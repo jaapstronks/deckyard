@@ -1,4 +1,36 @@
 /* Horizontal timeline slide (left-to-right chronological layout) */
+
+/* Timeline color tokens. Cards keep a solid, contrasting surface on every
+   background; a single accent (bar + marker) carries the brand. The
+   above/below alternation supplies the visual rhythm, so cards never rely
+   on a translucent fill that blends into the slide background. Dark
+   backgrounds override these tokens below. */
+.slide-timeline {
+  --timeline-card-surface: var(--slide-surface-white-solid);
+  --timeline-card-border: var(--slide-border-light);
+  --timeline-card-shadow: var(--slide-shadow-card);
+  --timeline-accent: var(--color-accent);
+  --timeline-marker-ring: rgba(255, 255, 255, var(--slide-opacity-visible));
+  --timeline-text: var(--color-text);
+  --timeline-text-muted: color-mix(
+    in srgb,
+    var(--color-text, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
+    transparent
+  );
+}
+
+/* Dark backgrounds: elevated glass card + a light-on-dark accent. Themes may
+   set --t-slide-bg-calm-accent (e.g. a bright brand colour); it falls back to
+   the regular accent for themes that don't. */
+.slide-timeline.slide-bg-calm,
+.slide-timeline.slide-bg-dark {
+  --timeline-card-surface: rgba(255, 255, 255, 0.1);
+  --timeline-card-border: rgba(255, 255, 255, 0.18);
+  --timeline-card-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --timeline-accent: var(--t-slide-bg-calm-accent, var(--color-accent));
+  --timeline-marker-ring: rgba(255, 255, 255, 0.85);
+}
+
 .slide-timeline .slide-inner {
   justify-content: flex-start;
 }
@@ -132,8 +164,8 @@
   width: var(--marker-size);
   height: var(--marker-size);
   border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, var(--slide-opacity-visible));
+  background: var(--timeline-accent);
+  box-shadow: 0 0 0 6px var(--timeline-marker-ring);
   z-index: 2;
 }
 
@@ -169,11 +201,11 @@
   width: max-content;
   min-width: min(var(--card-w), calc(100% + var(--card-spill)));
   max-width: min(var(--card-max-w), calc(100% + var(--card-spill)));
-  background: var(--slide-surface-white);
-  border: 2px solid var(--slide-border-light);
+  background: var(--timeline-card-surface);
+  border: 2px solid var(--timeline-card-border);
   border-radius: 16px; /* TODO: close to --slide-radius-md (18px) */
   padding: 14px var(--slide-space-4) var(--slide-space-4);
-  box-shadow: var(--slide-shadow-card);
+  box-shadow: var(--timeline-card-shadow);
 }
 
 /* Color accent bar on top of card */
@@ -185,22 +217,8 @@
   right: 0;
   height: 6px;
   border-radius: 14px 14px 8px 8px;
-  background: var(--color-accent);
+  background: var(--timeline-accent);
   opacity: 0.9;
-}
-
-/* Tone-based card styling */
-.slide-timeline .timeline-item[data-tone='accent'] .timeline-card {
-  background: rgba(56, 92, 92, 0.08);
-  border-color: rgba(56, 92, 92, 0.2);
-}
-
-.slide-timeline .timeline-item[data-tone='lime'] .timeline-card {
-  background: rgba(226, 254, 82, 0.22);
-}
-
-.slide-timeline .timeline-item[data-tone='lime'] .timeline-card::before {
-  background: var(--slide-bg-lime);
 }
 
 /* Card positioning for top items */
@@ -236,7 +254,7 @@
   line-height: var(--slide-leading-tight);
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  color: var(--timeline-text-muted);
   white-space: nowrap;
   z-index: 3;
 }
@@ -270,7 +288,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   margin: 0 0 var(--slide-space-2);
-  color: var(--color-text);
+  color: var(--timeline-text);
   overflow-wrap: break-word;
 }
 
@@ -279,11 +297,7 @@
   font-family: var(--font-body);
   font-size: 17px; /* off-scale: between --slide-text-sm (16) and --slide-text-base (20); projector-readable, keeps hierarchy with the 20px title */
   line-height: 1.3;
-  color: color-mix(
-    in srgb,
-    var(--color-text, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
-    transparent
-  );
+  color: var(--timeline-text-muted);
   margin: 0;
   max-width: 50ch;
 }
@@ -295,6 +309,17 @@
 
 .slide-timeline.slide-bg-lime .timeline-connector {
   background: rgba(0, 0, 0, 0.1); /* TODO: between --slide-opacity-subtle (0.08) and --slide-opacity-light (0.12) */
+}
+
+/* Dark backgrounds: lift the track + connector off the dark surface. */
+.slide-timeline.slide-bg-calm .timeline-track,
+.slide-timeline.slide-bg-dark .timeline-track {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.slide-timeline.slide-bg-calm .timeline-connector,
+.slide-timeline.slide-bg-dark .timeline-connector {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Responsive adjustments */
