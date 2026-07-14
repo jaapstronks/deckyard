@@ -1,0 +1,59 @@
+{
+  "id": "sandbox-warm",
+  "label": "Terracotta",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#1c1917",
+  "brandColors": ["#9a3412", "#c2410c", "#ea580c", "#f97316"],
+  "gradient": { "enabled": false },
+  "slides": {
+    "card-stack-slide": { "colors": ["#9a3412", "#c2410c", "#ea580c", "#f97316"] }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#fff7ed",
+    "--t-slide-bg-mist": "#ffedd5",
+    "--t-slide-bg-dark": "#431407",
+    "--t-color-background": "#fff7ed",
+    "--t-color-text": "#1c1917",
+    "--t-color-text-muted": "rgba(28, 25, 23, 0.66)",
+    "--t-color-accent": "#c2410c",
+    "--t-quote-author-color": "#9a3412",
+    "--t-quote-text-color": "#1c1917",
+    "--t-radius": "24px",
+    "--t-radius-sm": "16px",
+    "--t-radius-lg": "32px",
+    "--t-font-heading": "'Red Hat Display', 'Figtree', ui-sans-serif, system-ui, sans-serif",
+    "--t-font-body": "'Figtree', ui-sans-serif, system-ui, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "900",
+    "--t-icon-card-grid-icon-bg": "#ffedd5",
+    "--t-chart-0": "#9a3412",
+    "--t-chart-1": "#c2410c",
+    "--t-chart-2": "#ea580c",
+    "--t-chart-3": "#fb923c",
+    "--t-chart-4": "#1c1917",
+    "--t-chart-5": "#78716c",
+    "--t-chart-6": "#44403c",
+    "--t-chart-7": "#fdba74",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-400.woff2", "weight": 400, "style": "normal" },
+    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-500.woff2", "weight": 500, "style": "normal" },
+    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-700.woff2", "weight": 700, "style": "normal" },
+    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-900.woff2", "weight": 900, "style": "normal" },
+    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-400.woff2", "weight": 400, "style": "normal" },
+    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-500.woff2", "weight": 500, "style": "normal" },
+    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-600.woff2", "weight": 600, "style": "normal" },
+    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-700.woff2", "weight": 700, "style": "normal" }
+  ],
+  "hiddenSlideTypes": []
+}

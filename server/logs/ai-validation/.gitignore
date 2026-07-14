@@ -1,0 +1,4 @@
+# Ignore AI validation log files (large, auto-generated, may contain user content)
+*.jsonl
+!.gitkeep
+!.gitignore

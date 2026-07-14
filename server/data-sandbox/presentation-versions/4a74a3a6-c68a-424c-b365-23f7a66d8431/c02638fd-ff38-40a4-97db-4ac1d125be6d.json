@@ -1,0 +1,146 @@
+{
+  "id": "c02638fd-ff38-40a4-97db-4ac1d125be6d",
+  "presentationId": "4a74a3a6-c68a-424c-b365-23f7a66d8431",
+  "created": "2026-01-30T08:49:02.808Z",
+  "createdBy": "guest-69dd5a26-a7db-4765-90df-241028c821a7@sandbox.local",
+  "reason": "session_end",
+  "label": "",
+  "revision": 9,
+  "title": "blabla",
+  "presentation": {
+    "id": "4a74a3a6-c68a-424c-b365-23f7a66d8431",
+    "title": "blabla",
+    "description": null,
+    "created": "2026-01-30T07:58:22.069Z",
+    "modified": "2026-01-30T08:48:57.938Z",
+    "theme": "sandbox-minimal",
+    "lang": "nl",
+    "scope": "private",
+    "revision": 9,
+    "ownerEmail": "guest-69dd5a26-a7db-4765-90df-241028c821a7@sandbox.local",
+    "createdBy": "guest-69dd5a26-a7db-4765-90df-241028c821a7@sandbox.local",
+    "updatedBy": "guest-69dd5a26-a7db-4765-90df-241028c821a7@sandbox.local",
+    "isStarterKit": false,
+    "settings": {
+      "liveVideo": {
+        "enabled": false,
+        "provider": "",
+        "streamUrl": "",
+        "mobilePosition": "bottom",
+        "defaultPosition": "pip-top-right"
+      },
+      "qaEnabled": true,
+      "transitions": {
+        "preset": "fade"
+      },
+      "stepParagraphs": true
+    },
+    "i18n": {
+      "active": "nl",
+      "dominant": "nl",
+      "progress": {
+        "updatedAt": "2026-01-30T08:48:57.938Z",
+        "hasIncomplete": false,
+        "missingEnGbToNl": null,
+        "missingNlToEnGb": null
+      },
+      "versions": {
+        "nl": {
+          "title": "blabla",
+          "slides": [
+            {
+              "id": "02e70a6d-b051-450a-8ac9-8ffc70f5b56c",
+              "type": "title-slide",
+              "notes": "",
+              "content": {
+                "bgAlt": "",
+                "title": "Presentatie over blabla",
+                "byline": "",
+                "bgImage": "",
+                "background": "lime",
+                "logoCorner": "right",
+                "subheading": "",
+                "attribution": ""
+              },
+              "parentId": null,
+              "visibility": {}
+            },
+            {
+              "id": "2a9c2158-9ce2-4d89-9d3b-9aa8c74449fb",
+              "type": "chapter-title-slide",
+              "notes": "",
+              "content": {
+                "title": "flopiedpie lalala nummer twee"
+              },
+              "parentId": null
+            },
+            {
+              "id": "fecbf5e9-bb1b-4d85-97b9-56dc0bbb5885",
+              "type": "content-slide",
+              "notes": "",
+              "content": {
+                "body": "- Eerste punt\n- Tweede punt",
+                "title": "Nieuwe slide 3",
+                "layout": "one-column",
+                "actions": [],
+                "background": "lime",
+                "subheading": ""
+              },
+              "parentId": null
+            }
+          ]
+        }
+      }
+    },
+    "slides": [
+      {
+        "id": "02e70a6d-b051-450a-8ac9-8ffc70f5b56c",
+        "type": "title-slide",
+        "notes": "",
+        "content": {
+          "bgAlt": "",
+          "title": "Presentatie over blabla",
+          "byline": "",
+          "bgImage": "",
+          "background": "lime",
+          "logoCorner": "right",
+          "subheading": "",
+          "attribution": ""
+        },
+        "parentId": null,
+        "visibility": {}
+      },
+      {
+        "id": "2a9c2158-9ce2-4d89-9d3b-9aa8c74449fb",
+        "type": "chapter-title-slide",
+        "notes": "",
+        "content": {
+          "title": "flopiedpie lalala nummer twee"
+        },
+        "parentId": null
+      },
+      {
+        "id": "fecbf5e9-bb1b-4d85-97b9-56dc0bbb5885",
+        "type": "content-slide",
+        "notes": "",
+        "content": {
+          "body": "- Eerste punt\n- Tweede punt",
+          "title": "Nieuwe slide 3",
+          "layout": "one-column",
+          "actions": [],
+          "background": "lime",
+          "subheading": ""
+        },
+        "parentId": null
+      }
+    ],
+    "notionSourcePageId": null,
+    "sandbox": {
+      "enabled": true,
+      "expires": "2026-01-31T07:58:22.068Z"
+    },
+    "published": null,
+    "trashedAt": null,
+    "trashedBy": null
+  }
+}

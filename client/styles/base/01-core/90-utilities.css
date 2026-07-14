@@ -1,0 +1,140 @@
+/* Small utilities (keep minimal; prefer component classes where possible) */
+.hidden,
+[hidden] {
+  /* Ensure HTML `hidden` works even when component classes set explicit display values. */
+  display: none !important;
+}
+
+.is-pre-wrap {
+  white-space: pre-wrap;
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+/* Margin utilities */
+.is-ml-auto {
+  margin-left: auto !important;
+}
+
+.is-mr-auto {
+  margin-right: auto !important;
+}
+
+.is-mt-4 {
+  margin-top: var(--ps-space-4) !important;
+}
+
+.is-mt-8 {
+  margin-top: var(--ps-space-6) !important;
+}
+
+.is-mb-4 {
+  margin-bottom: var(--ps-space-4) !important;
+}
+
+/* Flex utilities */
+.is-flex {
+  display: flex !important;
+}
+
+.is-flex-col {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.is-flex-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.is-items-center {
+  align-items: center !important;
+}
+
+.is-items-start {
+  align-items: flex-start !important;
+}
+
+.is-justify-between {
+  justify-content: space-between !important;
+}
+
+.is-justify-end {
+  justify-content: flex-end !important;
+}
+
+/* Gap utilities */
+.is-gap-2 {
+  gap: var(--ps-space-2) !important;
+}
+
+.is-gap-3 {
+  gap: var(--ps-space-3) !important;
+}
+
+.is-gap-4 {
+  gap: var(--ps-space-4) !important;
+}
+
+/* Width utilities */
+.is-w-full {
+  width: 100% !important;
+}
+
+/* Text utilities */
+.is-text-center {
+  text-align: center !important;
+}
+
+.is-text-right {
+  text-align: right !important;
+}
+
+.is-truncate {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Visibility */
+.is-invisible {
+  visibility: hidden !important;
+}
+
+/* Pointer events */
+.is-pointer-none {
+  pointer-events: none !important;
+}
+
+/* Skip link for accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-bg-primary));
+  padding: var(--ps-space-3) var(--ps-space-4);
+  z-index: 10000;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 0 0 var(--ps-radius-md) 0;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Lucide icon dark-mode inversion
+   SVG icons are black strokes; invert to white in dark mode.
+   Targets all vendored Lucide <img> icons in UI chrome.
+   ───────────────────────────────────────────────────────────── */
+:root[data-ui-mode='dark'] img[src*="lucide-icons"] {
+  filter: invert(1);
+}

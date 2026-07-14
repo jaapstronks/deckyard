@@ -1,0 +1,241 @@
+/* Preview panel */
+.modal.ps-modal.preview-lightbox-modal {
+  /* Override generic `.modal.ps-modal { width: min(860px, 100%) }` */
+  width: min(1600px, 98vw);
+  height: 96vh;
+  max-height: 96vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.ps-modal.preview-lightbox-modal .ps-modal-header {
+  /* Keep the close button visible even if slide content uses z-index/positioning. */
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal.ps-modal.preview-lightbox-modal .ps-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.modal.ps-modal.preview-lightbox-modal .ps-modal-header-left h2 {
+  margin: 0;
+}
+
+.modal.ps-modal.preview-lightbox-modal .ps-modal-body {
+  position: relative;
+  z-index: 1;
+  /* Fill remaining space under the header so the stage has a real height. */
+  flex: 1;
+  min-height: 0;
+}
+
+.preview-lightbox-body {
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.preview-lightbox-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb.preview-lightbox-thumb {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Lightbox header: three-column layout to center the navigation */
+.modal.ps-modal.preview-lightbox-modal .ps-modal-header-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.preview-lightbox-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-lightbox-nav-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-lightbox-nav-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.preview-lightbox-counter {
+  font-family: var(--ps-font-mono);
+  font-size: 13px;
+  color: hsl(var(--app-text-secondary));
+  min-width: 50px;
+  text-align: center;
+}
+
+.preview-panel-header h2 {
+  margin: 0;
+}
+
+.preview-panel-scroll {
+  display: flex;
+  flex-direction: column;
+  /* The slide preview should always be fully visible; notes can scroll independently. */
+  overflow: hidden;
+}
+
+.preview-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-notes-wrap {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  max-height: clamp(160px, 38%, 360px);
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.preview-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+.preview-icon-btn:hover {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+}
+.preview-icon-btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+.preview-zoom-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.preview-notes-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.preview-panel-actions {
+  gap: 4px;
+}
+
+.is-editor:not(.is-preview-collapsed) .preview-notes-btn {
+  display: none;
+}
+
+.thumb.is-clickable-preview {
+  cursor: zoom-in;
+}
+.thumb.is-clickable-preview:hover {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: var(--app-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.is-editor.is-preview-collapsed .preview-panel-header h2 {
+  /* In the collapsed rail, hide the title to save horizontal space. */
+  display: none;
+}
+
+.is-editor.is-preview-collapsed .preview-notes {
+  display: none;
+}
+
+.is-editor.is-preview-collapsed .preview-notes-wrap {
+  display: none;
+}
+
+.is-editor.is-preview-collapsed .preview-panel-scroll > .help {
+  display: none;
+}
+
+.is-editor.is-preview-collapsed .preview-panel-scroll {
+  padding: var(--ps-space-2);
+}
+
+.is-editor.is-preview-collapsed .thumb.is-clickable-preview:hover {
+  /* Avoid a hover lift that can feel cramped/clipped in a narrow rail. */
+  transform: none;
+  box-shadow: var(--app-shadow-md);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Desktop (≥1025px): Allow a larger canvas by making notes scrollable. The
+   canvas column is now the flexible one at every desktop width, so the stage
+   grows 16:9 with its column on all desktop screens (was >1300px only).
+   ───────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 1025px) {
+  .is-editor .preview-panel-scroll {
+    /* Allow scrolling so the preview stage can grow larger */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .is-editor .preview-stage {
+    /* Don't shrink the stage; let the container scroll instead */
+    flex: 0 0 auto;
+    /* Stage should maintain 16:9 aspect ratio so the slide can grow with width */
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    /* Cap the stage at a reasonable max size to avoid overwhelming the notes */
+    max-height: min(70vh, 680px);
+  }
+
+  .is-editor .preview-notes-wrap {
+    /* On large screens, notes get a fixed max height so preview can grow */
+    flex-shrink: 0;
+    max-height: 280px;
+  }
+
+  /* Slide comments section should also be compact */
+  .is-editor .slide-comments-section {
+    flex-shrink: 0;
+  }
+}
+
+

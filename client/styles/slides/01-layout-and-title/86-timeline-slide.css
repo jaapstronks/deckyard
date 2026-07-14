@@ -1,0 +1,337 @@
+/* Horizontal timeline slide (left-to-right chronological layout) */
+.slide-timeline .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-timeline .header {
+  margin-bottom: var(--slide-space-6);
+}
+
+.slide-timeline .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: var(--slide-leading-tight);
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-timeline .subheading {
+  margin-top: var(--slide-space-2);
+  margin-bottom: 0;
+}
+
+/* Timeline container */
+.slide-timeline .timeline-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: var(--timeline-gap, 14px);
+  position: relative;
+  padding: 26px 32px;
+  /* Geometry. --card-w is the *minimum* (preferred) card width;
+     --card-max-w is the cap when content (long titles) needs more room.
+     Cards size to max-content between these bounds so long single words
+     get extra width before the JS auto-shrink kicks in. */
+  --marker-size: 20px;
+  --connector-height: 60px;
+  --card-w: clamp(200px, 18vw, 320px);
+  --card-max-w: clamp(240px, 22vw, 380px);
+  --card-spill: 100px;
+  --top-x: clamp(20px, 2.5vw, 70px);
+  --bottom-x: clamp(-70px, -2.5vw, -20px);
+}
+
+/* Responsive sizing based on item count */
+.slide-timeline .timeline-container[data-count='2'],
+.slide-timeline .timeline-container[data-count='3'] {
+  --card-w: clamp(260px, 24vw, 400px);
+  --card-max-w: clamp(300px, 28vw, 460px);
+  --card-spill: 140px;
+  --top-x: clamp(24px, 3vw, 90px);
+  --bottom-x: clamp(-90px, -3vw, -24px);
+  --timeline-gap: 18px;
+}
+
+.slide-timeline .timeline-container[data-count='4'] {
+  --card-w: clamp(220px, 20vw, 340px);
+  --card-max-w: clamp(260px, 24vw, 400px);
+  --card-spill: 120px;
+  --top-x: clamp(18px, 2.4vw, 70px);
+  --bottom-x: clamp(-70px, -2.4vw, -18px);
+  --timeline-gap: 14px;
+}
+
+.slide-timeline .timeline-container[data-count='5'],
+.slide-timeline .timeline-container[data-count='6'] {
+  --card-w: clamp(180px, 15vw, 280px);
+  --card-max-w: clamp(220px, 19vw, 340px);
+  --card-spill: 100px;
+  --top-x: clamp(14px, 1.8vw, 50px);
+  --bottom-x: clamp(-50px, -1.8vw, -14px);
+  --timeline-gap: 10px;
+}
+
+.slide-timeline .timeline-container[data-count='7'],
+.slide-timeline .timeline-container[data-count='8'] {
+  --card-w: clamp(160px, 12vw, 240px);
+  --card-max-w: clamp(190px, 15vw, 290px);
+  --card-spill: 80px;
+  --top-x: clamp(10px, 1.2vw, 34px);
+  --bottom-x: clamp(-34px, -1.2vw, -10px);
+  --timeline-gap: 8px;
+}
+
+/* Horizontal track line */
+.slide-timeline .timeline-track {
+  position: absolute;
+  left: var(--slide-space-8);
+  right: var(--slide-space-8);
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--slide-track-height);
+  background: var(--slide-track-color);
+  border-radius: var(--slide-radius-full);
+  z-index: 0;
+}
+
+/* Individual timeline item */
+.slide-timeline .timeline-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  z-index: 1;
+}
+
+/* Position adjustment for alternating cards */
+.slide-timeline .timeline-item.is-top {
+  --card-x: var(--top-x);
+}
+
+.slide-timeline .timeline-item.is-bottom {
+  --card-x: var(--bottom-x);
+}
+
+/* Edge protection: first/last items shouldn't push outward */
+.slide-timeline .timeline-item:first-of-type {
+  --card-x: clamp(0px, 2vw, 50px);
+}
+
+.slide-timeline .timeline-item:last-of-type {
+  --card-x: 0px;
+}
+
+/* Marker dot on the track */
+.slide-timeline .timeline-marker {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--marker-size);
+  height: var(--marker-size);
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, var(--slide-opacity-visible));
+  z-index: 2;
+}
+
+/* Connector line from marker to card */
+.slide-timeline .timeline-connector {
+  position: absolute;
+  width: var(--slide-connector-width);
+  background: var(--slide-connector-color);
+  border-radius: var(--slide-radius-full);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.slide-timeline .timeline-item.is-top .timeline-connector {
+  top: calc(50% - (var(--marker-size) / 2) - var(--connector-height));
+  height: var(--connector-height);
+}
+
+.slide-timeline .timeline-item.is-bottom .timeline-connector {
+  top: calc(50% + (var(--marker-size) / 2));
+  height: var(--connector-height);
+}
+
+/* Timeline card.
+   Width grows from --card-w (the preferred floor) to --card-max-w (the ceiling)
+   based on content; --card-spill caps the bleed into neighbour columns so
+   neighbours don't collide as cards widen. */
+.slide-timeline .timeline-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max-content;
+  min-width: min(var(--card-w), calc(100% + var(--card-spill)));
+  max-width: min(var(--card-max-w), calc(100% + var(--card-spill)));
+  background: var(--slide-surface-white);
+  border: 2px solid var(--slide-border-light);
+  border-radius: 16px; /* TODO: close to --slide-radius-md (18px) */
+  padding: 14px var(--slide-space-4) var(--slide-space-4);
+  box-shadow: var(--slide-shadow-card);
+}
+
+/* Color accent bar on top of card */
+.slide-timeline .timeline-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 14px 14px 8px 8px;
+  background: var(--color-accent);
+  opacity: 0.9;
+}
+
+/* Tone-based card styling */
+.slide-timeline .timeline-item[data-tone='accent'] .timeline-card {
+  background: rgba(56, 92, 92, 0.08);
+  border-color: rgba(56, 92, 92, 0.2);
+}
+
+.slide-timeline .timeline-item[data-tone='lime'] .timeline-card {
+  background: rgba(226, 254, 82, 0.22);
+}
+
+.slide-timeline .timeline-item[data-tone='lime'] .timeline-card::before {
+  background: var(--slide-bg-lime);
+}
+
+/* Card positioning for top items */
+.slide-timeline .timeline-item.is-top .timeline-card {
+  transform: translate(
+    calc(-50% + var(--card-x)),
+    calc(-100% - (var(--marker-size) / 2) - var(--connector-height))
+  );
+}
+
+/* Card positioning for bottom items */
+.slide-timeline .timeline-item.is-bottom .timeline-card {
+  transform: translate(
+    calc(-50% + var(--card-x)),
+    calc((var(--marker-size) / 2) + var(--connector-height))
+  );
+}
+
+/* Edge cards: tighter spill cap so the first/last card doesn't reach beyond the slide. */
+.slide-timeline .timeline-item:first-of-type .timeline-card,
+.slide-timeline .timeline-item:last-of-type .timeline-card {
+  min-width: min(var(--card-w), calc(100% + 50px));
+  max-width: min(var(--card-max-w), calc(100% + 50px));
+}
+
+/* Date label — sits next to the marker on the card-facing side of the line,
+   so it visually attaches to the timeline rather than to the card. */
+.slide-timeline .timeline-date {
+  position: absolute;
+  left: 50%;
+  font-family: var(--font-caption, var(--font-body));
+  font-size: var(--slide-text-sm);
+  line-height: var(--slide-leading-tight);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+  white-space: nowrap;
+  z-index: 3;
+}
+
+/* Date sits on the opposite side of the line from its card, so the
+   connector never visually crosses the date text. */
+.slide-timeline .timeline-item.is-top .timeline-date {
+  top: calc(50% + (var(--marker-size) / 2) + 12px);
+  transform: translateX(-50%);
+}
+
+.slide-timeline .timeline-item.is-bottom .timeline-date {
+  bottom: calc(50% + (var(--marker-size) / 2) + 12px);
+  transform: translateX(-50%);
+}
+
+/* Title. Font-size is the *ceiling*; client-side initTimelineSlides() may shrink it
+   down to --timeline-title-min-px (14) for cards whose title still wraps after the
+   card has grown to its max-width. overflow-wrap stays as the last-resort fallback
+   for truly absurd single words. */
+.slide-timeline .timeline-title {
+  --timeline-title-max-px: 20px;
+  /* Floor is deliberately high: the card has vertical room for 2-3 wrapped
+     lines, so long titles should wrap at a readable size rather than shrink. */
+  --timeline-title-min-px: 16px;
+  --timeline-title-max-lines: 3;
+  font-family: var(--font-heading);
+  font-size: var(--timeline-title-max-px); /* = --slide-text-base (20); auto-shrinks per card when it wraps */
+  line-height: 1.15;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 0 0 var(--slide-space-2);
+  color: var(--color-text);
+  overflow-wrap: break-word;
+}
+
+/* Description text */
+.slide-timeline .timeline-text {
+  font-family: var(--font-body);
+  font-size: 17px; /* off-scale: between --slide-text-sm (16) and --slide-text-base (20); projector-readable, keeps hierarchy with the 20px title */
+  line-height: 1.3;
+  color: color-mix(
+    in srgb,
+    var(--color-text, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
+    transparent
+  );
+  margin: 0;
+  max-width: 50ch;
+}
+
+/* Background-specific adjustments */
+.slide-timeline.slide-bg-lime .timeline-track {
+  background: rgba(0, 0, 0, var(--slide-opacity-light));
+}
+
+.slide-timeline.slide-bg-lime .timeline-connector {
+  background: rgba(0, 0, 0, 0.1); /* TODO: between --slide-opacity-subtle (0.08) and --slide-opacity-light (0.12) */
+}
+
+/* Responsive adjustments */
+@media (max-width: 980px) {
+  .slide-timeline .timeline-container {
+    gap: 10px; /* TODO: between --slide-space-2 (8px) and --slide-space-3 (12px) */
+    --marker-size: 18px;
+    --connector-height: 48px;
+    padding: var(--slide-space-5) var(--slide-space-6);
+  }
+
+  .slide-timeline .timeline-track {
+    left: var(--slide-space-6);
+    right: var(--slide-space-6);
+  }
+
+  .slide-timeline .timeline-card {
+    padding: var(--slide-space-3) 14px 14px;
+    border-radius: var(--slide-radius-sm);
+  }
+
+  .slide-timeline .timeline-title {
+    font-size: var(--slide-text-sm);
+  }
+
+  .slide-timeline .timeline-text {
+    font-size: var(--slide-text-xs);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-timeline .timeline-card {
+    box-shadow: none;
+  }
+
+  .slide-timeline .timeline-marker {
+    box-shadow: none;
+    border: 3px solid rgba(255, 255, 255, var(--slide-opacity-visible));
+  }
+}

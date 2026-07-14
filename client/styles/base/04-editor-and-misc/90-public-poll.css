@@ -1,0 +1,59 @@
+/* --- Public poll page --- */
+.poll-panel .poll-answer-btn {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.poll-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.poll-bar-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 44px;
+  gap: 12px;
+  align-items: center;
+}
+.poll-bar-name {
+  font-size: 14px;
+  line-height: 1.2;
+  color: hsl(var(--app-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.poll-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  background: hsl(var(--app-bg-hover));
+  overflow: hidden;
+}
+.poll-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: hsl(var(--app-accent-primary));
+  border-radius: 999px;
+  transition: width 260ms ease;
+}
+.poll-bar-count {
+  font-family: var(--ps-font-mono);
+  font-size: 13px;
+  color: hsl(var(--app-text-secondary));
+  text-align: right;
+}
+.poll-bars.poll-bars-compact .poll-bar-row {
+  grid-template-columns: 1fr 1fr 44px;
+}
+.poll-bars.poll-bars-compact .poll-bar-name {
+  font-size: 14px;
+}
+.poll-bars.poll-bars-compact .poll-bar-track {
+  height: 12px;
+}
+.poll-bars.poll-bars-compact .poll-bar-count {
+  font-size: 13px;
+}
+
+

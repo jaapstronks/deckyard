@@ -1,0 +1,401 @@
+/* ============================================
+   Share Modal
+   ============================================ */
+
+.share-modal {
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.share-modal-help {
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-section-title {
+  font-weight: 700;
+  font-size: var(--ps-text-base);
+  margin-bottom: var(--ps-space-3);
+  color: hsl(var(--app-text-primary));
+}
+
+.share-create-section {
+  padding: var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+.share-form-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.share-form-label {
+  width: 90px;
+  flex-shrink: 0;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+}
+
+.share-form-row .form-input {
+  flex: 1;
+}
+
+.share-form-actions {
+  margin-top: var(--ps-space-2);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.share-links-section {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.share-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.share-links-empty,
+.share-links-error {
+  text-align: center;
+  padding: var(--ps-space-4);
+  opacity: 0.65;
+}
+
+.share-link-item {
+  padding: var(--ps-space-3);
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+}
+
+.share-link-item > .share-link-info,
+.share-link-item > .share-link-actions {
+  display: inline-flex;
+  align-items: center;
+}
+
+.share-link-item > .share-link-info {
+  flex: 1;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.share-link-item > .share-link-actions {
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+.share-link-label {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+}
+
+.share-link-meta {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+  font-size: var(--ps-text-xs);
+}
+
+.share-link-permission {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.share-link-permission--view {
+  background: hsl(210 60% 90%);
+  color: hsl(210 60% 30%);
+}
+
+.share-link-permission--comment {
+  background: hsl(150 60% 90%);
+  color: hsl(150 60% 25%);
+}
+
+.share-link-permission--edit {
+  background: hsl(280 60% 90%);
+  color: hsl(280 60% 30%);
+}
+
+.share-link-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: hsl(var(--app-bg-hover));
+}
+
+img.share-link-badge {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: none;
+  object-fit: contain;
+}
+
+.share-link-badge--invite {
+  background: hsl(40 80% 90%);
+  color: hsl(40 80% 30%);
+}
+
+.share-link-expires,
+.share-link-uses {
+  opacity: 0.7;
+}
+
+/* ============================================
+   Guest Management Section
+   ============================================ */
+
+.share-guest-section {
+  margin-top: var(--ps-space-3);
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.share-guest-toggle {
+  width: 100%;
+  justify-content: center;
+}
+
+.share-guest-content {
+  margin-top: var(--ps-space-3);
+}
+
+.share-guest-add-form {
+  display: flex;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-3);
+  flex-wrap: wrap;
+}
+
+.share-guest-email {
+  flex: 2;
+  min-width: 180px;
+}
+
+.share-guest-name {
+  flex: 1;
+  min-width: 120px;
+}
+
+.share-guest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.share-guest-empty,
+.share-guest-error {
+  text-align: center;
+  padding: var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  opacity: 0.65;
+}
+
+.share-guest-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
+}
+
+.share-guest-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.share-guest-email-display {
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-guest-name-display {
+  font-size: var(--ps-text-xs);
+  opacity: 0.7;
+}
+
+.share-guest-status {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.share-guest-status--pending {
+  background: hsl(40 80% 90%);
+  color: hsl(40 80% 30%);
+}
+
+.share-guest-status--verified {
+  background: hsl(150 60% 90%);
+  color: hsl(150 60% 25%);
+}
+
+.share-guest-actions {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Collaborators Section
+   ============================================ */
+
+.share-collaborators-section {
+  padding: var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-collaborators-help {
+  margin-bottom: var(--ps-space-3);
+}
+
+.share-collaborator-form {
+  margin-bottom: var(--ps-space-3);
+}
+
+.share-collaborator-form-row {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.share-user-select {
+  flex: 2;
+  min-width: 180px;
+}
+
+.share-collaborator-permission {
+  flex: 1;
+  min-width: 120px;
+}
+
+.share-collaborators-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.share-collaborators-empty,
+.share-collaborators-error {
+  text-align: center;
+  padding: var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  opacity: 0.65;
+}
+
+.share-collaborator-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-subtle));
+}
+
+.share-collaborator-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-collaborator-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-collaborator-email {
+  font-size: var(--ps-text-xs);
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-collaborator-perm-select {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+/* Share Links Wrapper */
+.share-links-wrapper {
+  border-top: 1px solid hsl(var(--app-border-subtle));
+  padding-top: var(--ps-space-4);
+}
+
+.share-section-title-row {
+  margin-bottom: var(--ps-space-3);
+}
+
+/* Owner display in collaborators list */
+.share-collaborator-owner {
+  background: hsl(var(--app-bg-sunken));
+  border: 1px dashed hsl(var(--app-border-default));
+}
+
+.share-collaborator-owner .share-collaborator-info {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.share-owner-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  background: hsl(40 80% 90%);
+  color: hsl(40 80% 30%);
+  border-radius: 999px;
+}
+
+/* Progress indicator for batch invites */
+.share-collaborator-progress {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  margin-top: var(--ps-space-2);
+  display: none;
+}
+
+.share-collaborator-progress.is-visible {
+  display: block;
+}
+
+/* Autocomplete row in form */
+.share-collaborator-form-row.has-autocomplete {
+  flex-wrap: nowrap;
+}
+
+.share-collaborator-form-row.has-autocomplete > :first-child {
+  flex: 2;
+  min-width: 200px;
+}

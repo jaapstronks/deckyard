@@ -1,0 +1,11 @@
+{
+  email {$LETSENCRYPT_EMAIL}
+}
+
+{$DOMAIN} {
+  encode gzip
+
+  reverse_proxy app:4177
+}
+
+

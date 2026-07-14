@@ -1,0 +1,194 @@
+/* KPI / big-number metrics slide (1–4 tiles) */
+
+/* Title + subheading stay pinned to the top; the grid takes the remaining
+   space and centers its cards within it, so the header sits high and keeps a
+   clear gap from the number cards regardless of metric count. */
+.slide-kpi-metrics .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-kpi-metrics .heading {
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-heading) + 6px);
+  line-height: 1.1;
+  margin: 0 0 28px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-kpi-metrics .kpi-grid {
+  display: grid;
+  gap: 26px;
+  flex: 1;
+  min-height: 0;
+  align-content: center;
+  justify-items: stretch;
+  /* Breathing room between the title/subheading and the first row of cards. */
+  margin-top: var(--slide-space-10);
+}
+
+.slide-kpi-metrics .kpi-grid[data-metric-count='1'] {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='2'] {
+  grid-template-columns: 1fr 1fr;
+  justify-items: stretch;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='3'] {
+  /* 3-up: avoid overly tall tiles by keeping a single row that sizes to content */
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='4'] {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  align-content: stretch;
+  /* Densest layout: keep a header gap but a smaller one so the 2×2 fits. */
+  margin-top: var(--slide-space-6);
+}
+
+.slide-kpi-metrics .kpi-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 12px;
+  border-radius: 26px;
+  padding: 32px 34px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.16);
+}
+
+.slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-metric {
+  width: min(980px, 70%);
+  min-height: 360px;
+  padding: 54px 60px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='2'] .kpi-metric {
+  min-height: 320px;
+  padding: 30px 32px;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='3'] .kpi-metric {
+  min-height: 300px;
+  padding: 28px 30px;
+}
+
+.slide-kpi-metrics .kpi-value {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-synthesis: none;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.slide-kpi-metrics .kpi-value-num {
+  font-size: 108px;
+  line-height: 1;
+}
+.slide-kpi-metrics .kpi-unit {
+  font-size: 40px;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+.slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-value-num {
+  font-size: 156px;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-unit {
+  font-size: 54px;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='4'] .kpi-value-num {
+  font-size: 96px;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='3'] .kpi-value-num {
+  font-size: 98px;
+}
+
+.slide-kpi-metrics .kpi-label {
+  font-family: var(--font-body);
+  font-size: calc(var(--font-size-body) + 6px);
+  line-height: 1.18;
+  color: var(--color-text);
+  margin-top: 2px;
+}
+
+.slide-kpi-metrics .kpi-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+}
+.slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-meta {
+  justify-content: center;
+}
+
+.slide-kpi-metrics .kpi-delta {
+  color: var(--color-text);
+}
+.slide-kpi-metrics .kpi-delta.is-positive {
+  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text));
+}
+.slide-kpi-metrics .kpi-delta.is-negative {
+  color: color-mix(in srgb, #b00020 80%, var(--color-text));
+}
+
+/* Accent: highlight first metric tile */
+.slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, rgba(0, 0, 0, 0.16));
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent),
+    0 18px 48px rgba(0, 0, 0, 0.12);
+}
+.slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
+  border-color: color-mix(in srgb, #b00020 55%, rgba(0, 0, 0, 0.16));
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, #b00020 16%, transparent),
+    0 18px 48px rgba(0, 0, 0, 0.12);
+}
+
+/* Print/PDF: drop the blurred layer (Chromium print rasterizer can paint it as
+   a solid grey rectangle); keep the hard-edged accent ring. */
+@media print {
+  .slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+  .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
+    box-shadow: 0 0 0 6px color-mix(in srgb, #b00020 16%, transparent);
+  }
+}
+
+/* When bottom subheading is present, shrink card heights */
+.slide-kpi-metrics.has-bottom-subheading .kpi-metric {
+  padding: 24px 28px;
+}
+.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-metric {
+  min-height: 400px;
+  padding: 36px 48px;
+}
+.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='2'] .kpi-metric {
+  min-height: 240px;
+  padding: 24px 26px;
+}
+.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='3'] .kpi-metric {
+  min-height: 220px;
+  padding: 22px 24px;
+}
+.slide-kpi-metrics.has-bottom-subheading .kpi-value-num {
+  font-size: 80px;
+}
+.slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-value-num {
+  font-size: 120px;
+}
+
+

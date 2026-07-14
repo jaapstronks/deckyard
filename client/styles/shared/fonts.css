@@ -1,0 +1,14 @@
+/* Shared font faces used by slide themes and a few UI elements (mono).
+   Keep this file theme-independent. */
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('/assets/fonts/BricolageGrotesque-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+
+

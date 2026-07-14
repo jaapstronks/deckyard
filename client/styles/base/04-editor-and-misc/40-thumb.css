@@ -1,0 +1,44 @@
+/* Slide thumbnails (editor/preview) */
+.thumb {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--ps-radius-md);
+  overflow: hidden;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  aspect-ratio: 16 / 9;
+  position: relative;
+  --thumb-scale: 0.35;
+}
+
+.thumb .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+  max-width: none;
+  max-height: none;
+}
+
+.thumb-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 12px;
+  color: hsl(var(--app-text-tertiary));
+  pointer-events: none;
+}
+
+.thumb-overlay.is-bottom {
+  inset: auto 10px 10px 10px;
+  padding: 0;
+}
+
+.thumb-overlay.is-muted {
+  color: hsl(var(--app-text-tertiary));
+}
+
+

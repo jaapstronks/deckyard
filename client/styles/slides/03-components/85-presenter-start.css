@@ -1,0 +1,162 @@
+/* ============================================================
+   Presenter start curtain
+   Shown when the /present tab opens: fullscreen as the obvious
+   primary action, and the click that satisfies the browser's
+   requestFullscreen() user-gesture requirement.
+   ============================================================ */
+.presenter-start-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: hsl(var(--app-bg-base) / 0.86);
+  backdrop-filter: blur(14px);
+  opacity: 1;
+  transition: opacity 260ms ease;
+}
+.presenter-start-curtain.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.presenter-start-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  max-width: 520px;
+  padding: 40px 44px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 16px;
+  box-shadow: var(--app-shadow-xl);
+}
+
+.presenter-start-title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  line-height: 1.2;
+  color: hsl(var(--app-text-primary));
+}
+.presenter-start-meta {
+  font-size: 14px;
+  color: hsl(var(--app-text-secondary));
+  margin-top: -6px;
+}
+
+.presenter-start-fs {
+  margin-top: 8px;
+  font-size: 16px;
+  padding: 12px 22px;
+}
+.presenter-start-fs::before {
+  content: '\25B6'; /* ▶ */
+  margin-right: 10px;
+  font-size: 0.85em;
+}
+
+.presenter-start-windowed {
+  background: transparent;
+  border: none;
+  color: hsl(var(--app-text-secondary));
+  font-size: 14px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 120ms ease, background 120ms ease;
+}
+.presenter-start-windowed:hover {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
+}
+.presenter-start-windowed:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
+}
+
+.presenter-start-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: hsl(var(--app-text-secondary));
+}
+
+/* ============================================================
+   Remaining-build indicator
+   Small dots in the corner of the slide area: filled = revealed,
+   hollow = still to come. Persistently visible (not tied to the
+   auto-hiding chrome) but subtle; fades away once all builds are
+   shown, so "no dots" reads as "safe to advance".
+   ============================================================ */
+.presenter-step-indicator {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  z-index: 40;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.32);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 260ms ease;
+  pointer-events: none;
+}
+.presenter-step-indicator.is-visible {
+  display: flex;
+  opacity: 1;
+}
+/* When the build is complete, fade the whole indicator out. */
+.presenter-step-indicator.is-complete {
+  opacity: 0;
+}
+
+.presenter-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.6);
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+.presenter-step-dot.is-on {
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.92);
+}
+
+/* ============================================================
+   "Last build revealed" settle
+   A subtle, non-blocking nudge signalling the last step is now on
+   screen (so the presenter isn't surprised by one more bullet).
+   ============================================================ */
+@keyframes sb-step-settle {
+  0% {
+    transform: translateY(0);
+  }
+  28% {
+    transform: translateY(-0.5%);
+  }
+  62% {
+    transform: translateY(0.18%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+.deck-slide.sb-step-complete.is-active {
+  animation: sb-step-settle 440ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-slide.sb-step-complete.is-active {
+    animation: none;
+  }
+  .presenter-start-curtain {
+    transition: none;
+  }
+}

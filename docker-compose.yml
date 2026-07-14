@@ -1,0 +1,45 @@
+services:
+  app:
+    build: .
+    container_name: deckyard-app
+    restart: unless-stopped
+    # Allows container to reach services on the host (needed on Linux, harmless elsewhere)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Pass all environment variables from .env file automatically
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # These are always set regardless of .env
+      PORT: "4177"
+      HOST: "0.0.0.0"
+    volumes:
+      - ./server/data:/app/server/data
+      - ./server/uploads:/app/server/uploads
+    expose:
+      - "4177"
+
+  # Optional (recommended in production): HTTPS reverse proxy
+  # - Put DOMAIN and LETSENCRYPT_EMAIL in a `.env` file on the server (not committed)
+  # - Open ports 80/443 on your VPS
+  caddy:
+    image: caddy:2-alpine
+    container_name: deckyard-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

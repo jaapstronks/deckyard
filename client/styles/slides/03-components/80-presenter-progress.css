@@ -1,0 +1,25 @@
+/* Presenter progress */
+.presenter-progress {
+  padding: 10px 16px;
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  border-top: 1px solid hsl(var(--app-border-default));
+  backdrop-filter: blur(10px);
+}
+.presenter-progress-text {
+  font-size: 14px;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: 6px;
+}
+.presenter-progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: hsl(var(--app-border-default));
+  overflow: hidden;
+}
+.presenter-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: hsl(var(--app-accent-primary));
+}
+
+

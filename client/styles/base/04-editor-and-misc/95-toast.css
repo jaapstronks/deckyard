@@ -1,0 +1,134 @@
+/* --- Toast notifications --- */
+.toast-stack {
+  position: fixed;
+  right: calc(12px + env(safe-area-inset-right, 0px));
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(380px, calc(100vw - 24px));
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+  border-radius: var(--ps-radius-xl);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-overlay) / 0.92);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--app-shadow-xl);
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-sm);
+  line-height: 1.35;
+  transform: translateY(6px);
+  opacity: 0;
+  animation: toast-in 220ms ease-out forwards;
+}
+/* Leading status icon: gives each type a shape cue, so type is not
+   signalled by colour alone (WCAG 1.4.1). Purely decorative — the toast
+   text is already announced via role="status". */
+.toast::before {
+  content: 'ℹ';
+  flex: none;
+  font-size: 1em;
+  line-height: 1.35;
+  font-weight: 700;
+  color: hsl(var(--app-text-secondary, var(--app-text-primary)));
+}
+.toast.toast-success {
+  border-color: hsl(142 71% 45% / 0.5);
+  background:
+    linear-gradient(hsl(142 71% 45% / 0.1), hsl(142 71% 45% / 0.1)),
+    hsl(var(--app-bg-overlay) / 0.92);
+}
+.toast.toast-success::before {
+  content: '✓';
+  color: hsl(142 60% 40%);
+}
+.toast.toast-warning {
+  border-color: hsl(38 92% 50% / 0.55);
+  background:
+    linear-gradient(hsl(38 92% 50% / 0.12), hsl(38 92% 50% / 0.12)),
+    hsl(var(--app-bg-overlay) / 0.92);
+}
+.toast.toast-warning::before {
+  content: '⚠';
+  color: hsl(35 90% 45%);
+}
+.toast.toast-error {
+  border-color: hsl(0 72% 51% / 0.6);
+  background:
+    linear-gradient(hsl(0 72% 51% / 0.1), hsl(0 72% 51% / 0.1)),
+    hsl(var(--app-bg-overlay) / 0.92);
+}
+.toast.toast-error::before {
+  content: '✕';
+  color: hsl(0 68% 50%);
+}
+.toast-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.toast-action {
+  flex: none;
+  align-self: center;
+  appearance: none;
+  cursor: pointer;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-secondary) / 0.6);
+  color: hsl(var(--app-text-primary));
+  font: inherit;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  padding: 4px var(--ps-space-2);
+  border-radius: var(--ps-radius-md);
+  white-space: nowrap;
+}
+.toast-action:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-focus));
+}
+.toast-action:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: 1px;
+}
+.toast.is-leaving {
+  animation: toast-out 200ms ease-in forwards;
+}
+@keyframes toast-in {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes toast-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+    transform: none;
+    opacity: 1;
+  }
+  .toast.is-leaving {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+

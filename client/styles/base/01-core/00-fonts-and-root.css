@@ -1,0 +1,15 @@
+/* App chrome baseline (fonts are loaded via `client/styles/app/tokens.css`). */
+
+html {
+  font-size: 16px;
+}
+
+body {
+  padding: 0; /* override foundation's padding for app layout */
+  font-size: 14px; /* match UI token scale (Lovable design base) */
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+

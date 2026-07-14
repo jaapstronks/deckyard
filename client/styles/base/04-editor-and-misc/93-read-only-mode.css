@@ -1,0 +1,171 @@
+/**
+ * Read-only mode styles for when locked out by another user.
+ * Disables editing while still allowing viewing.
+ */
+
+.editor-shell.is-read-only .editor-panel {
+  position: relative;
+}
+
+/* Overlay to block interactions */
+.editor-shell.is-read-only .editor-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: not-allowed;
+  z-index: 10;
+}
+
+/* Visual indicator: reduce opacity of form elements */
+.editor-shell.is-read-only .editor-panel input,
+.editor-shell.is-read-only .editor-panel textarea,
+.editor-shell.is-read-only .editor-panel select,
+.editor-shell.is-read-only .editor-panel button:not(.btn-secondary),
+.editor-shell.is-read-only .editor-panel [contenteditable] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Disable slide list interactions (add/delete/reorder) */
+.editor-shell.is-read-only .slide-list-item {
+  cursor: default;
+}
+
+.editor-shell.is-read-only .slides-panel .btn,
+.editor-shell.is-read-only .slide-list-actions {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Keep topbar and comments panel interactive */
+.editor-shell.is-read-only .topbar,
+.editor-shell.is-read-only .comments-panel {
+  pointer-events: auto;
+}
+
+.editor-shell.is-read-only .topbar input,
+.editor-shell.is-read-only .topbar button,
+.editor-shell.is-read-only .comments-panel input,
+.editor-shell.is-read-only .comments-panel textarea,
+.editor-shell.is-read-only .comments-panel button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Preview panel: allow viewing but style subtly */
+.editor-shell.is-read-only .preview-panel {
+  pointer-events: auto;
+}
+
+/* Read-only banner - text is set via --read-only-banner-text CSS variable for i18n */
+.editor-shell.is-read-only .editor-panel::before {
+  content: var(--read-only-banner-text, 'View only - someone else is editing');
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--warning-bg, #fff3cd);
+  color: var(--warning-color, #856404);
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 11;
+  pointer-events: none;
+}
+
+/**
+ * Slide-locked mode styles for concurrent editing.
+ * When the currently selected slide is locked by another user,
+ * disable editing for that slide but allow selecting other slides.
+ */
+
+.editor-shell.is-slide-locked .editor-panel {
+  position: relative;
+}
+
+/* Overlay to block interactions on the editor form */
+.editor-shell.is-slide-locked .editor-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: not-allowed;
+  z-index: 10;
+}
+
+/* Visual indicator: reduce opacity of form elements */
+.editor-shell.is-slide-locked .editor-panel input,
+.editor-shell.is-slide-locked .editor-panel textarea,
+.editor-shell.is-slide-locked .editor-panel select,
+.editor-shell.is-slide-locked .editor-panel button:not(.btn-secondary),
+.editor-shell.is-slide-locked .editor-panel [contenteditable] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Slide-locked banner - text is set via --slide-locked-banner-text CSS variable for i18n */
+.editor-shell.is-slide-locked .editor-panel::before {
+  content: var(--slide-locked-banner-text, 'This slide is being edited by someone else');
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.2);
+  color: hsl(var(--app-text-primary));
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 11;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Keep slides panel interactive so user can select other slides */
+.editor-shell.is-slide-locked .slides-panel {
+  pointer-events: auto;
+}
+
+.editor-shell.is-slide-locked .slides-panel .btn,
+.editor-shell.is-slide-locked .slides-panel button,
+.editor-shell.is-slide-locked .slides-panel input {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Keep topbar and comments panel interactive */
+.editor-shell.is-slide-locked .topbar,
+.editor-shell.is-slide-locked .comments-panel,
+.editor-shell.is-slide-locked .preview-panel {
+  pointer-events: auto;
+}
+
+.editor-shell.is-slide-locked .topbar input,
+.editor-shell.is-slide-locked .topbar button,
+.editor-shell.is-slide-locked .comments-panel input,
+.editor-shell.is-slide-locked .comments-panel textarea,
+.editor-shell.is-slide-locked .comments-panel button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/**
+ * Author-locked slide styles.
+ * When the currently selected slide is author-locked and user is not the author,
+ * show an amber/orange banner and disable editing.
+ */
+
+/* Author-locked banner - uses same structure as slide-locked but different color */
+.editor-shell.is-author-locked-slide .editor-panel::before {
+  background: hsl(30 100% 50% / 0.2);
+  color: hsl(var(--app-text-primary));
+}
+
+/* Keep preview panel notes textarea interactive for author-locked slides
+   (comments can still be added) */
+.editor-shell.is-author-locked-slide .preview-panel textarea {
+  opacity: 1;
+  pointer-events: auto;
+}

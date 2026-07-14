@@ -1,0 +1,324 @@
+/**
+ * Cookie consent banner and settings modal styles.
+ */
+
+/* ============================================================
+   BANNER
+   ============================================================ */
+
+.cookie-consent-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: var(--color-surface, #fff);
+  border-top: 1px solid var(--color-border, #e5e5e5);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  padding: 16px 24px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.cookie-consent-banner-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.cookie-consent-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.cookie-consent-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.cookie-consent-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--color-text, #333);
+}
+
+.cookie-consent-description {
+  font-size: 14px;
+  margin: 0;
+  color: var(--color-text-muted, #666);
+  line-height: 1.5;
+}
+
+.cookie-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cookie-consent-btn-settings,
+.cookie-consent-btn-necessary {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.cookie-consent-btn-accept {
+  padding: 8px 20px;
+  font-size: 14px;
+}
+
+/* ============================================================
+   SETTINGS MODAL
+   ============================================================ */
+
+.cookie-consent-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cookie-consent-settings-visible {
+  opacity: 1;
+}
+
+.cookie-consent-settings {
+  background: var(--color-surface, #fff);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+.cookie-consent-settings-visible .cookie-consent-settings {
+  transform: scale(1);
+}
+
+.cookie-consent-settings-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border, #e5e5e5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cookie-consent-settings-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text, #333);
+}
+
+.cookie-consent-settings-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--color-text-muted, #666);
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.cookie-consent-settings-close:hover {
+  background: var(--color-bg-hover, #f5f5f5);
+}
+
+.cookie-consent-settings-body {
+  padding: 16px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cookie-consent-settings-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border, #e5e5e5);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ============================================================
+   CATEGORY ITEMS
+   ============================================================ */
+
+.cookie-consent-category {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-light, #eee);
+}
+
+.cookie-consent-category:last-child {
+  border-bottom: none;
+}
+
+.cookie-consent-category-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cookie-consent-category-info {
+  flex: 1;
+}
+
+.cookie-consent-category-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--color-text, #333);
+}
+
+.cookie-consent-category-description {
+  font-size: 13px;
+  margin: 0;
+  color: var(--color-text-muted, #666);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   TOGGLE SWITCH
+   ============================================================ */
+
+.cookie-consent-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.cookie-consent-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.cookie-consent-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 24px;
+  transition: background-color 0.3s ease;
+}
+
+.cookie-consent-toggle-slider::before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.cookie-consent-toggle input:checked + .cookie-consent-toggle-slider {
+  background-color: var(--color-primary, #0066cc);
+}
+
+.cookie-consent-toggle input:checked + .cookie-consent-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.cookie-consent-toggle input:disabled + .cookie-consent-toggle-slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cookie-consent-toggle-disabled {
+  opacity: 0.6;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 600px) {
+  .cookie-consent-banner {
+    padding: 12px 16px;
+  }
+
+  .cookie-consent-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cookie-consent-actions {
+    flex-direction: column;
+  }
+
+  .cookie-consent-btn-settings,
+  .cookie-consent-btn-necessary,
+  .cookie-consent-btn-accept {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cookie-consent-settings {
+    max-height: 80vh;
+  }
+
+  .cookie-consent-settings-header,
+  .cookie-consent-settings-body,
+  .cookie-consent-settings-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ============================================================
+   DARK MODE
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+  .cookie-consent-banner {
+    background: var(--color-surface-dark, #1a1a1a);
+    border-top-color: var(--color-border-dark, #333);
+  }
+
+  .cookie-consent-settings {
+    background: var(--color-surface-dark, #1a1a1a);
+  }
+
+  .cookie-consent-title,
+  .cookie-consent-settings-title,
+  .cookie-consent-category-title {
+    color: var(--color-text-light, #fff);
+  }
+
+  .cookie-consent-description,
+  .cookie-consent-category-description {
+    color: var(--color-text-muted-dark, #aaa);
+  }
+
+  .cookie-consent-settings-header,
+  .cookie-consent-settings-footer,
+  .cookie-consent-category {
+    border-color: var(--color-border-dark, #333);
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "delat med arbetsyta",
+  "notesJoin.copyLink": "Kopiera länk",
+  "notesJoin.copyPrompt": "Kopiera denna länk:",
+  "notesJoin.help": "Skanna QR-koden med din telefon för att öppna anteckningshjälpen.",
+  "notesJoin.open": "Öppna hjälp",
+  "notesJoin.title": "Anteckningshjälp",
+  "presenter.edit": "Edit",
+  "presenter.fullscreen": "Fullscreen",
+  "presenter.help": "←/→ or Space · F fullscreen · Esc edit/exit"
+}

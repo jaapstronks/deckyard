@@ -1,0 +1,196 @@
+/* Presenter console: an opt-in, presenter-only rail beside the stage showing
+   the elapsed timer, next-slide thumbnail, and current speaker notes.
+   Docked absolutely inside `.deck` so it never disturbs the shell grid or the
+   fullscreen letterbox math. Windowed mode only — fullscreen is the clean
+   projector view. */
+
+.presenter-console {
+  display: none;
+}
+
+.presenter-shell.is-console {
+  --presenter-console-width: 360px;
+}
+
+/* Make room for the rail: shrink the stage's available width and shift the
+   letterboxed slide into the remaining space. */
+.presenter-shell.is-console .deck {
+  padding-right: var(--presenter-console-width);
+}
+.presenter-shell.is-console .deck-stage {
+  width: min(
+    calc(100vw - var(--presenter-console-width)),
+    calc(
+      (100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)) *
+        16 / 9
+    )
+  );
+  height: min(
+    calc(100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)),
+    calc((100vw - var(--presenter-console-width)) * 9 / 16)
+  );
+}
+
+.presenter-shell.is-console .presenter-console {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--presenter-console-width);
+  padding: 16px;
+  background: hsl(var(--app-bg-elevated) / 0.96);
+  border-left: 1px solid hsl(var(--app-border-default));
+  z-index: 40;
+  overflow: hidden;
+}
+
+/* Fullscreen = projector: never show the console there, and let the deck
+   reclaim the full width. */
+html.is-fullscreen .presenter-console,
+.presenter-shell:fullscreen .presenter-console {
+  display: none !important;
+}
+html.is-fullscreen .presenter-shell.is-console .deck,
+.presenter-shell:fullscreen.is-console .deck {
+  padding-right: 0;
+}
+html.is-fullscreen .presenter-shell.is-console .deck-stage,
+.presenter-shell:fullscreen.is-console .deck-stage {
+  width: min(
+    100vw,
+    calc(
+      (100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)) *
+        16 / 9
+    )
+  );
+  height: min(
+    calc(100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)),
+    calc(100vw * 9 / 16)
+  );
+}
+
+/* --- Timer block --------------------------------------------------------- */
+.presenter-console-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 0.5rem;
+}
+.presenter-console-clock-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.presenter-console-clock {
+  font-family: var(--font-heading, inherit);
+  font-variant-numeric: tabular-nums;
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+.presenter-console-clock.is-overtime {
+  color: hsl(var(--app-danger, 0 72% 51%));
+}
+.presenter-console-overtime {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(var(--app-danger, 0 72% 51%));
+}
+.presenter-console-timer-actions {
+  gap: 8px;
+}
+.presenter-console-timer-actions .btn {
+  flex: 1;
+}
+.presenter-console-timer-toggle.is-active {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-accent, 0 0% 100%));
+}
+.presenter-console-target-row {
+  align-items: center;
+  gap: 8px;
+}
+.presenter-console-target-label {
+  margin: 0;
+  white-space: nowrap;
+}
+.presenter-console-target-input {
+  width: 6em;
+  text-align: center;
+}
+.presenter-console-target-hint {
+  margin: 0;
+}
+
+/* --- Section labels ------------------------------------------------------ */
+.presenter-console-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: 6px;
+}
+
+/* --- Next-slide block ---------------------------------------------------- */
+.presenter-console-next {
+  flex: none;
+}
+.presenter-console-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background: hsl(var(--app-bg-base));
+}
+.presenter-console-thumb.is-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.presenter-console-next-meta {
+  margin: 6px 0 0;
+}
+
+/* --- Notes block --------------------------------------------------------- */
+.presenter-console-notes {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0; /* allow the body to scroll inside the flex column */
+}
+.presenter-console-notes-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: hsl(var(--app-text-primary));
+  padding-right: 4px;
+}
+.presenter-console-notes-body > :first-child {
+  margin-top: 0;
+}
+.presenter-console-notes-body p {
+  margin: 0 0 0.6em;
+}
+
+/* Narrower rail on smaller windows so the slide keeps a usable size. */
+@media (max-width: 1100px) {
+  .presenter-shell.is-console {
+    --presenter-console-width: 300px;
+  }
+  .presenter-console-clock {
+    font-size: 34px;
+  }
+}

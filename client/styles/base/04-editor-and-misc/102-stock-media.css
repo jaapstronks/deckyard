@@ -1,0 +1,236 @@
+/**
+ * Stock Media Styles
+ *
+ * Styles for Unsplash and Giphy integration in the image picker.
+ */
+
+/* Tab navigation for image picker */
+.image-library-tabs {
+  display: flex;
+  gap: var(--ps-space-1);
+  margin-bottom: var(--ps-space-3);
+  border-bottom: 1px solid var(--ps-color-border);
+  padding-bottom: var(--ps-space-2);
+}
+
+.image-library-tab {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border: none;
+  background: transparent;
+  color: var(--ps-color-text-secondary);
+  cursor: pointer;
+  font-size: var(--ps-font-size-sm);
+  font-weight: 500;
+  border-radius: var(--ps-radius-sm) var(--ps-radius-sm) 0 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.image-library-tab:hover {
+  color: var(--ps-color-text);
+  background: var(--ps-color-bg-hover);
+}
+
+.image-library-tab.is-active {
+  color: var(--ps-color-primary);
+  background: var(--ps-color-bg-subtle);
+  border-bottom: 2px solid var(--ps-color-primary);
+  margin-bottom: -1px;
+}
+
+/* Tab content panels */
+.image-library-tab-content {
+  display: none;
+}
+
+.image-library-tab-content.is-active {
+  display: block;
+}
+
+/* Stock media search components */
+.stock-media-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+.stock-media-search-row {
+  display: flex;
+  gap: var(--ps-space-2);
+}
+
+.stock-media-search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Stock media grid */
+.stock-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--ps-space-2);
+  max-height: 400px;
+  overflow-y: auto;
+  padding: var(--ps-space-1);
+}
+
+.stock-media-grid-giphy {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+/* Stock media items */
+.stock-media-item {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: var(--ps-radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--ps-color-bg-subtle);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.stock-media-item:hover {
+  transform: scale(1.02);
+  box-shadow: var(--ps-shadow-md);
+}
+
+.stock-media-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Giphy items are often different aspect ratios */
+.stock-media-item.giphy-item {
+  aspect-ratio: auto;
+  min-height: 80px;
+  max-height: 200px;
+}
+
+.stock-media-item.giphy-item img {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+}
+
+/* Item overlay with attribution */
+.stock-media-item-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--ps-space-2);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.stock-media-item:hover .stock-media-item-overlay {
+  opacity: 1;
+}
+
+.stock-media-item-credit {
+  font-size: var(--ps-font-size-xs);
+  color: white;
+}
+
+.stock-media-item-credit a {
+  color: white;
+  text-decoration: underline;
+}
+
+.stock-media-item-credit a:hover {
+  color: var(--ps-color-primary-light);
+}
+
+/* Load more button */
+.stock-media-load-more {
+  align-self: center;
+  margin-top: var(--ps-space-2);
+}
+
+/* Attribution footers */
+.stock-media-attribution {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2);
+  font-size: var(--ps-font-size-xs);
+  color: var(--ps-color-text-secondary);
+  border-top: 1px solid var(--ps-color-border);
+  margin-top: var(--ps-space-3);
+}
+
+.stock-media-attribution a {
+  color: var(--ps-color-primary);
+  text-decoration: none;
+}
+
+.stock-media-attribution a:hover {
+  text-decoration: underline;
+}
+
+/* Giphy logo and attribution */
+.giphy-attribution {
+  background: var(--ps-color-bg-subtle);
+  border-radius: var(--ps-radius-sm);
+}
+
+.giphy-logo {
+  height: 20px;
+  width: auto;
+}
+
+/* Admin settings stock media status */
+.stock-media-status {
+  margin-left: var(--ps-space-2);
+  font-size: var(--ps-font-size-xs);
+}
+
+.stock-media-status.is-warning {
+  color: var(--ps-color-warning);
+}
+
+/* Empty state */
+.stock-media-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-6);
+  color: var(--ps-color-text-secondary);
+  text-align: center;
+}
+
+.stock-media-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--ps-space-2);
+  opacity: 0.5;
+}
+
+/* Loading state */
+.stock-media-item.is-loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.stock-media-item.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid var(--ps-color-primary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

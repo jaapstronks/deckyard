@@ -1,0 +1,140 @@
+/* =============================================================================
+   UNIVERSAL TITLE SLIDE
+   ============================================================================
+   Theme-agnostic title slide with flexible layout options.
+   Uses design tokens from 00-tokens.css.
+   Content positioned at bottom with gradient overlay for contrast.
+   ============================================================================ */
+
+.slide-title-universal {
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  /* Layout knobs (scoped to this slide only) */
+  --tsu-pad-left: 96px;
+  --tsu-pad-right: 96px;
+  --tsu-pad-bottom: 80px;
+}
+
+.slide-title-universal .slide-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.slide-title-universal .slide-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+/* Base gradient overlay - subtle theme-colored gradient from bottom */
+.slide-title-universal .tsu-overlay {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* Subtle gradient using theme's text color for contrast boost */
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-text) 12%, transparent) 0%,
+    color-mix(in srgb, var(--color-text) 6%, transparent) 25%,
+    transparent 50%
+  );
+}
+
+/* Background image variant: stronger gradient for readability */
+.slide-title-universal.has-bg .tsu-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.35) 30%,
+    rgba(0, 0, 0, 0.15) 55%,
+    transparent 80%
+  );
+}
+
+.slide-title-universal .tsu-logo {
+  position: absolute;
+  top: 52px;
+  z-index: 2;
+}
+.slide-title-universal.is-logo-left .tsu-logo {
+  left: 56px;
+}
+.slide-title-universal.is-logo-right .tsu-logo {
+  right: 56px;
+}
+.slide-title-universal .tsu-logo-img {
+  width: 150px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+.slide-title-universal .tsu-content {
+  position: relative;
+  z-index: 2;
+  width: min(1040px, calc(100% - var(--tsu-pad-left) - var(--tsu-pad-right)));
+  margin-left: var(--tsu-pad-left);
+  margin-right: var(--tsu-pad-right);
+  padding-bottom: var(--tsu-pad-bottom);
+}
+
+.slide-title-universal .title {
+  font-family: var(--font-heading);
+  font-size: var(--slide-text-4xl);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  margin: 0;
+  color: var(--color-text);
+  text-wrap: balance;
+}
+
+.slide-title-universal .tsu-meta {
+  margin-top: var(--slide-space-5);
+  max-width: 70ch;
+}
+.slide-title-universal .subtitle,
+.slide-title-universal .byline,
+.slide-title-universal .attribution {
+  margin: 0;
+  font-size: var(--slide-text-xl);
+  line-height: var(--slide-leading-snug);
+  color: var(--color-text-muted);
+}
+.slide-title-universal .subtitle + .byline,
+.slide-title-universal .subtitle + .attribution,
+.slide-title-universal .byline + .attribution,
+.slide-title-universal .byline + .byline,
+.slide-title-universal .attribution + .attribution {
+  margin-top: var(--slide-space-3);
+}
+
+/* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
+.slide-title-universal.is-logo-left,
+.slide-title-universal.align-left {
+  --tsu-pad-left: 72px;
+}
+
+/* Background-image variant: switch to light text for contrast */
+.slide-title-universal.has-bg .title {
+  color: var(--slide-text-light);
+}
+.slide-title-universal.has-bg .subtitle,
+.slide-title-universal.has-bg .byline,
+.slide-title-universal.has-bg .attribution {
+  color: var(--slide-text-light-muted);
+}
+
+

@@ -1,0 +1,409 @@
+/* 4 cards / card stack slide */
+.slide-card-stack {
+  /* Use the same "mist" grey as other slides */
+  background: var(--slide-bg-mist);
+  color: var(--color-text, #0b0b0b);
+  /* More vertical room for the cards (tighter header + smaller bottom padding) */
+  padding: var(--slide-space-12) var(--slide-padding) var(--slide-space-10);
+  /* Default row height (overridden per card-count) */
+  --cs-row-h: 132px;
+}
+.slide-card-stack[data-card-count='4'] {
+  --cs-row-h: 160px;
+}
+.slide-card-stack[data-card-count='3'] {
+  --cs-row-h: 160px;
+}
+.slide-card-stack[data-card-count='2'] {
+  --cs-row-h: 210px;
+}
+.slide-card-stack[data-card-count='1'] {
+  --cs-row-h: 320px;
+}
+.slide-card-stack .slide-inner {
+  justify-content: flex-start;
+  gap: 18px; /* TODO: between --slide-space-4 (16px) and --slide-space-5 (20px) */
+}
+.slide-card-stack .header .title {
+  font-family: var(--font-heading);
+  font-size: 48px; /* TODO: between --slide-text-2xl (44px) and --slide-text-3xl (52px) */
+  line-height: var(--slide-leading-tight);
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-synthesis: none;
+  margin: 0;
+}
+.slide-card-stack .header .subtitle {
+  margin: var(--slide-space-3) 0 0;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
+  color: color-mix(
+    in srgb,
+    var(--color-text, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
+    transparent
+  );
+  max-width: 70ch;
+}
+.slide-card-stack .card-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--slide-space-4);
+  flex: 1;
+  min-height: 0;
+}
+.slide-card-stack .card-stack-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  /* Only the right side is rounded (left label remains square) */
+  border-radius: 0 var(--slide-radius-md)
+    var(--slide-radius-md) 0;
+  overflow: hidden; /* clip the rounded right side */
+  border: 1px solid var(--slide-border-light);
+  box-shadow: var(--slide-shadow-lg);
+  background: transparent;
+  /* Equal-height rows regardless of content length */
+  height: var(--cs-row-h);
+}
+.slide-card-stack .card-stack-label {
+  flex: 0 0 clamp(260px, 24%, 350px);
+  background: var(--cs-label-bg, #7c3aed);
+  color: var(--cs-label-fg, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--slide-space-4);
+  font-family: var(--font-heading);
+  /* "Word in the colored square" is a title (theme controls casing + weight). */
+  font-weight: var(--heading-weight, 400);
+  font-synthesis: none;
+  letter-spacing: var(
+    --t-card-stack-label-letter-spacing,
+    -0.01em
+  );
+  text-transform: var(--heading-transform, none);
+  font-size: var(--t-card-stack-label-size, 21px);
+}
+.slide-card-stack .card-stack-body {
+  flex: 1 1 auto;
+  background: #fff;
+  padding: var(--slide-space-5) var(--slide-space-6);
+  font-family: var(--font-body);
+  font-size: var(--slide-text-md);
+  line-height: 1.3;
+  color: rgba(11, 11, 11, var(--slide-opacity-solid));
+  min-width: 0;
+  /* True vertical centering */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.slide-card-stack .card-stack-body ul,
+.slide-card-stack .card-stack-body ol {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.slide-card-stack .card-stack-body li {
+  margin: 6px 0; /* TODO: between --slide-space-1 (4px) and --slide-space-2 (8px) */
+}
+.slide-card-stack .card-stack-body p {
+  margin: 0;
+}
+.slide-card-stack .card-stack-body > * + * {
+  margin-top: var(--slide-space-3);
+}
+
+/* Icon card grid slide (2 columns × 3 rows) */
+.slide-icon-card-grid {
+  color: var(--t-icon-card-grid-text-color, #fff);
+  position: relative;
+  overflow: hidden;
+  background: var(
+    --t-icon-card-grid-slide-bg,
+    var(--color-background)
+  );
+  /* Middle-ground bottom breathing room */
+  padding: var(--slide-space-12) var(--slide-padding) 56px;
+  --g1x: 14%;
+  --g1y: 82%;
+  --g2x: 55%;
+  --g2y: 10%;
+  --g3x: 92%;
+  --g3y: 70%;
+  /* Card sizing */
+  /* Each card row height (3 rows). */
+  --icg-row-h: 198px;
+}
+.slide-icon-card-grid::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  background: var(--t-slide-gradient-bg, transparent);
+  opacity: var(--t-gradient-enabled, 1);
+  background-repeat: no-repeat;
+  background-size: 300% 300%;
+  background-position: 45% 35%;
+  will-change: background-position;
+  animation: sb-gradient-pan 95s ease-in-out infinite
+    alternate;
+}
+.slide-icon-card-grid::after {
+  /* Darken the top so the white header always has contrast */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.18) 46%,
+    rgba(0, 0, 0, 0) 72%
+  );
+  opacity: var(--t-gradient-enabled, 1);
+  pointer-events: none;
+}
+.slide-icon-card-grid .slide-inner {
+  position: relative;
+  z-index: 1;
+  justify-content: flex-start;
+  gap: 18px; /* TODO: between --slide-space-4 (16px) and --slide-space-5 (20px) */
+}
+.slide-icon-card-grid .header .title {
+  font-family: var(--font-heading);
+  font-size: 48px; /* TODO: between --slide-text-2xl (44px) and --slide-text-3xl (52px) */
+  line-height: var(--slide-leading-tight);
+  letter-spacing: -0.02em;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 0;
+}
+.slide-icon-card-grid .header .subtitle {
+  margin: var(--slide-space-3) 0 0;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
+  color: var(
+    --t-icon-card-grid-subtitle-color,
+    rgba(255, 255, 255, var(--slide-opacity-prominent))
+  );
+  max-width: 75ch;
+}
+/* When the subheading is empty it is not rendered, which makes the header
+   shorter — the top card creeps up toward the title and align-content spreads
+   the rows further apart. Reserve the space a one-line subheading would take so
+   the cards keep the exact same vertical position as a filled subheading. */
+.slide-icon-card-grid .header:not(:has(.subheading))::after {
+  content: '';
+  display: block;
+  /* one-line .subheading: 38px × line-height 1.2 + margin-top var(--slide-space-3) */
+  height: calc(38px * var(--slide-leading-snug) + var(--slide-space-3));
+}
+.slide-icon-card-grid .icon-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  /* Fixed row height + distribute remaining space evenly */
+  grid-template-rows: repeat(3, var(--icg-row-h));
+  gap: var(--slide-space-5) 18px;
+  flex: 1 1 auto;
+  align-content: space-between;
+  /* 5% less wide, leaving extra room on the right side */
+  width: 95%;
+  margin-right: auto;
+  min-height: 0;
+}
+.slide-icon-card-grid .icon-card {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  border-radius: var(--slide-radius-md);
+  overflow: hidden;
+  border: 1px solid var(--slide-border-strong);
+  box-shadow: var(--slide-shadow-lg);
+}
+.slide-icon-card-grid .icon-card.is-empty {
+  visibility: hidden;
+}
+/* Optional per-card link: a full-card overlay anchor (shared `cardLinkOverlayHtml`
+   helper, used by icon-card-grid, logo-wall, …). Only rendered outside the
+   editor, so it never blocks inline editing. Kept visually invisible; the
+   pointer cursor signals it's clickable. */
+.slide .has-link {
+  cursor: pointer;
+}
+.slide .card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  text-decoration: none;
+}
+.slide .card-link:focus-visible {
+  outline: 3px solid var(--color-accent, #4c8bf5);
+  outline-offset: -3px;
+}
+/* Card containers need a positioning context for the overlay anchor. */
+.slide-logo-wall .logo-wall-item {
+  position: relative;
+}
+.slide-icon-card-grid .icon-card-icon {
+  flex: 0 0 92px;
+  background: var(
+    --t-icon-card-grid-icon-bg,
+    var(--color-accent)
+  );
+  color: var(
+    --t-icon-card-grid-icon-fg,
+    var(--t-color-accent-contrast, #ffffff)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* With fewer than 5 cards (≤2 rows) the title and any subheading must stay at
+   the top of the slide; only the few cards themselves are centered vertically
+   in the space left below the header. Auto top/bottom margins on the grid
+   center it while the header keeps its flex-start position. */
+.slide-icon-card-grid .icon-card-grid[data-card-count='1'],
+.slide-icon-card-grid .icon-card-grid[data-card-count='2'],
+.slide-icon-card-grid .icon-card-grid[data-card-count='3'],
+.slide-icon-card-grid .icon-card-grid[data-card-count='4'] {
+  grid-template-rows: repeat(2, var(--icg-row-h));
+  flex: 0 0 auto;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+/* Exactly 3 cards read better stacked in a single, left-aligned column than in
+   the 2-column brick layout — which floats the 3rd card awkwardly halfway down
+   the right side. One column, sized to leave room on the right, vertically
+   centered in the space below the header (which stays pinned to the top). */
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='3'] {
+  grid-template-columns: minmax(0, 60%);
+  grid-template-rows: repeat(3, auto);
+  justify-content: start;
+  align-content: center;
+  row-gap: var(--slide-space-5);
+}
+
+/* Staggered ("brick") layout for 5 cards. The right column drops by half a row
+   so its cards sit vertically centred between the left column's cards — the
+   top-right card nestles halfway between the top two left cards. Only the
+   default "cards" layout (tiles is a single row). align-content:center + a
+   fixed row-gap make the row pitch deterministic so the half-row offset lands
+   exactly on the midpoint. */
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='5'] {
+  align-content: center;
+  row-gap: var(--slide-space-5);
+}
+.slide-icon-card-grid[data-layout='cards']
+  .icon-card-grid[data-card-count='5']
+  .icon-card:nth-child(even) {
+  transform: translateY(calc((var(--icg-row-h) + var(--slide-space-5)) / 2));
+}
+
+/* The number prefix ("1.") is only used in the tiles layout. */
+.slide-icon-card-grid .icon-card-num {
+  display: none;
+}
+
+/* Bottom subheading: caption-style line under the cards, light on the dark
+   slide background and centered. Applies to both layouts. */
+.slide-icon-card-grid .bottom-subheading {
+  color: var(--t-icon-card-grid-text-color, #fff);
+  max-width: none;
+}
+/* Darken the bottom too (the base ::after only darkens the top for the header)
+   so a light theme background keeps the bottom subheading legible. */
+.slide-icon-card-grid.has-bottom-subheading::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.72) 0%,
+    rgba(0, 0, 0, 0.18) 42%,
+    rgba(0, 0, 0, 0) 64%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+.slide-icon-card-grid[data-layout='tiles'] .bottom-subheading {
+  text-align: center;
+}
+
+/* ── Tiles layout ──────────────────────────────────────────────────────
+   Square, full-bleed accent tiles: large icon on top, number + title below.
+   Up to 4 sit in a single row; 5-6 wrap to two rows of three so every tile
+   stays visible (a fixed 4-column single row clipped the 5th/6th tile).
+   Overrides the default horizontal card layout. */
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid {
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 24px;
+  width: 100%;
+  margin: auto 0;
+  flex: 0 1 auto;
+  align-content: center;
+}
+/* Column count tracks the tile count so 1-4 fill their row without a phantom
+   empty column, and 5-6 break into a 3-wide, 2-row grid. */
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='1'] {
+  grid-template-columns: repeat(1, 1fr);
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='2'] {
+  grid-template-columns: repeat(2, 1fr);
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='3'] {
+  grid-template-columns: repeat(3, 1fr);
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='5'],
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='6'] {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card {
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 1 / 1;
+  border: none;
+  background: var(--t-icon-card-grid-icon-bg, var(--color-accent));
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-icon {
+  flex: 1 1 auto;
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6%;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-img {
+  width: 96px;
+  height: 96px;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-fallback {
+  width: 96px;
+  height: 96px;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-body {
+  flex: 0 0 auto;
+  background: transparent;
+  color: var(
+    --t-icon-card-grid-icon-fg,
+    var(--t-color-accent-contrast, #0b0b0b)
+  );
+  justify-content: flex-end;
+  text-align: center;
+  padding: 0 18px 24px;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-title {
+  margin-bottom: 0;
+  font-size: 28px;
+  line-height: 1.15;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-num {
+  display: inline;
+  opacity: 0.6;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-text {
+  display: none;
+}

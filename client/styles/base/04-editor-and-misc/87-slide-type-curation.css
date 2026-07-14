@@ -1,0 +1,342 @@
+/* Slide Type Curation Settings */
+
+.slide-type-curation-group {
+  margin-bottom: var(--ps-space-5);
+}
+
+.slide-type-curation-group-title {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: var(--ps-space-3);
+  padding-bottom: var(--ps-space-1);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+/* ============================================
+   Grid Layout
+   ============================================ */
+
+.slide-type-curation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  gap: var(--ps-space-3);
+}
+
+/* ============================================
+   Card
+   ============================================ */
+
+.slide-type-curation-card {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  overflow: hidden;
+  background: hsl(var(--app-bg-elevated));
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.slide-type-curation-card.is-disabled {
+  opacity: 0.4;
+}
+
+.slide-type-curation-card:hover {
+  border-color: hsl(var(--app-border-strong));
+}
+
+/* ============================================
+   Thumbnail (in card)
+   ============================================ */
+
+.slide-type-curation-thumb.thumb {
+  border-radius: 0;
+  border: none;
+  /* Scale: 200px / 1600px = 0.125 */
+  --thumb-scale: 0.125;
+  width: 200px;
+  height: 112.5px; /* 200 * 9/16 */
+  aspect-ratio: auto;
+  cursor: pointer;
+  background: hsl(var(--app-bg-sunken));
+}
+
+.slide-type-curation-thumb.thumb .slide {
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+}
+
+.slide-type-curation-thumb.is-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-type-curation-thumb-error {
+  font-size: 1.5rem;
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Video slide mockup */
+.slide-type-curation-thumb.is-video-mock,
+.slide-type-preview-thumb.is-video-mock {
+  background: linear-gradient(135deg, hsl(220 15% 20%) 0%, hsl(220 20% 12%) 100%);
+}
+
+.slide-type-curation-video-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slide-type-curation-video-frame {
+  width: 60%;
+  height: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, hsl(220 15% 28%) 0%, hsl(220 18% 18%) 100%);
+  border-radius: 4px;
+  border: 1px solid hsl(0 0% 100% / 0.1);
+}
+
+.slide-type-curation-video-play {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: hsl(0 0% 100% / 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
+}
+
+.slide-type-curation-video-play svg {
+  width: 16px;
+  height: 16px;
+  color: hsl(220 15% 20%);
+  margin-left: 2px;
+}
+
+/* ============================================
+   Info Bar
+   ============================================ */
+
+.slide-type-curation-info {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-sunken));
+  min-height: 32px;
+}
+
+.slide-type-curation-label {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.slide-type-curation-info input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: hsl(var(--app-accent));
+  cursor: pointer;
+}
+
+/* ============================================
+   Lightbox
+   ============================================ */
+
+.slide-type-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: hsl(0 0% 0% / 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-5);
+}
+
+.slide-type-preview-modal {
+  width: 100%;
+  max-width: 900px;
+  background: hsl(var(--app-bg-elevated));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: 0 24px 64px hsl(0 0% 0% / 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header */
+.slide-type-preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-type-preview-title-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slide-type-preview-name {
+  font-size: var(--ps-text-base);
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+}
+
+.slide-type-preview-key {
+  font-size: 11px;
+  font-family: var(--ps-font-mono, monospace);
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Navigation */
+.slide-type-preview-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.slide-type-preview-counter {
+  font-size: var(--ps-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--app-text-secondary));
+  min-width: 48px;
+  text-align: center;
+}
+
+/* Stage */
+.slide-type-preview-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-5);
+  background: hsl(var(--app-bg-sunken));
+}
+
+.slide-type-preview-thumb.thumb {
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  /* Scale: 800px / 1600px = 0.5 */
+  --thumb-scale: 0.5;
+  width: 800px;
+  height: 450px;
+  aspect-ratio: auto;
+  background: hsl(var(--app-bg-elevated));
+}
+
+.slide-type-preview-thumb.thumb .slide {
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+}
+
+.slide-type-preview-thumb.is-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Footer */
+.slide-type-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-type-preview-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+}
+
+.slide-type-preview-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: hsl(var(--app-accent));
+  cursor: pointer;
+}
+
+/* Retired/disabled slide type badge (used in editor) */
+.slide-type-retired-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  background: hsl(45 80% 92%);
+  color: hsl(35 60% 35%);
+  white-space: nowrap;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 960px) {
+  .slide-type-preview-thumb.thumb {
+    --thumb-scale: 0.4;
+    width: 640px;
+    height: 360px;
+  }
+}
+
+@media (max-width: 720px) {
+  .slide-type-curation-grid {
+    grid-template-columns: repeat(auto-fill, 160px);
+  }
+
+  .slide-type-curation-card {
+    width: 160px;
+  }
+
+  .slide-type-curation-thumb.thumb {
+    --thumb-scale: 0.1;
+    width: 160px;
+    height: 90px;
+  }
+
+  .slide-type-preview-thumb.thumb {
+    --thumb-scale: 0.3;
+    width: 480px;
+    height: 270px;
+  }
+
+  .slide-type-preview-modal {
+    max-width: 100%;
+  }
+
+  .slide-type-preview-stage {
+    padding: var(--ps-space-3);
+  }
+}

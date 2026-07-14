@@ -1,0 +1,34 @@
+/* Feedback slide (reuse follow-invite visual system, tuned for 2 codes) */
+.slide-feedback.slide-follow-invite .sfi-title {
+  /* Feedback questions can be longer; slightly smaller than invite title for fit */
+  font-size: 52px;
+}
+
+.slide-feedback.slide-follow-invite .sfi-body {
+  font-size: 26px;
+}
+
+/* Two code rows need a bit more compact typography */
+.slide-feedback.slide-follow-invite .sfi-code {
+  font-size: 64px;
+  letter-spacing: 0.12em;
+}
+
+/* Make labels more explicit but still bold/legible */
+.slide-feedback.slide-follow-invite .sfi-row-label {
+  font-size: 22px;
+  opacity: 0.84;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

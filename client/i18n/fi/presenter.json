@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "jaettu työtilaan",
+  "notesJoin.copyLink": "Kopioi linkki",
+  "notesJoin.copyPrompt": "Kopioi tämä linkki:",
+  "notesJoin.help": "Skannaa QR-koodi puhelimellasi avataksesi muistiinpanoavustajan.",
+  "notesJoin.open": "Avaa avustaja",
+  "notesJoin.title": "Muistiinpanoavustaja",
+  "presenter.edit": "Muokkaa",
+  "presenter.fullscreen": "Koko näyttö",
+  "presenter.help": "←/→ tai Välilyönti · F koko näyttö · Esc muokkaa/poistu"
+}

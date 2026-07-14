@@ -1,0 +1,58 @@
+{
+  "id": "sandbox-dark",
+  "label": "Midnight",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#fafaf9",
+  "textColorDark": "#1c1917",
+  "brandColors": ["#e11d48", "#f43f5e", "#38bdf8", "#a78bfa"],
+  "gradient": { "enabled": true },
+  "slides": {
+    "card-stack-slide": { "colors": ["#f43f5e", "#38bdf8", "#a78bfa", "#fbbf24"] }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#1c1917",
+    "--t-slide-bg-mist": "#292524",
+    "--t-slide-bg-dark": "#0c0a09",
+    "--t-color-background": "#0c0a09",
+    "--t-color-text": "#fafaf9",
+    "--t-color-text-muted": "rgba(250, 250, 249, 0.68)",
+    "--t-color-accent": "#f43f5e",
+    "--t-quote-author-color": "#fb7185",
+    "--t-quote-text-color": "#fafaf9",
+    "--t-radius": "14px",
+    "--t-radius-sm": "8px",
+    "--t-radius-lg": "20px",
+    "--t-font-heading": "'Bodoni Moda', 'Playfair Display', serif",
+    "--t-font-body": "'Inter', ui-sans-serif, system-ui, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "uppercase",
+    "--t-heading-weight": "400",
+    "--t-icon-card-grid-icon-bg": "#f43f5e",
+    "--t-chart-0": "#fb7185",
+    "--t-chart-1": "#f43f5e",
+    "--t-chart-2": "#38bdf8",
+    "--t-chart-3": "#a78bfa",
+    "--t-chart-4": "#fafaf9",
+    "--t-chart-5": "#78716c",
+    "--t-chart-6": "#fbbf24",
+    "--t-chart-7": "#34d399",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    { "family": "Bodoni Moda", "path": "assets/fonts/google/bodoni-moda/bodoni-moda-400.woff2", "weight": 400, "style": "normal" },
+    { "family": "Bodoni Moda", "path": "assets/fonts/google/bodoni-moda/bodoni-moda-500.woff2", "weight": 500, "style": "normal" },
+    { "family": "Bodoni Moda", "path": "assets/fonts/google/bodoni-moda/bodoni-moda-700.woff2", "weight": 700, "style": "normal" },
+    { "family": "Inter", "path": "assets/fonts/google/inter/inter-400.woff2", "weight": 400, "style": "normal" },
+    { "family": "Inter", "path": "assets/fonts/google/inter/inter-500.woff2", "weight": 500, "style": "normal" },
+    { "family": "Inter", "path": "assets/fonts/google/inter/inter-600.woff2", "weight": 600, "style": "normal" },
+    { "family": "Inter", "path": "assets/fonts/google/inter/inter-700.woff2", "weight": 700, "style": "normal" }
+  ],
+  "hiddenSlideTypes": []
+}

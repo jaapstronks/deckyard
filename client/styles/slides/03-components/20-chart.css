@@ -1,0 +1,280 @@
+/* --- Chart slide --- */
+.slide-chart {
+  /* Theme-driven chart palette (8 colors, cycles). */
+  --chart-0: var(--t-chart-0, var(--color-accent));
+  --chart-1: var(--t-chart-1, #5d989a);
+  --chart-2: var(--t-chart-2, #848f52);
+  --chart-3: var(--t-chart-3, #aebd63);
+  --chart-4: var(--t-chart-4, #a2afa7);
+  --chart-5: var(--t-chart-5, #e0e6e2);
+  --chart-6: var(--t-chart-6, #2c4a4b);
+  --chart-7: var(--t-chart-7, #cfd887);
+}
+.slide-chart .slide-inner {
+  justify-content: flex-start;
+}
+.slide-chart .chart-header {
+  margin-bottom: 18px;
+}
+.slide-chart .chart-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+.slide-chart .chart-title {
+  font-family: var(--font-heading);
+  font-size: 52px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-synthesis: none;
+  margin: 0;
+}
+.slide-chart .chart-subtitle {
+  margin-top: 10px;
+  font-size: 26px;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+  max-width: 70ch;
+}
+.slide-chart .chart-area {
+  flex: 1;
+  min-height: 0;
+  /* No background for chart area (per design) */
+  background: transparent;
+  border: 0;
+  padding: 8px 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.slide-chart[data-chart-type='bar'] .chart-area {
+  /* Bar charts read better slightly lower (more breathing room under title/legend). */
+  padding: 22px 4px 8px;
+}
+.slide-chart[data-chart-type='line'] .chart-area {
+  /* Smaller nudge than bar charts. */
+  padding: 14px 4px 8px;
+}
+.slide-chart .chart-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.slide-chart .chart-legend-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin: 6px 0 10px;
+}
+.slide-chart .chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.35);
+  /* Use theme text color for the legend label. */
+  color: var(--color-text);
+}
+.slide-chart .chart-legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  flex: 0 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  opacity: 0.92;
+}
+.slide-chart .chart-legend-name {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1.1;
+  color: inherit;
+  opacity: 0.86;
+}
+/* The value/percentage shown before a pie legend label — reads as the headline
+   number, so it's full-opacity and bold. */
+.slide-chart .chart-legend-stat {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1.1;
+  font-weight: 700;
+  color: inherit;
+  opacity: 1;
+}
+
+/* If supported, derive legend borders from the current text color so it works on dark themes too. */
+@supports (color: color-mix(in srgb, white 50%, black)) {
+  .slide-chart .chart-legend-item {
+    border-color: color-mix(in srgb, currentColor 18%, transparent);
+    background: color-mix(in srgb, var(--color-background) 10%, transparent);
+  }
+  .slide-chart .chart-legend-swatch {
+    border-color: color-mix(in srgb, currentColor 18%, transparent);
+  }
+}
+
+/* Line swatches */
+.slide-chart .chart-legend-swatch.chart-swatch-1 {
+  background: var(--chart-0);
+}
+.slide-chart .chart-legend-swatch.chart-swatch-2 {
+  background: var(--chart-1);
+}
+
+/* Pie swatches (match slice palette) */
+.slide-chart .chart-legend-swatch.chart-slice-0 {
+  background: var(--chart-0);
+}
+.slide-chart .chart-legend-swatch.chart-slice-1 {
+  background: var(--chart-1);
+}
+.slide-chart .chart-legend-swatch.chart-slice-2 {
+  background: var(--chart-2);
+}
+.slide-chart .chart-legend-swatch.chart-slice-3 {
+  background: var(--chart-3);
+}
+.slide-chart .chart-legend-swatch.chart-slice-4 {
+  background: var(--chart-4);
+}
+.slide-chart .chart-legend-swatch.chart-slice-5 {
+  background: var(--chart-5);
+}
+.slide-chart .chart-legend-swatch.chart-slice-6 {
+  background: var(--chart-6);
+}
+.slide-chart .chart-legend-swatch.chart-slice-7 {
+  background: var(--chart-7);
+}
+.slide-chart .chart-grid {
+  stroke: currentColor;
+  stroke-opacity: 0.14;
+  stroke-width: 2;
+}
+.slide-chart .chart-axis {
+  stroke: currentColor;
+  stroke-opacity: 0.55;
+  stroke-width: 4;
+}
+.slide-chart .chart-axis-label {
+  fill: currentColor;
+  fill-opacity: 0.78;
+  font-family: var(--font-mono);
+}
+.slide-chart .chart-axis-title {
+  fill: currentColor;
+  fill-opacity: 0.78;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.slide-chart .chart-value,
+.slide-chart .chart-legend-text,
+.slide-chart .chart-pie-label {
+  fill: currentColor;
+  fill-opacity: 0.86;
+  font-family: var(--font-mono);
+}
+.slide-chart .chart-pie-label {
+  font-weight: 700;
+  fill-opacity: 1;
+}
+.slide-chart .chart-pie-label.is-invert {
+  fill: var(--t-text-color-light, rgba(255, 255, 255, 0.96));
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.28);
+  stroke-width: 2px;
+}
+.slide-chart .chart-bar {
+  shape-rendering: geometricPrecision;
+}
+.slide-chart .chart-line {
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.slide-chart .chart-line-1 {
+  stroke: var(--chart-0);
+}
+.slide-chart .chart-line-2 {
+  stroke: var(--chart-1);
+}
+.slide-chart .chart-point {
+  stroke: rgba(255, 255, 255, 0.65);
+  stroke-width: 2;
+}
+.slide-chart .chart-point-1 {
+  fill: var(--chart-0);
+}
+.slide-chart .chart-point-2 {
+  fill: var(--chart-1);
+}
+/* (Legacy no-op) */
+
+/* Pie palette (8 max, cycles) */
+.slide-chart .chart-slice-0 {
+  fill: var(--chart-0);
+}
+.slide-chart .chart-slice-1 {
+  fill: var(--chart-1);
+}
+.slide-chart .chart-slice-2 {
+  fill: var(--chart-2);
+}
+.slide-chart .chart-slice-3 {
+  fill: var(--chart-3);
+}
+.slide-chart .chart-slice-4 {
+  fill: var(--chart-4);
+}
+.slide-chart .chart-slice-5 {
+  fill: var(--chart-5);
+}
+/* Similar extras (for >6 values) */
+.slide-chart .chart-slice-6 {
+  fill: var(--chart-6);
+}
+.slide-chart .chart-slice-7 {
+  fill: var(--chart-7);
+}
+
+.slide-chart .chart-error {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.7);
+  overflow: auto;
+}
+.slide-chart .chart-error-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  margin-bottom: 10px;
+  color: rgba(0, 0, 0, 0.9);
+}
+.slide-chart .chart-error-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 18px;
+  line-height: 1.35;
+  color: rgba(0, 0, 0, 0.82);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,62 @@
+/* Auto-advance countdown bar — overlays the bottom of the presenter stage */
+.auto-advance-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  z-index: 10;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.auto-advance-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--ps-accent, #3b82f6);
+  transition: none; /* driven by JS via requestAnimationFrame */
+  will-change: width;
+}
+
+.auto-advance-bar.is-paused .auto-advance-bar-fill {
+  opacity: 0.4;
+}
+
+/* Overtime state (pacing mode: timer exceeded 100%) */
+.auto-advance-bar.is-overtime .auto-advance-bar-fill {
+  background: var(--ps-danger, #ef4444);
+  animation: overtime-pulse 2s ease-in-out infinite;
+}
+
+@keyframes overtime-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auto-advance-bar-fill {
+    transition: none !important;
+  }
+  .auto-advance-bar.is-overtime .auto-advance-bar-fill {
+    animation: none;
+  }
+}
+
+/* Per-slide duration input in the editor form */
+.editor-slide-duration {
+  padding: var(--ps-space-2, 8px) 0;
+  border-bottom: 1px solid var(--ps-border, #e5e7eb);
+}
+
+.editor-slide-duration .form-input-sm {
+  max-width: 100px;
+}
+
+/* Total deck time in presenter progress bar */
+.presenter-progress-time {
+  font-size: 0.75rem;
+  color: var(--ps-text-muted, #94a3b8);
+  white-space: nowrap;
+  margin-left: auto;
+  padding-left: var(--ps-space-2, 8px);
+}

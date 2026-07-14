@@ -1,0 +1,95 @@
+/* Presenter: step-by-step reveal (used by presenter.js) */
+.sb-step-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+.slide-card-stack .card-stack-row,
+.slide-kpi-metrics .kpi-metric,
+.slide-icon-card-grid .icon-card,
+.slide-lijstje .lijst-item,
+.slide-timeline .timeline-item,
+.slide-text-blocks .text-blocks-step,
+.slide-table .table-step-row,
+.slide-table .table-step-cell {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+/*
+ * Flash prevention: When step mode is enabled AND transition is 'none',
+ * hide step-able content by default UNTIL JS has initialized stepping.
+ * The .sb-steps-ready class is added after JS applies initial step visibility.
+ */
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-card-stack .card-stack-row,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-kpi-metrics .kpi-metric,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-icon-card-grid .icon-card,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-lijstje .lijst-item,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-timeline .timeline-item,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-text-blocks .text-blocks-step,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-table .table-step-row,
+.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-table .table-step-cell {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  /* No transition during initial hide - prevents flash */
+  transition: none;
+}
+
+/* Lijstje: collapse hidden items so step-by-step doesn't leave big blank gaps. */
+.slide-lijstje .lijst-item {
+  max-height: 220px;
+  overflow: hidden;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    max-height 220ms ease,
+    padding 220ms ease,
+    border-color 220ms ease,
+    border-width 220ms ease;
+}
+.slide-lijstje .lijst-item.sb-step-hidden {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-card-stack .card-stack-row,
+  .slide-kpi-metrics .kpi-metric,
+  .slide-icon-card-grid .icon-card,
+  .slide-lijstje .lijst-item,
+  .slide-timeline .timeline-item,
+  .slide-text-blocks .text-blocks-step,
+  .slide-table .table-step-row,
+  .slide-table .table-step-cell {
+    transition: none;
+  }
+  .sb-step-hidden {
+    transform: none;
+  }
+}
+
+/* Image zoom steps: smooth pan/zoom animation for infographics or detailed images */
+.slide-image.has-zoom-steps .frame {
+  overflow: hidden;
+}
+.slide-image.has-zoom-steps .frame .image {
+  /* Smooth ease-out for natural deceleration when zooming */
+  transition:
+    transform 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform-origin 650ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, transform-origin;
+}
+/* Slightly faster when zooming out (returning to full view) */
+.slide-image.has-zoom-steps:not(.is-zoomed) .frame .image {
+  transition:
+    transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    transform-origin 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-image.has-zoom-steps .frame .image {
+    transition: none;
+  }
+}
+
+

@@ -1,0 +1,106 @@
+/* =============================================================================
+   END / CONTACT SLIDE
+   ============================================================================
+   Closing slide with title, optional body, contact info, and social links.
+   Professional, clean, generous whitespace between sections.
+   ============================================================================ */
+
+.slide-end .slide-inner {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: var(--slide-section-gap);
+}
+
+/* Title heading */
+.slide-end .heading {
+  font-family: var(--font-heading);
+  font-size: var(--slide-font-size-title);
+  font-weight: var(--heading-weight, 400);
+  font-synthesis: none;
+  line-height: var(--slide-leading-tight);
+  color: var(--color-text);
+  margin: 0;
+  text-transform: var(--heading-transform, none);
+}
+
+/* Body text (markdown content) */
+.slide-end .body {
+  font-family: var(--font-body);
+  font-size: var(--slide-text-lg);
+  line-height: var(--slide-leading-normal);
+  color: var(--color-text);
+  max-width: 65ch;
+  opacity: 0.85;
+}
+
+.slide-end .body p {
+  margin: 0 0 var(--slide-space-3);
+}
+
+.slide-end .body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Contact section */
+.slide-end .end-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--slide-space-2);
+  margin-top: var(--slide-space-4);
+}
+
+/* Contact name: slightly larger/bolder */
+.slide-end .end-contact-name {
+  font-family: var(--font-heading);
+  font-size: var(--slide-text-md);
+  font-weight: 500;
+  color: var(--color-text);
+  margin-bottom: var(--slide-space-1);
+}
+
+/* Contact items (email, phone, url) */
+.slide-end .end-contact-item {
+  font-family: var(--font-body);
+  font-size: var(--slide-text-base);
+  line-height: var(--slide-leading-normal);
+}
+
+.slide-end .end-contact-item a {
+  color: var(--t-accent, var(--color-text));
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.slide-end .end-contact-item a:hover {
+  border-bottom-color: currentColor;
+}
+
+/* Social links row */
+.slide-end .end-social {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--slide-space-4);
+  margin-top: var(--slide-space-6);
+}
+
+.slide-end .end-social-link {
+  font-family: var(--font-body);
+  font-size: var(--slide-text-sm);
+  color: var(--color-text);
+  opacity: 0.7;
+  text-decoration: none;
+  padding: var(--slide-space-2) var(--slide-space-4);
+  border: 1px solid var(--slide-border-light);
+  border-radius: var(--slide-radius-full);
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.slide-end .end-social-link:hover {
+  opacity: 1;
+  border-color: var(--slide-border-default);
+}

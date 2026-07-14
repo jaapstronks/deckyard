@@ -1,0 +1,75 @@
+/* Slide theme variables.
+   Runtime themes set `--t-*` via injected CSS (server) or JS (client).
+   IMPORTANT: these are scoped to `.slide` so the *application UI* is not theme-branded. */
+
+:root {
+  /* Presenter (not theme-specific, but used by presenter layout) */
+  --presenter-topbar-height: 56px;
+}
+
+.slide {
+  /* Slide backgrounds */
+  --slide-bg-lime: var(--t-slide-bg-lime, #e2fe52);
+  --slide-bg-mist: var(--t-slide-bg-mist, #e0e6e2);
+
+  /* Default slide colors */
+  --color-background: var(
+    --t-color-background,
+    var(--slide-bg-lime)
+  );
+  --color-text: var(--t-color-text, #0b0b0b);
+  --color-text-muted: var(
+    --t-color-text-muted,
+    rgba(11, 11, 11, 0.65)
+  );
+  --color-accent: var(--t-color-accent, #385c5c);
+
+  /* Quote slide */
+  --quote-author-color: var(
+    --t-quote-author-color,
+    #7c3aed
+  );
+  --quote-text-color: var(--t-quote-text-color, #ffffff);
+
+  /* Typography */
+  --font-heading: var(--t-font-heading, Arial, sans-serif);
+  --font-body: var(--t-font-body, Arial, sans-serif);
+  --font-caption: var(
+    --t-font-caption,
+    var(--font-body)
+  );
+  --font-mono: var(
+    --t-font-mono,
+    'JetBrains Mono',
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    'Liberation Mono',
+    'Courier New',
+    monospace
+  );
+  --heading-transform: var(--t-heading-transform, none);
+  --heading-weight: var(--t-heading-weight, 400);
+  --logo-url: var(
+    --t-logo-url,
+    url('/assets/images/logo.svg')
+  );
+
+  /* =========================================================================
+     SLIDE SIZING (Legacy variables)
+     =========================================================================
+     These are kept for backward compatibility. New code should use the
+     design tokens from 00-tokens.css (e.g., --slide-font-size-title).
+     ========================================================================= */
+
+  --slide-padding: var(--slide-space-16, 64px);
+
+  /* Typography aliases (map to new token system) */
+  --font-size-title: var(--slide-font-size-title, 64px);
+  --font-size-subtitle: var(--slide-font-size-subheading, 28px);
+  --font-size-heading: var(--slide-font-size-heading, 44px);
+  --font-size-body: var(--slide-font-size-body, 20px);
+  --line-height-body: var(--slide-leading-normal, 1.35);
+}

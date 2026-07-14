@@ -1,0 +1,35 @@
+/* Custom HTML slide
+ *
+ * A raw-HTML escape-hatch slide. The author's sanitized markup is injected into
+ * .custom-html-root (full-bleed, no forced padding so the author controls the
+ * whole canvas) and their scoped CSS is applied via a per-slide <style> block.
+ * We only provide a neutral container + inherited theme text colour here.
+ */
+.slide-custom-html {
+  display: block;
+  overflow: hidden;
+}
+
+.slide-custom-html .custom-html-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: var(--color-text, var(--t-color-text, #0b0b0b));
+  box-sizing: border-box;
+}
+
+.slide-custom-html .custom-html-root *,
+.slide-custom-html .custom-html-root *::before,
+.slide-custom-html .custom-html-root *::after {
+  box-sizing: border-box;
+}
+
+.slide-custom-html .custom-html-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0.5;
+  font-style: italic;
+}

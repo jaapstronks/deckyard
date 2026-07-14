@@ -1,0 +1,195 @@
+/* Image + text split slide */
+.slide-image-text {
+  padding: 0; /* image should bleed to slide edges */
+}
+.slide-image-text .slide-inner {
+  justify-content: flex-start;
+  padding: 0;
+}
+.slide-image-text .split {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr; /* lock to full height so swapping columns can't change vertical sizing */
+  gap: 0;
+  align-items: stretch; /* top align content; fill full height */
+  min-height: 0;
+  min-width: 0;
+}
+/* Narrow image layout: ~37% image, ~63% text */
+.slide-image-text.is-image-narrow .split {
+  grid-template-columns: 37fr 63fr;
+}
+/* When image is on the right, flip the columns so the image (column 2) is still 37% */
+.slide-image-text.is-image-narrow .split.is-right {
+  grid-template-columns: 63fr 37fr;
+}
+.slide-image-text .media {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.08);
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+.slide-image-text .frame {
+  width: 100%;
+  height: 100%;
+  margin: 0; /* reset default figure margins */
+  position: relative;
+}
+.slide-image-text .media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.slide-image-text .caption {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: var(--t-radius-sm, 14px);
+  font-family: var(--font-caption);
+  font-size: 18px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.92);
+  display: inline-block;
+  width: fit-content;
+  max-width: calc(100% - 36px);
+  white-space: normal;
+}
+
+/* Image + text (contain variant): never crop, keep padding around image */
+.slide-image-text.is-image-contain .media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Ensure there's always "breathing room" within the half-slide. */
+  padding: calc(var(--slide-padding) * 0.65);
+  box-sizing: border-box;
+  background: #fff;
+}
+
+/* Image background: match slide background color */
+.slide-image-text.is-image-bg-match .media {
+  background: transparent;
+}
+.slide-image-text.is-image-bg-match.is-image-contain .media {
+  background: transparent;
+}
+
+/* Image placeholder (when no image is selected yet) */
+.slide-image .image-placeholder,
+.slide-image-text .image-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--t-radius, 18px);
+  border: 1px dashed rgba(0, 0, 0, 0.22);
+  background:
+    radial-gradient(
+      circle at 40% 30%,
+      rgba(0, 0, 0, 0.07) 0%,
+      rgba(0, 0, 0, 0) 55%
+    ),
+    radial-gradient(
+      circle at 70% 70%,
+      rgba(0, 0, 0, 0.06) 0%,
+      rgba(0, 0, 0, 0) 55%
+    ),
+    rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* Centered image slide needs a bounded placeholder, not full-bleed height */
+.slide-image-centered .image-placeholder {
+  max-width: 100%;
+  max-height: calc(100% - 58px);
+  aspect-ratio: 16 / 9;
+}
+
+.slide-image-text .media .image-placeholder {
+  border-radius: 0; /* media column is full-bleed; avoid rounding the half panel */
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 0;
+  background:
+    radial-gradient(
+      circle at 40% 30%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    radial-gradient(
+      circle at 70% 70%,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    rgba(0, 0, 0, 0.12);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.image-placeholder-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  text-align: center;
+}
+.image-placeholder-icon {
+  width: 72px;
+  height: 72px;
+  display: block;
+  fill: currentColor;
+  opacity: 0.9;
+}
+.image-placeholder-text {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+.slide-image-text.is-image-contain .media img {
+  /* Fill the available padded box and use object-fit contain so `object-position`
+     can align the image within any letterboxed space. */
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+.slide-image-text .copy {
+  height: 100%;
+  padding: var(--slide-padding);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  min-height: 0;
+  min-width: 0;
+}
+.slide-image-text .copy .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  margin: 0 0 18px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+
+
+
+
+
+

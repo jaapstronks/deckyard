@@ -1,0 +1,10 @@
+/* Shared slide rendering (used by preview, presenter, and exports) */
+
+/* Design system foundation - must load first */
+@import url('./slides/00-tokens.css');
+@import url('./slides/00-patterns.css');
+
+/* Slide layouts and components */
+@import url('./slides/01-layout-and-title.css');
+@import url('./slides/02-content-and-media.css');
+@import url('./slides/03-components.css');

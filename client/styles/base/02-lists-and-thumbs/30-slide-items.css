@@ -1,0 +1,134 @@
+/* Tighter gap and reduced padding for slide list thumbnails */
+.is-editor .slides-panel .list {
+  gap: 2px;
+  /* Reduce horizontal padding to give thumbnails more width */
+  padding: var(--ps-space-2) var(--ps-space-1);
+}
+
+/* Ensure thumbnails fill their container width properly */
+.is-editor .slides-panel .slide-item {
+  padding: var(--ps-space-1);
+}
+
+.is-editor .slides-panel .slide-item .thumb.thumb-mini {
+  /* Remove any border that takes away from content area */
+  border-width: 1px;
+}
+
+/* Slide row item - PowerPoint/Keynote style with thumbnail only */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .list-item.slide-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ps-space-1);
+  padding: 0;
+  cursor: grab;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .list-item.slide-item:active {
+  cursor: grabbing;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .list-item.slide-item.is-dragging {
+  cursor: grabbing;
+}
+
+/* Thumbnail container with relative positioning for overlays */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item .thumb.thumb-mini {
+  position: relative;
+  width: 100%;
+  /* Use dynamic scale from JS, fallback to default for 200px panel width: (200-16-2-15)/1600 = 0.1044 */
+  --thumb-scale: var(--slides-thumb-scale, 0.1044);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .thumb.thumb-mini .slide {
+  pointer-events: none;
+}
+
+/* Collapsed rail: standalone slide number (hidden by default, shown when collapsed) */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-num-collapsed {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-elevated));
+  border-radius: var(--ps-radius-md);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.is-slides-collapsed .slide-num-collapsed {
+  display: flex;
+}
+
+.is-slides-collapsed .slide-item {
+  align-items: center;
+  padding: var(--ps-space-1) 0;
+}
+
+.is-slides-collapsed .slide-item.is-active .slide-num-collapsed {
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+}
+
+.is-slides-collapsed .slide-item .thumb.thumb-mini {
+  display: none;
+}

@@ -1,0 +1,59 @@
+services:
+  app:
+    build: .
+    container_name: deckyard-sandbox-app
+    restart: unless-stopped
+    environment:
+      PORT: "4177"
+      HOST: "0.0.0.0"
+
+      # Sandbox mode
+      SANDBOX_MODE: "1"
+      SANDBOX_TTL_HOURS: "${SANDBOX_TTL_HOURS:-24}"
+      SANDBOX_DEFAULT_THEME: "${SANDBOX_DEFAULT_THEME:-sandbox-minimal}"
+      SANDBOX_WATERMARK: "${SANDBOX_WATERMARK:-Sandbox export • Created by an anonymous user}"
+      # Ensure sandbox writes into the mounted volumes (not /app/server/data-sandbox).
+      SANDBOX_DATA_DIR: "/app/server/data"
+      SANDBOX_UPLOADS_DIR: "/app/server/uploads"
+
+      # Guardrails
+      SECURE_COOKIES: "1"
+      DISABLE_UPLOADS: "1"
+
+      # AI (sandbox only supports Mistral)
+      MISTRAL_API: "${MISTRAL_API:-}"
+      MISTRAL_MODEL: "${MISTRAL_MODEL:-mistral-small-latest}"
+
+      # Optional: keep Notion off by default in sandbox
+      NOTION_FEATURE: "${NOTION_FEATURE:-0}"
+      NOTION_SECRET: "${NOTION_SECRET:-}"
+    volumes:
+      - sandbox_data:/app/server/data
+      - sandbox_uploads:/app/server/uploads
+    expose:
+      - "4177"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: deckyard-sandbox-caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: "${DOMAIN:-sandbox.deckyard.eu}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL:-}"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  sandbox_data:
+  sandbox_uploads:
+  caddy_data:
+  caddy_config:
+
+

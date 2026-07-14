@@ -1,0 +1,239 @@
+/* Admin Users Management Styles */
+
+/* ============================================================
+   USER STATUS INDICATORS
+   ============================================================ */
+
+.admin-users-status {
+  white-space: nowrap;
+}
+
+.status-indicators {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.status-dot--success {
+  background-color: hsl(var(--app-success));
+  box-shadow: 0 0 0 2px hsl(var(--app-success) / 0.2);
+}
+
+.status-dot--warning {
+  background-color: hsl(var(--app-warning));
+  box-shadow: 0 0 0 2px hsl(var(--app-warning) / 0.2);
+}
+
+.status-dot--danger {
+  background-color: hsl(var(--app-danger));
+  box-shadow: 0 0 0 2px hsl(var(--app-danger) / 0.2);
+}
+
+.status-dot--muted {
+  background-color: hsl(var(--app-text-tertiary, 0 0% 60%));
+  opacity: 0.5;
+}
+
+.status-label {
+  font-size: 11px;
+  color: hsl(var(--app-text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Responsive: stack status indicators on smaller screens */
+@media (max-width: 768px) {
+  .status-indicators {
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+}
+
+/* ============================================================
+   ADMIN USERS CARD-BASED LAYOUT
+   ============================================================ */
+
+.admin-users-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-3);
+}
+
+.admin-user-card {
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border: 1px solid hsl(var(--app-border-subtle));
+  transition: background-color 0.15s ease;
+}
+
+.admin-user-card:hover {
+  background: hsl(var(--app-bg-secondary) / 0.5);
+}
+
+.admin-user-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+}
+
+.admin-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+}
+
+.admin-user-email-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.admin-user-email {
+  font-weight: 500;
+  color: hsl(var(--app-text-primary));
+  word-break: break-word;
+}
+
+.admin-user-name {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.admin-user-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: hsl(var(--app-bg-secondary));
+  color: hsl(var(--app-text-secondary));
+  flex-shrink: 0;
+}
+
+.admin-user-role-badge.is-admin {
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+}
+
+.admin-user-role-badge.is-designer {
+  background: hsl(280 60% 92%);
+  color: hsl(280 50% 40%);
+}
+
+.admin-user-status {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  margin-top: var(--ps-space-1);
+}
+
+.admin-user-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+.admin-user-status-label {
+  font-size: 11px;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.admin-user-last-login {
+  font-size: 11px;
+  color: hsl(var(--app-text-tertiary));
+  margin-top: var(--ps-space-1);
+}
+
+.admin-user-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: help;
+}
+
+.admin-user-dot.is-success {
+  background-color: hsl(142 70% 45%);
+  box-shadow: 0 0 0 2px hsl(142 70% 45% / 0.2);
+}
+
+.admin-user-dot.is-warning {
+  background-color: hsl(45 90% 50%);
+  box-shadow: 0 0 0 2px hsl(45 90% 50% / 0.2);
+}
+
+.admin-user-dot.is-danger {
+  background-color: hsl(0 70% 55%);
+  box-shadow: 0 0 0 2px hsl(0 70% 55% / 0.2);
+}
+
+.admin-user-dot.is-muted {
+  background-color: hsl(var(--app-text-tertiary, 0 0% 60%));
+  opacity: 0.4;
+}
+
+.admin-user-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.admin-user-actions .btn {
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+  white-space: nowrap;
+}
+
+.admin-user-actions .btn-danger {
+  color: hsl(var(--app-danger));
+  background: transparent;
+}
+
+.admin-user-actions .btn-danger:hover {
+  color: hsl(var(--app-text-on-solid));
+  background: hsl(var(--app-danger));
+}
+
+/* Responsive: stack actions below info on narrow screens */
+@media (max-width: 600px) {
+  .admin-user-main {
+    flex-direction: column;
+    gap: var(--ps-space-2);
+  }
+
+  .admin-user-actions {
+    justify-content: flex-start;
+    width: 100%;
+    padding-top: var(--ps-space-2);
+    border-top: 1px solid hsl(var(--app-border-subtle));
+    margin-top: var(--ps-space-1);
+  }
+}

@@ -1,0 +1,926 @@
+/* Settings view (theme-independent) */
+
+/* ============================================================
+   SETTINGS PAGE LAYOUT
+   ============================================================ */
+
+/* Override app-shell defaults for settings page */
+.app-shell.settings-page {
+  display: grid !important;
+  flex-direction: unset !important;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar content";
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Settings topbar */
+.settings-page > .settings-topbar {
+  grid-area: topbar;
+  position: relative !important;
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  min-height: var(--ps-topbar-height, 56px);
+  padding: 0 var(--ps-space-4);
+  padding-top: env(safe-area-inset-top, 0);
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.settings-page .settings-topbar .btn-icon {
+  flex-shrink: 0;
+}
+
+.settings-page .topbar-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-page .settings-page-title {
+  margin: 0;
+  font-size: var(--ps-text-lg);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+/* Settings sidebar */
+.settings-page > .settings-sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-4) var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border-right: 1px solid hsl(var(--app-border-subtle));
+  overflow-y: auto;
+}
+
+.settings-sidebar-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  width: 100%;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border: none;
+  border-radius: var(--ps-radius-md);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-family: inherit;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.settings-sidebar-tab:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.settings-sidebar-tab.is-active {
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+}
+
+.settings-sidebar-tab-icon {
+  font-size: 1.1em;
+}
+
+.settings-sidebar-tab-label {
+  flex: 1;
+}
+
+/* Sidebar divider for admin section */
+.settings-sidebar-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin: var(--ps-space-3) 0 var(--ps-space-2);
+  padding: 0 var(--ps-space-1);
+}
+
+.settings-sidebar-divider::before,
+.settings-sidebar-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: hsl(var(--app-border-subtle));
+}
+
+.settings-sidebar-divider-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--app-text-tertiary));
+  white-space: nowrap;
+}
+
+/* Settings content area */
+.settings-page > .settings-content {
+  grid-area: content;
+  padding: var(--ps-space-5);
+  overflow-y: auto;
+  background: hsl(var(--app-bg-base));
+}
+
+/* Tab views */
+.settings-tab-view {
+  display: none;
+  max-width: 800px;
+}
+
+.settings-tab-view.is-active {
+  display: block;
+}
+
+.settings-tab-title {
+  margin: 0 0 var(--ps-space-4);
+  font-size: var(--ps-text-xl);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+.settings-tab-description {
+  margin: 0 0 var(--ps-space-4);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  max-width: 600px;
+}
+
+.settings-tab-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ps-space-4);
+}
+
+/* Use horizontal space better on wider screens */
+@media (min-width: 900px) {
+  .settings-tab-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* Full-width cards */
+  .settings-tab-cards > .editor-card.admin-users-card,
+  .settings-tab-cards > .email-templates-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Admin settings cards - always single column */
+.settings-admin-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+/* Admin checkbox list */
+.admin-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+.admin-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  cursor: pointer;
+}
+
+.admin-checkbox-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Admin placeholder for coming soon features */
+.admin-placeholder {
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-secondary) / 0.5);
+  color: hsl(var(--app-text-tertiary));
+  font-size: var(--ps-text-sm);
+  font-style: italic;
+}
+
+/* Field row for admin settings (label + input pair) */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.field-row-label {
+  flex-shrink: 0;
+  width: 80px;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+}
+
+.field-row .input,
+.field-row .select {
+  flex: 1;
+  min-width: 0;
+}
+
+.gap-2 {
+  gap: var(--ps-space-2);
+}
+
+@media (max-width: 480px) {
+  .field-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--ps-space-1);
+  }
+
+  .field-row-label {
+    width: auto;
+  }
+}
+
+/* ============================================================
+   SETTINGS PAGE MOBILE RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .app-shell.settings-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "topbar"
+      "sidebar"
+      "content";
+  }
+
+  .settings-page > .settings-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: var(--ps-space-1);
+    padding: var(--ps-space-2) var(--ps-space-3);
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--app-border-subtle));
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .settings-page > .settings-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .settings-sidebar-tab {
+    flex-shrink: 0;
+    padding: var(--ps-space-2) var(--ps-space-3);
+    white-space: nowrap;
+  }
+
+  /* Mobile divider - simpler vertical line */
+  .settings-sidebar-divider {
+    flex-shrink: 0;
+    margin: 0 var(--ps-space-1);
+    padding: 0;
+  }
+
+  .settings-sidebar-divider::before {
+    display: none;
+  }
+
+  .settings-sidebar-divider::after {
+    width: 1px;
+    height: 20px;
+    flex: none;
+  }
+
+  .settings-sidebar-divider-label {
+    display: none;
+  }
+
+  .settings-page > .settings-content {
+    padding: var(--ps-space-4);
+  }
+
+  .settings-tab-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-page > .settings-topbar {
+    padding: 0 var(--ps-space-3);
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .settings-page > .settings-content {
+    padding: var(--ps-space-3);
+  }
+
+  .settings-tab-title {
+    font-size: var(--ps-text-lg);
+  }
+}
+
+/* ============================================================
+   LEGACY SETTINGS PANEL (for backward compatibility)
+   ============================================================ */
+
+.settings-panel {
+  /* Keep it feeling like a dedicated screen, not an editor sub-panel */
+  padding: var(--ps-space-5);
+}
+
+.settings-panel > h2 {
+  margin-top: 0;
+}
+
+.settings-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ps-space-4);
+  margin-top: var(--ps-space-4);
+}
+
+/* Use horizontal space better on wider screens (modal + /settings page). */
+@media (min-width: 820px) {
+  .settings-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  /* Admin card is usually the biggest; let it span full width. */
+  .settings-cards > .editor-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.settings-compact-control {
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Profile image section */
+.profile-image-section {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-4);
+  margin-bottom: var(--ps-space-3);
+}
+
+.profile-image-preview {
+  flex-shrink: 0;
+}
+
+.profile-image-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.profile-image-actions .btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .profile-image-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ps-space-3);
+  }
+
+  .profile-image-actions {
+    flex-direction: row;
+  }
+}
+
+.settings-panel .editor-card {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-subtle));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.settings-panel .editor-card:focus-within {
+  border-color: hsl(var(--app-border-focus));
+  box-shadow:
+    var(--app-shadow-sm),
+    0 0 0 3px hsl(var(--app-accent-primary) / 0.12);
+}
+
+.settings-panel .editor-card .field-label {
+  margin-top: 0;
+}
+
+/* Admin users panel */
+.admin-users-card {
+  grid-column: 1 / -1;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
+.admin-users-table th,
+.admin-users-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.admin-users-table th {
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-secondary) / 0.5);
+}
+
+.admin-users-table tr:hover td {
+  background: hsl(var(--app-bg-secondary) / 0.3);
+}
+
+.admin-users-actions {
+  white-space: nowrap;
+}
+
+.admin-users-actions .btn {
+  margin-right: 4px;
+}
+
+.admin-users-actions .btn:last-child {
+  margin-right: 0;
+}
+
+.badge-warning {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: hsl(var(--app-warning-bg, 45 100% 90%));
+  color: hsl(var(--app-warning-text, 30 100% 25%));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Modal overlay styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay .modal {
+  background: hsl(var(--app-bg-elevated));
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: var(--app-shadow-lg);
+}
+
+.modal-overlay .modal h3 {
+  margin: 0 0 16px;
+}
+
+.modal-overlay .modal-form {
+  gap: 12px;
+}
+
+.modal-overlay .modal-form .form-input,
+.modal-overlay .modal-form .form-select {
+  width: 100%;
+}
+
+.modal-status {
+  min-height: 20px;
+}
+
+/* Password status */
+.password-status {
+  min-height: 18px;
+  color: hsl(var(--app-text-error, 0 70% 50%));
+}
+
+/* Forgot password link on login */
+.forgot-password-link {
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
+/* Settings modal two-column grid */
+.settings-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ps-space-3);
+}
+
+@media (min-width: 600px) {
+  .settings-modal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.settings-modal-grid > .editor-callout,
+.settings-modal-grid > .row {
+  margin: 0;
+}
+
+/* Make modal content scrollable and limit height */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: var(--ps-space-2);
+}
+
+/* Ensure modal has proper max-width for settings */
+.modal-backdrop .modal-box {
+  max-width: 560px;
+}
+
+/* ============================================================
+   SETTINGS MODAL MOBILE RESPONSIVENESS
+   ============================================================ */
+
+@media (max-width: 600px) {
+  /* Make modal full-screen on mobile */
+  .modal-backdrop .modal.ps-modal {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  /* Adjust modal header for mobile */
+  .modal-backdrop .ps-modal-header {
+    padding: var(--ps-space-3) var(--ps-space-4);
+    /* Add safe area padding for iOS */
+    padding-top: max(var(--ps-space-3), env(safe-area-inset-top, 0));
+  }
+
+  .modal-backdrop .ps-modal-header h2 {
+    font-size: var(--ps-text-lg);
+  }
+
+  /* Adjust modal body for mobile */
+  .modal-backdrop .ps-modal-body {
+    padding: var(--ps-space-4);
+    /* Add safe area padding for bottom */
+    padding-bottom: max(var(--ps-space-4), env(safe-area-inset-bottom, 0));
+  }
+
+  /* Settings grid stays single column */
+  .settings-modal-grid {
+    gap: var(--ps-space-2);
+  }
+
+  /* Make form inputs larger for touch */
+  .settings-modal-grid .form-input,
+  .settings-modal-grid select {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  /* Adjust callout padding */
+  .settings-modal-grid .editor-callout,
+  .modal-content .editor-callout {
+    padding: var(--ps-space-3);
+  }
+
+  /* Stack checkbox rows vertically */
+  .settings-modal-grid .row.is-start {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ps-space-2);
+  }
+
+  .settings-modal-grid .row.is-start input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Modal content scrollable area */
+  .modal-content {
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Textarea adjustments */
+  .modal-content textarea.form-input {
+    min-height: 80px;
+    font-size: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 375px) {
+  .modal-backdrop .ps-modal-body {
+    padding: var(--ps-space-3);
+  }
+
+  .settings-modal-grid .editor-callout,
+  .modal-content .editor-callout {
+    padding: var(--ps-space-2);
+  }
+}
+
+/* ============================================================
+   EXTERNAL ANALYTICS TAB
+   ============================================================ */
+
+/* Info note box */
+.settings-info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+  margin-bottom: var(--ps-space-4);
+}
+
+.settings-info-note-icon {
+  flex-shrink: 0;
+  font-size: 1.1em;
+}
+
+/* Analytics sections */
+.analytics-section {
+  margin-bottom: var(--ps-space-4);
+}
+
+.analytics-section-title {
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  margin: 0 0 var(--ps-space-2);
+  padding-left: var(--ps-space-2);
+  border-left: 3px solid hsl(var(--app-border-subtle));
+}
+
+.analytics-section-title.privacy-friendly {
+  border-color: hsl(142 70% 45%);
+  color: hsl(142 50% 35%);
+}
+
+.analytics-section-title.requires-consent {
+  border-color: hsl(45 90% 50%);
+  color: hsl(30 80% 40%);
+}
+
+.analytics-section-description {
+  margin: 0 0 var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+/* Provider cards */
+.analytics-provider-card {
+  padding: var(--ps-space-4);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  margin-bottom: var(--ps-space-3);
+}
+
+.analytics-provider-card:last-child {
+  margin-bottom: 0;
+}
+
+.analytics-provider-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.analytics-provider-header input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.analytics-provider-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+}
+
+.analytics-provider-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.analytics-provider-badge.privacy-friendly {
+  background: hsl(142 70% 45% / 0.15);
+  color: hsl(142 50% 35%);
+}
+
+.analytics-provider-badge.requires-consent {
+  background: hsl(45 90% 50% / 0.15);
+  color: hsl(30 80% 40%);
+}
+
+.analytics-provider-description {
+  margin: var(--ps-space-2) 0 0;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  padding-left: calc(18px + var(--ps-space-3));
+}
+
+.analytics-provider-privacy-note {
+  margin: var(--ps-space-2) 0 0;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  padding-left: calc(18px + var(--ps-space-3) + var(--ps-space-3));
+  font-size: var(--ps-text-sm);
+  color: hsl(30 80% 40%);
+  background: hsl(45 90% 50% / 0.1);
+  border-radius: var(--ps-radius-sm);
+}
+
+.analytics-provider-config {
+  margin-top: var(--ps-space-3);
+  padding: var(--ps-space-3);
+  padding-left: calc(18px + var(--ps-space-3) + var(--ps-space-3));
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-md);
+  display: none;
+}
+
+.analytics-provider-config .field-row {
+  margin-bottom: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.analytics-provider-config .field-row:last-child {
+  margin-bottom: 0;
+}
+
+.analytics-provider-config .field-row-label {
+  width: 120px;
+}
+
+.analytics-provider-config .field-row .help {
+  flex-basis: 100%;
+  margin-top: var(--ps-space-1);
+  margin-left: calc(120px + var(--ps-space-3));
+  font-size: var(--ps-text-xs);
+}
+
+.analytics-provider-config .field-row.is-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.analytics-provider-config .field-row.is-checkbox .field-row-label {
+  flex: 1;
+  width: auto;
+  order: 2;
+  cursor: pointer;
+}
+
+.analytics-provider-config .field-row.is-checkbox input[type="checkbox"] {
+  order: 1;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.analytics-provider-config .field-row.is-checkbox .help {
+  order: 3;
+  margin-left: calc(16px + var(--ps-space-3));
+}
+
+/* Provider validation warning */
+.analytics-provider-warning {
+  margin-top: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  padding-left: calc(18px + var(--ps-space-3) + var(--ps-space-3));
+  font-size: var(--ps-text-sm);
+  color: hsl(30 80% 40%);
+  background: hsl(45 90% 50% / 0.1);
+  border-radius: var(--ps-radius-sm);
+  border-left: 3px solid hsl(45 90% 50%);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .analytics-provider-description,
+  .analytics-provider-privacy-note,
+  .analytics-provider-config,
+  .analytics-provider-warning {
+    padding-left: var(--ps-space-3);
+  }
+
+  .analytics-provider-config .field-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .analytics-provider-config .field-row-label {
+    width: auto;
+    margin-bottom: var(--ps-space-1);
+  }
+
+  .analytics-provider-config .field-row .help {
+    margin-left: 0;
+  }
+
+  .analytics-provider-config .field-row.is-checkbox {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .analytics-provider-config .field-row.is-checkbox .field-row-label {
+    margin-bottom: 0;
+  }
+
+  .analytics-provider-config .field-row.is-checkbox .help {
+    margin-left: calc(16px + var(--ps-space-3));
+  }
+}
+
+/* ============================================================
+   BULK EXPORT / DATA EXPORT TAB
+   ============================================================ */
+
+.bulk-export-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.bulk-export-progress {
+  padding: var(--ps-space-3) 0;
+}
+
+.bulk-export-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-border-subtle));
+  overflow: hidden;
+}
+
+.bulk-export-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-primary));
+  transition: width 0.4s ease;
+}
+
+/* "Connect via API / MCP" card (API Keys tab) */
+.mcp-connect-card {
+  gap: var(--ps-space-4);
+}
+
+.mcp-connect-block {
+  gap: var(--ps-space-2);
+}
+
+.mcp-connect-code {
+  margin: 0;
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-sunken));
+  color: hsl(var(--app-text-primary));
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: var(--ps-text-xs);
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+}

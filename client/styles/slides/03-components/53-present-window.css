@@ -1,0 +1,69 @@
+/* Two-window presenter: the clean projector window (present-window.js).
+   Full-bleed deck, no topbar/progress chrome — the beamer view. */
+
+.present-window {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: hsl(var(--app-bg-base));
+  overflow: hidden;
+  /* The shared .deck-stage sizing math references these; there's no presenter
+     shell here, so zero them out and let the deck fill the whole window. */
+  --presenter-topbar-height: 0px;
+}
+
+.present-window .deck {
+  width: 100%;
+  height: 100%;
+}
+
+/* Override the presenter's letterbox math (which subtracts a 56px progress row)
+   so the deck uses the entire projector window. */
+.present-window .deck-stage {
+  width: min(100vw, calc(100dvh * 16 / 9));
+  height: min(100dvh, calc(100vw * 9 / 16));
+}
+
+/* One-time curtain: the click is the user gesture that unlocks fullscreen. */
+.present-window-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-base));
+}
+.present-window-curtain[hidden] {
+  display: none;
+}
+.present-window-curtain-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 520px;
+  padding: 32px;
+  text-align: center;
+}
+.present-window-curtain-title {
+  font-size: 28px;
+  font-weight: 650;
+  color: hsl(var(--app-text-strong, var(--app-text-default)));
+}
+.present-window-curtain-hint {
+  max-width: 42ch;
+}
+
+/* Disconnect / status pill, bottom-centered, unobtrusive. */
+.present-window-status {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 15;
+}
+.present-window-status[hidden] {
+  display: none;
+}

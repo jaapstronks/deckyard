@@ -1,0 +1,546 @@
+/**
+ * Comments panel styles for collaborative annotations.
+ */
+
+.comments-panel {
+  position: fixed;
+  right: 0;
+  top: var(--topbar-height, 56px);
+  bottom: 0;
+  width: 320px;
+  max-width: 100vw;
+  background: var(--surface-color, #fff);
+  border-left: 1px solid var(--border-color, #e0e0e0);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.comments-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.comments-panel-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.comments-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+  color: var(--text-muted, #666);
+  line-height: 1;
+}
+
+.comments-close-btn:hover {
+  color: var(--text-color, #333);
+}
+
+.comments-panel-filter {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  flex-wrap: wrap;
+}
+
+.comments-panel-filter .btn-sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
+.comments-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.comments-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted, #666);
+  font-style: italic;
+}
+
+.comment-thread {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-light, #f0f0f0);
+}
+
+.comment-thread:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.comment-item {
+  padding: 4px 0;
+}
+
+.comment-reply {
+  margin-left: 12px;
+  padding-left: 12px;
+  margin-top: 6px;
+  border-left: 2px solid var(--border-light, #e0e0e0);
+}
+
+.comment-resolved {
+  opacity: 0.6;
+}
+
+.comment-item-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.comment-author {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-color, #333);
+}
+
+.comment-time {
+  font-size: 11px;
+  color: var(--text-muted, #999);
+}
+
+.comment-slide-link {
+  margin-left: auto;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: hsl(var(--app-accent-primary, 210 70% 50%));
+  background: hsl(var(--app-accent-soft, 210 70% 95%));
+  border: 1px solid hsl(var(--app-accent-primary, 210 70% 50%) / 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.comment-slide-link:hover {
+  background: hsl(var(--app-accent-primary, 210 70% 50%) / 0.15);
+  border-color: hsl(var(--app-accent-primary, 210 70% 50%) / 0.4);
+}
+
+.comment-body {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-color, #333);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.comment-actions .btn-xs {
+  padding: 1px 6px;
+  font-size: 11px;
+}
+
+.comment-replies {
+  margin-top: 4px;
+}
+
+.comment-reply-input {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px;
+  background: var(--surface-alt, #f8f8f8);
+  border-radius: 6px;
+}
+
+.comment-reply-textarea {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 4px;
+  resize: none;
+  font-family: inherit;
+  min-height: 32px;
+}
+
+.comment-reply-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+}
+
+.comments-panel-input {
+  padding: 12px;
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  background: var(--surface-alt, #fafafa);
+}
+
+.comments-input-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  resize: none;
+  font-family: inherit;
+  margin-bottom: 6px;
+  min-height: 36px;
+}
+
+.comments-input-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+}
+
+.comments-input-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.comments-input-controls .btn-sm {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+/* Topbar comments button and badge */
+.topbar-comments-btn {
+  position: relative;
+}
+
+.comments-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger-color, #dc3545);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comments-badge:empty,
+.comments-badge[hidden] {
+  display: none;
+}
+
+/* Seen state: grey background instead of red */
+.comments-badge--seen {
+  background: var(--muted-color, #6c757d);
+}
+
+/* Slide comment indicator */
+.slide-comment-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: var(--primary-color, #007bff);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.slide-comment-indicator:hover {
+  background: var(--primary-dark, #0056b3);
+}
+
+/* Slide lock indicator (locked by another user) */
+.slide-lock-indicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: hsl(var(--app-status-warning, 45 100% 50%));
+  color: hsl(0 0% 10%);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  z-index: 3;
+}
+
+.slide-lock-indicator::before {
+  content: '';
+  width: 10px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.slide-item.is-locked-by-other .thumb.thumb-mini {
+  opacity: 0.7;
+}
+
+.slide-item.is-locked-by-other .thumb.thumb-mini::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.1);
+  pointer-events: none;
+  border-radius: var(--ps-radius-sm);
+}
+
+/* Slide lock indicator for collapsed view */
+.slide-lock-indicator-collapsed {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: hsl(var(--app-status-warning, 45 100% 50%));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  z-index: 3;
+}
+
+.slide-lock-indicator-collapsed::before {
+  content: '';
+  width: 7px;
+  height: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2' ry='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* In collapsed mode, the .slide-num-collapsed needs position:relative for indicator positioning */
+.slide-num-collapsed {
+  position: relative;
+}
+
+/* Button size variants */
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 480px) {
+  .comments-panel {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   AI SUGGESTIONS STYLES
+   ============================================================ */
+
+/* Filter row layout */
+.comments-filter-row {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+.comments-filter-type {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border-light, #e0e0e0);
+}
+
+/* AI Suggestion comment styling */
+.comment-item.is-ai-suggestion {
+  background: linear-gradient(135deg, hsl(270 60% 98%), hsl(200 60% 98%));
+  border-left: 3px solid hsl(270 60% 60%);
+  border-radius: 6px;
+  padding: 8px;
+  margin: -4px 0;
+}
+
+.comment-author-ai {
+  color: hsl(270 60% 50%);
+}
+
+.comment-author-ai::before {
+  content: '';
+  margin-right: 2px;
+}
+
+/* Category badges */
+.comment-category-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: hsl(270 40% 90%);
+  color: hsl(270 60% 40%);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.comment-category-language {
+  background: hsl(210 60% 92%);
+  color: hsl(210 60% 35%);
+}
+
+.comment-category-slide-type {
+  background: hsl(270 60% 92%);
+  color: hsl(270 60% 35%);
+}
+
+.comment-category-visual-balance {
+  background: hsl(45 80% 90%);
+  color: hsl(45 80% 30%);
+}
+
+.comment-category-structure {
+  background: hsl(180 50% 90%);
+  color: hsl(180 50% 30%);
+}
+
+.comment-category-tone {
+  background: hsl(330 60% 92%);
+  color: hsl(330 60% 35%);
+}
+
+.comment-category-spelling {
+  background: hsl(0 60% 92%);
+  color: hsl(0 60% 35%);
+}
+
+.comment-category-brevity {
+  background: hsl(90 50% 90%);
+  color: hsl(90 50% 30%);
+}
+
+.comment-category-logic {
+  background: hsl(30 70% 90%);
+  color: hsl(30 70% 30%);
+}
+
+.comment-category-repetition {
+  background: hsl(150 50% 90%);
+  color: hsl(150 50% 30%);
+}
+
+/* Topbar icon buttons (comments, AI, analytics) */
+.topbar-btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+/* Analyze button in topbar */
+.topbar-analyze-btn {
+  position: relative;
+}
+
+/* ============================================================
+   ANALYZE MODAL STYLES
+   ============================================================ */
+
+.analyze-progress {
+  padding: 16px 0;
+}
+
+.analyze-status {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--text-color, #333);
+}
+
+.analyze-progress-bar {
+  height: 8px;
+  background: var(--border-color, #e0e0e0);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.analyze-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, hsl(270 60% 60%), hsl(200 60% 60%));
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.analyze-suggestions-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.analyze-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--surface-alt, #f8f8f8);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.analyze-category-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: hsl(270 40% 90%);
+  color: hsl(270 60% 40%);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.analyze-category-language { background: hsl(210 60% 92%); color: hsl(210 60% 35%); }
+.analyze-category-slide-type { background: hsl(270 60% 92%); color: hsl(270 60% 35%); }
+.analyze-category-visual-balance { background: hsl(45 80% 90%); color: hsl(45 80% 30%); }
+.analyze-category-structure { background: hsl(180 50% 90%); color: hsl(180 50% 30%); }
+.analyze-category-tone { background: hsl(330 60% 92%); color: hsl(330 60% 35%); }
+.analyze-category-spelling { background: hsl(0 60% 92%); color: hsl(0 60% 35%); }
+.analyze-category-brevity { background: hsl(90 50% 90%); color: hsl(90 50% 30%); }
+.analyze-category-logic { background: hsl(30 70% 90%); color: hsl(30 70% 30%); }
+.analyze-category-repetition { background: hsl(150 50% 90%); color: hsl(150 50% 30%); }
+
+.analyze-suggestion-body {
+  color: var(--text-muted, #666);
+  line-height: 1.3;
+}
+
+.analyze-info {
+  color: var(--text-muted, #666);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.analyze-options {
+  padding: 8px 0;
+}

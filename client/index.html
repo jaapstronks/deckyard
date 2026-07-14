@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Presentation System</title>
+  <meta name="description"
+    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
+  <meta name="application-name" content="Presentation System" />
+  <meta name="theme-color" content="#0b1220" />
+
+  <!-- UI mode bootstrap (app UI only): avoid flash of wrong theme.
+       Stored preference: localStorage['ps-ui-mode'] = 'system' | 'light' | 'dark' -->
+  <script>
+    (function () {
+      try {
+        var pref = (localStorage.getItem('ps-ui-mode') || 'system').toLowerCase();
+        if (pref !== 'light' && pref !== 'dark' && pref !== 'system') pref = 'system';
+        var resolved = pref;
+        if (pref === 'system') {
+          var m = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+          resolved = m && m.matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.uiMode = resolved === 'dark' ? 'dark' : 'light';
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', resolved === 'dark' ? '#0b1220' : '#f6f7fb');
+      } catch (e) {
+        // ignore
+      }
+    })();
+  </script>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Presentation System" />
+  <meta property="og:title" content="Presentation System" />
+  <meta property="og:description"
+    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
+  <meta property="og:image" content="/assets/images/slides-previewimage.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Presentation System" />
+  <meta name="twitter:description"
+    content="Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF." />
+  <meta name="twitter:image" content="/assets/images/slides-previewimage.png" />
+
+  <link rel="icon" href="/assets/images/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/client/styles/shared/fonts.css" />
+  <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
+  <link rel="stylesheet" href="/client/styles/app.css" />
+  <link rel="stylesheet" href="/client/styles/theme.css" />
+  <link rel="stylesheet" href="/client/styles/slides.css" />
+  <!-- Bunny Stream Player.js (must be available before Bunny iframes load) -->
+  <script type="text/javascript" src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js" defer
+    data-bunny-playerjs="1"></script>
+  <!-- DOMPurify for defense-in-depth HTML sanitization -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.2/dist/purify.min.js"></script>
+
+  <!-- Prism.js for code syntax highlighting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-sql.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+
+  <!-- KaTeX for math rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+</head>
+
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div id="app"></div>
+  <script type="module" src="/client/app.js"></script>
+</body>
+
+</html>

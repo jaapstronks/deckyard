@@ -1,0 +1,134 @@
+/* Keep for modals / other contexts that may still use type pills */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-subline {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  flex-wrap: nowrap;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-sm);
+  white-space: nowrap;
+}
+
+/* Author lock indicator - positioned in top-left corner (distinct from concurrent lock in bottom-right) */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-author-lock-indicator {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  background: hsl(30 100% 50% / 0.9);
+  border-radius: var(--ps-radius-sm);
+  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.15);
+  z-index: 3;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-author-lock-indicator::before {
+  content: '\1F512';
+  font-size: 0.5rem;
+}
+
+/* Author lock indicator for collapsed view */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-author-lock-indicator-collapsed {
+  display: none;
+  width: 12px;
+  height: 12px;
+  margin-left: 2px;
+  font-size: 0.5rem;
+  background: hsl(30 100% 50% / 0.9);
+  border-radius: 2px;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-author-lock-indicator-collapsed::before {
+  content: '\1F512';
+  font-size: 0.4rem;
+}
+
+.is-slides-collapsed .slide-author-lock-indicator-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Author-locked slide item styling */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-author-locked .thumb.thumb-mini {
+  outline: 2px solid hsl(30 100% 50% / 0.6);
+  outline-offset: -2px;
+}

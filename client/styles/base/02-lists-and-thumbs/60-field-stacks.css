@@ -1,0 +1,47 @@
+/* Field stacks: labels should visually belong to the control beneath them. */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .stack.is-field {
+  gap: var(--ps-space-2);
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .stack.is-field > .field-label {
+  margin-bottom: 0;
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .stack.is-field > .field-head {
+  margin-bottom: 0;
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .stack.is-field > .help {
+  margin-top: 0;
+}
+
+

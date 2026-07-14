@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Embed test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 18px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #111;
+      color: #eee;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input,
+    button,
+    select {
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #eee;
+    }
+
+    input {
+      width: 320px;
+      max-width: 90vw;
+    }
+
+    #mount {
+      max-width: 1100px;
+      margin-top: 14px;
+    }
+
+    .hint {
+      opacity: 0.8;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="row">
+    <label>
+      publishId
+      <input id="publishId" placeholder="e.g. 8990e7b8" />
+    </label>
+    <label>
+      controls
+      <select id="controls">
+        <option value="1" selected>on</option>
+        <option value="0">off</option>
+      </select>
+    </label>
+    <label>
+      ui
+      <select id="ui">
+        <option value="default" selected>default</option>
+        <option value="min">min</option>
+      </select>
+    </label>
+    <button id="btnLoad" type="button">Load</button>
+    <button id="btnNext" type="button" disabled>Next</button>
+    <button id="btnPrev" type="button" disabled>Prev</button>
+  </div>
+
+  <div id="mount"></div>
+  <div class="hint">
+    Tip: open <code>/client/embed-test.html?publishId=XXXX</code> while running the server.
+  </div>
+
+  <script src="/client/embed-sdk.js"></script>
+  <script>
+    let controller = null;
+
+    function qs() { return new URLSearchParams(location.search); }
+    function getVal(id) { return document.getElementById(id).value; }
+
+    function destroy() {
+      if (controller && controller.destroy) controller.destroy();
+      controller = null;
+      document.getElementById('btnNext').disabled = true;
+      document.getElementById('btnPrev').disabled = true;
+    }
+
+    function load() {
+      destroy();
+      const publishId = String(getVal('publishId') || '').trim();
+      if (!publishId) return alert('publishId required');
+
+      controller = window.PresentationSystemEmbed.createDeckEmbed({
+        el: document.getElementById('mount'),
+        publishId,
+        options: {
+          baseUrl: location.origin,
+          controls: getVal('controls') === '1',
+          ui: getVal('ui'),
+          allowedOrigins: [location.origin],
+        },
+      });
+
+      document.getElementById('btnNext').disabled = false;
+      document.getElementById('btnPrev').disabled = false;
+    }
+
+    document.getElementById('btnLoad').addEventListener('click', load);
+    document.getElementById('btnNext').addEventListener('click', () => controller && controller.next());
+    document.getElementById('btnPrev').addEventListener('click', () => controller && controller.prev());
+
+    // init from querystring
+    const pid = qs().get('publishId');
+    if (pid) document.getElementById('publishId').value = pid;
+    if (pid) load();
+  </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

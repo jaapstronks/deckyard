@@ -1,0 +1,426 @@
+/* Content slide + shared markdown tables */
+.slide-content .heading {
+  font-family: var(--font-heading);
+  /* Content-slide headings should read a touch more like "titles" */
+  font-size: calc(var(--font-size-heading) + 6px);
+  line-height: 1.1;
+  margin: 0 0 18px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+/* Subheading directly after heading - tighter spacing */
+.slide-content .subheading {
+  margin-top: -10px;
+  margin-bottom: 18px;
+}
+
+/* Markdown tables (used in content-slide and image-text-slide) */
+.md-table-wrap {
+  max-width: 100%;
+  overflow-x: auto; /* if a table is wider than the slide, scroll instead of breaking layout */
+  margin-top: 16px;
+}
+
+.md-table {
+  display: inline-table; /* shrink-to-fit when only a few columns */
+  width: auto;
+  max-width: 100%;
+  border-collapse: separate; /* allows us to control inner borders only */
+  border-spacing: 0;
+  table-layout: auto;
+}
+
+.md-table th,
+.md-table td {
+  padding: 16px 22px;
+  vertical-align: top;
+  text-align: start; /* RTL support */
+  font-weight: 400;
+  color: var(--color-text);
+  min-width: 140px; /* makes small-column tables feel roomier; wide tables will scroll */
+}
+
+.md-table th {
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+/* Inner gridlines only: no outer border.
+   Colour is driven by --table-border so themable table variants can restyle it;
+   the fallback reproduces the historical hardcoded gridline. */
+.md-table tr > *:not(:last-child) {
+  border-right: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
+}
+
+/* Header/body separator: thead's only row is typically :last-child within thead, so handle explicitly */
+.md-table thead tr > * {
+  border-bottom: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
+}
+
+/* Body row separators (no bottom outer line on the final row) */
+.md-table tbody tr:not(:last-child) > * {
+  border-bottom: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
+}
+
+.md-table a {
+  color: var(--color-accent);
+}
+
+.slide-content .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-content .body {
+  font-family: var(--font-body);
+  /* Comfortable default for two-column layouts. The auto-fit runtime steps
+     down through is-fit-medium → is-compact (or the density field forces a
+     size) when the body would overflow. */
+  font-size: 28px;
+  line-height: var(--line-height-body);
+  columns: 2;
+  column-gap: 64px;
+  column-fill: auto; /* fill left column first, then flow to right */
+  flex: 1;
+  min-height: 0;
+  /* Safety net: if even the smallest fitted size can't contain the content
+     (e.g. Large floored at medium), clip cleanly at the box edge rather than
+     spilling a cut-off extra column across the slide. */
+  overflow: hidden;
+}
+
+/* Medium step: between the comfortable default and the compact size. The
+   auto-fit runtime uses this as the first step down, and as the floor for the
+   forced "Large" (comfortable) density so it never shrinks to the small size. */
+.slide-content.is-fit-medium .body {
+  font-size: 25px;
+}
+
+.slide-content.is-compact .body {
+  font-size: 22px;
+}
+
+.slide-content.is-one-col .body {
+  columns: 1;
+  column-gap: 0;
+  /* One-column content is typically used for “big type” slides. */
+  font-size: 36px;
+}
+
+.slide-content.is-one-col.is-fit-medium .body {
+  font-size: 31px;
+}
+
+.slide-content.is-one-col.is-compact .body {
+  font-size: 28px;
+}
+
+/* In single-column mode, keep text line-length comfortable (tables are excluded). */
+.slide-content.is-one-col .body > p,
+.slide-content.is-one-col .body > ul,
+.slide-content.is-one-col .body > ol {
+  max-width: 65%;
+}
+
+/* Tables should not be constrained in single-column mode. */
+.slide-content.is-one-col .body > .md-table-wrap {
+  max-width: 100%;
+}
+
+.slide-content .body p {
+  margin: 0 0 14px;
+}
+/* Markdown subheading: ## renders as h3 (since slide title is h2) */
+.slide-content .body h3.md-subheading {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  line-height: 1.25;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 24px 0 12px;
+  color: var(--color-text);
+}
+.slide-content.is-fit-medium .body h3.md-subheading {
+  font-size: 29px;
+  margin: 21px 0 11px;
+}
+.slide-content.is-compact .body h3.md-subheading {
+  font-size: 26px;
+  margin: 18px 0 10px;
+}
+.slide-content .body h3.md-subheading:first-child {
+  margin-top: 0;
+}
+.slide-content .body ul,
+.slide-content .body ol {
+  margin: 0 0 14px 1.2em;
+  padding: 0;
+}
+.slide-content .body li {
+  margin: 10px 0;
+}
+.slide-content .body ul li::marker {
+  color: var(--color-accent);
+}
+.slide-content .body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-accent);
+  transition: text-decoration-color 0.15s ease;
+}
+.slide-content .body a:hover {
+  text-decoration-color: transparent;
+}
+
+.slide-content .body p,
+.slide-content .body ul,
+.slide-content .body ol,
+.slide-content .body li {
+  break-inside: avoid;
+}
+
+/* Action buttons (CTAs) */
+.slide-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.slide-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-decoration: none;
+  border-radius: var(--t-radius-sm, 10px);
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.slide-action:hover {
+  transform: translateY(-2px);
+}
+
+.slide-action:active {
+  transform: translateY(0);
+}
+
+.slide-action:focus-visible {
+  outline: 3px solid rgba(0, 0, 0, 0.3);
+  outline-offset: 2px;
+}
+
+/* Primary style - inverted "chip": theme text colour as fill (see .text-block.is-black) */
+.slide-action-primary {
+  background: var(--t-color-text, #0b0b0b);
+  color: var(--t-color-background, #fff);
+  border: 2px solid var(--t-color-text, #0b0b0b);
+}
+
+.slide-action-primary:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.slide-action-primary:active {
+  filter: brightness(0.9);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Secondary style - accent color background */
+.slide-action-secondary {
+  background: var(--color-accent, #7c3aed);
+  color: var(--t-color-accent-contrast, #fff);
+  border: 2px solid var(--color-accent, #7c3aed);
+}
+
+.slide-action-secondary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.slide-action-secondary:active {
+  filter: brightness(0.95);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Outline style - transparent with visible border.
+   Uses --color-text so the resting state stays readable on dark slide
+   backgrounds (identical to #0b0b0b on the default light slides). */
+.slide-action-outline {
+  background: transparent;
+  color: var(--color-text, #0b0b0b);
+  border: 2px solid var(--color-text, #0b0b0b);
+}
+
+.slide-action-outline:hover {
+  background: var(--color-text, #0b0b0b);
+  color: var(--slide-bg, var(--color-background, #fff));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.slide-action-outline:active {
+  background: var(--color-text, #0b0b0b);
+  color: var(--slide-bg, var(--color-background, #fff));
+  filter: brightness(1.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Image-text slide specific positioning */
+.slide-image-text .slide-actions {
+  margin-top: 20px;
+}
+
+/* ==========================================================================
+   Code Highlighting & Math Formulas
+   ========================================================================== */
+
+/* Inline code - red text with gray background */
+.md-code-inline {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.88em;
+  background: rgba(0, 0, 0, 0.06);
+  color: #c41a16;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Code blocks - dark Catppuccin Mocha style */
+.md-code-block {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 16px;
+  line-height: 1.5;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 20px 24px;
+  border-radius: var(--slide-radius-sm, 10px);
+  overflow-x: auto;
+  margin: 16px 0;
+  text-align: left;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.md-code-block code {
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* Override Prism theme to match Catppuccin Mocha */
+.md-code-block .token.comment,
+.md-code-block .token.prolog,
+.md-code-block .token.doctype,
+.md-code-block .token.cdata {
+  color: #6c7086;
+}
+
+.md-code-block .token.punctuation {
+  color: #bac2de;
+}
+
+.md-code-block .token.property,
+.md-code-block .token.tag,
+.md-code-block .token.boolean,
+.md-code-block .token.number,
+.md-code-block .token.constant,
+.md-code-block .token.symbol,
+.md-code-block .token.deleted {
+  color: #fab387;
+}
+
+.md-code-block .token.selector,
+.md-code-block .token.attr-name,
+.md-code-block .token.string,
+.md-code-block .token.char,
+.md-code-block .token.builtin,
+.md-code-block .token.inserted {
+  color: #a6e3a1;
+}
+
+.md-code-block .token.operator,
+.md-code-block .token.entity,
+.md-code-block .token.url,
+.md-code-block .language-css .token.string,
+.md-code-block .style .token.string {
+  color: #89dceb;
+}
+
+.md-code-block .token.atrule,
+.md-code-block .token.attr-value,
+.md-code-block .token.keyword {
+  color: #cba6f7;
+}
+
+.md-code-block .token.function,
+.md-code-block .token.class-name {
+  color: #89b4fa;
+}
+
+.md-code-block .token.regex,
+.md-code-block .token.important,
+.md-code-block .token.variable {
+  color: #f9e2af;
+}
+
+/* Math blocks - centered display */
+.md-math-block {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.2em;
+  overflow-x: auto;
+}
+
+/* Inline math */
+.md-math-inline {
+  display: inline;
+}
+
+/* KaTeX error styling - show raw LaTeX on error */
+.md-math-block .katex-error,
+.md-math-inline .katex-error {
+  color: #c41a16;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+}
+
+/* Ensure code blocks don't break across columns in multi-column layouts */
+.slide-content .body .md-code-block {
+  break-inside: avoid;
+}
+
+/* In single-column mode, code and math blocks match text width (65%) */
+.slide-content.is-one-col .body > .md-code-block,
+.slide-content.is-one-col .body > .md-math-block {
+  max-width: 65%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

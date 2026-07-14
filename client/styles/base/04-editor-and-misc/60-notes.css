@@ -1,0 +1,215 @@
+/* --- Mobile speaker notes companion --- */
+.is-notes,
+.is-notes body {
+  overflow-x: hidden;
+}
+.notes-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background: hsl(var(--app-bg-base));
+}
+.notes-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px;
+  background: hsl(var(--app-bg-elevated) / 0.95);
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  backdrop-filter: blur(10px);
+  overflow-x: hidden;
+}
+.notes-title {
+  font-weight: 700;
+  max-width: 70vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notes-preview-controls {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 0;
+  margin-bottom: 6px;
+}
+.notes-preview-meta {
+  justify-self: center;
+  text-align: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.notes-preview-prev {
+  justify-self: start;
+}
+.notes-preview-next {
+  justify-self: end;
+}
+
+@media (max-width: 420px) {
+  .notes-preview-controls {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'prev next'
+      'meta meta';
+  }
+  .notes-preview-prev {
+    grid-area: prev;
+  }
+  .notes-preview-next {
+    grid-area: next;
+  }
+  .notes-preview-meta {
+    grid-area: meta;
+  }
+}
+.notes-hint {
+  padding: 8px 14px;
+  background: hsl(var(--app-accent-soft));
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-sm);
+}
+.notes-preview {
+  padding: 12px 14px;
+}
+
+/* "Up next" preview: secondary, smaller than the current-slide preview. */
+.notes-next {
+  padding: 0 14px 12px;
+}
+.notes-next-label {
+  margin: 0 0 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+}
+.notes-next-preview {
+  max-width: 55%;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 8px;
+  overflow: hidden;
+}
+.notes-next-preview.is-empty {
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-sunken));
+}
+@media (max-width: 420px) {
+  .notes-next-preview {
+    max-width: 70%;
+  }
+}
+.notes-panel {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px 20px;
+  overflow: auto;
+  border-top: 1px solid hsl(var(--app-border-default));
+}
+.notes-panel-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.notes-qa-panel {
+  margin-top: 12px;
+}
+
+.notes-goto-input {
+  width: 110px;
+}
+.notes-controls {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+.notes-controls > .help {
+  margin-bottom: 8px;
+}
+.notes-body {
+  line-height: 1.45;
+}
+.notes-body .md-table-wrap {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.notes-body .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.notes-body .md-table th,
+.notes-body .md-table td {
+  border: 1px solid hsl(var(--app-border-default));
+  padding: 8px 10px;
+}
+
+/* Notes: Q&A list (moderation) */
+.notes-qa-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.notes-qa-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.notes-qa-who {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notes-qa-votes {
+  white-space: nowrap;
+}
+
+.notes-qa-actions {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.notes-qa-body {
+  margin-top: 8px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.notes-qa-body.is-clamped {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.notes-qa-footer {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.notes-qa-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent-soft));
+  border: 1px solid hsl(var(--app-accent-primary) / 0.28);
+  display: inline-block;
+}
+
+

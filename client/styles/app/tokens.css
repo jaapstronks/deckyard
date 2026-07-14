@@ -1,0 +1,15 @@
+/* App design tokens (theme-independent).
+   Do not reference slide theme variables here. */
+
+@import url('../shared/fonts.css');
+@import url('../shared/ui-tokens.css');
+
+body {
+  font-family: var(--ps-font-sans);
+  margin: 0;
+  min-height: 100vh;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-base));
+}
+
+

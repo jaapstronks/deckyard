@@ -1,0 +1,116 @@
+/* Countdown timer slide - big presenter-controlled timer */
+
+/* Background variants beyond lime/mist (which 00-base.css handles globally).
+   Mirrors the freeform slide so the extended background enum renders correctly. */
+.slide-countdown.slide-bg-dark {
+  background-color: var(--t-bg-dark, #212121);
+  color: var(--t-text-color-light, #ffffff);
+}
+.slide-countdown.slide-bg-accent {
+  background-color: var(--t-accent, #375c5d);
+  color: var(--t-text-color-light, #ffffff);
+}
+.slide-countdown.slide-bg-brand-1 {
+  background-color: var(--t-brand-1, #7c3aed);
+  color: var(--t-text-color-light, #ffffff);
+}
+.slide-countdown.slide-bg-brand-2 {
+  background-color: var(--t-brand-2, #375c5d);
+  color: var(--t-text-color-light, #ffffff);
+}
+
+/* Make the slide its own size-query container so the digits scale relative to
+   the slide itself (cqi/cqb), not the viewport. Without this the timer overflows
+   in scaled-down contexts like the editor canvas and thumbnails. */
+.slide-countdown {
+  container-type: size;
+}
+
+.slide-countdown .slide-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  padding: 48px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.slide-countdown .cd-title {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.slide-countdown .cd-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The digits: as large as the slide allows while keeping "MM:SS" on one line
+   and readable from the back row. Sized against the slide's own box (cqi = inline
+   size, cqb = block size) so it fits in present, editor and thumbnail alike.
+   ~5 tabular glyphs need to fit the width; cqb guards short/landscape boxes. */
+.slide-countdown .cd-time {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  font-size: min(26cqi, 60cqb);
+  transition: color 0.2s ease;
+}
+
+.slide-countdown .cd-zero-text {
+  margin-top: 0.05em;
+  font-weight: 800;
+  font-size: min(9cqi, 18cqb);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Controls row */
+.slide-countdown .cd-controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 0.4em;
+}
+
+.slide-countdown .cd-controls[hidden] {
+  display: none;
+}
+
+.slide-countdown .cd-btn[hidden] {
+  display: none;
+}
+
+/* Zero state: flash the digits red and reveal the "Tijd!" text. */
+.slide-countdown.is-zero .cd-time {
+  color: var(--color-danger, #e23b3b);
+  animation: cd-flash 1s steps(1, end) infinite;
+}
+
+.slide-countdown.is-zero .cd-zero-text {
+  color: var(--color-danger, #e23b3b);
+  opacity: 1;
+}
+
+@keyframes cd-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-countdown.is-zero .cd-time {
+    animation: none;
+  }
+}

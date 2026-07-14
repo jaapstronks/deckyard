@@ -1,0 +1,247 @@
+/* =============================================================================
+   SHARED SLIDE PATTERNS
+   ============================================================================
+   Reusable component patterns used across multiple slide types.
+   Import AFTER 00-tokens.css to access design tokens.
+   ============================================================================ */
+
+/* =========================================================================
+   SLIDE HEADER PATTERN
+   =========================================================================
+   Unified header for content slides (heading + optional subheading).
+   Used by: process, timeline, matrix, comparison, kpi-metrics, etc.
+   ========================================================================= */
+
+.slide-header {
+  margin-bottom: var(--slide-header-gap);
+}
+
+.slide-header .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: var(--slide-leading-tight);
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-header .subheading {
+  margin-top: var(--slide-text-gap);
+  margin-bottom: 0;
+}
+
+/* =========================================================================
+   SUBTITLE / SUBHEADING COMPATIBILITY
+   =========================================================================
+   Standardized on .subheading. This layer provides backward compatibility.
+   DEPRECATED: Use .subheading for new code. .subtitle will be removed.
+   ========================================================================= */
+
+/* Alias .subtitle to match .subheading styles */
+.slide .subtitle {
+  font-family: var(--font-body);
+  font-size: var(--slide-font-size-subheading);
+  line-height: var(--slide-leading-snug);
+  color: var(--color-text-muted);
+  max-width: 60ch;
+}
+
+/* =========================================================================
+   CARD BASE PATTERN
+   =========================================================================
+   Shared card styling used by timeline, matrix, comparison slides.
+   ========================================================================= */
+
+.slide-card {
+  background: var(--slide-surface-white);
+  border: 2px solid var(--slide-border-default);
+  border-radius: var(--slide-radius-md);
+  padding: var(--slide-space-4) var(--slide-space-4) var(--slide-space-5);
+  box-shadow: var(--slide-shadow-card);
+}
+
+.slide-card--elevated {
+  box-shadow: var(--slide-shadow-elevated);
+}
+
+.slide-card--borderless {
+  border: none;
+  background: var(--slide-surface-white-solid);
+}
+
+/* Card with accent bar on top */
+.slide-card--accent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 6px;
+  border-radius: var(--slide-radius-md) var(--slide-radius-md) 8px 8px;
+  background: var(--color-accent);
+  opacity: 0.9;
+}
+
+/* =========================================================================
+   OVERLAY GRADIENT PATTERNS
+   =========================================================================
+   Standardized gradient overlays for image backgrounds.
+   ========================================================================= */
+
+/* Bottom gradient (title slides - enhances readability at bottom) */
+.slide-overlay-bottom {
+  background: linear-gradient(
+    to top,
+    var(--slide-overlay-soft) 0%,
+    transparent 60%
+  );
+}
+
+/* Top gradient (universal title slides - enhances readability at top) */
+.slide-overlay-top {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.35) 0%,
+    rgba(0, 0, 0, 0.25) 30%,
+    rgba(0, 0, 0, 0.1) 65%,
+    transparent 100%
+  );
+}
+
+/* Full gradient for transparent title cards */
+.slide-overlay-full {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 42%,
+    var(--slide-overlay-strong) 100%
+  );
+}
+
+/* =========================================================================
+   STEP INDICATOR PATTERN
+   =========================================================================
+   Numbered circles for process, timeline, cycle slides.
+   ========================================================================= */
+
+.slide-step-indicator {
+  width: var(--slide-step-size);
+  height: var(--slide-step-size);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--slide-bg-lime, #e2fe52);
+  color: var(--color-text, #0b0b0b);
+  font-family: var(--font-heading);
+  font-size: var(--slide-step-font);
+  font-weight: var(--heading-weight, 400);
+  line-height: 1;
+  border-radius: var(--slide-radius-full);
+  box-shadow: var(--slide-shadow-md);
+}
+
+/* On lime background, invert colors */
+.slide-bg-lime .slide-step-indicator {
+  background: var(--color-accent, #375c5d);
+  color: #fff;
+}
+
+/* Size variants */
+.slide-step-indicator--sm {
+  width: var(--slide-step-size-sm);
+  height: var(--slide-step-size-sm);
+  font-size: var(--slide-text-md);
+}
+
+.slide-step-indicator--lg {
+  width: var(--slide-step-size-lg);
+  height: var(--slide-step-size-lg);
+  font-size: var(--slide-text-xl);
+}
+
+/* =========================================================================
+   TRACK LINE PATTERN
+   =========================================================================
+   Horizontal/vertical lines connecting elements (timeline).
+   ========================================================================= */
+
+.slide-track {
+  background: var(--slide-track-color);
+  border-radius: var(--slide-radius-full);
+}
+
+.slide-track--horizontal {
+  height: var(--slide-track-height);
+  width: 100%;
+}
+
+.slide-track--vertical {
+  width: var(--slide-track-height);
+  height: 100%;
+}
+
+/* Lighter track for lime backgrounds */
+.slide-bg-lime .slide-track {
+  background: var(--slide-border-light);
+}
+
+/* =========================================================================
+   CONNECTOR LINE PATTERN
+   =========================================================================
+   Thin lines connecting markers to cards.
+   ========================================================================= */
+
+.slide-connector {
+  width: var(--slide-connector-width);
+  background: var(--slide-connector-color);
+  border-radius: var(--slide-radius-full);
+}
+
+.slide-bg-lime .slide-connector {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================================================
+   TEXT STYLES
+   =========================================================================
+   Common text styling patterns.
+   ========================================================================= */
+
+/* Muted body text */
+.slide-text-muted {
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+}
+
+/* Light text for dark backgrounds */
+.slide-text-light {
+  color: var(--slide-text-light);
+}
+
+.slide-text-light-muted {
+  color: var(--slide-text-light-muted);
+}
+
+/* Date/label styling */
+.slide-label {
+  font-family: var(--font-caption, var(--font-body));
+  font-size: var(--slide-text-sm);
+  line-height: var(--slide-leading-tight);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.6));
+}
+
+/* =========================================================================
+   REDUCED MOTION SUPPORT
+   =========================================================================
+   Disable shadows/animations when user prefers reduced motion.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-card,
+  .slide-step-indicator {
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,803 @@
+/* Slide Library Styles */
+
+/* ============================================================
+   SLIDE LIBRARY - HEADER & FILTERS
+   ============================================================ */
+
+/* Slide library (Insert slide modal tab) */
+.ps-lib-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  margin-bottom: var(--ps-space-3);
+}
+
+.ps-lib-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  flex-wrap: wrap;
+}
+
+.form-input.ps-lib-search {
+  min-width: min(280px, 100%);
+  height: 36px;
+  flex: 1;
+}
+
+/* Slide type filters */
+.ps-lib-type-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.ps-lib-type-filter {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-full);
+  cursor: pointer;
+  color: hsl(var(--app-text-secondary));
+  transition: all var(--ps-transition-fast);
+  white-space: nowrap;
+}
+
+.ps-lib-type-filter:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+  color: hsl(var(--app-text-primary));
+}
+
+.ps-lib-type-filter.is-active {
+  background: hsl(var(--app-accent-soft));
+  border-color: hsl(var(--app-accent-primary) / 0.4);
+  color: hsl(var(--app-accent-text));
+}
+
+.ps-lib-type-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 600;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-full);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.ps-lib-type-filter.is-active .ps-lib-type-filter-count {
+  background: hsl(var(--app-accent-primary) / 0.15);
+  color: hsl(var(--app-accent-text));
+}
+
+/* Separator between type filters and tag filters */
+.ps-lib-filter-sep {
+  width: 1px;
+  height: 20px;
+  background: hsl(var(--app-border-default));
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Tag pill filters - slightly different styling */
+.ps-lib-type-filter.ps-lib-tag-pill {
+  border-style: dashed;
+}
+
+.ps-lib-type-filter.ps-lib-tag-pill.is-active {
+  border-style: solid;
+}
+
+/* ============================================================
+   SLIDE LIBRARY - CARD GRID
+   ============================================================ */
+
+.ps-lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--ps-space-3);
+}
+
+.ps-lib-card {
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--ps-transition-fast), box-shadow var(--ps-transition-fast);
+  /* Enable container queries for dynamic thumb scaling */
+  container-type: inline-size;
+}
+
+.ps-lib-card:hover {
+  border-color: hsl(var(--app-border-strong));
+}
+
+.ps-lib-card.is-favorite {
+  border-color: hsl(var(--app-accent-primary) / 0.5);
+}
+
+/* Thumbnail wrapper - contains thumb and overlay */
+.ps-lib-thumb-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: hsl(var(--app-bg-elevated));
+}
+
+/* Thumbnail inside library cards - fills wrapper completely */
+.ps-lib-thumb.thumb {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  border: none;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: unset;
+  overflow: hidden;
+}
+
+/* The slide inside - scale dynamically based on container */
+.ps-lib-thumb.thumb .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform: scale(var(--thumb-scale, 0.15));
+  transform-origin: top left;
+}
+
+/* Dynamic scale based on card width using container queries.
+   Breakpoints offset by -8px so slide slightly overflows (clipped) rather than underflows.
+   Scale 0.01 = 16px of slide width, so max overflow is ~8px. */
+@container (min-width: 216px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.14; } }
+@container (min-width: 232px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.15; } }
+@container (min-width: 248px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.16; } }
+@container (min-width: 264px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.17; } }
+@container (min-width: 280px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.18; } }
+@container (min-width: 296px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.19; } }
+@container (min-width: 312px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.20; } }
+@container (min-width: 328px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.21; } }
+@container (min-width: 344px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.22; } }
+@container (min-width: 360px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.23; } }
+@container (min-width: 376px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.24; } }
+@container (min-width: 392px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.25; } }
+@container (min-width: 408px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.26; } }
+@container (min-width: 424px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.27; } }
+@container (min-width: 440px) { .ps-lib-thumb.thumb .slide { --thumb-scale: 0.28; } }
+
+/* Overlay for buttons on thumbnail */
+.ps-lib-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--ps-transition-fast);
+}
+
+.ps-lib-card:hover .ps-lib-thumb-overlay,
+.ps-lib-card:focus-within .ps-lib-thumb-overlay {
+  opacity: 1;
+}
+
+/* Always show overlay on touch devices */
+@media (hover: none) {
+  .ps-lib-thumb-overlay {
+    opacity: 1;
+  }
+}
+
+/* Always show star if favorited */
+.ps-lib-thumb-overlay:has(.ps-lib-fav-btn.is-on) {
+  opacity: 1;
+}
+
+/* Overlay buttons base style */
+.ps-lib-overlay-btn {
+  appearance: none;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-overlay) / 0.9);
+  color: hsl(var(--app-text-secondary));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.15);
+  transition: all var(--ps-transition-fast);
+}
+
+.ps-lib-overlay-btn:hover {
+  background: hsl(var(--app-bg-overlay));
+  color: hsl(var(--app-text-primary));
+  transform: scale(1.05);
+}
+
+.ps-lib-overlay-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+}
+
+/* Favorite button - top right */
+.ps-lib-fav-btn {
+  order: 2;
+}
+
+.ps-lib-fav-btn.is-on {
+  background: hsl(var(--app-accent-primary));
+  color: white;
+}
+
+.ps-lib-fav-btn.is-on:hover {
+  background: hsl(var(--app-accent-primary));
+  filter: brightness(1.1);
+}
+
+/* More button - bottom right */
+.ps-lib-more-dropdown {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  pointer-events: auto;
+}
+
+.ps-lib-more-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ps-lib-more-dropdown .dropdown-menu {
+  position: fixed;
+  min-width: 180px;
+  z-index: 100;
+}
+
+/* Card content area - row with meta and action button */
+.ps-lib-card-content {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.ps-lib-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ps-lib-name {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-lib-sub {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action button on the right */
+.ps-lib-action-btn.btn.is-compact {
+  flex-shrink: 0;
+}
+
+.ps-lib-empty {
+  padding: var(--ps-space-4) 0;
+  text-align: center;
+}
+
+/* Clickable thumbnail hover effect */
+.ps-lib-thumb-wrap:hover .ps-lib-thumb.thumb {
+  filter: brightness(1.02);
+}
+
+/* ============================================================
+   SLIDE LIBRARY - CARD DESCRIPTION & TAGS
+   ============================================================ */
+
+/* Card description */
+.ps-lib-description {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* Card tags */
+.ps-lib-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ps-lib-tag {
+  padding: 1px 6px;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-sm);
+  font-size: 0.625rem;
+  color: hsl(var(--app-text-tertiary));
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-lib-tag::before {
+  content: '#';
+  opacity: 0.6;
+}
+
+.ps-lib-tag-more {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-secondary));
+}
+
+.ps-lib-tag-more::before {
+  content: '';
+}
+
+/* ============================================================
+   SLIDE LIBRARY - LIGHTBOX PREVIEW
+   ============================================================ */
+
+.modal.ps-modal.ps-lib-lightbox-modal {
+  width: min(1600px, 96vw);
+  height: 92vh;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal.ps-modal.ps-lib-lightbox-modal .ps-modal-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.modal.ps-modal.ps-lib-lightbox-modal .ps-modal-header h2 {
+  margin: 0;
+  font-size: var(--ps-text-lg);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-lib-lightbox-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--ps-space-3);
+  padding-top: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-lib-lightbox-stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  flex: 1;
+  min-height: 0;
+}
+
+.thumb.ps-lib-lightbox-thumb {
+  border: none;
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-lg);
+  overflow: hidden;
+  /* Dimensions set dynamically via JS */
+}
+
+.thumb.ps-lib-lightbox-thumb .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+}
+
+/* ============================================================
+   SLIDE LIBRARY - USE SLIDE MODAL OPTIONS
+   ============================================================ */
+
+.ps-lib-use-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-4);
+}
+
+.ps-lib-use-option {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--ps-transition-fast);
+  color: inherit;
+  font: inherit;
+  flex: 1 1 180px;
+  max-width: 240px;
+}
+
+.ps-lib-use-option:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.ps-lib-use-option:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+}
+
+.ps-lib-use-option-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  color: hsl(var(--app-text-secondary));
+}
+
+.ps-lib-use-option-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ps-lib-use-option-text {
+  min-width: 0;
+  text-align: center;
+}
+
+.ps-lib-use-option-title {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  line-height: 1.3;
+}
+
+.ps-lib-use-option-desc {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   SLIDE LIBRARY - LIGHTBOX METADATA SECTION
+   ============================================================ */
+
+.ps-lib-lightbox-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
+  margin-top: var(--ps-space-3);
+  flex-shrink: 0;
+}
+
+.ps-lib-lightbox-meta .field {
+  margin: 0;
+}
+
+.ps-lib-lightbox-meta .field-label {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: 4px;
+}
+
+.ps-lib-lightbox-meta .form-input {
+  font-size: var(--ps-text-sm);
+}
+
+.ps-lib-lightbox-meta textarea.form-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ============================================================
+   SLIDE LIBRARY - MULTI-SELECT
+   ============================================================ */
+
+/* Selection checkbox on cards */
+.ps-lib-select-checkbox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: hsl(var(--app-bg-overlay) / 0.9);
+  border-radius: var(--ps-radius-sm);
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.15);
+  transition: all var(--ps-transition-fast);
+  order: 0;
+}
+
+.ps-lib-select-checkbox:hover {
+  background: hsl(var(--app-bg-overlay));
+  transform: scale(1.05);
+}
+
+.ps-lib-select-checkbox.is-checked {
+  background: hsl(var(--app-accent-primary));
+}
+
+.ps-lib-select-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: hsl(var(--app-accent-primary));
+}
+
+/* Selected card state */
+.ps-lib-card.is-selected {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+}
+
+/* Always show checkbox on selected cards */
+.ps-lib-card.is-selected .ps-lib-thumb-overlay {
+  opacity: 1;
+}
+
+/* Selection bar at bottom */
+.ps-lib-selection-bar {
+  position: sticky;
+  bottom: var(--ps-space-3);
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  margin: var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--app-shadow-lg), 0 0 0 1px hsl(var(--app-border-subtle));
+  z-index: 10;
+}
+
+.ps-lib-selection-bar.is-visible {
+  display: flex;
+}
+
+.ps-lib-selection-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.ps-lib-selection-count {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-accent-soft));
+  padding: 4px 10px;
+  border-radius: var(--ps-radius-full);
+}
+
+.ps-lib-selection-clear-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ps-radius-full);
+  font-size: 16px;
+  line-height: 1;
+  color: hsl(var(--app-text-tertiary));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--ps-transition-fast);
+}
+
+.ps-lib-selection-clear-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.ps-lib-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+/* Danger text style for trash button */
+.btn.is-danger-text {
+  color: hsl(var(--app-danger));
+}
+
+.btn.is-danger-text:hover {
+  background: hsl(var(--app-danger) / 0.1);
+  border-color: hsl(var(--app-danger) / 0.3);
+}
+
+/* Header actions container */
+.ps-modal-header-actions {
+  display: flex;
+  gap: var(--ps-space-2);
+  align-items: center;
+}
+
+/* ============================================================
+   SLIDE LIBRARY - EDIT MODAL
+   ============================================================ */
+
+.modal.ps-modal.ps-lib-edit-modal {
+  width: min(1200px, 96vw);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-lib-edit-body {
+  flex: 1;
+  min-height: 0;
+  padding: var(--ps-space-4);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ps-space-6);
+  overflow: hidden;
+}
+
+.ps-lib-edit-form {
+  grid-column: 1;
+  overflow-y: auto;
+  padding-right: var(--ps-space-2);
+}
+
+.ps-lib-edit-form .stack {
+  gap: var(--ps-space-4);
+}
+
+.ps-lib-edit-preview {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ps-lib-edit-field .field-label {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  margin-bottom: var(--ps-space-1);
+}
+
+.ps-lib-edit-field .form-input {
+  width: 100%;
+}
+
+.ps-lib-edit-field textarea.form-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.ps-lib-edit-preview .field-label {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  margin-bottom: var(--ps-space-2);
+  flex-shrink: 0;
+}
+
+.thumb.ps-lib-edit-preview-thumb {
+  flex: 1;
+  min-height: 200px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-3);
+  overflow: hidden;
+}
+
+.thumb.ps-lib-edit-preview-thumb .slide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1600px;
+  height: 900px;
+  transform-origin: center center;
+  transform: translate(-50%, -50%) scale(var(--thumb-scale, 0.35));
+}
+
+.ps-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+  flex-shrink: 0;
+}
+
+.ps-modal-footer .modal-status {
+  margin-right: auto;
+  color: hsl(var(--app-text-secondary));
+}
+
+/* Responsive: stack columns on smaller screens */
+@media (max-width: 800px) {
+  .ps-lib-edit-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .ps-lib-edit-preview {
+    order: -1;
+    max-height: 300px;
+  }
+}

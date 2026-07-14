@@ -1,0 +1,48 @@
+{
+  "name": "deckyard",
+  "version": "1.0.0",
+  "description": "Self-hosted presentation engine for humans and AI agents (MCP-native)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaapstronks/deckyard.git"
+  },
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'",
+    "audit": "node scripts/audit-codebase.js",
+    "db:migrate": "node server/db/migrate.js up",
+    "db:migrate:down": "node server/db/migrate.js down",
+    "db:migrate:status": "node server/db/migrate.js status",
+    "db:migrate:data": "node scripts/migrate-data-to-postgres.js",
+    "i18n:extract": "node scripts/i18n-extract.js",
+    "i18n:merge": "node scripts/i18n-merge.js",
+    "i18n:sync": "node scripts/i18n-sync.js",
+    "i18n:validate": "node scripts/i18n-validate.js",
+    "start": "node server/server.js",
+    "seed:bg-demo": "node scripts/seed-bg-contrast-demo.js",
+    "mcp": "node server/mcp/index.js",
+    "postinstall": "node scripts/vendor-lucide.js && node scripts/download-google-fonts.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0",
+    "bullmq": "^5.30.0",
+    "dompurify": "^3.2.2",
+    "feed": "^5.2.0",
+    "ioredis": "^5.4.1",
+    "jsdom": "^25.0.0",
+    "jszip": "^3.10.1",
+    "kysely": "^0.27.5",
+    "lucide-static": "^0.469.0",
+    "mammoth": "^1.11.0",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.13.1",
+    "pptxgenjs": "^3.12.0",
+    "puppeteer-core": "^24.0.0",
+    "sharp": "^0.34.1",
+    "yaml": "^2.8.2",
+    "zod": "^3.24.1"
+  }
+}

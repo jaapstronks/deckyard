@@ -1,0 +1,89 @@
+/* Chapter title slide (same gradient family as quote, but deterministic "random-ish" control points per slide) */
+.slide-chapter-title {
+  color: var(--t-chapter-text-color, #fff);
+  --g1x: 58%;
+  --g1y: 14%;
+  --g2x: 90%;
+  --g2y: 90%;
+  --g3x: 12%;
+  --g3y: 90%;
+  position: relative;
+  overflow: hidden;
+  /* Fallback: when gradient layer fails to render (e.g. some print/export paths),
+     keep contrast by using the theme’s dark base background. */
+  background: var(--t-slide-bg-dark, var(--color-background));
+}
+.slide-chapter-title::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  background: var(--t-slide-gradient-bg, transparent);
+  opacity: var(--t-gradient-enabled, 1);
+  background-repeat: no-repeat;
+  background-size: 300% 300%;
+  background-position: 45% 35%;
+  will-change: background-position;
+  animation: sb-gradient-pan 100s ease-in-out infinite alternate-reverse;
+}
+.slide-chapter-title .slide-inner {
+  position: relative;
+  z-index: 1;
+  justify-content: center; /* vertical center */
+  align-items: flex-start; /* left align */
+}
+.slide-chapter-title .title {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-title);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  max-width: 34ch;
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+}
+
+@keyframes sb-gradient-pan {
+  0% {
+    background-position: 45% 35%;
+  }
+  25% {
+    background-position: 62% 48%;
+  }
+  50% {
+    background-position: 55% 72%;
+  }
+  75% {
+    background-position: 35% 56%;
+  }
+  100% {
+    background-position: 45% 35%;
+  }
+}
+
+@keyframes sb-caret-blink {
+  0%,
+  49% {
+    opacity: 0.85;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-quote::before,
+  .slide-chapter-title::before,
+  .slide-icon-card-grid::before {
+    animation: none;
+  }
+}
+
+@media print {
+  /* Print/export: avoid animated gradients (and Safari print oddities). */
+  .slide-chapter-title::before {
+    animation: none !important;
+  }
+}
+
+

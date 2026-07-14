@@ -1,0 +1,101 @@
+/**
+ * POST /api/presentations/import/markdown
+ *
+ * Imports a markdown deck (plain text, no AI) into a new presentation.
+ * Follows the same pattern as import-json.js.
+ */
+
+import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { json, serveJson } from '../../../utils/http.js';
+import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
+
+export async function handlePresentationsImportMarkdown({
+  repoRoot,
+  req,
+  res,
+  authedUser,
+} = {}) {
+  try {
+    console.log('[import-markdown] Starting import...');
+    const body = await json(req);
+
+    const markdown = body?.markdown;
+    if (!markdown || typeof markdown !== 'string') {
+      serveJson(res, 400, { error: 'Missing required field: markdown (string)' });
+      return true;
+    }
+
+    const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
+    const theme = typeof body?.theme === 'string' ? body.theme.trim() : undefined;
+
+    console.log('[import-markdown] Language:', lang);
+    console.log('[import-markdown] Markdown length:', markdown.length);
+
+    // Convert markdown to deck format
+    const { deck, report } = await convertMarkdownText(markdown, { lang, theme });
+
+    if (!deck) {
+      console.error('[import-markdown] Conversion failed:', report.errors);
+      serveJson(res, 422, {
+        error: 'Markdown conversion failed',
+        report,
+      });
+      return true;
+    }
+
+    console.log('[import-markdown] Converted:', report.slidesConverted, 'slides');
+
+    // Normalize through deckToPresentationParts (same as JSON import)
+    const parts = deckToPresentationParts(deck);
+    console.log('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
+
+    // Create presentation
+    const created = await createPresentation(repoRoot, {
+      title: parts.title,
+      theme: parts.theme,
+      lang,
+      ownerEmail: authedUser?.email || null,
+    });
+    console.log('[import-markdown] Created presentation:', created.id);
+
+    // Build i18n structure (same as JSON import)
+    const i18n = {
+      dominant: lang,
+      active: lang,
+      versions: {
+        [lang]: {
+          title: parts.title,
+          slides: parts.slides,
+        },
+      },
+    };
+
+    const updated = await updatePresentation(
+      repoRoot,
+      created.id,
+      {
+        title: parts.title,
+        theme: parts.theme,
+        lang,
+        slides: parts.slides,
+        i18n,
+      },
+      {
+        actorEmail: authedUser?.email || null,
+      }
+    );
+    console.log('[import-markdown] Updated presentation successfully');
+
+    serveJson(res, 201, {
+      ...updated,
+      _importReport: report,
+    });
+    return true;
+  } catch (err) {
+    console.error('[import-markdown] Error:', err.message);
+    console.error('[import-markdown] Stack:', err.stack);
+    serveJson(res, 500, { error: err.message, stack: err.stack });
+    return true;
+  }
+}

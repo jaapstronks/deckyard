@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "udostępniono w przestrzeni roboczej",
+  "notesJoin.copyLink": "Kopiuj link",
+  "notesJoin.copyPrompt": "Skopiuj ten link:",
+  "notesJoin.help": "Zeskanuj kod QR telefonem, aby otworzyć asystenta notatek.",
+  "notesJoin.open": "Otwórz asystenta",
+  "notesJoin.title": "Asystent notatek",
+  "presenter.edit": "Edytuj",
+  "presenter.fullscreen": "Pełny ekran",
+  "presenter.help": "←/→ lub Spacja · F pełny ekran · Esc edycja/wyjście"
+}

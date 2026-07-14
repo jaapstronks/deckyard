@@ -1,0 +1,445 @@
+/* Presenter layout (also used in standalone export) */
+.presenter-shell {
+  --presenter-progress-height: 56px;
+  position: relative; /* containing block for the fullscreen chrome overlay */
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: var(--presenter-topbar-height) 1fr var(--presenter-progress-height);
+  background: hsl(var(--app-bg-base));
+}
+
+/* Presenter controls should read as "light grey buttons" like Lovable. */
+.presenter-shell .btn-secondary {
+  background: hsl(var(--app-bg-sunken));
+  border-color: hsl(var(--app-border-default));
+  box-shadow: none;
+}
+.presenter-shell .btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+/* Fullscreen presenter: hide the top bar AND collapse the progress row so the
+   deck fills a true 16:9 (no pillarbox bars). The progress bar becomes an
+   auto-hiding bottom overlay (see .is-chrome-active below). */
+html:fullscreen,
+html.is-fullscreen {
+  --presenter-topbar-height: 0px;
+}
+html:fullscreen .presenter-shell,
+html.is-fullscreen .presenter-shell {
+  --presenter-progress-height: 0px;
+}
+html:fullscreen .presenter-topbar,
+html.is-fullscreen .presenter-topbar {
+  visibility: hidden; /* avoid reflow that can shift grid auto-placement */
+  pointer-events: none;
+}
+.presenter-shell:fullscreen {
+  --presenter-topbar-height: 0px;
+  --presenter-progress-height: 0px;
+  height: 100%;
+}
+.presenter-shell:fullscreen .presenter-topbar {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Fullscreen: the progress bar floats over the bottom of the deck and only
+   appears on pointer/keyboard activity (JS toggles .is-chrome-active). */
+html.is-fullscreen .presenter-progress,
+.presenter-shell:fullscreen .presenter-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  border-top: none;
+  opacity: 0;
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+html.is-fullscreen .presenter-shell.is-chrome-active .presenter-progress,
+.presenter-shell:fullscreen.is-chrome-active .presenter-progress {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Hide the cursor along with the chrome when idle in fullscreen. */
+html.is-fullscreen .presenter-shell:not(.is-chrome-active),
+.presenter-shell:fullscreen:not(.is-chrome-active) {
+  cursor: none;
+}
+
+/* Lock grid placement so hiding the topbar can't collapse/move the deck. */
+.presenter-topbar {
+  grid-row: 1;
+  grid-column: 1;
+}
+.deck {
+  grid-row: 2;
+  grid-column: 1;
+}
+.presenter-progress {
+  grid-row: 3;
+  grid-column: 1;
+}
+
+.presenter-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  backdrop-filter: blur(10px);
+  /* Ensure popovers can overlay the deck (grid/transform stacking contexts). */
+  position: relative;
+  z-index: 50;
+}
+.presenter-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.presenter-tools {
+  position: relative; /* anchor for absolute popover */
+}
+
+.presenter-tools-popover {
+  position: absolute;
+  top: calc(100% + 0.5rem); /* 8px below button */
+  right: 0; /* align to right edge of trigger */
+  min-width: 260px;
+  background: hsl(var(--app-bg-overlay));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 0.5rem;
+  box-shadow: var(--app-shadow-xl);
+  padding: 0.75rem;
+  z-index: 200;
+
+  /* Hidden by default */
+  display: none;
+}
+.presenter-tools.is-open .presenter-tools-popover {
+  display: block;
+}
+
+.presenter-tools-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.presenter-tools-actions .presenter-tools-item {
+  flex: 1;
+  margin-bottom: 0;
+  justify-content: center;
+}
+.presenter-tools-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  margin-bottom: 0.5rem;
+  padding: 0.25rem 0.5rem;
+}
+.presenter-tools-hint {
+  font-size: 0.6875rem;
+  color: hsl(var(--app-text-secondary));
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.presenter-tools-popover .presenter-tools-item {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  border: none;
+  color: hsl(var(--app-text-secondary));
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.presenter-tools-popover .presenter-tools-item:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.presenter-tools-popover .presenter-tools-item:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
+}
+
+.presenter-followcodes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 0.375rem;
+  margin-top: 0.5rem;
+}
+.presenter-followcodes-text {
+  font-size: 0.8125rem;
+  color: hsl(var(--app-text-secondary));
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.presenter-lang-seg {
+  width: 120px;
+}
+.presenter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: hsl(var(--app-text-secondary));
+  user-select: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+.presenter-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: hsl(var(--app-accent-primary));
+}
+.presenter-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: hsl(var(--app-text-primary));
+}
+.presenter-help {
+  font-size: 14px;
+  color: hsl(var(--app-text-secondary));
+  margin: 0;
+}
+
+/* Highlighter toolbar buttons */
+.presenter-highlighter-btn.is-active {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-accent, 0 0% 100%));
+}
+.presenter-highlighter-btn.is-active:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover, var(--app-accent-primary)));
+  border-color: hsl(var(--app-accent-primary-hover, var(--app-accent-primary)));
+}
+.deck {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--app-bg-base));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Presenter slide stage: keep a fixed 16:9 slide area and letterbox on ultrawide. */
+.deck-stage {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  /* Fit the available presenter viewport area (shell is 100vh, progress is 56px). */
+  width: min(
+    100vw,
+    calc((100dvh - var(--presenter-topbar-height) - 56px) * 16 / 9)
+  );
+  height: min(
+    calc(100dvh - var(--presenter-topbar-height) - 56px),
+    calc(100vw * 9 / 16)
+  );
+}
+
+/* Presenter scaling: fixed design stage (1600×900) scaled to fit `.deck-stage`. */
+.deck-stage .deck-stage-inner {
+  position: absolute;
+  width: 1600px;
+  height: 900px;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+  max-width: none;
+  max-height: none;
+}
+.deck-stage {
+  /* Presenter-only slide transition controls (set by presenter view).
+     Defaults are conservative; the deck can opt into motion. */
+  /* Slightly longer than typical UI micro-interactions so it's noticeable on a big screen. */
+  --sb-slide-trans-dur: 420ms;
+  --sb-slide-trans-ease: ease-in-out;
+}
+.deck-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  /* Default to "none" behavior unless enabled via data attribute. */
+  transform: none;
+  transition: none;
+  z-index: 0;
+}
+.deck-slide.is-active {
+  opacity: 1;
+  transform: none;
+  z-index: 1;
+}
+.deck-stage[data-slide-transition='fade'] .deck-slide {
+  transition:
+    opacity var(--sb-slide-trans-dur) var(--sb-slide-trans-ease);
+  will-change: opacity;
+}
+
+/* Slide (subtle): ease slides in/out with a small translate so it feels snappy
+   without being a huge motion jump on big screens. */
+.deck-stage[data-slide-transition='slide'] .deck-slide {
+  transition:
+    transform var(--sb-slide-trans-dur) var(--sb-slide-trans-ease),
+    opacity var(--sb-slide-trans-dur) var(--sb-slide-trans-ease);
+  will-change: transform, opacity;
+}
+.deck-stage[data-slide-transition='slide'] .deck-slide.is-before {
+  transform: translateX(-8%);
+}
+.deck-stage[data-slide-transition='slide'] .deck-slide.is-after {
+  transform: translateX(8%);
+}
+.deck-stage[data-slide-transition='slide'] .deck-slide.is-active {
+  transform: translateX(0);
+}
+
+/* Push (strong): offscreen stack; current slide is centered, previous/next are
+   positioned fully off-canvas. This yields a "carousel" feel. */
+.deck-stage[data-slide-transition='push'] .deck-slide {
+  transition:
+    transform var(--sb-slide-trans-dur) var(--sb-slide-trans-ease),
+    opacity var(--sb-slide-trans-dur) var(--sb-slide-trans-ease);
+  will-change: transform, opacity;
+}
+.deck-stage[data-slide-transition='push'] .deck-slide.is-before {
+  transform: translateX(-105%);
+}
+.deck-stage[data-slide-transition='push'] .deck-slide.is-after {
+  transform: translateX(105%);
+}
+.deck-stage[data-slide-transition='push'] .deck-slide.is-active {
+  transform: translateX(0);
+}
+
+/* 3D (Cube): an intentionally "over the top" transition.
+   We apply perspective on the stage so slide faces can rotate in 3D. */
+.deck-stage[data-slide-transition='cube'] .deck-stage-inner {
+  /* Bigger perspective reduces distortion while keeping a clear 3D feel. */
+  perspective: 2400px;
+  perspective-origin: 50% 50%;
+}
+.deck-stage[data-slide-transition='cube'] .deck-slide {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transform-origin: 50% 50%;
+}
+
+/* Hard-hide far slides. This avoids any "tiny ghost slide" artifacts during 3D transforms. */
+.deck-stage[data-slide-transition='cube'] .deck-slide.is-far {
+  display: none !important;
+}
+
+/* Idle: only the active slide is visible. Neighbor slides are positioned on cube sides
+   but kept invisible until the transition starts (prevents edge slivers). */
+.deck-stage[data-slide-transition='cube']:not(.is-cube-animating) .deck-slide {
+  transition: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+.deck-stage[data-slide-transition='cube']:not(.is-cube-animating) .deck-slide.is-active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: rotateY(0deg) translateX(0);
+}
+.deck-stage[data-slide-transition='cube']:not(.is-cube-animating) .deck-slide.is-next {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform-origin: 0% 50%;
+  /* Park it just "outside" the right edge as a cube side (kept hidden until anim). */
+  transform: translateX(100%) rotateY(90deg);
+}
+.deck-stage[data-slide-transition='cube']:not(.is-cube-animating) .deck-slide.is-prev {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform-origin: 100% 50%;
+  transform: translateX(-100%) rotateY(-90deg);
+}
+
+/* Animating: transition between faces.
+   We do a real "cube" rotate: current face rotates away while the neighbor rotates in. */
+.deck-stage[data-slide-transition='cube'].is-cube-animating .deck-slide {
+  /* Default: keep everything hidden and inert; we opt-in only the two faces involved. */
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+  will-change: auto;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating .deck-slide.is-active {
+  opacity: 1;
+  visibility: visible;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-dir='next'] .deck-slide.is-next,
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-dir='prev'] .deck-slide.is-prev {
+  opacity: 1;
+  visibility: visible;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating .deck-slide.is-active,
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-dir='next'] .deck-slide.is-next,
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-dir='prev'] .deck-slide.is-prev {
+  transition:
+    transform var(--sb-slide-trans-dur) var(--sb-slide-trans-ease),
+    opacity var(--sb-slide-trans-dur) var(--sb-slide-trans-ease);
+  will-change: transform, opacity;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='prep'] .deck-slide.is-active {
+  transform: rotateY(0deg) translateX(0);
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='prep'][data-cube-dir='next'] .deck-slide.is-next {
+  transform-origin: 0% 50%;
+  transform: translateX(100%) rotateY(90deg);
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='prep'][data-cube-dir='prev'] .deck-slide.is-prev {
+  transform-origin: 100% 50%;
+  transform: translateX(-100%) rotateY(-90deg);
+}
+
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='go'][data-cube-dir='next'] .deck-slide.is-active {
+  transform-origin: 100% 50%;
+  transform: translateX(-100%) rotateY(-90deg);
+  opacity: 0.98;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='go'][data-cube-dir='next'] .deck-slide.is-next {
+  transform-origin: 0% 50%;
+  transform: rotateY(0deg) translateX(0);
+  opacity: 1;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='go'][data-cube-dir='prev'] .deck-slide.is-active {
+  transform-origin: 0% 50%;
+  transform: translateX(100%) rotateY(90deg);
+  opacity: 0.98;
+}
+.deck-stage[data-slide-transition='cube'].is-cube-animating[data-cube-phase='go'][data-cube-dir='prev'] .deck-slide.is-prev {
+  transform-origin: 100% 50%;
+  transform: rotateY(0deg) translateX(0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-slide {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+

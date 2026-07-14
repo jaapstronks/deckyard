@@ -1,0 +1,26 @@
+/* Presenter edge hint (e.g., "end of deck") */
+.presenter-edge-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-overlay));
+  color: hsl(var(--app-text-primary));
+  font-size: 14px;
+  line-height: 1.15;
+  max-width: min(92vw, 70ch);
+  text-align: center;
+  box-shadow: var(--app-shadow-md);
+}
+.presenter-edge-hint.is-visible {
+  opacity: 1;
+}
+
+

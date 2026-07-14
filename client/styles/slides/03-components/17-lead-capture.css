@@ -1,0 +1,284 @@
+/* Lead Capture slide - centered card form layout */
+
+.slide-lead-capture {
+  --interaction-surface: rgba(255, 255, 255, 0.94);
+  --interaction-surface-2: rgba(255, 255, 255, 0.70);
+  --interaction-border: rgba(0, 0, 0, 0.10);
+  --interaction-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --interaction-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+@supports (color: color-mix(in srgb, white 50%, black)) {
+  .slide-lead-capture {
+    --interaction-surface: color-mix(in srgb, white 94%, var(--color-background));
+    --interaction-surface-2: color-mix(in srgb, white 76%, var(--color-background));
+    --interaction-border: color-mix(in srgb, currentColor 16%, transparent);
+  }
+}
+
+.slide-lead-capture .slide-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+}
+
+.slide-lead-capture .lead-capture-container {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Form state wrapper */
+.slide-lead-capture .lead-capture-form-state {
+  background: var(--interaction-surface);
+  border-radius: var(--t-radius-lg, 24px);
+  padding: 48px 56px;
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow);
+}
+
+/* Header section */
+.slide-lead-capture .lead-capture-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.slide-lead-capture .lead-capture-title {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  font-size: 52px;
+  line-height: 1.1;
+  margin: 0 0 16px;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.slide-lead-capture .lead-capture-description {
+  font-size: 24px;
+  line-height: 1.4;
+  color: var(--color-text);
+  opacity: 0.85;
+  max-width: 50ch;
+  margin: 0 auto;
+}
+
+.slide-lead-capture .lead-capture-description p {
+  margin: 0;
+}
+
+/* Form fields */
+.slide-lead-capture .lead-capture-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.slide-lead-capture .lead-capture-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-lead-capture .lead-capture-label {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  opacity: 0.9;
+}
+
+.slide-lead-capture .lead-capture-input {
+  font-family: inherit;
+  font-size: 22px;
+  padding: 18px 24px;
+  border: 2px solid var(--interaction-border);
+  border-radius: var(--t-radius, 16px);
+  background: var(--interaction-surface-2);
+  color: var(--color-text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slide-lead-capture .lead-capture-input::placeholder {
+  color: var(--color-text);
+  opacity: 0.4;
+}
+
+.slide-lead-capture .lead-capture-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px rgba(var(--color-accent-rgb, 59, 77, 219), 0.15);
+}
+
+/* Consent checkbox */
+.slide-lead-capture .lead-capture-consent {
+  margin-top: 8px;
+}
+
+.slide-lead-capture .lead-capture-consent-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  cursor: pointer;
+}
+
+.slide-lead-capture .lead-capture-consent-checkbox {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  margin-top: 3px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.slide-lead-capture .lead-capture-consent-text {
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--color-text);
+  opacity: 0.85;
+}
+
+.slide-lead-capture .lead-capture-privacy-link {
+  color: var(--color-accent, #3b4ddb);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.slide-lead-capture .lead-capture-privacy-link:hover {
+  opacity: 0.8;
+}
+
+/* Submit button */
+.slide-lead-capture .lead-capture-actions {
+  margin-top: 12px;
+}
+
+.slide-lead-capture .lead-capture-submit {
+  width: 100%;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 600;
+  padding: 20px 32px;
+  border: none;
+  border-radius: var(--t-radius, 16px);
+  background: var(--color-accent);
+  color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  box-shadow: var(--interaction-shadow-sm);
+}
+
+.slide-lead-capture .lead-capture-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.slide-lead-capture .lead-capture-submit:active {
+  transform: translateY(0);
+}
+
+.slide-lead-capture .lead-capture-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error message */
+.slide-lead-capture .lead-capture-error {
+  text-align: center;
+  font-size: 18px;
+  color: #c53030;
+  min-height: 1.5em;
+}
+
+.slide-lead-capture .lead-capture-error:empty {
+  display: none;
+}
+
+/* Cookie notice */
+.slide-lead-capture .lead-capture-cookie-notice {
+  text-align: center;
+  padding: 24px;
+  background: var(--interaction-surface-2);
+  border-radius: var(--t-radius, 16px);
+  border: 1px dashed var(--interaction-border);
+}
+
+.slide-lead-capture .lead-capture-cookie-notice p {
+  margin: 0;
+  font-size: 20px;
+  color: var(--color-text);
+  opacity: 0.7;
+}
+
+/* Thank you state */
+.slide-lead-capture .lead-capture-thankyou-state {
+  background: var(--interaction-surface);
+  border-radius: var(--t-radius-lg, 24px);
+  padding: 64px 56px;
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow);
+}
+
+.slide-lead-capture .lead-capture-thankyou {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.slide-lead-capture .lead-capture-thankyou-icon {
+  color: var(--color-accent);
+  width: 88px;
+  height: 88px;
+}
+
+.slide-lead-capture .lead-capture-thankyou-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.slide-lead-capture .lead-capture-thankyou-title {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  font-size: 56px;
+  line-height: 1.1;
+  margin: 0;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.slide-lead-capture .lead-capture-thankyou-message {
+  font-size: 26px;
+  line-height: 1.45;
+  color: var(--color-text);
+  opacity: 0.85;
+  max-width: 45ch;
+}
+
+.slide-lead-capture .lead-capture-thankyou-message p {
+  margin: 0;
+}
+
+/* Hidden state handling */
+.slide-lead-capture [hidden] {
+  display: none !important;
+}
+
+/* Form disabled state (when cookies not accepted) */
+.slide-lead-capture .lead-capture-form.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Submitting state */
+.slide-lead-capture .lead-capture-form.is-submitting .lead-capture-submit {
+  opacity: 0.7;
+  pointer-events: none;
+}

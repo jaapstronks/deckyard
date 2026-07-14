@@ -1,0 +1,1741 @@
+openapi: 3.0.3
+info:
+  title: Deckyard Public API
+  description: |
+    The Deckyard Public API allows you to programmatically create, manage, and export presentations.
+
+    ## Authentication
+
+    All API requests require authentication using an API key. Include your API key in the `Authorization` header:
+
+    ```
+    Authorization: Bearer dk_live_your_api_key_here
+    ```
+
+    You can create and manage API keys in your Deckyard settings.
+
+    ## Rate Limits
+
+    API requests are subject to rate limits based on your account tier:
+
+    | Tier | Requests/min | AI calls/day | Exports/day |
+    |------|-------------|--------------|-------------|
+    | Free | 60 | 10 | 50 |
+    | Pro | 300 | 100 | 500 |
+    | Enterprise | 1000 | Unlimited | Unlimited |
+
+    Rate limit information is included in response headers:
+    - `X-RateLimit-Limit`: Maximum requests allowed
+    - `X-RateLimit-Remaining`: Requests remaining
+    - `X-RateLimit-Reset`: Unix timestamp when the limit resets
+
+    ## Errors
+
+    The API uses standard HTTP status codes:
+    - `200` - Success
+    - `201` - Created
+    - `400` - Bad Request
+    - `401` - Unauthorized
+    - `403` - Forbidden
+    - `404` - Not Found
+    - `429` - Rate Limited
+    - `500` - Server Error
+
+  version: '1.0.0'
+  contact:
+    name: Deckyard Support
+    url: https://deckyard.com/support
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Presentations
+    description: Create, read, update, and delete presentations
+  - name: Slides
+    description: Slide-level operations within presentations
+  - name: Publishing
+    description: Publish and unpublish presentations
+  - name: Translation
+    description: AI-powered translation
+  - name: Slide Library
+    description: Access team slide library
+  - name: Exports
+    description: Export presentations in various formats
+  - name: AI
+    description: AI-powered content generation
+  - name: Resources
+    description: Themes, slide types, and other resources
+
+paths:
+  /presentations:
+    get:
+      tags:
+        - Presentations
+      summary: List presentations
+      description: Returns a paginated list of presentations accessible to the API key owner.
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of presentations to return (1-100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of presentations to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: starterKit
+          in: query
+          description: Filter to starter kit presentations only
+          schema:
+            type: string
+            enum: ['true']
+        - name: viewOnly
+          in: query
+          description: Filter to view-only presentations only
+          schema:
+            type: string
+            enum: ['true']
+      responses:
+        '200':
+          description: List of presentations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PresentationSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+    post:
+      tags:
+        - Presentations
+      summary: Create a presentation
+      description: Creates a new presentation with the specified properties.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Presentation title
+                  example: "Q1 Business Review"
+                description:
+                  type: string
+                  description: Presentation description
+                themeId:
+                  type: string
+                  description: Theme ID to use
+                  example: "default"
+                language:
+                  type: string
+                  enum: [en-GB, nl]
+                  description: Primary language
+                  default: en-GB
+                slides:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Slide'
+                  description: Initial slides
+      responses:
+        '201':
+          description: Presentation created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentation:
+                    $ref: '#/components/schemas/Presentation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /presentations/{id}:
+    get:
+      tags:
+        - Presentations
+      summary: Get a presentation
+      description: Returns a single presentation by ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Presentation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentation:
+                    $ref: '#/components/schemas/Presentation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Presentations
+      summary: Update a presentation
+      description: Updates an existing presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                themeId:
+                  type: string
+                slides:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Slide'
+      responses:
+        '200':
+          description: Presentation updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentation:
+                    $ref: '#/components/schemas/Presentation'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Presentations
+      summary: Delete a presentation
+      description: Moves a presentation to trash. Only the owner can delete.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Presentation deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/duplicate:
+    post:
+      tags:
+        - Presentations
+      summary: Duplicate a presentation
+      description: Creates a copy of an existing presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID to duplicate
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Presentation duplicated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentation:
+                    $ref: '#/components/schemas/Presentation'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/versions:
+    get:
+      tags:
+        - Presentations
+      summary: List presentation versions
+      description: Returns a list of version snapshots for a presentation, sorted by creation date (newest first).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                    created:
+                      type: string
+                      format: date-time
+                    createdBy:
+                      type: string
+                      nullable: true
+                    reason:
+                      type: string
+                      enum: [session_end, manual, restore, pre_restore, autosave, snapshot]
+                    label:
+                      type: string
+                    revision:
+                      type: integer
+                      nullable: true
+                    title:
+                      type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Presentations
+      summary: Create a manual version snapshot
+      description: Creates a labeled version snapshot of the current presentation state.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                label:
+                  type: string
+                  description: Optional label for the snapshot
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  version:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      created:
+                        type: string
+                        format: date-time
+                      createdBy:
+                        type: string
+                        nullable: true
+                      reason:
+                        type: string
+                      revision:
+                        type: integer
+                        nullable: true
+                      title:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/session-end:
+    post:
+      tags:
+        - Presentations
+      summary: Signal editing session end
+      description: |
+        Internal endpoint called by the editor when an editing session ends.
+        Creates a session-end snapshot if one hasn't been created recently (throttled to 60 seconds).
+        Used for reliable snapshot creation on tab close via sendBeacon API.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                beacon:
+                  type: boolean
+                  description: Indicates request is from sendBeacon (for logging)
+      responses:
+        '204':
+          description: Session end acknowledged (snapshot created or throttled)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/slides:
+    post:
+      tags:
+        - Slides
+      summary: Create a slide
+      description: Creates a new slide in the presentation at the specified position.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  description: Slide type (e.g., content-slide, title-slide)
+                content:
+                  type: object
+                  description: Slide content
+                notes:
+                  type: string
+                  description: Speaker notes
+                atIndex:
+                  type: integer
+                  description: Insert at this index (0-based)
+                afterSlideId:
+                  type: string
+                  description: Insert after this slide ID
+      responses:
+        '201':
+          description: Slide created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slide:
+                    $ref: '#/components/schemas/Slide'
+                  index:
+                    type: integer
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slideCount:
+                        type: integer
+                      revision:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/slides/{slideId}:
+    get:
+      tags:
+        - Slides
+      summary: Get a slide
+      description: Returns a single slide from a presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+        - name: slideId
+          in: path
+          required: true
+          description: Slide ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Slide details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slide:
+                    $ref: '#/components/schemas/Slide'
+                  index:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Slides
+      summary: Update a slide
+      description: Replaces slide content with the provided data.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+        - name: slideId
+          in: path
+          required: true
+          description: Slide ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  description: Slide type
+                content:
+                  type: object
+                  description: New slide content
+                notes:
+                  type: string
+                  description: Speaker notes
+      responses:
+        '200':
+          description: Slide updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slide:
+                    $ref: '#/components/schemas/Slide'
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      revision:
+                        type: integer
+                      updatedAt:
+                        type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Slides
+      summary: Delete a slide
+      description: Removes a slide from the presentation. Cannot delete the last slide.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+        - name: slideId
+          in: path
+          required: true
+          description: Slide ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Slide deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slideCount:
+                        type: integer
+                      revision:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/slides/reorder:
+    post:
+      tags:
+        - Slides
+      summary: Reorder slides
+      description: Reorders slides in the presentation according to the provided ID array.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slideIds
+              properties:
+                slideIds:
+                  type: array
+                  items:
+                    type: string
+                  description: Ordered array of slide IDs
+      responses:
+        '200':
+          description: Slides reordered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slides:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          type: string
+                        index:
+                          type: integer
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      revision:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/slides/from-library:
+    post:
+      tags:
+        - Slides
+      summary: Add slide from library
+      description: Copies a slide from the team library into the presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - libraryItemId
+              properties:
+                libraryItemId:
+                  type: string
+                  description: ID of the library item to copy
+                atIndex:
+                  type: integer
+                  description: Insert at this index
+                afterSlideId:
+                  type: string
+                  description: Insert after this slide ID
+      responses:
+        '201':
+          description: Slide added from library
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slide:
+                    $ref: '#/components/schemas/Slide'
+                  index:
+                    type: integer
+                  copiedFrom:
+                    type: object
+                    properties:
+                      libraryItemId:
+                        type: string
+                      libraryItemName:
+                        type: string
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      slideCount:
+                        type: integer
+                      revision:
+                        type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/publish:
+    get:
+      tags:
+        - Publishing
+      summary: Get publish status
+      description: Returns the publication status of a presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Publish status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isPublished:
+                    type: boolean
+                  publishId:
+                    type: string
+                  slug:
+                    type: string
+                  path:
+                    type: string
+                  ogImageUrl:
+                    type: string
+                  publishedAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Publishing
+      summary: Publish presentation
+      description: Makes the presentation publicly accessible via a share link.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Published successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publishId:
+                    type: string
+                  slug:
+                    type: string
+                  path:
+                    type: string
+                  ogImageUrl:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Publishing
+      summary: Unpublish presentation
+      description: Removes public access to the presentation.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Unpublished successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unpublished:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/translate:
+    post:
+      tags:
+        - Translation
+      summary: Translate presentation
+      description: |
+        Uses AI to translate the presentation to a target language.
+        Requires the 'ai' scope on your API key.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Presentation ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - targetLang
+              properties:
+                targetLang:
+                  type: string
+                  description: Target language code
+                  enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
+                sourceLang:
+                  type: string
+                  description: Source language code (defaults to active language)
+                vendor:
+                  type: string
+                  description: AI vendor to use
+                overwrite:
+                  type: boolean
+                  description: Overwrite existing translation
+                  default: false
+                fillMissing:
+                  type: boolean
+                  description: Only fill missing translations
+                  default: true
+      responses:
+        '200':
+          description: Translation complete
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  translated:
+                    type: boolean
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  presentation:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /translate/languages:
+    get:
+      tags:
+        - Translation
+      summary: List supported languages
+      description: Returns all supported translation languages.
+      responses:
+        '200':
+          description: Supported languages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  languages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        label:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /slide-library:
+    get:
+      tags:
+        - Slide Library
+      summary: List library items
+      description: Returns team slide library items.
+      parameters:
+        - name: themeId
+          in: query
+          description: Filter by theme
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Library items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SlideLibraryItem'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /slide-library/{itemId}:
+    get:
+      tags:
+        - Slide Library
+      summary: Get library item
+      description: Returns a single library item by ID.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          description: Library item ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Library item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/SlideLibraryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /slide-types/{slideType}/schema:
+    get:
+      tags:
+        - Resources
+      summary: Get slide type schema
+      description: Returns detailed schema information for a slide type including fields, defaults, and an example.
+      parameters:
+        - name: slideType
+          in: path
+          required: true
+          description: Slide type name (e.g., content-slide)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Slide type schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slideType:
+                    type: string
+                  label:
+                    type: string
+                  fields:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        label:
+                          type: string
+                        type:
+                          type: string
+                        required:
+                          type: boolean
+                        maxLength:
+                          type: integer
+                        options:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              value:
+                                type: string
+                              label:
+                                type: string
+                  defaults:
+                    type: object
+                  example:
+                    $ref: '#/components/schemas/Slide'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /presentations/{id}/export/json:
+    get:
+      tags:
+        - Exports
+      summary: Export as JSON
+      description: Exports the presentation in portable JSON format.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          description: Export language version
+          schema:
+            type: string
+            enum: [en-GB, nl]
+      responses:
+        '200':
+          description: JSON export
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /presentations/{id}/export/html:
+    get:
+      tags:
+        - Exports
+      summary: Export as HTML
+      description: Exports the presentation as a standalone HTML file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en-GB, nl]
+      responses:
+        '200':
+          description: HTML export
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /presentations/{id}/export/pptx:
+    get:
+      tags:
+        - Exports
+      summary: Export as PowerPoint
+      description: Exports the presentation as a PPTX file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en-GB, nl]
+        - name: scale
+          in: query
+          description: Image scale factor (1-3)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3
+            default: 2
+      responses:
+        '200':
+          description: PowerPoint export
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /presentations/{id}/export/pdf:
+    get:
+      tags:
+        - Exports
+      summary: Export as PDF
+      description: |
+        Returns an HTML page optimized for printing to PDF.
+        Use browser print-to-PDF functionality for best results.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en-GB, nl]
+      responses:
+        '200':
+          description: Print-ready HTML
+          content:
+            text/html:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /ai/vendors:
+    get:
+      tags:
+        - AI
+      summary: Get available AI vendors
+      description: Returns the list of configured LLM providers.
+      responses:
+        '200':
+          description: Available vendors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vendors:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        available:
+                          type: boolean
+                        name:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /ai/wizard:
+    post:
+      tags:
+        - AI
+      summary: Generate a presentation
+      description: |
+        Uses AI to generate a complete presentation from your content.
+        This creates a new presentation with AI-generated slides.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - raw
+              properties:
+                raw:
+                  type: string
+                  description: The content to generate a presentation from
+                  example: "Create a presentation about sustainable energy..."
+                vendor:
+                  type: string
+                  description: AI vendor to use (openai, anthropic, mistral)
+                lang:
+                  type: string
+                  enum: [en-GB, nl]
+                  description: Target language
+                theme:
+                  type: string
+                  description: Theme ID to use
+      responses:
+        '201':
+          description: Presentation generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentation:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      title:
+                        type: string
+                      slideCount:
+                        type: integer
+                      theme:
+                        type: string
+                      language:
+                        type: string
+                      createdAt:
+                        type: string
+                        format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /ai/append-slides:
+    post:
+      tags:
+        - AI
+      summary: Generate slides to append
+      description: |
+        Uses AI to generate new slides based on your content.
+        Returns slide objects that can be added to an existing presentation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - raw
+              properties:
+                raw:
+                  type: string
+                  description: Content to generate slides from
+                vendor:
+                  type: string
+                  description: AI vendor to use
+                lang:
+                  type: string
+                  enum: [en-GB, nl]
+                deck:
+                  type: object
+                  description: Existing deck for context
+                presentation:
+                  type: object
+                  description: Existing presentation for context
+      responses:
+        '200':
+          description: Slides generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slides:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Slide'
+                  slideCount:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /themes:
+    get:
+      tags:
+        - Resources
+      summary: List available themes
+      description: Returns all available themes (system and custom).
+      responses:
+        '200':
+          description: List of themes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  themes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Theme'
+                  count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /slide-types:
+    get:
+      tags:
+        - Resources
+      summary: List slide types
+      description: Returns all available slide type definitions.
+      responses:
+        '200':
+          description: Slide type definitions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slideTypes:
+                    type: object
+                    additionalProperties:
+                      $ref: '#/components/schemas/SlideType'
+                  count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /image-library:
+    get:
+      tags:
+        - Resources
+      summary: Search image library
+      description: Search and browse available images.
+      parameters:
+        - name: search
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Filter by category
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Image search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  images:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url:
+                          type: string
+                        thumbnail:
+                          type: string
+                        category:
+                          type: string
+                  categories:
+                    type: array
+                    items:
+                      type: string
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: API key authentication
+
+  schemas:
+    PresentationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        ownerEmail:
+          type: string
+        scope:
+          type: string
+          enum: [private, workspace]
+        themeId:
+          type: string
+        language:
+          type: string
+        slideCount:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Presentation:
+      allOf:
+        - $ref: '#/components/schemas/PresentationSummary'
+        - type: object
+          properties:
+            slides:
+              type: array
+              items:
+                $ref: '#/components/schemas/Slide'
+            i18n:
+              type: object
+              description: Internationalization data
+            revision:
+              type: integer
+
+    Slide:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          description: Slide type (e.g., title-slide, bullet-slide)
+        content:
+          type: object
+          description: Slide content (varies by type)
+        notes:
+          type: string
+          description: Speaker notes
+
+    Theme:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+          enum: [system, custom]
+        logoUrl:
+          type: string
+        colors:
+          type: object
+        fonts:
+          type: object
+        isDefault:
+          type: boolean
+
+    SlideType:
+      type: object
+      properties:
+        label:
+          type: string
+        fields:
+          type: object
+        defaults:
+          type: object
+
+    SlideLibraryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slideType:
+          type: string
+        themeId:
+          type: string
+        content:
+          type: object
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+
+    DeckExport:
+      type: object
+      properties:
+        format:
+          type: string
+          example: "slidecreator.deck"
+        version:
+          type: integer
+        title:
+          type: string
+        theme:
+          type: string
+        slides:
+          type: array
+          items:
+            type: object
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        hasMore:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

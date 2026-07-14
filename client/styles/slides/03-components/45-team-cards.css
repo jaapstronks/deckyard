@@ -1,0 +1,801 @@
+/* Team cards slide
+   NOTE: All dimensions use fixed pixel values so that slides scale correctly
+   when rendered at reference size (1600×900) and transformed for thumbnails.
+   Do NOT use vw/vh units as they refer to the browser viewport, not the slide. */
+.slide-team-cards {
+  background: var(--slide-bg-mist);
+  color: var(--color-text, #0b0b0b);
+  /* Use standard padding on left/right, slightly tighter on top/bottom for more card space */
+  padding: 48px var(--slide-padding) 56px;
+
+  /* Layout knobs (derived from card count via data-attrs) */
+  --team-cols: 4;
+  --team-rows: 2;
+  --team-gap-x: 20px;
+  --team-gap-y: 18px;
+
+  /* Default photo size for 2-row layouts (7-12 cards) */
+  --team-card-photo: 220px;
+}
+
+/* Center small groups so the slide never feels "empty top-left". */
+.slide-team-cards[data-card-count='1'] {
+  --team-cols: 1;
+  --team-rows: 1;
+  --team-card-photo: 320px;
+}
+.slide-team-cards[data-card-count='2'] {
+  --team-cols: 2;
+  --team-rows: 1;
+  --team-card-photo: 340px;
+  --team-gap-x: 48px;
+}
+.slide-team-cards[data-card-count='3'] {
+  --team-cols: 3;
+  --team-rows: 1;
+  --team-card-photo: 300px;
+  --team-gap-x: 40px;
+}
+.slide-team-cards[data-card-count='4'] {
+  --team-cols: 4;
+  --team-rows: 1;
+  /* 4 cards at 338px + 3 gaps at 40px = 1472px (exactly slide width minus 64px padding on each side) */
+  --team-card-photo: 338px;
+  --team-gap-x: 40px;
+}
+
+/* 5 cards => 5 columns × 1 row */
+.slide-team-cards[data-card-count='5'] {
+  --team-cols: 5;
+  --team-rows: 1;
+  /* 5 cards at 275px + 4 gaps at 24px = 1471px (fills available width with standard padding) */
+  --team-card-photo: 275px;
+  --team-gap-x: 24px;
+}
+
+/* 6 cards => 6 columns × 1 row */
+.slide-team-cards[data-card-count='6'] {
+  --team-cols: 6;
+  --team-rows: 1;
+  /* 6 cards at 220px + 5 gaps at 20px = 1420px */
+  --team-card-photo: 220px;
+  --team-gap-x: 20px;
+}
+
+/* 7–8 cards => 4 columns × 2 rows */
+.slide-team-cards[data-card-count='7'],
+.slide-team-cards[data-card-count='8'] {
+  --team-cols: 4;
+  --team-rows: 2;
+  --team-card-photo: 250px;
+}
+
+/* 9–10 cards => 5 columns × 2 rows */
+.slide-team-cards[data-card-count='9'],
+.slide-team-cards[data-card-count='10'] {
+  --team-cols: 5;
+  --team-rows: 2;
+  --team-card-photo: 230px;
+  --team-gap-x: 18px;
+}
+
+/* 11–12 cards => 6 columns × 2 rows */
+.slide-team-cards[data-card-count='11'],
+.slide-team-cards[data-card-count='12'] {
+  --team-cols: 6;
+  --team-rows: 2;
+  --team-card-photo: 200px;
+  --team-gap-x: 16px;
+}
+
+.slide-team-cards[data-card-count='9'],
+.slide-team-cards[data-card-count='10'],
+.slide-team-cards[data-card-count='11'],
+.slide-team-cards[data-card-count='12'] {
+  /* Tighter padding for dense grids to fit content */
+  padding: 44px 48px 52px;
+}
+
+/* ============================================
+   LARGE GRIDS (13–25 cards)
+   Compact thumbnail grids for rosters, boards, class photos.
+   The slide is 16:9, so wide grids (more columns, fewer rows) use the space far
+   better than tall ones: 13–18 fit in 3 rows, 19–24 in 3 rows of 8, 25 in 3
+   rows of 9. The team-cards auto-fit runtime scales the grid down if two-line
+   labels still push it past the slide.
+   ============================================ */
+
+/* 13–15 => 5 columns × 3 rows */
+.slide-team-cards[data-card-count='13'],
+.slide-team-cards[data-card-count='14'],
+.slide-team-cards[data-card-count='15'] {
+  --team-cols: 5;
+  --team-rows: 3;
+  --team-card-photo: 168px;
+  --team-gap-x: 18px;
+  --team-gap-y: 24px;
+}
+
+/* 16–18 => 6 columns × 3 rows */
+.slide-team-cards[data-card-count='16'],
+.slide-team-cards[data-card-count='17'],
+.slide-team-cards[data-card-count='18'] {
+  --team-cols: 6;
+  --team-rows: 3;
+  --team-card-photo: 150px;
+  --team-gap-x: 14px;
+  --team-gap-y: 24px;
+}
+
+/* 19–24 => 8 columns × 3 rows (e.g. 23 = 8+8+7, 24 = 8×3). Three wide rows use
+   the 16:9 width better than the old 6×4 and keep the portraits larger. */
+.slide-team-cards[data-card-count='19'],
+.slide-team-cards[data-card-count='20'],
+.slide-team-cards[data-card-count='21'],
+.slide-team-cards[data-card-count='22'],
+.slide-team-cards[data-card-count='23'],
+.slide-team-cards[data-card-count='24'] {
+  --team-cols: 8;
+  --team-rows: 3;
+  --team-card-photo: 165px;
+  --team-gap-x: 14px;
+  --team-gap-y: 24px;
+}
+
+/* 25 => 9 columns × 3 rows (25 = 9+8+8) instead of a cramped 5×5. */
+.slide-team-cards[data-card-count='25'] {
+  --team-cols: 9;
+  --team-rows: 3;
+  --team-card-photo: 150px;
+  --team-gap-x: 12px;
+  --team-gap-y: 22px;
+}
+
+/* Tightest padding for the largest grids */
+.slide-team-cards[data-card-count='13'],
+.slide-team-cards[data-card-count='14'],
+.slide-team-cards[data-card-count='15'],
+.slide-team-cards[data-card-count='16'],
+.slide-team-cards[data-card-count='17'],
+.slide-team-cards[data-card-count='18'],
+.slide-team-cards[data-card-count='19'],
+.slide-team-cards[data-card-count='20'],
+.slide-team-cards[data-card-count='21'],
+.slide-team-cards[data-card-count='22'],
+.slide-team-cards[data-card-count='23'],
+.slide-team-cards[data-card-count='24'],
+.slide-team-cards[data-card-count='25'] {
+  padding: 40px 48px 44px;
+}
+
+/* Reduce card sizes when bottom subheading is present (less vertical space) */
+.slide-team-cards.has-bottom-subheading {
+  --team-gap-y: 14px;
+}
+
+/* Card size reductions for all counts when bottom subheading is present */
+.slide-team-cards.has-bottom-subheading[data-card-count='1'] {
+  --team-card-photo: 280px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='2'] {
+  --team-card-photo: 300px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='3'] {
+  --team-card-photo: 260px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='4'] {
+  --team-card-photo: 295px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='5'] {
+  --team-card-photo: 230px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='6'] {
+  --team-card-photo: 195px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='7'],
+.slide-team-cards.has-bottom-subheading[data-card-count='8'] {
+  --team-card-photo: 200px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='9'],
+.slide-team-cards.has-bottom-subheading[data-card-count='10'] {
+  --team-card-photo: 185px;
+}
+.slide-team-cards.has-bottom-subheading[data-card-count='11'],
+.slide-team-cards.has-bottom-subheading[data-card-count='12'] {
+  --team-card-photo: 165px;
+}
+
+/* When both header and bottom subheading are present, reduce further */
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='1'] {
+  --team-card-photo: 250px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='2'] {
+  --team-card-photo: 270px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='3'] {
+  --team-card-photo: 230px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='4'] {
+  --team-card-photo: 265px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='5'] {
+  --team-card-photo: 200px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='6'] {
+  --team-card-photo: 175px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='7'],
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='8'] {
+  --team-card-photo: 175px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='9'],
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='10'] {
+  --team-card-photo: 165px;
+}
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='11'],
+.slide-team-cards.has-header.has-bottom-subheading[data-card-count='12'] {
+  --team-card-photo: 150px;
+}
+
+.slide-team-cards .slide-inner {
+  justify-content: flex-start;
+  gap: 18px;
+}
+
+.slide-team-cards.has-bottom-subheading .slide-inner {
+  gap: 12px;
+}
+
+.slide-team-cards:not(.has-header) .slide-inner {
+  justify-content: center;
+}
+
+.slide-team-cards .header .title {
+  font-family: var(--font-heading);
+  font-size: 48px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-synthesis: none;
+  margin: 0;
+}
+
+.slide-team-cards .header .subtitle {
+  margin: 10px 0 0;
+  font-size: 24px;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
+  max-width: 75ch;
+}
+
+.slide-team-cards .team-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--team-cols), var(--team-card-photo));
+  grid-template-rows: repeat(var(--team-rows), auto);
+  column-gap: var(--team-gap-x);
+  row-gap: var(--team-gap-y);
+  /* Default: left-align the grid to the title/subheading edge. A filled grid
+     (4+ across, often multiple rows) reads as floating when centered next to a
+     left-aligned header. 1–3 cards are a small single row and stay centered
+     (see below) so they feel intentional rather than stuck in a corner. */
+  justify-content: start;
+  align-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Anchor the auto-fit scale to the left so a shrunk grid stays aligned with
+     the title (transform-origin, applied by the team-cards auto-fit runtime). */
+  transform-origin: left center;
+}
+
+/* 1–3 cards: a small single row — center horizontally so it doesn't read as
+   marooned on the left. (align-content already centers it vertically.) */
+.slide-team-cards[data-card-count='1'] .team-cards-grid,
+.slide-team-cards[data-card-count='2'] .team-cards-grid,
+.slide-team-cards[data-card-count='3'] .team-cards-grid {
+  justify-content: center;
+  transform-origin: center center;
+}
+
+.slide-team-cards .team-card {
+  width: var(--team-card-photo);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.slide-team-cards .team-card-photo {
+  width: var(--team-card-photo);
+  height: var(--team-card-photo);
+  border-radius: 14px;
+  overflow: hidden;
+  /* Keep the name tight to its own photo. Combined with a clearly larger row
+     gap, a name (even wrapped to two lines) groups with the photo above it
+     rather than reading as a caption for the photo in the next row. */
+  margin-bottom: 8px;
+}
+
+/* Photo frame (background + border) - off by default */
+.slide-team-cards.has-photo-frame .team-card-photo {
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.slide-team-cards .team-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* crop so all photos align */
+  object-position: center;
+  display: block;
+}
+
+.slide-team-cards .team-card-photo.is-empty {
+  border: 1px dashed rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Image shape variants. Default 'rounded' keeps the 14px radius set above. */
+.slide-team-cards.shape-square .team-card-photo {
+  border-radius: 0;
+}
+.slide-team-cards.shape-circle .team-card-photo {
+  border-radius: 50%;
+}
+/* Circular portraits read as a roster: center the label under each circle. */
+.slide-team-cards.shape-circle .team-card {
+  align-items: center;
+}
+.slide-team-cards.shape-circle .team-card-name,
+.slide-team-cards.shape-circle .team-card-byline {
+  text-align: center;
+}
+
+.slide-team-cards .team-card-name {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  line-height: 1.18;
+  font-weight: 400;
+  font-synthesis: none;
+  margin-bottom: 4px;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.slide-team-cards .team-card-byline {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--color-text-muted);
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.slide-team-cards .team-card-linkedin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  font-size: 22px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.slide-team-cards .team-card-linkedin:hover,
+.slide-team-cards .team-card-linkedin:focus-visible {
+  color: #0a66c2;
+  transform: translateY(-1px);
+}
+
+.slide-team-cards .team-card-linkedin-icon {
+  display: block;
+}
+
+/* Larger text for 1-4 card layouts */
+.slide-team-cards[data-card-count='1'] .team-card-name,
+.slide-team-cards[data-card-count='2'] .team-card-name,
+.slide-team-cards[data-card-count='3'] .team-card-name,
+.slide-team-cards[data-card-count='4'] .team-card-name {
+  font-size: 28px;
+}
+
+.slide-team-cards[data-card-count='1'] .team-card-byline,
+.slide-team-cards[data-card-count='2'] .team-card-byline,
+.slide-team-cards[data-card-count='3'] .team-card-byline,
+.slide-team-cards[data-card-count='4'] .team-card-byline {
+  font-size: 22px;
+}
+
+/* Smaller text for 5-6 cards (more compact single-row layout) */
+.slide-team-cards[data-card-count='5'] .team-card-name,
+.slide-team-cards[data-card-count='6'] .team-card-name {
+  font-size: 20px;
+}
+
+.slide-team-cards[data-card-count='5'] .team-card-byline,
+.slide-team-cards[data-card-count='6'] .team-card-byline {
+  font-size: 17px;
+}
+
+/* Compact labels for large grids (13–18) */
+.slide-team-cards[data-card-count='13'] .team-card-name,
+.slide-team-cards[data-card-count='14'] .team-card-name,
+.slide-team-cards[data-card-count='15'] .team-card-name,
+.slide-team-cards[data-card-count='16'] .team-card-name,
+.slide-team-cards[data-card-count='17'] .team-card-name,
+.slide-team-cards[data-card-count='18'] .team-card-name {
+  font-size: 17px;
+  margin-bottom: 2px;
+}
+.slide-team-cards[data-card-count='13'] .team-card-byline,
+.slide-team-cards[data-card-count='14'] .team-card-byline,
+.slide-team-cards[data-card-count='15'] .team-card-byline,
+.slide-team-cards[data-card-count='16'] .team-card-byline,
+.slide-team-cards[data-card-count='17'] .team-card-byline,
+.slide-team-cards[data-card-count='18'] .team-card-byline {
+  font-size: 14px;
+}
+
+/* Even more compact for the densest grids (19–25) */
+.slide-team-cards[data-card-count='19'] .team-card-name,
+.slide-team-cards[data-card-count='20'] .team-card-name,
+.slide-team-cards[data-card-count='21'] .team-card-name,
+.slide-team-cards[data-card-count='22'] .team-card-name,
+.slide-team-cards[data-card-count='23'] .team-card-name,
+.slide-team-cards[data-card-count='24'] .team-card-name,
+.slide-team-cards[data-card-count='25'] .team-card-name {
+  font-size: 15px;
+  line-height: 1.12;
+  margin-bottom: 1px;
+}
+.slide-team-cards[data-card-count='19'] .team-card-byline,
+.slide-team-cards[data-card-count='20'] .team-card-byline,
+.slide-team-cards[data-card-count='21'] .team-card-byline,
+.slide-team-cards[data-card-count='22'] .team-card-byline,
+.slide-team-cards[data-card-count='23'] .team-card-byline,
+.slide-team-cards[data-card-count='24'] .team-card-byline,
+.slide-team-cards[data-card-count='25'] .team-card-byline {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Even smaller text when bottom subheading is present */
+.slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-name,
+.slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-name {
+  font-size: 18px;
+}
+
+.slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-byline,
+.slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-byline {
+  font-size: 15px;
+}
+
+.slide-team-cards .team-cards-empty {
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--color-text, #0b0b0b) 60%, transparent);
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Background color variants */
+.slide-team-cards.slide-bg-mist {
+  background: var(--slide-bg-mist);
+}
+
+.slide-team-cards.slide-bg-lime {
+  background: var(--slide-bg-lime, #d8ff00);
+}
+
+/* Text position variants */
+
+/* Below (default): photo first, then title + caption grouped below */
+.slide-team-cards.text-below .team-card-text {
+  margin-top: 6px;
+}
+
+/* Split: title above image, caption below image */
+.slide-team-cards.text-split .team-cards-grid {
+  /* Use subgrid-like alignment: align items to end so images line up */
+  align-items: end;
+}
+
+.slide-team-cards.text-split .team-card {
+  display: grid;
+  grid-template-rows: minmax(2.4em, auto) auto auto;
+  align-content: end; /* Push content to bottom of card */
+  height: 100%;
+}
+
+.slide-team-cards.text-split .team-card-name {
+  margin-bottom: 8px;
+  align-self: end; /* Push title to bottom so images align */
+  min-height: 2.4em; /* Reserve space for ~2 lines */
+  display: flex;
+  align-items: flex-end;
+}
+
+.slide-team-cards.text-split .team-card-photo {
+  margin-bottom: 8px;
+}
+
+.slide-team-cards.text-split .team-card-byline {
+  margin-top: 0;
+}
+
+/* Image aspect ratio variants */
+
+/* For original aspect, ensure all cards in a row have equal heights.
+   We use CSS subgrid to align title/photo/caption areas across cards in the same row.
+   Each row in the parent grid represents one horizontal row of cards.
+   Each card uses subgrid to align its internal sections with neighboring cards. */
+
+/* Parent grid: each row of cards gets 3 implicit sub-rows (for title, photo, caption) */
+.slide-team-cards.aspect-original .team-cards-grid {
+  /* Use explicit row templates based on number of card rows.
+     For text-split: 3 sub-rows per visual row (title, photo, caption).
+     For text-below: 2 sub-rows per visual row (photo, text). */
+  align-items: stretch;
+}
+
+/* For text-split + original aspect: title above, image, caption below */
+.slide-team-cards.aspect-original.text-split .team-cards-grid {
+  /* 3 sub-rows per card row: all auto-sized (content determines height).
+     align-content centers the rows vertically within the available space.
+     row-gap: 0 because element margins handle spacing within cards. */
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  row-gap: 0;
+}
+
+/* When there are 2 visual rows of cards (7+ cards), we need 6 sub-rows total
+   plus a gap track between the two card rows for vertical separation. */
+.slide-team-cards.aspect-original.text-split[data-card-count='7'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-split[data-card-count='8'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-split[data-card-count='9'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-split[data-card-count='10'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-split[data-card-count='11'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-split[data-card-count='12'] .team-cards-grid {
+  /* 7 tracks: 3 for row 1 + gap track + 3 for row 2 */
+  grid-template-rows: auto auto auto var(--team-gap-y) auto auto auto;
+}
+
+/* Cards in the second row start at track 5 (after the gap track) */
+.slide-team-cards.aspect-original.text-split[data-card-count='7'] .team-card:nth-child(n+5),
+.slide-team-cards.aspect-original.text-split[data-card-count='8'] .team-card:nth-child(n+5),
+.slide-team-cards.aspect-original.text-split[data-card-count='9'] .team-card:nth-child(n+6),
+.slide-team-cards.aspect-original.text-split[data-card-count='10'] .team-card:nth-child(n+6),
+.slide-team-cards.aspect-original.text-split[data-card-count='11'] .team-card:nth-child(n+7),
+.slide-team-cards.aspect-original.text-split[data-card-count='12'] .team-card:nth-child(n+7) {
+  grid-row: 5 / span 3;
+}
+
+.slide-team-cards.aspect-original.text-split .team-card {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3; /* Each card spans 3 sub-rows */
+  row-gap: 0;
+  height: auto;
+  align-items: stretch;
+  align-content: stretch; /* Override the 'end' alignment from base text-split */
+}
+
+.slide-team-cards.aspect-original.text-split .team-card-name {
+  align-self: start; /* Align title at TOP of its grid area */
+  margin-bottom: 8px;
+  min-height: 0;
+  display: block;
+}
+
+.slide-team-cards.aspect-original.text-split .team-card-photo {
+  height: auto;
+  aspect-ratio: auto;
+  /* Photo area stretches to fill its grid row, image centers within */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: var(--team-card-photo);
+  margin-bottom: 8px;
+}
+
+.slide-team-cards.aspect-original.text-split .team-card-photo img {
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.slide-team-cards.aspect-original.text-split .team-card-byline {
+  align-self: start;
+  margin-top: 0;
+}
+
+/* For text-below + original aspect: photo above, text (title+caption) below */
+.slide-team-cards.aspect-original.text-below .team-cards-grid {
+  /* 2 sub-rows per card row: all auto-sized.
+     align-content centers the rows vertically within the available space.
+     row-gap: 0 because element margins handle spacing within cards. */
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: 0;
+}
+
+/* When there are 2 visual rows of cards, add gap track between card rows */
+.slide-team-cards.aspect-original.text-below[data-card-count='7'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-below[data-card-count='8'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-below[data-card-count='9'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-below[data-card-count='10'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-below[data-card-count='11'] .team-cards-grid,
+.slide-team-cards.aspect-original.text-below[data-card-count='12'] .team-cards-grid {
+  /* 5 tracks: 2 for row 1 + gap track + 2 for row 2 */
+  grid-template-rows: auto auto var(--team-gap-y) auto auto;
+}
+
+/* Cards in the second row start at track 4 (after the gap track) */
+.slide-team-cards.aspect-original.text-below[data-card-count='7'] .team-card:nth-child(n+5),
+.slide-team-cards.aspect-original.text-below[data-card-count='8'] .team-card:nth-child(n+5),
+.slide-team-cards.aspect-original.text-below[data-card-count='9'] .team-card:nth-child(n+6),
+.slide-team-cards.aspect-original.text-below[data-card-count='10'] .team-card:nth-child(n+6),
+.slide-team-cards.aspect-original.text-below[data-card-count='11'] .team-card:nth-child(n+7),
+.slide-team-cards.aspect-original.text-below[data-card-count='12'] .team-card:nth-child(n+7) {
+  grid-row: 4 / span 2;
+}
+
+.slide-team-cards.aspect-original.text-below .team-card {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2; /* Each card spans 2 sub-rows */
+  row-gap: 0;
+  height: auto;
+  align-items: stretch;
+}
+
+.slide-team-cards.aspect-original.text-below .team-card-photo {
+  height: auto;
+  aspect-ratio: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: var(--team-card-photo);
+  margin-bottom: 10px;
+}
+
+.slide-team-cards.aspect-original.text-below .team-card-photo img {
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.slide-team-cards.aspect-original.text-below .team-card-text {
+  margin-top: 0;
+}
+
+/* Fallback for browsers without subgrid support (uses display: flex) */
+@supports not (grid-template-rows: subgrid) {
+  .slide-team-cards.aspect-original .team-cards-grid {
+    align-items: stretch;
+  }
+
+  .slide-team-cards.aspect-original .team-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .slide-team-cards.aspect-original.text-split .team-card-name {
+    flex: 0 0 auto;
+  }
+
+  .slide-team-cards.aspect-original .team-card-photo {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .slide-team-cards.aspect-original.text-split .team-card-byline,
+  .slide-team-cards.aspect-original.text-below .team-card-text {
+    flex: 0 0 auto;
+  }
+}
+
+/* ============================================
+   COLUMN SPLIT LAYOUT
+   Two groups of cards side-by-side with a larger gap between them
+   ============================================ */
+
+.slide-team-cards.has-column-split {
+  /* Gap between the two groups (larger than within-group gap) */
+  --split-gap: 80px;
+}
+
+/* Split container: holds both groups side by side, centered */
+.slide-team-cards .team-cards-split-container {
+  display: flex;
+  gap: var(--split-gap);
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: start;
+  justify-content: center;
+  margin-top: 8px; /* Extra space below title */
+  /* Anchor the auto-fit scale to the top so a shrunk split stays below the
+     title rather than drifting down (applied by the team-cards auto-fit runtime). */
+  transform-origin: center top;
+}
+
+/* Each group is a flex container with its own grid */
+.slide-team-cards .team-cards-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Group subheading: left-aligned within its group */
+.slide-team-cards .team-cards-group-subheading {
+  font-family: var(--font-body);
+  font-size: 24px;
+  line-height: 1.2;
+  color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
+  margin: 0 0 16px;
+  text-align: left;
+}
+
+/* Grid within each group - inherits card size from data-card-count rules */
+.slide-team-cards.has-column-split .team-cards-grid {
+  display: grid;
+  column-gap: var(--team-gap-x);
+  row-gap: var(--team-gap-y);
+  justify-content: start;
+}
+
+/* Dynamic column count based on data-cols attribute */
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='1'] {
+  grid-template-columns: repeat(1, var(--team-card-photo));
+}
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='2'] {
+  grid-template-columns: repeat(2, var(--team-card-photo));
+}
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='3'] {
+  grid-template-columns: repeat(3, var(--team-card-photo));
+}
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='4'] {
+  grid-template-columns: repeat(4, var(--team-card-photo));
+}
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='5'] {
+  grid-template-columns: repeat(5, var(--team-card-photo));
+}
+.slide-team-cards.has-column-split .team-cards-grid[data-cols='6'] {
+  grid-template-columns: repeat(6, var(--team-card-photo));
+}
+
+/* Column split + original aspect ratio */
+/* Apply subgrid within each group's grid for proper alignment */
+.slide-team-cards.has-column-split.aspect-original.text-split .team-cards-grid {
+  /* 3 sub-rows: title, photo, caption - all auto-sized */
+  grid-template-rows: auto auto auto;
+  align-content: center;
+  row-gap: 0;
+}
+
+.slide-team-cards.has-column-split.aspect-original.text-split .team-card {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+}
+
+.slide-team-cards.has-column-split.aspect-original.text-below .team-cards-grid {
+  /* 2 sub-rows: photo, text - all auto-sized */
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: 0;
+}
+
+.slide-team-cards.has-column-split.aspect-original.text-below .team-card {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 2;
+}
+
+/* Ensure both groups in split layout align at the top */
+.slide-team-cards.has-column-split.aspect-original .team-cards-split-container {
+  align-items: start;
+}
+

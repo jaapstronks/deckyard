@@ -1,0 +1,399 @@
+/**
+ * Slide visibility styles.
+ * Handles visibility badges, toggle buttons, and the visibility menu.
+ */
+
+/* ========================================
+   Visibility Badge on Thumbnails
+   ======================================== */
+
+.slide-visibility-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* When both visibility badge and lock indicator are present, shift badge left */
+.slide-item.is-author-locked .slide-visibility-badge,
+.slide-item.is-locked-by-other .slide-visibility-badge {
+  right: 26px;
+}
+
+/* Color coding by preset */
+.slide-visibility-badge--draft {
+  background: var(--c-warning, #f59e0b);
+  color: #000;
+}
+
+.slide-visibility-badge--draft::before {
+  content: "D";
+}
+
+.slide-visibility-badge--internal {
+  background: var(--c-info, #3b82f6);
+  color: #fff;
+}
+
+.slide-visibility-badge--internal::before {
+  content: "I";
+}
+
+.slide-visibility-badge--hidden {
+  background: var(--c-danger, #ef4444);
+  color: #fff;
+}
+
+.slide-visibility-badge--hidden::before {
+  content: "H";
+}
+
+.slide-visibility-badge--skipInPresentation {
+  background: var(--c-muted, #6b7280);
+  color: #fff;
+}
+
+.slide-visibility-badge--skipInPresentation::before {
+  content: "S";
+}
+
+.slide-visibility-badge--custom {
+  background: var(--c-purple, #8b5cf6);
+  color: #fff;
+}
+
+.slide-visibility-badge--custom::before {
+  content: "?";
+}
+
+/* ========================================
+   Visibility Toggle Button
+   ======================================== */
+
+.slide-visibility-toggle {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 7;
+}
+
+.slide-visibility-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.slide-visibility-toggle:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.slide-visibility-toggle.is-visibility-restricted {
+  color: var(--c-warning, #f59e0b);
+}
+
+/* Show on hover or when slide is selected */
+.slide-item:hover .slide-visibility-toggle,
+.slide-item.is-active .slide-visibility-toggle {
+  opacity: 1;
+}
+
+/* Always show if visibility is modified - use !important to override any conflicts */
+.slide-item.has-visibility .slide-visibility-toggle,
+.slide-item.is-visibility-hidden .slide-visibility-toggle {
+  opacity: 0.85;
+  /* Ensure it's above the overlay and clickable */
+  position: absolute;
+  z-index: 10;
+}
+
+.slide-item.has-visibility:hover .slide-visibility-toggle,
+.slide-item.is-visibility-hidden:hover .slide-visibility-toggle {
+  opacity: 1;
+}
+
+/* ========================================
+   Dim Hidden Slides in Editor
+   ======================================== */
+
+/* Use pseudo-element overlay instead of opacity so badge stays visible */
+.slide-item.is-visibility-hidden .thumb-mini::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ========================================
+   Visibility Menu Popover
+   ======================================== */
+
+.visibility-menu {
+  position: fixed;
+  z-index: 999;
+  min-width: 260px;
+  background: var(--c-bg-elevated, #1a1e1d);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+/* Right-click slide context menu (shares the elevated-popover look). */
+.slide-context-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 168px;
+  padding: 6px;
+  background: var(--c-bg-elevated, #1a1e1d);
+  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.slide-context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-text, rgba(255, 255, 255, 0.92));
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.slide-context-menu-item:hover,
+.slide-context-menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.slide-context-menu-item.is-danger {
+  color: var(--c-danger, #ef4444);
+}
+
+.slide-context-menu-item.is-danger:hover,
+.slide-context-menu-item.is-danger:focus-visible {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+.slide-context-menu-sep {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--c-border, rgba(255, 255, 255, 0.12));
+}
+
+.visibility-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.visibility-menu-close {
+  background: none;
+  border: none;
+  color: var(--c-text-muted, rgba(255, 255, 255, 0.6));
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.visibility-menu-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--c-text, rgba(255, 255, 255, 0.92));
+}
+
+.visibility-menu-options {
+  padding: 6px;
+}
+
+.visibility-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--c-text, rgba(255, 255, 255, 0.92));
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.visibility-menu-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.visibility-menu-option.is-active {
+  background: rgba(var(--c-accent-rgb, 99, 102, 241), 0.2);
+}
+
+.visibility-menu-option:active {
+  background: rgba(var(--c-accent-rgb, 99, 102, 241), 0.3);
+  transform: scale(0.98);
+}
+
+/* ========================================
+   Visibility Icons in Menu
+   ======================================== */
+
+.visibility-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.visibility-icon--visible {
+  background: var(--c-success, #10b981);
+}
+
+.visibility-icon--draft {
+  background: var(--c-warning, #f59e0b);
+}
+
+.visibility-icon--internal {
+  background: var(--c-info, #3b82f6);
+}
+
+.visibility-icon--hidden {
+  background: var(--c-danger, #ef4444);
+}
+
+.visibility-icon--skipInPresentation {
+  background: var(--c-muted, #6b7280);
+}
+
+.visibility-icon--custom {
+  background: var(--c-purple, #8b5cf6);
+}
+
+/* ========================================
+   Option Content
+   ======================================== */
+
+.visibility-option-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.visibility-option-label {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.visibility-option-desc {
+  font-size: 11px;
+  color: var(--c-text-muted, rgba(255, 255, 255, 0.6));
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.visibility-option-check {
+  color: var(--c-success, #10b981);
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ========================================
+   Draft Slide Overlay (Viewer Mode)
+   ======================================== */
+
+.slide-draft-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 8px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.slide-draft-badge {
+  background: var(--c-warning, #f59e0b);
+  color: #000;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Viewer slides panel - draft indicator */
+.viewer-slides-panel .slide-item.is-draft .thumb-mini::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 24px 24px 0;
+  border-color: transparent var(--c-warning, #f59e0b) transparent transparent;
+}
+
+/* Draft badge in viewer thumbnails */
+.viewer-slides-panel .slide-draft-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--c-warning, #f59e0b);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  z-index: 5;
+}

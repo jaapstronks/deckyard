@@ -1,0 +1,176 @@
+/* Split partner/title slide */
+.slide-partner-split {
+  padding: 0;
+  background: #000;
+}
+.slide-partner-split .slide-inner {
+  padding: 0;
+}
+.slide-partner-split .split-50 {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 0; /* prevent grid auto-min sizing from reflowing the row */
+  min-width: 0;
+}
+.slide-partner-split .left {
+  background: #fff;
+  padding: 0;
+  display: flex;
+  align-items: center; /* vertical center */
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden; /* keep left content from affecting right panel sizing */
+}
+.slide-partner-split .logo-stack {
+  padding-left: 9%;
+  padding-right: 9%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 52px; /* 40–60px */
+  max-height: 100%;
+  overflow: hidden;
+}
+.slide-partner-split .partner-logo {
+  display: block;
+  /* Keep all partner logos visually consistent: fixed height, varying width */
+  height: 78px;
+  width: auto;
+  max-width: 60%;
+  object-fit: contain;
+  object-position: left center;
+}
+.slide-partner-split .right {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+}
+.slide-partner-split .right .bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transform: scale(1.02);
+}
+.slide-partner-split .right .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 1) 100%
+  );
+}
+.slide-partner-split .right .text {
+  position: absolute;
+  left: 9%;
+  bottom: 9%;
+  right: 9%;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.slide-partner-split .right .badge {
+  display: inline-block;
+  background: #d4e600;
+  color: #000;
+  font-family: var(--font-body);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+  font-synthesis: none;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border-radius: 999px;
+  margin-bottom: 22px; /* 20–30 */
+}
+.slide-partner-split .right .title {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-synthesis: none;
+  font-size: 64px;
+  line-height: 1.05;
+  margin: 0 0 16px; /* 15–20 */
+}
+.slide-partner-split .right .subtitle {
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1.25;
+  opacity: 0.95;
+}
+
+/* Quote slide */
+.slide-quote {
+  color: var(--quote-text-color);
+  --g1x: 55%;
+  --g1y: 12%;
+  --g2x: 92%;
+  --g2y: 92%;
+  --g3x: 10%;
+  --g3y: 92%;
+  position: relative;
+  overflow: hidden;
+  /* Fallback: if the gradient layer isn't rendered (print/export quirks),
+     keep white text readable by using the theme's dark base background. */
+  background: var(
+    --t-slide-bg-dark,
+    var(--color-background)
+  );
+}
+.slide-quote::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  background: var(--t-slide-gradient-bg, transparent);
+  opacity: var(--t-gradient-enabled, 1);
+  /* Make the gradient larger than the slide so background-position animation is visible */
+  background-repeat: no-repeat;
+  background-size: 300% 300%;
+  background-position: 45% 35%;
+  will-change: background-position;
+  animation: sb-gradient-pan 80s ease-in-out infinite
+    alternate;
+}
+.slide-quote .slide-inner {
+  position: relative;
+  z-index: 1;
+  justify-content: space-between;
+}
+.slide-quote .quote-text {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-title);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-transform: var(--heading-transform, none);
+  font-weight: var(--heading-weight, 400);
+  max-width: 32ch;
+  margin-top: 8px;
+}
+.slide-quote .quote-author {
+  color: var(--quote-author-color);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 1.2;
+}
+.slide-quote .quote-author .name {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+.slide-quote .quote-author .role {
+  font-size: 28px;
+  opacity: 0.92;
+}
+
+@media print {
+  /* Print/export: avoid animated gradients (and Safari print oddities). */
+  .slide-quote::before {
+    animation: none !important;
+  }
+}

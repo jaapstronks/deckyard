@@ -1,0 +1,13 @@
+# Gitleaks configuration for Deckyard.
+# Extends the default ruleset; allowlists documented placeholder values.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Documentation placeholders (not real credentials)"
+regexes = [
+  # API-key placeholder used throughout the docs ("dk_live_..." literally)
+  '''dk_live_\.\.\.''',
+  '''dk_live_your_key_here''',
+]

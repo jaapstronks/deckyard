@@ -1,0 +1,94 @@
+/**
+ * Avatar component styles.
+ *
+ * Displays user profile images with initials fallback.
+ */
+
+.avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-surface-2, #e5e5e5);
+  vertical-align: middle;
+}
+
+/* Size variants */
+.avatar--xs {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.avatar--sm {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.avatar--md {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatar--xl {
+  width: 64px;
+  height: 64px;
+  font-size: 20px;
+}
+
+/* Image element */
+.avatar-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Initials fallback */
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .avatar {
+    background: var(--color-surface-3, #333);
+  }
+
+  .avatar-initials {
+    color: rgba(255, 255, 255, 0.95);
+  }
+}
+
+/* Force dark mode when body has dark class */
+body.is-dark .avatar {
+  background: var(--color-surface-3, #333);
+}
+
+body.is-dark .avatar-initials {
+  color: rgba(255, 255, 255, 0.95);
+}

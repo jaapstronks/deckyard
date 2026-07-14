@@ -1,0 +1,333 @@
+/* ============================================================
+   SIDEBAR NAVIGATION
+   PowerPoint-style sidebar for overview page navigation
+   ============================================================ */
+
+:root {
+  --ps-sidebar-width: 220px;
+  --ps-sidebar-collapsed-width: 64px;
+}
+
+/* Main layout with sidebar */
+.app-shell.has-sidebar {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+
+.app-shell.has-sidebar > .topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.app-shell.has-sidebar > .app-sidebar {
+  position: fixed;
+  top: var(--ps-topbar-height, 60px);
+  left: 0;
+  bottom: 0;
+  width: var(--ps-sidebar-width);
+  z-index: 90;
+}
+
+.app-shell.has-sidebar > .presentation-grid-content {
+  margin-left: var(--ps-sidebar-width);
+  margin-top: var(--ps-topbar-height, 60px);
+  min-height: calc(100vh - var(--ps-topbar-height, 60px));
+  overflow-x: hidden; /* Prevent horizontal scrollbar */
+}
+
+/* Sidebar container */
+.app-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--app-bg-elevated));
+  border-right: 1px solid hsl(var(--app-border-subtle));
+  padding: var(--ps-space-3) 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* New presentation button in sidebar */
+.sidebar-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  margin: 0 var(--ps-space-3) var(--ps-space-3);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-family: inherit;
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: white;
+  background: hsl(var(--app-accent-primary));
+  border: none;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+.sidebar-new-btn:hover {
+  background: hsl(var(--app-accent-primary-hover));
+  transform: translateY(-1px);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.sidebar-new-btn:active {
+  transform: translateY(0);
+}
+
+.sidebar-new-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Sidebar navigation section */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  padding: 0 var(--ps-space-3);
+}
+
+/* Sidebar nav item text (inside buttons) */
+.sidebar-nav-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sidebar section label (standalone header) */
+.sidebar-nav-label {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--app-text-tertiary));
+  padding: var(--ps-space-4) var(--ps-space-3) var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+.sidebar-nav-label:first-child {
+  margin-top: 0;
+  padding-top: var(--ps-space-2);
+}
+
+/* Sidebar navigation item */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-family: inherit;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all var(--ps-transition-fast);
+  text-decoration: none;
+}
+
+.sidebar-nav-item:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.sidebar-nav-item.is-active {
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+}
+
+.sidebar-nav-item:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: -2px;
+}
+
+/* Sidebar nav item icon */
+.sidebar-nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  object-fit: contain;
+}
+
+.sidebar-nav-item.is-active .sidebar-nav-icon {
+  opacity: 1;
+}
+
+/* Sidebar nav item badge (for unread count) - red notification style */
+.sidebar-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  background: hsl(var(--app-danger));
+  color: white;
+  border-radius: var(--ps-radius-full);
+}
+
+.sidebar-nav-badge:empty {
+  display: none;
+}
+
+.sidebar-nav-badge[data-count="0"] {
+  display: none;
+}
+
+/* Sidebar divider */
+.sidebar-divider {
+  height: 1px;
+  background: hsl(var(--app-border-subtle));
+  margin: var(--ps-space-3) var(--ps-space-3);
+}
+
+/* Sidebar footer (e.g., for workspace info) */
+.sidebar-footer {
+  margin-top: auto;
+  padding: var(--ps-space-4) var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+/* ============================================================
+   MOBILE BOTTOM TAB BAR
+   Transforms sidebar to bottom tabs on small screens
+   ============================================================ */
+
+.app-bottom-tabs {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: hsl(var(--app-bg-elevated));
+  border-top: 1px solid hsl(var(--app-border-default));
+  padding: var(--ps-space-2) var(--ps-space-3);
+  padding-bottom: calc(var(--ps-space-2) + env(safe-area-inset-bottom, 0px));
+}
+
+.app-bottom-tabs-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  color: hsl(var(--app-text-tertiary));
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+  min-width: 64px;
+}
+
+.bottom-tab:hover {
+  color: hsl(var(--app-text-secondary));
+}
+
+.bottom-tab.is-active {
+  color: hsl(var(--app-accent-text));
+}
+
+.bottom-tab-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.bottom-tab-label {
+  white-space: nowrap;
+}
+
+/* Badge on tab - red notification style */
+.bottom-tab-badge {
+  position: absolute;
+  top: 2px;
+  right: 12px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  background: hsl(var(--app-danger));
+  color: white;
+  border-radius: var(--ps-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-tab-badge:empty,
+.bottom-tab-badge[data-count="0"] {
+  display: none;
+}
+
+/* ============================================================
+   RESPONSIVE: Switch to bottom tabs on mobile
+   ============================================================ */
+
+@media (max-width: 768px) {
+  .app-shell.has-sidebar > .app-sidebar {
+    display: none;
+  }
+
+  .app-shell.has-sidebar > .presentation-grid-content {
+    margin-left: 0;
+    padding-bottom: 80px; /* Space for bottom tabs */
+  }
+
+  .app-shell.has-sidebar .app-bottom-tabs {
+    display: block;
+  }
+}
+
+/* ============================================================
+   VIEW CONTAINERS
+   Each sidebar view has its own content area
+   ============================================================ */
+
+.sidebar-view {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-view.is-active {
+  display: block;
+}
+
+/* Ensure grid lists inside views display properly */
+.sidebar-view .list.presentation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  width: 100%;
+}

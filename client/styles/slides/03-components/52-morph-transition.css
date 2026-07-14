@@ -1,0 +1,12 @@
+/* Morph transition: will-change hints and reduced-motion override */
+
+.deck-stage.is-morphing [data-morph-role] {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-morph-role] {
+    transition: none !important;
+    transform: none !important;
+  }
+}

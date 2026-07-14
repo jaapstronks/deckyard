@@ -1,0 +1,118 @@
+{
+  "id": "e5998a00-5a63-4f13-b782-bdb8d2c8109b",
+  "presentationId": "84d46de6-eb2d-4aa7-bf82-5b2f9bcddb5d",
+  "created": "2026-01-30T07:55:52.320Z",
+  "createdBy": "guest-c94c3d6f-bd6e-4f38-b194-34bca9c5edc5@sandbox.local",
+  "reason": "session_end",
+  "label": "",
+  "revision": 2,
+  "title": "asdfasdf",
+  "presentation": {
+    "id": "84d46de6-eb2d-4aa7-bf82-5b2f9bcddb5d",
+    "title": "asdfasdf",
+    "description": null,
+    "created": "2026-01-30T07:50:48.685Z",
+    "modified": "2026-01-30T07:50:53.820Z",
+    "theme": "sandbox-minimal",
+    "lang": "nl",
+    "scope": "private",
+    "revision": 2,
+    "ownerEmail": "guest-c94c3d6f-bd6e-4f38-b194-34bca9c5edc5@sandbox.local",
+    "createdBy": "guest-c94c3d6f-bd6e-4f38-b194-34bca9c5edc5@sandbox.local",
+    "updatedBy": "guest-c94c3d6f-bd6e-4f38-b194-34bca9c5edc5@sandbox.local",
+    "isStarterKit": false,
+    "settings": {
+      "liveVideo": {
+        "enabled": false,
+        "provider": "",
+        "streamUrl": "",
+        "mobilePosition": "bottom",
+        "defaultPosition": "pip-top-right"
+      },
+      "qaEnabled": true,
+      "transitions": {
+        "preset": "fade"
+      },
+      "stepParagraphs": true
+    },
+    "i18n": {
+      "active": "nl",
+      "dominant": "nl",
+      "progress": {
+        "updatedAt": "2026-01-30T07:50:53.819Z",
+        "hasIncomplete": false,
+        "missingEnGbToNl": null,
+        "missingNlToEnGb": null
+      },
+      "versions": {
+        "nl": {
+          "title": "asdfasdf",
+          "slides": [
+            {
+              "id": "8000b967-4627-4226-a6e4-3823e0d141a8",
+              "type": "title-slide",
+              "notes": "",
+              "content": {
+                "bgAlt": "",
+                "title": "Presentatie over asdfasdf",
+                "byline": "",
+                "bgImage": "",
+                "background": "lime",
+                "logoCorner": "right",
+                "subheading": "",
+                "attribution": ""
+              },
+              "parentId": null,
+              "visibility": {}
+            },
+            {
+              "id": "c88495d9-c25d-4221-90f8-6be3c89584f1",
+              "type": "chapter-title-slide",
+              "notes": "",
+              "content": {
+                "title": "Sectietitel"
+              },
+              "parentId": null
+            }
+          ]
+        }
+      }
+    },
+    "slides": [
+      {
+        "id": "8000b967-4627-4226-a6e4-3823e0d141a8",
+        "type": "title-slide",
+        "notes": "",
+        "content": {
+          "bgAlt": "",
+          "title": "Presentatie over asdfasdf",
+          "byline": "",
+          "bgImage": "",
+          "background": "lime",
+          "logoCorner": "right",
+          "subheading": "",
+          "attribution": ""
+        },
+        "parentId": null,
+        "visibility": {}
+      },
+      {
+        "id": "c88495d9-c25d-4221-90f8-6be3c89584f1",
+        "type": "chapter-title-slide",
+        "notes": "",
+        "content": {
+          "title": "Sectietitel"
+        },
+        "parentId": null
+      }
+    ],
+    "notionSourcePageId": null,
+    "sandbox": {
+      "enabled": true,
+      "expires": "2026-01-31T07:50:48.684Z"
+    },
+    "published": null,
+    "trashedAt": null,
+    "trashedBy": null
+  }
+}

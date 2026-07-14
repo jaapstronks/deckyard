@@ -1,0 +1,63 @@
+.DS_Store
+
+# Dependencies
+node_modules/
+
+# Astro
+.astro/
+
+# Local runtime data
+server/data/
+server/uploads/
+readme.md.local
+
+# Personal docs
+docs/STRATEGY-PERSONAL.md
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Claude Code local state (per-user, never commit)
+.claude/
+
+# Generated assets (downloaded via postinstall)
+assets/fonts/google/
+
+# ============================================
+# Fork Customization Directories
+# ============================================
+# Fork/client-specific themes, assets and slide types live under custom/.
+# Upstream OSS ships this tree EMPTY (only the .gitkeep placeholders are
+# tracked), so locally-installed themes stay out of the repo. A fork that wants
+# to version its own customizations un-ignores them — see
+# docs/reference/fork-setup.md.
+custom/themes/*
+!custom/themes/.gitkeep
+custom/assets/*
+!custom/assets/.gitkeep
+custom/slide-types/*
+!custom/slide-types/.gitkeep
+custom/mcp-tools.js
+
+# Playwright MCP screenshots
+.playwright-mcp/
+
+# Ad-hoc screenshots dropped at the repo root during manual testing
+/*.png
+
+# Working plans / briefings (local working docs, see docs/README.md)
+docs/plans/
+
+# Personal correspondence, never commit
+briefing-maarten.md
+
+# Stale i18n build artifact (runtime uses client/i18n/<locale>/*.json)
+client/i18n/en.json

@@ -1,0 +1,177 @@
+/* Lijstje slide */
+.slide-lijstje .slide-inner {
+  justify-content: flex-start;
+}
+.slide-lijstje .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  margin: 0 0 12px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+.slide-lijstje .subheading {
+  margin: 0 0 48px;
+  /* This is an intro/lead sentence (hero-description style), not a second
+     title: use the body font, kept a touch larger than body text - like a
+     lead paragraph on a web page. No heading transform/weight so an uppercase
+     theme doesn't shout a full sentence. */
+  font-family: var(--font-body);
+  font-size: var(--font-size-subtitle);
+  line-height: 1.35;
+  color: var(--color-text);
+  font-weight: 400;
+  text-transform: none;
+  max-width: 70ch;
+}
+.slide-lijstje .lijst {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  /* Match the readable one-column content slide width */
+  max-width: 65%;
+  /* Match the “one-column content” big-type feel */
+  font-size: calc(var(--font-size-body) + 2px);
+  line-height: var(--line-height-body);
+}
+/* When there's no subheading the list follows the heading directly; the
+   heading's 12px bottom margin alone crowds the first item against the title.
+   The subheading (when present) supplies its own 48px gap, so only pad here. */
+.slide-lijstje .heading + .lijst {
+  margin-top: 24px;
+}
+.slide-lijstje .lijst-item {
+  display: flex;
+  gap: 28px; /* more horizontal room between marker and text */
+  align-items: flex-start;
+  padding: 26px 0; /* more breathing room between items */
+  /* Never let flexbox compress an item to fit: shrinking eats the bottom
+     padding asymmetrically and the wrapped description ends up crowding the
+     divider below it. Keep items at natural size; when many long items don't
+     fit, the 'auto' layout moves them to two columns instead. */
+  flex-shrink: 0;
+}
+.slide-lijstje .lijst-item:first-child {
+  padding-top: 12px; /* more room above the first item */
+}
+.slide-lijstje .lijst-item + .lijst-item {
+  border-top: 2px solid rgba(0, 0, 0, 0.18);
+}
+.slide-lijstje .marker {
+  flex: 0 0 auto;
+}
+.slide-lijstje.is-numbers .marker {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--t-color-accent-contrast, #ffffff);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  line-height: 1;
+  margin-top: 2px;
+}
+.slide-lijstje.is-bullets .marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  margin-top: 16px; /* align with first line of text */
+}
+.slide-lijstje .lijst-item-body {
+  min-width: 0;
+  flex: 1;
+}
+.slide-lijstje .item-title {
+  font-family: var(--font-heading);
+  font-size: 0.95em; /* slightly smaller than body */
+  line-height: 1.12;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  letter-spacing: var(--t-list-item-title-letter-spacing, -0.01em);
+  margin: 0 0 6px;
+}
+.slide-lijstje .item-text {
+  font-family: var(--font-body);
+  font-size: 0.95em;
+  line-height: 1.22;
+}
+
+/* Text size variants (density field).
+   'Large' (is-comfortable) scales up the whole list, with an extra bump on the
+   item titles, to fill sparse slides (few items). 'Small' (is-compact) shrinks
+   everything so many items still fit on one slide. Titles use em units off
+   .lijst, so scaling the list font-size cascades to both title and text. */
+.slide-lijstje.is-comfortable .lijst {
+  font-size: calc(var(--font-size-body) + 7px);
+}
+.slide-lijstje.is-comfortable .item-title {
+  font-size: 1.18em; /* bigger titles are the main win for sparse slides */
+  margin-bottom: 8px;
+}
+.slide-lijstje.is-comfortable .item-text {
+  font-size: 1em;
+}
+.slide-lijstje.is-comfortable .lijst-item {
+  padding: 30px 0;
+}
+.slide-lijstje.is-comfortable.is-bullets .marker {
+  margin-top: 20px; /* keep bullet aligned with the taller title line */
+}
+
+.slide-lijstje.is-compact .lijst {
+  font-size: var(--font-size-body);
+}
+.slide-lijstje.is-compact .item-title {
+  font-size: 0.9em;
+}
+.slide-lijstje.is-compact .item-text {
+  font-size: 0.9em;
+}
+.slide-lijstje.is-compact .lijst-item {
+  padding: 16px 0;
+}
+.slide-lijstje.is-compact.is-bullets .marker {
+  margin-top: 12px;
+}
+
+/* Two-column layout */
+.slide-lijstje.is-two-col .lijst {
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 64px;
+  row-gap: 0;
+}
+.slide-lijstje.is-two-col .lijst-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Prevent grid blowout from content */
+  max-width: 100%;
+}
+.slide-lijstje.is-two-col .lijst-item {
+  border-top: 2px solid rgba(0, 0, 0, 0.18);
+}
+.slide-lijstje.is-two-col .lijst-col .lijst-item:first-child {
+  border-top: none;
+  padding-top: 12px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

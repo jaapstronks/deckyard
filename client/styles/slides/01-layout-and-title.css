@@ -1,0 +1,20 @@
+/* Shared slide rendering (used by preview, presenter, and exports) */
+@import url('./01-layout-and-title/00-base.css');
+@import url('./01-layout-and-title/10-payoff.css');
+@import url('./01-layout-and-title/11-end-slide.css');
+@import url('./01-layout-and-title/20-title-slide.css');
+@import url('./01-layout-and-title/21-title-slide-universal.css');
+@import url('./01-layout-and-title/30-content-and-tables.css');
+@import url('./01-layout-and-title/35-table-slide.css');
+@import url('./01-layout-and-title/40-image-slide.css');
+@import url('./01-layout-and-title/50-image-text-slide.css');
+@import url('./01-layout-and-title/60-lijstje-slide.css');
+@import url('./01-layout-and-title/80-kpi-metrics-slide.css');
+@import url('./01-layout-and-title/82-comparison-slide.css');
+@import url('./01-layout-and-title/84-process-slide.css');
+@import url('./01-layout-and-title/86-timeline-slide.css');
+@import url('./01-layout-and-title/88-matrix-slide.css');
+@import url('./01-layout-and-title/90-funnel-slide.css');
+@import url('./01-layout-and-title/91-pyramid-slide.css');
+@import url('./01-layout-and-title/92-cycle-slide.css');
+@import url('./01-layout-and-title/93-gallery-slide.css');

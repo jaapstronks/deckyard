@@ -1,0 +1,251 @@
+/* =============================================================================
+   BASE SLIDE STYLES
+   ============================================================================
+   Foundation styles for all slides. Uses design tokens from 00-tokens.css.
+   ============================================================================ */
+
+.slide {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: var(--slide-padding);
+  color: var(--color-text);
+  background: var(--slide-bg, var(--color-background));
+  display: flex;
+  /* Override global site typography defaults (e.g. centered white h1/h2). */
+  /* Using 'start' instead of 'left' for RTL language support. */
+  text-align: start;
+}
+
+/* Reset global heading styles inside slides (theme base CSS may set centered/white headings). */
+.slide h1,
+.slide h2,
+.slide h3 {
+  margin: 0;
+  color: inherit;
+  text-align: start;
+}
+
+.slide-bg-lime {
+  --slide-bg: var(--slide-bg-lime);
+}
+.slide-bg-mist {
+  --slide-bg: var(--slide-bg-mist);
+}
+
+/* Loading state for custom slide types (rendered server-side) */
+.slide.slide-loading {
+  background: var(--slide-bg-mist, #e0e6e2);
+  opacity: 0.7;
+}
+.slide.slide-loading .heading {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--slide-text-sm, 18px);
+  opacity: 0.5;
+}
+
+.slide-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Subheading: larger than regular text, placed after title.
+   Note: Uses 38px which is between scale values (34px/44px) for legacy reasons. */
+.slide .subheading {
+  font-family: var(--font-body);
+  font-size: 38px; /* TODO: Consider migrating to var(--slide-text-xl) */
+  line-height: var(--slide-leading-snug);
+  margin: var(--slide-space-3) 0 0;
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  max-width: 75ch;
+}
+
+/* Bottom subheading: stuck to the bottom of the slide, used as a caption.
+   margin-bottom:0 defeats the global `p { margin-bottom: 1em }` (~38px here) so
+   the caption's gap to the slide edge equals the slide padding on the other
+   sides, instead of floating ~38px too high. */
+.slide .bottom-subheading {
+  font-family: var(--font-body);
+  font-size: 38px; /* TODO: Consider migrating to var(--slide-text-xl) */
+  line-height: var(--slide-leading-snug);
+  margin-top: auto;
+  margin-bottom: 0;
+  padding-top: var(--slide-space-4);
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
+  max-width: 90ch;
+}
+
+/* Adjust subheading color on dark backgrounds */
+.slide-icon-card-grid .subheading {
+  color: var(
+    --t-icon-card-grid-subtitle-color,
+    var(--slide-text-light-muted)
+  );
+}
+
+/* When bottom subheading is present, shrink the main content area */
+.slide.has-bottom-subheading .slide-inner {
+  justify-content: flex-start;
+}
+
+/* =============================================================================
+   PER-SLIDE BACKGROUND IMAGE (global, optional)
+   ============================================================================
+   An optional full-bleed background image available on every slide type.
+   Rendered centrally (see renderSlideHtml) as a layer behind .slide-inner.
+   ============================================================================ */
+.slide.has-slide-bg {
+  position: relative;
+}
+.slide.has-slide-bg > .slide-bg-layer {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 0;
+  pointer-events: none;
+}
+/* In "fit (no crop)" mode the image is letterboxed; fill the gaps with the
+   slide's own background colour rather than leaving it transparent. */
+.slide.has-slide-bg-contain > .slide-bg-layer {
+  background-color: var(--slide-bg, var(--color-background));
+}
+.slide.has-slide-bg > .slide-bg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.slide.has-slide-bg > .slide-bg-overlay.slide-bg-overlay-light {
+  background: rgba(255, 255, 255, 0.55);
+}
+.slide.has-slide-bg > .slide-bg-overlay.slide-bg-overlay-dark {
+  background: rgba(0, 0, 0, 0.45);
+}
+/* Directional gradient scrims: darken one edge behind the text while leaving
+   the rest of the image visible. Half-opacity at the edge, fading to clear. */
+.slide.has-slide-bg > .slide-bg-overlay.slide-bg-overlay-gradient-top {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.28) 30%,
+    rgba(0, 0, 0, 0) 65%
+  );
+}
+.slide.has-slide-bg > .slide-bg-overlay.slide-bg-overlay-gradient-bottom {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.28) 30%,
+    rgba(0, 0, 0, 0) 65%
+  );
+}
+/* Auto scrim: injected only when auto-detection flagged the image as
+   low-contrast. A gentle, position-independent full scrim whose tint follows
+   the resolved text colour — dark under light text, light under dark text. */
+.slide.has-slide-bg.has-slide-bg-light-text
+  > .slide-bg-overlay.slide-bg-overlay-auto {
+  background: rgba(0, 0, 0, 0.38);
+}
+.slide.has-slide-bg.has-slide-bg-dark-text
+  > .slide-bg-overlay.slide-bg-overlay-auto {
+  background: rgba(255, 255, 255, 0.45);
+}
+/* Keep slide content above the background layer and overlay. */
+.slide.has-slide-bg > .slide-inner {
+  position: relative;
+  z-index: 2;
+}
+
+/* Optional: readable text on background images.
+   The light/dark variants redirect the slide's --color-text / --color-text-muted
+   tokens to the theme's house-style contrast colours
+   (--t-text-color-light / --t-text-color-dark, falling back to white /
+   near-black). "auto" mode picks one at edit time by luminance sampling
+   (client/lib/bg-contrast.js); manual light/dark force it. Muted variants are
+   derived with color-mix so brand tints stay on-palette. Redirecting the tokens
+   (not hard-setting colours) keeps hover colours, currentColor icons and
+   semantic fills working without !important. */
+.slide.has-slide-bg-light-text {
+  --slide-bg-text: var(--t-text-color-light, var(--slide-text-light, #fff));
+  --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
+  --color-text: var(--slide-bg-text);
+  --color-text-muted: var(--slide-bg-text-muted);
+  color: var(--slide-bg-text);
+}
+.slide.has-slide-bg-dark-text {
+  --slide-bg-text: var(--t-text-color-dark, #212121);
+  --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 70%, transparent);
+  --color-text: var(--slide-bg-text);
+  --color-text-muted: var(--slide-bg-text-muted);
+  color: var(--slide-bg-text);
+}
+.slide.has-slide-bg-light-text .slide-inner,
+.slide.has-slide-bg-dark-text .slide-inner {
+  color: var(--slide-bg-text);
+}
+/* Common slide-level captions/subtitles use hard-coded colours and sit directly
+   on the background, so the token override above doesn't reach them. */
+.slide.has-slide-bg-light-text
+  :is(.subheading, .bottom-subheading, .subtitle, .byline, .attribution),
+.slide.has-slide-bg-dark-text
+  :is(.subheading, .bottom-subheading, .subtitle, .byline, .attribution) {
+  color: var(--slide-bg-text-muted);
+}
+/* Several slide types render text on their own opaque light surfaces (cards,
+   matrix cells, the cycle hub, the partner-split panel). Those sit ON TOP of
+   the background image, so their text must stay dark — re-assert dark tokens. */
+.slide.has-slide-bg-light-text
+  :is(
+    .icon-card-body,
+    .card-stack-body,
+    .cycle-center,
+    .sfi-card,
+    .matrix-cell,
+    .slide-partner-split .left
+  ) {
+  --color-text: rgba(11, 11, 11, 0.92);
+  --color-text-muted: rgba(11, 11, 11, 0.7);
+  color: rgba(11, 11, 11, 0.92);
+}
+
+/* =============================================================================
+   PER-SLIDE THEME LOGO (global, optional)
+   ============================================================================
+   Shows the active theme's logo in a corner of the slide. Rendered centrally
+   (see renderSlideHtml) so it works on every slide type.
+   ============================================================================ */
+.slide.has-slide-logo {
+  position: relative;
+}
+.slide.has-slide-logo > .slide-logo-corner {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+.slide.has-slide-logo > .slide-logo-corner.slide-logo-top-right {
+  top: 52px;
+  right: 56px;
+}
+.slide.has-slide-logo > .slide-logo-corner .slide-logo-corner-img {
+  width: 150px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

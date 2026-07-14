@@ -1,0 +1,687 @@
+/* App UI components (theme-independent) */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-4);
+  border-radius: var(--ps-radius-md);
+  text-decoration: none;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  line-height: 1.25;
+  border: 1px solid hsl(var(--app-border-default));
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ps-transition-fast);
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+
+/* Inline spinner: any button can flip to a busy/cancel state with a spinner
+   by toggling `.is-loading` (the `.btn` gap handles spacing to the label). */
+.btn.is-loading::before {
+  content: '';
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-loading::before {
+    animation-duration: 2s;
+  }
+}
+
+.btn-primary {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+}
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
+}
+
+.btn-secondary {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-strong));
+  box-shadow: var(--app-shadow-sm);
+  color: hsl(var(--app-text-primary));
+}
+.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.btn-ai {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+  box-shadow: var(--app-shadow-sm);
+}
+.btn-ai:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
+}
+
+.btn-danger {
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger-soft));
+  border-color: transparent;
+}
+.btn-danger:hover:not(:disabled) {
+  color: hsl(var(--app-text-on-solid));
+  background: hsl(var(--app-danger));
+  border-color: hsl(var(--app-danger));
+}
+
+.btn.is-compact {
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+}
+
+.btn.is-compact-sm {
+  padding: 2px var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+  line-height: 1.1;
+}
+
+.btn.is-pill {
+  border-radius: var(--ps-radius-full);
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.btn.is-icon-only {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn.is-icon-only svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Logout: present but intentionally de-emphasized (rarely used). */
+.btn-logout {
+  opacity: 0.72;
+  font-size: var(--ps-text-xs);
+  padding: var(--ps-space-2) var(--ps-space-3);
+}
+.btn-logout:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-base);
+  line-height: 1.5;
+  outline: none;
+  transition: all var(--ps-transition-fast);
+  box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
+}
+.form-input::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+.form-input:focus {
+  border-color: hsl(var(--app-border-focus));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow:
+    inset 0 1px 2px hsl(var(--app-text-primary) / 0.03),
+    0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+}
+
+.form-textarea-sm {
+  min-height: 56px;
+  resize: vertical;
+}
+
+.form-textarea-md {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.form-textarea-lg {
+  min-height: 220px;
+  resize: vertical;
+}
+
+/* Monospace code editor textarea (custom-html-slide html/css fields) */
+.form-textarea-code {
+  min-height: 200px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.form-textarea-code[readonly] {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.ui-status-line {
+  min-height: 18px;
+}
+
+.form-input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* Utility: compact input/select in modals */
+.form-input.is-compact {
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* Background picker (slide field): visual swatches + compact dropdown */
+.bg-picker {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Inside a compact field grid (e.g. the chart controls row) the picker must
+   fit its column instead of overflowing onto a neighbouring field. */
+.field-grid .bg-picker,
+.field-grid .bg-picker-trigger {
+  width: 100%;
+  min-width: 0;
+}
+
+.bg-picker-trigger {
+  appearance: none;
+  border: 1px solid hsl(var(--app-border-default));
+  /* Less "white input", more "dropdown control" */
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-2) 38px var(--ps-space-2) var(--ps-space-3); /* room for chevron */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  cursor: pointer;
+  min-width: 240px;
+  position: relative;
+}
+.bg-picker-trigger::after {
+  content: '▾';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.75;
+  pointer-events: none;
+}
+.bg-picker-trigger:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+}
+
+.bg-picker-label {
+  font-size: 14px;
+}
+
+.bg-picker-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  flex: 0 0 auto;
+}
+.bg-picker-swatch.is-transparent {
+  background:
+    linear-gradient(
+      45deg,
+      hsl(var(--app-text-secondary) / 0.16) 25%,
+      transparent 25%,
+      transparent 75%,
+      hsl(var(--app-text-secondary) / 0.16) 75%
+    ),
+    linear-gradient(
+      45deg,
+      hsl(var(--app-text-secondary) / 0.16) 25%,
+      transparent 25%,
+      transparent 75%,
+      hsl(var(--app-text-secondary) / 0.16) 75%
+    );
+  background-position: 0 0, 6px 6px;
+  background-size: 12px 12px;
+  background-color: hsl(var(--app-bg-sunken));
+}
+
+.bg-picker-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  min-width: 240px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-overlay));
+  box-shadow: var(--app-shadow-xl);
+  z-index: 60;
+}
+
+.bg-picker-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+  text-align: left;
+}
+.bg-picker-option:hover {
+  background: hsl(var(--app-bg-hover));
+}
+.bg-picker-option.is-active {
+  border-color: hsl(var(--app-border-focus));
+  background: hsl(var(--app-accent-soft));
+}
+
+/* Icon picker preview (editor UI): keep neutral, never theme-branded. */
+.icon-picker-preview-img {
+  width: 28px;
+  height: 28px;
+  display: block;
+  border-radius: var(--ps-radius-sm, 6px);
+  background: hsl(var(--app-surface-white));
+  border: 1px solid hsl(var(--app-border-default));
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+.icon-picker-preview-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ps-radius-sm, 6px);
+  background: hsl(var(--app-surface-white));
+  border: 1px dashed hsl(var(--app-border-default));
+  box-sizing: border-box;
+}
+
+/* Icon field trigger: preview + current name, opens the picker modal.
+   Sized to match the adjacent text input so the Icon/Title row lines up. */
+.icon-picker-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  width: 100%;
+  padding: var(--ps-space-1, 0.25rem) var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.icon-picker-trigger:hover {
+  border-color: hsl(var(--app-border-strong));
+}
+.icon-picker-trigger:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 1px;
+}
+.icon-picker-trigger-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  color: hsl(var(--app-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.icon-picker-trigger-name.is-empty {
+  font-family: inherit;
+  color: hsl(var(--app-text-secondary));
+  font-style: italic;
+}
+.icon-picker-trigger-action {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: hsl(var(--app-text-secondary));
+}
+
+/* Icon picker modal: search + category chips + responsive grid. */
+.icon-picker-modal {
+  width: min(720px, 92vw);
+}
+.icon-picker-search {
+  width: 100%;
+}
+.icon-picker-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-3);
+}
+.icon-picker-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-surface-white));
+  color: hsl(var(--app-text-secondary));
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.icon-picker-chip:hover {
+  color: hsl(var(--app-text-primary));
+}
+.icon-picker-chip.is-active {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: #fff;
+}
+.icon-picker-section-label {
+  margin-top: var(--ps-space-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--app-text-secondary));
+}
+.icon-picker-section-label:empty {
+  display: none;
+}
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+.icon-picker-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--ps-radius-md, 8px);
+  border: 1px solid transparent;
+  background: hsl(var(--app-bg-sunken));
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.icon-picker-cell:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+}
+.icon-picker-cell:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 1px;
+}
+.icon-picker-cell.is-selected {
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.1);
+}
+.icon-picker-cell-img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  /* Lucide SVGs are loaded as <img> (black stroke); adapt to dark UI mode. */
+  filter: var(--app-icon-filter, none);
+}
+.icon-picker-empty {
+  grid-column: 1 / -1;
+  padding: var(--ps-space-5) 0;
+  text-align: center;
+}
+
+/* Table editor (custom slide form) */
+.table-editor-labelrow {
+  align-items: center;
+}
+
+.table-editor-count {
+  align-self: flex-start;
+}
+
+.table-editor-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+  background: hsl(var(--app-bg-elevated));
+}
+
+.table-editor-grid th,
+.table-editor-grid td {
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  border-right: 1px solid hsl(var(--app-border-default));
+  padding: 6px;
+  vertical-align: top;
+}
+
+.table-editor-grid tr:last-child > * {
+  border-bottom: 0;
+}
+.table-editor-grid tr > *:last-child {
+  border-right: 0;
+}
+
+.table-editor-corner {
+  width: 70px;
+  background: hsl(var(--app-bg-sunken));
+}
+
+.table-editor-colhead {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  text-align: left;
+  background: hsl(var(--app-bg-sunken));
+  color: hsl(var(--app-text-secondary));
+  user-select: none;
+}
+
+.table-editor-rowhead {
+  width: 70px;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  text-align: left;
+  background: hsl(var(--app-bg-sunken));
+  color: hsl(var(--app-text-secondary));
+  user-select: none;
+}
+
+.table-editor-grid tr.is-header-row .table-editor-rowhead {
+  color: hsl(var(--app-text-primary));
+}
+
+.table-editor-td {
+  padding: 6px;
+}
+
+.table-editor-cell {
+  padding: 8px 10px;
+  font-size: var(--ps-text-sm);
+}
+
+.table-editor-actions-td {
+  width: 44px;
+  text-align: center;
+  background: hsl(var(--app-bg-sunken));
+}
+
+.table-editor-import summary {
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--ps-text-sm);
+  opacity: 0.9;
+}
+
+/* Contextual structure affordances */
+.table-editor-colhead {
+  white-space: nowrap;
+}
+.table-editor-colhead .table-editor-colhead-delete {
+  margin-left: var(--ps-space-2);
+  opacity: 0.35;
+}
+.table-editor-colhead:hover .table-editor-colhead-delete,
+.table-editor-colhead .table-editor-colhead-delete:focus-visible {
+  opacity: 1;
+}
+.table-editor-addcol-th {
+  width: 44px;
+  text-align: center;
+  vertical-align: middle;
+}
+.table-editor-addrow-td {
+  padding: var(--ps-space-2);
+  background: hsl(var(--app-bg-sunken));
+}
+.table-editor-addrow-btn {
+  width: 100%;
+}
+
+/* Roomy "Edit table" modal */
+.modal.table-editor-modal {
+  width: min(1100px, 100%);
+  max-height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+}
+.modal.table-editor-modal .modal-content {
+  overflow: auto;
+}
+.table-editor-modal-grid {
+  padding-top: var(--ps-space-3);
+}
+.table-editor-grid.is-roomy .table-editor-cell {
+  padding: 10px 12px;
+  font-size: var(--ps-text-base);
+  min-width: 120px;
+}
+.table-editor-grid.is-roomy .table-editor-rowhead,
+.table-editor-grid.is-roomy .table-editor-corner {
+  width: 84px;
+}
+
+/* Markdown toolbar for text fields */
+.md-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border: 1px solid #d0d0d0;
+  border-bottom: none;
+  border-radius: var(--ps-radius-md, 6px) var(--ps-radius-md, 6px) 0 0;
+}
+
+.md-toolbar + .form-input {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.md-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #c0c0c0;
+  border-radius: var(--ps-radius-sm, 4px);
+  background: #ffffff;
+  color: #333333;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.md-toolbar-btn:hover {
+  background: #e8e8e8;
+  border-color: #999999;
+}
+
+.md-toolbar-btn:active {
+  background: #d8d8d8;
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+.md-toolbar-btn:focus-visible {
+  outline: none;
+  border-color: #666666;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+.md-toolbar-btn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  stroke: #333333;
+}
+
+.md-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: #c0c0c0;
+  margin: 4px 4px;
+}
+
+

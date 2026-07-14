@@ -1,0 +1,301 @@
+/* ============================================================
+   FONT MANAGER STYLES
+   ============================================================ */
+
+/* Font family card list */
+.font-families-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--ps-space-4);
+}
+
+.font-family-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3);
+}
+
+.font-family-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ps-space-2);
+}
+
+.font-family-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.font-family-card-name {
+  font-weight: 600;
+  font-size: var(--ps-text-base);
+  color: hsl(var(--app-text-primary));
+  margin: 0;
+}
+
+.font-family-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-1);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+/* Source badge */
+.font-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.font-source-badge[data-source="upload"] {
+  background: hsl(var(--app-bg-secondary));
+  color: hsl(var(--app-text-secondary));
+}
+
+.font-source-badge[data-source="adobe"] {
+  background: hsl(0 80% 95%);
+  color: hsl(0 70% 40%);
+}
+
+.font-source-badge[data-source="monotype"] {
+  background: hsl(220 70% 95%);
+  color: hsl(220 60% 40%);
+}
+
+.font-source-badge[data-source="google"] {
+  background: hsl(140 50% 93%);
+  color: hsl(140 50% 30%);
+}
+
+/* Preview text rendered in the font */
+.font-preview-text {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-sm);
+  font-size: var(--ps-text-base);
+  color: hsl(var(--app-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.5em;
+  display: flex;
+  align-items: center;
+}
+
+.font-family-card-actions {
+  display: flex;
+  gap: var(--ps-space-1);
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   FONT EDITOR
+   ============================================================ */
+
+.font-editor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+.font-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.font-editor-header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.font-editor-title {
+  margin: 0;
+  font-size: var(--ps-text-lg);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+/* Source selector radio group */
+.font-source-selector {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.font-source-option {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-subtle));
+  cursor: pointer;
+  font-size: var(--ps-text-sm);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.font-source-option:hover {
+  background: hsl(var(--app-bg-secondary) / 0.3);
+}
+
+.font-source-option.is-selected {
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-soft) / 0.1);
+}
+
+.font-source-option input[type="radio"] {
+  accent-color: hsl(var(--app-accent));
+}
+
+/* Common fields */
+.font-editor-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ps-space-3);
+}
+
+@media (max-width: 600px) {
+  .font-editor-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Source-specific panels */
+.font-source-panel {
+  display: none;
+}
+
+.font-source-panel.is-active {
+  display: block;
+}
+
+/* Upload variant grid */
+.font-variant-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--ps-space-2);
+}
+
+.font-variant-grid-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(var(--app-text-secondary));
+}
+
+.font-variant-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 1fr;
+  gap: var(--ps-space-2);
+  align-items: center;
+  padding: var(--ps-space-2);
+  border-radius: var(--ps-radius-sm);
+  background: hsl(var(--app-bg-secondary) / 0.2);
+}
+
+.font-variant-row:hover {
+  background: hsl(var(--app-bg-secondary) / 0.4);
+}
+
+.font-variant-weight {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+.font-variant-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  min-width: 0;
+}
+
+.font-variant-filename {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font-variant-size {
+  font-size: 11px;
+  color: hsl(var(--app-text-tertiary));
+  flex-shrink: 0;
+}
+
+.font-variant-empty {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Adobe discover results */
+.font-discover-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-3);
+}
+
+.font-discover-family {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-sm);
+  background: hsl(var(--app-bg-secondary) / 0.3);
+}
+
+.font-discover-family-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.font-discover-family-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+}
+
+.font-discover-family-variants {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  margin-top: 2px;
+}
+
+/* Empty state */
+.font-families-empty {
+  padding: var(--ps-space-6) var(--ps-space-4);
+  text-align: center;
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-lg);
+  border: 2px dashed hsl(var(--app-border-subtle));
+}
+
+.font-families-empty p {
+  margin: 0;
+  color: hsl(var(--app-text-secondary));
+}
+
+.font-families-empty .help {
+  margin-top: var(--ps-space-2);
+}

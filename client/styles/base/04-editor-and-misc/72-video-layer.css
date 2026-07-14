@@ -1,0 +1,134 @@
+/* ----------------------------------------------------------------
+   Video Layer - persistent video overlay for live presentations
+   ---------------------------------------------------------------- */
+
+.video-layer {
+  position: absolute;
+  z-index: 8;
+  transition: left 0.3s ease-out, top 0.3s ease-out, width 0.3s ease-out;
+  border-radius: var(--ps-radius-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: #000;
+  /* Default fallback (overridden by inline styles from JS) */
+  left: 72%;
+  top: 4%;
+  width: 25%;
+}
+
+.video-layer[data-visible="false"] {
+  display: none;
+}
+
+/* Player container - fills the layer */
+.video-layer-player {
+  position: relative;
+  width: 100%;
+  /* 16:9 aspect ratio */
+  padding-bottom: 56.25%;
+}
+
+.video-layer-player iframe,
+.video-layer-player video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* Controls overlay */
+.video-layer-controls {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.video-layer-unmute {
+  appearance: none;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--ps-radius-sm, 4px);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s;
+}
+
+.video-layer-unmute:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.video-layer-unmute[hidden] {
+  display: none;
+}
+
+/* Error fallback */
+.video-layer-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ccc;
+  font-size: 13px;
+  padding: 12px;
+  text-align: center;
+  z-index: 2;
+}
+
+/* ----------------------------------------------------------------
+   Mobile responsive
+   ---------------------------------------------------------------- */
+
+@media (max-width: 768px) {
+  .video-layer {
+    /* Override JS-applied position for mobile */
+    border-radius: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    transition: none;
+  }
+
+  /* Bottom dock (default) */
+  .video-layer[data-mobile-position="bottom"] {
+    position: fixed;
+    left: 0 !important;
+    bottom: 0;
+    top: auto !important;
+    width: 100% !important;
+    border-radius: 0;
+  }
+
+  /* Top dock */
+  .video-layer[data-mobile-position="top"] {
+    position: fixed;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    border-radius: 0;
+  }
+
+  /* Hidden on mobile */
+  .video-layer[data-mobile-position="hidden"] {
+    display: none !important;
+  }
+
+  /* Small PiP on mobile */
+  .video-layer[data-mobile-position="pip"] {
+    position: fixed;
+    left: auto !important;
+    right: 8px;
+    bottom: 8px;
+    top: auto !important;
+    width: 40% !important;
+    min-width: 140px;
+    max-width: 200px;
+    border-radius: var(--ps-radius-md, 8px);
+  }
+}

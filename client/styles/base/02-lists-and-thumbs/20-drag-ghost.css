@@ -1,0 +1,60 @@
+/* Drag preview (HTML5 drag image) */
+.drag-ghost {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  z-index: 999999;
+  pointer-events: none;
+  user-select: none;
+  width: 260px;
+  padding: 10px 12px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  box-shadow:
+    0 10px 24px hsl(0 0% 0% / 0.18),
+    0 2px 6px hsl(0 0% 0% / 0.12);
+  opacity: 0.86;
+}
+
+.drag-ghost .row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drag-ghost .ghost-num {
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.drag-ghost .ghost-title {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.drag-ghost .ghost-type {
+  margin-top: 6px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--app-text-tertiary));
+}
+
+

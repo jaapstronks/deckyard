@@ -1,0 +1,57 @@
+/* Payoff slide */
+.slide-payoff {
+  padding: 0;
+}
+.slide-payoff .slide-inner {
+  justify-content: center;
+  align-items: center;
+}
+.slide-payoff .payoff-logo {
+  width: 33.333%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+.slide-payoff .payoff-logo.is-payoff-pre {
+  opacity: 0;
+  transform: scale(2.6);
+}
+.slide-payoff .payoff-logo.is-payoff-anim {
+  transform-origin: center;
+  will-change: transform, opacity;
+  animation: sb-payoff-logo-in 950ms cubic-bezier(0.18, 0.82, 0.18, 1) both;
+}
+@keyframes sb-payoff-logo-in {
+  0% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-payoff .payoff-logo.is-payoff-pre,
+  .slide-payoff .payoff-logo.is-payoff-anim {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

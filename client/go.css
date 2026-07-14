@@ -1,0 +1,134 @@
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    sans-serif;
+  background: radial-gradient(
+      1200px 800px at 20% 10%,
+      rgba(255, 255, 255, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      1200px 800px at 80% 90%,
+      rgba(255, 255, 255, 0.06),
+      transparent 60%
+    ),
+    #0b0f0e;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.go-wrap {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.go-card {
+  width: min(420px, 100%);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.go-kicker {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 10px;
+}
+
+.go-title {
+  margin: 0 0 14px;
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.go-form {
+  display: grid;
+  gap: 10px;
+}
+
+.go-label {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.go-input {
+  width: 100%;
+  padding: 14px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 28px;
+  font-weight: 750;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+}
+
+.go-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.go-btn {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.go-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.go-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.go-error {
+  min-height: 18px;
+  color: rgba(255, 120, 120, 0.95);
+  font-size: 13px;
+}
+
+.go-help {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  opacity: 0.78;
+  line-height: 1.35;
+}
+
+
+
+
+
+
+
+

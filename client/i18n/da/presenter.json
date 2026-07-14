@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "delt med arbejdsområde",
+  "notesJoin.copyLink": "Kopiér link",
+  "notesJoin.copyPrompt": "Kopiér dette link:",
+  "notesJoin.help": "Scan QR-koden på din telefon for at åbne notehjælperen.",
+  "notesJoin.open": "Åbn hjælper",
+  "notesJoin.title": "Notehjælper",
+  "presenter.edit": "Edit",
+  "presenter.fullscreen": "Fullscreen",
+  "presenter.help": "←/→ or Space · F fullscreen · Esc edit/exit"
+}

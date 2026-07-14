@@ -1,0 +1,63 @@
+/* Layout utilities (used across views) */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .row.spread {
+  justify-content: space-between;
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .row.is-wrap {
+  flex-wrap: wrap;
+}
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .row.is-end {
+  justify-content: flex-end;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+

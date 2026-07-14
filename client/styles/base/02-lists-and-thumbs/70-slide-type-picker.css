@@ -1,0 +1,782 @@
+/* Slide type picker (drawer + modal) — Lovable structure (`#slideModal`) */
+.slide-add-drawer {
+  padding: var(--ps-space-3);
+  background: hsl(var(--app-bg-sunken));
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-add-title {
+  font-size: var(--ps-text-sm);
+  font-weight: 700;
+  color: hsl(var(--app-text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.slide-add {
+  margin-top: var(--ps-space-3);
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+/* Compact top toolbar: tabs on the left, insert-position + AI on the right. */
+.ps-insert-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--ps-space-4);
+  padding-bottom: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.ps-insert-pos {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin-left: auto;
+}
+
+.ps-insert-pos .field-label {
+  margin: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
+.form-input.ps-insert-input {
+  width: 64px;
+  height: 32px;
+  padding: 0 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ps-insert-pos .btn {
+  height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.ps-insert-toolbar .btn-ai {
+  margin-left: var(--ps-space-2);
+}
+
+/* Keep the segmented tabs from stretching in the flex toolbar. */
+.ps-insert-toolbar .ps-insert-tabs {
+  flex: 0 0 auto;
+}
+
+.ps-slide-types-mount,
+.ps-slide-library-mount {
+  width: 100%;
+  min-width: 0;
+}
+
+.ps-slide-types {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+  width: 100%;
+}
+
+.ps-type-group {
+  padding: var(--ps-space-4);
+  border-radius: var(--ps-radius-lg);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+}
+
+.ps-type-group:nth-child(even) {
+  background: hsl(var(--app-bg-elevated));
+}
+
+.ps-type-group-title {
+  margin: 0 0 var(--ps-space-3);
+  padding: 0;
+  border: 0;
+  font-size: var(--ps-text-sm);
+}
+
+/* Collapsible section header (whole row is the toggle). */
+.ps-type-group-toggle {
+  appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid hsl(var(--app-border-default));
+  padding: 0 0 var(--ps-space-2);
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--app-text-primary));
+}
+
+.ps-type-group-toggle:hover {
+  color: hsl(var(--app-accent-text, var(--app-text-primary)));
+}
+
+.ps-type-group-toggle:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
+  border-radius: var(--ps-radius-sm);
+}
+
+.ps-type-group-chev {
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transform: rotate(90deg);
+  transition: transform var(--ps-transition-fast);
+  flex: 0 0 auto;
+}
+
+.ps-type-group.is-collapsed .ps-type-group-chev {
+  transform: rotate(0deg);
+}
+
+.ps-type-group-name {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.ps-type-group-count {
+  font-weight: 600;
+  color: hsl(var(--app-text-tertiary));
+  letter-spacing: 0;
+}
+
+/* Collapsed sections hide their grid, unless a search is active (then every
+   section is force-expanded so matches stay visible). */
+.ps-type-group.is-collapsed .ps-type-grid {
+  display: none;
+}
+
+.ps-slide-types.is-searching .ps-type-group.is-collapsed .ps-type-grid {
+  display: grid;
+}
+
+.ps-type-grid {
+  display: grid;
+  /* Denser: small cards, more per row */
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: var(--ps-space-2);
+  justify-content: start;
+  width: 100%;
+}
+
+.ps-type-card {
+  appearance: none;
+  border: 1px solid hsl(var(--app-border-default));
+  /* Lovable: cards are grey (not white), compact */
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--ps-transition-fast);
+  box-shadow: none;
+  color: hsl(var(--app-text-primary));
+  width: 112px;
+}
+.ps-type-card:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+.ps-type-card:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.2);
+}
+
+.ps-type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ps-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  color: hsl(var(--app-text-secondary));
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.ps-type-label {
+  font-size: var(--ps-text-xs);
+  font-weight: 650;
+  color: hsl(var(--app-text-primary));
+  line-height: 1.15;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .ps-type-grid {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  }
+  .ps-type-card {
+    width: 104px;
+  }
+}
+
+/* ============================================
+   Slide Type Picker - Search
+   ============================================ */
+
+.ps-picker-search {
+  margin-bottom: var(--ps-space-4);
+}
+
+/* Search + surface toggle on one row: search left, toggle right. */
+.ps-picker-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--ps-space-4);
+}
+
+.ps-picker-controls .ps-picker-search {
+  flex: 1 1 16rem;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Filter, not a hero input: capped and left-aligned. */
+.ps-picker-search-input {
+  width: 100%;
+  max-width: 22rem;
+}
+
+/* Preview-background swatch toggle. */
+.ps-surface-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex: 0 0 auto;
+}
+
+.ps-surface-label {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  white-space: nowrap;
+}
+
+.ps-surface-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex: 0 0 auto;
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-strong));
+  background: var(--sw, hsl(var(--app-bg-elevated)));
+  cursor: pointer;
+  transition: box-shadow var(--ps-transition-fast), transform var(--ps-transition-fast);
+}
+
+/* "Auto" swatch: a diagonal two-tone of the first two offered surfaces, so it
+   reads as "each type keeps its own background". */
+.ps-surface-swatch.is-auto {
+  background: linear-gradient(
+    135deg,
+    var(--sw-a, hsl(var(--app-bg-elevated))) 0 50%,
+    var(--sw-b, hsl(var(--app-bg-sunken))) 50% 100%
+  );
+}
+
+.ps-surface-swatch:hover {
+  transform: translateY(-1px);
+  border-color: hsl(var(--app-border-focus));
+}
+
+.ps-surface-swatch.is-active {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary));
+}
+
+.ps-surface-swatch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+}
+
+@media (max-width: 520px) {
+  .ps-surface-label {
+    display: none;
+  }
+}
+
+.ps-picker-no-results {
+  padding: var(--ps-space-5) var(--ps-space-3);
+  text-align: center;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.ps-picker-ai-hatch {
+  flex: 0 0 auto;
+}
+
+/* ============================================
+   Slide Type Picker - Thumbnail Mode
+   ============================================ */
+
+.ps-slide-types.is-thumb-mode {
+  gap: var(--ps-space-4);
+}
+
+.ps-type-grid-thumbs {
+  display: grid;
+  /* Fluid: fill each row with as many tiles as fit; each tile scales its own
+     thumbnail to its measured width (see --thumb-scale, set in JS). Denser than
+     the old fixed 240px column while staying legible. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: var(--ps-space-3);
+  width: 100%;
+}
+
+/* Grid item: wraps the (button) card + the overlay pin button as siblings. */
+.ps-type-card-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.ps-type-card.ps-type-card-thumb {
+  /* Fill the wrap (width comes from the grid track, not a fixed px). */
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ps-type-card.ps-type-card-thumb .ps-type-labelwrap {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  text-align: left;
+  border-top: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-sunken));
+  min-width: 0;
+}
+
+.ps-type-card.ps-type-card-thumb .ps-type-label {
+  display: block;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Visible one-line description so a slide's purpose reads at a glance and the
+   right slide is easier to spot. */
+.ps-type-desc {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: hsl(var(--app-text-tertiary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pin button: overlay in the tile's top-right, revealed on hover or when
+   pinned. A sibling of the card button (never nested inside it). */
+.ps-type-pin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  color: hsl(var(--app-text-tertiary));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.ps-type-pin svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ps-type-card-wrap:hover .ps-type-pin,
+.ps-type-pin:focus-visible {
+  opacity: 1;
+}
+
+.ps-type-pin:hover {
+  color: hsl(var(--app-text-primary));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.ps-type-pin.is-pinned {
+  opacity: 1;
+  color: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+}
+
+/* Thumbnail wrapper inside type cards. Fluid: fills the tile width and keeps a
+   16:9 box; the inner slide is scaled to match via --thumb-scale (set in JS
+   from the measured width). --thumb-scale has a sane fallback for the brief
+   moment before JS measures. */
+.ps-type-thumb.thumb {
+  border-radius: 0;
+  border: none;
+  --thumb-scale: 0.11;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: hsl(var(--app-bg-elevated));
+  overflow: hidden;
+  position: relative;
+}
+
+/* Placeholder shown until the tile scrolls into view and hydrates. */
+.ps-type-thumb.thumb.is-pending {
+  background: linear-gradient(
+    100deg,
+    hsl(var(--app-bg-sunken)) 0%,
+    hsl(var(--app-bg-elevated)) 50%,
+    hsl(var(--app-bg-sunken)) 100%
+  );
+}
+
+.ps-type-thumb.thumb .slide {
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+}
+
+.ps-type-thumb.is-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-sunken));
+}
+
+.ps-type-thumb-error {
+  font-size: 2rem;
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Video slide thumbnail mockup */
+.ps-type-thumb.ps-type-thumb-video {
+  background: linear-gradient(135deg, hsl(220 15% 20%) 0%, hsl(220 20% 12%) 100%);
+}
+
+.ps-type-video-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.ps-type-video-frame {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Poster image so the tile reads as a video, not an icon. */
+.ps-type-video-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.72);
+}
+
+.ps-type-video-play {
+  position: relative;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: hsl(0 0% 100% / 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px hsl(0 0% 0% / 0.35);
+}
+
+.ps-type-video-play svg {
+  width: 22px;
+  height: 22px;
+  color: hsl(220 15% 20%);
+  margin-left: 3px; /* Visual centering for play icon */
+}
+
+/* Embed slide thumbnail mockup: a small browser window. */
+.ps-type-thumb.ps-type-thumb-embed {
+  background: hsl(var(--app-bg-elevated));
+  padding: 12px;
+}
+
+.ps-type-embed-window {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-surface, var(--app-bg-elevated)));
+}
+
+.ps-type-embed-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  background: hsl(var(--app-bg-sunken));
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.ps-type-embed-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: hsl(var(--app-border-strong));
+  flex: 0 0 auto;
+}
+
+.ps-type-embed-url {
+  margin-left: 6px;
+  height: 8px;
+  flex: 1;
+  border-radius: 4px;
+  background: hsl(var(--app-border-default));
+}
+
+.ps-type-embed-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.ps-type-embed-body svg {
+  width: 40px;
+  height: 40px;
+}
+
+/* Hover effect for thumbnail cards */
+.ps-type-card.ps-type-card-thumb:hover {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
+}
+
+.ps-type-card.ps-type-card-thumb:hover .ps-type-label {
+  color: hsl(var(--app-accent-text));
+}
+
+/* Focus state for thumbnail cards */
+.ps-type-card.ps-type-card-thumb:focus-visible {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
+}
+
+/* ============================================
+   Responsive adjustments for thumbnail mode
+   ============================================ */
+
+/* Tiles are fluid (auto-fill minmax + JS scale), so columns adapt on their own.
+   Only nudge the minimum tile size down on small screens for a touch more
+   density. */
+@media (max-width: 520px) {
+  .ps-type-grid-thumbs {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  }
+}
+
+/* Peek button: overlay in the tile's top-left (mirrors the pin, top-right).
+   Revealed on hover/focus. Opens the enlarged preview lightbox. */
+.ps-type-peek-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated) / 0.92);
+  color: hsl(var(--app-text-tertiary));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.ps-type-peek-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ps-type-card-wrap:hover .ps-type-peek-btn,
+.ps-type-peek-btn:focus-visible {
+  opacity: 1;
+}
+
+.ps-type-peek-btn:hover {
+  color: hsl(var(--app-text-primary));
+  border-color: hsl(var(--app-border-strong));
+}
+
+/* Peek lightbox: a larger preview over the picker modal. */
+.modal.ps-modal.ps-type-peek {
+  width: min(92vw, 860px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ps-type-peek-body {
+  padding: var(--ps-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+  min-height: 0;
+}
+
+.ps-type-peek-stage {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+}
+
+.thumb.ps-type-peek-thumb {
+  position: relative;
+  border: none;
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-lg);
+  overflow: hidden;
+  /* Dimensions set dynamically via JS. */
+}
+
+.thumb.ps-type-peek-thumb .slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform: scale(var(--thumb-scale));
+  transform-origin: top left;
+}
+
+.ps-type-peek-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-4);
+  flex-wrap: wrap;
+}
+
+.ps-type-peek-title {
+  margin: 0;
+  font-size: var(--ps-text-lg);
+}
+
+.ps-type-peek-desc {
+  margin: 2px 0 0;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+}
+
+.ps-type-peek-actions {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex: 0 0 auto;
+}
+
+/* ============================================
+   Inline "From your library" strip (item 10)
+   ============================================ */
+
+.ps-lib-strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-2);
+  margin: 0 0 var(--ps-space-3);
+  padding: 0 0 var(--ps-space-2);
+  border-bottom: 2px solid hsl(var(--app-border-default));
+}
+
+.ps-lib-strip-name {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+}
+
+.ps-lib-strip-seeall {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 4px;
+  font: inherit;
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-accent-primary));
+}
+
+.ps-lib-strip-seeall:hover {
+  text-decoration: underline;
+}
+
+.ps-lib-strip-seeall:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+  border-radius: var(--ps-radius-sm);
+}

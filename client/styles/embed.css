@@ -1,0 +1,75 @@
+/* Embed UI entrypoint.
+   Keep this minimal so embed chrome does not accidentally affect slide rendering. */
+
+@import url('./shared/ui-tokens.css');
+
+/* Minimal button styling (used by embed controls). */
+.btn {
+  appearance: none;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-2) var(--ps-space-4);
+  font: 600 var(--ps-text-sm)/1 var(--ps-font-sans);
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn:hover {
+  background: hsl(var(--app-bg-hover));
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+}
+
+.btn.btn-secondary {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-strong));
+}
+
+/* Segmented control (language toggle) */
+.sb-segmented {
+  display: inline-flex;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+  background: hsl(var(--app-bg-sunken));
+  padding: 2px;
+  gap: 2px;
+}
+
+.sb-segmented-btn {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  padding: 6px 10px;
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font: 600 var(--ps-text-sm)/1 var(--ps-font-sans);
+  cursor: pointer;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+}
+
+.sb-segmented-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.sb-segmented-btn.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.sb-segmented-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+}
+
+
+
+

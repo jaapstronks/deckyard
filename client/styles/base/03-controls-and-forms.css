@@ -1,0 +1,1009 @@
+
+/* Editor and modal controls */
+
+/* Responsive field row.
+   The editor form column is drag-resizable (--editor-panel-width), so its width
+   is independent of the viewport and media queries can't help here. Instead the
+   row reflows on its own real width via flex-wrap: fields sit side by side when
+   there is room and drop onto their own line when there isn't - no breakpoints,
+   no JS, no per-slide-type tuning.
+
+   Each field carries a size intent (its natural minimum width) as an
+   `is-field-*` class on its wrapper; `--field-basis` is that minimum. A field
+   whose basis no longer fits beside its neighbour wraps to the next line, then
+   grows to fill the row. The class is inert outside a `.field-grid` (the flex
+   rules below are scoped to direct children), so renderers can stamp it
+   unconditionally.
+
+   Size tokens:
+     narrow ~ number / short numeric inputs
+     default ~ text inputs, selects, 2-3 option toggles
+     wide   ~ 4-6 option segmented controls (need room before sharing a row)
+     full   ~ textareas / markdown / anything that wants its own line */
+.field-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-3);
+  align-items: start;
+}
+.field-grid > * {
+  /* 10rem default: at the standard ~400px form column (≈358px inner) two
+     default fields still pair up (160·2 + gap ≤ 358); they only stack once the
+     column is dragged below ≈374px, which is exactly the "too narrow" regime. */
+  flex: 1 1 var(--field-basis, 10rem);
+  min-width: 0;
+}
+.field-grid > .is-field-narrow {
+  --field-basis: 7rem;
+}
+.field-grid > .is-field-wide {
+  --field-basis: 17rem;
+}
+.field-grid > .is-field-full {
+  --field-basis: 100%;
+}
+
+/* Repeatable groups */
+.card-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-lg);
+}
+
+.card-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+}
+
+.card-group-title {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card-group-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+/* Compact per-item remove (×): quiet by default, danger on hover, so routine
+   list management doesn't read as a wall of destructive red buttons. */
+.btn.card-remove-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+  color: hsl(var(--app-text-secondary));
+  flex-shrink: 0;
+}
+.btn.card-remove-btn:hover:not(:disabled) {
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger-soft));
+  border-color: hsl(var(--app-danger) / 0.4);
+}
+
+/* Drag handle for reorderable items */
+.item-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-sm);
+  color: hsl(var(--app-text-tertiary));
+  cursor: grab;
+  transition: color var(--ps-transition-fast), background var(--ps-transition-fast);
+  flex-shrink: 0;
+}
+
+.item-drag-handle:hover {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.item-drag-handle svg {
+  pointer-events: none;
+}
+
+/* Subtle index badge on drag handle */
+.item-index-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  color: hsl(var(--app-text-tertiary));
+  pointer-events: none;
+}
+
+/* Inline title input in block/card headers */
+.item-inline-title {
+  flex: 1;
+  font-weight: 500;
+  min-width: 0;
+}
+
+/* Title preview in collapsed card headers */
+.item-title-preview {
+  text-transform: none;
+  letter-spacing: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+/* When showing the actual card/block title, use normal weight */
+.card-group-title.item-title-preview {
+  font-weight: 500;
+}
+
+/* Dim placeholder for untitled items */
+.item-title-preview.is-placeholder {
+  opacity: 0.5;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Draggable card-group states */
+.items-reorder-list .card-group {
+  transition: opacity var(--ps-transition-fast), transform var(--ps-transition-fast);
+  position: relative;
+}
+
+.items-reorder-list .card-group.is-dragging {
+  opacity: 0.5;
+}
+
+/* Drop indicators */
+.items-reorder-list .card-group.is-drop-before::before,
+.items-reorder-list .card-group.is-drop-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: hsl(var(--app-accent-primary));
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.items-reorder-list .card-group.is-drop-before::before {
+  top: -10px;
+}
+
+.items-reorder-list .card-group.is-drop-after::after {
+  bottom: -10px;
+}
+
+/* Segmented control */
+.sb-segmented {
+  display: inline-flex;
+  align-items: center;
+  /* In the editor, segmented controls often sit inside `.stack` (a flex column with
+     default `align-items: stretch`), which would otherwise stretch them full-width.
+     Make them shrink-wrap by default. */
+  width: fit-content;
+  max-width: 100%;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-1);
+  gap: var(--ps-space-1);
+}
+
+.sb-segmented.is-toggle {
+  width: fit-content;
+}
+
+/* Editor forms: ensure segmented controls don't stretch to full width inside stacks/grids. */
+.editor-form .sb-segmented {
+  align-self: flex-start;
+}
+
+/* Safety net: in a responsive row a segmented control keeps its compact
+   `fit-content` width (see .sb-segmented above), but if a very narrow column
+   can't hold all its buttons on one line, wrap them onto a second row rather
+   than overflowing onto a neighbour. Size intent (is-field-wide/full) already
+   gives 3+ option controls their own line, so this rarely fires. */
+.field-grid .sb-segmented {
+  flex-wrap: wrap;
+}
+
+.sb-segmented-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+  white-space: nowrap;
+}
+
+/* Image focus picker (3x3 grid) */
+.sb-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(3, 34px);
+  gap: var(--ps-space-1);
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--ps-space-1);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-lg);
+}
+
+.sb-focus-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all var(--ps-transition-fast);
+}
+
+.sb-focus-btn:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.sb-focus-btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+
+.sb-focus-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sb-focus-btn.is-active {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.18);
+}
+
+.sb-focus-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-text-secondary) / 0.7);
+}
+
+.sb-focus-btn.is-active .sb-focus-dot {
+  background: hsl(var(--app-accent-primary));
+}
+
+.sb-focus-actions {
+  margin-top: var(--ps-space-2);
+}
+
+.sb-segmented.is-compact .sb-segmented-btn {
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+}
+
+.sb-segmented-btn:hover:not(.is-active) {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.sb-segmented-btn.is-active {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.sb-segmented-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+}
+
+/* UI mode switcher: icon buttons (system/light/dark) */
+.ui-mode-switcher .sb-segmented-btn {
+  width: 34px;
+  padding: 6px 0;
+}
+
+.ui-mode-switcher .ui-mode-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+  background: currentColor;
+  -webkit-mask-image: var(--ui-mode-icon-url);
+  mask-image: var(--ui-mode-icon-url);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.sb-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--sb-swatch);
+  box-shadow: 0 0 0 1px hsl(var(--app-border-default));
+}
+.sb-swatch.sb-swatch-transparent {
+  background:
+    linear-gradient(
+      45deg,
+      hsl(var(--app-text-secondary) / 0.18) 25%,
+      transparent 25%,
+      transparent 75%,
+      hsl(var(--app-text-secondary) / 0.18) 75%
+    ),
+    linear-gradient(
+      45deg,
+      hsl(var(--app-text-secondary) / 0.18) 25%,
+      transparent 25%,
+      transparent 75%,
+      hsl(var(--app-text-secondary) / 0.18) 75%
+    );
+  background-position: 0 0, 6px 6px;
+  background-size: 12px 12px;
+  background-color: hsl(var(--app-bg-sunken));
+}
+
+.sb-chip-text {
+  font-size: 12px;
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.06em;
+}
+
+.sb-icon {
+  width: 28px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Icons: image side */
+.sb-icon.sb-icon-side-left {
+  background: linear-gradient(
+    to right,
+    hsl(var(--app-text-secondary) / 0.55) 0%,
+    hsl(var(--app-text-secondary) / 0.55) 48%,
+    hsl(var(--app-text-secondary) / 0.14) 48%,
+    hsl(var(--app-text-secondary) / 0.14) 100%
+  );
+}
+.sb-icon.sb-icon-side-right {
+  background: linear-gradient(
+    to right,
+    hsl(var(--app-text-secondary) / 0.14) 0%,
+    hsl(var(--app-text-secondary) / 0.14) 52%,
+    hsl(var(--app-text-secondary) / 0.55) 52%,
+    hsl(var(--app-text-secondary) / 0.55) 100%
+  );
+}
+
+/* Icons: image fit */
+.sb-icon.sb-icon-fit-cover::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 3px;
+  background: hsl(var(--app-text-secondary) / 0.3);
+}
+.sb-icon.sb-icon-fit-contain::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 3px;
+  border: 1px solid hsl(var(--app-text-secondary) / 0.45);
+}
+.sb-icon.sb-icon-fit-contain::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 2px;
+  border: 1px solid hsl(var(--app-text-secondary) / 0.35);
+}
+
+/* Icons: columns */
+.sb-icon.sb-icon-cols-2 {
+  background: linear-gradient(
+    to right,
+    hsl(var(--app-text-secondary) / 0.48) 0%,
+    hsl(var(--app-text-secondary) / 0.48) 47%,
+    hsl(var(--app-text-secondary) / 0.14) 47%,
+    hsl(var(--app-text-secondary) / 0.14) 53%,
+    hsl(var(--app-text-secondary) / 0.48) 53%,
+    hsl(var(--app-text-secondary) / 0.48) 100%
+  );
+}
+.sb-icon.sb-icon-cols-1 {
+  background: hsl(var(--app-text-secondary) / 0.48);
+}
+
+/* Icons: toggle */
+.sb-icon.sb-icon-toggle-on::before,
+.sb-icon.sb-icon-toggle-off::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  background: hsl(var(--app-text-secondary) / 0.2);
+}
+.sb-icon.sb-icon-toggle-on::after,
+.sb-icon.sb-icon-toggle-off::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 8px;
+  border-radius: 999px;
+  background: hsl(var(--app-bg-overlay));
+}
+.sb-icon.sb-icon-toggle-on::after {
+  right: 6px;
+}
+.sb-icon.sb-icon-toggle-off::after {
+  left: 6px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--ps-space-1);
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+/* Field header: label above input, optional right-aligned action (e.g. "Vertaal") */
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-1);
+}
+
+.field-head .field-label {
+  margin-bottom: 0;
+}
+
+.field-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ps-space-2);
+  flex-shrink: 0;
+}
+
+.help {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  line-height: 1.4;
+  margin-top: var(--ps-space-1);
+}
+.help.help-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ps-space-1) var(--ps-space-3);
+}
+.btn-copy-example {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  color: hsl(var(--app-accent));
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-copy-example:hover {
+  color: hsl(var(--app-accent-hover, var(--app-accent)));
+  text-decoration: none;
+}
+
+.editor-form {
+  gap: var(--ps-space-5);
+}
+
+.editor-advanced {
+  margin-top: 2px;
+}
+.editor-advanced-summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+  padding: 8px 10px 8px 28px;
+  border-radius: 10px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  list-style: none; /* Firefox summary marker */
+  position: relative;
+}
+.editor-advanced-summary::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform var(--ps-transition-fast);
+}
+.editor-advanced[open] > .editor-advanced-summary::before {
+  transform: translateY(-50%) rotate(90deg);
+}
+.editor-advanced-summary::-webkit-details-marker {
+  display: none;
+}
+.editor-advanced-summary:hover {
+  background: hsl(var(--app-bg-hover));
+}
+.editor-advanced-body {
+  margin-top: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: hsl(var(--app-bg-sunken) / 0.5);
+}
+.editor-advanced[open] > .editor-advanced-summary {
+  border-radius: 10px 10px 0 0;
+}
+
+.editor-form-header {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ps-space-3);
+  margin-bottom: var(--ps-space-4);
+  padding: var(--ps-space-3) 0;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.editor-form-header-left {
+  align-items: center;
+  gap: var(--ps-space-3);
+  flex-wrap: wrap;
+}
+
+.editor-form-title {
+  margin: 0;
+  padding: 0;
+  border: none;
+  font-size: var(--ps-text-base);
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.editor-form-header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ps-space-2);
+  /* Stay pinned to the right even when the header wraps to a second line
+     (e.g. custom-html's wider "EDIT · CUSTOM HTML · Custom type" left group).
+     Otherwise the actions drop to the left, and the "…" menu - which opens
+     leftward from the button's right edge - overflows the panel's left edge
+     and gets clipped by the panel's overflow:hidden / hidden behind the
+     slides column. */
+  margin-left: auto;
+}
+
+/* Title/subheading row: always single column. The edit panel is a fixed narrow
+   column (~320px) regardless of viewport width, so a 2-col split here just
+   cramps both fields — keying it off viewport width was the bug. */
+.editor-title-row {
+  grid-template-columns: 1fr !important;
+}
+
+.editor-form .editor-field-half {
+  /* Half-width field container (do NOT turn a single field into a 2-col grid). */
+  width: 100%;
+  max-width: 340px;
+  align-self: flex-start;
+}
+
+.editor-callout {
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  line-height: 1.45;
+}
+
+.callout-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.btn-lock-icon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.editor-card {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.help.is-mt-8 {
+  margin-top: 8px;
+}
+
+.help.is-mb-16 {
+  margin-bottom: 16px;
+}
+
+.editor-img-preview {
+  display: block;
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.editor-img-thumb-btn {
+  padding: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 140px;
+  height: 78px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.editor-img-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.editor-logo-thumb-sm {
+  width: 72px;
+  height: 40px;
+  object-fit: contain;
+  background: hsl(var(--app-surface-white));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.editor-logo-thumb-md {
+  width: 96px;
+  height: 54px;
+  object-fit: contain;
+  background: hsl(var(--app-surface-white));
+  border-radius: 10px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.editor-toggle-row {
+  padding-top: 4px;
+}
+
+/* Avoid extra top margin; rely on `.editor-form` spacing instead. */
+.editor-form > .stack > .field-label,
+.editor-form > .field-grid > .stack > .field-label {
+  margin-top: 0;
+}
+
+.danger {
+  border-color: hsl(var(--app-danger) / 0.55) !important;
+}
+
+/* Row collapse toggle button */
+.row-collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-sm);
+  color: hsl(var(--app-text-tertiary));
+  cursor: pointer;
+  transition: color var(--ps-transition-fast), background var(--ps-transition-fast), transform var(--ps-transition-fast);
+  flex-shrink: 0;
+}
+
+.row-collapse-toggle:hover {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.row-collapse-toggle svg {
+  transition: transform var(--ps-transition-fast);
+}
+
+/* Rotate chevron when collapsed */
+.card-group.is-collapsed .row-collapse-toggle svg {
+  transform: rotate(-90deg);
+}
+
+/* Bulk collapse/expand-all toggle in card-list headers */
+.collapse-all-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.collapse-all-toggle svg {
+  transition: transform var(--ps-transition-fast);
+}
+.collapse-all-toggle.is-all-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* Collapsible row content */
+.row-collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Text blocks list container */
+.text-blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Block header with drag handle */
+.block-header {
+  align-items: center;
+  margin-bottom: var(--ps-space-1);
+}
+
+.block-header .block-label {
+  margin-bottom: 0;
+}
+
+/* Smaller field labels for stacked fields */
+.field-label-sm {
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: var(--ps-space-1);
+}
+
+/* Field stack spacing */
+.field-stack {
+  gap: var(--ps-space-1);
+}
+
+/* Nested block card styling */
+.text-blocks-list .block-fields {
+  padding: var(--ps-space-3);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-md);
+}
+
+/* Image blocks list container */
+.image-blocks-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Collapsible block content */
+.block-collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Gallery images list container */
+.gallery-images-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Icon cards list container */
+.icon-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Four cards list container */
+.four-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Content columns list container */
+.content-columns-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+/* Color picker field */
+.color-field-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.color-picker-native {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  background: transparent;
+  overflow: hidden;
+}
+
+.color-picker-native::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.color-picker-native::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--ps-radius-md) - 3px);
+}
+
+.color-picker-native::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--ps-radius-md) - 3px);
+}
+
+.color-hex-input {
+  width: 100px;
+  font-family: var(--ps-font-mono, monospace);
+  text-transform: uppercase;
+}
+
+.color-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+.color-preset-swatch {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-sm);
+  cursor: pointer;
+  background: var(--swatch-color, #ffffff);
+  transition: border-color var(--ps-transition-fast), transform var(--ps-transition-fast);
+}
+
+.color-preset-swatch:hover {
+  border-color: hsl(var(--app-accent-primary));
+  transform: scale(1.1);
+}
+
+.color-preset-swatch:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 2px;
+}
+
+/* Freeform slide editor styles */
+.freeform-elements-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+.freeform-add-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.freeform-empty-state {
+  padding: var(--ps-space-6);
+  text-align: center;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px dashed hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  color: hsl(var(--app-text-secondary));
+}
+
+.freeform-empty-state p {
+  margin: 0;
+}
+
+/* Freeform editor overlay (for canvas editing) */
+.freeform-editor-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.freeform-element-overlay {
+  position: absolute;
+  pointer-events: auto;
+  cursor: move;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  transition: border-color var(--ps-transition-fast);
+}
+
+.freeform-element-overlay:hover {
+  border-color: hsl(var(--app-accent) / 0.5);
+}
+
+.freeform-element-overlay.is-selected {
+  border-color: hsl(var(--app-accent));
+}
+
+/* Card-link field: text input + in-deck slide picker side by side. */
+.card-link-row {
+  align-items: stretch;
+}
+.card-link-row .form-input:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.card-link-row .card-link-picker {
+  flex: 0 1 auto;
+  max-width: 45%;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "deckyard",
+  "version": "1.0.0",
+  "description": "Create AI-powered presentations from any OpenClaw agent using Deckyard's MCP API.",
+  "author": "Deckyard",
+  "license": "MIT",
+  "homepage": "https://deckyard.eu",
+  "repository": "https://github.com/jaapstronks/deckyard",
+  "keywords": ["presentations", "slides", "ai", "mcp", "deckyard"],
+  "requires": {
+    "python3": true
+  },
+  "env": {
+    "DECKYARD_URL": {
+      "description": "URL of your Deckyard instance",
+      "required": true,
+      "example": "https://deckyard.example.com"
+    },
+    "DECKYARD_API_KEY": {
+      "description": "Deckyard API key (dk_live_...)",
+      "required": true,
+      "secret": true
+    }
+  }
+}

@@ -1,0 +1,481 @@
+/* --- Poll & Likert interaction slides (layout refresh inspired by slide-style-studio) --- */
+
+/* Shared “card” surfaces that adapt to themes/backgrounds */
+.slide-poll,
+.slide-likert {
+  --interaction-surface: rgba(255, 255, 255, 0.92);
+  --interaction-surface-2: rgba(255, 255, 255, 0.70);
+  --interaction-border: rgba(0, 0, 0, 0.10);
+  --interaction-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
+  --interaction-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+@supports (color: color-mix(in srgb, white 50%, black)) {
+  .slide-poll,
+  .slide-likert {
+    --interaction-surface: color-mix(in srgb, white 92%, var(--color-background));
+    --interaction-surface-2: color-mix(in srgb, white 76%, var(--color-background));
+    --interaction-border: color-mix(in srgb, currentColor 16%, transparent);
+  }
+}
+
+/* --- Poll slide --- */
+.slide-poll .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-poll .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-poll .poll-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 48px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+.slide-poll .poll-left {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.slide-poll .poll-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+/* Poll Options */
+.slide-poll .poll-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.slide-poll .poll-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.slide-poll .poll-option {
+  display: flex;
+  min-width: 0;
+}
+
+.slide-poll .poll-option-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  padding: 20px 24px;
+  border-radius: var(--t-radius, 18px);
+  background: var(--interaction-surface);
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow-sm);
+}
+
+.slide-poll .poll-letter {
+  font-family: var(--font-heading);
+  font-weight: var(--heading-weight, 600);
+  font-size: calc(var(--font-size-body) + 4px);
+  color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
+  background: var(--color-accent);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--t-radius-sm, 12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.slide-poll .poll-text {
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text);
+  padding-top: 6px;
+  min-width: 0;
+}
+
+/* Poll/Likert Results card (shared class name: .poll-results) */
+.slide-poll .poll-results,
+.slide-likert .poll-results {
+  background: var(--interaction-surface);
+  border-radius: var(--t-radius-lg, 22px);
+  padding: 28px;
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow);
+}
+
+.slide-poll .poll-results-title,
+.slide-likert .poll-results-title {
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-body) - 2px);
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  color: var(--color-text);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--interaction-border);
+}
+
+.slide-poll .poll-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slide-poll .poll-bar-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.slide-poll .poll-bar-name {
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-body) - 4px);
+  font-weight: var(--heading-weight, 600);
+  color: var(--color-text);
+}
+
+.slide-poll .poll-bar-track {
+  height: 28px;
+  background: var(--interaction-surface-2);
+  border-radius: var(--t-radius-sm, 12px);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--interaction-border);
+}
+
+.slide-poll .poll-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--color-accent);
+  border-radius: var(--t-radius-sm, 12px);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+}
+
+/* Alternate bar colors using chart palette */
+.slide-poll .poll-bar-row:nth-child(1) .poll-bar-fill { background: var(--t-chart-0, var(--color-accent)); }
+.slide-poll .poll-bar-row:nth-child(2) .poll-bar-fill { background: var(--t-chart-1, var(--color-accent)); }
+.slide-poll .poll-bar-row:nth-child(3) .poll-bar-fill { background: var(--t-chart-2, var(--color-accent)); }
+.slide-poll .poll-bar-row:nth-child(4) .poll-bar-fill { background: var(--t-chart-3, var(--color-accent)); }
+.slide-poll .poll-bar-row:nth-child(5) .poll-bar-fill { background: var(--t-chart-4, var(--color-accent)); }
+
+.slide-poll .poll-bar-count {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  min-width: 110px;
+  justify-content: flex-end;
+  font-family: var(--font-mono);
+}
+
+.slide-poll .poll-bar-count-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.slide-poll .poll-bar-count-pct {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.slide-poll .poll-bar-count-sep {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+.slide-poll .poll-total,
+.slide-likert .poll-total {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--interaction-border);
+  font-family: var(--font-mono);
+}
+
+/* Poll Scan/Join Section */
+.slide-poll .poll-scan {
+  background: var(--interaction-surface);
+  border-radius: var(--t-radius-lg, 22px);
+  padding: 32px;
+  box-shadow: var(--interaction-shadow);
+  border: 1px solid var(--interaction-border);
+}
+
+.slide-poll .poll-scan-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: var(--heading-weight, 600);
+  text-transform: var(--heading-transform, none);
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.slide-poll .poll-scan .help {
+  font-size: calc(var(--font-size-body) - 6px);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* Optional QR inside poll-scan (legacy / future) */
+.slide-poll .poll-qr {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--t-radius, 18px);
+  background: #fff;
+  padding: 12px;
+  margin: 18px auto 0;
+  box-sizing: border-box;
+}
+
+/* --- Likert slide --- */
+.slide-likert .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-likert .heading {
+  font-family: var(--font-heading);
+  /* Bigger, title-like question for Likert (requested) */
+  font-size: calc(var(--font-size-heading) + 10px);
+  line-height: 1.08;
+  margin: 0 0 18px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-likert .likert-layout {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: 48px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  margin-top: 18px;
+}
+
+.slide-likert .poll-left {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.slide-likert .poll-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+/* Likert Options (Scale) */
+.slide-likert .likert-options {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.slide-likert .likert-option {
+  display: flex;
+}
+
+.slide-likert .likert-option-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--interaction-surface);
+  padding: 20px 28px;
+  border-radius: var(--t-radius, 18px);
+  width: 100%;
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow-sm);
+}
+
+.slide-likert .likert-num {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: var(--heading-weight, 600);
+  color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
+  background: var(--color-accent);
+  width: 52px;
+  height: 52px;
+  border-radius: var(--t-radius-sm, 12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slide-likert .likert-text {
+  font-size: 28px;
+  line-height: 1.3;
+  color: var(--color-text);
+  min-width: 0;
+}
+
+/* Likert Results (reuses poll results card) */
+.slide-likert .likert-results {
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+}
+
+.slide-likert .likert-results .poll-results-title {
+  font-size: 26px;
+  margin-bottom: 24px;
+}
+
+.slide-likert .likert-hill {
+  flex: 1;
+  min-height: 240px;
+  position: relative;
+  margin: 16px 0;
+  color: var(--color-accent);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.03) 100%);
+  border-radius: var(--t-radius, 18px);
+  overflow: hidden;
+  border: 1px solid var(--interaction-border);
+}
+
+.slide-likert .likert-hill svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.slide-likert .likert-hill-baseline {
+  stroke: rgba(0, 0, 0, 0.18);
+  stroke-width: 2;
+}
+
+.slide-likert .likert-hill-fill {
+  stroke: none;
+}
+
+.slide-likert .likert-hill-stroke {
+  stroke: currentColor;
+  stroke-width: 3;
+  opacity: 0.82;
+}
+
+/* Likert axis (keeps exact alignment with hill x-positions) */
+.slide-likert .likert-axis {
+  position: relative;
+  height: 56px;
+  border-top: 2px solid var(--color-text);
+}
+
+.slide-likert .likert-axis-tick {
+  position: absolute;
+  top: 14px;
+  left: calc(
+    8.4% +
+      (var(--i, 0) / var(--likert-axis-denom, 9)) *
+        (100% - 16.8%)
+  );
+  transform: translateX(-50%);
+  text-align: center;
+  min-width: 36px;
+  font-family: var(--font-mono);
+  font-size: 28px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.slide-likert .likert-results .poll-total {
+  font-size: 24px;
+  margin-top: 20px;
+}
+
+/* Likert slider slide (projector/presenter view) */
+.slide-likert-slider .likert-slider-scale {
+  background: var(--interaction-surface);
+  border: 1px solid var(--interaction-border);
+  box-shadow: var(--interaction-shadow-sm);
+  border-radius: var(--t-radius, 18px);
+  padding: 24px 28px;
+}
+.slide-likert-slider .likert-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: baseline;
+}
+.slide-likert-slider .likert-slider-label {
+  display: inline-flex;
+  gap: 14px;
+  align-items: baseline;
+  min-width: 0;
+}
+.slide-likert-slider .likert-slider-label.is-right {
+  justify-content: flex-end;
+  text-align: right;
+}
+.slide-likert-slider .likert-slider-num {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 34px;
+  color: var(--color-text);
+}
+.slide-likert-slider .likert-slider-text {
+  font-size: 26px;
+  color: var(--color-text);
+  opacity: 0.92;
+  min-width: 0;
+}
+
+.slide-likert-slider .likert-slider-help {
+  font-size: 26px;
+  line-height: 1.3;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* --- Poll/Likert utility spacing (moved from inline styles) --- */
+
+/* Status help text under poll results */
+.slide-poll .help[data-poll-status],
+.slide-likert .help[data-poll-status] {
+  margin-top: 8px;
+}
+
+/* Help text inside poll-scan section */
+.slide-poll .poll-scan > .help {
+  margin-top: 10px;
+}
+
+/* Follow codes help text */
+.slide-poll .poll-follow-codes {
+  margin-top: 10px;
+}
+
+

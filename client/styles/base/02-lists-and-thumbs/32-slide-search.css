@@ -1,0 +1,106 @@
+/* Search results: show metadata below thumbnail */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-search-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-search-meta .slide-title-line {
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  mark.search-hit {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: hsl(var(--app-accent-primary) / 0.18);
+  color: inherit;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-search-snippet {
+  margin-top: 2px;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-search-src {
+  color: hsl(var(--app-text-secondary));
+  font-weight: 600;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slides-search-hint,
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slides-search-empty {
+  padding: var(--ps-space-2);
+}

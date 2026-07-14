@@ -1,0 +1,282 @@
+/* Pyramid/Hierarchy slide (Maslow's hierarchy, priority levels) */
+.slide-pyramid .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-pyramid .header {
+  margin-bottom: 28px;
+}
+
+.slide-pyramid .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-pyramid .subheading {
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+/* Container for pyramid levels */
+.slide-pyramid .pyramid-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 0;
+}
+
+/* ===========================================
+   INDIVIDUAL LEVEL STYLING
+   =========================================== */
+
+.slide-pyramid .pyramid-level {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The colored bar that creates the pyramid effect */
+.slide-pyramid .level-bar {
+  width: var(--level-width, 100%);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Use lime as primary pyramid color */
+  background: var(--slide-bg-lime, #e2fe52);
+  /* Trapezoid shape using clip-path */
+  clip-path: polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%);
+  padding: 10px 32px;
+  transition: width 0.3s ease;
+}
+
+/* On lime background, use accent color for bars */
+.slide-pyramid.slide-bg-lime .level-bar {
+  background: var(--color-accent, #375c5d);
+}
+
+.slide-pyramid.slide-bg-lime .level-bar .level-label,
+.slide-pyramid.slide-bg-lime .level-bar .level-text {
+  color: var(--t-color-accent-contrast, #ffffff);
+}
+
+/* Level content (label + text) */
+.slide-pyramid .level-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.slide-pyramid .level-label {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  color: var(--color-text, #0b0b0b);
+}
+
+.slide-pyramid .level-text {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+}
+
+/* On lime bg, muted text needs different treatment */
+.slide-pyramid.slide-bg-lime .level-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===========================================
+   LEVEL COUNT SIZING (3-6 levels)
+   =========================================== */
+
+/* 3 levels: larger elements */
+.slide-pyramid .pyramid-container[data-count='3'] {
+  gap: 10px;
+}
+
+.slide-pyramid .pyramid-container[data-count='3'] .level-bar {
+  min-height: 80px;
+  padding: 16px 40px;
+}
+
+.slide-pyramid .pyramid-container[data-count='3'] .level-label {
+  font-size: 28px;
+}
+
+.slide-pyramid .pyramid-container[data-count='3'] .level-text {
+  font-size: 20px;
+}
+
+/* 4 levels */
+.slide-pyramid .pyramid-container[data-count='4'] {
+  gap: 8px;
+}
+
+.slide-pyramid .pyramid-container[data-count='4'] .level-bar {
+  min-height: 64px;
+  padding: 14px 36px;
+}
+
+.slide-pyramid .pyramid-container[data-count='4'] .level-label {
+  font-size: 24px;
+}
+
+.slide-pyramid .pyramid-container[data-count='4'] .level-text {
+  font-size: 18px;
+}
+
+/* 5 levels: default sizing (defined above) */
+
+/* 6 levels: smallest */
+.slide-pyramid .pyramid-container[data-count='6'] {
+  gap: 4px;
+}
+
+.slide-pyramid .pyramid-container[data-count='6'] .level-bar {
+  min-height: 40px;
+  padding: 8px 24px;
+}
+
+.slide-pyramid .pyramid-container[data-count='6'] .level-label {
+  font-size: 18px;
+}
+
+.slide-pyramid .pyramid-container[data-count='6'] .level-text {
+  font-size: 14px;
+}
+
+/* ===========================================
+   COLOR GRADIENT FOR VISUAL HIERARCHY
+   =========================================== */
+
+/* Create a gradient effect from top (accent) to bottom (lime) */
+.slide-pyramid .pyramid-level:nth-child(1) .level-bar {
+  background: var(--color-accent, #375c5d);
+}
+
+.slide-pyramid .pyramid-level:nth-child(1) .level-label,
+.slide-pyramid .pyramid-level:nth-child(1) .level-text {
+  color: var(--t-color-accent-contrast, #ffffff);
+}
+
+.slide-pyramid .pyramid-level:nth-child(1) .level-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.slide-pyramid .pyramid-level:nth-child(2) .level-bar {
+  background: color-mix(in srgb, var(--color-accent, #375c5d) 75%, var(--slide-bg-lime, #e2fe52));
+}
+
+.slide-pyramid .pyramid-level:nth-child(2) .level-label,
+.slide-pyramid .pyramid-level:nth-child(2) .level-text {
+  color: var(--t-color-accent-contrast, #ffffff);
+}
+
+.slide-pyramid .pyramid-level:nth-child(2) .level-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.slide-pyramid .pyramid-level:nth-child(3) .level-bar {
+  background: color-mix(in srgb, var(--color-accent, #375c5d) 50%, var(--slide-bg-lime, #e2fe52));
+}
+
+.slide-pyramid .pyramid-level:nth-child(4) .level-bar {
+  background: color-mix(in srgb, var(--color-accent, #375c5d) 25%, var(--slide-bg-lime, #e2fe52));
+}
+
+/* On lime background, invert the gradient direction */
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-bar {
+  background: var(--slide-bg-lime, #e2fe52);
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-label,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-text {
+  color: var(--color-text, #0b0b0b);
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-text {
+  color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-bar {
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 75%, var(--color-accent, #375c5d));
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-label,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-text {
+  color: var(--color-text, #0b0b0b);
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-bar {
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 50%, var(--color-accent, #375c5d));
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-bar {
+  background: color-mix(in srgb, var(--slide-bg-lime, #e2fe52) 25%, var(--color-accent, #375c5d));
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-bar,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-bar {
+  background: var(--color-accent, #375c5d);
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-label,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-label,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-label,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-label {
+  color: var(--t-color-accent-contrast, #ffffff);
+}
+
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-text,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-text,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-text,
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-text {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+
+@media (max-width: 980px) {
+  .slide-pyramid .pyramid-container {
+    gap: 4px;
+  }
+
+  .slide-pyramid .level-bar {
+    min-height: 36px;
+    padding: 8px 20px;
+  }
+
+  .slide-pyramid .level-label {
+    font-size: 16px;
+  }
+
+  .slide-pyramid .level-text {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-pyramid .level-bar {
+    transition: none;
+  }
+}

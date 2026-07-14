@@ -1,0 +1,409 @@
+/* ============================================================
+   CUSTOM SLIDE TYPE EDITOR
+   ============================================================ */
+
+/* Custom types grid (mirrors .themes-grid) */
+.custom-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--ps-space-4);
+}
+
+.custom-types-grid.is-hidden {
+  display: none;
+}
+
+.custom-types-empty-state {
+  padding: var(--ps-space-6) var(--ps-space-4);
+  text-align: center;
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-lg);
+  border: 2px dashed hsl(var(--app-border-subtle));
+}
+
+.custom-types-empty-state.is-hidden {
+  display: none;
+}
+
+.custom-types-empty-state p {
+  margin: 0;
+  color: hsl(var(--app-text-secondary));
+}
+
+.custom-types-empty-state .help {
+  margin-top: var(--ps-space-2);
+}
+
+/* Custom type card */
+.custom-type-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3);
+}
+
+.custom-type-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.custom-type-card-name {
+  font-weight: 600;
+  font-size: var(--ps-text-base);
+  color: hsl(var(--app-text-primary));
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-type-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.custom-type-card-slug {
+  font-size: 11px;
+  font-family: var(--ps-font-mono, monospace);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.custom-type-card-base {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
+.custom-type-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ps-space-2);
+}
+
+/* Status badges */
+.slide-type-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.slide-type-status-badge.is-published {
+  background: hsl(145 60% 92%);
+  color: hsl(145 40% 30%);
+}
+
+.slide-type-status-badge.is-draft {
+  background: hsl(var(--app-bg-secondary));
+  color: hsl(var(--app-text-secondary));
+}
+
+/* Custom type badge in editor (blue) */
+.slide-type-custom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--ps-radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  background: hsl(210 80% 92%);
+  color: hsl(210 60% 35%);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   SLIDE TYPE EDITOR (two-column layout, mirrors theme-editor)
+   ============================================================ */
+
+.slide-type-editor-section {
+  max-width: 100%;
+}
+
+.slide-type-editor-section.is-hidden {
+  display: none;
+}
+
+.slide-type-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+.slide-type-editor-header {
+  padding-bottom: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-type-editor-title {
+  margin: 0;
+  font-size: var(--ps-text-lg);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+}
+
+.slide-type-editor-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ps-space-5);
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .slide-type-editor-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.slide-type-editor-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+  min-width: 0;
+}
+
+.slide-type-editor-preview {
+  position: sticky;
+  top: var(--ps-space-4);
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+/* ============================================================
+   FIELD LIST EDITOR
+   ============================================================ */
+
+.field-list-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.field-list-empty {
+  padding: var(--ps-space-3);
+  text-align: center;
+}
+
+.field-list-item {
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-md);
+  overflow: hidden;
+}
+
+.field-list-item[open] {
+  border-color: hsl(var(--app-border-default));
+}
+
+.field-list-item-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  cursor: pointer;
+  user-select: none;
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  transition: background-color 0.1s ease;
+}
+
+.field-list-item-summary:hover {
+  background: hsl(var(--app-bg-secondary) / 0.5);
+}
+
+.field-list-item-info {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.field-list-item-label {
+  font-weight: 500;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+}
+
+.field-list-item-type-badge {
+  display: inline-flex;
+  padding: 1px 6px;
+  border-radius: var(--ps-radius-sm);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+}
+
+.field-list-item-key {
+  font-size: 11px;
+  font-family: var(--ps-font-mono, monospace);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.field-list-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.field-list-item-body {
+  padding: var(--ps-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.field-list-field-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+}
+
+.field-list-field-row-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.field-list-nested {
+  padding: var(--ps-space-3);
+  background: hsl(var(--app-bg-secondary) / 0.2);
+  border-radius: var(--ps-radius-md);
+  border: 1px dashed hsl(var(--app-border-subtle));
+}
+
+/* Reorder buttons */
+.field-list-reorder {
+  font-size: 12px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+}
+
+/* Code textarea (monospace for template/CSS/JSON) */
+.code-textarea {
+  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace) !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  tab-size: 2;
+  white-space: pre;
+  resize: vertical;
+}
+
+/* Button sizes */
+.btn-xs {
+  font-size: 11px;
+  padding: 2px 6px;
+  min-height: 22px;
+  min-width: 22px;
+}
+
+.field-label-sm {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+}
+
+.font-mono {
+  font-family: var(--ps-font-mono, monospace);
+}
+
+/* ============================================================
+   SLIDE TYPE PREVIEW
+   ============================================================ */
+
+.slide-type-preview-container {
+  width: 100%;
+  min-width: 0;
+  background: hsl(var(--app-bg-secondary) / 0.3);
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-4);
+  border: 1px solid hsl(var(--app-border-subtle));
+}
+
+.slide-type-preview-wrapper {
+  position: relative;
+  width: 100%;
+  min-width: 280px;
+  padding-bottom: 56.25%; /* 16:9 */
+  overflow: hidden;
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-md);
+  background: #f0f0f0;
+}
+
+.slide-type-preview-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* ============================================================
+   PUBLISH TOGGLE
+   ============================================================ */
+
+.slide-type-publish-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) 0;
+}
+
+.slide-type-publish-toggle label {
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+}
+
+.slide-type-publish-toggle .help {
+  margin-top: var(--ps-space-1);
+}
+
+/* ============================================================
+   CURATION ROW: Duplicate button for core types
+   ============================================================ */
+
+.slide-type-curation-row .btn-duplicate-core {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.slide-type-curation-row:hover .btn-duplicate-core {
+  opacity: 1;
+}
+
+/* ============================================================
+   CONTEXT MENU
+   ============================================================ */
+
+.custom-type-context-menu {
+  display: block;
+  min-width: 160px;
+}
+
+.custom-type-context-menu .dropdown-item.is-danger {
+  color: hsl(var(--app-danger));
+}
+
+.custom-type-context-menu .dropdown-item.is-danger:hover {
+  background: hsl(var(--app-danger) / 0.1);
+}

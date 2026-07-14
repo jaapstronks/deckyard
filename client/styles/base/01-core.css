@@ -1,0 +1,10 @@
+/* Core app layout styles (split for maintainability) */
+@import url('./01-core/00-fonts-and-root.css');
+@import url('./01-core/05-avatar.css');
+@import url('./01-core/10-shell-topbar-dropdown.css');
+@import url('./01-core/20-editor-layout.css');
+@import url('./01-core/30-auth.css');
+@import url('./01-core/31-list-layout.css');
+@import url('./01-core/32-list-cards.css');
+@import url('./01-core/40-sidebar.css');
+@import url('./01-core/90-utilities.css');

@@ -1,0 +1,173 @@
+/* =============================================================================
+   SLIDE DESIGN TOKENS
+   ============================================================================
+   Centralized design tokens for consistent slide styling.
+   Use these variables throughout slide CSS to ensure visual consistency
+   and enable easy theme customization.
+   ============================================================================ */
+
+.slide {
+  /* =========================================================================
+     TYPOGRAPHY SCALE
+     =========================================================================
+     Based on ~1.25 ratio (Major Third). All text sizes should use these tokens.
+     Theme-scalable via --t-slide-text-scale multiplier (not yet implemented).
+     ========================================================================= */
+
+  /* Core scale tokens */
+  --slide-text-xs: 14px;     /* Captions, labels */
+  --slide-text-sm: 16px;     /* Small text, dates */
+  --slide-text-base: 20px;   /* Default body text */
+  --slide-text-md: 24px;     /* Emphasized body, step titles */
+  --slide-text-lg: 28px;     /* Large body, subtitles */
+  --slide-text-xl: 34px;     /* Small headings */
+  --slide-text-2xl: 44px;    /* Section headings */
+  --slide-text-3xl: 52px;    /* Large headings */
+  --slide-text-4xl: 64px;    /* Title slides */
+  --slide-text-5xl: 80px;    /* Hero titles */
+
+  /* Semantic typography aliases */
+  --slide-font-size-title: var(--slide-text-4xl);
+  --slide-font-size-heading: var(--slide-text-2xl);
+  --slide-font-size-subheading: var(--slide-text-lg);
+  --slide-font-size-body: var(--slide-text-base);
+  --slide-font-size-caption: var(--slide-text-sm);
+
+  /* KPI/metric display sizes */
+  --slide-text-kpi-lg: 156px;
+  --slide-text-kpi-md: 108px;
+  --slide-text-kpi-sm: 80px;
+
+  /* Line heights */
+  --slide-leading-tight: 1.1;
+  --slide-leading-snug: 1.2;
+  --slide-leading-normal: 1.35;
+  --slide-leading-relaxed: 1.5;
+
+  /* =========================================================================
+     SPACING SCALE
+     =========================================================================
+     8px base unit system. Consistent spacing throughout slides.
+     Theme-scalable via --t-slide-space-scale multiplier (not yet implemented).
+     ========================================================================= */
+
+  /* Core spacing tokens (8px base) */
+  --slide-space-1: 4px;      /* Tight gaps (inline elements) */
+  --slide-space-2: 8px;      /* Minimum spacing */
+  --slide-space-3: 12px;     /* Small gaps (related items) */
+  --slide-space-4: 16px;     /* Standard gaps */
+  --slide-space-5: 20px;     /* Medium gaps */
+  --slide-space-6: 24px;     /* Section gaps */
+  --slide-space-8: 32px;     /* Large gaps */
+  --slide-space-10: 40px;    /* Extra large gaps */
+  --slide-space-12: 48px;    /* Section separators */
+  --slide-space-16: 64px;    /* Slide padding */
+
+  /* Semantic spacing aliases */
+  --slide-padding: var(--slide-space-16);
+  --slide-header-gap: var(--slide-space-6);
+  --slide-section-gap: var(--slide-space-8);
+  --slide-card-gap: var(--slide-space-4);
+  --slide-item-gap: var(--slide-space-3);
+  --slide-text-gap: var(--slide-space-2);
+
+  /* =========================================================================
+     OPACITY SCALE
+     =========================================================================
+     Consistent opacity values for overlays, borders, and text muting.
+     ========================================================================= */
+
+  --slide-opacity-subtle: 0.08;    /* Barely visible (hover states) */
+  --slide-opacity-light: 0.12;     /* Light borders, separators */
+  --slide-opacity-muted: 0.18;     /* Muted elements */
+  --slide-opacity-soft: 0.22;      /* Soft overlays */
+  --slide-opacity-medium: 0.45;    /* Medium visibility */
+  --slide-opacity-strong: 0.65;    /* Strong but not solid */
+  --slide-opacity-visible: 0.75;   /* Clearly visible */
+  --slide-opacity-prominent: 0.82; /* Prominent elements */
+  --slide-opacity-solid: 0.92;     /* Nearly solid */
+
+  /* =========================================================================
+     BORDER RADIUS
+     =========================================================================
+     Consistent corner rounding. Integrates with theme via --t-radius tokens.
+     ========================================================================= */
+
+  --slide-radius-sm: var(--t-radius-sm, 10px);   /* Small elements (buttons, tags) */
+  --slide-radius-md: var(--t-radius, 18px);      /* Cards, panels */
+  --slide-radius-lg: var(--t-radius-lg, 24px);   /* Large containers */
+  --slide-radius-full: 999px;                     /* Pills, circles */
+
+  /* =========================================================================
+     SHADOWS
+     =========================================================================
+     Consistent elevation shadows. Theme-adjustable via --t-shadow-opacity.
+     ========================================================================= */
+
+  --slide-shadow-sm: 0 2px 6px rgba(0, 0, 0, var(--slide-opacity-subtle));
+  --slide-shadow-md: 0 4px 12px rgba(0, 0, 0, var(--slide-opacity-light));
+  --slide-shadow-lg: 0 10px 22px rgba(0, 0, 0, var(--slide-opacity-muted));
+  --slide-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --slide-shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.15);
+
+  /* =========================================================================
+     SEMANTIC COLORS (using opacity tokens)
+     =========================================================================
+     Common colors derived from opacity scale for consistency.
+     ========================================================================= */
+
+  /* Border colors */
+  --slide-border-subtle: rgba(0, 0, 0, var(--slide-opacity-subtle));
+  --slide-border-light: rgba(0, 0, 0, var(--slide-opacity-light));
+  --slide-border-default: rgba(0, 0, 0, 0.12);
+  --slide-border-strong: rgba(0, 0, 0, var(--slide-opacity-muted));
+
+  /* Overlay colors (for gradients, backgrounds) */
+  --slide-overlay-subtle: rgba(0, 0, 0, var(--slide-opacity-subtle));
+  --slide-overlay-soft: rgba(0, 0, 0, var(--slide-opacity-soft));
+  --slide-overlay-medium: rgba(0, 0, 0, var(--slide-opacity-medium));
+  --slide-overlay-strong: rgba(0, 0, 0, var(--slide-opacity-solid));
+
+  /* Text on dark backgrounds */
+  --slide-text-light: rgba(255, 255, 255, 0.98);
+  --slide-text-light-muted: rgba(255, 255, 255, var(--slide-opacity-prominent));
+
+  /* Surface colors */
+  --slide-surface-white: rgba(255, 255, 255, 0.8);
+  --slide-surface-white-solid: rgba(255, 255, 255, 0.95);
+
+  /* =========================================================================
+     COMPONENT-SPECIFIC TOKENS
+     =========================================================================
+     Tokens for specific components, derived from base tokens.
+     ========================================================================= */
+
+  /* Step indicators (process, timeline, cycle slides) */
+  --slide-step-size: 56px;
+  --slide-step-size-sm: 44px;
+  --slide-step-size-lg: 64px;
+  --slide-step-font: var(--slide-text-lg);
+
+  /* Connector lines (timeline, process) */
+  --slide-connector-width: 2px;
+  --slide-connector-color: rgba(0, 0, 0, 0.15);
+
+  /* Track lines (timeline) */
+  --slide-track-height: 4px;
+  --slide-track-color: rgba(0, 0, 0, var(--slide-opacity-muted));
+}
+
+/* Print/PDF: Chromium's print rasterizer can paint a blurred, semi-transparent
+   box-shadow as a solid grey rectangle around the element (whether that happens
+   varies per element with layer promotion, hence e.g. one card fine, the next
+   boxed). Cards keep their borders, so drop all elevation shadows in print.
+   Applies to browser print, the pdf-slides export page, and headless PDF. */
+@media print {
+  .slide {
+    --slide-shadow-sm: none;
+    --slide-shadow-md: none;
+    --slide-shadow-lg: none;
+    --slide-shadow-card: none;
+    --slide-shadow-elevated: none;
+  }
+}

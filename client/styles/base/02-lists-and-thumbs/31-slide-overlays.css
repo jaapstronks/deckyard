@@ -1,0 +1,106 @@
+/* Slide number overlay - positioned in top-left corner of thumbnail */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-num-overlay {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated) / 0.9);
+  border-radius: var(--ps-radius-sm);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
+  z-index: 2;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-active .slide-num-overlay,
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-selected .slide-num-overlay {
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+}
+
+/* The active (currently open) slide gets a bold RED number badge with a thick
+   red ring (white separator so the ring reads against the red fill), so the
+   selection is unmistakable in a long list. Later rule → wins over the accent
+   fill above; specificity is equal (:where() adds none). */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-active .slide-num-overlay {
+  background: hsl(var(--app-danger));
+  color: #fff;
+  box-shadow:
+    0 0 0 2px hsl(0 0% 100%),
+    0 0 0 4px hsl(var(--app-danger));
+}
+
+/* Multi-selection: blue border on selected slide thumbnails */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-selected .thumb.thumb-mini {
+  outline: 3px solid hsl(var(--app-accent-primary));
+  outline-offset: -3px;
+  border-radius: var(--ps-radius-sm);
+}
+
+/* Adjust overlay position when selected to account for border */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-item.is-selected .slide-num-overlay {
+  top: 6px;
+  left: 6px;
+}

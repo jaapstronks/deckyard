@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "mit Arbeitsbereich geteilt",
+  "notesJoin.copyLink": "Link kopieren",
+  "notesJoin.copyPrompt": "Diesen Link kopieren:",
+  "notesJoin.help": "Scannen Sie den QR-Code mit Ihrem Handy, um den Notizen-Begleiter zu öffnen.",
+  "notesJoin.open": "Begleiter öffnen",
+  "notesJoin.title": "Notizen-Begleiter",
+  "presenter.edit": "Edit",
+  "presenter.fullscreen": "Fullscreen",
+  "presenter.help": "←/→ or Space · F fullscreen · Esc edit/exit"
+}

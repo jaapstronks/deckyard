@@ -1,0 +1,61 @@
+/* Shared keyboard-shortcut help overlay (opened with "?"). Rendered inside the
+   shared modal by client/lib/shortcuts-overlay.js, so only the inner content is
+   styled here. Used by both the presenter and the editor. */
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px 28px;
+}
+
+.shortcuts-group-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: hsl(var(--app-text-secondary));
+  margin: 0 0 10px;
+}
+
+.shortcuts-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.shortcuts-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.shortcuts-keys kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  padding: 2px 6px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-bottom-width: 2px;
+  border-radius: 0.3rem;
+}
+
+.shortcuts-or {
+  font-size: 0.6875rem;
+  color: hsl(var(--app-text-secondary));
+}
+
+.shortcuts-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: hsl(var(--app-text-primary));
+}

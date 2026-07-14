@@ -1,0 +1,189 @@
+/* Image-text slide
+   Comfortable defaults size the body for the text column's width:
+   - 50% image (half): text gets a wider column → 28px
+   - 37% image (narrow): text gets even more room → 32px
+   The is-compact variant (forced via the density field, or set by the
+   auto-fit runtime when the copy overflows) drops back to a denser size. */
+.slide-image-text .copy .body {
+  font-family: var(--font-body);
+  font-size: 28px;
+  line-height: var(--line-height-body);
+}
+.slide-image-text.is-image-narrow .copy .body {
+  font-size: 32px;
+}
+.slide-image-text.is-compact .copy .body {
+  font-size: 22px;
+}
+.slide-image-text.is-image-narrow.is-compact .copy .body {
+  font-size: 24px;
+}
+.slide-image-text .copy .body p {
+  margin: 0 0 14px;
+}
+/* Markdown subheading: ## renders as h3 (since slide title is h2) */
+.slide-image-text .copy .body h3.md-subheading {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 24px 0 12px;
+  color: var(--color-text);
+}
+.slide-image-text.is-compact .copy .body h3.md-subheading {
+  font-size: 22px;
+  margin: 18px 0 10px;
+}
+.slide-image-text .copy .body h3.md-subheading:first-child {
+  margin-top: 0;
+}
+.slide-image-text .copy .body ul,
+.slide-image-text .copy .body ol {
+  margin: 0 0 14px 1.2em;
+  padding: 0;
+}
+.slide-image-text .copy .body li {
+  margin: 10px 0;
+}
+.slide-image-text .copy .body ul li::marker {
+  color: var(--color-accent);
+}
+.slide-image-text .copy .body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-accent);
+  transition: text-decoration-color 0.15s ease;
+}
+.slide-image-text .copy .body a:hover {
+  text-decoration-color: transparent;
+}
+.slide-image-text .split.is-right .media {
+  grid-column: 2;
+  grid-row: 1;
+}
+.slide-image-text .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+/* Video slide */
+.slide-video {
+  padding: 0;
+}
+.slide-video .slide-inner {
+  padding: var(--slide-padding);
+  padding-bottom: var(--slide-padding);
+  justify-content: flex-start;
+  gap: 22px;
+}
+.slide-video .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 0;
+}
+.slide-video .video-frame {
+  /* Keep the video slightly smaller than full-slide */
+  flex: 0 0 auto;
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  border-radius: var(--t-radius, 18px);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.08);
+  aspect-ratio: 16 / 9;
+}
+/* When a title is shown, align the video's left edge with the title
+   (instead of centering it) and drop it down a touch so it doesn't
+   crowd the heading. Without a title, the centered layout above stays. */
+.slide-video .slide-inner:has(.heading) .video-frame {
+  margin-left: 0;
+  margin-right: auto;
+  margin-top: 18px;
+}
+.slide-video .video-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.slide-video .video-empty {
+  padding: 18px;
+  border-radius: var(--t-radius-sm, 14px);
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Embed slide */
+.slide-embed {
+  padding: 0;
+}
+.slide-embed .slide-inner {
+  padding: var(--slide-padding);
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+}
+.slide-embed .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 0;
+  flex-shrink: 0;
+}
+.slide-embed .embed-frame {
+  /* Don't grow beyond aspect ratio - use flex: 0 1 auto */
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 1280px;
+  max-height: 100%;
+  margin: 0 auto;
+  border-radius: var(--t-radius, 18px);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+.slide-embed .embed-frame.embed-aspect-16-9 {
+  aspect-ratio: 16 / 9;
+}
+.slide-embed .embed-frame.embed-aspect-4-3 {
+  aspect-ratio: 4 / 3;
+}
+.slide-embed .embed-frame.embed-aspect-1-1 {
+  aspect-ratio: 1 / 1;
+  max-width: 700px;
+}
+.slide-embed .embed-frame.embed-aspect-auto {
+  /* Auto mode: fill available space */
+  flex: 1 1 auto;
+  min-height: 300px;
+}
+.slide-embed .embed-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  position: absolute;
+  inset: 0;
+}
+.slide-embed .embed-frame.embed-aspect-auto .embed-iframe {
+  position: relative;
+  min-height: 300px;
+}
+.slide-embed .embed-empty {
+  padding: 18px;
+  border-radius: var(--t-radius-sm, 14px);
+  border: 1px dashed rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.35);
+}

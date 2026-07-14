@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Follow along</title>
+    <link rel="stylesheet" href="/client/go.css" />
+  </head>
+  <body>
+    <main class="go-wrap">
+      <div class="go-card">
+        <div class="go-kicker">Follow along</div>
+        <h1 class="go-title">Enter code</h1>
+
+        <form class="go-form" id="goForm" novalidate>
+          <label class="go-label" for="goCode">4-letter code</label>
+          <input
+            id="goCode"
+            class="go-input"
+            type="text"
+            inputmode="text"
+            placeholder="ABCD"
+            maxlength="4"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+          />
+          <button class="go-btn" type="submit" id="goSubmit">
+            Continue
+          </button>
+          <div class="go-error" id="goError" role="status" aria-live="polite"></div>
+        </form>
+
+        <div class="go-help">
+          Enter the 4-letter code shown on the presentation screen.
+        </div>
+      </div>
+    </main>
+
+    <script src="/client/go.js" type="module"></script>
+  </body>
+</html>
+
+
+
+
+
+
+
+

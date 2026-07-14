@@ -1,0 +1,138 @@
+/* Table slide (structured table) */
+.slide-table .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-table .heading {
+  font-family: var(--font-heading);
+  font-size: calc(var(--font-size-heading) + 6px);
+  line-height: 1.1;
+  margin: 0 0 18px;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+/* Reuse markdown table styles via .md-table-wrap / .md-table */
+.slide-table .md-table-wrap {
+  margin-top: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Ensure table text is readable - use body font size */
+.slide-table .md-table {
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+.slide-table .md-table th,
+.slide-table .md-table td {
+  font-size: var(--font-size-body);
+  padding: 14px 20px;
+}
+
+/* Header row slightly bolder for emphasis */
+.slide-table .md-table th {
+  font-weight: 500;
+}
+
+/* =============================================================================
+   THEMABLE TABLE SURFACE (named style variants)
+   ============================================================================
+   Six consumer vars control the table's own surface, independent of the slide
+   background. Defaults reproduce the historical look (transparent, dark
+   gridlines), so a `plain` (or unset) table renders exactly as before.
+
+   Named variants below set these vars from the theme *palette*, so a table
+   looks designed on any theme with zero per-theme work. A theme can remap a
+   variant's colours by defining `--t-table-<variant>-*` tokens; the header and
+   label-column text auto-derive from whichever background wins (see
+   normalizeTheme's pickTextColorForBg pass in server/utils/themes.js).
+   ============================================================================ */
+.slide-table .md-table {
+  background: var(--table-bg, transparent);
+  border-radius: var(--table-radius, 0);
+  overflow: hidden; /* clip cell fills to the rounded corners */
+}
+.slide-table .md-table thead th {
+  background: var(--table-header-bg, transparent);
+  color: var(--table-header-text, var(--color-text));
+}
+.slide-table .md-table td:first-child,
+.slide-table .md-table thead th:first-child {
+  background: var(--table-firstcol-bg, transparent);
+  color: var(--table-firstcol-text, var(--color-text));
+}
+/* Body cells pair their text with the table body surface (--table-text), not
+   the slide's --color-text. Without this, a filled panel/soft body on a dark
+   slide background keeps inheriting white text and goes invisible. plain leaves
+   --table-text unset, so it falls back to --color-text (historical look). The
+   first-column rule above wins by specificity, keeping its own paired colour. */
+.slide-table .md-table td {
+  color: var(--table-text, var(--color-text));
+}
+
+/* plain — all vars stay at their defaults → historical transparent look */
+.slide-table .md-table--plain {
+  /* intentionally empty */
+}
+/* On the dark calm background a fully transparent plain header is
+   indistinguishable from the body; give it a faint tint. Light backgrounds
+   keep the historical transparent look. */
+.slide-bg-calm .md-table--plain {
+  --table-header-bg: rgba(255, 255, 255, 0.08);
+}
+
+/* panel — filled panel surface, emphasized header row + label column */
+.slide-table .md-table--panel {
+  --table-bg: var(--t-table-panel-bg, var(--t-color-surface-muted, var(--slide-bg-mist, #e0e6e2)));
+  --table-text: var(--t-table-panel-text, rgba(11, 11, 11, 0.92));
+  --table-header-bg: var(--t-table-panel-header-bg, var(--color-accent));
+  --table-header-text: var(--t-table-panel-header-text, var(--t-color-accent-contrast, #fff));
+  --table-firstcol-bg: var(--t-table-panel-firstcol-bg, var(--t-table-panel-header-bg, var(--color-accent)));
+  --table-firstcol-text: var(--t-table-panel-firstcol-text, var(--t-color-accent-contrast, #fff));
+  --table-border: var(--t-table-panel-border, rgba(0, 0, 0, 0.14));
+  --table-radius: var(--t-radius, 12px);
+}
+
+/* soft — near-white panel, coloured header, faint accent label column */
+.slide-table .md-table--soft {
+  --table-bg: var(--t-table-soft-bg, #fff);
+  --table-text: var(--t-table-soft-text, rgba(11, 11, 11, 0.92));
+  --table-header-bg: var(--t-table-soft-header-bg, var(--color-accent));
+  --table-header-text: var(--t-table-soft-header-text, var(--t-color-accent-contrast, #fff));
+  --table-firstcol-bg: var(
+    --t-table-soft-firstcol-bg,
+    color-mix(in srgb, var(--color-accent) 10%, transparent)
+  );
+  --table-firstcol-text: var(--t-table-soft-firstcol-text, var(--color-accent));
+  --table-border: var(
+    --t-table-soft-border,
+    color-mix(in srgb, var(--color-accent) 20%, transparent)
+  );
+  --table-radius: var(--t-radius, 12px);
+}
+
+.slide-table .table-caption {
+  margin-top: 14px;
+  font-family: var(--font-body);
+  font-size: calc(var(--font-size-body) - 2px);
+  line-height: 1.35;
+  opacity: 0.9;
+  max-width: 80%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

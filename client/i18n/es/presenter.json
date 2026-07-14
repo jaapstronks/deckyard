@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "compartido con el espacio de trabajo",
+  "notesJoin.copyLink": "Copiar enlace",
+  "notesJoin.copyPrompt": "Copie este enlace:",
+  "notesJoin.help": "Escanee el código QR con su teléfono para abrir el compañero de notas.",
+  "notesJoin.open": "Abrir compañero",
+  "notesJoin.title": "Compañero de notas",
+  "presenter.edit": "Edit",
+  "presenter.fullscreen": "Fullscreen",
+  "presenter.help": "←/→ or Space · F fullscreen · Esc edit/exit"
+}

@@ -1,0 +1,19 @@
+/* Editor preview notes + responsive layout */
+.preview-notes {
+  /* Spacing/border is handled by `.preview-notes-wrap` (so notes can scroll). */
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.preview-notes-input {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.slide-notes-modal-input {
+  min-height: 320px;
+  resize: vertical;
+}
+
+

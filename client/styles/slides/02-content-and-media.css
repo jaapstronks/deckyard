@@ -1,0 +1,6 @@
+/* Content and media slide styles (split for maintainability) */
+@import url('./02-content-and-media/01-basic-media.css');
+@import url('./02-content-and-media/02-layouts.css');
+@import url('./02-content-and-media/03-cards.css');
+@import url('./02-content-and-media/04-columns.css');
+@import url('./02-content-and-media/80-freeform.css');

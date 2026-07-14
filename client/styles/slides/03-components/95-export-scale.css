@@ -1,0 +1,28 @@
+/* Standalone/export scaling wrappers (16:9 stage -> design px layout scaled to fit) */
+.sb-scale-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  will-change: width, height, margin-left, margin-top;
+}
+.sb-scale-design {
+  width: 1920px;
+  height: 1080px;
+  position: relative;
+  overflow: hidden;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

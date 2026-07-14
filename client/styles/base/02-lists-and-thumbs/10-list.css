@@ -1,0 +1,192 @@
+/* Shared list + slide thumb styles (app UI only) */
+
+/* App chrome scope boundary:
+   These primitives are intentionally NOT global anymore; they only apply inside
+   app shells (editor/list/moderate) and app-only standalone shells (notes/follow/presenter)
+   as well as modals which are mounted outside `.app-shell`. */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list {
+  display: flex;
+  flex-direction: column;
+  padding: var(--ps-space-2);
+  gap: var(--ps-space-1);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid transparent;
+  border-radius: var(--ps-radius-lg);
+  position: relative;
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-active {
+  background: hsl(var(--app-accent-soft));
+  border-color: hsl(var(--app-accent-primary) / 0.3);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.2);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Multi-selection state */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-selected {
+  background: hsl(var(--app-accent-primary) / 0.12);
+  border-color: hsl(var(--app-accent-primary) / 0.25);
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-selected.is-active {
+  background: hsl(var(--app-accent-soft));
+  border-color: hsl(var(--app-accent-primary) / 0.4);
+}
+
+/* Drag & drop (slide list reorder) */
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-drop-before::before,
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-drop-after::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 3px;
+  background: hsl(var(--app-accent-primary));
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.18);
+  pointer-events: none;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-drop-before::before {
+  top: -6px;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .list-item.is-drop-after::after {
+  bottom: -6px;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .slide-item.is-dragging {
+  opacity: 0.42;
+  background: hsl(var(--app-bg-sunken));
+  border-color: hsl(var(--app-border-default));
+}
+
+

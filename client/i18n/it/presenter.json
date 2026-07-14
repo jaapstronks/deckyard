@@ -1,0 +1,11 @@
+{
+  "activity.action.sharedToWorkspace": "condiviso nel workspace",
+  "notesJoin.copyLink": "Copia link",
+  "notesJoin.copyPrompt": "Copia questo link:",
+  "notesJoin.help": "Scansiona il codice QR con il telefono per aprire il companion delle note.",
+  "notesJoin.open": "Apri companion",
+  "notesJoin.title": "Companion note",
+  "presenter.edit": "Modifica",
+  "presenter.fullscreen": "Schermo intero",
+  "presenter.help": "←/→ o Spazio · F schermo intero · Esc modifica/esci"
+}

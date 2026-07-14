@@ -1,0 +1,25 @@
+{
+  "locales": [
+    { "id": "en", "label": "English" },
+    { "id": "nl", "label": "Nederlands" },
+    { "id": "de", "label": "Deutsch" },
+    { "id": "fr", "label": "Français" },
+    { "id": "es", "label": "Español" },
+    { "id": "pt", "label": "Português" },
+    { "id": "it", "label": "Italiano" },
+    { "id": "pl", "label": "Polski" },
+    { "id": "fi", "label": "Suomi" },
+    { "id": "da", "label": "Dansk" },
+    { "id": "sv", "label": "Svenska" },
+    { "id": "no", "label": "Norsk" }
+  ]
+}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,207 @@
+/* Comparison slide (A vs B / pros-cons / before-after) */
+.slide-comparison .slide-inner {
+  justify-content: flex-start;
+}
+
+.slide-comparison .header {
+  margin-bottom: var(--slide-space-6);
+}
+
+.slide-comparison .heading {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-heading);
+  line-height: 1.1;
+  margin: 0;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+}
+
+.slide-comparison .subheading {
+  margin-top: var(--slide-space-2);
+  margin-bottom: 0;
+}
+
+/* Split layout container */
+.slide-comparison .comparison-split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* Each side takes equal space */
+.slide-comparison .comparison-side {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--slide-space-6) var(--slide-space-8);
+}
+
+.slide-comparison .comparison-side.left {
+  padding-left: 0;
+  padding-right: var(--slide-space-10);
+}
+
+.slide-comparison .comparison-side.right {
+  padding-right: 0;
+  padding-left: var(--slide-space-10);
+}
+
+/* Vertical divider */
+.slide-comparison .comparison-divider {
+  width: 3px;
+  background: var(--slide-connector-color);
+  border-radius: var(--slide-radius-full);
+  flex-shrink: 0;
+  align-self: stretch;
+  margin: var(--slide-space-3) 0;
+}
+
+/* Side titles */
+.slide-comparison .side-title {
+  font-family: var(--font-heading);
+  font-size: var(--slide-text-2xl);
+  line-height: var(--slide-leading-snug);
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 0 0 var(--slide-space-5);
+  color: var(--color-text);
+}
+
+/* Markdown body */
+.slide-comparison .body {
+  font-family: var(--font-body);
+  font-size: calc(var(--font-size-body) + 2px);
+  line-height: var(--line-height-body);
+  flex: 1;
+  min-height: 0;
+}
+
+.slide-comparison .body p {
+  margin: 0 0 var(--slide-space-3);
+}
+
+/* Markdown subheading: ## renders as h3 (since slide title is h2) */
+.slide-comparison .body h3.md-subheading {
+  font-family: var(--font-heading);
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: var(--slide-space-5) 0 var(--slide-space-3);
+  color: var(--color-text);
+}
+
+.slide-comparison .body h3.md-subheading:first-child {
+  margin-top: 0;
+}
+
+.slide-comparison .body ul,
+.slide-comparison .body ol {
+  margin: 0 0 var(--slide-space-3) 1.2em;
+  padding: 0;
+}
+
+.slide-comparison .body li {
+  margin: var(--slide-space-3) 0;
+}
+
+.slide-comparison .body ul li::marker {
+  color: var(--color-accent);
+}
+
+.slide-comparison .body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-accent);
+  transition: text-decoration-color 0.15s ease;
+}
+
+.slide-comparison .body a:hover {
+  text-decoration-color: transparent;
+}
+
+/* Verdict badge */
+.slide-comparison .comparison-verdict {
+  text-align: center;
+  padding-top: var(--slide-space-5);
+  margin-top: auto;
+}
+
+.slide-comparison .comparison-verdict .badge {
+  display: inline-block;
+  padding: var(--slide-space-3) var(--slide-space-8);
+  font-family: var(--font-body);
+  font-size: var(--slide-text-md);
+  font-weight: 500;
+  line-height: var(--slide-leading-snug);
+  /* Use lime for badge to ensure contrast on any theme */
+  background: var(--slide-bg-lime, #e2fe52);
+  color: var(--color-text, #0b0b0b);
+  border-radius: var(--slide-radius-sm);
+  box-shadow: var(--slide-shadow-md);
+}
+
+/* On lime background, use accent color for badge to stand out */
+.slide-comparison.slide-bg-lime .comparison-verdict .badge {
+  background: var(--color-accent, #375c5d);
+  color: var(--t-color-accent-contrast, #ffffff);
+}
+
+/* When verdict is present, bottom subheading sits below it */
+.slide-comparison.has-verdict .bottom-subheading {
+  margin-top: var(--slide-space-4);
+}
+
+/* Background-specific adjustments */
+.slide-comparison.slide-bg-lime .comparison-divider {
+  background: var(--slide-border-light);
+}
+
+/* Responsive adjustments */
+@media (max-width: 980px) {
+  .slide-comparison .comparison-split {
+    gap: 0;
+  }
+
+  .slide-comparison .comparison-side {
+    padding: 16px 20px;
+  }
+
+  .slide-comparison .comparison-side.left {
+    padding-left: 0;
+    padding-right: 24px;
+  }
+
+  .slide-comparison .comparison-side.right {
+    padding-right: 0;
+    padding-left: 24px;
+  }
+
+  .slide-comparison .side-title {
+    font-size: 34px;
+    margin-bottom: 16px;
+  }
+
+  .slide-comparison .body {
+    font-size: var(--font-size-body);
+  }
+
+  .slide-comparison .comparison-verdict .badge {
+    font-size: 18px;
+    padding: 10px 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-comparison .body a {
+    transition: none;
+  }
+}

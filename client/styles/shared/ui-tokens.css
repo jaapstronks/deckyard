@@ -1,0 +1,169 @@
+/* Shared UI design tokens (app UI only).
+   These tokens are explicitly NOT slide-theme variables and must never depend on `--t-*`. */
+
+/* Typography + spacing scale (app chrome only) */
+:root {
+  --ps-font-sans: ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  --ps-font-mono: 'JetBrains Mono', ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+
+  --ps-text-xs: 0.6875rem;
+  --ps-text-sm: 0.8125rem;
+  --ps-text-base: 0.875rem;
+  --ps-text-lg: 1rem;
+  --ps-text-xl: 1.125rem;
+  --ps-text-2xl: 1.375rem;
+
+  /* Spacing scale (4px base) */
+  --ps-space-1: 0.25rem;
+  --ps-space-2: 0.5rem;
+  --ps-space-3: 0.75rem;
+  --ps-space-4: 1rem;
+  --ps-space-5: 1.25rem;
+  --ps-space-6: 1.5rem;
+  --ps-space-8: 2rem;
+  --ps-space-10: 2.5rem;
+  --ps-space-12: 3rem;
+
+  --ps-radius-sm: 0.25rem;
+  --ps-radius-md: 0.375rem;
+  --ps-radius-lg: 0.5rem;
+  --ps-radius-xl: 0.75rem;
+  --ps-radius-2xl: 1rem;
+  --ps-radius-full: 9999px;
+
+  --ps-transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ps-transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ps-transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --ps-focus-ring-offset: 2px;
+
+  --ps-topbar-height: 56px;
+  --ps-slides-collapsed-width: 64px;
+  --ps-slides-expanded-width: 200px;
+  --ps-preview-collapsed-width: 92px;
+  --ps-editor-content-max-width: 640px;
+  /* Editor: preview column max width (expanded). Keep this modest so extra space
+     benefits the edit pane once the slide preview is already "full size". */
+  --ps-editor-preview-max-width: 640px;
+  /* Responsive: slides drawer width for narrow viewports (≤820px) */
+  --ps-slides-drawer-width: min(320px, 85vw);
+  /* Responsive: preview sheet height for mobile viewports (≤600px) */
+  --ps-preview-sheet-height: 50vh;
+
+  /* App UI Tokens (Light Mode) */
+  color-scheme: light;
+  --app-bg-base: 220 14% 97%;
+  --app-bg-elevated: 0 0% 100%;
+  --app-bg-sunken: 220 14% 94%;
+  --app-bg-overlay: 0 0% 100%;
+  --app-bg-hover: 220 14% 94%;
+  --app-bg-active: 220 14% 91%;
+  /* Always-white surface for asset thumbnails (logos/icons/QR), regardless of UI mode */
+  --app-surface-white: 0 0% 100%;
+
+  --app-text-primary: 220 13% 13%;
+  --app-text-secondary: 220 9% 46%;
+  --app-text-tertiary: 220 9% 64%;
+  --app-text-disabled: 220 9% 74%;
+  --app-text-inverse: 0 0% 100%;
+  /* Text color for content placed on accent/danger solid backgrounds (always white). */
+  --app-text-on-solid: 0 0% 100%;
+
+  --app-border-default: 220 13% 90%;
+  --app-border-subtle: 220 13% 94%;
+  --app-border-strong: 220 13% 80%;
+  --app-border-focus: 160 45% 33%;
+
+  --app-accent-primary: 160 45% 33%;
+  --app-accent-primary-hover: 160 45% 28%;
+  --app-accent-primary-active: 160 45% 24%;
+  --app-accent-soft: 160 40% 95%;
+  --app-accent-soft-hover: 160 40% 90%;
+  /* Foreground text in accent color (same as primary in light mode) */
+  --app-accent-text: 160 45% 33%;
+
+  --app-danger: 4 65% 48%;
+  --app-danger-hover: 4 65% 42%;
+  --app-danger-soft: 4 55% 96%;
+
+  --app-success: 142 70% 45%;
+  --app-success-soft: 142 70% 94%;
+
+  --app-warning: 45 90% 50%;
+  --app-warning-soft: 45 90% 92%;
+
+  --app-shadow-sm: 0 1px 2px 0 hsl(220 13% 13% / 0.04);
+  --app-shadow-md: 0 2px 4px -1px hsl(220 13% 13% / 0.06),
+    0 4px 6px -1px hsl(220 13% 13% / 0.08);
+  --app-shadow-lg: 0 4px 6px -2px hsl(220 13% 13% / 0.05),
+    0 10px 15px -3px hsl(220 13% 13% / 0.08);
+  --app-shadow-xl: 0 10px 25px -5px hsl(220 13% 13% / 0.1),
+    0 20px 40px -10px hsl(220 13% 13% / 0.12);
+
+  /* Logo treatment (overview topbar logo.svg is black by default) */
+  --app-logo-filter: none;
+  --app-icon-filter: none;
+
+  /* Legacy aliases: keep old variable names out of new CSS, but preserve `--sb-*` for class hooks. */
+  --sb-bg: hsl(var(--app-bg-elevated));
+  --sb-border: hsl(var(--app-border-default));
+  --sb-shadow: var(--app-shadow-md);
+}
+
+:root[data-ui-mode='dark'] {
+  color-scheme: dark;
+  --app-bg-base: 222 20% 9%;
+  --app-bg-elevated: 222 20% 12%;
+  --app-bg-sunken: 222 20% 7%;
+  --app-bg-overlay: 222 20% 14%;
+  --app-bg-hover: 222 15% 18%;
+  --app-bg-active: 222 15% 22%;
+  /* Always-white surface for asset thumbnails (logos/icons/QR), regardless of UI mode */
+  --app-surface-white: 0 0% 100%;
+
+  --app-text-primary: 210 20% 95%;
+  --app-text-secondary: 215 15% 65%;
+  --app-text-tertiary: 215 12% 50%;
+  --app-text-disabled: 215 10% 40%;
+  --app-text-inverse: 222 20% 9%;
+  /* Text color for content placed on accent/danger solid backgrounds (always white). */
+  --app-text-on-solid: 0 0% 100%;
+
+  --app-border-default: 222 15% 22%;
+  --app-border-subtle: 222 15% 18%;
+  --app-border-strong: 222 15% 30%;
+  --app-border-focus: 160 45% 50%;
+
+  --app-accent-primary: 160 45% 33%;
+  --app-accent-primary-hover: 160 45% 36%;
+  --app-accent-primary-active: 160 45% 38%;
+  --app-accent-soft: 160 30% 18%;
+  --app-accent-soft-hover: 160 30% 22%;
+  /* Foreground text in accent color (brighter than bg accent for dark mode readability) */
+  --app-accent-text: 160 45% 55%;
+
+  --app-danger: 4 55% 55%;
+  --app-danger-hover: 4 55% 60%;
+  --app-danger-soft: 4 40% 18%;
+
+  --app-success: 142 60% 50%;
+  --app-success-soft: 142 40% 18%;
+
+  --app-warning: 45 80% 55%;
+  --app-warning-soft: 45 50% 18%;
+
+  --app-shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
+  --app-shadow-md: 0 2px 4px -1px hsl(0 0% 0% / 0.25),
+    0 4px 6px -1px hsl(0 0% 0% / 0.3);
+  --app-shadow-lg: 0 4px 6px -2px hsl(0 0% 0% / 0.2),
+    0 10px 15px -3px hsl(0 0% 0% / 0.35);
+  --app-shadow-xl: 0 10px 25px -5px hsl(0 0% 0% / 0.3),
+    0 20px 40px -10px hsl(0 0% 0% / 0.4);
+
+  --app-logo-filter: invert(1);
+  --app-icon-filter: invert(1);
+}

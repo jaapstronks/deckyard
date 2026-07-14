@@ -1,0 +1,387 @@
+/* Tag filter and editor styles */
+
+/* ============================================================
+   TAG FILTER (for overview pages)
+   ============================================================ */
+
+.tag-filter {
+  position: relative;
+  display: inline-block;
+}
+
+.tag-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  font-size: 0.875rem;
+  color: hsl(var(--app-text-secondary));
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+.tag-filter-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.tag-filter-btn.has-selection {
+  background: hsl(var(--app-accent-soft));
+  border-color: hsl(var(--app-accent-primary) / 0.3);
+  color: hsl(var(--app-accent-text));
+}
+
+.tag-filter-btn::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-color: currentColor;
+  -webkit-mask-image: url('/client/vendor/lucide-icons/tag.svg');
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-image: url('/client/vendor/lucide-icons/tag.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  vertical-align: middle;
+}
+
+.tag-filter-dropdown {
+  position: absolute;
+  top: calc(100% + var(--ps-space-1));
+  right: 0;
+  min-width: 220px;
+  max-width: 300px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--ps-shadow-lg);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--ps-transition-fast);
+}
+
+.tag-filter-dropdown.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tag-filter-search {
+  width: 100%;
+  padding: var(--ps-space-2);
+  border: none;
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg) var(--ps-radius-lg) 0 0;
+  font-size: 0.875rem;
+  background: transparent;
+  color: hsl(var(--app-text-primary));
+}
+
+.tag-filter-search:focus {
+  outline: none;
+  background: hsl(var(--app-bg-sunken));
+}
+
+.tag-filter-search::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+
+.tag-filter-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--ps-space-1);
+}
+
+.tag-filter-empty {
+  padding: var(--ps-space-2);
+  text-align: center;
+  color: hsl(var(--app-text-tertiary));
+  font-size: 0.875rem;
+}
+
+.tag-filter-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  transition: background var(--ps-transition-fast);
+}
+
+.tag-filter-item:hover {
+  background: hsl(var(--app-bg-hover));
+}
+
+.tag-filter-item.is-selected {
+  background: hsl(var(--app-accent-soft));
+}
+
+.tag-filter-item input[type="checkbox"] {
+  flex-shrink: 0;
+}
+
+.tag-filter-item-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: hsl(var(--app-text-primary));
+}
+
+.tag-filter-item-count {
+  font-size: 0.75rem;
+  color: hsl(var(--app-text-tertiary));
+  background: hsl(var(--app-bg-sunken));
+  padding: 0 var(--ps-space-1);
+  border-radius: var(--ps-radius-sm);
+}
+
+.tag-filter-clear {
+  width: 100%;
+  padding: var(--ps-space-2);
+  border: none;
+  border-top: 1px solid hsl(var(--app-border-default));
+  border-radius: 0 0 var(--ps-radius-lg) var(--ps-radius-lg);
+  font-size: 0.75rem;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+.tag-filter-clear:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+/* ============================================================
+   TAG EDITOR (for settings/metadata editing)
+   ============================================================ */
+
+.tag-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-2);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  min-height: 42px;
+  align-items: center;
+}
+
+.tag-editor:focus-within {
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-accent-primary) / 0.2);
+}
+
+.tag-editor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-1);
+}
+
+.tag-editor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  padding: 2px var(--ps-space-1) 2px var(--ps-space-2);
+  background: hsl(var(--app-accent-soft));
+  border: 1px solid hsl(var(--app-accent-primary) / 0.2);
+  border-radius: var(--ps-radius-full);
+  font-size: 0.8125rem;
+  color: hsl(var(--app-accent-text));
+}
+
+.tag-editor-tag-text {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag-editor-tag-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: hsl(var(--app-accent-text));
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+.tag-editor-tag-remove:hover {
+  background: hsl(var(--app-accent-primary) / 0.2);
+}
+
+.tag-editor-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 100px;
+}
+
+.tag-editor-input {
+  width: 100%;
+  padding: var(--ps-space-1);
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: hsl(var(--app-text-primary));
+}
+
+.tag-editor-input:focus {
+  outline: none;
+}
+
+.tag-editor-input::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+
+.tag-editor-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--ps-shadow-lg);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: all var(--ps-transition-fast);
+}
+
+.tag-editor-suggestions.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tag-editor-suggestion {
+  padding: var(--ps-space-2);
+  font-size: 0.875rem;
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+  transition: background var(--ps-transition-fast);
+}
+
+.tag-editor-suggestion:hover,
+.tag-editor-suggestion.is-highlighted {
+  background: hsl(var(--app-bg-hover));
+}
+
+/* ============================================================
+   TAG BADGES (for presentation cards)
+   ============================================================ */
+
+.presentation-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--ps-space-1);
+}
+
+.presentation-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--ps-space-1);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-sm);
+  font-size: 0.6875rem;
+  color: hsl(var(--app-text-secondary));
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presentation-tag::before {
+  content: '#';
+  opacity: 0.6;
+}
+
+/* View header with filter */
+.view-header-with-filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-2);
+}
+
+.view-header-with-filter .presentation-grid-title {
+  margin-bottom: 0;
+}
+
+/* Multiple filters container */
+.view-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+/* ============================================================
+   VISIBILITY FILTER (segmented button group)
+   ============================================================ */
+
+.visibility-filter {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  overflow: hidden;
+  background: hsl(var(--app-bg-elevated));
+}
+
+.visibility-filter-btn {
+  padding: var(--ps-space-1) var(--ps-space-2);
+  border: none;
+  border-right: 1px solid hsl(var(--app-border-default));
+  background: transparent;
+  font-size: 0.75rem;
+  color: hsl(var(--app-text-secondary));
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+  white-space: nowrap;
+}
+
+.visibility-filter-btn:last-child {
+  border-right: none;
+}
+
+.visibility-filter-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.visibility-filter-btn.is-active {
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-weight: 600;
+}
+
+/* Mobile: hide visibility filter on small screens */
+@media (max-width: 640px) {
+  .visibility-filter {
+    display: none;
+  }
+}

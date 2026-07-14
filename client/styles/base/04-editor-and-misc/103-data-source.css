@@ -1,0 +1,177 @@
+/**
+ * Data source indicator and modal styles.
+ * Shown in the editor form when a slide has (or supports) a data source binding.
+ */
+
+/* Indicator bar in the editor form */
+.data-source-bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  font-size: var(--ps-text-sm);
+  margin-bottom: var(--ps-space-3);
+}
+
+.data-source-bar--live {
+  background: hsl(var(--app-success-soft));
+  border: 1px solid hsl(var(--app-success) / 0.3);
+}
+
+.data-source-bar--frozen {
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.data-source-bar--empty {
+  background: hsl(var(--app-bg-sunken));
+  border: 1px dashed hsl(var(--app-border-default));
+  padding: var(--ps-space-2) var(--ps-space-3);
+}
+
+/* Status row: dot + text */
+.data-source-status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.data-source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ps-radius-full);
+  flex-shrink: 0;
+}
+
+.data-source-dot--live {
+  background: hsl(var(--app-success));
+  box-shadow: 0 0 4px hsl(var(--app-success) / 0.5);
+}
+
+.data-source-dot--frozen {
+  background: hsl(var(--app-text-tertiary));
+}
+
+.data-source-status {
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+}
+
+/* Actions row */
+.data-source-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.data-source-actions .form-select-xs {
+  font-size: var(--ps-text-xs);
+  padding: 2px 6px;
+  height: auto;
+  min-height: 0;
+}
+
+/* Modal styles */
+.data-source-modal {
+  max-width: 560px;
+}
+
+.data-source-section {
+  margin-bottom: var(--ps-space-4);
+}
+
+.data-source-section:empty {
+  display: none;
+}
+
+/* Preview table */
+.data-source-preview-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--ps-space-2);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
+  font-size: var(--ps-text-xs);
+  font-family: var(--ps-font-mono);
+}
+
+.data-source-preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-1) var(--ps-space-3);
+  padding: var(--ps-space-1) 0;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.data-source-preview-row:last-child {
+  border-bottom: none;
+}
+
+.data-source-preview-row-label {
+  color: hsl(var(--app-text-tertiary));
+  min-width: 48px;
+  flex-shrink: 0;
+}
+
+.data-source-preview-cell {
+  display: flex;
+  gap: var(--ps-space-1);
+  align-items: baseline;
+  padding: 2px 0;
+}
+
+.data-source-preview-key {
+  color: hsl(var(--app-accent-text));
+  font-weight: 500;
+}
+
+.data-source-preview-key::after {
+  content: ':';
+}
+
+.data-source-preview-value {
+  color: hsl(var(--app-text-primary));
+  word-break: break-all;
+}
+
+/* Binding rows */
+.data-source-binding-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-1) 0;
+}
+
+.data-source-binding-target {
+  font-family: var(--ps-font-mono);
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  min-width: 140px;
+  flex-shrink: 0;
+}
+
+.data-source-binding-arrow {
+  color: hsl(var(--app-text-tertiary));
+  font-size: var(--ps-text-sm);
+}
+
+.data-source-binding-row .form-input-sm {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Status message (modal) */
+.data-source-modal-status {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  min-height: 1.2em;
+}
+
+.data-source-modal-status:empty {
+  display: none;
+}

@@ -1,0 +1,621 @@
+/* App shell */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: hsl(var(--app-bg-base));
+  color: hsl(var(--app-text-primary));
+}
+
+.editor-shell {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  /* Use min-height so topbar can expand with safe-area-inset */
+  min-height: var(--ps-topbar-height);
+  /* Add safe-area-inset for iOS devices with dynamic island/notch */
+  padding: 0 var(--ps-space-4);
+  padding-top: env(safe-area-inset-top, 0);
+  padding-left: max(var(--ps-space-4), env(safe-area-inset-left, 0));
+  padding-right: max(var(--ps-space-4), env(safe-area-inset-right, 0));
+  background: hsl(var(--app-bg-elevated));
+  border-bottom: 1px solid hsl(var(--app-border-default));
+  box-shadow: var(--app-shadow-sm);
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.topbar .title-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar-spacer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.topbar-undo-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.topbar-presence {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Author display in topbar - shown after title */
+.topbar-author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  border-radius: var(--ps-radius-sm);
+  background: hsl(var(--app-bg-secondary) / 0.5);
+  flex-shrink: 0;
+}
+
+.topbar-author:empty {
+  display: none;
+}
+
+.topbar-author-avatar {
+  flex-shrink: 0;
+}
+
+.topbar-author-name {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* Hide author on smaller screens to save space */
+@media (max-width: 768px) {
+  .topbar-author {
+    display: none;
+  }
+}
+
+.topbar-pres-title {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-secondary) / 0.4);
+  color: hsl(var(--app-text-primary));
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  flex: 0 1 300px;
+  max-width: min(300px, 26vw);
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all var(--ps-transition-fast);
+}
+.topbar-pres-title:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+}
+.topbar-pres-title:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.2);
+}
+
+/* Save-status chip: persistent Saving/Saved/Unsaved/Failed indicator.
+   Text differs per state, so the meaning does not rely on colour alone. */
+.topbar-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  flex: none;
+  padding: 2px var(--ps-space-2);
+  border-radius: var(--ps-radius-pill, 999px);
+  font-size: var(--ps-text-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-secondary) / 0.5);
+  border: 1px solid hsl(var(--app-border-subtle));
+}
+.topbar-save-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.topbar-save-status.is-saving {
+  color: hsl(var(--app-text-secondary));
+}
+.topbar-save-status.is-saving::before {
+  animation: save-status-pulse 1s ease-in-out infinite;
+}
+.topbar-save-status.is-saved {
+  color: hsl(142 60% 38%);
+  background: hsl(142 71% 45% / 0.1);
+  border-color: hsl(142 71% 45% / 0.35);
+}
+.topbar-save-status.is-unsaved {
+  color: hsl(35 90% 40%);
+  background: hsl(38 92% 50% / 0.1);
+  border-color: hsl(38 92% 50% / 0.4);
+}
+.topbar-save-status.is-error {
+  color: hsl(0 68% 48%);
+  background: hsl(0 72% 51% / 0.1);
+  border-color: hsl(0 72% 51% / 0.45);
+}
+@keyframes save-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-save-status.is-saving::before {
+    animation: none;
+  }
+}
+/* Hide the chip on narrow viewports to protect the title/action row. */
+@media (max-width: 720px) {
+  .topbar-save-status {
+    display: none !important;
+  }
+}
+
+/* Dropdown (details-based) */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  list-style: none; /* Firefox summary marker */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.dropdown-trigger::-webkit-details-marker {
+  display: none;
+}
+.dropdown summary {
+  cursor: pointer;
+}
+
+.dropdown-caret {
+  opacity: 0.75;
+  font-size: 1em;
+  margin-left: 0.25em;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + var(--ps-space-1));
+  right: 0;
+  z-index: 100;
+  min-width: 200px;
+  padding: var(--ps-space-1);
+  border-radius: var(--ps-radius-lg);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-overlay));
+  box-shadow: var(--app-shadow-xl);
+  display: none;
+}
+
+.dropdown-menu-right {
+  right: 0;
+  left: auto;
+}
+
+.dropdown[open] .dropdown-menu {
+  display: block;
+}
+
+.dropdown-help {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 0;
+  background: transparent;
+  color: hsl(var(--app-text-primary));
+  cursor: pointer;
+  font: inherit;
+  transition: all var(--ps-transition-fast);
+}
+
+.dropdown-item:hover {
+  background: hsl(var(--app-bg-hover));
+}
+
+.dropdown-item:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+  background: hsl(var(--app-bg-hover));
+}
+
+.dropdown-item.is-danger {
+  color: hsl(var(--app-danger));
+}
+.dropdown-item.is-danger:hover {
+  background: hsl(var(--app-danger-soft));
+}
+
+.dropdown-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dropdown-submenu {
+  position: relative;
+}
+
+/* Nested submenu inside a dropdown menu (used in editor slide actions). */
+.dropdown-submenu > .dropdown-menu.dropdown-submenu-menu {
+  top: 0;
+  left: calc(100% + var(--ps-space-1));
+  right: auto;
+}
+
+.dropdown-submenu-caret {
+  margin-left: auto;
+  opacity: 0.7;
+  font-size: var(--ps-text-sm);
+}
+
+.dropdown-sep {
+  height: 1px;
+  margin: var(--ps-space-1) 0;
+  background: hsl(var(--app-border-default));
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   User Menu
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-1);
+  border-radius: var(--ps-radius-full);
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+}
+
+.user-menu-trigger:hover {
+  background: hsl(var(--app-bg-hover));
+}
+
+.user-menu-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+}
+
+.user-menu-avatar {
+  flex-shrink: 0;
+}
+
+.user-menu-header {
+  padding: var(--ps-space-2) var(--ps-space-3);
+}
+
+.user-menu-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.user-menu-email {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  margin-top: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Topbar Responsive
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Narrow topbar: shrink title, hide secondary items progressively */
+@media (max-width: 1024px) {
+  .topbar-pres-title {
+    max-width: min(200px, 20vw);
+    flex: 0 1 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Hide theme toggle and notes QR button */
+  .topbar .sb-segmented.is-toggle:not(.is-compact) {
+    display: none;
+  }
+  .topbar .topbar-notes-qr-btn {
+    display: none;
+  }
+  .topbar-presence {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar-pres-title {
+    max-width: 140px;
+    flex: 0 1 140px;
+    min-width: 80px;
+  }
+  /* Settings button hidden (available via More menu) */
+  .topbar .topbar-settings-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar-pres-title {
+    max-width: 100px;
+    flex: 0 1 100px;
+    min-width: 60px;
+  }
+  /* Hide language toggle at very narrow widths */
+  .topbar .sb-segmented.is-compact {
+    display: none;
+  }
+}
+
+/* Responsive overflow items in More menu - hidden on desktop, shown at narrow widths */
+.topbar-overflow-item {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  /* Show theme toggle and notes QR in menu when hidden from topbar */
+  .topbar-overflow-item {
+    display: flex;
+  }
+}
+
+/* Language segment wrapper for popover positioning */
+.lang-seg-wrapper {
+  position: relative;
+}
+
+.lang-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 220px;
+  max-width: 280px;
+  padding: var(--ps-space-3) var(--ps-space-4);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-overlay));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--app-shadow-xl);
+  z-index: 100;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.4;
+
+  /* Hidden by default */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 150ms ease, visibility 150ms ease;
+}
+
+.lang-popover.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Arrow pointing up */
+.lang-popover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: hsl(var(--app-border-default));
+}
+.lang-popover::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: hsl(var(--app-bg-overlay));
+}
+
+.lang-popover-msg {
+  margin-bottom: var(--ps-space-3);
+}
+
+.lang-popover-btn {
+  width: 100%;
+}
+
+/* Two stacked actions in the translate-invite popover. */
+.lang-popover-btn + .lang-popover-btn {
+  margin-top: var(--ps-space-2);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: hsl(var(--app-accent-text));
+  background: hsl(var(--app-accent-soft));
+  border-radius: var(--ps-radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.live-dot {
+  color: hsl(142 71% 45%);
+  font-size: 12px;
+  transform: translateY(-0.5px);
+  margin-right: 6px;
+}
+
+/* Card-like panels (non-editor screens). Editor overrides these in `20-editor-layout.css`. */
+.panel {
+  border-radius: var(--ps-radius-xl);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-md);
+  padding: var(--ps-space-4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Topbar Search
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.topbar-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 280px;
+  max-width: 280px;
+  min-width: 120px;
+}
+
+.topbar-search-icon {
+  position: absolute;
+  left: var(--ps-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.topbar-search-input {
+  width: 100%;
+  padding: var(--ps-space-2) var(--ps-space-3) var(--ps-space-2) calc(var(--ps-space-3) + 1.5em);
+  font: inherit;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-base));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  transition: all var(--ps-transition-fast);
+}
+
+.topbar-search-input::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+
+.topbar-search-input:hover {
+  border-color: hsl(var(--app-border-hover));
+}
+
+.topbar-search-input:focus {
+  outline: none;
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+  background: hsl(var(--app-bg-elevated));
+}
+
+/* Search cancel button (webkit) */
+.topbar-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  height: 1em;
+  width: 1em;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>') center/contain no-repeat;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.topbar-search-input::-webkit-search-cancel-button:hover {
+  opacity: 1;
+}
+
+/* Responsive search */
+@media (max-width: 900px) {
+  .topbar-search-wrapper {
+    flex: 0 1 200px;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar-search-wrapper {
+    flex: 0 1 160px;
+    max-width: 160px;
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar-search-wrapper {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .topbar-search-input {
+    padding: var(--ps-space-2);
+    padding-left: calc(var(--ps-space-2) + 1.5em);
+  }
+}
+
+
