@@ -139,12 +139,10 @@ export function pickAltText({
  * This fallback is used by server-side code (newSlide, deck import) when no theme context is available.
  */
 export const TITLE_BG_PRESETS = [
-  '/assets/images/backgrounds/backgroundpic-1.jpg',
-  '/assets/images/backgrounds/backgroundpic-2.jpeg',
-  '/assets/images/backgrounds/backgroundpic-3.jpeg',
-  '/assets/images/backgrounds/backgroundpic-4.jpeg',
-  '/assets/images/backgrounds/backgroundpic-5.jpeg',
-  '/assets/images/backgrounds/backgroundpic-6.jpeg',
+  '/assets/images/backgrounds/demo-aurora.jpg',
+  '/assets/images/backgrounds/demo-dusk.jpg',
+  '/assets/images/backgrounds/demo-paper.jpg',
+  '/assets/images/backgrounds/demo-moss.jpg',
 ];
 
 export function pickRandom(arr) {

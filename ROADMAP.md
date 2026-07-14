@@ -59,6 +59,9 @@ self-contained project.
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
+- **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
+  — make `theme.backgroundPresets` the single source of default background
+  imagery and remove the deprecated hardcoded fallback list.
 
 ## Later — cloud / multi-tenant track
 

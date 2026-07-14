@@ -291,7 +291,7 @@ function compactFieldSchema(fields) {
 }
 
 export function buildSlideTypesPrompt({
-  preferredPlaceholderImage = '/assets/images/backgrounds/backgroundpic-1.jpg',
+  preferredPlaceholderImage = '/assets/images/backgrounds/demo-aurora.jpg',
   disabledSlideTypes = [],
   customSlideTypes = [],
 } = {}) {

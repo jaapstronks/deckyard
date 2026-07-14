@@ -525,7 +525,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
           !s.content.image.trim())
       ) {
         s.content = s.content && typeof s.content === 'object' ? s.content : {};
-        s.content.image = '/assets/images/backgrounds/backgroundpic-1.jpg';
+        s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
       }
     }
 

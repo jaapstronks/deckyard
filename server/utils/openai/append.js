@@ -10,7 +10,7 @@ export async function generateSlidesToAppendFromRawContent(
   rawContent,
   {
     existingDeck = null,
-    preferredPlaceholderImage = '/assets/images/backgrounds/backgroundpic-1.jpg',
+    preferredPlaceholderImage = '/assets/images/backgrounds/demo-aurora.jpg',
     targetLang = null,
     vendor = null,
     contentOnly = false,

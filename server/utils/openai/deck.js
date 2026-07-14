@@ -53,7 +53,7 @@ export async function generateDeckJsonFromRawContent(
     '',
     buildSlideTypesPrompt({
       preferredPlaceholderImage:
-        '/assets/images/backgrounds/backgroundpic-1.jpg',
+        '/assets/images/backgrounds/demo-aurora.jpg',
       disabledSlideTypes,
       customSlideTypes,
     }),
@@ -106,7 +106,7 @@ export async function generateDeckJsonFromRawContent(
     '  - For interviews, include at least 1 image-text-slide about the interviewee (or the interview topic) near the start of the deck.',
     '  - For long decks, aim for ~1 image-text-slide per 8–10 slides.',
     '  - Alternate imageSide left/right across multiple image-text-slide(s) for variety.',
-    '  - If you cannot provide a real image URL, you MUST still provide a valid placeholder URL: "/assets/images/backgrounds/backgroundpic-1.jpg".',
+    '  - If you cannot provide a real image URL, you MUST still provide a valid placeholder URL: "/assets/images/backgrounds/demo-aurora.jpg".',
     '  - Add a clear TODO marker in the body (last bullet) so the user knows to replace the image, e.g. "- TODO: replace image".',
     '- Do NOT use split-partner-title-slide unless the input explicitly provides partner logo URLs (logos is required).',
     '',

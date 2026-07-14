@@ -61,7 +61,7 @@ export default {
   ],
   defaults: {
     logos: ['/assets/images/logo-placeholder.svg'],
-    bgImage: '/assets/images/backgrounds/backgroundpic-1.jpg',
+    bgImage: '/assets/images/backgrounds/demo-aurora.jpg',
     bgAlt: '',
     label: 'PARTNER',
     title: 'Slide title',
@@ -90,7 +90,7 @@ export default {
     const bg =
       typeof content?.bgImage === 'string' && content.bgImage.trim()
         ? content.bgImage.trim()
-        : '/assets/images/backgrounds/backgroundpic-1.jpg';
+        : '/assets/images/backgrounds/demo-aurora.jpg';
     const bgAlt =
       typeof content?.bgAlt === 'string' ? content.bgAlt.trim() : '';
     const label = content?.label ? `<div class="badge" data-inline-field="label" dir="auto">${esc(content.label)}</div>` : '';
