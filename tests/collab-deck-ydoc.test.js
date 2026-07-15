@@ -249,6 +249,7 @@ describe('round-trip: nested items (text-blocks rows/blocks)', () => {
       lang: 'nl',
       slides: [],
       i18n: {
+        active: 'nl',
         dominant: 'nl',
         versions: {
           nl: {
@@ -416,6 +417,7 @@ describe('round-trip: every registered slide type with real defaults', () => {
       lang: 'nl',
       slides: [],
       i18n: {
+        active: 'nl',
         dominant: 'nl',
         versions: {
           nl: { title: 'Alle types', slides: nlSlides },
@@ -440,6 +442,9 @@ describe('round-trip: real local decks (skipped when none present)', () => {
   function stripVolatile(pres) {
     const p = JSON.parse(JSON.stringify(pres));
     if (p.i18n) delete p.i18n.progress;
+    // `active` is per-client editor state: the codec deliberately does not
+    // round-trip it (projection emits active = dominant).
+    if (p.i18n) delete p.i18n.active;
     return p;
   }
 

@@ -52,6 +52,12 @@ export function createLanguageMode({
   editorState,
   topbarTitleEl,
   toast,
+  // Live collaborative editing (collab fase 2): when set, language versions
+  // are read from the live Y.Doc instead of the server JSON (which lags by
+  // up to a persistence debounce window), and server translate responses are
+  // pushed back into the doc so the next collab store can't overwrite them.
+  // `{ loadLanguageVersion(lang) => presLike|null, adoptLanguageVersion(lang, version) }`
+  collabLanguage = null,
 } = {}) {
   let translateBusy = false;
 
@@ -123,9 +129,22 @@ export function createLanguageMode({
     if (!next) return false;
     const prevSelectedSlideId = String(getSelectedSlideId?.() || '');
     try {
-      const refreshed = await api?.(
-        `/api/presentations/${id}?lang=${encodeURIComponent(next)}`
-      );
+      // Live-edit mode: project the version from the live doc (fresh; the
+      // server JSON can lag a debounce window). Falls back to the server
+      // fetch when the doc isn't synced yet.
+      let refreshed = null;
+      if (collabLanguage?.loadLanguageVersion) {
+        try {
+          refreshed = collabLanguage.loadLanguageVersion(next) || null;
+        } catch {
+          refreshed = null;
+        }
+      }
+      if (!refreshed) {
+        refreshed = await api?.(
+          `/api/presentations/${id}?lang=${encodeURIComponent(next)}`
+        );
+      }
       pres.i18n = refreshed.i18n;
       pres.title = refreshed.title;
       pres.slides = refreshed.slides;
@@ -154,6 +173,10 @@ export function createLanguageMode({
     setUrlLangParam(next);
     editorState.refreshAll();
     syncLangUi();
+    // Live-edit mode: the switch itself (dominant, a just-created version)
+    // must reach the shared doc — the autosave path that used to persist it
+    // is inert with the flag on.
+    if (collabLanguage) markDirty?.();
     return true;
   };
 
@@ -315,6 +338,13 @@ export function createLanguageMode({
         }),
       });
       applyServerMeta(resp?.presentation);
+      // Live-edit mode: the translate endpoint only updated the stored JSON;
+      // push the translated version into the live doc, then the doc-based
+      // load below shows it.
+      collabLanguage?.adoptLanguageVersion?.(
+        to,
+        resp?.presentation?.i18n?.versions?.[to]
+      );
       await loadLanguageIntoView(to, { onStatus });
       onStatus?.({
         level: 'success',
@@ -389,6 +419,9 @@ export function createLanguageMode({
       const updated = resp?.presentation;
       if (updated?.i18n) pres.i18n = updated.i18n;
       applyServerMeta(updated);
+      // Live-edit mode: see translateMissingForActive — without this the
+      // next collab store would overwrite the server-side translation.
+      collabLanguage?.adoptLanguageVersion?.(to, updated?.i18n?.versions?.[to]);
       onStatus?.({ level: 'success', msg: t('editor.translate.done', 'Translation ready.') });
     } catch (e) {
       onStatus?.(String(e?.message || e));

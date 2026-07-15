@@ -2,8 +2,9 @@
 
 *How a deck maps onto a Yjs document for real-time collaboration (phase 2,
 steps 1–2 of [ADR 001](../adr/001-realtime-collaboration.md) §4–5). The
-editor binder (step 3) and the server-as-collaborator seam (step 4) are not
-wired yet.*
+editor binder (step 3) is documented in
+[collab-editor-binder.md](collab-editor-binder.md); the
+server-as-collaborator seam (step 4) is not wired yet.*
 
 ## The mapping
 
@@ -33,7 +34,13 @@ everything non-textual is last-write-wins; slide order and item lists merge
 structurally (Y.Array). A structural edit (add/remove/reorder slide or item)
 automatically applies to **all** languages because there is only one
 structure — the job of the editor's fragile `syncOtherLanguageStructureForSave`
-disappears by construction once the binder (step 3) lands.
+disappears by construction with the binder (step 3) in place.
+
+`i18n.active` is per-client editor state and is deliberately **not** stored
+in the doc: bootstrap strips it and projection emits `active = dominant`. (A
+stored `active` ≠ `dominant` would make the storage facade's `normalizeI18n`
+overwrite `versions[active]` with the dominant-language buffers on every
+collab store.)
 
 **Self-describing encoding**: on a content (or item) map, a nested Y.Map is
 always a lang→Y.Text map, a nested Y.Array is always an items list, anything
