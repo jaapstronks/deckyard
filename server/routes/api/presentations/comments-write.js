@@ -55,7 +55,7 @@ async function checkCommentEditAccess({ req, authedUser, pres, comment }) {
  */
 async function checkCommentDeleteAccess({ req, authedUser, pres, comment }) {
   if (canReadPresentation({ user: authedUser, pres })) {
-    return canDeleteComment({ user: authedUser, comment });
+    return canDeleteComment({ user: authedUser, pres, comment });
   }
   const guestInfo = await getGuestFromRequest(req);
   if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
