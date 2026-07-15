@@ -63,7 +63,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
@@ -150,7 +150,7 @@ async function handleCreateSlide(ctx, presentationId) {
   const { ok: bodyOk, body } = await parseJsonBody(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   // Validate slide type
@@ -252,7 +252,7 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
@@ -314,7 +314,7 @@ async function handleReorderSlides(ctx, presentationId) {
     return true;
   }
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   const existingSlides = Array.isArray(pres.slides) ? pres.slides : [];

@@ -17,16 +17,16 @@ import { registerTools } from '../../server/mcp/tools.js';
 // ============================================================================
 
 describe('MCP Tools Registration', () => {
-  it('all 22 tools are registered', async () => {
+  it('all 24 tools are registered', async () => {
     const server = new McpServer();
     registerTools(server, { defaultOwnerEmail: 'test@test.com' });
-    assert.strictEqual(server.tools.size, 22, `Expected 22 tools, got ${server.tools.size}`);
+    assert.strictEqual(server.tools.size, 24, `Expected 24 tools, got ${server.tools.size}`);
   });
 
   it('registers without defaultOwnerEmail', async () => {
     const server = new McpServer();
     registerTools(server, {});
-    assert.strictEqual(server.tools.size, 22);
+    assert.strictEqual(server.tools.size, 24);
   });
 
   it('all tools have required fields', async () => {
@@ -99,6 +99,8 @@ describe('MCP Tools Inventory', () => {
     'export_presentation',
     'preview_slide',
     'preview_presentation',
+    'list_comments',
+    'list_recent_comments',
   ];
 
   it('has all expected tools', async () => {

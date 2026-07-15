@@ -175,7 +175,7 @@ async function handleUpdate(ctx, id) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres: existing } = await getPresentationWithAccess(ctx, id);
+  const { ok, pres: existing } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
   const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);

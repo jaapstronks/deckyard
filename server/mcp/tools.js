@@ -9,12 +9,18 @@ import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
-  getPresentation,
   createPresentation,
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
 } from '../storage/presentations.js';
+import { loadPresentationChecked } from './presentation-access.js';
+import {
+  listComments,
+  listRecentCommentsForOwner,
+  listAccessiblePresentationRefs,
+} from '../storage/presentation-comments.js';
+import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
   presentationToDeck,
@@ -84,6 +90,20 @@ export function registerTools(
     return context?.ownerEmail || defaultOwnerEmail || null;
   }
 
+  /**
+   * Load a deck by id and enforce the session owner's access to it.
+   * `access: 'write'` for mutating tools, `'delete'` for deletion,
+   * default read for everything else. No owner configured = trusted
+   * local (stdio) session, no per-deck check.
+   * @param {string} presentationId
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @param {{access?: 'read'|'write'|'delete'}} [options]
+   * @returns {Promise<Object>}
+   */
+  function getCheckedPresentation(presentationId, context, options) {
+    return loadPresentationChecked(repoRoot, presentationId, getOwner(context), options);
+  }
+
   // ─── get_slide_types ────────────────────────────────────────────────────
 
   server.tool(
@@ -142,7 +162,7 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List all presentations. Returns id, title, theme, creation date, and slide count for each.',
+    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `scope` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
     {
       type: 'object',
       properties: {
@@ -150,20 +170,49 @@ export function registerTools(
           type: 'number',
           description: 'Max results (default: 50)',
         },
+        scope: {
+          type: 'string',
+          description:
+            'Which decks to include: "owned" (default), "shared" (decks shared with you), or "all" (union). Shared decks require the DB storage backend.',
+          enum: ['owned', 'shared', 'all'],
+        },
       },
     },
-    async ({ limit = 50 } = {}, context) => {
-      const all = await listPresentations(repoRoot);
-
-      // Filter to only show presentations owned by the authenticated user
+    async ({ limit = 50, scope = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const owned = owner
-        ? all.filter(p => p.ownerEmail === owner)
-        : all;
+      const validScope = ['owned', 'shared', 'all'].includes(scope) ? scope : 'owned';
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
 
-      const items = owned.slice(0, limit).map(p => {
-        // slideCount: try slides array, then slideCount property, then fall back to 0
-        // listPresentations may not include full slides array (too heavy for lists)
+      // Collect owned and/or shared decks, de-duplicated by id (a deck could
+      // appear in both lists in edge cases). Shared lookups are DB-only and
+      // resolve to [] in file mode.
+      const decks = [];
+      const seen = new Set();
+
+      if (validScope === 'owned' || validScope === 'all') {
+        const all = await listPresentations(repoRoot);
+        const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
+        for (const p of owned) {
+          if (!seen.has(p.id)) {
+            seen.add(p.id);
+            decks.push(p);
+          }
+        }
+      }
+
+      if ((validScope === 'shared' || validScope === 'all') && owner) {
+        const shared = await listPresentationsSharedWithUser(owner, ctx);
+        for (const p of shared) {
+          if (!seen.has(p.id)) {
+            seen.add(p.id);
+            decks.push(p);
+          }
+        }
+      }
+
+      const items = decks.slice(0, limit).map((p) => {
+        // slideCount: try slides array, then slideCount property, else omit.
+        // list sources may not include the full slides array (too heavy).
         const slideCount = Array.isArray(p.slides) ? p.slides.length
           : (typeof p.slideCount === 'number' ? p.slideCount : null);
 
@@ -175,6 +224,8 @@ export function registerTools(
           updatedAt: p.modified || p.updatedAt,
         };
         if (slideCount !== null) item.slideCount = slideCount;
+        // Present on shared decks; marks how the caller has access.
+        if (p.permission) item.permission = p.permission;
         const url = presentationUrl(p.id, 'edit');
         if (url) item.editUrl = url;
         return item;
@@ -182,8 +233,9 @@ export function registerTools(
 
       return {
         presentations: items,
-        total: owned.length,
+        total: decks.length,
         ownerFilter: owner || null,
+        scope: validScope,
       };
     }
   );
@@ -200,9 +252,8 @@ export function registerTools(
       },
       required: ['id'],
     },
-    async ({ id }) => {
-      const pres = await getPresentation(repoRoot, id);
-      if (!pres) throw new Error(`Presentation not found: ${id}`);
+    async ({ id }, context) => {
+      const pres = await getCheckedPresentation(id, context);
 
       return {
         id: pres.id,
@@ -500,9 +551,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex', 'content'],
     },
-    async ({ presentationId, slideIndex, content, type }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex, content, type }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -550,9 +600,8 @@ export function registerTools(
       },
       required: ['presentationId', 'type', 'content'],
     },
-    async ({ presentationId, type, content, position }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, type, content, position }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       // Validate the new slide
       const [validated] = validateAndFixRefinedSlides([{ type, content }]);
@@ -599,9 +648,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex', 'targetType'],
     },
-    async ({ presentationId, slideIndex, targetType, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex, targetType, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range`);
       }
@@ -651,9 +699,8 @@ export function registerTools(
       },
       required: ['presentationId', 'command'],
     },
-    async ({ presentationId, command, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, command, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       const lang = pres.lang || 'en-GB';
 
@@ -692,9 +739,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const validated = validateAndFixRefinedSlides(
         pres.slides.map(s => ({ type: s.type, content: s.content, reasoning: '' }))
@@ -768,10 +814,10 @@ export function registerTools(
       },
       required: ['presentationId', 'confirm'],
     },
-    async ({ presentationId, confirm }) => {
+    async ({ presentationId, confirm }, context) => {
       if (!confirm) {
         // Fetch title for confirmation prompt
-        const pres = await getPresentation(repoRoot, presentationId);
+        const pres = await getCheckedPresentation(presentationId, context);
         return {
           deleted: false,
           id: presentationId,
@@ -780,6 +826,7 @@ export function registerTools(
           message: 'Set confirm: true to delete this presentation. This action moves it to trash.',
         };
       }
+      await getCheckedPresentation(presentationId, context, { access: 'delete' });
       await deletePresentation(repoRoot, presentationId);
       return { deleted: true, id: presentationId };
     }
@@ -798,9 +845,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex'],
     },
-    async ({ presentationId, slideIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -832,9 +878,8 @@ export function registerTools(
       },
       required: ['presentationId', 'fromIndex', 'toIndex'],
     },
-    async ({ presentationId, fromIndex, toIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, fromIndex, toIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       const len = pres.slides.length;
       if (fromIndex < 0 || fromIndex >= len) throw new Error(`fromIndex ${fromIndex} out of range`);
       if (toIndex < 0 || toIndex >= len) throw new Error(`toIndex ${toIndex} out of range`);
@@ -869,9 +914,8 @@ export function registerTools(
       },
       required: ['presentationId', 'content'],
     },
-    async ({ presentationId, content, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, content, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       const lang = pres.lang || 'en-GB';
       const existingDeck = presentationToDeck(pres);
@@ -941,9 +985,10 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, apply = false, intensity = 'moderate', vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, apply = false, intensity = 'moderate', vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: apply ? 'write' : 'read',
+      });
 
       const recommendations = await analyzeForCompression(pres, {
         targetReduction: intensity,
@@ -982,9 +1027,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       // analyzePresentation auto-detects language from slide content
       const result = await analyzePresentation(pres, {
@@ -1023,6 +1067,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
+      await getCheckedPresentation(presentationId, context);
       const dup = await duplicatePresentation(repoRoot, presentationId, {
         ownerEmail: getOwner(context),
       });
@@ -1051,10 +1096,9 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId }) => {
-      // Verify it exists
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId }, context) => {
+      // Verify it exists and is accessible
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const base = getAppBaseUrl();
       if (!base) {
@@ -1097,9 +1141,8 @@ export function registerTools(
       },
       required: ['presentationId', 'format'],
     },
-    async ({ presentationId, format, lang }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, format, lang }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       // Agent-friendly format name → in-app export route (cookie-authenticated).
       const EXPORT_PATHS = {
@@ -1152,9 +1195,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex'],
     },
-    async ({ presentationId, slideIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -1188,9 +1230,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, slideRange }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideRange }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       let theme = null;
       try {
@@ -1219,6 +1260,122 @@ export function registerTools(
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
+    }
+  );
+
+  // ─── list_comments ──────────────────────────────────────────────────────
+
+  server.tool(
+    'list_comments',
+    'List comments on a single presentation (newest first) with nested replies. Use to read reviewer/AI feedback on one deck. Access is scoped to decks you own or that are shared with you.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID' },
+        status: {
+          type: 'string',
+          description: 'Filter by status (default: all)',
+          enum: ['open', 'resolved', 'dismissed', 'all'],
+        },
+        slideId: {
+          type: 'string',
+          description: 'Only comments anchored to this slide id',
+        },
+        includeReplies: {
+          type: 'boolean',
+          description:
+            'When true, return replies as separate top-level rows instead of nested under their parent (default: false)',
+        },
+      },
+      required: ['presentationId'],
+    },
+    async ({ presentationId, status = 'all', slideId, includeReplies = false }, context) => {
+      const owner = getOwner(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      // Access guard: only decks the acting owner can see (owned or shared).
+      const refs = await listAccessiblePresentationRefs(repoRoot, ctx, 'all');
+      const ref = refs.find((r) => r.id === presentationId);
+      if (!ref) {
+        throw new Error(`Presentation not found or not accessible: ${presentationId}`);
+      }
+
+      const comments = await listComments(presentationId, ctx, {
+        status: status === 'all' ? undefined : status,
+        slideId: slideId || undefined,
+        includeReplies,
+      });
+
+      return {
+        presentationId,
+        presentationTitle: ref.title,
+        comments,
+        total: comments.length,
+      };
+    }
+  );
+
+  // ─── list_recent_comments ───────────────────────────────────────────────
+
+  server.tool(
+    'list_recent_comments',
+    'List the most recent comments across all your presentations (newest first), optionally filtered to one reviewer. Answers "what are the latest comments on my decks?". Each row carries the deck title and edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
+    {
+      type: 'object',
+      properties: {
+        scope: {
+          type: 'string',
+          description: 'Which decks to include: owned, shared, or all (default: all)',
+          enum: ['owned', 'shared', 'all'],
+        },
+        authorEmail: {
+          type: 'string',
+          description: 'Optional: only comments left by this author email',
+        },
+        status: {
+          type: 'string',
+          description: 'Filter by status (default: all)',
+          enum: ['open', 'resolved', 'dismissed', 'all'],
+        },
+        limit: {
+          type: 'number',
+          description: 'Max comments to return (default: 50, max: 200)',
+        },
+      },
+    },
+    async ({ scope = 'all', authorEmail, status = 'all', limit = 50 } = {}, context) => {
+      const owner = getOwner(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      const { comments, total } = await listRecentCommentsForOwner(repoRoot, ctx, {
+        scope,
+        authorEmail: authorEmail || null,
+        status,
+        limit,
+      });
+
+      const items = comments.map((c) => {
+        const item = {
+          presentationId: c.presentationId,
+          presentationTitle: c.presentationTitle,
+          slideId: c.slideId,
+          authorName: c.authorName,
+          authorEmail: c.authorEmail,
+          body: c.body,
+          status: c.status,
+          createdAt: c.createdAt,
+        };
+        const url = presentationUrl(c.presentationId, 'edit');
+        if (url) item.editUrl = url;
+        return item;
+      });
+
+      return {
+        comments: items,
+        total,
+        scope,
+        ownerFilter: owner || null,
+      };
     }
   );
 
