@@ -16,6 +16,11 @@ import {
   duplicatePresentation,
 } from '../storage/presentations.js';
 import {
+  listComments,
+  listRecentCommentsForOwner,
+  listAccessiblePresentationRefs,
+} from '../storage/presentation-comments.js';
+import {
   deckToPresentationParts,
   presentationToDeck,
 } from '../../shared/slide-types.js';
@@ -1219,6 +1224,122 @@ export function registerTools(
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
+    }
+  );
+
+  // ─── list_comments ──────────────────────────────────────────────────────
+
+  server.tool(
+    'list_comments',
+    'List comments on a single presentation (newest first) with nested replies. Use to read reviewer/AI feedback on one deck. Access is scoped to decks you own or that are shared with you.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID' },
+        status: {
+          type: 'string',
+          description: 'Filter by status (default: all)',
+          enum: ['open', 'resolved', 'dismissed', 'all'],
+        },
+        slideId: {
+          type: 'string',
+          description: 'Only comments anchored to this slide id',
+        },
+        includeReplies: {
+          type: 'boolean',
+          description:
+            'When true, return replies as separate top-level rows instead of nested under their parent (default: false)',
+        },
+      },
+      required: ['presentationId'],
+    },
+    async ({ presentationId, status = 'all', slideId, includeReplies = false }, context) => {
+      const owner = getOwner(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      // Access guard: only decks the acting owner can see (owned or shared).
+      const refs = await listAccessiblePresentationRefs(repoRoot, ctx, 'all');
+      const ref = refs.find((r) => r.id === presentationId);
+      if (!ref) {
+        throw new Error(`Presentation not found or not accessible: ${presentationId}`);
+      }
+
+      const comments = await listComments(presentationId, ctx, {
+        status: status === 'all' ? undefined : status,
+        slideId: slideId || undefined,
+        includeReplies,
+      });
+
+      return {
+        presentationId,
+        presentationTitle: ref.title,
+        comments,
+        total: comments.length,
+      };
+    }
+  );
+
+  // ─── list_recent_comments ───────────────────────────────────────────────
+
+  server.tool(
+    'list_recent_comments',
+    'List the most recent comments across all your presentations (newest first), optionally filtered to one reviewer. Answers "what are the latest comments on my decks?". Each row carries the deck title and edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
+    {
+      type: 'object',
+      properties: {
+        scope: {
+          type: 'string',
+          description: 'Which decks to include: owned, shared, or all (default: all)',
+          enum: ['owned', 'shared', 'all'],
+        },
+        authorEmail: {
+          type: 'string',
+          description: 'Optional: only comments left by this author email',
+        },
+        status: {
+          type: 'string',
+          description: 'Filter by status (default: all)',
+          enum: ['open', 'resolved', 'dismissed', 'all'],
+        },
+        limit: {
+          type: 'number',
+          description: 'Max comments to return (default: 50, max: 200)',
+        },
+      },
+    },
+    async ({ scope = 'all', authorEmail, status = 'all', limit = 50 } = {}, context) => {
+      const owner = getOwner(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      const { comments, total } = await listRecentCommentsForOwner(repoRoot, ctx, {
+        scope,
+        authorEmail: authorEmail || null,
+        status,
+        limit,
+      });
+
+      const items = comments.map((c) => {
+        const item = {
+          presentationId: c.presentationId,
+          presentationTitle: c.presentationTitle,
+          slideId: c.slideId,
+          authorName: c.authorName,
+          authorEmail: c.authorEmail,
+          body: c.body,
+          status: c.status,
+          createdAt: c.createdAt,
+        };
+        const url = presentationUrl(c.presentationId, 'edit');
+        if (url) item.editUrl = url;
+        return item;
+      });
+
+      return {
+        comments: items,
+        total,
+        scope,
+        ownerFilter: owner || null,
+      };
     }
   );
 

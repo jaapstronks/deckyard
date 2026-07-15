@@ -57,6 +57,8 @@ Add to your Cursor MCP settings:
 | `get_presentation` | Get full deck data (all slides) |
 | `get_presentation_url` | Get edit and present URLs for sharing |
 | `list_themes` | List available themes with brand colors |
+| `list_comments` | List comments on one deck (newest first, with replies); access-scoped |
+| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer (DB store only) |
 
 ### Creating
 

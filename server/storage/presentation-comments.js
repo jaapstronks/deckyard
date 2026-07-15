@@ -4,8 +4,10 @@
  */
 
 import { getOrgId } from '../utils/context.js';
-import { norm, nowIso } from '../utils/normalize.js';
+import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { listPresentations } from './presentations.js';
+import { listPresentationsSharedWithUser } from './collaborators.js';
 
 // ============================================================
 // COMMENTS CRUD
@@ -91,6 +93,103 @@ export async function listComments(presentationId, ctx, opts = {}) {
     }
 
     return comments;
+  });
+}
+
+/**
+ * Resolve the presentations the acting user may see, as `{ id, title }` refs.
+ * Owned decks come from `listPresentations` (filtered by `ownerEmail`); shared
+ * decks from `listPresentationsSharedWithUser` (DB-only, `[]` in file mode).
+ * Built once so callers avoid per-comment N+1 title lookups.
+ *
+ * @param {string} repoRoot
+ * @param {Object} ctx - Storage context; `ctx.actorEmail`/`ctx.ownerEmail` is
+ *   the acting user, `ctx.organizationId` scopes shared lookups.
+ * @param {'owned'|'shared'|'all'} [scope='all']
+ * @returns {Promise<Array<{ id: string, title: string }>>}
+ */
+export async function listAccessiblePresentationRefs(repoRoot, ctx, scope = 'all') {
+  const owner = normalizeEmail(ctx?.actorEmail || ctx?.ownerEmail);
+  if (!owner) return [];
+
+  const wantOwned = scope === 'owned' || scope === 'all';
+  const wantShared = scope === 'shared' || scope === 'all';
+
+  const titleById = new Map();
+
+  if (wantOwned) {
+    const all = await listPresentations(repoRoot);
+    for (const p of all) {
+      if (normalizeEmail(p.ownerEmail) === owner) {
+        titleById.set(p.id, p.title || 'Untitled');
+      }
+    }
+  }
+
+  if (wantShared) {
+    const shared = await listPresentationsSharedWithUser(owner, ctx);
+    for (const p of shared) {
+      if (!titleById.has(p.id)) titleById.set(p.id, p.title || 'Untitled');
+    }
+  }
+
+  return [...titleById.entries()].map(([id, title]) => ({ id, title }));
+}
+
+/**
+ * List the most recent top-level comments across every presentation the acting
+ * user can see (owned and/or shared), newest first. Powers cross-deck review
+ * queries ("latest comments on my decks", optionally by one reviewer) that the
+ * per-deck listComments() can't answer.
+ *
+ * File mode has no comment store, so this resolves to an empty result there.
+ *
+ * @param {string} repoRoot
+ * @param {Object} ctx - Storage context (acting user + org, as above).
+ * @param {Object} [opts]
+ * @param {'owned'|'shared'|'all'} [opts.scope='all'] - Which decks to include.
+ * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.
+ * @param {'open'|'resolved'|'dismissed'|'all'} [opts.status='all']
+ * @param {number} [opts.limit=50] - Max comments (clamped to 1..200).
+ * @returns {Promise<{ comments: Array, total: number }>} Comments enriched with
+ *   `presentationTitle`; `total` is the number returned.
+ */
+export async function listRecentCommentsForOwner(repoRoot, ctx, opts = {}) {
+  const scope = ['owned', 'shared', 'all'].includes(opts?.scope) ? opts.scope : 'all';
+  const authorEmail = opts?.authorEmail ? normalizeEmail(opts.authorEmail) : null;
+  const status = ['open', 'resolved', 'dismissed', 'all'].includes(opts?.status)
+    ? opts.status
+    : 'all';
+  const limit = Math.max(1, Math.min(200, Number(opts?.limit) || 50));
+
+  const refs = await listAccessiblePresentationRefs(repoRoot, ctx, scope);
+  if (refs.length === 0) return { comments: [], total: 0 };
+
+  const titleById = new Map(refs.map((r) => [r.id, r.title]));
+  const ids = refs.map((r) => r.id);
+
+  return withDbGuard({ comments: [], total: 0 }, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    let query = db
+      .selectFrom('presentation_comments')
+      .selectAll()
+      .where('presentation_id', 'in', ids)
+      .where('organization_id', '=', orgId)
+      .where('parent_id', 'is', null); // top-level comments only
+
+    if (authorEmail) query = query.where('author_email', '=', authorEmail);
+    if (status !== 'all') query = query.where('status', '=', status);
+
+    const rows = await query.orderBy('created_at', 'desc').limit(limit).execute();
+
+    const comments = rows.map((row) => {
+      const comment = rowToComment(row);
+      comment.presentationTitle = titleById.get(comment.presentationId) || null;
+      return comment;
+    });
+
+    return { comments, total: comments.length };
   });
 }
 
