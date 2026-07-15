@@ -31,8 +31,16 @@ export function canEditComment({ user, comment } = {}) {
 
 /**
  * Check if a user can delete a comment.
- * Same as edit - only author or admin can delete.
+ * The comment author or an admin can always delete. Additionally, the
+ * presentation owner/creator can delete (moderate) any comment on their
+ * own presentation, mirroring canResolveComment - so owners can clean up
+ * AI suggestions, guest comments, and collaborator feedback.
  */
-export function canDeleteComment({ user, comment } = {}) {
-  return canEditComment({ user, comment });
+export function canDeleteComment({ user, pres, comment } = {}) {
+  if (canEditComment({ user, comment })) return true;
+  const userEmail = normalizeEmail(user?.email);
+  if (!userEmail) return false;
+  const owner = normalizeEmail(pres?.ownerEmail);
+  const createdBy = normalizeEmail(pres?.createdBy);
+  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
 }
