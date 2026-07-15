@@ -106,6 +106,12 @@ language.)
   actively loaded still land only in the JSON and are overwritten by the
   next collab store — unchanged from step 2, see collab-deck-doc.md. The
   editor's own translate flows are bridged via `adoptLanguageVersion`.
+- The **theme-change flow** is in the same family: deck settings' theme
+  picker goes through `POST /api/presentations/:id/change-theme` (a
+  server-side write; it can also convert slides) and updates `pres` without
+  `markDirty`, so with the flag on the change never reaches the doc and the
+  next collab store overwrites it. Other deck-settings toggles are fine
+  (they mutate `pres` + `markDirty`). Bridge or retire with step 4.
 - Publish/export read the stored JSON, which can lag live edits by up to one
   persistence debounce window (~2 s).
 

@@ -150,8 +150,11 @@ export function initEditorLiveEdits({
     else if (p.slideIds.has(selectedId)) tryCall(updateSelectedSlideListItem);
 
     const selectedTouched = selectionGone || (!!selectedId && p.slideIds.has(selectedId));
+    // Meta-only changes (e.g. a remote theme switch) still repaint the
+    // preview — parity with the flag-off SSE path, which re-renders on
+    // every remote update. rerenderPreview guards active inline edits.
+    if (selectedTouched || p.meta) tryCall(rerenderPreview);
     if (selectedTouched) {
-      tryCall(rerenderPreview); // guarded against active inline edits inside
       requestEditorRerender();
       refreshNotesTa();
     }

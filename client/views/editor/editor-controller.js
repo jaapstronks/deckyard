@@ -823,6 +823,19 @@ export async function createEditorController({
       })
       .catch((e) => {
         console.warn('[collab] presence unavailable:', e?.message || e);
+        // In live-edit mode there is no autosave fallback: markDirty routes
+        // into a binder that will now never arrive, so edits would be lost
+        // silently. Make the failure loud instead.
+        if (liveEditsActive) {
+          setSaveStatus('error');
+          toast.error(
+            t(
+              'editor.collab.liveEditsUnavailable',
+              'Live collaboration failed to load; changes are not being saved. Reload the editor.'
+            ),
+            { durationMs: 15000 }
+          );
+        }
       });
   }
 
