@@ -53,3 +53,18 @@ Please include:
 - A clear problem statement
 - Before/after screenshots for UI changes (where applicable)
 - Notes on cleanup/lifecycle if you added event listeners/timers/SSE/etc.
+
+## Branching & releases
+
+- **`main` is stable.** Every commit on it should be releasable; forks are
+  told to sync on release tags (see `docs/reference/fork-setup.md`).
+- **Small changes** go via a feature branch + PR to `main`.
+- **Large multi-PR tracks** (features whose architecture is still being
+  proven) go via an **integration branch** (e.g. `collab` for real-time
+  collaboration). Sub-PRs target that branch and are reviewed/merged there;
+  `main` is only touched by one final umbrella PR once the track as a whole
+  is accepted — or never, if it isn't. Integration branches get `main`
+  merged into them regularly to prevent drift.
+- **Releases** are git tags (`v1.1.0`) + a GitHub Release, with the changes
+  summarized in `CHANGELOG.md` (Keep a Changelog format; maintain the
+  `[Unreleased]` section as you merge).

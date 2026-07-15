@@ -56,6 +56,12 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
   `main`** — no branch or PR needed.
 - **Code changes** go via a feature branch, merged into `main` (PR for
   anything substantial).
+- **Long-running feature tracks** use an integration branch: sub-PRs target
+  that branch (not `main`), which gets one umbrella PR to `main` when the
+  whole track is accepted. Active: `collab` (real-time collaboration, ADR
+  001) — all collab PRs base on `collab`; merge `main` into it periodically.
+- **Releases**: tag `vX.Y.Z` + GitHub Release; update `CHANGELOG.md`
+  (`[Unreleased]` → release section). Forks sync on tags, not `main`.
 
 ## Verifying work
 
