@@ -163,6 +163,43 @@ export class StorageAdapter {
   }
 
   // ============================================================
+  // COLLAB Y.DOC STATE
+  // ============================================================
+
+  /**
+   * Read the stored collab Y.Doc state (one merged yjs update) for a
+   * presentation. The binary is a cache of the live CRDT state; the deck
+   * JSON stays the durable format (ADR 001 §5).
+   * @param {string} presentationId
+   * @param {StorageContext} ctx
+   * @returns {Promise<Uint8Array|null>}
+   */
+  async getYDocState(presentationId, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Store the collab Y.Doc state for a presentation.
+   * @param {string} presentationId
+   * @param {Uint8Array} state - Merged yjs update
+   * @param {StorageContext} ctx
+   * @returns {Promise<boolean>}
+   */
+  async setYDocState(presentationId, state, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Delete the stored collab Y.Doc state for a presentation.
+   * @param {string} presentationId
+   * @param {StorageContext} ctx
+   * @returns {Promise<boolean>}
+   */
+  async deleteYDocState(presentationId, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  // ============================================================
   // PRESENTATION VERSIONS
   // ============================================================
 

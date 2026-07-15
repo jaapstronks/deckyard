@@ -328,7 +328,21 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
             ycontent.set(key, buildItemsArray(content[key], key, peers, itemSpec));
             continue;
           }
-          if (content[key] !== undefined) ycontent.set(key, deepClone(content[key]));
+          if (content[key] !== undefined) {
+            ycontent.set(key, deepClone(content[key]));
+            // Plain values normalize to the dominant version. Legacy decks
+            // can diverge here (e.g. deprecated `hidden` fields, which the
+            // translate pipeline does copy per language but this codec
+            // deliberately keeps plain) — surface it instead of silently
+            // dropping the other version's value.
+            const dominantJson = JSON.stringify(content[key]);
+            for (const { lang, slide: peer } of matches) {
+              const pv = peer?.content?.[key];
+              if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
+                warnings.push(`slide ${sid}: plain field '${key}' differs in version '${lang}' — dominant wins`);
+              }
+            }
+          }
         }
         ymap.set('content', ycontent);
 

@@ -5,6 +5,7 @@ import {
   isLiveDataEnabled,
   isRssFeedEnabled,
   isCollabEnabled,
+  isCollabLiveEditsEnabled,
 } from './features.js';
 import { truthy } from './utils.js';
 
@@ -40,5 +41,6 @@ export function getFeatureFlags() {
     enableLiveData: isLiveDataEnabled(),
     enableRssFeed: isRssFeedEnabled(),
     collab: isCollabEnabled(),
+    collabLiveEdits: isCollabLiveEditsEnabled(),
   };
 }

@@ -5,6 +5,7 @@
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
@@ -88,6 +89,17 @@ export async function updatePresentation(repoRoot, id, body, opts) {
     import('./present-sessions/sse.js')
       .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
       .catch(() => {});
+    // Collab live edits: a save that did NOT come from the collab doc makes
+    // any stored (cold) Y.Doc binary stale — invalidate it so the next
+    // collab open re-bootstraps from this fresh JSON instead of resurrecting
+    // old content. Saves originating from the doc keep their binary.
+    // Unconditional (not gated on COLLAB_LIVE_EDITS): a binary written while
+    // the flag was on must not survive saves made while it is off, or
+    // re-enabling the flag would resurrect stale state. No-op when no binary
+    // exists.
+    if (opts?.reason !== 'collab') {
+      deleteYDocState(repoRoot, id).catch(() => {});
+    }
   }
   return result;
 }
@@ -140,6 +152,9 @@ export async function deletePresentation(repoRoot, id, opts) {
     return await mod.deletePresentation(repoRoot, id, opts);
   } finally {
     invalidatePresentationCache(id);
+    // Trash/restore round-trips must not resurrect a stale collab doc.
+    // Unconditional for the same reason as in updatePresentation.
+    deleteYDocState(repoRoot, id).catch(() => {});
   }
 }
 

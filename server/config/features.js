@@ -63,6 +63,17 @@ export function isCollabEnabled() {
 }
 
 /**
+ * Real-time collaboration (live document edits) configuration.
+ * Phase 2 on top of presence: the Y.Doc becomes the live source of truth
+ * while a deck is open collaboratively — persisted server-side and
+ * serialized back to the deck JSON. Requires COLLAB_ENABLED; kept as a
+ * separate flag so presence can ship and soak alone. Default: off.
+ */
+export function isCollabLiveEditsEnabled() {
+  return isCollabEnabled() && truthy(process.env.COLLAB_LIVE_EDITS);
+}
+
+/**
  * RSS Feed configuration.
  * When enabled, organizations can activate RSS/Atom/JSON feeds for published presentations.
  * Default: true (enabled). The env var is a kill switch for instances that don't want the feature.

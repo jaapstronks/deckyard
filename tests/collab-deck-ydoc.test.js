@@ -323,6 +323,17 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     assert.equal(projected.i18n.versions['en-GB'].slides.length, 2);
   });
 
+  it('warns when a plain (e.g. hidden/deprecated) field diverges between versions', () => {
+    const pres = normalizeTopLevel(twoLangDeck());
+    // `variant` is an enum (plain LWW); legacy decks can have diverged here,
+    // as can deprecated `hidden` fields, which are also kept plain.
+    pres.i18n.versions['en-GB'].slides[0].content.variant = 'bullets';
+    const { projected, warnings } = roundTrip(pres);
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /plain field 'variant' differs in version 'en-GB'/);
+    assert.equal(projected.i18n.versions['en-GB'].slides[0].content.variant, 'numbers', 'dominant wins');
+  });
+
   it('lets the dominant type win on a type mismatch, with a warning', () => {
     const pres = normalizeTopLevel(twoLangDeck());
     pres.i18n.versions['en-GB'].slides[1].type = 'content-slide';
