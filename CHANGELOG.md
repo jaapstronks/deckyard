@@ -6,6 +6,17 @@ entries are grouped per release rather than exhaustively listed.
 
 ## [Unreleased]
 
+### Fixed
+
+- Presentation owners can delete any comment on their own deck (#1)
+
+### Changed
+
+- Stock background photos replaced with generated demo gradients
+- CI and Docker on Node 22 (matches `engines`)
+
+## [1.0.0] — 2026-07-14
+
 ### Added
 
 - First public open-source release 🎉

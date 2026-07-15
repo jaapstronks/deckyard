@@ -113,11 +113,8 @@ To receive updates from the main Deckyard project:
 # Add upstream remote
 git remote add upstream https://github.com/jaapstronks/deckyard.git
 
-# Fetch upstream changes
-git fetch upstream
-
-# Merge upstream updates (when you want to update)
-git merge upstream/main
+# Fetch upstream changes, including release tags
+git fetch upstream --tags
 ```
 
 Because your customizations live in `custom/` directories that the upstream doesn't modify, merges should be conflict-free.
@@ -126,19 +123,31 @@ Because your customizations live in `custom/` directories that the upstream does
 
 ## Updating Your Fork
 
-When Deckyard releases updates:
+**Track releases, not the tip of `main`.** Releases are tagged (`v1.0.0`,
+`v1.1.0`, …) and each release's changes are summarized in `CHANGELOG.md` —
+that summary tells you whether an update affects your fork before you merge
+anything. The tip of `main` may additionally contain work that just hasn't
+been released yet, and long-running feature tracks live on integration
+branches (e.g. `collab`) that you should never merge directly.
 
 ```bash
-# Fetch the latest from upstream
-git fetch upstream
+# Fetch the latest from upstream, including tags
+git fetch upstream --tags
 
-# Merge into your branch
-git merge upstream/main
+# See what releases are available
+git tag -l 'v*'
+
+# Read the release notes first (CHANGELOG.md at that tag), then merge it
+git merge v1.1.0
 
 # If there are conflicts (rare), resolve them
 # Then push to your fork
 git push origin main
 ```
+
+Merging `upstream/main` directly still works if you want the bleeding edge,
+but you're then integrating unreleased work at whatever state it happens to
+be in — releases are the supported sync points.
 
 ## Deployment
 
