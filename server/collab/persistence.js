@@ -33,14 +33,18 @@ import {
   getYDocState as defaultGetYDocState,
   setYDocState as defaultSetYDocState,
 } from '../storage/presentation-ydocs.js';
+import { canEditCustomHtml } from '../utils/route-middleware.js';
+import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
 
 /**
  * Create the Hocuspocus persistence hooks.
  *
  * @param {Object} options
  * @param {string} options.repoRoot
- * @param {Object} [options.deps] - Test seam: override storage/codec/Y/log
- * @returns {{onLoadDocument: Function, onStoreDocument: Function}}
+ * @param {Object} [options.deps] - Test seam: override storage/codec/Y/log/
+ *   canEditCustomHtmlFn
+ * @returns {{onLoadDocument: Function, onStoreDocument: Function,
+ *   onChange: Function, afterUnloadDocument: Function}}
  */
 export function createCollabPersistence({ repoRoot, deps = {} }) {
   const {
@@ -50,8 +54,12 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     updatePresentation = defaultUpdatePresentation,
     getYDocState = defaultGetYDocState,
     setYDocState = defaultSetYDocState,
+    canEditCustomHtmlFn = canEditCustomHtml,
     log = console,
   } = deps;
+
+  /** Per-document snapshot of custom-html raw fields, for the capability gate. */
+  const customHtmlSnapshots = new Map();
 
   /** A doc is ours once bootstrap/load populated meta (guards empty docs). */
   function isPopulated(document) {
@@ -65,6 +73,7 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     const stored = await getYDocState(repoRoot, id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
+      customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
       return document;
     }
 
@@ -86,7 +95,36 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     } catch (err) {
       log.error(`[collab] failed to store bootstrap state for ${id}:`, err?.message || err);
     }
+    customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
     return document;
+  }
+
+  /**
+   * Per-change custom-html capability gate (see custom-html-guard.js). Fires
+   * for every doc update with the originating connection's context; a
+   * non-capable editor's raw HTML/CSS edit on a custom-html-slide is reverted
+   * in place. Server-origin writes (live-apply, no `context.user`) are already
+   * gated by the REST route, so they update the snapshot instead.
+   */
+  function onChange({ documentName, document, context }) {
+    const id = presentationIdFromDocumentName(documentName);
+    if (!id) return;
+    const user = context?.user;
+    const allowed = !user || canEditCustomHtmlFn(user);
+    const prev = customHtmlSnapshots.get(documentName);
+    const { snapshot, reverted } = guardCustomHtml(document, prev, { allowed, Y });
+    customHtmlSnapshots.set(documentName, snapshot);
+    if (reverted) {
+      log.warn(
+        `[collab] reverted a raw HTML/CSS edit on ${id} by a user without the ` +
+          `canEditCustomHtml capability (${user?.email || 'unknown'})`
+      );
+    }
+  }
+
+  /** Drop the per-document snapshot when Hocuspocus unloads the doc. */
+  function afterUnloadDocument({ documentName }) {
+    customHtmlSnapshots.delete(documentName);
   }
 
   async function onStoreDocument({ documentName, document }) {
@@ -103,7 +141,19 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     try {
       await setYDocState(repoRoot, id, Y.encodeStateAsUpdate(document));
     } catch (err) {
-      log.error(`[collab] failed to store doc binary for ${id}:`, err?.message || err);
+      // Do NOT fall through to the JSON write. If the binary store failed but
+      // the JSON write then succeeded, the stored binary would be OLDER than
+      // the JSON, and nothing invalidates it (collab-reason saves never delete
+      // the binary) — the next collab open would load the stale binary and
+      // revert the newer JSON on its first store. Bailing keeps the pair
+      // consistent: the JSON is at most one debounce window stale and
+      // self-heals on the next (retried) store.
+      log.error(
+        `[collab] failed to store doc binary for ${id}; skipping the JSON write ` +
+          'this cycle to keep binary/JSON consistent (retries next store):',
+        err?.message || err
+      );
+      return;
     }
 
     // Serialize to the legacy JSON through the facade. The doc is the merge,
@@ -136,5 +186,5 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     }
   }
 
-  return { onLoadDocument, onStoreDocument };
+  return { onLoadDocument, onStoreDocument, onChange, afterUnloadDocument };
 }

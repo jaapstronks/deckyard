@@ -63,7 +63,19 @@ export async function applyServerWriteToActiveDoc(id, storedPres, opts = {}) {
   if (!hocuspocus || !storedPres || typeof storedPres !== 'object') return false;
 
   const documentName = `${COLLAB_DOC_PREFIX}${id}`;
-  if (!hocuspocus.documents.has(documentName)) return false;
+  // A doc that is still loading sits in `loadingDocuments`, not yet in
+  // `documents` (Hocuspocus only `documents.set()`s after onLoadDocument
+  // resolves). Treating a loading doc as inactive would let a save that races
+  // an open slip through as a cold write: it invalidates the binary (a no-op
+  // for the already-read state) and is then reverted when the doc finishes
+  // loading with pre-save content and stores it back. Include loading docs so
+  // `openDirectConnection` coalesces with the in-flight load and applies our
+  // save to the loaded doc; the unpopulated-doc guard inside the transaction
+  // still covers a load that ultimately failed.
+  const isActive =
+    hocuspocus.documents.has(documentName) ||
+    hocuspocus.loadingDocuments?.has?.(documentName);
+  if (!isActive) return false;
 
   // The facade may have attached transient validation warnings to the
   // result object; those are response metadata, not deck content.
