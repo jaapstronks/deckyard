@@ -157,7 +157,7 @@ export function createInlineEditor({
     const slide = getSlide?.();
     if (!slide) return;
     const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
-    editing = { el, path, meta, original: raw, isNew, cancel: false };
+    editing = { el, path, meta, original: raw, isNew, cancel: false, slideId: slide.id };
     setHotField(null);
     el.setAttribute('contenteditable', 'plaintext-only');
     el.classList.add('ie-editing');
@@ -199,8 +199,19 @@ export function createInlineEditor({
     }
 
     const value = normalizeText(el.textContent, meta);
-    const slide = getSlide?.();
-    if (!slide) return;
+    // Commit to the slide the edit STARTED on, never the current selection:
+    // a collaborator can delete the edited slide mid-edit (live collab), which
+    // makes the selection fall back to another slide — resolving via
+    // getSlide() here would write this field's text into that other slide.
+    const slide = done.slideId
+      ? (pres?.slides || []).find((s) => s?.id === done.slideId)
+      : getSlide?.();
+    if (!slide) {
+      // The edited slide is gone (deleted remotely): drop the commit and
+      // repaint the canvas, which is still showing the deleted slide.
+      rerenderPreview?.();
+      return;
+    }
     const current = getByPath(slide.content, path);
     // The spawn sentinel counts as "still empty": typing nothing into a fresh
     // field must not dirty/save, just drop back to the ghost.

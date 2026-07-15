@@ -77,6 +77,9 @@ npm run vendor:collab
 - The Y.Doc content is unused; nothing is persisted server-side. Slide edits
   still flow through the normal save path (autosave PUT + slide-level merge),
   and the existing slide-lock system remains the edit-exclusivity mechanism.
+  (With `COLLAB_LIVE_EDITS` also on — phase 2 — the lock system is retired
+  in favour of CRDT merging; see
+  [collab-editor-binder.md](collab-editor-binder.md).)
 - Multi-instance deployments would need cross-node awareness fan-out (Redis);
   all Deckyard realtime is process-local today, so presence follows suit.
 - Phase 2 (live CRDT edits through the same connection) is specced in

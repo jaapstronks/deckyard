@@ -6,6 +6,7 @@ import { h } from '../../../lib/dom.js';
 import { normalizeLang } from '../../../lib/i18n.js';
 import { confirmModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { ifMatchRevision } from '../if-match-revision.js';
 import { openWorkspaceShareModal } from './workspace-share-modal.js';
 
 /**
@@ -68,7 +69,7 @@ export async function handleShareToWorkspace({
   try {
     const updated = await api(`/api/presentations/${id}/scope`, {
       method: 'PATCH',
-      headers: { 'If-Match': String(Number(pres?.revision) || 1) },
+      headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
       body: JSON.stringify({
         scope: 'workspace',
         isStarterKit: shareResult.isStarterKit,
@@ -144,7 +145,7 @@ export async function handleMoveToPrivate({
   try {
     const updated = await api(`/api/presentations/${id}/scope`, {
       method: 'PATCH',
-      headers: { 'If-Match': String(Number(pres?.revision) || 1) },
+      headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
       body: JSON.stringify({ scope: 'private' }),
     });
     if (updated && typeof updated === 'object') {
