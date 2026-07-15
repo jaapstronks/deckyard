@@ -52,6 +52,17 @@ export function requireLiveData() {
 }
 
 /**
+ * Real-time collaboration (presence) configuration.
+ * When enabled, the server mounts a Yjs/Hocuspocus WebSocket endpoint at
+ * /collab and the editor shows live collaborator presence. Default: off —
+ * single-user installs run without any collaboration transport.
+ * Read at call time (not module load) so .env loading order can't bite.
+ */
+export function isCollabEnabled() {
+  return truthy(process.env.COLLAB_ENABLED);
+}
+
+/**
  * RSS Feed configuration.
  * When enabled, organizations can activate RSS/Atom/JSON feeds for published presentations.
  * Default: true (enabled). The env var is a kill switch for instances that don't want the feature.

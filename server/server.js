@@ -24,6 +24,7 @@ import { closeRedis } from './utils/redis-client.js';
 import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
+import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
 
 function getUrl(req) {
   const host = req.headers.host || 'localhost';
@@ -165,6 +166,9 @@ const analyticsCleanupJob = scheduleAnalyticsCleanup(); // Clean old analytics d
 await initializeQueues();
 await initializeWorkers();
 
+// Real-time collaboration (presence) WebSocket endpoint, gated by COLLAB_ENABLED
+await maybeAttachCollab(server, { repoRoot });
+
 const PORT = Number(process.env.PORT || 4177);
 const HOST = process.env.HOST || '127.0.0.1';
 server.on('error', (err) => {
@@ -187,6 +191,7 @@ server.listen(PORT, HOST, () => {
 async function shutdown(signal) {
   console.log(`\n[Server] Received ${signal}, shutting down...`);
   stopHeartbeat(); // Stop SSE heartbeat
+  await shutdownCollab(); // Close collab WebSocket connections
   authCleanupJob.stop(); // Stop auth cleanup job
   digestEmailJob.stop(); // Stop digest email job
   analyticsCleanupJob.stop(); // Stop analytics cleanup job
