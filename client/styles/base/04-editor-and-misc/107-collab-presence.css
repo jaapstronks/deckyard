@@ -1,0 +1,95 @@
+/**
+ * Collaborator presence (feature-flagged: collab).
+ *
+ * Topbar avatar stack, per-slide indicators in the slide list, and
+ * field-focus outlines + name labels on the preview canvas.
+ */
+
+/* ---- Topbar avatar stack ---- */
+
+.collab-presence-stack {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 8px;
+}
+
+.collab-presence-avatar {
+  border-radius: 50%;
+  border: 2px solid var(--presence-color, var(--color-border, #ccc));
+  line-height: 0;
+}
+
+.collab-presence-avatar + .collab-presence-avatar,
+.collab-presence-avatar + .collab-presence-more {
+  margin-left: -6px;
+}
+
+.collab-presence-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 12px;
+  background: var(--color-surface-2, #e5e5e5);
+  color: var(--color-text-muted, #666);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ---- Slide list indicators ---- */
+
+.slide-item {
+  position: relative;
+}
+
+.collab-slide-presence {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  gap: 3px;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.collab-slide-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--presence-color, #888);
+  border: 2px solid var(--color-surface, #fff);
+  box-sizing: content-box;
+}
+
+.collab-slide-dot.is-editing {
+  box-shadow: 0 0 0 2px var(--presence-color, #888);
+}
+
+/* ---- Field-focus rings on the preview canvas ----
+   Overlay elements on .thumb at real screen px (the slide itself is
+   transform-scaled, so in-slide borders would be microscopic). */
+
+.collab-focus-ring {
+  position: absolute;
+  z-index: 29;
+  border: 2px solid var(--presence-color, #888);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.collab-focus-label {
+  position: absolute;
+  z-index: 30;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}

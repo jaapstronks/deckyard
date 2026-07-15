@@ -569,5 +569,9 @@
   "editor.deckReview.revisionFailed": "No revised section received (please try again).",
   "editor.deckReview.discardDeck": "Discard deck",
   "editor.deckReview.discardConfirm": "Delete this generated presentation? It will be moved to the trash.",
-  "editor.deckReview.keep": "Looks good"
+  "editor.deckReview.keep": "Looks good",
+  "editor.presence.here": "Also here",
+  "editor.presence.viewerTitle": "{name} is in this deck",
+  "editor.presence.viewingSlide": "{name} is viewing this slide",
+  "editor.presence.editingSlide": "{name} is editing this slide"
 }

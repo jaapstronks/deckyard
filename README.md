@@ -214,6 +214,19 @@ Users are managed in the app itself (admin panel, invitations, password
 reset). For local development, `AUTH_DEV_BYPASS=true` skips auth entirely and
 auto-logs you in as admin.
 
+### Real-time collaboration (presence)
+
+Optional and **off by default** — single-user installs need nothing. Set
+`COLLAB_ENABLED=true` and the server mounts a [Yjs](https://yjs.dev)
+([Hocuspocus](https://tiptap.dev/docs/hocuspocus)) WebSocket endpoint at
+`/collab` inside the same Node process — no extra service, port, or proxy
+configuration (WebSocket upgrades ride the same port; Caddy/nginx pass them
+through by default). With the flag on, editors show live collaborator
+presence: who is in the deck, which slide each person is viewing, and which
+field they are editing. Access control reuses the normal presentation
+permissions; viewers and share-link guests connect read-only. See
+`docs/reference/collab-presence.md` for how it works.
+
 ## Deployment
 
 ### Docker (Recommended)
