@@ -9,12 +9,12 @@ import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
-  getPresentation,
   createPresentation,
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
 } from '../storage/presentations.js';
+import { loadPresentationChecked } from './presentation-access.js';
 import {
   listComments,
   listRecentCommentsForOwner,
@@ -88,6 +88,20 @@ export function registerTools(
    */
   function getOwner(context) {
     return context?.ownerEmail || defaultOwnerEmail || null;
+  }
+
+  /**
+   * Load a deck by id and enforce the session owner's access to it.
+   * `access: 'write'` for mutating tools, `'delete'` for deletion,
+   * default read for everything else. No owner configured = trusted
+   * local (stdio) session, no per-deck check.
+   * @param {string} presentationId
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @param {{access?: 'read'|'write'|'delete'}} [options]
+   * @returns {Promise<Object>}
+   */
+  function getCheckedPresentation(presentationId, context, options) {
+    return loadPresentationChecked(repoRoot, presentationId, getOwner(context), options);
   }
 
   // ─── get_slide_types ────────────────────────────────────────────────────
@@ -238,9 +252,8 @@ export function registerTools(
       },
       required: ['id'],
     },
-    async ({ id }) => {
-      const pres = await getPresentation(repoRoot, id);
-      if (!pres) throw new Error(`Presentation not found: ${id}`);
+    async ({ id }, context) => {
+      const pres = await getCheckedPresentation(id, context);
 
       return {
         id: pres.id,
@@ -538,9 +551,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex', 'content'],
     },
-    async ({ presentationId, slideIndex, content, type }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex, content, type }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -588,9 +600,8 @@ export function registerTools(
       },
       required: ['presentationId', 'type', 'content'],
     },
-    async ({ presentationId, type, content, position }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, type, content, position }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       // Validate the new slide
       const [validated] = validateAndFixRefinedSlides([{ type, content }]);
@@ -637,9 +648,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex', 'targetType'],
     },
-    async ({ presentationId, slideIndex, targetType, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex, targetType, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range`);
       }
@@ -689,9 +699,8 @@ export function registerTools(
       },
       required: ['presentationId', 'command'],
     },
-    async ({ presentationId, command, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, command, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       const lang = pres.lang || 'en-GB';
 
@@ -730,9 +739,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const validated = validateAndFixRefinedSlides(
         pres.slides.map(s => ({ type: s.type, content: s.content, reasoning: '' }))
@@ -806,10 +814,10 @@ export function registerTools(
       },
       required: ['presentationId', 'confirm'],
     },
-    async ({ presentationId, confirm }) => {
+    async ({ presentationId, confirm }, context) => {
       if (!confirm) {
         // Fetch title for confirmation prompt
-        const pres = await getPresentation(repoRoot, presentationId);
+        const pres = await getCheckedPresentation(presentationId, context);
         return {
           deleted: false,
           id: presentationId,
@@ -818,6 +826,7 @@ export function registerTools(
           message: 'Set confirm: true to delete this presentation. This action moves it to trash.',
         };
       }
+      await getCheckedPresentation(presentationId, context, { access: 'delete' });
       await deletePresentation(repoRoot, presentationId);
       return { deleted: true, id: presentationId };
     }
@@ -836,9 +845,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex'],
     },
-    async ({ presentationId, slideIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -870,9 +878,8 @@ export function registerTools(
       },
       required: ['presentationId', 'fromIndex', 'toIndex'],
     },
-    async ({ presentationId, fromIndex, toIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, fromIndex, toIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
       const len = pres.slides.length;
       if (fromIndex < 0 || fromIndex >= len) throw new Error(`fromIndex ${fromIndex} out of range`);
       if (toIndex < 0 || toIndex >= len) throw new Error(`toIndex ${toIndex} out of range`);
@@ -907,9 +914,8 @@ export function registerTools(
       },
       required: ['presentationId', 'content'],
     },
-    async ({ presentationId, content, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, content, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, { access: 'write' });
 
       const lang = pres.lang || 'en-GB';
       const existingDeck = presentationToDeck(pres);
@@ -979,9 +985,10 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, apply = false, intensity = 'moderate', vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, apply = false, intensity = 'moderate', vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context, {
+        access: apply ? 'write' : 'read',
+      });
 
       const recommendations = await analyzeForCompression(pres, {
         targetReduction: intensity,
@@ -1020,9 +1027,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, vendor }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, vendor }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       // analyzePresentation auto-detects language from slide content
       const result = await analyzePresentation(pres, {
@@ -1061,6 +1067,7 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
+      await getCheckedPresentation(presentationId, context);
       const dup = await duplicatePresentation(repoRoot, presentationId, {
         ownerEmail: getOwner(context),
       });
@@ -1089,10 +1096,9 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId }) => {
-      // Verify it exists
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId }, context) => {
+      // Verify it exists and is accessible
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const base = getAppBaseUrl();
       if (!base) {
@@ -1135,9 +1141,8 @@ export function registerTools(
       },
       required: ['presentationId', 'format'],
     },
-    async ({ presentationId, format, lang }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, format, lang }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       // Agent-friendly format name → in-app export route (cookie-authenticated).
       const EXPORT_PATHS = {
@@ -1190,9 +1195,8 @@ export function registerTools(
       },
       required: ['presentationId', 'slideIndex'],
     },
-    async ({ presentationId, slideIndex }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideIndex }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
         throw new Error(`Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`);
       }
@@ -1226,9 +1230,8 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, slideRange }) => {
-      const pres = await getPresentation(repoRoot, presentationId);
-      if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
+    async ({ presentationId, slideRange }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       let theme = null;
       try {

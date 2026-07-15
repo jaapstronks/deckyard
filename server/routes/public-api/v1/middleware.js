@@ -5,7 +5,7 @@
 
 import { validateApiKey, TIER_LIMITS, hasScope } from '../../../storage/api-keys.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
-import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
+import { normalizePresentationScope, canActorAccessPresentation } from '../../../utils/presentation-authz.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
 import { serveJson, forbidden, rateLimited as sendRateLimited, json } from '../../../utils/http.js';
@@ -99,11 +99,16 @@ export function requireScope(ctx, scope) {
 // ============================================================
 
 /**
- * Check if an API key owner can access a presentation.
+ * Synchronous ownership/scope filter for presentation *listings* only.
  * Returns true if:
  * - Presentation has workspace scope
  * - API key owner matches presentation owner or creator
  * - Presentation has no owner/creator (legacy)
+ *
+ * Note: this deliberately ignores the collaborator table (checking it per
+ * deck in a list would be N queries). For per-deck access decisions use
+ * getPresentationWithAccess, which is collaborator-aware and distinguishes
+ * read from write access.
  * @param {Object} presentation - The presentation object
  * @param {string} ownerEmail - The API key owner's email
  * @returns {boolean}
@@ -128,11 +133,18 @@ export function canAccessPresentation(presentation, ownerEmail) {
 /**
  * Fetch a presentation and verify access in one call.
  * Sends appropriate error responses if presentation not found or access denied.
+ *
+ * Uses the same collaborator-aware canRead/canWritePresentation checks as the
+ * editor routes: reads allow owner/creator, workspace scope, and any
+ * collaborator; writes additionally require edit rights (owner/creator,
+ * writable workspace deck, or a collaborator with edit/admin permission).
  * @param {Object} ctx - Request context with repoRoot and apiKey
  * @param {string} presentationId - The presentation ID to fetch
+ * @param {Object} [options]
+ * @param {'read'|'write'} [options.access='read'] - Required access level
  * @returns {Promise<{ok: boolean, pres?: Object}>} - Result with presentation if successful
  */
-export async function getPresentationWithAccess(ctx, presentationId) {
+export async function getPresentationWithAccess(ctx, presentationId, { access = 'read' } = {}) {
   const { repoRoot, apiKey } = ctx;
 
   const pres = await getPresentation(repoRoot, presentationId);
@@ -141,8 +153,13 @@ export async function getPresentationWithAccess(ctx, presentationId) {
     return { ok: false };
   }
 
-  if (!canAccessPresentation(pres, apiKey.ownerEmail)) {
+  if (!(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'read'))) {
     await apiError(ctx, 403, 'Access denied to this presentation');
+    return { ok: false };
+  }
+
+  if (access === 'write' && !(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'write'))) {
+    await apiError(ctx, 403, 'You have read-only access to this presentation');
     return { ok: false };
   }
 

@@ -125,7 +125,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   }
 
   // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   // Load library item

@@ -56,3 +56,9 @@ export {
   canGuestEditComment,
   canGuestDeleteComment,
 } from './presentation-authz/guests.js';
+
+// Actor-based access (machine clients: public API, MCP)
+export {
+  checkActorAccess,
+  canActorAccessPresentation,
+} from './presentation-authz/actor-access.js';

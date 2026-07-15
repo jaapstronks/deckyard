@@ -29,7 +29,7 @@ async function handlePublish(ctx, id) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, id);
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
   // Generate or reuse publish ID
@@ -150,7 +150,7 @@ async function handleUnpublish(ctx, id) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, id);
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
   const publishId = String(pres?.published?.id || '').trim();

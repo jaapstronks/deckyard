@@ -17,11 +17,11 @@ import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.
 import { getDefaultOrganizationId } from '../../../config/database.js';
 import {
   requireScope,
-  canAccessPresentation,
   checkExportLimit,
   trackExportRequest,
   apiError,
 } from './middleware.js';
+import { canActorAccessPresentation } from '../../../utils/presentation-authz.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 
 // ============================================================
@@ -47,7 +47,7 @@ async function prepareExportContext(ctx, presentationId) {
     return { ok: false, status: 404, error: 'Presentation not found' };
   }
 
-  if (!canAccessPresentation(pres, apiKey.ownerEmail)) {
+  if (!(await canActorAccessPresentation(pres, apiKey.ownerEmail, 'read'))) {
     return { ok: false, status: 403, error: 'Access denied to this presentation' };
   }
 
