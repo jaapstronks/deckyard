@@ -20,6 +20,7 @@ import {
   listRecentCommentsForOwner,
   listAccessiblePresentationRefs,
 } from '../storage/presentation-comments.js';
+import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
   presentationToDeck,
@@ -147,7 +148,7 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List all presentations. Returns id, title, theme, creation date, and slide count for each.',
+    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `scope` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
     {
       type: 'object',
       properties: {
@@ -155,20 +156,49 @@ export function registerTools(
           type: 'number',
           description: 'Max results (default: 50)',
         },
+        scope: {
+          type: 'string',
+          description:
+            'Which decks to include: "owned" (default), "shared" (decks shared with you), or "all" (union). Shared decks require the DB storage backend.',
+          enum: ['owned', 'shared', 'all'],
+        },
       },
     },
-    async ({ limit = 50 } = {}, context) => {
-      const all = await listPresentations(repoRoot);
-
-      // Filter to only show presentations owned by the authenticated user
+    async ({ limit = 50, scope = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const owned = owner
-        ? all.filter(p => p.ownerEmail === owner)
-        : all;
+      const validScope = ['owned', 'shared', 'all'].includes(scope) ? scope : 'owned';
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
 
-      const items = owned.slice(0, limit).map(p => {
-        // slideCount: try slides array, then slideCount property, then fall back to 0
-        // listPresentations may not include full slides array (too heavy for lists)
+      // Collect owned and/or shared decks, de-duplicated by id (a deck could
+      // appear in both lists in edge cases). Shared lookups are DB-only and
+      // resolve to [] in file mode.
+      const decks = [];
+      const seen = new Set();
+
+      if (validScope === 'owned' || validScope === 'all') {
+        const all = await listPresentations(repoRoot);
+        const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
+        for (const p of owned) {
+          if (!seen.has(p.id)) {
+            seen.add(p.id);
+            decks.push(p);
+          }
+        }
+      }
+
+      if ((validScope === 'shared' || validScope === 'all') && owner) {
+        const shared = await listPresentationsSharedWithUser(owner, ctx);
+        for (const p of shared) {
+          if (!seen.has(p.id)) {
+            seen.add(p.id);
+            decks.push(p);
+          }
+        }
+      }
+
+      const items = decks.slice(0, limit).map((p) => {
+        // slideCount: try slides array, then slideCount property, else omit.
+        // list sources may not include the full slides array (too heavy).
         const slideCount = Array.isArray(p.slides) ? p.slides.length
           : (typeof p.slideCount === 'number' ? p.slideCount : null);
 
@@ -180,6 +210,8 @@ export function registerTools(
           updatedAt: p.modified || p.updatedAt,
         };
         if (slideCount !== null) item.slideCount = slideCount;
+        // Present on shared decks; marks how the caller has access.
+        if (p.permission) item.permission = p.permission;
         const url = presentationUrl(p.id, 'edit');
         if (url) item.editUrl = url;
         return item;
@@ -187,8 +219,9 @@ export function registerTools(
 
       return {
         presentations: items,
-        total: owned.length,
+        total: decks.length,
         ownerFilter: owner || null,
+        scope: validScope,
       };
     }
   );

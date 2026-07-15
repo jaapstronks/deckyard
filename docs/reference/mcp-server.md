@@ -53,7 +53,7 @@ Add to your Cursor MCP settings:
 | Tool | Description |
 |------|-------------|
 | `get_slide_types` | List all slide types with schemas and usage guidance |
-| `list_presentations` | Browse all presentations (with edit URLs) |
+| `list_presentations` | Browse presentations you can access (`scope`: owned/shared/all; with edit URLs) |
 | `get_presentation` | Get full deck data (all slides) |
 | `get_presentation_url` | Get edit and present URLs for sharing |
 | `list_themes` | List available themes with brand colors |
