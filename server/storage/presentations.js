@@ -5,7 +5,6 @@
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
-import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
@@ -94,7 +93,11 @@ export async function updatePresentation(repoRoot, id, body, opts) {
     // any stored (cold) Y.Doc binary stale — invalidate it so the next
     // collab open re-bootstraps from this fresh JSON instead of resurrecting
     // old content. Saves originating from the doc keep their binary.
-    if (isCollabLiveEditsEnabled() && opts?.reason !== 'collab') {
+    // Unconditional (not gated on COLLAB_LIVE_EDITS): a binary written while
+    // the flag was on must not survive saves made while it is off, or
+    // re-enabling the flag would resurrect stale state. No-op when no binary
+    // exists.
+    if (opts?.reason !== 'collab') {
       deleteYDocState(repoRoot, id).catch(() => {});
     }
   }
@@ -150,9 +153,8 @@ export async function deletePresentation(repoRoot, id, opts) {
   } finally {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
-    if (isCollabLiveEditsEnabled()) {
-      deleteYDocState(repoRoot, id).catch(() => {});
-    }
+    // Unconditional for the same reason as in updatePresentation.
+    deleteYDocState(repoRoot, id).catch(() => {});
   }
 }
 

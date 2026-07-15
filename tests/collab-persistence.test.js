@@ -252,6 +252,23 @@ describe('cold-binary invalidation on non-collab saves', () => {
     assert.equal(await getYDocState(tempRoot, deckId), null, 'binary invalidated');
   });
 
+  it('invalidation also fires while the flag is off (no resurrection after re-enable)', async () => {
+    // A binary written while COLLAB_LIVE_EDITS was on must not survive saves
+    // made while it is off — re-enabling the flag would resurrect stale state.
+    delete process.env.COLLAB_ENABLED;
+    delete process.env.COLLAB_LIVE_EDITS;
+    try {
+      await setYDocState(tempRoot, deckId, new Uint8Array([1, 2, 3]));
+      const pres = await getPresentation(tempRoot, deckId);
+      await updatePresentation(tempRoot, deckId, { ...pres, title: 'Saved while flag off' });
+      await new Promise((r) => setTimeout(r, 50));
+      assert.equal(await getYDocState(tempRoot, deckId), null, 'binary invalidated');
+    } finally {
+      process.env.COLLAB_ENABLED = 'true';
+      process.env.COLLAB_LIVE_EDITS = 'true';
+    }
+  });
+
   it('a collab-originated save keeps the binary', async () => {
     const hooks = createCollabPersistence({ repoRoot: tempRoot, deps: { log: makeLog() } });
     const doc = new Y.Doc();

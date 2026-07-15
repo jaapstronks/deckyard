@@ -109,7 +109,10 @@ is always safe (next open re-bootstraps from JSON).
 *not* originate from the collab doc (`reason !== 'collab'`) deletes the
 stored binary, as does trashing a deck. Without this, a REST/MCP/AI save
 made while no collab clients are connected would be overwritten by stale
-doc state on the next collab open.
+doc state on the next collab open. The invalidation runs regardless of the
+feature flags (it no-ops when no binary exists), so toggling
+`COLLAB_LIVE_EDITS` off and back on cannot resurrect stale doc state from
+before the toggle.
 
 **Known gap until step 4**: while a doc is *actively loaded* (clients
 connected), a server-side save still only lands in the JSON — the live doc
