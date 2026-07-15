@@ -394,6 +394,61 @@ export function withPresentations(Base) {
     }
 
     // ============================================================
+    // COLLAB Y.DOC STATE
+    // ============================================================
+
+    async getYDocState(presentationId, ctx) {
+      const db = getDb();
+      const orgId = getOrgId(ctx);
+
+      const row = await db
+        .selectFrom('presentation_ydocs')
+        .select('state')
+        .where('presentation_id', '=', presentationId)
+        .where('organization_id', '=', orgId)
+        .executeTakeFirst();
+
+      if (!row?.state) return null;
+      return new Uint8Array(row.state);
+    }
+
+    async setYDocState(presentationId, state, ctx) {
+      const db = getDb();
+      const orgId = getOrgId(ctx);
+      const buf = Buffer.from(state);
+      const timestamp = now();
+
+      await db
+        .insertInto('presentation_ydocs')
+        .values({
+          presentation_id: presentationId,
+          organization_id: orgId,
+          state: buf,
+          updated_at: timestamp,
+        })
+        .onConflict((oc) =>
+          oc.column('presentation_id').doUpdateSet({
+            state: buf,
+            updated_at: timestamp,
+          })
+        )
+        .execute();
+      return true;
+    }
+
+    async deleteYDocState(presentationId, ctx) {
+      const db = getDb();
+      const orgId = getOrgId(ctx);
+
+      const result = await db
+        .deleteFrom('presentation_ydocs')
+        .where('presentation_id', '=', presentationId)
+        .where('organization_id', '=', orgId)
+        .executeTakeFirst();
+      return Number(result?.numDeletedRows || 0) > 0;
+    }
+
+    // ============================================================
     // PRESENTATION VERSIONS
     // ============================================================
 

@@ -30,6 +30,12 @@ import {
 } from '../presentations/versions.js';
 
 import {
+  getYDocState as fileGetYDocState,
+  setYDocState as fileSetYDocState,
+  deleteYDocState as fileDeleteYDocState,
+} from '../presentations/ydoc-state.js';
+
+import {
   getImageLibrary as fileGetImageLibrary,
   saveImageLibrary as fileSaveImageLibrary,
 } from '../image-library-file.js';
@@ -141,6 +147,22 @@ export class FileAdapter extends StorageAdapter {
     return fileDuplicatePresentation(this.repoRoot, id, {
       actorEmail: ctx?.actorEmail,
     });
+  }
+
+  // ============================================================
+  // COLLAB Y.DOC STATE
+  // ============================================================
+
+  async getYDocState(presentationId, ctx) {
+    return fileGetYDocState(this.repoRoot, presentationId);
+  }
+
+  async setYDocState(presentationId, state, ctx) {
+    return fileSetYDocState(this.repoRoot, presentationId, state);
+  }
+
+  async deleteYDocState(presentationId, ctx) {
+    return fileDeleteYDocState(this.repoRoot, presentationId);
   }
 
   // ============================================================

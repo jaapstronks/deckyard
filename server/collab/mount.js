@@ -14,7 +14,7 @@
  * the MCP SSE mount (server/server.js:/mcp).
  */
 
-import { isCollabEnabled } from '../config/features.js';
+import { isCollabEnabled, isCollabLiveEditsEnabled } from '../config/features.js';
 
 /** URL path the WebSocket upgrade listens on. */
 export const COLLAB_PATH = '/collab';
@@ -40,8 +40,19 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     import('./auth.js'),
   ]);
 
+  // Phase 2 (COLLAB_LIVE_EDITS): document persistence. Without the flag the
+  // Y.Doc stays ephemeral (presence-only) and nothing is ever stored.
+  const liveEdits = isCollabLiveEditsEnabled();
+  let persistence = {};
+  if (liveEdits) {
+    const { createCollabPersistence } = await import('./persistence.js');
+    persistence = createCollabPersistence({ repoRoot });
+  }
+
   const hocuspocus = new Hocuspocus({
     quiet: true,
+    // Debounce document stores (ADR 001 §5); flushed on last disconnect.
+    ...(liveEdits ? { debounce: 2000, maxDebounce: 10000 } : {}),
     // Per-document authorization. The user was already authenticated on the
     // upgrade (see below) and rides in via the connection context.
     async onConnect({ documentName, context, connectionConfig }) {
@@ -52,6 +63,7 @@ export async function maybeAttachCollab(server, { repoRoot }) {
       });
       connectionConfig.readOnly = readOnly;
     },
+    ...persistence,
   });
 
   const ws = crossws({
@@ -108,7 +120,9 @@ export async function maybeAttachCollab(server, { repoRoot }) {
   });
 
   active = { hocuspocus, ws };
-  console.log(`[collab] presence endpoint mounted at ${COLLAB_PATH}`);
+  console.log(
+    `[collab] ${liveEdits ? 'presence + live-edits' : 'presence'} endpoint mounted at ${COLLAB_PATH}`
+  );
   return hocuspocus;
 }
 

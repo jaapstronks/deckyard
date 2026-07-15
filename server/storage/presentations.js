@@ -5,6 +5,8 @@
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { isCollabLiveEditsEnabled } from '../config/features.js';
+import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
@@ -88,6 +90,13 @@ export async function updatePresentation(repoRoot, id, body, opts) {
     import('./present-sessions/sse.js')
       .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
       .catch(() => {});
+    // Collab live edits: a save that did NOT come from the collab doc makes
+    // any stored (cold) Y.Doc binary stale — invalidate it so the next
+    // collab open re-bootstraps from this fresh JSON instead of resurrecting
+    // old content. Saves originating from the doc keep their binary.
+    if (isCollabLiveEditsEnabled() && opts?.reason !== 'collab') {
+      deleteYDocState(repoRoot, id).catch(() => {});
+    }
   }
   return result;
 }
@@ -140,6 +149,10 @@ export async function deletePresentation(repoRoot, id, opts) {
     return await mod.deletePresentation(repoRoot, id, opts);
   } finally {
     invalidatePresentationCache(id);
+    // Trash/restore round-trips must not resurrect a stale collab doc.
+    if (isCollabLiveEditsEnabled()) {
+      deleteYDocState(repoRoot, id).catch(() => {});
+    }
   }
 }
 
