@@ -216,9 +216,13 @@ export async function createEditorController({
     window.__currentUserEmail = user.email;
   }
 
+  // Collaborator presence (initialized further down when features.collab)
+  let presenceHandle = null;
+
   // Wrapper for setSelectedSlideId that also acquires slide lock
   const setSelectedSlideIdWithLock = (v) => {
     selectedSlideId = v;
+    presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
     const authorLocked = isSlideAuthorLockedForUser(v);
     try {
@@ -718,6 +722,39 @@ export async function createEditorController({
 
   const { previewEl: preview, thumbEl: thumb, previewNotesTa } = previewPanel;
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
+
+  // ============================================================
+  // COLLABORATOR PRESENCE (feature-flagged: collab)
+  // ============================================================
+
+  // Dynamic import so flag-off sessions never load the yjs vendor bundle.
+  // The cleanup entry is registered before the import resolves, so a fast
+  // navigate-away can't leave a dangling WebSocket connection.
+  if (features.collab && user?.email) {
+    let presenceClosed = false;
+    cleanup.register('presence', () => {
+      presenceClosed = true;
+      presenceHandle?.destroy?.();
+      presenceHandle = null;
+    });
+    import('./presence/index.js')
+      .then(({ initEditorPresence }) => {
+        if (presenceClosed) return;
+        presenceHandle = initEditorPresence({
+          h,
+          pres,
+          user,
+          topbarEl: topbarApi.topbarEl,
+          listEl: slideListEl,
+          thumb,
+          getSelectedSlideId: () => selectedSlideId,
+        });
+        presenceHandle.setViewSlide(selectedSlideId);
+      })
+      .catch((e) => {
+        console.warn('[collab] presence unavailable:', e?.message || e);
+      });
+  }
 
   // ============================================================
   // LAYOUT

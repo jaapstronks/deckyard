@@ -581,5 +581,9 @@
   "editor.deckReview.revisionFailed": "Geen herziene sectie ontvangen (probeer opnieuw).",
   "editor.deckReview.discardDeck": "Deck verwerpen",
   "editor.deckReview.discardConfirm": "Deze gegenereerde presentatie verwijderen? Hij verhuist naar de prullenbak.",
-  "editor.deckReview.keep": "Ziet er goed uit"
+  "editor.deckReview.keep": "Ziet er goed uit",
+  "editor.presence.here": "Ook hier",
+  "editor.presence.viewerTitle": "{name} is in deze presentatie",
+  "editor.presence.viewingSlide": "{name} bekijkt deze slide",
+  "editor.presence.editingSlide": "{name} bewerkt deze slide"
 }
