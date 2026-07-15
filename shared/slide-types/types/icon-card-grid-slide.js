@@ -254,8 +254,15 @@ export default {
       const title = card.title || '';
       const bodyRaw = card.body || '';
 
+      // Render as a CSS mask tinted by the container `color` rather than an
+      // <img>: an <img>-loaded SVG is an isolated document and never inherits
+      // the host `color`, so its `currentColor` fell back to the OS default
+      // text color (black in light mode, white in dark) — making the themed
+      // --t-icon-card-grid-icon-fg dead code. iconSrc is always a vetted
+      // /client/vendor/lucide-icons/<name>.svg (name matches /^[a-z0-9-]+$/),
+      // so it is URL/CSS-safe inside url() with no escaping surprises.
       const iconHtml = iconSrc
-        ? `<img class="icon-card-icon-img" src="${esc(iconSrc)}" alt="" />`
+        ? `<span class="icon-card-icon-img" aria-hidden="true" style="--icg-icon-url:url(${esc(iconSrc)})"></span>`
         : `<div class="icon-card-icon-fallback" aria-hidden="true"></div>`;
 
       // Optional click behavior: a full-card overlay anchor (shared helper).

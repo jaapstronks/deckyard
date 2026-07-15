@@ -3,6 +3,12 @@
   width: 44px;
   height: 44px;
   display: block;
+  /* Tint the icon by the container `color` (= --t-icon-card-grid-icon-fg) via a
+     CSS mask, so the icon color is theme-driven instead of OS-default. */
+  background-color: currentColor;
+  -webkit-mask: var(--icg-icon-url) center / contain no-repeat;
+  mask: var(--icg-icon-url) center / contain no-repeat;
+  /* Retained for back-compat with themes that set an icon filter. */
   filter: var(--t-icon-card-grid-icon-filter, none);
 }
 .slide-icon-card-grid .icon-card-icon-fallback {
