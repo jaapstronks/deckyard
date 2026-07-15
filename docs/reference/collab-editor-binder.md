@@ -55,9 +55,14 @@ these paths is untouched:
 - **SSE slide-update handler**: not attached. Remote changes arrive through
   the doc; the SSE refetch would race it with stale (≤ one debounce window)
   server JSON.
-- **Slide locks**: not acquired and not enforced (concurrent editing is the
-  point). The lock machinery is untouched for flag-off editors and is
-  retired for good in step 5. Author locks (`lockedByAuthor`) still apply.
+- **Slide locks**: fully retired (concurrent editing is the point). The
+  slide-lock manager is never initialized (no SSE listener, no refresh
+  timer, no acquisitions), slide selection skips acquisition, and the
+  presence-lock module is never attached — so the topbar lock-request UI
+  stays dormant and no lock endpoints are called at all. The machinery
+  itself is untouched and keeps serving flag-off editors byte-for-byte.
+  Author locks (`lockedByAuthor`) are checked directly on the slide data
+  and keep working in both modes.
 - **Language switching** reads the requested version from the live doc
   (`projectLanguage`) instead of the server JSON. Translate endpoints write
   server-side; since step 4 the server applies that write to the live doc
@@ -79,11 +84,39 @@ these paths is untouched:
   additionally defers editor-form rebuilds while focus is inside the form
   (flushed on focusout) and skips the notes textarea while it has focus.
 - **Moves are clone-based**: Yjs has no move op, so a reorder is delete +
-  insert of a deep clone (all languages preserved). A collaborator's
-  keystroke landing in the same field during the exact move window can be
-  lost — step 5's conflict-behavior tests pin down the accepted semantics.
+  insert of a deep clone (all languages preserved).
 - **Selected slide deleted remotely**: selection falls back to the first
   slide.
+
+### Conflict semantics (pinned by tests)
+
+`tests/collab-conflict-semantics.test.js` pins the accepted outcome for
+every conflicting-pair case deterministically (two offline replicas, edits
+before any exchange):
+
+- **Delete vs edit of the same slide** → the delete wins; the edit vanishes
+  with the slide. The inline (WYSIWYG) editor commits to the slide the edit
+  *started* on (pinned by id): when that slide was deleted remotely
+  mid-edit, the commit is dropped and the canvas repaints — without the id
+  pin, the commit would resolve the *current* selection (which fell back to
+  another slide) and write the text into the wrong slide. Found and fixed
+  in the step-5 browser verification.
+- **Move vs delete of the same slide** → the move wins: the concurrent
+  delete removes the original, but the move's inserted clone is a new
+  object that delete never saw — the slide survives at its new position.
+- **Move vs concurrent edit inside the moved slide** → the edit is lost
+  (it landed in the original the move deleted; the clone predates it). The
+  accepted cost of clone-based moves.
+- **Same field, two discrete edits** → character-level merge (Y.Text).
+- **Same field while one user stays focused** → field-level LWW: the
+  focused user's next keystroke deletes the other's merged-in characters
+  (see above).
+- **Adding a language version concurrent with content edits** → both
+  survive; the new version shares the edited structure.
+- **Server translate (three-way apply) vs concurrent client edit** → both
+  survive; the translation reflects the base the server read, so a text
+  edited during the translate keeps its edit and gets picked up by the
+  next translate run.
 
 ## i18n
 
@@ -124,14 +157,39 @@ itself — see "Server as collaborator" in
   the provider's origin, so `Y.UndoManager` (tracking only the binder's
   local origin) never makes them undoable.
 
+## Revision hygiene (If-Match side routes)
+
+Collab stores bump the deck revision server-side on every debounce, but the
+editor never adopts those bumps into `pres.revision` (server-managed keys
+are deliberately not synced through the doc). If-Match-guarded side routes
+(scope change in the share dropdown, version restore) would therefore 409
+after the first few edits of a live session.
+
+The fix is client-side and call-site-local: `if-match-revision.js` fetches
+the current revision right before the guarded call when live edits are
+active (flag off: pass-through of `pres.revision`, which autosave keeps
+fresh). Two alternatives were rejected deliberately: reading the revision
+from the doc's `extra` is wrong because only server-side writes
+(live-apply) refresh it there — the client-driven collab stores that
+dominate a live session don't write back into the doc; and relaxing
+If-Match server-side would weaken the flag-off API contract. The remaining
+fetch-to-PATCH race window is no wider than any client-held revision ever
+was, and the server-side guard still runs.
+
+Restore during a live session behaves like any server write (step 4): the
+restored deck is applied to the live doc as a three-way diff, so a
+collaborator's in-flight (not yet stored) edits survive the restore rather
+than being reset with the rest of the deck. The restoring client reloads
+its editor afterwards, as before.
+
 ## Known limitations
 
 - Publish/export read the stored JSON, which can lag live edits by up to one
   persistence debounce window (~2 s).
-- The editor's own copy of `pres.revision` is not refreshed by collab
-  stores (server-managed keys are not adopted from the doc), so
-  If-Match-guarded side routes (e.g. scope changes) can 409 after a long
-  collab session — pre-existing, slated for the step-5 cleanup.
+- A scope change made by one collaborator does not update `pres.scope` in
+  other open editors (server-managed keys are not adopted from the doc);
+  it lands on their next editor load. Cosmetic — the server enforces scope
+  on every request.
 
 ## Files
 
@@ -150,6 +208,10 @@ itself — see "Server as collaborator" in
   branches (markDirty routing, undo delegation, lock/SSE-handler skips).
 - `client/views/editor/topbar/language-mode.js` — doc-based language
   loading + translate adoption via the optional `collabLanguage` dep.
+- `client/views/editor/if-match-revision.js` — collab-aware If-Match value
+  for the side routes (scope change, restore); see "Revision hygiene".
 - `tests/collab-editor-binder.test.js` — two editor-like clients over a
   real mount: field edits, same-field character merge, items, add/delete/
   reorder, per-user undo/redo, language versions, persisted JSON.
+- `tests/collab-conflict-semantics.test.js` — deterministic two-replica
+  conflict tests pinning the accepted merge semantics (see above).

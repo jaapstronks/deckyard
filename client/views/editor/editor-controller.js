@@ -573,6 +573,12 @@ export async function createEditorController({
     openOverlayClosers,
     markDirty,
     setPresenceText: (setter) => {
+      // Live-edit mode: no lock plumbing at all. CRDT merging replaces edit
+      // exclusivity and the presence layer (avatar stack, slide dots) covers
+      // awareness, so the presence-lock module is never attached — the
+      // topbar lock-request UI stays dormant (its buttons only appear when
+      // a lock-state callback fires) and no fake holder state is reported.
+      if (liveEditsActive) return;
       const detachPresenceLock = attachPresentationPresenceLock({
         api,
         id,
@@ -955,10 +961,14 @@ export async function createEditorController({
   updateSelectedSlideListItem = slideListApi.updateSelectedSlideListItem;
   cleanup.register('slideListKeys', slideListApi.detach);
 
-  // Initialize slide lock manager. In live-edit mode locks are never
-  // acquired or enforced (concurrent editing through the CRDT doc is the
-  // whole point; presence indicators cover the awareness role until the
-  // lock machinery is retired in fase 2 stap 5) — the manager stays inert.
+  // Initialize slide lock manager. In live-edit mode the lock machinery is
+  // fully retired: the manager is never initialized (no SSE listener, no
+  // refresh timer, no acquisitions — its lock getters just report "no
+  // locks"), the presence-lock module above is never attached, and slide
+  // selection skips acquisition. Concurrent editing through the CRDT doc is
+  // the whole point; presence indicators cover awareness. Author locks
+  // (lockedByAuthor) are checked directly on the slide data and keep
+  // working in both modes. The flag-off path is untouched.
   if (!liveEditsActive) {
     slideLockManager.init().then((cleanupSSE) => {
       if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
