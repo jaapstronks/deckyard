@@ -105,6 +105,13 @@ export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
  *   projectDocToPresentation: (doc: Object) => Object,
  *   getDocLangs: (doc: Object) => string[],
  *   getDocDominant: (doc: Object) => string,
+ *   buildSlideForLang: (slide: Object, lang: string) => Object,
+ *   buildItemsForLang: (arr: Array, spec: Object, lang: string) => Object,
+ *   buildItemForLang: (item: *, spec: Object, lang: string) => *,
+ *   buildTextFieldForLang: (value: string, lang: string) => Object,
+ *   projectSlideForLang: (yslide: Object, lang: string) => Object,
+ *   projectValueForLang: (value: *, lang: string) => *,
+ *   cloneYValue: (value: *) => *,
  * }}
  */
 export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
@@ -181,6 +188,86 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
   }
 
   /**
+   * Build one slide as a Y.Map. `matches` carries the other language
+   * versions' slides (`{lang, slide}`), empty for a single-language build.
+   * Plain-field divergence across versions is reported into `warnings`.
+   */
+  function buildSlideYMap(slide, { lang, matches = [], warnings = [] } = {}) {
+    const ymap = new Y.Map();
+    if (!isPlainObject(slide)) return ymap;
+    const sid = typeof slide.id === 'string' ? slide.id : '';
+    ymap.set('id', sid);
+    ymap.set('type', typeof slide.type === 'string' ? slide.type : '');
+
+    // Notes are per-language.
+    const notesValues = {};
+    if (typeof slide.notes === 'string') notesValues[lang] = slide.notes;
+    for (const { lang: peerLang, slide: peer } of matches) {
+      if (typeof peer.notes === 'string') notesValues[peerLang] = peer.notes;
+    }
+    ymap.set('notes', langTextMap(notesValues));
+
+    // Content: classify per schema; unknown keys stay plain.
+    const spec = textFieldSpecForType(slide.type, slideTypes);
+    const content = isPlainObject(slide.content) ? slide.content : {};
+    const ycontent = new Y.Map();
+    const keys = new Set(Object.keys(content));
+    for (const k of spec.textKeys) {
+      // Union with schema text keys so a translation that only exists in
+      // a non-dominant version isn't dropped.
+      if (matches.some(({ slide: peer }) => typeof textAt(peer, k) === 'string')) keys.add(k);
+    }
+    for (const key of keys) {
+      if (spec.textKeys.has(key)) {
+        const values = {};
+        if (typeof content[key] === 'string') values[lang] = content[key];
+        for (const { lang: peerLang, slide: peer } of matches) {
+          const v = textAt(peer, key);
+          if (typeof v === 'string') values[peerLang] = v;
+        }
+        if (Object.keys(values).length) ycontent.set(key, langTextMap(values));
+        // Schema says text but the value isn't a string: keep as plain.
+        else if (content[key] !== undefined) ycontent.set(key, deepClone(content[key]));
+        continue;
+      }
+      const itemSpec = spec.items.get(key);
+      if (itemSpec && Array.isArray(content[key])) {
+        const peers = {
+          dominantLang: lang,
+          list: matches.map(({ lang: peerLang, slide: peer }) => ({
+            lang: peerLang,
+            item: isPlainObject(peer.content) ? peer.content : {},
+          })),
+        };
+        ycontent.set(key, buildItemsArray(content[key], key, peers, itemSpec));
+        continue;
+      }
+      if (content[key] !== undefined) {
+        ycontent.set(key, deepClone(content[key]));
+        // Plain values normalize to the dominant version. Legacy decks
+        // can diverge here (e.g. deprecated `hidden` fields, which the
+        // translate pipeline does copy per language but this codec
+        // deliberately keeps plain) — surface it instead of silently
+        // dropping the other version's value.
+        const dominantJson = JSON.stringify(content[key]);
+        for (const { lang: peerLang, slide: peer } of matches) {
+          const pv = peer?.content?.[key];
+          if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
+            warnings.push(`slide ${sid}: plain field '${key}' differs in version '${peerLang}' — dominant wins`);
+          }
+        }
+      }
+    }
+    ymap.set('content', ycontent);
+
+    // Any other slide-level keys ride along as plain LWW values.
+    for (const [k, v] of Object.entries(slide)) {
+      if (!SLIDE_SPECIAL_KEYS.has(k) && v !== undefined) ymap.set(k, deepClone(v));
+    }
+    return ymap;
+  }
+
+  /**
    * Bootstrap an (empty) Y.Doc from a legacy presentation JSON.
    * @param {Object} pres - Presentation in the legacy JSON format
    * @param {Object} doc - A fresh Y.Doc to populate
@@ -239,7 +326,12 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
       if (hasI18n) {
         const i18nExtra = {};
         for (const [k, v] of Object.entries(pres.i18n)) {
-          if (k !== 'versions') i18nExtra[k] = deepClone(v);
+          // `active` is per-client editor state; freezing one client's value
+          // into the shared doc corrupts other versions on serialize (the
+          // storage facade's normalizeI18n overwrites versions[active] with
+          // the top-level = dominant buffers). Projection re-emits
+          // active = dominant instead.
+          if (k !== 'versions' && k !== 'active') i18nExtra[k] = deepClone(v);
         }
         meta.set('i18n', i18nExtra);
       } else {
@@ -281,76 +373,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
           }
         }
 
-        const ymap = new Y.Map();
-        ymap.set('id', sid);
-        ymap.set('type', typeof slide.type === 'string' ? slide.type : '');
-
-        // Notes are per-language.
-        const notesValues = {};
-        if (typeof slide.notes === 'string') notesValues[dominant] = slide.notes;
-        for (const { lang, slide: peer } of matches) {
-          if (typeof peer.notes === 'string') notesValues[lang] = peer.notes;
-        }
-        ymap.set('notes', langTextMap(notesValues));
-
-        // Content: classify per schema; unknown keys stay plain.
-        const spec = textFieldSpecForType(slide.type, slideTypes);
-        const content = isPlainObject(slide.content) ? slide.content : {};
-        const ycontent = new Y.Map();
-        const keys = new Set(Object.keys(content));
-        for (const k of spec.textKeys) {
-          // Union with schema text keys so a translation that only exists in
-          // a non-dominant version isn't dropped.
-          if (matches.some(({ slide: peer }) => typeof textAt(peer, k) === 'string')) keys.add(k);
-        }
-        for (const key of keys) {
-          if (spec.textKeys.has(key)) {
-            const values = {};
-            if (typeof content[key] === 'string') values[dominant] = content[key];
-            for (const { lang, slide: peer } of matches) {
-              const v = textAt(peer, key);
-              if (typeof v === 'string') values[lang] = v;
-            }
-            if (Object.keys(values).length) ycontent.set(key, langTextMap(values));
-            // Schema says text but the value isn't a string: keep as plain.
-            else if (content[key] !== undefined) ycontent.set(key, deepClone(content[key]));
-            continue;
-          }
-          const itemSpec = spec.items.get(key);
-          if (itemSpec && Array.isArray(content[key])) {
-            const peers = {
-              dominantLang: dominant,
-              list: matches.map(({ lang, slide: peer }) => ({
-                lang,
-                item: isPlainObject(peer.content) ? peer.content : {},
-              })),
-            };
-            ycontent.set(key, buildItemsArray(content[key], key, peers, itemSpec));
-            continue;
-          }
-          if (content[key] !== undefined) {
-            ycontent.set(key, deepClone(content[key]));
-            // Plain values normalize to the dominant version. Legacy decks
-            // can diverge here (e.g. deprecated `hidden` fields, which the
-            // translate pipeline does copy per language but this codec
-            // deliberately keeps plain) — surface it instead of silently
-            // dropping the other version's value.
-            const dominantJson = JSON.stringify(content[key]);
-            for (const { lang, slide: peer } of matches) {
-              const pv = peer?.content?.[key];
-              if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
-                warnings.push(`slide ${sid}: plain field '${key}' differs in version '${lang}' — dominant wins`);
-              }
-            }
-          }
-        }
-        ymap.set('content', ycontent);
-
-        // Any other slide-level keys ride along as plain LWW values.
-        for (const [k, v] of Object.entries(slide)) {
-          if (!SLIDE_SPECIAL_KEYS.has(k) && v !== undefined) ymap.set(k, deepClone(v));
-        }
-        return ymap;
+        return buildSlideYMap(slide, { lang: dominant, matches, warnings });
       });
       yslides.push(built);
     });
@@ -444,9 +467,36 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
 
     const i18nExtra = meta.get('i18n');
     if (isPlainObject(i18nExtra)) {
-      pres.i18n = { ...deepClone(i18nExtra), versions };
+      // active = dominant keeps the pair consistent: normalizeI18n syncs
+      // versions[active] from the top-level buffers, which hold the dominant
+      // language here. (Docs bootstrapped before this rule may still carry a
+      // stored `active`; the dominant wins over it.)
+      pres.i18n = { ...deepClone(i18nExtra), active: dominant, versions };
     }
     return pres;
+  }
+
+  // ── binder helpers (phase 2, step 3) ────────────────────────────────────
+
+  /**
+   * Deep-clone a Y value (or plain value). Yjs types cannot be re-inserted
+   * after removal, so a "move" in a Y.Array is delete + insert of a clone;
+   * cloning preserves every language's texts, unlike rebuilding from a
+   * single-language JSON projection.
+   */
+  function cloneYValue(value) {
+    if (value instanceof Y.Map) {
+      const m = new Y.Map();
+      for (const [k, v] of value.entries()) m.set(k, cloneYValue(v));
+      return m;
+    }
+    if (value instanceof Y.Array) {
+      const a = new Y.Array();
+      a.push(value.toArray().map((v) => cloneYValue(v)));
+      return a;
+    }
+    if (value instanceof Y.Text) return new Y.Text(value.toString());
+    return deepClone(value);
   }
 
   return {
@@ -454,5 +504,21 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     projectDocToPresentation,
     getDocLangs,
     getDocDominant,
+    /** Build one slide Y.Map from a single-language legacy slide. */
+    buildSlideForLang: (slide, lang) => buildSlideYMap(slide, { lang }),
+    /** Build an items field Y.Array from a single-language items array. */
+    buildItemsForLang: (arr, spec, lang) =>
+      buildItemsArray(Array.isArray(arr) ? arr : [], '', { dominantLang: lang, list: [] }, spec || EMPTY_SPEC),
+    /** Build one item (Y.Map or plain passthrough) from a single-language item. */
+    buildItemForLang: (item, spec, lang) =>
+      buildItem(item, { dominantLang: lang, list: [] }, spec || EMPTY_SPEC),
+    /** lang→Y.Text map holding one language's value. */
+    buildTextFieldForLang: (value, lang) =>
+      langTextMap({ [lang]: typeof value === 'string' ? value : '' }),
+    projectSlideForLang: projectSlide,
+    projectValueForLang: projectValue,
+    cloneYValue,
+    /** Translatable-field spec bound to this codec's slide-type registry. */
+    textSpecForType: (type) => textFieldSpecForType(type, slideTypes),
   };
 }
