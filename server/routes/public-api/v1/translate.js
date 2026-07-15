@@ -48,7 +48,7 @@ async function handleTranslate(ctx, presentationId) {
   if (!bodyOk) return true;
 
   // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
+  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
   // Validate target language

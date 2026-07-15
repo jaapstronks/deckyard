@@ -8,6 +8,25 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Security: per-deck authorization for machine clients (MCP + public
+  API).** MCP tools that fetch a deck by id performed no per-deck check at
+  all: any configured MCP session (or any API key, via the SSE transport)
+  could read, edit or delete any deck by id. And the public API used an
+  owner/workspace-only check with no read/write distinction that ignored
+  the collaborator table. Both surfaces now use the same collaborator-aware
+  `canRead`/`canWritePresentation` checks as the editor routes.
+  **Breaking for integrations that leaned on the old, too-permissive
+  behavior:**
+  - API keys can no longer *write* to workspace decks that are view-only or
+    starter kits, nor to private decks of other users (previously possible
+    whenever the deck had `scope: workspace`, and via MCP for any deck).
+  - MCP `delete_presentation` is now owner-only.
+  - API keys of collaborators (view/comment/edit/admin) now get access to
+    decks shared with them, matching their permission level — reads that
+    previously returned 403 now succeed.
+  - Unchanged: stdio MCP without `DECKYARD_MCP_OWNER_EMAIL` remains a
+    trusted local session (no per-deck checks), and per-deck *listing*
+    (`GET /api/v1/presentations`) still returns owned + workspace decks.
 - Presentation owners can delete any comment on their own deck (#1)
 
 ### Changed

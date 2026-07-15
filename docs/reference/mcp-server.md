@@ -32,6 +32,8 @@ Add to your `claude_desktop_config.json`:
 
 The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. This should match your Deckyard user email. Without it, presentations are created without an owner and may show "Access Denied" in the web UI.
 
+It also determines what the session may touch: every tool that fetches a deck by id enforces per-deck access for this owner (read for read-only tools; collaborator-aware write access for mutating tools; delete is owner-only). When the variable is unset, the stdio session is treated as a trusted local single-user process and per-deck checks are skipped.
+
 ## Connecting to Cursor
 
 Add to your Cursor MCP settings:
@@ -272,6 +274,10 @@ curl -X POST https://your-deckyard.com/mcp \
 - Rate limiting via existing API key tiers (free/pro/enterprise)
 - Sessions expire after 30 minutes of inactivity
 - Each session is bound to its API key owner — cross-key access is denied
+- Per-deck authorization: tools use the same collaborator-aware
+  `canRead`/`canWritePresentation` checks as the app. The key owner can read
+  decks they own, workspace decks, and decks shared with them; mutating tools
+  additionally require edit rights, and `delete_presentation` is owner-only
 - CORS is open (`*`) — restrict via reverse proxy if needed
 
 ## Requirements
