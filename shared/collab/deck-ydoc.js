@@ -81,6 +81,74 @@ function specForFields(fields) {
 const EMPTY_SPEC = { textKeys: new Set(), items: new Map() };
 
 /**
+ * Minimal Y.Text patch: keep the common prefix/suffix, replace the middle.
+ * No-op when the text already matches. Shared by the client binder and the
+ * server-side apply differ so both produce the same mergeable ops.
+ * @param {Object} ytext - Y.Text instance
+ * @param {string} next - Target string value
+ */
+export function patchYText(ytext, next) {
+  const old = ytext.toString();
+  if (old === next) return;
+  let start = 0;
+  const minLen = Math.min(old.length, next.length);
+  while (start < minLen && old[start] === next[start]) start += 1;
+  let endOld = old.length;
+  let endNew = next.length;
+  while (endOld > start && endNew > start && old[endOld - 1] === next[endNew - 1]) {
+    endOld -= 1;
+    endNew -= 1;
+  }
+  if (endOld > start) ytext.delete(start, endOld - start);
+  if (endNew > start) ytext.insert(start, next.slice(start, endNew));
+}
+
+/**
+ * Resolve a legacy presentation's language versions: which languages exist,
+ * which one is dominant, and a normalized `{title, slides}` per language.
+ * Decks without an i18n block become a single-language world keyed by
+ * `pres.lang`. Shared by bootstrap and the server-side apply differ.
+ * @param {Object} pres - Presentation in the legacy JSON format
+ * @returns {{versions: Object, langs: string[], dominant: string, hasI18n: boolean}}
+ */
+function resolveVersions(pres) {
+  const hasI18n = isPlainObject(pres?.i18n);
+  const rawVersions = hasI18n && isPlainObject(pres.i18n.versions) ? pres.i18n.versions : {};
+  const versionLangs = Object.keys(rawVersions).filter((l) => isPlainObject(rawVersions[l]));
+  const fallbackLang =
+    (typeof pres?.lang === 'string' && pres.lang) ||
+    (hasI18n && typeof pres.i18n.dominant === 'string' && pres.i18n.dominant) ||
+    'nl';
+  const dominant =
+    (hasI18n && typeof pres.i18n.dominant === 'string' && rawVersions[pres.i18n.dominant]
+      ? pres.i18n.dominant
+      : versionLangs[0]) || fallbackLang;
+
+  const versions = {};
+  if (versionLangs.length) {
+    for (const l of versionLangs) {
+      versions[l] = {
+        title: typeof rawVersions[l].title === 'string' ? rawVersions[l].title : '',
+        slides: Array.isArray(rawVersions[l].slides) ? rawVersions[l].slides : [],
+      };
+    }
+  } else {
+    versions[dominant] = {
+      title: typeof pres?.title === 'string' ? pres.title : '',
+      slides: Array.isArray(pres?.slides) ? pres.slides : [],
+    };
+  }
+  return { versions, langs: Object.keys(versions), dominant, hasI18n };
+}
+
+/** JSON-structural equality (undefined-safe). */
+function jsonEq(a, b) {
+  if (a === b) return true;
+  if (a === undefined || b === undefined) return false;
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
  * Translatable-text spec for a slide type (recursive over items fields).
  * Unknown types get an empty spec: every field is treated as plain LWW.
  * @param {string} type - Slide type name
@@ -102,6 +170,7 @@ export function textFieldSpecForType(type, slideTypes = SLIDE_TYPES) {
  * @param {Object} [options.slideTypes] - Slide-type registry override (forks/tests)
  * @returns {{
  *   bootstrapPresentationToDoc: (pres: Object, doc: Object) => {warnings: string[]},
+ *   applyPresentationToDoc: (pres: Object, doc: Object) => {warnings: string[]},
  *   projectDocToPresentation: (doc: Object) => Object,
  *   getDocLangs: (doc: Object) => string[],
  *   getDocDominant: (doc: Object) => string,
@@ -276,36 +345,7 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
    */
   function bootstrapPresentationToDoc(pres, doc) {
     const warnings = [];
-
-    // Resolve language versions. Without an i18n block the deck is a
-    // single-language world keyed by pres.lang.
-    const hasI18n = isPlainObject(pres?.i18n);
-    const rawVersions = hasI18n && isPlainObject(pres.i18n.versions) ? pres.i18n.versions : {};
-    const versionLangs = Object.keys(rawVersions).filter((l) => isPlainObject(rawVersions[l]));
-    const fallbackLang =
-      (typeof pres?.lang === 'string' && pres.lang) ||
-      (hasI18n && typeof pres.i18n.dominant === 'string' && pres.i18n.dominant) ||
-      'nl';
-    const dominant =
-      (hasI18n && typeof pres.i18n.dominant === 'string' && rawVersions[pres.i18n.dominant]
-        ? pres.i18n.dominant
-        : versionLangs[0]) || fallbackLang;
-
-    const versions = {};
-    if (versionLangs.length) {
-      for (const l of versionLangs) {
-        versions[l] = {
-          title: typeof rawVersions[l].title === 'string' ? rawVersions[l].title : '',
-          slides: Array.isArray(rawVersions[l].slides) ? rawVersions[l].slides : [],
-        };
-      }
-    } else {
-      versions[dominant] = {
-        title: typeof pres?.title === 'string' ? pres.title : '',
-        slides: Array.isArray(pres?.slides) ? pres.slides : [],
-      };
-    }
-    const langs = Object.keys(versions);
+    const { versions, langs, dominant, hasI18n } = resolveVersions(pres);
     const otherLangs = langs.filter((l) => l !== dominant);
 
     doc.transact(() => {
@@ -499,8 +539,597 @@ export function createDeckYdocCodec(Y, { slideTypes = SLIDE_TYPES } = {}) {
     return deepClone(value);
   }
 
+  // ── server-side apply (phase 2, step 4) ─────────────────────────────────
+
+  /** {[lang]: value} view of one key across per-language variants. */
+  function keyViewByLang(byLang, key) {
+    const view = {};
+    for (const [lang, obj] of Object.entries(byLang)) {
+      const v = isPlainObject(obj) ? obj[key] : undefined;
+      if (v !== undefined) view[lang] = v;
+    }
+    return view;
+  }
+
+  /** {[lang]: string} — only the string values (Y.Text patch targets). */
+  function textValuesByLang(byLang, key) {
+    const values = {};
+    for (const [lang, obj] of Object.entries(byLang)) {
+      const v = isPlainObject(obj) ? obj[key] : undefined;
+      if (typeof v === 'string') values[lang] = v;
+    }
+    return values;
+  }
+
+  /** Per-language view of the item at `[key][i]` under each variant. */
+  function itemViewByLangAt(byLang, key, i) {
+    const view = {};
+    for (const [lang, obj] of Object.entries(byLang)) {
+      const arr = isPlainObject(obj) ? obj[key] : undefined;
+      const item = Array.isArray(arr) ? arr[i] : undefined;
+      if (item !== undefined) view[lang] = item;
+    }
+    return view;
+  }
+
+  /** Builder-shaped peers ({dominantLang, list}) from a by-lang view. */
+  function peersFromByLang(byLang, dominantLang) {
+    const list = [];
+    for (const [lang, item] of Object.entries(byLang)) {
+      if (lang !== dominantLang) list.push({ lang, item });
+    }
+    return { dominantLang, list };
+  }
+
+  /**
+   * Patch a lang→Y.Text entry at `ymap[key]` towards `values`
+   * ({lang: string}). With `baseValues` (three-way mode) only languages
+   * whose value actually changed vs the base are written — concurrent
+   * client typing in other languages survives. Languages the incoming deck
+   * has no string for are left untouched (a missing translation projects
+   * as '' anyway).
+   */
+  function applyTextField(ymap, key, values, baseValues) {
+    const entry = ymap.get(key);
+    if (!(entry instanceof Y.Map)) {
+      if (baseValues && jsonEq(values, baseValues)) return;
+      ymap.set(key, langTextMap(values));
+      return;
+    }
+    for (const [lang, v] of Object.entries(values)) {
+      if (baseValues && baseValues[lang] === v) continue;
+      const yt = entry.get(lang);
+      if (yt instanceof Y.Text) patchYText(yt, v);
+      else entry.set(lang, new Y.Text(v));
+    }
+  }
+
+  /**
+   * Index-matched diff of an items Y.Array (the step-4 policy: items have
+   * no ids, so position is identity). Items whose per-language values equal
+   * the caller's base are skipped entirely; changed items diff in place so
+   * concurrent edits on untouched fields merge. The array length only
+   * changes when the caller changed it vs the base (an item a client added
+   * concurrently survives a text-only server edit). A mid-list insert
+   * rewrites the shifted items — accepted for server writes.
+   */
+  function applyItemsArray(yarr, arr, key, spec, ctx) {
+    const { incByLang, baseByLang, dominant } = ctx;
+    const incAt = (i) => itemViewByLangAt(incByLang, key, i);
+    const baseAt = baseByLang ? (i) => itemViewByLangAt(baseByLang, key, i) : null;
+    const buildAt = (i) => buildItem(arr[i], peersFromByLang(incAt(i), dominant), spec);
+
+    const n = arr.length;
+    const common = Math.min(yarr.length, n);
+    for (let i = 0; i < common; i += 1) {
+      const itemView = incAt(i);
+      if (baseAt && jsonEq(itemView, baseAt(i))) continue;
+      const yitem = yarr.get(i);
+      const item = arr[i];
+      if (yitem instanceof Y.Map && isPlainObject(item)) {
+        applyContentMap(yitem, spec, {
+          ...ctx,
+          incByLang: itemView,
+          baseByLang: baseAt ? baseAt(i) : null,
+          warnLabel: null,
+        });
+      } else if (!(yitem instanceof Y.Map) && !isPlainObject(item) && jsonEq(yitem, item)) {
+        // Equal plain passthrough values — leave as-is.
+      } else {
+        yarr.delete(i, 1);
+        yarr.insert(i, [buildAt(i)]);
+      }
+    }
+
+    const baseRef = baseByLang ? baseByLang[dominant] : undefined;
+    const baseArr = isPlainObject(baseRef) ? baseRef[key] : undefined;
+    const lengthTouched = !baseAt || !Array.isArray(baseArr) || baseArr.length !== n;
+    if (!lengthTouched) return;
+    if (yarr.length > n) yarr.delete(n, yarr.length - n);
+    else if (yarr.length < n) {
+      const from = yarr.length;
+      yarr.insert(
+        from,
+        arr.slice(from).map((_, off) => buildAt(from + off))
+      );
+    }
+  }
+
+  /**
+   * Diff a content (or item) map against incoming per-language values
+   * (`ctx.incByLang` = {lang: contentObject}). In three-way mode
+   * (`ctx.baseByLang` set) keys whose per-language values equal the base
+   * are skipped, and keys are only deleted when the base knew them — so
+   * concurrent client edits on fields the caller didn't touch survive.
+   * `force` skips in-place patching after a slide type change (field
+   * classification shifted). `warnLabel` enables the plain-field divergence
+   * warning at slide content level (parity with bootstrap).
+   */
+  function applyContentMap(ymap, spec, ctx) {
+    const { incByLang, baseByLang, dominant, warnings, force = false, warnLabel = null } = ctx;
+    const domObj = isPlainObject(incByLang[dominant]) ? incByLang[dominant] : {};
+    const keys = new Set(Object.keys(domObj));
+    for (const k of spec.textKeys) {
+      if (Object.keys(textValuesByLang(incByLang, k)).length) keys.add(k);
+    }
+    for (const k of ymap.keys()) keys.add(k);
+
+    for (const key of keys) {
+      const incoming = domObj[key];
+      const baseView = baseByLang ? keyViewByLang(baseByLang, key) : null;
+      if (baseView && !force && jsonEq(keyViewByLang(incByLang, key), baseView)) continue;
+
+      const textValues = spec.textKeys.has(key) ? textValuesByLang(incByLang, key) : null;
+      if (incoming === undefined && !(textValues && Object.keys(textValues).length)) {
+        // Key absent from the incoming deck: delete it — in three-way mode
+        // only when the caller's base knew it (else it's a concurrent
+        // client addition).
+        const baseKnew = baseView ? Object.keys(baseView).length > 0 : true;
+        if (baseKnew && ymap.has(key)) ymap.delete(key);
+        continue;
+      }
+      if (textValues && Object.keys(textValues).length) {
+        if (force) ymap.set(key, langTextMap(textValues));
+        else {
+          applyTextField(
+            ymap,
+            key,
+            textValues,
+            baseByLang ? textValuesByLang(baseByLang, key) : null
+          );
+        }
+        continue;
+      }
+      const itemSpec = spec.items.get(key);
+      if (itemSpec && Array.isArray(incoming)) {
+        const yarr = ymap.get(key);
+        if (force || !(yarr instanceof Y.Array)) {
+          ymap.set(key, buildItemsArray(incoming, key, peersFromByLang(incByLang, dominant), itemSpec));
+        } else {
+          applyItemsArray(yarr, incoming, key, itemSpec, ctx);
+        }
+        continue;
+      }
+      // Plain LWW value (normalizes to the dominant version, with a warning
+      // when other versions diverge — same policy as bootstrap).
+      const cur = ymap.get(key);
+      const isYType = cur instanceof Y.Map || cur instanceof Y.Array || cur instanceof Y.Text;
+      if (isYType || !jsonEq(cur, incoming)) ymap.set(key, deepClone(incoming));
+      if (warnLabel) {
+        const dominantJson = JSON.stringify(incoming);
+        for (const [lang, obj] of Object.entries(incByLang)) {
+          if (lang === dominant) continue;
+          const pv = isPlainObject(obj) ? obj[key] : undefined;
+          if (pv !== undefined && JSON.stringify(pv) !== dominantJson) {
+            warnings.push(
+              `${warnLabel}: plain field '${key}' differs in version '${lang}' — dominant wins`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  /** Warn when other language versions disagree on a slide's type. */
+  function warnTypeDivergence(sid, slide, matches, warnings) {
+    for (const { lang, slide: peer } of matches) {
+      if (peer.type !== slide.type) {
+        warnings.push(
+          `slide ${sid}: type '${peer.type}' in version '${lang}' differs from dominant '${slide.type}' — dominant wins`
+        );
+      }
+    }
+  }
+
+  /**
+   * Field-level diff of one existing slide Y.Map across all languages.
+   * `slideByLang` = {lang: slideObject}; `baseSlideByLang` (three-way mode)
+   * gates every write on whether the caller actually changed the value vs
+   * the deck state their write was based on.
+   */
+  function applySlideYMap(yslide, { dominant, slideByLang, baseSlideByLang, warnings }) {
+    const slide = slideByLang[dominant];
+    const baseSlide = baseSlideByLang ? baseSlideByLang[dominant] : undefined;
+    const sid = typeof slide.id === 'string' ? slide.id : '';
+    const nextType = typeof slide.type === 'string' ? slide.type : '';
+    const matches = [];
+    for (const [lang, s] of Object.entries(slideByLang)) {
+      if (lang !== dominant && isPlainObject(s)) matches.push({ lang, slide: s });
+    }
+    warnTypeDivergence(sid, slide, matches, warnings);
+
+    const typeTouched =
+      !baseSlideByLang ||
+      String(isPlainObject(baseSlide) ? baseSlide.type || '' : '') !== nextType;
+    let typeChanged = false;
+    if (typeTouched && String(yslide.get('type') || '') !== nextType) {
+      yslide.set('type', nextType);
+      typeChanged = true;
+    }
+
+    // Slide-level plain keys (everything except id/type/content/notes).
+    const slideKeys = new Set(Object.keys(slide));
+    for (const k of yslide.keys()) slideKeys.add(k);
+    for (const key of slideKeys) {
+      if (SLIDE_SPECIAL_KEYS.has(key)) continue;
+      const v = slide[key];
+      if (baseSlideByLang && jsonEq(v, isPlainObject(baseSlide) ? baseSlide[key] : undefined)) {
+        continue; // untouched by the caller
+      }
+      if (v === undefined) {
+        if (yslide.has(key)) yslide.delete(key);
+      } else if (!jsonEq(yslide.get(key), v)) {
+        yslide.set(key, deepClone(v));
+      }
+    }
+
+    // Notes per language.
+    const notesValues = {};
+    for (const [lang, s] of Object.entries(slideByLang)) {
+      if (typeof s?.notes === 'string') notesValues[lang] = s.notes;
+    }
+    let baseNotes = null;
+    if (baseSlideByLang) {
+      baseNotes = {};
+      for (const [lang, s] of Object.entries(baseSlideByLang)) {
+        if (typeof s?.notes === 'string') baseNotes[lang] = s.notes;
+      }
+    }
+    applyTextField(yslide, 'notes', notesValues, baseNotes);
+
+    // Content, classified by the (possibly new) type's schema.
+    let ycontent = yslide.get('content');
+    if (!(ycontent instanceof Y.Map)) {
+      ycontent = new Y.Map();
+      yslide.set('content', ycontent);
+    }
+    const incByLang = {};
+    for (const [lang, s] of Object.entries(slideByLang)) {
+      incByLang[lang] = isPlainObject(s?.content) ? s.content : undefined;
+    }
+    let baseByLang = null;
+    if (baseSlideByLang && !typeChanged) {
+      baseByLang = {};
+      for (const [lang, s] of Object.entries(baseSlideByLang)) {
+        baseByLang[lang] = isPlainObject(s?.content) ? s.content : undefined;
+      }
+    }
+    applyContentMap(ycontent, textFieldSpecForType(nextType, slideTypes), {
+      dominant,
+      incByLang,
+      baseByLang,
+      warnings,
+      force: typeChanged,
+      warnLabel: `slide ${sid}`,
+    });
+  }
+
+  /** Delete removed languages' texts everywhere (title, notes, fields). */
+  function removeLanguagesFromDoc(doc, langs) {
+    const dropFromLangMap = (m) => {
+      for (const l of langs) if (m.has(l)) m.delete(l);
+    };
+    // Self-describing walk: a Y.Map inside a content/item map is a lang
+    // map; a Y.Map inside an items Y.Array is an item map.
+    const walkContent = (container) => {
+      for (const [, v] of container.entries()) {
+        if (v instanceof Y.Map) dropFromLangMap(v);
+        else if (v instanceof Y.Array) {
+          for (const entry of v.toArray()) {
+            if (entry instanceof Y.Map) walkContent(entry);
+          }
+        }
+      }
+    };
+    const ytitle = doc.getMap('meta').get('title');
+    if (ytitle instanceof Y.Map) dropFromLangMap(ytitle);
+    for (const ys of doc.getArray('slides').toArray()) {
+      if (!(ys instanceof Y.Map)) continue;
+      const ynotes = ys.get('notes');
+      if (ynotes instanceof Y.Map) dropFromLangMap(ynotes);
+      const yc = ys.get('content');
+      if (yc instanceof Y.Map) walkContent(yc);
+    }
+  }
+
+  /** Top-level keys owned by meta.extra (everything except title/slides/i18n). */
+  function extraOf(pres) {
+    const extra = {};
+    for (const [k, v] of Object.entries(isPlainObject(pres) ? pres : {})) {
+      if (!PRES_SPECIAL_KEYS.has(k) && v !== undefined) extra[k] = deepClone(v);
+    }
+    return extra;
+  }
+
+  /** The i18n envelope minus versions/active, or null without an i18n block. */
+  function i18nExtraOf(pres) {
+    if (!isPlainObject(pres?.i18n)) return null;
+    const out = {};
+    for (const [k, v] of Object.entries(pres.i18n)) {
+      if (k !== 'versions' && k !== 'active') out[k] = deepClone(v);
+    }
+    return out;
+  }
+
+  /**
+   * Three-way key merge for plain JSON envelopes (meta.extra / meta.i18n):
+   * overlay onto the doc's current object only the keys the caller changed
+   * vs their base, preserving concurrently client-set keys.
+   */
+  function mergeEnvelope(docObj, baseObj, incObj) {
+    const next = deepClone(isPlainObject(docObj) ? docObj : {});
+    let changed = false;
+    const keys = new Set([
+      ...Object.keys(isPlainObject(baseObj) ? baseObj : {}),
+      ...Object.keys(isPlainObject(incObj) ? incObj : {}),
+    ]);
+    for (const k of keys) {
+      const bv = isPlainObject(baseObj) ? baseObj[k] : undefined;
+      const iv = isPlainObject(incObj) ? incObj[k] : undefined;
+      if (jsonEq(bv, iv)) continue;
+      if (iv === undefined) {
+        if (k in next) {
+          delete next[k];
+          changed = true;
+        }
+      } else if (!jsonEq(next[k], iv)) {
+        next[k] = deepClone(iv);
+        changed = true;
+      }
+    }
+    return { changed, next };
+  }
+
+  /**
+   * Apply a legacy presentation JSON onto an already-populated doc as a
+   * structural diff (phase 2, step 4 — ADR 001 §6): slides matched by id,
+   * fields by key, texts per language as Y.Text patches, items by index —
+   * the Yjs twin of mergeSlidesAtSlideLevel.
+   *
+   * With `options.base` (the deck JSON the caller's write was based on —
+   * the stored state just before this save) the diff is **three-way**: only
+   * what the caller actually changed vs that base produces ops, so
+   * concurrent client edits — which can run up to one persistence debounce
+   * ahead of the stored JSON — survive on every field, slide, item and
+   * language the caller didn't touch, and deletions only happen when the
+   * base knew the thing being deleted. Without a base the incoming deck is
+   * authoritative (full-replace, bootstrap-style normalization).
+   *
+   * Divergent language versions normalize to the dominant with the same
+   * warnings as bootstrap; removed languages are reported loudly.
+   *
+   * Call inside the caller's transaction/origin (Yjs transactions nest);
+   * the server seam uses Hocuspocus' `openDirectConnection().transact()`.
+   *
+   * @param {Object} pres - Presentation in the legacy JSON format
+   * @param {Object} doc - A populated Y.Doc (see bootstrapPresentationToDoc)
+   * @param {Object} [options]
+   * @param {Object|null} [options.base] - Deck JSON the write was based on
+   * @returns {{warnings: string[]}}
+   */
+  function applyPresentationToDoc(pres, doc, { base = null } = {}) {
+    const warnings = [];
+    const inc = resolveVersions(pres);
+    const bas = base ? resolveVersions(base) : null;
+
+    doc.transact(() => {
+      const meta = doc.getMap('meta');
+      const yslides = doc.getArray('slides');
+      const docLangs = getDocLangs(doc);
+
+      // Languages: removals are judged against the caller's base (a
+      // language a client added in the write window survives); without a
+      // base the incoming set is authoritative.
+      const removedLangs = (bas ? bas.langs : docLangs).filter((l) => !inc.langs.includes(l));
+      const removedSet = new Set(removedLangs);
+      const nextLangs = docLangs.filter((l) => !removedSet.has(l));
+      for (const l of inc.langs) if (!nextLangs.includes(l)) nextLangs.push(l);
+      if (!jsonEq(nextLangs, docLangs)) meta.set('langs', nextLangs);
+      if (removedLangs.length) {
+        for (const l of removedLangs) {
+          warnings.push(`language version '${l}' is not in the incoming deck — removed`);
+        }
+        removeLanguagesFromDoc(doc, removedLangs);
+      }
+      if ((!bas || bas.dominant !== inc.dominant) && inc.dominant !== getDocDominant(doc)) {
+        meta.set('dominant', inc.dominant);
+      }
+
+      // Title per language.
+      const titleValues = {};
+      for (const l of inc.langs) titleValues[l] = inc.versions[l].title;
+      let baseTitles = null;
+      if (bas) {
+        baseTitles = {};
+        for (const l of bas.langs) baseTitles[l] = bas.versions[l].title;
+      }
+      applyTextField(meta, 'title', titleValues, baseTitles);
+
+      // Top-level extras. Without a base: whole-object LWW. With a base:
+      // per-key three-way merge, so concurrently client-set keys survive
+      // (server-managed keys like revision always differ vs the base and
+      // are always refreshed).
+      const incExtra = extraOf(pres);
+      if (!bas) {
+        if (!jsonEq(incExtra, meta.get('extra'))) meta.set('extra', incExtra);
+      } else {
+        const { changed, next } = mergeEnvelope(meta.get('extra'), extraOf(base), incExtra);
+        if (changed) meta.set('extra', next);
+      }
+
+      // i18n envelope minus versions/active (`active` is per-client state).
+      const incI18n = i18nExtraOf(pres);
+      if (!bas) {
+        if (!jsonEq(incI18n, meta.get('i18n') ?? null)) meta.set('i18n', incI18n);
+      } else {
+        const baseI18n = i18nExtraOf(base);
+        if (!jsonEq(incI18n, baseI18n)) {
+          if (incI18n === null || !isPlainObject(meta.get('i18n'))) meta.set('i18n', incI18n);
+          else {
+            const { changed, next } = mergeEnvelope(meta.get('i18n'), baseI18n, incI18n);
+            if (changed) meta.set('i18n', next);
+          }
+        }
+      }
+
+      // Slides. Per-language id → slide lookups on both sides.
+      const idMapsFor = (rv) => {
+        const byId = {};
+        for (const l of rv.langs) {
+          byId[l] = new Map(
+            rv.versions[l].slides
+              .filter((s) => isPlainObject(s) && typeof s.id === 'string' && s.id)
+              .map((s) => [s.id, s])
+          );
+        }
+        return byId;
+      };
+      const incById = idMapsFor(inc);
+      const basById = bas ? idMapsFor(bas) : null;
+      const viewFor = (byId, langsArr, id) => {
+        const view = {};
+        for (const l of langsArr) {
+          const s = byId[l]?.get(id);
+          if (s !== undefined) view[l] = s;
+        }
+        return view;
+      };
+
+      const target = inc.versions[inc.dominant].slides.filter(
+        (s) => isPlainObject(s) && typeof s.id === 'string' && s.id
+      );
+      const targetIds = target.map((s) => s.id);
+      const targetIdSet = new Set(targetIds);
+      const baseIds = bas
+        ? bas.versions[bas.dominant].slides
+            .filter((s) => isPlainObject(s) && typeof s.id === 'string' && s.id)
+            .map((s) => s.id)
+        : null;
+      const baseIdSet = baseIds ? new Set(baseIds) : null;
+
+      // Ghost slides (only in a non-dominant version) are dropped — warn,
+      // but in three-way mode only when they're new vs the base.
+      for (const l of inc.langs) {
+        if (l === inc.dominant) continue;
+        for (const id of incById[l].keys()) {
+          if (targetIdSet.has(id)) continue;
+          const ghostInBase = bas ? basById[l]?.has(id) && !baseIdSet.has(id) : false;
+          if (!ghostInBase) {
+            warnings.push(
+              `slide ${id} only exists in version '${l}' — dropped (structure follows '${inc.dominant}')`
+            );
+          }
+        }
+      }
+
+      const yslideIdAt = (i) => {
+        const s = yslides.get(i);
+        return s instanceof Y.Map ? s.get('id') : undefined;
+      };
+      const findYSlide = (id) => {
+        for (let i = 0; i < yslides.length; i += 1) {
+          if (yslideIdAt(i) === id) return yslides.get(i);
+        }
+        return null;
+      };
+
+      // Deletions: without a base everything not incoming goes; with a
+      // base only slides the caller actually removed (a slide a client
+      // added in the write window survives).
+      for (let i = yslides.length - 1; i >= 0; i -= 1) {
+        const id = yslideIdAt(i);
+        const remove = baseIdSet
+          ? baseIdSet.has(id) && !targetIdSet.has(id)
+          : !targetIdSet.has(id);
+        if (remove) yslides.delete(i, 1);
+      }
+
+      // Order + inserts, only when the caller changed the structure
+      // (clone-based moves, same as the client binder: Yjs types can't be
+      // re-inserted). Client-added unknown slides drift towards the end on
+      // a genuine server reorder, but always survive.
+      const structureTouched = !baseIds || targetIds.join(' ') !== baseIds.join(' ');
+      const insertedIds = new Set();
+      if (structureTouched) {
+        for (let i = 0; i < targetIds.length; i += 1) {
+          if (i < yslides.length && yslideIdAt(i) === targetIds[i]) continue;
+          let j = -1;
+          for (let k = i; k < yslides.length; k += 1) {
+            if (yslideIdAt(k) === targetIds[i]) {
+              j = k;
+              break;
+            }
+          }
+          if (j >= 0) {
+            const clone = cloneYValue(yslides.get(j));
+            yslides.delete(j, 1);
+            yslides.insert(i, [clone]);
+          } else if (!baseIdSet || !baseIdSet.has(targetIds[i])) {
+            // Genuinely new slide: build it with every incoming language.
+            const matches = [];
+            for (const l of inc.langs) {
+              if (l === inc.dominant) continue;
+              const s = incById[l].get(targetIds[i]);
+              if (isPlainObject(s)) matches.push({ lang: l, slide: s });
+            }
+            warnTypeDivergence(targetIds[i], target[i], matches, warnings);
+            yslides.insert(i, [
+              buildSlideYMap(target[i], { lang: inc.dominant, matches, warnings }),
+            ]);
+            insertedIds.add(targetIds[i]);
+          }
+          // else: the slide was in the caller's base but a client deleted
+          // it concurrently — the deletion wins, don't resurrect it.
+        }
+        if (!baseIds) {
+          while (yslides.length > targetIds.length) yslides.delete(targetIds.length, 1);
+        }
+      }
+
+      // Field-level diff of every pre-existing slide, all languages.
+      for (let i = 0; i < target.length; i += 1) {
+        const id = targetIds[i];
+        if (insertedIds.has(id)) continue;
+        const slideByLang = viewFor(incById, inc.langs, id);
+        const baseSlideByLang =
+          bas && baseIdSet.has(id) ? viewFor(basById, bas.langs, id) : null;
+        if (baseSlideByLang && jsonEq(slideByLang, baseSlideByLang)) continue; // untouched
+        const yslide = findYSlide(id);
+        if (!(yslide instanceof Y.Map)) continue; // concurrently deleted by a client
+        applySlideYMap(yslide, {
+          dominant: inc.dominant,
+          slideByLang,
+          baseSlideByLang,
+          warnings,
+        });
+      }
+    });
+    return { warnings };
+  }
+
   return {
     bootstrapPresentationToDoc,
+    applyPresentationToDoc,
     projectDocToPresentation,
     getDocLangs,
     getDocDominant,

@@ -22,6 +22,16 @@ export const COLLAB_PATH = '/collab';
 let active = null; // { hocuspocus, ws }
 
 /**
+ * The running Hocuspocus instance, or null when collab isn't mounted.
+ * Used by the server-as-collaborator seam (live-apply.js) to reach actively
+ * loaded documents.
+ * @returns {Object|null}
+ */
+export function getActiveHocuspocus() {
+  return active?.hocuspocus || null;
+}
+
+/**
  * Attach the collab WebSocket endpoint to an existing node:http server.
  * No-op (returns null) when COLLAB_ENABLED is off.
  *

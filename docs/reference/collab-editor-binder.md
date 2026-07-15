@@ -59,9 +59,10 @@ these paths is untouched:
   point). The lock machinery is untouched for flag-off editors and is
   retired for good in step 5. Author locks (`lockedByAuthor`) still apply.
 - **Language switching** reads the requested version from the live doc
-  (`projectLanguage`) instead of the server JSON; the translate endpoints'
-  responses are pushed back into the doc (`adoptLanguageVersion`) so the
-  next collab store can't overwrite the fresh translation.
+  (`projectLanguage`) instead of the server JSON. Translate endpoints write
+  server-side; since step 4 the server applies that write to the live doc
+  itself, and it reaches every client (including the initiating one) as a
+  regular remote update.
 
 ## Editing semantics
 
@@ -100,20 +101,37 @@ projection. (This also fixed a latent step-2 bug: a stored `active` ≠
 with the dominant buffers on every collab store, corrupting the other
 language.)
 
-## Known limitations until step 4 (server-as-collaborator)
+## Server-side writes (step 4)
 
-- Server-side writes (MCP tools, public API, AI endpoints) while a doc is
-  actively loaded still land only in the JSON and are overwritten by the
-  next collab store — unchanged from step 2, see collab-deck-doc.md. The
-  editor's own translate flows are bridged via `adoptLanguageVersion`.
-- The **theme-change flow** is in the same family: deck settings' theme
-  picker goes through `POST /api/presentations/:id/change-theme` (a
-  server-side write; it can also convert slides) and updates `pres` without
-  `markDirty`, so with the flag on the change never reaches the doc and the
-  next collab store overwrites it. Other deck-settings toggles are fine
-  (they mutate `pres` + `markDirty`). Bridge or retire with step 4.
+Server-side writes (MCP tools, public API, AI endpoints, `/change-theme`,
+the translate endpoints) are applied to the live doc by the storage facade
+itself — see "Server as collaborator" in
+[collab-deck-doc.md](collab-deck-doc.md). Consequences for the editor:
+
+- The theme-change flow needs no client bridge: the server write reaches
+  the doc, arrives here as a remote update (metaChanged → preview repaint),
+  and converges with the response-based `pres` update the modal already
+  does.
+- The step-3 translate bridge (`adoptLanguageVersion`) is **removed**, not
+  kept as a fallback: with the server also writing the translation into the
+  doc, a client-side write of the same texts would race it — two replicas
+  independently inserting the same string into one Y.Text duplicates it on
+  merge ("HalloHallo"). One writer only; the server is it. The initiating
+  client may briefly show the pre-translate state until the remote update
+  lands (typically same-tick with the HTTP response), after which the
+  binder re-renders.
+- Server writes transact under Hocuspocus' own origin and arrive here under
+  the provider's origin, so `Y.UndoManager` (tracking only the binder's
+  local origin) never makes them undoable.
+
+## Known limitations
+
 - Publish/export read the stored JSON, which can lag live edits by up to one
   persistence debounce window (~2 s).
+- The editor's own copy of `pres.revision` is not refreshed by collab
+  stores (server-managed keys are not adopted from the doc), so
+  If-Match-guarded side routes (e.g. scope changes) can 409 after a long
+  collab session — pre-existing, slated for the step-5 cleanup.
 
 ## Files
 
