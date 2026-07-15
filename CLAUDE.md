@@ -60,6 +60,11 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
   that branch (not `main`), which gets one umbrella PR to `main` when the
   whole track is accepted. Active: `collab` (real-time collaboration, ADR
   001) — all collab PRs base on `collab`; merge `main` into it periodically.
+  **The base branch is set at PR creation** and GitHub defaults to `main`,
+  so always pass it explicitly: `gh pr create --base collab …`. Double-check
+  the "wants to merge into" line before finishing up. Exception only when
+  the plan explicitly says a step goes to `main` (e.g. a standalone fix
+  that must survive a track no-go, like collab step 0 / PR #6).
 - **Releases**: tag `vX.Y.Z` + GitHub Release; update `CHANGELOG.md`
   (`[Unreleased]` → release section). Forks sync on tags, not `main`.
 
