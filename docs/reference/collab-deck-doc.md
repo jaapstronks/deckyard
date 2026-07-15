@@ -1,10 +1,9 @@
 # Collab deck document (CRDT schema + serializer + persistence)
 
 *How a deck maps onto a Yjs document for real-time collaboration (phase 2,
-steps 1–2 of [ADR 001](../adr/001-realtime-collaboration.md) §4–5). The
-editor binder (step 3) is documented in
-[collab-editor-binder.md](collab-editor-binder.md); the
-server-as-collaborator seam (step 4) is not wired yet.*
+steps 1–2 and 4 of [ADR 001](../adr/001-realtime-collaboration.md) §4–6).
+The editor binder (step 3) is documented in
+[collab-editor-binder.md](collab-editor-binder.md).*
 
 ## The mapping
 
@@ -121,20 +120,60 @@ feature flags (it no-ops when no binary exists), so toggling
 `COLLAB_LIVE_EDITS` off and back on cannot resurrect stale doc state from
 before the toggle.
 
-**Known gap until step 4**: while a doc is *actively loaded* (clients
-connected), a server-side save still only lands in the JSON — the live doc
-doesn't see it, and the next debounced store wins. Step 4 closes this by
-routing `updatePresentation` through the active doc
-(`openDirectConnection().transact()`). Until then `COLLAB_LIVE_EDITS`
-should only be enabled in environments that accept this window.
+## Server as collaborator (step 4)
+
+While a doc is actively loaded (clients connected), a server-side save that
+only landed in the JSON would be overwritten by the next debounced collab
+store. The `updatePresentation` facade therefore applies every successful
+non-collab save to the live doc (`server/collab/live-apply.js`, via
+Hocuspocus' `openDirectConnection().transact()`), so MCP/API/AI writes —
+including the theme-change flow and the translate endpoints — appear live in
+open editors. When no doc is loaded, nothing changes: the save is a cold
+write and invalidates the stored binary as before.
+
+Design decisions, deliberate and load-bearing:
+
+- **Store-first, doc-second** (inverts the ADR §6 sketch): the JSON path
+  runs every check (revision conflict, locks, author-lock validation,
+  limits, schema validation) before the doc is touched, so a rejected write
+  can never corrupt the live doc — and callers get today's response shape
+  (the stored presentation with its bumped revision) unchanged.
+- **Three-way diff** (`applyPresentationToDoc(pres, doc, { base })` in the
+  codec — the Yjs twin of `mergeSlidesAtSlideLevel`): the facade passes the
+  pre-save JSON as `base`; only what the caller changed vs that base
+  produces ops. This matters because the stored JSON runs up to one
+  persistence debounce (~2 s) behind the live doc — a two-way diff would
+  revert every in-flight client edit in that window. Slides match by id,
+  fields by key, texts patch per language (`patchYText`), items match by
+  index; deletions (slides, keys, languages) only happen when the base knew
+  the thing being deleted, so concurrent client additions survive.
+- **Transaction origin**: Hocuspocus' direct connection transacts with its
+  own `{source: 'local'}` origin; client undo managers track only their
+  binder's local origin (and remote updates arrive under the provider's
+  origin anyway), so server writes are never undoable by clients — covered
+  by an explicit test.
+- **No store loop**: `disconnect()` flushes the store hooks immediately
+  (collapsing the pending debounce) so the binary is persisted right away,
+  and `onStoreDocument` skips the JSON write when the doc projection equals
+  the stored deck — a server write settles at exactly one revision bump.
+- Divergent language versions normalize to the dominant with the same loud
+  warnings as bootstrap; a language version the caller dropped is removed
+  (loudly), including its per-field texts.
+- If the apply itself fails, the JSON save has already succeeded and an
+  error is logged loudly; the gap for that one write equals the pre-step-4
+  behavior (the next collab store wins).
 
 ## Files
 
 - `shared/collab/deck-ydoc.js` — the codec. Y-agnostic: `createDeckYdocCodec(Y)`
   takes the yjs namespace so the same module runs on the server
   (`import * as Y from 'yjs'`) and the client (vendored bundle exports `Y`).
-  Also exports `textFieldSpecForType` (recursive translatable-field spec).
+  Also exports `textFieldSpecForType` (recursive translatable-field spec)
+  and `patchYText` (minimal Y.Text patch, shared with the client binder).
+  The codec includes `applyPresentationToDoc` (the step-4 differ).
 - `server/collab/deck-doc.js` — server binding (`deckYdocCodec`, `Y`).
+- `server/collab/live-apply.js` — the server-as-collaborator seam, called
+  from the `updatePresentation` facade after a successful non-collab save.
 - `server/collab/persistence.js` — Hocuspocus onLoad/onStore hooks
   (dependency-injectable for tests); wired in `server/collab/mount.js`.
 - `server/storage/presentation-ydocs.js` — doc-state facade;
@@ -142,7 +181,10 @@ should only be enabled in environments that accept this window.
   `server/db/migrations/040_presentation_ydocs.js` (Postgres).
 - `tests/collab-persistence.test.js` — hook + invalidation tests;
   `tests/collab-live-edits.test.js` — end-to-end over a real mount (two WS
-  clients, concurrent edits converge, debounced JSON persist).
+  clients, concurrent edits converge, debounced JSON persist);
+  `tests/collab-server-apply.test.js` — the step-4 differ (unit) + facade
+  writes reaching live editors end-to-end (undo isolation, in-flight edits,
+  revision stability).
 - `tests/collab-deck-ydoc.test.js` — round-trip tests: hand fixtures
   (single-lang, bilingual, nested rows/blocks, divergent versions), an
   all-registered-slide-types bilingual deck built from real defaults, CRDT

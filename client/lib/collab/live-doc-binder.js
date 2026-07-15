@@ -41,6 +41,8 @@
  * so tests can run this against the vendored bundle in Node.
  */
 
+import { patchYText } from '../../../shared/collab/deck-ydoc.js';
+
 const SERVER_MANAGED_KEYS = new Set([
   'id',
   'created',
@@ -134,23 +136,6 @@ export function createLiveDocBinder({
   }
 
   // ── local → doc ──────────────────────────────────────────────────────────
-
-  /** Minimal Y.Text patch: keep the common prefix/suffix, replace the middle. */
-  function patchYText(ytext, next) {
-    const old = ytext.toString();
-    if (old === next) return;
-    let start = 0;
-    const minLen = Math.min(old.length, next.length);
-    while (start < minLen && old[start] === next[start]) start += 1;
-    let endOld = old.length;
-    let endNew = next.length;
-    while (endOld > start && endNew > start && old[endOld - 1] === next[endNew - 1]) {
-      endOld -= 1;
-      endNew -= 1;
-    }
-    if (endOld > start) ytext.delete(start, endOld - start);
-    if (endNew > start) ytext.insert(start, next.slice(start, endNew));
-  }
 
   function writeTextField(container, key, value, lang) {
     const entry = container.get(key);
@@ -754,79 +739,6 @@ export function createLiveDocBinder({
     return undoManager.redo() != null;
   }
 
-  /** Recursively write one language's texts into an existing content map. */
-  function adoptContentTexts(ymap, content, spec, lang) {
-    if (!isPlainObject(content)) return;
-    for (const key of spec.textKeys) {
-      const v = content[key];
-      if (typeof v !== 'string') continue;
-      const entry = ymap.get(key);
-      if (entry instanceof Y.Map) {
-        const yt = entry.get(lang);
-        if (yt instanceof Y.Text) patchYText(yt, v);
-        else entry.set(lang, new Y.Text(v));
-      } else if (entry === undefined && v) {
-        ymap.set(key, codec.buildTextFieldForLang(v, lang));
-      }
-      // A plain-classified existing entry stays plain (LWW).
-    }
-    for (const [key, sub] of spec.items) {
-      const arr = content[key];
-      const yarr = ymap.get(key);
-      if (!Array.isArray(arr) || !(yarr instanceof Y.Array)) continue;
-      const n = Math.min(arr.length, yarr.length);
-      for (let i = 0; i < n; i += 1) {
-        const yitem = yarr.get(i);
-        if (yitem instanceof Y.Map) adoptContentTexts(yitem, arr[i], sub, lang);
-      }
-    }
-  }
-
-  /**
-   * Write a whole language version's texts into the live doc (slides matched
-   * by id, items by index; structure untouched). Server-side translate
-   * endpoints only update the stored JSON, which the next collab store would
-   * overwrite — the editor calls this with the translate response so the
-   * translation reaches the doc (the step-4 server-as-collaborator seam will
-   * make this unnecessary).
-   */
-  function adoptLanguageVersion(lang, version) {
-    if (destroyed || !attached || !lang || !isPlainObject(version)) return;
-    const slidesIn = Array.isArray(version.slides) ? version.slides : [];
-    doc.transact(() => {
-      const docLangs = codec.getDocLangs(doc);
-      if (!docLangs.includes(lang)) meta.set('langs', [...docLangs, lang]);
-      if (typeof version.title === 'string') {
-        writeTextField(meta, 'title', version.title, lang);
-      }
-      for (const slide of slidesIn) {
-        if (!isPlainObject(slide) || typeof slide.id !== 'string') continue;
-        const yslide = findYSlideById(slide.id);
-        if (!(yslide instanceof Y.Map)) continue;
-        if (typeof slide.notes === 'string' && slide.notes) {
-          writeTextField(yslide, 'notes', slide.notes, lang);
-        }
-        const ycontent = yslide.get('content');
-        if (!(ycontent instanceof Y.Map)) continue;
-        adoptContentTexts(
-          ycontent,
-          slide.content,
-          codec.textSpecForType(yslide.get('type')),
-          lang
-        );
-      }
-    }, origin);
-    shadow.langs = codec.getDocLangs(doc);
-    refreshVersionBuffers();
-    if (lang === shadowLang) {
-      // Adopted texts for the language being edited: re-project them out.
-      const changedSlideIds = new Set();
-      reconcilePresFromDoc(changedSlideIds);
-      applyMetaFromDoc();
-      notifyRemote({ changedSlideIds, structureChanged: false, titleChanged: true, metaChanged: true });
-    }
-  }
-
   /**
    * Project the full deck for a language switch: the legacy-format
    * presentation with top-level title/slides set to the requested language
@@ -871,7 +783,6 @@ export function createLiveDocBinder({
     canUndo: () => !!undoManager && undoManager.undoStack.length > 0,
     canRedo: () => !!undoManager && undoManager.redoStack.length > 0,
     projectLanguage,
-    adoptLanguageVersion,
     destroy,
     /** Exposed for tests. */
     _origin: origin,

@@ -561,8 +561,6 @@ export async function createEditorController({
     collabLanguage: liveEditsActive
       ? {
           loadLanguageVersion: (lang) => liveEdits?.projectLanguage(lang) || null,
-          adoptLanguageVersion: (lang, version) =>
-            liveEdits?.adoptLanguageVersion(lang, version),
         }
       : null,
     // Defined later in this controller; the button is only clickable afterwards.

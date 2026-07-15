@@ -21,6 +21,7 @@
  * COLLAB_LIVE_EDITS.
  */
 
+import { isDeepStrictEqual } from 'node:util';
 import * as YDefault from 'yjs';
 import { deckYdocCodec } from './deck-doc.js';
 import { presentationIdFromDocumentName } from './auth.js';
@@ -110,6 +111,13 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     // collab-managed saves.
     try {
       const projected = codec.projectDocToPresentation(document);
+      // Skip the JSON write when the doc already equals the stored deck —
+      // notably right after the server-as-collaborator seam applied a fresh
+      // server save to the doc (live-apply.js flushes this hook on
+      // disconnect). Storing anyway would bump the revision and fire SSE
+      // for a byte-identical deck.
+      const current = await getPresentation(repoRoot, id);
+      if (current && isDeepStrictEqual(projected, current)) return;
       const result = await updatePresentation(repoRoot, id, projected, {
         bypassLockCheck: true,
         reason: 'collab',

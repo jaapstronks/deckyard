@@ -270,12 +270,6 @@ export function initEditorLiveEdits({
     projectLanguage(lang) {
       return ready ? binder.projectLanguage(lang) : null;
     },
-    /** Push a server translate response's language version into the doc. */
-    adoptLanguageVersion(lang, version) {
-      if (!ready) return;
-      binder.adoptLanguageVersion(lang, version);
-      updateStatus();
-    },
     isReady: () => ready,
     destroy() {
       if (destroyed) return;

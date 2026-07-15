@@ -56,7 +56,7 @@ export function createLanguageMode({
   // are read from the live Y.Doc instead of the server JSON (which lags by
   // up to a persistence debounce window), and server translate responses are
   // pushed back into the doc so the next collab store can't overwrite them.
-  // `{ loadLanguageVersion(lang) => presLike|null, adoptLanguageVersion(lang, version) }`
+  // `{ loadLanguageVersion(lang) => presLike|null }`
   collabLanguage = null,
 } = {}) {
   let translateBusy = false;
@@ -338,13 +338,11 @@ export function createLanguageMode({
         }),
       });
       applyServerMeta(resp?.presentation);
-      // Live-edit mode: the translate endpoint only updated the stored JSON;
-      // push the translated version into the live doc, then the doc-based
-      // load below shows it.
-      collabLanguage?.adoptLanguageVersion?.(
-        to,
-        resp?.presentation?.i18n?.versions?.[to]
-      );
+      // Live-edit mode: the server applied the translation to the live doc
+      // itself (step-4 server-as-collaborator seam); it reaches this client
+      // as a regular remote update. The doc-based load below may briefly
+      // show the pre-translate state until that update lands, after which
+      // the binder re-renders.
       await loadLanguageIntoView(to, { onStatus });
       onStatus?.({
         level: 'success',
@@ -419,9 +417,9 @@ export function createLanguageMode({
       const updated = resp?.presentation;
       if (updated?.i18n) pres.i18n = updated.i18n;
       applyServerMeta(updated);
-      // Live-edit mode: see translateMissingForActive — without this the
-      // next collab store would overwrite the server-side translation.
-      collabLanguage?.adoptLanguageVersion?.(to, updated?.i18n?.versions?.[to]);
+      // Live-edit mode: the server applied the translation to the live doc
+      // (step-4 seam), so it syncs to every client — no local doc write here
+      // (a duplicate write would double-insert the same text via the CRDT).
       onStatus?.({ level: 'success', msg: t('editor.translate.done', 'Translation ready.') });
     } catch (e) {
       onStatus?.(String(e?.message || e));
