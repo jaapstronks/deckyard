@@ -142,6 +142,23 @@ export function registerTools(
     return loadPresentationChecked(repoRoot, presentationId, getOwner(context), options);
   }
 
+  /**
+   * Write options for updatePresentation/deletePresentation calls: attribute
+   * the write to the acting session owner so the slide-lock policy
+   * (enforceSlideWritePolicy) can tell authors from non-authors. Without
+   * actorEmail the policy fails closed and author-locked slides reject even
+   * their own author. No owner configured = trusted local (stdio) session:
+   * per-deck access checks are already skipped for it (see
+   * presentation-access.js), so lock enforcement is skipped too instead of
+   * failing closed on an anonymous actor.
+   * @param {Object} [context] - Per-request context (SSE session)
+   * @returns {Object} opts for the storage write call
+   */
+  function writeOpts(context) {
+    const owner = getOwner(context);
+    return owner ? { actorEmail: owner } : { bypassLockCheck: true };
+  }
+
   // ─── get_slide_types ────────────────────────────────────────────────────
 
   server.tool(
@@ -383,7 +400,7 @@ export function registerTools(
         ...created,
         slides: parts.slides,
         title: parts.title,
-      });
+      }, { actorEmail: effectiveOwner });
 
       const result = {
         id: updated.id,
@@ -542,7 +559,7 @@ export function registerTools(
           content: s.content,
           notes: s.notes || '',
         })),
-      });
+      }, { actorEmail: effectiveOwner });
       if (updated?.ok === false) {
         throw new Error(`updatePresentation failed: ${updated.reason || 'unknown'}`);
       }
@@ -606,7 +623,7 @@ export function registerTools(
       }]);
       slide.content = validated.content;
 
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         updated: true,
@@ -656,7 +673,7 @@ export function registerTools(
         : pres.slides.length;
 
       pres.slides.splice(insertAt, 0, newSlide);
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         added: true,
@@ -705,7 +722,7 @@ export function registerTools(
       const fromType = slide.type;
       slide.type = result.type || targetType;
       slide.content = result.content;
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         converted: true,
@@ -749,7 +766,7 @@ export function registerTools(
 
       // Save the modified deck
       pres.slides = newDeck.slides;
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         applied: true,
@@ -865,7 +882,7 @@ export function registerTools(
         };
       }
       await getCheckedPresentation(presentationId, context, { access: 'delete' });
-      await deletePresentation(repoRoot, presentationId);
+      await deletePresentation(repoRoot, presentationId, { actorEmail: getOwner(context) });
       return { deleted: true, id: presentationId };
     }
   );
@@ -890,7 +907,7 @@ export function registerTools(
       }
 
       const removed = pres.slides.splice(slideIndex, 1)[0];
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         removed: true,
@@ -924,7 +941,7 @@ export function registerTools(
 
       const [slide] = pres.slides.splice(fromIndex, 1);
       pres.slides.splice(toIndex, 0, slide);
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         moved: true,
@@ -987,7 +1004,7 @@ export function registerTools(
 
       pres.slides.splice(insertAt, 0, ...slidesToInsert);
 
-      await updatePresentation(repoRoot, presentationId, pres);
+      await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
 
       return {
         appended: newSlides.length,
@@ -1036,7 +1053,7 @@ export function registerTools(
       if (apply && (recommendations.merges.length > 0 || recommendations.removals.length > 0)) {
         const compressed = applyCompression(pres, recommendations);
         pres.slides = compressed.slides;
-        await updatePresentation(repoRoot, presentationId, pres);
+        await updatePresentation(repoRoot, presentationId, pres, writeOpts(context));
       }
 
       return {
@@ -1108,6 +1125,7 @@ export function registerTools(
       await getCheckedPresentation(presentationId, context);
       const dup = await duplicatePresentation(repoRoot, presentationId, {
         ownerEmail: getOwner(context),
+        actorEmail: getOwner(context),
       });
       if (!dup?.id) throw new Error('Duplication failed');
 
