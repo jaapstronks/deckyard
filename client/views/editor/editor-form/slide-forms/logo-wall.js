@@ -1,4 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { MAX_LOGOS } from '../../../../../shared/slide-types/types/logo-wall-slide.js';
 import { dragHandleIcon, chevronDownIcon } from '../../../../lib/icons.js';
 import { createCollapsedState } from '../../../../lib/collapsed-state.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
@@ -13,7 +14,10 @@ const logoBlocksState = createCollapsedState('logo');
  */
 function syncToNumbered(slide) {
   const logos = slide.content.logos || [];
-  slide.content.logoCount = String(logos.length);
+  // logoCount is a strictly validated legacy enum (1..12): cap it. Walls
+  // beyond 12 logos live in logos[] only; the numbered mirror carries the
+  // first 12 for old code paths.
+  slide.content.logoCount = String(Math.min(logos.length, 12) || 1);
   for (let i = 0; i < 12; i++) {
     const l = logos[i] || {};
     slide.content[`logo${i + 1}Image`] = l.image || '';
@@ -41,12 +45,13 @@ export function renderLogoWallForm({
   add('title');
   add('subheading');
 
-  const MAX = 12;
+  const MAX = MAX_LOGOS;
+  const LEGACY_MAX = 12;
 
   // Mark all logo-related fields as used (hide from generic renderer)
   used.add('logos');
   used.add('logoCount');
-  for (let i = 1; i <= MAX; i += 1) {
+  for (let i = 1; i <= LEGACY_MAX; i += 1) {
     used.add(`logo${i}Image`);
     used.add(`logo${i}Name`);
     used.add(`logo${i}Alt`);
@@ -55,7 +60,7 @@ export function renderLogoWallForm({
 
   // Normalize: if no logos[] but numbered fields exist, build logos on the fly
   if (!Array.isArray(slide.content.logos) || slide.content.logos.length === 0) {
-    const count = Math.max(1, Math.min(MAX, Number(slide.content.logoCount || 1)));
+    const count = Math.max(1, Math.min(LEGACY_MAX, Number(slide.content.logoCount || 1)));
     const logos = [];
     for (let i = 1; i <= count; i++) {
       if (slide.content[`logo${i}Name`] || slide.content[`logo${i}Image`]) {

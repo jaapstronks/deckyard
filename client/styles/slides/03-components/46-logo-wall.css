@@ -1,6 +1,8 @@
 /* Logo wall slide */
 .slide-logo-wall {
-  background: var(--slide-bg-mist);
+  /* --slide-bg is set by the slide-bg-<value> class (mist by default; lime or
+     a theme-defined variant when the author picks one). */
+  background: var(--slide-bg, var(--slide-bg-mist));
   color: var(--color-text, #0b0b0b);
   padding: 48px 64px 56px;
 
@@ -67,7 +69,7 @@
 .slide-logo-wall[data-logo-count='12'] {
   --lw-cols: 6;
   --lw-rows: 2;
-  --lw-cell: clamp(165px, 9.8vw, 210px);
+  --lw-cell: clamp(170px, 10.4vw, 225px);
   --lw-gap-x: 16px;
 }
 
@@ -76,6 +78,31 @@
 .slide-logo-wall[data-logo-count='11'],
 .slide-logo-wall[data-logo-count='12'] {
   padding: 44px 48px 52px;
+}
+
+/* 13+ logos: fluid columns (renderer sets --lw-cols/--lw-rows inline).
+   Cells share the row width instead of using fixed sizes, so any count up
+   to the cap lays out without per-count CSS. */
+.slide-logo-wall.is-fluid {
+  padding: 40px 48px 48px;
+}
+
+.slide-logo-wall.is-fluid .logo-wall-grid {
+  grid-template-columns: repeat(var(--lw-cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--lw-rows), auto);
+  column-gap: 16px;
+  row-gap: 14px;
+  width: 100%;
+}
+
+.slide-logo-wall.is-fluid .logo-wall-item {
+  width: 100%;
+}
+
+.slide-logo-wall.is-fluid .logo-wall-frame {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.61;
 }
 
 .slide-logo-wall .slide-inner {

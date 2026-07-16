@@ -101,7 +101,6 @@ export function renderChartSlideForm({
   dataWrap.append(ta, h('div', { class: 'help', text: help }));
   form.append(dataWrap);
 
-  const bgField = fieldByKey.get('background');
   const showValuesField = fieldByKey.get('showValues');
   const showLegendField = fieldByKey.get('showLegend');
   const pieLabelModeField = fieldByKey.get('pieLabelMode');
@@ -122,13 +121,7 @@ export function renderChartSlideForm({
     used.add(key);
   }
 
-  // Background sits on its own row: it's a dropdown control that needs the
-  // width, and this matches how every other slide type presents it. (In a
-  // cramped grid its trigger would overflow onto the next field.)
-  if (bgField) {
-    const bgEl = renderField(bgField);
-    if (bgEl) form.append(bgEl);
-  }
+  // Background colour renders in the unified Background section (editor-form.js).
 
   // Chart-specific display toggles, two-up so each control has room to breathe.
   const toggles = [];

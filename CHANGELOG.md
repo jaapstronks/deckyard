@@ -8,6 +8,19 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Unified Background section in the slide form.** Background colour, custom
+  background image (with focus/fit/overlay) and the theme corner logo now
+  live in one "Background" section, instead of a loose colour dropdown at the
+  top plus a separate collapsed "Background & logo" panel. Open by default
+  (sticky per user). Also fixes the freeform slide's custom-colour input,
+  which never rendered because the colour field renderer wasn't passed
+  through to the form.
+- **Logo wall: up to 30 logos, background colour.** The cap was 12; beyond 12
+  the grid switches to fluid 7/8-wide columns so any count lays out cleanly,
+  and small counts keep rendering larger (the 11-12 tier got a slight size
+  bump). The slide also gained the standard background colour option
+  (defaults to its historical mist look; theme background variants work too).
+
 - **Editor loading skeleton.** Opening a deck used to show a blank white
   page until everything was fetched (seconds, on long decks). The editor
   route now mounts a shimmer skeleton of the real three-column layout

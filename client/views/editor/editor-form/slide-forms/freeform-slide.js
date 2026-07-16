@@ -57,9 +57,8 @@ export function renderFreeformSlideForm({
   used.add('bgCustomColor');
   used.add('snapToGrid');
 
-  // Background and settings row
-  const bgField = fieldByKey?.get('background');
-  const bgCustomField = fieldByKey?.get('bgCustomColor');
+  // Background (+ custom colour) renders in the unified Background section
+  // (editor-form.js); this panel keeps the freeform-specific settings.
   const snapField = fieldByKey?.get('snapToGrid');
 
   const settingsDetails = h('details', { class: 'editor-advanced' });
@@ -69,20 +68,6 @@ export function renderFreeformSlideForm({
   });
   const settingsBody = h('div', { class: 'editor-advanced-body' });
   settingsDetails.append(settingsSummary, settingsBody);
-
-  // Background row
-  if (bgField || bgCustomField) {
-    const bgEl = bgField ? renderField(bgField) : null;
-    const bgCustomEl = bgCustomField ? renderField(bgCustomField) : null;
-
-    // Show custom color picker only when background is 'custom'
-    if (bgCustomEl && slide.content.background !== 'custom') {
-      bgCustomEl.style.display = 'none';
-    }
-
-    const bgRow = fieldGrid([bgEl, bgCustomEl].filter(Boolean), 2);
-    if (bgRow) settingsBody.append(bgRow);
-  }
 
   // Snap to grid
   if (snapField) {

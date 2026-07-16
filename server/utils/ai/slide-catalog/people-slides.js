@@ -58,7 +58,8 @@ export const PEOPLE_SLIDES = {
     resolveInPhase1: false,
     description: `
       Display partner/sponsor/supporter logos in a grid.
-      Each logo has a name and optional image. Up to 12 logos.
+      Each logo has a name and optional image. Up to 30 logos; fewer logos
+      render larger automatically.
 
       STRUCTURE:
       - logos: Array of logo objects, each with { image, name }
