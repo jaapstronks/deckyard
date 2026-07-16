@@ -66,7 +66,7 @@ export function createCommentRenderers({
    * Render a comment thread (main comment + replies).
    */
   function renderCommentThread(comment) {
-    const threadEl = h('div', { class: 'comment-thread' });
+    const threadEl = h('div', { class: 'comment-thread', 'data-comment-id': comment.id });
     const mainComment = renderComment(comment, false, threadEl);
     threadEl.append(mainComment);
 

@@ -239,6 +239,7 @@ export function createEditorTopbar({
     type: 'button',
     title: t('editor.comments', 'Comments'),
     'aria-label': t('editor.comments', 'Comments'),
+    'aria-pressed': 'false',
     onclick: () => onToggleComments?.(),
   });
   btnComments.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('message-circle'), alt: '', 'aria-hidden': 'true' }), commentsBadgeEl);
@@ -283,12 +284,18 @@ export function createEditorTopbar({
   btnInspector.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('info'), alt: '', 'aria-hidden': 'true' }));
 
   /**
-   * Reflect the rail state on the toggle (pressed = rail open).
-   * @param {boolean} open
+   * Reflect the rail state on both pane toggles. Pressed means "the rail is
+   * open on MY pane", not merely "the rail is open" - so a pane switch flips
+   * one button off and the other on.
+   * @param {{ open: boolean, pane: string|null }} state
    */
-  const setInspectorOpen = (open) => {
-    btnInspector.setAttribute('aria-pressed', String(Boolean(open)));
-    btnInspector.classList.toggle('is-active', Boolean(open));
+  const setInspectorPaneState = ({ open, pane } = {}) => {
+    const settingsActive = Boolean(open) && pane === 'settings';
+    const commentsActive = Boolean(open) && pane === 'comments';
+    btnInspector.setAttribute('aria-pressed', String(settingsActive));
+    btnInspector.classList.toggle('is-active', settingsActive);
+    btnComments.setAttribute('aria-pressed', String(commentsActive));
+    btnComments.classList.toggle('is-active', commentsActive);
   };
 
   // ============================================================
@@ -584,5 +591,5 @@ export function createEditorTopbar({
     }
   };
 
-  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, setInspectorOpen, detach };
+  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, setInspectorPaneState, detach };
 }

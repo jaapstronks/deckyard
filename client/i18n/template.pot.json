@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T16:59:27.457Z",
+    "generatedAt": "2026-07-16T18:32:56.229Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -1164,7 +1164,7 @@
     "comments.addPlaceholder": {
       "default": "Add a comment...",
       "refs": [
-        "client/views/editor/comments-panel.js:285",
+        "client/views/editor/comments-panel.js:288",
         "client/views/editor/modals/preview-lightbox.js:267",
         "client/views/editor/preview-panel.js:214",
         "client/views/share-viewer/viewer-comments.js:69"
@@ -1174,8 +1174,8 @@
       "default": "Add comment to specific spot",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:58",
-        "client/views/editor/preview-panel.js:114",
-        "client/views/editor/preview-panel.js:292"
+        "client/views/editor/preview-panel.js:115",
+        "client/views/editor/preview-panel.js:291"
       ]
     },
     "comments.addSlide": {
@@ -1193,13 +1193,13 @@
     "comments.cancelPosition": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/preview-panel.js:290"
+        "client/views/editor/preview-panel.js:289"
       ]
     },
     "comments.close": {
       "default": "Close",
       "refs": [
-        "client/views/editor/comments-panel.js:224"
+        "client/views/editor/comments-panel.js:225"
       ]
     },
     "comments.delete": {
@@ -1208,9 +1208,6 @@
         "client/views/editor/comments-panel-actions.js:58",
         "client/views/editor/comments-panel-actions.js:60",
         "client/views/editor/comments-panel-renderers.js:217",
-        "client/views/editor/slide-comments.js:233",
-        "client/views/editor/slide-comments.js:321",
-        "client/views/editor/slide-comments.js:323",
         "client/views/share-viewer/viewer-comments.js:203",
         "client/views/share-viewer/viewer-comments.js:269",
         "client/views/share-viewer/viewer-comments.js:271"
@@ -1220,7 +1217,6 @@
       "default": "Delete this comment?",
       "refs": [
         "client/views/editor/comments-panel-actions.js:59",
-        "client/views/editor/slide-comments.js:322",
         "client/views/share-viewer/viewer-comments.js:270"
       ]
     },
@@ -1261,12 +1257,6 @@
         "client/views/editor/comments-panel-renderers.js:52"
       ]
     },
-    "comments.empty.slide": {
-      "default": "No comments on this slide yet.",
-      "refs": [
-        "client/views/editor/slide-comments.js:130"
-      ]
-    },
     "comments.error.applyFailed": {
       "default": "Failed to apply suggestion",
       "refs": [
@@ -1288,14 +1278,14 @@
     "comments.error.loadFailed": {
       "default": "Failed to load comments",
       "refs": [
-        "client/views/editor/comments-panel.js:121",
+        "client/views/editor/comments-panel.js:122",
         "client/views/share-viewer/viewer-comments.js:109"
       ]
     },
     "comments.error.postFailed": {
       "default": "Failed to post comment",
       "refs": [
-        "client/views/editor/comments-panel.js:141"
+        "client/views/editor/comments-panel.js:142"
       ]
     },
     "comments.error.reopenFailed": {
@@ -1307,7 +1297,7 @@
     "comments.error.replyFailed": {
       "default": "Failed to post reply",
       "refs": [
-        "client/views/editor/comments-panel.js:155"
+        "client/views/editor/comments-panel.js:156"
       ]
     },
     "comments.error.resolveFailed": {
@@ -1319,44 +1309,44 @@
     "comments.filter.ai": {
       "default": "AI",
       "refs": [
-        "client/views/editor/comments-panel.js:275"
+        "client/views/editor/comments-panel.js:278"
       ]
     },
     "comments.filter.all": {
       "default": "All",
       "refs": [
-        "client/views/editor/comments-panel.js:235",
+        "client/views/editor/comments-panel.js:238",
         "client/views/share-viewer/viewer-comments.js:48"
       ]
     },
     "comments.filter.allTypes": {
       "default": "All",
       "refs": [
-        "client/views/editor/comments-panel.js:263"
+        "client/views/editor/comments-panel.js:266"
       ]
     },
     "comments.filter.human": {
       "default": "Human",
       "refs": [
-        "client/views/editor/comments-panel.js:269"
+        "client/views/editor/comments-panel.js:272"
       ]
     },
     "comments.filter.open": {
       "default": "Open",
       "refs": [
-        "client/views/editor/comments-panel.js:241"
+        "client/views/editor/comments-panel.js:244"
       ]
     },
     "comments.filter.resolved": {
       "default": "Resolved",
       "refs": [
-        "client/views/editor/comments-panel.js:247"
+        "client/views/editor/comments-panel.js:250"
       ]
     },
     "comments.filter.thisSlide": {
       "default": "This slide",
       "refs": [
-        "client/views/editor/comments-panel.js:253",
+        "client/views/editor/comments-panel.js:256",
         "client/views/share-viewer/viewer-comments.js:42"
       ]
     },
@@ -1376,37 +1366,29 @@
       "default": "Comment",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:62",
-        "client/views/editor/preview-panel.js:118"
+        "client/views/editor/preview-panel.js:119"
       ]
     },
     "comments.pinModeHint": {
       "default": "Click on the slide to place comment",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:66",
-        "client/views/editor/preview-panel.js:123"
+        "client/views/editor/preview-panel.js:124"
       ]
     },
     "comments.post": {
       "default": "Post",
       "refs": [
-        "client/views/editor/comments-panel.js:297",
+        "client/views/editor/comments-panel.js:300",
         "client/views/editor/modals/preview-lightbox.js:286",
         "client/views/editor/preview-panel.js:232",
-        "client/views/editor/slide-comments.js:47",
         "client/views/share-viewer/viewer-comments.js:75"
-      ]
-    },
-    "comments.quickPlaceholder": {
-      "default": "Add a comment to this slide...",
-      "refs": [
-        "client/views/editor/slide-comments.js:42"
       ]
     },
     "comments.reopen": {
       "default": "Reopen",
       "refs": [
-        "client/views/editor/comments-panel-renderers.js:205",
-        "client/views/editor/slide-comments.js:221"
+        "client/views/editor/comments-panel-renderers.js:205"
       ]
     },
     "comments.reply": {
@@ -1414,8 +1396,6 @@
       "refs": [
         "client/views/editor/comments-panel-renderers.js:175",
         "client/views/editor/comments-panel-renderers.js:256",
-        "client/views/editor/slide-comments.js:192",
-        "client/views/editor/slide-comments.js:253",
         "client/views/share-viewer/viewer-comments.js:183",
         "client/views/share-viewer/viewer-comments.js:223"
       ]
@@ -1424,15 +1404,13 @@
       "default": "Reply...",
       "refs": [
         "client/views/editor/comments-panel-renderers.js:235",
-        "client/views/editor/slide-comments.js:247",
         "client/views/share-viewer/viewer-comments.js:217"
       ]
     },
     "comments.resolve": {
       "default": "Resolve",
       "refs": [
-        "client/views/editor/comments-panel-renderers.js:197",
-        "client/views/editor/slide-comments.js:213"
+        "client/views/editor/comments-panel-renderers.js:197"
       ]
     },
     "comments.slideAdded": {
@@ -1474,7 +1452,7 @@
     "comments.title": {
       "default": "Comments",
       "refs": [
-        "client/views/editor/comments-panel.js:220",
+        "client/views/editor/comments-panel.js:221",
         "client/views/share-viewer/viewer-comments.js:36",
         "client/views/share-viewer.js:183"
       ]
@@ -1485,14 +1463,7 @@
         "client/views/editor/comments-panel-renderers.js:102",
         "client/views/editor/modals/preview-lightbox.js:176",
         "client/views/editor/modals/preview-lightbox.js:203",
-        "client/views/editor/slide-comments.js:170",
         "client/views/share-viewer/viewer-comments.js:161"
-      ]
-    },
-    "comments.viewComments": {
-      "default": "View comments",
-      "refs": [
-        "client/views/editor/slide-comments.js:66"
       ]
     },
     "common.accept": {
@@ -1514,8 +1485,8 @@
         "client/views/analytics/index.js:87",
         "client/views/analytics/index.js:127",
         "client/views/editor/image-library/detail.js:123",
-        "client/views/editor/topbar.js:545",
-        "client/views/editor/topbar.js:546",
+        "client/views/editor/topbar.js:552",
+        "client/views/editor/topbar.js:553",
         "client/views/settings/font-editor/index.js:59",
         "client/views/settings/font-editor/index.js:60",
         "client/views/settings/index.js:87",
@@ -1952,7 +1923,7 @@
         "client/views/editor/topbar/language-mode.js:311",
         "client/views/editor/topbar/language-mode.js:390",
         "client/views/editor/topbar/more-menu.js:57",
-        "client/views/editor/topbar.js:465"
+        "client/views/editor/topbar.js:472"
       ]
     },
     "common.search": {
@@ -2621,15 +2592,15 @@
     "editor.analytics": {
       "default": "Analytics",
       "refs": [
-        "client/views/editor/topbar.js:431",
-        "client/views/editor/topbar.js:432"
+        "client/views/editor/topbar.js:438",
+        "client/views/editor/topbar.js:439"
       ]
     },
     "editor.analyze": {
       "default": "AI Analysis",
       "refs": [
-        "client/views/editor/topbar.js:301",
-        "client/views/editor/topbar.js:302"
+        "client/views/editor/topbar.js:308",
+        "client/views/editor/topbar.js:309"
       ]
     },
     "editor.analyzeModal.analyze": {
@@ -2715,9 +2686,9 @@
       "default": "This slide is locked by the author",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:143",
-        "client/views/editor/editor-controller.js:228",
-        "client/views/editor/editor-controller.js:277",
-        "client/views/editor/editor-controller.js:1301"
+        "client/views/editor/editor-controller.js:231",
+        "client/views/editor/editor-controller.js:280",
+        "client/views/editor/editor-controller.js:1333"
       ]
     },
     "editor.autoFit.applied": {
@@ -2857,7 +2828,7 @@
     "editor.cards.icon": {
       "default": "Icon",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:149",
+        "client/views/editor/editor-form/inspector-form.js:150",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:257"
       ]
     },
@@ -2882,7 +2853,7 @@
     "editor.cards.linkHelp2": {
       "default": "Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:169",
+        "client/views/editor/editor-form/inspector-form.js:170",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:308",
         "client/views/editor/editor-form/slide-forms/logo-wall.js:298"
       ]
@@ -3055,7 +3026,7 @@
     "editor.collab.liveEditsUnavailable": {
       "default": "Live collaboration failed to load; changes are not being saved. Reload the editor.",
       "refs": [
-        "client/views/editor/editor-controller.js:872"
+        "client/views/editor/editor-controller.js:885"
       ]
     },
     "editor.color.pickColor": {
@@ -3075,13 +3046,13 @@
       "default": "Companion",
       "refs": [
         "client/views/editor/topbar/more-menu.js:150",
-        "client/views/editor/topbar.js:368"
+        "client/views/editor/topbar.js:375"
       ]
     },
     "editor.companion.title": {
       "default": "Open speaker notes companion on your phone (QR code).",
       "refs": [
-        "client/views/editor/topbar.js:369"
+        "client/views/editor/topbar.js:376"
       ]
     },
     "editor.conflict.copyMine": {
@@ -3269,8 +3240,8 @@
     "editor.deckGrid.open": {
       "default": "Slide overview",
       "refs": [
-        "client/views/editor/topbar.js:314",
-        "client/views/editor/topbar.js:315"
+        "client/views/editor/topbar.js:321",
+        "client/views/editor/topbar.js:322"
       ]
     },
     "editor.deckGrid.peek": {
@@ -4545,13 +4516,13 @@
     "editor.inspector.cardsConfig": {
       "default": "Card icons & links",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:139"
+        "client/views/editor/editor-form/inspector-form.js:140"
       ]
     },
     "editor.inspector.column": {
       "default": "Column {n}",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:193"
+        "client/views/editor/editor-form/inspector-form.js:194"
       ]
     },
     "editor.inspector.hide": {
@@ -4570,8 +4541,8 @@
     "editor.inspector.toggle": {
       "default": "Show or hide the inspector",
       "refs": [
-        "client/views/editor/topbar.js:278",
-        "client/views/editor/topbar.js:279"
+        "client/views/editor/topbar.js:279",
+        "client/views/editor/topbar.js:280"
       ]
     },
     "editor.items.add": {
@@ -4879,20 +4850,20 @@
       "default": "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone.",
       "refs": [
         "client/views/editor/modals/slide-notes-modal.js:71",
-        "client/views/editor/preview-panel.js:314"
+        "client/views/editor/preview-panel.js:313"
       ]
     },
     "editor.notes.savedPerSlide": {
       "default": "Saved per slide.",
       "refs": [
-        "client/views/editor/preview-panel.js:306"
+        "client/views/editor/preview-panel.js:305"
       ]
     },
     "editor.notes.title": {
       "default": "Presenter notes",
       "refs": [
         "client/views/editor/modals/slide-notes-modal.js:33",
-        "client/views/editor/preview-panel.js:302"
+        "client/views/editor/preview-panel.js:301"
       ]
     },
     "editor.pendingRequests": {
@@ -4929,58 +4900,58 @@
     "editor.present": {
       "default": "Present",
       "refs": [
-        "client/views/editor/topbar.js:462",
+        "client/views/editor/topbar.js:469",
         "client/views/viewer/viewer-topbar.js:105"
       ]
     },
     "editor.present.abortedSaveFailed": {
       "default": "Could not save; presenting aborted.",
       "refs": [
-        "client/views/editor/topbar.js:471"
+        "client/views/editor/topbar.js:478"
       ]
     },
     "editor.preview.clickToZoom": {
       "default": "Click to open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:139"
+        "client/views/editor/preview-panel.js:140"
       ]
     },
     "editor.preview.collapse": {
       "default": "Collapse slide panel",
       "refs": [
-        "client/views/editor/preview-panel.js:69",
-        "client/views/editor/preview-panel.js:76"
+        "client/views/editor/preview-panel.js:70",
+        "client/views/editor/preview-panel.js:77"
       ]
     },
     "editor.preview.editNotes": {
       "default": "Edit presenter notes",
       "refs": [
-        "client/views/editor/preview-panel.js:103"
+        "client/views/editor/preview-panel.js:104"
       ]
     },
     "editor.preview.expand": {
       "default": "Expand slide panel",
       "refs": [
-        "client/views/editor/preview-panel.js:68",
-        "client/views/editor/preview-panel.js:75"
+        "client/views/editor/preview-panel.js:69",
+        "client/views/editor/preview-panel.js:76"
       ]
     },
     "editor.preview.liveWhileTyping": {
       "default": "The slide updates live while you type.",
       "refs": [
-        "client/views/editor/preview-panel.js:350"
+        "client/views/editor/preview-panel.js:349"
       ]
     },
     "editor.preview.openLarge": {
       "default": "Open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:91"
+        "client/views/editor/preview-panel.js:92"
       ]
     },
     "editor.preview.title": {
       "default": "Slide",
       "refs": [
-        "client/views/editor/preview-panel.js:60"
+        "client/views/editor/preview-panel.js:61"
       ]
     },
     "editor.previewSheet.close": {
@@ -5246,19 +5217,19 @@
     "editor.readOnly.banner": {
       "default": "View only - someone else is editing",
       "refs": [
-        "client/views/editor/editor-controller.js:658"
+        "client/views/editor/editor-controller.js:664"
       ]
     },
     "editor.readOnly.someone": {
       "default": "someone else",
       "refs": [
-        "client/views/editor/editor-controller.js:662"
+        "client/views/editor/editor-controller.js:668"
       ]
     },
     "editor.readOnly.toast": {
       "default": "This presentation is being edited by {who}. You can view but not edit.",
       "refs": [
-        "client/views/editor/editor-controller.js:664"
+        "client/views/editor/editor-controller.js:670"
       ]
     },
     "editor.redo": {
@@ -5266,7 +5237,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:292",
         "client/views/editor/slide-list/undo-actions.js:95",
-        "client/views/editor/topbar.js:512"
+        "client/views/editor/topbar.js:519"
       ]
     },
     "editor.remoteMerge.intro": {
@@ -5339,13 +5310,13 @@
     "editor.save.remoteMerged": {
       "default": "Changes from another editor were merged in",
       "refs": [
-        "client/views/editor/editor-controller.js:329"
+        "client/views/editor/editor-controller.js:332"
       ]
     },
     "editor.save.remoteMergedSee": {
       "default": "See what changed",
       "refs": [
-        "client/views/editor/editor-controller.js:334"
+        "client/views/editor/editor-controller.js:337"
       ]
     },
     "editor.save.saved": {
@@ -5627,7 +5598,7 @@
       "default": "Keyboard shortcuts",
       "refs": [
         "client/views/editor/shortcuts.js:72",
-        "client/views/editor/topbar.js:527"
+        "client/views/editor/topbar.js:534"
       ]
     },
     "editor.shortcuts.undo": {
@@ -5639,13 +5610,13 @@
     "editor.slide.accessibility": {
       "default": "Accessibility",
       "refs": [
-        "client/views/editor/editor-form.js:937"
+        "client/views/editor/editor-form.js:940"
       ]
     },
     "editor.slide.accessibility.title": {
       "default": "Optional fields to improve screen-reader output and exports.",
       "refs": [
-        "client/views/editor/editor-form.js:938"
+        "client/views/editor/editor-form.js:941"
       ]
     },
     "editor.slide.addImage": {
@@ -5699,62 +5670,62 @@
     "editor.slide.aiIterate.applied": {
       "default": "Changes applied",
       "refs": [
-        "client/views/editor/editor-form.js:877"
+        "client/views/editor/editor-form.js:880"
       ]
     },
     "editor.slide.aiIterate.button": {
       "default": "Refine",
       "refs": [
-        "client/views/editor/editor-form.js:804",
-        "client/views/editor/editor-form.js:816"
+        "client/views/editor/editor-form.js:807",
+        "client/views/editor/editor-form.js:819"
       ]
     },
     "editor.slide.aiIterate.cancel": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/editor-form.js:815"
+        "client/views/editor/editor-form.js:818"
       ]
     },
     "editor.slide.aiIterate.cancelled": {
       "default": "Refinement cancelled.",
       "refs": [
-        "client/views/editor/editor-form.js:902"
+        "client/views/editor/editor-form.js:905"
       ]
     },
     "editor.slide.aiIterate.failed": {
       "default": "Refinement failed: {error}",
       "refs": [
-        "client/views/editor/editor-form.js:905"
+        "client/views/editor/editor-form.js:908"
       ]
     },
     "editor.slide.aiIterate.noChanges": {
       "default": "No changes suggested",
       "refs": [
-        "client/views/editor/editor-form.js:898"
+        "client/views/editor/editor-form.js:901"
       ]
     },
     "editor.slide.aiIterate.placeholder": {
       "default": "Make this punchier, split this slide...",
       "refs": [
-        "client/views/editor/editor-form.js:797"
+        "client/views/editor/editor-form.js:800"
       ]
     },
     "editor.slide.aiIterate.reverted": {
       "default": "Reverted the change.",
       "refs": [
-        "client/views/editor/editor-form.js:892"
+        "client/views/editor/editor-form.js:895"
       ]
     },
     "editor.slide.aiIterate.title": {
       "default": "Use AI to refine this slide",
       "refs": [
-        "client/views/editor/editor-form.js:802"
+        "client/views/editor/editor-form.js:805"
       ]
     },
     "editor.slide.aiIterate.undo": {
       "default": "Undo",
       "refs": [
-        "client/views/editor/editor-form.js:881"
+        "client/views/editor/editor-form.js:884"
       ]
     },
     "editor.slide.aiReasoning": {
@@ -5778,31 +5749,31 @@
     "editor.slide.background.colour": {
       "default": "Color",
       "refs": [
-        "client/views/editor/editor-form.js:1065"
+        "client/views/editor/editor-form.js:1068"
       ]
     },
     "editor.slide.background.focus": {
       "default": "Background focus (crop)",
       "refs": [
-        "client/views/editor/editor-form.js:1090"
+        "client/views/editor/editor-form.js:1093"
       ]
     },
     "editor.slide.background.focusHelp": {
       "default": "Pick which part stays visible when the image is cropped to fill the slide.",
       "refs": [
-        "client/views/editor/editor-form.js:1091"
+        "client/views/editor/editor-form.js:1094"
       ]
     },
     "editor.slide.background.section": {
       "default": "Background",
       "refs": [
-        "client/views/editor/editor-form.js:973"
+        "client/views/editor/editor-form.js:976"
       ]
     },
     "editor.slide.background.sectionHelp": {
       "default": "Background colour or a custom image, plus the theme corner logo.",
       "refs": [
-        "client/views/editor/editor-form.js:974"
+        "client/views/editor/editor-form.js:977"
       ]
     },
     "editor.slide.caption": {
@@ -6220,13 +6191,13 @@
       "default": "This slide is being edited by someone else",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:145",
-        "client/views/editor/editor-controller.js:225"
+        "client/views/editor/editor-controller.js:228"
       ]
     },
     "editor.slideLocked.toast": {
       "default": "This slide is being edited by {name}",
       "refs": [
-        "client/views/editor/editor-controller.js:237"
+        "client/views/editor/editor-controller.js:240"
       ]
     },
     "editor.slideTypeModal.aiAdd": {
@@ -6939,7 +6910,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:282",
         "client/views/editor/slide-list/undo-actions.js:86",
-        "client/views/editor/topbar.js:502"
+        "client/views/editor/topbar.js:509"
       ]
     },
     "editor.versions.backupNotice": {

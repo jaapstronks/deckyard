@@ -1,7 +1,6 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { createSlideNotesModal } from './modals/slide-notes-modal.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createSlideCommentsSection } from './slide-comments.js';
 import { createCommentMarkers } from './comment-markers.js';
 
 export function createPreviewPanel({
@@ -23,6 +22,9 @@ export function createPreviewPanel({
   // Slide comments support
   commentsApi,
   user,
+  // Positioned-marker click: opens the comments pane on this comment (the
+  // under-slide thread list folded into the inspector rail, fase 4).
+  onOpenComments,
   // Lightbox navigation
   onLightboxNavigate,
 } = {}) {
@@ -43,7 +45,6 @@ export function createPreviewPanel({
     commentsApi,
     onCommentAdded: () => {
       refreshCommentMarkers();
-      slideCommentsSection?.refresh?.();
     },
     onNavigate: onLightboxNavigate,
   });
@@ -153,7 +154,6 @@ export function createPreviewPanel({
   // Comment markers on the slide preview - setup functions first
   let commentMarkers = null;
   let positionedCommentPopup = null;
-  let slideCommentsSection = null; // Forward declaration for use in commentMarkers
 
   function hidePositionedCommentPopup() {
     if (positionedCommentPopup) {
@@ -247,7 +247,6 @@ export function createPreviewPanel({
           pinCommentBtn?.classList?.remove('is-active');
           // Refresh to show the new marker
           refreshCommentMarkers();
-          slideCommentsSection?.refresh?.();
         } catch (err) {
           console.error('Failed to post positioned comment:', err);
         } finally {
@@ -269,8 +268,8 @@ export function createPreviewPanel({
       h,
       containerEl: thumb,
       onMarkerClick: (comment) => {
-        // Expand the slide comments section and highlight this specific comment
-        slideCommentsSection?.highlightComment?.(comment.id);
+        // Open the comments pane in the inspector rail on this comment.
+        onOpenComments?.(comment.id);
       },
       onPositionSelect: ({ x, y }) => {
         // Show popup for adding a positioned comment
@@ -353,26 +352,14 @@ export function createPreviewPanel({
     ),
   });
 
-  // Slide comments section (between help and notes)
-  // Assign to forward-declared variable
-  if (commentsApi) {
-    slideCommentsSection = createSlideCommentsSection({
-      h,
-      commentsApi,
-      getSelectedSlideId,
-      user,
-      pres,
-    });
-    slideCommentsSection.show();
-  }
+  // The always-open slide comments section that used to sit here folded
+  // into the inspector's comments pane (fase 4); the positioned markers on
+  // the slide (above) are the remaining comments surface in this panel.
 
   const previewNotesWrap = h('div', { class: 'preview-notes-wrap' });
   previewNotesWrap.append(previewNotes);
 
   previewScroll.append(previewStage, previewHelp);
-  if (slideCommentsSection) {
-    previewScroll.append(slideCommentsSection.el);
-  }
   previewScroll.append(previewNotesWrap);
   preview.append(previewScroll);
 
@@ -394,9 +381,9 @@ export function createPreviewPanel({
     previewNotesTa,
     detachThumbScale,
     rerenderLightboxIfOpen: () => previewLightbox.rerenderIfOpen(),
-    // Slide comments API
+    // Slide comments API (markers only; the thread list lives in the
+    // inspector's comments pane)
     refreshSlideComments: () => {
-      slideCommentsSection?.refresh?.();
       refreshCommentMarkers();
     },
     // Re-attach markers DOM after a preview rerender wipes thumb contents.
@@ -405,6 +392,5 @@ export function createPreviewPanel({
       commentMarkers?.reattach?.();
       commentMarkers?.refresh?.();
     },
-    setSlideCommentCount: (count) => slideCommentsSection?.setCommentCount?.(count),
   };
 }

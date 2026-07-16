@@ -38,6 +38,7 @@ export function createCommentsPanel({
   onCommentCountChange,
   onSlideCommentCountsChange,
   onJumpToSlide,
+  onRequestClose,
 }) {
   const commentsApi = createCommentsApi({ api, presentationId });
 
@@ -223,7 +224,9 @@ export function createCommentsPanel({
     type: 'button',
     title: t('comments.close', 'Close'),
     text: '×',
-    onclick: () => hide(),
+    // Mounted as an inspector pane the host owns visibility: closing means
+    // dismissing the rail (onRequestClose), not just hiding this element.
+    onclick: () => (onRequestClose ? onRequestClose() : hide()),
   });
   headerEl.append(headerTitle, closeBtn);
 
@@ -374,6 +377,23 @@ export function createCommentsPanel({
     return slideCommentCounts;
   }
 
+  /**
+   * Scroll a thread into view and flash it (used by the positioned comment
+   * markers on the canvas, which used to expand the under-slide list).
+   * No-op when the comment is filtered out of the current view.
+   * @param {string} commentId
+   */
+  async function highlightComment(commentId) {
+    await loadComments();
+    const el = listEl.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!el) return;
+    try {
+      el.scrollIntoView({ block: 'center' });
+    } catch { /* ignore */ }
+    el.classList.add('is-highlighted');
+    setTimeout(() => el.classList.remove('is-highlighted'), 2000);
+  }
+
   // ========================================
   // Public API
   // ========================================
@@ -387,6 +407,7 @@ export function createCommentsPanel({
     getOpenCount,
     loadComments,
     getSlideCommentCounts,
+    highlightComment,
     startPolling: sse.startPolling,
     stopPolling: sse.stopPolling,
   };

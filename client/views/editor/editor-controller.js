@@ -129,11 +129,14 @@ export async function createEditorController({
   const isInspectorCollapsed = () =>
     document.documentElement.classList.contains('is-inspector-collapsed');
 
-  // Late-bound: reassigned once the topbar exists.
-  let syncInspectorTopbar = () => {};
+  // Late-bound: reassigned once topbar, panes and comments panel all exist.
+  // Reflects the rail state everywhere it is mirrored: the per-pane topbar
+  // toggles (pressed = rail open on MY pane) and the comments panel's
+  // visible/seen state.
+  let syncRailState = () => {};
   const setInspectorCollapsed = (v) => {
     inspectorCollapsedPref.set(v);
-    syncInspectorTopbar();
+    syncRailState();
   };
 
   // ============================================================
@@ -626,8 +629,10 @@ export async function createEditorController({
       });
       cleanup.register('presenceLock', detachPresenceLock);
     },
-    onToggleComments: () => commentsPanel?.toggle?.(),
-    // Rail toggle: dereferenced at click time (inspectorPanes is built below).
+    // Both buttons drive the same rail, each with its own pane; toggle
+    // semantics (open on my pane = dismiss, else open/switch) live in the
+    // pane host. Dereferenced at click time (inspectorPanes is built below).
+    onToggleComments: () => inspectorPanes.toggle('comments'),
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     setCommentsBadge: (fn) => { setCommentsBadgeFn = fn; },
     setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
@@ -643,8 +648,9 @@ export async function createEditorController({
         openOverlayClosers,
         onComplete: ({ suggestionCount } = {}) => {
           if (suggestionCount > 0) {
-            commentsPanel?.loadComments?.();
-            commentsPanel?.show?.();
+            // Open the rail on the comments pane; syncRailState shows the
+            // panel, which loads the fresh suggestions.
+            inspectorPanes.open('comments');
           }
         },
       });
@@ -686,11 +692,9 @@ export async function createEditorController({
     syncTopbarUndo();
   }
 
-  // Reflect the rail state on the topbar "i" toggle (initial + every change).
-  if (typeof topbarApi.setInspectorOpen === 'function') {
-    syncInspectorTopbar = () => topbarApi.setInspectorOpen(!isInspectorCollapsed());
-    syncInspectorTopbar();
-  }
+  // The real syncRailState is assigned once the comments panel exists (it
+  // also drives that panel's visibility); until then the topbar buttons get
+  // their initial state from that assignment further down.
 
   // ============================================================
   // SLIDES PANEL
@@ -738,11 +742,13 @@ export async function createEditorController({
 
   const inspectorPanel = h('div', { class: 'panel inspector-panel' });
 
-  // Pane host: settings now; the comments pane slots in here in phase 4.
+  // Pane host: settings + comments (registered further down, once the
+  // comments panel exists).
   const inspectorPanes = createInspectorPanes({
     panelEl: inspectorPanel,
     setCollapsed: setInspectorCollapsed,
     isCollapsed: isInspectorCollapsed,
+    onActivePaneChange: () => syncRailState(),
   });
 
   const editorMount = h('div', { class: 'editor-mount' });
@@ -784,6 +790,13 @@ export async function createEditorController({
     setPreviewCollapsed: (collapsed) => previewCollapsedPref.set(collapsed),
     commentsApi,
     user,
+    // Positioned-marker click: open the rail on the comments pane and
+    // highlight the thread (the under-slide list this used to expand is
+    // folded into that pane).
+    onOpenComments: (commentId) => {
+      inspectorPanes.open('comments');
+      commentsPanel?.highlightComment?.(commentId);
+    },
     onLightboxNavigate: (slideId) => {
       setSelectedSlideIdWithLock(slideId);
       rerenderSlideList();
@@ -920,8 +933,27 @@ export async function createEditorController({
         });
       }
     },
+    // The x in the pane header dismisses the rail (same as the topbar
+    // toggle); plain hide() would leave an open rail with an empty pane.
+    onRequestClose: () => setInspectorCollapsed(true),
   });
-  shell.append(commentsPanel.panelEl);
+
+  // Comments mount as the second inspector pane (fase 4): the old fixed
+  // right slide-over now lives inside the rail. Visibility is driven by
+  // rail state below, not by the panel's own toggle.
+  const commentsPane = h('div', {}, [commentsPanel.panelEl]);
+  inspectorPanes.registerPane('comments', commentsPane);
+
+  // Single mirror of the rail state: per-pane topbar pressed-states and the
+  // comments panel's visible/seen tracking (show() marks as seen + loads).
+  syncRailState = () => {
+    const open = !isInspectorCollapsed();
+    const pane = inspectorPanes.getActivePane();
+    topbarApi.setInspectorPaneState?.({ open, pane });
+    if (open && pane === 'comments') commentsPanel.show();
+    else commentsPanel.hide();
+  };
+  syncRailState();
 
   root.append(shell);
 

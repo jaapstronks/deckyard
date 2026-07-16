@@ -1,5 +1,10 @@
 {
-  "editor.panel.title": "Muokkaa",
+  "editor.inspector.title": "Tarkastaja",
+  "editor.inspector.hide": "Piilota tarkastaja",
+  "editor.inspector.toggle": "Näytä tai piilota tarkastaja",
+  "editor.inspector.cardsConfig": "Korttien kuvakkeet ja linkit",
+  "editor.inspector.cardUntitled": "Nimetön kortti",
+  "editor.inspector.column": "Sarake {n}",
   "comments.addPlaceholder": "Lisää kommentti...",
   "comments.close": "Sulje",
   "comments.delete": "Poista",
