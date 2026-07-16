@@ -3,12 +3,12 @@
  * Disables editing while still allowing viewing.
  */
 
-.editor-shell.is-read-only .editor-panel {
+.editor-shell.is-read-only .inspector-panel {
   position: relative;
 }
 
 /* Overlay to block interactions */
-.editor-shell.is-read-only .editor-panel::after {
+.editor-shell.is-read-only .inspector-panel::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -18,11 +18,11 @@
 }
 
 /* Visual indicator: reduce opacity of form elements */
-.editor-shell.is-read-only .editor-panel input,
-.editor-shell.is-read-only .editor-panel textarea,
-.editor-shell.is-read-only .editor-panel select,
-.editor-shell.is-read-only .editor-panel button:not(.btn-secondary),
-.editor-shell.is-read-only .editor-panel [contenteditable] {
+.editor-shell.is-read-only .inspector-panel input,
+.editor-shell.is-read-only .inspector-panel textarea,
+.editor-shell.is-read-only .inspector-panel select,
+.editor-shell.is-read-only .inspector-panel button:not(.btn-secondary),
+.editor-shell.is-read-only .inspector-panel [contenteditable] {
   opacity: 0.6;
   pointer-events: none;
 }
@@ -59,7 +59,7 @@
 }
 
 /* Read-only banner - text is set via --read-only-banner-text CSS variable for i18n */
-.editor-shell.is-read-only .editor-panel::before {
+.editor-shell.is-read-only .inspector-panel::before {
   content: var(--read-only-banner-text, 'View only - someone else is editing');
   position: absolute;
   top: 8px;
@@ -81,12 +81,12 @@
  * disable editing for that slide but allow selecting other slides.
  */
 
-.editor-shell.is-slide-locked .editor-panel {
+.editor-shell.is-slide-locked .inspector-panel {
   position: relative;
 }
 
 /* Overlay to block interactions on the editor form */
-.editor-shell.is-slide-locked .editor-panel::after {
+.editor-shell.is-slide-locked .inspector-panel::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -96,17 +96,17 @@
 }
 
 /* Visual indicator: reduce opacity of form elements */
-.editor-shell.is-slide-locked .editor-panel input,
-.editor-shell.is-slide-locked .editor-panel textarea,
-.editor-shell.is-slide-locked .editor-panel select,
-.editor-shell.is-slide-locked .editor-panel button:not(.btn-secondary),
-.editor-shell.is-slide-locked .editor-panel [contenteditable] {
+.editor-shell.is-slide-locked .inspector-panel input,
+.editor-shell.is-slide-locked .inspector-panel textarea,
+.editor-shell.is-slide-locked .inspector-panel select,
+.editor-shell.is-slide-locked .inspector-panel button:not(.btn-secondary),
+.editor-shell.is-slide-locked .inspector-panel [contenteditable] {
   opacity: 0.6;
   pointer-events: none;
 }
 
 /* Slide-locked banner - text is set via --slide-locked-banner-text CSS variable for i18n */
-.editor-shell.is-slide-locked .editor-panel::before {
+.editor-shell.is-slide-locked .inspector-panel::before {
   content: var(--slide-locked-banner-text, 'This slide is being edited by someone else');
   position: absolute;
   top: 8px;
@@ -158,7 +158,7 @@
  */
 
 /* Author-locked banner - uses same structure as slide-locked but different color */
-.editor-shell.is-author-locked-slide .editor-panel::before {
+.editor-shell.is-author-locked-slide .inspector-panel::before {
   background: hsl(30 100% 50% / 0.2);
   color: hsl(var(--app-text-primary));
 }

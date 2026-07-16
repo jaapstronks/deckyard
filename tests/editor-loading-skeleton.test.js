@@ -36,7 +36,7 @@ test('skeleton mounts the editor layout classes and removes cleanly', () => {
   assert.ok(shell, 'skeleton shell mounted');
   assert.ok(shell.classList.contains('editor-shell'), 'reuses editor-shell');
   assert.ok(shell.querySelector('.layout'), 'has .layout');
-  for (const cls of ['slides-panel', 'editor-panel', 'preview-panel']) {
+  for (const cls of ['slides-panel', 'preview-panel', 'inspector-panel']) {
     assert.ok(shell.querySelector(`.panel.${cls}`), `has .panel.${cls}`);
   }
   assert.ok(shell.querySelector('[role="status"]'), 'has a status element');

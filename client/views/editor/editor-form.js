@@ -169,7 +169,7 @@ function buildHeaderActions({
   rerenderPreview,
   rerenderSlideList,
   isAuthor,
-  setFormCollapsed,
+  setInspectorCollapsed,
 }) {
   const headerActions = h('div', { class: 'row editor-form-header-actions' });
   const isFollowInviteSlide = slide.type === 'follow-invite-slide';
@@ -519,17 +519,18 @@ function buildHeaderActions({
     btnLock.append(h('img', { class: 'btn-lock-icon', src: isLocked ? iconUrl('lock-open') : iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
   }
 
-  // Collapse button: shrink the form panel to a thin rail so the slide canvas
-  // gets the width (the rail re-expands it).
+  // Collapse button: shrink the inspector to a thin rail so the slide canvas
+  // gets the width (the rail re-expands it). The panel sits on the right, so
+  // it collapses rightward.
   let btnCollapse = null;
-  if (setFormCollapsed) {
+  if (setInspectorCollapsed) {
     btnCollapse = h('button', {
       class: 'btn btn-secondary btn-icon',
       type: 'button',
-      text: '◀',
-      title: t('editor.form.hidePanel', 'Hide edit panel'),
-      'aria-label': t('editor.form.hidePanel', 'Hide edit panel'),
-      onclick: () => setFormCollapsed(true),
+      text: '▶',
+      title: t('editor.inspector.hide', 'Hide inspector'),
+      'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+      onclick: () => setInspectorCollapsed(true),
     });
   }
 
@@ -565,7 +566,7 @@ export function createRerenderEditor({
   isAuthor,
   disabledSlideTypes,
   features,
-  setFormCollapsed,
+  setInspectorCollapsed,
   onOpenBulkEdit,
   // Bulk-edit ("Edit all text") mode: render ONLY the per-type content fields
   // into editorMount - no header/actions, no data-source bar, no duration, no
@@ -614,7 +615,7 @@ export function createRerenderEditor({
     const header = h('div', { class: 'row spread editor-form-header' });
     const headerLeft = h('div', { class: 'row editor-form-header-left' });
     headerLeft.append(
-      h('h2', { class: 'editor-form-title', text: t('editor.panel.title', 'Edit') }),
+      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') }),
       h('div', {
         class: 'pill',
         text: t(
@@ -668,7 +669,7 @@ export function createRerenderEditor({
       rerenderPreview,
       rerenderSlideList,
       isAuthor,
-      setFormCollapsed,
+      setInspectorCollapsed,
     });
     headerActionsDetach = headerActionsResult.detach;
     // "Edit all text": opens the roomy bulk-edit modal (all content fields +
