@@ -19,6 +19,7 @@ import { createPresenceUI } from './presence-ui.js';
  * @param {HTMLElement} opts.topbarEl
  * @param {HTMLElement} opts.listEl - slide list container
  * @param {HTMLElement} opts.thumb - preview slide container
+ * @param {HTMLElement} [opts.editorMount] - side-form root
  * @param {Function} opts.getSelectedSlideId
  * @returns {{ setViewSlide: Function, destroy: Function }}
  */
@@ -29,6 +30,7 @@ export function initEditorPresence({
   topbarEl,
   listEl,
   thumb,
+  editorMount,
   getSelectedSlideId,
 }) {
   const session = createPresenceSession({
@@ -42,6 +44,7 @@ export function initEditorPresence({
     topbarEl,
     listEl,
     thumb,
+    editorMount,
     getSelectedSlideId,
   });
 

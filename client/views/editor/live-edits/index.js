@@ -27,6 +27,7 @@
 import { Y } from '../../../vendor/collab.js';
 import { createDeckYdocCodec } from '../../../../shared/collab/deck-ydoc.js';
 import { createLiveDocBinder } from '../../../lib/collab/live-doc-binder.js';
+import { applyRemoteTextareaValue } from '../../../lib/collab/textarea-merge.js';
 import { toast } from '../../../lib/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 
@@ -115,11 +116,37 @@ export function initEditorLiveEdits({
   };
   editorMount?.addEventListener('focusout', onFormFocusOut);
 
+  // Remote notes changes are applied even while the local user is focused in
+  // the textarea, with the caret remapped across the change (plain text, so
+  // this is safe — unlike the contenteditable canvas fields). Skipping the
+  // focused case instead would make the field go permanently stale and turn
+  // the user's next keystroke into a whole-value overwrite that deletes the
+  // collaborator's text. Only an active IME composition defers the refresh
+  // (swapping the value mid-composition breaks the IME); it's flushed on
+  // compositionend.
+  let notesComposing = false;
+  let notesRefreshPending = false;
   const refreshNotesTa = () => {
-    if (!previewNotesTa || document.activeElement === previewNotesTa) return;
+    if (!previewNotesTa) return;
     const slide = (pres.slides || []).find((s) => s?.id === getSelectedSlideId?.());
-    if (slide) previewNotesTa.value = typeof slide.notes === 'string' ? slide.notes : '';
+    if (!slide) return;
+    const next = typeof slide.notes === 'string' ? slide.notes : '';
+    if (notesComposing) {
+      notesRefreshPending = previewNotesTa.value !== next;
+      return;
+    }
+    notesRefreshPending = false;
+    applyRemoteTextareaValue(previewNotesTa, next);
   };
+  const onNotesCompositionStart = () => {
+    notesComposing = true;
+  };
+  const onNotesCompositionEnd = () => {
+    notesComposing = false;
+    if (notesRefreshPending) refreshNotesTa();
+  };
+  previewNotesTa?.addEventListener('compositionstart', onNotesCompositionStart);
+  previewNotesTa?.addEventListener('compositionend', onNotesCompositionEnd);
 
   function flushRender() {
     if (renderTimer) {
@@ -165,6 +192,14 @@ export function initEditorLiveEdits({
     pendingRender.structure = pendingRender.structure || !!structureChanged;
     pendingRender.title = pendingRender.title || !!titleChanged;
     pendingRender.meta = pendingRender.meta || !!metaChanged;
+    // The notes textarea refreshes immediately (cheap, value-compared), not
+    // on the render debounce: a local keystroke inside that 120ms window
+    // would write the textarea's stale whole value back over the remote
+    // characters that already landed in `pres`.
+    const selectedId = getSelectedSlideId?.();
+    if (structureChanged || (selectedId && pendingRender.slideIds.has(selectedId))) {
+      refreshNotesTa();
+    }
     if (!renderTimer) renderTimer = setTimeout(flushRender, 120);
   }
 
@@ -284,6 +319,8 @@ export function initEditorLiveEdits({
       }
       offConnection?.();
       editorMount?.removeEventListener('focusout', onFormFocusOut);
+      previewNotesTa?.removeEventListener('compositionstart', onNotesCompositionStart);
+      previewNotesTa?.removeEventListener('compositionend', onNotesCompositionEnd);
       binder.destroy();
     },
   };

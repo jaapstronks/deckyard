@@ -78,11 +78,22 @@ these paths is untouched:
   keystroke overwrites remote characters in that one field — field-level
   last-writer-wins while focused. This is the accepted step-3 fallback; a
   true caret-mapped `Y.Text` ↔ contenteditable binding can replace it later
-  without touching the rest of the binder.
+  without touching the rest of the binder. **Exception — presenter notes**:
+  the notes textarea is plain text, so remote changes are merged in live
+  with the caret/selection remapped across the change
+  (`client/lib/collab/textarea-merge.js`) — two people can genuinely
+  co-type in the notes. The refresh bypasses the render debounce (a
+  keystroke inside that window would write the stale whole value back) and
+  is only deferred during an active IME composition. The markdown modal
+  stays whole-value: its Save writes the full text, so a collaborator's
+  edit made while the modal was open is overwritten (presence shows the
+  other editor's color on the modal, which is the guard against editing
+  the same field blind).
 - **Caret stability**: remote updates never interrupt local editing. The
   preview re-render already refuses to run during an inline edit; the binder
   additionally defers editor-form rebuilds while focus is inside the form
-  (flushed on focusout) and skips the notes textarea while it has focus.
+  (flushed on focusout). The notes textarea is updated in place with caret
+  remapping (see above) instead of being skipped while focused.
 - **Moves are clone-based**: Yjs has no move op, so a reorder is delete +
   insert of a deep clone (all languages preserved).
 - **Selected slide deleted remotely**: selection falls back to the first

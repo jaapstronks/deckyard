@@ -93,3 +93,33 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* ---- Remote focus on flat editing surfaces ----
+   Side-form field wrappers, the presenter-notes block and the inline
+   markdown modal are not transform-scaled, so a simple outline + name chip
+   (::after) works — no overlay geometry needed. */
+
+.collab-remote-focus {
+  position: relative;
+  outline: 2px solid var(--presence-color, #888);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.collab-remote-focus::after {
+  content: attr(data-collab-focus-name);
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  transform: translateY(-100%);
+  z-index: 30;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+}

@@ -95,7 +95,7 @@ export function createRenderField({
     fieldImages,
   } = fieldRenderers || {};
 
-  return function renderField(field) {
+  const renderFieldInner = function renderField(field) {
     if (!field) return null;
 
     if (field.type === 'string') {
@@ -636,5 +636,16 @@ export function createRenderField({
     }
 
     return null;
+  };
+
+  return function renderField(field) {
+    const el = renderFieldInner(field);
+    // Collab presence: every field wrapper carries its content key so focus
+    // inside the side form can be reported to and decorated for
+    // collaborators (see presence/presence-ui.js). Inert without collab.
+    if (el instanceof HTMLElement && field?.key) {
+      el.setAttribute('data-collab-field-key', String(field.key));
+    }
+    return el;
   };
 }

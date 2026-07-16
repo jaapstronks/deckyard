@@ -307,6 +307,9 @@ export function createPreviewPanel({
   });
   const previewNotesTa = h('textarea', {
     class: 'form-input preview-notes-input',
+    // Collab presence: focus in the notes is reported/decorated under the
+    // 'notes' field path (see presence/presence-ui.js). Inert without collab.
+    'data-collab-field-key': 'notes',
     placeholder:
       t(
         'editor.notes.placeholder',

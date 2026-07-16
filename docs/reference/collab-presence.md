@@ -14,7 +14,11 @@ sees:
 - **Slide-list indicators** — a colored dot on the slide each person is
   viewing; the dot gains a halo when they are actively editing a field there.
 - **Field-focus ring** — when someone edits a field on the slide you have
-  open, that field gets a colored ring + name label on the preview canvas.
+  open, that field gets a colored ring + name label: on the preview canvas
+  for WYSIWYG fields, and as an outline + name chip on flat surfaces — the
+  side-form field wrapper, the presenter-notes block and the inline markdown
+  modal (if you have the same field's modal open, your modal shows the other
+  editor's color).
 
 Presence disappears immediately on tab close/navigate (explicit teardown on
 `pagehide`) and within the awareness timeout on hard disconnects. No polling,
@@ -55,8 +59,15 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   from the peer list via MutationObservers rather than stored in the DOM.
   Focus rings/labels are absolutely positioned `.thumb` children at real
   screen pixels (the slide is transform-scaled; in-slide borders would be
-  microscopic — same rationale as the inline-edit overlay). Own focus is
-  reported from `focusin`/`focusout` on `[data-inline-field]` elements.
+  microscopic — same rationale as the inline-edit overlay); flat surfaces
+  (side-form wrappers, notes, markdown modal — they carry
+  `data-collab-field-key` with the same path vocabulary as
+  `data-inline-field`) get a CSS outline + name chip instead. Own focus is
+  **derived from `document.activeElement`** on document-level
+  `focusin`/`focusout` (and re-derived on every refresh as a backstop) —
+  never incrementally tracked per element, so a missed `focusout` (Safari
+  quirks, a re-render removing the focused node) cannot leave a stale
+  "still editing" ring behind on peers.
 - **Feature gating**: server `COLLAB_ENABLED` → `feature-flags.js` `collab` →
   client `features.collab`. The editor controller dynamic-imports the
   presence module only when the flag is on, so the yjs vendor bundle is never

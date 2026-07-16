@@ -37,6 +37,8 @@ function uniqueByEmail(peers) {
  * @param {HTMLElement} opts.topbarEl - editor topbar root
  * @param {HTMLElement} opts.listEl - slide list container (.slides-panel .list)
  * @param {HTMLElement} opts.thumb - preview slide container
+ * @param {HTMLElement} [opts.editorMount] - side-form root (re-applies form
+ *   field decorations after the form re-renders)
  * @param {Function} opts.getSelectedSlideId - () => current slide id
  * @returns {{ destroy: Function }}
  */
@@ -46,6 +48,7 @@ export function createPresenceUI({
   topbarEl,
   listEl,
   thumb,
+  editorMount,
   getSelectedSlideId,
 }) {
   const detachers = [];
@@ -141,28 +144,56 @@ export function createPresenceUI({
     }
   }
 
-  // Slide-list re-renders wipe the items; re-apply when that happens.
-  const listObserver = new MutationObserver(() => {
+  // Re-renders wipe the decorations; re-apply when that happens. The
+  // observers must ignore the decorations' own add/remove churn: their
+  // callbacks are delivered asynchronously (after `applying` has been reset),
+  // so without this filter a visible ring re-triggers refresh() from its own
+  // mutations in an endless rAF loop.
+  const isPresenceNode = (n) =>
+    n instanceof HTMLElement &&
+    (n.classList.contains('collab-focus-ring') ||
+      n.classList.contains('collab-focus-label') ||
+      n.classList.contains('collab-slide-presence'));
+  const onDomMutations = (mutations) => {
     if (applying) return;
-    scheduleRefresh();
-  });
+    for (const m of mutations) {
+      for (const n of [...m.addedNodes, ...m.removedNodes]) {
+        if (!isPresenceNode(n)) {
+          scheduleRefresh();
+          return;
+        }
+      }
+    }
+  };
+
+  // Slide-list re-renders wipe the items; re-apply when that happens.
+  const listObserver = new MutationObserver(onDomMutations);
   if (listEl) listObserver.observe(listEl, { childList: true });
   detachers.push(() => listObserver.disconnect());
 
   // ============================================================
-  // FIELD-FOCUS OUTLINES (preview canvas)
+  // FIELD-FOCUS OUTLINES (preview canvas + flat editing surfaces)
   // ============================================================
 
   // The slide renders at 1600x900 and is transform-scaled inside the thumb,
   // so any in-slide border would read as microscopic (same reason the
   // inline-edit affordances use an overlay). Focus rings + name labels are
   // therefore absolutely positioned thumb children at real screen pixels.
+  //
+  // Flat (unscaled) editing surfaces — side-form field wrappers, the
+  // presenter-notes textarea and the inline markdown modal — carry a
+  // `data-collab-field-key` attribute instead and are decorated with a CSS
+  // class (outline + name chip via ::after).
   function applyFieldOutlines(peers) {
     if (!thumb) return;
     applying = true;
     try {
       for (const el of thumb.querySelectorAll('.collab-focus-ring, .collab-focus-label'))
         el.remove();
+      for (const el of document.querySelectorAll('.collab-remote-focus')) {
+        el.classList.remove('collab-remote-focus');
+        delete el.dataset.collabFocusName;
+      }
 
       const selectedId = getSelectedSlideId?.();
       if (!selectedId) return;
@@ -171,6 +202,24 @@ export function createPresenceUI({
       for (const peer of peers) {
         const focus = peer.focus;
         if (!focus || focus.slideId !== selectedId || !focus.fieldPath) continue;
+
+        // Flat surfaces: mark every element bound to this field key (the
+        // side-form wrapper, the notes textarea's block, a matching open
+        // markdown modal). Inputs/textareas can't host ::after, so the
+        // decoration lands on their parent block.
+        for (const bound of document.querySelectorAll(
+          `[data-collab-field-key="${CSS.escape(focus.fieldPath)}"]`
+        )) {
+          const target =
+            bound instanceof HTMLTextAreaElement || bound instanceof HTMLInputElement
+              ? bound.parentElement
+              : bound;
+          if (!target) continue;
+          target.classList.add('collab-remote-focus');
+          target.style.setProperty('--presence-color', peer.user.color);
+          target.dataset.collabFocusName = peerName(peer);
+        }
+
         const el = thumb.querySelector(
           `[data-inline-field="${CSS.escape(focus.fieldPath)}"]`
         );
@@ -201,47 +250,69 @@ export function createPresenceUI({
   }
 
   // Preview re-renders wipe the slide DOM; re-apply outlines afterwards.
-  const thumbObserver = new MutationObserver(() => {
-    if (applying) return;
-    scheduleRefresh();
-  });
+  const thumbObserver = new MutationObserver(onDomMutations);
   if (thumb) thumbObserver.observe(thumb, { childList: true });
   detachers.push(() => thumbObserver.disconnect());
 
+  // Side-form rebuilds wipe the field-wrapper decorations the same way.
+  const formObserver = new MutationObserver(onDomMutations);
+  if (editorMount) formObserver.observe(editorMount, { childList: true });
+  detachers.push(() => formObserver.disconnect());
+
   // ============================================================
-  // OWN FOCUS REPORTING (inline-edit fields carry data-inline-field)
+  // OWN FOCUS REPORTING
   // ============================================================
 
+  // Every collaborative editing surface is recognizable from the DOM: canvas
+  // WYSIWYG fields carry `data-inline-field`, and side-form wrappers, the
+  // presenter-notes textarea and the inline markdown modal carry
+  // `data-collab-field-key` (same path vocabulary). The reported state is
+  // always DERIVED from document.activeElement — never incrementally tracked
+  // off individual focus events — so a missed focusout (Safari quirks,
+  // elements removed while focused by a re-render) can't leave a stale
+  // "still editing" ring behind on peers; refresh() re-derives as a backstop.
+  function ownFieldPath() {
+    const el = document.activeElement;
+    if (!el || el === document.body) return null;
+    const inline = el.closest?.('[data-inline-field]');
+    if (inline) return inline.getAttribute('data-inline-field');
+    const keyed = el.closest?.('[data-collab-field-key]');
+    if (keyed) return keyed.getAttribute('data-collab-field-key');
+    return null;
+  }
+
+  let reportedPath = null;
   let blurTimer = null;
-  const onFocusIn = (e) => {
-    const field = e.target?.closest?.('[data-inline-field]');
-    if (!field) return;
-    if (blurTimer) {
-      clearTimeout(blurTimer);
-      blurTimer = null;
+  function reportOwnFocus() {
+    const path = ownFieldPath();
+    if (path) {
+      if (blurTimer) {
+        clearTimeout(blurTimer);
+        blurTimer = null;
+      }
+      if (path !== reportedPath) {
+        reportedPath = path;
+        session.setFocusField(getSelectedSlideId?.() || null, path);
+      }
+      return;
     }
-    session.setFocusField(
-      getSelectedSlideId?.() || null,
-      field.getAttribute('data-inline-field')
-    );
-  };
-  const onFocusOut = () => {
-    // Small delay so hopping between fields doesn't flicker through null.
-    if (blurTimer) clearTimeout(blurTimer);
+    if (reportedPath === null || blurTimer) return;
+    // Small delay so hopping between fields doesn't flicker through null;
+    // the timer re-derives instead of blindly clearing.
     blurTimer = setTimeout(() => {
       blurTimer = null;
-      session.setFocusField(null, null);
+      const now = ownFieldPath();
+      reportedPath = now;
+      session.setFocusField(now ? getSelectedSlideId?.() || null : null, now);
     }, 150);
-  };
-  if (thumb) {
-    thumb.addEventListener('focusin', onFocusIn);
-    thumb.addEventListener('focusout', onFocusOut);
-    detachers.push(() => {
-      thumb.removeEventListener('focusin', onFocusIn);
-      thumb.removeEventListener('focusout', onFocusOut);
-      if (blurTimer) clearTimeout(blurTimer);
-    });
   }
+  document.addEventListener('focusin', reportOwnFocus);
+  document.addEventListener('focusout', reportOwnFocus);
+  detachers.push(() => {
+    document.removeEventListener('focusin', reportOwnFocus);
+    document.removeEventListener('focusout', reportOwnFocus);
+    if (blurTimer) clearTimeout(blurTimer);
+  });
 
   // ============================================================
   // REFRESH PIPELINE
@@ -258,6 +329,9 @@ export function createPresenceUI({
   }
 
   function refresh() {
+    // Self-heal the reported own-focus first: re-renders can remove a
+    // focused element without firing focusout.
+    reportOwnFocus();
     const peers = session.getPeers();
     renderStack(peers);
     applySlideIndicators(peers);
