@@ -44,7 +44,6 @@
   --ps-topbar-height: 56px;
   --ps-slides-collapsed-width: 64px;
   --ps-slides-expanded-width: 200px;
-  --ps-preview-collapsed-width: 92px;
   --ps-editor-content-max-width: 640px;
   /* Editor: preview column max width (expanded). Keep this modest so extra space
      benefits the edit pane once the slide preview is already "full size". */

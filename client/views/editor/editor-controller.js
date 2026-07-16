@@ -53,7 +53,7 @@ import { iconUrl } from '../../../shared/icon-names.js';
 import {
   createNotesSessionEnsurer,
   createSlidesCollapsedPreference,
-  createPreviewCollapsedPreference,
+  createCollapsedClassPreference,
 } from './bootstrap.js';
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
@@ -111,16 +111,11 @@ export async function createEditorController({
   });
   slidesCollapsedPref.loadInitial();
 
-  const previewCollapsedPref = createPreviewCollapsedPreference({
-    storageKey: 'ps:preview-collapsed',
-  });
-  previewCollapsedPref.loadInitial();
-
-  // Collapsible inspector rail (same mechanism as the preview preference):
+  // Collapsible inspector rail:
   // dismissing it gives the slide canvas the extra width. Every path that
   // flips this goes through setInspectorCollapsed below so the topbar toggle
   // stays in sync.
-  const inspectorCollapsedPref = createPreviewCollapsedPreference({
+  const inspectorCollapsedPref = createCollapsedClassPreference({
     storageKey: 'ps:inspector-collapsed',
     className: 'is-inspector-collapsed',
   });
@@ -785,9 +780,6 @@ export async function createEditorController({
     getSelectedSlideId: () => selectedSlideId,
     markDirty,
     nav,
-    isPreviewCollapsed: () =>
-      document.documentElement.classList.contains('is-preview-collapsed'),
-    setPreviewCollapsed: (collapsed) => previewCollapsedPref.set(collapsed),
     commentsApi,
     user,
     // Positioned-marker click: open the rail on the comments pane and
@@ -1380,7 +1372,6 @@ export async function createEditorController({
       if (uiRefreshTimer) clearTimeout(uiRefreshTimer);
       commentsPanel?.stopPolling?.();
       slidesCollapsedPref.clearClass();
-      previewCollapsedPref.clearClass();
       inspectorCollapsedPref.clearClass();
     } catch { /* ignore */ }
   };

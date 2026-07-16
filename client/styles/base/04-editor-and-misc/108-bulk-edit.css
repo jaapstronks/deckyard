@@ -3,9 +3,9 @@
    field styles; only the modal shell and the two-pane layout live here. */
 
 .modal.bulk-edit-modal {
-  width: min(1240px, calc(100vw - 48px));
+  width: min(1680px, calc(100vw - 48px));
   max-width: none;
-  height: min(780px, calc(100vh - 64px));
+  height: min(920px, calc(100vh - 64px));
   display: flex;
   flex-direction: column;
 }

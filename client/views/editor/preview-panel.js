@@ -1,5 +1,4 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
-import { createSlideNotesModal } from './modals/slide-notes-modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
 
@@ -17,8 +16,6 @@ export function createPreviewPanel({
   getSelectedSlideId,
   markDirty,
   nav,
-  isPreviewCollapsed,
-  setPreviewCollapsed,
   // Slide comments support
   commentsApi,
   user,
@@ -50,8 +47,6 @@ export function createPreviewPanel({
   });
   const openPreviewLightbox = () => previewLightbox.open();
 
-  let openNotesModal = () => {};
-
   const previewHeader = h('div', {
     class: 'row spread preview-panel-header',
   });
@@ -60,27 +55,6 @@ export function createPreviewPanel({
   previewHeader.append(
     h('h2', { text: t('editor.preview.title', 'Slide') })
   );
-
-  const updateCollapseBtn = (btn) => {
-    const collapsed = isPreviewCollapsed?.() ?? false;
-    // The panel is on the right: collapse moves right, expand moves left.
-    btn.textContent = collapsed ? '◀' : '▶';
-    btn.title = collapsed
-      ? t('editor.preview.expand', 'Expand slide panel')
-      : t('editor.preview.collapse', 'Collapse slide panel');
-  };
-  const collapseBtn = h('button', {
-    class: 'btn btn-secondary preview-collapse-btn',
-    text: isPreviewCollapsed?.() ? '◀' : '▶',
-    title: isPreviewCollapsed?.()
-      ? t('editor.preview.expand', 'Expand slide panel')
-      : t('editor.preview.collapse', 'Collapse slide panel'),
-    onclick: () => {
-      const next = !(isPreviewCollapsed?.() ?? false);
-      setPreviewCollapsed?.(next);
-      updateCollapseBtn(collapseBtn);
-    },
-  });
 
   const zoomIcon = h('img', {
     class: 'preview-zoom-icon',
@@ -93,18 +67,6 @@ export function createPreviewPanel({
     onclick: () => openPreviewLightbox(),
   });
   zoomBtn.append(zoomIcon);
-
-  const notesIcon = h('img', {
-    class: 'preview-notes-icon',
-    alt: '',
-    src: iconUrl('file-text'),
-  });
-  const notesBtn = h('button', {
-    class: 'preview-icon-btn preview-notes-btn',
-    title: t('editor.preview.editNotes', 'Edit presenter notes'),
-    onclick: () => openNotesModal(),
-  });
-  notesBtn.append(notesIcon);
 
   // Pin comment button (only shown if commentsApi is available)
   let pinCommentBtn = null;
@@ -129,7 +91,7 @@ export function createPreviewPanel({
   const headerActions = h('div', { class: 'row preview-panel-actions' });
   if (pinCommentBtn) headerActions.append(pinCommentBtn);
   if (pinModeHint) headerActions.append(pinModeHint);
-  headerActions.append(collapseBtn, notesBtn, zoomBtn);
+  headerActions.append(zoomBtn);
   previewHeader.append(headerActions);
   preview.append(previewHeader);
 
@@ -324,34 +286,6 @@ export function createPreviewPanel({
   });
   previewNotes.append(previewNotesHeader, previewNotesHelp, previewNotesTa);
 
-  const notesModal = createSlideNotesModal({
-    h,
-    root,
-    pres,
-    lockDocumentScroll,
-    openOverlayClosers,
-    getSelectedSlideId,
-    markDirty,
-    onNotesChanged: (v) => {
-      // Keep the inline textarea in sync even if edits happen via the modal
-      // (important: the controller only refreshes notes on slide change).
-      try {
-        previewNotesTa.value = String(v ?? '');
-      } catch {
-        // ignore
-      }
-    },
-  });
-  openNotesModal = () => notesModal.open();
-
-  const previewHelp = h('div', {
-    class: 'help preview-help',
-    text: t(
-      'editor.preview.liveWhileTyping',
-      'The slide updates live while you type.'
-    ),
-  });
-
   // The always-open slide comments section that used to sit here folded
   // into the inspector's comments pane (fase 4); the positioned markers on
   // the slide (above) are the remaining comments surface in this panel.
@@ -359,7 +293,7 @@ export function createPreviewPanel({
   const previewNotesWrap = h('div', { class: 'preview-notes-wrap' });
   previewNotesWrap.append(previewNotes);
 
-  previewScroll.append(previewStage, previewHelp);
+  previewScroll.append(previewStage);
   previewScroll.append(previewNotesWrap);
   preview.append(previewScroll);
 

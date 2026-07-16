@@ -226,7 +226,13 @@ export default {
     // Both layouts support up to 6: cards is 3 rows of 2; tiles is a single row
     // for 1-4 and wraps to two rows of three for 5-6 (see the tiles CSS).
     const maxCards = 6;
-    let count = Math.max(1, Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards));
+    // items[] is the source of truth when present: cardCount is a stale
+    // legacy mirror there (inline add/remove only mutates the array), so
+    // counting it would keep rendering an empty slot after a card removal.
+    const useItems = Array.isArray(content?.items) && content.items.length > 0;
+    let count = useItems
+      ? Math.max(1, Math.min(maxCards, content.items.length))
+      : Math.max(1, Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards));
     // A bottom subheading eats a row of vertical space in the cards layout, so
     // cap at 4 (2 rows) to keep everything on the slide.
     if (hasBottom && layout === 'cards') count = Math.min(count, 4);
@@ -238,8 +244,8 @@ export default {
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
 
     const resolved = resolveCards(content, count);
-    // Inline-edit paths must point at the data source resolveCards() used.
-    const useItems = Array.isArray(content?.items) && content.items.length > 0;
+    // Inline-edit paths must point at the data source resolveCards() used
+    // (useItems above).
     const cards = [];
     for (let i = 1; i <= maxCards; i += 1) {
       const isEmpty = i > count;
