@@ -1,30 +1,26 @@
 /**
- * Responsive drawer/sheet controls for narrow viewports.
+ * Responsive drawer controls for narrow viewports.
  *
  * - Slides drawer: slide-over panel from left at ≤820px
- * - Preview sheet: bottom sheet at ≤600px
  *
- * These elements are hidden via CSS at wider viewports.
+ * The old preview bottom sheet (≤600px) is gone: since the responsive
+ * convergence (editor-UI fase 4) the canvas is the main column at every
+ * width, with the inspector stacked below it, so there is nothing left to
+ * summon from a sheet. The toggle is hidden via CSS at wider viewports.
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { iconUrl } from '../../../shared/icon-names.js';
 
 const DRAWER_BREAKPOINT = 820;
-const SHEET_BREAKPOINT = 600;
 
 /**
- * Creates the responsive drawer/sheet toggle buttons and backdrops.
+ * Creates the responsive slides-drawer toggle button and backdrop.
  * Call detach() when the editor unmounts.
  */
 export function createResponsiveDrawers({ h, root } = {}) {
   if (!h || !root) throw new Error('createResponsiveDrawers: h and root required');
 
   const doc = document.documentElement;
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Slides Drawer (left panel, ≤820px)
-  // ─────────────────────────────────────────────────────────────────────────
 
   const slidesDrawerBackdrop = h('div', {
     class: 'slides-drawer-backdrop',
@@ -64,58 +60,13 @@ export function createResponsiveDrawers({ h, root } = {}) {
   slidesDrawerBackdrop.addEventListener('click', closeSlidesDrawer);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Preview Sheet (bottom panel, ≤600px)
-  // ─────────────────────────────────────────────────────────────────────────
-
-  const previewSheetBackdrop = h('div', {
-    class: 'preview-sheet-backdrop',
-    'aria-hidden': 'true',
-  });
-
-  const previewSheetToggle = h('button', {
-    class: 'preview-sheet-toggle',
-    type: 'button',
-    title: t('editor.previewSheet.open', 'Open preview'),
-    'aria-label': t('editor.previewSheet.open', 'Open preview'),
-  });
-  previewSheetToggle.append(h('img', { class: 'preview-sheet-icon', src: iconUrl('eye'), alt: '', 'aria-hidden': 'true' }));
-
-  const openPreviewSheet = () => {
-    doc.classList.add('is-preview-sheet-open');
-    previewSheetToggle.setAttribute('aria-expanded', 'true');
-    previewSheetToggle.title = t('editor.previewSheet.close', 'Close preview');
-  };
-
-  const closePreviewSheet = () => {
-    doc.classList.remove('is-preview-sheet-open');
-    previewSheetToggle.setAttribute('aria-expanded', 'false');
-    previewSheetToggle.title = t('editor.previewSheet.open', 'Open preview');
-  };
-
-  const togglePreviewSheet = () => {
-    if (doc.classList.contains('is-preview-sheet-open')) {
-      closePreviewSheet();
-    } else {
-      openPreviewSheet();
-    }
-  };
-
-  previewSheetToggle.addEventListener('click', togglePreviewSheet);
-  previewSheetBackdrop.addEventListener('click', closePreviewSheet);
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Keyboard handling (Escape closes drawers/sheets)
+  // Keyboard handling (Escape closes the drawer)
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleKeydown = (e) => {
-    if (e.key === 'Escape') {
-      if (doc.classList.contains('is-slides-drawer-open')) {
-        closeSlidesDrawer();
-        e.preventDefault();
-      } else if (doc.classList.contains('is-preview-sheet-open')) {
-        closePreviewSheet();
-        e.preventDefault();
-      }
+    if (e.key === 'Escape' && doc.classList.contains('is-slides-drawer-open')) {
+      closeSlidesDrawer();
+      e.preventDefault();
     }
   };
 
@@ -140,47 +91,31 @@ export function createResponsiveDrawers({ h, root } = {}) {
   document.addEventListener('click', handleSlideClick);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Window resize: close drawers if viewport becomes wide enough
+  // Window resize: close the drawer if the viewport becomes wide enough
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleResize = () => {
     if (window.innerWidth > DRAWER_BREAKPOINT) {
       closeSlidesDrawer();
     }
-    if (window.innerWidth > SHEET_BREAKPOINT) {
-      closePreviewSheet();
-    }
   };
 
   window.addEventListener('resize', handleResize);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Mount elements
-  // ─────────────────────────────────────────────────────────────────────────
-
-  // Insert backdrops and toggles into the root (editor shell)
+  // Insert backdrop and toggle into the root (editor shell)
   root.append(slidesDrawerBackdrop, slidesDrawerToggle);
-  root.append(previewSheetBackdrop, previewSheetToggle);
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Cleanup
-  // ─────────────────────────────────────────────────────────────────────────
 
   const detach = () => {
     document.removeEventListener('keydown', handleKeydown);
     document.removeEventListener('click', handleSlideClick);
     window.removeEventListener('resize', handleResize);
 
-    // Remove classes in case they're still applied
+    // Remove class in case it's still applied
     closeSlidesDrawer();
-    closePreviewSheet();
 
-    // Remove elements
     try {
       slidesDrawerBackdrop.remove();
       slidesDrawerToggle.remove();
-      previewSheetBackdrop.remove();
-      previewSheetToggle.remove();
     } catch {
       // ignore
     }
@@ -191,8 +126,5 @@ export function createResponsiveDrawers({ h, root } = {}) {
     openSlidesDrawer,
     closeSlidesDrawer,
     toggleSlidesDrawer,
-    openPreviewSheet,
-    closePreviewSheet,
-    togglePreviewSheet,
   };
 }

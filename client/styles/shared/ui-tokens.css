@@ -52,7 +52,6 @@
   /* Responsive: slides drawer width for narrow viewports (≤820px) */
   --ps-slides-drawer-width: min(320px, 85vw);
   /* Responsive: preview sheet height for mobile viewports (≤600px) */
-  --ps-preview-sheet-height: 50vh;
 
   /* App UI Tokens (Light Mode) */
   color-scheme: light;
