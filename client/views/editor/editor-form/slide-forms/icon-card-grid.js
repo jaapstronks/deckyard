@@ -10,7 +10,13 @@ const iconCardsState = createCollapsedState('iconcard');
 /**
  * Sync items[] back to numbered fields for backward compatibility.
  * This ensures older code paths and the renderer can use either format.
+ * Exported for the phase-3 inspector, whose per-card icon/link controls
+ * write items[] and must keep the numbered mirror in sync like the form.
  */
+export function syncIconCardsToNumbered(slide) {
+  syncToNumbered(slide);
+}
+
 function syncToNumbered(slide) {
   const items = slide.content.items || [];
   slide.content.cardCount = String(items.length);

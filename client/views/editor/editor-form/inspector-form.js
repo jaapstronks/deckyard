@@ -1,0 +1,232 @@
+import { t } from '../../../lib/ui-i18n.js';
+import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
+import { renderImagePositionPicker } from './image-position-picker.js';
+import { fieldCardLink } from '../fields/card-link-field.js';
+import { renderChartConfigControls } from './slide-forms/chart.js';
+import { syncIconCardsToNumbered } from './slide-forms/icon-card-grid.js';
+import {
+  appendImageFocusPicker,
+  appendImageZoomSettings,
+  appendImageTextLayoutOptions,
+} from './slide-forms/image-slide.js';
+
+/**
+ * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
+ *
+ * This map mirrors the per-type coverage audit in
+ * docs/plans/editor-ui-direction.md ("Phase 3 gate 2"): the inspector renders
+ * ONLY Background, Accessibility and these settings/design fields. Content
+ * fields live on the slide itself (wysiwyg) and - all of them, by
+ * construction - in the "Edit all text" bulk modal. A key may only be dropped
+ * from this map when its replacement surface has shipped (parity invariant).
+ *
+ * Documented deviations from the audit table's shorthand (see the plan doc):
+ * - table colCount, team-cards cardCount and logo-wall logoCount are derived
+ *   mirrors managed by their editors/arrays and were never rendered as form
+ *   controls; they are not resurrected here.
+ * - gallery keeps its layout enum (missing from the audit's keeps column;
+ *   enums are inspector material by definition).
+ *
+ * Keys handled by the shared Background/Accessibility sections are not listed.
+ */
+const INSPECTOR_KEEPS = {
+  'title-slide': ['logoCorner'],
+  'chapter-title-slide': ['layout'],
+  'content-slide': ['layout', 'density'],
+  'table-slide': ['headerRow', 'tableStyle', 'animateByCell'],
+  'list-slide': ['variant', 'layout', 'density'],
+  'lijstje-slide': ['variant', 'layout', 'density'],
+  'kpi-metrics-slide': ['accent', 'countUp'],
+  'split-partner-title-slide': [],
+  'image-text-slide': ['imageRole', 'density', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
+  'video-slide': ['autoplay'],
+  'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
+  'logo-wall-slide': [],
+  'card-stack-slide': ['cardCount'],
+  'icon-card-grid-slide': ['layout'],
+  'payoff-slide': [],
+  'quote-slide': [],
+  'image-slide': ['imageRole', 'layout', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
+  'embed-slide': ['aspectRatio', 'sandbox'],
+  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
+  'poll-slide': ['onClose'],
+  'likert-slide': ['onClose'],
+  'likert-slider-slide': [],
+  'feedback-slide': [],
+  'lead-capture-slide': [],
+  'follow-invite-slide': [],
+  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode'],
+  'text-blocks-slide': [],
+  'content-columns-slide': ['columnCount'],
+  'comparison-slide': [],
+  'process-slide': ['direction'],
+  'timeline-slide': [],
+  'matrix-slide': [],
+  'funnel-slide': [],
+  'pyramid-slide': [],
+  'cycle-slide': [],
+  'gallery-slide': ['layout'],
+  'freeform-slide': ['snapToGrid'],
+  'custom-html-slide': [],
+  'end-slide': [],
+};
+
+/**
+ * Resolve the set of field keys the inspector may render for a slide type.
+ *
+ * Unknown (custom/fork) types are not in the audit, so they fall back
+ * conservatively: every schema field EXCEPT the ones with proven wysiwyg
+ * coverage (getInlineFormTextKeys) stays in the inspector - dropping more
+ * would risk orphaning a field the fork has no other surface for.
+ *
+ * @param {string} type
+ * @param {Object} def - Slide type definition (fields[])
+ * @returns {Set<string>} keys allowed in the inspector (excl. bg/a11y routing)
+ */
+export function getInspectorKeepKeys(type, def) {
+  const keeps = INSPECTOR_KEEPS[type];
+  if (Array.isArray(keeps)) return new Set(keeps);
+  const inlineCovered = new Set(getInlineFormTextKeys(type, def));
+  const all = (def?.fields || []).map((f) => f.key).filter((k) => !inlineCovered.has(k));
+  return new Set(all);
+}
+
+/**
+ * Per-type inspector widgets that a flat keeps-list cannot express: the chart
+ * data editor, per-card icon/link controls, focus pickers, per-column image
+ * settings. Runs BEFORE the generic keeps loop; anything rendered here marks
+ * its keys used so the loop skips them.
+ *
+ * @param {Object} ctx - Same context shape as renderSlideFormByType
+ */
+export function renderInspectorExtrasByType(ctx) {
+  const { h, form, slide, add, used, fieldByKey, renderField, deckSlides,
+    fieldRenderers, markDirty, rerenderEditor, scheduleUiRefresh } = ctx;
+  const { fieldGrid } = fieldRenderers || {};
+
+  switch (slide.type) {
+    case 'chart-slide':
+      // chartType + data editor + per-type display toggles, exactly like the
+      // form's config half (axis/series labels stay bulk-modal-only).
+      renderChartConfigControls({
+        h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
+        markDirty, rerenderEditor, scheduleUiRefresh,
+      });
+      return;
+
+    case 'image-slide':
+      add('imageRole');
+      add('layout');
+      appendImageFocusPicker({ h, form, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
+      appendImageZoomSettings({ h, form, slide, used, fieldByKey, renderField });
+      return;
+
+    case 'image-text-slide':
+      add('imageRole');
+      add('density');
+      appendImageTextLayoutOptions({
+        h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
+      });
+      return;
+
+    case 'icon-card-grid-slide': {
+      add('layout');
+      // Per-card icon picker + link: settings the wysiwyg deliberately never
+      // covers. Card texts and add/remove live on the slide and in the bulk
+      // modal; this list only carries the two config controls per card.
+      const items = Array.isArray(slide.content?.items) ? slide.content.items : [];
+      if (!items.length) return;
+      const wrap = h('div', { class: 'stack' });
+      wrap.append(h('div', { class: 'field-label', text: t('editor.inspector.cardsConfig', 'Card icons & links') }));
+      const { fieldIconPicker } = fieldRenderers || {};
+      items.forEach((item, idx) => {
+        const group = h('div', { class: 'stack card-group' });
+        group.append(h('div', {
+          class: 'help',
+          text: `${idx + 1}. ${String(item?.title || '').trim() || t('editor.inspector.cardUntitled', 'Untitled card')}`,
+        }));
+        if (typeof fieldIconPicker === 'function') {
+          group.append(fieldIconPicker(
+            t('editor.cards.icon', 'Icon'),
+            item.icon || '',
+            (v) => {
+              items[idx].icon = v;
+              syncIconCardsToNumbered(slide);
+              markDirty?.();
+              scheduleUiRefresh?.();
+            },
+            {}
+          ));
+        }
+        group.append(fieldCardLink({
+          value: item.link || '',
+          slides: deckSlides,
+          onChange: (v) => {
+            items[idx].link = v;
+            syncIconCardsToNumbered(slide);
+            markDirty?.();
+            scheduleUiRefresh?.();
+          },
+          help: t(
+            'editor.cards.linkHelp2',
+            'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
+          ),
+        }));
+        wrap.append(group);
+      });
+      form.append(wrap);
+      return;
+    }
+
+    case 'content-columns-slide': {
+      add('columnCount');
+      // Per-column image settings (fit + focus) and block count: numbered
+      // schema, so these are plain fields; the column texts live in the bulk
+      // modal. Only active columns render.
+      const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
+      for (let n = 1; n <= count; n += 1) {
+        const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
+        const blockCountField = fieldByKey.get(`col${n}BlockCount`);
+        if (!imgUrl && !blockCountField) continue;
+        const group = h('div', { class: 'stack' });
+        group.append(h('div', {
+          class: 'field-label',
+          text: t('editor.inspector.column', 'Column {n}', { n: String(n) }),
+        }));
+        if (imgUrl) {
+          used.add(`col${n}ImageFocusX`);
+          used.add(`col${n}ImageFocusY`);
+          const fitField = fieldByKey.get(`col${n}ImageFit`);
+          if (fitField) {
+            used.add(`col${n}ImageFit`);
+            const fitEl = renderField(fitField);
+            if (fitEl) group.append(fitEl);
+          }
+          const picker = renderImagePositionPicker({
+            h,
+            mode: 'cover',
+            imageUrl: imgUrl,
+            focusX: slide.content?.[`col${n}ImageFocusX`] ?? 50,
+            focusY: slide.content?.[`col${n}ImageFocusY`] ?? 50,
+            onChange: ({ focusX, focusY } = {}) => {
+              slide.content[`col${n}ImageFocusX`] = focusX;
+              slide.content[`col${n}ImageFocusY`] = focusY;
+              markDirty?.();
+              scheduleUiRefresh?.();
+            },
+          });
+          if (picker) group.append(picker);
+        }
+        if (blockCountField) {
+          used.add(`col${n}BlockCount`);
+          const bcEl = renderField(blockCountField);
+          if (bcEl) group.append(bcEl);
+        }
+        if (group.childNodes.length > 1) form.append(group);
+      }
+      return;
+    }
+
+    default:
+  }
+}
