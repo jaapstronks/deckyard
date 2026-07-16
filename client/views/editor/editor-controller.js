@@ -790,6 +790,7 @@ export async function createEditorController({
           topbarEl: topbarApi.topbarEl,
           listEl: slideListEl,
           thumb,
+          editorMount,
           getSelectedSlideId: () => selectedSlideId,
         });
         presenceHandle.setViewSlide(selectedSlideId);

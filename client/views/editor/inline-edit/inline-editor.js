@@ -262,6 +262,10 @@ export function createInlineEditor({
       },
       { maxLength: meta?.maxLength, required: !!meta?.required, showHeading: true }
     );
+    // Collab presence: while this modal is open, focus inside it reports the
+    // edited field's path, so collaborators see a ring on the matching canvas
+    // field (and on their own modal if they have the same field open).
+    editorEl.setAttribute('data-collab-field-key', String(path));
 
     const save = () => {
       if (latest !== raw) {
