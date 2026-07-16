@@ -11,14 +11,24 @@ sees:
 
 - **Topbar avatar stack** — avatars (with a per-user presence color ring) of
   the other people currently in the deck; collapses to `+N` beyond 5.
-- **Slide-list indicators** — a colored dot on the slide each person is
-  viewing; the dot gains a halo when they are actively editing a field there.
+- **Slide-list indicators** — a name label + colored dot on the slide each
+  person is viewing; the dot gains a halo when they are actively editing a
+  field there. When a person moves to another slide, their label glides from
+  the old thumb to the new one (a transform transition on one persistent
+  element per peer; disabled under `prefers-reduced-motion`). A user with
+  multiple connections gets one indicator, preferring the connection that is
+  actively editing.
 - **Field-focus ring** — when someone edits a field on the slide you have
   open, that field gets a colored ring + name label: on the preview canvas
-  for WYSIWYG fields, and as an outline + name chip on flat surfaces — the
-  side-form field wrapper, the presenter-notes block and the inline markdown
-  modal (if you have the same field's modal open, your modal shows the other
-  editor's color).
+  for WYSIWYG fields (label floats above the ring, pinned with a connector
+  line), and as an outline + name chip inside the top-right corner on flat
+  surfaces — the side-form field wrapper, the presenter-notes block and the
+  inline markdown modal (if you have the same field's modal open, your modal
+  shows the other editor's color). If the focused field has no *visible*
+  local counterpart — a freshly spawned field/item whose content hasn't
+  synced here, or a form field hidden in a collapsed group — a fallback name
+  chip appears in the slide's top-right corner instead, so editing presence
+  is never invisible.
 
 Presence disappears immediately on tab close/navigate (explicit teardown on
 `pagehide`) and within the awareness timeout on hard disconnects. No polling,

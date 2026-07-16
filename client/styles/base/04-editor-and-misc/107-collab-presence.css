@@ -39,20 +39,50 @@
   font-weight: 600;
 }
 
-/* ---- Slide list indicators ---- */
+/* ---- Slide list indicators ----
+   One persistent floating element per peer (name label + dot), a listEl
+   child positioned over the slide items with a transform. Moving a peer to
+   another slide transitions the transform, so the label glides from the old
+   thumb to the new one (positioning in presence-ui.js). */
 
 .slide-item {
   position: relative;
 }
 
-.collab-slide-presence {
+.collab-list-peer {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0;
+  left: 0;
   display: inline-flex;
-  gap: 3px;
-  pointer-events: auto;
-  z-index: 2;
+  align-items: center;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1),
+    opacity 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collab-list-peer {
+    transition: none;
+  }
+}
+
+.collab-list-peer-name {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .collab-slide-dot {
@@ -105,6 +135,13 @@
   width: 2px;
   height: 7px;
   background: var(--presence-color, #888);
+}
+
+/* Slide-corner fallback chip: shown when a peer edits a field that has no
+   local element yet (freshly spawned field/item whose content hasn't synced
+   here) — not pinned to anything, so no connector line. */
+.collab-focus-label.is-fallback::after {
+  display: none;
 }
 
 /* ---- Remote focus on flat editing surfaces ----
