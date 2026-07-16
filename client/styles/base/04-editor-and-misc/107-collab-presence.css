@@ -106,12 +106,15 @@
   border-radius: 4px;
 }
 
+/* The chip sits INSIDE the top-right corner: these surfaces live in
+   scrollable panels (notes block, side form), so anything hung above the
+   element's top edge gets clipped once the user scrolls that edge to the
+   panel top. */
 .collab-remote-focus::after {
   content: attr(data-collab-focus-name);
   position: absolute;
-  top: -5px;
-  right: -5px;
-  transform: translateY(-100%);
+  top: 4px;
+  right: 4px;
   z-index: 30;
   padding: 1px 6px;
   border-radius: 3px;
