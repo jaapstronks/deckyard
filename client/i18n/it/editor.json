@@ -1,5 +1,10 @@
 {
-  "editor.panel.title": "Modifica",
+  "editor.inspector.title": "Ispettore",
+  "editor.inspector.hide": "Nascondi ispettore",
+  "editor.inspector.toggle": "Mostra o nascondi l'ispettore",
+  "editor.inspector.cardsConfig": "Icone e link delle schede",
+  "editor.inspector.cardUntitled": "Scheda senza titolo",
+  "editor.inspector.column": "Colonna {n}",
   "comments.addPlaceholder": "Aggiungi un commento...",
   "comments.close": "Chiudi",
   "comments.delete": "Elimina",

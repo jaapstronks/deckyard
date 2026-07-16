@@ -1,5 +1,10 @@
 {
-  "editor.panel.title": "Edytuj",
+  "editor.inspector.title": "Inspektor",
+  "editor.inspector.hide": "Ukryj inspektora",
+  "editor.inspector.toggle": "Pokaż lub ukryj inspektora",
+  "editor.inspector.cardsConfig": "Ikony i linki kart",
+  "editor.inspector.cardUntitled": "Karta bez tytułu",
+  "editor.inspector.column": "Kolumna {n}",
   "comments.addPlaceholder": "Dodaj komentarz...",
   "comments.close": "Zamknij",
   "comments.delete": "Usuń",

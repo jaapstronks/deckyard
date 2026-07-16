@@ -2,19 +2,16 @@
  * Comments panel styles for collaborative annotations.
  */
 
+/* Mounted as an inspector pane (fase 4): fills the rail instead of being a
+   fixed right slide-over. Width and background come from the inspector
+   panel; this element only stacks its own header/filter/list/input. */
 .comments-panel {
-  position: fixed;
-  right: 0;
-  top: var(--topbar-height, 56px);
-  bottom: 0;
-  width: 320px;
-  max-width: 100vw;
-  background: var(--surface-color, #fff);
-  border-left: 1px solid var(--border-color, #e0e0e0);
   display: flex;
   flex-direction: column;
-  z-index: 100;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  background: none;
 }
 
 .comments-panel-header {
@@ -350,11 +347,11 @@
   font-size: 13px;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 480px) {
-  .comments-panel {
-    width: 100%;
-  }
+/* Marker-click highlight: flash the targeted thread in the pane list. */
+.comment-thread.is-highlighted {
+  background: hsl(var(--app-accent-primary) / 0.1);
+  border-radius: var(--ps-radius-md, 8px);
+  transition: background 0.4s ease;
 }
 
 /* ============================================================
