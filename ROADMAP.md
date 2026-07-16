@@ -39,15 +39,19 @@ self-contained project.
    One Share dialog (live audience / link / workspace), guard the
    presenter-control link, reconcile the permission model.
 5. **Editor UI direction: wysiwyg-first editing** —
-   `docs/plans/editor-ui-direction.md` — decided 2026-07-16. Four phases,
-   each shippable alone: (1) WYSIWYG parity (blocks overhaul, inline
-   reorder, empty-slot adds); (2) the form column becomes a right-side
-   **Inspector** — slides | canvas | inspector, toggleable from the topbar,
-   settings only (background / layout / accessibility, no more content
-   text fields); (3) an "Edit all text" bulk modal (fields left, live
-   preview right); (4) responsive convergence (2 columns under a
-   breakpoint) and comments as a second inspector pane. Comments
-   resolve/inbox semantics stay a separate parked plan.
+   `docs/plans/editor-ui-direction.md` — decided 2026-07-16, re-sequenced
+   the same day; this track now also absorbs the formerly separate
+   WYSIWYG-overhaul and inline-descriptor-seam items. Four phases, each
+   shippable alone, in this order: (1) WYSIWYG parity (blocks overhaul,
+   inline reorder, empty-slot adds, descriptor seam for custom types);
+   (2) an "Edit all text" bulk surface (fields left, live preview right) —
+   the non-wysiwyg mode for everything inline editing can't cover;
+   (3) only then the form column becomes a right-side **Inspector** —
+   slides | canvas | inspector, toggleable from the topbar, settings only
+   (background / layout / accessibility, no more content text fields);
+   (4) responsive convergence (2 columns under a breakpoint) and comments
+   as a second inspector pane. Comments resolve/inbox semantics stay a
+   separate parked plan.
 
 ## Next — existing feature plans
 
