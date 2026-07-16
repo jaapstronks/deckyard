@@ -1,0 +1,95 @@
+/* Bulk-edit modal ("Edit all text"): all content fields of the slide on the
+   left, live preview on the right. The form pane reuses the regular editor
+   field styles; only the modal shell and the two-pane layout live here. */
+
+.modal.bulk-edit-modal {
+  width: min(1240px, calc(100vw - 48px));
+  max-width: none;
+  height: min(780px, calc(100vh - 64px));
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-edit-modal .modal-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* The base .modal-content caps itself at 70vh and scrolls; here the modal
+     shell owns the height and only the form pane scrolls. */
+  max-height: none;
+  overflow: hidden;
+}
+
+.bulk-edit-hint {
+  margin: 0 0 10px;
+}
+
+.bulk-edit-nav {
+  align-items: center;
+  gap: 8px;
+}
+
+.bulk-edit-counter {
+  white-space: nowrap;
+}
+
+/* Locked slide (author lock or concurrent editor): the shell-scoped
+   .is-slide-locked rules in 93-read-only-mode.css can't reach this modal,
+   so it carries its own gating. Nav and Close stay interactive. */
+.bulk-edit-locked-note {
+  margin: 0 0 10px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.2);
+  color: hsl(var(--app-text-primary));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bulk-edit-modal.is-locked .bulk-edit-form {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.bulk-edit-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 5fr) minmax(0, 7fr);
+  gap: 20px;
+}
+
+.bulk-edit-form {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.bulk-edit-preview {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-subtle, 0 0% 96%));
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* The thumb is scaled by attachThumbScaleContain via --thumb-scale. */
+.bulk-edit-thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Single column on narrow viewports: preview above, fields below. */
+@media (max-width: 860px) {
+  .bulk-edit-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(160px, 2fr) 3fr;
+  }
+  .bulk-edit-preview {
+    order: -1;
+  }
+}

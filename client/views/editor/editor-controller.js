@@ -31,6 +31,7 @@ import { createImagePickerSeam } from './media/picker-provider.js';
 import { createFieldRenderers } from './fields.js';
 import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
+import { createBulkEditModal } from './bulk-edit-modal.js';
 import { createPreviewPanel } from './preview-panel.js';
 import { createEditorPanelResize } from './editor-panel-resize.js';
 import { createInlineEditor } from './inline-edit/inline-editor.js';
@@ -1121,7 +1122,9 @@ export async function createEditorController({
   // EDITOR FORM
   // ============================================================
 
-  rerenderEditor = createRerenderEditor({
+  // Shared between the panel form and the bulk-edit modal (which runs a second
+  // createRerenderEditor instance in contentOnly mode on its own mount).
+  const editorFormDeps = {
     h,
     editorMount,
     pres,
@@ -1148,6 +1151,45 @@ export async function createEditorController({
     disabledSlideTypes,
     features,
     setFormCollapsed: (v) => formCollapsedPref.set(v),
+  };
+
+  const bulkEditModal = createBulkEditModal({
+    h,
+    pres,
+    getSelectedSlideId: () => selectedSlideId,
+    setSelectedSlideId: setSelectedSlideIdWithLock,
+    getTheme: () => theme,
+    // The shell-scoped locked-slide CSS can't reach the modal (it mounts on
+    // document.body), so it asks for the lock state and gates itself.
+    getSlideLockKind: (slideId) => {
+      if (isSlideAuthorLockedForUser(slideId)) return 'author';
+      if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId)) return 'other';
+      return null;
+    },
+    openOverlayClosers,
+    // Resync the panel form after the modal closes: the modal's structural
+    // edits rerender its own form instance, not the panel behind it.
+    onClosed: () => rerenderEditor(),
+    createFormRenderer: (formMount, refreshModalPreview) =>
+      createRerenderEditor({
+        ...editorFormDeps,
+        editorMount: formMount,
+        contentOnly: true,
+        // Keep the main canvas live too, and repaint the modal preview.
+        scheduleUiRefresh: () => {
+          scheduleUiRefresh();
+          refreshModalPreview();
+        },
+        rerenderPreview: () => {
+          rerenderPreview();
+          refreshModalPreview();
+        },
+      }),
+  });
+
+  rerenderEditor = createRerenderEditor({
+    ...editorFormDeps,
+    onOpenBulkEdit: () => bulkEditModal.open(),
   });
 
   // ============================================================
