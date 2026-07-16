@@ -34,6 +34,7 @@ import { createRerenderEditor } from './editor-form.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
 import { createPreviewPanel } from './preview-panel.js';
 import { createInspectorResize } from './inspector-resize.js';
+import { createInspectorPanes } from './inspector-panes.js';
 import { createInlineEditor } from './inline-edit/inline-editor.js';
 import { createEditorTopbar } from './topbar.js';
 import { createSlidesPanel } from './slides-panel.js';
@@ -115,13 +116,25 @@ export async function createEditorController({
   });
   previewCollapsedPref.loadInitial();
 
-  // Collapsible inspector panel (same mechanism as the preview preference):
-  // collapsing it gives the slide canvas the extra width.
+  // Collapsible inspector rail (same mechanism as the preview preference):
+  // dismissing it gives the slide canvas the extra width. Every path that
+  // flips this goes through setInspectorCollapsed below so the topbar toggle
+  // stays in sync.
   const inspectorCollapsedPref = createPreviewCollapsedPreference({
     storageKey: 'ps:inspector-collapsed',
     className: 'is-inspector-collapsed',
   });
   inspectorCollapsedPref.loadInitial();
+
+  const isInspectorCollapsed = () =>
+    document.documentElement.classList.contains('is-inspector-collapsed');
+
+  // Late-bound: reassigned once the topbar exists.
+  let syncInspectorTopbar = () => {};
+  const setInspectorCollapsed = (v) => {
+    inspectorCollapsedPref.set(v);
+    syncInspectorTopbar();
+  };
 
   // ============================================================
   // LOAD MODEL
@@ -614,6 +627,8 @@ export async function createEditorController({
       cleanup.register('presenceLock', detachPresenceLock);
     },
     onToggleComments: () => commentsPanel?.toggle?.(),
+    // Rail toggle: dereferenced at click time (inspectorPanes is built below).
+    onToggleInspector: () => inspectorPanes.toggle('settings'),
     setCommentsBadge: (fn) => { setCommentsBadgeFn = fn; },
     setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
     onOpenOverview: openDeckOverview,
@@ -671,6 +686,12 @@ export async function createEditorController({
     syncTopbarUndo();
   }
 
+  // Reflect the rail state on the topbar "i" toggle (initial + every change).
+  if (typeof topbarApi.setInspectorOpen === 'function') {
+    syncInspectorTopbar = () => topbarApi.setInspectorOpen(!isInspectorCollapsed());
+    syncInspectorTopbar();
+  }
+
   // ============================================================
   // SLIDES PANEL
   // ============================================================
@@ -712,37 +733,29 @@ export async function createEditorController({
   const { leftEl: left, slideListEl, openSlideTypeModal, openSlideLibraryModal } = slidesPanel;
 
   // ============================================================
-  // INSPECTOR PANEL
+  // INSPECTOR PANEL (rail with swappable panes)
   // ============================================================
 
   const inspectorPanel = h('div', { class: 'panel inspector-panel' });
+
+  // Pane host: settings now; the comments pane slots in here in phase 4.
+  const inspectorPanes = createInspectorPanes({
+    panelEl: inspectorPanel,
+    setCollapsed: setInspectorCollapsed,
+    isCollapsed: isInspectorCollapsed,
+  });
+
   const editorMount = h('div', { class: 'editor-mount' });
   const inspectorScroll = h('div', { class: 'panel-scroll' });
   inspectorScroll.append(editorMount);
-  inspectorPanel.append(inspectorScroll);
-
-  // Thin expand rail, shown only while the inspector is collapsed.
-  const inspectorExpandRail = h('button', {
-    class: 'inspector-expand-rail',
-    type: 'button',
-    title: t('editor.inspector.show', 'Open inspector'),
-    onclick: () => inspectorCollapsedPref.set(false),
-  });
-  inspectorExpandRail.append(
-    h('span', { text: '◀', 'aria-hidden': 'true' }),
-    h('span', {
-      class: 'inspector-expand-rail-label',
-      text: t('editor.inspector.title', 'Inspector'),
-    })
-  );
-  inspectorPanel.append(inspectorExpandRail);
+  const settingsPane = h('div', {}, [inspectorScroll]);
+  inspectorPanes.registerPane('settings', settingsPane);
 
   // Drag-to-resize handle on the left edge: trades inspector width for canvas width.
   const inspectorResize = createInspectorResize({
     h,
     panelEl: inspectorPanel,
-    isCollapsed: () =>
-      document.documentElement.classList.contains('is-inspector-collapsed'),
+    isCollapsed: isInspectorCollapsed,
   });
   inspectorPanel.append(inspectorResize.handleEl);
 
@@ -1166,7 +1179,7 @@ export async function createEditorController({
     isAuthor: isAuthor(),
     disabledSlideTypes,
     features,
-    setInspectorCollapsed: (v) => inspectorCollapsedPref.set(v),
+    setInspectorCollapsed,
   };
 
   const bulkEditModal = createBulkEditModal({

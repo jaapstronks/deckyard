@@ -36,19 +36,23 @@
     var(--ps-preview-collapsed-width) minmax(320px, 1fr);
 }
 
-/* Collapsed inspector: it shrinks to a thin expand rail and the canvas
-   takes everything. Wins over preview-collapsed (the canvas is the only
-   content left, so it must stay visible). */
+/* Dismissed inspector rail: the panel leaves the grid entirely and the
+   canvas gets all the space (the topbar "i" toggle brings it back). Wins
+   over preview-collapsed (the canvas is the only content left, so it must
+   stay visible). */
 .is-editor.is-inspector-collapsed .layout,
 .is-editor.is-preview-collapsed.is-inspector-collapsed .layout {
   grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
-    minmax(320px, 1fr) var(--ps-inspector-collapsed-width, 46px);
+    minmax(320px, 1fr);
 }
 
 .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
 .is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
-  grid-template-columns: var(--ps-slides-collapsed-width)
-    minmax(320px, 1fr) var(--ps-inspector-collapsed-width, 46px);
+  grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr);
+}
+
+.is-editor.is-inspector-collapsed .inspector-panel {
+  display: none;
 }
 
 /* Editor panels (columns) */
@@ -151,11 +155,8 @@
 
   /* On mobile the inspector is the main column: ignore a collapsed
      preference persisted from desktop. */
-  .is-editor.is-inspector-collapsed .inspector-panel .panel-scroll {
-    display: block;
-  }
-  .is-editor.is-inspector-collapsed .inspector-expand-rail {
-    display: none;
+  .is-editor.is-inspector-collapsed .inspector-panel {
+    display: flex;
   }
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
@@ -165,40 +166,19 @@
   }
 }
 
-/* Collapsed inspector: hide the pane, show a full-height expand rail. */
-.is-editor .inspector-expand-rail {
+/* Inspector panes: one rail, swappable panes (settings now, comments in
+   phase 4). Exactly one pane is active; each pane is a full-height flex
+   column so its .panel-scroll child can take the remaining space. */
+.is-editor .inspector-pane {
   display: none;
-}
-
-.is-editor.is-inspector-collapsed .inspector-panel .panel-scroll {
-  display: none;
-}
-
-.is-editor.is-inspector-collapsed .inspector-expand-rail {
-  display: flex;
   flex: 1;
   flex-direction: column;
-  align-items: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-3) 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: hsl(var(--app-text-secondary));
+  min-height: 0;
+  min-width: 0;
 }
 
-.is-editor.is-inspector-collapsed .inspector-expand-rail:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.is-editor .inspector-expand-rail-label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: var(--ps-text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.is-editor .inspector-pane.is-active {
+  display: flex;
 }
 
 .is-editor .slides-panel-header {
@@ -419,11 +399,10 @@
       minmax(280px, 1fr) minmax(320px, var(--inspector-width, 380px));
   }
 
-  /* Collapsed inspector wins over the tablet default (declared after it). */
+  /* Dismissed inspector wins over the tablet default (declared after it). */
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-inspector-collapsed:not(.is-slides-expanded-override) .layout {
-    grid-template-columns: var(--ps-slides-collapsed-width)
-      minmax(280px, 1fr) var(--ps-inspector-collapsed-width, 46px);
+    grid-template-columns: var(--ps-slides-collapsed-width) minmax(280px, 1fr);
   }
 
   /* Apply collapsed styling automatically at this width */

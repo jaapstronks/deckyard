@@ -175,7 +175,7 @@
   "editor.export.printText": "Print text",
   "editor.export.title": "Export to file",
   "editor.inspector.hide": "Hide inspector",
-  "editor.inspector.show": "Open inspector",
+  "editor.inspector.toggle": "Show or hide the inspector",
   "editor.gallery.collapse": "Collapse",
   "editor.gallery.dragToReorder": "Drag to reorder",
   "editor.gallery.expand": "Expand",
