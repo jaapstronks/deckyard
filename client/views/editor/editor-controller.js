@@ -870,7 +870,9 @@ export async function createEditorController({
     },
     onJumpToSlide: (slideId) => {
       if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
-        selectedSlideId = slideId;
+        // Through the wrapper so presence view + slide locks follow the jump
+        // (a bare assignment left the collab view-dot on the old slide).
+        setSelectedSlideIdWithLock(slideId);
         rerenderSlideList();
         rerenderEditor();
         rerenderPreview();
