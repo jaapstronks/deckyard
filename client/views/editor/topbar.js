@@ -54,6 +54,7 @@ export function createEditorTopbar({
   markDirty,
   setPresenceText,
   onToggleComments,
+  onToggleInspector,
   setCommentsBadge,
   setLockStateCallback,
   onReadOnlyChange,
@@ -264,6 +265,31 @@ export function createEditorTopbar({
       // ignore
     }
   }
+
+  // ============================================================
+  // INSPECTOR TOGGLE
+  // ============================================================
+
+  // "i" icon: opens/dismisses the right-hand inspector rail (settings pane).
+  // Phase 4 gives the comments icon the same rail with a comments pane.
+  const btnInspector = h('button', {
+    class: 'btn btn-secondary btn-icon topbar-inspector-btn',
+    type: 'button',
+    title: t('editor.inspector.toggle', 'Show or hide the inspector'),
+    'aria-label': t('editor.inspector.toggle', 'Show or hide the inspector'),
+    'aria-pressed': 'false',
+    onclick: () => onToggleInspector?.(),
+  });
+  btnInspector.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('info'), alt: '', 'aria-hidden': 'true' }));
+
+  /**
+   * Reflect the rail state on the toggle (pressed = rail open).
+   * @param {boolean} open
+   */
+  const setInspectorOpen = (open) => {
+    btnInspector.setAttribute('aria-pressed', String(Boolean(open)));
+    btnInspector.classList.toggle('is-active', Boolean(open));
+  };
 
   // ============================================================
   // ANALYZE (AI) BUTTON
@@ -533,6 +559,7 @@ export function createEditorTopbar({
     btnOverview,
     btnAnalyze,
     btnComments,
+    btnInspector,
     btnShortcuts,
     btnSettingsQuick,
     btnAnalytics,
@@ -557,5 +584,5 @@ export function createEditorTopbar({
     }
   };
 
-  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, detach };
+  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, setInspectorOpen, detach };
 }

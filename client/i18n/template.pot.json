@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T16:37:03.070Z",
+    "generatedAt": "2026-07-16T16:46:43.078Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -1514,8 +1514,8 @@
         "client/views/analytics/index.js:87",
         "client/views/analytics/index.js:127",
         "client/views/editor/image-library/detail.js:123",
-        "client/views/editor/topbar.js:519",
-        "client/views/editor/topbar.js:520",
+        "client/views/editor/topbar.js:545",
+        "client/views/editor/topbar.js:546",
         "client/views/settings/font-editor/index.js:59",
         "client/views/settings/font-editor/index.js:60",
         "client/views/settings/index.js:87",
@@ -1952,7 +1952,7 @@
         "client/views/editor/topbar/language-mode.js:311",
         "client/views/editor/topbar/language-mode.js:390",
         "client/views/editor/topbar/more-menu.js:57",
-        "client/views/editor/topbar.js:439"
+        "client/views/editor/topbar.js:465"
       ]
     },
     "common.search": {
@@ -1968,8 +1968,8 @@
       "default": "Settings",
       "refs": [
         "client/lib/user-menu.js:88",
-        "client/views/editor/topbar.js:225",
-        "client/views/editor/topbar.js:226"
+        "client/views/editor/topbar.js:226",
+        "client/views/editor/topbar.js:227"
       ]
     },
     "common.signOut": {
@@ -2621,15 +2621,15 @@
     "editor.analytics": {
       "default": "Analytics",
       "refs": [
-        "client/views/editor/topbar.js:405",
-        "client/views/editor/topbar.js:406"
+        "client/views/editor/topbar.js:431",
+        "client/views/editor/topbar.js:432"
       ]
     },
     "editor.analyze": {
       "default": "AI Analysis",
       "refs": [
-        "client/views/editor/topbar.js:275",
-        "client/views/editor/topbar.js:276"
+        "client/views/editor/topbar.js:301",
+        "client/views/editor/topbar.js:302"
       ]
     },
     "editor.analyzeModal.analyze": {
@@ -2715,9 +2715,9 @@
       "default": "This slide is locked by the author",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:143",
-        "client/views/editor/editor-controller.js:215",
-        "client/views/editor/editor-controller.js:264",
-        "client/views/editor/editor-controller.js:1288"
+        "client/views/editor/editor-controller.js:228",
+        "client/views/editor/editor-controller.js:277",
+        "client/views/editor/editor-controller.js:1301"
       ]
     },
     "editor.autoFit.applied": {
@@ -3053,7 +3053,7 @@
     "editor.collab.liveEditsUnavailable": {
       "default": "Live collaboration failed to load; changes are not being saved. Reload the editor.",
       "refs": [
-        "client/views/editor/editor-controller.js:859"
+        "client/views/editor/editor-controller.js:872"
       ]
     },
     "editor.color.pickColor": {
@@ -3065,21 +3065,21 @@
     "editor.comments": {
       "default": "Comments",
       "refs": [
-        "client/views/editor/topbar.js:239",
-        "client/views/editor/topbar.js:240"
+        "client/views/editor/topbar.js:240",
+        "client/views/editor/topbar.js:241"
       ]
     },
     "editor.companion": {
       "default": "Companion",
       "refs": [
         "client/views/editor/topbar/more-menu.js:150",
-        "client/views/editor/topbar.js:342"
+        "client/views/editor/topbar.js:368"
       ]
     },
     "editor.companion.title": {
       "default": "Open speaker notes companion on your phone (QR code).",
       "refs": [
-        "client/views/editor/topbar.js:343"
+        "client/views/editor/topbar.js:369"
       ]
     },
     "editor.conflict.copyMine": {
@@ -3267,8 +3267,8 @@
     "editor.deckGrid.open": {
       "default": "Slide overview",
       "refs": [
-        "client/views/editor/topbar.js:288",
-        "client/views/editor/topbar.js:289"
+        "client/views/editor/topbar.js:314",
+        "client/views/editor/topbar.js:315"
       ]
     },
     "editor.deckGrid.peek": {
@@ -4547,17 +4547,17 @@
         "client/views/editor/editor-form.js:532"
       ]
     },
-    "editor.inspector.show": {
-      "default": "Open inspector",
-      "refs": [
-        "client/views/editor/editor-controller.js:728"
-      ]
-    },
     "editor.inspector.title": {
       "default": "Inspector",
       "refs": [
-        "client/views/editor/editor-controller.js:735",
         "client/views/editor/editor-form.js:618"
+      ]
+    },
+    "editor.inspector.toggle": {
+      "default": "Show or hide the inspector",
+      "refs": [
+        "client/views/editor/topbar.js:278",
+        "client/views/editor/topbar.js:279"
       ]
     },
     "editor.items.add": {
@@ -4915,14 +4915,14 @@
     "editor.present": {
       "default": "Present",
       "refs": [
-        "client/views/editor/topbar.js:436",
+        "client/views/editor/topbar.js:462",
         "client/views/viewer/viewer-topbar.js:105"
       ]
     },
     "editor.present.abortedSaveFailed": {
       "default": "Could not save; presenting aborted.",
       "refs": [
-        "client/views/editor/topbar.js:445"
+        "client/views/editor/topbar.js:471"
       ]
     },
     "editor.preview.clickToZoom": {
@@ -5232,19 +5232,19 @@
     "editor.readOnly.banner": {
       "default": "View only - someone else is editing",
       "refs": [
-        "client/views/editor/editor-controller.js:643"
+        "client/views/editor/editor-controller.js:658"
       ]
     },
     "editor.readOnly.someone": {
       "default": "someone else",
       "refs": [
-        "client/views/editor/editor-controller.js:647"
+        "client/views/editor/editor-controller.js:662"
       ]
     },
     "editor.readOnly.toast": {
       "default": "This presentation is being edited by {who}. You can view but not edit.",
       "refs": [
-        "client/views/editor/editor-controller.js:649"
+        "client/views/editor/editor-controller.js:664"
       ]
     },
     "editor.redo": {
@@ -5252,7 +5252,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:292",
         "client/views/editor/slide-list/undo-actions.js:95",
-        "client/views/editor/topbar.js:486"
+        "client/views/editor/topbar.js:512"
       ]
     },
     "editor.remoteMerge.intro": {
@@ -5325,13 +5325,13 @@
     "editor.save.remoteMerged": {
       "default": "Changes from another editor were merged in",
       "refs": [
-        "client/views/editor/editor-controller.js:316"
+        "client/views/editor/editor-controller.js:329"
       ]
     },
     "editor.save.remoteMergedSee": {
       "default": "See what changed",
       "refs": [
-        "client/views/editor/editor-controller.js:321"
+        "client/views/editor/editor-controller.js:334"
       ]
     },
     "editor.save.saved": {
@@ -5361,25 +5361,25 @@
     "editor.saveStatus.failed": {
       "default": "Save failed",
       "refs": [
-        "client/views/editor/topbar.js:156"
+        "client/views/editor/topbar.js:157"
       ]
     },
     "editor.saveStatus.saved": {
       "default": "Saved",
       "refs": [
-        "client/views/editor/topbar.js:154"
+        "client/views/editor/topbar.js:155"
       ]
     },
     "editor.saveStatus.saving": {
       "default": "Saving…",
       "refs": [
-        "client/views/editor/topbar.js:153"
+        "client/views/editor/topbar.js:154"
       ]
     },
     "editor.saveStatus.unsaved": {
       "default": "Unsaved changes",
       "refs": [
-        "client/views/editor/topbar.js:155"
+        "client/views/editor/topbar.js:156"
       ]
     },
     "editor.share.button": {
@@ -5613,7 +5613,7 @@
       "default": "Keyboard shortcuts",
       "refs": [
         "client/views/editor/shortcuts.js:72",
-        "client/views/editor/topbar.js:501"
+        "client/views/editor/topbar.js:527"
       ]
     },
     "editor.shortcuts.undo": {
@@ -6224,13 +6224,13 @@
       "default": "This slide is being edited by someone else",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:145",
-        "client/views/editor/editor-controller.js:212"
+        "client/views/editor/editor-controller.js:225"
       ]
     },
     "editor.slideLocked.toast": {
       "default": "This slide is being edited by {name}",
       "refs": [
-        "client/views/editor/editor-controller.js:224"
+        "client/views/editor/editor-controller.js:237"
       ]
     },
     "editor.slideTypeModal.aiAdd": {
@@ -6943,7 +6943,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:282",
         "client/views/editor/slide-list/undo-actions.js:86",
-        "client/views/editor/topbar.js:476"
+        "client/views/editor/topbar.js:502"
       ]
     },
     "editor.versions.backupNotice": {

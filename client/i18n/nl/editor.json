@@ -159,7 +159,7 @@
   "editor.export.printText": "Tekst printen",
   "editor.export.title": "Exporteren naar bestand",
   "editor.inspector.hide": "Inspector verbergen",
-  "editor.inspector.show": "Inspector openen",
+  "editor.inspector.toggle": "Inspector tonen of verbergen",
   "editor.iconPicker.help": "Typ om te zoeken (bijv. “lightbulb”)",
   "editor.iconPicker.placeholder": "Zoek pictogram…",
   "editor.image.bgHelp.uploadsDisabled": "Kies een bestaande afbeelding uit de beeldbank. Uploads zijn uitgeschakeld.",
