@@ -3,7 +3,7 @@
 **Updated: 2026-07-10.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (38 typed slide types, AI pipeline with
-validation/iteration, MCP server with 22 tools + SSE transport).
+validation/iteration, MCP server with 27 tools + SSE transport).
 
 ## How this file works
 
@@ -69,11 +69,6 @@ self-contained project.
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
-- **Comments via public API v1 + MCP write** — `docs/plans/comments-api-mcp.md`
-  — expose comments in the public v1 API (read + reply/resolve, new key
-  scopes) and add MCP write tools + slide-context/snapshot enrichment, so
-  agents can triage and answer reviewer feedback. MCP read tools shipped
-  2026-07-15 (PR #5).
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.

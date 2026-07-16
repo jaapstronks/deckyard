@@ -12,6 +12,7 @@ import { createCommentsPanel } from '../editor/comments-panel.js';
 import { createCommentsApi } from '../editor/comments-api.js';
 import { api } from '../../lib/api.js';
 import { initPresentationI18n } from '../editor/bootstrap.js';
+import { syncSlideIdInUrl } from '../editor/slide-url.js';
 
 export async function createViewerController({
   root,
@@ -62,6 +63,15 @@ export async function createViewerController({
   let rerenderSlideList = () => {};
   let rerenderPreview = () => {};
 
+  // Single selection path (viewer counterpart of the editor's
+  // setSelectedSlideIdWithLock): update state, mirror it in the URL, rerender.
+  const selectSlide = (newId) => {
+    selectedSlideId = newId;
+    syncSlideIdInUrl(newId);
+    rerenderSlideList();
+    rerenderPreview();
+  };
+
   // Topbar
   const topbarApi = createViewerTopbar({
     h,
@@ -83,11 +93,7 @@ export async function createViewerController({
     pres,
     theme,
     getSelectedSlideId: () => selectedSlideId,
-    setSelectedSlideId: (newId) => {
-      selectedSlideId = newId;
-      rerenderSlideList();
-      rerenderPreview();
-    },
+    setSelectedSlideId: selectSlide,
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
   });
   layout.append(slidesPanel.panelEl);
@@ -99,11 +105,7 @@ export async function createViewerController({
     theme,
     id,
     getSelectedSlideId: () => selectedSlideId,
-    setSelectedSlideId: (newId) => {
-      selectedSlideId = newId;
-      rerenderSlideList();
-      rerenderPreview();
-    },
+    setSelectedSlideId: selectSlide,
     canComment,
     commentsApi,
     user,
@@ -133,9 +135,7 @@ export async function createViewerController({
       },
       onJumpToSlide: (slideId) => {
         if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
-          selectedSlideId = slideId;
-          rerenderSlideList();
-          rerenderPreview();
+          selectSlide(slideId);
         }
       },
     });
@@ -179,16 +179,12 @@ export async function createViewerController({
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (currentIndex > 0) {
-        selectedSlideId = slides[currentIndex - 1].id;
-        rerenderSlideList();
-        rerenderPreview();
+        selectSlide(slides[currentIndex - 1].id);
       }
     } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
       e.preventDefault();
       if (currentIndex < slides.length - 1) {
-        selectedSlideId = slides[currentIndex + 1].id;
-        rerenderSlideList();
-        rerenderPreview();
+        selectSlide(slides[currentIndex + 1].id);
       }
     }
   };

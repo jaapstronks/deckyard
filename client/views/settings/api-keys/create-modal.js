@@ -124,6 +124,8 @@ export function showCreateModal(onSuccess) {
     { value: 'write', label: t('settings.apiKeys.scopes.write', 'Write'), desc: t('settings.apiKeys.scopeDesc.write', 'Create, update, and delete presentations'), defaultChecked: true },
     { value: 'ai', label: t('settings.apiKeys.scopes.ai', 'AI'), desc: t('settings.apiKeys.scopeDesc.ai', 'Use AI generation and refinement features'), defaultChecked: false },
     { value: 'export', label: t('settings.apiKeys.scopes.export', 'Export'), desc: t('settings.apiKeys.scopeDesc.export', 'Export presentations to HTML, JSON, or PDF'), defaultChecked: false },
+    { value: 'comments:read', label: t('settings.apiKeys.scopes.commentsRead', 'Comments: read'), desc: t('settings.apiKeys.scopeDesc.commentsRead', 'Read comments on accessible presentations'), defaultChecked: false },
+    { value: 'comments:write', label: t('settings.apiKeys.scopes.commentsWrite', 'Comments: write'), desc: t('settings.apiKeys.scopeDesc.commentsWrite', 'Add comments and replies, resolve or reopen them'), defaultChecked: false },
   ];
 
   for (const scope of scopes) {

@@ -261,31 +261,37 @@ export async function updateUserEventRead(userEmail, eventId, ctx) {
 }
 
 /**
- * Get count of unread events for a user.
+ * Get unread event counts grouped by presentation, so callers can apply
+ * per-presentation access filtering before summing — the raw total would
+ * leak activity on decks the user cannot read.
+ * @returns {Promise<Array<{presentationId: string|null, count: number}>>}
  */
-export async function getUnreadEventCount(userEmail, ctx) {
+export async function getUnreadEventCountsByPresentation(userEmail, ctx) {
   const email = norm(userEmail)?.toLowerCase();
-  if (!email) return 0;
+  if (!email) return [];
 
-  return withDbGuard(0, async (db) => {
+  return withDbGuard([], async (db) => {
     const orgId = getOrgId(ctx);
 
-    // Get user's last read position
     const readMarker = await getUserEventRead(email, ctx);
 
     let query = db
       .selectFrom('activity_events')
+      .select('presentation_id')
       .select((eb) => eb.fn.count('id').as('count'))
       .where('organization_id', '=', orgId)
-      .where('actor_email', '!=', email); // Exclude own events
+      .where('actor_email', '!=', email) // Exclude own events
+      .groupBy('presentation_id');
 
-    // If user has a read marker, count events after that
     if (readMarker?.lastReadAt) {
       query = query.where('created_at', '>', readMarker.lastReadAt);
     }
 
-    const result = await query.executeTakeFirst();
-    return Number(result?.count) || 0;
+    const rows = await query.execute();
+    return rows.map((row) => ({
+      presentationId: row.presentation_id || null,
+      count: Number(row.count) || 0,
+    }));
   });
 }
 

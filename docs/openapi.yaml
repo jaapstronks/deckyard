@@ -14,6 +14,19 @@ info:
 
     You can create and manage API keys in your Deckyard settings.
 
+    ## Scopes
+
+    Each API key carries a set of scopes that gate what it may do:
+
+    | Scope | Grants |
+    |-------|--------|
+    | `read` | Read presentations, themes, slide types |
+    | `write` | Create, update, delete presentations |
+    | `export` | Export presentations |
+    | `ai` | AI generation features |
+    | `comments:read` | Read comments on accessible presentations |
+    | `comments:write` | Create comments/replies and change comment status |
+
     ## Rate Limits
 
     API requests are subject to rate limits based on your account tier:
@@ -58,6 +71,8 @@ tags:
     description: Create, read, update, and delete presentations
   - name: Slides
     description: Slide-level operations within presentations
+  - name: Comments
+    description: Read and respond to reviewer comments (scopes comments:read / comments:write)
   - name: Publishing
     description: Publish and unpublish presentations
   - name: Translation
@@ -1526,6 +1541,183 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /presentations/{id}/comments:
+    get:
+      tags:
+        - Comments
+      summary: List comments
+      description: |
+        Returns the comments on a presentation (newest first) with nested
+        replies. Each comment carries current slide context (`slide`), the
+        slide snapshot captured when the comment was created
+        (`slideSnapshot`, `null` for comments that predate snapshots) and an
+        `editUrl` deep link anchored to the commented slide.
+        Requires the `comments:read` scope and the database storage backend.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by status (default all)
+          schema:
+            type: string
+            enum: [open, resolved, dismissed, all]
+        - name: slideId
+          in: query
+          description: Only comments anchored to this slide id
+          schema:
+            type: string
+            format: uuid
+        - name: since
+          in: query
+          description: Only comments created at/after this ISO 8601 date/datetime
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Comments on the presentation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  presentationId:
+                    type: string
+                    format: uuid
+                  presentationTitle:
+                    type: string
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+                  since:
+                    type: string
+                    format: date-time
+                    nullable: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      tags:
+        - Comments
+      summary: Create a comment or reply
+      description: |
+        Creates a comment (or a reply when `parentId` is given) authored by
+        the API key owner. When `slideId` is given, a snapshot of that slide
+        is stored with the comment. Requires the `comments:write` scope and
+        comment permission on the presentation (owner/creator, workspace
+        member, or collaborator with comment rights).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  description: Comment text (max 5000 characters)
+                slideId:
+                  type: string
+                  format: uuid
+                  description: Anchor the comment to this slide
+                parentId:
+                  type: string
+                  format: uuid
+                  description: Reply to this top-level comment
+      responses:
+        '201':
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  comment:
+                    $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /comments/{commentId}/status:
+    post:
+      tags:
+        - Comments
+      summary: Change comment status
+      description: |
+        Resolve, reopen or dismiss a comment. Allowed transitions follow the
+        app: open→resolved, open→dismissed, resolved→open (409 otherwise).
+        Requires the `comments:write` scope; only the presentation
+        owner/creator may change status.
+      parameters:
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [resolved, open, dismissed]
+      responses:
+        '200':
+          description: Updated comment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  comment:
+                    $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Transition not allowed from the comment's current status
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1596,6 +1788,82 @@ components:
         notes:
           type: string
           description: Speaker notes
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        presentationId:
+          type: string
+          format: uuid
+        slideId:
+          type: string
+          format: uuid
+          nullable: true
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        authorEmail:
+          type: string
+        authorName:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, dismissed]
+        resolvedBy:
+          type: string
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        slide:
+          type: object
+          nullable: true
+          description: |
+            Current context of the commented slide: null when the comment has
+            no slide anchor; `{ "deleted": true }` when the slide no longer
+            exists; otherwise index/number/type/title as the deck is now.
+          properties:
+            deleted:
+              type: boolean
+            index:
+              type: integer
+              description: 0-based slide index
+            number:
+              type: integer
+              description: 1-based slide number
+            type:
+              type: string
+            title:
+              type: string
+        slideSnapshot:
+          type: object
+          nullable: true
+          description: |
+            The commented slide ({ id, type, content }) as it was when the
+            comment was created. Null for comments without a slide anchor and
+            for comments created before snapshots existed.
+        editUrl:
+          type: string
+          nullable: true
+          description: Editor deep link, anchored to the commented slide via ?slideId=
+        replies:
+          type: array
+          items:
+            type: object
+          description: Nested replies (same shape as Comment, without further nesting)
 
     Theme:
       type: object

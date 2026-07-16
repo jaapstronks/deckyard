@@ -56,6 +56,11 @@ export async function listComments(presentationId, ctx, opts = {}) {
       query = query.where('suggestion_category', '=', opts.suggestionCategory);
     }
 
+    // Only comments created at/after this ISO timestamp ("new since ...")
+    if (opts?.since) {
+      query = query.where('created_at', '>=', opts.since);
+    }
+
     // Only get top-level comments (not replies) for main list
     if (!opts?.includeReplies) {
       query = query.where('parent_id', 'is', null);
@@ -150,6 +155,7 @@ export async function listAccessiblePresentationRefs(repoRoot, ctx, scope = 'all
  * @param {'owned'|'shared'|'all'} [opts.scope='all'] - Which decks to include.
  * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.
  * @param {'open'|'resolved'|'dismissed'|'all'} [opts.status='all']
+ * @param {string|null} [opts.since=null] - Only comments created at/after this ISO timestamp.
  * @param {number} [opts.limit=50] - Max comments (clamped to 1..200).
  * @returns {Promise<{ comments: Array, total: number }>} Comments enriched with
  *   `presentationTitle`; `total` is the number returned.
@@ -180,6 +186,7 @@ export async function listRecentCommentsForOwner(repoRoot, ctx, opts = {}) {
 
     if (authorEmail) query = query.where('author_email', '=', authorEmail);
     if (status !== 'all') query = query.where('status', '=', status);
+    if (opts?.since) query = query.where('created_at', '>=', opts.since);
 
     const rows = await query.orderBy('created_at', 'desc').limit(limit).execute();
 
@@ -270,6 +277,10 @@ export async function createComment(presentationId, data, ctx) {
     const suggestionCategory = data?.suggestionCategory || null;
     const proposedSlide = data?.proposedSlide || null;
 
+    // Snapshot of the commented slide at create time (see migration 041);
+    // captured by the caller, only meaningful for comments with a slideId.
+    const slideSnapshot = data?.slideId && data?.slideSnapshot ? data.slideSnapshot : null;
+
     const row = await db
       .insertInto('presentation_comments')
       .values({
@@ -286,6 +297,7 @@ export async function createComment(presentationId, data, ctx) {
         comment_type: commentType,
         suggestion_category: suggestionCategory,
         proposed_slide: proposedSlide ? JSON.stringify(proposedSlide) : null,
+        slide_snapshot: slideSnapshot ? JSON.stringify(slideSnapshot) : null,
         created_at: now,
         updated_at: now,
       })
@@ -539,6 +551,7 @@ function rowToComment(row) {
     commentType: row.comment_type ?? 'human',
     suggestionCategory: row.suggestion_category ?? null,
     proposedSlide: row.proposed_slide ?? null,
+    slideSnapshot: row.slide_snapshot ?? null,
     replies: [], // Populated separately
   };
 }

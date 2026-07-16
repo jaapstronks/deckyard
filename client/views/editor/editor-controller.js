@@ -58,6 +58,7 @@ import { attachEditorLifecycle } from './editor-lifecycle.js';
 import { getFeatures } from '../../lib/features.js';
 import { attachPresentationPresenceLock } from './presence-lock.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
+import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel } from './comments-panel.js';
 import { createCommentsApi } from './comments-api.js';
 import { createEditorTitleController } from './title-controller.js';
@@ -231,9 +232,13 @@ export async function createEditorController({
   // Collaborator presence (initialized further down when features.collab)
   let presenceHandle = null;
 
-  // Wrapper for setSelectedSlideId that also acquires slide lock
+  // Wrapper for setSelectedSlideId that also acquires slide lock.
+  // Single seam for slide selection: slide list, comments jump, undo/redo,
+  // lightbox, overview grid and collab-driven reselection all pass through
+  // here, so this is also where the URL learns about the selection.
   const setSelectedSlideIdWithLock = (v) => {
     selectedSlideId = v;
+    syncSlideIdInUrl(v);
     presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
     const authorLocked = isSlideAuthorLockedForUser(v);

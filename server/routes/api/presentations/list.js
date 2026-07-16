@@ -7,12 +7,10 @@ import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getOrgId } from '../../../utils/context.js';
 
 // Filter for what appears in a user's collection (not authorization).
-// A presentation belongs in a user's collection if:
-// - It's workspace-shared (visible to all org members), OR
-// - User is the owner, OR
-// - User is the creator (createdBy), OR
-// - No owner is set (legacy presentations created before auth was enabled)
-function belongsInCollection({ user, pres } = {}) {
+// Invariant: a deck card is only shown when canReadPresentation would also
+// let the user open it — so no ownerless-legacy exception here (the view
+// route would refuse those anyway, leaving a dead card).
+export function belongsInCollection({ user, pres } = {}) {
   if (!pres || typeof pres !== 'object') return false;
   const scope = normalizePresentationScope(pres?.scope);
   if (scope === 'workspace') return true;
@@ -26,10 +24,6 @@ function belongsInCollection({ user, pres } = {}) {
   // User owns or created the presentation
   if (owner && owner === userEmail) return true;
   if (createdBy && createdBy === userEmail) return true;
-
-  // Legacy presentations without owner: show to all authenticated users
-  // (these were created before auth was enabled)
-  if (!owner && !createdBy) return true;
 
   return false;
 }

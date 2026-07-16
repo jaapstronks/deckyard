@@ -21,7 +21,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 | | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard |
 |---|---|---|---|
 | AI generation | ✅ | ✅ | ✅ 38 typed slides |
-| MCP interface | ❌ | ❌ | ✅ 22 tools + 6 prompts |
+| MCP interface | ❌ | ❌ | ✅ 27 tools + 6 prompts |
 | Self-hosted | ❌ | ❌ | ✅ |
 | BYO LLM | ❌ | ❌ | ✅ |
 | Custom themes | Limited | Limited | ✅ Full control |
@@ -77,7 +77,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 
 ### What agents can do
 
-**22 tools** covering the full presentation lifecycle:
+**27 tools** covering the full presentation lifecycle:
 
 - `create_presentation` — Generate a full deck from raw text, bullet points, or meeting notes
 - `iterate_presentation` — Modify with natural language ("make slide 3 punchier", "split the KPI slide")
@@ -87,6 +87,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 - `analyze_presentation` — Get suggestions for improving structure and content
 - `validate_presentation` — Check for density issues, repetition, readability problems
 - `preview_slide` / `preview_presentation` — Self-contained HTML preview for in-chat rendering
+- Comments: `list_comments` / `list_recent_comments` (with slide context + snapshots), `add_comment`, `reply_to_comment`, `set_comment_status` — agents can triage and answer reviewer feedback
 - Plus: `add_slide`, `update_slide`, `remove_slide`, `reorder_slides`, `duplicate_presentation`, `list_themes`, `get_presentation_url`, and more
 
 **6 guided prompts** for Claude Desktop's `/` menu:
@@ -277,7 +278,7 @@ deckyard/
 
 ## Documentation
 
-- [MCP Server reference](docs/reference/mcp-server.md) — All 22 tools, 6 prompts, transport options
+- [MCP Server reference](docs/reference/mcp-server.md) — All 27 tools, 6 prompts, transport options
 - [Product docs](https://github.com/jaapstronks/deckyard-website) — Features and usage (website repo)
 - [Developer docs](docs/developer/README.md) — Architecture and extending
 - [Theme reference](docs/developer/themes.md) — Theming system

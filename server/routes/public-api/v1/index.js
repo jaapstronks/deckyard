@@ -17,6 +17,7 @@ import { handlePublishing } from './publishing.js';
 import { handleSlideLibrary } from './slide-library.js';
 import { handleSlides } from './slides.js';
 import { handleTranslation } from './translate.js';
+import { handleComments } from './comments.js';
 
 // ============================================================
 // API INFO ENDPOINT
@@ -188,6 +189,7 @@ export async function handlePublicApiV1(ctx) {
   if (await handleTranslation(ctx)) return true;
   if (await handleSlideLibrary(ctx)) return true;
   if (await handleSlides(ctx)) return true;
+  if (await handleComments(ctx)) return true;
   if (await handlePresentations(ctx)) return true;
   if (await handleExports(ctx)) return true;
   if (await handleAi(ctx)) return true;

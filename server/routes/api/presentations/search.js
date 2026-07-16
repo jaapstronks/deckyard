@@ -5,8 +5,7 @@
 
 import { listPresentations, getPresentation } from '../../../storage/presentations.js';
 import { serveJson, badRequest } from '../../../utils/http.js';
-import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
+import { belongsInCollection } from './list.js';
 
 /**
  * Normalize string for search (lowercase, remove accents)
@@ -130,27 +129,6 @@ function extractSlideText(slide) {
   if (content.caption) texts.push(content.caption);
 
   return texts.join(' ');
-}
-
-/**
- * Check if presentation belongs in user's collection
- */
-function belongsInCollection({ user, pres } = {}) {
-  if (!pres || typeof pres !== 'object') return false;
-  const scope = normalizePresentationScope(pres?.scope);
-  if (scope === 'workspace') return true;
-
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-
-  if (owner && owner === userEmail) return true;
-  if (createdBy && createdBy === userEmail) return true;
-  if (!owner && !createdBy) return true;
-
-  return false;
 }
 
 /**

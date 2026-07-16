@@ -61,4 +61,6 @@ export {
 export {
   checkActorAccess,
   canActorAccessPresentation,
+  checkActorCommentAccess,
+  canActorCommentOnPresentation,
 } from './presentation-authz/actor-access.js';
