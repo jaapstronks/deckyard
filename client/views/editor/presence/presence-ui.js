@@ -266,8 +266,14 @@ export function createPresenceUI({
           target.style.setProperty('--presence-color', peer.user.color);
           target.dataset.collabFocusName = peerName(peer);
           // Only a visible decoration counts as covered — the side form
-          // renders every field, but e.g. a collapsed group hides it.
-          if (target.getClientRects().length > 0) matched = true;
+          // renders every field, but e.g. a collapsed Advanced group hides
+          // it. checkVisibility() also catches closed-<details> content,
+          // which keeps layout boxes in Chromium (getClientRects lies).
+          const visible =
+            typeof target.checkVisibility === 'function'
+              ? target.checkVisibility()
+              : target.getClientRects().length > 0;
+          if (visible) matched = true;
         }
 
         const el = thumb.querySelector(
