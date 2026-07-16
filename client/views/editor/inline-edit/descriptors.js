@@ -154,9 +154,10 @@ export const INLINE_DESCRIPTORS = {
   },
   'quote-slide': {
     formText: ['quote', 'authorName', 'authorTitle'],
-    // Clicking a portrait (or the editor-only empty slot) opens the media
-    // popover writing to the flat authorImage{n} / authorImage{n}Alt fields
-    // (data-inline-photo carries the 1-based slot number).
+    // Clicking a filled portrait opens the media popover writing to the flat
+    // authorImage{n} / authorImage{n}Alt fields (data-inline-photo carries
+    // the 1-based slot number). Empty slots render nothing - portraits are
+    // fully optional, so a first portrait is added via the side form.
     media: {
       photoSelector: '.quote-portrait[data-inline-photo]',
       imageField: 'authorImage{n}',

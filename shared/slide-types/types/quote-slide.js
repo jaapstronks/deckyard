@@ -92,14 +92,14 @@ export default {
     authorImage2: '',
     authorImage2Alt: '',
   },
-  renderHtml: (content, slide, ctx) => {
+  renderHtml: (content, slide) => {
     const vars = gradientVarsForSlide(slide?.id, 'quote');
 
-    // Portraits: render every filled slot; in the editor canvas also render
-    // one empty slot (the next free one) so a first/second portrait can be
-    // added from the slide (media popover via data-inline-photo).
+    // Portraits are fully optional: only filled slots render, nowhere (also
+    // not in the editor canvas) does an empty circle appear. Adding a first
+    // portrait happens via the side form's image pickers; a filled portrait
+    // is still clickable in-slide (media popover via data-inline-photo).
     const portraitParts = [];
-    let placeholderAdded = false;
     for (let n = 1; n <= MAX_PORTRAITS; n++) {
       const src =
         typeof content?.[`authorImage${n}`] === 'string'
@@ -116,12 +116,6 @@ export default {
               <div class="quote-portrait" data-inline-photo="${n}">
                 <img src="${esc(src)}" alt="${esc(alt)}" />
               </div>`);
-      } else if (ctx?.mode === 'edit' && !placeholderAdded) {
-        // Editor canvas only: portraits are optional, so nothing ships to
-        // present/export - but an empty slot must be clickable to add one.
-        portraitParts.push(`
-              <div class="quote-portrait quote-portrait-placeholder is-empty" data-inline-photo="${n}" aria-hidden="true"></div>`);
-        placeholderAdded = true;
       }
     }
     const portraitsHtml = portraitParts.length
