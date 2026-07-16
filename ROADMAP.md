@@ -42,9 +42,9 @@ self-contained project.
    `docs/plans/editor-ui-direction.md` — decided 2026-07-16, re-sequenced
    the same day; this track now also absorbs the formerly separate
    WYSIWYG-overhaul and inline-descriptor-seam items. Four phases, each
-   shippable alone, in this order: (1) WYSIWYG parity (blocks overhaul +
-   descriptor seam shipped as #22, inline reorder as #23; empty-slot adds
-   remain);
+   shippable alone, in this order: (1) WYSIWYG parity — **complete**
+   (blocks overhaul + descriptor seam #22, inline reorder #23,
+   empty-slot adds #24);
    (2) an "Edit all text" bulk surface (fields left, live preview right) —
    the non-wysiwyg mode for everything inline editing can't cover;
    (3) only then the form column becomes a right-side **Inspector** —
