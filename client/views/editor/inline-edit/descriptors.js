@@ -161,6 +161,14 @@ export const INLINE_DESCRIPTORS = {
   },
   'image-text-slide': {
     ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],
+    // Flat single image (filled <img> or empty placeholder, both tagged with
+    // data-inline-photo="0"): clicking it sets image + alt in-slide. Focus,
+    // fit, side and width stay in the side form.
+    media: {
+      photoSelector: '.frame [data-inline-photo]',
+      imageField: 'image',
+      altField: 'alt',
+    },
     formText: ['title', 'caption', 'body'],
   },
 
@@ -513,9 +521,10 @@ export const INLINE_DESCRIPTORS = {
     ghosts: HEADER_GHOSTS,
     // Clicking a column image opens the media popover (image + alt) writing to
     // the flat col{n}Image / col{n}Alt fields (data-inline-photo carries the
-    // 1-based column number). Empty columns render no image element, so adding a
-    // first image still happens in the side form; column count / fit / focus /
-    // per-column block counts stay in the form too.
+    // 1-based column number). Empty columns render a clickable placeholder in
+    // the editor canvas (mode 'edit' only), so a FIRST image can be added
+    // in-slide too; column count / fit / focus / per-column block counts stay
+    // in the form.
     media: {
       photoSelector: '.cc-image[data-inline-photo]',
       imageField: 'col{n}Image',

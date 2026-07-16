@@ -387,6 +387,14 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Editor-canvas-only placeholder for an image-less column (rendered in mode
+   'edit' so a FIRST image can be added from the slide; the inline-edit
+   overlay draws the outline + "Add image" chip on top of it). */
+.slide-content-columns .cc-image-placeholder {
+  border: 1px dashed rgba(0, 0, 0, 0.22);
+  background: rgba(0, 0, 0, 0.04);
+}
 .slide-content-columns .cc-image.is-contain img {
   max-width: 100%;
   max-height: 100%;

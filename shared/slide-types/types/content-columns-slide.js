@@ -204,7 +204,7 @@ export default {
     ...generateColumnDefaults(7, 'en'),
   },
 
-  renderHtml: (content) => {
+  renderHtml: (content, _slide, ctx) => {
     const title = typeof content?.title === 'string' && content.title.trim()
       ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
       : '';
@@ -254,13 +254,18 @@ export default {
           ? objectPositionStyleAttrFromFocus({ focusX: colImageFocusX, focusY: colImageFocusY })
           : '';
         // Inline-edit hook: clicking a column image opens a media popover
-        // (image + alt) writing to the flat col{n}Image / col{n}Alt fields. Only
-        // columns that already have an image carry an element to click; adding a
-        // first image to an empty column still happens in the side form.
+        // (image + alt) writing to the flat col{n}Image / col{n}Alt fields.
         imageHtml = `
           <div class="cc-image ${fitClass}" data-inline-photo="${colNum}">
             <img src="${esc(colImage)}" alt="${esc(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
           </div>
+        `;
+      } else if (ctx?.mode === 'edit') {
+        // Editor canvas only: an image-less column is a legitimate layout, so
+        // no placeholder ships to present/export - but in the editor an empty
+        // slot must be clickable to add a FIRST image (media popover).
+        imageHtml = `
+          <div class="cc-image is-cover cc-image-placeholder is-empty" data-inline-photo="${colNum}" aria-hidden="true"></div>
         `;
       }
 
