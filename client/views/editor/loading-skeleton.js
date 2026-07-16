@@ -7,7 +7,7 @@ const SKELETON_CLASS = 'editor-loading-skeleton';
  * Show a full-page editor loading skeleton inside `root`.
  *
  * Reuses the real editor layout classes (`.editor-shell`, `.layout`,
- * `.panel.slides-panel` / `.editor-panel` / `.preview-panel`) so the column
+ * `.panel.slides-panel` / `.preview-panel` / `.inspector-panel`) so the column
  * split and every responsive breakpoint match what the editor will render,
  * and the swap to real content doesn't shift anything.
  *
@@ -58,7 +58,7 @@ export function showEditorLoadingSkeleton(root) {
       ])
     );
   }
-  const middle = h('div', { class: 'panel editor-panel' }, [
+  const inspector = h('div', { class: 'panel inspector-panel' }, [
     h('div', { class: 'panel-scroll skeleton-scroll' }, [
       block('skeleton-heading'),
       ...fields,
@@ -84,7 +84,7 @@ export function showEditorLoadingSkeleton(root) {
   const shell = h(
     'div',
     { class: `app-shell editor-shell ${SKELETON_CLASS}` },
-    [topbar, h('div', { class: 'layout' }, [left, middle, preview])]
+    [topbar, h('div', { class: 'layout' }, [left, preview, inspector])]
   );
   root.append(shell);
   return () => shell.remove();

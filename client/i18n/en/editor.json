@@ -1,5 +1,5 @@
 {
-  "editor.panel.title": "Edit",
+  "editor.inspector.title": "Inspector",
   "editor.saveStatus.saving": "Saving…",
   "editor.saveStatus.saved": "Saved",
   "editor.saveStatus.unsaved": "Unsaved changes",
@@ -174,8 +174,8 @@
   "editor.export.pdfPrint": "PDF (print in browser)",
   "editor.export.printText": "Print text",
   "editor.export.title": "Export to file",
-  "editor.form.hidePanel": "Hide edit panel",
-  "editor.form.showPanel": "Open edit panel",
+  "editor.inspector.hide": "Hide inspector",
+  "editor.inspector.show": "Open inspector",
   "editor.gallery.collapse": "Collapse",
   "editor.gallery.dragToReorder": "Drag to reorder",
   "editor.gallery.expand": "Expand",
