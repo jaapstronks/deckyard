@@ -23,6 +23,7 @@
 
 import { getInlineDescriptor } from './descriptors.js';
 import { getByPath, setByPath, fieldMetaForPath, isEmptyValue } from './field-path.js';
+import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openMediaPopover } from './media-popover.js';
@@ -581,6 +582,8 @@ export function createInlineEditor({
       addLabel: cards.addLabel,
       removeLabelKey: cards.removeLabelKey,
       removeLabel: cards.removeLabel,
+      reorder: cards.reorder,
+      reorderPlacement: cards.reorderPlacement,
     });
 
     // Nested card level (text-blocks: blocks within rows.{i}) - one card set
@@ -607,6 +610,8 @@ export function createInlineEditor({
         addLabel: child.addLabel,
         removeLabelKey: child.removeLabelKey,
         removeLabel: child.removeLabel,
+        reorder: child.reorder,
+        reorderPlacement: child.reorderPlacement,
       });
       insertChildGhosts(parentEl, def, cards, idx, childPath);
     }
@@ -629,6 +634,8 @@ export function createInlineEditor({
     addLabel,
     removeLabelKey,
     removeLabel,
+    reorder,
+    reorderPlacement,
   }) {
     const min = Number.isFinite(meta?.minItems) ? meta.minItems : 0;
     const max = Number.isFinite(meta?.maxItems) ? meta.maxItems : 99;
@@ -636,10 +643,17 @@ export function createInlineEditor({
       ? getByPath(slide.content, path)
       : [];
 
-    if (arr.length > min) {
-      for (const itemEl of scopeEl.querySelectorAll(itemSelector)) {
-        const idx = Number(itemEl.getAttribute('data-inline-item-index'));
-        if (!Number.isInteger(idx)) continue;
+    for (const itemEl of scopeEl.querySelectorAll(itemSelector)) {
+      const idx = Number(itemEl.getAttribute('data-inline-item-index'));
+      if (!Number.isInteger(idx)) continue;
+      // Some item elements are full-height layout columns whose visible card
+      // is transform-positioned inside them (timeline). Pin the badges to the
+      // visual element (removeAnchor) so they land on the card corners, not
+      // the column corners.
+      const badgeTarget =
+        (removeAnchor && itemEl.querySelector(removeAnchor)) || itemEl;
+
+      if (arr.length > min) {
         const remove = h('button', {
           class: 'ie-card-remove',
           type: 'button',
@@ -651,13 +665,27 @@ export function createInlineEditor({
             removeCard(path, idx);
           },
         });
-        // Some item elements are full-height layout columns whose visible card
-        // is transform-positioned inside them (timeline). Pin the × to the
-        // visual element (removeAnchor) so it lands on the card corner, not
-        // the column corner.
-        const removeTarget =
-          (removeAnchor && itemEl.querySelector(removeAnchor)) || itemEl;
-        overlay.place(remove, removeTarget, removePlacement || 'top-right', 0);
+        overlay.place(remove, badgeTarget, removePlacement || 'top-right', 0);
+      }
+
+      // Reorder grip (drag handle) on the top-edge middle, clear of the × and
+      // of grid neighbours' badges. Lives on the overlay, NOT the card itself
+      // - card clicks are for text editing.
+      if (arr.length > 1 && reorder !== false) {
+        const grip = h('button', {
+          class: 'ie-card-grip',
+          type: 'button',
+          title: t('editor.inline.reorderItem', 'Drag to reorder'),
+          text: '⠿',
+          onpointerdown: (e) => beginReorder(e, { path, scopeEl, itemSelector, fromIdx: idx }),
+          // The button "click" after a drag must never bubble into the slide's
+          // click-to-edit routing.
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+        });
+        overlay.place(grip, badgeTarget, reorderPlacement || 'top-center', 0);
       }
     }
 
@@ -750,6 +778,93 @@ export function createInlineEditor({
     if (!Array.isArray(arr)) return;
     arr.splice(idx, 1);
     afterStructuralChange();
+  }
+
+  function moveCard(path, from, to) {
+    const slide = getSlide?.();
+    const arr = slide ? getByPath(slide.content, path) : null;
+    if (!Array.isArray(arr) || from === to) return;
+    if (!arr[from] || to < 0 || to >= arr.length) return;
+    const [item] = arr.splice(from, 1);
+    arr.splice(to, 0, item);
+    afterStructuralChange();
+  }
+
+  /**
+   * Pointer-based drag from a grip: measure the level's item rects once (the
+   * slide doesn't rerender mid-drag), snap the pointer to the nearest
+   * insertion gap (reorder-geometry.js) and show an indicator line there;
+   * pointerup commits the array move. Pointer capture keeps the events on the
+   * grip, so nothing leaks into click-to-edit. Esc cancels.
+   */
+  function beginReorder(e, { path, scopeEl, itemSelector, fromIdx }) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const grip = e.currentTarget;
+    const thumbRect = thumb.getBoundingClientRect();
+    const items = [...scopeEl.querySelectorAll(itemSelector)]
+      .filter((el) => Number.isInteger(Number(el.getAttribute('data-inline-item-index'))))
+      .sort(
+        (a, b) =>
+          Number(a.getAttribute('data-inline-item-index')) -
+          Number(b.getAttribute('data-inline-item-index'))
+      );
+    if (items.length < 2) return;
+    const rects = items.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left - thumbRect.left, top: r.top - thumbRect.top, width: r.width, height: r.height };
+    });
+
+    const indicator = h('div', { class: 'ie-drop-indicator' });
+    overlay.layer.appendChild(indicator);
+    thumb.classList.add('is-ie-dragging');
+    grip.classList.add('is-dragging');
+    grip.setPointerCapture?.(e.pointerId);
+
+    let drop = null;
+    const onMove = (ev) => {
+      drop = computeDrop(rects, { x: ev.clientX - thumbRect.left, y: ev.clientY - thumbRect.top });
+      if (!drop) return;
+      const line = drop.line;
+      const s = indicator.style;
+      if (line.orientation === 'v') {
+        s.left = `${line.x - 1.5}px`;
+        s.top = `${line.y}px`;
+        s.width = '3px';
+        s.height = `${line.length}px`;
+      } else {
+        s.left = `${line.x}px`;
+        s.top = `${line.y - 1.5}px`;
+        s.width = `${line.length}px`;
+        s.height = '3px';
+      }
+    };
+    const onKeyDown = (ev) => {
+      if (ev.key === 'Escape') {
+        ev.stopPropagation();
+        finish(false);
+      }
+    };
+    const onUp = () => finish(true);
+    const onCancel = () => finish(false);
+    function finish(commit) {
+      grip.removeEventListener('pointermove', onMove);
+      grip.removeEventListener('pointerup', onUp);
+      grip.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('keydown', onKeyDown, true);
+      indicator.remove();
+      thumb.classList.remove('is-ie-dragging');
+      grip.classList.remove('is-dragging');
+      if (commit && drop) {
+        const to = resolveMove(fromIdx, drop.index);
+        if (to !== fromIdx) moveCard(path, fromIdx, to);
+      }
+    }
+    grip.addEventListener('pointermove', onMove);
+    grip.addEventListener('pointerup', onUp);
+    grip.addEventListener('pointercancel', onCancel);
+    window.addEventListener('keydown', onKeyDown, true);
   }
 
   function afterStructuralChange() {

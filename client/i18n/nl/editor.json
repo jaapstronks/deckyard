@@ -529,6 +529,7 @@
   "editor.inline.removeRow": "Rij verwijderen",
   "editor.inline.addBlock": "Blok toevoegen",
   "editor.inline.removeBlock": "Blok verwijderen",
+  "editor.inline.reorderItem": "Sleep om te verplaatsen",
   "editor.inline.coach": "Klik op een tekst in de slide om die te bewerken",
   "editor.inline.coachDismiss": "Sluiten",
   "editor.shortcuts.title": "Sneltoetsen",

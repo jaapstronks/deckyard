@@ -484,6 +484,9 @@ export const INLINE_DESCRIPTORS = {
       container: '.text-blocks-content',
       itemSelector: '.text-blocks-row',
       removePlacement: 'bottom-right',
+      // The row's top-left corner coincides with the first block's own grip,
+      // so the row grip mirrors the row × on the bottom edge instead.
+      reorderPlacement: 'bottom-left',
       addLabelKey: 'editor.inline.addRow',
       addLabel: 'Add row',
       removeLabelKey: 'editor.inline.removeRow',
