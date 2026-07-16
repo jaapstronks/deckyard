@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T18:32:56.229Z",
+    "generatedAt": "2026-07-16T18:41:57.565Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -4954,20 +4954,6 @@
         "client/views/editor/preview-panel.js:61"
       ]
     },
-    "editor.previewSheet.close": {
-      "default": "Close preview",
-      "refs": [
-        "client/views/editor/responsive-drawers.js:86"
-      ]
-    },
-    "editor.previewSheet.open": {
-      "default": "Open preview",
-      "refs": [
-        "client/views/editor/responsive-drawers.js:78",
-        "client/views/editor/responsive-drawers.js:79",
-        "client/views/editor/responsive-drawers.js:92"
-      ]
-    },
     "editor.publish.confirm": {
       "default": "Publish?\n\nThis makes the presentation publicly accessible to anyone with the link.",
       "refs": [
@@ -6397,15 +6383,15 @@
     "editor.slidesDrawer.close": {
       "default": "Close slides",
       "refs": [
-        "client/views/editor/responsive-drawers.js:46"
+        "client/views/editor/responsive-drawers.js:42"
       ]
     },
     "editor.slidesDrawer.open": {
       "default": "Open slides",
       "refs": [
-        "client/views/editor/responsive-drawers.js:37",
-        "client/views/editor/responsive-drawers.js:38",
-        "client/views/editor/responsive-drawers.js:52"
+        "client/views/editor/responsive-drawers.js:33",
+        "client/views/editor/responsive-drawers.js:34",
+        "client/views/editor/responsive-drawers.js:48"
       ]
     },
     "editor.table.addCol": {

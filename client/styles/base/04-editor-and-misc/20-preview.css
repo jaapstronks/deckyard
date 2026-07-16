@@ -231,11 +231,6 @@
     flex-shrink: 0;
     max-height: 280px;
   }
-
-  /* Slide comments section should also be compact */
-  .is-editor .slide-comments-section {
-    flex-shrink: 0;
-  }
 }
 
 
