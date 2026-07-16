@@ -6,6 +6,24 @@ entries are grouped per release rather than exhaustively listed.
 
 ## [Unreleased]
 
+### Added
+
+- **Real-time collaboration (opt-in, feature-flagged).** With
+  `COLLAB_ENABLED=true`, everyone with the same deck open sees live
+  presence: topbar avatars, a name label + dot on the slide each person is
+  viewing (gliding along when they move), and focus rings + name labels on
+  the field someone is editing. With `COLLAB_LIVE_EDITS=true` on top, the
+  deck becomes a shared CRDT document (Yjs/Hocuspocus over a `/collab`
+  WebSocket on the same port): edits merge live at character level,
+  undo/redo is per-user, presenter notes support genuine co-typing, and
+  server-side writes (AI, MCP, public API, translate, theme change) appear
+  live in open editors. Slide locks are retired while the flag is on;
+  autosave and conflict modals are inert (the server persists debounced).
+  Both flags default off; with them off, behavior is byte-for-byte
+  unchanged. Postgres installs need migration 040 (`presentation_ydocs`).
+  See `docs/reference/collab-presence.md`, `collab-deck-doc.md`,
+  `collab-editor-binder.md` and ADR 001.
+
 ### Fixed
 
 - **Security: per-deck authorization for machine clients (MCP + public

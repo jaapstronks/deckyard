@@ -41,13 +41,6 @@ self-contained project.
 
 ## Next — existing feature plans
 
-- **Real-time collaboration & presence** — research + ADR done
-  ([docs/collab-research.md](docs/collab-research.md),
-  [ADR 001](docs/adr/001-realtime-collaboration.md)): Yjs + Hocuspocus as an
-  optional, feature-flagged layer. Phase 1 = presence (avatars, who's on
-  which slide), phase 2 = live CRDT edits incl. AI/MCP mutations appearing
-  live. Awaiting per-phase go.
-
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.

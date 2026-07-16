@@ -2,7 +2,7 @@
 
 - **Status**: proposed (awaiting go/no-go per phase)
 - **Date**: 2026-07-15
-- **Research**: [docs/collab-research.md](../collab-research.md)
+- **Research**: [docs/reference/collab-research.md](../reference/collab-research.md)
 
 ## Context
 
