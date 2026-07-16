@@ -110,6 +110,28 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top}px`;
         s.transform = 'translate(-50%, -50%)';
         break;
+      case 'top-left':
+        // Centered on the top-left corner.
+        s.left = `${r.left}px`;
+        s.top = `${r.top}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
+      case 'top-center':
+        // Centered on the middle of the top edge - the reorder grip's
+        // default: a corner would collide with the remove × of a grid/row
+        // neighbour (adjacent cards share their gutter corners), the edge
+        // middle never does, and it reads as a drag handle.
+        s.left = `${r.left + r.width / 2}px`;
+        s.top = `${r.top}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
+      case 'bottom-left':
+        // Centered on the bottom-left corner (container-level grips whose
+        // top-left corner coincides with the first child card's own grip).
+        s.left = `${r.left}px`;
+        s.top = `${r.top + r.height}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
       case 'bottom-right':
         // Centered on the bottom-right corner. Used for container-level remove
         // buttons (a text-blocks row) whose top-right corner coincides with the

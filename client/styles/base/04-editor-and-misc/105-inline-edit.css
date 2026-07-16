@@ -182,6 +182,64 @@
   background: hsl(var(--app-danger, 0 70% 50%) / 0.12);
 }
 
+/* ---- Reorder grip (⠿) and drop indicator ---- */
+.ie-overlay .ie-card-grip {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+  color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  border: 1.5px solid hsl(var(--app-border-default));
+  border-radius: 999px;
+  box-shadow: 0 2px 6px hsl(0 0% 0% / 0.15);
+  cursor: grab;
+  touch-action: none; /* the drag is pointer-based; don't let touch scroll it */
+  opacity: 0;
+  transition: opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.thumb.is-inline-edit:hover .ie-overlay .ie-card-grip,
+.ie-overlay .ie-card-grip:focus-visible {
+  opacity: 1;
+}
+
+.ie-overlay .ie-card-grip:hover {
+  background: hsl(var(--app-accent-primary) / 0.12);
+}
+
+.ie-overlay .ie-card-grip.is-dragging,
+.thumb.is-ie-dragging .ie-overlay .ie-card-grip.is-dragging {
+  cursor: grabbing;
+  opacity: 1;
+}
+
+/* While dragging: the indicator is the story; mute every other affordance so
+   the insertion line is unambiguous. */
+.thumb.is-ie-dragging .ie-overlay .ie-ghost,
+.thumb.is-ie-dragging .ie-overlay .ie-card-add,
+.thumb.is-ie-dragging .ie-overlay .ie-media-hint,
+.thumb.is-ie-dragging .ie-overlay .ie-clear,
+.thumb.is-ie-dragging .ie-overlay .ie-card-remove,
+.thumb.is-ie-dragging .ie-overlay .ie-ol-outline,
+.thumb.is-ie-dragging .ie-overlay .ie-card-grip:not(.is-dragging) {
+  opacity: 0 !important;
+}
+
+.ie-overlay .ie-drop-indicator {
+  position: absolute;
+  z-index: 3;
+  background: hsl(var(--app-accent-primary));
+  border-radius: 2px;
+  /* thin light halo so the line stays visible over dark/tinted cards */
+  box-shadow: 0 0 0 1px hsl(0 0% 100% / 0.6);
+  pointer-events: none;
+}
+
 /* Markdown modal: a clearly-separate editing mode over the preview panel.
    Dimmed + blurred backdrop plus a centered, elevated card so it never reads as
    part of the slide. Hosted on the preview panel (not the scaled thumb). */
