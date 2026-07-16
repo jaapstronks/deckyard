@@ -167,6 +167,35 @@
   font-size: 28px;
   opacity: 0.92;
 }
+.slide-quote .quote-author.has-portraits {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.slide-quote .quote-portraits {
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.slide-quote .quote-portrait {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.slide-quote .quote-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Editor-canvas-only placeholder for an empty portrait slot (rendered in mode
+   'edit' so a portrait can be added from the slide; the inline-edit overlay
+   draws the outline + "Add image" chip on top of it). */
+.slide-quote .quote-portrait-placeholder {
+  border: 1px dashed rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.08);
+}
 
 @media print {
   /* Print/export: avoid animated gradients (and Safari print oddities). */
