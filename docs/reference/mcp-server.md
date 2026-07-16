@@ -59,8 +59,8 @@ Add to your Cursor MCP settings:
 | `get_presentation` | Get full deck data (all slides) |
 | `get_presentation_url` | Get edit and present URLs for sharing |
 | `list_themes` | List available themes with brand colors |
-| `list_comments` | List comments on one deck (newest first, with replies); access-scoped |
-| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer (DB store only) |
+| `list_comments` | List comments on one deck (newest first, with replies, slide context + snapshots, `since` filter); access-scoped |
+| `list_recent_comments` | Latest comments across your decks, optionally by one reviewer or since-date (DB store only) |
 
 ### Creating
 
@@ -81,6 +81,17 @@ Add to your Cursor MCP settings:
 | `reorder_slides` | Move a slide from one position to another |
 | `convert_slide` | AI-powered type conversion (e.g. content → list) |
 | `iterate_presentation` | Natural language modification ("make slide 3 punchier") |
+
+### Commenting
+
+| Tool | Description |
+|------|-------------|
+| `add_comment` | New top-level comment as the acting user, optionally anchored to a slide (stores a slide snapshot) |
+| `reply_to_comment` | Reply in an existing thread ("good point, fixed in slide 7") |
+| `set_comment_status` | Resolve / reopen / dismiss (owner-only, same transitions as the app) |
+
+Details, payload shape and the matching REST endpoints:
+`docs/reference/comments-api.md`.
 
 ### Analyzing
 
