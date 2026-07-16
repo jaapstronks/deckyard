@@ -42,8 +42,9 @@ self-contained project.
    `docs/plans/editor-ui-direction.md` — decided 2026-07-16, re-sequenced
    the same day; this track now also absorbs the formerly separate
    WYSIWYG-overhaul and inline-descriptor-seam items. Four phases, each
-   shippable alone, in this order: (1) WYSIWYG parity (blocks overhaul,
-   inline reorder, empty-slot adds, descriptor seam for custom types);
+   shippable alone, in this order: (1) WYSIWYG parity (blocks overhaul
+   and descriptor seam shipped as #22; inline reorder and empty-slot adds
+   remain);
    (2) an "Edit all text" bulk surface (fields left, live preview right) —
    the non-wysiwyg mode for everything inline editing can't cover;
    (3) only then the form column becomes a right-side **Inspector** —
@@ -65,10 +66,6 @@ self-contained project.
 - **AI: recreate a slide from an image/PDF** — `docs/plans/ai-slide-from-image.md`
   — attach a screenshot/PDF in the AI add + refine flows; recognize the slide
   type + content and rebuild it as a native editable slide.
-- **WYSIWYG + sidebar overhaul for row/block types** —
-  `docs/plans/wysiwyg-blocks-overhaul.md` — text-blocks (+ `col{N}` family) onto
-  the icon-card-grid add/remove/reorder pattern in sidebar + WYSIWYG; backwards
-  compatible. Since 2026-07-16 phase 1a of the editor-UI-direction track above.
 - **Interactive behaviors** — `docs/plans/interactive-behaviors.md` —
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
