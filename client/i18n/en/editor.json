@@ -207,6 +207,7 @@
   "editor.images.upload.disabled": "Uploading custom logos is disabled.",
   "editor.images.upload.help": "Upload custom logos (they will be added to the selection)",
   "editor.items.add": "+ Add item",
+  "editor.loading.deck": "Loading presentation…",
   "editor.items.delete": "Delete",
   "editor.items.itemN": "Item {n}",
   "editor.items.remove": "Remove item",

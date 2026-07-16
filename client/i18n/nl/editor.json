@@ -187,6 +187,7 @@
   "editor.images.upload.disabled": "Aangepaste logo’s uploaden is uitgeschakeld.",
   "editor.images.upload.help": "Aangepaste logo’s uploaden (worden toegevoegd aan de selectie)",
   "editor.items.add": "+ Item toevoegen",
+  "editor.loading.deck": "Presentatie laden…",
   "editor.items.delete": "Verwijderen",
   "editor.items.itemN": "Item {n}",
   "editor.items.remove": "Item verwijderen",
