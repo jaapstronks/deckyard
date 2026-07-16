@@ -66,6 +66,11 @@ self-contained project.
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
+- **Comments via public API v1 + MCP write** — `docs/plans/comments-api-mcp.md`
+  — expose comments in the public v1 API (read + reply/resolve, new key
+  scopes) and add MCP write tools + slide-context/snapshot enrichment, so
+  agents can triage and answer reviewer feedback. MCP read tools shipped
+  2026-07-15 (PR #5).
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
@@ -79,6 +84,17 @@ self-contained project.
 
 ## Ideas (no briefing yet)
 
+- **Slide alternatives** — a slide can carry one or more alternative
+  versions (possibly a different slide type), one being the default; try a
+  different form of slide 6 without losing the original or polluting the
+  deck. Sketch: alternatives nested under the slide (deck stays a flat
+  array; exports/presenter/API see only defaults unless asked), slide-list
+  badge/stack, promote-to-default, side-by-side compare with per-variant
+  comment threads. Early decisions locked 2026-07-16: per-slide only (no
+  multi-slide alternative sets), presenter picks variants at start (no
+  live switching for now), alternatives are editor/collaborator-facing
+  only (shared/published views see defaults). Needs a design session
+  first; build after the collab track lands (touches the CRDT codec).
 - `content-columns-slide` → `columns[]` migration (last remaining dual-read
   migration from the type-system layer).
 - Constraint calibration: review maxLength values against real decks.
