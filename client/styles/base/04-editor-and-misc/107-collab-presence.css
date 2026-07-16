@@ -1,0 +1,179 @@
+/**
+ * Collaborator presence (feature-flagged: collab).
+ *
+ * Topbar avatar stack, per-slide indicators in the slide list, and
+ * field-focus outlines + name labels on the preview canvas.
+ */
+
+/* ---- Topbar avatar stack ---- */
+
+.collab-presence-stack {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding-right: 8px;
+}
+
+.collab-presence-avatar {
+  border-radius: 50%;
+  border: 2px solid var(--presence-color, var(--color-border, #ccc));
+  line-height: 0;
+}
+
+.collab-presence-avatar + .collab-presence-avatar,
+.collab-presence-avatar + .collab-presence-more {
+  margin-left: -6px;
+}
+
+.collab-presence-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 12px;
+  background: var(--color-surface-2, #e5e5e5);
+  color: var(--color-text-muted, #666);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ---- Slide list indicators ----
+   One persistent floating element per peer (name label + dot), a listEl
+   child positioned over the slide items with a transform. Moving a peer to
+   another slide transitions the transform, so the label glides from the old
+   thumb to the new one (positioning in presence-ui.js). */
+
+.slide-item {
+  position: relative;
+}
+
+.collab-list-peer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: none;
+  will-change: transform;
+  transition:
+    transform 0.45s cubic-bezier(0.22, 0.9, 0.3, 1),
+    opacity 0.15s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collab-list-peer {
+    transition: none;
+  }
+}
+
+.collab-list-peer-name {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.collab-slide-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--presence-color, #888);
+  border: 2px solid var(--color-surface, #fff);
+  box-sizing: content-box;
+}
+
+.collab-slide-dot.is-editing {
+  box-shadow: 0 0 0 2px var(--presence-color, #888);
+}
+
+/* ---- Field-focus rings on the preview canvas ----
+   Overlay elements on .thumb at real screen px (the slide itself is
+   transform-scaled, so in-slide borders would be microscopic). */
+
+.collab-focus-ring {
+  position: absolute;
+  z-index: 29;
+  border: 2px solid var(--presence-color, #888);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* The label floats a little above the ring, pinned to it with a short
+   connector line (::after) — see the positioning in presence-ui.js. */
+.collab-focus-label {
+  position: absolute;
+  z-index: 30;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.collab-focus-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  width: 2px;
+  height: 7px;
+  background: var(--presence-color, #888);
+}
+
+/* Slide-corner fallback chip: shown when a peer edits a field that has no
+   local element yet (freshly spawned field/item whose content hasn't synced
+   here) — not pinned to anything, so no connector line. */
+.collab-focus-label.is-fallback::after {
+  display: none;
+}
+
+/* ---- Remote focus on flat editing surfaces ----
+   Side-form field wrappers, the presenter-notes block and the inline
+   markdown modal are not transform-scaled, so a simple outline + name chip
+   (::after) works — no overlay geometry needed. */
+
+.collab-remote-focus {
+  position: relative;
+  outline: 2px solid var(--presence-color, #888);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* The chip sits INSIDE the top-right corner: these surfaces live in
+   scrollable panels (notes block, side form), so anything hung above the
+   element's top edge gets clipped once the user scrolls that edge to the
+   panel top. */
+.collab-remote-focus::after {
+  content: attr(data-collab-focus-name);
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 30;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--presence-color, #888);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}

@@ -9,6 +9,7 @@ import {
 } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
+import { ifMatchRevision } from '../if-match-revision.js';
 import { openVersionPreviewModal } from './versions-preview.js';
 import { openVersionCompareModal } from './versions-compare.js';
 
@@ -207,7 +208,7 @@ export function openVersionsModal({
                 {
                   method: 'POST',
                   headers: {
-                    'If-Match': String(Number(pres?.revision) || 1),
+                    'If-Match': await ifMatchRevision({ api, id, pres }),
                   },
                 }
               );

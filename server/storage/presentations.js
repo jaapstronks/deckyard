@@ -5,6 +5,8 @@
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { isCollabLiveEditsEnabled } from '../config/features.js';
+import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
@@ -76,6 +78,15 @@ export async function createPresentation(repoRoot, body) {
 }
 
 export async function updatePresentation(repoRoot, id, body, opts) {
+  // Server-as-collaborator seam: capture the pre-save state first. It is
+  // the base the caller's write was computed against, and live-apply's
+  // three-way diff needs it to leave concurrent client edits alone.
+  const collabEligible = opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
+  let collabBase = null;
+  if (collabEligible) {
+    collabBase = await getPresentation(repoRoot, id).catch(() => null);
+  }
+
   let result;
   try {
     result = await updatePresentationUncached(repoRoot, id, body, opts);
@@ -88,6 +99,37 @@ export async function updatePresentation(repoRoot, id, body, opts) {
     import('./present-sessions/sse.js')
       .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
       .catch(() => {});
+    // Collab live edits, server-as-collaborator seam (ADR 001 §6): when the
+    // deck's collab doc is actively loaded, apply this just-stored save to
+    // the live doc so it reaches open editors instead of being overwritten
+    // by the next debounced collab store. Saves that came FROM the doc
+    // (reason 'collab') never loop back into it.
+    let appliedToLiveDoc = false;
+    if (collabEligible) {
+      try {
+        const { applyServerWriteToActiveDoc } = await import('../collab/live-apply.js');
+        appliedToLiveDoc = await applyServerWriteToActiveDoc(id, result, { base: collabBase });
+      } catch (err) {
+        // The JSON save already succeeded; the live doc just didn't get it
+        // (same gap as before step 4, for this one write). Say so loudly.
+        console.error(
+          `[collab] applying server write to active doc of ${id} failed; ` +
+            'open editors will overwrite this save on their next store:',
+          err?.message || err
+        );
+      }
+    }
+    // A save that did NOT reach the collab doc makes any stored (cold)
+    // Y.Doc binary stale — invalidate it so the next collab open
+    // re-bootstraps from this fresh JSON instead of resurrecting old
+    // content. Saves originating from or applied to the doc keep their
+    // binary. Unconditional (not gated on COLLAB_LIVE_EDITS): a binary
+    // written while the flag was on must not survive saves made while it is
+    // off, or re-enabling the flag would resurrect stale state. No-op when
+    // no binary exists.
+    if (opts?.reason !== 'collab' && !appliedToLiveDoc) {
+      deleteYDocState(repoRoot, id).catch(() => {});
+    }
   }
   return result;
 }
@@ -140,6 +182,9 @@ export async function deletePresentation(repoRoot, id, opts) {
     return await mod.deletePresentation(repoRoot, id, opts);
   } finally {
     invalidatePresentationCache(id);
+    // Trash/restore round-trips must not resurrect a stale collab doc.
+    // Unconditional for the same reason as in updatePresentation.
+    deleteYDocState(repoRoot, id).catch(() => {});
   }
 }
 

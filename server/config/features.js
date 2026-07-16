@@ -52,6 +52,28 @@ export function requireLiveData() {
 }
 
 /**
+ * Real-time collaboration (presence) configuration.
+ * When enabled, the server mounts a Yjs/Hocuspocus WebSocket endpoint at
+ * /collab and the editor shows live collaborator presence. Default: off —
+ * single-user installs run without any collaboration transport.
+ * Read at call time (not module load) so .env loading order can't bite.
+ */
+export function isCollabEnabled() {
+  return truthy(process.env.COLLAB_ENABLED);
+}
+
+/**
+ * Real-time collaboration (live document edits) configuration.
+ * Phase 2 on top of presence: the Y.Doc becomes the live source of truth
+ * while a deck is open collaboratively — persisted server-side and
+ * serialized back to the deck JSON. Requires COLLAB_ENABLED; kept as a
+ * separate flag so presence can ship and soak alone. Default: off.
+ */
+export function isCollabLiveEditsEnabled() {
+  return isCollabEnabled() && truthy(process.env.COLLAB_LIVE_EDITS);
+}
+
+/**
  * RSS Feed configuration.
  * When enabled, organizations can activate RSS/Atom/JSON feeds for published presentations.
  * Default: true (enabled). The env var is a kill switch for instances that don't want the feature.

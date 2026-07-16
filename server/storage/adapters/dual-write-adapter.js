@@ -123,6 +123,29 @@ export class DualWriteAdapter extends StorageAdapter {
   }
 
   // ============================================================
+  // COLLAB Y.DOC STATE
+  // ============================================================
+
+  async getYDocState(presentationId, ctx) {
+    const primary = this._getPrimary();
+    return primary.getYDocState(presentationId, ctx);
+  }
+
+  async setYDocState(presentationId, state, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.setYDocState(presentationId, state, ctx);
+    this._writeToSecondary('setYDocState', [presentationId, state, ctx], result);
+    return result;
+  }
+
+  async deleteYDocState(presentationId, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.deleteYDocState(presentationId, ctx);
+    this._writeToSecondary('deleteYDocState', [presentationId, ctx], result);
+    return result;
+  }
+
+  // ============================================================
   // PRESENTATION VERSIONS
   // ============================================================
 

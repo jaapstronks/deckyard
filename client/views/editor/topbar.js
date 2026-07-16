@@ -59,6 +59,7 @@ export function createEditorTopbar({
   onReadOnlyChange,
   onAnalyze,
   onOpenOverview,
+  collabLanguage,
 } = {}) {
   const detachers = [];
 
@@ -188,6 +189,7 @@ export function createEditorTopbar({
     editorState,
     topbarTitleEl,
     toast,
+    collabLanguage,
   });
 
   // ============================================================

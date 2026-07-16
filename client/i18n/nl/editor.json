@@ -79,6 +79,7 @@
   "editor.chart.help.barPie": "Plak TSV (uit Sheets/Excel) of CSV.\nBar/Pie formaat: Label, Value.\nVoorbeeld:\nLabel,Value\nA,10\nB,25\nC,15",
   "editor.chart.help.line": "Plak TSV (uit Sheets/Excel) of CSV.\nLine formaat: X, Serie 1, optioneel Serie 2.\nGebruik de header (eerste rij) om serie-namen te zetten, of vul “Serie 1 naam (legend)” / “Serie 2 naam (legend)” in.\nVoorbeeld:\nX,Revenue,Cost\nJan,12,8\nFeb,18,11",
   "editor.chart.importCsv": "Importeer CSV",
+  "editor.collab.liveEditsUnavailable": "Live samenwerken kon niet laden; wijzigingen worden niet opgeslagen. Herlaad de editor.",
   "editor.companion": "Companion",
   "editor.companion.title": "Open sprekernotities companion op je telefoon (QR-code).",
   "editor.conflict.copyMine": "Kopieer mijn versie (JSON)",
@@ -581,5 +582,9 @@
   "editor.deckReview.revisionFailed": "Geen herziene sectie ontvangen (probeer opnieuw).",
   "editor.deckReview.discardDeck": "Deck verwerpen",
   "editor.deckReview.discardConfirm": "Deze gegenereerde presentatie verwijderen? Hij verhuist naar de prullenbak.",
-  "editor.deckReview.keep": "Ziet er goed uit"
+  "editor.deckReview.keep": "Ziet er goed uit",
+  "editor.presence.here": "Ook hier",
+  "editor.presence.viewerTitle": "{name} is in deze presentatie",
+  "editor.presence.viewingSlide": "{name} bekijkt deze slide",
+  "editor.presence.editingSlide": "{name} bewerkt deze slide"
 }

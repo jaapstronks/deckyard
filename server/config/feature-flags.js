@@ -1,6 +1,12 @@
 import { getLlmStatus } from '../utils/llm/config.js';
 import { sandboxEnabled } from './sandbox.js';
-import { isMultiWorkspaceEnabled, isLiveDataEnabled, isRssFeedEnabled } from './features.js';
+import {
+  isMultiWorkspaceEnabled,
+  isLiveDataEnabled,
+  isRssFeedEnabled,
+  isCollabEnabled,
+  isCollabLiveEditsEnabled,
+} from './features.js';
 import { truthy } from './utils.js';
 
 export function getFeatureFlags() {
@@ -34,5 +40,7 @@ export function getFeatureFlags() {
     multiWorkspace: isMultiWorkspaceEnabled(),
     enableLiveData: isLiveDataEnabled(),
     enableRssFeed: isRssFeedEnabled(),
+    collab: isCollabEnabled(),
+    collabLiveEdits: isCollabLiveEditsEnabled(),
   };
 }

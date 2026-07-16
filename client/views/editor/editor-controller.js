@@ -87,6 +87,17 @@ export async function createEditorController({
   const features = getFeatures() || {};
   const cleanup = createEditorCleanupRegistry();
 
+  // Live collaborative editing (ADR 001 fase 2, stap 3). When on, the shared
+  // Y.Doc is the write target: markDirty routes into the live-edits binder,
+  // undo/redo switch to Y.UndoManager, autosave/If-Match stay inert (the
+  // saveManager never sees a dirty state), the SSE slide-update handler is
+  // not attached (changes arrive through the doc) and slide locks are not
+  // acquired (CRDT merging replaces edit exclusivity; presence shows who is
+  // where). With the flag off, every one of those paths is untouched.
+  const liveEditsActive = !!(features.collab && features.collabLiveEdits && user?.email);
+  let liveEdits = null; // handle from ./live-edits/index.js (dynamic import)
+  let liveEditsHadEarlyEdits = false;
+
   // ============================================================
   // UI PREFERENCES
   // ============================================================
@@ -216,9 +227,13 @@ export async function createEditorController({
     window.__currentUserEmail = user.email;
   }
 
+  // Collaborator presence (initialized further down when features.collab)
+  let presenceHandle = null;
+
   // Wrapper for setSelectedSlideId that also acquires slide lock
   const setSelectedSlideIdWithLock = (v) => {
     selectedSlideId = v;
+    presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
     const authorLocked = isSlideAuthorLockedForUser(v);
     try {
@@ -229,8 +244,9 @@ export async function createEditorController({
         shell?.style?.setProperty?.('--slide-locked-banner-text', `"${bannerText}"`);
       }
     } catch { /* ignore */ }
-    // Acquire lock on the newly selected slide
-    slideLockManager.onSlideSelected(v).catch(() => {});
+    // Acquire lock on the newly selected slide (not in live-edit mode:
+    // concurrent editing is the point, presence covers awareness)
+    if (!liveEditsActive) slideLockManager.onSlideSelected(v).catch(() => {});
   };
 
   const { openOverlayClosers, closeAll: closeAllOverlays } = createOverlayRegistry();
@@ -336,6 +352,14 @@ export async function createEditorController({
    * BEFORE each new sequence starts (not after each individual edit).
    */
   const markDirty = (opts = {}) => {
+    if (liveEditsActive) {
+      // Live-edit mode: the mutation is already in pres; push it into the
+      // shared doc. No snapshot undo (Y.UndoManager) and no autosave (the
+      // server persists the doc), so the saveManager stays untouched/clean.
+      if (liveEdits) liveEdits.localEdit(opts);
+      else liveEditsHadEarlyEdits = true;
+      return undefined;
+    }
     // Notify undo manager of the change (it tracks sequences internally)
     undoManager.captureSnapshot(pres, {
       slideId: opts?.slideId || selectedSlideId,
@@ -414,15 +438,25 @@ export async function createEditorController({
   });
 
   // Shared undo/redo actions — drive both the keyboard shortcuts and the
-  // topbar buttons from one implementation.
-  const { performUndo, performRedo } = createUndoActions({
-    pres,
-    undoManager,
-    getSelectedSlideId: () => selectedSlideId,
-    setSelectedSlideId: setSelectedSlideIdWithLock,
-    markDirty,
-    editorState,
-  });
+  // topbar buttons from one implementation. In live-edit mode they delegate
+  // to the binder's Y.UndoManager (own edits only) instead.
+  const { performUndo: performSnapshotUndo, performRedo: performSnapshotRedo } =
+    createUndoActions({
+      pres,
+      undoManager,
+      getSelectedSlideId: () => selectedSlideId,
+      setSelectedSlideId: setSelectedSlideIdWithLock,
+      markDirty,
+      editorState,
+    });
+  const performUndo = liveEditsActive ? () => !!liveEdits?.undo() : performSnapshotUndo;
+  const performRedo = liveEditsActive ? () => !!liveEdits?.redo() : performSnapshotRedo;
+  const canUndo = liveEditsActive
+    ? () => !!liveEdits?.canUndo()
+    : () => undoManager.canUndo();
+  const canRedo = liveEditsActive
+    ? () => !!liveEdits?.canRedo()
+    : () => undoManager.canRedo();
 
   // ============================================================
   // DROPDOWNS (SHARE + EXPORT)
@@ -520,8 +554,15 @@ export async function createEditorController({
     onError: (e) => saveManager.setLastError(e),
     onUndo: performUndo,
     onRedo: performRedo,
-    canUndo: () => undoManager.canUndo(),
-    canRedo: () => undoManager.canRedo(),
+    canUndo,
+    canRedo,
+    // Live-edit mode: language switching + translate flows go through the
+    // live doc (null/undefined handles fall back to the server fetch).
+    collabLanguage: liveEditsActive
+      ? {
+          loadLanguageVersion: (lang) => liveEdits?.projectLanguage(lang) || null,
+        }
+      : null,
     // Defined later in this controller; the button is only clickable afterwards.
     onShowShortcuts: () => shortcutsHelp.open(),
     normalizeLang,
@@ -532,6 +573,12 @@ export async function createEditorController({
     openOverlayClosers,
     markDirty,
     setPresenceText: (setter) => {
+      // Live-edit mode: no lock plumbing at all. CRDT merging replaces edit
+      // exclusivity and the presence layer (avatar stack, slide dots) covers
+      // awareness, so the presence-lock module is never attached — the
+      // topbar lock-request UI stays dormant (its buttons only appear when
+      // a lock-state callback fires) and no fake holder state is reported.
+      if (liveEditsActive) return;
       const detachPresenceLock = attachPresentationPresenceLock({
         api,
         id,
@@ -720,6 +767,84 @@ export async function createEditorController({
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
 
   // ============================================================
+  // COLLABORATOR PRESENCE (feature-flagged: collab)
+  // ============================================================
+
+  // Dynamic import so flag-off sessions never load the yjs vendor bundle.
+  // The cleanup entry is registered before the import resolves, so a fast
+  // navigate-away can't leave a dangling WebSocket connection.
+  if (features.collab && user?.email) {
+    let presenceClosed = false;
+    cleanup.register('presence', () => {
+      presenceClosed = true;
+      presenceHandle?.destroy?.();
+      presenceHandle = null;
+    });
+    import('./presence/index.js')
+      .then(({ initEditorPresence }) => {
+        if (presenceClosed) return;
+        presenceHandle = initEditorPresence({
+          h,
+          pres,
+          user,
+          topbarEl: topbarApi.topbarEl,
+          listEl: slideListEl,
+          thumb,
+          editorMount,
+          getSelectedSlideId: () => selectedSlideId,
+        });
+        presenceHandle.setViewSlide(selectedSlideId);
+
+        // Live edits ride on the same provider/doc as presence.
+        if (!liveEditsActive) return undefined;
+        return import('./live-edits/index.js').then(({ initEditorLiveEdits }) => {
+          if (presenceClosed) return;
+          liveEdits = initEditorLiveEdits({
+            session: presenceHandle.session,
+            pres,
+            normalizeLang,
+            hadEarlyEdits: liveEditsHadEarlyEdits,
+            getSelectedSlideId: () => selectedSlideId,
+            setSelectedSlideId: setSelectedSlideIdWithLock,
+            rerenderSlideList: () => rerenderSlideList(),
+            rerenderEditor: () => rerenderEditor(),
+            rerenderPreview: () => rerenderPreview(),
+            updateSelectedSlideListItem: () => updateSelectedSlideListItem?.(),
+            editorMount,
+            previewNotesTa,
+            setSaveStatus: (s) => setSaveStatus(s),
+            onTitleChanged: (next) => {
+              if (!topbarTitle) return;
+              topbarTitle.textContent = next;
+              topbarTitle.title = next;
+            },
+            onUndoStateChanged: () => syncTopbarUndo(),
+          });
+          cleanup.register('liveEdits', () => {
+            liveEdits?.destroy();
+            liveEdits = null;
+          });
+        });
+      })
+      .catch((e) => {
+        console.warn('[collab] presence unavailable:', e?.message || e);
+        // In live-edit mode there is no autosave fallback: markDirty routes
+        // into a binder that will now never arrive, so edits would be lost
+        // silently. Make the failure loud instead.
+        if (liveEditsActive) {
+          setSaveStatus('error');
+          toast.error(
+            t(
+              'editor.collab.liveEditsUnavailable',
+              'Live collaboration failed to load; changes are not being saved. Reload the editor.'
+            ),
+            { durationMs: 15000 }
+          );
+        }
+      });
+  }
+
+  // ============================================================
   // LAYOUT
   // ============================================================
 
@@ -745,7 +870,9 @@ export async function createEditorController({
     },
     onJumpToSlide: (slideId) => {
       if (slideId && pres.slides?.some((s) => s?.id === slideId)) {
-        selectedSlideId = slideId;
+        // Through the wrapper so presence view + slide locks follow the jump
+        // (a bare assignment left the collab view-dot on the old slide).
+        setSelectedSlideIdWithLock(slideId);
         rerenderSlideList();
         rerenderEditor();
         rerenderPreview();
@@ -837,30 +964,44 @@ export async function createEditorController({
   updateSelectedSlideListItem = slideListApi.updateSelectedSlideListItem;
   cleanup.register('slideListKeys', slideListApi.detach);
 
-  // Initialize slide lock manager
-  slideLockManager.init().then((cleanupSSE) => {
-    if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
-  }).catch(() => {});
-  cleanup.register('slideLockManager', () => slideLockManager.destroy());
+  // Initialize slide lock manager. In live-edit mode the lock machinery is
+  // fully retired: the manager is never initialized (no SSE listener, no
+  // refresh timer, no acquisitions — its lock getters just report "no
+  // locks"), the presence-lock module above is never attached, and slide
+  // selection skips acquisition. Concurrent editing through the CRDT doc is
+  // the whole point; presence indicators cover awareness. Author locks
+  // (lockedByAuthor) are checked directly on the slide data and keep
+  // working in both modes. The flag-off path is untouched.
+  if (!liveEditsActive) {
+    slideLockManager.init().then((cleanupSSE) => {
+      if (cleanupSSE) cleanup.register('slideLockSSE', cleanupSSE);
+    }).catch(() => {});
+    cleanup.register('slideLockManager', () => slideLockManager.destroy());
 
-  // Acquire lock on initial slide
-  if (selectedSlideId) {
-    slideLockManager.onSlideSelected(selectedSlideId).catch(() => {});
+    // Acquire lock on initial slide
+    if (selectedSlideId) {
+      slideLockManager.onSlideSelected(selectedSlideId).catch(() => {});
+    }
   }
 
-  // Real-time slide update handler (syncs remote changes into local state)
-  const slideUpdateHandler = createSlideUpdateHandler({
-    api,
-    presentationId: id,
-    pres,
-    getSelectedSlideId: () => selectedSlideId,
-    getCurrentLockedSlideId: () => slideLockManager.getCurrentLockedSlideId(),
-    rerenderSlideList: () => rerenderSlideList(),
-    rerenderEditor: () => rerenderEditor(),
-    rerenderPreview: () => rerenderPreview(),
-    saveManager,
-  });
-  cleanup.register('slideUpdateHandler', () => slideUpdateHandler.destroy());
+  // Real-time slide update handler (syncs remote changes into local state).
+  // Not attached in live-edit mode: remote changes arrive through the doc,
+  // and the SSE refetch would race it with (up to a debounce window) stale
+  // server JSON.
+  if (!liveEditsActive) {
+    const slideUpdateHandler = createSlideUpdateHandler({
+      api,
+      presentationId: id,
+      pres,
+      getSelectedSlideId: () => selectedSlideId,
+      getCurrentLockedSlideId: () => slideLockManager.getCurrentLockedSlideId(),
+      rerenderSlideList: () => rerenderSlideList(),
+      rerenderEditor: () => rerenderEditor(),
+      rerenderPreview: () => rerenderPreview(),
+      saveManager,
+    });
+    cleanup.register('slideUpdateHandler', () => slideUpdateHandler.destroy());
+  }
 
   // Load initial comment counts
   commentsPanel?.loadComments?.().catch(() => {});
