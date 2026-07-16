@@ -47,27 +47,52 @@ sits on the **right**, has a drag-resizable width on its left edge
 default 340px), and is a **toggleable rail with swappable panes**
 (`client/views/editor/inspector-panes.js`):
 
-- Exactly one pane is active at a time. Panes today: **settings** (topbar
-  "i" button) and **comments** (topbar comments button; the deck-level
-  comment threads, incl. jump-to-slide and highlight-from-marker via
-  `data-comment-id`).
-- **Pressed-state semantics**: `aria-pressed` on a topbar toggle means
-  "rail open on MY pane", so a pane switch flips one button off and the
-  other on. Toggling the active pane's own trigger dismisses the rail.
-- **The pane's × dismisses the whole rail** (same as the topbar toggles;
-  hiding just the pane would leave an open empty rail). A dismissed rail
-  gives the canvas the space (`is-inspector-collapsed`; the panel leaves
-  the grid entirely).
-- The unseen-comments badge stays on the comments topbar button, so it is
-  visible while the rail is closed.
-- **Notes stay under the canvas**, not in a pane: the notes textarea is
-  wired into the collab presence/live-edits binder and the notes-QR
-  session; making it a pane buys little and risks those seams. Revisit only
-  if the pane model grows a third tenant.
+- Exactly one pane is active at a time. Panes: **settings**, **comments**
+  (the deck-level comment threads, incl. jump-to-slide and
+  highlight-from-marker via `data-comment-id`) and **notes** (presenter
+  notes, `client/views/editor/notes-pane.js`).
+- The rail is driven by the **pane switcher**: a labeled tab group
+  ([Inspector | Comments | Notes]) at the far right of the topbar, in its
+  own visual zone exactly above the rail. It is always visible - also with
+  the rail closed - which is what makes the rail findable.
+- **Pressed-state semantics**: `aria-pressed` on a tab means "rail open on
+  MY pane", so a pane switch flips one tab off and the other on. Clicking
+  the active pane's own tab dismisses the rail.
+- **The pane's × dismisses the whole rail** (same as the tabs; hiding just
+  the pane would leave an open empty rail). A dismissed rail gives the
+  canvas the space (`is-inspector-collapsed`; the panel leaves the grid
+  entirely).
+- The unseen-comments badge sits on the Comments tab, so it is visible
+  while the rail is closed.
+- **Notes are a pane, not an under-canvas block**: notes are rarely used
+  and only matter again while presenting, so they live out of sight. The
+  textarea keeps its collab seams (`data-collab-field-key="notes"` for
+  presence, the same element reference for the live-edits binder); the
+  "Notes (QR)" companion flow sits in the pane header. Panes are
+  persistent DOM, so those bindings survive rerenders.
 - Lock/read-only gating is **not** the pane host's job: every editing
   surface consumes the state-driven `getSlideLockKind` seam itself (see
   `editor-controller.js`); slide locks are also enforced server-side
   (`enforceSlideWritePolicy`).
+
+## The slide toolbar and the topbar zones
+
+Everything scoped to the **current slide** lives with the slide, in a
+toolbar in the canvas header (mount points filled by `rerenderEditor` on
+every slide change): the type chip (+ retired/custom badges), "All text"
+(the bulk modal), the Comment pin, the author lock, the "…" slide-actions
+menu (Fill / Save to library / Convert / AI Convert / Duplicate / Delete)
+and the zoom button. The inspector pane header is pure pane chrome (pane
+name + ×).
+
+The topbar holds only **deck-level** chrome, in zones: identity (back,
+title, save status, presence) - deck editing (undo/redo, language) - deck
+actions (Export, Share, deck grid, Present as the primary CTA with a
+caret menu holding Companion) - utilities (user menu, ⋯ with AI analysis,
+Translate, Versions, Settings, Keyboard shortcuts) - and, far right past
+a separator, the pane switcher. At narrow widths the bar sheds
+progressively (title shrinks; deck grid mirrors into ⋯ at ≤1024; undo/
+redo ≤820; avatar ≤600) so the pane switcher never falls off-screen.
 
 ## What the settings pane renders (the keeps-model)
 
@@ -83,7 +108,11 @@ together**.
   would risk orphaning a field the fork has no other surface for.
 - Widgets a flat keeps-list can't express (chart data editor, focus
   pickers, icon-card-grid icon+link, per-column image settings) render via
-  `renderInspectorExtrasByType` in the same module.
+  `renderInspectorExtrasByType` in the same module. Bulky widget blocks
+  ("Card icons & links", "Column images & blocks", the image-slide
+  animation settings) render as **collapsible groups, default closed**, so
+  the pane leads with the at-a-glance settings (layout/variant enums) and
+  ends with Background (sticky-open) and Accessibility.
 
 ## Per-type coverage audit (executed 2026-07-16)
 

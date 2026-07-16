@@ -593,5 +593,6 @@
   "editor.panes.label": "Side panels",
   "editor.present.more": "More presenting options",
   "editor.notes.tab": "Notes",
-  "editor.notes.qr": "Notes (QR)"
+  "editor.notes.qr": "Notes (QR)",
+  "editor.inspector.columnsConfig": "Column images & blocks"
 }

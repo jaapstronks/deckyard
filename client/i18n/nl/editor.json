@@ -606,5 +606,6 @@
   "editor.panes.label": "Zijpanelen",
   "editor.present.more": "Meer presenteeropties",
   "editor.notes.tab": "Notities",
-  "editor.notes.qr": "Notities (QR)"
+  "editor.notes.qr": "Notities (QR)",
+  "editor.inspector.columnsConfig": "Kolom-afbeeldingen & blokken"
 }
