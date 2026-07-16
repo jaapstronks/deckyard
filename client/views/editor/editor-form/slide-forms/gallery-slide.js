@@ -63,12 +63,11 @@ export function renderGallerySlideForm({
     form.append(renderField(bottomSubheadingField));
   }
 
-  // Layout and background in collapsible settings
+  // Layout in collapsible settings (background colour moved to the unified
+  // Background section, editor-form.js).
   const layoutField = fieldByKey?.get('layout');
-  const bgField = fieldByKey?.get('background');
 
   used.add('layout');
-  used.add('background');
 
   const layoutDetails = h('details', { class: 'editor-advanced' });
   const layoutSummary = h('summary', {
@@ -78,10 +77,8 @@ export function renderGallerySlideForm({
   const layoutBody = h('div', { class: 'editor-advanced-body' });
   layoutDetails.append(layoutSummary, layoutBody);
 
-  if (layoutField || bgField) {
-    const layoutEl = layoutField ? renderField(layoutField) : null;
-    const bgEl = bgField ? renderField(bgField) : null;
-    const row = fieldGrid([layoutEl, bgEl].filter(Boolean), 2);
+  if (layoutField) {
+    const row = fieldGrid([renderField(layoutField)].filter(Boolean), 1);
     if (row) layoutBody.append(row);
   }
 

@@ -1,6 +1,17 @@
-import { esc, pickAltText, nonEmpty, cardLinkOverlayHtml } from '../helpers.js';
+import {
+  esc,
+  pickAltText,
+  nonEmpty,
+  cardLinkOverlayHtml,
+  bgClass,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 
-const MAX_LOGOS = 12;
+// Cap for the logos[] array. The legacy numbered fields (logo{N}*) stay at 12:
+// they predate logos[], and logoCount is a strictly validated enum — walls
+// beyond 12 logos exist only in the array format.
+export const MAX_LOGOS = 30;
+const LEGACY_MAX = 12;
 
 function clampInt(n, min, max) {
   const v = Number(n);
@@ -15,7 +26,7 @@ function clampInt(n, min, max) {
 export function resolveLogos(content) {
   // New format: logos[]
   if (Array.isArray(content?.logos) && content.logos.length > 0) {
-    return content.logos.map((l) => ({
+    return content.logos.slice(0, MAX_LOGOS).map((l) => ({
       image: l.image || '',
       name: l.name || '',
       alt: l.alt || '',
@@ -24,9 +35,9 @@ export function resolveLogos(content) {
   }
 
   // Legacy format: logo{N}Image, logo{N}Name, etc.
-  const count = clampInt(content?.logoCount || 1, 1, MAX_LOGOS);
+  const count = clampInt(content?.logoCount || 1, 1, LEGACY_MAX);
   let maxUsedIdx = 0;
-  for (let i = 1; i <= MAX_LOGOS; i++) {
+  for (let i = 1; i <= LEGACY_MAX; i++) {
     if (content?.[`logo${i}Image`] || content?.[`logo${i}Name`]) {
       maxUsedIdx = i;
     }
@@ -66,12 +77,13 @@ export default {
       required: false,
       maxLength: 220,
     },
+    BACKGROUND_FIELD,
     {
       key: 'logoCount',
       label: 'Number of logos',
       type: 'enum',
       required: false,
-      options: Array.from({ length: MAX_LOGOS }, (_v, i) => String(i + 1)),
+      options: Array.from({ length: LEGACY_MAX }, (_v, i) => String(i + 1)),
       deprecated: true,
     },
 
@@ -91,7 +103,7 @@ export default {
     },
 
     // Legacy 1..12 logos: image + (optional) name + optional explicit alt (author intent)
-    ...Array.from({ length: MAX_LOGOS }, (_v, idx) => {
+    ...Array.from({ length: LEGACY_MAX }, (_v, idx) => {
       const i = idx + 1;
       return [
         {
@@ -129,6 +141,7 @@ export default {
   defaults: {
     title: '',
     subheading: '',
+    background: 'mist',
     logoCount: '1',
     logo1Image: '',
     logo1Name: 'Logo',
@@ -202,10 +215,26 @@ export default {
         `
         : '';
 
+    // Existing decks carry no background value; their historical look is mist.
+    const bg = bgClass(content?.background || 'mist');
+
+    // Counts 1-12 use the hand-tuned CSS tiers (fixed cell sizes that grow as
+    // the wall empties). Beyond 12 the grid switches to fluid columns: a
+    // steady 7-wide (8 for the last tier) so cell size stays consistent and
+    // rows grow with the count.
+    let fluidClass = '';
+    let fluidStyle = '';
+    if (count > 12) {
+      const cols = count <= 28 ? 7 : 8;
+      const rows = Math.ceil(count / cols);
+      fluidClass = ' is-fluid';
+      fluidStyle = ` style="--lw-cols: ${cols}; --lw-rows: ${rows};"`;
+    }
+
     return `
-      <div class="slide slide-logo-wall slide-bg-mist${
+      <div class="slide slide-logo-wall ${bg}${
         hasHeader ? ' has-header' : ''
-      }" data-logo-count="${count}">
+      }${fluidClass}" data-logo-count="${count}"${fluidStyle}>
         <div class="slide-inner">
           ${headerHtml}
           <div class="logo-wall-grid">

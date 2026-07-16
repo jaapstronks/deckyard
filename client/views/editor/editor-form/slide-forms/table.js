@@ -351,21 +351,17 @@ export function renderTableSlideForm({
   add('title');
   add('caption');
 
-  // Compact appearance row: header + background + table style together
-  // (table style is an appearance setting like background; it used to render
-  // detached at the very bottom of the panel).
+  // Compact appearance row: header + table style together (background colour
+  // moved to the unified Background section, editor-form.js).
   const headerField = fieldByKey.get('headerRow');
-  const bgField = fieldByKey.get('background');
   const styleField = fieldByKey.get('tableStyle');
   const animateByCellField = fieldByKey.get('animateByCell');
-  if (headerField || bgField || styleField) {
+  if (headerField || styleField) {
     used.add('headerRow');
-    used.add('background');
     used.add('tableStyle');
     const hEl = headerField ? renderField(headerField) : null;
-    const bgEl = bgField ? renderField(bgField) : null;
     const styleEl = styleField ? renderField(styleField) : null;
-    const row = fieldGrid([hEl, bgEl, styleEl], 2);
+    const row = fieldGrid([hEl, styleEl], 2);
     if (row) form.append(row);
   }
 

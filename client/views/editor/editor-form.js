@@ -92,6 +92,28 @@ function storeTextFieldsOpen(open) {
   }
 }
 
+// Sticky user preference for the unified "Background" section (colour +
+// custom image + corner logo). Defaults to open: the colour picker lives
+// here now, and hiding a primary design control behind a collapsed panel
+// would be a discoverability regression.
+const BG_SECTION_OPEN_KEY = 'editor.bgSection.open';
+
+function readBgSectionOpen() {
+  try {
+    return localStorage.getItem(BG_SECTION_OPEN_KEY) !== '0';
+  } catch {
+    return true;
+  }
+}
+
+function storeBgSectionOpen(open) {
+  try {
+    localStorage.setItem(BG_SECTION_OPEN_KEY, open ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
+
 // AI conversion targets — which types can each slide type convert to?
 const AI_CONVERT_TARGETS = {
   'content-slide': [
@@ -554,6 +576,7 @@ export function createRerenderEditor({
     fieldEnum,
     fieldGrid,
     fieldBackground,
+    fieldColor,
     fieldIconPicker,
     fieldImage,
     fieldTitleBgImage,
@@ -950,17 +973,22 @@ export function createRerenderEditor({
     );
     textDetails.append(textSummary, textBody);
 
-    // Per-slide background image + theme logo (global) are tucked behind a toggle
+    // The unified "Background" section: colour choice, custom image and the
+    // theme corner logo live together (they used to be split between a
+    // top-level colour dropdown and a collapsed "Background & logo" panel).
+    // Sticky open preference (default open); force-open when a non-default
+    // image/logo is set so active settings are never hidden.
     const hasBgImage = Boolean(String(slide?.content?.slideBgImage || '').trim());
     const hasCornerLogo = slide?.content?.slideLogo === 'top-right';
-    const bgDetails = h('details', { class: 'editor-advanced' });
-    if (hasBgImage || hasCornerLogo) bgDetails.open = true;
+    const bgDetails = h('details', { class: 'editor-advanced editor-bg-section' });
+    if (readBgSectionOpen() || hasBgImage || hasCornerLogo) bgDetails.open = true;
+    bgDetails.addEventListener('toggle', () => storeBgSectionOpen(bgDetails.open));
     const bgSummary = h('summary', {
       class: 'editor-advanced-summary',
-      text: t('editor.slide.background.section', 'Background & logo'),
+      text: t('editor.slide.background.section', 'Background'),
       title: t(
         'editor.slide.background.sectionHelp',
-        'Optional full-slide background image and theme logo, per slide.'
+        'Background colour or a custom image, plus the theme corner logo.'
       ),
     });
     const bgBody = h('div', { class: 'editor-advanced-body' });
@@ -981,6 +1009,7 @@ export function createRerenderEditor({
         fieldEnum,
         fieldGrid,
         fieldBackground,
+        fieldColor,
         fieldIconPicker,
         fieldImage,
         fieldTitleBgImage,
@@ -996,6 +1025,8 @@ export function createRerenderEditor({
 
     const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';
     const isGlobalBgFieldKey = (key) =>
+      key === 'background' ||
+      key === 'bgCustomColor' ||
       key === 'slideBgImage' ||
       key === 'slideBgFit' ||
       key === 'slideBgFocusX' ||
@@ -1044,7 +1075,31 @@ export function createRerenderEditor({
       textSectionPlaced = true;
     };
 
-    // Populate the Background section (image picker + crop focus + fit/overlay).
+    // Populate the Background section. Colour first: the section reads as
+    // "colour ór custom image, and optionally the logo on top".
+    const bgColorField = fieldByKey.get('background');
+    if (bgColorField) {
+      // Inside a section already titled "Background" the field label reads
+      // better as "Colour" (it sits next to "Background image").
+      const colorEl = renderField({
+        ...bgColorField,
+        label: t('editor.slide.background.colour', 'Color'),
+      });
+      if (colorEl) bgBody.append(colorEl);
+      // Freeform's extended option set has a 'custom' value with its own
+      // colour input; only shown while 'custom' is selected (the form
+      // rerenders on change, so this stays in sync).
+      const bgCustomField = fieldByKey.get('bgCustomColor');
+      if (bgCustomField) {
+        const customEl = renderField(bgCustomField);
+        if (customEl) {
+          if (slide.content?.background !== 'custom') customEl.style.display = 'none';
+          bgBody.append(customEl);
+        }
+      }
+    }
+
+    // Custom image (+ crop focus + fit/overlay once an image is set).
     const bgImageField = fieldByKey.get('slideBgImage');
     if (bgImageField) {
       const imgEl = renderField(bgImageField);
@@ -1130,12 +1185,13 @@ export function createRerenderEditor({
       if (!used.has(f.key)) add(f.key);
     }
 
+    // Background section above the Text fallback: it's a design control set,
+    // and it replaces the colour dropdown that used to sit loose in the form.
+    if (bgBody.childNodes?.length) form.append(bgDetails);
+
     // Append the collapsed Text section (only when fields were routed into it,
     // and only if a slide-form didn't already position it above its content).
     if (textFieldCount > 0 && !textSectionPlaced) form.append(textDetails);
-
-    // Append background image toggle (always available on every slide type)
-    if (bgBody.childNodes?.length) form.append(bgDetails);
 
     // Append accessibility toggle if it has content
     if (a11yBody.childNodes?.length) form.append(a11yDetails);

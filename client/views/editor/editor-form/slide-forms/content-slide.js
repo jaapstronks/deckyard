@@ -16,14 +16,11 @@ export function renderContentSlideForm({
   add('subheading');
   add('bottomSubheading');
 
+  // Background colour moved to the unified Background section (editor-form.js).
   const layoutField = fieldByKey.get('layout');
-  const bgField = fieldByKey.get('background');
-  if (layoutField || bgField) {
+  if (layoutField) {
     used.add('layout');
-    used.add('background');
-    const layoutEl = layoutField ? renderField(layoutField) : null;
-    const bgEl = bgField ? renderField(bgField) : null;
-    const row = fieldGrid([layoutEl, bgEl], 2);
+    const row = fieldGrid([renderField(layoutField)], 1);
     if (row) form.append(row);
   }
 
