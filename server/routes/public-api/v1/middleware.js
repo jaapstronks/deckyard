@@ -103,7 +103,10 @@ export function requireScope(ctx, scope) {
  * Returns true if:
  * - Presentation has workspace scope
  * - API key owner matches presentation owner or creator
- * - Presentation has no owner/creator (legacy)
+ *
+ * No ownerless-legacy exception: per-deck reads would refuse those decks
+ * anyway, so listing them only leaks titles (same invariant as the Home
+ * collection filter).
  *
  * Note: this deliberately ignores the collaborator table (checking it per
  * deck in a list would be N queries). For per-deck access decisions use
@@ -125,7 +128,6 @@ export function canAccessPresentation(presentation, ownerEmail) {
 
   if (owner && owner === normalized) return true;
   if (createdBy && createdBy === normalized) return true;
-  if (!owner && !createdBy) return true;
 
   return false;
 }

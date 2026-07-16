@@ -17,16 +17,16 @@ import { registerTools } from '../../server/mcp/tools.js';
 // ============================================================================
 
 describe('MCP Tools Registration', () => {
-  it('all 24 tools are registered', async () => {
+  it('all 27 tools are registered', async () => {
     const server = new McpServer();
     registerTools(server, { defaultOwnerEmail: 'test@test.com' });
-    assert.strictEqual(server.tools.size, 24, `Expected 24 tools, got ${server.tools.size}`);
+    assert.strictEqual(server.tools.size, 27, `Expected 27 tools, got ${server.tools.size}`);
   });
 
   it('registers without defaultOwnerEmail', async () => {
     const server = new McpServer();
     registerTools(server, {});
-    assert.strictEqual(server.tools.size, 24);
+    assert.strictEqual(server.tools.size, 27);
   });
 
   it('all tools have required fields', async () => {
@@ -101,6 +101,9 @@ describe('MCP Tools Inventory', () => {
     'preview_presentation',
     'list_comments',
     'list_recent_comments',
+    'add_comment',
+    'reply_to_comment',
+    'set_comment_status',
   ];
 
   it('has all expected tools', async () => {
@@ -149,6 +152,41 @@ describe('MCP Tool Schemas', () => {
     registerTools(server, {});
     const tool = server.tools.get('get_presentation');
     assert.ok(tool.inputSchema.required.includes('id'));
+  });
+
+  it('add_comment requires presentationId and body', async () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    const tool = server.tools.get('add_comment');
+    assert.ok(tool.inputSchema.required.includes('presentationId'));
+    assert.ok(tool.inputSchema.required.includes('body'));
+    assert.ok('slideId' in tool.inputSchema.properties);
+  });
+
+  it('reply_to_comment requires presentationId, commentId, body', async () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    const tool = server.tools.get('reply_to_comment');
+    for (const field of ['presentationId', 'commentId', 'body']) {
+      assert.ok(tool.inputSchema.required.includes(field), `requires ${field}`);
+    }
+  });
+
+  it('set_comment_status requires presentationId, commentId, status enum', async () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    const tool = server.tools.get('set_comment_status');
+    for (const field of ['presentationId', 'commentId', 'status']) {
+      assert.ok(tool.inputSchema.required.includes(field), `requires ${field}`);
+    }
+    assert.deepEqual(tool.inputSchema.properties.status.enum, ['resolved', 'open', 'dismissed']);
+  });
+
+  it('list_comments and list_recent_comments accept a since filter', async () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    assert.ok('since' in server.tools.get('list_comments').inputSchema.properties);
+    assert.ok('since' in server.tools.get('list_recent_comments').inputSchema.properties);
   });
 
   it('update_slide requires presentationId, slideIndex, content', async () => {

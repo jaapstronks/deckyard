@@ -8,6 +8,24 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Comments in the public API v1 + MCP write tools.** Agents/scripts with
+  an API key can now read reviewer comments and respond to them: new
+  endpoints `GET/POST /api/v1/presentations/:id/comments` and
+  `POST /api/v1/comments/:id/status` behind new key scopes `comments:read`
+  and `comments:write`; new MCP tools `add_comment`, `reply_to_comment` and
+  `set_comment_status` (core tool count 24 → 27). Comment payloads carry
+  current slide context, a `slideSnapshot` of the slide as it was when the
+  comment was created (migration 041, `null` for older comments), a `since`
+  filter and an `editUrl` deep link anchored to the commented slide. MCP
+  edit links also got fixed to point at the real editor route (`/app/:id`;
+  `/edit/:id` never existed). See `docs/reference/comments-api.md`.
+
+- **Selected slide in the editor URL.** Navigating slides in the editor (and
+  the view/comment viewer) now updates `?slideId=` via `replaceState`, so a
+  refresh reopens the same slide and a copied URL is a shareable deep link
+  to that slide. No history entry per slide; the deck language param is
+  preserved.
+
 - **Unified Background section in the slide form.** Background colour, custom
   background image (with focus/fit/overlay) and the theme corner logo now
   live in one "Background" section, instead of a loose colour dropdown at the
@@ -46,6 +64,16 @@ entries are grouped per release rather than exhaustively listed.
   `collab-editor-binder.md` and ADR 001.
 
 ### Fixed
+
+- **Security: Home/overviews no longer leak decks without view access.**
+  Three related fixes, all enforcing the same invariant (a deck card — title
+  + first-slide thumbnail — is only visible when the user could also open
+  the deck): (1) `GET /api/presentations` (and search) no longer shows
+  ownerless "legacy" decks to every authenticated user; (2) the popular rail
+  no longer surfaces private-but-published decks with dead links into the
+  app view; (3) the activity unread badge now counts only events on decks
+  the user can read (a fresh user used to see an org-wide count). The same
+  legacy exception was removed from the public API's listing filter.
 
 - **Security: per-deck authorization for machine clients (MCP + public
   API).** MCP tools that fetch a deck by id performed no per-deck check at

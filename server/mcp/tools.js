@@ -9,6 +9,7 @@ import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
+  getPresentation,
   createPresentation,
   updatePresentation,
   deletePresentation,
@@ -19,7 +20,27 @@ import {
   listComments,
   listRecentCommentsForOwner,
   listAccessiblePresentationRefs,
+  getComment,
+  createComment,
+  resolveComment,
+  reopenComment,
+  dismissComment,
 } from '../storage/presentation-comments.js';
+import {
+  canActorCommentOnPresentation,
+  canResolveComment,
+} from '../utils/presentation-authz.js';
+import {
+  buildSlideSnapshot,
+  enrichCommentsWithSlideContext,
+  slideContextFor,
+} from '../services/comment-slide-context.js';
+import {
+  broadcastToPresentation,
+  CommentEventTypes,
+} from '../services/comment-events.js';
+import { recordCommentCreated, recordCommentResolved, recordCommentReopened } from '../services/activity-events.js';
+import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../routes/api/presentations/comments-shared.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
@@ -53,12 +74,29 @@ function slideTitle(slide) {
 }
 
 /**
- * Build a presentation URL (edit or present mode)
+ * Build a presentation URL (edit or present mode). Edit links go to the
+ * SPA's real editor route /app/:id (there is no /edit route), optionally
+ * anchored to a slide via ?slideId= (honored by editor and viewer mode).
  */
-function presentationUrl(id, mode = 'edit') {
+function presentationUrl(id, mode = 'edit', { slideId } = {}) {
   const base = getAppBaseUrl();
   if (!base) return null;
-  return `${base}/${mode}/${id}`;
+  const path = mode === 'edit' ? 'app' : mode;
+  const anchor = slideId ? `?slideId=${encodeURIComponent(slideId)}` : '';
+  return `${base}/${path}/${id}${anchor}`;
+}
+
+/**
+ * Parse an optional `since` tool argument into a normalized ISO string.
+ * Throws on unparseable input so the model gets a clear error.
+ */
+function parseSince(since) {
+  if (!since) return null;
+  const parsed = new Date(since);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid since value: ${since} (use an ISO 8601 date/datetime)`);
+  }
+  return parsed.toISOString();
 }
 
 /**
@@ -1267,7 +1305,7 @@ export function registerTools(
 
   server.tool(
     'list_comments',
-    'List comments on a single presentation (newest first) with nested replies. Use to read reviewer/AI feedback on one deck. Access is scoped to decks you own or that are shared with you.',
+    'List comments on a single presentation (newest first) with nested replies. Use to read reviewer/AI feedback on one deck. Each comment carries current slide context (index, type, title, or deleted), the slide snapshot captured at create time (null for older comments), and an editUrl anchored to the slide. Access is scoped to decks you own or that are shared with you.',
     {
       type: 'object',
       properties: {
@@ -1281,6 +1319,10 @@ export function registerTools(
           type: 'string',
           description: 'Only comments anchored to this slide id',
         },
+        since: {
+          type: 'string',
+          description: 'Only comments created at/after this ISO 8601 date/datetime (e.g. "2026-07-15" or "2026-07-15T12:00:00Z")',
+        },
         includeReplies: {
           type: 'boolean',
           description:
@@ -1289,7 +1331,7 @@ export function registerTools(
       },
       required: ['presentationId'],
     },
-    async ({ presentationId, status = 'all', slideId, includeReplies = false }, context) => {
+    async ({ presentationId, status = 'all', slideId, since, includeReplies = false }, context) => {
       const owner = getOwner(context);
       const ctx = { actorEmail: owner, organizationId: context?.organizationId };
 
@@ -1303,14 +1345,23 @@ export function registerTools(
       const comments = await listComments(presentationId, ctx, {
         status: status === 'all' ? undefined : status,
         slideId: slideId || undefined,
+        since: parseSince(since) || undefined,
         includeReplies,
       });
+
+      // Slide context reflects the deck as it is now; the stored
+      // slideSnapshot on each comment shows the slide at create time.
+      const pres = await getPresentation(repoRoot, presentationId);
+      const enriched = enrichCommentsWithSlideContext(comments, pres || { slides: [] }).map((c) => ({
+        ...c,
+        editUrl: presentationUrl(presentationId, 'edit', { slideId: c.slideId }),
+      }));
 
       return {
         presentationId,
         presentationTitle: ref.title,
-        comments,
-        total: comments.length,
+        comments: enriched,
+        total: enriched.length,
       };
     }
   );
@@ -1319,7 +1370,7 @@ export function registerTools(
 
   server.tool(
     'list_recent_comments',
-    'List the most recent comments across all your presentations (newest first), optionally filtered to one reviewer. Answers "what are the latest comments on my decks?". Each row carries the deck title and edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
+    'List the most recent comments across all your presentations (newest first), optionally filtered to one reviewer or a since-date. Answers "what are the latest comments on my decks?". Each row carries the deck title, current slide context, create-time slide snapshot and a slide-anchored edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
     {
       type: 'object',
       properties: {
@@ -1337,13 +1388,17 @@ export function registerTools(
           description: 'Filter by status (default: all)',
           enum: ['open', 'resolved', 'dismissed', 'all'],
         },
+        since: {
+          type: 'string',
+          description: 'Only comments created at/after this ISO 8601 date/datetime',
+        },
         limit: {
           type: 'number',
           description: 'Max comments to return (default: 50, max: 200)',
         },
       },
     },
-    async ({ scope = 'all', authorEmail, status = 'all', limit = 50 } = {}, context) => {
+    async ({ scope = 'all', authorEmail, status = 'all', since, limit = 50 } = {}, context) => {
       const owner = getOwner(context);
       const ctx = { actorEmail: owner, organizationId: context?.organizationId };
 
@@ -1351,24 +1406,39 @@ export function registerTools(
         scope,
         authorEmail: authorEmail || null,
         status,
+        since: parseSince(since) || null,
         limit,
       });
 
-      const items = comments.map((c) => {
+      // Load each referenced deck once for current slide context.
+      const presCache = new Map();
+      const presFor = async (id) => {
+        if (!presCache.has(id)) {
+          presCache.set(id, await getPresentation(repoRoot, id).catch(() => null));
+        }
+        return presCache.get(id);
+      };
+
+      const items = [];
+      for (const c of comments) {
+        const pres = await presFor(c.presentationId);
         const item = {
+          id: c.id,
           presentationId: c.presentationId,
           presentationTitle: c.presentationTitle,
           slideId: c.slideId,
+          slide: slideContextFor(pres || { slides: [] }, c.slideId),
+          slideSnapshot: c.slideSnapshot ?? null,
           authorName: c.authorName,
           authorEmail: c.authorEmail,
           body: c.body,
           status: c.status,
           createdAt: c.createdAt,
         };
-        const url = presentationUrl(c.presentationId, 'edit');
+        const url = presentationUrl(c.presentationId, 'edit', { slideId: c.slideId });
         if (url) item.editUrl = url;
-        return item;
-      });
+        items.push(item);
+      }
 
       return {
         comments: items,
@@ -1376,6 +1446,194 @@ export function registerTools(
         scope,
         ownerFilter: owner || null,
       };
+    }
+  );
+
+  // ─── comment write tools (shared plumbing) ──────────────────────────────
+
+  /**
+   * Resolve the acting user for a comment mutation, or throw.
+   * Writes need an author identity; a trusted local session without an
+   * owner email cannot attribute the comment to anyone.
+   */
+  function requireCommentActor(context) {
+    const owner = getOwner(context);
+    if (!owner) {
+      throw new Error(
+        'This tool needs an acting user email to attribute the comment to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).'
+      );
+    }
+    return owner;
+  }
+
+  /**
+   * Shared create path for add_comment and reply_to_comment.
+   */
+  async function createCommentAsActor({ presentationId, body, slideId = null, parentId = null }, context) {
+    const owner = requireCommentActor(context);
+    const pres = await getCheckedPresentation(presentationId, context);
+
+    if (!(await canActorCommentOnPresentation(pres, owner))) {
+      throw new Error('You do not have comment permission on this presentation');
+    }
+
+    const text = typeof body === 'string' ? body.trim() : '';
+    if (!text) throw new Error('Comment body is required');
+    if (text.length > MAX_COMMENT_LENGTH) {
+      throw new Error(`Comment must be ${MAX_COMMENT_LENGTH} characters or less`);
+    }
+
+    let slideSnapshot = null;
+    if (slideId) {
+      const slide = (pres.slides || []).find((s) => s?.id === slideId);
+      if (!slide) throw new Error(`Slide not found in this presentation: ${slideId}`);
+      slideSnapshot = buildSlideSnapshot(slide);
+    }
+
+    const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+    const result = await createComment(presentationId, {
+      email: owner,
+      body: text,
+      slideId,
+      parentId,
+      slideSnapshot,
+    }, ctx);
+
+    if (!result.ok) {
+      throw new Error(`Could not create comment: ${result.reason} (comments require the DB storage backend)`);
+    }
+
+    // Same side effects as the app routes so the editor UI updates live.
+    void recordCommentCreated({
+      comment: result.comment,
+      presentation: pres,
+      actor: { email: owner },
+      ctx,
+    });
+    void broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
+      comment: result.comment,
+    });
+    void broadcastCommentCounts(presentationId, ctx);
+
+    return {
+      ok: true,
+      comment: {
+        ...result.comment,
+        slide: slideContextFor(pres, result.comment.slideId),
+        editUrl: presentationUrl(presentationId, 'edit', { slideId: result.comment.slideId }),
+      },
+    };
+  }
+
+  // ─── add_comment ────────────────────────────────────────────────────────
+
+  server.tool(
+    'add_comment',
+    'Add a new top-level comment to a presentation as the acting user. Optionally anchor it to a slide via slideId — a snapshot of that slide is stored with the comment. Requires the DB storage backend.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID' },
+        body: { type: 'string', description: 'Comment text (max 5000 characters)' },
+        slideId: {
+          type: 'string',
+          description: 'Optional: anchor the comment to this slide id',
+        },
+      },
+      required: ['presentationId', 'body'],
+    },
+    async ({ presentationId, body, slideId }, context) =>
+      createCommentAsActor({ presentationId, body, slideId: slideId || null }, context)
+  );
+
+  // ─── reply_to_comment ───────────────────────────────────────────────────
+
+  server.tool(
+    'reply_to_comment',
+    'Reply to an existing comment thread as the acting user (e.g. "good point, fixed in slide 7"). Replying to a reply attaches to the same top-level thread. Requires the DB storage backend.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID the comment belongs to' },
+        commentId: { type: 'string', description: 'Comment (or reply) ID to respond to' },
+        body: { type: 'string', description: 'Reply text (max 5000 characters)' },
+      },
+      required: ['presentationId', 'commentId', 'body'],
+    },
+    async ({ presentationId, commentId, body }, context) => {
+      const owner = requireCommentActor(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      const parent = await getComment(commentId, ctx);
+      if (!parent || parent.presentationId !== presentationId) {
+        throw new Error(`Comment not found on this presentation: ${commentId}`);
+      }
+
+      // Threads are one level deep: replying to a reply joins its thread.
+      const parentId = parent.parentId || parent.id;
+
+      return createCommentAsActor({ presentationId, body, parentId }, context);
+    }
+  );
+
+  // ─── set_comment_status ─────────────────────────────────────────────────
+
+  server.tool(
+    'set_comment_status',
+    'Resolve, reopen or dismiss a comment. Allowed transitions follow the app: open→resolved, open→dismissed, resolved→open. Only the presentation owner/creator may change status. Requires the DB storage backend.',
+    {
+      type: 'object',
+      properties: {
+        presentationId: { type: 'string', description: 'Presentation ID the comment belongs to' },
+        commentId: { type: 'string', description: 'Comment ID' },
+        status: {
+          type: 'string',
+          description: 'New status',
+          enum: ['resolved', 'open', 'dismissed'],
+        },
+      },
+      required: ['presentationId', 'commentId', 'status'],
+    },
+    async ({ presentationId, commentId, status }, context) => {
+      const owner = requireCommentActor(context);
+      const ctx = { actorEmail: owner, organizationId: context?.organizationId };
+
+      const comment = await getComment(commentId, ctx);
+      if (!comment || comment.presentationId !== presentationId) {
+        throw new Error(`Comment not found on this presentation: ${commentId}`);
+      }
+
+      const pres = await getCheckedPresentation(presentationId, context);
+      if (!canResolveComment({ user: { email: owner }, pres, comment })) {
+        throw new Error('Only the presentation owner can change comment status');
+      }
+
+      let result;
+      if (status === 'resolved') {
+        result = await resolveComment(commentId, { email: owner }, ctx);
+      } else if (status === 'dismissed') {
+        result = await dismissComment(commentId, { email: owner }, ctx);
+      } else {
+        result = await reopenComment(commentId, ctx);
+      }
+
+      if (!result.ok) {
+        throw new Error(`Could not change status: ${result.reason}`);
+      }
+
+      const actor = { email: owner };
+      if (status === 'resolved') {
+        void recordCommentResolved({ comment: result.comment, presentation: pres, actor, ctx });
+        void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });
+      } else if (status === 'open') {
+        void recordCommentReopened({ comment: result.comment, presentation: pres, actor, ctx });
+        void broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, { comment: result.comment });
+      } else {
+        void broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, { comment: result.comment });
+      }
+      void broadcastCommentCounts(presentationId, ctx);
+
+      return { ok: true, comment: result.comment };
     }
   );
 

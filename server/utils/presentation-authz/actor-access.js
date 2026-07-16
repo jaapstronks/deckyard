@@ -9,7 +9,11 @@
  */
 
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
-import { canReadPresentation, canWritePresentation } from './presentations.js';
+import {
+  canReadPresentation,
+  canWritePresentation,
+  canCommentOnPresentation,
+} from './presentations.js';
 
 /**
  * Pure check: can an actor (email only) read or write a presentation?
@@ -44,4 +48,36 @@ export async function canActorAccessPresentation(pres, actorEmail, access = 'rea
     ? await getCollaboratorPermission(pres.id, actorEmail, {})
     : null;
   return checkActorAccess({ pres, actorEmail, access, collaboratorPermission });
+}
+
+/**
+ * Pure check: can an actor (email only) comment on a presentation?
+ * Same rules as the editor routes (canCommentOnPresentation): owner/creator,
+ * any workspace user, or a collaborator with comment permission or higher.
+ *
+ * @param {Object} options
+ * @param {Object} options.pres - The presentation object
+ * @param {string} options.actorEmail - The acting user's email
+ * @param {string|null} [options.collaboratorPermission=null]
+ * @returns {boolean}
+ */
+export function checkActorCommentAccess({ pres, actorEmail, collaboratorPermission = null } = {}) {
+  if (!pres || typeof pres !== 'object') return false;
+  return canCommentOnPresentation({ user: { email: actorEmail }, pres, collaboratorPermission });
+}
+
+/**
+ * Async check: fetches the actor's collaborator permission and applies
+ * checkActorCommentAccess.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {string} actorEmail - The acting user's email
+ * @returns {Promise<boolean>}
+ */
+export async function canActorCommentOnPresentation(pres, actorEmail) {
+  if (!pres || typeof pres !== 'object') return false;
+  const collaboratorPermission = actorEmail
+    ? await getCollaboratorPermission(pres.id, actorEmail, {})
+    : null;
+  return checkActorCommentAccess({ pres, actorEmail, collaboratorPermission });
 }

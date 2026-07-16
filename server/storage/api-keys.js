@@ -41,6 +41,8 @@ export const AVAILABLE_SCOPES = [
   'write',          // Create, update, delete presentations
   'export',         // Export presentations
   'ai',             // Use AI generation features
+  'comments:read',  // Read comments on accessible presentations
+  'comments:write', // Create comments/replies and change comment status
 ];
 
 // ============================================================
