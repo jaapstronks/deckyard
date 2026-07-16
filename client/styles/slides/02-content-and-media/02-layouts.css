@@ -189,13 +189,6 @@
   object-fit: cover;
   display: block;
 }
-/* Editor-canvas-only placeholder for an empty portrait slot (rendered in mode
-   'edit' so a portrait can be added from the slide; the inline-edit overlay
-   draws the outline + "Add image" chip on top of it). */
-.slide-quote .quote-portrait-placeholder {
-  border: 1px dashed rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.08);
-}
 
 @media print {
   /* Print/export: avoid animated gradients (and Safari print oddities). */
