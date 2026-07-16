@@ -1175,6 +1175,15 @@ export async function createEditorController({
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);
 
+  // Custom (non-bundled) slide types render a placeholder synchronously and
+  // get their real DOM from the server afterwards — re-apply the inline-edit
+  // affordances then (refresh() is a no-op mid-edit and for undecorated types).
+  const onSlideServerRendered = () => inlineEditor.refresh();
+  thumb.addEventListener('slide-server-rendered', onSlideServerRendered);
+  cleanup.register('inlineServerRenderRefresh', () =>
+    thumb.removeEventListener('slide-server-rendered', onSlideServerRendered)
+  );
+
   // ============================================================
   // PREVIEW RERENDER
   // ============================================================

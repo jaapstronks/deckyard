@@ -551,19 +551,34 @@ export const INLINE_DESCRIPTORS = {
 };
 
 /**
+ * Resolve the inline descriptor for a slide type. The core map wins; a type
+ * without a core entry falls back to an `inline` descriptor declared on the
+ * slide-type definition itself. That is the extension seam for custom slide
+ * types (custom/slide-types/*.js in forks): declare `inline: { ghosts, cards,
+ * formText, ... }` on the definition and it arrives here via /api/slide-types
+ * - no core file needs editing. Same seam philosophy as the MCP custom-tools
+ * hook. Note a definition-declared descriptor is JSON, so function-valued
+ * options (addPlacement as a function) are core-map-only.
  * @param {string} type
+ * @param {Object} [def] - slide-type definition (SLIDE_TYPES[type] / API meta)
  * @returns {InlineDescriptor | null}
  */
-export function getInlineDescriptor(type) {
-  return INLINE_DESCRIPTORS[type] || null;
+export function getInlineDescriptor(type, def) {
+  const custom = def?.inline;
+  return (
+    INLINE_DESCRIPTORS[type] ||
+    (custom && typeof custom === 'object' ? custom : null)
+  );
 }
 
 /**
  * Side-form field keys fully covered by the inline layer for this type.
  * Empty for types without inline editing.
  * @param {string} type
+ * @param {Object} [def] - slide-type definition, for the custom-type fallback
  * @returns {string[]}
  */
-export function getInlineFormTextKeys(type) {
-  return INLINE_DESCRIPTORS[type]?.formText || [];
+export function getInlineFormTextKeys(type, def) {
+  const d = getInlineDescriptor(type, def);
+  return Array.isArray(d?.formText) ? d.formText : [];
 }

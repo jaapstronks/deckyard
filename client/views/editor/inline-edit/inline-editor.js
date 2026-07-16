@@ -796,7 +796,9 @@ export function createInlineEditor({
 
   function openMediaFor(photoEl) {
     const slide = getSlide?.();
-    const descriptor = slide ? getInlineDescriptor(slide.type) : null;
+    const descriptor = slide
+      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
+      : null;
     const media = descriptor?.media;
     if (!slide || !media || typeof openImagePicker !== 'function') return;
     const idx = Number(photoEl.getAttribute('data-inline-photo'));
@@ -883,7 +885,7 @@ export function createInlineEditor({
     if (!getCanEdit?.()) return;
     const slide = getSlide?.();
     const def = slide ? getSlideDef?.(slide.type) : null;
-    const descriptor = slide ? getInlineDescriptor(slide.type) : null;
+    const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
     if (!def || !descriptor) return; // opt-in only
     thumb.classList.add('is-inline-edit');
     // Clicking an editable slide edits text; it does NOT open the lightbox, so

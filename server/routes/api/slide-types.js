@@ -23,6 +23,14 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.defaultsByLang && typeof def.defaultsByLang === 'object'
             ? def.defaultsByLang
             : undefined,
+        // Inline-edit descriptor declared on the definition itself: the
+        // extension seam for custom slide types (custom/slide-types/*.js).
+        // The client's descriptor registry falls back to this when it has no
+        // core entry for the type. JSON-only (no function-valued options).
+        inline:
+          def.inline && typeof def.inline === 'object'
+            ? def.inline
+            : undefined,
       };
     }
 
