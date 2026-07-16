@@ -1,16 +1,19 @@
 # Responsive editor fields (size-intent field rows)
 
-How the editor form column lays out inputs, dropdowns and toggles so they sit
-side by side when there is room and stack when there isn't - without any
-per-slide-type tuning. This replaced the old fixed `.field-grid.cols-N` grid.
+How the editor's inspector column lays out inputs, dropdowns and toggles so
+they sit side by side when there is room and stack when there isn't - without
+any per-slide-type tuning. This replaced the old fixed `.field-grid.cols-N`
+grid.
 
 ## The problem it solves
 
-The editor form column (`.editor-panel`) is **drag-resizable**
-(`--editor-panel-width`, min 320px, default ~400px). Its width is therefore
-independent of the viewport, so viewport media queries can't drive its
-internal layout. The old approach put fields in a CSS grid with a hard column
-count (`grid-template-columns: repeat(2, …)`), which forced two columns no
+The inspector column (`.inspector-panel`) is **drag-resizable**
+(`--inspector-width`, min 320px, default 340px) on desktop, and becomes a
+full-width row under the canvas below the 1100px breakpoint (see
+`editor-inspector.md`). Its width is therefore independent of the viewport,
+so viewport media queries can't drive its internal layout. The old approach
+put fields in a CSS grid with a hard column count
+(`grid-template-columns: repeat(2, …)`), which forced two columns no
 matter how narrow the user dragged the panel - so controls got cramped and
 segmented toggles wrapped their buttons onto a ragged second line.
 
@@ -35,10 +38,11 @@ Two pieces, both at a single chokepoint:
    The class is **inert outside a `.field-grid`** (the flex rules are scoped to
    direct children), so renderers can stamp it unconditionally.
 
-At the ~400px default column, two default fields pair up (10rem·2 + gap ≤ the
-~358px inner width); they stack once the column is dragged below ~374px, which
-is exactly the "too narrow" regime. A wide/full control takes its own line on a
-narrow column and pairs up again on a wide one.
+Two default fields pair up once the column offers ~374px or more (10rem·2 +
+gap); below that - including the 340px default width - they stack, which is
+exactly the "too narrow" regime. A wide/full control takes its own line on a
+narrow column and pairs up again on a wide one (or in the full-width stacked
+row below the breakpoint).
 
 ## Where the intent is set
 
@@ -61,7 +65,7 @@ count.
 ## Verifying
 
 Drive the editor and vary the column width (drag the handle, or set
-`--editor-panel-width` on `.layout`). Across 320-560px there should be zero
+`--inspector-width` on `.layout`). Across 320-560px there should be zero
 control overflow and no segmented-button wrapping. When measuring button rows
 programmatically, compare each button's `left` to the previous one (a smaller
 `left` means a real wrap) - comparing `top` gives false positives because the

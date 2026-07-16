@@ -14,13 +14,13 @@ import {
  * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
  *
  * This map mirrors the per-type coverage audit in
- * docs/plans/editor-ui-direction.md ("Phase 3 gate 2"): the inspector renders
+ * docs/reference/editor-inspector.md: the inspector renders
  * ONLY Background, Accessibility and these settings/design fields. Content
  * fields live on the slide itself (wysiwyg) and - all of them, by
  * construction - in the "Edit all text" bulk modal. A key may only be dropped
  * from this map when its replacement surface has shipped (parity invariant).
  *
- * Documented deviations from the audit table's shorthand (see the plan doc):
+ * Documented deviations from the audit table's shorthand (see the reference doc):
  * - table colCount, team-cards cardCount and logo-wall logoCount are derived
  *   mirrors managed by their editors/arrays and were never rendered as form
  *   controls; they are not resurrected here.

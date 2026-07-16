@@ -1,6 +1,6 @@
 # Deckyard Roadmap
 
-**Updated: 2026-07-10.** This is the single overview for ongoing development.
+**Updated: 2026-07-16.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (38 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
@@ -38,24 +38,11 @@ self-contained project.
 4. **Share unification** — `docs/plans/ux-share-unification.md`
    One Share dialog (live audience / link / workspace), guard the
    presenter-control link, reconcile the permission model.
-5. **Editor UI direction: wysiwyg-first editing** —
-   `docs/plans/editor-ui-direction.md` — decided 2026-07-16, re-sequenced
-   the same day; this track now also absorbs the formerly separate
-   WYSIWYG-overhaul and inline-descriptor-seam items. Four phases, each
-   shippable alone, in this order: (1) WYSIWYG parity — **complete**
-   (blocks overhaul + descriptor seam #22, inline reorder #23,
-   empty-slot adds #24);
-   (2) an "Edit all text" bulk surface (fields left, live preview right) —
-   the non-wysiwyg mode for everything inline editing can't cover —
-   **complete** (#25);
-   (3) only then the form column becomes a right-side **Inspector** —
-   slides | canvas | inspector, toggleable from the topbar, settings only
-   (background / layout / accessibility, no more content text fields) —
-   both gates cleared 2026-07-16: server-side slide-lock enforcement
-   (#27) and the per-type coverage audit;
-   (4) responsive convergence (2 columns under a breakpoint) and comments
-   as a second inspector pane. Comments resolve/inbox semantics stay a
-   separate parked plan.
+
+_(The editor-UI track — wysiwyg-first editing, "Edit all text" bulk modal,
+the right-side Inspector rail with settings + comments panes, responsive
+convergence — shipped in full on 2026-07-16; how it works is documented in
+`docs/reference/editor-inspector.md`.)_
 
 ## Next — existing feature plans
 

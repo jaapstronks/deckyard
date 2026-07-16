@@ -306,7 +306,7 @@ export default {
     ],
     // add/remove buttons for repeatable items (schema minItems/maxItems apply)
     cards: { field: 'items', container: '.my-grid', itemSelector: '.my-card' },
-    // side-form fields fully covered inline (tucked behind the "Text" section)
+    // fields fully covered inline; the settings inspector may omit these
     formText: ['title', 'subheading', 'items'],
   },
   renderHtml: (content) => { /* ... */ },

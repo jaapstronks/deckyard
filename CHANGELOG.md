@@ -98,6 +98,19 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **The editor is now wysiwyg-first.** The slide canvas covers all content
+  editing in place: inline text everywhere, add/remove of repeatable items
+  (including text-blocks rows and blocks), drag-reorder via an overlay grip,
+  and adding a first image to an empty slot. A new **"Edit all text" modal**
+  shows every content field in one list next to a live preview, with
+  prev/next navigation across the deck. The old form column became a slim
+  **Inspector** on the right: a toggleable rail with a settings pane
+  (background, layout/variant enums, accessibility; no more content text
+  fields) and a comments pane that replaces the separate comments slide-over
+  and the thread list under the slide. Below 1100px the editor converges on
+  two columns with the inspector as a full-width row under the canvas.
+  Slide locks are now also enforced server-side (423 on content writes to a
+  locked slide). See `docs/reference/editor-inspector.md`.
 - Stock background photos replaced with generated demo gradients
 - CI and Docker on Node 22 (matches `engines`)
 

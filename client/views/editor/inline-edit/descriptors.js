@@ -60,12 +60,14 @@
  *     The parent item element anchors the child's "+" chip. `ghosts` lists
  *     optional child-item subfields (`{ field, pos?, chip? }`) whose element
  *     the renderer omits when empty - a chip on the child item re-adds them.
- *   formText: side-form field keys whose editing is FULLY covered by the inline
+ *   formText: field keys whose editing is FULLY covered by the inline
  *     layer (plain text, markdown modal, and items whose subfields are all
- *     inline-editable). The side form tucks these behind its collapsed "Text"
- *     section so the visible form leads with design controls. A field whose
- *     editor also carries non-inline controls (icon pickers, image subfields,
- *     KPI delta/note, table column ops) must NOT be listed here.
+ *     inline-editable). For types without an INSPECTOR_KEEPS entry these are
+ *     the keys the settings inspector may omit (conservative fallback in
+ *     inspector-form.js); the bulk "Edit all text" modal renders them too.
+ *     A field whose editor also carries non-inline controls (icon pickers,
+ *     image subfields, KPI delta/note, table column ops) must NOT be listed
+ *     here.
  *
  *   media: per-image affordance. Clicking an element tagged
  *     `data-inline-photo="<n>"` opens an in-slide popover (image picker + alt
