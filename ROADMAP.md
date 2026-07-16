@@ -26,11 +26,6 @@ validation/iteration, MCP server with 22 tools + SSE transport).
 In recommended working order (rationale in `docs/plans/TODO.md`); each is a
 self-contained project.
 
-0. **Editor loading skeleton** — opening a long deck shows seconds of blank
-   white under the topbar until everything is loaded, which reads as broken.
-   Show the three-column editor skeleton (layout is known from the viewport)
-   with pulsing placeholders + a loading indicator immediately on mount.
-   Top priority, in progress 2026-07-16.
 1. **i18n & copy cleanup** — `docs/plans/ux-i18n-copy-cleanup.md`
    Hardcoded NL/EN mix in presenter/companion surfaces, `en.json` artifact,
    locale manifest, date formats, UUID-as-theme-name.
