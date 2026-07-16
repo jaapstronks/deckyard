@@ -31,6 +31,13 @@
   justify-content: center; /* vertical center */
   align-items: flex-start; /* left align */
 }
+/* Layout variants: title block pinned top / center (default) / bottom. */
+.slide-chapter-title.is-layout-top .slide-inner {
+  justify-content: flex-start;
+}
+.slide-chapter-title.is-layout-bottom .slide-inner {
+  justify-content: flex-end;
+}
 .slide-chapter-title .title {
   font-family: var(--font-heading);
   font-size: var(--font-size-title);
@@ -40,6 +47,16 @@
   margin: 0;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
+}
+.slide-chapter-title .subtitle {
+  margin: var(--slide-space-3) 0 0;
+  font-size: var(--slide-text-xl);
+  line-height: var(--slide-leading-snug);
+  max-width: 48ch;
+  /* Override the global muted-gray .subtitle color: this slide sits on a dark
+     gradient, so the subtitle must follow the slide's own text color. */
+  color: inherit;
+  opacity: 0.85;
 }
 
 @keyframes sb-gradient-pan {

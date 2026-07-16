@@ -142,7 +142,8 @@ export const INLINE_DESCRIPTORS = {
     formText: ['quote', 'authorName', 'authorTitle'],
   },
   'chapter-title-slide': {
-    formText: ['title'],
+    ghosts: [{ field: 'subheading', anchor: '.title', pos: 'after' }],
+    formText: ['title', 'subheading'],
   },
   'image-text-slide': {
     ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],

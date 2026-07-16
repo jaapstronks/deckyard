@@ -109,7 +109,7 @@ Section divider for major topics.
   "type": "chapter-title-slide",
   "content": {
     "title": "Chapter Title",
-    "subtitle": "Optional subtitle"
+    "subheading": "Optional subheading"
   }
 }
 
