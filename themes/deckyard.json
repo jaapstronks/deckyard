@@ -36,7 +36,7 @@
     "--t-color-text": "#111827",
     "--t-color-text-muted": "rgba(55, 65, 81, 0.82)",
     "--t-color-accent": "#7c3aed",
-    "--t-quote-author-color": "#5b21b6",
+    "--t-quote-author-color": "#c4b5fd",
     "--t-radius": "16px",
     "--t-radius-sm": "12px",
     "--t-radius-lg": "20px",
