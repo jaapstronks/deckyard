@@ -19,11 +19,17 @@ function peerName(peer) {
   return peer?.user?.name || displayNameFromEmail(peer?.user?.email || '');
 }
 
-/** Dedupe peers by email (multiple tabs of one user collapse into one). */
+/**
+ * Dedupe peers by email (multiple tabs of one user collapse into one).
+ * A connection that is actively editing wins over an idle one — otherwise a
+ * user's forgotten background tab pins their slide-list dot to whatever
+ * slide it was left on while they visibly edit elsewhere.
+ */
 function uniqueByEmail(peers) {
   const seen = new Map();
   for (const p of peers) {
-    if (!seen.has(p.user.email)) seen.set(p.user.email, p);
+    const kept = seen.get(p.user.email);
+    if (!kept || (!kept.focus && p.focus)) seen.set(p.user.email, p);
   }
   return [...seen.values()];
 }
@@ -241,8 +247,11 @@ export function createPresenceUI({
           'aria-hidden': 'true',
         });
         thumb.append(ring, label);
+        // The label floats 7px above the ring; a ::after pin line spans the
+        // gap (see 107-collab-presence.css). Clamped into the thumb when the
+        // field sits at the very top.
         label.style.left = `${rect.left - thumbRect.left - 3}px`;
-        label.style.top = `${Math.max(0, rect.top - thumbRect.top - 3 - label.offsetHeight)}px`;
+        label.style.top = `${Math.max(0, rect.top - thumbRect.top - 3 - 7 - label.offsetHeight)}px`;
       }
     } finally {
       applying = false;

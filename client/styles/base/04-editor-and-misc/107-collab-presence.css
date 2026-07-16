@@ -80,11 +80,13 @@
   pointer-events: none;
 }
 
+/* The label floats a little above the ring, pinned to it with a short
+   connector line (::after) — see the positioning in presence-ui.js. */
 .collab-focus-label {
   position: absolute;
   z-index: 30;
-  padding: 1px 6px;
-  border-radius: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
   background: var(--presence-color, #888);
   color: #fff;
   font-size: 11px;
@@ -92,6 +94,17 @@
   line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.collab-focus-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  width: 2px;
+  height: 7px;
+  background: var(--presence-color, #888);
 }
 
 /* ---- Remote focus on flat editing surfaces ----
@@ -106,15 +119,18 @@
   border-radius: 4px;
 }
 
+/* The chip sits INSIDE the top-right corner: these surfaces live in
+   scrollable panels (notes block, side form), so anything hung above the
+   element's top edge gets clipped once the user scrolls that edge to the
+   panel top. */
 .collab-remote-focus::after {
   content: attr(data-collab-focus-name);
   position: absolute;
-  top: -5px;
-  right: -5px;
-  transform: translateY(-100%);
+  top: 4px;
+  right: 4px;
   z-index: 30;
-  padding: 1px 6px;
-  border-radius: 3px;
+  padding: 2px 8px;
+  border-radius: 4px;
   background: var(--presence-color, #888);
   color: #fff;
   font-size: 11px;
@@ -122,4 +138,5 @@
   line-height: 1.5;
   white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
