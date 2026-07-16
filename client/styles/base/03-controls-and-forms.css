@@ -713,6 +713,13 @@
   object-fit: cover;
 }
 
+/* Narrow inspector rail: smaller preset tiles so two fit per row instead of
+   a tall single column (the 340px default leaves ~240px inside a section). */
+.is-editor .inspector-panel .editor-img-thumb-btn {
+  width: 110px;
+  height: 62px;
+}
+
 .editor-logo-thumb-sm {
   width: 72px;
   height: 40px;

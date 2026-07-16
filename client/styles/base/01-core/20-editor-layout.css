@@ -6,7 +6,7 @@
      fixed, user-resizable width (--inspector-width, set via the drag handle)
      and the slides column uses --slides-panel-width (also drag-resizable). */
   grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
-    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 400px));
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
   height: calc(100vh - var(--ps-topbar-height));
   height: calc(100dvh - var(--ps-topbar-height));
   gap: 0;
@@ -22,7 +22,7 @@
 
 .is-editor.is-slides-collapsed .layout {
   grid-template-columns: var(--ps-slides-collapsed-width)
-    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 400px));
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
 }
 
 .is-editor.is-preview-collapsed .layout {
@@ -396,7 +396,7 @@
 @media (max-width: 1024px) and (min-width: 821px) {
   .is-editor:not(.is-slides-expanded-override) .layout {
     grid-template-columns: var(--ps-slides-collapsed-width)
-      minmax(280px, 1fr) minmax(320px, var(--inspector-width, 380px));
+      minmax(280px, 1fr) minmax(320px, var(--inspector-width, 340px));
   }
 
   /* Dismissed inspector wins over the tablet default (declared after it). */

@@ -787,7 +787,10 @@ export function createRerenderEditor({
       form.append(warningsDiv);
     }
 
-    // AI Iterate panel (slide-level AI refinement)
+    // AI Iterate panel (slide-level AI refinement). Built here, appended at
+    // the very end of the form: the inspector is a settings pane first, and
+    // the refine box is a tool, not a setting.
+    let aiIteratePanel = null;
     if (api && !contentOnly) {
       const iteratePanel = h('div', { class: 'ai-iterate-panel' });
       const iterateForm = h('div', { class: 'ai-iterate-form' });
@@ -923,7 +926,7 @@ export function createRerenderEditor({
 
       iterateForm.append(iterateInput, iterateBtn);
       iteratePanel.append(iterateForm);
-      form.append(iteratePanel);
+      aiIteratePanel = iteratePanel;
     }
 
     // Accessibility fields (global) are tucked behind a toggle
@@ -1180,6 +1183,9 @@ export function createRerenderEditor({
 
     // Append accessibility toggle if it has content
     if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
+
+    // AI refine box last: tooling under the settings.
+    if (aiIteratePanel) form.append(aiIteratePanel);
 
     editorMount.append(form);
   };
