@@ -26,6 +26,11 @@ validation/iteration, MCP server with 22 tools + SSE transport).
 In recommended working order (rationale in `docs/plans/TODO.md`); each is a
 self-contained project.
 
+0. **Editor loading skeleton** — opening a long deck shows seconds of blank
+   white under the topbar until everything is loaded, which reads as broken.
+   Show the three-column editor skeleton (layout is known from the viewport)
+   with pulsing placeholders + a loading indicator immediately on mount.
+   Top priority, in progress 2026-07-16.
 1. **i18n & copy cleanup** — `docs/plans/ux-i18n-copy-cleanup.md`
    Hardcoded NL/EN mix in presenter/companion surfaces, `en.json` artifact,
    locale manifest, date formats, UUID-as-theme-name.
@@ -67,6 +72,14 @@ self-contained project.
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
+- **Comments & notifications UX rethink** —
+  `docs/plans/comments-notifications-ux.md` — in busy review rounds the
+  comments list doubles as a personal inbox: "Resolve" archives the whole
+  thread for everyone, while what you often want is "done for me" without
+  hiding it from a colleague who still has to read it. Analysis + candidate
+  scenarios (per-user dismiss, Notion-style events inbox, split
+  answered/resolved, unread markers) are in the plan; parked until a design
+  session picks a direction — do not build before that.
 
 ## Later — cloud / multi-tenant track
 
@@ -86,8 +99,12 @@ self-contained project.
   comment threads. Early decisions locked 2026-07-16: per-slide only (no
   multi-slide alternative sets), presenter picks variants at start (no
   live switching for now), alternatives are editor/collaborator-facing
-  only (shared/published views see defaults). Needs a design session
-  first; build after the collab track lands (touches the CRDT codec).
+  only (shared/published views see defaults). **Caution: idea only** — the
+  concept still has to be thought through properly, and Jaap is not yet
+  convinced it should be built at all (nor on what timescale). Needs a
+  real design session first; if it goes ahead, build only after careful
+  sequencing with the collab data model (it touches the CRDT codec).
+  Explicitly not near the top of the list.
 - `content-columns-slide` → `columns[]` migration (last remaining dual-read
   migration from the type-system layer).
 - Constraint calibration: review maxLength values against real decks.
