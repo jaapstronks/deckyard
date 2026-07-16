@@ -56,6 +56,7 @@ export function createEditorTopbar({
   setPresenceText,
   onToggleComments,
   onToggleInspector,
+  onToggleNotes,
   setCommentsBadge,
   setLockStateCallback,
   onReadOnlyChange,
@@ -278,25 +279,40 @@ export function createEditorTopbar({
     h('span', { class: 'topbar-pane-tab-label', text: t('editor.inspector.title', 'Inspector') })
   );
 
+  const btnNotes = h('button', {
+    class: 'topbar-pane-tab topbar-notes-btn',
+    type: 'button',
+    title: t('editor.notes.title', 'Presenter notes'),
+    'aria-pressed': 'false',
+    onclick: () => onToggleNotes?.(),
+  });
+  btnNotes.append(
+    h('img', { class: 'topbar-btn-icon', src: iconUrl('file-text'), alt: '', 'aria-hidden': 'true' }),
+    h('span', { class: 'topbar-pane-tab-label', text: t('editor.notes.tab', 'Notes') })
+  );
+
   const paneSwitcher = h(
     'div',
     { class: 'topbar-pane-switcher', role: 'group', 'aria-label': t('editor.panes.label', 'Side panels') },
-    [btnInspector, btnComments]
+    [btnInspector, btnComments, btnNotes]
   );
 
   /**
-   * Reflect the rail state on both pane toggles. Pressed means "the rail is
+   * Reflect the rail state on the pane toggles. Pressed means "the rail is
    * open on MY pane", not merely "the rail is open" - so a pane switch flips
-   * one button off and the other on.
+   * one tab off and the other on.
    * @param {{ open: boolean, pane: string|null }} state
    */
   const setInspectorPaneState = ({ open, pane } = {}) => {
-    const settingsActive = Boolean(open) && pane === 'settings';
-    const commentsActive = Boolean(open) && pane === 'comments';
-    btnInspector.setAttribute('aria-pressed', String(settingsActive));
-    btnInspector.classList.toggle('is-active', settingsActive);
-    btnComments.setAttribute('aria-pressed', String(commentsActive));
-    btnComments.classList.toggle('is-active', commentsActive);
+    for (const [btn, name] of [
+      [btnInspector, 'settings'],
+      [btnComments, 'comments'],
+      [btnNotes, 'notes'],
+    ]) {
+      const active = Boolean(open) && pane === name;
+      btn.setAttribute('aria-pressed', String(active));
+      btn.classList.toggle('is-active', active);
+    }
   };
 
   // ============================================================
@@ -601,5 +617,5 @@ export function createEditorTopbar({
     }
   };
 
-  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, setInspectorPaneState, detach };
+  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, setInspectorPaneState, openNotesQr, detach };
 }

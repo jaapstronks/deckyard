@@ -14,7 +14,6 @@ export function createPreviewPanel({
   renderSlideElement,
   openOverlayClosers,
   getSelectedSlideId,
-  markDirty,
   nav,
   // Slide comments support
   commentsApi,
@@ -259,44 +258,12 @@ export function createPreviewPanel({
     }
   }
 
-  const previewNotes = h('div', { class: 'preview-notes stack' });
-  const previewNotesHeader = h('div', {
-    class: 'field-label',
-    text: t('editor.notes.title', 'Presenter notes'),
-  });
-  const previewNotesHelp = h('div', {
-    class: 'help',
-    text: t('editor.notes.savedPerSlide', 'Saved per slide.'),
-  });
-  const previewNotesTa = h('textarea', {
-    class: 'form-input preview-notes-input',
-    // Collab presence: focus in the notes is reported/decorated under the
-    // 'notes' field path (see presence/presence-ui.js). Inert without collab.
-    'data-collab-field-key': 'notes',
-    placeholder:
-      t(
-        'editor.notes.placeholder',
-        "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone."
-      ),
-  });
-  previewNotesTa.addEventListener('input', () => {
-    const sid = getSelectedSlideId?.();
-    const slide = (pres?.slides || []).find((s) => s?.id === sid);
-    if (!slide) return;
-    slide.notes = previewNotesTa.value;
-    markDirty?.();
-  });
-  previewNotes.append(previewNotesHeader, previewNotesHelp, previewNotesTa);
-
-  // The always-open slide comments section that used to sit here folded
-  // into the inspector's comments pane (fase 4); the positioned markers on
-  // the slide (above) are the remaining comments surface in this panel.
-
-  const previewNotesWrap = h('div', { class: 'preview-notes-wrap' });
-  previewNotesWrap.append(previewNotes);
+  // Presenter notes moved into the inspector rail as their own pane (chrome
+  // re-org stap 2, see notes-pane.js); the always-open comments section
+  // folded into the comments pane earlier (fase 4). The positioned markers
+  // on the slide (above) are the remaining comments surface in this panel.
 
   previewScroll.append(previewStage);
-  previewScroll.append(previewNotesWrap);
   preview.append(previewScroll);
 
   const detachThumbScale = attachThumbScaleContain(thumb, {
@@ -314,7 +281,6 @@ export function createPreviewPanel({
   return {
     previewEl: preview,
     thumbEl: thumb,
-    previewNotesTa,
     // Mount points for the slide-scoped toolbar (filled by rerenderEditor).
     slideToolbar: { leftEl: slideToolbarLeft, actionsEl: slideToolbarActions },
     detachThumbScale,

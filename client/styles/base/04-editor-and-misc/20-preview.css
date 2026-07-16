@@ -112,17 +112,6 @@
   justify-content: center;
 }
 
-.preview-notes-wrap {
-  flex: 0 0 auto;
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  max-height: clamp(160px, 38%, 360px);
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid hsl(var(--app-border-subtle));
-}
-
 .preview-icon-btn {
   display: flex;
   align-items: center;
@@ -201,14 +190,8 @@
     /* Stage should maintain 16:9 aspect ratio so the slide can grow with width */
     width: 100%;
     aspect-ratio: 16 / 9;
-    /* Cap the stage at a reasonable max size to avoid overwhelming the notes */
-    max-height: min(70vh, 680px);
-  }
-
-  .is-editor .preview-notes-wrap {
-    /* On large screens, notes get a fixed max height so preview can grow */
-    flex-shrink: 0;
-    max-height: 280px;
+    /* Cap the stage so very wide canvases don't force vertical scrolling */
+    max-height: min(78vh, 720px);
   }
 }
 

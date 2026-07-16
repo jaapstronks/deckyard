@@ -4,6 +4,10 @@ export function focusSearchHitInEditor({
   pres,
   editorMount,
   previewNotesTa,
+  // Notes and form fields live in rail panes: these surface the right pane
+  // before focusing (no-ops when not provided).
+  onFocusNotes,
+  onFocusField,
 } = {}) {
   const q = String(query || '').trim();
   if (!q) return;
@@ -15,6 +19,7 @@ export function focusSearchHitInEditor({
   const notesIdx = notes.toLowerCase().indexOf(qLower);
   if (notesIdx >= 0) {
     try {
+      onFocusNotes?.();
       previewNotesTa?.focus?.();
       previewNotesTa?.setSelectionRange?.(notesIdx, notesIdx + q.length);
       previewNotesTa?.scrollIntoView?.({ block: 'nearest' });
@@ -33,6 +38,7 @@ export function focusSearchHitInEditor({
       const val = String(el?.value || '');
       const idx = val.toLowerCase().indexOf(qLower);
       if (idx < 0) continue;
+      onFocusField?.();
       el.focus?.();
       try {
         el.setSelectionRange?.(idx, idx + q.length);

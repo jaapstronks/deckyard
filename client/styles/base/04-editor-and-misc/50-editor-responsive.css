@@ -1,13 +1,33 @@
-/* Editor preview notes + responsive layout */
-.preview-notes {
-  /* Spacing/border is handled by `.preview-notes-wrap` (so notes can scroll). */
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
+/* Presenter-notes pane in the inspector rail (see notes-pane.js) */
+.notes-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 0 var(--ps-space-4);
 }
 
-.preview-notes-input {
+.notes-pane-header {
+  align-items: center;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) 0;
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.notes-pane-header-actions {
+  gap: 6px;
+}
+
+.notes-pane-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-4) 0;
+}
+
+.notes-pane-input {
   min-height: 220px;
+  flex: 0 0 auto;
   resize: vertical;
 }
 

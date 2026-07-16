@@ -604,5 +604,7 @@
   "editor.save.slideLocked": "Niet opgeslagen: een gewijzigde slide is vergrendeld door de auteur.",
   "editor.save.slideLockedBy": "Niet opgeslagen: een gewijzigde slide wordt bewerkt door {name}.",
   "editor.panes.label": "Zijpanelen",
-  "editor.present.more": "Meer presenteeropties"
+  "editor.present.more": "Meer presenteeropties",
+  "editor.notes.tab": "Notities",
+  "editor.notes.qr": "Notities (QR)"
 }

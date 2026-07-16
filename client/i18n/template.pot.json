@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T20:49:17.383Z",
+    "generatedAt": "2026-07-16T21:03:57.370Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -1166,7 +1166,7 @@
       "refs": [
         "client/views/editor/comments-panel.js:288",
         "client/views/editor/modals/preview-lightbox.js:267",
-        "client/views/editor/preview-panel.js:178",
+        "client/views/editor/preview-panel.js:177",
         "client/views/share-viewer/viewer-comments.js:69"
       ]
     },
@@ -1174,8 +1174,8 @@
       "default": "Add comment to specific spot",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:58",
-        "client/views/editor/preview-panel.js:78",
-        "client/views/editor/preview-panel.js:255"
+        "client/views/editor/preview-panel.js:77",
+        "client/views/editor/preview-panel.js:254"
       ]
     },
     "comments.addSlide": {
@@ -1193,7 +1193,7 @@
     "comments.cancelPosition": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/preview-panel.js:253"
+        "client/views/editor/preview-panel.js:252"
       ]
     },
     "comments.close": {
@@ -1366,14 +1366,14 @@
       "default": "Comment",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:62",
-        "client/views/editor/preview-panel.js:82"
+        "client/views/editor/preview-panel.js:81"
       ]
     },
     "comments.pinModeHint": {
       "default": "Click on the slide to place comment",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:66",
-        "client/views/editor/preview-panel.js:87"
+        "client/views/editor/preview-panel.js:86"
       ]
     },
     "comments.post": {
@@ -1381,7 +1381,7 @@
       "refs": [
         "client/views/editor/comments-panel.js:300",
         "client/views/editor/modals/preview-lightbox.js:286",
-        "client/views/editor/preview-panel.js:196",
+        "client/views/editor/preview-panel.js:195",
         "client/views/share-viewer/viewer-comments.js:75"
       ]
     },
@@ -1485,8 +1485,8 @@
         "client/views/analytics/index.js:87",
         "client/views/analytics/index.js:127",
         "client/views/editor/image-library/detail.js:123",
-        "client/views/editor/topbar.js:563",
-        "client/views/editor/topbar.js:564",
+        "client/views/editor/topbar.js:580",
+        "client/views/editor/topbar.js:581",
         "client/views/settings/font-editor/index.js:59",
         "client/views/settings/font-editor/index.js:60",
         "client/views/settings/index.js:87",
@@ -1520,7 +1520,7 @@
         "client/views/editor/modals/revoke-message-modal.js:135",
         "client/views/editor/modals/save-to-library-modal.js:315",
         "client/views/editor/modals/versions-modal.js:34",
-        "client/views/editor/preview-panel.js:186",
+        "client/views/editor/preview-panel.js:185",
         "client/views/editor/share-dropdown/workspace-share-modal.js:85",
         "client/views/list/modals/ai-wizard.js:400",
         "client/views/list/modals/file-converter.js:174",
@@ -1788,8 +1788,8 @@
         "client/lib/slide-library/picker.js:269",
         "client/views/editor/editor-form.js:181",
         "client/views/editor/editor-form.js:182",
-        "client/views/editor/topbar/more-menu.js:192",
-        "client/views/editor/topbar/more-menu.js:193"
+        "client/views/editor/topbar/more-menu.js:202",
+        "client/views/editor/topbar/more-menu.js:203"
       ]
     },
     "common.moveDown": {
@@ -1895,7 +1895,7 @@
         "client/views/editor/modals/versions-modal.js:248",
         "client/views/editor/share-dropdown/share-actions.js:43",
         "client/views/editor/share-dropdown/share-actions.js:129",
-        "client/views/editor/topbar/more-menu.js:66"
+        "client/views/editor/topbar/more-menu.js:67"
       ]
     },
     "common.saved": {
@@ -1921,8 +1921,8 @@
         "client/views/editor/topbar/language-mode.js:214",
         "client/views/editor/topbar/language-mode.js:311",
         "client/views/editor/topbar/language-mode.js:390",
-        "client/views/editor/topbar/more-menu.js:60",
-        "client/views/editor/topbar.js:454"
+        "client/views/editor/topbar/more-menu.js:61",
+        "client/views/editor/topbar.js:471"
       ]
     },
     "common.search": {
@@ -1938,14 +1938,14 @@
       "default": "Settings",
       "refs": [
         "client/lib/user-menu.js:88",
-        "client/views/editor/topbar/more-menu.js:154"
+        "client/views/editor/topbar/more-menu.js:155"
       ]
     },
     "common.signOut": {
       "default": "Sign out",
       "refs": [
         "client/lib/user-menu.js:103",
-        "client/views/editor/topbar/more-menu.js:176"
+        "client/views/editor/topbar/more-menu.js:186"
       ]
     },
     "common.theme": {
@@ -1960,7 +1960,7 @@
     "common.toggleTheme": {
       "default": "Toggle dark/light mode",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:169"
+        "client/views/editor/topbar/more-menu.js:179"
       ]
     },
     "common.unknown": {
@@ -2590,14 +2590,14 @@
     "editor.analytics": {
       "default": "Analytics",
       "refs": [
-        "client/views/editor/topbar.js:420",
-        "client/views/editor/topbar.js:421"
+        "client/views/editor/topbar.js:437",
+        "client/views/editor/topbar.js:438"
       ]
     },
     "editor.analyze": {
       "default": "AI Analysis",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:147"
+        "client/views/editor/topbar/more-menu.js:148"
       ]
     },
     "editor.analyzeModal.analyze": {
@@ -2683,9 +2683,9 @@
       "default": "This slide is locked by the author",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:143",
-        "client/views/editor/editor-controller.js:226",
-        "client/views/editor/editor-controller.js:275",
-        "client/views/editor/editor-controller.js:1329"
+        "client/views/editor/editor-controller.js:227",
+        "client/views/editor/editor-controller.js:276",
+        "client/views/editor/editor-controller.js:1355"
       ]
     },
     "editor.autoFit.applied": {
@@ -3023,7 +3023,7 @@
     "editor.collab.liveEditsUnavailable": {
       "default": "Live collaboration failed to load; changes are not being saved. Reload the editor.",
       "refs": [
-        "client/views/editor/editor-controller.js:877"
+        "client/views/editor/editor-controller.js:894"
       ]
     },
     "editor.color.pickColor": {
@@ -3035,20 +3035,21 @@
     "editor.comments": {
       "default": "Comments",
       "refs": [
-        "client/views/editor/topbar.js:236",
-        "client/views/editor/topbar.js:242"
+        "client/views/editor/topbar.js:237",
+        "client/views/editor/topbar.js:243"
       ]
     },
     "editor.companion": {
       "default": "Companion",
       "refs": [
-        "client/views/editor/topbar.js:499"
+        "client/views/editor/topbar.js:516"
       ]
     },
     "editor.companion.title": {
       "default": "Open speaker notes companion on your phone (QR code).",
       "refs": [
-        "client/views/editor/topbar.js:500"
+        "client/views/editor/notes-pane.js:44",
+        "client/views/editor/topbar.js:517"
       ]
     },
     "editor.conflict.copyMine": {
@@ -3236,8 +3237,9 @@
     "editor.deckGrid.open": {
       "default": "Slide overview",
       "refs": [
-        "client/views/editor/topbar.js:309",
-        "client/views/editor/topbar.js:310"
+        "client/views/editor/topbar/more-menu.js:171",
+        "client/views/editor/topbar.js:325",
+        "client/views/editor/topbar.js:326"
       ]
     },
     "editor.deckGrid.peek": {
@@ -4525,20 +4527,22 @@
       "default": "Hide inspector",
       "refs": [
         "client/views/editor/editor-form.js:596",
-        "client/views/editor/editor-form.js:597"
+        "client/views/editor/editor-form.js:597",
+        "client/views/editor/notes-pane.js:55",
+        "client/views/editor/notes-pane.js:56"
       ]
     },
     "editor.inspector.title": {
       "default": "Inspector",
       "refs": [
         "client/views/editor/editor-form.js:588",
-        "client/views/editor/topbar.js:278"
+        "client/views/editor/topbar.js:279"
       ]
     },
     "editor.inspector.toggle": {
       "default": "Show or hide the inspector",
       "refs": [
-        "client/views/editor/topbar.js:272"
+        "client/views/editor/topbar.js:273"
       ]
     },
     "editor.items.add": {
@@ -4739,33 +4743,33 @@
     "editor.more.duplicateDeck": {
       "default": "Duplicate deck…",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:53",
-        "client/views/editor/topbar/more-menu.js:74"
+        "client/views/editor/topbar/more-menu.js:54",
+        "client/views/editor/topbar/more-menu.js:75"
       ]
     },
     "editor.more.duplicateDeck.confirm": {
       "default": "Duplicate \"{title}\"?",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:75"
+        "client/views/editor/topbar/more-menu.js:76"
       ]
     },
     "editor.more.duplicateDeck.done": {
       "default": "Duplicated. Opening copy…",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:92"
+        "client/views/editor/topbar/more-menu.js:93"
       ]
     },
     "editor.more.duplicateDeck.thisPresentation": {
       "default": "this presentation",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:81",
-        "client/views/editor/topbar/more-menu.js:119"
+        "client/views/editor/topbar/more-menu.js:82",
+        "client/views/editor/topbar/more-menu.js:120"
       ]
     },
     "editor.more.duplicateDeck.title": {
       "default": "Create a private copy of this presentation.",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:54"
+        "client/views/editor/topbar/more-menu.js:55"
       ]
     },
     "editor.more.shareLinks": {
@@ -4783,45 +4787,45 @@
     "editor.more.translate": {
       "default": "Translate",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:33"
+        "client/views/editor/topbar/more-menu.js:34"
       ]
     },
     "editor.more.translate.title": {
       "default": "Create (or refresh) the other language version so follow-along and switching are ready.",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:35"
+        "client/views/editor/topbar/more-menu.js:36"
       ]
     },
     "editor.more.trash": {
       "default": "Move to trash…",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:105",
-        "client/views/editor/topbar/more-menu.js:112",
-        "client/views/editor/topbar/more-menu.js:122"
+        "client/views/editor/topbar/more-menu.js:106",
+        "client/views/editor/topbar/more-menu.js:113",
+        "client/views/editor/topbar/more-menu.js:123"
       ]
     },
     "editor.more.trash.confirm": {
       "default": "Move \"{title}\" to trash?",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:113"
+        "client/views/editor/topbar/more-menu.js:114"
       ]
     },
     "editor.more.trash.done": {
       "default": "Moved to trash.",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:132"
+        "client/views/editor/topbar/more-menu.js:133"
       ]
     },
     "editor.more.trash.title": {
       "default": "Move this presentation to trash.",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:106"
+        "client/views/editor/topbar/more-menu.js:107"
       ]
     },
     "editor.more.versions": {
       "default": "Versions…",
       "refs": [
-        "client/views/editor/topbar/more-menu.js:46"
+        "client/views/editor/topbar/more-menu.js:47"
       ]
     },
     "editor.newAccessRequest": {
@@ -4839,25 +4843,38 @@
     "editor.notes.placeholder": {
       "default": "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone.",
       "refs": [
-        "client/views/editor/preview-panel.js:277"
+        "client/views/editor/notes-pane.js:68"
+      ]
+    },
+    "editor.notes.qr": {
+      "default": "Notes (QR)",
+      "refs": [
+        "client/views/editor/notes-pane.js:43"
       ]
     },
     "editor.notes.savedPerSlide": {
       "default": "Saved per slide.",
       "refs": [
-        "client/views/editor/preview-panel.js:269"
+        "client/views/editor/notes-pane.js:83"
+      ]
+    },
+    "editor.notes.tab": {
+      "default": "Notes",
+      "refs": [
+        "client/views/editor/topbar.js:291"
       ]
     },
     "editor.notes.title": {
       "default": "Presenter notes",
       "refs": [
-        "client/views/editor/preview-panel.js:265"
+        "client/views/editor/notes-pane.js:35",
+        "client/views/editor/topbar.js:285"
       ]
     },
     "editor.panes.label": {
       "default": "Side panels",
       "refs": [
-        "client/views/editor/topbar.js:283"
+        "client/views/editor/topbar.js:296"
       ]
     },
     "editor.pendingRequests": {
@@ -4894,33 +4911,33 @@
     "editor.present": {
       "default": "Present",
       "refs": [
-        "client/views/editor/topbar.js:451",
+        "client/views/editor/topbar.js:468",
         "client/views/viewer/viewer-topbar.js:105"
       ]
     },
     "editor.present.abortedSaveFailed": {
       "default": "Could not save; presenting aborted.",
       "refs": [
-        "client/views/editor/topbar.js:460"
+        "client/views/editor/topbar.js:477"
       ]
     },
     "editor.present.more": {
       "default": "More presenting options",
       "refs": [
-        "client/views/editor/topbar.js:491",
-        "client/views/editor/topbar.js:492"
+        "client/views/editor/topbar.js:508",
+        "client/views/editor/topbar.js:509"
       ]
     },
     "editor.preview.clickToZoom": {
       "default": "Click to open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:104"
+        "client/views/editor/preview-panel.js:103"
       ]
     },
     "editor.preview.openLarge": {
       "default": "Open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:67"
+        "client/views/editor/preview-panel.js:66"
       ]
     },
     "editor.publish.confirm": {
@@ -5172,19 +5189,19 @@
     "editor.readOnly.banner": {
       "default": "View only - someone else is editing",
       "refs": [
-        "client/views/editor/editor-controller.js:659"
+        "client/views/editor/editor-controller.js:661"
       ]
     },
     "editor.readOnly.someone": {
       "default": "someone else",
       "refs": [
-        "client/views/editor/editor-controller.js:663"
+        "client/views/editor/editor-controller.js:665"
       ]
     },
     "editor.readOnly.toast": {
       "default": "This presentation is being edited by {who}. You can view but not edit.",
       "refs": [
-        "client/views/editor/editor-controller.js:665"
+        "client/views/editor/editor-controller.js:667"
       ]
     },
     "editor.redo": {
@@ -5192,7 +5209,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:292",
         "client/views/editor/slide-list/undo-actions.js:95",
-        "client/views/editor/topbar.js:541"
+        "client/views/editor/topbar.js:558"
       ]
     },
     "editor.remoteMerge.intro": {
@@ -5265,13 +5282,13 @@
     "editor.save.remoteMerged": {
       "default": "Changes from another editor were merged in",
       "refs": [
-        "client/views/editor/editor-controller.js:327"
+        "client/views/editor/editor-controller.js:328"
       ]
     },
     "editor.save.remoteMergedSee": {
       "default": "See what changed",
       "refs": [
-        "client/views/editor/editor-controller.js:332"
+        "client/views/editor/editor-controller.js:333"
       ]
     },
     "editor.save.saved": {
@@ -5301,25 +5318,25 @@
     "editor.saveStatus.failed": {
       "default": "Save failed",
       "refs": [
-        "client/views/editor/topbar.js:158"
+        "client/views/editor/topbar.js:159"
       ]
     },
     "editor.saveStatus.saved": {
       "default": "Saved",
       "refs": [
-        "client/views/editor/topbar.js:156"
+        "client/views/editor/topbar.js:157"
       ]
     },
     "editor.saveStatus.saving": {
       "default": "Saving…",
       "refs": [
-        "client/views/editor/topbar.js:155"
+        "client/views/editor/topbar.js:156"
       ]
     },
     "editor.saveStatus.unsaved": {
       "default": "Unsaved changes",
       "refs": [
-        "client/views/editor/topbar.js:157"
+        "client/views/editor/topbar.js:158"
       ]
     },
     "editor.share.button": {
@@ -6145,13 +6162,13 @@
       "default": "This slide is being edited by someone else",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:145",
-        "client/views/editor/editor-controller.js:223"
+        "client/views/editor/editor-controller.js:224"
       ]
     },
     "editor.slideLocked.toast": {
       "default": "This slide is being edited by {name}",
       "refs": [
-        "client/views/editor/editor-controller.js:235"
+        "client/views/editor/editor-controller.js:236"
       ]
     },
     "editor.slideTypeModal.aiAdd": {
@@ -6864,7 +6881,7 @@
       "refs": [
         "client/views/editor/live-edits/index.js:282",
         "client/views/editor/slide-list/undo-actions.js:86",
-        "client/views/editor/topbar.js:531"
+        "client/views/editor/topbar.js:548"
       ]
     },
     "editor.versions.backupNotice": {
