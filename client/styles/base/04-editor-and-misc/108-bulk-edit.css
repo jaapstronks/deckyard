@@ -34,6 +34,24 @@
   white-space: nowrap;
 }
 
+/* Locked slide (author lock or concurrent editor): the shell-scoped
+   .is-slide-locked rules in 93-read-only-mode.css can't reach this modal,
+   so it carries its own gating. Nav and Close stay interactive. */
+.bulk-edit-locked-note {
+  margin: 0 0 10px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.2);
+  color: hsl(var(--app-text-primary));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bulk-edit-modal.is-locked .bulk-edit-form {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .bulk-edit-body {
   flex: 1;
   min-height: 0;

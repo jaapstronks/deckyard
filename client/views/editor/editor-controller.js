@@ -1159,6 +1159,13 @@ export async function createEditorController({
     getSelectedSlideId: () => selectedSlideId,
     setSelectedSlideId: setSelectedSlideIdWithLock,
     getTheme: () => theme,
+    // The shell-scoped locked-slide CSS can't reach the modal (it mounts on
+    // document.body), so it asks for the lock state and gates itself.
+    getSlideLockKind: (slideId) => {
+      if (isSlideAuthorLockedForUser(slideId)) return 'author';
+      if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId)) return 'other';
+      return null;
+    },
     openOverlayClosers,
     // Resync the panel form after the modal closes: the modal's structural
     // edits rerender its own form instance, not the panel behind it.

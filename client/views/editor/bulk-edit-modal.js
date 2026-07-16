@@ -25,6 +25,10 @@ import { t } from '../../lib/ui-i18n.js';
  *   rerender function; the controller builds this from createRerenderEditor
  *   with `contentOnly: true` so the modal reuses the exact form machinery.
  * @param {Function} [opts.getTheme] - () => current theme (for the preview)
+ * @param {Function} [opts.getSlideLockKind] - (slideId) => 'author' | 'other'
+ *   | null. The panel's locked-slide gating is CSS scoped to .editor-shell;
+ *   this modal lives on document.body, so it mirrors that gating itself
+ *   (prev/next can land on a locked slide).
  * @param {Function} [opts.onClosed] - called after close (resync main form)
  * @param {Set} [opts.openOverlayClosers]
  * @returns {{ open: Function }}
@@ -36,15 +40,19 @@ export function createBulkEditModal({
   setSelectedSlideId,
   createFormRenderer,
   getTheme,
+  getSlideLockKind,
   onClosed,
   openOverlayClosers,
 } = {}) {
   function open() {
     let detachScale = null;
+    let previewRaf = 0;
     const modal = createModal(h, {
       title: t('editor.bulkEdit.title', 'Edit all text'),
       modalClass: 'bulk-edit-modal',
       onClose: () => {
+        if (previewRaf) cancelAnimationFrame(previewRaf);
+        previewRaf = 0;
         detachScale?.();
         onClosed?.();
       },
@@ -57,6 +65,9 @@ export function createBulkEditModal({
     previewStage.append(previewThumb);
     const body = h('div', { class: 'bulk-edit-body' });
     body.append(formMount, previewStage);
+    // Locked-slide banner: hidden unless the current slide is locked (author
+    // lock or another editor holding the concurrent-edit lock).
+    const lockedNote = h('div', { class: 'bulk-edit-locked-note', hidden: true });
     modal.append(
       h('div', {
         class: 'help bulk-edit-hint',
@@ -65,6 +76,7 @@ export function createBulkEditModal({
           'The slide updates live while you type. Layout, background and accessibility stay in the side panel.'
         ),
       }),
+      lockedNote,
       body
     );
 
@@ -89,7 +101,6 @@ export function createBulkEditModal({
     modal.header.insertBefore(nav, modal.closeBtn);
 
     // ---- Live preview ----
-    let previewRaf = 0;
     const refreshPreview = () => {
       if (previewRaf) return;
       previewRaf = requestAnimationFrame(() => {
@@ -122,6 +133,17 @@ export function createBulkEditModal({
       });
       prevBtn.disabled = idx <= 0;
       nextBtn.disabled = idx >= pres.slides.length - 1;
+      // Mirror the panel's locked-slide state: the shell-scoped CSS gating
+      // can't reach this modal, so it disables its own form pane.
+      const lockKind = getSlideLockKind?.(pres.slides[idx].id) || null;
+      modal.modal.classList.toggle('is-locked', !!lockKind);
+      lockedNote.hidden = !lockKind;
+      lockedNote.textContent =
+        lockKind === 'author'
+          ? t('editor.authorLocked.banner', 'This slide is locked by the author')
+          : lockKind
+            ? t('editor.slideLocked.banner', 'This slide is being edited by someone else')
+            : '';
       rerenderForm();
       refreshPreview();
     };
