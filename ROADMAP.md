@@ -38,6 +38,15 @@ self-contained project.
 4. **Share unification** — `docs/plans/ux-share-unification.md`
    One Share dialog (live audience / link / workspace), guard the
    presenter-control link, reconcile the permission model.
+5. **Editor UI direction: wysiwyg-first editing** —
+   `docs/plans/editor-ui-direction.md` — decided 2026-07-16. Four phases,
+   each shippable alone: (1) WYSIWYG parity (blocks overhaul, inline
+   reorder, empty-slot adds); (2) the form column slims down to a settings
+   inspector (background / layout / accessibility, no more content text
+   fields); (3) an "Edit all text" bulk modal (fields left, live preview
+   right); (4) responsive convergence (2 columns under a breakpoint with
+   the inspector below the slide; notes + comments to a popover/toggle).
+   Comments resolve/inbox semantics stay a separate parked plan.
 
 ## Next — existing feature plans
 
@@ -54,7 +63,7 @@ self-contained project.
 - **WYSIWYG + sidebar overhaul for row/block types** —
   `docs/plans/wysiwyg-blocks-overhaul.md` — text-blocks (+ `col{N}` family) onto
   the icon-card-grid add/remove/reorder pattern in sidebar + WYSIWYG; backwards
-  compatible.
+  compatible. Since 2026-07-16 phase 1a of the editor-UI-direction track above.
 - **Interactive behaviors** — `docs/plans/interactive-behaviors.md` —
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
