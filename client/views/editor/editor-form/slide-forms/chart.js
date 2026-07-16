@@ -1,6 +1,12 @@
 import { t } from '../../../../lib/ui-i18n.js';
 
-export function renderChartSlideForm({
+/**
+ * Chart configuration controls: type, the data editor (CSV/TSV textarea with
+ * import + example) and the per-type display toggles. Shared between the full
+ * content form below and the phase-3 inspector (which renders ONLY this
+ * config; the text and axis-label fields live in the bulk modal).
+ */
+export function renderChartConfigControls({
   h,
   form,
   slide,
@@ -13,9 +19,6 @@ export function renderChartSlideForm({
   rerenderEditor,
   scheduleUiRefresh,
 } = {}) {
-  add('title');
-  add('subheading');
-  add('bottomSubheading');
   add('chartType');
 
   // Custom data editor: textarea + import button + chart-type specific help.
@@ -135,8 +138,18 @@ export function renderChartSlideForm({
   }
   const toggleRow = fieldGrid(toggles.filter(Boolean), 2);
   if (toggleRow) form.append(toggleRow);
+}
+
+export function renderChartSlideForm(ctx = {}) {
+  const { add, slide } = ctx;
+  add('title');
+  add('subheading');
+  add('bottomSubheading');
+
+  renderChartConfigControls(ctx);
 
   // Axis and series labels only apply to bar and line charts.
+  const ct = String(slide?.content?.chartType || 'bar');
   if (ct === 'line') {
     add('xLabel');
     add('yLabel');

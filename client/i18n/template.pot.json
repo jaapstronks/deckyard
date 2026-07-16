@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T16:46:43.078Z",
+    "generatedAt": "2026-07-16T16:59:27.457Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -179,13 +179,13 @@
     "admin.jsonDebug.menuItem": {
       "default": "View JSON (Debug)",
       "refs": [
-        "client/views/editor/editor-form.js:436"
+        "client/views/editor/editor-form.js:419"
       ]
     },
     "admin.jsonDebug.menuItemTitle": {
       "default": "View and edit raw slide JSON data",
       "refs": [
-        "client/views/editor/editor-form.js:437"
+        "client/views/editor/editor-form.js:420"
       ]
     },
     "admin.jsonDebug.reset": {
@@ -1684,7 +1684,7 @@
         "client/views/analytics/leads-tab.js:174",
         "client/views/analytics/leads-tab.js:199",
         "client/views/editor/comments-panel-actions.js:109",
-        "client/views/editor/editor-form.js:469",
+        "client/views/editor/editor-form.js:452",
         "client/views/editor/fields/images/multiple-images.js:96",
         "client/views/editor/fields/images/single-image.js:76",
         "client/views/editor/fields/images/title-bg-image.js:46",
@@ -1816,8 +1816,8 @@
       "default": "More options",
       "refs": [
         "client/lib/slide-library/picker.js:269",
-        "client/views/editor/editor-form.js:199",
-        "client/views/editor/editor-form.js:200",
+        "client/views/editor/editor-form.js:182",
+        "client/views/editor/editor-form.js:183",
         "client/views/editor/topbar/more-menu.js:173",
         "client/views/editor/topbar/more-menu.js:174"
       ]
@@ -2772,13 +2772,13 @@
     "editor.bulkEdit.open": {
       "default": "All text",
       "refs": [
-        "client/views/editor/editor-form.js:682"
+        "client/views/editor/editor-form.js:665"
       ]
     },
     "editor.bulkEdit.openTitle": {
       "default": "Edit all text fields of this slide in one view",
       "refs": [
-        "client/views/editor/editor-form.js:683"
+        "client/views/editor/editor-form.js:666"
       ]
     },
     "editor.bulkEdit.prev": {
@@ -2797,7 +2797,7 @@
       "default": "+ Add card",
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:71",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:118"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:124"
       ]
     },
     "editor.cards.bodyMarkdown": {
@@ -2816,7 +2816,7 @@
       "default": "Collapse",
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:148",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:200"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:206"
       ]
     },
     "editor.cards.collapseAll": {
@@ -2830,22 +2830,22 @@
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:173",
         "client/views/editor/editor-form/slide-forms/card-stack.js:174",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:226",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:227"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:232",
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:233"
       ]
     },
     "editor.cards.dragToReorder": {
       "default": "Drag to reorder",
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:122",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:169"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:175"
       ]
     },
     "editor.cards.expand": {
       "default": "Expand",
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:147",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:199"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:205"
       ]
     },
     "editor.cards.expandAll": {
@@ -2857,13 +2857,14 @@
     "editor.cards.icon": {
       "default": "Icon",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:251"
+        "client/views/editor/editor-form/inspector-form.js:149",
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:257"
       ]
     },
     "editor.cards.iconHelp": {
       "default": "Search (EN), e.g. lightbulb / gear / users.",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:260"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:266"
       ]
     },
     "editor.cards.label": {
@@ -2881,7 +2882,8 @@
     "editor.cards.linkHelp2": {
       "default": "Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:302",
+        "client/views/editor/editor-form/inspector-form.js:169",
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:308",
         "client/views/editor/editor-form/slide-forms/logo-wall.js:298"
       ]
     },
@@ -2894,26 +2896,26 @@
     "editor.cards.text": {
       "default": "Text",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:289"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:295"
       ]
     },
     "editor.cards.title": {
       "default": "Cards",
       "refs": [
         "client/views/editor/editor-form/slide-forms/card-stack.js:49",
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:99"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:105"
       ]
     },
     "editor.cards.titleField": {
       "default": "Title",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:268"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:274"
       ]
     },
     "editor.cards.untitledCard": {
       "default": "Untitled card",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:214"
+        "client/views/editor/editor-form/slide-forms/icon-card-grid.js:220"
       ]
     },
     "editor.changeTheme.apply": {
@@ -3017,31 +3019,31 @@
     "editor.chart.dataLabel": {
       "default": "Data (CSV/TSV)",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/chart.js:27"
+        "client/views/editor/editor-form/slide-forms/chart.js:30"
       ]
     },
     "editor.chart.example": {
       "default": "Example",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/chart.js:46"
+        "client/views/editor/editor-form/slide-forms/chart.js:49"
       ]
     },
     "editor.chart.help.barPie": {
       "default": "Paste TSV (from Sheets/Excel) or CSV.\nBar/Pie format: Label, Value.\nExample:\nLabel,Value\nA,10\nB,25\nC,15",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/chart.js:97"
+        "client/views/editor/editor-form/slide-forms/chart.js:100"
       ]
     },
     "editor.chart.help.line": {
       "default": "Paste TSV (from Sheets/Excel) or CSV.\nLine format: X, Series 1, optional Series 2.\nUse the header row to set series names, or fill “Series 1 label (legend)” / “Series 2 label (legend)”.\nExample:\nX,Revenue,Cost\nJan,12,8\nFeb,18,11",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/chart.js:93"
+        "client/views/editor/editor-form/slide-forms/chart.js:96"
       ]
     },
     "editor.chart.importCsv": {
       "default": "Import CSV",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/chart.js:41"
+        "client/views/editor/editor-form/slide-forms/chart.js:44"
       ]
     },
     "editor.code.readOnly": {
@@ -4540,17 +4542,29 @@
         "client/views/editor/inline-edit/inline-editor.js:678"
       ]
     },
+    "editor.inspector.cardsConfig": {
+      "default": "Card icons & links",
+      "refs": [
+        "client/views/editor/editor-form/inspector-form.js:139"
+      ]
+    },
+    "editor.inspector.column": {
+      "default": "Column {n}",
+      "refs": [
+        "client/views/editor/editor-form/inspector-form.js:193"
+      ]
+    },
     "editor.inspector.hide": {
       "default": "Hide inspector",
       "refs": [
-        "client/views/editor/editor-form.js:531",
-        "client/views/editor/editor-form.js:532"
+        "client/views/editor/editor-form.js:514",
+        "client/views/editor/editor-form.js:515"
       ]
     },
     "editor.inspector.title": {
       "default": "Inspector",
       "refs": [
-        "client/views/editor/editor-form.js:618"
+        "client/views/editor/editor-form.js:601"
       ]
     },
     "editor.inspector.toggle": {
@@ -5625,13 +5639,13 @@
     "editor.slide.accessibility": {
       "default": "Accessibility",
       "refs": [
-        "client/views/editor/editor-form.js:954"
+        "client/views/editor/editor-form.js:937"
       ]
     },
     "editor.slide.accessibility.title": {
       "default": "Optional fields to improve screen-reader output and exports.",
       "refs": [
-        "client/views/editor/editor-form.js:955"
+        "client/views/editor/editor-form.js:938"
       ]
     },
     "editor.slide.addImage": {
@@ -5643,110 +5657,110 @@
     "editor.slide.aiConvert": {
       "default": "AI Convert…",
       "refs": [
-        "client/views/editor/editor-form.js:297"
+        "client/views/editor/editor-form.js:280"
       ]
     },
     "editor.slide.aiConvert.cancel": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/editor-form.js:328"
+        "client/views/editor/editor-form.js:311"
       ]
     },
     "editor.slide.aiConvert.cancelled": {
       "default": "Conversion cancelled.",
       "refs": [
-        "client/views/editor/editor-form.js:363"
+        "client/views/editor/editor-form.js:346"
       ]
     },
     "editor.slide.aiConvert.converting": {
       "default": "Converting with AI…",
       "refs": [
-        "client/views/editor/editor-form.js:323"
+        "client/views/editor/editor-form.js:306"
       ]
     },
     "editor.slide.aiConvert.done": {
       "default": "Converted successfully!",
       "refs": [
-        "client/views/editor/editor-form.js:356"
+        "client/views/editor/editor-form.js:339"
       ]
     },
     "editor.slide.aiConvert.failed": {
       "default": "Conversion failed: {error}",
       "refs": [
-        "client/views/editor/editor-form.js:366"
+        "client/views/editor/editor-form.js:349"
       ]
     },
     "editor.slide.aiConvert.title": {
       "default": "Use AI to intelligently convert this slide to a different type.",
       "refs": [
-        "client/views/editor/editor-form.js:294"
+        "client/views/editor/editor-form.js:277"
       ]
     },
     "editor.slide.aiIterate.applied": {
       "default": "Changes applied",
       "refs": [
-        "client/views/editor/editor-form.js:894"
+        "client/views/editor/editor-form.js:877"
       ]
     },
     "editor.slide.aiIterate.button": {
       "default": "Refine",
       "refs": [
-        "client/views/editor/editor-form.js:821",
-        "client/views/editor/editor-form.js:833"
+        "client/views/editor/editor-form.js:804",
+        "client/views/editor/editor-form.js:816"
       ]
     },
     "editor.slide.aiIterate.cancel": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/editor-form.js:832"
+        "client/views/editor/editor-form.js:815"
       ]
     },
     "editor.slide.aiIterate.cancelled": {
       "default": "Refinement cancelled.",
       "refs": [
-        "client/views/editor/editor-form.js:919"
+        "client/views/editor/editor-form.js:902"
       ]
     },
     "editor.slide.aiIterate.failed": {
       "default": "Refinement failed: {error}",
       "refs": [
-        "client/views/editor/editor-form.js:922"
+        "client/views/editor/editor-form.js:905"
       ]
     },
     "editor.slide.aiIterate.noChanges": {
       "default": "No changes suggested",
       "refs": [
-        "client/views/editor/editor-form.js:915"
+        "client/views/editor/editor-form.js:898"
       ]
     },
     "editor.slide.aiIterate.placeholder": {
       "default": "Make this punchier, split this slide...",
       "refs": [
-        "client/views/editor/editor-form.js:814"
+        "client/views/editor/editor-form.js:797"
       ]
     },
     "editor.slide.aiIterate.reverted": {
       "default": "Reverted the change.",
       "refs": [
-        "client/views/editor/editor-form.js:909"
+        "client/views/editor/editor-form.js:892"
       ]
     },
     "editor.slide.aiIterate.title": {
       "default": "Use AI to refine this slide",
       "refs": [
-        "client/views/editor/editor-form.js:819"
+        "client/views/editor/editor-form.js:802"
       ]
     },
     "editor.slide.aiIterate.undo": {
       "default": "Undo",
       "refs": [
-        "client/views/editor/editor-form.js:898"
+        "client/views/editor/editor-form.js:881"
       ]
     },
     "editor.slide.aiReasoning": {
       "default": "AI type reasoning",
       "refs": [
-        "client/views/editor/editor-form.js:767"
+        "client/views/editor/editor-form.js:750"
       ]
     },
     "editor.slide.altText": {
@@ -5758,37 +5772,37 @@
     "editor.slide.animationSettings": {
       "default": "Animation settings",
       "refs": [
-        "client/views/editor/editor-form/slide-forms/image-slide.js:72"
+        "client/views/editor/editor-form/slide-forms/image-slide.js:65"
       ]
     },
     "editor.slide.background.colour": {
       "default": "Color",
       "refs": [
-        "client/views/editor/editor-form.js:1118"
+        "client/views/editor/editor-form.js:1065"
       ]
     },
     "editor.slide.background.focus": {
       "default": "Background focus (crop)",
       "refs": [
-        "client/views/editor/editor-form.js:1143"
+        "client/views/editor/editor-form.js:1090"
       ]
     },
     "editor.slide.background.focusHelp": {
       "default": "Pick which part stays visible when the image is cropped to fill the slide.",
       "refs": [
-        "client/views/editor/editor-form.js:1144"
+        "client/views/editor/editor-form.js:1091"
       ]
     },
     "editor.slide.background.section": {
       "default": "Background",
       "refs": [
-        "client/views/editor/editor-form.js:1014"
+        "client/views/editor/editor-form.js:973"
       ]
     },
     "editor.slide.background.sectionHelp": {
       "default": "Background colour or a custom image, plus the theme corner logo.",
       "refs": [
-        "client/views/editor/editor-form.js:1015"
+        "client/views/editor/editor-form.js:974"
       ]
     },
     "editor.slide.caption": {
@@ -5800,39 +5814,39 @@
     "editor.slide.convert": {
       "default": "Convert…",
       "refs": [
-        "client/views/editor/editor-form.js:236",
-        "client/views/editor/editor-form.js:256",
-        "client/views/editor/editor-form.js:262"
+        "client/views/editor/editor-form.js:219",
+        "client/views/editor/editor-form.js:239",
+        "client/views/editor/editor-form.js:245"
       ]
     },
     "editor.slide.convert.confirmLossy": {
       "default": "Convert \"{from}\" → \"{to}\"?\n\nThis will remove some fields:\n{fields}\n\n(Notes are kept.)",
       "refs": [
-        "client/views/editor/editor-form.js:257"
+        "client/views/editor/editor-form.js:240"
       ]
     },
     "editor.slide.convert.title": {
       "default": "Convert this slide to a different type (best-effort).",
       "refs": [
-        "client/views/editor/editor-form.js:233"
+        "client/views/editor/editor-form.js:216"
       ]
     },
     "editor.slide.customType": {
       "default": "Custom type",
       "refs": [
-        "client/views/editor/editor-form.js:642"
+        "client/views/editor/editor-form.js:625"
       ]
     },
     "editor.slide.customType.basedOn": {
       "default": "Based on: {base}",
       "refs": [
-        "client/views/editor/editor-form.js:644"
+        "client/views/editor/editor-form.js:627"
       ]
     },
     "editor.slide.delete": {
       "default": "Delete slide",
       "refs": [
-        "client/views/editor/editor-form.js:467",
+        "client/views/editor/editor-form.js:450",
         "client/views/editor/slide-list/context-menu.js:94",
         "client/views/editor/slide-list/slide-actions.js:141"
       ]
@@ -5840,45 +5854,45 @@
     "editor.slide.deleteConfirm": {
       "default": "Delete this slide?",
       "refs": [
-        "client/views/editor/editor-form.js:468",
+        "client/views/editor/editor-form.js:451",
         "client/views/editor/slide-list/slide-actions.js:126"
       ]
     },
     "editor.slide.deleteMenu": {
       "default": "Delete slide…",
       "refs": [
-        "client/views/editor/editor-form.js:461"
+        "client/views/editor/editor-form.js:444"
       ]
     },
     "editor.slide.duplicate": {
       "default": "Duplicate",
       "refs": [
-        "client/views/editor/editor-form.js:416",
+        "client/views/editor/editor-form.js:399",
         "client/views/editor/slide-list/context-menu.js:86"
       ]
     },
     "editor.slide.duration.help": {
       "default": "Leave empty to use the deck default ({default}s). Override for this slide only.",
       "refs": [
-        "client/views/editor/editor-form.js:719"
+        "client/views/editor/editor-form.js:702"
       ]
     },
     "editor.slide.duration.label": {
       "default": "Slide duration (seconds)",
       "refs": [
-        "client/views/editor/editor-form.js:707"
+        "client/views/editor/editor-form.js:690"
       ]
     },
     "editor.slide.fillTranslation": {
       "default": "Fill slide…",
       "refs": [
-        "client/views/editor/editor-form.js:383"
+        "client/views/editor/editor-form.js:366"
       ]
     },
     "editor.slide.fillTranslation.title": {
       "default": "Fill this slide from the other language (with preview).",
       "refs": [
-        "client/views/editor/editor-form.js:384"
+        "client/views/editor/editor-form.js:367"
       ]
     },
     "editor.slide.fillTranslationToEn": {
@@ -5921,15 +5935,15 @@
       "default": "Layout settings",
       "refs": [
         "client/views/editor/editor-form/slide-forms/gallery-slide.js:75",
-        "client/views/editor/editor-form/slide-forms/image-slide.js:150",
+        "client/views/editor/editor-form/slide-forms/image-slide.js:127",
         "client/views/editor/editor-form/slide-forms/team-cards.js:85"
       ]
     },
     "editor.slide.lock": {
       "default": "Lock slide",
       "refs": [
-        "client/views/editor/editor-form.js:508",
-        "client/views/editor/editor-form.js:511"
+        "client/views/editor/editor-form.js:491",
+        "client/views/editor/editor-form.js:494"
       ]
     },
     "editor.slide.moveTo": {
@@ -5960,56 +5974,38 @@
     "editor.slide.retiredType": {
       "default": "Retired type",
       "refs": [
-        "client/views/editor/editor-form.js:633"
+        "client/views/editor/editor-form.js:616"
       ]
     },
     "editor.slide.retiredType.title": {
       "default": "This slide type is no longer available for new slides.",
       "refs": [
-        "client/views/editor/editor-form.js:634"
-      ]
-    },
-    "editor.slide.textSection": {
-      "default": "Text",
-      "refs": [
-        "client/views/editor/editor-form.js:984"
-      ]
-    },
-    "editor.slide.textSection.help": {
-      "default": "Tip: you can also edit these texts by clicking them on the slide.",
-      "refs": [
-        "client/views/editor/editor-form.js:994"
-      ]
-    },
-    "editor.slide.textSection.title": {
-      "default": "All text on this slide. You can also edit it by clicking the text on the slide itself.",
-      "refs": [
-        "client/views/editor/editor-form.js:985"
+        "client/views/editor/editor-form.js:617"
       ]
     },
     "editor.slide.unlock": {
       "default": "Unlock slide",
       "refs": [
-        "client/views/editor/editor-form.js:507",
-        "client/views/editor/editor-form.js:510"
+        "client/views/editor/editor-form.js:490",
+        "client/views/editor/editor-form.js:493"
       ]
     },
     "editor.slideLibrary.save": {
       "default": "Save to slide library…",
       "refs": [
-        "client/views/editor/editor-form.js:399"
+        "client/views/editor/editor-form.js:382"
       ]
     },
     "editor.slideLibrary.save.disabled": {
       "default": "This slide is managed automatically and can't be saved.",
       "refs": [
-        "client/views/editor/editor-form.js:402"
+        "client/views/editor/editor-form.js:385"
       ]
     },
     "editor.slideLibrary.save.title": {
       "default": "Save this slide so you can reuse it later.",
       "refs": [
-        "client/views/editor/editor-form.js:401"
+        "client/views/editor/editor-form.js:384"
       ]
     },
     "editor.slideLibrary.saveModal.bothLangsAvailable": {
