@@ -12,7 +12,7 @@ import {
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import {
   listActivityEvents,
-  getUnreadEventCount,
+  getUnreadEventCountsByPresentation,
   updateUserEventRead,
 } from '../../storage/activity-events.js';
 import { createRouteContext } from '../../utils/context.js';
@@ -79,7 +79,23 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname === '/api/activity/unread-count') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-    const count = await getUnreadEventCount(email, ctx);
+    // Same invariant as the feed itself: only count events on presentations
+    // the user can read (a raw org-wide count leaks activity on private decks).
+    const grouped = await getUnreadEventCountsByPresentation(email, ctx);
+    let count = 0;
+    for (const entry of grouped) {
+      if (!entry.presentationId) {
+        count += entry.count;
+        continue;
+      }
+      const pres = await getReadablePresentation(
+        entry.presentationId,
+        repoRoot,
+        authedUser,
+        ctx
+      );
+      if (pres) count += entry.count;
+    }
 
     serveJson(res, 200, {
       ok: true,
@@ -105,6 +121,35 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
 }
 
 /**
+ * Fetch a presentation and return it only if the user can read it
+ * (collaborator-aware). Returns null when missing or not accessible.
+ */
+async function getReadablePresentation(pid, repoRoot, authedUser, ctx) {
+  try {
+    const pres = await getPresentation(repoRoot, pid);
+    if (!pres) return null;
+
+    let collaboratorPermission = null;
+    try {
+      collaboratorPermission = await getCollaboratorPermission(pid, authedUser?.email, ctx);
+    } catch {
+      // Ignore - no collaborator access
+    }
+
+    const hasAccess = canReadPresentation({
+      user: authedUser,
+      pres,
+      collaboratorPermission,
+    });
+
+    return hasAccess ? pres : null;
+  } catch {
+    // Presentation may have been deleted
+    return null;
+  }
+}
+
+/**
  * Enrich events with presentation information and filter by access.
  * Fetches presentation titles for events that reference presentations,
  * and filters out events for presentations the user cannot access.
@@ -123,34 +168,14 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
   const accessibleIds = new Set();
 
   for (const pid of presentationIds) {
-    try {
-      const pres = await getPresentation(repoRoot, pid);
-      if (pres) {
-        // Check if user can access this presentation
-        let collaboratorPermission = null;
-        try {
-          collaboratorPermission = await getCollaboratorPermission(pid, authedUser?.email, ctx);
-        } catch {
-          // Ignore - no collaborator access
-        }
-
-        const hasAccess = canReadPresentation({
-          user: authedUser,
-          pres,
-          collaboratorPermission,
-        });
-
-        if (hasAccess) {
-          accessibleIds.add(pid);
-          presentations.set(pid, {
-            id: pres.id,
-            title: pres.title,
-            ownerEmail: pres.ownerEmail,
-          });
-        }
-      }
-    } catch {
-      // Presentation may have been deleted
+    const pres = await getReadablePresentation(pid, repoRoot, authedUser, ctx);
+    if (pres) {
+      accessibleIds.add(pid);
+      presentations.set(pid, {
+        id: pres.id,
+        title: pres.title,
+        ownerEmail: pres.ownerEmail,
+      });
     }
   }
 

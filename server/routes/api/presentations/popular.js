@@ -7,6 +7,8 @@ import { getOrgId } from '../../../utils/context.js';
 import { serveJson, unauthorized, methodNotAllowed } from '../../../utils/http.js';
 import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
+import { canReadPresentation } from '../../../utils/presentation-authz.js';
+import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 
 /**
  * Get popular presentations based on recent activity.
@@ -116,11 +118,43 @@ async function getPopularPresentations(ctx) {
         .limit(10)
         .execute();
 
-      return formatPresentations(fallbackRows, ctx);
+      return formatPresentations(await filterReadableRows(fallbackRows, ctx), ctx);
     }
 
-    return formatPresentations(rows, ctx);
+    return formatPresentations(await filterReadableRows(rows, ctx), ctx);
   });
+}
+
+/**
+ * Drop rows the user cannot read. The query keeps published private decks
+ * in scope for their own readers, but a card must never surface a deck
+ * (title + first-slide thumbnail) the click can't open.
+ */
+async function filterReadableRows(rows, ctx) {
+  const user = ctx?.user || null;
+  const readable = [];
+  for (const row of rows) {
+    const pres = {
+      id: row.id,
+      scope: row.scope,
+      ownerEmail: row.owner_email,
+      createdBy: row.created_by,
+    };
+    let collaboratorPermission = null;
+    if (canReadPresentation({ user, pres })) {
+      readable.push(row);
+      continue;
+    }
+    try {
+      collaboratorPermission = await getCollaboratorPermission(row.id, user?.email, ctx);
+    } catch {
+      collaboratorPermission = null;
+    }
+    if (canReadPresentation({ user, pres, collaboratorPermission })) {
+      readable.push(row);
+    }
+  }
+  return readable;
 }
 
 /**
