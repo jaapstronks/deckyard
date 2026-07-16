@@ -8,6 +8,14 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Editor loading skeleton.** Opening a deck used to show a blank white
+  page until everything was fetched (seconds, on long decks). The editor
+  route now mounts a shimmer skeleton of the real three-column layout
+  immediately, with a spinner + "Loading presentation…" status in the
+  canvas, honoring `prefers-reduced-motion`. Loading also got faster: the
+  presentation is no longer fetched twice back-to-back, and theme /
+  slide-type / asset requests now run in parallel.
+
 - **Real-time collaboration (opt-in, feature-flagged).** With
   `COLLAB_ENABLED=true`, everyone with the same deck open sees live
   presence: topbar avatars, a name label + dot on the slide each person is

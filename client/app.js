@@ -36,6 +36,7 @@ import { fetchAppSettings, fetchMySettings } from './lib/settings.js';
 import { setSupportedLangs, writeLangMode } from './lib/i18n.js';
 import { getUiLocale, readUiLocale, setUiLocale, t } from './lib/ui-i18n.js';
 import { escapeHtml } from '../shared/slide-types/helpers.js';
+import { showEditorLoadingSkeleton } from './views/editor/loading-skeleton.js';
 
 let cachedMe = null;
 let cachedMeAt = 0;
@@ -107,6 +108,17 @@ async function render() {
   cleanup = null;
 
   root.innerHTML = '';
+
+  // The editor route fetches auth/settings/presentation before it can mount;
+  // show its layout skeleton right away so the page never sits blank.
+  // renderEditor reuses (and removes) this instance.
+  if (r.name === 'edit') {
+    try {
+      showEditorLoadingSkeleton(root);
+    } catch {
+      // purely cosmetic; never block rendering on it
+    }
+  }
 
   try {
     if (r.name === 'login') {

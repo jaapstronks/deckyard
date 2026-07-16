@@ -3,12 +3,17 @@ import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { showEditorLoadingSkeleton } from './loading-skeleton.js';
 
 export async function renderEditor(
   root,
   id,
   { nav, user } = {}
 ) {
+  // Long decks take a while to fetch + mount; show the layout skeleton
+  // immediately so the page never sits blank (removed on every exit path).
+  const hideSkeleton = showEditorLoadingSkeleton(root);
+
   // Fetch presentation to check permission level
   const url = new URL(location.href);
   const initialLang = url.searchParams.get('lang');
@@ -21,6 +26,7 @@ export async function renderEditor(
   try {
     pres = await api(`/api/presentations/${id}${langParam}`);
   } catch (err) {
+    hideSkeleton();
     // Handle permission denied errors with a nice page
     if (err.statusCode === 401 || err.statusCode === 403) {
       renderPermissionDenied(root, nav);
@@ -39,26 +45,35 @@ export async function renderEditor(
 
   // For view or comment permissions, render the viewer mode instead of the editor
   if (permission === 'view' || permission === 'comment') {
-    const { createViewerController } = await import('../viewer/viewer-controller.js');
-    const controller = await createViewerController({
+    try {
+      const { createViewerController } = await import('../viewer/viewer-controller.js');
+      const controller = await createViewerController({
+        root,
+        id,
+        nav,
+        user,
+        permission,
+        pres,
+      });
+      return controller.detach;
+    } finally {
+      hideSkeleton();
+    }
+  }
+
+  // Default: full editor for 'edit' permission
+  try {
+    const controller = await createEditorController({
       root,
       id,
       nav,
       user,
-      permission,
-      pres,
+      initialPres: pres,
     });
     return controller.detach;
+  } finally {
+    hideSkeleton();
   }
-
-  // Default: full editor for 'edit' permission
-  const controller = await createEditorController({
-    root,
-    id,
-    nav,
-    user,
-  });
-  return controller.detach;
 }
 
 /**

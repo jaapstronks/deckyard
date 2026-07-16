@@ -80,6 +80,7 @@ export async function createEditorController({
   id,
   nav,
   user,
+  initialPres = null,
 } = {}) {
   if (!root) throw new Error('createEditorController: root is required');
   if (!id) throw new Error('createEditorController: id is required');
@@ -125,7 +126,7 @@ export async function createEditorController({
   // ============================================================
 
   const [editorModel, orgSettingsData] = await Promise.all([
-    loadEditorModel({ id, api }),
+    loadEditorModel({ id, api, initialPres }),
     api('/api/settings/organization').catch(() => ({})),
   ]);
 

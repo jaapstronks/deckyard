@@ -1,0 +1,166 @@
+/* Editor loading skeleton — shown while the presentation + editor model load.
+   Reuses the real .editor-shell/.layout/.panel classes for column layout and
+   breakpoints (20-editor-layout.css); this file only styles the placeholder
+   blocks inside. */
+
+.editor-loading-skeleton .skeleton-block {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--app-bg-base)) 0%,
+    hsl(var(--app-border-default)) 50%,
+    hsl(var(--app-bg-base)) 100%
+  );
+  background-size: 200% 100%;
+  /* Namespaced keyframes: the analytics view defines its own
+     skeleton-shimmer; both stylesheets load in one page. */
+  animation: editor-skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--ps-radius-sm, 4px);
+}
+
+@keyframes editor-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editor-loading-skeleton .skeleton-block {
+    animation: none;
+    background: hsl(var(--app-bg-base));
+  }
+  .editor-loading-skeleton .skeleton-spinner {
+    animation: none;
+  }
+}
+
+/* Topbar */
+.editor-loading-skeleton .skeleton-topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+
+.editor-loading-skeleton .skeleton-topbar-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+}
+
+.editor-loading-skeleton .skeleton-topbar-title {
+  width: min(260px, 40vw);
+  height: 20px;
+}
+
+.editor-loading-skeleton .skeleton-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin-left: auto;
+}
+
+.editor-loading-skeleton .skeleton-topbar-chip {
+  width: 72px;
+  height: 30px;
+}
+
+/* Slides column */
+.editor-loading-skeleton .slides-panel-header {
+  display: flex;
+  align-items: center;
+}
+
+.editor-loading-skeleton .skeleton-heading {
+  width: 90px;
+  height: 14px;
+  margin-bottom: var(--ps-space-2);
+}
+
+.editor-loading-skeleton .skeleton-scroll {
+  padding: var(--ps-space-3);
+  overflow: hidden;
+}
+
+.editor-loading-skeleton .skeleton-slide-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-3);
+}
+
+.editor-loading-skeleton .skeleton-slide-num {
+  width: 18px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.editor-loading-skeleton .skeleton-slide-thumb {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ps-radius-md, 6px);
+}
+
+/* Form column */
+.editor-loading-skeleton .skeleton-field {
+  margin-bottom: var(--ps-space-4);
+}
+
+.editor-loading-skeleton .skeleton-label {
+  width: 40%;
+  max-width: 140px;
+  height: 12px;
+  margin-bottom: var(--ps-space-2);
+}
+
+.editor-loading-skeleton .skeleton-input {
+  width: 100%;
+  height: 36px;
+}
+
+.editor-loading-skeleton .skeleton-field:nth-child(3) .skeleton-input {
+  height: 84px;
+}
+
+/* Canvas column */
+.editor-loading-skeleton .skeleton-canvas {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: var(--ps-radius-md, 6px);
+  border: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-elevated));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-loading-skeleton .skeleton-status {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+}
+
+.editor-loading-skeleton .skeleton-spinner {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--app-border-default));
+  border-top-color: hsl(var(--app-accent-primary));
+  animation: editor-skeleton-spin 0.8s linear infinite;
+}
+
+@keyframes editor-skeleton-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The preview rail/sheet on small screens hides the canvas: keep the status
+   text reachable in the form column instead is overkill — the shimmer rows
+   already communicate loading there. */
