@@ -5,6 +5,8 @@
   "editor.saveStatus.unsaved": "Unsaved changes",
   "editor.saveStatus.failed": "Save failed",
   "editor.save.remoteMergedSee": "See what changed",
+  "editor.save.slideLocked": "Not saved: a slide you changed is locked by the author.",
+  "editor.save.slideLockedBy": "Not saved: a slide you changed is being edited by {name}.",
   "editor.remoteMerge.title": "Changes merged in",
   "editor.remoteMerge.intro": "Another editor changed these slides while you were working. Your own unsaved edits were kept.",
   "editor.remoteMerge.slideN": "Slide {n}",

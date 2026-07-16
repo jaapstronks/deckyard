@@ -7,6 +7,7 @@ import { getDb, getOrgId, jsonb, now, sql, applyPagination } from './helpers.js'
 import { mapPresentationRow, mapVersionRowSummary, mapVersionRowFull } from '../../mappers.js';
 import { ConflictError } from '../../../utils/errors.js';
 import { mergeSlidesAtSlideLevel } from '../../presentations/crud/helpers.js';
+import { enforceSlideWritePolicy } from '../../presentations/crud/enforce-slide-locks.js';
 
 /**
  * Presentations mixin - adds presentation methods to adapter.
@@ -141,10 +142,13 @@ export function withPresentations(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
+      // Read the stored state once: the optimistic-locking check and the
+      // slide-lock policy below both diff against it.
+      const existing = await this.getPresentation(id, ctx);
+      if (!existing) return null;
+
       // Check for optimistic locking
       if (opts?.expectedRevision != null) {
-        const existing = await this.getPresentation(id, ctx);
-        if (!existing) return null;
         if (existing.revision !== opts.expectedRevision) {
           // Attempt slide-level merge when client provides modifiedSlideIds
           const modifiedSlideIds = Array.isArray(opts?.modifiedSlideIds) ? opts.modifiedSlideIds : null;
@@ -179,6 +183,21 @@ export function withPresentations(Base) {
           }
         }
       }
+
+      // Slide-lock policy (shared with the file-mode CRUD path): only
+      // authors may toggle lockedByAuthor, and content edits/deletes on
+      // locked slides are rejected with 423. Runs after the slide-level
+      // merge above so stale client copies of other users' slides don't
+      // read as edits.
+      await enforceSlideWritePolicy({
+        existing,
+        nextSlides: data.slides,
+        nextI18nVersions: data?.i18n?.versions || null,
+        user: opts?.user || null,
+        actorEmail: ctx?.actorEmail || '',
+        bypassLockCheck: !!opts?.bypassLockCheck,
+        ctx,
+      });
 
       const updateData = {
         title: data.title,

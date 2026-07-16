@@ -51,6 +51,7 @@ info:
     - `401` - Unauthorized
     - `403` - Forbidden
     - `404` - Not Found
+    - `423` - Locked (a changed slide is locked by the author or being edited by another user)
     - `429` - Rate Limited
     - `500` - Server Error
 
@@ -267,6 +268,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '423':
+          $ref: '#/components/responses/SlideLocked'
 
     delete:
       tags:
@@ -645,6 +648,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '423':
+          $ref: '#/components/responses/SlideLocked'
 
     delete:
       tags:
@@ -693,6 +698,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '423':
+          $ref: '#/components/responses/SlideLocked'
 
   /presentations/{id}/slides/reorder:
     post:
@@ -1983,6 +1990,18 @@ components:
 
     NotFound:
       description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    SlideLocked:
+      description: >-
+        Locked - a changed slide is locked. Author-locked slides
+        (lockedByAuthor) reject content edits from non-authors; slides being
+        edited by another user (concurrent slide lock) reject edits from
+        everyone but the lock holder. Details include slideId and lockKind
+        (author or concurrent).
       content:
         application/json:
           schema:

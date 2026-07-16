@@ -470,6 +470,15 @@ export function createSaveManager({
         } catch {
           // ignore
         }
+      } else if (Number(e?.statusCode) === 423) {
+        // Server-side slide-lock enforcement: a changed slide is locked
+        // (author lock or another editor holds it). Not a hard block like a
+        // revision conflict — the next edit reschedules autosave as usual.
+        const name = e?.details?.holderName || e?.details?.holderEmail || '';
+        lastError = name
+          ? t('editor.save.slideLockedBy', 'Not saved: a slide you changed is being edited by {name}.', { name })
+          : t('editor.save.slideLocked', 'Not saved: a slide you changed is locked by the author.');
+        toast.error(lastError, { id: 'save-status', durationMs: 12000 });
       } else {
       lastError = String(e.message || e);
       toast.error(

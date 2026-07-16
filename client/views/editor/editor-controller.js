@@ -225,6 +225,20 @@ export async function createEditorController({
     },
   });
 
+  // Single state-driven lock seam for every editing surface (bulk-edit
+  // modal, inline editor, future inspector panes). Body-mounted overlays
+  // escape the shell-scoped locked-slide CSS, so gating must come from
+  // state, not stylesheets. The server enforces the same rules (423).
+  const getSlideLockKind = (slideId) => {
+    if (isSlideAuthorLockedForUser(slideId)) return 'author';
+    if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId)) return 'other';
+    return null;
+  };
+
+  // State mirror of the shell's is-read-only class (presentation-level lock
+  // by another user); surfaces read this instead of the classList.
+  let readOnlyMode = false;
+
   // Store user email for SSE event filtering
   if (user?.email) {
     window.__currentUserEmail = user.email;
@@ -623,6 +637,7 @@ export async function createEditorController({
     onReadOnlyChange: (() => {
       let wasReadOnly = false;
       return (isReadOnly, lockInfo) => {
+        readOnlyMode = !!isReadOnly;
         shell.classList.toggle('is-read-only', isReadOnly);
         if (isReadOnly) {
           const bannerText = t('editor.readOnly.banner', 'View only - someone else is editing');
@@ -1161,11 +1176,7 @@ export async function createEditorController({
     getTheme: () => theme,
     // The shell-scoped locked-slide CSS can't reach the modal (it mounts on
     // document.body), so it asks for the lock state and gates itself.
-    getSlideLockKind: (slideId) => {
-      if (isSlideAuthorLockedForUser(slideId)) return 'author';
-      if (!liveEditsActive && slideLockManager.isLockedByOther?.(slideId)) return 'other';
-      return null;
-    },
+    getSlideLockKind,
     openOverlayClosers,
     // Resync the panel form after the modal closes: the modal's structural
     // edits rerender its own form instance, not the panel behind it.
@@ -1203,10 +1214,9 @@ export async function createEditorController({
     overlayHost: preview,
     getSlide: () => pres.slides.find((s) => s.id === selectedSlideId),
     getSlideDef: (type) => SLIDE_TYPES[type],
-    getCanEdit: () =>
-      !!shell &&
-      !shell.classList.contains('is-read-only') &&
-      !shell.classList.contains('is-slide-locked'),
+    // State-driven, not classList-driven: the lock seam is the source of
+    // truth; the shell classes are presentation only.
+    getCanEdit: () => !readOnlyMode && !getSlideLockKind(selectedSlideId),
     markDirty,
     requestSave,
     rerenderPreview: () => rerenderPreview(),

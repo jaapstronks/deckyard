@@ -6,7 +6,7 @@ import { validatePresentation } from '../../../../shared/slide-schemas.js';
 import { normalizeSlides } from '../slides.js';
 import { normalizeI18n } from '../i18n.js';
 import { writePresentation } from '../io.js';
-import { normalizePresentationScope, isPresentationAuthor } from '../../../utils/presentation-authz.js';
+import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
 import {
   createPresentationVersion,
   listPresentationVersions,
@@ -21,6 +21,7 @@ import { normalizeEmail, nowIso } from '../../../utils/normalize.js';
 import { ConflictError, ValidationError } from '../../../utils/errors.js';
 import { getPresentation } from './read.js';
 import { prepareNewPresentation } from './factory.js';
+import { enforceSlideWritePolicy } from './enforce-slide-locks.js';
 import {
   normalizeMeta,
   conflictError,
@@ -163,21 +164,6 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
     }
   }
 
-  // Author lock validation: only authors can change lockedByAuthor on slides
-  const user = opts?.user || (opts?.actorEmail ? { email: opts.actorEmail } : null);
-  const isAuthor = isPresentationAuthor({ user, pres: existing });
-  if (!isAuthor && Array.isArray(body?.slides)) {
-    const existingSlides = existing?.slides || [];
-    const existingLockMap = new Map(existingSlides.map((s) => [s.id, !!s.lockedByAuthor]));
-    for (const slide of body.slides) {
-      const existingLock = existingLockMap.get(slide.id) || false;
-      const newLock = !!slide.lockedByAuthor;
-      if (existingLock !== newLock) {
-        throw new ValidationError('Only the presentation author can lock or unlock slides.');
-      }
-    }
-  }
-
   // We accept the full document from client, but enforce id + timestamps server-side.
   const now = nowIso();
   const candidate = {
@@ -209,6 +195,21 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
   // Use merged slides if we performed a slide-level merge
   candidate.slides = normalizeSlides(mergedSlides || candidate.slides);
   normalizeI18n(candidate);
+
+  // Slide-lock policy (shared with the Postgres adapter): only authors may
+  // toggle lockedByAuthor, and content edits/deletes on locked slides are
+  // rejected with 423. Runs after merge + normalization so per-slide diffs
+  // compare like with like. Saves are whole-presentation PUTs, so the
+  // policy module diffs per slide to find what actually changed.
+  await enforceSlideWritePolicy({
+    existing,
+    nextSlides: candidate.slides,
+    nextI18nVersions: candidate?.i18n?.versions || null,
+    user: opts?.user || null,
+    actorEmail: normalizeEmail(opts?.actorEmail),
+    bypassLockCheck: !!opts?.bypassLockCheck,
+    ctx: { organizationId: getDefaultOrganizationId() },
+  });
 
   const v = validatePresentation(candidate, {
     allowedThemes: await allowedThemesForValidation(repoRoot, {
