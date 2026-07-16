@@ -126,6 +126,7 @@ export async function handlePresentationItem(
       updated = await updatePresentation(repoRoot, id, body, {
         expectedRevision,
         actorEmail: authedUser?.email || null,
+        user: authedUser || null,
         modifiedSlideIds,
       });
     } catch (e) {

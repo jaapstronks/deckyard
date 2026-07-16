@@ -92,6 +92,11 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     notes: typeof body.notes === 'string' ? body.notes : (existingSlide.notes || ''),
     visibility: body.visibility || existingSlide.visibility || {},
   };
+  // Preserve the author-lock flag: the public API cannot toggle it, and
+  // dropping it here would silently unlock the slide on every update.
+  if (typeof existingSlide.lockedByAuthor === 'boolean') {
+    updatedSlide.lockedByAuthor = existingSlide.lockedByAuthor;
+  }
 
   // Validate the slide
   const errors = validateSlide(updatedSlide);

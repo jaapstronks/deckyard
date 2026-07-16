@@ -606,5 +606,7 @@
   "editor.presence.here": "Ook hier",
   "editor.presence.viewerTitle": "{name} is in deze presentatie",
   "editor.presence.viewingSlide": "{name} bekijkt deze slide",
-  "editor.presence.editingSlide": "{name} bewerkt deze slide"
+  "editor.presence.editingSlide": "{name} bewerkt deze slide",
+  "editor.save.slideLocked": "Niet opgeslagen: een gewijzigde slide is vergrendeld door de auteur.",
+  "editor.save.slideLockedBy": "Niet opgeslagen: een gewijzigde slide wordt bewerkt door {name}."
 }
