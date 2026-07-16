@@ -33,7 +33,8 @@ import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
 import { createPreviewPanel } from './preview-panel.js';
-import { createEditorPanelResize } from './editor-panel-resize.js';
+import { createInspectorResize } from './inspector-resize.js';
+import { createInspectorPanes } from './inspector-panes.js';
 import { createInlineEditor } from './inline-edit/inline-editor.js';
 import { createEditorTopbar } from './topbar.js';
 import { createSlidesPanel } from './slides-panel.js';
@@ -115,13 +116,25 @@ export async function createEditorController({
   });
   previewCollapsedPref.loadInitial();
 
-  // Collapsible edit-form panel (same mechanism as the preview preference):
-  // collapsing it gives the slide canvas the extra width.
-  const formCollapsedPref = createPreviewCollapsedPreference({
-    storageKey: 'ps:form-collapsed',
-    className: 'is-form-collapsed',
+  // Collapsible inspector rail (same mechanism as the preview preference):
+  // dismissing it gives the slide canvas the extra width. Every path that
+  // flips this goes through setInspectorCollapsed below so the topbar toggle
+  // stays in sync.
+  const inspectorCollapsedPref = createPreviewCollapsedPreference({
+    storageKey: 'ps:inspector-collapsed',
+    className: 'is-inspector-collapsed',
   });
-  formCollapsedPref.loadInitial();
+  inspectorCollapsedPref.loadInitial();
+
+  const isInspectorCollapsed = () =>
+    document.documentElement.classList.contains('is-inspector-collapsed');
+
+  // Late-bound: reassigned once the topbar exists.
+  let syncInspectorTopbar = () => {};
+  const setInspectorCollapsed = (v) => {
+    inspectorCollapsedPref.set(v);
+    syncInspectorTopbar();
+  };
 
   // ============================================================
   // LOAD MODEL
@@ -614,6 +627,8 @@ export async function createEditorController({
       cleanup.register('presenceLock', detachPresenceLock);
     },
     onToggleComments: () => commentsPanel?.toggle?.(),
+    // Rail toggle: dereferenced at click time (inspectorPanes is built below).
+    onToggleInspector: () => inspectorPanes.toggle('settings'),
     setCommentsBadge: (fn) => { setCommentsBadgeFn = fn; },
     setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
     onOpenOverview: openDeckOverview,
@@ -671,6 +686,12 @@ export async function createEditorController({
     syncTopbarUndo();
   }
 
+  // Reflect the rail state on the topbar "i" toggle (initial + every change).
+  if (typeof topbarApi.setInspectorOpen === 'function') {
+    syncInspectorTopbar = () => topbarApi.setInspectorOpen(!isInspectorCollapsed());
+    syncInspectorTopbar();
+  }
+
   // ============================================================
   // SLIDES PANEL
   // ============================================================
@@ -712,39 +733,31 @@ export async function createEditorController({
   const { leftEl: left, slideListEl, openSlideTypeModal, openSlideLibraryModal } = slidesPanel;
 
   // ============================================================
-  // EDITOR PANEL
+  // INSPECTOR PANEL (rail with swappable panes)
   // ============================================================
 
-  const middle = h('div', { class: 'panel editor-panel' });
+  const inspectorPanel = h('div', { class: 'panel inspector-panel' });
+
+  // Pane host: settings now; the comments pane slots in here in phase 4.
+  const inspectorPanes = createInspectorPanes({
+    panelEl: inspectorPanel,
+    setCollapsed: setInspectorCollapsed,
+    isCollapsed: isInspectorCollapsed,
+  });
+
   const editorMount = h('div', { class: 'editor-mount' });
-  const middleScroll = h('div', { class: 'panel-scroll' });
-  middleScroll.append(editorMount);
-  middle.append(middleScroll);
+  const inspectorScroll = h('div', { class: 'panel-scroll' });
+  inspectorScroll.append(editorMount);
+  const settingsPane = h('div', {}, [inspectorScroll]);
+  inspectorPanes.registerPane('settings', settingsPane);
 
-  // Thin expand rail, shown only while the form panel is collapsed.
-  const editorExpandRail = h('button', {
-    class: 'editor-expand-rail',
-    type: 'button',
-    title: t('editor.form.showPanel', 'Open edit panel'),
-    onclick: () => formCollapsedPref.set(false),
-  });
-  editorExpandRail.append(
-    h('span', { text: '▶', 'aria-hidden': 'true' }),
-    h('span', {
-      class: 'editor-expand-rail-label',
-      text: t('editor.panel.title', 'Edit'),
-    })
-  );
-  middle.append(editorExpandRail);
-
-  // Drag-to-resize handle on the right edge: trades form width for canvas width.
-  const editorPanelResize = createEditorPanelResize({
+  // Drag-to-resize handle on the left edge: trades inspector width for canvas width.
+  const inspectorResize = createInspectorResize({
     h,
-    panelEl: middle,
-    isFormCollapsed: () =>
-      document.documentElement.classList.contains('is-form-collapsed'),
+    panelEl: inspectorPanel,
+    isCollapsed: isInspectorCollapsed,
   });
-  middle.append(editorPanelResize.handleEl);
+  inspectorPanel.append(inspectorResize.handleEl);
 
   // ============================================================
   // PREVIEW PANEL
@@ -870,7 +883,8 @@ export async function createEditorController({
   // LAYOUT
   // ============================================================
 
-  const layout = h('div', { class: 'layout' }, [left, middle, preview]);
+  // Column order slides | canvas | inspector (Keynote/Figma convention).
+  const layout = h('div', { class: 'layout' }, [left, preview, inspectorPanel]);
   shell.append(layout);
 
   // ============================================================
@@ -1165,7 +1179,7 @@ export async function createEditorController({
     isAuthor: isAuthor(),
     disabledSlideTypes,
     features,
-    setFormCollapsed: (v) => formCollapsedPref.set(v),
+    setInspectorCollapsed,
   };
 
   const bulkEditModal = createBulkEditModal({
@@ -1335,7 +1349,7 @@ export async function createEditorController({
       commentsPanel?.stopPolling?.();
       slidesCollapsedPref.clearClass();
       previewCollapsedPref.clearClass();
-      formCollapsedPref.clearClass();
+      inspectorCollapsedPref.clearClass();
     } catch { /* ignore */ }
   };
 

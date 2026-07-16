@@ -2,7 +2,7 @@
 /* Editor and modal controls */
 
 /* Responsive field row.
-   The editor form column is drag-resizable (--editor-panel-width), so its width
+   The editor form column is drag-resizable (--inspector-width), so its width
    is independent of the viewport and media queries can't help here. Instead the
    row reflows on its own real width via flex-wrap: fields sit side by side when
    there is room and drop onto their own line when there isn't - no breakpoints,
@@ -711,6 +711,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Narrow inspector rail: smaller preset tiles so two fit per row instead of
+   a tall single column (the 340px default leaves ~240px inside a section). */
+.is-editor .inspector-panel .editor-img-thumb-btn {
+  width: 110px;
+  height: 62px;
 }
 
 .editor-logo-thumb-sm {

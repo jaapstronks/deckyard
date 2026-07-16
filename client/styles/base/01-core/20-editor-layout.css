@@ -1,12 +1,12 @@
-/* 3-column editor layout (editor route only) */
+/* 3-column editor layout (editor route only): slides | canvas | inspector */
 .is-editor .layout {
   display: grid;
   /* The slide canvas is the primary editing surface (inline WYSIWYG), so it
-     gets all the flexible space. The form column has a fixed, user-resizable
-     width (--editor-panel-width, set via the drag handle) and the slides
-     column uses --slides-panel-width (also drag-resizable). */
+     gets all the flexible space. The inspector column on the right has a
+     fixed, user-resizable width (--inspector-width, set via the drag handle)
+     and the slides column uses --slides-panel-width (also drag-resizable). */
   grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
-    minmax(320px, var(--editor-panel-width, 400px)) minmax(320px, 1fr);
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
   height: calc(100vh - var(--ps-topbar-height));
   height: calc(100dvh - var(--ps-topbar-height));
   gap: 0;
@@ -22,33 +22,37 @@
 
 .is-editor.is-slides-collapsed .layout {
   grid-template-columns: var(--ps-slides-collapsed-width)
-    minmax(320px, var(--editor-panel-width, 400px)) minmax(320px, 1fr);
+    minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
 }
 
 .is-editor.is-preview-collapsed .layout {
-  /* When the canvas is collapsed, give the editor column the extra space. */
-  grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width)) minmax(320px, 1fr)
-    var(--ps-preview-collapsed-width);
+  /* When the canvas is collapsed, give the inspector column the extra space. */
+  grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
+    var(--ps-preview-collapsed-width) minmax(320px, 1fr);
 }
 
 .is-editor.is-slides-collapsed.is-preview-collapsed .layout {
-  grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr)
-    var(--ps-preview-collapsed-width);
-}
-
-/* Collapsed edit panel: the form shrinks to a thin expand rail and the canvas
-   takes everything. Wins over preview-collapsed (the canvas is the only
-   content left, so it must stay visible). */
-.is-editor.is-form-collapsed .layout,
-.is-editor.is-preview-collapsed.is-form-collapsed .layout {
-  grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
-    var(--ps-form-collapsed-width, 46px) minmax(320px, 1fr);
-}
-
-.is-editor.is-slides-collapsed.is-form-collapsed .layout,
-.is-editor.is-slides-collapsed.is-preview-collapsed.is-form-collapsed .layout {
   grid-template-columns: var(--ps-slides-collapsed-width)
-    var(--ps-form-collapsed-width, 46px) minmax(320px, 1fr);
+    var(--ps-preview-collapsed-width) minmax(320px, 1fr);
+}
+
+/* Dismissed inspector rail: the panel leaves the grid entirely and the
+   canvas gets all the space (the topbar "i" toggle brings it back). Wins
+   over preview-collapsed (the canvas is the only content left, so it must
+   stay visible). */
+.is-editor.is-inspector-collapsed .layout,
+.is-editor.is-preview-collapsed.is-inspector-collapsed .layout {
+  grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
+    minmax(320px, 1fr);
+}
+
+.is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
+.is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
+  grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr);
+}
+
+.is-editor.is-inspector-collapsed .inspector-panel {
+  display: none;
 }
 
 /* Editor panels (columns) */
@@ -67,9 +71,9 @@
   min-width: 0;
 }
 
-/* Editor panel submenus: JS positions them with position:fixed to escape
+/* Inspector submenus: JS positions them with position:fixed to escape
    overflow clipping from .panel-scroll. High z-index ensures visibility. */
-.is-editor .editor-panel .dropdown-submenu > .dropdown-menu.dropdown-submenu-menu {
+.is-editor .inspector-panel .dropdown-submenu > .dropdown-menu.dropdown-submenu-menu {
   z-index: 1000;
 }
 .is-editor .panel:last-child {
@@ -116,12 +120,13 @@
   }
 }
 
-/* Resize handle between the edit form and the slide canvas (same pattern as
-   the slides handle): drag to trade form width for canvas width. */
-.is-editor .editor-panel-resize-handle {
+/* Resize handle between the slide canvas and the inspector (same pattern as
+   the slides handle): the inspector sits on the right, so the handle lives on
+   its LEFT edge; drag to trade inspector width for canvas width. */
+.is-editor .inspector-resize-handle {
   position: absolute;
   top: 0;
-  right: -3px;
+  left: -3px;
   bottom: 0;
   width: 6px;
   cursor: col-resize;
@@ -130,74 +135,50 @@
   transition: background var(--ps-transition-fast);
 }
 
-.is-editor .editor-panel-resize-handle:hover,
-.is-editor .editor-panel-resize-handle.is-resizing {
+.is-editor .inspector-resize-handle:hover,
+.is-editor .inspector-resize-handle.is-resizing {
   background: hsl(var(--app-accent-primary) / 0.3);
 }
 
-.is-editor .editor-panel-resize-handle.is-resizing {
+.is-editor .inspector-resize-handle.is-resizing {
   background: hsl(var(--app-accent-primary) / 0.5);
 }
 
-.is-editor.is-form-collapsed .editor-panel-resize-handle {
+.is-editor.is-inspector-collapsed .inspector-resize-handle {
   display: none;
 }
 
 @media (max-width: 820px) {
-  .is-editor .editor-panel-resize-handle {
+  .is-editor .inspector-resize-handle {
     display: none;
   }
 
-  /* On mobile the form panel is the main column: ignore a form-collapsed
+  /* On mobile the inspector is the main column: ignore a collapsed
      preference persisted from desktop. */
-  .is-editor.is-form-collapsed .editor-panel .panel-scroll {
-    display: block;
+  .is-editor.is-inspector-collapsed .inspector-panel {
+    display: flex;
   }
-  .is-editor.is-form-collapsed .editor-expand-rail {
-    display: none;
-  }
-  .is-editor.is-form-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-form-collapsed .layout,
-  .is-editor.is-preview-collapsed.is-form-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed.is-form-collapsed .layout {
+  .is-editor.is-inspector-collapsed .layout,
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
+  .is-editor.is-preview-collapsed.is-inspector-collapsed .layout,
+  .is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
     grid-template-columns: 1fr var(--ps-preview-collapsed-width, 92px);
   }
 }
 
-/* Collapsed edit panel: hide the form, show a full-height expand rail. */
-.is-editor .editor-expand-rail {
+/* Inspector panes: one rail, swappable panes (settings now, comments in
+   phase 4). Exactly one pane is active; each pane is a full-height flex
+   column so its .panel-scroll child can take the remaining space. */
+.is-editor .inspector-pane {
   display: none;
-}
-
-.is-editor.is-form-collapsed .editor-panel .panel-scroll {
-  display: none;
-}
-
-.is-editor.is-form-collapsed .editor-expand-rail {
-  display: flex;
   flex: 1;
   flex-direction: column;
-  align-items: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-3) 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: hsl(var(--app-text-secondary));
+  min-height: 0;
+  min-width: 0;
 }
 
-.is-editor.is-form-collapsed .editor-expand-rail:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.is-editor .editor-expand-rail-label {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  font-size: var(--ps-text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.is-editor .inspector-pane.is-active {
+  display: flex;
 }
 
 .is-editor .slides-panel-header {
@@ -322,14 +303,14 @@
   font-size: var(--ps-text-xs);
 }
 
-.is-editor .editor-panel {
+.is-editor .inspector-panel {
   background: hsl(var(--app-bg-elevated));
   border-left: 1px solid hsl(var(--app-border-subtle));
-  /* Positioning context for the drag-to-resize handle on its right edge. */
+  /* Positioning context for the drag-to-resize handle on its left edge. */
   position: relative;
 }
 
-.is-editor .editor-panel .panel-scroll {
+.is-editor .inspector-panel .panel-scroll {
   padding: var(--ps-space-5);
   /* Extra bottom room so the last section (e.g. the collapsed "Accessibility"
      toggle) can always be scrolled fully into view. The panel sits flush with
@@ -406,7 +387,7 @@
 
 /* Note: the desktop grid (≥1025px) is fully expressed by the base rules above.
    The canvas always gets the flexible space; the form width is the resizable
-   --editor-panel-width. Former breakpoint-specific column overrides for
+   --inspector-width. Former breakpoint-specific column overrides for
    1025-1300px and >1300px were removed with the canvas-first layout. */
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -415,14 +396,13 @@
 @media (max-width: 1024px) and (min-width: 821px) {
   .is-editor:not(.is-slides-expanded-override) .layout {
     grid-template-columns: var(--ps-slides-collapsed-width)
-      minmax(320px, var(--editor-panel-width, 380px)) minmax(280px, 1fr);
+      minmax(280px, 1fr) minmax(320px, var(--inspector-width, 340px));
   }
 
-  /* Collapsed form wins over the tablet default (declared after it). */
-  .is-editor.is-form-collapsed .layout,
-  .is-editor.is-form-collapsed:not(.is-slides-expanded-override) .layout {
-    grid-template-columns: var(--ps-slides-collapsed-width)
-      var(--ps-form-collapsed-width, 46px) minmax(280px, 1fr);
+  /* Dismissed inspector wins over the tablet default (declared after it). */
+  .is-editor.is-inspector-collapsed .layout,
+  .is-editor.is-inspector-collapsed:not(.is-slides-expanded-override) .layout {
+    grid-template-columns: var(--ps-slides-collapsed-width) minmax(280px, 1fr);
   }
 
   /* Apply collapsed styling automatically at this width */
@@ -477,6 +457,16 @@
     grid-template-columns: 1fr var(--ps-preview-collapsed-width, 92px);
     grid-template-rows: 1fr;
     position: relative;
+  }
+
+  /* The desktop DOM order is slides | canvas | inspector; on tablet portrait
+     the inspector is the main (left) column and the canvas a thin rail on the
+     right, so swap them back via grid order (phase 4 rethinks this layout). */
+  .is-editor .inspector-panel {
+    order: 1;
+  }
+  .is-editor .preview-panel {
+    order: 2;
   }
 
   .is-editor.is-preview-collapsed .layout,
@@ -564,7 +554,7 @@
     display: none;
   }
 
-  .is-editor .editor-panel {
+  .is-editor .inspector-panel {
     border-right: none;
     border-left: none;
   }

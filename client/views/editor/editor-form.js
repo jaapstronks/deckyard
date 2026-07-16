@@ -20,7 +20,11 @@ import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { getInlineDescriptor, getInlineFormTextKeys } from './inline-edit/descriptors.js';
+import { getInlineDescriptor } from './inline-edit/descriptors.js';
+import {
+  getInspectorKeepKeys,
+  renderInspectorExtrasByType,
+} from './editor-form/inspector-form.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { detectBgTextContrast } from '../../lib/bg-contrast.js';
@@ -69,27 +73,6 @@ async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefres
   }
   markDirty?.();
   scheduleUiRefresh?.();
-}
-
-// Sticky user preference: whether the collapsed "Text" section (fields that
-// are also inline-editable on the preview) is expanded. Form-first users open
-// it once and keep their flow; the clean default stays collapsed.
-const TEXT_FIELDS_OPEN_KEY = 'editor.textFields.open';
-
-function readTextFieldsOpen() {
-  try {
-    return localStorage.getItem(TEXT_FIELDS_OPEN_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function storeTextFieldsOpen(open) {
-  try {
-    localStorage.setItem(TEXT_FIELDS_OPEN_KEY, open ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
 }
 
 // Sticky user preference for the unified "Background" section (colour +
@@ -169,7 +152,7 @@ function buildHeaderActions({
   rerenderPreview,
   rerenderSlideList,
   isAuthor,
-  setFormCollapsed,
+  setInspectorCollapsed,
 }) {
   const headerActions = h('div', { class: 'row editor-form-header-actions' });
   const isFollowInviteSlide = slide.type === 'follow-invite-slide';
@@ -519,17 +502,18 @@ function buildHeaderActions({
     btnLock.append(h('img', { class: 'btn-lock-icon', src: isLocked ? iconUrl('lock-open') : iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
   }
 
-  // Collapse button: shrink the form panel to a thin rail so the slide canvas
-  // gets the width (the rail re-expands it).
+  // Collapse button: shrink the inspector to a thin rail so the slide canvas
+  // gets the width (the rail re-expands it). The panel sits on the right, so
+  // it collapses rightward.
   let btnCollapse = null;
-  if (setFormCollapsed) {
+  if (setInspectorCollapsed) {
     btnCollapse = h('button', {
       class: 'btn btn-secondary btn-icon',
       type: 'button',
-      text: '◀',
-      title: t('editor.form.hidePanel', 'Hide edit panel'),
-      'aria-label': t('editor.form.hidePanel', 'Hide edit panel'),
-      onclick: () => setFormCollapsed(true),
+      text: '▶',
+      title: t('editor.inspector.hide', 'Hide inspector'),
+      'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+      onclick: () => setInspectorCollapsed(true),
     });
   }
 
@@ -565,7 +549,7 @@ export function createRerenderEditor({
   isAuthor,
   disabledSlideTypes,
   features,
-  setFormCollapsed,
+  setInspectorCollapsed,
   onOpenBulkEdit,
   // Bulk-edit ("Edit all text") mode: render ONLY the per-type content fields
   // into editorMount - no header/actions, no data-source bar, no duration, no
@@ -614,7 +598,7 @@ export function createRerenderEditor({
     const header = h('div', { class: 'row spread editor-form-header' });
     const headerLeft = h('div', { class: 'row editor-form-header-left' });
     headerLeft.append(
-      h('h2', { class: 'editor-form-title', text: t('editor.panel.title', 'Edit') }),
+      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') }),
       h('div', {
         class: 'pill',
         text: t(
@@ -668,7 +652,7 @@ export function createRerenderEditor({
       rerenderPreview,
       rerenderSlideList,
       isAuthor,
-      setFormCollapsed,
+      setInspectorCollapsed,
     });
     headerActionsDetach = headerActionsResult.detach;
     // "Edit all text": opens the roomy bulk-edit modal (all content fields +
@@ -803,7 +787,10 @@ export function createRerenderEditor({
       form.append(warningsDiv);
     }
 
-    // AI Iterate panel (slide-level AI refinement)
+    // AI Iterate panel (slide-level AI refinement). Built here, appended at
+    // the very end of the form: the inspector is a settings pane first, and
+    // the refine box is a tool, not a setting.
+    let aiIteratePanel = null;
     if (api && !contentOnly) {
       const iteratePanel = h('div', { class: 'ai-iterate-panel' });
       const iterateForm = h('div', { class: 'ai-iterate-form' });
@@ -939,7 +926,7 @@ export function createRerenderEditor({
 
       iterateForm.append(iterateInput, iterateBtn);
       iteratePanel.append(iterateForm);
-      form.append(iteratePanel);
+      aiIteratePanel = iteratePanel;
     }
 
     // Accessibility fields (global) are tucked behind a toggle
@@ -956,12 +943,11 @@ export function createRerenderEditor({
     const a11yBody = h('div', { class: 'editor-advanced-body' });
     a11yDetails.append(a11ySummary, a11yBody);
 
-    // Text fields that are fully editable inline on the preview are tucked
-    // behind a collapsed "Text" section: the slide itself is the primary text
-    // surface, and the visible form leads with design controls (layout,
-    // background, images). The section is the full-power fallback; its open
-    // state is a sticky preference for form-first users.
-    const inlineTextKeys = new Set(getInlineFormTextKeys(slide.type, def));
+    // Inspector mode (the default): the pane renders ONLY settings/design
+    // fields (the audit's "Inspector keeps"), plus Background and
+    // Accessibility. Content lives on the slide (wysiwyg) and - all of it,
+    // by construction - in the "Edit all text" bulk modal.
+    const inspectorKeeps = contentOnly ? null : getInspectorKeepKeys(slide.type, def);
 
     // Legacy alias collections (items/steps/stages): the schema carries both
     // keys but the renderer reads exactly one (getCollectionKey). Skip the
@@ -975,29 +961,6 @@ export function createRerenderEditor({
         if (k !== activeKey) inactiveCollectionKeys.add(k);
       }
     }
-    const textDetails = h('details', { class: 'editor-advanced editor-text-fields' });
-    if (readTextFieldsOpen()) textDetails.open = true;
-    textDetails.addEventListener('toggle', () => storeTextFieldsOpen(textDetails.open));
-    const textSummary = h('summary', {
-      class: 'editor-advanced-summary',
-      text: t('editor.slide.textSection', 'Text'),
-      title: t(
-        'editor.slide.textSection.title',
-        'All text on this slide. You can also edit it by clicking the text on the slide itself.'
-      ),
-    });
-    const textBody = h('div', { class: 'editor-advanced-body' });
-    textBody.append(
-      h('div', {
-        class: 'help',
-        text: t(
-          'editor.slide.textSection.help',
-          'Tip: you can also edit these texts by clicking them on the slide.'
-        ),
-      })
-    );
-    textDetails.append(textSummary, textBody);
-
     // The unified "Background" section: colour choice, custom image and the
     // theme corner logo live together (they used to be split between a
     // top-level colour dropdown and a collapsed "Background & logo" panel).
@@ -1060,7 +1023,6 @@ export function createRerenderEditor({
       key === 'slideBgText' ||
       key === 'slideLogo';
 
-    let textFieldCount = 0;
     const add = (key) => {
       const f = fieldByKey.get(key);
       if (!f) return;
@@ -1074,9 +1036,14 @@ export function createRerenderEditor({
         used.add(key);
         return;
       }
-      // Bulk-edit mode: a11y stays an inspector concern, and inline-covered
-      // text renders in place (there is no collapsed Text section to tuck into).
+      // Bulk-edit mode: a11y stays an inspector concern.
       if (contentOnly && isA11yFieldKey(key)) {
+        used.add(key);
+        return;
+      }
+      // Inspector mode: content fields don't render here (their homes are the
+      // slide surface and the bulk modal); only the per-type keeps pass.
+      if (inspectorKeeps && !isA11yFieldKey(key) && !inspectorKeeps.has(key)) {
         used.add(key);
         return;
       }
@@ -1087,23 +1054,7 @@ export function createRerenderEditor({
         a11yBody.append(el);
         return;
       }
-      if (!contentOnly && inlineTextKeys.has(key)) {
-        textBody.append(el);
-        textFieldCount += 1;
-        return;
-      }
       form.append(el);
-    };
-
-    // A slide-form can call this (after adding its text fields) to position the
-    // collapsed "Text" section above its own content — card grids read better
-    // with the title/subheading editors on top rather than below the card list.
-    // If never called, the section is appended at the end as usual.
-    let textSectionPlaced = false;
-    const placeTextSection = () => {
-      if (contentOnly || textSectionPlaced || textFieldCount === 0) return;
-      form.append(textDetails);
-      textSectionPlaced = true;
     };
 
     // Populate the Background section. Colour first: the section reads as
@@ -1182,8 +1133,7 @@ export function createRerenderEditor({
       if (logoEl) bgBody.append(logoEl);
     }
 
-    // Route to appropriate slide form renderer
-    renderSlideFormByType({
+    const formTypeCtx = {
       h,
       form,
       slide,
@@ -1194,7 +1144,6 @@ export function createRerenderEditor({
       renderField,
       // Deck slides (minus the current one) for in-deck card-link pickers.
       deckSlides: buildDeckSlideOptions(pres, slide?.id),
-      placeTextSection,
       fieldRenderers: {
         fieldGrid,
         fieldText,
@@ -1209,23 +1158,34 @@ export function createRerenderEditor({
       rerenderSlideList,
       rerenderPreview,
       scheduleUiRefresh,
-    });
+    };
 
-    // Add any remaining fields not handled by the type-specific form
+    if (contentOnly) {
+      // Bulk modal: the full per-type content form (parity by construction).
+      renderSlideFormByType(formTypeCtx);
+    } else {
+      // Inspector: only the per-type widgets a flat keeps-list can't express
+      // (chart config, focus pickers, per-card icon/link, per-column image
+      // settings); the loop below renders the remaining keeps.
+      renderInspectorExtrasByType(formTypeCtx);
+    }
+
+    // Add any remaining fields not handled above. In inspector mode add()
+    // gates on the keeps set, so this renders keeps in schema order and
+    // routes a11y/background keys to their sections.
     for (const f of def.fields || []) {
       if (!used.has(f.key)) add(f.key);
     }
 
-    // Background section above the Text fallback: it's a design control set,
+    // Background section after the type fields: it's a design control set,
     // and it replaces the colour dropdown that used to sit loose in the form.
     if (!contentOnly && bgBody.childNodes?.length) form.append(bgDetails);
 
-    // Append the collapsed Text section (only when fields were routed into it,
-    // and only if a slide-form didn't already position it above its content).
-    if (!contentOnly && textFieldCount > 0 && !textSectionPlaced) form.append(textDetails);
-
     // Append accessibility toggle if it has content
     if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
+
+    // AI refine box last: tooling under the settings.
+    if (aiIteratePanel) form.append(aiIteratePanel);
 
     editorMount.append(form);
   };
