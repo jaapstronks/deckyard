@@ -46,7 +46,8 @@ self-contained project.
    (blocks overhaul + descriptor seam #22, inline reorder #23,
    empty-slot adds #24);
    (2) an "Edit all text" bulk surface (fields left, live preview right) —
-   the non-wysiwyg mode for everything inline editing can't cover;
+   the non-wysiwyg mode for everything inline editing can't cover —
+   **complete** (#25);
    (3) only then the form column becomes a right-side **Inspector** —
    slides | canvas | inspector, toggleable from the topbar, settings only
    (background / layout / accessibility, no more content text fields);
