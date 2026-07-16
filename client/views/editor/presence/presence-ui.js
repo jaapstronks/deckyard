@@ -109,13 +109,26 @@ export function createPresenceUI({
 
   let applying = false;
 
+  // One persistent floating element per peer (name label + dot), positioned
+  // over the slide list with a transform. Because the element survives
+  // refreshes, moving it to another slide item transitions the transform —
+  // the label glides from the old slide to the new one instead of blinking
+  // out and in (CSS in 107-collab-presence.css; reduced-motion disables it).
+  // The elements are listEl children, not item children, so destructive
+  // item re-renders don't kill them mid-transition.
+  const listPeerEls = new Map(); // email -> element
+  if (listEl && getComputedStyle(listEl).position === 'static') {
+    listEl.style.position = 'relative';
+  }
+  detachers.push(() => {
+    for (const el of listPeerEls.values()) el.remove();
+    listPeerEls.clear();
+  });
+
   function applySlideIndicators(peers) {
     if (!listEl) return;
     applying = true;
     try {
-      for (const old of listEl.querySelectorAll('.collab-slide-presence'))
-        old.remove();
-
       // Group peers per viewed slide (dedupe by email within a slide).
       const bySlide = new Map();
       for (const peer of uniqueByEmail(peers)) {
@@ -125,25 +138,51 @@ export function createPresenceUI({
         bySlide.get(slideId).push(peer);
       }
 
+      const seen = new Set();
       for (const [slideId, slidePeers] of bySlide) {
         const item = listEl.querySelector(
           `.slide-item[data-slide-id="${CSS.escape(slideId)}"]`
         );
-        if (!item) continue;
-        const badge = h('div', { class: 'collab-slide-presence' });
-        for (const peer of slidePeers.slice(0, 3)) {
+        // Skip missing/hidden items (e.g. filtered out by slide search).
+        if (!item || item.offsetParent === null) continue;
+        slidePeers.slice(0, 3).forEach((peer, i) => {
           const isEditing = peer.focus?.slideId === slideId;
-          badge.append(
-            h('span', {
-              class: `collab-slide-dot${isEditing ? ' is-editing' : ''}`,
-              style: `--presence-color: ${peer.user.color}`,
-              title: isEditing
-                ? t('editor.presence.editingSlide', '{name} is editing this slide', { name: peerName(peer) })
-                : t('editor.presence.viewingSlide', '{name} is viewing this slide', { name: peerName(peer) }),
-            })
-          );
+          // Anchor at the item's top-right corner in listEl content
+          // coordinates (scroll-independent); the second translate
+          // right-aligns the element by its own width.
+          const x = item.offsetLeft + item.offsetWidth - 4;
+          const y = item.offsetTop + 4 + i * 22;
+          const transform = `translate(${x}px, ${y}px) translate(-100%, 0)`;
+
+          let el = listPeerEls.get(peer.user.email);
+          if (!el) {
+            el = h('div', { class: 'collab-list-peer', 'aria-hidden': 'true' });
+            el.append(
+              h('span', { class: 'collab-list-peer-name' }),
+              h('span', { class: 'collab-slide-dot' })
+            );
+            // Set the position before inserting so a new peer appears in
+            // place instead of gliding in from the list origin.
+            el.style.transform = transform;
+            listPeerEls.set(peer.user.email, el);
+          }
+          if (!el.isConnected) listEl.append(el);
+          el.style.setProperty('--presence-color', peer.user.color);
+          el.querySelector('.collab-list-peer-name').textContent = peerName(peer);
+          el.querySelector('.collab-slide-dot').classList.toggle('is-editing', isEditing);
+          el.title = isEditing
+            ? t('editor.presence.editingSlide', '{name} is editing this slide', { name: peerName(peer) })
+            : t('editor.presence.viewingSlide', '{name} is viewing this slide', { name: peerName(peer) });
+          el.style.transform = transform;
+          seen.add(peer.user.email);
+        });
+      }
+
+      for (const [email, el] of listPeerEls) {
+        if (!seen.has(email)) {
+          el.remove();
+          listPeerEls.delete(email);
         }
-        item.append(badge);
       }
     } finally {
       applying = false;
@@ -159,7 +198,7 @@ export function createPresenceUI({
     n instanceof HTMLElement &&
     (n.classList.contains('collab-focus-ring') ||
       n.classList.contains('collab-focus-label') ||
-      n.classList.contains('collab-slide-presence'));
+      n.classList.contains('collab-list-peer'));
   const onDomMutations = (mutations) => {
     if (applying) return;
     for (const m of mutations) {
@@ -205,6 +244,7 @@ export function createPresenceUI({
       if (!selectedId) return;
 
       const thumbRect = thumb.getBoundingClientRect();
+      const fallbackEmails = new Set();
       for (const peer of peers) {
         const focus = peer.focus;
         if (!focus || focus.slideId !== selectedId || !focus.fieldPath) continue;
@@ -213,6 +253,7 @@ export function createPresenceUI({
         // side-form wrapper, the notes textarea's block, a matching open
         // markdown modal). Inputs/textareas can't host ::after, so the
         // decoration lands on their parent block.
+        let matched = false;
         for (const bound of document.querySelectorAll(
           `[data-collab-field-key="${CSS.escape(focus.fieldPath)}"]`
         )) {
@@ -224,12 +265,40 @@ export function createPresenceUI({
           target.classList.add('collab-remote-focus');
           target.style.setProperty('--presence-color', peer.user.color);
           target.dataset.collabFocusName = peerName(peer);
+          // Only a visible decoration counts as covered — the side form
+          // renders every field, but e.g. a collapsed Advanced group hides
+          // it. checkVisibility() also catches closed-<details> content,
+          // which keeps layout boxes in Chromium (getClientRects lies).
+          const visible =
+            typeof target.checkVisibility === 'function'
+              ? target.checkVisibility()
+              : target.getClientRects().length > 0;
+          if (visible) matched = true;
         }
 
         const el = thumb.querySelector(
           `[data-inline-field="${CSS.escape(focus.fieldPath)}"]`
         );
-        if (!el) continue;
+        if (!el) {
+          // The focused field has no local element yet — typically a field
+          // (or array item) the peer just spawned whose content hasn't
+          // reached this client. If no flat surface matched either, show a
+          // generic name chip in the slide corner so the editing presence
+          // isn't invisible (one per user; connections may overlap).
+          if (!matched && !fallbackEmails.has(peer.user.email)) {
+            fallbackEmails.add(peer.user.email);
+            const chip = h('span', {
+              class: 'collab-focus-label is-fallback',
+              text: peerName(peer),
+              style: `--presence-color: ${peer.user.color}`,
+              'aria-hidden': 'true',
+            });
+            thumb.append(chip);
+            chip.style.right = '8px';
+            chip.style.top = `${8 + (fallbackEmails.size - 1) * 26}px`;
+          }
+          continue;
+        }
         const rect = el.getBoundingClientRect();
         const ring = h('div', {
           class: 'collab-focus-ring',
