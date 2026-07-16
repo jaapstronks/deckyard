@@ -47,7 +47,14 @@
   margin: -3px;
   padding: 3px;
   box-sizing: content-box;
-  border: 1.5px dashed hsl(var(--app-accent-primary) / 0.55);
+  border: 1.5px dashed hsl(var(--app-accent-primary) / 0.9);
+  /* Background-agnostic contrast: a thin light halo on both sides of the
+     dashes keeps the outline visible over dark/tinted cards (the overlay
+     can't know the card colour underneath; on light backgrounds the halo
+     simply disappears). */
+  box-shadow:
+    0 0 0 1px hsl(0 0% 100% / 0.55),
+    inset 0 0 0 1px hsl(0 0% 100% / 0.45);
   opacity: 0;
   transition: opacity 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
 }

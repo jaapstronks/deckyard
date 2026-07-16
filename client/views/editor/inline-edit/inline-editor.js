@@ -405,9 +405,10 @@ export function createInlineEditor({
    * description) whose element the renderer omits when empty. For each rendered
    * item (identified by `data-inline-item-index`), if that item's subfield is
    * empty, a chip is anchored to the item element.
-   * Shape: `{ list, field, item, within?, pos?, chip? }` where `list` is the
-   * primary collection key (aliases resolved via the cards config), `item` the
-   * item-element selector, and `within` an optional inner element to spawn into.
+   * Shape: `{ list, field, item, within?, pos?, chip?, minIndex? }` where
+   * `list` is the primary collection key (aliases resolved via the cards
+   * config), `item` the item-element selector, and `within` an optional inner
+   * element to spawn into.
    */
   function insertItemGhosts(root, def, descriptor) {
     const slide = getSlide?.();
@@ -423,6 +424,9 @@ export function createInlineEditor({
       for (const itemEl of root.querySelectorAll(g.item)) {
         const idx = Number(itemEl.getAttribute('data-inline-item-index'));
         if (!Number.isInteger(idx) || !arr[idx]) continue;
+        // Some subfields only exist from a given index on (a text-blocks row
+        // title renders for rows 2+ only); `minIndex` skips the earlier items.
+        if (Number.isInteger(g.minIndex) && idx < g.minIndex) continue;
         const path = `${listKey}.${idx}.${g.field}`;
         if (!isEmptyValue(getByPath(slide.content, path))) continue;
         const meta = fieldMetaForPath(def, `${listKey}.0.${g.field}`);
@@ -553,8 +557,6 @@ export function createInlineEditor({
     const slide = getSlide?.();
     if (!slide) return;
     const listField = (def.fields || []).find((f) => f.key === cards.field) || {};
-    const min = Number.isFinite(listField.minItems) ? listField.minItems : 0;
-    const max = Number.isFinite(listField.maxItems) ? listField.maxItems : 99;
     // Write to the same array the renderer reads (legacy `steps`/`stages` decks).
     const fieldKey = getCollectionKey(slide.content, cards.field, cards.fieldAliases || []);
     const arr = Array.isArray(getByPath(slide.content, fieldKey))
@@ -565,75 +567,188 @@ export function createInlineEditor({
     // numbered fields - that would silently switch the renderer's data source.
     if (cards.skipWhenEmpty && arr.length === 0) return;
 
+    insertCardLevel(root, slide, {
+      path: fieldKey,
+      meta: listField,
+      itemSelector: cards.itemSelector,
+      addAnchorEl:
+        (cards.addAnchor && root.querySelector(cards.addAnchor)) ||
+        root.querySelector(cards.container),
+      removeAnchor: cards.removeAnchor,
+      removePlacement: cards.removePlacement,
+      addPlacement: cards.addPlacement,
+      addLabelKey: cards.addLabelKey,
+      addLabel: cards.addLabel,
+      removeLabelKey: cards.removeLabelKey,
+      removeLabel: cards.removeLabel,
+    });
+
+    // Nested card level (text-blocks: blocks within rows.{i}) - one card set
+    // per parent item element, writing to the `${path}.${i}.${child.field}`
+    // array. The child's min/max/itemDefaults come from the nested itemFields
+    // schema (fieldMetaForPath already walks `rows.0.blocks`).
+    const child = cards.child;
+    if (!child) return;
+    const childMeta = fieldMetaForPath(def, `${cards.field}.0.${child.field}`);
+    for (const parentEl of root.querySelectorAll(cards.itemSelector)) {
+      const idx = Number(parentEl.getAttribute('data-inline-item-index'));
+      if (!Number.isInteger(idx) || !arr[idx]) continue;
+      const childPath = `${fieldKey}.${idx}.${child.field}`;
+      insertCardLevel(parentEl, slide, {
+        path: childPath,
+        meta: childMeta,
+        itemSelector: child.itemSelector,
+        // The parent item element itself anchors the child "+" chip.
+        addAnchorEl: parentEl,
+        removeAnchor: child.removeAnchor,
+        removePlacement: child.removePlacement,
+        addPlacement: child.addPlacement,
+        addLabelKey: child.addLabelKey,
+        addLabel: child.addLabel,
+        removeLabelKey: child.removeLabelKey,
+        removeLabel: child.removeLabel,
+      });
+      insertChildGhosts(parentEl, def, cards, idx, childPath);
+    }
+  }
+
+  /**
+   * Add/remove affordances for one repeatable-items level. `scopeEl` bounds the
+   * item-element query (the slide root for top-level lists, the parent item
+   * element for a nested child list); `path` is the content path of the array.
+   */
+  function insertCardLevel(scopeEl, slide, {
+    path,
+    meta,
+    itemSelector,
+    addAnchorEl,
+    removeAnchor,
+    removePlacement,
+    addPlacement,
+    addLabelKey,
+    addLabel,
+    removeLabelKey,
+    removeLabel,
+  }) {
+    const min = Number.isFinite(meta?.minItems) ? meta.minItems : 0;
+    const max = Number.isFinite(meta?.maxItems) ? meta.maxItems : 99;
+    const arr = Array.isArray(getByPath(slide.content, path))
+      ? getByPath(slide.content, path)
+      : [];
+
     if (arr.length > min) {
-      const items = root.querySelectorAll(cards.itemSelector);
-      for (const itemEl of items) {
+      for (const itemEl of scopeEl.querySelectorAll(itemSelector)) {
         const idx = Number(itemEl.getAttribute('data-inline-item-index'));
         if (!Number.isInteger(idx)) continue;
         const remove = h('button', {
           class: 'ie-card-remove',
           type: 'button',
-          title: t('editor.inline.removeItem', 'Remove item'),
+          title: t(removeLabelKey || 'editor.inline.removeItem', removeLabel || 'Remove item'),
           text: '×',
           onclick: (e) => {
             e.preventDefault();
             e.stopPropagation();
-            removeCard(fieldKey, idx);
+            removeCard(path, idx);
           },
         });
         // Some item elements are full-height layout columns whose visible card
         // is transform-positioned inside them (timeline). Pin the × to the
-        // visual element (cards.removeAnchor) so it lands on the card corner,
-        // not the column corner.
+        // visual element (removeAnchor) so it lands on the card corner, not
+        // the column corner.
         const removeTarget =
-          (cards.removeAnchor && itemEl.querySelector(cards.removeAnchor)) || itemEl;
-        overlay.place(remove, removeTarget, 'top-right', 0);
+          (removeAnchor && itemEl.querySelector(removeAnchor)) || itemEl;
+        overlay.place(remove, removeTarget, removePlacement || 'top-right', 0);
       }
     }
 
-    if (arr.length < max) {
+    if (arr.length < max && addAnchorEl) {
       // The add button is placed against the container by default, or an
       // explicit addAnchor. Its placement is 'bottom-center' unless the
       // descriptor overrides it (e.g. 'right-center' for horizontal layouts
       // whose new item appends to the right); addPlacement may be a function
       // of the slide when it depends on content (process direction).
-      const addAnchorEl =
-        (cards.addAnchor && root.querySelector(cards.addAnchor)) ||
-        root.querySelector(cards.container);
-      if (addAnchorEl) {
-        const placement =
-          typeof cards.addPlacement === 'function'
-            ? cards.addPlacement(slide)
-            : cards.addPlacement || 'bottom-center';
-        const add = h('button', {
-          class: 'ie-card-add',
-          type: 'button',
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            addCard(fieldKey, listField.itemDefaults || {});
-          },
-        }, [
-          h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
-          h('span', { text: t('editor.inline.addItem', 'Add item') }),
-        ]);
-        overlay.place(add, addAnchorEl, placement, placement === 'bottom-center' ? 10 : 6);
+      const placement =
+        typeof addPlacement === 'function'
+          ? addPlacement(slide)
+          : addPlacement || 'bottom-center';
+      const add = h('button', {
+        class: 'ie-card-add',
+        type: 'button',
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          addCard(path, meta?.itemDefaults || {});
+        },
+      }, [
+        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+        h('span', { text: t(addLabelKey || 'editor.inline.addItem', addLabel || 'Add item') }),
+      ]);
+      overlay.place(add, addAnchorEl, placement, placement === 'bottom-center' ? 10 : 6);
+    }
+  }
+
+  /**
+   * Ghosts for optional subfields of nested child items (a block's title/body
+   * inside rows.{i}.blocks.{j}): declared as `cards.child.ghosts`, anchored to
+   * the child item element. The spawn goes through the sentinel path, so the
+   * renderer emits the field's real element.
+   */
+  function insertChildGhosts(parentEl, def, cards, parentIdx, childPath) {
+    const child = cards.child;
+    if (!child?.ghosts?.length) return;
+    const slide = getSlide?.();
+    if (!slide) return;
+    for (const childEl of parentEl.querySelectorAll(child.itemSelector)) {
+      const childIdx = Number(childEl.getAttribute('data-inline-item-index'));
+      if (!Number.isInteger(childIdx)) continue;
+      for (const g of child.ghosts) {
+        const path = `${childPath}.${childIdx}.${g.field}`;
+        if (!isEmptyValue(getByPath(slide.content, path))) continue;
+        const meta = fieldMetaForPath(
+          def,
+          `${cards.field}.0.${child.field}.0.${g.field}`
+        );
+        if (!meta || !meta.key) continue;
+        const reanchor = () => {
+          const freshParent = [...(slideEl()?.querySelectorAll(cards.itemSelector) || [])].find(
+            (el) => Number(el.getAttribute('data-inline-item-index')) === parentIdx
+          );
+          const freshChild = freshParent
+            ? [...freshParent.querySelectorAll(child.itemSelector)].find(
+                (el) => Number(el.getAttribute('data-inline-item-index')) === childIdx
+              )
+            : null;
+          if (!freshChild) return null;
+          return { el: freshChild, pos: g.pos || 'append', chip: g.chip || 'below-start' };
+        };
+        placeGhostChip(path, meta, {
+          el: childEl,
+          pos: g.pos || 'append',
+          chip: g.chip || 'below-start',
+        }, reanchor);
       }
     }
   }
 
-  function addCard(field, itemDefaults) {
+  function addCard(path, itemDefaults) {
     const slide = getSlide?.();
     if (!slide) return;
-    if (!Array.isArray(slide.content[field])) slide.content[field] = [];
-    slide.content[field].push({ ...itemDefaults });
+    let arr = getByPath(slide.content, path);
+    if (!Array.isArray(arr)) {
+      arr = [];
+      setByPath(slide.content, path, arr);
+    }
+    // Deep clone: itemDefaults may carry nested arrays (a row's starter
+    // blocks) that must not be shared with the schema object.
+    arr.push(structuredClone(itemDefaults));
     afterStructuralChange();
   }
 
-  function removeCard(field, idx) {
+  function removeCard(path, idx) {
     const slide = getSlide?.();
-    if (!slide || !Array.isArray(slide.content[field])) return;
-    slide.content[field].splice(idx, 1);
+    const arr = slide ? getByPath(slide.content, path) : null;
+    if (!Array.isArray(arr)) return;
+    arr.splice(idx, 1);
     afterStructuralChange();
   }
 
@@ -681,7 +796,9 @@ export function createInlineEditor({
 
   function openMediaFor(photoEl) {
     const slide = getSlide?.();
-    const descriptor = slide ? getInlineDescriptor(slide.type) : null;
+    const descriptor = slide
+      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
+      : null;
     const media = descriptor?.media;
     if (!slide || !media || typeof openImagePicker !== 'function') return;
     const idx = Number(photoEl.getAttribute('data-inline-photo'));
@@ -768,7 +885,7 @@ export function createInlineEditor({
     if (!getCanEdit?.()) return;
     const slide = getSlide?.();
     const def = slide ? getSlideDef?.(slide.type) : null;
-    const descriptor = slide ? getInlineDescriptor(slide.type) : null;
+    const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
     if (!def || !descriptor) return; // opt-in only
     thumb.classList.add('is-inline-edit');
     // Clicking an editable slide edits text; it does NOT open the lightbox, so

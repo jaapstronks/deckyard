@@ -378,6 +378,10 @@ async function triggerServerRender(el, slide, { mode, theme, presentationId, api
       if (theme) applyThemeVarsToElement(el, theme);
       // Initialize code highlighting and math rendering
       initCodeAndMath(el);
+      // The sync mount already ran its decorators against the placeholder;
+      // let listeners (the editor's inline-edit overlay) re-apply against the
+      // real slide DOM now that it exists.
+      el.dispatchEvent(new CustomEvent('slide-server-rendered', { bubbles: true }));
     }
   } catch (err) {
     console.error('[slide-render] Server render failed:', err);

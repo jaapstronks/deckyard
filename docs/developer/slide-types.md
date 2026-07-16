@@ -284,6 +284,48 @@ For image fields, `presetSource` controls which presets appear:
 | `sampleContent` | object | Sample content for the slide type picker thumbnail |
 | `defaultsByLang` | object | Localized default content: `{ nl: {...}, 'en-GB': {...} }` |
 | `ai` | object | AI wizard metadata (see AI Wizard Integration section) |
+| `inline` | object | Inline (WYSIWYG) edit descriptor for the editor canvas (see below) |
+
+---
+
+## Inline (WYSIWYG) editing for custom types
+
+Core slide types opt into click-to-edit on the editor canvas via a descriptor
+registry (`client/views/editor/inline-edit/descriptors.js`). A custom type
+cannot edit that core file, so the registry falls back to an `inline`
+descriptor declared on the slide-type definition itself:
+
+```javascript
+export default {
+  label: 'My cards',
+  fields: [ /* ... incl. an items field with itemFields ... */ ],
+  inline: {
+    // "+ <field>" chips for empty optional fields
+    ghosts: [
+      { field: 'subheading', anchors: [{ sel: '.header', pos: 'append', chip: 'below-start' }] },
+    ],
+    // add/remove buttons for repeatable items (schema minItems/maxItems apply)
+    cards: { field: 'items', container: '.my-grid', itemSelector: '.my-card' },
+    // side-form fields fully covered inline (tucked behind the "Text" section)
+    formText: ['title', 'subheading', 'items'],
+  },
+  renderHtml: (content) => { /* ... */ },
+};
+```
+
+Two requirements, same as for core types:
+
+1. `renderHtml()` must emit `data-inline-field="<path>"` on editable elements
+   (`"title"`, `"items.0.title"`, ...) and `data-inline-item-index="<n>"` on
+   repeatable item elements for `cards` to work.
+2. The descriptor shapes are documented in the header of
+   `client/views/editor/inline-edit/descriptors.js` (ghosts, itemGhosts,
+   cards incl. two-level `cards.child`, media, formText).
+
+The descriptor travels to the client via `/api/slide-types`, so it must be
+plain JSON: function-valued options (like a dynamic `addPlacement`) only work
+in the core registry. A core entry for the same type name wins over the
+definition's `inline`.
 
 ---
 

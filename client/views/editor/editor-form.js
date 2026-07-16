@@ -936,13 +936,13 @@ export function createRerenderEditor({
     // surface, and the visible form leads with design controls (layout,
     // background, images). The section is the full-power fallback; its open
     // state is a sticky preference for form-first users.
-    const inlineTextKeys = new Set(getInlineFormTextKeys(slide.type));
+    const inlineTextKeys = new Set(getInlineFormTextKeys(slide.type, def));
 
     // Legacy alias collections (items/steps/stages): the schema carries both
     // keys but the renderer reads exactly one (getCollectionKey). Skip the
     // inactive ones — a second "Stages" editor that edits an array the slide
     // never renders is a trap.
-    const cardsCfg = getInlineDescriptor(slide.type)?.cards;
+    const cardsCfg = getInlineDescriptor(slide.type, def)?.cards;
     const inactiveCollectionKeys = new Set();
     if (cardsCfg?.fieldAliases?.length) {
       const activeKey = getCollectionKey(slide.content, cardsCfg.field, cardsCfg.fieldAliases);
