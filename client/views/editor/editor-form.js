@@ -566,6 +566,14 @@ export function createRerenderEditor({
   disabledSlideTypes,
   features,
   setFormCollapsed,
+  onOpenBulkEdit,
+  // Bulk-edit ("Edit all text") mode: render ONLY the per-type content fields
+  // into editorMount - no header/actions, no data-source bar, no duration, no
+  // AI panels, no Background/Accessibility sections, and inline-covered text
+  // fields render in place instead of tucked behind the collapsed Text
+  // section. Reuses the exact same field renderers, so the modal can never
+  // drift from what the form can edit (the phase-2 parity invariant).
+  contentOnly = false,
 } = {}) {
   const {
     fieldText,
@@ -602,6 +610,7 @@ export function createRerenderEditor({
     if (!slide) return;
 
     // Build combined header: h2 title + slide type pill + actions
+    if (!contentOnly) {
     const header = h('div', { class: 'row spread editor-form-header' });
     const headerLeft = h('div', { class: 'row editor-form-header-left' });
     headerLeft.append(
@@ -662,17 +671,33 @@ export function createRerenderEditor({
       setFormCollapsed,
     });
     headerActionsDetach = headerActionsResult.detach;
+    // "Edit all text": opens the roomy bulk-edit modal (all content fields +
+    // live preview). Sits with the actions so the header row stays one line.
+    if (typeof onOpenBulkEdit === 'function') {
+      headerLeft.append(
+        h('button', {
+          type: 'button',
+          class: 'btn btn-sm editor-bulk-edit-btn',
+          text: t('editor.bulkEdit.open', 'All text'),
+          title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
+          onclick: () => onOpenBulkEdit(),
+        })
+      );
+    }
     header.append(headerLeft, headerActionsResult.el);
     editorMount.append(header);
+    } // end !contentOnly header
 
     // Data source indicator (shown for bindable slide types when live data is enabled)
-    const dsBar = buildDataSourceIndicator({
-      h, slide, pres, api, markDirty, editorState, features, openOverlayClosers,
-    });
-    if (dsBar) editorMount.append(dsBar);
+    if (!contentOnly) {
+      const dsBar = buildDataSourceIndicator({
+        h, slide, pres, api, markDirty, editorState, features, openOverlayClosers,
+      });
+      if (dsBar) editorMount.append(dsBar);
+    }
 
     // Per-slide duration input (shown only when auto-advance is enabled)
-    const timingEnabled = !!pres?.settings?.autoAdvance?.enabled;
+    const timingEnabled = !contentOnly && !!pres?.settings?.autoAdvance?.enabled;
     if (timingEnabled) {
       const deckDefault = pres.settings.autoAdvance.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS;
       const durationWrap = h('div', { class: 'editor-slide-duration' });
@@ -735,7 +760,7 @@ export function createRerenderEditor({
     const used = new Set();
 
     // AI reasoning panel (shown for AI-generated slides)
-    if (slide._aiReasoning) {
+    if (!contentOnly && slide._aiReasoning) {
       const aiSection = h('details', { class: 'ai-reasoning-panel' });
       const summary = h('summary', { class: 'ai-reasoning-toggle' });
       summary.textContent = t('editor.slide.aiReasoning', 'AI type reasoning');
@@ -768,7 +793,7 @@ export function createRerenderEditor({
     }
 
     // AI warnings panel (shown when validation found issues)
-    if (slide._aiWarnings?.length) {
+    if (!contentOnly && slide._aiWarnings?.length) {
       const warningsDiv = h('div', { class: 'ai-warnings' });
       for (const w of slide._aiWarnings) {
         const p = h('p', { class: 'ai-warning-item' });
@@ -779,7 +804,7 @@ export function createRerenderEditor({
     }
 
     // AI Iterate panel (slide-level AI refinement)
-    if (api) {
+    if (api && !contentOnly) {
       const iteratePanel = h('div', { class: 'ai-iterate-panel' });
       const iterateForm = h('div', { class: 'ai-iterate-form' });
       const iterateInput = h('input', {
@@ -1049,6 +1074,12 @@ export function createRerenderEditor({
         used.add(key);
         return;
       }
+      // Bulk-edit mode: a11y stays an inspector concern, and inline-covered
+      // text renders in place (there is no collapsed Text section to tuck into).
+      if (contentOnly && isA11yFieldKey(key)) {
+        used.add(key);
+        return;
+      }
       const el = renderField(f);
       used.add(key);
       if (!el) return;
@@ -1056,7 +1087,7 @@ export function createRerenderEditor({
         a11yBody.append(el);
         return;
       }
-      if (inlineTextKeys.has(key)) {
+      if (!contentOnly && inlineTextKeys.has(key)) {
         textBody.append(el);
         textFieldCount += 1;
         return;
@@ -1070,14 +1101,14 @@ export function createRerenderEditor({
     // If never called, the section is appended at the end as usual.
     let textSectionPlaced = false;
     const placeTextSection = () => {
-      if (textSectionPlaced || textFieldCount === 0) return;
+      if (contentOnly || textSectionPlaced || textFieldCount === 0) return;
       form.append(textDetails);
       textSectionPlaced = true;
     };
 
     // Populate the Background section. Colour first: the section reads as
     // "colour ór custom image, and optionally the logo on top".
-    const bgColorField = fieldByKey.get('background');
+    const bgColorField = contentOnly ? null : fieldByKey.get('background');
     if (bgColorField) {
       // Inside a section already titled "Background" the field label reads
       // better as "Colour" (it sits next to "Background image").
@@ -1100,7 +1131,7 @@ export function createRerenderEditor({
     }
 
     // Custom image (+ crop focus + fit/overlay once an image is set).
-    const bgImageField = fieldByKey.get('slideBgImage');
+    const bgImageField = contentOnly ? null : fieldByKey.get('slideBgImage');
     if (bgImageField) {
       const imgEl = renderField(bgImageField);
       if (imgEl) bgBody.append(imgEl);
@@ -1144,7 +1175,7 @@ export function createRerenderEditor({
       }
     }
     // Theme logo (corner) toggle — independent of the background image.
-    const logoField = fieldByKey.get('slideLogo');
+    const logoField = contentOnly ? null : fieldByKey.get('slideLogo');
     if (logoField) {
       if (slide.content.slideLogo == null) slide.content.slideLogo = 'none';
       const logoEl = renderField(logoField);
@@ -1187,14 +1218,14 @@ export function createRerenderEditor({
 
     // Background section above the Text fallback: it's a design control set,
     // and it replaces the colour dropdown that used to sit loose in the form.
-    if (bgBody.childNodes?.length) form.append(bgDetails);
+    if (!contentOnly && bgBody.childNodes?.length) form.append(bgDetails);
 
     // Append the collapsed Text section (only when fields were routed into it,
     // and only if a slide-form didn't already position it above its content).
-    if (textFieldCount > 0 && !textSectionPlaced) form.append(textDetails);
+    if (!contentOnly && textFieldCount > 0 && !textSectionPlaced) form.append(textDetails);
 
     // Append accessibility toggle if it has content
-    if (a11yBody.childNodes?.length) form.append(a11yDetails);
+    if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
 
     editorMount.append(form);
   };
