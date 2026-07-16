@@ -245,11 +245,13 @@ export default {
       ? (() => {
           const ariaDecorative =
             imageRole === 'decorative' ? ' aria-hidden="true"' : '';
+          // data-inline-photo: clicking the image in the editor opens the
+          // media popover (image + alt); inert on every other surface.
           return `<img src="${esc(content.image)}" alt="${esc(
             alt
-          )}"${ariaDecorative}${focusStyle} />`;
+          )}" data-inline-photo="0"${ariaDecorative}${focusStyle} />`;
         })()
-      : `<div class="image-placeholder" aria-hidden="true">
+      : `<div class="image-placeholder is-empty" data-inline-photo="0" aria-hidden="true">
           <div class="image-placeholder-inner">
             <svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">
               <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>
