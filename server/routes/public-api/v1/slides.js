@@ -127,7 +127,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     });
   } catch (e) {
     if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message);
+      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
       return true;
     }
     throw e;
@@ -231,7 +231,7 @@ async function handleCreateSlide(ctx, presentationId) {
     });
   } catch (e) {
     if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message);
+      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
       return true;
     }
     throw e;
@@ -285,7 +285,7 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
     });
   } catch (e) {
     if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message);
+      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
       return true;
     }
     throw e;
@@ -358,7 +358,7 @@ async function handleReorderSlides(ctx, presentationId) {
     });
   } catch (e) {
     if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message);
+      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
       return true;
     }
     throw e;

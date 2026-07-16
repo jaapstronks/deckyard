@@ -153,7 +153,7 @@ async function handleTranslate(ctx, presentationId) {
     });
   } catch (e) {
     if (e?.statusCode) {
-      await apiError(ctx, e.statusCode, e.message);
+      await apiError(ctx, e.statusCode, e.message, { details: e.details || null });
       return true;
     }
     throw e;
