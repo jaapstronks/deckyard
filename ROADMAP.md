@@ -50,7 +50,9 @@ self-contained project.
    **complete** (#25);
    (3) only then the form column becomes a right-side **Inspector** —
    slides | canvas | inspector, toggleable from the topbar, settings only
-   (background / layout / accessibility, no more content text fields);
+   (background / layout / accessibility, no more content text fields) —
+   both gates cleared 2026-07-16: server-side slide-lock enforcement
+   (#27) and the per-type coverage audit;
    (4) responsive convergence (2 columns under a breakpoint) and comments
    as a second inspector pane. Comments resolve/inbox semantics stay a
    separate parked plan.
