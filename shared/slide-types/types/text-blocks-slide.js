@@ -108,16 +108,21 @@ function generateBlockFields(rowNum) {
   return fields;
 }
 
-function generateDefaultBlocks(rowNum, count, lang) {
-  const defaults = {};
+function generateDefaultRows(lang) {
   const blockLabels = lang === 'nl'
     ? ['Blok', 'Tekst hier']
     : ['Block', 'Text here'];
-  for (let i = 1; i <= count; i++) {
-    defaults[`row${rowNum}Block${i}Title`] = `${blockLabels[0]} ${i}`;
-    defaults[`row${rowNum}Block${i}Body`] = blockLabels[1];
-  }
-  return defaults;
+  return [
+    {
+      title: '',
+      color: 'yellow',
+      arrow: 'none',
+      blocks: Array.from({ length: 3 }, (_, i) => ({
+        title: `${blockLabels[0]} ${i + 1}`,
+        body: blockLabels[1],
+      })),
+    },
+  ];
 }
 
 export default {
@@ -154,7 +159,18 @@ export default {
       required: false,
       minItems: 1,
       maxItems: 3,
-      itemDefaults: { title: '', color: 'yellow', arrow: 'none', blocks: [] },
+      // Starter blocks so a freshly-added row renders visible, clickable cards
+      // (an empty blocks[] would render a zero-height row with nothing to edit).
+      itemDefaults: {
+        title: '',
+        color: 'yellow',
+        arrow: 'none',
+        blocks: [
+          { title: 'Block 1', body: '' },
+          { title: 'Block 2', body: '' },
+          { title: 'Block 3', body: '' },
+        ],
+      },
       itemFields: [
         { key: 'title', label: 'Row heading', type: 'string', required: false, maxLength: 120 },
         { key: 'color', label: 'Color', type: 'enum', required: false, options: ['yellow', 'black'] },
@@ -299,67 +315,28 @@ export default {
     ...generateBlockFields(3),
   ],
 
+  // Defaults are array-canonical: new slides start in the rows[] shape.
+  // Legacy numbered decks keep working via resolveRows()'s dual-read.
   defaultsByLang: {
     nl: {
       title: 'Tekstblokken',
       subheading: '',
       bottomSubheading: '',
-      row1Count: '3',
-      row1Color: 'yellow',
-      ...generateDefaultBlocks(1, 3, 'nl'),
-      arrow1: 'none',
-      row2Enabled: 'no',
-      row2Title: '',
-      row2Count: '3',
-      row2Color: 'black',
-      ...generateDefaultBlocks(2, 3, 'nl'),
-      arrow2: 'none',
-      row3Enabled: 'no',
-      row3Title: '',
-      row3Count: '3',
-      row3Color: 'yellow',
-      ...generateDefaultBlocks(3, 3, 'nl'),
+      rows: generateDefaultRows('nl'),
     },
     'en-GB': {
       title: 'Text blocks',
       subheading: '',
       bottomSubheading: '',
-      row1Count: '3',
-      row1Color: 'yellow',
-      ...generateDefaultBlocks(1, 3, 'en'),
-      arrow1: 'none',
-      row2Enabled: 'no',
-      row2Title: '',
-      row2Count: '3',
-      row2Color: 'black',
-      ...generateDefaultBlocks(2, 3, 'en'),
-      arrow2: 'none',
-      row3Enabled: 'no',
-      row3Title: '',
-      row3Count: '3',
-      row3Color: 'yellow',
-      ...generateDefaultBlocks(3, 3, 'en'),
+      rows: generateDefaultRows('en'),
     },
   },
 
   defaults: {
     title: 'Text blocks',
-    subtitle: '',
-    row1Count: '3',
-    row1Color: 'yellow',
-    ...generateDefaultBlocks(1, 3, 'en'),
-    arrow1: 'none',
-    row2Enabled: 'no',
-    row2Title: '',
-    row2Count: '3',
-    row2Color: 'black',
-    ...generateDefaultBlocks(2, 3, 'en'),
-    arrow2: 'none',
-    row3Enabled: 'no',
-    row3Title: '',
-    row3Count: '3',
-    row3Color: 'yellow',
-    ...generateDefaultBlocks(3, 3, 'en'),
+    subheading: '',
+    bottomSubheading: '',
+    rows: generateDefaultRows('en'),
   },
 
   renderHtml: (content) => {
@@ -405,17 +382,21 @@ export default {
         const bodyHtml = block.body
           ? `<div class="text-block-body" data-inline-field="${blockBodyPath}">${markdownToSafeHtml(block.body)}</div>`
           : '';
+        // Item indexes only in array mode: the inline editor's card add/remove
+        // writes to rows[], so legacy numbered decks must not grow affordances.
+        const blockItemAttr = useRows ? ` data-inline-item-index="${bIdx}"` : '';
         return `
-          <div class="text-block text-blocks-step ${colorClass}">
+          <div class="text-block text-blocks-step ${colorClass}"${blockItemAttr}>
             ${titleHtml}
             ${bodyHtml}
           </div>
         `;
       });
 
+      const rowItemAttr = useRows ? ` data-inline-item-index="${rowIdx}"` : '';
       return `
         ${rowTitleHtml}
-        <div class="text-blocks-row" data-count="${blockCount}">
+        <div class="text-blocks-row" data-count="${blockCount}"${rowItemAttr}>
           ${blockHtmls.join('')}
         </div>
       `;

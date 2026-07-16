@@ -110,6 +110,14 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top}px`;
         s.transform = 'translate(-50%, -50%)';
         break;
+      case 'bottom-right':
+        // Centered on the bottom-right corner. Used for container-level remove
+        // buttons (a text-blocks row) whose top-right corner coincides with the
+        // last child card's own remove ×.
+        s.left = `${r.left + r.width}px`;
+        s.top = `${r.top + r.height}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
       case 'bottom-center':
         s.left = `${r.left + r.width / 2}px`;
         s.top = `${r.top + r.height + p.gap}px`;

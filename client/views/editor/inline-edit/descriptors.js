@@ -34,18 +34,32 @@
  *   cards: repeatable-items affordances (add/remove) driven by the schema's
  *     minItems / maxItems / itemDefaults.
  *       { field, fieldAliases?, container, itemSelector, removeAnchor?,
- *         addAnchor?, addPlacement? }
+ *         removePlacement?, addAnchor?, addPlacement?, addLabelKey?, addLabel?,
+ *         removeLabelKey?, removeLabel?, child? }
  *     `fieldAliases` lists legacy collection keys (`steps`, `stages`) so edits
  *     write to the array the renderer actually reads. `removeAnchor` is an
  *     optional selector inside the item element to pin the remove × to, for
  *     items whose element is a full-height layout column while the visible
- *     card is transform-positioned within it (timeline). `addAnchor` overrides
- *     the element the "+ Add item" button is placed against (defaults to
- *     `container`); `addPlacement` overrides its overlay placement mode
- *     (defaults to 'bottom-center'). Use 'right-center' for single-row
- *     horizontal layouts whose new item appends to the right (timeline,
- *     horizontal process). `addPlacement` may be a function `(slide) => mode`
- *     when it depends on content (e.g. process direction).
+ *     card is transform-positioned within it (timeline); `removePlacement`
+ *     overrides the ×'s overlay placement (defaults to 'top-right' - use
+ *     'bottom-right' when the item's top-right corner coincides with another
+ *     ×). `addAnchor` overrides the element the "+ Add item" button is placed
+ *     against (defaults to `container`); `addPlacement` overrides its overlay
+ *     placement mode (defaults to 'bottom-center'). Use 'right-center' for
+ *     single-row horizontal layouts whose new item appends to the right
+ *     (timeline, horizontal process). `addPlacement` may be a function
+ *     `(slide) => mode` when it depends on content (e.g. process direction).
+ *     `addLabelKey`/`addLabel` (and the remove variants) override the generic
+ *     "Add item"/"Remove item" copy per level.
+ *   cards.child: a nested card level for two-level list types (text-blocks
+ *     rows -> blocks). One card set is rendered per parent item element,
+ *     scoped to it, writing to `${field}.{parentIdx}.${child.field}`; min/max/
+ *     itemDefaults come from the nested itemFields schema.
+ *       { field, itemSelector, removeAnchor?, removePlacement?, addPlacement?,
+ *         addLabelKey?, addLabel?, removeLabelKey?, removeLabel?, ghosts? }
+ *     The parent item element anchors the child's "+" chip. `ghosts` lists
+ *     optional child-item subfields (`{ field, pos?, chip? }`) whose element
+ *     the renderer omits when empty - a chip on the child item re-adds them.
  *   formText: side-form field keys whose editing is FULLY covered by the inline
  *     layer (plain text, markdown modal, and items whose subfields are all
  *     inline-editable). The side form tucks these behind its collapsed "Text"
@@ -452,7 +466,43 @@ export const INLINE_DESCRIPTORS = {
   },
   'text-blocks-slide': {
     ghosts: HEADER_GHOSTS,
-    // Row/block counts (legacy enums or nested rows[]) stay in the form.
+    // Row titles render for rows 2+ only (row 1 never has one); the ghost chip
+    // sits at the row's top-left, where the spawned <h3> will appear.
+    itemGhosts: [
+      { list: 'rows', field: 'title', item: '.text-blocks-row', minIndex: 1, chip: 'top-start' },
+    ],
+    // Two-level cards: rows in the slide, blocks within each row. Rows append
+    // at the bottom; blocks append to the right inside their row. The row's
+    // remove × sits at its bottom-right corner because the top-right corner
+    // coincides with the last block's own ×. skipWhenEmpty keeps legacy
+    // numbered decks (no rows[]) free of affordances - the renderer reads the
+    // numbered fields there, so writing rows[] would switch its data source.
+    cards: {
+      field: 'rows',
+      skipWhenEmpty: true,
+      container: '.text-blocks-content',
+      itemSelector: '.text-blocks-row',
+      removePlacement: 'bottom-right',
+      addLabelKey: 'editor.inline.addRow',
+      addLabel: 'Add row',
+      removeLabelKey: 'editor.inline.removeRow',
+      removeLabel: 'Remove row',
+      child: {
+        field: 'blocks',
+        itemSelector: '.text-block',
+        addPlacement: 'right-center',
+        addLabelKey: 'editor.inline.addBlock',
+        addLabel: 'Add block',
+        removeLabelKey: 'editor.inline.removeBlock',
+        removeLabel: 'Remove block',
+        // A block whose title/body was cleared re-gains it via these chips
+        // (the renderer omits the empty elements entirely).
+        ghosts: [
+          { field: 'title', chip: 'top-start' },
+          { field: 'body', chip: 'bottom-start' },
+        ],
+      },
+    },
     formText: HEADER_TEXT,
   },
   'content-columns-slide': {
