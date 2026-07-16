@@ -18,9 +18,13 @@ export function createEditorTopbarMoreMenu({
   canTranslate = true,
   onVersions,
   onLogout,
-  // Responsive overflow items (shown at narrow widths via CSS)
+  // Responsive overflow item (shown at narrow widths via CSS)
   onToggleTheme,
-  onNotesQr,
+  // Utilities demoted from their own topbar icons
+  onAnalyze,
+  onShowShortcuts,
+  onOpenSettings,
+  onOpenOverview,
 } = {}) {
   const detachers = [];
 
@@ -136,19 +140,44 @@ export function createEditorTopbarMoreMenu({
     },
   });
 
+  // Utilities demoted from their own topbar icons (2026-07-16 chrome
+  // re-org): still one click away, without crowding the deck-action zone.
+  const btnAnalyze = h('button', {
+    class: 'dropdown-item',
+    type: 'button',
+    text: t('editor.analyze', 'AI Analysis'),
+    onclick: () => onAnalyze?.(),
+  });
+
+  const btnSettings = h('button', {
+    class: 'dropdown-item',
+    type: 'button',
+    text: t('common.settings', 'Settings'),
+    onclick: () => onOpenSettings?.(),
+  });
+
+  const btnShortcuts = h('button', {
+    class: 'dropdown-item',
+    type: 'button',
+    text: `${t('editor.shortcuts.title', 'Keyboard shortcuts')} (?)`,
+    onclick: () => onShowShortcuts?.(),
+  });
+
+  // Mirror of the deck-grid topbar button; CSS shows it only at widths
+  // where the bar hides that button.
+  const btnOverview = h('button', {
+    class: 'dropdown-item topbar-overflow-item-lg',
+    type: 'button',
+    text: t('editor.deckGrid.open', 'Slide overview'),
+    onclick: () => onOpenOverview?.(),
+  });
+
   // Responsive overflow items - visible only at narrow widths (CSS hides on desktop)
   const btnThemeToggle = h('button', {
     class: 'dropdown-item topbar-overflow-item',
     type: 'button',
     text: t('common.toggleTheme', 'Toggle dark/light mode'),
     onclick: () => onToggleTheme?.(),
-  });
-
-  const btnCompanion = h('button', {
-    class: 'dropdown-item topbar-overflow-item',
-    type: 'button',
-    text: t('editor.companion', 'Companion'),
-    onclick: () => onNotesQr?.(),
   });
 
   const btnLogout = h('button', {
@@ -176,12 +205,16 @@ export function createEditorTopbarMoreMenu({
     [h('span', { text: '⋯', 'aria-hidden': 'true' })]
   );
   const moreMenu = h('div', { class: 'dropdown-menu dropdown-menu-right' }, [
+    btnOverview,
+    btnAnalyze,
     btnTranslateOther,
     btnVersions,
     btnDuplicateDeck,
-    // Responsive overflow items (visible only at narrow viewports)
+    h('div', { class: 'dropdown-sep' }),
+    btnSettings,
+    btnShortcuts,
+    // Responsive overflow item (visible only at narrow viewports)
     btnThemeToggle,
-    btnCompanion,
     h('div', { class: 'dropdown-sep' }),
     btnMoveToTrash,
     btnLogout,
@@ -211,11 +244,14 @@ export function createEditorTopbarMoreMenu({
       return prev?.(e);
     };
   };
+  closeMoreOnClick(btnOverview);
+  closeMoreOnClick(btnAnalyze);
   closeMoreOnClick(btnTranslateOther);
   closeMoreOnClick(btnVersions);
   closeMoreOnClick(btnDuplicateDeck);
+  closeMoreOnClick(btnSettings);
+  closeMoreOnClick(btnShortcuts);
   closeMoreOnClick(btnThemeToggle);
-  closeMoreOnClick(btnCompanion);
   closeMoreOnClick(btnMoveToTrash);
   closeMoreOnClick(btnLogout);
 

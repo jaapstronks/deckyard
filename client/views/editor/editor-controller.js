@@ -1204,6 +1204,10 @@ export async function createEditorController({
     disabledSlideTypes,
     features,
     setInspectorCollapsed,
+    // Canvas-header mounts for the slide-scoped toolbar (type chip, All
+    // text, lock, actions). The contentOnly (bulk modal) instance renders
+    // no chrome, so sharing this dep is harmless there.
+    slideToolbar: previewPanel.slideToolbar,
   };
 
   const bulkEditModal = createBulkEditModal({

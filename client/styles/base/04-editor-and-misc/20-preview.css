@@ -158,6 +158,22 @@
   gap: 4px;
 }
 
+/* Slide toolbar in the canvas header: slide-scoped controls (type chip,
+   "All text", lock, actions menu) rendered by rerenderEditor. */
+.slide-toolbar-left {
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.slide-toolbar-actions {
+  gap: 4px;
+}
+
+.slide-toolbar-actions:empty {
+  display: none;
+}
+
 .thumb.is-clickable-preview {
   cursor: zoom-in;
 }

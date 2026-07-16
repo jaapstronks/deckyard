@@ -50,11 +50,12 @@ export function createPreviewPanel({
   const previewHeader = h('div', {
     class: 'row spread preview-panel-header',
   });
-  // "Slide", not "Preview": with inline WYSIWYG this panel is the primary
-  // editing surface, not a passive preview.
-  previewHeader.append(
-    h('h2', { text: t('editor.preview.title', 'Slide') })
-  );
+  // Slide toolbar (chrome re-org 2026-07-16): everything scoped to the
+  // CURRENT slide lives with the slide, not in the inspector header. The
+  // editor form renders the slide-dependent contents (type chip, "All text",
+  // lock, actions menu) into these mounts on every rerender.
+  const slideToolbarLeft = h('div', { class: 'row slide-toolbar-left' });
+  previewHeader.append(slideToolbarLeft);
 
   const zoomIcon = h('img', {
     class: 'preview-zoom-icon',
@@ -89,9 +90,10 @@ export function createPreviewPanel({
   }
 
   const headerActions = h('div', { class: 'row preview-panel-actions' });
+  const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
   if (pinCommentBtn) headerActions.append(pinCommentBtn);
   if (pinModeHint) headerActions.append(pinModeHint);
-  headerActions.append(zoomBtn);
+  headerActions.append(slideToolbarActions, zoomBtn);
   previewHeader.append(headerActions);
   preview.append(previewHeader);
 
@@ -313,6 +315,8 @@ export function createPreviewPanel({
     previewEl: preview,
     thumbEl: thumb,
     previewNotesTa,
+    // Mount points for the slide-scoped toolbar (filled by rerenderEditor).
+    slideToolbar: { leftEl: slideToolbarLeft, actionsEl: slideToolbarActions },
     detachThumbScale,
     rerenderLightboxIfOpen: () => previewLightbox.rerenderIfOpen(),
     // Slide comments API (markers only; the thread list lives in the

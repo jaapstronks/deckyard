@@ -163,7 +163,6 @@
   "editor.preview.clickToZoom": "Klikk for å åpne større forhåndsvisning",
   "editor.preview.largeTitle": "Forhåndsvisning (stor)",
   "editor.preview.openLarge": "Åpne større forhåndsvisning",
-  "editor.preview.title": "Forhåndsvisning",
   "editor.publish.confirm": "Publiser?\n\nDette gjør presentasjonen offentlig tilgjengelig for alle med lenken.",
   "editor.publish.missingAltConfirm": "Advarsel: disse lysbildene inneholder et bilde uten alt-tekst (NL/EN): {slides}\n\nPubliser likevel?",
   "editor.publish.noSlides": "Ingen lysbilder å publisere",

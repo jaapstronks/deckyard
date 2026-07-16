@@ -163,7 +163,6 @@
   "editor.preview.clickToZoom": "Klicka för att öppna större förhandsgranskning",
   "editor.preview.largeTitle": "Förhandsgranskning (stor)",
   "editor.preview.openLarge": "Öppna större förhandsgranskning",
-  "editor.preview.title": "Förhandsgranskning",
   "editor.publish.confirm": "Publicera?\n\nDetta gör presentationen offentligt tillgänglig för alla med länken.",
   "editor.publish.missingAltConfirm": "Varning: dessa slides innehåller en bild utan alt-text (NL/EN): {slides}\n\nPublicera ändå?",
   "editor.publish.noSlides": "Inga slides att publicera",

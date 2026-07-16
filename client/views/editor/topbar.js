@@ -7,6 +7,7 @@
  * - topbar/more-menu.js - More menu dropdown
  */
 
+import { installDismissOnOutside } from '../../lib/dom.js';
 import { openSettingsModal as openSettingsModalImpl } from './modals/settings-modal.js';
 import { openVersionsModal as openVersionsModalImpl } from './modals/versions-modal.js';
 import { getUiModePreference, setUiModePreference } from '../../lib/ui-mode.js';
@@ -220,29 +221,27 @@ export function createEditorTopbar({
       requestSave,
     });
 
-  const btnSettingsQuick = h('button', {
-    class: 'btn btn-secondary btn-icon topbar-settings-btn',
-    type: 'button',
-    title: t('common.settings', 'Settings'),
-    'aria-label': t('common.settings', 'Settings'),
-    onclick: () => openSettings(),
-  });
-  btnSettingsQuick.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('settings'), alt: '', 'aria-hidden': 'true' }));
-
   // ============================================================
-  // COMMENTS BUTTON
+  // PANE SWITCHER (Inspector / Comments — Notes joins as a third pane)
   // ============================================================
 
+  // Labeled tabs at the far right of the topbar, visually one group sitting
+  // exactly above the rail they control. Pressed = "rail open on MY pane";
+  // clicking the active tab dismisses the rail. Always visible (also with
+  // the rail closed), which is what makes the rail findable.
   const commentsBadgeEl = h('span', { class: 'comments-badge', text: '' });
   const btnComments = h('button', {
-    class: 'btn btn-secondary btn-icon topbar-comments-btn',
+    class: 'topbar-pane-tab topbar-comments-btn',
     type: 'button',
     title: t('editor.comments', 'Comments'),
-    'aria-label': t('editor.comments', 'Comments'),
     'aria-pressed': 'false',
     onclick: () => onToggleComments?.(),
   });
-  btnComments.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('message-circle'), alt: '', 'aria-hidden': 'true' }), commentsBadgeEl);
+  btnComments.append(
+    h('img', { class: 'topbar-btn-icon', src: iconUrl('message-circle'), alt: '', 'aria-hidden': 'true' }),
+    h('span', { class: 'topbar-pane-tab-label', text: t('editor.comments', 'Comments') }),
+    commentsBadgeEl
+  );
 
   /**
    * Update comments badge.
@@ -267,21 +266,23 @@ export function createEditorTopbar({
     }
   }
 
-  // ============================================================
-  // INSPECTOR TOGGLE
-  // ============================================================
-
-  // "i" icon: opens/dismisses the right-hand inspector rail (settings pane).
-  // Phase 4 gives the comments icon the same rail with a comments pane.
   const btnInspector = h('button', {
-    class: 'btn btn-secondary btn-icon topbar-inspector-btn',
+    class: 'topbar-pane-tab topbar-inspector-btn',
     type: 'button',
     title: t('editor.inspector.toggle', 'Show or hide the inspector'),
-    'aria-label': t('editor.inspector.toggle', 'Show or hide the inspector'),
     'aria-pressed': 'false',
     onclick: () => onToggleInspector?.(),
   });
-  btnInspector.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('info'), alt: '', 'aria-hidden': 'true' }));
+  btnInspector.append(
+    h('img', { class: 'topbar-btn-icon', src: iconUrl('sliders-horizontal'), alt: '', 'aria-hidden': 'true' }),
+    h('span', { class: 'topbar-pane-tab-label', text: t('editor.inspector.title', 'Inspector') })
+  );
+
+  const paneSwitcher = h(
+    'div',
+    { class: 'topbar-pane-switcher', role: 'group', 'aria-label': t('editor.panes.label', 'Side panels') },
+    [btnInspector, btnComments]
+  );
 
   /**
    * Reflect the rail state on both pane toggles. Pressed means "the rail is
@@ -297,19 +298,6 @@ export function createEditorTopbar({
     btnComments.setAttribute('aria-pressed', String(commentsActive));
     btnComments.classList.toggle('is-active', commentsActive);
   };
-
-  // ============================================================
-  // ANALYZE (AI) BUTTON
-  // ============================================================
-
-  const btnAnalyze = h('button', {
-    class: 'btn btn-secondary btn-icon topbar-analyze-btn',
-    type: 'button',
-    title: t('editor.analyze', 'AI Analysis'),
-    'aria-label': t('editor.analyze', 'AI Analysis'),
-    onclick: () => onAnalyze?.(),
-  });
-  btnAnalyze.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('sparkles'), alt: '', 'aria-hidden': 'true' }));
 
   // ============================================================
   // DECK OVERVIEW (LIGHT TABLE) BUTTON
@@ -370,16 +358,6 @@ export function createEditorTopbar({
       });
   };
 
-  const btnCompanion = h('button', {
-    class: 'btn btn-secondary topbar-companion-btn',
-    text: t('editor.companion', 'Companion'),
-    title: t(
-      'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).'
-    ),
-    onclick: () => openNotesQr(),
-  });
-
   // ============================================================
   // USER MENU
   // ============================================================
@@ -424,7 +402,12 @@ export function createEditorTopbar({
       }),
     onLogout: () => logout(),
     onToggleTheme: toggleTheme,
-    onNotesQr: openNotesQr,
+    // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
+    // bar keeps deck-level actions; utilities live here.
+    onAnalyze: () => onAnalyze?.(),
+    onShowShortcuts: () => onShowShortcuts?.(),
+    onOpenSettings: () => openSettings(),
+    onOpenOverview: () => onOpenOverview?.(),
   });
   detachers.push(moreMenu.detach);
 
@@ -499,6 +482,46 @@ export function createEditorTopbar({
     },
   });
 
+  // Present is the primary CTA; the attached caret menu holds the live-
+  // presenting extras you never need while editing (Companion phone remote).
+  const presentMenuDetails = h('details', { class: 'dropdown topbar-present-more' });
+  const presentMenuSummary = h(
+    'summary',
+    {
+      class: 'btn btn-primary btn-icon dropdown-trigger topbar-present-caret',
+      title: t('editor.present.more', 'More presenting options'),
+      'aria-label': t('editor.present.more', 'More presenting options'),
+    },
+    [h('span', { text: '▾', 'aria-hidden': 'true' })]
+  );
+  const presentCompanionItem = h('button', {
+    class: 'dropdown-item',
+    type: 'button',
+    text: t('editor.companion', 'Companion'),
+    title: t(
+      'editor.companion.title',
+      'Open speaker notes companion on your phone (QR code).'
+    ),
+    onclick: () => {
+      presentMenuDetails.open = false;
+      openNotesQr();
+    },
+  });
+  presentMenuDetails.append(
+    presentMenuSummary,
+    h('div', { class: 'dropdown-menu dropdown-menu-right' }, [presentCompanionItem])
+  );
+  detachers.push(
+    installDismissOnOutside({
+      rootEl: presentMenuDetails,
+      isOpen: () => !!presentMenuDetails.open,
+      close: () => {
+        presentMenuDetails.open = false;
+      },
+    })
+  );
+  const presentGroup = h('div', { class: 'topbar-present-group' }, [btnPresent, presentMenuDetails]);
+
   // ============================================================
   // UNDO / REDO
   // ============================================================
@@ -524,17 +547,6 @@ export function createEditorTopbar({
   btnRedo.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('redo'), alt: '', 'aria-hidden': 'true' }));
 
   const undoRedoGroup = h('div', { class: 'topbar-undo-group' }, [btnUndo, btnRedo]);
-
-  // Keyboard-shortcut help (also opens with ? / Cmd+/). Makes the shortcuts
-  // discoverable instead of hidden behind a key nobody thinks to press.
-  const btnShortcuts = h('button', {
-    class: 'btn btn-secondary btn-icon topbar-shortcuts-btn',
-    type: 'button',
-    title: `${t('editor.shortcuts.title', 'Keyboard shortcuts')} (?)`,
-    'aria-label': t('editor.shortcuts.title', 'Keyboard shortcuts'),
-    onclick: () => onShowShortcuts?.(),
-  });
-  btnShortcuts.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('circle-help'), alt: '', 'aria-hidden': 'true' }));
 
   // Reflect the undo manager's stacks on the buttons. Called on every stack change.
   const syncUndoButtons = () => {
@@ -564,16 +576,14 @@ export function createEditorTopbar({
     topbarExportEl,
     topbarShareEl,
     btnOverview,
-    btnAnalyze,
-    btnComments,
-    btnInspector,
-    btnShortcuts,
-    btnSettingsQuick,
     btnAnalytics,
-    btnCompanion,
-    btnPresent,
+    presentGroup,
     userMenu.el,
     moreMenu.el,
+    // Far right, visually its own zone: the pane switcher sits exactly above
+    // the rail it controls (see the chrome re-org plan, 2026-07-16).
+    h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
+    paneSwitcher,
   ]);
 
   // Warm the notes session in the background
