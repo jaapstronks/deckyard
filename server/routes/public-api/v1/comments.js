@@ -217,6 +217,7 @@ async function handleCreateComment(ctx, presentationId) {
     comment: result.comment,
     parentComment,
     actor,
+    ctx: sctx,
   });
   void recordCommentCreated({
     comment: result.comment,

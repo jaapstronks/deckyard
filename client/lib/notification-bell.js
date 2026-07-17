@@ -306,10 +306,11 @@ export function createNotificationBell({ api, onNavigate }) {
     if (notif.actionUrl) {
       closeDropdown();
       if (onNavigate) {
-        // Extract relative path from actionUrl
+        // Extract relative path from actionUrl, keeping the query string
+        // (comment notifications anchor to a slide via ?slideId=).
         try {
           const url = new URL(notif.actionUrl, window.location.origin);
-          onNavigate(url.pathname);
+          onNavigate(url.pathname + url.search);
         } catch {
           onNavigate(notif.actionUrl);
         }

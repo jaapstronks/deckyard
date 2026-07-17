@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Kan kommentere",
   "viewer.permission.edit": "Rediger",
   "viewer.permission.view": "Kun visning",
-
   "analytics.teamViewers": "{{count}} teammedlem visninger",
   "analytics.teamViewersNote": "(aggregeret for privatliv)",
   "analytics.teamMember": "Teammedlem",
-
   "common.default": "standard",
-
   "dashboard.title": "Engagement Indsigt",
   "dashboard.periodLabel": "Periode",
   "dashboard.period.7d": "Sidste 7 dage",
@@ -78,25 +75,27 @@
   "dashboard.loading": "Indlæser indsigt...",
   "dashboard.error": "Kunne ikke indlæse indsigt",
   "dashboard.vsLastPeriod": "vs forrige periode",
-
   "dashboard.cards.totalViews": "Samlede visninger",
   "dashboard.cards.uniqueViewers": "Unikke seere",
   "dashboard.cards.avgDuration": "Gns. varighed",
   "dashboard.cards.completionRate": "Fuldførelsesrate",
   "dashboard.trend.vsPrevious": "vs forrige periode",
   "dashboard.trend.noPrevious": "Ingen tidligere data",
-
   "dashboard.chart.title": "Visninger over tid",
   "dashboard.chart.empty": "Ingen visningsdata for denne periode",
   "dashboard.chart.ariaLabel": "Søjlediagram der viser visninger over tid",
-
   "dashboard.top.title": "Top præsentationer",
   "dashboard.top.empty": "Ingen præsentationer med visninger endnu",
   "dashboard.top.presentation": "Præsentation",
   "dashboard.top.views": "Visninger",
   "dashboard.top.avgDuration": "Gns. varighed",
   "dashboard.top.completion": "Fuldførelse",
-
   "dashboard.source.title": "Engagement efter kilde",
-  "dashboard.source.empty": "Ingen data endnu"
+  "dashboard.source.empty": "Ingen data endnu",
+  "notifications.bell": "Notifikationer",
+  "notifications.empty": "Ingen notifikationer",
+  "notifications.loading": "Indlæser...",
+  "notifications.markAllRead": "Markér alle som læst",
+  "notifications.title": "Notifikationer",
+  "notifications.unread": "ulæst"
 }

@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Voi kommentoida",
   "viewer.permission.edit": "Muokkaa",
   "viewer.permission.view": "Vain katselu",
-
   "analytics.teamViewers": "{{count}} tiimin jäsenen katselua",
   "analytics.teamViewersNote": "(koottu yksityisyyden vuoksi)",
   "analytics.teamMember": "Tiimin jäsen",
-
   "common.default": "oletus",
-
   "dashboard.title": "Sitoutumisanalyysi",
   "dashboard.periodLabel": "Ajanjakso",
   "dashboard.period.7d": "Viimeiset 7 päivää",
@@ -78,28 +75,23 @@
   "dashboard.loading": "Ladataan analyyseja...",
   "dashboard.error": "Analyysien lataus epäonnistui",
   "dashboard.vsLastPeriod": "vs edellinen jakso",
-
   "dashboard.cards.totalViews": "Katselut yhteensä",
   "dashboard.cards.uniqueViewers": "Yksilölliset katsojat",
   "dashboard.cards.avgDuration": "Keskim. kesto",
   "dashboard.cards.completionRate": "Valmistumisaste",
   "dashboard.trend.vsPrevious": "vs edellinen jakso",
   "dashboard.trend.noPrevious": "Ei aiempia tietoja",
-
   "dashboard.chart.title": "Katselut ajan mittaan",
   "dashboard.chart.empty": "Ei tietoja tälle ajanjaksolle",
   "dashboard.chart.ariaLabel": "Pylväskaavio katseluista ajan mittaan",
-
   "dashboard.top.title": "Suosituimmat esitykset",
   "dashboard.top.empty": "Ei esityksiä katseluilla vielä",
   "dashboard.top.presentation": "Esitys",
   "dashboard.top.views": "Katselut",
   "dashboard.top.avgDuration": "Keskim. kesto",
   "dashboard.top.completion": "Valmistuminen",
-
   "dashboard.source.title": "Sitoutuminen lähteen mukaan",
   "dashboard.source.empty": "Ei tietoja vielä",
-
   "stockMedia.tabs.library": "Kirjasto",
   "stockMedia.tabs.unsplash": "Unsplash",
   "stockMedia.tabs.giphy": "Giphy",
@@ -115,7 +107,6 @@
   "stockMedia.unsplash.onUnsplash": "Unsplashissa",
   "stockMedia.giphy.poweredBy": "Powered by GIPHY",
   "stockMedia.giphy.trending": "Suositut",
-
   "analytics.leads": "Liidit",
   "analytics.noLeads": "Ei kerättyjä liidejä vielä",
   "analytics.noLeadsHint": "Lisää liidien keräysdia esitykseesi aloittaaksesi yhteystietojen keräämisen.",
@@ -125,7 +116,6 @@
   "analytics.submitted": "Lähetetty",
   "analytics.deleteLead": "Poista tämä liidi",
   "analytics.confirmDeleteLead": "Haluatko varmasti poistaa tämän liidin? Toimintoa ei voi kumota.",
-
   "cookies.bannerLabel": "Evästeiden hyväksyntä",
   "cookies.title": "Käytämme evästeitä",
   "cookies.description": "Käytämme evästeitä parantaaksemme kokemustasi ja analysoidaksemme sivuston käyttöä. Voit hallita asetuksiasi alla.",
@@ -141,11 +131,9 @@
   "cookies.analytics.description": "Auttavat meitä ymmärtämään, miten kävijät käyttävät sivustoamme.",
   "cookies.marketing.title": "Markkinointi",
   "cookies.marketing.description": "Käytetään liidien keräyslomakkeisiin ja personoituun sisältöön.",
-
   "common.exporting": "Viedään...",
   "common.deleting": "Poistetaan...",
   "common.failed": "Epäonnistui",
-
   "leadCapture.privacyLink": "Tietosuojakäytäntö",
   "leadCapture.cookieNotice": "Ota markkinointievästeet käyttöön lähettääksesi tämän lomakkeen.",
   "leadCapture.error.acceptCookies": "Hyväksy markkinointievästeet lähettääksesi tämän lomakkeen.",
@@ -153,9 +141,14 @@
   "leadCapture.error.validEmail": "Anna kelvollinen sähköpostiosoite.",
   "leadCapture.error.acceptTerms": "Hyväksy tietosuojaehdot.",
   "leadCapture.error.generic": "Jokin meni pieleen. Yritä uudelleen.",
-
   "export.video.missingSource": "Videolähde puuttuu",
   "export.video.cannotEmbed": "(Videoita ei voi upottaa PNG-muotoon.)",
   "export.print.noCardContent": "Ei kortin sisältöä.",
-  "export.print.noContent": "Ei sisältöä."
+  "export.print.noContent": "Ei sisältöä.",
+  "notifications.bell": "Ilmoitukset",
+  "notifications.empty": "Ei ilmoituksia",
+  "notifications.loading": "Ladataan...",
+  "notifications.markAllRead": "Merkitse kaikki luetuiksi",
+  "notifications.title": "Ilmoitukset",
+  "notifications.unread": "lukematon"
 }

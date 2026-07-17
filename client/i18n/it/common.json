@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Può commentare",
   "viewer.permission.edit": "Modifica",
   "viewer.permission.view": "Solo visualizzazione",
-
   "analytics.teamViewers": "{{count}} visualizzazioni membri del team",
   "analytics.teamViewersNote": "(aggregato per privacy)",
   "analytics.teamMember": "Membro del team",
-
   "common.default": "predefinito",
-
   "dashboard.title": "Analisi engagement",
   "dashboard.periodLabel": "Periodo",
   "dashboard.period.7d": "Ultimi 7 giorni",
@@ -78,28 +75,23 @@
   "dashboard.loading": "Caricamento analisi...",
   "dashboard.error": "Impossibile caricare le analisi",
   "dashboard.vsLastPeriod": "vs periodo precedente",
-
   "dashboard.cards.totalViews": "Visualizzazioni totali",
   "dashboard.cards.uniqueViewers": "Visitatori unici",
   "dashboard.cards.avgDuration": "Durata media",
   "dashboard.cards.completionRate": "Tasso di completamento",
   "dashboard.trend.vsPrevious": "vs periodo precedente",
   "dashboard.trend.noPrevious": "Nessun dato precedente",
-
   "dashboard.chart.title": "Visualizzazioni nel tempo",
   "dashboard.chart.empty": "Nessun dato per questo periodo",
   "dashboard.chart.ariaLabel": "Grafico a barre delle visualizzazioni nel tempo",
-
   "dashboard.top.title": "Presentazioni migliori",
   "dashboard.top.empty": "Nessuna presentazione con visualizzazioni ancora",
   "dashboard.top.presentation": "Presentazione",
   "dashboard.top.views": "Visualizzazioni",
   "dashboard.top.avgDuration": "Durata media",
   "dashboard.top.completion": "Completamento",
-
   "dashboard.source.title": "Engagement per fonte",
   "dashboard.source.empty": "Nessun dato ancora",
-
   "stockMedia.tabs.library": "Libreria",
   "stockMedia.tabs.unsplash": "Unsplash",
   "stockMedia.tabs.giphy": "Giphy",
@@ -115,7 +107,6 @@
   "stockMedia.unsplash.onUnsplash": "su Unsplash",
   "stockMedia.giphy.poweredBy": "Powered by GIPHY",
   "stockMedia.giphy.trending": "Di tendenza",
-
   "analytics.leads": "Lead",
   "analytics.noLeads": "Nessun lead acquisito ancora",
   "analytics.noLeadsHint": "Aggiungi una slide di acquisizione lead alla tua presentazione per iniziare a raccogliere contatti.",
@@ -125,7 +116,6 @@
   "analytics.submitted": "Inviato",
   "analytics.deleteLead": "Elimina questo lead",
   "analytics.confirmDeleteLead": "Sei sicuro di voler eliminare questo lead? Questa azione non può essere annullata.",
-
   "cookies.bannerLabel": "Consenso cookie",
   "cookies.title": "Utilizziamo i cookie",
   "cookies.description": "Utilizziamo i cookie per migliorare la tua esperienza e analizzare l'utilizzo del sito. Puoi gestire le tue preferenze qui sotto.",
@@ -141,11 +131,9 @@
   "cookies.analytics.description": "Ci aiutano a capire come i visitatori interagiscono con il nostro sito.",
   "cookies.marketing.title": "Marketing",
   "cookies.marketing.description": "Utilizzati per i moduli di acquisizione lead e contenuti personalizzati.",
-
   "common.exporting": "Esportazione...",
   "common.deleting": "Eliminazione...",
   "common.failed": "Fallito",
-
   "leadCapture.privacyLink": "Informativa sulla privacy",
   "leadCapture.cookieNotice": "Abilita i cookie di marketing per inviare questo modulo.",
   "leadCapture.error.acceptCookies": "Accetta i cookie di marketing per inviare questo modulo.",
@@ -153,9 +141,14 @@
   "leadCapture.error.validEmail": "Inserisci un indirizzo email valido.",
   "leadCapture.error.acceptTerms": "Accetta i termini sulla privacy.",
   "leadCapture.error.generic": "Qualcosa è andato storto. Riprova.",
-
   "export.video.missingSource": "Sorgente video mancante",
   "export.video.cannotEmbed": "(I video non possono essere incorporati in PNG.)",
   "export.print.noCardContent": "Nessun contenuto scheda.",
-  "export.print.noContent": "Nessun contenuto."
+  "export.print.noContent": "Nessun contenuto.",
+  "notifications.bell": "Notifiche",
+  "notifications.empty": "Nessuna notifica",
+  "notifications.loading": "Caricamento...",
+  "notifications.markAllRead": "Segna tutte come lette",
+  "notifications.title": "Notifiche",
+  "notifications.unread": "non letta"
 }

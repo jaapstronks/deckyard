@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Peut commenter",
   "viewer.permission.edit": "Modifier",
   "viewer.permission.view": "Lecture seule",
-
   "analytics.teamViewers": "{{count}} vues de membres de l'équipe",
   "analytics.teamViewersNote": "(agrégé pour la confidentialité)",
   "analytics.teamMember": "Membre de l'équipe",
-
   "common.default": "par défaut",
-
   "dashboard.title": "Aperçus d'engagement",
   "dashboard.periodLabel": "Période",
   "dashboard.period.7d": "7 derniers jours",
@@ -78,25 +75,27 @@
   "dashboard.loading": "Chargement des aperçus...",
   "dashboard.error": "Impossible de charger les aperçus",
   "dashboard.vsLastPeriod": "vs période précédente",
-
   "dashboard.cards.totalViews": "Vues totales",
   "dashboard.cards.uniqueViewers": "Visiteurs uniques",
   "dashboard.cards.avgDuration": "Durée moy.",
   "dashboard.cards.completionRate": "Taux d'achèvement",
   "dashboard.trend.vsPrevious": "vs période précédente",
   "dashboard.trend.noPrevious": "Pas de données précédentes",
-
   "dashboard.chart.title": "Vues dans le temps",
   "dashboard.chart.empty": "Pas de données de vues pour cette période",
   "dashboard.chart.ariaLabel": "Graphique à barres des vues dans le temps",
-
   "dashboard.top.title": "Meilleures présentations",
   "dashboard.top.empty": "Pas encore de présentations avec des vues",
   "dashboard.top.presentation": "Présentation",
   "dashboard.top.views": "Vues",
   "dashboard.top.avgDuration": "Durée moy.",
   "dashboard.top.completion": "Achèvement",
-
   "dashboard.source.title": "Engagement par source",
-  "dashboard.source.empty": "Pas encore de données"
+  "dashboard.source.empty": "Pas encore de données",
+  "notifications.bell": "Notifications",
+  "notifications.empty": "Aucune notification",
+  "notifications.loading": "Chargement...",
+  "notifications.markAllRead": "Tout marquer comme lu",
+  "notifications.title": "Notifications",
+  "notifications.unread": "non lue"
 }

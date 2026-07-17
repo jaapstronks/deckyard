@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Może komentować",
   "viewer.permission.edit": "Edytuj",
   "viewer.permission.view": "Tylko podgląd",
-
   "analytics.teamViewers": "{{count}} wyświetleń członków zespołu",
   "analytics.teamViewersNote": "(zagregowane dla prywatności)",
   "analytics.teamMember": "Członek zespołu",
-
   "common.default": "domyślny",
-
   "dashboard.title": "Analiza zaangażowania",
   "dashboard.periodLabel": "Okres",
   "dashboard.period.7d": "Ostatnie 7 dni",
@@ -78,28 +75,23 @@
   "dashboard.loading": "Ładowanie analiz...",
   "dashboard.error": "Nie udało się załadować analiz",
   "dashboard.vsLastPeriod": "vs poprzedni okres",
-
   "dashboard.cards.totalViews": "Łączne wyświetlenia",
   "dashboard.cards.uniqueViewers": "Unikalni widzowie",
   "dashboard.cards.avgDuration": "Średni czas",
   "dashboard.cards.completionRate": "Wskaźnik ukończenia",
   "dashboard.trend.vsPrevious": "vs poprzedni okres",
   "dashboard.trend.noPrevious": "Brak poprzednich danych",
-
   "dashboard.chart.title": "Wyświetlenia w czasie",
   "dashboard.chart.empty": "Brak danych dla tego okresu",
   "dashboard.chart.ariaLabel": "Wykres słupkowy wyświetleń w czasie",
-
   "dashboard.top.title": "Najlepsze prezentacje",
   "dashboard.top.empty": "Brak prezentacji z wyświetleniami",
   "dashboard.top.presentation": "Prezentacja",
   "dashboard.top.views": "Wyświetlenia",
   "dashboard.top.avgDuration": "Średni czas",
   "dashboard.top.completion": "Ukończenie",
-
   "dashboard.source.title": "Zaangażowanie wg źródła",
   "dashboard.source.empty": "Brak danych",
-
   "stockMedia.tabs.library": "Biblioteka",
   "stockMedia.tabs.unsplash": "Unsplash",
   "stockMedia.tabs.giphy": "Giphy",
@@ -115,7 +107,6 @@
   "stockMedia.unsplash.onUnsplash": "na Unsplash",
   "stockMedia.giphy.poweredBy": "Powered by GIPHY",
   "stockMedia.giphy.trending": "Popularne",
-
   "analytics.leads": "Leady",
   "analytics.noLeads": "Brak pozyskanych leadów",
   "analytics.noLeadsHint": "Dodaj slajd pozyskiwania leadów do swojej prezentacji, aby zacząć zbierać kontakty.",
@@ -125,7 +116,6 @@
   "analytics.submitted": "Przesłano",
   "analytics.deleteLead": "Usuń ten lead",
   "analytics.confirmDeleteLead": "Czy na pewno chcesz usunąć ten lead? Tej akcji nie można cofnąć.",
-
   "cookies.bannerLabel": "Zgoda na cookies",
   "cookies.title": "Używamy plików cookie",
   "cookies.description": "Używamy plików cookie, aby poprawić Twoje doświadczenie i analizować wykorzystanie strony. Możesz zarządzać swoimi preferencjami poniżej.",
@@ -141,11 +131,9 @@
   "cookies.analytics.description": "Pomagają nam zrozumieć, jak odwiedzający korzystają z naszej strony.",
   "cookies.marketing.title": "Marketingowe",
   "cookies.marketing.description": "Używane do formularzy pozyskiwania leadów i spersonalizowanych treści.",
-
   "common.exporting": "Eksportowanie...",
   "common.deleting": "Usuwanie...",
   "common.failed": "Niepowodzenie",
-
   "leadCapture.privacyLink": "Polityka prywatności",
   "leadCapture.cookieNotice": "Włącz marketingowe pliki cookie, aby przesłać ten formularz.",
   "leadCapture.error.acceptCookies": "Zaakceptuj marketingowe pliki cookie, aby przesłać ten formularz.",
@@ -153,9 +141,14 @@
   "leadCapture.error.validEmail": "Wprowadź prawidłowy adres email.",
   "leadCapture.error.acceptTerms": "Zaakceptuj warunki prywatności.",
   "leadCapture.error.generic": "Coś poszło nie tak. Spróbuj ponownie.",
-
   "export.video.missingSource": "Brak źródła wideo",
   "export.video.cannotEmbed": "(Wideo nie może być osadzone w PNG.)",
   "export.print.noCardContent": "Brak zawartości karty.",
-  "export.print.noContent": "Brak zawartości."
+  "export.print.noContent": "Brak zawartości.",
+  "notifications.bell": "Powiadomienia",
+  "notifications.empty": "Brak powiadomień",
+  "notifications.loading": "Ładowanie...",
+  "notifications.markAllRead": "Oznacz wszystkie jako przeczytane",
+  "notifications.title": "Powiadomienia",
+  "notifications.unread": "nieprzeczytane"
 }
