@@ -279,6 +279,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     starterKits,
     themePicker,
     unreadCount,
+    user,
     onCreate: () => openNewPresentationModalWrapper(),
     onBrowseTemplates: () => setView('starterKits'),
   });

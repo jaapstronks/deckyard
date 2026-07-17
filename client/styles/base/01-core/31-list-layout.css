@@ -81,12 +81,21 @@
   color: hsl(var(--app-accent-text));
 }
 
-/* Sections (Lovable) */
+/* Sections.
+   Flush by default: no box, no inset — every home section (Recent, Popular,
+   Activity, Start-new) shares the column's left edge for one clean line.
+   A visible box is re-added only on the tinted workspace/private variants
+   below, where the tint carries real grouping meaning. */
 .presentation-section {
-  margin-bottom: var(--ps-space-5);
+  margin-bottom: var(--ps-space-8);
+  overflow: hidden; /* Prevent horizontal overflow */
+}
+
+/* Tinted grouping variants keep their card treatment (padding + radius). */
+.presentation-section[data-section='workspace'],
+.presentation-section[data-section='private'] {
   padding: var(--ps-space-4);
   border-radius: var(--ps-radius-xl);
-  overflow: hidden; /* Prevent horizontal overflow */
 }
 
 .presentation-section[data-section='workspace'] {
@@ -112,7 +121,9 @@
 .presentation-section-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* Cluster title + count + "View all" on the left so the link reads as part
+     of the section, not marooned at the far right edge. */
+  justify-content: flex-start;
   gap: var(--ps-space-3);
   margin-bottom: var(--ps-space-3);
 }
@@ -193,6 +204,16 @@
   padding: var(--ps-space-3) 0 var(--ps-space-4);
 }
 
+/* Home preview rows: `auto-fill` keeps every card the same size regardless of
+   how many a section has (Popular may have 1-2, Recent 4). Cards reflow evenly
+   4/3/2/1 and an under-full row just leaves trailing space — far cleaner than
+   the old fixed-width `.is-row`, which clipped half-cards and left uneven
+   middle gaps, and better than `auto-fit`, which balloons 1-2 cards to full
+   width. */
+.sidebar-view[data-view='home'] .list.presentation-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
 /* Mobile: Single column, cards use full width */
 @media (max-width: 600px) {
   .list.presentation-grid {
@@ -249,8 +270,12 @@
   }
 
   .presentation-section {
+    margin-bottom: var(--ps-space-6);
+  }
+
+  .presentation-section[data-section='workspace'],
+  .presentation-section[data-section='private'] {
     padding: var(--ps-space-3);
-    margin-bottom: var(--ps-space-3);
   }
 }
 
@@ -310,6 +335,28 @@
   color: hsl(var(--app-text-primary));
   padding: var(--ps-space-4) 0 0;
   margin-bottom: var(--ps-space-5);
+}
+
+/* Home greeting header — the page's top anchor. Shares the column's left edge
+   with every section below it. */
+.home-header {
+  padding: var(--ps-space-5) 0 var(--ps-space-5);
+  margin-bottom: var(--ps-space-6);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.home-header-title {
+  margin: 0;
+  font-size: var(--ps-text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: hsl(var(--app-text-primary));
+}
+
+.home-header-subtitle {
+  margin: var(--ps-space-2) 0 0;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-tertiary));
 }
 
 .presentation-brand {

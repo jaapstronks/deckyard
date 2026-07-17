@@ -2,6 +2,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { buildSectionHeader } from './section-header.js';
 import { createNoPresentationsEmptyState } from '../empty-state.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
+import { displayNameFromEmail } from '../../../lib/user-format.js';
 
 /**
  * Create the home view with recent presentations, starter kits, and activity preview
@@ -16,6 +17,7 @@ import { createOnboardingChecklist } from '../onboarding-checklist.js';
  * @param {Array} opts.starterKits - Starter kit presentations
  * @param {object} opts.themePicker - Theme picker component
  * @param {number} opts.unreadCount - Initial unread count
+ * @param {object} [opts.user] - Current user (for the greeting header)
  * @returns {object} - { el, loadActivityPreview }
  */
 export function createHomeView({
@@ -28,11 +30,11 @@ export function createHomeView({
   starterKits,
   themePicker,
   unreadCount,
+  user,
   onCreate,
   onBrowseTemplates,
 }) {
   const homeView = h('div', { class: 'sidebar-view', 'data-view': 'home' });
-  const homeTitle = h('h2', { class: 'presentation-grid-title', text: t('list.home.title', 'Welcome') });
 
   // First-run onboarding checklist (create deck / try template / connect an AI
   // agent). Returns null for existing or dismissed users; persists progress so
@@ -63,7 +65,7 @@ export function createHomeView({
     if (onboardingChecklist) homeView.append(onboardingChecklist);
     if (starterKits.length > 0) {
       const homeStarterKitsSection = h('div', { class: 'presentation-section', 'data-section': 'starter-kits' });
-      const homeStarterKitsList = h('div', { class: 'list presentation-grid is-row' });
+      const homeStarterKitsList = h('div', { class: 'list presentation-grid' });
       homeStarterKitsSection.append(
         buildSectionHeader({
           h,
@@ -91,7 +93,7 @@ export function createHomeView({
 
   // Recent presentations section
   const homeRecentSection = h('div', { class: 'presentation-section', 'data-section': 'recent' });
-  const homeRecentList = h('div', { class: 'list presentation-grid is-row' });
+  const homeRecentList = h('div', { class: 'list presentation-grid' });
 
   homeRecentSection.append(
     buildSectionHeader({
@@ -117,7 +119,7 @@ export function createHomeView({
 
   // Popular presentations section
   const homePopularSection = h('div', { class: 'presentation-section', 'data-section': 'popular' });
-  const homePopularList = h('div', { class: 'list presentation-grid is-row' });
+  const homePopularList = h('div', { class: 'list presentation-grid' });
   const homePopularLoading = h('div', { class: 'help', text: t('list.home.popularLoading', 'Loading popular...') });
 
   homePopularSection.append(
@@ -149,7 +151,7 @@ export function createHomeView({
 
   // Starter kits section
   const homeStarterKitsSection = h('div', { class: 'presentation-section', 'data-section': 'starter-kits' });
-  const homeStarterKitsList = h('div', { class: 'list presentation-grid is-row' });
+  const homeStarterKitsList = h('div', { class: 'list presentation-grid' });
 
   if (starterKits.length > 0) {
     homeStarterKitsSection.append(
@@ -167,13 +169,19 @@ export function createHomeView({
     homeStarterKitsSection.append(homeStarterKitsList);
   }
 
-  // Assemble home view
+  // Greeting header — a real page anchor at the top of the column, replacing
+  // the old orphan "Welcome" heading that labelled nothing.
+  const homeHeader = buildHomeHeader({ h, user, count: allByDate.length });
+
+  // Assemble home view. Content-first order for a returning user: their work
+  // (Recent) leads, then create affordances (Start something new / Starter
+  // kits), then discovery (Popular) and finally what's happening (Activity).
   if (onboardingChecklist) homeView.append(onboardingChecklist);
-  homeView.append(themePicker.el, homeTitle, homeRecentSection, homePopularSection);
+  homeView.append(homeHeader, homeRecentSection, themePicker.el);
   if (starterKits.length > 0) {
     homeView.append(homeStarterKitsSection);
   }
-  homeView.append(homeActivitySection);
+  homeView.append(homePopularSection, homeActivitySection);
 
   // Popular presentations loading
   async function loadPopularPresentations() {
@@ -225,6 +233,45 @@ export function createHomeView({
     loadActivityPreview,
     loadPopularPresentations,
   };
+}
+
+/**
+ * Build the home greeting header: "Welcome back, {firstName}" plus a subtitle
+ * with today's date and the deck count. Falls back to a name-less greeting for
+ * guests or when the user record has no name/email.
+ *
+ * @param {object} opts
+ * @param {Function} opts.h - DOM helper
+ * @param {object} [opts.user] - Current user
+ * @param {number} opts.count - Total presentation count
+ * @returns {HTMLElement}
+ */
+function buildHomeHeader({ h, user, count }) {
+  const rawName = user?.name || displayNameFromEmail(user?.email || '') || '';
+  const firstName = rawName.trim().split(/\s+/)[0] || '';
+
+  const greeting = firstName
+    ? t('list.home.greeting', 'Welcome back, {name}', { name: firstName })
+    : t('list.home.greetingGuest', 'Welcome back');
+
+  let dateLabel = '';
+  try {
+    dateLabel = new Intl.DateTimeFormat(undefined, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }).format(new Date());
+  } catch {
+    dateLabel = '';
+  }
+
+  const countLabel = t('list.home.greetingCount', '{count} presentations', { count });
+  const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
+
+  return h('header', { class: 'home-header' }, [
+    h('h1', { class: 'home-header-title', text: greeting }),
+    h('p', { class: 'home-header-subtitle', text: subtitleText }),
+  ]);
 }
 
 /**

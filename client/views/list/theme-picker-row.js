@@ -4,6 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { iconUrl } from '../../../shared/icon-names.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { renderSlideElement } from '../../lib/slide-render.js';
 import { attachThumbScale } from '../../lib/thumb-scale.js';
@@ -69,18 +70,21 @@ export function createThemePickerRow({ h, api, onThemeSelect, onShowAll, maxVisi
   const el = h('div', { class: 'theme-picker-row' });
   const detachCallbacks = [];
 
-  // Header
+  // Header — mirrors the shared `.presentation-section-header` treatment so
+  // "Start something new" lines up with Recent / Popular / Activity.
   const header = h('div', { class: 'theme-picker-header' });
-  const titleWrap = h('div');
-  const title = h('div', {
-    class: 'theme-picker-title',
-    text: t('list.theme.quickStart', 'Quick start'),
-  });
-  const subtitle = h('div', {
-    class: 'theme-picker-subtitle',
-    text: t('list.theme.pickTheme', 'Pick a theme to create a new presentation'),
-  });
-  titleWrap.append(title, subtitle);
+  const titleWrap = h('div', { class: 'theme-picker-title-group' }, [
+    h('img', {
+      class: 'presentation-section-icon',
+      src: iconUrl('sparkles'),
+      alt: '',
+      'aria-hidden': 'true',
+    }),
+    h('span', {
+      class: 'theme-picker-title',
+      text: t('list.theme.startNew', 'Start something new'),
+    }),
+  ]);
 
   const moreBtn = h('button', {
     class: 'theme-picker-more',
