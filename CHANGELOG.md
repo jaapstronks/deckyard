@@ -155,6 +155,16 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Placing a comment on a slide now works anywhere, and the affordance is
+  visible.** "Add comment" is a labeled toolbar button (was a bare, easily
+  missed pin glyph). In placement mode the inline WYSIWYG editor yields its
+  click so a pin lands anywhere on the slide - including over editable text,
+  which previously swallowed the click and started a text edit, so pins could
+  only be dropped in the margins. The placement hint moved to an overlay
+  banner on the slide (it used to wrap inside the toolbar row and unbalance
+  it), and the positioned-comment composer got its missing styling (it had
+  collapsed to a near-invisible bare textarea).
+
 - **Stale browser tabs can no longer silently overwrite other users' work.**
   A tab that slept through remote saves (laptop lid, offline) used to
   autosave its days-old copy straight over newer edits: the slide-level
@@ -216,9 +226,11 @@ entries are grouped per release rather than exhaustively listed.
 
 - **Editor chrome re-organized: slide-scoped vs. deck-scoped.** The right
   rail is now driven by an always-visible labeled pane switcher
-  (Inspector / Comments / Notes) at the far right of the topbar; presenter
-  notes moved from a permanent block under the canvas into their own rail
-  pane (with the Notes-QR companion flow in its header). Everything about
+  (Inspector / Comments) at the far right of the toolbar above the canvas;
+  presenter notes live in a collapsible strip directly under the slide
+  (Keynote / PowerPoint convention, with the Notes-QR companion flow in
+  its header), filling the space beneath the 16:9 stage and reclaiming the
+  full height when collapsed. Everything about
   the current slide (type chip, "All text", lock, the slide actions menu)
   sits in a toolbar above the canvas; the topbar keeps deck-level actions,
   with Companion tucked into a Present split-menu and utilities (AI
