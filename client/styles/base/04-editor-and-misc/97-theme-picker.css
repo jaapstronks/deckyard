@@ -3,41 +3,43 @@
    Horizontal row of theme thumbnails for quick new presentation
    ============================================================ */
 
+/* Flush, boxless — sits in the same rhythm as the `.presentation-section`
+   rows around it (no alien white card glued under the topbar). */
 .theme-picker-row {
-  margin-bottom: var(--ps-space-6);
-  padding: var(--ps-space-4);
-  background: hsl(var(--app-bg-elevated));
-  border: 1px solid hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-xl);
+  margin-bottom: var(--ps-space-8);
 }
 
+/* Header mirrors `.presentation-section-header`: icon + title clustered left,
+   with "Browse all themes" tied right after. */
 .theme-picker-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: var(--ps-space-3);
   margin-bottom: var(--ps-space-3);
 }
 
+.theme-picker-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
 .theme-picker-title {
-  font-size: var(--ps-text-sm);
+  font-size: var(--ps-text-base);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
 }
 
-.theme-picker-subtitle {
-  font-size: var(--ps-text-xs);
-  color: hsl(var(--app-text-tertiary));
-}
-
 .theme-picker-more {
-  font-size: var(--ps-text-xs);
+  font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-accent-text));
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: var(--ps-space-1) var(--ps-space-2);
-  border-radius: var(--ps-radius-sm);
+  padding: 2px 10px;
+  border-radius: var(--ps-radius-md);
 }
 
 .theme-picker-more:hover {

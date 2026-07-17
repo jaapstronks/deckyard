@@ -8683,6 +8683,24 @@
         "client/views/list/views/home-view.js:35"
       ]
     },
+    "list.home.greeting": {
+      "default": "Welcome back, {name}",
+      "refs": [
+        "client/views/list/views/home-view.js"
+      ]
+    },
+    "list.home.greetingGuest": {
+      "default": "Welcome back",
+      "refs": [
+        "client/views/list/views/home-view.js"
+      ]
+    },
+    "list.home.greetingCount": {
+      "default": "{count} presentations",
+      "refs": [
+        "client/views/list/views/home-view.js"
+      ]
+    },
     "list.importJson": {
       "default": "Import",
       "refs": [
@@ -9356,6 +9374,12 @@
       "default": "Quick start",
       "refs": [
         "client/views/list/theme-picker-row.js:77"
+      ]
+    },
+    "list.theme.startNew": {
+      "default": "Start something new",
+      "refs": [
+        "client/views/list/theme-picker-row.js"
       ]
     },
     "list.theme.showMore": {
