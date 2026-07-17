@@ -27,6 +27,7 @@ import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openMediaPopover } from './media-popover.js';
+import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createBasicFields } from '../fields/basic.js';
@@ -976,6 +977,47 @@ export function createInlineEditor({
     });
   }
 
+  // ----------------------------------------------------------------
+  // Icon picker (per-icon, e.g. icon-card-grid card icons)
+  // ----------------------------------------------------------------
+  /**
+   * Decorate icon elements tagged `data-inline-icon` with a dashed outline so
+   * they read as editable, like text fields. The click itself is routed in
+   * onThumbClickCapture; the picker is the canonical modal, so no in-slide
+   * popover lifecycle is needed here.
+   */
+  function insertIconAffordances(root, _def, descriptor) {
+    const icons = descriptor.icons;
+    if (!icons?.selector) return;
+    for (const el of root.querySelectorAll(icons.selector)) {
+      outlineByField.set(el, overlay.outline(el));
+    }
+  }
+
+  function openIconFor(iconEl) {
+    const slide = getSlide?.();
+    const descriptor = slide
+      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
+      : null;
+    const icons = descriptor?.icons;
+    if (!slide || !icons) return;
+    const path = iconEl.getAttribute('data-inline-icon');
+    if (!path) return;
+    const current = getByPath(slide.content, path);
+    openIconPicker({
+      current: typeof current === 'string' ? current : '',
+      onSelect: (name) => {
+        setByPath(slide.content, path, name);
+        try {
+          icons.afterWrite?.(slide);
+        } catch {
+          /* mirror sync is best-effort; the primary write already landed */
+        }
+        afterStructuralChange(); // dirty + save + form rebuild + preview remount
+      },
+    });
+  }
+
   function dismissMediaPopover() {
     if (mediaPopover) {
       try {
@@ -1016,6 +1058,7 @@ export function createInlineEditor({
     insertClearButtons(root, def, descriptor);
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
+    insertIconAffordances(root, def, descriptor);
 
     // Measure now, then again after layout settles (fonts/images can reflow).
     overlay.reposition();
@@ -1060,7 +1103,7 @@ export function createInlineEditor({
   function onThumbPointerMove(e) {
     if (editing) return;
     const t = e.target;
-    const fieldEl = t && t.closest ? t.closest('[data-inline-field]') : null;
+    const fieldEl = t && t.closest ? t.closest('[data-inline-field], [data-inline-icon]') : null;
     setHotField(fieldEl && thumb.contains(fieldEl) ? fieldEl : null);
   }
 
@@ -1086,6 +1129,16 @@ export function createInlineEditor({
     }
     // Clicks inside the active edit are for the caret.
     if (editing && editing.el.contains(target)) return;
+
+    // Card icons open the icon-picker modal.
+    const iconEl = target.closest('[data-inline-icon]');
+    if (iconEl && thumb.contains(iconEl)) {
+      coach.dismiss();
+      e.preventDefault();
+      e.stopPropagation();
+      openIconFor(iconEl);
+      return;
+    }
 
     // Item photos open the media popover (image + alt + extra fields).
     const photoEl = target.closest('[data-inline-photo]');
