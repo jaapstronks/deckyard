@@ -299,6 +299,13 @@
   padding: 0;
   background: transparent;
 }
+/* The multi-frame contain rule above carries more classes than the generic
+   cover-undo, so the slide-contain + per-image-cover combo needs its own
+   higher-specificity escape. */
+.slide-image-text.is-image-contain .media.is-multi .frame.is-fit-cover {
+  padding: 0;
+  background: transparent;
+}
 .slide-image-text .media .frame.is-fit-cover img {
   object-fit: cover;
 }
