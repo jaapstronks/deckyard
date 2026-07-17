@@ -71,10 +71,7 @@ scope switch. How it works is documented in
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
-- **Image blocks `imageAspect: original` polish** —
-  `docs/plans/image-grid-original-aspect-polish.md` — align captions to the
-  image (not the cell), let a few screenshots fill the slide, uniform
-  magnification; prototype vs routing screenshots to gallery masonry.
+
 ## Later — cloud / multi-tenant track
 
 - **Custom domains** — `docs/plans/custom-domains.md`
