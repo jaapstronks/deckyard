@@ -12,8 +12,10 @@
  *     measured here.
  *
  * Image-text-slides keep the simpler two-step behavior (comfortable ↔
- * `is-compact`). Re-runs whenever the slide or its body change size (e.g. while
- * typing in the editor preview).
+ * `is-compact`); with two text columns (`is-text-cols-2`) overflow flows
+ * sideways like on the content slide, so the check switches to scrollWidth.
+ * Re-runs whenever the slide or its body change size (e.g. while typing in
+ * the editor preview).
  */
 
 const SELECTOR =
@@ -104,11 +106,17 @@ const measureImageTextSlide = (slide) => {
   const wasCompact = slide.classList.contains('is-compact');
   if (wasCompact) slide.classList.remove('is-compact');
 
-  // Allow >1px slack to absorb sub-pixel rounding.
+  // Allow >1px slack to absorb sub-pixel rounding. With two text columns the
+  // body is multi-column: spillover flows sideways into a cut-off extra
+  // column (scrollWidth grows), and summing child block heights would
+  // over-report by design, so that check is skipped there.
+  const multiCol = slide.classList.contains('is-text-cols-2');
   const overflow =
     body.scrollHeight > body.clientHeight + 1 ||
     container.scrollHeight > container.clientHeight + 1 ||
-    naturalContentHeight(body) > body.clientHeight + 1;
+    (multiCol
+      ? body.scrollWidth > body.clientWidth + 1
+      : naturalContentHeight(body) > body.clientHeight + 1);
 
   if (overflow) slide.classList.add('is-compact');
 };

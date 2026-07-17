@@ -8,6 +8,23 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Image-text: optional two text columns in the row and duo layouts.**
+  A new `textColumns` enum (1/2) on the image-text slide breaks the body
+  into two balanced text columns while the composition stays one story -
+  one title, one body field. The layout-switcher popover gains a
+  "1 column / 2 columns" segmented toggle next to the mirror toggle,
+  driven by a JSON-safe `layoutTextColumns` declaration on the type
+  definition (forks control their own; the toggle only appears in the
+  layouts it applies to). The same enum doubles in the Layout settings
+  section, matching the existing double-control design. Outside the
+  row/duo layouts a remembered value stays inert, so a split slide never
+  inherits phantom columns; the auto-density runtime detects two-column
+  overflow sideways (spillover flows into a cut-off extra column) and
+  steps the text size down. Bijvangst from the phase-3 review: the
+  popover toggles now guard against slides without a content object.
+  5 new tests; browser-verified end to end including undo granularity,
+  persistence and both export paths.
+
 - **Image-text layout catalogue, phase 3: cross-type tiles, the mirror
   toggle and polish.** The layout switcher now crosses the type boundary
   in both directions. On image-text a new "Own text per column" tile

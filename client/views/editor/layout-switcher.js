@@ -36,16 +36,50 @@ function getLayoutMirror(def) {
   return key && values ? { key, values } : null;
 }
 
+/**
+ * Effective value of a content field, falling back to the definition's
+ * defaults so an older slide without the field still reads correctly.
+ * @param {Object} slide
+ * @param {Object} def
+ * @param {string} key
+ * @returns {string}
+ */
+function effectiveContentValue(slide, def, key) {
+  const raw = slide?.content?.[key];
+  return raw != null && raw !== ''
+    ? String(raw)
+    : String(def?.defaults?.[key] ?? '');
+}
+
 /** Mirror state: schematics flip when the mirror field holds the right-hand value. */
 function isMirrored(slide, def) {
   const mirror = getLayoutMirror(def);
   if (!mirror) return false;
-  const raw = slide?.content?.[mirror.key];
-  const value =
-    raw != null && raw !== ''
-      ? String(raw)
-      : String(def?.defaults?.[mirror.key] ?? '');
-  return value === mirror.values[1];
+  return effectiveContentValue(slide, def, mirror.key) === mirror.values[1];
+}
+
+/**
+ * The definition's text-columns declaration (`layoutTextColumns`): which enum
+ * field holds the column count, its two values in [one, two] order, and for
+ * which values of another enum field (`when`, typically the layout) the
+ * toggle applies. Null when the type declares none.
+ * @param {Object} def
+ * @returns {{key: string, values: string[], when: {key: string, values: string[]}|null}|null}
+ */
+function getLayoutTextColumns(def) {
+  const d = def?.layoutTextColumns;
+  const key = typeof d?.key === 'string' ? d.key : '';
+  const values =
+    Array.isArray(d?.values) && d.values.length === 2
+      ? d.values.map(String)
+      : null;
+  if (!key || !values) return null;
+  const whenKey = typeof d?.when?.key === 'string' ? d.when.key : '';
+  const whenValues = Array.isArray(d?.when?.values)
+    ? d.when.values.map(String)
+    : null;
+  const when = whenKey && whenValues?.length ? { key: whenKey, values: whenValues } : null;
+  return { key, values, when };
 }
 
 /**
@@ -178,8 +212,9 @@ export function createLayoutSwitcherChip({
     let mirrorBtns = null;
     if (mirror) {
       const setSide = (idx) => {
+        if (!slide?.content || typeof slide.content !== 'object') return;
         const value = mirror.values[idx];
-        if (slide?.content?.[mirror.key] === value) return;
+        if (slide.content[mirror.key] === value) return;
         slide.content[mirror.key] = value;
         editorState.dirtyRefreshWithItem();
         syncMirrorState();
@@ -220,6 +255,68 @@ export function createLayoutSwitcherChip({
       mirrorBtns[1].setAttribute('aria-pressed', mirrored ? 'true' : 'false');
     };
     syncMirrorState();
+
+    // Text-columns toggle (1/2 columns): only when the definition declares
+    // it AND the current layout is one it applies to (`when`). Picking a
+    // layout tile closes the popover, so this visibility check at open time
+    // can't go stale. Same interaction model as the mirror toggle: a normal
+    // content-field update, one undo step, popover stays open.
+    const textCols = getLayoutTextColumns(def);
+    let textColsBtns = null;
+    const textColsApplies =
+      textCols &&
+      (!textCols.when ||
+        textCols.when.values.includes(
+          effectiveContentValue(slide, def, textCols.when.key)
+        ));
+    const syncTextColsState = () => {
+      if (!textColsBtns) return;
+      const active =
+        effectiveContentValue(slide, def, textCols.key) === textCols.values[1]
+          ? 1
+          : 0;
+      textColsBtns.forEach((btn, i) => {
+        btn.classList.toggle('is-active', i === active);
+        btn.setAttribute('aria-pressed', i === active ? 'true' : 'false');
+      });
+    };
+    if (textColsApplies) {
+      const setCols = (idx) => {
+        if (!slide?.content || typeof slide.content !== 'object') return;
+        const value = textCols.values[idx];
+        if (slide.content[textCols.key] === value) return;
+        slide.content[textCols.key] = value;
+        editorState.dirtyRefreshWithItem();
+        syncTextColsState();
+      };
+      textColsBtns = [
+        h('button', {
+          type: 'button',
+          class: 'sb-segmented-btn',
+          text: t('editor.layoutSwitcher.textCols1', '1 column'),
+          onclick: () => setCols(0),
+        }),
+        h('button', {
+          type: 'button',
+          class: 'sb-segmented-btn',
+          text: t('editor.layoutSwitcher.textCols2', '2 columns'),
+          onclick: () => setCols(1),
+        }),
+      ];
+      popover.append(
+        h(
+          'div',
+          {
+            class: 'sb-segmented is-toggle layout-switcher-mirror',
+            role: 'group',
+            'aria-label': t('editor.layoutSwitcher.textColumns', 'Text columns'),
+          },
+          textColsBtns
+        )
+      );
+      syncTextColsState();
+    }
+
     popover.append(grid);
 
     const pickVariant = async (variant) => {

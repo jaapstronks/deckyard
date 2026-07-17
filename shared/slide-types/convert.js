@@ -86,6 +86,9 @@ const CONSUMED_SOURCE_KEYS = {
       'imageWidth',
       'imageFit',
       'imageBackground',
+      // Text columns carry over conceptually (content-slide has its own
+      // one/two-column layout enum), so the non-empty default never warns.
+      'textColumns',
       'focusX',
       'focusY',
     ],
@@ -103,6 +106,7 @@ const CONSUMED_SOURCE_KEYS = {
       'imageSide',
       'imageWidth',
       'layout',
+      'textColumns',
       'imageFit',
       'imageBackground',
       'focusX',
