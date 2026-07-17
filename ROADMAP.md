@@ -72,14 +72,14 @@ scope switch. How it works is documented in
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
-- **Comments & notifications UX rethink** —
-  `docs/plans/comments-notifications-ux.md` — in busy review rounds the
-  comments list doubles as a personal inbox: "Resolve" archives the whole
-  thread for everyone, while what you often want is "done for me" without
-  hiding it from a colleague who still has to read it. Analysis + candidate
-  scenarios (per-user dismiss, Notion-style events inbox, split
-  answered/resolved, unread markers) are in the plan; parked until a design
-  session picks a direction — do not build before that.
+- **Comments & notifications: inbox, mentions, read-state** —
+  `docs/plans/comments-notifications-ux.md` — decided 2026-07-17: thread
+  status stays shared (Resolve unchanged); personal follow-up moves to a
+  Notion-style events inbox on the notification bell (read + archive,
+  auto-archive on own reply); @mentions with autocomplete and an
+  access-warning prompt; GitHub-style subscriptions (participating by
+  default, per-deck override). Five independently shippable phases,
+  buildable plan in the doc.
 
 ## Later — cloud / multi-tenant track
 
