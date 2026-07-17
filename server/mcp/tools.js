@@ -1523,14 +1523,18 @@ export function registerTools(
     }
 
     // Same side effects as the app routes so the editor UI updates live.
-    const parentComment = parentId ? await getComment(parentId, ctx) : null;
-    void notifyCommentCreatedInApp({
-      presentation: pres,
-      comment: result.comment,
-      parentComment,
-      actor: { email: owner },
-      ctx,
-    });
+    // The parent lookup rides inside the voided task: the tool response
+    // must not wait on notification plumbing.
+    void (async () => {
+      const parentComment = parentId ? await getComment(parentId, ctx) : null;
+      await notifyCommentCreatedInApp({
+        presentation: pres,
+        comment: result.comment,
+        parentComment,
+        actor: { email: owner },
+        ctx,
+      });
+    })().catch(() => { /* notification failures never fail the tool call */ });
     void recordCommentCreated({
       comment: result.comment,
       presentation: pres,

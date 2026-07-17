@@ -97,5 +97,12 @@
   "notifications.loading": "Laster...",
   "notifications.markAllRead": "Merk alle som lest",
   "notifications.title": "Varsler",
-  "notifications.unread": "ulest"
+  "notifications.unread": "ulest",
+  "notifications.filter.all": "Alle",
+  "notifications.filter.mentions": "Omtaler",
+  "notifications.filter.unread": "Uleste",
+  "notifications.filter.archived": "Arkivert",
+  "notifications.archive": "Arkiver",
+  "notifications.archiveAll": "Arkiver alle",
+  "notifications.empty.archived": "Ingenting arkivert ennå"
 }

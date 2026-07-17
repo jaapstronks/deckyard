@@ -150,5 +150,12 @@
   "notifications.loading": "Ladataan...",
   "notifications.markAllRead": "Merkitse kaikki luetuiksi",
   "notifications.title": "Ilmoitukset",
-  "notifications.unread": "lukematon"
+  "notifications.unread": "lukematon",
+  "notifications.filter.all": "Kaikki",
+  "notifications.filter.mentions": "Maininnat",
+  "notifications.filter.unread": "Lukemattomat",
+  "notifications.filter.archived": "Arkistoidut",
+  "notifications.archive": "Arkistoi",
+  "notifications.archiveAll": "Arkistoi kaikki",
+  "notifications.empty.archived": "Ei vielä arkistoituja"
 }

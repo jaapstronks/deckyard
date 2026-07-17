@@ -157,5 +157,12 @@
   "notifications.loading": "Loading...",
   "notifications.markAllRead": "Mark all read",
   "notifications.title": "Notifications",
-  "notifications.unread": "unread"
+  "notifications.unread": "unread",
+  "notifications.filter.all": "All",
+  "notifications.filter.mentions": "Mentions",
+  "notifications.filter.unread": "Unread",
+  "notifications.filter.archived": "Archived",
+  "notifications.archive": "Archive",
+  "notifications.archiveAll": "Archive all",
+  "notifications.empty.archived": "Nothing archived yet"
 }

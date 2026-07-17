@@ -21,6 +21,9 @@ export function createNotificationBell({ api, onNavigate }) {
   let unreadCount = 0;
   let isLoading = false;
   let eventSource = null;
+  // Events-inbox lens: 'all' (default, unarchived), 'mentions', 'unread',
+  // 'archived'. Archiving = "handled"; is_read stays "seen" (badge).
+  let filter = 'all';
 
   // Container
   const container = h('div', { class: 'notification-bell' });
@@ -76,12 +79,61 @@ export function createNotificationBell({ api, onNavigate }) {
     },
   });
 
-  dropdownHeader.append(markAllReadBtn);
+  const archiveAllBtn = h('button', {
+    class: 'notification-bell-mark-all',
+    type: 'button',
+    text: t('notifications.archiveAll', 'Archive all'),
+    onclick: async (e) => {
+      e.stopPropagation();
+      await archiveAll();
+    },
+  });
+
+  dropdownHeader.append(archiveAllBtn, markAllReadBtn);
+
+  // Filter chips (events-inbox lenses)
+  const FILTERS = [
+    { value: 'all', label: () => t('notifications.filter.all', 'All') },
+    { value: 'mentions', label: () => t('notifications.filter.mentions', 'Mentions') },
+    { value: 'unread', label: () => t('notifications.filter.unread', 'Unread') },
+    { value: 'archived', label: () => t('notifications.filter.archived', 'Archived') },
+  ];
+  const filterBtns = FILTERS.map((f) => {
+    const btn = h('button', {
+      class: 'notification-bell-filter-btn',
+      type: 'button',
+      text: f.label(),
+      'aria-pressed': String(f.value === filter),
+      onclick: (e) => {
+        e.stopPropagation();
+        if (filter === f.value) return;
+        filter = f.value;
+        syncFilterUi();
+        loadNotifications();
+      },
+    });
+    btn.dataset.filter = f.value;
+    return btn;
+  });
+  const filterRow = h('div', { class: 'notification-bell-filters' }, filterBtns);
+
+  function syncFilterUi() {
+    for (const btn of filterBtns) {
+      const active = btn.dataset.filter === filter;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    }
+    // Only on the All lens: there the visible list is exactly what
+    // {all:true} archives. On a narrowed lens the button would silently
+    // archive items outside the current view.
+    archiveAllBtn.style.display = filter === 'all' ? '' : 'none';
+  }
+  syncFilterUi();
 
   // Notification list
   const listContainer = h('div', { class: 'notification-bell-list' });
 
-  dropdown.append(dropdownHeader, listContainer);
+  dropdown.append(dropdownHeader, filterRow, listContainer);
   container.append(bellBtn, dropdown);
 
   // Install dismiss handler
@@ -122,7 +174,9 @@ export function createNotificationBell({ api, onNavigate }) {
       listContainer.append(
         h('div', {
           class: 'notification-bell-item is-empty',
-          text: t('notifications.empty', 'No notifications'),
+          text: filter === 'archived'
+            ? t('notifications.empty.archived', 'Nothing archived yet')
+            : t('notifications.empty', 'No notifications'),
         })
       );
       return;
@@ -172,7 +226,26 @@ export function createNotificationBell({ api, onNavigate }) {
         item.append(unreadDot);
       }
 
-      listContainer.append(item);
+      // Archive ("handled") - not shown on already-archived items. A row
+      // wrapper keeps the item itself a button for click-to-navigate.
+      const row = h('div', { class: 'notification-bell-row' });
+      row.append(item);
+      if (!notif.archivedAt) {
+        const archiveBtn = h('button', {
+          type: 'button',
+          class: 'notification-bell-archive-btn',
+          title: t('notifications.archive', 'Archive'),
+          'aria-label': t('notifications.archive', 'Archive'),
+          text: '✓',
+          onclick: (e) => {
+            e.stopPropagation();
+            archiveOne(notif);
+          },
+        });
+        row.append(archiveBtn);
+      }
+
+      listContainer.append(row);
     }
   }
 
@@ -222,7 +295,7 @@ export function createNotificationBell({ api, onNavigate }) {
     renderNotifications();
 
     try {
-      const resp = await api('/api/notifications?limit=20');
+      const resp = await api(`/api/notifications?limit=20&filter=${encodeURIComponent(filter)}`);
       notifications = resp?.notifications || [];
       unreadCount = resp?.unreadCount || 0;
       updateBadge();
@@ -296,6 +369,45 @@ export function createNotificationBell({ api, onNavigate }) {
     }
   }
 
+  async function archiveOne(notif) {
+    try {
+      await api('/api/notifications/archive', {
+        method: 'POST',
+        body: JSON.stringify({ notificationId: notif.id }),
+      });
+      // Archived items leave every non-archived lens; archiving also reads.
+      if (!notif.isRead) {
+        unreadCount = Math.max(0, unreadCount - 1);
+        updateBadge();
+      }
+      notif.isRead = true;
+      notif.archivedAt = new Date().toISOString();
+      if (filter !== 'archived') {
+        notifications = notifications.filter((n) => n.id !== notif.id);
+      }
+      renderNotifications();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[notification-bell] archive error:', e);
+    }
+  }
+
+  async function archiveAll() {
+    try {
+      await api('/api/notifications/archive', {
+        method: 'POST',
+        body: JSON.stringify({ all: true }),
+      });
+      notifications = []; // Button only renders on the All lens
+      unreadCount = 0;
+      updateBadge();
+      renderNotifications();
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[notification-bell] archive all error:', e);
+    }
+  }
+
   async function handleNotificationClick(notif) {
     // Mark as read
     if (!notif.isRead) {
@@ -351,8 +463,14 @@ export function createNotificationBell({ api, onNavigate }) {
       eventSource.addEventListener('notification:new', (e) => {
         try {
           const notif = JSON.parse(e.data);
-          // Add to beginning of list
-          notifications.unshift(notif);
+          // Add to the list when it belongs in the current lens (a new
+          // item is never archived; mentions lens wants mentions only).
+          const belongs = filter === 'all'
+            || filter === 'unread'
+            || (filter === 'mentions' && notif.notificationType === 'comment_mention');
+          if (belongs) {
+            notifications.unshift(notif);
+          }
           unreadCount++;
           updateBadge();
           if (isOpen) {

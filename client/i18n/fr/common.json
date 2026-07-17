@@ -97,5 +97,12 @@
   "notifications.loading": "Chargement...",
   "notifications.markAllRead": "Tout marquer comme lu",
   "notifications.title": "Notifications",
-  "notifications.unread": "non lue"
+  "notifications.unread": "non lue",
+  "notifications.filter.all": "Tout",
+  "notifications.filter.mentions": "Mentions",
+  "notifications.filter.unread": "Non lues",
+  "notifications.filter.archived": "Archivées",
+  "notifications.archive": "Archiver",
+  "notifications.archiveAll": "Tout archiver",
+  "notifications.empty.archived": "Rien d'archivé pour l'instant"
 }

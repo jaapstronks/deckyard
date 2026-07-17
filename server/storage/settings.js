@@ -3,6 +3,7 @@ import { safeSlug } from '../utils/slug.js';
 import { readJsonIfExists, writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
+import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
 function settingsPath(repoRoot) {
   return path.join(dataDir(repoRoot), 'settings.json');
@@ -544,8 +545,6 @@ export function defaultUserSettings() {
   };
 }
 
-const SUBSCRIPTION_LEVELS = ['watching', 'participating', 'mentions_only', 'mute'];
-
 function normalizeSubscriptionLevel(v) {
   return SUBSCRIPTION_LEVELS.includes(v) ? v : 'participating';
 }
@@ -660,17 +659,22 @@ export async function writeUserSettings(repoRoot, email, next) {
     next?.notifications && typeof next.notifications === 'object'
       ? next.notifications
       : null;
+  // Partial writes inherit absent keys from the stored settings, so an
+  // API consumer updating one preference can't silently reset the rest.
   const notifications = nextNotif
     ? {
-        emailEnabled: nextNotif?.emailEnabled !== false,
-        slackEnabled: nextNotif?.slackEnabled !== false,
-        leadEmails: nextNotif?.leadEmails !== false,
+        emailEnabled: (nextNotif?.emailEnabled ?? prev.notifications?.emailEnabled) !== false,
+        slackEnabled: (nextNotif?.slackEnabled ?? prev.notifications?.slackEnabled) !== false,
+        leadEmails: (nextNotif?.leadEmails ?? prev.notifications?.leadEmails) !== false,
         defaultLevel: normalizeSubscriptionLevel(
           nextNotif?.defaultLevel ?? prev.notifications?.defaultLevel
         ),
-        emailByType: normalizeEmailByType(
-          nextNotif?.emailByType ?? prev.notifications?.emailByType
-        ),
+        emailByType: normalizeEmailByType({
+          ...prev.notifications?.emailByType,
+          ...(nextNotif?.emailByType && typeof nextNotif.emailByType === 'object'
+            ? nextNotif.emailByType
+            : {}),
+        }),
       }
     : prev.notifications;
 

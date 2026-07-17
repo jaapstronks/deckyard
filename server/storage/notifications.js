@@ -3,6 +3,7 @@
  * Handles CRUD operations for in-app notifications.
  */
 
+import { sql } from 'kysely';
 import { getOrgId } from '../utils/context.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
@@ -71,6 +72,9 @@ export async function createNotification(data, ctx) {
  * @param {number} [options.limit=20] - Maximum results
  * @param {number} [options.offset=0] - Offset for pagination
  * @param {boolean} [options.unreadOnly=false] - Only return unread
+ * @param {boolean} [options.archived=false] - true: only archived items;
+ *   false (default): only unarchived (the inbox)
+ * @param {string[]} [options.types] - Only these notification types
  * @param {Object} ctx - Context object
  * @returns {Promise<Array>} - List of notifications
  */
@@ -91,6 +95,17 @@ export async function listNotifications(userEmail, options = {}, ctx) {
 
     if (options.unreadOnly) {
       qb = qb.where('is_read', '=', false);
+    }
+
+    // The inbox shows unarchived items; archived stays reachable via filter.
+    if (options.archived === true) {
+      qb = qb.where('archived_at', 'is not', null);
+    } else {
+      qb = qb.where('archived_at', 'is', null);
+    }
+
+    if (Array.isArray(options.types) && options.types.length > 0) {
+      qb = qb.where('notification_type', 'in', options.types);
     }
 
     const rows = await qb
@@ -122,6 +137,8 @@ export async function getUnreadCount(userEmail, ctx) {
       .where('user_email', '=', email)
       .where('organization_id', '=', orgId)
       .where('is_read', '=', false)
+      // Archived = handled; it should not keep the badge lit.
+      .where('archived_at', 'is', null)
       .executeTakeFirst();
 
     return parseInt(result?.count || '0', 10);
@@ -231,6 +248,111 @@ export async function markAllAsRead(userEmail, ctx) {
   });
 }
 
+/**
+ * Archive one notification ("handled": out of the default inbox list).
+ * Also marks it read - an archived item should not keep the badge lit.
+ */
+export async function archiveNotification(notificationId, userEmail, ctx) {
+  const email = normalizeEmail(userEmail);
+  if (!email || !notificationId) {
+    return { ok: false, reason: 'invalid_params' };
+  }
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+    const now = nowIso();
+
+    const row = await db
+      .updateTable('user_notifications')
+      .set({ archived_at: now, is_read: true, read_at: now })
+      .where('id', '=', notificationId)
+      .where('user_email', '=', email)
+      .where('organization_id', '=', orgId)
+      .returningAll()
+      .executeTakeFirst();
+
+    if (!row) {
+      return { ok: false, reason: 'not_found' };
+    }
+    return { ok: true, notification: formatNotification(row) };
+  });
+}
+
+/**
+ * Archive all unarchived notifications for a user ("inbox zero").
+ */
+export async function archiveAllNotifications(userEmail, ctx) {
+  const email = normalizeEmail(userEmail);
+  if (!email) {
+    return { ok: false, reason: 'invalid_email' };
+  }
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+    const now = nowIso();
+
+    const result = await db
+      .updateTable('user_notifications')
+      .set({ archived_at: now, is_read: true, read_at: now })
+      .where('user_email', '=', email)
+      .where('organization_id', '=', orgId)
+      .where('archived_at', 'is', null)
+      .execute();
+
+    return {
+      ok: true,
+      updatedCount: Number(result[0]?.numUpdatedRows || 0),
+    };
+  });
+}
+
+/**
+ * Auto-archive a user's open comment-notifications for one thread
+ * (phase 5, decision 4: replying in a thread means you handled it). New
+ * activity in the thread simply creates a fresh unarchived item.
+ *
+ * Matches comment notifications whose stored data points at the thread:
+ * top-level items carry the thread id as `commentId`, reply/mention items
+ * as `parentId`.
+ *
+ * @param {string} userEmail - Whose inbox to clean
+ * @param {string} presentationId
+ * @param {string} threadId - Top-level comment id of the thread
+ * @param {Object} ctx - Context object
+ */
+export async function archiveThreadNotifications(userEmail, presentationId, threadId, ctx) {
+  const email = normalizeEmail(userEmail);
+  const tid = String(threadId || '').trim();
+  const pid = String(presentationId || '').trim();
+  if (!email || !tid || !pid) {
+    return { ok: false, reason: 'invalid_params' };
+  }
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+    const now = nowIso();
+
+    const result = await db
+      .updateTable('user_notifications')
+      .set({ archived_at: now, is_read: true, read_at: now })
+      .where('user_email', '=', email)
+      .where('organization_id', '=', orgId)
+      .where('presentation_id', '=', pid)
+      .where('archived_at', 'is', null)
+      .where('notification_type', 'in', ['comment_created', 'comment_reply', 'comment_mention'])
+      .where((eb) => eb.or([
+        eb(sql`data->>'commentId'`, '=', tid),
+        eb(sql`data->>'parentId'`, '=', tid),
+      ]))
+      .execute();
+
+    return {
+      ok: true,
+      updatedCount: Number(result[0]?.numUpdatedRows || 0),
+    };
+  });
+}
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -263,6 +385,7 @@ function formatNotification(row) {
     actionUrl: row.action_url,
     isRead: row.is_read,
     readAt: row.read_at,
+    archivedAt: row.archived_at ?? null,
     createdAt: row.created_at,
   };
 }

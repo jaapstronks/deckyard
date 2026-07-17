@@ -4,6 +4,9 @@
   "email.common.troubleClicking": "Lukt het niet om op de knop te klikken? Kopieer en plak deze URL in je browser:",
   "email.common.safeToIgnore": "Als je dit niet hebt aangevraagd, kun je deze e-mail negeren.",
 
+  "email.commentNotification.subject.mention": "{commenterName} heeft je genoemd bij \"{presTitle}\"",
+  "email.commentNotification.body.mention": "heeft je genoemd in een reactie op",
+  "email.commentNotification.footer.mention": "Je ontvangt deze melding omdat je genoemd bent in een reactie.",
   "email.commentNotification.subject.reply": "{commenterName} heeft gereageerd op je opmerking",
   "email.commentNotification.subject.new": "Nieuwe opmerking op \"{presTitle}\"",
   "email.commentNotification.body.reply": "heeft gereageerd op je opmerking op",

@@ -4,6 +4,9 @@
   "email.common.troubleClicking": "If you're having trouble clicking the button, copy and paste this URL into your browser:",
   "email.common.safeToIgnore": "If you didn't request this, you can safely ignore this email.",
 
+  "email.commentNotification.subject.mention": "{commenterName} mentioned you on \"{presTitle}\"",
+  "email.commentNotification.body.mention": "mentioned you in a comment on",
+  "email.commentNotification.footer.mention": "This notification was sent because you were mentioned in a comment.",
   "email.commentNotification.subject.reply": "{commenterName} replied to your comment",
   "email.commentNotification.subject.new": "New comment on \"{presTitle}\"",
   "email.commentNotification.body.reply": "replied to your comment on",

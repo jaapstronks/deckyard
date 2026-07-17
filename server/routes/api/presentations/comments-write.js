@@ -33,7 +33,7 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { getGuestFromRequest, withPresentationCommentAuth } from '../../../utils/route-middleware.js';
-import { notifyCommentCreated } from '../../../services/comment-notifications.js';
+import { notifyCommentCreated, notifyMentionsAdded } from '../../../services/comment-notifications.js';
 import { getCtx, MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
 
 /**
@@ -216,6 +216,25 @@ export async function handlePresentationCommentUpdate(
   if (!result.ok) {
     return serveJson(res, 400, result);
   }
+
+  // A mention added by the edit notifies like a fresh mention (diffed
+  // against the pre-edit list, so re-saving never re-notifies).
+  void (async () => {
+    const parentComment = result.comment?.parentId
+      ? await getComment(result.comment.parentId, ctx)
+      : null;
+    await notifyMentionsAdded(repoRoot, req, {
+      presentation: pres,
+      comment: result.comment,
+      previousMentions: comment.mentions,
+      parentComment,
+      actor: authedUser || { email: comment.authorEmail, name: comment.authorName },
+      ctx,
+    });
+  })().catch((e) => {
+    // eslint-disable-next-line no-console
+    console.warn('[comments] mention-on-edit notify failed:', e?.message || e);
+  });
 
   // Broadcast to all connected clients (non-blocking)
   void broadcastToPresentation(id, CommentEventTypes.UPDATED, {

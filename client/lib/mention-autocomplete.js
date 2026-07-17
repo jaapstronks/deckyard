@@ -125,6 +125,12 @@ export function attachMentionAutocomplete({
 
   function pick(user) {
     const caret = textarea.selectionStart;
+    if (caret <= atStart) {
+      // Caret moved before the '@' (e.g. via arrow keys): the stored
+      // anchor is stale, inserting would corrupt the text.
+      close();
+      return;
+    }
     const before = textarea.value.slice(0, atStart);
     const after = textarea.value.slice(caret);
     const markup = mentionMarkup({ name: user.name || user.email, email: user.email });
@@ -157,6 +163,10 @@ export function attachMentionAutocomplete({
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
+      close();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') {
+      // Caret moves fire no input event, so the stored '@' anchor and the
+      // results go stale — close instead of picking against a moved caret.
       close();
     }
   }

@@ -90,10 +90,13 @@ Semantics:
   rule as the editor UI).
 
 Mutations fire the same side effects as in-app comments: activity events,
-notifications (create only: owner gets `comment_created`, parent author
+notifications (on create: owner gets `comment_created`, parent author
 `comment_reply`, mentioned users `comment_mention` — highest specificity
-wins, one notification per recipient) and SSE broadcasts, so open editors
-and notification bells update live.
+wins, one notification per recipient; on update: mentions newly added by
+the edit notify as `comment_mention`, diffed against the pre-edit list)
+and SSE broadcasts, so open editors and notification bells update live.
+Mentions only ever notify existing accounts: an address without an account
+is stored in the markup but never produces a notification or email.
 
 ## MCP tools
 
@@ -111,6 +114,12 @@ Write (this release):
   reply attaches to the same top-level thread.
 - `set_comment_status` — `{ presentationId, commentId, status }`; same
   transition and owner-only rules as REST.
+
+MCP writes trigger the in-app side of the notification pipeline (bell +
+SSE, including `comment_mention`); email and the Slack/Discord webhook
+currently fire only for app and REST writes, because the MCP stdio path
+has no request origin to build links from. Treat that as a known gap, not
+a contract.
 
 The acting user is the SSE session owner (API key owner) or the configured
 stdio owner email; write tools refuse to run without one (a comment needs
