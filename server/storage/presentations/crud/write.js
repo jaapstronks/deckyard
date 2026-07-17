@@ -130,6 +130,8 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
         serverSlides: existing.slides,
         clientSlides: body.slides,
         modifiedSlideIds,
+        baseFingerprints: opts?.slideBaseFingerprints || null,
+        revisionGap: Number(existing.revision) - expectedRevision,
       });
       if (mergeResult.merged && mergeResult.conflicts.length === 0) {
         mergedSlides = mergeResult.slides;

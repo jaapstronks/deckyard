@@ -5,6 +5,7 @@
 import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { ConflictError, LockedError } from '../../../utils/errors.js';
+import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
 
 /**
  * Normalize presentation metadata.
@@ -60,6 +61,22 @@ export function useEnforcedLocks() {
   return process.env.USE_DB_LOCKS === 'true';
 }
 
+// The slide-level merge exists for seconds-to-minutes concurrent editing.
+// Beyond this many revisions of staleness the client's copy is too old to
+// merge safely (its order and unmodified slides no longer mean anything), so
+// the save falls back to a plain 409 and the editor's reload flow.
+const DEFAULT_MERGE_MAX_REVISION_GAP = 10;
+
+/**
+ * Maximum client staleness (in revisions) the slide-level merge accepts.
+ * Override with MERGE_MAX_REVISION_GAP.
+ * @returns {number}
+ */
+export function mergeMaxRevisionGap() {
+  const n = Number(process.env.MERGE_MAX_REVISION_GAP);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_MERGE_MAX_REVISION_GAP;
+}
+
 /**
  * Merge slides from two versions at the slide level.
  * Used for concurrent editing: if user A edited slide 1 and user B edited slide 2,
@@ -69,9 +86,28 @@ export function useEnforcedLocks() {
  * @param {Array} options.serverSlides - Current slides on server
  * @param {Array} options.clientSlides - Slides from client
  * @param {Array} options.modifiedSlideIds - IDs of slides the client modified
- * @returns {Object} { merged: boolean, slides: Array, conflicts: Array }
+ * @param {Object|null} [options.baseFingerprints] - Per-slide fingerprints of the
+ *   client's base version (id → hash, see shared/slide-fingerprint.js). When a
+ *   modified slide's server version no longer matches its base fingerprint,
+ *   both sides changed it and the slide is reported in `conflicts` instead of
+ *   silently letting the client win.
+ * @param {number} [options.revisionGap] - How many revisions the client is
+ *   behind the server. Beyond mergeMaxRevisionGap() the merge is refused
+ *   (`merged: false`) so the caller falls back to a plain revision conflict.
+ * @returns {Object} { merged: boolean, slides: Array|null, conflicts: Array }
  */
-export function mergeSlidesAtSlideLevel({ serverSlides, clientSlides, modifiedSlideIds }) {
+export function mergeSlidesAtSlideLevel({
+  serverSlides,
+  clientSlides,
+  modifiedSlideIds,
+  baseFingerprints = null,
+  revisionGap = 0,
+}) {
+  const gap = Math.abs(Number(revisionGap) || 0);
+  if (gap > mergeMaxRevisionGap()) {
+    return { merged: false, slides: null, conflicts: [] };
+  }
+
   const serverById = new Map();
   const clientById = new Map();
   const modifiedSet = new Set(modifiedSlideIds || []);
@@ -99,8 +135,20 @@ export function mergeSlidesAtSlideLevel({ serverSlides, clientSlides, modifiedSl
       // Slide only exists in client (newly added by this client)
       mergedSlides.push(clientSlide);
     } else if (modifiedSet.has(id)) {
-      // Client modified this slide - use client's version
-      mergedSlides.push(clientSlide);
+      // Client modified this slide. If it sent a base fingerprint and the
+      // server's current version no longer matches it, the slide was also
+      // changed server-side since the client's base: a true conflict.
+      const baseFp =
+        baseFingerprints && typeof baseFingerprints === 'object'
+          ? baseFingerprints[id]
+          : null;
+      if (typeof baseFp === 'string' && baseFp && slideFingerprint(serverSlide) !== baseFp) {
+        conflicts.push(id);
+        mergedSlides.push(serverSlide);
+      } else {
+        // No fingerprint (legacy client) or base matches server: client wins.
+        mergedSlides.push(clientSlide);
+      }
     } else {
       // Client didn't modify - use server's version (may have been changed by others)
       mergedSlides.push(serverSlide);

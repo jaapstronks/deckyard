@@ -121,6 +121,22 @@ export async function handlePresentationItem(
       }
     }
 
+    // Base fingerprints of the modified slides (id → hash) let the merge
+    // detect slides that were also changed server-side since the client's
+    // base, instead of last-writer-wins (see shared/slide-fingerprint.js).
+    let slideBaseFingerprints = null;
+    const baseFingerprintsHeader = req.headers['x-slide-base-fingerprints'];
+    if (baseFingerprintsHeader) {
+      try {
+        const parsed = JSON.parse(baseFingerprintsHeader);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          slideBaseFingerprints = parsed;
+        }
+      } catch {
+        slideBaseFingerprints = null;
+      }
+    }
+
     let updated = null;
     try {
       updated = await updatePresentation(repoRoot, id, body, {
@@ -128,6 +144,7 @@ export async function handlePresentationItem(
         actorEmail: authedUser?.email || null,
         user: authedUser || null,
         modifiedSlideIds,
+        slideBaseFingerprints,
       });
     } catch (e) {
       if (e?.statusCode)
