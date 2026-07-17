@@ -79,6 +79,7 @@ const SLIDE_TYPE_PRESETS = {
     { id: 'image-right', labelKey: 'editor.slideTypePreset.imageText.right', label: 'Image right', content: { imageSide: 'right' } },
     { id: 'image-wide', labelKey: 'editor.slideTypePreset.imageText.wide', label: 'Image 2/3', content: { imageWidth: 'wide' } },
     { id: 'image-corner', labelKey: 'editor.slideTypePreset.imageText.corner', label: 'Corner image', content: { layout: 'corner', imageSide: 'right' } },
+    { id: 'image-row', labelKey: 'editor.slideTypePreset.imageText.row', label: 'Image row', content: { layout: 'row-top' } },
   ],
   'content-slide': [
     { id: 'one-column', labelKey: 'editor.slideTypePreset.content.oneColumn', label: 'One column', content: { layout: 'one-column' } },

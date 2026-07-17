@@ -25,7 +25,8 @@ const isMirrored = (slide) => slide?.content?.imageSide === 'right';
 /**
  * Draw the mini-schematic for one variant tile: a 16:9 box with an "image"
  * block and "text" lines, driven by the variant's declared `schematic`
- * ({ split: <image %> } | { corner: <image %> } | {} for text-only).
+ * ({ split: <image %> } | { corner: <image %> } | { duo: <image %> } |
+ * { row: 'top'|'bottom' } | {} for text-only). Rows don't mirror.
  * @param {Function} h
  * @param {Object} variant
  * @param {boolean} mirrored
@@ -43,6 +44,13 @@ function renderSchematic(h, variant, mirrored) {
 
   const splitPct = Number(sch.split);
   const cornerPct = Number(sch.corner);
+  const duoPct = Number(sch.duo);
+  const row = sch.row === 'top' || sch.row === 'bottom' ? sch.row : '';
+  const rowBlock = () =>
+    h('div', { class: 'layout-tile-row' }, [
+      h('div', { class: 'layout-tile-image' }),
+      h('div', { class: 'layout-tile-image' }),
+    ]);
   if (Number.isFinite(splitPct) && splitPct > 0) {
     const img = h('div', { class: 'layout-tile-image', style: `width:${splitPct}%` });
     box.classList.add('is-split');
@@ -53,6 +61,18 @@ function renderSchematic(h, variant, mirrored) {
     box.classList.add('is-corner');
     if (mirrored) box.append(textBlock(), img);
     else box.append(img, textBlock());
+  } else if (Number.isFinite(duoPct) && duoPct > 0) {
+    const stack = h('div', { class: 'layout-tile-duo', style: `width:${duoPct}%` }, [
+      h('div', { class: 'layout-tile-image' }),
+      h('div', { class: 'layout-tile-image' }),
+    ]);
+    box.classList.add('is-duo');
+    if (mirrored) box.append(textBlock(), stack);
+    else box.append(stack, textBlock());
+  } else if (row) {
+    box.classList.add('is-row', row === 'top' ? 'is-row-top' : 'is-row-bottom');
+    if (row === 'top') box.append(rowBlock(), textBlock());
+    else box.append(textBlock(), rowBlock());
   } else {
     box.classList.add('is-text-only');
     box.append(textBlock());

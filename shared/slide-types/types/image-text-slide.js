@@ -7,17 +7,70 @@ import {
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
+import {
+  imageTextImageItems,
+  imageTextCellCount,
+} from '../image-text-images.js';
 
 export default {
   label: 'Image + text',
   fields: [
     {
+      // LEGACY single-image field. Since the phase-2 layout catalogue the
+      // canonical field is `images` below; this one stays declared so old
+      // decks keep validating, translating and collab-syncing, and renders
+      // as item 0 when images[] is empty. The editor migrates it on touch
+      // (ensureImageTextImages).
       key: 'image',
       label: 'Image',
       type: 'image',
-      // Allow creating a new image+text slide without selecting an image yet.
-      // Rendering/export already handle missing images gracefully.
       required: false,
+    },
+    {
+      key: 'images',
+      label: 'Images',
+      type: 'items',
+      required: false,
+      minItems: 0,
+      maxItems: 3,
+      itemDefaults: { src: '', alt: '' },
+      itemFields: [
+        { key: 'src', label: 'Image URL', type: 'image', required: false },
+        {
+          key: 'alt',
+          label: 'Alt text',
+          type: 'string',
+          required: false,
+          maxLength: 180,
+        },
+        {
+          // Per-image escape for non-croppable images (logos, diagrams);
+          // empty = follow the slide-level Image fit.
+          key: 'fit',
+          label: 'Image fit',
+          type: 'enum',
+          required: false,
+          options: ['cover', 'contain'],
+        },
+        {
+          key: 'focusX',
+          label: 'Focus X',
+          type: 'number',
+          required: false,
+          min: 0,
+          max: 100,
+          step: 1,
+        },
+        {
+          key: 'focusY',
+          label: 'Focus Y',
+          type: 'number',
+          required: false,
+          min: 0,
+          max: 100,
+          step: 1,
+        },
+      ],
     },
     {
       key: 'caption',
@@ -85,6 +138,23 @@ export default {
           label: 'Corner image',
           title:
             'Image only in the top corner; the space below stays empty. Fits little text.',
+        },
+        {
+          value: 'duo',
+          label: 'Two beside text',
+          title: 'Two images stacked beside the text.',
+        },
+        {
+          value: 'row-top',
+          label: 'Row above',
+          title:
+            'A row of 2-3 images above the text; the number of images sets the columns.',
+        },
+        {
+          value: 'row-bottom',
+          label: 'Row below',
+          title:
+            'A row of 2-3 images below the text; the number of images sets the columns.',
         },
       ],
     },
@@ -168,8 +238,10 @@ export default {
   //                       (only shown when the seam supports it);
   //   schematic         - mini-tile drawing: { split: <image %> } for a
   //                       side-by-side split, { corner: <image %> } for the
-  //                       corner layout, {} for text-only. Mirrored live via
-  //                       content.imageSide.
+  //                       corner layout, { duo: <image %> } for two stacked
+  //                       images beside the text, { row: 'top'|'bottom' }
+  //                       for an image row, {} for text-only. Mirrored live
+  //                       via content.imageSide (rows don't mirror).
   layoutVariants: [
     {
       id: 'text',
@@ -200,6 +272,27 @@ export default {
       schematic: { split: 63 },
     },
     {
+      id: 'row-top',
+      labelKey: 'editor.layoutVariant.rowTop',
+      label: 'Row above',
+      set: { layout: 'row-top' },
+      schematic: { row: 'top' },
+    },
+    {
+      id: 'row-bottom',
+      labelKey: 'editor.layoutVariant.rowBottom',
+      label: 'Row below',
+      set: { layout: 'row-bottom' },
+      schematic: { row: 'bottom' },
+    },
+    {
+      id: 'duo',
+      labelKey: 'editor.layoutVariant.duo',
+      label: 'Two beside text',
+      set: { layout: 'duo' },
+      schematic: { duo: 45 },
+    },
+    {
       id: 'corner',
       labelKey: 'editor.layoutVariant.corner',
       label: 'Corner image',
@@ -210,6 +303,7 @@ export default {
   defaultsByLang: {
     nl: {
       image: '',
+      images: [],
       caption: '',
       alt: '',
       imageRole: 'content',
@@ -227,6 +321,7 @@ export default {
     },
     'en-GB': {
       image: '',
+      images: [],
       caption: '',
       alt: '',
       imageRole: 'content',
@@ -274,8 +369,17 @@ export default {
         : content?.imageWidth === 'wide'
           ? 'is-image-wide'
           : '';
+    const layoutRaw = String(content?.layout || 'split');
     const layoutClass =
-      content?.layout === 'corner' ? ' is-layout-corner' : '';
+      layoutRaw === 'corner'
+        ? ' is-layout-corner'
+        : layoutRaw === 'duo'
+          ? ' is-layout-duo'
+          : layoutRaw === 'row-top'
+            ? ' is-layout-row-top'
+            : layoutRaw === 'row-bottom'
+              ? ' is-layout-row-bottom'
+              : '';
     const fit =
       content?.imageFit === 'contain'
         ? 'is-image-contain'
@@ -305,28 +409,54 @@ export default {
       : '';
     const imageRole =
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
-    const alt =
-      imageRole === 'decorative'
-        ? ''
-        : pickAltText({
-            explicit: altExplicit || altNl || altEn,
-            src: content?.image,
-            fallbacks: [content?.caption, content?.title],
-            hardFallback: 'Image',
-          });
-    // For cover this controls crop focus; for contain this controls alignment.
-    const focusStyle = objectPositionStyleAttrFromFocus(content);
-    const img = content?.image
-      ? (() => {
-          const ariaDecorative =
-            imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-          // data-inline-photo: clicking the image in the editor opens the
-          // media popover (image + alt); inert on every other surface.
-          return `<img src="${esc(content.image)}" alt="${esc(
+    const ariaDecorative =
+      imageRole === 'decorative' ? ' aria-hidden="true"' : '';
+    const items = imageTextImageItems(content);
+    const cells = imageTextCellCount(content);
+    // One <figure class="frame"> per cell. Item 0 falls back to the legacy
+    // slide-level alt/focus so unmigrated decks render identically; a
+    // per-item fit only adds a class when it overrides the slide-level fit.
+    const cellHtml = (idx) => {
+      const item = items[idx] || {
+        src: '',
+        alt: '',
+        fit: '',
+        focusX: '',
+        focusY: '',
+      };
+      const itemAlt =
+        typeof item.alt === 'string' && item.alt.trim()
+          ? item.alt.trim()
+          : idx === 0
+            ? altExplicit || altNl || altEn
+            : '';
+      const alt =
+        imageRole === 'decorative'
+          ? ''
+          : pickAltText({
+              explicit: itemAlt,
+              src: item.src,
+              fallbacks: idx === 0 ? [content?.caption, content?.title] : [],
+              hardFallback: cells > 1 ? `Image ${idx + 1}` : 'Image',
+            });
+      // For cover this controls crop focus; for contain, alignment.
+      const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
+      const focusStyle = objectPositionStyleAttrFromFocus(
+        hasOwnFocus || idx > 0 ? item : content
+      );
+      const fitClass =
+        item.fit === 'contain'
+          ? ' is-fit-contain'
+          : item.fit === 'cover'
+            ? ' is-fit-cover'
+            : '';
+      // data-inline-photo: clicking the image in the editor opens the
+      // media popover (image + alt); inert on every other surface.
+      const inner = item.src
+        ? `<img src="${esc(item.src)}" alt="${esc(
             alt
-          )}" data-inline-photo="0"${ariaDecorative}${focusStyle} />`;
-        })()
-      : `<div class="image-placeholder is-empty" data-inline-photo="0" aria-hidden="true">
+          )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
+        : `<div class="image-placeholder is-empty" data-inline-photo="${idx}" aria-hidden="true">
           <div class="image-placeholder-inner">
             <svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">
               <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>
@@ -334,16 +464,22 @@ export default {
             <div class="image-placeholder-text">Afbeelding</div>
           </div>
         </div>`;
+      // The shared caption lives in the first frame (absolute, bottom-left).
+      return `<figure class="frame${fitClass}">
+                  ${inner}
+                  ${idx === 0 ? caption : ''}
+                </figure>`;
+    };
+    const mediaCells = Array.from({ length: cells }, (_, i) => cellHtml(i)).join('');
+    const mediaMulti = cells > 1 ? ` is-multi` : '';
+    const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
         <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${densityClass}" data-density="${density}">
           <div class="slide-inner">
             <div class="split ${side}">
-              <div class="media" data-morph-role="image">
-                <figure class="frame">
-                  ${img}
-                  ${caption}
-                </figure>
+              <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">
+                ${mediaCells}
               </div>
               <div class="copy">
                 <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(

@@ -9,6 +9,7 @@ import {
   appendImageZoomSettings,
   appendImageTextLayoutOptions,
 } from './slide-forms/image-slide.js';
+import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
 
 /**
  * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
@@ -140,13 +141,39 @@ export function renderInspectorExtrasByType(ctx) {
       appendImageZoomSettings({ h, form, slide, used, fieldByKey, renderField });
       return;
 
-    case 'image-text-slide':
+    case 'image-text-slide': {
       add('imageRole');
       add('density');
+      // Images manager (images[], phase 2): the canvas media popover covers
+      // pick/change per cell; this section adds per-image alt/fit/focus,
+      // reorder, and the row model's third image. Rendering it also migrates
+      // legacy flat content and pads items to the layout's cell count.
+      const { fieldText, fieldEnum, fieldImage } = fieldRenderers || {};
+      const imagesSection = renderImageTextImagesSection({
+        h,
+        slide,
+        used,
+        fieldGrid,
+        fieldText,
+        fieldEnum,
+        fieldImage,
+        markDirty,
+        rerenderEditor,
+        scheduleUiRefresh,
+      });
+      if (imagesSection) {
+        const section = collapsibleGroup(
+          h,
+          t('editor.imageText.images', 'Images')
+        );
+        section.body.append(imagesSection);
+        form.append(section.el);
+      }
       appendImageTextLayoutOptions({
         h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
       });
       return;
+    }
 
     case 'icon-card-grid-slide': {
       add('layout');

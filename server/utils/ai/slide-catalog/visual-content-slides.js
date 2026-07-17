@@ -18,30 +18,51 @@ export const VISUAL_CONTENT_SLIDES = {
       Keep body concise (3-6 bullets).
 
       LAYOUT VARIANTS:
-      - layout "split" (default): image beside text. imageWidth picks the
+      - layout "split" (default): one image beside text. imageWidth picks the
         split: "narrow" (1/3 image), "half" (default), "wide" (2/3 image -
         image-dominant, keep body to 2-3 short bullets).
-      - layout "corner": image only in the top corner, the space below stays
-        empty air. Very little text room - max 2-3 short bullets.
+      - layout "corner": one image only in the top corner, the space below
+        stays empty air. Very little text room - max 2-3 short bullets.
+      - layout "duo": two images stacked beside the text (needs 2 images).
+      - layout "row-top" / "row-bottom": a row of 2-3 images above/below the
+        text; the number of images sets the columns. About half the slide is
+        images, so keep the body short (2-4 bullets).
+
+      IMAGES: prefer the images[] array (max 3 items, each { src, alt }).
+      One image: images with a single item. The legacy flat "image" field
+      still works for a single image.
     `,
     bestFor: [
       'Content where a photo/image adds value',
       'Product or feature showcases',
       'Person introductions with photo',
       'Location or event context',
+      'A small set of 2-3 related images with one shared story (rows/duo)',
     ],
     notFor: [
       'Content without a meaningful image to pair',
       'Heavy text content (use content-slide or split into multiple)',
       'Long bodies on the "wide" or "corner" layouts (little text room)',
+      'Per-image text blocks (use content-columns-slide)',
+      'Many images without text (use gallery-slide)',
     ],
     schema: {
       title: { type: 'string', required: true, maxLength: 120 },
       body: { type: 'markdown', required: false, maxLength: 800 },
       image: { type: 'string', required: false },
+      images: {
+        type: 'array',
+        required: false,
+        maxItems: 3,
+        items: { src: { type: 'string' }, alt: { type: 'string', maxLength: 180 } },
+      },
       imageSide: { type: 'enum', options: ['left', 'right'] },
       imageWidth: { type: 'enum', options: ['narrow', 'half', 'wide'], default: 'half' },
-      layout: { type: 'enum', options: ['split', 'corner'], default: 'split' },
+      layout: {
+        type: 'enum',
+        options: ['split', 'corner', 'duo', 'row-top', 'row-bottom'],
+        default: 'split',
+      },
       background: { type: 'enum', options: ['lime', 'mist'] },
     },
   },

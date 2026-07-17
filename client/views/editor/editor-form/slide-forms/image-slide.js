@@ -1,5 +1,6 @@
 import { renderImagePositionPicker } from '../image-position-picker.js';
 import { t } from '../../../../lib/ui-i18n.js';
+import { renderImageTextImagesSection } from './image-text-images.js';
 
 /**
  * Focus (crop) picker for image-slide. Shared between the content form and
@@ -225,7 +226,11 @@ export function renderImageTextSlideForm({
   fieldByKey,
   renderField,
   fieldGrid,
+  fieldText,
+  fieldEnum,
+  fieldImage,
   markDirty,
+  rerenderEditor,
   scheduleUiRefresh,
 }) {
   // Title/body first, then image fields below
@@ -234,12 +239,24 @@ export function renderImageTextSlideForm({
   add('density');
   add('background');
 
-  add('image');
+  // Multi-image manager (images[], phase 2); replaces the flat image + alt
+  // fields and migrates legacy content on render.
+  const imagesSection = renderImageTextImagesSection({
+    h,
+    slide,
+    used,
+    fieldGrid,
+    fieldText,
+    fieldEnum,
+    fieldImage,
+    markDirty,
+    rerenderEditor,
+    scheduleUiRefresh,
+  });
+  if (imagesSection) form.append(imagesSection);
+
   add('caption');
   add('imageRole');
-  if (String(slide?.content?.imageRole || 'content') !== 'decorative') {
-    add('alt');
-  }
 
   appendImageTextLayoutOptions({
     h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,

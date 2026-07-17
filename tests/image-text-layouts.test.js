@@ -155,3 +155,143 @@ test('layoutVariants declaration is JSON-safe (survives the /api/slide-types tri
   const roundTrip = JSON.parse(JSON.stringify(variants));
   assert.deepEqual(roundTrip, variants);
 });
+
+// ---- Phase 2: images[] + rows/duo ----------------------------------------
+
+import {
+  IMAGE_TEXT_MAX_IMAGES,
+  imageTextImageItems,
+  imageTextCellCount,
+  ensureImageTextImages,
+} from '../shared/slide-types/image-text-images.js';
+import { convertSlideToType, getConversionLossyKeys } from '../shared/slide-types/convert.js';
+
+test('imageTextImageItems: legacy flat image folds into item 0; images[] wins', () => {
+  assert.deepEqual(imageTextImageItems({}), []);
+  const legacy = imageTextImageItems({ image: '/x.png' });
+  assert.equal(legacy.length, 1);
+  assert.equal(legacy[0].src, '/x.png');
+  const both = imageTextImageItems({ image: '/x.png', images: [{ src: '/a.png' }] });
+  assert.equal(both.length, 1);
+  assert.equal(both[0].src, '/a.png');
+  // Sanitization: junk items become empty canonical items, capped at max.
+  const junk = imageTextImageItems({ images: [null, { src: 42 }, {}, {}, {}] });
+  assert.equal(junk.length, IMAGE_TEXT_MAX_IMAGES);
+  assert.equal(junk[0].src, '');
+});
+
+test('imageTextCellCount: 1 for split/corner, 2 for duo, 2-3 for rows', () => {
+  assert.equal(imageTextCellCount({ layout: 'split' }), 1);
+  assert.equal(imageTextCellCount({ layout: 'corner' }), 1);
+  assert.equal(imageTextCellCount({ layout: 'duo' }), 2);
+  assert.equal(imageTextCellCount({ layout: 'row-top' }), 2);
+  assert.equal(imageTextCellCount({ layout: 'row-top', images: [{}, {}, {}] }), 3);
+  assert.equal(imageTextCellCount({ layout: 'row-bottom', image: '/x.png' }), 2);
+});
+
+test('ensureImageTextImages: migrates flat -> images[0], pads to cell count, idempotent', () => {
+  const content = { image: '/x.png', layout: 'row-top', images: [] };
+  ensureImageTextImages(content);
+  assert.equal(content.image, '', 'flat image cleared after migration');
+  assert.equal(content.images.length, 2, 'padded to the row minimum');
+  assert.equal(content.images[0].src, '/x.png');
+  assert.equal(content.images[1].src, '');
+  const snapshot = JSON.parse(JSON.stringify(content));
+  ensureImageTextImages(content);
+  assert.deepEqual(JSON.parse(JSON.stringify(content)), snapshot, 'idempotent');
+});
+
+test('ensureImageTextImages: keeps extra items and caps at the maximum', () => {
+  const content = { layout: 'split', images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }, { src: '/d' }] };
+  ensureImageTextImages(content);
+  assert.equal(content.images.length, IMAGE_TEXT_MAX_IMAGES, 'capped at max');
+  assert.equal(content.images[0].src, '/a', 'existing items untouched');
+});
+
+test('render: duo shows two frames with indexed inline-photo hooks', () => {
+  const html = DEF.renderHtml(
+    slide({ layout: 'duo', images: [{ src: '/a.png' }, { src: '/b.png' }] }).content
+  );
+  assert.match(html, /is-layout-duo/);
+  assert.match(html, /class="media is-multi" data-count="2"/);
+  assert.match(html, /data-inline-photo="0"/);
+  assert.match(html, /data-inline-photo="1"/);
+});
+
+test('render: rows follow the image count and pad placeholders', () => {
+  const three = DEF.renderHtml(
+    slide({ layout: 'row-top', images: [{ src: '/a' }, { src: '/b' }, { src: '/c' }] }).content
+  );
+  assert.match(three, /is-layout-row-top/);
+  assert.match(three, /data-count="3"/);
+  const one = DEF.renderHtml(slide({ layout: 'row-bottom', images: [{ src: '/a' }] }).content);
+  assert.match(one, /is-layout-row-bottom/);
+  assert.match(one, /data-count="2"/);
+  assert.match(one, /image-placeholder is-empty" data-inline-photo="1"/);
+});
+
+test('render: per-image fit and focus override the slide level', () => {
+  const html = DEF.renderHtml(
+    slide({
+      layout: 'duo',
+      images: [
+        { src: '/a.png', fit: 'contain', focusX: 10, focusY: 20 },
+        { src: '/b.png' },
+      ],
+    }).content
+  );
+  assert.match(html, /frame is-fit-contain/);
+  assert.match(html, /object-position:10% 20%/);
+});
+
+test('render: legacy alt and focus keep working as item-0 fallbacks', () => {
+  const html = DEF.renderHtml(
+    slide({ image: '/x.png', alt: 'Legacy alt', focusX: 30, focusY: 40 }).content
+  );
+  assert.match(html, /alt="Legacy alt"/);
+  assert.match(html, /object-position:30% 40%/);
+  // Migrated shape without item alt still falls back to the slide-level alt.
+  const migrated = DEF.renderHtml(
+    slide({ images: [{ src: '/x.png' }], alt: 'Legacy alt' }).content
+  );
+  assert.match(migrated, /alt="Legacy alt"/);
+});
+
+test('layoutVariants: the phase-2 catalogue carries rows and duo', () => {
+  const ids = getLayoutVariants(DEF).map((v) => v.id);
+  for (const id of ['row-top', 'row-bottom', 'duo']) {
+    assert.ok(ids.includes(id), `catalogue has ${id}`);
+  }
+});
+
+test('active variant: rows and duo match on their layout value', () => {
+  assert.equal(activeLayoutVariantId(slide({ layout: 'duo' }), DEF), 'duo');
+  assert.equal(
+    activeLayoutVariantId(slide({ layout: 'row-top', imageWidth: 'wide' }), DEF),
+    'row-top'
+  );
+  assert.equal(activeLayoutVariantId(slide({ layout: 'row-bottom' }), DEF), 'row-bottom');
+});
+
+test('convert: image-slide -> image-text lands in canonical images[0]', () => {
+  const src = {
+    id: 's1',
+    type: 'image-slide',
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      image: '/photo.png',
+      title: 'T',
+    },
+  };
+  const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
+  assert.equal(next.content.images.length, 1);
+  assert.equal(next.content.images[0].src, '/photo.png');
+  assert.equal(next.content.image, '', 'flat field stays empty');
+});
+
+test('convert: filled images[] warns as lossy towards content-slide', () => {
+  const s = slide({ images: [{ src: '/a.png' }] });
+  s.content.image = '';
+  const lossy = getConversionLossyKeys(s, 'content-slide');
+  assert.ok(lossy.includes('images'), 'images reported as lossy');
+});

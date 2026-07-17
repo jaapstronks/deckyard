@@ -8,6 +8,27 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Image-text layout catalogue, phase 2: image rows, duo layout and the
+  `images[]` migration.** The image-text slide now carries up to three
+  images in a canonical `images[]` field (per-image alt, fit and focus);
+  the legacy flat `image` keeps rendering identically and migrates into
+  `images[0]` the first time the editor touches the slide, with the
+  slide-level alt/fit/focus staying live as item-0 fallbacks (alt
+  translations survive). Three new layout variants join the switcher:
+  a row of 2-3 equal-height image cells above or below the text (the
+  number of images sets the columns) and a duo of two images stacked
+  beside the text (width series and mirroring keep applying). The WYSIWYG
+  media popover works per cell (clicking an empty cell creates its item
+  on the spot), and a new "Images" section in the inspector and form adds
+  per-image alt/fit/focus, reordering and the row's third image. The AI
+  catalogue, insert-picker preset ("Image row"), convert seam
+  (image-slide → image-text now lands in `images[0]`; a filled `images[]`
+  warns as lossy towards content-slide) and both export paths moved
+  along; the export image-inliner learned to walk items arrays, which
+  also fixes gallery images never being embedded in standalone HTML.
+  Collab needs no codec change (items arrays are schema-driven).
+  12 new tests; browser-verified end to end.
+
 - **Image-text layout catalogue, phase 1: width series, corner layout and a
   layout switcher.** The image-text slide's width enum gains `wide` (63%);
   the existing `narrow` (37%) doubles as the catalogue's 1/3 split, so no

@@ -235,7 +235,11 @@ export function renderSlideFormByType(ctx) {
         fieldByKey,
         renderField,
         fieldGrid,
+        fieldText,
+        fieldEnum,
+        fieldImage,
         markDirty,
+        rerenderEditor,
         scheduleUiRefresh,
       });
       return true;
