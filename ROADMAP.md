@@ -61,9 +61,9 @@ scope switch. How it works is documented in
   corner image) behind a layout switcher in the WYSIWYG slide toolbar;
   content survives every switch, "text without image" is the zeroth
   variant. Deliberately a curated catalogue, not free-form placement.
-  Phase 0 is `docs/plans/wysiwyg-image-add-remove.md` — "add an image" on
-  a text slide and "remove the image area" on an image-text slide, with
-  the existing convert seam doing the type switch under water.
+  Phase 0 ("add an image" on a text slide and "remove the image area" on an
+  image-text slide, with the existing convert seam doing the type switch
+  under water) shipped in PR #47.
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.

@@ -8,6 +8,18 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Add/remove an image directly in the WYSIWYG editor.** A text slide gets
+  a "+ Add image" chip on the edit canvas: clicking it turns the slide into
+  an image-text slide (same id, notes, comments and URL) and opens the media
+  popover on the fresh placeholder. On an image-text slide, an empty image
+  placeholder gets a hover-× that removes the reserved image area and turns
+  the slide back into a text slide; a filled image must be cleared first, so
+  removal is a deliberate two-step. Both affordances run through the existing
+  convert seam, are declarable by custom slide types, and the lossy-fields
+  confirm no longer fires on enum defaults (only on real content such as a
+  filled image, caption or alt text). Phase 0 of the image-text layout
+  catalogue.
+
 - **Comments in the public API v1 + MCP write tools.** Agents/scripts with
   an API key can now read reviewer comments and respond to them: new
   endpoints `GET/POST /api/v1/presentations/:id/comments` and
