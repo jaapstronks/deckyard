@@ -1,0 +1,85 @@
+# Comments & notifications: the three-layer model
+
+Shipped 2026-07-17 (PR stack #52–#56, migrations 042–045). This documents
+the durable semantics; the API/MCP surface is in `comments-api.md`.
+
+## The model in one paragraph
+
+Thread status (`open` / `resolved` / `dismissed`) is **shared** state:
+Resolve means "we agree, this is settled" and affects everyone. Personal
+follow-up lives in the **events inbox** behind the notification bell: each
+inbox item has `read_at` ("seen", drives the badge) and `archived_at`
+("handled", drops it from the default list) — two fields, so "seen but
+still to do" exists. **Subscriptions** decide which events become inbox
+items for whom. Nothing in the inbox ever touches shared thread status.
+
+## Data model
+
+| Table | Migration | Purpose |
+|-------|-----------|---------|
+| `comment_thread_reads` | 042 | Per-user read-state per thread (`user_email`, top-level `comment_id`, `last_read_at`; PK user+comment, org-scoped). Drives the unread dots and the "waiting for me" filter. Guests have no account and no read-state. |
+| `presentation_comments.mentions` | 043 | JSONB list `[{name, email}]`, parsed server-side from body markup `@[Name](user:email)` at create **and** update — single source of truth for every write path (app, REST v1, MCP). Parser: `shared/comment-mentions.js`. |
+| `presentation_subscriptions` | 044 | Per-deck override (`level`: `watching` \| `participating` \| `mentions_only` \| `mute`). No row = use the user's global default (`settings.notifications.defaultLevel`). |
+| `user_notifications.archived_at` | 045 | "Handled" timestamp next to `is_read`/`read_at`. Archiving always also marks read; the badge counts unread **unarchived** items only. |
+
+## Event → recipients (the subscription resolver)
+
+`server/services/comment-subscriptions.js` is the one place that decides
+who receives a comment event. Candidates, most specific reason first:
+
+1. **mention** — the comment @mentions you. Always delivers, at every
+   level (muting a busy deck never silences being addressed directly).
+   Mentions only ever resolve to **existing accounts** (org-scoped
+   lookup); an arbitrary address in the markup is stored but never
+   notified or emailed.
+2. **reply** — you wrote the parent comment.
+3. **participating** — you own/created the deck or wrote in the thread.
+4. **watching** — you have an explicit per-deck watching override, or you
+   are a collaborator whose effective level is `watching` (this is how
+   the global "watching" default actually delivers).
+
+Effective level: per-deck override → global default → `participating`.
+The level filters the candidates: `watching` passes everything,
+`participating` passes reply+participating, `mentions_only` and `mute`
+pass only mentions. For comment events those last two currently behave
+identically; the distinction is intent and future event types.
+
+Notification type follows the recipient's reason (`comment_mention` /
+`comment_reply` / `comment_created`), so "Replies to your comments" in
+the settings means exactly that — a third-party reply on your own deck
+arrives as `comment_created`.
+
+## Channels
+
+- **In-app** (bell + per-user SSE): every write path — app routes, public
+  API v1, MCP.
+- **Email** (Brevo): app + REST v1. Gated per recipient on `emailEnabled`
+  and per-type `emailByType.{comment_created,comment_reply,comment_mention}`.
+  Mention markup is stripped from bodies/excerpts.
+- **Slack/Discord webhook**: app + REST v1. Channel-level: it fires from
+  the pre-subscription recipient set, so one user's mute cannot silence a
+  shared channel. Payload body is markup-stripped.
+- **MCP** currently triggers only the in-app side (no request origin to
+  build links from) — known gap, not a contract.
+
+Settings writes merge per key: a partial `notifications` PUT never resets
+stored opt-outs.
+
+## Inbox semantics
+
+- Filters: All / Mentions / Unread / Archived. "Archive all" only shows
+  on the All lens (elsewhere it would archive items outside the view).
+- **Auto-archive on own reply**: replying in a thread archives your open
+  inbox items for that thread (you handled it); new activity in the
+  thread creates a fresh unarchived item. Runs on every write path with
+  an actor, even when nobody else is left to notify.
+- Mentions added by **editing** a comment notify the newly added users
+  (diffed against the pre-edit list, so re-saving never re-notifies).
+
+## Deliberate non-features
+
+- No explicit assignment: mention = passing the ball. Could become a
+  checkbox on top of mentions if practice demands it.
+- No full inbox page (popover only) — optional later.
+- Guests: no account → not mentionable, no read-state, no subscriptions;
+  email stays their channel.

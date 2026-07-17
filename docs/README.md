@@ -43,4 +43,5 @@ User documentation (getting started, configuration, hosting, integrations) lives
 | Internationalization | `docs/developer/i18n.md` |
 | REST API | `docs/developer/api.md` + `docs/openapi.yaml` |
 | MCP server | `docs/reference/mcp-server.md` |
+| Comments & notifications model | `docs/reference/comments-and-notifications.md` |
 | Setting up a fork | `docs/reference/fork-setup.md` |
