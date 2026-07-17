@@ -20,6 +20,7 @@ import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { moreIcon, closeIcon } from '../../lib/icons.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import {
   getInspectorKeepKeys,
@@ -177,11 +178,11 @@ function buildHeaderActions({
   const actionsSummary = h(
     'summary',
     {
-      class: 'btn btn-secondary btn-icon dropdown-trigger',
+      class: 'ghost-icon-btn dropdown-trigger',
       title: t('common.moreOptions', 'More options'),
       'aria-label': t('common.moreOptions', 'More options'),
     },
-    [h('span', { text: '⋯', 'aria-hidden': 'true' })]
+    [moreIcon({ size: 16 })]
   );
   const actionsMenu = h('div', { class: 'dropdown-menu dropdown-menu-right' });
 
@@ -483,7 +484,7 @@ function buildHeaderActions({
   if (isAuthor) {
     const isLocked = !!slide.lockedByAuthor;
     btnLock = h('button', {
-      class: `btn btn-secondary btn-icon${isLocked ? ' is-active' : ''}`,
+      class: `ghost-icon-btn${isLocked ? ' is-active' : ''}`,
       type: 'button',
       title: isLocked
         ? t('editor.slide.unlock', 'Unlock slide')
@@ -589,14 +590,17 @@ export function createRerenderEditor({
     );
     if (setInspectorCollapsed) {
       header.append(
-        h('button', {
-          class: 'btn btn-secondary btn-icon editor-form-close-btn',
-          type: 'button',
-          text: '×',
-          title: t('editor.inspector.hide', 'Hide inspector'),
-          'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-          onclick: () => setInspectorCollapsed(true),
-        })
+        (() => {
+          const b = h('button', {
+            class: 'ghost-icon-btn editor-form-close-btn',
+            type: 'button',
+            title: t('editor.inspector.hide', 'Hide inspector'),
+            'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+            onclick: () => setInspectorCollapsed(true),
+          });
+          b.append(closeIcon({ size: 16 }));
+          return b;
+        })()
       );
     }
     editorMount.append(header);

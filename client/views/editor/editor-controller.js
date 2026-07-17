@@ -38,6 +38,7 @@ import { createInspectorResize } from './inspector-resize.js';
 import { createInspectorPanes } from './inspector-panes.js';
 import { createInlineEditor } from './inline-edit/inline-editor.js';
 import { createEditorTopbar } from './topbar.js';
+import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
@@ -625,13 +626,6 @@ export async function createEditorController({
       });
       cleanup.register('presenceLock', detachPresenceLock);
     },
-    // Both buttons drive the same rail, each with its own pane; toggle
-    // semantics (open on my pane = dismiss, else open/switch) live in the
-    // pane host. Dereferenced at click time (inspectorPanes is built below).
-    onToggleComments: () => inspectorPanes.toggle('comments'),
-    onToggleInspector: () => inspectorPanes.toggle('settings'),
-    onToggleNotes: () => inspectorPanes.toggle('notes'),
-    setCommentsBadge: (fn) => { setCommentsBadgeFn = fn; },
     setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
     onOpenOverview: openDeckOverview,
     onAnalyze: () => {
@@ -781,6 +775,19 @@ export async function createEditorController({
 
   const commentsApi = createCommentsApi({ api, presentationId: id });
 
+  // Pane tabs (Inspector / Comments / Notes) at the far right of the slide
+  // toolbar, directly above the rail. The panes are slide-scoped, so the
+  // tabs live in the slide row, not the deck-level topbar. Toggle semantics
+  // (open on my pane = dismiss, else open/switch) live in the pane host;
+  // dereferenced at click time (inspectorPanes is built above).
+  const paneTabs = createPaneTabs({
+    h,
+    onToggleInspector: () => inspectorPanes.toggle('settings'),
+    onToggleComments: () => inspectorPanes.toggle('comments'),
+    onToggleNotes: () => inspectorPanes.toggle('notes'),
+  });
+  setCommentsBadgeFn = paneTabs.updateBadge;
+
   const previewPanel = createPreviewPanel({
     h,
     root,
@@ -815,6 +822,7 @@ export async function createEditorController({
         } catch { /* ignore */ }
       });
     },
+    paneTabsEl: paneTabs.el,
   });
 
   const { previewEl: preview, thumbEl: thumb } = previewPanel;
@@ -953,12 +961,12 @@ export async function createEditorController({
   const commentsPane = h('div', {}, [commentsPanel.panelEl]);
   inspectorPanes.registerPane('comments', commentsPane);
 
-  // Single mirror of the rail state: per-pane topbar pressed-states and the
+  // Single mirror of the rail state: per-pane tab pressed-states and the
   // comments panel's visible/seen tracking (show() marks as seen + loads).
   syncRailState = () => {
     const open = !isInspectorCollapsed();
     const pane = inspectorPanes.getActivePane();
-    topbarApi.setInspectorPaneState?.({ open, pane });
+    paneTabs.setState({ open, pane });
     if (open && pane === 'comments') commentsPanel.show();
     else commentsPanel.hide();
   };

@@ -10,6 +10,7 @@ import { doPublish, buildPublishModalData } from './publish-export/publish.js';
 import { openShareModal } from './modals/share-modal.js';
 import { openDescriptionModal } from './modals/description-modal.js';
 import { installDismissOnOutside } from '../../lib/dom.js';
+import { makeDropdownCaret } from '../../lib/icons.js';
 import { confirmModal } from '../../lib/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { handleShareToWorkspace, handleMoveToPrivate, handleNotionPublish } from './share-dropdown/share-actions.js';
@@ -68,11 +69,7 @@ export function setupShareDropdown({
     },
     [
       summaryLabel,
-      h('span', {
-        class: 'dropdown-caret',
-        text: '▾',
-        'aria-hidden': 'true',
-      }),
+      makeDropdownCaret(),
     ]
   );
 

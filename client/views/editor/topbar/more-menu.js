@@ -1,6 +1,7 @@
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { confirmModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { moreIcon } from '../../../lib/icons.js';
 
 export function createEditorTopbarMoreMenu({
   h,
@@ -198,11 +199,11 @@ export function createEditorTopbarMoreMenu({
   const moreSummary = h(
     'summary',
     {
-      class: 'btn btn-secondary btn-icon dropdown-trigger',
+      class: 'ghost-icon-btn dropdown-trigger',
       title: t('common.moreOptions', 'More options'),
       'aria-label': t('common.moreOptions', 'More options'),
     },
-    [h('span', { text: '⋯', 'aria-hidden': 'true' })]
+    [moreIcon({ size: 16 })]
   );
   const moreMenu = h('div', { class: 'dropdown-menu dropdown-menu-right' }, [
     btnOverview,

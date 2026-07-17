@@ -53,9 +53,8 @@
   flex-shrink: 0;
 }
 
-/* Far-right topbar zone: the pane switcher (Inspector / Comments / Notes)
-   sits visually above the rail it controls, separated from the deck-level
-   actions. Pressed (is-active) = "rail open on MY pane". */
+/* Zone separators split the topbar into its three groups: identity/nav,
+   edit-session tools, and the deliver cluster + user avatar. */
 .topbar-zone-sep {
   width: 1px;
   align-self: stretch;
@@ -64,59 +63,64 @@
   flex-shrink: 0;
 }
 
-.topbar-pane-switcher {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
-.topbar-pane-tab {
-  position: relative;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Ghost icon button - the tier for repeat actions (undo/redo, overview,
+   analytics, more-menus, slide actions). 32px, borderless, hover surface,
+   mandatory tooltip. Labeled buttons keep their border (.btn); there is one
+   filled primary per screen (Present).
+   ───────────────────────────────────────────────────────────────────────────── */
+.ghost-icon-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
   color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-md);
   cursor: pointer;
+  font: inherit;
   transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
 }
 
-.topbar-pane-tab:hover {
-  background: hsl(var(--app-bg-hover));
+.ghost-icon-btn:hover {
   color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
 }
 
-.topbar-pane-tab:focus-visible {
+.ghost-icon-btn:focus-visible {
   outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
   outline-offset: -1px;
 }
 
-.topbar-pane-tab.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
+.ghost-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
 }
 
-.topbar-pane-tab .topbar-btn-icon {
-  width: 15px;
-  height: 15px;
+.ghost-icon-btn.is-active {
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
 }
 
-/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). */
-@media (max-width: 1000px) {
-  .topbar-pane-tab-label {
-    display: none;
-  }
+.ghost-icon-btn img,
+.ghost-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* details/summary ghost trigger: hide the disclosure marker */
+summary.ghost-icon-btn {
+  list-style: none;
+}
+summary.ghost-icon-btn::-webkit-details-marker {
+  display: none;
 }
 
 /* Present split-button: primary CTA + caret menu with the live-presenting
@@ -143,16 +147,34 @@
   margin-left: 1px;
 }
 
+/* Presence is STATUS, not an action: it renders as a quiet chip in the same
+   family as the save-status chip (dot + one line, never wrapping), so it can
+   sit among buttons without pretending to be one. */
 .topbar-presence {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: var(--ps-space-1);
   min-width: 0;
+  max-width: 280px;
+  padding: 2px var(--ps-space-2);
+  border-radius: var(--ps-radius-pill, 999px);
   font-size: var(--ps-text-xs);
+  line-height: 1.4;
   color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-secondary) / 0.5);
+  border: 1px solid hsl(var(--app-border-subtle));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.topbar-presence::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(142 71% 45%);
+  flex: none;
 }
 
 /* Author display in topbar - shown after title */
@@ -220,6 +242,13 @@
   border-color: hsl(var(--app-border-focus));
   box-shadow: 0 0 0 var(--ps-focus-ring-offset)
     hsl(var(--app-accent-primary) / 0.2);
+}
+
+.topbar-title-pencil {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  opacity: 0.55;
 }
 
 /* Save-status chip: persistent Saving/Saved/Unsaved/Failed indicator.
@@ -457,9 +486,9 @@
    Topbar Responsive
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Narrow topbar: shrink title, hide secondary items progressively. The
-   pane switcher at the far right must never be pushed out - it is the only
-   always-visible affordance for the rail. */
+/* Narrow topbar: shrink title, hide secondary items progressively. (The
+   pane tabs live in the slide toolbar now, so the topbar only sheds
+   deck-level extras here.) */
 @media (max-width: 1024px) {
   .topbar-pres-title {
     max-width: min(200px, 20vw);

@@ -211,11 +211,8 @@
   font-size: 12px;
 }
 
-/* Topbar comments button and badge */
-.topbar-comments-btn {
-  position: relative;
-}
-
+/* Comments badge (viewer topbar; the editor's pane tab uses the inline
+   .pane-tab-badge in 20-preview.css instead) */
 .comments-badge {
   position: absolute;
   top: -4px;
