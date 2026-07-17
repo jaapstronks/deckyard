@@ -392,5 +392,10 @@
   "analytics.noViewersYet": "Nessun visitatore ancora",
   "analytics.shareToGetViewers": "Una volta che le persone visualizzeranno la tua presentazione, le loro sessioni appariranno qui.",
   "analytics.noLeadsYet": "Nessun lead acquisito ancora",
-  "analytics.addLeadCaptureHint": "Aggiungi una slide di acquisizione lead alla tua presentazione per iniziare a raccogliere informazioni di contatto dai visitatori."
+  "analytics.addLeadCaptureHint": "Aggiungi una slide di acquisizione lead alla tua presentazione per iniziare a raccogliere informazioni di contatto dai visitatori.",
+  "comments.filter.attention": "Attenzione",
+  "comments.filter.everyone": "Tutto",
+  "comments.filter.waitingForMe": "In attesa di me",
+  "comments.empty.waiting": "Niente in attesa per te qui",
+  "comments.unread": "Nuova attività"
 }

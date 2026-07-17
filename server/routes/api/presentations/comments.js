@@ -30,6 +30,7 @@ export {
   handlePresentationCommentReopen,
   handlePresentationCommentDismiss,
   handlePresentationCommentApply,
+  handlePresentationCommentsMarkRead,
 } from './comments-actions.js';
 
 // Re-export shared utilities (in case other modules need them)

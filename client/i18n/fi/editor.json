@@ -392,5 +392,10 @@
   "analytics.noViewersYet": "Ei katsojia vielä",
   "analytics.shareToGetViewers": "Kun ihmiset katsovat esitystäsi, heidän istuntonsa näkyvät täällä.",
   "analytics.noLeadsYet": "Ei kerättyjä liidejä vielä",
-  "analytics.addLeadCaptureHint": "Lisää liidien keräysdia esitykseesi aloittaaksesi yhteystietojen keräämisen katsojilta."
+  "analytics.addLeadCaptureHint": "Lisää liidien keräysdia esitykseesi aloittaaksesi yhteystietojen keräämisen katsojilta.",
+  "comments.filter.attention": "Huomio",
+  "comments.filter.everyone": "Kaikki",
+  "comments.filter.waitingForMe": "Odottaa minua",
+  "comments.empty.waiting": "Täällä ei odota mikään sinua",
+  "comments.unread": "Uutta toimintaa"
 }

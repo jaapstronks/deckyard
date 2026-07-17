@@ -392,5 +392,10 @@
   "analytics.noViewersYet": "Brak widzów jeszcze",
   "analytics.shareToGetViewers": "Gdy ludzie obejrzą Twoją prezentację, ich sesje pojawią się tutaj.",
   "analytics.noLeadsYet": "Brak pozyskanych leadów jeszcze",
-  "analytics.addLeadCaptureHint": "Dodaj slajd pozyskiwania leadów do swojej prezentacji, aby zacząć zbierać dane kontaktowe od widzów."
+  "analytics.addLeadCaptureHint": "Dodaj slajd pozyskiwania leadów do swojej prezentacji, aby zacząć zbierać dane kontaktowe od widzów.",
+  "comments.filter.attention": "Uwaga",
+  "comments.filter.everyone": "Wszystko",
+  "comments.filter.waitingForMe": "Czeka na mnie",
+  "comments.empty.waiting": "Nic tu na Ciebie nie czeka",
+  "comments.unread": "Nowa aktywność"
 }

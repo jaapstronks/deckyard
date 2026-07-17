@@ -91,6 +91,19 @@ export function createCommentsApi({ api, presentationId }) {
     };
   };
 
+  /**
+   * Mark threads as read for the current user (batch; personal read-state,
+   * nothing shared changes).
+   * @param {string[]} commentIds - Top-level comment ids
+   */
+  const markThreadsRead = async (commentIds) => {
+    const resp = await api(`/api/presentations/${pid}/comments/mark-read`, {
+      method: 'POST',
+      body: JSON.stringify({ commentIds }),
+    });
+    return resp;
+  };
+
   return {
     listComments,
     createComment,
@@ -100,5 +113,6 @@ export function createCommentsApi({ api, presentationId }) {
     resolveComment,
     reopenComment,
     getCommentCounts,
+    markThreadsRead,
   };
 }

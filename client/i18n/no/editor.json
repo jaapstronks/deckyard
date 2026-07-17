@@ -323,5 +323,10 @@
   "visibility.skipInPresentationDesc": "Skjul kun i presentasjonsmodus",
   "editor.slideList.visibility": "Endre synlighet",
   "viewer.draftSlide": "Utkast - Ikke fullført",
-  "common.close": "Lukk"
+  "common.close": "Lukk",
+  "comments.filter.attention": "Oppmerksomhet",
+  "comments.filter.everyone": "Alt",
+  "comments.filter.waitingForMe": "Venter på meg",
+  "comments.empty.waiting": "Ingenting venter på deg her",
+  "comments.unread": "Ny aktivitet"
 }

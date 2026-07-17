@@ -633,5 +633,10 @@
   "comments.scope.label": "Comments scope",
   "comments.filter.title": "Filter comments",
   "comments.filter.status": "Status",
-  "comments.filter.type": "Type"
+  "comments.filter.type": "Type",
+  "comments.filter.attention": "Attention",
+  "comments.filter.everyone": "Everything",
+  "comments.filter.waitingForMe": "Waiting for me",
+  "comments.empty.waiting": "Nothing waiting for you here",
+  "comments.unread": "New activity"
 }

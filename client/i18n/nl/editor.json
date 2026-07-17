@@ -646,5 +646,10 @@
   "comments.scope.label": "Bereik van opmerkingen",
   "comments.filter.title": "Opmerkingen filteren",
   "comments.filter.status": "Status",
-  "comments.filter.type": "Type"
+  "comments.filter.type": "Type",
+  "comments.filter.attention": "Aandacht",
+  "comments.filter.everyone": "Alles",
+  "comments.filter.waitingForMe": "Wacht op mij",
+  "comments.empty.waiting": "Niets dat op jou wacht",
+  "comments.unread": "Nieuwe activiteit"
 }
