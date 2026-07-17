@@ -323,5 +323,10 @@
   "visibility.skipInPresentationDesc": "Dölj endast i presentationsläge",
   "editor.slideList.visibility": "Ändra synlighet",
   "viewer.draftSlide": "Utkast - Inte färdig",
-  "common.close": "Stäng"
+  "common.close": "Stäng",
+  "comments.filter.attention": "Uppmärksamhet",
+  "comments.filter.everyone": "Allt",
+  "comments.filter.waitingForMe": "Väntar på mig",
+  "comments.empty.waiting": "Inget väntar på dig här",
+  "comments.unread": "Ny aktivitet"
 }

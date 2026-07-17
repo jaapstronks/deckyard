@@ -323,5 +323,10 @@
   "visibility.skipInPresentationDesc": "Nur im Präsentationsmodus verbergen",
   "editor.slideList.visibility": "Sichtbarkeit ändern",
   "viewer.draftSlide": "Entwurf - Noch nicht fertig",
-  "common.close": "Schließen"
+  "common.close": "Schließen",
+  "comments.filter.attention": "Aufmerksamkeit",
+  "comments.filter.everyone": "Alles",
+  "comments.filter.waitingForMe": "Wartet auf mich",
+  "comments.empty.waiting": "Hier wartet nichts auf dich",
+  "comments.unread": "Neue Aktivität"
 }

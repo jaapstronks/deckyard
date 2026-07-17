@@ -9,6 +9,7 @@ import {
   serveJson,
   unauthorized,
   badRequest,
+  requireJsonBody,
 } from '../../../utils/http.js';
 import { canResolveComment } from '../../../utils/presentation-authz.js';
 import {
@@ -16,6 +17,7 @@ import {
   resolveComment,
   reopenComment,
   dismissComment,
+  markThreadsRead,
 } from '../../../storage/presentation-comments.js';
 import {
   recordCommentResolved,
@@ -25,7 +27,7 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { withPresentationAuth } from '../../../utils/route-middleware.js';
+import { withPresentationAuth, withPresentationReadAuth } from '../../../utils/route-middleware.js';
 import { getCtx, broadcastCommentCounts } from './comments-shared.js';
 
 /**
@@ -252,5 +254,42 @@ export async function handlePresentationCommentApply(
     originalSlideIndex,
     newSlideIndex: originalSlideIndex + 1,
   });
+  return true;
+}
+/**
+ * Mark comment threads as read for the current user (batch).
+ * POST /api/presentations/:id/comments/mark-read
+ * Body: { commentIds: string[] }
+ *
+ * Personal read-state, not a thread status: nothing shared changes. Guests
+ * have no account and therefore no read-state; their calls are a cheap no-op
+ * so the client doesn't need a special guest path.
+ */
+export async function handlePresentationCommentsMarkRead(
+  { repoRoot, req, res, authedUser } = {},
+  id
+) {
+  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+
+  const { pres } = await withPresentationReadAuth({ repoRoot, req, id, authedUser, res });
+  if (!pres) return true;
+
+  const jsonResult = await requireJsonBody(req, res);
+  if (!jsonResult.ok) return true;
+  const commentIds = jsonResult.body?.commentIds;
+  if (!Array.isArray(commentIds)) {
+    return badRequest(res, 'commentIds array is required');
+  }
+  if (commentIds.length > 500) {
+    return badRequest(res, 'Too many commentIds (max 500)');
+  }
+
+  const ctx = getCtx(authedUser);
+  const result = await markThreadsRead(id, commentIds, ctx);
+  if (!result.ok) {
+    return serveJson(res, result.reason === 'unavailable' ? 503 : 400, result);
+  }
+
+  serveJson(res, 200, { ok: true, marked: result.marked });
   return true;
 }

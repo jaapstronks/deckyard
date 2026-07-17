@@ -95,9 +95,118 @@ export async function listComments(presentationId, ctx, opts = {}) {
       for (const comment of comments) {
         comment.replies = repliesByParent.get(comment.id) || [];
       }
+
+      // Per-user read-state on threads. Guests have no account, so requests
+      // without an acting user get no annotation (and the panel no dots).
+      await annotateThreadReadState(db, comments, ctx);
     }
 
     return comments;
+  });
+}
+
+/**
+ * Annotate top-level comments with `unreadForUser` + `lastActivityAt` for
+ * the acting user. A thread is unread when someone ELSE'S activity (the
+ * top-level comment or a reply) is newer than the user's `last_read_at`;
+ * threads where the user wrote the latest foreign-free activity are never
+ * unread, so your own fresh comment doesn't dot itself.
+ */
+async function annotateThreadReadState(db, threads, ctx) {
+  const userEmail = normalizeEmail(ctx?.actorEmail);
+  if (!userEmail || threads.length === 0) return;
+
+  const rows = await db
+    .selectFrom('comment_thread_reads')
+    .select(['comment_id', 'last_read_at'])
+    .where('user_email', '=', userEmail)
+    .where('comment_id', 'in', threads.map((t) => t.id))
+    .execute();
+  const readAtByComment = new Map(
+    rows.map((r) => [r.comment_id, new Date(r.last_read_at).getTime()])
+  );
+
+  for (const thread of threads) {
+    const messages = [thread, ...(thread.replies || [])];
+    const lastActivity = Math.max(
+      ...messages.map((m) => new Date(m.createdAt).getTime())
+    );
+    thread.lastActivityAt = new Date(lastActivity).toISOString();
+
+    // Only activity from others can make a thread unread, and your own
+    // later reply counts as an implicit read (you saw what you answered).
+    const foreign = messages.filter(
+      (m) => normalizeEmail(m.authorEmail) !== userEmail
+    );
+    if (foreign.length === 0) {
+      thread.unreadForUser = false;
+      continue;
+    }
+    const lastForeign = Math.max(
+      ...foreign.map((m) => new Date(m.createdAt).getTime())
+    );
+    const own = messages.filter(
+      (m) => normalizeEmail(m.authorEmail) === userEmail
+    );
+    const lastOwn = own.length
+      ? Math.max(...own.map((m) => new Date(m.createdAt).getTime()))
+      : -Infinity;
+    const readAt = readAtByComment.get(thread.id) ?? -Infinity;
+    thread.unreadForUser = lastForeign > Math.max(readAt, lastOwn);
+  }
+}
+
+/**
+ * Mark threads as read for the acting user (batch upsert of
+ * `comment_thread_reads.last_read_at`). Only top-level comments of the given
+ * presentation count; unknown/reply ids are ignored. No-op without an acting
+ * user (guests have no read-state).
+ *
+ * @param {string} presentationId
+ * @param {string[]} commentIds - Top-level comment ids to mark read
+ * @param {Object} ctx - Storage context (actorEmail + org scoping)
+ * @returns {Promise<{ok: boolean, marked?: number, reason?: string}>}
+ */
+export async function markThreadsRead(presentationId, commentIds, ctx) {
+  const pid = norm(presentationId);
+  const userEmail = normalizeEmail(ctx?.actorEmail);
+  if (!pid) return { ok: false, reason: 'invalid_presentation' };
+  if (!userEmail) return { ok: true, marked: 0 };
+
+  const ids = Array.isArray(commentIds)
+    ? commentIds.map(norm).filter((id) => /^[0-9a-f-]{36}$/i.test(id))
+    : [];
+  if (ids.length === 0) return { ok: true, marked: 0 };
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    // Validate: only top-level comments of this presentation.
+    const valid = await db
+      .selectFrom('presentation_comments')
+      .select('id')
+      .where('presentation_id', '=', pid)
+      .where('organization_id', '=', orgId)
+      .where('parent_id', 'is', null)
+      .where('id', 'in', ids)
+      .execute();
+    if (valid.length === 0) return { ok: true, marked: 0 };
+
+    const now = nowIso();
+    await db
+      .insertInto('comment_thread_reads')
+      .values(valid.map((row) => ({
+        organization_id: orgId,
+        user_email: userEmail,
+        comment_id: row.id,
+        last_read_at: now,
+      })))
+      .onConflict((oc) =>
+        oc.columns(['user_email', 'comment_id']).doUpdateSet({ last_read_at: now })
+      )
+      .execute();
+
+    return { ok: true, marked: valid.length };
   });
 }
 

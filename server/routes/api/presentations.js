@@ -41,6 +41,7 @@ import {
   handlePresentationCommentReopen,
   handlePresentationCommentDismiss,
   handlePresentationCommentApply,
+  handlePresentationCommentsMarkRead,
   handlePresentationCommentCounts,
   handlePresentationCommentEvents,
 } from './presentations/comments.js';
@@ -549,6 +550,17 @@ export async function handlePresentations({
     return handlePresentationCommentCounts(
       { repoRoot, req, res, url, authedUser },
       commentCountsMatch[1]
+    );
+  }
+
+  // Mark comment threads as read for the current user (batch)
+  const commentMarkReadMatch = url.pathname.match(
+    /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/
+  );
+  if (commentMarkReadMatch) {
+    return handlePresentationCommentsMarkRead(
+      { repoRoot, req, res, url, authedUser },
+      commentMarkReadMatch[1]
     );
   }
 

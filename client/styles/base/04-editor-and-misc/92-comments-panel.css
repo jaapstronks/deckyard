@@ -120,6 +120,20 @@
   margin-bottom: 0;
 }
 
+/* Per-user read-state: unseen activity from others (mail convention) */
+.comment-thread.is-unread > .comment-item .comment-author {
+  font-weight: 700;
+}
+
+.comment-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary-600, #4f46e5);
+  flex: none;
+  align-self: center;
+}
+
 .comment-item {
   padding: 4px 0;
 }

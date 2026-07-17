@@ -323,5 +323,10 @@
   "visibility.skipInPresentationDesc": "Skjul kun i præsentationstilstand",
   "editor.slideList.visibility": "Skift synlighed",
   "viewer.draftSlide": "Kladde - Ikke afsluttet",
-  "common.close": "Luk"
+  "common.close": "Luk",
+  "comments.filter.attention": "Opmærksomhed",
+  "comments.filter.everyone": "Alt",
+  "comments.filter.waitingForMe": "Venter på mig",
+  "comments.empty.waiting": "Intet venter på dig her",
+  "comments.unread": "Ny aktivitet"
 }

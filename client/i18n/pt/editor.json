@@ -323,5 +323,10 @@
   "visibility.skipInPresentationDesc": "Ocultar apenas em modo de apresentação",
   "editor.slideList.visibility": "Alterar visibilidade",
   "viewer.draftSlide": "Rascunho - Não finalizado",
-  "common.close": "Fechar"
+  "common.close": "Fechar",
+  "comments.filter.attention": "Atenção",
+  "comments.filter.everyone": "Tudo",
+  "comments.filter.waitingForMe": "À minha espera",
+  "comments.empty.waiting": "Nada à sua espera aqui",
+  "comments.unread": "Nova atividade"
 }

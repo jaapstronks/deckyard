@@ -13,6 +13,7 @@ import { storage } from '../../lib/storage.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
 import { createCommentSSE } from './comments-panel-sse.js';
+import { threadWaitsFor, collectUnreadThreadIds } from './comments-read-state.js';
 
 /**
  * Creates a comments panel component for the editor.
@@ -54,7 +55,10 @@ export function createCommentsPanel({
   // so the slide scope follows the selection. The object identity of
   // `filter` matters: the renderers hold a reference to it.
   let scope = 'slide';
-  let filter = { slideId: null, status: 'open', commentType: null };
+  // attention is a client-side lens on the loaded threads: 'waiting' keeps
+  // only open threads whose latest message is not yours ("waiting for me").
+  // Heuristic, not a status — nothing is stored.
+  let filter = { slideId: null, status: 'open', commentType: null, attention: null };
   let isVisible = false;
 
   // Seen state tracking (for badge color)
@@ -112,10 +116,14 @@ export function createCommentsPanel({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       openCount = result.openCount || 0;
-      renderers.renderCommentList(listEl, comments);
+      const visibleThreads = filter.attention === 'waiting'
+        ? comments.filter((c) => threadWaitsFor(c, user?.email))
+        : comments;
+      renderers.renderCommentList(listEl, visibleThreads);
 
       if (isVisible) {
         markAsSeen();
+        scheduleMarkThreadsRead(visibleThreads);
       }
       notifyBadge();
 
@@ -130,6 +138,42 @@ export function createCommentsPanel({
     } catch (err) {
       toast?.error?.(t('comments.error.loadFailed', 'Failed to load comments'));
     }
+  }
+
+  // Trailing debounce so arrow-key slide navigation with an open pane fires
+  // one fetch pair for the slide you land on, not one per slide passed.
+  let loadDebounceTimer = null;
+  function scheduleLoadComments() {
+    if (loadDebounceTimer) clearTimeout(loadDebounceTimer);
+    loadDebounceTimer = setTimeout(() => {
+      loadDebounceTimer = null;
+      loadComments();
+    }, 150);
+  }
+
+  // ========================================
+  // Read-state (per-user, batched)
+  // ========================================
+
+  // Viewing a thread in the panel marks it read, but batched: ids collect
+  // here and flush once per pause. The dots stay as rendered until the next
+  // reload, so you still see what was new. Guests have no account: no email,
+  // no read-state, no calls.
+  const pendingReadIds = new Set();
+  let markReadTimer = null;
+  function scheduleMarkThreadsRead(threads) {
+    if (!user?.email) return;
+    for (const id of collectUnreadThreadIds(threads)) pendingReadIds.add(id);
+    if (pendingReadIds.size === 0) return;
+    if (markReadTimer) clearTimeout(markReadTimer);
+    markReadTimer = setTimeout(() => {
+      markReadTimer = null;
+      const ids = [...pendingReadIds];
+      pendingReadIds.clear();
+      commentsApi.markThreadsRead(ids).catch(() => {
+        // Non-critical: dots simply reappear next session.
+      });
+    }, 1200);
   }
 
   // ========================================
@@ -275,6 +319,10 @@ export function createCommentsPanel({
     { value: 'human', label: () => t('comments.filter.human', 'Human') },
     { value: 'ai-suggestion', label: () => t('comments.filter.ai', 'AI') },
   ];
+  const ATTENTION_OPTIONS = [
+    { value: null, label: () => t('comments.filter.everyone', 'Everything') },
+    { value: 'waiting', label: () => t('comments.filter.waitingForMe', 'Waiting for me') },
+  ];
 
   const filterMenuLabel = h('span', { class: 'comments-filter-label', text: '' });
   const filterSummary = h(
@@ -322,12 +370,28 @@ export function createCommentsPanel({
     item.dataset.type = String(opt.value);
     return item;
   });
+  const attentionItems = ATTENTION_OPTIONS.map((opt) => {
+    const item = h('button', {
+      class: 'dropdown-item comments-filter-item',
+      type: 'button',
+      text: opt.label(),
+      onclick: () => {
+        filterDetails.open = false;
+        setFilter({ attention: opt.value });
+      },
+    });
+    item.dataset.attention = String(opt.value);
+    return item;
+  });
   filterMenu.append(
     h('div', { class: 'dropdown-help', text: t('comments.filter.status', 'Status') }),
     ...statusItems,
     h('div', { class: 'dropdown-sep' }),
     h('div', { class: 'dropdown-help', text: t('comments.filter.type', 'Type') }),
-    ...typeItems
+    ...typeItems,
+    h('div', { class: 'dropdown-sep' }),
+    h('div', { class: 'dropdown-help', text: t('comments.filter.attention', 'Attention') }),
+    ...attentionItems
   );
 
   filterEl.append(scopeEl, filterDetails);
@@ -370,10 +434,13 @@ export function createCommentsPanel({
 
     const statusOpt = STATUS_OPTIONS.find((o) => o.value === filter.status) || STATUS_OPTIONS[0];
     const typeOpt = TYPE_OPTIONS.find((o) => o.value === filter.commentType) || TYPE_OPTIONS[0];
-    // The trigger label names the active refinement; the type only when it
-    // narrows ("Open", "Open · AI", "All · Human").
-    filterMenuLabel.textContent =
-      typeOpt.value === null ? statusOpt.label() : `${statusOpt.label()} · ${typeOpt.label()}`;
+    const attentionOpt = ATTENTION_OPTIONS.find((o) => o.value === filter.attention) || ATTENTION_OPTIONS[0];
+    // The trigger label names the active refinement; type and attention only
+    // when they narrow ("Open", "Open · AI", "Open · Waiting for me").
+    const labelParts = [statusOpt.label()];
+    if (typeOpt.value !== null) labelParts.push(typeOpt.label());
+    if (attentionOpt.value !== null) labelParts.push(attentionOpt.label());
+    filterMenuLabel.textContent = labelParts.join(' · ');
 
     for (const item of statusItems) {
       item.classList.toggle('is-selected', item.dataset.status === String(filter.status));
@@ -381,12 +448,18 @@ export function createCommentsPanel({
     for (const item of typeItems) {
       item.classList.toggle('is-selected', item.dataset.type === String(filter.commentType));
     }
+    for (const item of attentionItems) {
+      item.classList.toggle('is-selected', item.dataset.attention === String(filter.attention));
+    }
   }
 
   function setScope(next) {
     if (scope === next) return;
     scope = next;
     updateFilterUi();
+    // A hidden pane reloads on the next show() anyway; loading here too made
+    // setScope('all') + open('comments') fetch twice (AI review path).
+    if (!isVisible) return;
     loadComments();
   }
 
@@ -396,6 +469,9 @@ export function createCommentsPanel({
     }
     if (opts.commentType !== undefined) {
       filter.commentType = opts.commentType;
+    }
+    if (opts.attention !== undefined) {
+      filter.attention = opts.attention;
     }
     updateFilterUi();
     loadComments();
@@ -408,7 +484,7 @@ export function createCommentsPanel({
    */
   function onSlideChanged() {
     if (scope !== 'slide' || !isVisible) return;
-    loadComments();
+    scheduleLoadComments();
   }
 
   updateFilterUi();
@@ -482,6 +558,10 @@ export function createCommentsPanel({
     setScope,
     startPolling: sse.startPolling,
     stopPolling: sse.stopPolling,
-    detach: detachFilterMenu,
+    detach: () => {
+      if (loadDebounceTimer) clearTimeout(loadDebounceTimer);
+      if (markReadTimer) clearTimeout(markReadTimer);
+      detachFilterMenu();
+    },
   };
 }

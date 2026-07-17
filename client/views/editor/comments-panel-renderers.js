@@ -48,9 +48,11 @@ export function createCommentRenderers({
     if (comments.length === 0) {
       const emptyEl = h('div', {
         class: 'comments-empty',
-        text: filter.status === 'resolved'
-          ? t('comments.empty.resolved', 'No resolved comments')
-          : t('comments.empty.none', 'No comments yet. Be the first to add one!'),
+        text: filter.attention === 'waiting'
+          ? t('comments.empty.waiting', 'Nothing waiting for you here')
+          : filter.status === 'resolved'
+            ? t('comments.empty.resolved', 'No resolved comments')
+            : t('comments.empty.none', 'No comments yet. Be the first to add one!'),
       });
       listEl.append(emptyEl);
       return;
@@ -67,6 +69,9 @@ export function createCommentRenderers({
    */
   function renderCommentThread(comment) {
     const threadEl = h('div', { class: 'comment-thread', 'data-comment-id': comment.id });
+    // Mail convention: someone else's unseen activity bolds the thread and
+    // dots it. The server computes unreadForUser; guests never get the flag.
+    if (comment.unreadForUser === true) threadEl.classList.add('is-unread');
     const mainComment = renderComment(comment, false, threadEl);
     threadEl.append(mainComment);
 
@@ -106,6 +111,15 @@ export function createCommentRenderers({
       text: formatTime(comment.createdAt),
     });
     headerEl.append(authorEl, timeEl);
+
+    // Unread dot on the thread header (top-level only)
+    if (!isReply && comment.unreadForUser === true) {
+      headerEl.append(h('span', {
+        class: 'comment-unread-dot',
+        title: t('comments.unread', 'New activity'),
+        'aria-label': t('comments.unread', 'New activity'),
+      }));
+    }
 
     // Category badge for AI suggestions
     if (isAiSuggestion && comment.suggestionCategory) {
