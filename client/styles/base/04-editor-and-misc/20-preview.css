@@ -154,18 +154,8 @@
   display: block;
 }
 
-.preview-notes-icon {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
 .preview-panel-actions {
   gap: 4px;
-}
-
-.is-editor:not(.is-preview-collapsed) .preview-notes-btn {
-  display: none;
 }
 
 .thumb.is-clickable-preview {
@@ -175,33 +165,6 @@
   border-color: hsl(var(--app-accent-primary));
   box-shadow: var(--app-shadow-lg);
   transform: translateY(-2px);
-}
-
-.is-editor.is-preview-collapsed .preview-panel-header h2 {
-  /* In the collapsed rail, hide the title to save horizontal space. */
-  display: none;
-}
-
-.is-editor.is-preview-collapsed .preview-notes {
-  display: none;
-}
-
-.is-editor.is-preview-collapsed .preview-notes-wrap {
-  display: none;
-}
-
-.is-editor.is-preview-collapsed .preview-panel-scroll > .help {
-  display: none;
-}
-
-.is-editor.is-preview-collapsed .preview-panel-scroll {
-  padding: var(--ps-space-2);
-}
-
-.is-editor.is-preview-collapsed .thumb.is-clickable-preview:hover {
-  /* Avoid a hover lift that can feel cramped/clipped in a narrow rail. */
-  transform: none;
-  box-shadow: var(--app-shadow-md);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

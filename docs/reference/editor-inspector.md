@@ -184,15 +184,13 @@ One converged model around a **1100px breakpoint**
 (`20-editor-layout.css`):
 
 - **>1100px (desktop)**: the 3-column grid above. The inspector width
-  handle and the canvas-collapse (`is-preview-collapsed`) live here.
+  handle lives here.
 - **≤1100px**: 2 columns - slides | canvas - with the inspector as a
   **full-width row under the canvas** (grid-template-areas; row
   `minmax(200px, 38vh)`, 42vh at ≤820px). Not an overlay: the rail-toggle
   machinery keeps working unchanged (dismissed = full-height canvas) and
   nothing floats over the wysiwyg surface. The inspector resize handle is
-  hidden (the width is the full column); `is-preview-collapsed` is
-  neutralized and its toggle hidden - the stored preference resumes on
-  desktop widths.
+  hidden (the width is the full column).
 - **821-1024px**: additionally swaps the slides column for the
   auto-collapse rail.
 - **≤820px**: drops the slides column entirely; slides live in a drawer

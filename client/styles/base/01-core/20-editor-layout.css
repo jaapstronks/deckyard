@@ -25,29 +25,14 @@
     minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
 }
 
-.is-editor.is-preview-collapsed .layout {
-  /* When the canvas is collapsed, give the inspector column the extra space. */
-  grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
-    var(--ps-preview-collapsed-width) minmax(320px, 1fr);
-}
-
-.is-editor.is-slides-collapsed.is-preview-collapsed .layout {
-  grid-template-columns: var(--ps-slides-collapsed-width)
-    var(--ps-preview-collapsed-width) minmax(320px, 1fr);
-}
-
 /* Dismissed inspector rail: the panel leaves the grid entirely and the
-   canvas gets all the space (the topbar "i" toggle brings it back). Wins
-   over preview-collapsed (the canvas is the only content left, so it must
-   stay visible). */
-.is-editor.is-inspector-collapsed .layout,
-.is-editor.is-preview-collapsed.is-inspector-collapsed .layout {
+   canvas gets all the space (the topbar "i" toggle brings it back). */
+.is-editor.is-inspector-collapsed .layout {
   grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
     minmax(320px, 1fr);
 }
 
-.is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
-.is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
+.is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
   grid-template-columns: var(--ps-slides-collapsed-width) minmax(320px, 1fr);
 }
 
@@ -146,24 +131,6 @@
 
 .is-editor.is-inspector-collapsed .inspector-resize-handle {
   display: none;
-}
-
-@media (max-width: 820px) {
-  .is-editor .inspector-resize-handle {
-    display: none;
-  }
-
-  /* On mobile the inspector is the main column: ignore a collapsed
-     preference persisted from desktop. */
-  .is-editor.is-inspector-collapsed .inspector-panel {
-    display: flex;
-  }
-  .is-editor.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-preview-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
-    grid-template-columns: 1fr var(--ps-preview-collapsed-width, 92px);
-  }
 }
 
 /* Inspector panes: one rail, swappable panes (settings now, comments in
@@ -292,13 +259,6 @@
   font-size: var(--ps-text-xs);
 }
 
-.is-editor .preview-collapse-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  font-size: var(--ps-text-xs);
-}
-
 .is-editor .slides-add-btn {
   font-size: var(--ps-text-xs);
 }
@@ -398,13 +358,8 @@
    (rail at 821-1024, drawer ≤820).
    ───────────────────────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
-  /* Every desktop column-variant collapses into the same area model.
-     is-preview-collapsed (canvas collapsed to a rail) is desktop-only: the
-     canvas is the primary surface here, so the class is neutralized and its
-     toggle hidden. */
-  .is-editor .layout,
-  .is-editor.is-preview-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed .layout {
+  /* Every desktop column-variant collapses into the same area model. */
+  .is-editor .layout {
     grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
       minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(200px, 38vh);
@@ -413,16 +368,13 @@
       'slides inspector';
   }
 
-  .is-editor.is-slides-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed .layout {
+  .is-editor.is-slides-collapsed .layout {
     grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
   }
 
   /* Dismissed rail: the canvas gets the full height. */
   .is-editor.is-inspector-collapsed .layout,
-  .is-editor.is-preview-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: 'slides canvas';
   }
@@ -444,10 +396,6 @@
   /* Width is the full column now; the drag handle only makes sense as a
      side-by-side divider. (A row-height handle can come later if needed.) */
   .is-editor .inspector-resize-handle {
-    display: none;
-  }
-
-  .is-editor .preview-collapse-btn {
     display: none;
   }
 }
@@ -514,9 +462,7 @@
 @media (max-width: 820px) {
   /* Mirror the ≤1100 combo selectors so this later block wins the tie. */
   .is-editor .layout,
-  .is-editor.is-slides-collapsed .layout,
-  .is-editor.is-preview-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed .layout {
+  .is-editor.is-slides-collapsed .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) minmax(200px, 42vh);
     grid-template-areas:
@@ -526,9 +472,11 @@
   }
 
   .is-editor.is-inspector-collapsed .layout,
-  .is-editor.is-preview-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout,
-  .is-editor.is-slides-collapsed.is-preview-collapsed.is-inspector-collapsed .layout {
+  .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
+    /* Repeat the columns: the desktop dismissed-rail rule (slides + canvas)
+       outranks the plain ≤820 rule above, and the slides column is a fixed
+       drawer here - without this the canvas would sit in a 200px column. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr);
     grid-template-areas: 'canvas';
   }

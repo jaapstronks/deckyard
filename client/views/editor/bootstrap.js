@@ -29,10 +29,10 @@ export function createSlidesCollapsedPreference({
   return { loadInitial, set, clearClass };
 }
 
-export function createPreviewCollapsedPreference({
-  storageKey = 'ps:preview-collapsed',
+export function createCollapsedClassPreference({
+  storageKey,
   rootEl = document.documentElement,
-  className = 'is-preview-collapsed',
+  className,
 } = {}) {
   const apply = (collapsed) => {
     rootEl.classList.toggle(className, Boolean(collapsed));
