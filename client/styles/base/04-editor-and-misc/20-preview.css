@@ -293,26 +293,13 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Desktop (≥1025px): Allow a larger canvas by making notes scrollable. The
-   canvas column is now the flexible one at every desktop width, so the stage
-   grows 16:9 with its column on all desktop screens (was >1300px only).
+   The slide preview must always be fully visible — no vertical scrollbar on the
+   stage. Presenter notes live in their own strip beneath the scroll container
+   (notes-strip.js), so the stage never needs to scroll: it fills the available
+   height and attachThumbScaleContain() fits the 16:9 slide within it (scaling by
+   whichever of width/height is the limiting dimension). The base rules
+   (.preview-panel-scroll { overflow: hidden } + .preview-stage { flex: 1;
+   min-height: 0 }) already do this, so no desktop override is needed.
    ───────────────────────────────────────────────────────────────────────────── */
-@media (min-width: 1025px) {
-  .is-editor .preview-panel-scroll {
-    /* Allow scrolling so the preview stage can grow larger */
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .is-editor .preview-stage {
-    /* Don't shrink the stage; let the container scroll instead */
-    flex: 0 0 auto;
-    /* Stage should maintain 16:9 aspect ratio so the slide can grow with width */
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    /* Cap the stage so very wide canvases don't force vertical scrolling */
-    max-height: min(78vh, 720px);
-  }
-}
 
 
