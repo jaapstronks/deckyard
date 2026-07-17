@@ -87,6 +87,56 @@ export const VISUAL_CONTENT_SLIDES = {
     },
   },
 
+  'gallery-slide': {
+    category: 'content',
+    resolveInPhase1: false,
+    description: `
+      A curated grid of 2-6 images with optional per-image captions. The go-to
+      type for "show these images / screenshots / photos in one slide" when the
+      images carry the slide (no long explanatory text). Handles mixed aspect
+      ratios well, especially in the masonry layout.
+
+      STRUCTURE:
+      - images: Array of 2-6 objects, each with { src, caption, alt }
+      - layout: 'grid' (default, even cells), 'masonry' (preserves each image's
+        native aspect ratio — best for screenshots and mixed-shape images), or
+        'featured' (one large image + smaller ones).
+
+      Use for photo galleries, sets of screenshots, or a handful of related
+      images shown together. For images that each need a Title AND a Caption,
+      or for more than 6 images / people grids, use team-cards-slide instead.
+    `,
+    bestFor: [
+      'Several screenshots or UI captures in one slide (use layout: masonry)',
+      'A photo gallery or set of related images',
+      '2-6 images shown together where the images tell the story',
+      'Mixed aspect-ratio images that must not be cropped (masonry)',
+    ],
+    notFor: [
+      'A single hero image (use image-slide)',
+      'One image beside a paragraph of text (use image-text-slide)',
+      'More than 6 images, or images each needing a Title + Caption (use team-cards-slide)',
+      'Partner/sponsor logos (use logo-wall-slide)',
+    ],
+    schema: {
+      title: { type: 'string', required: false, maxLength: 120 },
+      subheading: { type: 'string', required: false, maxLength: 200 },
+      layout: { type: 'enum', options: ['grid', 'masonry', 'featured'], default: 'grid' },
+      images: {
+        type: 'array',
+        required: true,
+        minItems: 2,
+        maxItems: 6,
+        itemSchema: {
+          src: { type: 'string', required: true, description: 'Image URL' },
+          caption: { type: 'string', required: false, maxLength: 100 },
+          alt: { type: 'string', required: false, maxLength: 200 },
+        },
+      },
+      background: { type: 'enum', options: ['lime', 'mist'] },
+    },
+  },
+
   'table-slide': {
     category: 'content',
     resolveInPhase1: false,
