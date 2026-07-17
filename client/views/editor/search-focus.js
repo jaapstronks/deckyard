@@ -1,3 +1,19 @@
+/**
+ * Open every collapsed `<details>` ancestor of `el` so a subsequent
+ * `focus()` / `scrollIntoView()` actually reaches it. Inspector fields now
+ * live in default-collapsed per-type groups (e.g. "Card icons & links",
+ * "Column images & blocks"); without this walk, focusing a hit inside a
+ * closed group is a no-op on display:none content.
+ * @param {Element|null} el
+ */
+function openAncestorDetails(el) {
+  let node = el?.parentElement;
+  while (node) {
+    if (node.tagName === 'DETAILS' && !node.open) node.open = true;
+    node = node.parentElement;
+  }
+}
+
 export function focusSearchHitInEditor({
   query,
   slideId,
@@ -39,6 +55,7 @@ export function focusSearchHitInEditor({
       const idx = val.toLowerCase().indexOf(qLower);
       if (idx < 0) continue;
       onFocusField?.();
+      openAncestorDetails(el);
       el.focus?.();
       try {
         el.setSelectionRange?.(idx, idx + q.length);
