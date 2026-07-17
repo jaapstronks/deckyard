@@ -19,6 +19,7 @@ import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.j
 import { iconUrl } from '../../../shared/icon-names.js';
 import { moreIcon, closeIcon } from '../../lib/icons.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
+import { createLayoutSwitcherChip } from './layout-switcher.js';
 import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
@@ -626,6 +627,18 @@ export function createRerenderEditor({
           })
         );
       }
+
+      // Layout switcher chip: only for types that declare layoutVariants
+      // (type-agnostic; forks that override a type control their own set).
+      const layoutChip = createLayoutSwitcherChip({
+        h,
+        slide,
+        pres,
+        SLIDE_TYPES,
+        editorState,
+        openOverlayClosers,
+      });
+      if (layoutChip) tbLeft.append(layoutChip);
 
       // "Edit all text": opens the roomy bulk-edit modal (all content fields
       // + live preview).

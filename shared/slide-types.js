@@ -26,6 +26,12 @@ export {
 } from './slide-types/deck.js';
 
 export {
+  getLayoutVariants,
+  activeLayoutVariantId,
+  applyLayoutVariant,
+} from './slide-types/layout-variants.js';
+
+export {
   getConvertibleSlideTypes,
   convertSlideToType,
   getConversionLossyKeys,

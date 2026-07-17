@@ -31,6 +31,12 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.inline && typeof def.inline === 'object'
             ? def.inline
             : undefined,
+        // Layout catalogue for the editor's layout switcher. Declared on the
+        // definition (JSON-safe) so forks that override a type by name bring
+        // their own variant set; absent = no switcher chip.
+        layoutVariants: Array.isArray(def.layoutVariants)
+          ? def.layoutVariants
+          : undefined,
       };
     }
 
