@@ -607,5 +607,10 @@
   "editor.present.more": "Meer presenteeropties",
   "editor.notes.tab": "Notities",
   "editor.notes.qr": "Notities (QR)",
-  "editor.inspector.columnsConfig": "Kolom-afbeeldingen & blokken"
+  "editor.inspector.columnsConfig": "Kolom-afbeeldingen & blokken",
+  "comments.scope.allSlides": "Alle slides",
+  "comments.scope.label": "Bereik van opmerkingen",
+  "comments.filter.title": "Opmerkingen filteren",
+  "comments.filter.status": "Status",
+  "comments.filter.type": "Type"
 }

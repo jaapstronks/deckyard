@@ -281,6 +281,8 @@ export async function createEditorController({
     // Acquire lock on the newly selected slide (not in live-edit mode:
     // concurrent editing is the point, presence covers awareness)
     if (!liveEditsActive) slideLockManager.onSlideSelected(v).catch(() => {});
+    // A slide-scoped comments pane follows the selection.
+    commentsPanel?.onSlideChanged?.();
   };
 
   const { openOverlayClosers, closeAll: closeAllOverlays } = createOverlayRegistry();
@@ -639,8 +641,10 @@ export async function createEditorController({
         openOverlayClosers,
         onComplete: ({ suggestionCount } = {}) => {
           if (suggestionCount > 0) {
-            // Open the rail on the comments pane; syncRailState shows the
-            // panel, which loads the fresh suggestions.
+            // AI suggestions can land on any slide: widen the pane to the
+            // deck scope, then open the rail on it (syncRailState shows the
+            // panel, which loads the fresh suggestions).
+            commentsPanel?.setScope?.('all');
             inspectorPanes.open('comments');
           }
         },
@@ -1409,6 +1413,7 @@ export async function createEditorController({
       saveManager.cancelAutosave();
       if (uiRefreshTimer) clearTimeout(uiRefreshTimer);
       commentsPanel?.stopPolling?.();
+      commentsPanel?.detach?.();
       slidesCollapsedPref.clearClass();
       inspectorCollapsedPref.clearClass();
     } catch { /* ignore */ }

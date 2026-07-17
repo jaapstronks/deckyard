@@ -594,5 +594,10 @@
   "editor.present.more": "More presenting options",
   "editor.notes.tab": "Notes",
   "editor.notes.qr": "Notes (QR)",
-  "editor.inspector.columnsConfig": "Column images & blocks"
+  "editor.inspector.columnsConfig": "Column images & blocks",
+  "comments.scope.allSlides": "All slides",
+  "comments.scope.label": "Comments scope",
+  "comments.filter.title": "Filter comments",
+  "comments.filter.status": "Status",
+  "comments.filter.type": "Type"
 }
