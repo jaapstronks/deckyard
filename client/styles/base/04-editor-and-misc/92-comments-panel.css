@@ -572,6 +572,73 @@
   cursor: crosshair;
 }
 
+/* Positioned-comment composer: the little card that opens where you click to
+   place a pinned comment. Rendered into .preview-stage with inline left/top
+   pixel values at the click point; the anchor-* classes flip it so it never
+   clips past an edge. (Previously unstyled - it collapsed to a bare textarea
+   with no chrome, hence "narrow and nearly invisible".) */
+.positioned-comment-popup {
+  position: absolute;
+  z-index: 9;
+  width: min(260px, 70%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md, 8px);
+  box-shadow: var(--app-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.22));
+  /* Offset down-right from the click point so the cursor doesn't cover it. */
+  transform: translate(14px, 14px);
+}
+
+.positioned-comment-popup.anchor-right {
+  transform: translate(calc(-100% - 14px), 14px);
+}
+
+.positioned-comment-popup.anchor-bottom {
+  transform: translate(14px, calc(-100% - 14px));
+}
+
+.positioned-comment-popup.anchor-right.anchor-bottom {
+  transform: translate(calc(-100% - 14px), calc(-100% - 14px));
+}
+
+/* Small accent dot marking the click point, in the popup corner nearest it. */
+.positioned-comment-marker {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  border: 2px solid hsl(var(--app-bg-elevated));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.positioned-comment-popup.anchor-right .positioned-comment-marker {
+  left: auto;
+  right: -4px;
+}
+
+.positioned-comment-popup.anchor-bottom .positioned-comment-marker {
+  top: auto;
+  bottom: -4px;
+}
+
+.positioned-comment-popup textarea {
+  resize: none;
+  width: 100%;
+}
+
+.positioned-comment-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
 /* ============================================================
    AI SUGGESTIONS STYLES
    ============================================================ */

@@ -662,5 +662,11 @@
   "subscription.level.mute.help": "Silence this deck. Direct @mentions still reach you.",
   "subscription.saved": "Notification setting saved",
   "subscription.saveFailed": "Could not save notification setting",
-  "subscription.loadFailed": "Could not load notification setting"
+  "subscription.loadFailed": "Could not load notification setting",
+  "comments.addLabel": "Add comment",
+  "comments.addPositioned": "Add comment to specific spot",
+  "comments.cancelPosition": "Cancel",
+  "comments.pinModeHint": "Click on the slide to place comment",
+  "editor.notes.collapse": "Hide presenter notes",
+  "editor.notes.expand": "Show presenter notes"
 }

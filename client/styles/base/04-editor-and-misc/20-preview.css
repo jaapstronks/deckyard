@@ -110,6 +110,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Positioning context for the add-comment mode hint overlay and the
+     positioned-comment composer popup. */
+  position: relative;
 }
 
 .preview-panel-actions {
@@ -132,10 +135,54 @@
   display: none;
 }
 
+/* Add-comment button: labeled (icon + text), not a bare pin glyph, so the
+   entry point is discoverable. Flips to a Cancel affordance when active. */
+.pin-comment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .pin-comment-btn .btn-pin-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   display: block;
+}
+
+.pin-comment-btn.is-active {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(0 0% 100%);
+}
+
+.pin-comment-btn.is-active .btn-pin-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* Mode hint: overlay banner pinned to the top of the slide stage while
+   placing a comment. Kept out of the toolbar flex row (where it wrapped and
+   unbalanced the bar); pointer-through so it never blocks the placement
+   click. Stage is the positioning context (position: relative below). */
+.pin-mode-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent-primary));
+  color: hsl(0 0% 100%);
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--app-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+}
+
+.pin-mode-hint[hidden] {
+  display: none;
 }
 
 /* Divider between the slide actions and the pane tabs. */
@@ -224,9 +271,14 @@
   background: hsl(var(--app-text-tertiary, 0 0% 55%));
 }
 
-/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). */
+/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). The
+   add-comment button collapses to its pin icon on the same breakpoint. */
 @media (max-width: 1150px) {
   .pane-tab-label {
+    display: none;
+  }
+
+  .pin-comment-label {
     display: none;
   }
 }
