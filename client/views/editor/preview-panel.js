@@ -1,6 +1,7 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
+import { zoomInIcon } from '../../lib/icons.js';
 
 export function createPreviewPanel({
   h,
@@ -23,6 +24,9 @@ export function createPreviewPanel({
   onOpenComments,
   // Lightbox navigation
   onLightboxNavigate,
+  // Pane tabs (Inspector / Comments / Notes): the far-right group of the
+  // slide toolbar, directly above the rail the tabs control.
+  paneTabsEl,
 } = {}) {
   const preview = h('div', { class: 'panel preview-panel' });
 
@@ -56,29 +60,27 @@ export function createPreviewPanel({
   const slideToolbarLeft = h('div', { class: 'row slide-toolbar-left' });
   previewHeader.append(slideToolbarLeft);
 
-  const zoomIcon = h('img', {
-    class: 'preview-zoom-icon',
-    alt: '',
-    src: iconUrl('search'),
-  });
   const zoomBtn = h('button', {
-    class: 'preview-icon-btn preview-zoom-btn',
+    class: 'ghost-icon-btn preview-zoom-btn',
     title: t('editor.preview.openLarge', 'Open larger preview'),
+    'aria-label': t('editor.preview.openLarge', 'Open larger preview'),
     onclick: () => openPreviewLightbox(),
   });
-  zoomBtn.append(zoomIcon);
+  zoomBtn.append(zoomInIcon({ size: 16 }));
 
-  // Pin comment button (only shown if commentsApi is available)
+  // Pin comment button (only shown if commentsApi is available). Icon-only,
+  // same ghost tier as the other slide actions; the labeled entry point
+  // lives in the comments pane.
   let pinCommentBtn = null;
   let pinModeHint = null;
   if (commentsApi) {
     pinCommentBtn = h('button', {
-      class: 'btn btn-secondary btn-sm pin-comment-btn',
+      class: 'ghost-icon-btn pin-comment-btn',
       title: t('comments.addPositioned', 'Add comment to specific spot'),
+      'aria-label': t('comments.addPositioned', 'Add comment to specific spot'),
     });
     pinCommentBtn.append(
-      h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' }),
-      h('span', { class: 'pin-comment-btn-label', text: t('comments.pinCommentLabel', 'Comment') })
+      h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' })
     );
     // Hint text that appears when pin mode is active
     pinModeHint = h('span', {
@@ -90,9 +92,15 @@ export function createPreviewPanel({
 
   const headerActions = h('div', { class: 'row preview-panel-actions' });
   const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
-  if (pinCommentBtn) headerActions.append(pinCommentBtn);
   if (pinModeHint) headerActions.append(pinModeHint);
-  headerActions.append(slideToolbarActions, zoomBtn);
+  if (pinCommentBtn) headerActions.append(pinCommentBtn);
+  headerActions.append(zoomBtn, slideToolbarActions);
+  if (paneTabsEl) {
+    headerActions.append(
+      h('div', { class: 'slide-toolbar-sep', 'aria-hidden': 'true' }),
+      paneTabsEl
+    );
+  }
   previewHeader.append(headerActions);
   preview.append(previewHeader);
 

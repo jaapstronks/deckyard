@@ -6,6 +6,7 @@ import { normalizeLang, hasLangVersion, otherLang } from '../../lib/i18n.js';
 import { buildExportUrl } from './publish-export/urls.js';
 import { installDismissOnOutside } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
+import { makeDropdownCaret } from '../../lib/icons.js';
 
 export function setupExportDropdown({
   h,
@@ -21,11 +22,7 @@ export function setupExportDropdown({
     },
     [
       h('span', { text: t('editor.export.button', 'Export') }),
-      h('span', {
-        class: 'dropdown-caret',
-        text: '▾',
-        'aria-hidden': 'true',
-      }),
+      makeDropdownCaret(),
     ]
   );
 

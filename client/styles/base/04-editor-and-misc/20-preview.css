@@ -112,37 +112,6 @@
   justify-content: center;
 }
 
-.preview-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  color: hsl(var(--app-text-secondary));
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--ps-radius-md);
-  cursor: pointer;
-  transition: all var(--ps-transition-fast);
-}
-.preview-icon-btn:hover {
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-hover));
-  border-color: hsl(var(--app-border-default));
-}
-.preview-icon-btn:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.25);
-}
-.preview-zoom-icon {
-  width: 18px;
-  height: 18px;
-  display: block;
-}
-
 .preview-panel-actions {
   gap: 4px;
 }
@@ -161,6 +130,105 @@
 
 .slide-toolbar-actions:empty {
   display: none;
+}
+
+.pin-comment-btn .btn-pin-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Divider between the slide actions and the pane tabs. */
+.slide-toolbar-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 6px;
+  background: hsl(var(--app-border-default));
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Pane tabs (Inspector / Comments / Notes): far right of the slide toolbar,
+   directly above the rail they control. Same segmented-control recipe as the
+   topbar language toggle; pressed (is-active) = "rail open on MY pane".
+   ───────────────────────────────────────────────────────────────────────────── */
+.pane-tabs {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px;
+  background: hsl(var(--app-bg-base));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  flex-shrink: 0;
+}
+
+.pane-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.pane-tab:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.pane-tab:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -1px;
+}
+
+.pane-tab.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.pane-tab-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+/* Inline count on the Comments tab (never absolute: it must not overlap the
+   label). Red = new/unseen, grey = seen but unresolved. */
+.pane-tab-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: hsl(var(--app-danger, 0 72% 51%));
+  color: hsl(0 0% 100%);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.pane-tab-badge[hidden] {
+  display: none;
+}
+
+.pane-tab-badge--seen {
+  background: hsl(var(--app-text-tertiary, 0 0% 55%));
+}
+
+/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). */
+@media (max-width: 1150px) {
+  .pane-tab-label {
+    display: none;
+  }
 }
 
 .thumb.is-clickable-preview {
