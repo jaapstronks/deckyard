@@ -1,6 +1,6 @@
 # Deckyard Roadmap
 
-**Updated: 2026-07-16.** This is the single overview for ongoing development.
+**Updated: 2026-07-17.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (38 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
@@ -41,11 +41,24 @@ self-contained project.
 
 _(The editor-UI track — wysiwyg-first editing, "Edit all text" bulk modal,
 the right-side Inspector rail with settings + comments panes, responsive
-convergence — shipped in full on 2026-07-16; how it works is documented in
+convergence — shipped in full on 2026-07-16, followed on 2026-07-17 by the
+editor-chrome redesign: deck-only topbar zones, pane tabs on the slide
+toolbar, presenter notes as a third pane, inline icon picker and a comments
+scope switch. How it works is documented in
 `docs/reference/editor-inspector.md`.)_
 
 ## Next — existing feature plans
 
+- **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
+  merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
+  detection via base fingerprints): order-preserving merges, client refresh
+  on focus/online so a tab never grows stale, a merge audit log with
+  pre-merge snapshots, and a decision on the admin If-Match bypass.
+  Worklist entry in `docs/plans/TODO.md`.
+- **WYSIWYG: add/remove image as a direct intent** —
+  `docs/plans/wysiwyg-image-add-remove.md` — "add an image" on a text slide
+  and "remove the image area" on an image-text slide, with the existing
+  convert seam doing the type switch under water.
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.
