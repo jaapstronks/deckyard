@@ -28,6 +28,27 @@ import { createRouteContext } from '../../../utils/context.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
 import { broadcastToPresentation, PresentationEventTypes } from '../../../services/comment-events.js';
 
+/**
+ * GET /api/presentations/:id/revision — lightweight revision probe.
+ * Lets a waking editor tab check whether the server has moved on without
+ * downloading the whole deck (see client/views/editor/remote-refresh.js).
+ */
+export async function handlePresentationRevision(
+  { repoRoot, req, res, authedUser } = {},
+  id
+) {
+  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+  const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'read' });
+  if (!pres) return true;
+  serveJson(res, 200, {
+    id: pres.id,
+    revision: pres.revision,
+    modified: pres.modified,
+    updatedBy: pres.updatedBy || null,
+  });
+  return true;
+}
+
 export async function handlePresentationItem(
   { repoRoot, req, res, url, authedUser } = {},
   id
@@ -137,6 +158,17 @@ export async function handlePresentationItem(
       }
     }
 
+    // Did the client actually reorder slides since its base? '0' keeps the
+    // server's slide order authoritative in a merge (a stale tab must not
+    // reshuffle the deck); absent header = legacy client → old behaviour.
+    let clientReordered = null;
+    const orderChangedHeader = req.headers['x-slides-order-changed'];
+    if (orderChangedHeader === '1' || orderChangedHeader === 'true') {
+      clientReordered = true;
+    } else if (orderChangedHeader === '0' || orderChangedHeader === 'false') {
+      clientReordered = false;
+    }
+
     let updated = null;
     try {
       updated = await updatePresentation(repoRoot, id, body, {
@@ -145,6 +177,7 @@ export async function handlePresentationItem(
         user: authedUser || null,
         modifiedSlideIds,
         slideBaseFingerprints,
+        clientReordered,
       });
     } catch (e) {
       if (e?.statusCode)

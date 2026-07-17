@@ -9,6 +9,11 @@ import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
+import {
+  createPresentationVersion,
+  prunePresentationVersions,
+} from './presentations/versions.js';
+import { recordSlideLevelMerge } from '../services/activity-events.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
 import { invalidatePresentationCache } from './presentation-cache.js';
 
@@ -87,11 +92,42 @@ export async function updatePresentation(repoRoot, id, body, opts) {
     collabBase = await getPresentation(repoRoot, id).catch(() => null);
   }
 
+  // Merge-capable save (editor autosave with If-Match + modified-slide ids)
+  // by a client more than one revision behind: snapshot the current server
+  // state first (reason 'pre_merge'), so a bad merge is a one-click restore
+  // in the version history. File-based like every other snapshot, for both
+  // storage backends. Best-effort: never blocks the save.
+  const expectedRevision = Number(opts?.expectedRevision);
+  if (Number.isFinite(expectedRevision) && Array.isArray(opts?.modifiedSlideIds)) {
+    try {
+      const current = collabBase || (await getPresentation(repoRoot, id));
+      if (current && Number(current.revision) - expectedRevision > 1) {
+        await createPresentationVersion(repoRoot, id, current, {
+          actorEmail: opts?.actorEmail || null,
+          reason: 'pre_merge',
+        });
+        await prunePresentationVersions(repoRoot, id);
+      }
+    } catch {
+      // snapshots are best-effort
+    }
+  }
+
   let result;
   try {
     result = await updatePresentationUncached(repoRoot, id, body, opts);
   } finally {
     invalidatePresentationCache(id);
+  }
+  // Audit every performed slide-level merge (see the write paths, which
+  // attach `_slideMerge` to the result). Fire-and-forget; the activity store
+  // degrades to a no-op without a database.
+  if (result && result.ok !== false && result._slideMerge && opts?.actorEmail) {
+    void recordSlideLevelMerge({
+      presentation: result,
+      actorEmail: opts.actorEmail,
+      merge: result._slideMerge,
+    }).catch(() => {});
   }
   // Any successful mutation (editor save, public API, MCP tool) refreshes
   // live presenting clients. Fire-and-forget: a no-op without a live session.

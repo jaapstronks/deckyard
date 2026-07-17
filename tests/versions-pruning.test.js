@@ -30,8 +30,9 @@ describe('getReasonPriority', () => {
     assert.strictEqual(getReasonPriority('manual'), 2);
     assert.strictEqual(getReasonPriority('restore'), 3);
     assert.strictEqual(getReasonPriority('pre_restore'), 4);
-    assert.strictEqual(getReasonPriority('autosave'), 5);
-    assert.strictEqual(getReasonPriority('snapshot'), 6);
+    assert.strictEqual(getReasonPriority('pre_merge'), 5);
+    assert.strictEqual(getReasonPriority('autosave'), 6);
+    assert.strictEqual(getReasonPriority('snapshot'), 7);
   });
 
   it('returns fallback priority for unknown reasons', () => {

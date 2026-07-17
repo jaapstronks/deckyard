@@ -6,7 +6,7 @@ import { handlePresentationsCreate } from './presentations/create.js';
 import { handlePresentationsImportJson } from './presentations/import-json.js';
 import { handlePresentationsImportMarkdown } from './presentations/import-markdown.js';
 import { handlePresentationScope } from './presentations/scope.js';
-import { handlePresentationItem } from './presentations/presentation.js';
+import { handlePresentationItem, handlePresentationRevision } from './presentations/presentation.js';
 import { handlePresentationDuplicate } from './presentations/duplicate.js';
 import { handlePresentationDescriptionGenerate } from './presentations/description.js';
 import { handlePresentationTranslateFields } from './presentations/translate-fields.js';
@@ -178,6 +178,17 @@ export async function handlePresentations({
     return handlePresentationDuplicate(
       { repoRoot, req, res, url, authedUser },
       dupMatch[1]
+    );
+  }
+
+  // Lightweight revision probe (staleness check for waking editor tabs)
+  const revisionMatch = url.pathname.match(
+    /^\/api\/presentations\/([^/]+)\/revision$/
+  );
+  if (revisionMatch) {
+    return handlePresentationRevision(
+      { repoRoot, req, res, url, authedUser },
+      revisionMatch[1]
     );
   }
 

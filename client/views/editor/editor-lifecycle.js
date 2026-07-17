@@ -4,9 +4,20 @@ const VISIBILITY_DEBOUNCE_MS = 30 * 1000;
 export function attachEditorLifecycle({
   saveManager,
   detachThumbScale,
+  onWake,
 } = {}) {
   let visibilityDebounceTimer = null;
   let beaconSentForCurrentHide = false;
+
+  // Wake signals: the tab may have missed remote saves while asleep or
+  // offline; give the remote-refresh check a chance before the user edits.
+  const handleWake = () => {
+    try {
+      onWake?.();
+    } catch {
+      // wake checks are best-effort
+    }
+  };
 
   const sendSessionEndBeacon = () => {
     const beacon = saveManager?.getSessionEndBeacon?.();
@@ -62,17 +73,22 @@ export function attachEditorLifecycle({
         clearTimeout(visibilityDebounceTimer);
         visibilityDebounceTimer = null;
       }
+      handleWake();
     }
   };
 
   window.addEventListener('beforeunload', onBeforeUnload);
   window.addEventListener('popstate', onPopState);
   document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('focus', handleWake);
+  window.addEventListener('online', handleWake);
 
   return () => {
     window.removeEventListener('beforeunload', onBeforeUnload);
     window.removeEventListener('popstate', onPopState);
     document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.removeEventListener('focus', handleWake);
+    window.removeEventListener('online', handleWake);
     if (visibilityDebounceTimer) {
       clearTimeout(visibilityDebounceTimer);
       visibilityDebounceTimer = null;

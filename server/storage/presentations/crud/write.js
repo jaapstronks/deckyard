@@ -122,19 +122,29 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
   // Slide-level merge: when there's a conflict and client provides modifiedSlideIds,
   // try to merge non-overlapping changes instead of failing
   let mergedSlides = null;
+  let mergeInfo = null;
   if (hasRevisionConflict) {
     const modifiedSlideIds = Array.isArray(opts?.modifiedSlideIds) ? opts.modifiedSlideIds : null;
     if (modifiedSlideIds && modifiedSlideIds.length >= 0) {
       // Attempt slide-level merge
+      const revisionGap = Number(existing.revision) - expectedRevision;
+      const clientReordered = opts?.clientReordered ?? null;
       const mergeResult = mergeSlidesAtSlideLevel({
         serverSlides: existing.slides,
         clientSlides: body.slides,
         modifiedSlideIds,
         baseFingerprints: opts?.slideBaseFingerprints || null,
-        revisionGap: Number(existing.revision) - expectedRevision,
+        revisionGap,
+        clientReordered,
       });
       if (mergeResult.merged && mergeResult.conflicts.length === 0) {
         mergedSlides = mergeResult.slides;
+        mergeInfo = {
+          revisionGap,
+          modifiedSlideIds,
+          appendedSlideIds: mergeResult.appendedSlideIds || [],
+          clientReordered,
+        };
       } else if (mergeResult.conflicts.length > 0) {
         // There are true conflicts - throw error with details
         throw new ConflictError(
@@ -227,5 +237,9 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
     actorEmail: normalizeEmail(opts?.actorEmail),
     reason: opts?.reason || (opts?.restoreFromVersionId ? 'restore' : 'autosave'),
   });
-  return normalizeMeta(candidate);
+  const out = normalizeMeta(candidate);
+  // Response-only audit metadata (attached after the write, so it is never
+  // persisted): the facade logs it to activity_events.
+  if (mergeInfo) out._slideMerge = mergeInfo;
+  return out;
 }

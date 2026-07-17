@@ -79,6 +79,7 @@ import { isPresentationAuthor, isSlideLockedForUser } from '../../lib/slide-lock
 import { createUndoManager } from '../../lib/undo-manager.js';
 import { createUndoActions } from './slide-list/undo-actions.js';
 import { createSlideUpdateHandler } from './slide-update-handler.js';
+import { createRemoteRefresh } from './remote-refresh.js';
 
 export async function createEditorController({
   root,
@@ -1101,6 +1102,33 @@ export async function createEditorController({
     cleanup.register('slideUpdateHandler', () => slideUpdateHandler.destroy());
   }
 
+  // Wake-up staleness guard: a tab that slept through remote saves checks the
+  // server revision on visible/focus/online (wired into the lifecycle below)
+  // and refreshes or merges before the user edits stale content.
+  const remoteRefresh = createRemoteRefresh({
+    api,
+    id,
+    pres,
+    saveManager,
+    isEnabled: () => !liveEditsActive,
+    onRefreshed: ({ changedSlideIds } = {}) => {
+      let reselected = false;
+      // The selected slide may be gone after adopting the server state.
+      if (selectedSlideId && !pres.slides.some((s) => s?.id === selectedSlideId)) {
+        setSelectedSlideIdWithLock(pres.slides[0]?.id || null);
+        reselected = true;
+      }
+      try { rerenderSlideList(); } catch { /* ignore */ }
+      try { rerenderPreview(); } catch { /* ignore */ }
+      if (
+        reselected ||
+        (Array.isArray(changedSlideIds) && changedSlideIds.includes(selectedSlideId))
+      ) {
+        try { rerenderEditor(); } catch { /* ignore */ }
+      }
+    },
+  });
+
   // Load initial comment counts
   commentsPanel?.loadComments?.().catch(() => {});
   commentsPanel?.startPolling?.();
@@ -1398,6 +1426,7 @@ export async function createEditorController({
   const detachLifecycle = attachEditorLifecycle({
     saveManager,
     detachThumbScale: () => cleanup.run('thumbScale'),
+    onWake: () => remoteRefresh.check(),
   });
   cleanup.register('lifecycle', detachLifecycle);
 
