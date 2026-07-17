@@ -72,6 +72,18 @@ export const BASIC_SLIDE_EXAMPLES = {
     background: 'lime',
   }],
 
+  'gallery-slide': [{
+    title: 'Product Screenshots',
+    subheading: 'The dashboard at a glance',
+    layout: 'masonry',
+    images: [
+      { src: '', caption: 'Overview dashboard', alt: 'Dashboard overview screen' },
+      { src: '', caption: 'Report builder', alt: 'Report builder screen' },
+      { src: '', caption: 'Team settings', alt: 'Team settings screen' },
+    ],
+    background: 'mist',
+  }],
+
   'timeline-slide': [{
     title: 'Project Roadmap',
     subheading: '2024-2025 Development Phases',
