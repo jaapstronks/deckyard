@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Puede comentar",
   "viewer.permission.edit": "Editar",
   "viewer.permission.view": "Solo lectura",
-
   "analytics.teamViewers": "{{count}} vistas de miembros del equipo",
   "analytics.teamViewersNote": "(agregado por privacidad)",
   "analytics.teamMember": "Miembro del equipo",
-
   "common.default": "predeterminado",
-
   "dashboard.title": "Estadísticas de Engagement",
   "dashboard.periodLabel": "Período",
   "dashboard.period.7d": "Últimos 7 días",
@@ -78,25 +75,27 @@
   "dashboard.loading": "Cargando estadísticas...",
   "dashboard.error": "No se pudieron cargar las estadísticas",
   "dashboard.vsLastPeriod": "vs período anterior",
-
   "dashboard.cards.totalViews": "Vistas totales",
   "dashboard.cards.uniqueViewers": "Visitantes únicos",
   "dashboard.cards.avgDuration": "Duración prom.",
   "dashboard.cards.completionRate": "Tasa de finalización",
   "dashboard.trend.vsPrevious": "vs período anterior",
   "dashboard.trend.noPrevious": "Sin datos anteriores",
-
   "dashboard.chart.title": "Vistas en el tiempo",
   "dashboard.chart.empty": "Sin datos de vistas para este período",
   "dashboard.chart.ariaLabel": "Gráfico de barras de vistas en el tiempo",
-
   "dashboard.top.title": "Mejores presentaciones",
   "dashboard.top.empty": "Sin presentaciones con vistas aún",
   "dashboard.top.presentation": "Presentación",
   "dashboard.top.views": "Vistas",
   "dashboard.top.avgDuration": "Duración prom.",
   "dashboard.top.completion": "Finalización",
-
   "dashboard.source.title": "Engagement por fuente",
-  "dashboard.source.empty": "Sin datos aún"
+  "dashboard.source.empty": "Sin datos aún",
+  "notifications.bell": "Notificaciones",
+  "notifications.empty": "Sin notificaciones",
+  "notifications.loading": "Cargando...",
+  "notifications.markAllRead": "Marcar todo como leído",
+  "notifications.title": "Notificaciones",
+  "notifications.unread": "no leída"
 }

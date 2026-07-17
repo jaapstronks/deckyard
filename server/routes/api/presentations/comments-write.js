@@ -150,6 +150,7 @@ export async function handlePresentationCommentsCreate(
     comment: result.comment,
     parentComment,
     actor: notificationUser,
+    ctx,
   });
 
   // Record activity event (non-blocking)

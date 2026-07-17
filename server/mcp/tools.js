@@ -40,6 +40,7 @@ import {
   CommentEventTypes,
 } from '../services/comment-events.js';
 import { recordCommentCreated, recordCommentResolved, recordCommentReopened } from '../services/activity-events.js';
+import { notifyCommentCreatedInApp } from '../services/comment-notifications.js';
 import { broadcastCommentCounts, MAX_COMMENT_LENGTH } from '../routes/api/presentations/comments-shared.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
@@ -1522,6 +1523,14 @@ export function registerTools(
     }
 
     // Same side effects as the app routes so the editor UI updates live.
+    const parentComment = parentId ? await getComment(parentId, ctx) : null;
+    void notifyCommentCreatedInApp({
+      presentation: pres,
+      comment: result.comment,
+      parentComment,
+      actor: { email: owner },
+      ctx,
+    });
     void recordCommentCreated({
       comment: result.comment,
       presentation: pres,
