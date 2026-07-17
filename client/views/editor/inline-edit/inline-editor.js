@@ -59,6 +59,7 @@ export function createInlineEditor({
   getSlide,
   getSlideDef,
   getCanEdit,
+  isCommentAddMode,
   markDirty,
   requestSave,
   rerenderPreview,
@@ -1208,6 +1209,11 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
   function onThumbClickCapture(e) {
     if (!getCanEdit?.()) return;
+    // Placing a positioned comment? Yield entirely: don't preventDefault or
+    // stopPropagation, so the click bubbles to the comment-markers handler on
+    // the same element and the pin lands wherever the user clicked - including
+    // over editable text, which would otherwise start a text edit instead.
+    if (isCommentAddMode?.()) return;
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.

@@ -675,5 +675,11 @@
   "subscription.level.mute.help": "Zet dit deck stil. Directe @mentions bereiken je nog wel.",
   "subscription.saved": "Meldingsinstelling opgeslagen",
   "subscription.saveFailed": "Meldingsinstelling opslaan mislukt",
-  "subscription.loadFailed": "Meldingsinstelling laden mislukt"
+  "subscription.loadFailed": "Meldingsinstelling laden mislukt",
+  "comments.addLabel": "Opmerking plaatsen",
+  "comments.addPositioned": "Opmerking op een specifieke plek",
+  "comments.cancelPosition": "Annuleren",
+  "comments.pinModeHint": "Klik op de slide om een opmerking te plaatsen",
+  "editor.notes.collapse": "Notities verbergen",
+  "editor.notes.expand": "Notities tonen"
 }

@@ -1,34 +1,80 @@
-/* Presenter-notes pane in the inspector rail (see notes-pane.js) */
-.notes-pane {
+/* ─────────────────────────────────────────────────────────────────────────────
+   Presenter-notes strip under the slide preview (see notes-strip.js).
+   Keynote / PowerPoint convention: notes sit beneath the slide, filling the
+   space left by the 16:9 stage. Collapsible so the slide can take the full
+   canvas height. Single horizontal padding (no rail .panel-scroll nesting, so
+   the old doubled-padding bug is gone by construction).
+   ───────────────────────────────────────────────────────────────────────────── */
+.notes-strip {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 auto;
   min-height: 0;
-  padding: 0 var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-base));
 }
 
-.notes-pane-header {
+.notes-strip-header {
   align-items: center;
   gap: var(--ps-space-3);
-  padding: var(--ps-space-3) 0;
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
+  padding: var(--ps-space-2) var(--ps-space-4);
 }
 
-.notes-pane-header-actions {
+/* The header title doubles as the collapse toggle (whole-title hit target). */
+.notes-strip-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: 4px 6px;
+  margin-left: -6px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: var(--ps-radius-sm);
+}
+
+.notes-strip-toggle:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.notes-strip-toggle:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -1px;
+}
+
+.notes-strip-chevron {
+  flex-shrink: 0;
+  transition: transform var(--ps-transition-fast);
+}
+
+.notes-strip.is-collapsed .notes-strip-chevron {
+  transform: rotate(-90deg);
+}
+
+.notes-strip-actions {
   gap: 6px;
 }
 
-.notes-pane-body {
+.notes-strip-body {
   display: flex;
   flex-direction: column;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-4) 0;
+  min-height: 0;
+  height: clamp(110px, 20vh, 240px);
+  padding: 0 var(--ps-space-4) var(--ps-space-3);
 }
 
-.notes-pane-input {
-  min-height: 220px;
-  flex: 0 0 auto;
-  resize: vertical;
+.notes-strip.is-collapsed .notes-strip-body {
+  display: none;
 }
 
-
+.notes-strip-input {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+}

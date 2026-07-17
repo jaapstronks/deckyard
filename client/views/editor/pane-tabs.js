@@ -1,5 +1,5 @@
 /**
- * Pane tabs for the inspector rail: Inspector / Comments / Notes.
+ * Pane tabs for the inspector rail: Inspector / Comments.
  *
  * Lives at the far right of the slide toolbar (the row above the canvas),
  * directly above the rail it controls - the panes are slide-scoped, so they
@@ -7,6 +7,9 @@
  * re-org 2026-07-17). Pressed = "rail open on MY pane"; clicking the active
  * tab dismisses the rail. Always visible (also with the rail closed), which
  * is what makes the rail findable.
+ *
+ * Presenter notes are no longer a tab here - they live in a strip under the
+ * slide (notes-strip.js), so the rail is Inspector + Comments only.
  */
 
 import { t } from '../../lib/ui-i18n.js';
@@ -17,14 +20,12 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * @param {Function} options.h - DOM helper
  * @param {Function} [options.onToggleInspector]
  * @param {Function} [options.onToggleComments]
- * @param {Function} [options.onToggleNotes]
  * @returns {{ el: HTMLElement, setState: Function, updateBadge: Function }}
  */
 export function createPaneTabs({
   h,
   onToggleInspector,
   onToggleComments,
-  onToggleNotes,
 } = {}) {
   const makeTab = ({ icon, label, title, extraClass, onclick }) => {
     const btn = h('button', {
@@ -58,17 +59,10 @@ export function createPaneTabs({
   });
   btnComments.append(badgeEl);
 
-  const btnNotes = makeTab({
-    icon: 'file-text',
-    label: t('editor.notes.tab', 'Notes'),
-    title: t('editor.notes.title', 'Presenter notes'),
-    onclick: () => onToggleNotes?.(),
-  });
-
   const el = h(
     'div',
     { class: 'pane-tabs', role: 'group', 'aria-label': t('editor.panes.label', 'Side panels') },
-    [btnInspector, btnComments, btnNotes]
+    [btnInspector, btnComments]
   );
 
   /**
@@ -81,7 +75,6 @@ export function createPaneTabs({
     for (const [btn, name] of [
       [btnInspector, 'settings'],
       [btnComments, 'comments'],
-      [btnNotes, 'notes'],
     ]) {
       const active = Boolean(open) && pane === name;
       btn.setAttribute('aria-pressed', String(active));

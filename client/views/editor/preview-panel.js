@@ -24,9 +24,11 @@ export function createPreviewPanel({
   onOpenComments,
   // Lightbox navigation
   onLightboxNavigate,
-  // Pane tabs (Inspector / Comments / Notes): the far-right group of the
-  // slide toolbar, directly above the rail the tabs control.
+  // Pane tabs (Inspector / Comments): the far-right group of the slide
+  // toolbar, directly above the rail the tabs control.
   paneTabsEl,
+  // Presenter-notes strip, mounted under the slide (see notes-strip.js).
+  notesStripEl,
 } = {}) {
   const preview = h('div', { class: 'panel preview-panel' });
 
@@ -68,31 +70,39 @@ export function createPreviewPanel({
   });
   zoomBtn.append(zoomInIcon({ size: 16 }));
 
-  // Pin comment button (only shown if commentsApi is available). Icon-only,
-  // same ghost tier as the other slide actions; the labeled entry point
-  // lives in the comments pane.
+  // Add-comment button (only shown if commentsApi is available). Labeled, not
+  // icon-only: placing a comment was too well hidden as a bare pin glyph. When
+  // active it flips to a Cancel affordance. The mode hint no longer lives in
+  // the toolbar (it wrapped and unbalanced the row) - it renders as an overlay
+  // banner on the slide stage instead (see pinModeHint below).
   let pinCommentBtn = null;
+  let pinCommentLabel = null;
   let pinModeHint = null;
   if (commentsApi) {
     pinCommentBtn = h('button', {
-      class: 'ghost-icon-btn pin-comment-btn',
+      class: 'btn btn-secondary btn-sm pin-comment-btn',
+      type: 'button',
       title: t('comments.addPositioned', 'Add comment to specific spot'),
-      'aria-label': t('comments.addPositioned', 'Add comment to specific spot'),
+    });
+    pinCommentLabel = h('span', {
+      class: 'pin-comment-label',
+      text: t('comments.addLabel', 'Add comment'),
     });
     pinCommentBtn.append(
-      h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' })
+      h('img', { class: 'btn-pin-icon', src: iconUrl('map-pin'), alt: '', 'aria-hidden': 'true' }),
+      pinCommentLabel
     );
-    // Hint text that appears when pin mode is active
+    // Mode hint: rendered as an overlay on the stage (appended to previewStage
+    // further down), toggled with add-mode. Kept out of the flex toolbar row.
     pinModeHint = h('span', {
       class: 'pin-mode-hint',
-      text: t('comments.pinModeHint', 'Click on the preview to place comment'),
+      text: t('comments.pinModeHint', 'Click on the slide to place comment'),
     });
-    pinModeHint.style.display = 'none';
+    pinModeHint.hidden = true;
   }
 
   const headerActions = h('div', { class: 'row preview-panel-actions' });
   const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
-  if (pinModeHint) headerActions.append(pinModeHint);
   if (pinCommentBtn) headerActions.append(pinCommentBtn);
   headerActions.append(zoomBtn, slideToolbarActions);
   if (paneTabsEl) {
@@ -121,6 +131,9 @@ export function createPreviewPanel({
     openPreviewLightbox();
   });
   previewStage.append(thumb);
+  // Add-comment mode hint: an overlay banner on the stage (pointer-through so
+  // it never blocks the placement click). Lives here, not in the toolbar row.
+  if (pinModeHint) previewStage.append(pinModeHint);
 
   // Comment markers on the slide preview - setup functions first
   let commentMarkers = null;
@@ -133,8 +146,25 @@ export function createPreviewPanel({
     }
     // Also hide hint when popup is dismissed
     if (pinModeHint) {
-      pinModeHint.style.display = 'none';
+      pinModeHint.hidden = true;
     }
+  }
+
+  // Reflect add-comment mode on the toolbar button: filled + "Cancel" while
+  // active, back to "Add comment" when idle. Centralized so every exit path
+  // (toolbar toggle, composer Cancel, composer Post) restores the same state.
+  function syncPinButton(isActive) {
+    if (!pinCommentBtn) return;
+    pinCommentBtn.classList.toggle('is-active', isActive);
+    pinCommentBtn.title = isActive
+      ? t('comments.cancelPosition', 'Cancel')
+      : t('comments.addPositioned', 'Add comment to specific spot');
+    if (pinCommentLabel) {
+      pinCommentLabel.textContent = isActive
+        ? t('comments.cancelPosition', 'Cancel')
+        : t('comments.addLabel', 'Add comment');
+    }
+    if (pinModeHint) pinModeHint.hidden = !isActive;
   }
 
   async function refreshCommentMarkers() {
@@ -194,7 +224,7 @@ export function createPreviewPanel({
       onclick: () => {
         hidePositionedCommentPopup();
         commentMarkers?.exitAddMode?.();
-        pinCommentBtn?.classList?.remove('is-active');
+        syncPinButton(false);
       },
     });
     const submitBtn = h('button', {
@@ -215,7 +245,7 @@ export function createPreviewPanel({
           });
           hidePositionedCommentPopup();
           commentMarkers?.exitAddMode?.();
-          pinCommentBtn?.classList?.remove('is-active');
+          syncPinButton(false);
           // Refresh to show the new marker
           refreshCommentMarkers();
         } catch (err) {
@@ -252,27 +282,24 @@ export function createPreviewPanel({
     if (pinCommentBtn) {
       pinCommentBtn.addEventListener('click', () => {
         const isActive = commentMarkers.toggleAddMode();
-        pinCommentBtn.classList.toggle('is-active', isActive);
-        if (pinModeHint) {
-          pinModeHint.style.display = isActive ? '' : 'none';
-        }
-        if (isActive) {
-          pinCommentBtn.title = t('comments.cancelPosition', 'Cancel');
-        } else {
-          pinCommentBtn.title = t('comments.addPositioned', 'Add comment to specific spot');
-          hidePositionedCommentPopup();
-        }
+        syncPinButton(isActive);
+        if (!isActive) hidePositionedCommentPopup();
       });
     }
   }
 
-  // Presenter notes moved into the inspector rail as their own pane (chrome
-  // re-org stap 2, see notes-pane.js); the always-open comments section
-  // folded into the comments pane earlier (fase 4). The positioned markers
-  // on the slide (above) are the remaining comments surface in this panel.
+  // Presenter notes live in the strip under the slide (notes-strip.js,
+  // appended below); the comment thread list folded into the comments pane
+  // earlier (fase 4). The positioned markers on the slide (above) are the
+  // remaining comments surface in this panel.
 
   previewScroll.append(previewStage);
   preview.append(previewScroll);
+
+  // Presenter-notes strip, directly under the slide (Keynote / PowerPoint
+  // convention). Fills the space beneath the 16:9 stage; collapsible so the
+  // slide can reclaim the full height. See notes-strip.js.
+  if (notesStripEl) preview.append(notesStripEl);
 
   const detachThumbScale = attachThumbScaleContain(thumb, {
     virtualWidth: 1600,
@@ -304,5 +331,9 @@ export function createPreviewPanel({
       commentMarkers?.reattach?.();
       commentMarkers?.refresh?.();
     },
+    // True while placing a positioned comment. The inline WYSIWYG editor reads
+    // this to yield its click capture so the pin lands anywhere on the slide,
+    // not only in the non-editable margins.
+    isCommentAddMode: () => Boolean(commentMarkers?.isInAddMode?.()),
   };
 }
