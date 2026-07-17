@@ -157,9 +157,32 @@ export function withPresentations(Base) {
               serverSlides: existing.slides,
               clientSlides: data.slides,
               modifiedSlideIds,
+              baseFingerprints: opts?.slideBaseFingerprints || null,
+              revisionGap: Number(existing.revision) - Number(opts.expectedRevision),
             });
             if (mergeResult.merged && mergeResult.conflicts.length === 0) {
               data = { ...data, slides: mergeResult.slides };
+              // Keep the active-language buffer in step with the merged
+              // slides. The editor loads that buffer, so storing the
+              // client's stale copy here would undo the merge on the next
+              // load. (File-mode gets this for free: normalizeI18n runs
+              // after the merge there.)
+              const activeLang = data?.i18n?.active;
+              if (activeLang && data?.i18n?.versions?.[activeLang]) {
+                data = {
+                  ...data,
+                  i18n: {
+                    ...data.i18n,
+                    versions: {
+                      ...data.i18n.versions,
+                      [activeLang]: {
+                        ...data.i18n.versions[activeLang],
+                        slides: mergeResult.slides,
+                      },
+                    },
+                  },
+                };
+              }
             } else if (mergeResult.conflicts.length > 0) {
               throw new ConflictError(
                 'Conflict: the same slides were modified by multiple users.',

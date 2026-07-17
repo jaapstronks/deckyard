@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
 const SESSION_IDLE_TIMEOUT_MS = 5 * 60 * 1000;
@@ -38,6 +39,22 @@ export function createSaveManager({
   // actually included in a completed save (edits made while a save is in
   // flight must stay tracked for the next save).
   const modifiedSlideIds = new Map();
+
+  // Fingerprint of every slide as last acknowledged by the server (initial
+  // load, refreshed from each save response). Sent along with modified slide
+  // IDs so the server's slide-level merge can tell "only I changed this
+  // slide" from "we both did" instead of letting the last writer win.
+  const baseFingerprints = new Map();
+  const rebaseFingerprints = (slides) => {
+    if (!Array.isArray(slides)) return;
+    baseFingerprints.clear();
+    for (const s of slides) {
+      if (s && typeof s.id === 'string' && s.id) {
+        baseFingerprints.set(s.id, slideFingerprint(s));
+      }
+    }
+  };
+  rebaseFingerprints(pres?.slides);
 
   const setLastError = (e) => {
     lastError = String(e?.message || e || '');
@@ -419,9 +436,19 @@ export function createSaveManager({
         'If-Match': String(sentRevision),
       };
 
-      // Send modified slide IDs for slide-level merge (concurrent editing)
+      // Send modified slide IDs for slide-level merge (concurrent editing),
+      // plus the base fingerprint of each so the server can detect slides
+      // that were also changed by someone else since our base.
       if (modifiedForThisSave.length > 0) {
         headers['X-Modified-Slides'] = JSON.stringify(modifiedForThisSave);
+        const fingerprints = {};
+        for (const sid of modifiedForThisSave) {
+          const fp = baseFingerprints.get(sid);
+          if (fp) fingerprints[sid] = fp;
+        }
+        if (Object.keys(fingerprints).length > 0) {
+          headers['X-Slide-Base-Fingerprints'] = JSON.stringify(fingerprints);
+        }
       }
 
       const updated = await api(`/api/presentations/${id}`, {
@@ -449,6 +476,11 @@ export function createSaveManager({
           // rerender callbacks are best-effort
         }
       }
+
+      // The response is the new server truth: refresh the per-slide base
+      // fingerprints against it (also correct for slides re-edited while
+      // this save was in flight — their base is what was just stored).
+      rebaseFingerprints(updated?.slides);
 
       return updated;
     })();
