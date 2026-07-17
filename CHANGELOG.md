@@ -98,6 +98,19 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **Editor chrome re-organized: slide-scoped vs. deck-scoped.** The right
+  rail is now driven by an always-visible labeled pane switcher
+  (Inspector / Comments / Notes) at the far right of the topbar; presenter
+  notes moved from a permanent block under the canvas into their own rail
+  pane (with the Notes-QR companion flow in its header). Everything about
+  the current slide (type chip, "All text", lock, the slide actions menu)
+  sits in a toolbar above the canvas; the topbar keeps deck-level actions,
+  with Companion tucked into a Present split-menu and utilities (AI
+  analysis, settings, shortcut help) in the ⋯ menu. The legacy
+  "collapse slide panel" mode - which could trap the editor in a
+  super-wide inspector - is gone, removing a card in an icon-cards slide
+  really removes it (a stale legacy count kept a ghost slot), and the
+  "Edit all text" modal got substantially roomier.
 - **The editor is now wysiwyg-first.** The slide canvas covers all content
   editing in place: inline text everywhere, add/remove of repeatable items
   (including text-blocks rows and blocks), drag-reorder via an overlay grip,

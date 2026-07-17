@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-16T21:03:57.370Z",
+    "generatedAt": "2026-07-16T21:07:57.013Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -2825,7 +2825,7 @@
     "editor.cards.icon": {
       "default": "Icon",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:150",
+        "client/views/editor/editor-form/inspector-form.js:172",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:257"
       ]
     },
@@ -2850,7 +2850,7 @@
     "editor.cards.linkHelp2": {
       "default": "Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:170",
+        "client/views/editor/editor-form/inspector-form.js:192",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:308",
         "client/views/editor/editor-form/slide-forms/logo-wall.js:298"
       ]
@@ -4514,13 +4514,19 @@
     "editor.inspector.cardsConfig": {
       "default": "Card icons & links",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:140"
+        "client/views/editor/editor-form/inspector-form.js:160"
       ]
     },
     "editor.inspector.column": {
       "default": "Column {n}",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:194"
+        "client/views/editor/editor-form/inspector-form.js:220"
+      ]
+    },
+    "editor.inspector.columnsConfig": {
+      "default": "Column images & blocks",
+      "refs": [
+        "client/views/editor/editor-form/inspector-form.js:211"
       ]
     },
     "editor.inspector.hide": {

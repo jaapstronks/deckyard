@@ -92,6 +92,25 @@ export function getInspectorKeepKeys(type, def) {
 }
 
 /**
+ * Collapsible group for a bulky per-type widget block, styled like the
+ * Background/Accessibility sections. Big blocks default closed so the pane
+ * leads with the at-a-glance settings (chrome re-org stap 3).
+ *
+ * @param {Function} h - DOM helper
+ * @param {string} title - Summary label
+ * @param {{ open?: boolean }} [opts]
+ * @returns {{ el: HTMLElement, body: HTMLElement }}
+ */
+function collapsibleGroup(h, title, { open = false } = {}) {
+  const el = h('details', { class: 'editor-advanced' });
+  if (open) el.open = true;
+  el.append(h('summary', { class: 'editor-advanced-summary', text: title }));
+  const body = h('div', { class: 'editor-advanced-body' });
+  el.append(body);
+  return { el, body };
+}
+
+/**
  * Per-type inspector widgets that a flat keeps-list cannot express: the chart
  * data editor, per-card icon/link controls, focus pickers, per-column image
  * settings. Runs BEFORE the generic keeps loop; anything rendered here marks
@@ -136,8 +155,11 @@ export function renderInspectorExtrasByType(ctx) {
       // modal; this list only carries the two config controls per card.
       const items = Array.isArray(slide.content?.items) ? slide.content.items : [];
       if (!items.length) return;
-      const wrap = h('div', { class: 'stack' });
-      wrap.append(h('div', { class: 'field-label', text: t('editor.inspector.cardsConfig', 'Card icons & links') }));
+      const section = collapsibleGroup(
+        h,
+        t('editor.inspector.cardsConfig', 'Card icons & links')
+      );
+      const wrap = section.body;
       const { fieldIconPicker } = fieldRenderers || {};
       items.forEach((item, idx) => {
         const group = h('div', { class: 'stack card-group' });
@@ -174,7 +196,7 @@ export function renderInspectorExtrasByType(ctx) {
         }));
         wrap.append(group);
       });
-      form.append(wrap);
+      form.append(section.el);
       return;
     }
 
@@ -182,8 +204,12 @@ export function renderInspectorExtrasByType(ctx) {
       add('columnCount');
       // Per-column image settings (fit + focus) and block count: numbered
       // schema, so these are plain fields; the column texts live in the bulk
-      // modal. Only active columns render.
+      // modal. Only active columns render, together in one collapsible group.
       const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
+      const colSection = collapsibleGroup(
+        h,
+        t('editor.inspector.columnsConfig', 'Column images & blocks')
+      );
       for (let n = 1; n <= count; n += 1) {
         const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
         const blockCountField = fieldByKey.get(`col${n}BlockCount`);
@@ -222,8 +248,9 @@ export function renderInspectorExtrasByType(ctx) {
           const bcEl = renderField(blockCountField);
           if (bcEl) group.append(bcEl);
         }
-        if (group.childNodes.length > 1) form.append(group);
+        if (group.childNodes.length > 1) colSection.body.append(group);
       }
+      if (colSection.body.childNodes.length) form.append(colSection.el);
       return;
     }
 

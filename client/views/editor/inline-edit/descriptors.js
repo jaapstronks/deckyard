@@ -83,13 +83,25 @@
  *         { photoSelector, imageField, altField, extraFields? }
  *     extraFields entries: `{key,type,label,i18nKey}`.
  *
+ *   icons: per-icon affordance. Clicking an element tagged
+ *     `data-inline-icon="<path>"` opens the canonical icon-picker modal and
+ *     writes the chosen name to that content path (the renderer emits the
+ *     path for whichever data source it resolved, items or legacy numbered).
+ *       { selector, afterWrite? }
+ *     `afterWrite(slide)` runs after a successful write, for types that keep
+ *     a legacy mirror in sync (function-valued, so core-map-only - same
+ *     restriction as function addPlacement).
+ *
  * @typedef {Object} InlineDescriptor
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
  * @property {string[]} [formText]
+ * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
  */
+
+import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -421,7 +433,21 @@ export const INLINE_DESCRIPTORS = {
       container: '.icon-card-grid',
       itemSelector: '.icon-card:not(.is-empty)',
     },
-    // Card editors stay: they carry the icon pickers.
+    // Clicking a card's icon opens the icon-picker modal in-slide. The write
+    // lands on whichever path the renderer emitted (items.N.icon or the
+    // legacy card{i}Icon); in items-mode the numbered mirror is re-synced,
+    // the same contract the side form and phase-3 inspector follow. The
+    // items[] guard matters: syncing a legacy deck (no items[]) would wipe
+    // its numbered fields.
+    icons: {
+      selector: '.icon-card-icon[data-inline-icon]',
+      afterWrite: (slide) => {
+        if (Array.isArray(slide?.content?.items) && slide.content.items.length > 0) {
+          syncIconCardsToNumbered(slide);
+        }
+      },
+    },
+    // Card editors stay in the form: they carry link + reorder controls.
     formText: HEADER_TEXT,
   },
   'card-stack-slide': {

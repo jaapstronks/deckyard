@@ -252,6 +252,7 @@ export default {
       const card = resolved[i - 1] || {};
       const titlePath = useItems ? `items.${i - 1}.title` : `card${i}Title`;
       const bodyPath = useItems ? `items.${i - 1}.body` : `card${i}Body`;
+      const iconPath = useItems ? `items.${i - 1}.icon` : `card${i}Icon`;
       const itemAttrs = !isEmpty && useItems
         ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
         : '';
@@ -281,7 +282,7 @@ export default {
           <div class="icon-card${isEmpty ? ' is-empty' : ''}${linkHtml ? ' has-link' : ''}" data-morph-role="icon-card-${i - 1}" role="group" ${
         isEmpty ? 'aria-hidden="true"' : ''
       }${itemAttrs}>
-            <div class="icon-card-icon">
+            <div class="icon-card-icon"${isEmpty ? '' : ` data-inline-icon="${iconPath}"`}>
               ${iconHtml}
             </div>
             <div class="icon-card-body">

@@ -20,6 +20,11 @@
   cursor: text;
 }
 
+/* Icon targets open a picker modal, not a caret. */
+.thumb.is-inline-edit [data-inline-icon] {
+  cursor: pointer;
+}
+
 /* ---- The overlay layer ---- */
 .ie-overlay {
   position: absolute;
