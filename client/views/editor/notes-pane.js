@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { closeIcon } from '../../lib/icons.js';
 
 /**
  * Presenter-notes pane for the inspector rail (chrome re-org stap 2).
@@ -47,16 +48,17 @@ export function createNotesPane({
     );
   }
   if (typeof onRequestClose === 'function') {
-    headerActions.append(
-      h('button', {
-        class: 'btn btn-secondary btn-icon',
-        type: 'button',
-        text: '×',
-        title: t('editor.inspector.hide', 'Hide inspector'),
-        'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-        onclick: () => onRequestClose(),
-      })
-    );
+    // Match the sister panes (comments / inspector-form): a ghost icon button
+    // with the shared close glyph, not a bespoke '×' text button.
+    const closeBtn = h('button', {
+      class: 'ghost-icon-btn notes-pane-close-btn',
+      type: 'button',
+      title: t('editor.inspector.hide', 'Hide inspector'),
+      'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+      onclick: () => onRequestClose(),
+    });
+    closeBtn.append(closeIcon({ size: 16 }));
+    headerActions.append(closeBtn);
   }
   header.append(headerActions);
 

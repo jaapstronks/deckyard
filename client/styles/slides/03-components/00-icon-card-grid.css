@@ -39,6 +39,11 @@
   font-synthesis: none;
   letter-spacing: var(--t-icon-card-grid-card-title-letter-spacing, -0.01em);
   margin-bottom: 8px;
+  /* Long single words (URLs, compound nouns) must not run past the card edge:
+     break within the word and hyphenate where the content language allows
+     (hyphens honors the slide's `lang`, defaulting to the document language). */
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .slide-icon-card-grid .icon-card-text {
   font-family: var(--font-body);
