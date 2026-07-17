@@ -245,7 +245,7 @@ try {
 3. Add CSS in `client/styles/slides/my-slide.css`
 4. Import CSS in the appropriate bundle
 5. Add translations for labels in `client/i18n/en/slide-types.json`
-6. Run `npm run i18n:merge` and `npm run i18n:sync`
+6. Run `npm run i18n:sync` to add placeholders to the other locales
 
 ### New API Endpoint
 
@@ -257,9 +257,11 @@ try {
 ### New Translation Keys
 
 1. Add keys to appropriate module in `client/i18n/en/*.json`
-2. Run `npm run i18n:merge` to rebuild index.json
-3. Run `npm run i18n:sync` to add placeholders to other locales
-4. Run `npm run i18n:validate` to check for issues
+2. Run `npm run i18n:sync` to add placeholders to other locales
+3. Run `npm run i18n:validate` to check for issues
+
+(The runtime loads the modular `<locale>/<component>.json` files directly;
+there is no merged build step.)
 
 ---
 
@@ -269,7 +271,7 @@ try {
 
 - Add dependencies without strong justification
 - Use frameworks or heavy libraries
-- Create custom UI components (use Shoelace if needed)
+- Create custom UI components (plain DOM via `h()`; no component library)
 - Skip HTML escaping for user content
 - Leave cleanup functions unimplemented
 - Hardcode text (use translations)

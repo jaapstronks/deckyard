@@ -7,6 +7,7 @@
 | `docs/developer/` | Contributor docs: architecture, dev setup, themes, slide types, i18n, API |
 | `docs/reference/` | Stable "how it works" docs: MCP server, fork setup, font management, AI prompts, feature deep-dives |
 | `docs/ops/` | Operations: self-hosting / VPS deploy guide |
+| `docs/adr/` | Architecture decision records (historical; only the status line is kept current) |
 | `docs/plans/` | Active project briefings (**gitignored** — local working docs). Indexed from `/ROADMAP.md` |
 | `docs/openapi.yaml` | OpenAPI spec — stays at this path, the server serves it at `/api/v1/openapi.yaml` |
 

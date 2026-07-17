@@ -10,17 +10,17 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Why Deckyard
 
-**For AI agents:** 22 MCP tools, 6 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup — it describes what it wants, and Deckyard handles the rest.
+**For AI agents:** 27 MCP tools, 6 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup — it describes what it wants, and Deckyard handles the rest.
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 
-**For presenters:** 38 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
+**For presenters:** 39 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
 
 ### What makes it different
 
 | | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard |
 |---|---|---|---|
-| AI generation | ✅ | ✅ | ✅ 38 typed slides |
+| AI generation | ✅ | ✅ | ✅ 39 typed slides |
 | MCP interface | ❌ | ❌ | ✅ 27 tools + 6 prompts |
 | Self-hosted | ❌ | ❌ | ✅ |
 | BYO LLM | ❌ | ❌ | ✅ |
@@ -82,7 +82,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 - `create_presentation` — Generate a full deck from raw text, bullet points, or meeting notes
 - `iterate_presentation` — Modify with natural language ("make slide 3 punchier", "split the KPI slide")
 - `append_slides` — Add content to an existing deck (smart positioning before closing slides)
-- `convert_slide` — Switch between 38 slide types with AI-powered content adaptation
+- `convert_slide` — Switch between 39 slide types with AI-powered content adaptation
 - `compress_presentation` — Reduce slide count while preserving key messages
 - `analyze_presentation` — Get suggestions for improving structure and content
 - `validate_presentation` — Check for density issues, repetition, readability problems
@@ -103,7 +103,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 
 Deckyard doesn't just dump text onto slides. The AI pipeline:
 
-1. **Outlines** the deck structure, picking from 38 typed slide layouts
+1. **Outlines** the deck structure, picking from 39 typed slide layouts
 2. **Refines** each slide with type-aware content (KPI metrics, timeline entries, process steps — not just bullet points)
 3. **Validates** the result: density checks, repetition detection, readability analysis
 4. Returns **reasoning** for each type selection and **alternative suggestions**

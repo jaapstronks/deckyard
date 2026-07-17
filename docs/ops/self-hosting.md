@@ -40,9 +40,11 @@ every option; the ones most installs want:
 |---|---|
 | `AUTH_ENABLED` + `AUTH_SECRET` | Enable auth; long random string for session signing |
 | `AUTH_ADMIN_EMAIL` | This user gets the admin role |
-| `DEEPSEEK_API_KEY` / `OPENAI_*` | Enable the AI wizard (optional) |
+| `OPENAI_API` / `CLAUDE_API` / `MISTRAL_API` / `DEEPSEEK_API` | Enable the AI wizard (optional; one is enough) |
 | `DATABASE_*` | Postgres storage instead of JSON files (optional) |
 | `DEFAULT_THEME` | Default theme id for new decks |
+| `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`) | Real-time collaboration: presence, and optionally live co-editing (default off) |
+| `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL` | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
 After editing: `docker compose up -d` to apply.
 
@@ -53,6 +55,9 @@ When running with Postgres, apply migrations after each update:
 ```bash
 cd /opt/deckyard && docker compose exec app npm run db:migrate
 ```
+
+Feature flags that need a migration on Postgres: `COLLAB_LIVE_EDITS` requires
+migration `040_presentation_ydocs` (included in a normal `db:migrate` run).
 
 ## Deploy updates
 

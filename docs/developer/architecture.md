@@ -22,6 +22,8 @@ deckyard/
 │   ├── routes/          # HTTP handlers (API + static)
 │   │   ├── api/         # REST API endpoints
 │   │   └── public-api/  # API key authenticated endpoints (v1)
+│   ├── mcp/             # MCP server (stdio + SSE transports, 27 tools)
+│   ├── collab/          # Real-time collaboration (Yjs/Hocuspocus over WebSocket)
 │   ├── storage/         # Data persistence layer
 │   │   └── adapters/    # File-based or PostgreSQL backends
 │   ├── export/          # Export format builders (PNG, PDF, PPTX, HTML)
@@ -30,12 +32,17 @@ deckyard/
 │   ├── db/              # PostgreSQL client + migrations
 │   ├── config/          # Environment, feature flags, paths
 │   ├── services/        # Domain services (SSE broadcast, notifications)
-│   ├── jobs/            # Background jobs (cleanup, digest emails)
+│   ├── jobs/            # Background jobs (cleanup, digest emails, bulk export)
 │   ├── integrations/    # Third-party APIs (Brevo, Giphy, Unsplash)
+│   ├── analytics/       # Usage analytics
+│   ├── media/           # Media handling
+│   ├── i18n/            # Server-side i18n helpers
+│   ├── data-sandbox/    # Sandboxed evaluation for live data sources
 │   └── utils/           # HTTP helpers, middleware, LLM clients
 │
 ├── shared/              # Code used by both client + server
 │   ├── slide-types/     # Slide type definitions (schema, defaults, rendering)
+│   ├── collab/          # Yjs deck-document codec (shared client/server)
 │   ├── markdown.js      # Markdown to safe HTML
 │   └── sanitize.js      # HTML sanitization
 │
@@ -177,9 +184,43 @@ Guest authentication for public demos:
 
 ---
 
+## MCP Server
+
+Deckyard is MCP-native: `server/mcp/` exposes the full presentation lifecycle
+(27 tools + 6 guided prompts) to AI agents, over two transports:
+
+- **stdio** (`npm run mcp`, `server/mcp/index.js`) — for local clients like
+  Claude Desktop; owner set via `DECKYARD_MCP_OWNER_EMAIL`.
+- **Streamable HTTP/SSE** (`POST /mcp` on the main server, `server/mcp/sse.js`)
+  — for remote agents, authenticated with API keys.
+
+Tools live in `server/mcp/tools.js` and reuse the same storage + validation
+layer as the REST API (per-deck authorization via
+`server/mcp/presentation-access.js`). Forks can add their own tools through
+`custom/mcp-tools.js` (see `docs/reference/mcp-server.md`).
+
+---
+
+## Real-Time Collaboration (Yjs / WebSocket)
+
+Optional, behind `COLLAB_ENABLED` / `COLLAB_LIVE_EDITS` (default off). A
+Hocuspocus server is mounted on the same HTTP port at `/collab`
+(`server/collab/mount.js`); the deck is mirrored into a Yjs document
+(`shared/collab/deck-ydoc.js`) for presence (avatars, slide focus, field
+focus) and — with the second flag — live co-editing with per-user undo.
+Server-side persistence flushes CRDT state back to the normal storage layer
+(`server/collab/persistence.js`, Postgres table `presentation_ydocs`,
+migration 040). With the flags off, this entire subsystem is inert and the
+classic save path (below, SSE + revision merge) is unchanged.
+
+Details: `docs/reference/collab-presence.md`, `collab-deck-doc.md`,
+`collab-editor-binder.md`, and ADR 001.
+
+---
+
 ## Real-Time Features (SSE)
 
-Server-Sent Events power real-time updates:
+Server-Sent Events power the non-CRDT real-time updates:
 
 ### Comment Events
 
@@ -311,5 +352,7 @@ export function attachSlideRuntime(slideEl) {
 | Puppeteer rendering | Server-side PNG/PDF at request time |
 | Feature flags | Toggle AI, uploads, demo mode per deployment |
 | Session versioning | Invalidate all sessions on password change |
-| Slide-level locks | Concurrent editing with per-slide acquisition |
+| Slide-level locks | Concurrent editing with per-slide acquisition (phased out when `COLLAB_LIVE_EDITS` is on) |
+| Collab as optional layer | Yjs/Hocuspocus behind a flag; flag-off path byte-identical to classic saves |
+| MCP alongside REST | Agents use the same storage/validation layer as the UI |
 | Rate limiting | Token bucket per IP for abuse prevention |

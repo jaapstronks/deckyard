@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- **Node.js 20+** (LTS recommended)
+- **Node.js 22+** (per `engines` in `package.json`; CI runs on 22)
 - No build step required (vanilla ESM)
 
 ## Quick Start
@@ -86,13 +86,16 @@ NOTION_FEATURE=true
 | Script | Description |
 |--------|-------------|
 | `npm start` | Start development server |
+| `npm test` | Run the node test suite |
+| `npm run mcp` | Start the MCP server over stdio (for Claude Desktop etc.) |
+| `npm run vendor:collab` | Rebuild the vendored Yjs/Hocuspocus client bundle |
+| `npm run seed:bg-demo` | Seed the background-contrast demo deck |
 | `npm run audit` | Code audit report (file sizes, complexity) |
 | `npm run db:migrate` | Run pending database migrations |
 | `npm run db:migrate:down` | Rollback last migration |
 | `npm run db:migrate:status` | Show migration status |
 | `npm run db:migrate:data` | Migrate file data to PostgreSQL |
 | `npm run i18n:extract` | Extract translation keys from source |
-| `npm run i18n:merge` | Rebuild merged translation files |
 | `npm run i18n:sync` | Sync missing keys across locales |
 | `npm run i18n:validate` | Validate translation files |
 

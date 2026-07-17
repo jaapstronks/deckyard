@@ -12,6 +12,11 @@ server/routes/public-api/
 │   ├── index.js        # Main router, auth, rate limiting
 │   ├── middleware.js   # Authentication, rate limits, tracking
 │   ├── presentations.js # CRUD operations
+│   ├── slides.js       # Slide-level operations
+│   ├── translate.js    # Translation endpoints
+│   ├── comments.js     # Comments (comments:read / comments:write scopes)
+│   ├── publishing.js   # Publish/unpublish
+│   ├── slide-library.js # Slide library
 │   ├── exports.js      # Export handlers (JSON, HTML, PPTX, PDF)
 │   ├── ai.js           # AI generation endpoints
 │   └── resources.js    # Themes, slide types, image library

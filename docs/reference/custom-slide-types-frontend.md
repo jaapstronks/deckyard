@@ -105,24 +105,10 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 
 ---
 
-## Next Steps
+## Open improvements
 
-### Short-term
-
-- [ ] **Field validation in the editor form** -- custom fields with `required: true` should show validation errors before save (currently only enforced server-side)
-- [ ] **Sort order** -- add drag-to-reorder for custom types in the settings card grid (the `sortOrder` column exists in the DB but the UI doesn't expose it yet)
-- [ ] **Template syntax documentation** -- add a help link or expandable reference for the template syntax (`{{esc}}`, `{{markdown}}`, `{{#if}}`, `{{#each}}`, available CSS classes)
-- [ ] **Import/export custom types** -- JSON export of type definitions for sharing between instances or backing up
-
-### Medium-term
-
-- [ ] **Template editor enhancements** -- syntax highlighting (CodeMirror or similar), auto-complete for field keys, preview error messages when template has invalid syntax
-- [ ] **Version history for custom types** -- the `presentation_versions` pattern could be adapted to track custom type changes
-- [ ] **Marketplace / sharing** -- allow publishing custom types to other organizations (cloud feature)
-- [ ] **AI-assisted template generation** -- "Describe your slide layout" prompt that generates template + CSS
-
-### Integration with existing features
-
-- [ ] **Markdown import mapping** -- add custom types to the heuristic matching in `server/utils/markdown-import/map.js` (e.g. via frontmatter `layout: custom-hero-banner`)
-- [ ] **AI deck generation** -- the AI pipeline already handles custom types via `buildMergedSlideTypes()` but could benefit from training examples in the custom type definition
-- [ ] **Export pipeline** -- verify PDF/PPTX/PNG exports render custom types correctly (should work via server-side rendering but needs testing with complex templates)
+The remaining backlog for this feature (editor-form validation for custom
+required fields, drag-to-reorder via the unused `sortOrder` column, template
+syntax help, import/export of type definitions, template-editor enhancements,
+markdown-import mapping, export-pipeline verification) is tracked in
+`docs/plans/TODO.md` — this doc describes only what exists.
