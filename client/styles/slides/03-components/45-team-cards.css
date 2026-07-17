@@ -528,7 +528,7 @@
    IMAGE ASPECT: ORIGINAL (uncropped)
    Screenshots / mixed-shape images shown at their true aspect ratio
    instead of cropped to a square. Layout goals (see
-   docs/plans/image-grid-original-aspect-polish.md):
+   docs/reference/team-cards-original-aspect.md):
      1. Captions hug the image, not the grid cell — the card shrink-wraps
         the rendered image so title/caption align to the image edges.
      2. A few images fill the slide — every image shares one target height
