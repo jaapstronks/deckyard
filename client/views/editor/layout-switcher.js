@@ -124,7 +124,11 @@ export function createLayoutSwitcherChip({
           editorState,
           SLIDE_TYPES,
         });
-        if (ok && applyLayoutVariant(slide, variant)) {
+        // Strip convertTo before applying: applyLayoutVariant rejects
+        // cross-type variants (those must go through the seam above), but
+        // after a successful conversion the remaining `set` is a plain
+        // same-type update on the converted content.
+        if (ok && applyLayoutVariant(slide, { set: variant.set })) {
           editorState.dirtyRefreshWithItem();
         }
         return;
