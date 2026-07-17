@@ -97,5 +97,12 @@
   "notifications.loading": "Cargando...",
   "notifications.markAllRead": "Marcar todo como leído",
   "notifications.title": "Notificaciones",
-  "notifications.unread": "no leída"
+  "notifications.unread": "no leída",
+  "notifications.filter.all": "Todo",
+  "notifications.filter.mentions": "Menciones",
+  "notifications.filter.unread": "No leídas",
+  "notifications.filter.archived": "Archivadas",
+  "notifications.archive": "Archivar",
+  "notifications.archiveAll": "Archivar todo",
+  "notifications.empty.archived": "Nada archivado todavía"
 }

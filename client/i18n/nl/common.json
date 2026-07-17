@@ -157,5 +157,12 @@
   "notifications.loading": "Laden...",
   "notifications.markAllRead": "Alles gelezen",
   "notifications.title": "Meldingen",
-  "notifications.unread": "ongelezen"
+  "notifications.unread": "ongelezen",
+  "notifications.filter.all": "Alles",
+  "notifications.filter.mentions": "Mentions",
+  "notifications.filter.unread": "Ongelezen",
+  "notifications.filter.archived": "Gearchiveerd",
+  "notifications.archive": "Archiveren",
+  "notifications.archiveAll": "Alles archiveren",
+  "notifications.empty.archived": "Nog niets gearchiveerd"
 }

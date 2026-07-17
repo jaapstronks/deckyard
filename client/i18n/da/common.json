@@ -97,5 +97,12 @@
   "notifications.loading": "Indlæser...",
   "notifications.markAllRead": "Markér alle som læst",
   "notifications.title": "Notifikationer",
-  "notifications.unread": "ulæst"
+  "notifications.unread": "ulæst",
+  "notifications.filter.all": "Alle",
+  "notifications.filter.mentions": "Omtaler",
+  "notifications.filter.unread": "Ulæste",
+  "notifications.filter.archived": "Arkiveret",
+  "notifications.archive": "Arkivér",
+  "notifications.archiveAll": "Arkivér alle",
+  "notifications.empty.archived": "Intet arkiveret endnu"
 }

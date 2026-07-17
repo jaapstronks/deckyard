@@ -150,5 +150,12 @@
   "notifications.loading": "Caricamento...",
   "notifications.markAllRead": "Segna tutte come lette",
   "notifications.title": "Notifiche",
-  "notifications.unread": "non letta"
+  "notifications.unread": "non letta",
+  "notifications.filter.all": "Tutto",
+  "notifications.filter.mentions": "Menzioni",
+  "notifications.filter.unread": "Non lette",
+  "notifications.filter.archived": "Archiviate",
+  "notifications.archive": "Archivia",
+  "notifications.archiveAll": "Archivia tutto",
+  "notifications.empty.archived": "Ancora niente in archivio"
 }

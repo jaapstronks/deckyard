@@ -150,5 +150,12 @@
   "notifications.loading": "Ładowanie...",
   "notifications.markAllRead": "Oznacz wszystkie jako przeczytane",
   "notifications.title": "Powiadomienia",
-  "notifications.unread": "nieprzeczytane"
+  "notifications.unread": "nieprzeczytane",
+  "notifications.filter.all": "Wszystko",
+  "notifications.filter.mentions": "Wzmianki",
+  "notifications.filter.unread": "Nieprzeczytane",
+  "notifications.filter.archived": "Zarchiwizowane",
+  "notifications.archive": "Archiwizuj",
+  "notifications.archiveAll": "Archiwizuj wszystko",
+  "notifications.empty.archived": "Nic jeszcze nie zarchiwizowano"
 }

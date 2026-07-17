@@ -97,5 +97,12 @@
   "notifications.loading": "Laddar...",
   "notifications.markAllRead": "Markera alla som lästa",
   "notifications.title": "Aviseringar",
-  "notifications.unread": "oläst"
+  "notifications.unread": "oläst",
+  "notifications.filter.all": "Alla",
+  "notifications.filter.mentions": "Omnämnanden",
+  "notifications.filter.unread": "Olästa",
+  "notifications.filter.archived": "Arkiverade",
+  "notifications.archive": "Arkivera",
+  "notifications.archiveAll": "Arkivera alla",
+  "notifications.empty.archived": "Inget arkiverat ännu"
 }

@@ -11,7 +11,11 @@ import { sendCommentNotification } from '../integrations/brevo.js';
 import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
-import { createNotification } from '../storage/notifications.js';
+import {
+  createNotification,
+  archiveThreadNotifications,
+  getUnreadCount,
+} from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
 import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
 
@@ -68,6 +72,9 @@ export async function notifyCommentCreated(repoRoot, req, {
     recipients,
     ctx,
   });
+
+  // Your own reply archives your open inbox items for this thread.
+  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
 
   // Fetch user preferences for all recipients
   const recipientPrefs = new Map();
@@ -169,6 +176,8 @@ export async function notifyCommentCreatedInApp({
     recipients,
     ctx,
   });
+  // Your own reply archives your open inbox items for this thread.
+  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
 }
 
 /** Trim a comment body to a short notification excerpt (mentions as @Name). */
@@ -251,6 +260,32 @@ export function buildInAppNotificationInputs({
       },
     };
   });
+}
+
+/**
+ * Auto-archive on own reply (phase 5, decision 4): answering a thread
+ * means you handled it, so your open inbox items for that thread archive
+ * themselves. The badge follows live via a counts push.
+ */
+async function autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx }) {
+  const actorEmail = normalizeEmail(actor?.email);
+  if (!actorEmail || !parentComment) return;
+  const threadId = parentComment.parentId || parentComment.id;
+  try {
+    const result = await archiveThreadNotifications(
+      actorEmail,
+      presentation?.id,
+      threadId,
+      ctx
+    );
+    if (result?.ok && result.updatedCount > 0) {
+      const unreadCount = await getUnreadCount(actorEmail, ctx);
+      broadcastToUser(actorEmail, NotificationEventTypes.COUNTS, { unreadCount });
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('[comment-notifications] auto-archive failed:', e?.message || e);
+  }
 }
 
 /**
