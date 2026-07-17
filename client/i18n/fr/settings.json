@@ -38,17 +38,14 @@
   "settings.admin.notifications.title": "Admin: email notifications",
   "settings.admin.supportedSlideLangs.hint": "Cela contrôle quelles langues sont visibles/utilisables dans le mode langue et la traduction.",
   "settings.admin.supportedSlideLangs.title": "Admin : langues de diapositives prises en charge",
-
   "settings.admin.aiAssistant.title": "Identité de l'assistant IA",
   "settings.admin.aiAssistant.hint": "Personnalisez le nom et l'e-mail affichés pour le contenu généré par l'IA.",
   "settings.admin.aiAssistant.name": "Nom",
   "settings.admin.aiAssistant.email": "E-mail",
-
   "settings.admin.emailSender.title": "Identité de l'expéditeur",
   "settings.admin.emailSender.hint": "Adresse d'expédition pour les e-mails système. Utilise les variables d'environnement si vide.",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.name": "Nom",
-
   "settings.admin.sessionDuration.title": "Durée de session",
   "settings.admin.sessionDuration.hint": "Durée de connexion des utilisateurs avant de devoir se reconnecter.",
   "settings.admin.sessionDuration.duration": "Durée",
@@ -58,7 +55,6 @@
   "settings.admin.sessionDuration.30days": "30 jours (par défaut)",
   "settings.admin.sessionDuration.90days": "90 jours",
   "settings.admin.sessionDuration.365days": "1 an",
-
   "settings.admin.webhooks.commentCreated.hint": "Event: comment.created",
   "settings.admin.webhooks.commentCreated.title": "When a comment is posted",
   "settings.admin.webhooks.hint": "Configurez les URLs de webhook pour recevoir des payloads JSON POST lorsque certains événements se produisent.",
@@ -98,7 +94,6 @@
   "settings.title": "Paramètres",
   "settings.uiLocale.hint": "La langue de l'interface de cette application, sans rapport avec la langue utilisée dans les diapositives.",
   "settings.uiLocale.title": "Langue de l'application",
-
   "settings.admin.analytics.title": "Aperçus d'engagement",
   "settings.admin.analytics.hint": "Configurez comment les données d'engagement sont collectées et affichées.",
   "settings.admin.analytics.enabled": "Activer les aperçus d'engagement",
@@ -113,14 +108,12 @@
   "settings.admin.analytics.retentionDays": "Conserver les données de session pendant",
   "settings.admin.analytics.retentionIpDays": "Anonymiser les adresses IP après",
   "settings.admin.analytics.days": "jours",
-
   "settings.privacy.title": "Confidentialité",
   "settings.privacy.hint": "Contrôlez comment votre activité est suivie et affichée.",
   "settings.privacy.allowAttribution": "Autoriser l'affichage de mon nom dans les aperçus d'engagement",
   "settings.privacy.allowAttributionHint": "Si activé, les présentateurs peuvent voir votre nom au lieu de juste \"membre de l'équipe a vu\".",
   "settings.privacy.disableTracking": "Se désinscrire de tout suivi d'engagement",
   "settings.privacy.disableTrackingHint": "Si activé, vos vues ne seront pas enregistrées.",
-
   "settings.digest.title": "Résumé hebdomadaire",
   "settings.digest.hint": "Recevez un résumé hebdomadaire par e-mail de l'engagement de vos présentations.",
   "settings.digest.enabled": "Envoyer le résumé d'engagement hebdomadaire",
@@ -132,5 +125,11 @@
   "settings.digest.dayOfWeek.4": "Jeudi",
   "settings.digest.dayOfWeek.5": "Vendredi",
   "settings.digest.dayOfWeek.6": "Samedi",
-  "settings.digest.includeTeam": "Inclure les statistiques d'engagement d'équipe"
+  "settings.digest.includeTeam": "Inclure les statistiques d'engagement d'équipe",
+  "settings.notifications.defaultLevel": "Niveau par défaut par deck",
+  "settings.notifications.defaultLevel.help": "S'applique aux decks sans réglage propre. Les @mentions directes passent toujours.",
+  "settings.notifications.emailByType": "M'envoyer un e-mail pour",
+  "settings.notifications.emailCommentCreated": "Nouveaux commentaires",
+  "settings.notifications.emailCommentReply": "Réponses à vos commentaires",
+  "settings.notifications.emailCommentMention": "Mentions"
 }

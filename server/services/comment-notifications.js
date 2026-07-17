@@ -13,6 +13,7 @@ import { normalizeEmail } from '../utils/normalize.js';
 import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
 import { createNotification } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
+import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
 
 /**
  * Send notifications for a newly created comment.
@@ -38,8 +39,19 @@ export async function notifyCommentCreated(repoRoot, req, {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   const commenterEmail = normalizeEmail(actor?.email);
 
-  const recipients = buildRecipients({ presentation, comment, parentComment, actor });
-  if (recipients.size === 0) return;
+  // One place decides event → who: the subscription resolver (per-deck
+  // override → user default → participating; mentions always deliver).
+  // Every channel below consumes the same list.
+  const recipients = await resolveCommentRecipients({
+    repoRoot,
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    ctx,
+  });
+  if (recipients.length === 0) return;
+  const recipientEmails = new Set(recipients.map((r) => r.email));
 
   const settings = await readAppSettings(repoRoot);
   const origin = getRequestOrigin(req);
@@ -53,12 +65,13 @@ export async function notifyCommentCreated(repoRoot, req, {
     comment,
     parentComment,
     actor,
+    recipients,
     ctx,
   });
 
   // Fetch user preferences for all recipients
   const recipientPrefs = new Map();
-  for (const email of recipients) {
+  for (const email of recipientEmails) {
     const userSettings = await readUserSettings(repoRoot, email);
     recipientPrefs.set(email, userSettings?.notifications || {});
   }
@@ -71,7 +84,7 @@ export async function notifyCommentCreated(repoRoot, req, {
     parentComment,
     actor,
     ownerEmail,
-    recipients,
+    recipients: recipientEmails,
     recipientPrefs,
   });
 
@@ -141,11 +154,19 @@ export async function notifyCommentCreatedInApp({
   actor,
   ctx,
 }) {
+  const recipients = await resolveCommentRecipients({
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    ctx,
+  });
   await createInAppNotifications({
     presentation,
     comment,
     parentComment,
     actor,
+    recipients,
     ctx,
   });
 }
@@ -162,6 +183,10 @@ function commentExcerpt(body, maxLength = 140) {
  * Pure: no storage or SSE. One notification per recipient, highest
  * specificity wins: mention > reply > created. Exported for tests.
  *
+ * @param {Object} options
+ * @param {Array<{email: string, reason: string}>} [options.recipients] -
+ *   Subscription-resolved recipients. When omitted, falls back to the
+ *   unfiltered candidate set (owner + parent author + mentions).
  * @returns {Array<Object>} createNotification-ready payloads
  */
 export function buildInAppNotificationInputs({
@@ -169,14 +194,26 @@ export function buildInAppNotificationInputs({
   comment,
   parentComment,
   actor,
+  recipients,
 }) {
-  const recipients = buildRecipients({ presentation, comment, parentComment, actor });
-  if (recipients.size === 0) return [];
-
-  const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
+  let resolved = recipients;
+  if (!Array.isArray(resolved)) {
+    const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
+    const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
+    resolved = [...buildRecipients({ presentation, comment, parentComment, actor })].map(
+      (email) => ({
+        email,
+        reason: mentionedEmails.has(email)
+          ? 'mention'
+          : parentAuthorEmail && email === parentAuthorEmail
+            ? 'reply'
+            : 'participating',
+      })
+    );
+  }
+  if (resolved.length === 0) return [];
 
   const actorName = actor?.name || actor?.email || 'Someone';
-  const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
   const presentationTitle = presentation?.title || 'Untitled';
   const excerpt = commentExcerpt(comment?.body);
 
@@ -191,20 +228,14 @@ export function buildInAppNotificationInputs({
     ? `/app/${presentation.id}${slideAnchor}`
     : null;
 
-  return [...recipients].map((recipientEmail) => {
-    const isMentioned = mentionedEmails.has(recipientEmail);
-    const isReplyToRecipient = !!parentAuthorEmail && recipientEmail === parentAuthorEmail;
-    const notificationType = isMentioned
-      ? 'comment_mention'
-      : isReplyToRecipient
-        ? 'comment_reply'
-        : 'comment_created';
+  return resolved.map(({ email: recipientEmail, reason }) => {
+    const notificationType = REASON_TO_TYPE[reason] || 'comment_created';
     return {
       userEmail: recipientEmail,
       notificationType,
-      title: isMentioned
+      title: notificationType === 'comment_mention'
         ? `${actorName} mentioned you in "${presentationTitle}"`
-        : isReplyToRecipient
+        : notificationType === 'comment_reply'
           ? `${actorName} replied to your comment`
           : `${actorName} commented on "${presentationTitle}"`,
       body: excerpt,
@@ -231,6 +262,7 @@ async function createInAppNotifications({
   comment,
   parentComment,
   actor,
+  recipients,
   ctx,
 }) {
   const inputs = buildInAppNotificationInputs({
@@ -238,6 +270,7 @@ async function createInAppNotifications({
     comment,
     parentComment,
     actor,
+    recipients,
   });
 
   for (const input of inputs) {
@@ -316,12 +349,12 @@ async function sendCommentEmails({
     return;
   }
 
-  const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
-
-  for (const recipientEmail of recipients) {
-    // Check if user has email notifications enabled
+  for (const { email: recipientEmail, reason } of recipients) {
+    // Channel master switch + per-event-type email preference
     const prefs = recipientPrefs.get(recipientEmail);
     if (prefs?.emailEnabled === false) continue;
+    const notificationType = REASON_TO_TYPE[reason] || 'comment_created';
+    if (prefs?.emailByType?.[notificationType] === false) continue;
 
     const isOwner = recipientEmail === ownerEmail;
     void sendCommentNotification({
@@ -329,9 +362,9 @@ async function sendCommentEmails({
       comment: { ...comment, body: stripMentionMarkup(comment?.body) },
       presentation,
       commenter: { email: commenterEmail, name: actor?.name },
-      isReply: !!parentComment,
+      isReply: reason === 'reply',
       isOwner,
-      isMention: mentionedEmails.has(recipientEmail),
+      isMention: reason === 'mention',
       editUrl,
       repoRoot,
     }).then((result) => {

@@ -335,5 +335,22 @@
   "mentions.noAccess.share": "Del med kommentaradgang",
   "mentions.noAccess.postAnyway": "Send alligevel",
   "mentions.shared": "Delt med kommentaradgang",
-  "mentions.shareFailed": "Kunne ikke dele"
+  "mentions.shareFailed": "Kunne ikke dele",
+  "editor.more.subscription": "Deck-notifikationer…",
+  "editor.more.subscription.title": "Vælg hvilken kommentaraktivitet på dette deck der giver dig besked.",
+  "subscription.title": "Notifikationer for dette deck",
+  "subscription.hint": "Styrer hvilken kommentaraktivitet på dette deck der giver dig besked (klokke og e-mail). Direkte @omtaler kommer altid igennem.",
+  "subscription.level.default": "Din standard",
+  "subscription.level.default.help": "Følg din globale notifikationsindstilling.",
+  "subscription.level.watching": "Følg alt",
+  "subscription.level.watching.help": "Hver kommentar på dette deck.",
+  "subscription.level.participating": "Deltagende",
+  "subscription.level.participating.help": "Tråde du skriver i, svar til dig og dine egne decks.",
+  "subscription.level.mentionsOnly": "Kun omtaler",
+  "subscription.level.mentionsOnly.help": "Kun når nogen @omtaler dig.",
+  "subscription.level.mute": "Lydløs",
+  "subscription.level.mute.help": "Gør dette deck lydløst. Direkte @omtaler når dig stadig.",
+  "subscription.saved": "Notifikationsindstilling gemt",
+  "subscription.saveFailed": "Kunne ikke gemme indstillingen",
+  "subscription.loadFailed": "Kunne ikke indlæse indstillingen"
 }

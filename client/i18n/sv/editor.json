@@ -335,5 +335,22 @@
   "mentions.noAccess.share": "Dela med kommentarsbehörighet",
   "mentions.noAccess.postAnyway": "Publicera ändå",
   "mentions.shared": "Delad med kommentarsbehörighet",
-  "mentions.shareFailed": "Kunde inte dela"
+  "mentions.shareFailed": "Kunde inte dela",
+  "editor.more.subscription": "Deck-aviseringar…",
+  "editor.more.subscription.title": "Välj vilken kommentarsaktivitet på detta deck som aviserar dig.",
+  "subscription.title": "Aviseringar för detta deck",
+  "subscription.hint": "Styr vilken kommentarsaktivitet på detta deck som aviserar dig (klocka och e-post). Direkta @omnämnanden kommer alltid fram.",
+  "subscription.level.default": "Din standard",
+  "subscription.level.default.help": "Följ din globala aviseringsinställning.",
+  "subscription.level.watching": "Följ allt",
+  "subscription.level.watching.help": "Varje kommentar på detta deck.",
+  "subscription.level.participating": "Deltagande",
+  "subscription.level.participating.help": "Trådar du skriver i, svar till dig och dina egna decks.",
+  "subscription.level.mentionsOnly": "Endast omnämnanden",
+  "subscription.level.mentionsOnly.help": "Endast när någon @omnämner dig.",
+  "subscription.level.mute": "Tysta",
+  "subscription.level.mute.help": "Tystar detta deck. Direkta @omnämnanden når dig ändå.",
+  "subscription.saved": "Aviseringsinställning sparad",
+  "subscription.saveFailed": "Kunde inte spara inställningen",
+  "subscription.loadFailed": "Kunde inte läsa in inställningen"
 }

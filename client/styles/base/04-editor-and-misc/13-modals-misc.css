@@ -1085,3 +1085,41 @@
     transform: scale(calc(120 / 1920));
   }
 }
+
+/* Per-deck notification subscription chooser (more-menu → Deck notifications) */
+.subscription-level-list {
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.subscription-level-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.subscription-level-option:hover {
+  background: var(--color-gray-100, #f3f4f6);
+}
+
+.subscription-level-option.is-selected {
+  border-color: var(--color-primary-600, #4f46e5);
+  background: color-mix(in srgb, var(--color-primary-600, #4f46e5) 6%, transparent);
+}
+
+.subscription-level-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-color, #333);
+}
+
+.subscription-level-help {
+  font-size: 12px;
+  color: var(--text-muted, #777);
+}

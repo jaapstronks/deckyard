@@ -38,17 +38,14 @@
   "settings.admin.notifications.title": "Admin: email notifications",
   "settings.admin.supportedSlideLangs.hint": "Dette styrer hvilke sprog der er synlige/brugbare i sprogtilstand og oversættelse.",
   "settings.admin.supportedSlideLangs.title": "Admin: understøttede slide-sprog",
-
   "settings.admin.aiAssistant.title": "AI-assistent identitet",
   "settings.admin.aiAssistant.hint": "Tilpas navn og e-mail der vises for AI-genereret indhold.",
   "settings.admin.aiAssistant.name": "Navn",
   "settings.admin.aiAssistant.email": "E-mail",
-
   "settings.admin.emailSender.title": "E-mail afsender identitet",
   "settings.admin.emailSender.hint": "Afsenderadresse for system-e-mails. Bruger miljøvariabler hvis tom.",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.name": "Navn",
-
   "settings.admin.sessionDuration.title": "Sessionsvarighed",
   "settings.admin.sessionDuration.hint": "Hvor længe brugere forbliver logget ind før de skal logge ind igen.",
   "settings.admin.sessionDuration.duration": "Varighed",
@@ -58,7 +55,6 @@
   "settings.admin.sessionDuration.30days": "30 dage (standard)",
   "settings.admin.sessionDuration.90days": "90 dage",
   "settings.admin.sessionDuration.365days": "1 år",
-
   "settings.admin.webhooks.commentCreated.hint": "Event: comment.created",
   "settings.admin.webhooks.commentCreated.title": "When a comment is posted",
   "settings.admin.webhooks.hint": "Konfigurer webhook-URL'er til at modtage POSTede JSON-payloads når bestemte hændelser sker.",
@@ -98,7 +94,6 @@
   "settings.title": "Indstillinger",
   "settings.uiLocale.hint": "Sproget for denne applikations brugerflade, ikke relateret til sproget brugt i slides.",
   "settings.uiLocale.title": "Applikationssprog",
-
   "settings.admin.analytics.title": "Engagement Indsigt",
   "settings.admin.analytics.hint": "Konfigurer hvordan engagement-data indsamles og vises.",
   "settings.admin.analytics.enabled": "Aktiver engagement indsigt",
@@ -113,14 +108,12 @@
   "settings.admin.analytics.retentionDays": "Behold sessionsdata i",
   "settings.admin.analytics.retentionIpDays": "Anonymiser IP-adresser efter",
   "settings.admin.analytics.days": "dage",
-
   "settings.privacy.title": "Privatliv",
   "settings.privacy.hint": "Kontroller hvordan din aktivitet spores og vises.",
   "settings.privacy.allowAttribution": "Tillad at mit navn vises i engagement indsigt",
   "settings.privacy.allowAttributionHint": "Hvis aktiveret, kan præsentanter se dit navn i stedet for bare \"teammedlem så\".",
   "settings.privacy.disableTracking": "Fravælg al engagement-sporing",
   "settings.privacy.disableTrackingHint": "Hvis aktiveret, registreres dine visninger ikke.",
-
   "settings.digest.title": "Ugentlig Oversigt",
   "settings.digest.hint": "Modtag en ugentlig e-mail oversigt over din præsentations engagement.",
   "settings.digest.enabled": "Send ugentlig engagement oversigt",
@@ -132,5 +125,11 @@
   "settings.digest.dayOfWeek.4": "Torsdag",
   "settings.digest.dayOfWeek.5": "Fredag",
   "settings.digest.dayOfWeek.6": "Lørdag",
-  "settings.digest.includeTeam": "Inkluder team engagement statistik"
+  "settings.digest.includeTeam": "Inkluder team engagement statistik",
+  "settings.notifications.defaultLevel": "Standardniveau pr. deck",
+  "settings.notifications.defaultLevel.help": "Gælder for decks uden egen indstilling. Direkte @omtaler kommer altid igennem.",
+  "settings.notifications.emailByType": "Send mig e-mail om",
+  "settings.notifications.emailCommentCreated": "Nye kommentarer",
+  "settings.notifications.emailCommentReply": "Svar på dine kommentarer",
+  "settings.notifications.emailCommentMention": "Omtaler"
 }

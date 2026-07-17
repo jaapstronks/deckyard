@@ -7,22 +7,18 @@
   "settings.tabs.integrations": "Integraties",
   "settings.tabs.ariaLabel": "Instellingen navigatie",
   "settings.tabs.adminSection": "Beheer",
-
   "settings.admin.description": "Configureer instellingen voor de hele werkruimte die van toepassing zijn op alle gebruikers.",
   "settings.admin.supportedThemes.title": "Ondersteunde thema's",
   "settings.admin.supportedThemes.hint": "Bepaalt welke presentatiethema's beschikbaar zijn in deze werkruimte.",
   "settings.admin.supportedThemes.comingSoon": "Thema-configuratie komt binnenkort.",
-
   "settings.admin.aiAssistant.title": "AI-assistent identiteit",
   "settings.admin.aiAssistant.hint": "Pas de naam en het e-mailadres aan die worden getoond voor AI-gegenereerde inhoud.",
   "settings.admin.aiAssistant.name": "Naam",
   "settings.admin.aiAssistant.email": "E-mail",
-
   "settings.admin.emailSender.title": "E-mail afzender identiteit",
   "settings.admin.emailSender.hint": "Afzenderadres voor systeemmails. Valt terug op omgevingsvariabelen indien leeg.",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.name": "Naam",
-
   "settings.admin.sessionDuration.title": "Sessieduur",
   "settings.admin.sessionDuration.hint": "Hoe lang gebruikers ingelogd blijven voordat ze opnieuw moeten inloggen.",
   "settings.admin.sessionDuration.duration": "Duur",
@@ -32,9 +28,7 @@
   "settings.admin.sessionDuration.30days": "30 dagen (standaard)",
   "settings.admin.sessionDuration.90days": "90 dagen",
   "settings.admin.sessionDuration.365days": "1 jaar",
-
   "settings.integrations.description": "Koppel externe services via webhooks om meldingen over gebeurtenissen te ontvangen.",
-
   "settings.mcp.title": "Verbinden via API / MCP",
   "settings.mcp.description": "Deckyard spreekt het Model Context Protocol: richt Claude Desktop, Cursor of een externe agent op deze server om decks in natuurlijke taal te maken en te bewerken. Externe toegang authenticeert met een van de API-sleutels hierboven.",
   "settings.mcp.remote.label": "Externe agents (HTTP + API-sleutel)",
@@ -43,7 +37,6 @@
   "settings.mcp.desktop.help": "Toevoegen aan claude_desktop_config.json. Lokale stdio heeft geen API-sleutel nodig; stel het owner-e-mailadres in zodat decks aan jou worden toegewezen.",
   "settings.mcp.rest.label": "Liever gewoon REST?",
   "settings.mcp.rest.link": "Bekijk de OpenAPI-spec",
-
   "admin.users.actions": "Acties",
   "admin.users.addModal.adding": "Toevoegen...",
   "admin.users.addModal.alreadyExists": "Er bestaat al een gebruiker met dit e-mailadres.",
@@ -132,7 +125,6 @@
   "settings.title": "Instellingen",
   "settings.uiLocale.hint": "De taal van de interface van deze applicatie, los van de taal die in slides wordt gebruikt.",
   "settings.uiLocale.title": "Applicatietaal",
-
   "settings.admin.emailTemplates.title": "Admin: E-mailsjablonen",
   "settings.admin.emailTemplates.hint": "Pas e-mailsjablonen aan die door het systeem worden verstuurd. Wijzigingen overschrijven de standaardwaarden.",
   "settings.admin.emailTemplates.defaultLocale": "Standaardtaal voor nieuwe gebruikersuitnodigingen:",
@@ -150,7 +142,6 @@
   "settings.admin.emailTemplates.resetConfirm": "Sjabloon herstellen naar standaard? Dit verwijdert alle aanpassingen voor deze taal.",
   "settings.admin.emailTemplates.testSent": "Testmail verstuurd.",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Standaardtaal bijgewerkt.",
-
   "settings.admin.emailTemplates.types.userInvitation": "Gebruikersuitnodiging",
   "settings.admin.emailTemplates.types.activationReminder": "Activatieherinnering",
   "settings.admin.emailTemplates.types.collaboratorInvite": "Samenwerkingsuitnodiging",
@@ -159,7 +150,6 @@
   "settings.admin.emailTemplates.types.magicLink": "Magic Link",
   "settings.admin.emailTemplates.types.commentNotification": "Reactiemelding",
   "settings.admin.emailTemplates.types.guestVerification": "Gast e-mailverificatie",
-
   "settings.admin.emailTemplates.locales.en": "English",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
@@ -169,13 +159,11 @@
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.sv": "Svenska",
   "settings.admin.emailTemplates.locales.no": "Norsk",
-
   "settings.admin.emailTemplates.fields.subject": "Onderwerp",
   "settings.admin.emailTemplates.fields.greeting": "Begroeting",
   "settings.admin.emailTemplates.fields.body": "Inhoud",
   "settings.admin.emailTemplates.fields.buttonLabel": "Knoptekst",
   "settings.admin.emailTemplates.fields.footer": "Voettekst",
-
   "settings.admin.analytics.title": "Engagement Inzichten",
   "settings.admin.analytics.hint": "Configureer hoe engagement data wordt verzameld en weergegeven.",
   "settings.admin.analytics.enabled": "Engagement inzichten inschakelen",
@@ -190,14 +178,12 @@
   "settings.admin.analytics.retentionDays": "Sessiegegevens bewaren voor",
   "settings.admin.analytics.retentionIpDays": "IP-adressen anonimiseren na",
   "settings.admin.analytics.days": "dagen",
-
   "settings.privacy.title": "Privacy",
   "settings.privacy.hint": "Bepaal hoe je activiteit wordt gevolgd en weergegeven.",
   "settings.privacy.allowAttribution": "Mijn naam mag worden getoond in engagement inzichten",
   "settings.privacy.allowAttributionHint": "Indien ingeschakeld kunnen presentatoren je naam zien in plaats van alleen \"teamlid bekeken\".",
   "settings.privacy.disableTracking": "Opt-out van alle engagement tracking",
   "settings.privacy.disableTrackingHint": "Indien ingeschakeld worden je weergaven niet geregistreerd.",
-
   "settings.digest.title": "Wekelijkse Samenvatting",
   "settings.digest.hint": "Ontvang een wekelijkse e-mail samenvatting van je presentatie engagement.",
   "settings.digest.enabled": "Wekelijkse engagement samenvatting versturen",
@@ -210,7 +196,6 @@
   "settings.digest.dayOfWeek.5": "Vrijdag",
   "settings.digest.dayOfWeek.6": "Zaterdag",
   "settings.digest.includeTeam": "Team engagement statistieken opnemen",
-
   "settings.admin.stockMedia.title": "Stock Media",
   "settings.admin.stockMedia.hint": "Schakel stockfoto- en GIF-integraties in voor de afbeeldingskiezer. Vereist API-sleutels in serveromgeving.",
   "settings.admin.stockMedia.unsplash": "Unsplash foto's inschakelen",
@@ -219,18 +204,14 @@
   "settings.admin.stockMedia.giphyHint": "Zoek en gebruik geanimeerde GIF's van Giphy. Vereist GIPHY_API_KEY.",
   "settings.admin.stockMedia.notConfigured": "Niet geconfigureerd (API-sleutel ontbreekt)",
   "settings.admin.stockMedia.configured": "API-sleutel geconfigureerd",
-
   "settings.admin.webhooks.leadSubmitted.title": "Wanneer een lead wordt ingediend",
   "settings.admin.webhooks.leadSubmitted.hint": "Event: lead.submitted",
-
   "settings.admin.leads.title": "Lead Capture",
   "settings.admin.leads.hint": "Configureer instellingen voor lead capture formulieren.",
   "settings.admin.leads.retentionDays": "Lead gegevens bewaren voor",
   "settings.admin.leads.days": "dagen",
-
   "settings.notifications.leadEmails": "Lead notificatie e-mails",
   "settings.notifications.leadEmailsHint": "Ontvang een e-mail wanneer iemand een lead formulier invult op je presentatie.",
-
   "settings.tabs.analytics": "Externe Analytics",
   "settings.analytics.description": "Externe analytics vullen ingebouwde inzichten aan door bezoekersgedrag over websites heen te volgen. Kies privacyvriendelijke providers die je bezoekers respecteren.",
   "settings.analytics.envVarsNote": "Analytics kunnen ook via omgevingsvariabelen worden geconfigureerd. Instellingen hier overschrijven omgevingsvariabelen.",
@@ -238,22 +219,18 @@
   "settings.analytics.privacyFriendlyDesc": "Deze providers zijn ontworpen met privacy in gedachten. Ze gebruiken meestal geen cookies en zijn standaard GDPR-compliant.",
   "settings.analytics.requiresConsentSection": "Vereist Toestemming",
   "settings.analytics.requiresConsentDesc": "Deze providers plaatsen cookies en vereisen een cookiebanner onder GDPR/ePrivacy. Overweeg de privacyvriendelijke alternatieven hierboven.",
-
   "settings.analytics.providers.privacyFriendly": "Privacyvriendelijk",
   "settings.analytics.providers.requiresConsent": "Vereist toestemming",
-
   "settings.analytics.providers.umami.description": "Cookievrij, GDPR-compliant, open-source analytics. Kan zelf gehost worden.",
   "settings.analytics.providers.umami.websiteId": "Website ID",
   "settings.analytics.providers.umami.websiteIdHint": "Te vinden in je Umami dashboard onder Instellingen > Websites",
   "settings.analytics.providers.umami.url": "Server URL",
   "settings.analytics.providers.umami.urlHint": "Laat leeg voor Umami Cloud, of voer je self-hosted URL in",
-
   "settings.analytics.providers.plausible.description": "Lichtgewicht, cookievrije analytics. EU-gehoste cloudoptie beschikbaar.",
   "settings.analytics.providers.plausible.domain": "Domein",
   "settings.analytics.providers.plausible.domainHint": "Het domein dat je wilt tracken",
   "settings.analytics.providers.plausible.url": "Server URL",
   "settings.analytics.providers.plausible.urlHint": "Laat leeg voor Plausible Cloud, of voer je self-hosted URL in",
-
   "settings.analytics.providers.matomo.description": "Uitgebreide, zelf te hosten analytics met cookievrije trackingmodus.",
   "settings.analytics.providers.matomo.url": "Matomo URL",
   "settings.analytics.providers.matomo.urlHint": "Je Matomo server URL",
@@ -263,11 +240,15 @@
   "settings.analytics.providers.matomo.disableCookiesHint": "Track zonder cookies te plaatsen",
   "settings.analytics.providers.matomo.requireConsent": "Toestemming vereisen",
   "settings.analytics.providers.matomo.requireConsentHint": "Wacht op expliciete toestemming van gebruiker voordat je trackt",
-
   "settings.analytics.providers.googleAnalytics.description": "Google's analyticsplatform. Veel gebruikt maar plaatst cookies.",
   "settings.analytics.providers.googleAnalytics.privacyNote": "Google Analytics plaatst cookies en deelt gegevens met Google. Je moet een cookiebanner tonen en je privacybeleid bijwerken wanneer je deze provider gebruikt.",
   "settings.analytics.providers.googleAnalytics.measurementId": "Measurement ID",
   "settings.analytics.providers.googleAnalytics.measurementIdHint": "Te vinden in GA4 > Beheer > Gegevensstreams > jouw stream",
-
-  "settings.analytics.validation.enabledButMissing": "Provider is ingeschakeld maar verplichte velden ontbreken. Het wordt pas actief na configuratie."
+  "settings.analytics.validation.enabledButMissing": "Provider is ingeschakeld maar verplichte velden ontbreken. Het wordt pas actief na configuratie.",
+  "settings.notifications.defaultLevel": "Standaardniveau per deck",
+  "settings.notifications.defaultLevel.help": "Geldt voor decks zonder eigen instelling. Directe @mentions komen altijd door.",
+  "settings.notifications.emailByType": "Mail mij over",
+  "settings.notifications.emailCommentCreated": "Nieuwe comments",
+  "settings.notifications.emailCommentReply": "Reacties op jouw comments",
+  "settings.notifications.emailCommentMention": "Mentions"
 }

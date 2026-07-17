@@ -335,5 +335,22 @@
   "mentions.noAccess.share": "Mit Kommentarrechten teilen",
   "mentions.noAccess.postAnyway": "Trotzdem posten",
   "mentions.shared": "Mit Kommentarrechten geteilt",
-  "mentions.shareFailed": "Teilen fehlgeschlagen"
+  "mentions.shareFailed": "Teilen fehlgeschlagen",
+  "editor.more.subscription": "Deck-Benachrichtigungen…",
+  "editor.more.subscription.title": "Wähle, welche Kommentar-Aktivität auf diesem Deck dich benachrichtigt.",
+  "subscription.title": "Benachrichtigungen für dieses Deck",
+  "subscription.hint": "Bestimmt, welche Kommentar-Aktivität auf diesem Deck dich benachrichtigt (Glocke und E-Mail). Direkte @Erwähnungen kommen immer durch.",
+  "subscription.level.default": "Dein Standard",
+  "subscription.level.default.help": "Folge deiner globalen Benachrichtigungseinstellung.",
+  "subscription.level.watching": "Alles verfolgen",
+  "subscription.level.watching.help": "Jeder Kommentar auf diesem Deck.",
+  "subscription.level.participating": "Teilnehmend",
+  "subscription.level.participating.help": "Threads, in denen du schreibst, Antworten an dich und deine eigenen Decks.",
+  "subscription.level.mentionsOnly": "Nur Erwähnungen",
+  "subscription.level.mentionsOnly.help": "Nur wenn dich jemand @erwähnt.",
+  "subscription.level.mute": "Stummschalten",
+  "subscription.level.mute.help": "Dieses Deck stummschalten. Direkte @Erwähnungen erreichen dich weiterhin.",
+  "subscription.saved": "Benachrichtigungseinstellung gespeichert",
+  "subscription.saveFailed": "Speichern der Einstellung fehlgeschlagen",
+  "subscription.loadFailed": "Laden der Einstellung fehlgeschlagen"
 }

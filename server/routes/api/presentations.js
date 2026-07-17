@@ -46,6 +46,7 @@ import {
   handlePresentationCommentEvents,
 } from './presentations/comments.js';
 import { handlePresentationImportSlidesAsImages } from './presentations/import-slides-as-images.js';
+import { handlePresentationSubscription } from './presentations/subscription.js';
 import { handlePresentationAnalyze } from './presentations/analyze.js';
 import { handlePresentationTags } from './tags.js';
 import { handleOwnershipTransfer } from './presentations/ownership.js';
@@ -550,6 +551,17 @@ export async function handlePresentations({
     return handlePresentationCommentCounts(
       { repoRoot, req, res, url, authedUser },
       commentCountsMatch[1]
+    );
+  }
+
+  // Per-deck notification subscription (personal, GET current / PUT set)
+  const subscriptionMatch = url.pathname.match(
+    /^\/api\/presentations\/([^/]+)\/subscription$/
+  );
+  if (subscriptionMatch) {
+    return handlePresentationSubscription(
+      { repoRoot, req, res, url, authedUser },
+      subscriptionMatch[1]
     );
   }
 

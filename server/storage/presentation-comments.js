@@ -158,6 +158,44 @@ async function annotateThreadReadState(db, threads, ctx) {
 }
 
 /**
+ * Author emails of everyone in a thread (the top-level comment + all its
+ * replies), normalized and deduplicated. Used by the subscription resolver:
+ * writing in a thread makes you a participant.
+ *
+ * @param {string} commentId - Top-level comment id (or a reply id; the
+ *   thread is resolved via its parent)
+ * @returns {Promise<string[]>}
+ */
+export async function getThreadParticipants(commentId, ctx) {
+  const cid = norm(commentId);
+  if (!cid) return [];
+
+  return withDbGuard([], async (db) => {
+    const orgId = getOrgId(ctx);
+    const root = await db
+      .selectFrom('presentation_comments')
+      .select(['id', 'parent_id', 'author_email'])
+      .where('id', '=', cid)
+      .where('organization_id', '=', orgId)
+      .executeTakeFirst();
+    if (!root) return [];
+
+    const rootId = root.parent_id || root.id;
+    const rows = await db
+      .selectFrom('presentation_comments')
+      .select('author_email')
+      .where('organization_id', '=', orgId)
+      .where((eb) => eb.or([
+        eb('id', '=', rootId),
+        eb('parent_id', '=', rootId),
+      ]))
+      .execute();
+
+    return [...new Set(rows.map((r) => normalizeEmail(r.author_email)).filter(Boolean))];
+  });
+}
+
+/**
  * Mark threads as read for the acting user (batch upsert of
  * `comment_thread_reads.last_read_at`). Only top-level comments of the given
  * presentation count; unknown/reply ids are ignored. No-op without an acting

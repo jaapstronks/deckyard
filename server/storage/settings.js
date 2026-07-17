@@ -510,9 +510,19 @@ export function defaultUserSettings() {
     uiLocale: 'en', // UI language for app chrome
     uiLang: null, // 'nl' | 'en-GB' | null
     notifications: {
-      emailEnabled: true, // Receive email notifications
-      slackEnabled: true, // Receive Slack/webhook notifications
+      emailEnabled: true, // Receive email notifications (channel master switch)
+      slackEnabled: true, // Receive Slack/webhook notifications (channel master switch)
       leadEmails: true, // Receive email when leads are captured
+      // Default subscription level for decks without a per-deck override
+      // (watching | participating | mentions_only | mute)
+      defaultLevel: 'participating',
+      // Email per comment-event type (in-app notifications always follow
+      // the subscription level; these only gate the email channel)
+      emailByType: {
+        comment_created: true,
+        comment_reply: true,
+        comment_mention: true,
+      },
     },
     // Privacy settings for analytics
     privacy: {
@@ -531,6 +541,21 @@ export function defaultUserSettings() {
       thickness: 4, // Stroke width in pixels (1-10)
       persistentDraw: false, // If true, drawings don't fade (cleared on slide change or manually)
     },
+  };
+}
+
+const SUBSCRIPTION_LEVELS = ['watching', 'participating', 'mentions_only', 'mute'];
+
+function normalizeSubscriptionLevel(v) {
+  return SUBSCRIPTION_LEVELS.includes(v) ? v : 'participating';
+}
+
+function normalizeEmailByType(v) {
+  const obj = v && typeof v === 'object' ? v : {};
+  return {
+    comment_created: obj?.comment_created !== false,
+    comment_reply: obj?.comment_reply !== false,
+    comment_mention: obj?.comment_mention !== false,
   };
 }
 
@@ -572,6 +597,8 @@ export async function readUserSettings(repoRoot, email) {
     emailEnabled: notif?.emailEnabled !== false,
     slackEnabled: notif?.slackEnabled !== false,
     leadEmails: notif?.leadEmails !== false,
+    defaultLevel: normalizeSubscriptionLevel(notif?.defaultLevel),
+    emailByType: normalizeEmailByType(notif?.emailByType),
   };
 
   // Privacy settings
@@ -638,6 +665,12 @@ export async function writeUserSettings(repoRoot, email, next) {
         emailEnabled: nextNotif?.emailEnabled !== false,
         slackEnabled: nextNotif?.slackEnabled !== false,
         leadEmails: nextNotif?.leadEmails !== false,
+        defaultLevel: normalizeSubscriptionLevel(
+          nextNotif?.defaultLevel ?? prev.notifications?.defaultLevel
+        ),
+        emailByType: normalizeEmailByType(
+          nextNotif?.emailByType ?? prev.notifications?.emailByType
+        ),
       }
     : prev.notifications;
 

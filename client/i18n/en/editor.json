@@ -645,5 +645,22 @@
   "mentions.noAccess.share": "Share with comment access",
   "mentions.noAccess.postAnyway": "Post anyway",
   "mentions.shared": "Shared with comment access",
-  "mentions.shareFailed": "Could not share the presentation"
+  "mentions.shareFailed": "Could not share the presentation",
+  "editor.more.subscription": "Deck notifications…",
+  "editor.more.subscription.title": "Choose which comment activity on this deck notifies you.",
+  "subscription.title": "Notifications for this deck",
+  "subscription.hint": "Controls which comment activity on this deck notifies you (bell and email). Direct @mentions always come through.",
+  "subscription.level.default": "Your default",
+  "subscription.level.default.help": "Follow your global notification setting.",
+  "subscription.level.watching": "Watching",
+  "subscription.level.watching.help": "Every comment on this deck.",
+  "subscription.level.participating": "Participating",
+  "subscription.level.participating.help": "Threads you write in, replies to you, and your own decks.",
+  "subscription.level.mentionsOnly": "Mentions only",
+  "subscription.level.mentionsOnly.help": "Only when someone @mentions you.",
+  "subscription.level.mute": "Mute",
+  "subscription.level.mute.help": "Silence this deck. Direct @mentions still reach you.",
+  "subscription.saved": "Notification setting saved",
+  "subscription.saveFailed": "Could not save notification setting",
+  "subscription.loadFailed": "Could not load notification setting"
 }
