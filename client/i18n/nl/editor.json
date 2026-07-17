@@ -554,6 +554,7 @@
   "editor.inline.media.title": "Afbeelding",
   "editor.inline.media.addImage": "Afbeelding toevoegen",
   "editor.inline.media.changeImage": "Afbeelding wijzigen",
+  "editor.inline.media.removeImageArea": "Beeldruimte verwijderen (wordt een tekstslide)",
   "editor.inline.media.alt": "Alt-tekst (optioneel)",
   "editor.inline.media.altPlaceholder": "Omschrijf de afbeelding",
   "editor.inline.media.linkedin": "LinkedIn-URL (optioneel)",

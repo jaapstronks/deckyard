@@ -48,6 +48,27 @@ function hasMeaningfulValue(v) {
 // Keys that are intentionally "moved" during conversion, so the editor shouldn't warn
 // about them being removed.
 const CONSUMED_SOURCE_KEYS = {
+  'content-slide': {
+    // `layout` (one/two-column) has no image-text equivalent; the body flows
+    // beside the image instead. Deliberate drop, not data loss worth a warning
+    // - and the default 'one-column' would otherwise trigger the confirm on
+    // every conversion.
+    'image-text-slide': ['layout'],
+  },
+  'image-text-slide': {
+    // The image-area housekeeping enums ship as non-empty defaults, so without
+    // this every conversion warned about them. Removing the image area is the
+    // point of the conversion; image/caption/alt still warn when filled.
+    'content-slide': [
+      'imageRole',
+      'imageSide',
+      'imageWidth',
+      'imageFit',
+      'imageBackground',
+      'focusX',
+      'focusY',
+    ],
+  },
   'lijstje-slide': {
     'content-slide': ['subtitle', 'variant', 'items'],
     'content-columns-slide': ['variant', 'layout', 'items'],

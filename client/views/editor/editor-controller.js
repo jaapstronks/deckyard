@@ -37,6 +37,10 @@ import { createPreviewPanel } from './preview-panel.js';
 import { createInspectorResize } from './inspector-resize.js';
 import { createInspectorPanes } from './inspector-panes.js';
 import { createInlineEditor } from './inline-edit/inline-editor.js';
+import {
+  canConvertSlideTo,
+  convertSlideWithConfirm,
+} from './convert-slide-action.js';
 import { createEditorTopbar } from './topbar.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
@@ -1332,6 +1336,27 @@ export async function createEditorController({
     openImagePicker,
     pres,
     normalizeLang,
+    canConvertSlideTo: (slide, toType) =>
+      canConvertSlideTo(slide, toType, SLIDE_TYPES),
+    // The shared convert action (lossy confirm + convert seam + refresh); on
+    // "+ Add image" the fresh placeholder gets the media popover right away.
+    // One markDirty per conversion = one undo step for the whole switch.
+    convertSlideType: async (toType, { openMedia = false } = {}) => {
+      const slide = pres.slides.find((s) => s.id === selectedSlideId);
+      if (!slide) return false;
+      const ok = await convertSlideWithConfirm({
+        h,
+        slide,
+        toType,
+        pres,
+        editorState,
+        SLIDE_TYPES,
+      });
+      if (ok && openMedia) {
+        requestAnimationFrame(() => inlineEditor.openMediaByIndex(0));
+      }
+      return ok;
+    },
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);
 
