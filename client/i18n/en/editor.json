@@ -543,6 +543,7 @@
   "editor.inline.media.title": "Image",
   "editor.inline.media.addImage": "Add image",
   "editor.inline.media.changeImage": "Change image",
+  "editor.inline.media.removeImageArea": "Remove image area (becomes a text slide)",
   "editor.inline.media.alt": "Alt text (optional)",
   "editor.inline.media.altPlaceholder": "Describe the image",
   "editor.inline.media.linkedin": "LinkedIn URL (optional)",

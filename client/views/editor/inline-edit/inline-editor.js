@@ -47,6 +47,9 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  * @param {Function} [opts.requestSave]
  * @param {Function} opts.rerenderPreview - full preview remount + refresh()
  * @param {Function} [opts.rerenderEditor] - rebuild the side form (thumb-safe)
+ * @param {Function} [opts.convertSlideType] - (toType, {openMedia}) => Promise<boolean>;
+ *   runs the shared convert action for the selected slide (descriptor `convert`)
+ * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
  */
 export function createInlineEditor({
   h,
@@ -63,8 +66,16 @@ export function createInlineEditor({
   openImagePicker,
   pres,
   normalizeLang,
+  convertSlideType,
+  canConvertSlideTo,
 } = {}) {
-  if (!thumb) return { refresh() {}, isEditing: () => false, destroy() {} };
+  if (!thumb)
+    return {
+      refresh() {},
+      isEditing: () => false,
+      destroy() {},
+      openMediaByIndex() {},
+    };
 
   // Sentinel written to a field while a ghost-spawned edit is in progress: it
   // makes the renderer emit the field's real element (correct tag/class/size)
@@ -910,6 +921,19 @@ export function createInlineEditor({
     }
   }
 
+  /**
+   * Open the media popover on the photo element with the given
+   * data-inline-photo index in the CURRENT slide DOM. Used by the convert
+   * flow: after "+ Add image" converts a text slide, the fresh placeholder
+   * gets the popover right away. No-op when the element isn't there (e.g. an
+   * async server-rendered custom type) - the placeholder itself stays
+   * clickable.
+   */
+  function openMediaByIndex(idx) {
+    const el = slideEl()?.querySelector(`[data-inline-photo="${idx}"]`);
+    if (el) openMediaFor(el);
+  }
+
   function openMediaFor(photoEl) {
     const slide = getSlide?.();
     const descriptor = slide
@@ -975,6 +999,66 @@ export function createInlineEditor({
         mediaPopover = null;
       },
     });
+  }
+
+  // ----------------------------------------------------------------
+  // Type-switch affordances (descriptor `convert`: add/remove image area)
+  // ----------------------------------------------------------------
+  /**
+   * The "add an image" / "remove the image area" intents surface here; the
+   * type switch underneath runs through the controller's shared convert
+   * action. Both affordances are gated on the convert seam actually
+   * supporting the switch for this slide, so forks with custom types only
+   * get them where the mapping exists.
+   */
+  function insertConvertAffordances(root, _def, descriptor) {
+    const conv = descriptor.convert;
+    if (!conv || typeof convertSlideType !== 'function') return;
+    const slide = getSlide?.();
+    if (!slide) return;
+
+    const add = conv.addMedia;
+    if (add?.toType && canConvertSlideTo?.(slide, add.toType)) {
+      const anchor = resolveGhostAnchor(root, add);
+      if (anchor) {
+        const chip = h('button', {
+          class: 'ie-ghost',
+          type: 'button',
+          'data-ie-convert': add.toType,
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            convertSlideType(add.toType, { openMedia: true });
+          },
+        }, [
+          h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+          h('span', { text: t('editor.inline.media.addImage', 'Add image') }),
+        ]);
+        overlay.place(chip, anchor.el, anchor.chip, 8);
+      }
+    }
+
+    const rem = conv.removeMedia;
+    if (rem?.toType && rem.selector && canConvertSlideTo?.(slide, rem.toType)) {
+      for (const el of root.querySelectorAll(rem.selector)) {
+        const btn = h('button', {
+          class: 'ie-clear',
+          type: 'button',
+          'data-ie-convert': rem.toType,
+          title: t(
+            'editor.inline.media.removeImageArea',
+            'Remove image area (becomes a text slide)'
+          ),
+          text: '×',
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            convertSlideType(rem.toType);
+          },
+        });
+        overlay.place(btn, el, 'top-right', 0);
+      }
+    }
   }
 
   // ----------------------------------------------------------------
@@ -1059,6 +1143,7 @@ export function createInlineEditor({
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
+    insertConvertAffordances(root, def, descriptor);
 
     // Measure now, then again after layout settles (fonts/images can reflow).
     overlay.reposition();
@@ -1198,7 +1283,7 @@ export function createInlineEditor({
     }
   }
 
-  return { refresh, isEditing, destroy };
+  return { refresh, isEditing, destroy, openMediaByIndex };
 }
 
 // --------------------------------------------------------------------

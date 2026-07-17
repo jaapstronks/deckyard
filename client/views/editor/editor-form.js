@@ -9,11 +9,8 @@ import { confirmModal } from '../../lib/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { slidePrimaryLabel } from './editor-utils.js';
 import { toast as defaultToast } from '../../lib/toast.js';
-import {
-  convertSlideToType,
-  getConvertibleSlideTypes,
-  getConversionLossyKeys,
-} from '../../../shared/slide-types.js';
+import { getConvertibleSlideTypes } from '../../../shared/slide-types.js';
+import { convertSlideWithConfirm } from './convert-slide-action.js';
 import { openJsonDebugModal } from './modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from './modals/save-to-library-modal.js';
 import { isOrgDisabledSlideType } from './slide-types-policy.js';
@@ -232,32 +229,14 @@ function buildHeaderActions({
           onclick: async () => {
             actionsDetails.open = false;
             convertDetails.open = false;
-
-            const lossy = getConversionLossyKeys(slide, toType, { slideTypes: SLIDE_TYPES });
-            if (lossy.length) {
-              const ok = await confirmModal(h, document.body, {
-                title: t('editor.slide.convert', 'Convert…'),
-                message: t('editor.slide.convert.confirmLossy', 'Convert "{from}" → "{to}"?\n\nThis will remove some fields:\n{fields}\n\n(Notes are kept.)', {
-                  from: typeLabel(slide.type),
-                  to: typeLabel(toType),
-                  fields: lossy.map((k) => `- ${k}`).join('\n'),
-                }),
-                confirmLabel: t('editor.slide.convert', 'Convert…'),
-                danger: true,
-              });
-              if (!ok) return;
-            }
-
-            try {
-              const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-              const next = convertSlideToType(slide, toType, { slideTypes: SLIDE_TYPES, lang });
-              slide.type = next.type;
-              slide.content = next.content;
-              editorState.dirtyRefreshWithItem();
-            } catch (e) {
-              debugLog('[editor] convert slide failed', e);
-              toast.error(String(e?.message || e));
-            }
+            await convertSlideWithConfirm({
+              h,
+              slide,
+              toType,
+              pres,
+              editorState,
+              SLIDE_TYPES,
+            });
           },
         })
       );

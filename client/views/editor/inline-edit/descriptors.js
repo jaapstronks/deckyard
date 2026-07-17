@@ -92,6 +92,24 @@
  *     a legacy mirror in sync (function-valued, so core-map-only - same
  *     restriction as function addPlacement).
  *
+ *   convert: type-switch affordances for the "add/remove an image" intent.
+ *     The user thinks "add an image here", not "convert the slide type", so
+ *     the WYSIWYG surfaces the intent and the shared convert seam
+ *     (convertSlideToType) moves the type underneath. Both entries are only
+ *     shown when the seam actually supports the conversion for this slide
+ *     (canConvertSlideTo), so custom types that override a core name keep
+ *     working and unrelated types never see the affordance.
+ *       addMedia: { toType, anchors: [{sel, chip}, ...] } - a "+ Add image"
+ *         chip (same look as ghosts) on a type without an image side.
+ *         Clicking converts to `toType` and opens the media popover on the
+ *         fresh placeholder. `anchors` works like the ghost anchor list.
+ *       removeMedia: { toType, selector } - a hover-revealed × on the EMPTY
+ *         image placeholder (`selector`). Clicking converts to `toType`,
+ *         removing the reserved image area. A filled image first goes through
+ *         "clear the image" (media popover), so removal is a deliberate
+ *         two-step; leftover caption/alt text still triggers the lossy
+ *         confirm via the shared action.
+ *
  * @typedef {Object} InlineDescriptor
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
@@ -99,6 +117,7 @@
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
  * @property {string[]} [formText]
  * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
+ * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]
  */
 
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
@@ -150,6 +169,14 @@ export const INLINE_DESCRIPTORS = {
   'content-slide': {
     ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
     formText: ['title', 'subheading', 'body'],
+    convert: {
+      // "Add an image" on a text slide = become an image-text slide (empty
+      // image); the existing placeholder + media popover take over from there.
+      addMedia: {
+        toType: 'image-text-slide',
+        anchors: [{ sel: '.slide-inner', chip: 'bottom-start' }],
+      },
+    },
   },
   'list-slide': {
     ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
@@ -193,6 +220,15 @@ export const INLINE_DESCRIPTORS = {
       altField: 'alt',
     },
     formText: ['title', 'caption', 'body'],
+    convert: {
+      // × on the EMPTY placeholder removes the reserved image area = become a
+      // plain text slide. With an image set the placeholder doesn't render, so
+      // removal is a deliberate two-step (clear the image first).
+      removeMedia: {
+        toType: 'content-slide',
+        selector: '.image-placeholder.is-empty[data-inline-photo]',
+      },
+    },
   },
 
   // ---- Data-viz types (shared header pattern + schema-driven cards) ----
