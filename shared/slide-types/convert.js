@@ -183,7 +183,11 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
 
   // image -> image-text (one-way; reverse isn't offered)
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
-    if (typeof from.image === 'string') to.image = from.image;
+    // images[] is the canonical field since the phase-2 catalogue; the
+    // slide-level caption/alt/focus keep working as item-0 fallbacks.
+    if (typeof from.image === 'string' && from.image.trim()) {
+      to.images = [{ src: from.image, alt: '' }];
+    }
     if (typeof from.caption === 'string') to.caption = from.caption;
     if (typeof from.alt === 'string') to.alt = from.alt;
     if (typeof from.imageRole === 'string') to.imageRole = from.imageRole;

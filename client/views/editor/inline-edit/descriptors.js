@@ -211,22 +211,28 @@ export const INLINE_DESCRIPTORS = {
   },
   'image-text-slide': {
     ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],
-    // Flat single image (filled <img> or empty placeholder, both tagged with
-    // data-inline-photo="0"): clicking it sets image + alt in-slide. Focus,
-    // fit, side and width stay in the side form.
+    // images[] media (phase 2): every cell (filled <img> or empty
+    // placeholder) carries data-inline-photo="<idx>"; clicking mutates
+    // images[idx] (src + alt) in place. Legacy flat decks migrate to
+    // images[] when the editor forms render (ensureImageTextImages); the
+    // inline editor pads missing items up to the clicked cell. Per-image
+    // fit/focus and reordering stay in the images section.
     media: {
+      list: 'images',
       photoSelector: '.frame [data-inline-photo]',
-      imageField: 'image',
+      imageField: 'src',
       altField: 'alt',
     },
     formText: ['title', 'caption', 'body'],
     convert: {
-      // × on the EMPTY placeholder removes the reserved image area = become a
-      // plain text slide. With an image set the placeholder doesn't render, so
-      // removal is a deliberate two-step (clear the image first).
+      // × on the ONLY empty placeholder removes the reserved image area =
+      // become a plain text slide (with an image set the placeholder doesn't
+      // render, so removal stays a deliberate two-step). Multi-cell layouts
+      // (duo/rows) manage their cells in the images section instead - no
+      // convert affordance per cell.
       removeMedia: {
         toType: 'content-slide',
-        selector: '.image-placeholder.is-empty[data-inline-photo]',
+        selector: '.media > .frame:only-child .image-placeholder.is-empty[data-inline-photo]',
       },
     },
   },

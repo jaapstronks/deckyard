@@ -157,7 +157,7 @@ homed. Not listed per row.
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | split-partner-title | label, title, subheading | logos[], logo{n}Alt, bgImage, bgAlt | - | partner logos have no media popover yet |
-| image-text | title, body, caption; image+alt via popover | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | |
+| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, layout, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | inspector also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | source, bunnyLibraryId | autoplay | source is a URL/id (text home = bulk) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |

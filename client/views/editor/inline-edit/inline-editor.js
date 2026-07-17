@@ -954,7 +954,11 @@ export function createInlineEditor({
     let extraFields;
     if (media.list) {
       const arr = getByPath(slide.content, media.list);
-      if (!Array.isArray(arr) || !arr[idx]) return;
+      if (!Array.isArray(arr)) return;
+      // Renderers may draw placeholder cells beyond the current array (e.g.
+      // image-text rows padding to their cell count); create the item the
+      // popover will mutate in place.
+      while (arr.length <= idx) arr.push({});
       member = arr[idx];
       imageField = media.imageField;
       altField = media.altField;

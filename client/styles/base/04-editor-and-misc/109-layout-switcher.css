@@ -109,3 +109,30 @@
 .layout-tile-schematic.is-corner .layout-tile-text {
   max-height: 58%;
 }
+/* Duo schematic: two image blocks stacked beside the text lines. */
+.layout-tile-duo {
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.layout-tile-duo .layout-tile-image {
+  flex: 1;
+  width: 100%;
+}
+/* Row schematics: the box stacks vertically - an image strip above or below
+   the text lines. */
+.layout-tile-schematic.is-row {
+  flex-direction: column;
+}
+.layout-tile-row {
+  display: flex;
+  gap: 3px;
+  height: 46%;
+  flex-shrink: 0;
+}
+.layout-tile-row .layout-tile-image {
+  flex: 1;
+  align-self: stretch;
+}
