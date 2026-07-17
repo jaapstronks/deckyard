@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Alles",
   "comments.filter.waitingForMe": "Wartet auf mich",
   "comments.empty.waiting": "Hier wartet nichts auf dich",
-  "comments.unread": "Neue Aktivität"
+  "comments.unread": "Neue Aktivität",
+  "mentions.noResults": "Keine passenden Benutzer",
+  "mentions.noAccess.title": "Kein Zugriff auf diese Präsentation",
+  "mentions.noAccess.message": "{names} kann diese Präsentation nicht sehen, die Erwähnung hilft also nicht. Mit Kommentarrechten teilen?",
+  "mentions.noAccess.share": "Mit Kommentarrechten teilen",
+  "mentions.noAccess.postAnyway": "Trotzdem posten",
+  "mentions.shared": "Mit Kommentarrechten geteilt",
+  "mentions.shareFailed": "Teilen fehlgeschlagen"
 }

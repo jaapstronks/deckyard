@@ -25,6 +25,7 @@ export async function sendCommentNotification({
   commenter,
   isReply,
   isOwner,
+  isMention = false,
   editUrl,
   locale = 'en',
   repoRoot = null,
@@ -48,10 +49,12 @@ export async function sendCommentNotification({
   });
   if (customResult) return customResult;
 
-  // Default behavior
-  const subject = isReply
-    ? tr('email.commentNotification.subject.reply', '{commenterName} replied to your comment', { commenterName })
-    : tr('email.commentNotification.subject.new', 'New comment on "{presTitle}"', { presTitle });
+  // Default behavior; mention is the most specific flavor and wins.
+  const subject = isMention
+    ? tr('email.commentNotification.subject.mention', '{commenterName} mentioned you on "{presTitle}"', { commenterName, presTitle })
+    : isReply
+      ? tr('email.commentNotification.subject.reply', '{commenterName} replied to your comment', { commenterName })
+      : tr('email.commentNotification.subject.new', 'New comment on "{presTitle}"', { presTitle });
 
   const { htmlContent, textContent } = buildCommentNotificationEmail({
     tr,
@@ -60,6 +63,7 @@ export async function sendCommentNotification({
     commentBody,
     isReply,
     isOwner,
+    isMention,
     editUrl,
   });
 

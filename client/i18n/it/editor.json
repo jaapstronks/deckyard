@@ -397,5 +397,12 @@
   "comments.filter.everyone": "Tutto",
   "comments.filter.waitingForMe": "In attesa di me",
   "comments.empty.waiting": "Niente in attesa per te qui",
-  "comments.unread": "Nuova attività"
+  "comments.unread": "Nuova attività",
+  "mentions.noResults": "Nessun utente trovato",
+  "mentions.noAccess.title": "Nessun accesso a questa presentazione",
+  "mentions.noAccess.message": "{names} non può vedere questa presentazione, quindi la menzione non servirà. Condividere con permesso di commento?",
+  "mentions.noAccess.share": "Condividi con permesso di commento",
+  "mentions.noAccess.postAnyway": "Pubblica comunque",
+  "mentions.shared": "Condiviso con permesso di commento",
+  "mentions.shareFailed": "Condivisione non riuscita"
 }

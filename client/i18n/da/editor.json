@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Alt",
   "comments.filter.waitingForMe": "Venter på mig",
   "comments.empty.waiting": "Intet venter på dig her",
-  "comments.unread": "Ny aktivitet"
+  "comments.unread": "Ny aktivitet",
+  "mentions.noResults": "Ingen matchende brugere",
+  "mentions.noAccess.title": "Ingen adgang til denne præsentation",
+  "mentions.noAccess.message": "{names} kan ikke se denne præsentation, så omtalen hjælper ikke. Del med kommentaradgang?",
+  "mentions.noAccess.share": "Del med kommentaradgang",
+  "mentions.noAccess.postAnyway": "Send alligevel",
+  "mentions.shared": "Delt med kommentaradgang",
+  "mentions.shareFailed": "Kunne ikke dele"
 }

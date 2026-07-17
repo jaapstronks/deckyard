@@ -10,6 +10,7 @@ import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
 import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
+import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
 import { createNotification } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
 
@@ -37,7 +38,7 @@ export async function notifyCommentCreated(repoRoot, req, {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   const commenterEmail = normalizeEmail(actor?.email);
 
-  const recipients = buildRecipients({ presentation, parentComment, actor });
+  const recipients = buildRecipients({ presentation, comment, parentComment, actor });
   if (recipients.size === 0) return;
 
   const settings = await readAppSettings(repoRoot);
@@ -92,17 +93,34 @@ export async function notifyCommentCreated(repoRoot, req, {
 
 /**
  * Build the recipient set for a new comment: deck owner + parent-comment
- * author, deduplicated, excluding the commenter.
+ * author + mentioned users, deduplicated, excluding the commenter.
  */
-function buildRecipients({ presentation, parentComment, actor }) {
+function buildRecipients({ presentation, comment, parentComment, actor }) {
   const recipients = new Set();
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
   if (ownerEmail) recipients.add(ownerEmail);
   if (parentComment?.authorEmail) {
     recipients.add(normalizeEmail(parentComment.authorEmail));
   }
+  for (const mention of commentMentions(comment)) {
+    recipients.add(mention.email);
+  }
   recipients.delete(normalizeEmail(actor?.email)); // Don't notify yourself
   return recipients;
+}
+
+/**
+ * The mentioned emails of a comment (normalized set). Prefers the stored
+ * `mentions` list (filled by the storage layer); falls back to parsing the
+ * body for callers that pass a raw comment.
+ */
+function commentMentions(comment) {
+  const list = Array.isArray(comment?.mentions) && comment.mentions.length
+    ? comment.mentions
+    : parseMentions(comment?.body);
+  return list
+    .map((m) => ({ ...m, email: normalizeEmail(m?.email) }))
+    .filter((m) => m.email);
 }
 
 /**
@@ -132,18 +150,17 @@ export async function notifyCommentCreatedInApp({
   });
 }
 
-/** Trim a comment body to a short notification excerpt. */
+/** Trim a comment body to a short notification excerpt (mentions as @Name). */
 function commentExcerpt(body, maxLength = 140) {
-  const s = String(body || '').replace(/\s+/g, ' ').trim();
+  const s = stripMentionMarkup(body).replace(/\s+/g, ' ').trim();
   if (s.length <= maxLength) return s;
   return `${s.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
 /**
  * Build the per-recipient in-app notification payloads for a new comment.
- * Pure: no storage or SSE. The deck owner gets `comment_created`, the
- * parent-comment author gets `comment_reply` (reply wins when someone is
- * both). Exported for tests.
+ * Pure: no storage or SSE. One notification per recipient, highest
+ * specificity wins: mention > reply > created. Exported for tests.
  *
  * @returns {Array<Object>} createNotification-ready payloads
  */
@@ -153,8 +170,10 @@ export function buildInAppNotificationInputs({
   parentComment,
   actor,
 }) {
-  const recipients = buildRecipients({ presentation, parentComment, actor });
+  const recipients = buildRecipients({ presentation, comment, parentComment, actor });
   if (recipients.size === 0) return [];
+
+  const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
 
   const actorName = actor?.name || actor?.email || 'Someone';
   const parentAuthorEmail = normalizeEmail(parentComment?.authorEmail);
@@ -173,13 +192,21 @@ export function buildInAppNotificationInputs({
     : null;
 
   return [...recipients].map((recipientEmail) => {
+    const isMentioned = mentionedEmails.has(recipientEmail);
     const isReplyToRecipient = !!parentAuthorEmail && recipientEmail === parentAuthorEmail;
+    const notificationType = isMentioned
+      ? 'comment_mention'
+      : isReplyToRecipient
+        ? 'comment_reply'
+        : 'comment_created';
     return {
       userEmail: recipientEmail,
-      notificationType: isReplyToRecipient ? 'comment_reply' : 'comment_created',
-      title: isReplyToRecipient
-        ? `${actorName} replied to your comment`
-        : `${actorName} commented on "${presentationTitle}"`,
+      notificationType,
+      title: isMentioned
+        ? `${actorName} mentioned you in "${presentationTitle}"`
+        : isReplyToRecipient
+          ? `${actorName} replied to your comment`
+          : `${actorName} commented on "${presentationTitle}"`,
       body: excerpt,
       presentationId: presentation?.id,
       actorEmail: actor?.email || null,
@@ -289,6 +316,8 @@ async function sendCommentEmails({
     return;
   }
 
+  const mentionedEmails = new Set(commentMentions(comment).map((m) => m.email));
+
   for (const recipientEmail of recipients) {
     // Check if user has email notifications enabled
     const prefs = recipientPrefs.get(recipientEmail);
@@ -297,11 +326,12 @@ async function sendCommentEmails({
     const isOwner = recipientEmail === ownerEmail;
     void sendCommentNotification({
       recipientEmail,
-      comment,
+      comment: { ...comment, body: stripMentionMarkup(comment?.body) },
       presentation,
       commenter: { email: commenterEmail, name: actor?.name },
       isReply: !!parentComment,
       isOwner,
+      isMention: mentionedEmails.has(recipientEmail),
       editUrl,
       repoRoot,
     }).then((result) => {

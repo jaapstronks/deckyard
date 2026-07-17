@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Allt",
   "comments.filter.waitingForMe": "Väntar på mig",
   "comments.empty.waiting": "Inget väntar på dig här",
-  "comments.unread": "Ny aktivitet"
+  "comments.unread": "Ny aktivitet",
+  "mentions.noResults": "Inga matchande användare",
+  "mentions.noAccess.title": "Ingen åtkomst till denna presentation",
+  "mentions.noAccess.message": "{names} kan inte se denna presentation, så omnämnandet hjälper inte. Dela med kommentarsbehörighet?",
+  "mentions.noAccess.share": "Dela med kommentarsbehörighet",
+  "mentions.noAccess.postAnyway": "Publicera ändå",
+  "mentions.shared": "Delad med kommentarsbehörighet",
+  "mentions.shareFailed": "Kunde inte dela"
 }

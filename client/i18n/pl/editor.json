@@ -397,5 +397,12 @@
   "comments.filter.everyone": "Wszystko",
   "comments.filter.waitingForMe": "Czeka na mnie",
   "comments.empty.waiting": "Nic tu na Ciebie nie czeka",
-  "comments.unread": "Nowa aktywność"
+  "comments.unread": "Nowa aktywność",
+  "mentions.noResults": "Brak pasujących użytkowników",
+  "mentions.noAccess.title": "Brak dostępu do tej prezentacji",
+  "mentions.noAccess.message": "{names} nie widzi tej prezentacji, więc wzmianka nic nie da. Udostępnić z prawem komentowania?",
+  "mentions.noAccess.share": "Udostępnij z prawem komentowania",
+  "mentions.noAccess.postAnyway": "Opublikuj mimo to",
+  "mentions.shared": "Udostępniono z prawem komentowania",
+  "mentions.shareFailed": "Nie udało się udostępnić"
 }

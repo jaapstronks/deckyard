@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Tudo",
   "comments.filter.waitingForMe": "À minha espera",
   "comments.empty.waiting": "Nada à sua espera aqui",
-  "comments.unread": "Nova atividade"
+  "comments.unread": "Nova atividade",
+  "mentions.noResults": "Nenhum utilizador correspondente",
+  "mentions.noAccess.title": "Sem acesso a esta apresentação",
+  "mentions.noAccess.message": "{names} não consegue ver esta apresentação, por isso a menção não ajudará. Partilhar com acesso de comentário?",
+  "mentions.noAccess.share": "Partilhar com acesso de comentário",
+  "mentions.noAccess.postAnyway": "Publicar mesmo assim",
+  "mentions.shared": "Partilhado com acesso de comentário",
+  "mentions.shareFailed": "Não foi possível partilhar"
 }

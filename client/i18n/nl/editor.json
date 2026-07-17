@@ -651,5 +651,12 @@
   "comments.filter.everyone": "Alles",
   "comments.filter.waitingForMe": "Wacht op mij",
   "comments.empty.waiting": "Niets dat op jou wacht",
-  "comments.unread": "Nieuwe activiteit"
+  "comments.unread": "Nieuwe activiteit",
+  "mentions.noResults": "Geen gebruikers gevonden",
+  "mentions.noAccess.title": "Geen toegang tot deze presentatie",
+  "mentions.noAccess.message": "{names} kan deze presentatie niet zien, dus de mention helpt ze niet. Delen met comment-rechten?",
+  "mentions.noAccess.share": "Delen met comment-rechten",
+  "mentions.noAccess.postAnyway": "Toch posten",
+  "mentions.shared": "Gedeeld met comment-rechten",
+  "mentions.shareFailed": "Delen is niet gelukt"
 }

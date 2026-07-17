@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Alt",
   "comments.filter.waitingForMe": "Venter på meg",
   "comments.empty.waiting": "Ingenting venter på deg her",
-  "comments.unread": "Ny aktivitet"
+  "comments.unread": "Ny aktivitet",
+  "mentions.noResults": "Ingen samsvarende brukere",
+  "mentions.noAccess.title": "Ingen tilgang til denne presentasjonen",
+  "mentions.noAccess.message": "{names} kan ikke se denne presentasjonen, så omtalen hjelper ikke. Dele med kommentartilgang?",
+  "mentions.noAccess.share": "Del med kommentartilgang",
+  "mentions.noAccess.postAnyway": "Publiser likevel",
+  "mentions.shared": "Delt med kommentartilgang",
+  "mentions.shareFailed": "Kunne ikke dele"
 }

@@ -5,6 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
+import { splitMentionSegments } from '../../../shared/comment-mentions.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -33,6 +34,7 @@ export function createCommentRenderers({
   isAuthor,
   onJumpToSlide,
   onReply,
+  attachMentions,
   onResolve,
   onReopen,
   onDelete,
@@ -148,11 +150,20 @@ export function createCommentRenderers({
       }
     }
 
-    // Body
-    const bodyEl = h('div', {
-      class: 'comment-body',
-      text: comment.body,
-    });
+    // Body: mention markup renders as a styled chip; everything else stays
+    // plain text (h() text nodes, so no escaping worries).
+    const bodyEl = h('div', { class: 'comment-body' });
+    for (const seg of splitMentionSegments(comment.body)) {
+      if (seg.type === 'mention') {
+        bodyEl.append(h('span', {
+          class: 'comment-mention-chip',
+          title: seg.email,
+          text: `@${seg.name}`,
+        }));
+      } else {
+        bodyEl.append(seg.text);
+      }
+    }
 
     // Actions row
     const actionsEl = h('div', { class: 'comment-actions' });
@@ -256,9 +267,11 @@ export function createCommentRenderers({
       onReply?.(parentId, body, textarea);
     };
 
-    // Enter to send, Shift+Enter for newline
+    // Enter to send, Shift+Enter for newline; with the mention popover
+    // open, Enter picks a user instead.
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
+        if (mentionAc?.isOpen()) return;
         e.preventDefault();
         submitReply();
       }
@@ -271,6 +284,7 @@ export function createCommentRenderers({
       onclick: submitReply,
     });
     container.append(textarea, submitBtn);
+    const mentionAc = attachMentions?.(textarea, container);
     return container;
   }
 

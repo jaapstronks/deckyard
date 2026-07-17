@@ -35,6 +35,13 @@ carries:
 - **`editUrl`** — a deep link into the editor, anchored to the commented
   slide via `?slideId=` (the editor and the view/comment viewer both open
   on that slide).
+- **`mentions`** — the parsed `@`-mentions of the comment as
+  `[{ name, email }]` (empty for comments without mentions or from before
+  migration 043). The body carries the markup
+  `@[Display Name](user:email@example.com)`; the server parses it at
+  create/update, so agents that post via API/MCP can mention users with the
+  same markup and trigger the same `comment_mention` notification the app
+  fires. Mentioned users must have an account (guests are not mentionable).
 
 The difference between `slide` and `slideSnapshot` is deliberate: a
 reviewer's remark may be about content that has since changed; the snapshot
@@ -83,8 +90,10 @@ Semantics:
   rule as the editor UI).
 
 Mutations fire the same side effects as in-app comments: activity events,
-owner/parent-author notifications (create only) and SSE broadcasts, so open
-editors update live.
+notifications (create only: owner gets `comment_created`, parent author
+`comment_reply`, mentioned users `comment_mention` — highest specificity
+wins, one notification per recipient) and SSE broadcasts, so open editors
+and notification bells update live.
 
 ## MCP tools
 
@@ -114,6 +123,11 @@ an author). Access rules are identical to the REST endpoints.
   slide, never the whole deck, to keep rows small. No retention concerns
   beyond normal comments — it's user content that dies with the comment row
   (FK cascade).
+- `presentation_comments.mentions` (JSONB, migration
+  `043_comment_mentions.js`) holds the parsed mention list, filled
+  server-side at create/update from the body markup (single source of
+  truth for every write path — app, REST, MCP). Parser lives in
+  `shared/comment-mentions.js`.
 - Comments live only in Postgres (`server/storage/presentation-comments.js`
   wraps everything in `withDbGuard`); the file backend has no comments
   table, so there was no second backend to migrate.

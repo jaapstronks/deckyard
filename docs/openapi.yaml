@@ -1866,6 +1866,20 @@ components:
           type: string
           nullable: true
           description: Editor deep link, anchored to the commented slide via ?slideId=
+        mentions:
+          type: array
+          description: |
+            Parsed @-mentions of this comment, filled server-side from the
+            body markup `@[Display Name](user:email@example.com)`. Mentioned
+            users receive a `comment_mention` notification. Empty when the
+            comment has no mentions.
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              email:
+                type: string
         replies:
           type: array
           items:
