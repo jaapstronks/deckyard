@@ -17,13 +17,50 @@
   min-height: 0;
   min-width: 0;
 }
-/* Narrow image layout: ~37% image, ~63% text */
+/* Narrow image layout: ~37% image, ~63% text (the catalogue's 1/3 split) */
 .slide-image-text.is-image-narrow .split {
   grid-template-columns: 37fr 63fr;
 }
 /* When image is on the right, flip the columns so the image (column 2) is still 37% */
 .slide-image-text.is-image-narrow .split.is-right {
   grid-template-columns: 63fr 37fr;
+}
+/* Wide image layout: ~63% image, ~37% text (the 2/3 split, mirror of narrow) */
+.slide-image-text.is-image-wide .split {
+  grid-template-columns: 63fr 37fr;
+}
+.slide-image-text.is-image-wide .split.is-right {
+  grid-template-columns: 37fr 63fr;
+}
+/* Corner layout: the image sits only in the top corner and the area under it
+   stays empty air. Both cells live in the top row; the bottom row is
+   deliberately unused breathing room, so this variant fits little text
+   (auto-density steps the body down when it overflows). These rules come
+   after the width rules on purpose: a corner slide keeps its imageWidth
+   value, and the later corner rules must win the same-specificity fight. */
+.slide-image-text.is-layout-corner .split {
+  grid-template-columns: 45fr 55fr;
+  grid-template-rows: 58fr 42fr;
+}
+.slide-image-text.is-layout-corner .split .media {
+  grid-column: 1;
+  grid-row: 1;
+}
+.slide-image-text.is-layout-corner .split .copy {
+  grid-column: 2;
+  grid-row: 1;
+}
+/* Mirrored: image top-right, air bottom-left (the canonical corner slide). */
+.slide-image-text.is-layout-corner .split.is-right {
+  grid-template-columns: 55fr 45fr;
+}
+.slide-image-text.is-layout-corner .split.is-right .media {
+  grid-column: 2;
+  grid-row: 1;
+}
+.slide-image-text.is-layout-corner .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
 }
 .slide-image-text .media {
   width: 100%;

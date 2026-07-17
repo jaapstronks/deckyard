@@ -16,6 +16,13 @@ export const VISUAL_CONTENT_SLIDES = {
       Split layout with an image on one side and text (bullets) on the other.
       Great for visual breaks and when there's a relevant image.
       Keep body concise (3-6 bullets).
+
+      LAYOUT VARIANTS:
+      - layout "split" (default): image beside text. imageWidth picks the
+        split: "narrow" (1/3 image), "half" (default), "wide" (2/3 image -
+        image-dominant, keep body to 2-3 short bullets).
+      - layout "corner": image only in the top corner, the space below stays
+        empty air. Very little text room - max 2-3 short bullets.
     `,
     bestFor: [
       'Content where a photo/image adds value',
@@ -26,12 +33,15 @@ export const VISUAL_CONTENT_SLIDES = {
     notFor: [
       'Content without a meaningful image to pair',
       'Heavy text content (use content-slide or split into multiple)',
+      'Long bodies on the "wide" or "corner" layouts (little text room)',
     ],
     schema: {
       title: { type: 'string', required: true, maxLength: 120 },
       body: { type: 'markdown', required: false, maxLength: 800 },
       image: { type: 'string', required: false },
       imageSide: { type: 'enum', options: ['left', 'right'] },
+      imageWidth: { type: 'enum', options: ['narrow', 'half', 'wide'], default: 'half' },
+      layout: { type: 'enum', options: ['split', 'corner'], default: 'split' },
       background: { type: 'enum', options: ['lime', 'mist'] },
     },
   },

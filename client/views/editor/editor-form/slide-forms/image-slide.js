@@ -105,6 +105,7 @@ export function appendImageTextLayoutOptions({
   markDirty,
   scheduleUiRefresh,
 } = {}) {
+  const layoutField = fieldByKey.get('layout');
   const sideField = fieldByKey.get('imageSide');
   const widthField = fieldByKey.get('imageWidth');
   const fitField = fieldByKey.get('imageFit');
@@ -112,8 +113,9 @@ export function appendImageTextLayoutOptions({
   const fxField = fieldByKey.get('focusX');
   const fyField = fieldByKey.get('focusY');
 
-  if (!sideField && !widthField && !fitField && !imgBgField && !fxField && !fyField) return;
+  if (!layoutField && !sideField && !widthField && !fitField && !imgBgField && !fxField && !fyField) return;
 
+  used.add('layout');
   used.add('imageSide');
   used.add('imageWidth');
   used.add('imageFit');
@@ -128,6 +130,14 @@ export function appendImageTextLayoutOptions({
   });
   const layoutBody = h('div', { class: 'editor-advanced-body' });
   layoutDetails.append(layoutSummary, layoutBody);
+
+  // Layout variant (split vs corner); the toolbar's layout switcher is the
+  // primary control - this enum deliberately doubles it (same designkeuze as
+  // the other layout enums, see docs/reference/editor-inspector.md).
+  if (layoutField) {
+    const layoutEl = renderField(layoutField);
+    if (layoutEl) layoutBody.append(layoutEl);
+  }
 
   // First row: side, width, fit
   if (sideField || widthField || fitField) {

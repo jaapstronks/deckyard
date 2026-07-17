@@ -1,0 +1,111 @@
+/* Layout switcher: "Layout" chip in the slide toolbar + tile popover with
+   mini-schematics per layout variant (image-text layout catalogue). */
+
+.layout-switcher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.layout-switcher-chip svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.layout-switcher-popover {
+  z-index: 1000;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 10px;
+  box-shadow: var(--app-shadow-lg);
+  padding: 10px;
+  max-width: min(92vw, 460px);
+}
+
+.layout-switcher-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.layout-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 8px;
+  background: hsl(var(--app-bg-base));
+  cursor: pointer;
+  font: inherit;
+  color: hsl(var(--app-text-primary));
+}
+.layout-tile:hover {
+  border-color: hsl(var(--app-border-strong));
+  background: hsl(var(--app-bg-hover));
+}
+.layout-tile:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 1px;
+}
+.layout-tile.is-active {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
+}
+
+.layout-tile-label {
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* The 16:9 mini-schematic: an "image" block + "text" lines. */
+.layout-tile-schematic {
+  width: 76px;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 4px;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  overflow: hidden;
+}
+.layout-tile-image {
+  background: hsl(var(--app-border-strong));
+  border-radius: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+/* Corner variant: the image block hugs the top; the space below stays empty. */
+.layout-tile-image.is-corner {
+  align-self: flex-start;
+  height: 58%;
+}
+.layout-tile-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
+}
+.layout-tile-line {
+  height: 4px;
+  border-radius: 2px;
+  background: hsl(var(--app-border-default));
+  width: 90%;
+}
+.layout-tile-line.is-heading {
+  height: 6px;
+  width: 70%;
+  background: hsl(var(--app-border-strong));
+}
+.layout-tile-line.is-short {
+  width: 55%;
+}
+/* Corner schematic keeps its text lines in the top band only. */
+.layout-tile-schematic.is-corner .layout-tile-text {
+  max-height: 58%;
+}

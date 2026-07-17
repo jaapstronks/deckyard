@@ -65,9 +65,27 @@ export default {
       label: 'Image width',
       type: 'enum',
       required: false,
+      // narrow/half/wide double as the catalogue's 1/3, 1/2 and 2/3 splits
+      // (37/63 mirrors 63/37, so no fourth value is needed).
       options: [
         { value: 'half', label: '50%' },
         { value: 'narrow', label: '37%' },
+        { value: 'wide', label: '63%' },
+      ],
+    },
+    {
+      key: 'layout',
+      label: 'Layout',
+      type: 'enum',
+      required: false,
+      options: [
+        { value: 'split', label: 'Split' },
+        {
+          value: 'corner',
+          label: 'Corner image',
+          title:
+            'Image only in the top corner; the space below stays empty. Fits little text.',
+        },
       ],
     },
     {
@@ -139,6 +157,56 @@ export default {
     BACKGROUND_FIELD,
     ACTIONS_FIELD,
   ],
+  // Layout catalogue for the editor's layout switcher (toolbar chip above the
+  // slide). Declared on the definition - not hardcoded in the editor - so
+  // forks that override this type by name control their own variant set.
+  // JSON-safe by design: custom types receive definitions via /api/slide-types.
+  //   id/labelKey/label - tile identity and copy;
+  //   set               - content-field updates that select the variant
+  //                       (matched against content with these defaults);
+  //   convertTo         - cross-type tile through the shared convert seam
+  //                       (only shown when the seam supports it);
+  //   schematic         - mini-tile drawing: { split: <image %> } for a
+  //                       side-by-side split, { corner: <image %> } for the
+  //                       corner layout, {} for text-only. Mirrored live via
+  //                       content.imageSide.
+  layoutVariants: [
+    {
+      id: 'text',
+      labelKey: 'editor.layoutVariant.text',
+      label: 'Text only',
+      convertTo: 'content-slide',
+      schematic: {},
+    },
+    {
+      id: 'split-narrow',
+      labelKey: 'editor.layoutVariant.splitNarrow',
+      label: 'Image 1/3',
+      set: { layout: 'split', imageWidth: 'narrow' },
+      schematic: { split: 37 },
+    },
+    {
+      id: 'split-half',
+      labelKey: 'editor.layoutVariant.splitHalf',
+      label: 'Image 1/2',
+      set: { layout: 'split', imageWidth: 'half' },
+      schematic: { split: 50 },
+    },
+    {
+      id: 'split-wide',
+      labelKey: 'editor.layoutVariant.splitWide',
+      label: 'Image 2/3',
+      set: { layout: 'split', imageWidth: 'wide' },
+      schematic: { split: 63 },
+    },
+    {
+      id: 'corner',
+      labelKey: 'editor.layoutVariant.corner',
+      label: 'Corner image',
+      set: { layout: 'corner' },
+      schematic: { corner: 45 },
+    },
+  ],
   defaultsByLang: {
     nl: {
       image: '',
@@ -147,6 +215,7 @@ export default {
       imageRole: 'content',
       imageSide: 'left',
       imageWidth: 'half',
+      layout: 'split',
       imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
@@ -163,6 +232,7 @@ export default {
       imageRole: 'content',
       imageSide: 'left',
       imageWidth: 'half',
+      layout: 'split',
       imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
@@ -181,6 +251,7 @@ export default {
     imageRole: 'content',
     imageSide: 'left',
     imageWidth: 'half',
+    layout: 'split',
     imageFit: 'cover',
     imageBackground: 'white',
     density: 'auto',
@@ -200,7 +271,11 @@ export default {
     const width =
       content?.imageWidth === 'narrow'
         ? 'is-image-narrow'
-        : '';
+        : content?.imageWidth === 'wide'
+          ? 'is-image-wide'
+          : '';
+    const layoutClass =
+      content?.layout === 'corner' ? ' is-layout-corner' : '';
     const fit =
       content?.imageFit === 'contain'
         ? 'is-image-contain'
@@ -261,7 +336,7 @@ export default {
         </div>`;
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${densityClass}" data-density="${density}">
+        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${densityClass}" data-density="${density}">
           <div class="slide-inner">
             <div class="split ${side}">
               <div class="media" data-morph-role="image">
