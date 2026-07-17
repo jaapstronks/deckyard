@@ -1,4 +1,12 @@
-/* Insert row between slides */
+/* Insert row between slides.
+   The row is a CONSTANT-height hover zone that never resizes on hover. An
+   earlier version animated the row from 2px to 32px on :hover, but the "+"
+   button (opacity 0 yet still ~28px tall and pointer-catching) overhung that
+   2px strip and triggered the hover from *above* the row. As the row then grew
+   downward, that origin fell outside it, hover dropped, the row shrank, and the
+   cursor was over the button again -> a rapid grow/shrink flicker right on the
+   edge. Keeping the hit zone a fixed size removes the layout shift under the
+   cursor, so only the button's opacity/scale animates. */
 :where(
     .app-shell,
     .modal-backdrop,
@@ -11,21 +19,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 2px;
-  margin: var(--ps-space-1) 0;
-  transition: height var(--ps-transition-fast);
-}
-
-:where(
-    .app-shell,
-    .modal-backdrop,
-    .notes-shell,
-    .follow-shell,
-    .join-shell,
-    .presenter-shell
-  )
-  .slide-insert:hover {
-  height: 32px;
+  height: var(--ps-space-6);
+  margin: 0;
 }
 
 :where(
@@ -39,7 +34,12 @@
   .slide-insert-btn {
   opacity: 0;
   transform: scale(0.9);
-  transition: all var(--ps-transition-fast);
+  /* Hidden button must not intercept the pointer, or its overhang would still
+     capture hover outside the row. Re-enabled the moment it's revealed. */
+  pointer-events: none;
+  transition:
+    opacity var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
 }
 
 :where(
@@ -50,9 +50,19 @@
     .join-shell,
     .presenter-shell
   )
-  .slide-insert:hover .slide-insert-btn {
+  .slide-insert:hover .slide-insert-btn,
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell
+  )
+  .slide-insert.is-kb-active .slide-insert-btn {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
 }
 
 /* The insert row after the LAST slide is otherwise a 2px sliver flush against
@@ -68,6 +78,8 @@
 .is-editor .slides-panel .list > .slide-insert:last-child .slide-insert-btn {
   opacity: 0.35;
   transform: scale(1);
+  /* Trailing "+" is visible at rest, so it must stay clickable. */
+  pointer-events: auto;
 }
 .is-editor .slides-panel .list > .slide-insert:last-child:hover .slide-insert-btn {
   opacity: 1;
