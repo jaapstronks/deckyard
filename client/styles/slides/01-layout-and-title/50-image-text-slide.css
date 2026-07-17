@@ -103,6 +103,27 @@
   grid-column: 1;
   grid-row: 1;
 }
+/* Rows don't mirror, but a row slide can carry imageSide: right (remembered
+   from a split, or via the mirror toggle). The generic split mirror rule
+   (01-basic-media.css, loaded later) would then push .media into an implicit
+   second column; these is-right repeats out-specificity it, same trick as
+   the corner rules above. */
+.slide-image-text.is-layout-row-top .split.is-right .media {
+  grid-column: 1;
+  grid-row: 1;
+}
+.slide-image-text.is-layout-row-top .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 2;
+}
+.slide-image-text.is-layout-row-bottom .split.is-right .media {
+  grid-column: 1;
+  grid-row: 2;
+}
+.slide-image-text.is-layout-row-bottom .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
+}
 .slide-image-text.is-layout-row-top .split .media,
 .slide-image-text.is-layout-row-bottom .split .media {
   display: grid;
@@ -304,6 +325,17 @@
    higher-specificity escape. */
 .slide-image-text.is-image-contain .media.is-multi .frame.is-fit-cover {
   padding: 0;
+  background: transparent;
+}
+/* Same escape for single-cell layouts (split/corner): there the contain
+   padding sits on .media itself, which a frame-level cover-undo can't reach,
+   so a per-image cover kept the white border. */
+.slide-image-text.is-image-contain .media:not(.is-multi):has(.frame.is-fit-cover) {
+  padding: 0;
+  background: rgba(0, 0, 0, 0.08);
+}
+.slide-image-text.is-image-bg-match.is-image-contain
+  .media:not(.is-multi):has(.frame.is-fit-cover) {
   background: transparent;
 }
 .slide-image-text .media .frame.is-fit-cover img {

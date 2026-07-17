@@ -240,8 +240,15 @@ export default {
   //                       side-by-side split, { corner: <image %> } for the
   //                       corner layout, { duo: <image %> } for two stacked
   //                       images beside the text, { row: 'top'|'bottom' }
-  //                       for an image row, {} for text-only. Mirrored live
-  //                       via content.imageSide (rows don't mirror).
+  //                       for an image row, { textCols: 2 } for two text
+  //                       columns, { cols: <n> } for n image+text columns,
+  //                       {} for text-only. Mirrored live via the
+  //                       layoutMirror field (rows/columns don't mirror).
+  // The switcher popover also shows a mirror toggle when the definition
+  // declares `layoutMirror`: which enum field flips the image side, and its
+  // two values in [left, right] order. Declared here (JSON-safe) so forks
+  // keep control per type; absent = no toggle.
+  layoutMirror: { key: 'imageSide', values: ['left', 'right'] },
   layoutVariants: [
     {
       id: 'text',
@@ -298,6 +305,15 @@ export default {
       label: 'Corner image',
       set: { layout: 'corner' },
       schematic: { corner: 45 },
+    },
+    {
+      // Cross-type exit for "I want my own text per image": the convert seam
+      // maps title/body/images onto content-columns columns.
+      id: 'columns',
+      labelKey: 'editor.layoutVariant.columns',
+      label: 'Own text per column',
+      convertTo: 'content-columns-slide',
+      schematic: { cols: 3 },
     },
   ],
   defaultsByLang: {

@@ -37,6 +37,12 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         layoutVariants: Array.isArray(def.layoutVariants)
           ? def.layoutVariants
           : undefined,
+        // Which enum field mirrors the layout (image left/right); drives the
+        // switcher's mirror toggle. Same fork story as layoutVariants.
+        layoutMirror:
+          def.layoutMirror && typeof def.layoutMirror === 'object'
+            ? def.layoutMirror
+            : undefined,
       };
     }
 

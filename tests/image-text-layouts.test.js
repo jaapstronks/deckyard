@@ -295,3 +295,143 @@ test('convert: filled images[] warns as lossy towards content-slide', () => {
   const lossy = getConversionLossyKeys(s, 'content-slide');
   assert.ok(lossy.includes('images'), 'images reported as lossy');
 });
+
+// ---- Phase 3: columns cross-over, content-slide series, mirror -----------
+
+const CONTENT_DEF = SLIDE_TYPES['content-slide'];
+
+const contentSlide = (content = {}) => ({
+  id: 'slide-2',
+  type: 'content-slide',
+  notes: '',
+  content: { ...structuredClone(CONTENT_DEF.defaults), ...content },
+});
+
+test('convert seam: image-text also reaches content-columns', () => {
+  assert.ok(getConvertibleSlideTypes(slide()).includes('content-columns-slide'));
+});
+
+test('convert: image-text -> content-columns maps images and distributes bullets', () => {
+  const s = slide({
+    layout: 'row-top',
+    images: [
+      { src: '/a.png', alt: 'A' },
+      { src: '/b.png' },
+      { src: '/c.png', fit: 'contain' },
+    ],
+    title: 'Titel',
+    body: '- Punt één\n- Punt twee\n- Punt drie',
+  });
+  const next = convertSlideToType(s, 'content-columns-slide', { lang: 'nl' });
+  assert.equal(next.type, 'content-columns-slide');
+  assert.equal(next.content.columnCount, '3');
+  assert.equal(next.content.title, 'Titel');
+  assert.equal(next.content.col1Image, '/a.png');
+  assert.equal(next.content.col1Alt, 'A');
+  assert.equal(next.content.col2Image, '/b.png');
+  assert.equal(next.content.col3ImageFit, 'contain');
+  assert.equal(next.content.col1Text, 'Punt één');
+  assert.equal(next.content.col2Text, 'Punt twee');
+  assert.equal(next.content.col3Text, 'Punt drie');
+  assert.equal(next.content.col1Title, '', 'no placeholder column titles');
+  assert.equal(next.content.col1BlockCount, '0');
+});
+
+test('convert: extra bullets collect in the last column as a list', () => {
+  const s = slide({
+    layout: 'duo',
+    images: [{ src: '/a.png' }, { src: '/b.png' }],
+    body: '- Een\n- Twee\n- Drie\n- Vier',
+  });
+  const next = convertSlideToType(s, 'content-columns-slide', { lang: 'nl' });
+  // max(2 images, 4 bullets) clamps to the 3-column maximum.
+  assert.equal(next.content.columnCount, '3');
+  assert.equal(next.content.col1Text, 'Een');
+  assert.equal(next.content.col2Text, 'Twee');
+  assert.equal(next.content.col3Text, '- Drie\n- Vier');
+  assert.equal(next.content.col3Image, '', 'no third image to place');
+});
+
+test('convert: a non-list body lands whole in column 1', () => {
+  const s = slide({
+    images: [{ src: '/a.png' }],
+    body: 'Gewoon een verhaal.\nTweede regel.',
+  });
+  const next = convertSlideToType(s, 'content-columns-slide', { lang: 'nl' });
+  assert.equal(next.content.columnCount, '2');
+  assert.equal(next.content.col1Text, 'Gewoon een verhaal.\nTweede regel.');
+  assert.equal(next.content.col2Text, '');
+});
+
+test('convert: legacy flat image converts via the item-0 fallbacks', () => {
+  const s = slide({
+    image: '/x.png',
+    alt: 'Legacy alt',
+    imageFit: 'contain',
+    focusX: 30,
+    focusY: 40,
+    body: 'verhaal',
+  });
+  const next = convertSlideToType(s, 'content-columns-slide', { lang: 'nl' });
+  assert.equal(next.content.col1Image, '/x.png');
+  assert.equal(next.content.col1Alt, 'Legacy alt');
+  assert.equal(next.content.col1ImageFit, 'contain');
+  assert.equal(next.content.col1ImageFocusX, 30);
+  assert.equal(next.content.col1ImageFocusY, 40);
+});
+
+test('convert: content-columns lossy check stays quiet on defaults, warns on caption', () => {
+  const clean = slide({ images: [{ src: '/a.png' }] });
+  assert.deepEqual(getConversionLossyKeys(clean, 'content-columns-slide'), []);
+  const withCaption = slide({ caption: 'Bijschrift' });
+  assert.ok(
+    getConversionLossyKeys(withCaption, 'content-columns-slide').includes('caption')
+  );
+});
+
+test('image-text catalogue: the columns tile crosses to content-columns', () => {
+  const tile = getLayoutVariants(DEF).find((v) => v.id === 'columns');
+  assert.ok(tile, 'catalogue has the columns tile');
+  assert.equal(tile.convertTo, 'content-columns-slide');
+});
+
+test('content-slide layoutVariants: full series, valid sets, seam-covered, JSON-safe', () => {
+  const variants = getLayoutVariants(CONTENT_DEF);
+  const ids = variants.map((v) => v.id);
+  assert.equal(new Set(ids).size, ids.length, 'variant ids are unique');
+  for (const id of ['one-column', 'two-column', 'split-half', 'row-top', 'duo', 'corner']) {
+    assert.ok(ids.includes(id), `series carries ${id}`);
+  }
+  // Sets of cross-type tiles apply to the *target* type after conversion, so
+  // validate them against that schema; same-type sets against content-slide.
+  for (const v of variants) {
+    const def = v.convertTo ? SLIDE_TYPES[v.convertTo] : CONTENT_DEF;
+    if (v.convertTo) {
+      assert.ok(
+        getConvertibleSlideTypes(contentSlide()).includes(v.convertTo),
+        `${v.id}: seam supports content-slide -> ${v.convertTo}`
+      );
+    }
+    for (const [key, value] of Object.entries(v.set || {})) {
+      const field = def.fields.find((f) => f.key === key);
+      assert.ok(field, `${v.id}: set key "${key}" exists on ${v.convertTo || 'content-slide'}`);
+      const options = field.options.map((o) => (typeof o === 'string' ? o : o.value));
+      assert.ok(options.includes(value), `${v.id}: ${key}=${value} is valid`);
+    }
+  }
+  assert.deepEqual(JSON.parse(JSON.stringify(variants)), variants, 'JSON-safe');
+});
+
+test('content-slide active variant follows the layout enum', () => {
+  assert.equal(activeLayoutVariantId(contentSlide(), CONTENT_DEF), 'one-column');
+  assert.equal(
+    activeLayoutVariantId(contentSlide({ layout: 'two-column' }), CONTENT_DEF),
+    'two-column'
+  );
+});
+
+test('layoutMirror: image-text declares the imageSide flip, JSON-safe', () => {
+  assert.deepEqual(DEF.layoutMirror, { key: 'imageSide', values: ['left', 'right'] });
+  assert.deepEqual(JSON.parse(JSON.stringify(DEF.layoutMirror)), DEF.layoutMirror);
+  assert.equal(CONTENT_DEF.layoutMirror, undefined, 'text slide has nothing to mirror');
+});
