@@ -12,6 +12,7 @@ import { STEP_DEPS } from './presenter/step.js';
 import { startPresenterSession } from './presenter/session.js';
 import { normalizeLang } from '../lib/i18n.js';
 import { t } from '../lib/ui-i18n.js';
+import { setDocumentTitle } from '../lib/branding.js';
 import { copyToClipboardWithPromptFallback } from '../lib/clipboard.js';
 import { loadThemeById } from '../lib/theme.js';
 import { attachStageScale } from './presenter/stage-scale.js';
@@ -57,6 +58,7 @@ export async function renderPresenter(
   const startUrl = new URL(location.href);
   const { activeLang, langQs } = readDeckLangFromUrl(startUrl);
   let pres = await api(`/api/presentations/${id}${langQs}`);
+  setDocumentTitle(pres?.title);
   const theme = await loadThemeById(pres?.theme);
   const modeLang =
     activeLang ||

@@ -12,6 +12,7 @@ import { displayNameFromEmail } from './user-format.js';
 import { logout } from './auth.js';
 import { storage } from './storage.js';
 import { t } from './ui-i18n.js';
+import { getHelpUrl } from './branding.js';
 
 /**
  * Create a user menu dropdown.
@@ -92,6 +93,22 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
     },
   });
   menuItems.push(btnSettings);
+
+  // Help / docs (only when a docs URL is configured)
+  const helpUrl = getHelpUrl();
+  if (helpUrl) {
+    const linkHelp = h('a', {
+      class: 'dropdown-item',
+      href: helpUrl,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      text: t('common.help', 'Help & docs'),
+      onclick: () => {
+        details.open = false;
+      },
+    });
+    menuItems.push(linkHelp);
+  }
 
   // Sign out (only for authenticated users)
   if (!isAnonymous) {

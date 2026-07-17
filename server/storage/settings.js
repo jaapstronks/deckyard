@@ -3,6 +3,7 @@ import { safeSlug } from '../utils/slug.js';
 import { readJsonIfExists, writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
+import { getAppName } from '../config/branding.js';
 import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
 function settingsPath(repoRoot) {
@@ -765,7 +766,7 @@ export async function getEmailSender(repoRoot) {
     name:
       settings.emailSender?.name ||
       process.env.BREVO_SENDER_NAME ||
-      'Presentation System',
+      getAppName(),
   };
 }
 
