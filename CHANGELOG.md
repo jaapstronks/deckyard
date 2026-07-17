@@ -8,6 +8,24 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Image-text layout catalogue, phase 1: width series, corner layout and a
+  layout switcher.** The image-text slide's width enum gains `wide` (63%);
+  the existing `narrow` (37%) doubles as the catalogue's 1/3 split, so no
+  fourth value or data migration was needed. A new `layout` enum adds the
+  corner variant: the image sits only in the top corner and the space below
+  stays deliberately empty (mirrors via the existing image-position toggle,
+  which stays orthogonal to the variants). A new "Layout" chip in the slide
+  toolbar opens a tile popover with mini-schematics per variant - current
+  variant marked, one click switches while the content stays put, one undo
+  step per switch. The "Text without image" tile is the zeroth variant and
+  runs through the phase 0 convert seam. Variants are declared on the
+  slide-type definition (`layoutVariants`, JSON-safe, served via
+  `/api/slide-types`), so forks that override the type by name control
+  their own set. Insert-picker presets, inspector enums (deliberately
+  doubled), the AI catalogue (including a "little text room" hint for wide
+  and corner) and both export paths (pdf-slides, standalone HTML) moved
+  along; browser-verified end to end.
+
 - **Add/remove an image directly in the WYSIWYG editor.** A text slide gets
   a "+ Add image" chip on the edit canvas: clicking it turns the slide into
   an image-text slide (same id, notes, comments and URL) and opens the media
