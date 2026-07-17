@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Kann kommentieren",
   "viewer.permission.edit": "Bearbeiten",
   "viewer.permission.view": "Nur ansehen",
-
   "analytics.teamViewers": "{{count}} Teammitglieder-Aufrufe",
   "analytics.teamViewersNote": "(aggregiert für Datenschutz)",
   "analytics.teamMember": "Teammitglied",
-
   "common.default": "Standard",
-
   "dashboard.title": "Engagement-Einblicke",
   "dashboard.periodLabel": "Zeitraum",
   "dashboard.period.7d": "Letzte 7 Tage",
@@ -78,25 +75,27 @@
   "dashboard.loading": "Lade Einblicke...",
   "dashboard.error": "Einblicke konnten nicht geladen werden",
   "dashboard.vsLastPeriod": "vs. vorherige Periode",
-
   "dashboard.cards.totalViews": "Gesamtaufrufe",
   "dashboard.cards.uniqueViewers": "Eindeutige Betrachter",
   "dashboard.cards.avgDuration": "Durchschn. Dauer",
   "dashboard.cards.completionRate": "Abschlussrate",
   "dashboard.trend.vsPrevious": "vs. vorherige Periode",
   "dashboard.trend.noPrevious": "Keine vorherigen Daten",
-
   "dashboard.chart.title": "Aufrufe im Zeitverlauf",
   "dashboard.chart.empty": "Keine Aufrufdaten für diesen Zeitraum",
   "dashboard.chart.ariaLabel": "Balkendiagramm mit Aufrufen im Zeitverlauf",
-
   "dashboard.top.title": "Top-Präsentationen",
   "dashboard.top.empty": "Noch keine Präsentationen mit Aufrufen",
   "dashboard.top.presentation": "Präsentation",
   "dashboard.top.views": "Aufrufe",
   "dashboard.top.avgDuration": "Durchschn. Dauer",
   "dashboard.top.completion": "Abschluss",
-
   "dashboard.source.title": "Engagement nach Quelle",
-  "dashboard.source.empty": "Noch keine Daten"
+  "dashboard.source.empty": "Noch keine Daten",
+  "notifications.bell": "Benachrichtigungen",
+  "notifications.empty": "Keine Benachrichtigungen",
+  "notifications.loading": "Wird geladen...",
+  "notifications.markAllRead": "Alle als gelesen markieren",
+  "notifications.title": "Benachrichtigungen",
+  "notifications.unread": "ungelesen"
 }

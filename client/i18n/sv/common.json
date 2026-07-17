@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Kan kommentera",
   "viewer.permission.edit": "Redigera",
   "viewer.permission.view": "Endast visning",
-
   "analytics.teamViewers": "{{count}} teammedlems visningar",
   "analytics.teamViewersNote": "(aggregerat för integritet)",
   "analytics.teamMember": "Teammedlem",
-
   "common.default": "standard",
-
   "dashboard.title": "Engagemangsinsikter",
   "dashboard.periodLabel": "Period",
   "dashboard.period.7d": "Senaste 7 dagarna",
@@ -78,25 +75,27 @@
   "dashboard.loading": "Laddar insikter...",
   "dashboard.error": "Kunde inte ladda insikter",
   "dashboard.vsLastPeriod": "vs föregående period",
-
   "dashboard.cards.totalViews": "Totala visningar",
   "dashboard.cards.uniqueViewers": "Unika tittare",
   "dashboard.cards.avgDuration": "Snittlängd",
   "dashboard.cards.completionRate": "Slutförandegrad",
   "dashboard.trend.vsPrevious": "vs föregående period",
   "dashboard.trend.noPrevious": "Inga tidigare data",
-
   "dashboard.chart.title": "Visningar över tid",
   "dashboard.chart.empty": "Inga visningsdata för denna period",
   "dashboard.chart.ariaLabel": "Stapeldiagram som visar visningar över tid",
-
   "dashboard.top.title": "Toppresentationer",
   "dashboard.top.empty": "Inga presentationer med visningar ännu",
   "dashboard.top.presentation": "Presentation",
   "dashboard.top.views": "Visningar",
   "dashboard.top.avgDuration": "Snittlängd",
   "dashboard.top.completion": "Slutförande",
-
   "dashboard.source.title": "Engagemang per källa",
-  "dashboard.source.empty": "Inga data ännu"
+  "dashboard.source.empty": "Inga data ännu",
+  "notifications.bell": "Aviseringar",
+  "notifications.empty": "Inga aviseringar",
+  "notifications.loading": "Laddar...",
+  "notifications.markAllRead": "Markera alla som lästa",
+  "notifications.title": "Aviseringar",
+  "notifications.unread": "oläst"
 }

@@ -54,13 +54,10 @@
   "viewer.permission.comment": "Mag reageren",
   "viewer.permission.edit": "Bewerken",
   "viewer.permission.view": "Alleen bekijken",
-
   "analytics.teamViewers": "{{count}} teamlid weergaven",
   "analytics.teamViewersNote": "(geaggregeerd voor privacy)",
   "analytics.teamMember": "Teamlid",
-
   "common.default": "standaard",
-
   "dashboard.title": "Engagement Inzichten",
   "dashboard.periodLabel": "Tijdsperiode",
   "dashboard.period.7d": "Laatste 7 dagen",
@@ -85,28 +82,23 @@
   "dashboard.loading": "Inzichten laden...",
   "dashboard.error": "Kon inzichten niet laden",
   "dashboard.vsLastPeriod": "vs vorige periode",
-
   "dashboard.cards.totalViews": "Totaal weergaven",
   "dashboard.cards.uniqueViewers": "Unieke kijkers",
   "dashboard.cards.avgDuration": "Gem. duur",
   "dashboard.cards.completionRate": "Voltooiingspercentage",
   "dashboard.trend.vsPrevious": "vs vorige periode",
   "dashboard.trend.noPrevious": "Geen vorige data",
-
   "dashboard.chart.title": "Weergaven in de tijd",
   "dashboard.chart.empty": "Geen weergavedata voor deze periode",
   "dashboard.chart.ariaLabel": "Staafdiagram met weergaven in de tijd",
-
   "dashboard.top.title": "Best presterende presentaties",
   "dashboard.top.empty": "Nog geen presentaties met weergaven",
   "dashboard.top.presentation": "Presentatie",
   "dashboard.top.views": "Weergaven",
   "dashboard.top.avgDuration": "Gem. duur",
   "dashboard.top.completion": "Voltooiing",
-
   "dashboard.source.title": "Engagement per bron",
   "dashboard.source.empty": "Nog geen data",
-
   "stockMedia.tabs.library": "Bibliotheek",
   "stockMedia.tabs.unsplash": "Unsplash",
   "stockMedia.tabs.giphy": "Giphy",
@@ -122,7 +114,6 @@
   "stockMedia.unsplash.onUnsplash": "op Unsplash",
   "stockMedia.giphy.poweredBy": "Aangedreven door GIPHY",
   "stockMedia.giphy.trending": "Trending",
-
   "analytics.leads": "Leads",
   "analytics.noLeads": "Nog geen leads verzameld",
   "analytics.noLeadsHint": "Voeg een Lead Capture slide toe aan je presentatie om leads te verzamelen.",
@@ -132,7 +123,6 @@
   "analytics.submitted": "Ingediend",
   "analytics.deleteLead": "Verwijder deze lead",
   "analytics.confirmDeleteLead": "Weet je zeker dat je deze lead wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-
   "cookies.bannerLabel": "Cookie toestemming",
   "cookies.title": "Wij gebruiken cookies",
   "cookies.description": "Wij gebruiken cookies om je ervaring te verbeteren en het sitegebruik te analyseren. Je kunt je voorkeuren hieronder beheren.",
@@ -148,11 +138,9 @@
   "cookies.analytics.description": "Help ons te begrijpen hoe bezoekers de website gebruiken.",
   "cookies.marketing.title": "Marketing",
   "cookies.marketing.description": "Gebruikt voor lead capture formulieren en gepersonaliseerde content.",
-
   "common.exporting": "Exporteren...",
   "common.deleting": "Verwijderen...",
   "common.failed": "Mislukt",
-
   "leadCapture.privacyLink": "Privacybeleid",
   "leadCapture.cookieNotice": "Schakel marketingcookies in om dit formulier te versturen.",
   "leadCapture.error.acceptCookies": "Accepteer marketingcookies om dit formulier te versturen.",
@@ -160,9 +148,14 @@
   "leadCapture.error.validEmail": "Vul een geldig e-mailadres in.",
   "leadCapture.error.acceptTerms": "Accepteer de privacyvoorwaarden.",
   "leadCapture.error.generic": "Er is iets misgegaan. Probeer het opnieuw.",
-
   "export.video.missingSource": "Video bron ontbreekt",
   "export.video.cannotEmbed": "(Video's kunnen niet in PNG worden ingesloten.)",
   "export.print.noCardContent": "Geen kaarten-inhoud.",
-  "export.print.noContent": "Geen inhoud."
+  "export.print.noContent": "Geen inhoud.",
+  "notifications.bell": "Meldingen",
+  "notifications.empty": "Geen meldingen",
+  "notifications.loading": "Laden...",
+  "notifications.markAllRead": "Alles gelezen",
+  "notifications.title": "Meldingen",
+  "notifications.unread": "ongelezen"
 }

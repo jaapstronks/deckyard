@@ -21,6 +21,7 @@ import { createAvatar, updateAvatar } from '../../lib/avatar.js';
 import { getUserProfileAsync } from '../../lib/user-profiles.js';
 import { displayNameFromEmail } from '../../lib/user-format.js';
 import { createUserMenu } from '../../lib/user-menu.js';
+import { createNotificationBell } from '../../lib/notification-bell.js';
 import { chevronDownIcon } from '../../lib/icons.js';
 
 export function createEditorTopbar({
@@ -291,6 +292,16 @@ export function createEditorTopbar({
   detachers.push(userMenu.detach);
 
   // ============================================================
+  // NOTIFICATION BELL
+  // ============================================================
+
+  const notificationBell = createNotificationBell({
+    api,
+    onNavigate: (path) => nav?.(path),
+  });
+  detachers.push(notificationBell.detach);
+
+  // ============================================================
   // MORE MENU
   // ============================================================
 
@@ -510,6 +521,7 @@ export function createEditorTopbar({
     topbarShareEl,
     presentGroup,
     h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
+    notificationBell.el,
     userMenu.el,
   ]);
 

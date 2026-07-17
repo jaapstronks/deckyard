@@ -47,13 +47,10 @@
   "viewer.permission.comment": "Pode comentar",
   "viewer.permission.edit": "Editar",
   "viewer.permission.view": "Apenas visualização",
-
   "analytics.teamViewers": "{{count}} visualizações de membros da equipa",
   "analytics.teamViewersNote": "(agregado para privacidade)",
   "analytics.teamMember": "Membro da equipa",
-
   "common.default": "padrão",
-
   "dashboard.title": "Estatísticas de Engagement",
   "dashboard.periodLabel": "Período",
   "dashboard.period.7d": "Últimos 7 dias",
@@ -78,25 +75,27 @@
   "dashboard.loading": "A carregar estatísticas...",
   "dashboard.error": "Não foi possível carregar as estatísticas",
   "dashboard.vsLastPeriod": "vs período anterior",
-
   "dashboard.cards.totalViews": "Visualizações totais",
   "dashboard.cards.uniqueViewers": "Visitantes únicos",
   "dashboard.cards.avgDuration": "Duração média",
   "dashboard.cards.completionRate": "Taxa de conclusão",
   "dashboard.trend.vsPrevious": "vs período anterior",
   "dashboard.trend.noPrevious": "Sem dados anteriores",
-
   "dashboard.chart.title": "Visualizações ao longo do tempo",
   "dashboard.chart.empty": "Sem dados de visualização para este período",
   "dashboard.chart.ariaLabel": "Gráfico de barras de visualizações ao longo do tempo",
-
   "dashboard.top.title": "Melhores apresentações",
   "dashboard.top.empty": "Sem apresentações com visualizações ainda",
   "dashboard.top.presentation": "Apresentação",
   "dashboard.top.views": "Visualizações",
   "dashboard.top.avgDuration": "Duração média",
   "dashboard.top.completion": "Conclusão",
-
   "dashboard.source.title": "Engagement por fonte",
-  "dashboard.source.empty": "Sem dados ainda"
+  "dashboard.source.empty": "Sem dados ainda",
+  "notifications.bell": "Notificações",
+  "notifications.empty": "Sem notificações",
+  "notifications.loading": "A carregar...",
+  "notifications.markAllRead": "Marcar tudo como lido",
+  "notifications.title": "Notificações",
+  "notifications.unread": "não lida"
 }
