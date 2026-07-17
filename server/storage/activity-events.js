@@ -14,6 +14,7 @@ import { withDbGuard } from './utils/db-guard.js';
 export const EVENT_TYPES = {
   PRESENTATION_CREATED: 'presentation.created',
   PRESENTATION_UPDATED: 'presentation.updated',
+  PRESENTATION_MERGED: 'presentation.merged',
   PRESENTATION_DELETED: 'presentation.deleted',
   PRESENTATION_MOVED_TO_WORKSPACE: 'presentation.moved_to_workspace',
   OWNERSHIP_TRANSFERRED: 'presentation.ownership_transferred',

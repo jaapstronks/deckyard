@@ -35,6 +35,7 @@ function getActionText(eventType) {
   const actions = {
     'presentation.created': t('activity.action.created', 'created'),
     'presentation.updated': t('activity.action.updated', 'updated'),
+    'presentation.merged': t('activity.action.mergedChangesOn', 'merged concurrent changes in'),
     'presentation.deleted': t('activity.action.deleted', 'deleted'),
     'presentation.moved_to_workspace': t('activity.action.sharedToWorkspace', 'shared to workspace'),
     'collaborator.added': t('activity.action.sharedWith', 'shared'),
@@ -67,6 +68,7 @@ function getEventIcon(eventType) {
   const icons = {
     'presentation.created': 'plus',
     'presentation.updated': 'pencil',
+    'presentation.merged': 'git-merge',
     'presentation.deleted': 'trash-2',
     'presentation.moved_to_workspace': 'users',
     'collaborator.added': 'handshake',

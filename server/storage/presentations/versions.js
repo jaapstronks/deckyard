@@ -129,8 +129,9 @@ const REASON_PRIORITY = {
   manual: 2,
   restore: 3,
   pre_restore: 4,
-  autosave: 5,
-  snapshot: 6,
+  pre_merge: 5,
+  autosave: 6,
+  snapshot: 7,
 };
 
 // Fallback priority for unknown reasons (lowest priority)

@@ -123,6 +123,12 @@ export function createSlideUpdateHandler({
       pres.modified = remote.modified;
       pres.updatedBy = remote.updatedBy;
 
+      // The adopted remote slides are our new merge base: rebase the
+      // save-manager's fingerprints so a later edit of an adopted slide
+      // isn't flagged as a false conflict (slides with pending local edits
+      // keep their previous base).
+      saveManager.rebaseServerTruth?.(remote.slides);
+
       const who = eventData.actorEmail || 'another user';
       toast.info(`Slides updated by ${who}`, { id: 'remote-update' });
 

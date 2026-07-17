@@ -94,7 +94,13 @@ export function mergeMaxRevisionGap() {
  * @param {number} [options.revisionGap] - How many revisions the client is
  *   behind the server. Beyond mergeMaxRevisionGap() the merge is refused
  *   (`merged: false`) so the caller falls back to a plain revision conflict.
- * @returns {Object} { merged: boolean, slides: Array|null, conflicts: Array }
+ * @param {boolean|null} [options.clientReordered] - Whether the client
+ *   actually reordered slides since its base (X-Slides-Order-Changed).
+ *   `false` keeps the server's slide order authoritative; `true` or `null`
+ *   (legacy client, no signal) applies the client's order as before.
+ * @returns {Object} { merged: boolean, slides: Array|null, conflicts: Array,
+ *   appendedSlideIds: Array } — appendedSlideIds are server-side slides the
+ *   client didn't know about that were carried into the result.
  */
 export function mergeSlidesAtSlideLevel({
   serverSlides,
@@ -102,10 +108,11 @@ export function mergeSlidesAtSlideLevel({
   modifiedSlideIds,
   baseFingerprints = null,
   revisionGap = 0,
+  clientReordered = null,
 }) {
   const gap = Math.abs(Number(revisionGap) || 0);
   if (gap > mergeMaxRevisionGap()) {
-    return { merged: false, slides: null, conflicts: [] };
+    return { merged: false, slides: null, conflicts: [], appendedSlideIds: [] };
   }
 
   const serverById = new Map();
@@ -120,63 +127,100 @@ export function mergeSlidesAtSlideLevel({
   }
 
   const conflicts = [];
+  const appendedSlideIds = [];
   const mergedSlides = [];
   const seenIds = new Set();
 
-  // Process in client's order (preserves reordering by this client)
-  for (const clientSlide of clientSlides || []) {
-    const id = clientSlide?.id;
-    if (!id || seenIds.has(id)) continue;
-    seenIds.add(id);
+  // For a client-modified slide, decide which version wins. With a base
+  // fingerprint that no longer matches the server's current version, both
+  // sides changed it since the client's base: a true conflict — keep the
+  // server version and report it. Without a fingerprint (legacy client) or
+  // with a matching base, the client wins.
+  const resolveModified = (clientSlide, serverSlide) => {
+    const baseFp =
+      baseFingerprints && typeof baseFingerprints === 'object'
+        ? baseFingerprints[clientSlide.id]
+        : null;
+    if (typeof baseFp === 'string' && baseFp && slideFingerprint(serverSlide) !== baseFp) {
+      conflicts.push(clientSlide.id);
+      return serverSlide;
+    }
+    return clientSlide;
+  };
 
-    const serverSlide = serverById.get(id);
-
-    if (!serverSlide) {
-      // Slide only exists in client (newly added by this client)
-      mergedSlides.push(clientSlide);
-    } else if (modifiedSet.has(id)) {
-      // Client modified this slide. If it sent a base fingerprint and the
-      // server's current version no longer matches it, the slide was also
-      // changed server-side since the client's base: a true conflict.
-      const baseFp =
-        baseFingerprints && typeof baseFingerprints === 'object'
-          ? baseFingerprints[id]
-          : null;
-      if (typeof baseFp === 'string' && baseFp && slideFingerprint(serverSlide) !== baseFp) {
-        conflicts.push(id);
-        mergedSlides.push(serverSlide);
+  if (clientReordered === false) {
+    // The client did not reorder: the server's slide order is authoritative.
+    // Walk the server slides, swapping in client content where the client
+    // modified a slide; server-side slides the client doesn't know stay at
+    // their server position instead of being appended.
+    for (const serverSlide of serverSlides || []) {
+      const id = serverSlide?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      const clientSlide = clientById.get(id);
+      if (clientSlide && modifiedSet.has(id)) {
+        mergedSlides.push(resolveModified(clientSlide, serverSlide));
       } else {
-        // No fingerprint (legacy client) or base matches server: client wins.
-        mergedSlides.push(clientSlide);
+        // Unmodified by the client, or absent from the client's copy
+        // (server-new, or client-deleted — indistinguishable here; kept,
+        // matching the client-order path below).
+        mergedSlides.push(serverSlide);
+        if (!clientSlide) appendedSlideIds.push(id);
       }
-    } else {
-      // Client didn't modify - use server's version (may have been changed by others)
-      mergedSlides.push(serverSlide);
     }
-  }
-
-  // Add any slides from server that aren't in client's version
-  // (slides added by other users)
-  for (const serverSlide of serverSlides || []) {
-    const id = serverSlide?.id;
-    if (!id || seenIds.has(id)) continue;
-    seenIds.add(id);
-
-    // Slide exists on server but not in client
-    // Check if client intentionally deleted it (was in modifiedSlideIds but not in clientSlides)
-    // For now, we'll preserve server slides that client never touched
-    // This means deletions need to be tracked separately (modifiedSlideIds includes deleted)
-    const wasInClient = clientById.has(id);
-    if (!wasInClient) {
-      // Client never had this slide - it was added by another user, include it
-      mergedSlides.push(serverSlide);
+    // Client-new slides keep their position relative to their neighbours:
+    // insert after the nearest preceding client slide that made it into the
+    // merged result (start of the deck when there is none). A run of new
+    // slides stays together in its own order.
+    let anchor = -1;
+    for (const clientSlide of clientSlides || []) {
+      const id = clientSlide?.id;
+      if (!id) continue;
+      if (seenIds.has(id)) {
+        const idx = mergedSlides.findIndex((s) => s?.id === id);
+        if (idx !== -1) anchor = idx;
+        continue;
+      }
+      seenIds.add(id);
+      anchor += 1;
+      mergedSlides.splice(anchor, 0, clientSlide);
     }
-    // If client had it but removed it, it's intentionally deleted - don't add back
+  } else {
+    // Client reordered (or legacy client without the order signal): process
+    // in the client's order so its reordering is preserved.
+    for (const clientSlide of clientSlides || []) {
+      const id = clientSlide?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+
+      const serverSlide = serverById.get(id);
+      if (!serverSlide) {
+        // Slide only exists in client (newly added by this client)
+        mergedSlides.push(clientSlide);
+      } else if (modifiedSet.has(id)) {
+        mergedSlides.push(resolveModified(clientSlide, serverSlide));
+      } else {
+        // Client didn't modify - use server's version (may have been changed by others)
+        mergedSlides.push(serverSlide);
+      }
+    }
+
+    // Slides only the server knows (added by other users) are preserved;
+    // with the client's order authoritative there is no anchor to place
+    // them by, so they go at the end.
+    for (const serverSlide of serverSlides || []) {
+      const id = serverSlide?.id;
+      if (!id || seenIds.has(id)) continue;
+      seenIds.add(id);
+      mergedSlides.push(serverSlide);
+      appendedSlideIds.push(id);
+    }
   }
 
   return {
     merged: true,
     slides: mergedSlides,
     conflicts,
+    appendedSlideIds,
   };
 }

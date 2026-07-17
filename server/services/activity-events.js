@@ -67,6 +67,38 @@ export async function recordPresentationUpdated({
 }
 
 /**
+ * Record a slide-level merge performed during a save. Audit trail for the
+ * stale-tab overwrite class of incidents: without it a silent merge leaves
+ * no trace of which slides were taken from whom.
+ */
+export async function recordSlideLevelMerge({
+  presentation,
+  actorEmail,
+  merge,
+  ctx,
+}) {
+  const context = ctx || createRouteContext({ email: actorEmail });
+
+  return createActivityEvent({
+    eventType: EVENT_TYPES.PRESENTATION_MERGED,
+    entityType: ENTITY_TYPES.PRESENTATION,
+    entityId: presentation.id,
+    presentationId: presentation.id,
+    actorEmail,
+    actorName: actorEmail,
+    actorType: ACTOR_TYPES.USER,
+    data: {
+      title: presentation.title,
+      revisionGap: merge?.revisionGap ?? null,
+      modifiedSlideIds: merge?.modifiedSlideIds || [],
+      appendedSlideIds: merge?.appendedSlideIds || [],
+      clientReordered: merge?.clientReordered ?? null,
+      resultRevision: presentation.revision ?? null,
+    },
+  }, context);
+}
+
+/**
  * Record a presentation deleted event.
  */
 export async function recordPresentationDeleted({

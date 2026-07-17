@@ -1,5 +1,6 @@
 {
   "activity.action.sharedToWorkspace": "gedeeld met werkruimte",
+  "activity.action.mergedChangesOn": "gelijktijdige wijzigingen samengevoegd in",
   "notes.connectionLost": "Verbinding verbroken (opnieuw verbinden...)",
   "notes.endOfDeck": "Einde van de presentatie",
   "notes.go": "Ga",

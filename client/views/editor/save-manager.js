@@ -45,16 +45,63 @@ export function createSaveManager({
   // IDs so the server's slide-level merge can tell "only I changed this
   // slide" from "we both did" instead of letting the last writer win.
   const baseFingerprints = new Map();
+
+  // Slide order as last acknowledged by the server. Compared against the
+  // current order at save time: only a client that actually reordered may
+  // impose its order during a slide-level merge (X-Slides-Order-Changed) —
+  // a stale tab that merely edited content must not reshuffle the deck.
+  let baseOrder = [];
+
   const rebaseFingerprints = (slides) => {
     if (!Array.isArray(slides)) return;
     baseFingerprints.clear();
+    baseOrder = [];
     for (const s of slides) {
       if (s && typeof s.id === 'string' && s.id) {
         baseFingerprints.set(s.id, slideFingerprint(s));
+        baseOrder.push(s.id);
       }
     }
   };
   rebaseFingerprints(pres?.slides);
+
+  /**
+   * True when the relative order of slides present in both the base and the
+   * current deck changed. Adds and removes alone don't count as reordering.
+   */
+  const orderChangedSinceBase = () => {
+    const currentIds = (Array.isArray(pres?.slides) ? pres.slides : [])
+      .map((s) => (s && typeof s.id === 'string' ? s.id : ''))
+      .filter(Boolean);
+    const currentSet = new Set(currentIds);
+    const baseSet = new Set(baseOrder);
+    const commonCurrent = currentIds.filter((sid) => baseSet.has(sid));
+    const commonBase = baseOrder.filter((sid) => currentSet.has(sid));
+    if (commonCurrent.length !== commonBase.length) return true;
+    for (let i = 0; i < commonCurrent.length; i += 1) {
+      if (commonCurrent[i] !== commonBase[i]) return true;
+    }
+    return false;
+  };
+
+  /**
+   * Re-anchor the per-slide base fingerprints to a fresh server truth after
+   * the local copy adopted it outside a save (silent wake-up refresh, SSE
+   * remote-update adoption). Slides with pending local edits keep their
+   * previous base: their content in `slides` is the edited version, not the
+   * server version their edit was based on.
+   * @param {Array} slides - Slides as just received from the server
+   */
+  const rebaseServerTruth = (slides) => {
+    if (!Array.isArray(slides)) return;
+    const pending = new Map();
+    for (const sid of modifiedSlideIds.keys()) {
+      const fp = baseFingerprints.get(sid);
+      if (fp) pending.set(sid, fp);
+    }
+    rebaseFingerprints(slides);
+    for (const [sid, fp] of pending) baseFingerprints.set(sid, fp);
+  };
 
   const setLastError = (e) => {
     lastError = String(e?.message || e || '');
@@ -438,9 +485,12 @@ export function createSaveManager({
 
       // Send modified slide IDs for slide-level merge (concurrent editing),
       // plus the base fingerprint of each so the server can detect slides
-      // that were also changed by someone else since our base.
+      // that were also changed by someone else since our base, plus whether
+      // we actually reordered — without that signal the merge must not let
+      // this client's (possibly stale) slide order win.
       if (modifiedForThisSave.length > 0) {
         headers['X-Modified-Slides'] = JSON.stringify(modifiedForThisSave);
+        headers['X-Slides-Order-Changed'] = orderChangedSinceBase() ? '1' : '0';
         const fingerprints = {};
         for (const sid of modifiedForThisSave) {
           const fp = baseFingerprints.get(sid);
@@ -577,6 +627,7 @@ export function createSaveManager({
     getSessionEndBeacon,
     isDirty: () => dirty,
     isSaving: () => saving,
+    rebaseServerTruth,
     getLastError: () => lastError,
     getStatus,
     isBlockedByConflict: () => blockedByConflict,

@@ -148,19 +148,29 @@ export function withPresentations(Base) {
       if (!existing) return null;
 
       // Check for optimistic locking
+      let mergeInfo = null;
       if (opts?.expectedRevision != null) {
         if (existing.revision !== opts.expectedRevision) {
           // Attempt slide-level merge when client provides modifiedSlideIds
           const modifiedSlideIds = Array.isArray(opts?.modifiedSlideIds) ? opts.modifiedSlideIds : null;
           if (modifiedSlideIds && modifiedSlideIds.length >= 0) {
+            const revisionGap = Number(existing.revision) - Number(opts.expectedRevision);
+            const clientReordered = opts?.clientReordered ?? null;
             const mergeResult = mergeSlidesAtSlideLevel({
               serverSlides: existing.slides,
               clientSlides: data.slides,
               modifiedSlideIds,
               baseFingerprints: opts?.slideBaseFingerprints || null,
-              revisionGap: Number(existing.revision) - Number(opts.expectedRevision),
+              revisionGap,
+              clientReordered,
             });
             if (mergeResult.merged && mergeResult.conflicts.length === 0) {
+              mergeInfo = {
+                revisionGap,
+                modifiedSlideIds,
+                appendedSlideIds: mergeResult.appendedSlideIds || [],
+                clientReordered,
+              };
               data = { ...data, slides: mergeResult.slides };
               // Keep the active-language buffer in step with the merged
               // slides. The editor loads that buffer, so storing the
@@ -251,7 +261,11 @@ export function withPresentations(Base) {
         .executeTakeFirst();
 
       if (!row) return null;
-      return mapPresentationRow(row);
+      const out = mapPresentationRow(row);
+      // Response-only audit metadata (never stored); the facade logs it to
+      // activity_events.
+      if (mergeInfo) out._slideMerge = mergeInfo;
+      return out;
     }
 
     async deletePresentation(id, ctx) {
