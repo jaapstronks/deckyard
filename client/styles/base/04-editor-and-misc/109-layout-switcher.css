@@ -136,3 +136,40 @@
   flex: 1;
   align-self: stretch;
 }
+/* Text-columns schematic (content-slide two-column): two text blocks side by
+   side. The flex container already lays the two blocks out; just let both
+   claim half. */
+.layout-tile-schematic.is-text-cols .layout-tile-text {
+  flex: 1;
+}
+/* Columns schematic (cross-type "own text per column"): n mini columns, each
+   an image block with text lines under it. */
+.layout-tile-schematic.is-cols {
+  align-items: stretch;
+}
+.layout-tile-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.layout-tile-col .layout-tile-image {
+  height: 46%;
+  width: 100%;
+}
+.layout-tile-col .layout-tile-line {
+  width: 100%;
+}
+.layout-tile-col .layout-tile-line.is-short {
+  width: 70%;
+}
+/* Mirror toggle (image left/right) above the tile grid: the shared segmented
+   control, stretched to the popover width. */
+.layout-switcher-popover .layout-switcher-mirror {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.layout-switcher-popover .layout-switcher-mirror .sb-segmented-btn {
+  flex: 1;
+}

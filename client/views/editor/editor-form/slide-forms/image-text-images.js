@@ -169,6 +169,11 @@ export function renderImageTextImagesSection({
       );
     }
 
+    // Item 0 of a migrated legacy slide keeps its alt at the slide level (so
+    // alt translations survive); surface that effective value as a
+    // placeholder instead of showing a misleading empty field.
+    const slideAltFallback =
+      i === 0 && typeof content.alt === 'string' ? content.alt.trim() : '';
     const altEl =
       typeof fieldText === 'function'
         ? fieldText(
@@ -178,7 +183,8 @@ export function renderImageTextImagesSection({
               images[i].alt = v;
               markDirty?.();
               scheduleUiRefresh?.();
-            }
+            },
+            slideAltFallback ? { placeholder: slideAltFallback } : {}
           )
         : null;
     const fitEl =

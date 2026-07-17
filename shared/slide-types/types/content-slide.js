@@ -49,6 +49,84 @@ export default {
     BACKGROUND_FIELD,
     ACTIONS_FIELD,
   ],
+  // Layout catalogue for the editor's layout switcher: the text slide is the
+  // zeroth variant of the image-text series, so the full series is reachable
+  // from here too. The image tiles are cross-type (convert seam moves the
+  // type, then the remaining `set` selects the target variant). Declared on
+  // the definition (JSON-safe) so forks that override this type by name
+  // control their own set. Shape documented in types/image-text-slide.js.
+  layoutVariants: [
+    {
+      id: 'one-column',
+      labelKey: 'editor.layoutVariant.oneColumn',
+      label: 'One column',
+      set: { layout: 'one-column' },
+      schematic: {},
+    },
+    {
+      id: 'two-column',
+      labelKey: 'editor.layoutVariant.twoColumn',
+      label: 'Two columns',
+      set: { layout: 'two-column' },
+      schematic: { textCols: 2 },
+    },
+    {
+      id: 'split-narrow',
+      labelKey: 'editor.layoutVariant.splitNarrow',
+      label: 'Image 1/3',
+      convertTo: 'image-text-slide',
+      set: { layout: 'split', imageWidth: 'narrow' },
+      schematic: { split: 37 },
+    },
+    {
+      id: 'split-half',
+      labelKey: 'editor.layoutVariant.splitHalf',
+      label: 'Image 1/2',
+      convertTo: 'image-text-slide',
+      set: { layout: 'split', imageWidth: 'half' },
+      schematic: { split: 50 },
+    },
+    {
+      id: 'split-wide',
+      labelKey: 'editor.layoutVariant.splitWide',
+      label: 'Image 2/3',
+      convertTo: 'image-text-slide',
+      set: { layout: 'split', imageWidth: 'wide' },
+      schematic: { split: 63 },
+    },
+    {
+      id: 'row-top',
+      labelKey: 'editor.layoutVariant.rowTop',
+      label: 'Row above',
+      convertTo: 'image-text-slide',
+      set: { layout: 'row-top' },
+      schematic: { row: 'top' },
+    },
+    {
+      id: 'row-bottom',
+      labelKey: 'editor.layoutVariant.rowBottom',
+      label: 'Row below',
+      convertTo: 'image-text-slide',
+      set: { layout: 'row-bottom' },
+      schematic: { row: 'bottom' },
+    },
+    {
+      id: 'duo',
+      labelKey: 'editor.layoutVariant.duo',
+      label: 'Two beside text',
+      convertTo: 'image-text-slide',
+      set: { layout: 'duo' },
+      schematic: { duo: 45 },
+    },
+    {
+      id: 'corner',
+      labelKey: 'editor.layoutVariant.corner',
+      label: 'Corner image',
+      convertTo: 'image-text-slide',
+      set: { layout: 'corner' },
+      schematic: { corner: 45 },
+    },
+  ],
   defaultsByLang: {
     nl: {
       title: 'Nieuwe slide',

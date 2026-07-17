@@ -1,6 +1,7 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
 import { TITLE_BG_PRESETS, pickRandom } from './helpers.js';
 import { normalizeLang } from '../i18n-utils.js';
+import { imageTextImageItems } from './image-text-images.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'
@@ -33,6 +34,26 @@ function preserveGlobalFields({ fromContent, toContent }) {
   for (const k of GLOBAL_SLIDE_FIELD_KEYS) {
     if (fromContent[k] != null) toContent[k] = fromContent[k];
   }
+}
+
+/**
+ * Parse a markdown body as a flat bullet/numbered list: every non-empty line
+ * must be a top-level list item. Returns the item texts (markers stripped),
+ * or null when the body is anything else (nested lists, prose, headings) -
+ * callers then treat the body as one block instead of distributing it.
+ * @param {*} body
+ * @returns {string[]|null}
+ */
+function parseFlatMarkdownList(body) {
+  if (typeof body !== 'string' || !body.trim()) return null;
+  const lines = body.split('\n').filter((l) => l.trim().length);
+  const items = [];
+  for (const line of lines) {
+    const m = /^(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
+    if (!m || !m[1].trim()) return null;
+    items.push(m[1].trim());
+  }
+  return items.length >= 2 ? items : null;
 }
 
 function hasMeaningfulValue(v) {
@@ -68,6 +89,27 @@ const CONSUMED_SOURCE_KEYS = {
       'focusX',
       'focusY',
     ],
+    // "Own text per column": images/alt/fit/focus move into the columns and
+    // the body is distributed over the column texts; the layout enums and the
+    // background have no columns equivalent (deliberate drops, defaults would
+    // otherwise always warn - content-columns has a fixed background).
+    // caption and actions have no target field and still warn when filled.
+    'content-columns-slide': [
+      'image',
+      'images',
+      'alt',
+      'body',
+      'imageRole',
+      'imageSide',
+      'imageWidth',
+      'layout',
+      'imageFit',
+      'imageBackground',
+      'focusX',
+      'focusY',
+      'density',
+      'background',
+    ],
   },
   'lijstje-slide': {
     'content-slide': ['subtitle', 'variant', 'items'],
@@ -102,7 +144,7 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   if (type === 'content-slide') {
     return ['image-text-slide'];
   }
-  if (type === 'image-text-slide') return ['content-slide'];
+  if (type === 'image-text-slide') return ['content-slide', 'content-columns-slide'];
   if (type === 'image-slide') return ['image-text-slide'];
   if (type === 'lijstje-slide') return ['content-slide', 'content-columns-slide'];
   if (type === 'card-stack-slide') return ['icon-card-grid-slide'];
@@ -179,6 +221,61 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
   }
   if (fromType === 'image-text-slide' && targetType === 'content-slide') {
     if (typeof from.body === 'string') to.body = from.body;
+  }
+
+  // image-text -> content-columns ("own text per column"): each image becomes
+  // a column; a flat-list body is distributed one item per column (extras
+  // append to the last column), any other body lands in column 1.
+  if (fromType === 'image-text-slide' && targetType === 'content-columns-slide') {
+    const items = imageTextImageItems(from).filter((it) => it.src);
+    const listItems = parseFlatMarkdownList(from?.body);
+    const columnCount = Math.max(
+      2,
+      Math.min(3, Math.max(items.length, listItems ? listItems.length : 0))
+    );
+    to.columnCount = String(columnCount);
+
+    const perCol = Array.from({ length: columnCount }, () => []);
+    if (listItems) {
+      listItems.forEach((item, i) => perCol[Math.min(i, columnCount - 1)].push(item));
+    } else if (nonEmptyString(from?.body)) {
+      perCol[0].push(from.body);
+    }
+    // A column that collected multiple items becomes a list again.
+    const texts = perCol.map((arr) =>
+      arr.length > 1 ? arr.map((s) => `- ${s}`).join('\n') : arr[0] || ''
+    );
+
+    for (let col = 1; col <= columnCount; col += 1) {
+      const item = items[col - 1] || null;
+      // The defaults ship placeholder titles/blocks; converted columns start
+      // with just their image and text.
+      to[`col${col}Title`] = '';
+      to[`col${col}Text`] = texts[col - 1] || '';
+      to[`col${col}BlockCount`] = '0';
+      to[`col${col}Block1Title`] = '';
+      to[`col${col}Block1Body`] = '';
+      to[`col${col}Image`] = item ? item.src : '';
+      // Item 0 keeps its slide-level alt/fit/focus fallbacks (same rule as
+      // the image-text renderer), so unmigrated legacy decks convert cleanly.
+      const alt =
+        item && nonEmptyString(item.alt)
+          ? item.alt.trim()
+          : col === 1 && nonEmptyString(from?.alt)
+            ? from.alt.trim()
+            : '';
+      to[`col${col}Alt`] = alt;
+      const fit =
+        (item && (item.fit === 'contain' || item.fit === 'cover') && item.fit) ||
+        (from?.imageFit === 'contain' ? 'contain' : 'cover');
+      to[`col${col}ImageFit`] = fit;
+      const hasOwnFocus = item && (item.focusX !== '' || item.focusY !== '');
+      const focusSource = hasOwnFocus ? item : col === 1 ? from : null;
+      const fx = Number(focusSource?.focusX);
+      const fy = Number(focusSource?.focusY);
+      if (Number.isFinite(fx)) to[`col${col}ImageFocusX`] = fx;
+      if (Number.isFinite(fy)) to[`col${col}ImageFocusY`] = fy;
+    }
   }
 
   // image -> image-text (one-way; reverse isn't offered)

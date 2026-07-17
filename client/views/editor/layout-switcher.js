@@ -19,14 +19,42 @@ import {
 } from '../../../shared/slide-types.js';
 import { canConvertSlideTo, convertSlideWithConfirm, slideTypeLabel } from './convert-slide-action.js';
 
-/** Mirror state: schematics flip when the image sits on the right. */
-const isMirrored = (slide) => slide?.content?.imageSide === 'right';
+/**
+ * The definition's mirror declaration (`layoutMirror`): which enum field
+ * flips the image side, and its two values in [left, right] order. Null when
+ * the type declares none (no toggle, schematics never mirror).
+ * @param {Object} def
+ * @returns {{key: string, values: string[]}|null}
+ */
+function getLayoutMirror(def) {
+  const m = def?.layoutMirror;
+  const key = typeof m?.key === 'string' ? m.key : '';
+  const values =
+    Array.isArray(m?.values) && m.values.length === 2
+      ? m.values.map(String)
+      : null;
+  return key && values ? { key, values } : null;
+}
+
+/** Mirror state: schematics flip when the mirror field holds the right-hand value. */
+function isMirrored(slide, def) {
+  const mirror = getLayoutMirror(def);
+  if (!mirror) return false;
+  const raw = slide?.content?.[mirror.key];
+  const value =
+    raw != null && raw !== ''
+      ? String(raw)
+      : String(def?.defaults?.[mirror.key] ?? '');
+  return value === mirror.values[1];
+}
 
 /**
  * Draw the mini-schematic for one variant tile: a 16:9 box with an "image"
  * block and "text" lines, driven by the variant's declared `schematic`
  * ({ split: <image %> } | { corner: <image %> } | { duo: <image %> } |
- * { row: 'top'|'bottom' } | {} for text-only). Rows don't mirror.
+ * { row: 'top'|'bottom' } | { textCols: 2 } for two text columns |
+ * { cols: <n> } for n image+text columns | {} for text-only). Rows and
+ * columns don't mirror.
  * @param {Function} h
  * @param {Object} variant
  * @param {boolean} mirrored
@@ -45,13 +73,29 @@ function renderSchematic(h, variant, mirrored) {
   const splitPct = Number(sch.split);
   const cornerPct = Number(sch.corner);
   const duoPct = Number(sch.duo);
+  const textCols = Number(sch.textCols);
+  const cols = Number(sch.cols);
   const row = sch.row === 'top' || sch.row === 'bottom' ? sch.row : '';
   const rowBlock = () =>
     h('div', { class: 'layout-tile-row' }, [
       h('div', { class: 'layout-tile-image' }),
       h('div', { class: 'layout-tile-image' }),
     ]);
-  if (Number.isFinite(splitPct) && splitPct > 0) {
+  if (Number.isFinite(cols) && cols > 1) {
+    box.classList.add('is-cols');
+    for (let i = 0; i < Math.min(cols, 3); i += 1) {
+      box.append(
+        h('div', { class: 'layout-tile-col' }, [
+          h('div', { class: 'layout-tile-image' }),
+          h('div', { class: 'layout-tile-line' }),
+          h('div', { class: 'layout-tile-line is-short' }),
+        ])
+      );
+    }
+  } else if (Number.isFinite(textCols) && textCols > 1) {
+    box.classList.add('is-text-cols');
+    box.append(textBlock(), textBlock());
+  } else if (Number.isFinite(splitPct) && splitPct > 0) {
     const img = h('div', { class: 'layout-tile-image', style: `width:${splitPct}%` });
     box.classList.add('is-split');
     if (mirrored) box.append(textBlock(), img);
@@ -120,15 +164,62 @@ export function createLayoutSwitcherChip({
   let close = null;
 
   const openPopover = () => {
-    const activeId = activeLayoutVariantId(slide, def);
-    const mirrored = isMirrored(slide);
-
     const popover = h('div', {
       class: 'layout-switcher-popover',
       role: 'dialog',
       'aria-label': t('editor.layoutSwitcher.title', 'Slide layout'),
     });
     const grid = h('div', { class: 'layout-switcher-grid' });
+
+    // Mirror toggle (image left/right): only when the definition declares a
+    // mirror field. Applying it is a normal content-field update (one undo
+    // step); the popover stays open and the schematics flip live.
+    const mirror = getLayoutMirror(def);
+    let mirrorBtns = null;
+    if (mirror) {
+      const setSide = (idx) => {
+        const value = mirror.values[idx];
+        if (slide?.content?.[mirror.key] === value) return;
+        slide.content[mirror.key] = value;
+        editorState.dirtyRefreshWithItem();
+        syncMirrorState();
+        renderGrid();
+      };
+      mirrorBtns = [
+        h('button', {
+          type: 'button',
+          class: 'sb-segmented-btn',
+          text: t('editor.layoutSwitcher.imageLeft', 'Image left'),
+          onclick: () => setSide(0),
+        }),
+        h('button', {
+          type: 'button',
+          class: 'sb-segmented-btn',
+          text: t('editor.layoutSwitcher.imageRight', 'Image right'),
+          onclick: () => setSide(1),
+        }),
+      ];
+      popover.append(
+        h(
+          'div',
+          {
+            class: 'sb-segmented is-toggle layout-switcher-mirror',
+            role: 'group',
+            'aria-label': t('editor.layoutSwitcher.imagePosition', 'Image position'),
+          },
+          mirrorBtns
+        )
+      );
+    }
+    const syncMirrorState = () => {
+      if (!mirrorBtns) return;
+      const mirrored = isMirrored(slide, def);
+      mirrorBtns[0].classList.toggle('is-active', !mirrored);
+      mirrorBtns[0].setAttribute('aria-pressed', mirrored ? 'false' : 'true');
+      mirrorBtns[1].classList.toggle('is-active', mirrored);
+      mirrorBtns[1].setAttribute('aria-pressed', mirrored ? 'true' : 'false');
+    };
+    syncMirrorState();
     popover.append(grid);
 
     const pickVariant = async (variant) => {
@@ -158,29 +249,35 @@ export function createLayoutSwitcherChip({
       }
     };
 
-    for (const variant of variants) {
-      // Cross-type tiles only when the seam supports the conversion here
-      // (keeps custom types that override a core name working).
-      if (variant.convertTo && !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)) {
-        continue;
+    const renderGrid = () => {
+      const activeId = activeLayoutVariantId(slide, def);
+      const mirrored = isMirrored(slide, def);
+      grid.replaceChildren();
+      for (const variant of variants) {
+        // Cross-type tiles only when the seam supports the conversion here
+        // (keeps custom types that override a core name working).
+        if (variant.convertTo && !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)) {
+          continue;
+        }
+        const label = variant.convertTo && !variant.labelKey && !variant.label
+          ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
+          : t(variant.labelKey || `editor.layoutVariant.${variant.id}`, variant.label || variant.id);
+        const isActive = !variant.convertTo && variant.id === activeId;
+        const tile = h(
+          'button',
+          {
+            type: 'button',
+            class: `layout-tile${isActive ? ' is-active' : ''}`,
+            'aria-pressed': isActive ? 'true' : 'false',
+            title: label,
+            onclick: () => pickVariant(variant),
+          },
+          [renderSchematic(h, variant, mirrored), h('span', { class: 'layout-tile-label', text: label })]
+        );
+        grid.append(tile);
       }
-      const label = variant.convertTo && !variant.labelKey && !variant.label
-        ? slideTypeLabel(variant.convertTo, SLIDE_TYPES)
-        : t(variant.labelKey || `editor.layoutVariant.${variant.id}`, variant.label || variant.id);
-      const isActive = !variant.convertTo && variant.id === activeId;
-      const tile = h(
-        'button',
-        {
-          type: 'button',
-          class: `layout-tile${isActive ? ' is-active' : ''}`,
-          'aria-pressed': isActive ? 'true' : 'false',
-          title: label,
-          onclick: () => pickVariant(variant),
-        },
-        [renderSchematic(h, variant, mirrored), h('span', { class: 'layout-tile-label', text: label })]
-      );
-      grid.append(tile);
-    }
+    };
+    renderGrid();
 
     document.body.append(popover);
 

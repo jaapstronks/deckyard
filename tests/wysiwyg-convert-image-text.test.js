@@ -37,7 +37,12 @@ const imageTextSlide = (content = {}) => ({
 
 test('convert seam offers the pair in both directions', () => {
   assert.deepEqual(getConvertibleSlideTypes(contentSlide()), ['image-text-slide']);
-  assert.deepEqual(getConvertibleSlideTypes(imageTextSlide()), ['content-slide']);
+  // Since phase 3 the image-text slide also crosses to content-columns
+  // ("own text per column"); the text pair stays first.
+  assert.deepEqual(getConvertibleSlideTypes(imageTextSlide()), [
+    'content-slide',
+    'content-columns-slide',
+  ]);
 });
 
 test('content -> image-text: lossless for the pair, image starts empty', () => {

@@ -8,6 +8,28 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Image-text layout catalogue, phase 3: cross-type tiles, the mirror
+  toggle and polish.** The layout switcher now crosses the type boundary
+  in both directions. On image-text a new "Own text per column" tile
+  converts to content-columns through the shared convert seam: each image
+  becomes a column (per-image alt/fit/focus move along, item 0 keeps its
+  slide-level fallbacks) and a flat-list body is distributed one bullet
+  per column (extras collect in the last column; any other body lands
+  whole in column 1). The text slide declares the full series the other
+  way around: its own one/two-column tiles plus all seven image variants
+  as cross-type tiles into image-text (convert + variant set in one
+  click, one undo step). The popover gains an "Image left / Image right"
+  toggle driven by a new JSON-safe `layoutMirror` declaration on the type
+  definition (forks control their own; schematics flip live, rows stay
+  put). Polish from the phase-2 review: the Images section shows a
+  migrated slide's slide-level alt as a placeholder instead of a
+  misleading empty field, and a per-image "Fill (crop)" now also removes
+  the contain padding in single-cell layouts. Bug fix surfaced by the
+  toggle (but reachable before): a row layout with a remembered
+  right-hand image side pushed its media strip into a phantom second
+  column. 10 new tests; browser-verified end to end including both
+  export paths.
+
 - **Image-text layout catalogue, phase 2: image rows, duo layout and the
   `images[]` migration.** The image-text slide now carries up to three
   images in a canonical `images[]` field (per-image alt, fit and focus);
