@@ -39,7 +39,7 @@ const INSPECTOR_KEEPS = {
   'lijstje-slide': ['variant', 'layout', 'density'],
   'kpi-metrics-slide': ['accent', 'countUp'],
   'split-partner-title-slide': [],
-  'image-text-slide': ['imageRole', 'density', 'layout', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
+  'image-text-slide': ['imageRole', 'density', 'layout', 'textColumns', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
   'video-slide': ['autoplay'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],

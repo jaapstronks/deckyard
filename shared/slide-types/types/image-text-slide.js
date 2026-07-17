@@ -159,6 +159,17 @@ export default {
       ],
     },
     {
+      key: 'textColumns',
+      label: 'Text columns',
+      type: 'enum',
+      required: false,
+      helpText: 'Only used in the image-row and duo layouts.',
+      options: [
+        { value: '1', label: '1 column' },
+        { value: '2', label: '2 columns' },
+      ],
+    },
+    {
       key: 'imageFit',
       label: 'Image fit',
       type: 'enum',
@@ -249,6 +260,17 @@ export default {
   // two values in [left, right] order. Declared here (JSON-safe) so forks
   // keep control per type; absent = no toggle.
   layoutMirror: { key: 'imageSide', values: ['left', 'right'] },
+  // Second popover toggle: text in one or two columns. Same fork story as
+  // layoutMirror (JSON-safe, declared per type; absent = no toggle):
+  //   key/values - the enum field and its two values in [one, two] order;
+  //   when       - only offered while this enum field holds one of these
+  //                values (the wide-copy layouts; elsewhere the stored value
+  //                is remembered but inert, like imageSide on a row).
+  layoutTextColumns: {
+    key: 'textColumns',
+    values: ['1', '2'],
+    when: { key: 'layout', values: ['row-top', 'row-bottom', 'duo'] },
+  },
   layoutVariants: [
     {
       id: 'text',
@@ -326,6 +348,7 @@ export default {
       imageSide: 'left',
       imageWidth: 'half',
       layout: 'split',
+      textColumns: '1',
       imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
@@ -344,6 +367,7 @@ export default {
       imageSide: 'left',
       imageWidth: 'half',
       layout: 'split',
+      textColumns: '1',
       imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
@@ -363,6 +387,7 @@ export default {
     imageSide: 'left',
     imageWidth: 'half',
     layout: 'split',
+    textColumns: '1',
     imageFit: 'cover',
     imageBackground: 'white',
     density: 'auto',
@@ -396,6 +421,16 @@ export default {
             : layoutRaw === 'row-bottom'
               ? ' is-layout-row-bottom'
               : '';
+    // Two text columns only apply in the wide-copy layouts (rows/duo);
+    // elsewhere the stored value is remembered but inert, so a split slide
+    // never inherits phantom columns (same model as imageSide on a row).
+    const textColsClass =
+      String(content?.textColumns) === '2' &&
+      (layoutRaw === 'duo' ||
+        layoutRaw === 'row-top' ||
+        layoutRaw === 'row-bottom')
+        ? ' is-text-cols-2'
+        : '';
     const fit =
       content?.imageFit === 'contain'
         ? 'is-image-contain'
@@ -491,7 +526,7 @@ export default {
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${densityClass}" data-density="${density}">
+        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
           <div class="slide-inner">
             <div class="split ${side}">
               <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">

@@ -43,6 +43,13 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.layoutMirror && typeof def.layoutMirror === 'object'
             ? def.layoutMirror
             : undefined,
+        // Which enum field sets the text-column count (and for which layout
+        // values it applies); drives the switcher's second toggle. Same fork
+        // story as layoutMirror.
+        layoutTextColumns:
+          def.layoutTextColumns && typeof def.layoutTextColumns === 'object'
+            ? def.layoutTextColumns
+            : undefined,
       };
     }
 

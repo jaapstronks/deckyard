@@ -164,8 +164,8 @@
 .layout-tile-col .layout-tile-line.is-short {
   width: 70%;
 }
-/* Mirror toggle (image left/right) above the tile grid: the shared segmented
-   control, stretched to the popover width. */
+/* Toggles above the tile grid (image left/right, text columns): the shared
+   segmented control, stretched to the popover width. */
 .layout-switcher-popover .layout-switcher-mirror {
   width: 100%;
   margin-bottom: 8px;

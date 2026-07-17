@@ -351,6 +351,31 @@
   min-height: 0;
   min-width: 0;
 }
+/* Two text columns (textColumns: 2): the renderer only emits the class in
+   the row/duo layouts, where the copy is wide enough for two columns.
+   Unlike the content slide this balances the columns: the split is an
+   explicit toggle, so short bodies must visibly divide instead of all
+   landing in the left column (which would make the toggle look inert).
+   Overflow still spills sideways into a cut-off extra column, which the
+   auto-fit runtime detects via scrollWidth; clip it at the box edge. */
+.slide-image-text.is-text-cols-2 .copy .body {
+  columns: 2;
+  column-gap: 64px;
+  column-fill: balance;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+/* The duo copy is only ~half the slide wide; tighten the gutter there. */
+.slide-image-text.is-layout-duo.is-text-cols-2 .copy .body {
+  column-gap: 40px;
+}
+/* List items carry symmetric vertical margins; at a column start the top
+   margin is trimmed, which made the second column sit a few px higher.
+   Bottom-only margins keep both columns top-aligned. */
+.slide-image-text.is-text-cols-2 .copy .body li {
+  margin: 0 0 10px;
+}
 .slide-image-text .copy .heading {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);

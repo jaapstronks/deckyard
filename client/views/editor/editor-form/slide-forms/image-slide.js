@@ -107,6 +107,7 @@ export function appendImageTextLayoutOptions({
   scheduleUiRefresh,
 } = {}) {
   const layoutField = fieldByKey.get('layout');
+  const textColsField = fieldByKey.get('textColumns');
   const sideField = fieldByKey.get('imageSide');
   const widthField = fieldByKey.get('imageWidth');
   const fitField = fieldByKey.get('imageFit');
@@ -117,6 +118,7 @@ export function appendImageTextLayoutOptions({
   if (!layoutField && !sideField && !widthField && !fitField && !imgBgField && !fxField && !fyField) return;
 
   used.add('layout');
+  used.add('textColumns');
   used.add('imageSide');
   used.add('imageWidth');
   used.add('imageFit');
@@ -138,6 +140,14 @@ export function appendImageTextLayoutOptions({
   if (layoutField) {
     const layoutEl = renderField(layoutField);
     if (layoutEl) layoutBody.append(layoutEl);
+  }
+
+  // Text columns (1/2): doubles the popover toggle, same as the enums above.
+  // Only meaningful in the row/duo layouts; the field's helpText says so and
+  // the renderer ignores the value elsewhere.
+  if (textColsField) {
+    const textColsEl = renderField(textColsField);
+    if (textColsEl) layoutBody.append(textColsEl);
   }
 
   // First row: side, width, fit

@@ -435,3 +435,53 @@ test('layoutMirror: image-text declares the imageSide flip, JSON-safe', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(DEF.layoutMirror)), DEF.layoutMirror);
   assert.equal(CONTENT_DEF.layoutMirror, undefined, 'text slide has nothing to mirror');
 });
+
+// ---- Text columns (follow-up 2026-07-17): 2-col copy in rows/duo ----------
+
+test('render: textColumns 2 adds is-text-cols-2 in the row and duo layouts', () => {
+  for (const layout of ['row-top', 'row-bottom', 'duo']) {
+    const html = DEF.renderHtml(slide({ layout, textColumns: '2' }).content);
+    assert.match(html, /is-text-cols-2/, `${layout} gets the class`);
+  }
+});
+
+test('render: textColumns 2 is inert outside rows/duo (no phantom columns)', () => {
+  // A remembered '2' on a split or corner slide must not leak column styling
+  // - the same model as imageSide: right on a row (the phase-3 bijvangst).
+  for (const layout of ['split', 'corner']) {
+    const html = DEF.renderHtml(slide({ layout, textColumns: '2' }).content);
+    assert.ok(!html.includes('is-text-cols-2'), `${layout} stays single-column`);
+  }
+});
+
+test('render: default and explicit 1 render without the class', () => {
+  assert.ok(!DEF.renderHtml(slide({ layout: 'row-bottom' }).content).includes('is-text-cols-2'));
+  assert.ok(
+    !DEF.renderHtml(slide({ layout: 'duo', textColumns: '1' }).content).includes('is-text-cols-2')
+  );
+});
+
+test('textColumns defaults to 1 in every language block', () => {
+  assert.equal(DEF.defaults.textColumns, '1');
+  assert.equal(DEF.defaultsByLang.nl.textColumns, '1');
+  assert.equal(DEF.defaultsByLang['en-GB'].textColumns, '1');
+});
+
+test('layoutTextColumns declaration is consistent with the schema, JSON-safe', () => {
+  const d = DEF.layoutTextColumns;
+  assert.ok(d, 'image-text declares the text-columns toggle');
+  const enumOptions = (key) => {
+    const field = DEF.fields.find((f) => f.key === key);
+    assert.ok(field, `declared key "${key}" is a schema field`);
+    return field.options.map((o) => (typeof o === 'string' ? o : o.value));
+  };
+  assert.equal(d.values.length, 2, 'exactly two values (a toggle)');
+  for (const v of d.values) {
+    assert.ok(enumOptions(d.key).includes(v), `${d.key}=${v} is a valid enum value`);
+  }
+  for (const v of d.when.values) {
+    assert.ok(enumOptions(d.when.key).includes(v), `when: ${d.when.key}=${v} is valid`);
+  }
+  assert.deepEqual(JSON.parse(JSON.stringify(d)), d, 'JSON-safe');
+  assert.equal(CONTENT_DEF.layoutTextColumns, undefined, 'content-slide uses its layout enum instead');
+});
