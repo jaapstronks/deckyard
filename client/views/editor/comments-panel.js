@@ -5,6 +5,8 @@
 
 import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
+import { closeIcon, makeDropdownCaret } from '../../lib/icons.js';
+import { installDismissOnOutside } from '../../lib/dom.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
@@ -46,6 +48,12 @@ export function createCommentsPanel({
   let comments = [];
   let openCount = 0;
   let slideCommentCounts = {};
+  // Scope is the primary axis: the pane is slide-scoped by default (like the
+  // inspector and notes panes it sits between); "All slides" is the explicit
+  // deck-wide overview. filter.slideId is DERIVED from scope on every load,
+  // so the slide scope follows the selection. The object identity of
+  // `filter` matters: the renderers hold a reference to it.
+  let scope = 'slide';
   let filter = { slideId: null, status: 'open', commentType: null };
   let isVisible = false;
 
@@ -95,6 +103,7 @@ export function createCommentsPanel({
 
   async function loadComments() {
     try {
+      filter.slideId = scope === 'slide' ? (getSelectedSlideId?.() || null) : null;
       const opts = {};
       if (filter.slideId) opts.slideId = filter.slideId;
       if (filter.status && filter.status !== 'all') opts.status = filter.status;
@@ -220,67 +229,108 @@ export function createCommentsPanel({
   // Header
   const headerTitle = h('h3', { text: t('comments.title', 'Comments') });
   const closeBtn = h('button', {
-    class: 'btn btn-icon comments-close-btn',
+    class: 'ghost-icon-btn comments-close-btn',
     type: 'button',
     title: t('comments.close', 'Close'),
-    text: '×',
+    'aria-label': t('comments.close', 'Close'),
     // Mounted as an inspector pane the host owns visibility: closing means
     // dismissing the rail (onRequestClose), not just hiding this element.
     onclick: () => (onRequestClose ? onRequestClose() : hide()),
   });
+  closeBtn.append(closeIcon({ size: 16 }));
   headerEl.append(headerTitle, closeBtn);
 
-  // Filter buttons - row 1: status filters
-  const filterRow1 = h('div', { class: 'comments-filter-row' });
-  const filterAllBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
-    type: 'button',
-    text: t('comments.filter.all', 'All'),
-    onclick: () => setFilter({ status: 'all' }),
-  });
-  const filterOpenBtn = h('button', {
-    class: 'btn btn-sm btn-primary',
-    type: 'button',
-    text: t('comments.filter.open', 'Open'),
-    onclick: () => setFilter({ status: 'open' }),
-  });
-  const filterResolvedBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
-    type: 'button',
-    text: t('comments.filter.resolved', 'Resolved'),
-    onclick: () => setFilter({ status: 'resolved' }),
-  });
-  const filterSlideBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
+  // Scope switch: the pane shows the current slide's threads by default (the
+  // same order as the inspector/notes panes); "All slides" is the explicit
+  // deck-wide overview, where each comment links to its slide.
+  const scopeSlideBtn = h('button', {
+    class: 'comments-scope-btn',
     type: 'button',
     text: t('comments.filter.thisSlide', 'This slide'),
-    onclick: () => toggleSlideFilter(),
+    'aria-pressed': 'true',
+    onclick: () => setScope('slide'),
   });
-  filterRow1.append(filterAllBtn, filterOpenBtn, filterResolvedBtn, filterSlideBtn);
+  const scopeAllBtn = h('button', {
+    class: 'comments-scope-btn',
+    type: 'button',
+    text: t('comments.scope.allSlides', 'All slides'),
+    'aria-pressed': 'false',
+    onclick: () => setScope('all'),
+  });
+  const scopeEl = h(
+    'div',
+    { class: 'comments-scope', role: 'group', 'aria-label': t('comments.scope.label', 'Comments scope') },
+    [scopeSlideBtn, scopeAllBtn]
+  );
 
-  // Filter buttons - row 2: type filters (Human / AI)
-  const filterRow2 = h('div', { class: 'comments-filter-row comments-filter-type' });
-  const filterAllTypesBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
-    type: 'button',
-    text: t('comments.filter.allTypes', 'All'),
-    onclick: () => setFilter({ commentType: null }),
-  });
-  const filterHumanBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
-    type: 'button',
-    text: t('comments.filter.human', 'Human'),
-    onclick: () => setFilter({ commentType: 'human' }),
-  });
-  const filterAiBtn = h('button', {
-    class: 'btn btn-sm btn-secondary',
-    type: 'button',
-    text: t('comments.filter.ai', 'AI'),
-    onclick: () => setFilter({ commentType: 'ai-suggestion' }),
-  });
-  filterRow2.append(filterAllTypesBtn, filterHumanBtn, filterAiBtn);
+  // Status + type live in one compact filter menu next to the scope switch
+  // (they refine the list; scope decides what the list is about).
+  const STATUS_OPTIONS = [
+    { value: 'open', label: () => t('comments.filter.open', 'Open') },
+    { value: 'resolved', label: () => t('comments.filter.resolved', 'Resolved') },
+    { value: 'all', label: () => t('comments.filter.all', 'All') },
+  ];
+  const TYPE_OPTIONS = [
+    { value: null, label: () => t('comments.filter.allTypes', 'All') },
+    { value: 'human', label: () => t('comments.filter.human', 'Human') },
+    { value: 'ai-suggestion', label: () => t('comments.filter.ai', 'AI') },
+  ];
 
-  filterEl.append(filterRow1, filterRow2);
+  const filterMenuLabel = h('span', { class: 'comments-filter-label', text: '' });
+  const filterSummary = h(
+    'summary',
+    {
+      class: 'btn btn-sm btn-secondary dropdown-trigger comments-filter-trigger',
+      title: t('comments.filter.title', 'Filter comments'),
+    },
+    [filterMenuLabel, makeDropdownCaret()]
+  );
+  const filterMenu = h('div', { class: 'dropdown-menu dropdown-menu-right comments-filter-menu' });
+  const filterDetails = h('details', { class: 'dropdown comments-filter-dropdown' }, [
+    filterSummary,
+    filterMenu,
+  ]);
+  const detachFilterMenu = installDismissOnOutside({
+    rootEl: filterDetails,
+    isOpen: () => !!filterDetails.open,
+    close: () => { filterDetails.open = false; },
+  });
+
+  const statusItems = STATUS_OPTIONS.map((opt) => {
+    const item = h('button', {
+      class: 'dropdown-item comments-filter-item',
+      type: 'button',
+      text: opt.label(),
+      onclick: () => {
+        filterDetails.open = false;
+        setFilter({ status: opt.value });
+      },
+    });
+    item.dataset.status = String(opt.value);
+    return item;
+  });
+  const typeItems = TYPE_OPTIONS.map((opt) => {
+    const item = h('button', {
+      class: 'dropdown-item comments-filter-item',
+      type: 'button',
+      text: opt.label(),
+      onclick: () => {
+        filterDetails.open = false;
+        setFilter({ commentType: opt.value });
+      },
+    });
+    item.dataset.type = String(opt.value);
+    return item;
+  });
+  filterMenu.append(
+    h('div', { class: 'dropdown-help', text: t('comments.filter.status', 'Status') }),
+    ...statusItems,
+    h('div', { class: 'dropdown-sep' }),
+    h('div', { class: 'dropdown-help', text: t('comments.filter.type', 'Type') }),
+    ...typeItems
+  );
+
+  filterEl.append(scopeEl, filterDetails);
 
   // Input area
   const inputTextarea = h('textarea', {
@@ -312,14 +362,32 @@ export function createCommentsPanel({
   // Filter logic
   // ========================================
 
-  function updateFilterButtons() {
-    filterAllBtn.className = `btn btn-sm ${filter.status === 'all' ? 'btn-primary' : 'btn-secondary'}`;
-    filterOpenBtn.className = `btn btn-sm ${filter.status === 'open' ? 'btn-primary' : 'btn-secondary'}`;
-    filterResolvedBtn.className = `btn btn-sm ${filter.status === 'resolved' ? 'btn-primary' : 'btn-secondary'}`;
-    filterSlideBtn.className = `btn btn-sm ${filter.slideId ? 'btn-primary' : 'btn-secondary'}`;
-    filterAllTypesBtn.className = `btn btn-sm ${filter.commentType === null ? 'btn-primary' : 'btn-secondary'}`;
-    filterHumanBtn.className = `btn btn-sm ${filter.commentType === 'human' ? 'btn-primary' : 'btn-secondary'}`;
-    filterAiBtn.className = `btn btn-sm ${filter.commentType === 'ai-suggestion' ? 'btn-primary' : 'btn-secondary'}`;
+  function updateFilterUi() {
+    scopeSlideBtn.classList.toggle('is-active', scope === 'slide');
+    scopeSlideBtn.setAttribute('aria-pressed', String(scope === 'slide'));
+    scopeAllBtn.classList.toggle('is-active', scope === 'all');
+    scopeAllBtn.setAttribute('aria-pressed', String(scope === 'all'));
+
+    const statusOpt = STATUS_OPTIONS.find((o) => o.value === filter.status) || STATUS_OPTIONS[0];
+    const typeOpt = TYPE_OPTIONS.find((o) => o.value === filter.commentType) || TYPE_OPTIONS[0];
+    // The trigger label names the active refinement; the type only when it
+    // narrows ("Open", "Open · AI", "All · Human").
+    filterMenuLabel.textContent =
+      typeOpt.value === null ? statusOpt.label() : `${statusOpt.label()} · ${typeOpt.label()}`;
+
+    for (const item of statusItems) {
+      item.classList.toggle('is-selected', item.dataset.status === String(filter.status));
+    }
+    for (const item of typeItems) {
+      item.classList.toggle('is-selected', item.dataset.type === String(filter.commentType));
+    }
+  }
+
+  function setScope(next) {
+    if (scope === next) return;
+    scope = next;
+    updateFilterUi();
+    loadComments();
   }
 
   function setFilter(opts) {
@@ -329,19 +397,21 @@ export function createCommentsPanel({
     if (opts.commentType !== undefined) {
       filter.commentType = opts.commentType;
     }
-    updateFilterButtons();
+    updateFilterUi();
     loadComments();
   }
 
-  function toggleSlideFilter() {
-    if (filter.slideId) {
-      filter.slideId = null;
-    } else {
-      filter.slideId = getSelectedSlideId?.() || null;
-    }
-    updateFilterButtons();
+  /**
+   * The selected slide changed: a slide-scoped pane follows it. Called by
+   * the controller on every slide selection; a hidden pane reloads on the
+   * next show() anyway.
+   */
+  function onSlideChanged() {
+    if (scope !== 'slide' || !isVisible) return;
     loadComments();
   }
+
+  updateFilterUi();
 
   // ========================================
   // Panel visibility
@@ -408,7 +478,10 @@ export function createCommentsPanel({
     loadComments,
     getSlideCommentCounts,
     highlightComment,
+    onSlideChanged,
+    setScope,
     startPolling: sse.startPolling,
     stopPolling: sse.stopPolling,
+    detach: detachFilterMenu,
   };
 }

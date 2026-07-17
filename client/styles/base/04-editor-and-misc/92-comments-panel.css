@@ -28,31 +28,72 @@
   font-weight: 600;
 }
 
-.comments-close-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 4px;
-  color: var(--text-muted, #666);
-  line-height: 1;
-}
-
-.comments-close-btn:hover {
-  color: var(--text-color, #333);
-}
-
+/* Scope switch + one compact filter menu (chrome re-org 2026-07-17): scope
+   decides what the list is about, the dropdown refines it. */
 .comments-panel-filter {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px 12px;
   border-bottom: 1px solid var(--border-color, #e0e0e0);
-  flex-wrap: wrap;
 }
 
-.comments-panel-filter .btn-sm {
-  padding: 2px 8px;
-  font-size: 11px;
+.comments-scope {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px;
+  background: hsl(var(--app-bg-base));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  flex-shrink: 0;
+}
+
+.comments-scope-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: none;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.comments-scope-btn:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.comments-scope-btn:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -1px;
+}
+
+.comments-scope-btn.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.comments-filter-trigger {
+  padding: 3px 8px;
+  font-size: var(--ps-text-xs);
+}
+
+.comments-filter-menu {
+  min-width: 150px;
+}
+
+.comments-filter-item.is-selected {
+  font-weight: 600;
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.1));
 }
 
 .comments-panel-list {
@@ -354,19 +395,6 @@
 /* ============================================================
    AI SUGGESTIONS STYLES
    ============================================================ */
-
-/* Filter row layout */
-.comments-filter-row {
-  display: flex;
-  gap: 4px;
-  width: 100%;
-}
-
-.comments-filter-type {
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--border-light, #e0e0e0);
-}
 
 /* AI Suggestion comment styling */
 .comment-item.is-ai-suggestion {
