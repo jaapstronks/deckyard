@@ -10,6 +10,9 @@ import { installDismissOnOutside } from '../../lib/dom.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
+import { confirmModal } from '../../lib/modal.js';
+import { attachMentionAutocomplete } from '../../lib/mention-autocomplete.js';
+import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
 import { createCommentSSE } from './comments-panel-sse.js';
@@ -177,6 +180,75 @@ export function createCommentsPanel({
   }
 
   // ========================================
+  // Mentions: access knowledge + pre-post check
+  // ========================================
+
+  // Emails known to have access (owner + collaborators). Only owners/admins
+  // may list collaborators; when that fails the list is not authoritative
+  // and the access prompt is skipped (we only warn when we KNOW access is
+  // missing).
+  let accessEmails = null;
+  let accessListAuthoritative = false;
+
+  async function loadAccessEmails() {
+    if (accessEmails !== null) return accessEmails;
+    const emails = new Set();
+    const owner = String(pres?.ownerEmail || pres?.createdBy || '').toLowerCase();
+    if (owner) emails.add(owner);
+    try {
+      const resp = await api(`/api/presentations/${presentationId}/collaborators`);
+      for (const c of resp?.collaborators || []) {
+        const email = String(c?.userEmail || '').toLowerCase();
+        if (email) emails.add(email);
+      }
+      accessListAuthoritative = true;
+    } catch {
+      accessListAuthoritative = false;
+    }
+    accessEmails = emails;
+    return accessEmails;
+  }
+
+  /**
+   * Warn when mentioned users have no access to this deck; offer to share
+   * with comment rights. Non-blocking: the comment posts either way.
+   */
+  async function checkMentionAccess(body) {
+    const mentions = parseMentions(body);
+    if (mentions.length === 0) return;
+    await loadAccessEmails();
+    if (!accessListAuthoritative) return;
+    const missing = mentions.filter((m) => !accessEmails.has(m.email));
+    if (missing.length === 0) return;
+
+    const names = missing.map((m) => m.name || m.email).join(', ');
+    const share = await confirmModal(h, document.body, {
+      title: t('mentions.noAccess.title', 'No access to this presentation'),
+      message: t(
+        'mentions.noAccess.message',
+        '{names} cannot see this presentation, so the mention will not help them. Share it with comment access?',
+        { names }
+      ),
+      confirmLabel: t('mentions.noAccess.share', 'Share with comment access'),
+      cancelLabel: t('mentions.noAccess.postAnyway', 'Post anyway'),
+    });
+    if (!share) return;
+    try {
+      await api(`/api/presentations/${presentationId}/collaborators`, {
+        method: 'POST',
+        body: JSON.stringify({
+          userEmails: missing.map((m) => m.email),
+          permission: 'comment',
+        }),
+      });
+      for (const m of missing) accessEmails.add(m.email);
+      toast?.success?.(t('mentions.shared', 'Shared with comment access'));
+    } catch {
+      toast?.error?.(t('mentions.shareFailed', 'Could not share the presentation'));
+    }
+  }
+
+  // ========================================
   // Comment submission
   // ========================================
 
@@ -185,6 +257,7 @@ export function createCommentsPanel({
     if (!body) return;
 
     try {
+      await checkMentionAccess(body);
       await commentsApi.createComment({
         body,
         slideId: getSelectedSlideId?.() || null,
@@ -198,6 +271,7 @@ export function createCommentsPanel({
 
   async function handleReply(parentId, body, textarea) {
     try {
+      await checkMentionAccess(body);
       await commentsApi.createComment({
         body,
         parentId,
@@ -208,6 +282,33 @@ export function createCommentsPanel({
     } catch (err) {
       toast?.error?.(t('comments.error.replyFailed', 'Failed to post reply'));
     }
+  }
+
+  // ========================================
+  // Mention autocomplete plumbing
+  // ========================================
+
+  const mentionDetachers = [];
+
+  /**
+   * Attach @-autocomplete to a comment textarea. The popover mounts inside
+   * `host`, which gets position:relative via .has-mention-autocomplete.
+   * Guests are not mentionable and guests can't mention (no account): the
+   * whole feature is authed-user-only.
+   */
+  function attachMentions(textarea, host) {
+    if (!user?.email) return null;
+    const ac = attachMentionAutocomplete({
+      textarea,
+      api,
+      getPriorityEmails: () => (accessEmails ? [...accessEmails] : []),
+    });
+    host.classList.add('has-mention-autocomplete');
+    host.append(ac.el);
+    // Warm the priority list in the background on first attach.
+    loadAccessEmails();
+    mentionDetachers.push(ac.detach);
+    return ac;
   }
 
   // ========================================
@@ -236,6 +337,7 @@ export function createCommentsPanel({
     isAuthor,
     onJumpToSlide,
     onReply: handleReply,
+    attachMentions,
     onResolve: actions.resolveComment,
     onReopen: actions.reopenComment,
     onDelete: actions.deleteComment,
@@ -404,6 +506,8 @@ export function createCommentsPanel({
   });
   inputTextarea.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+      // With the mention popover open, Enter picks a user instead.
+      if (mainMentionAc?.isOpen()) return;
       e.preventDefault();
       submitComment();
     }
@@ -417,6 +521,7 @@ export function createCommentsPanel({
   const inputControls = h('div', { class: 'comments-input-controls' });
   inputControls.append(inputSubmitBtn);
   inputEl.append(inputTextarea, inputControls);
+  const mainMentionAc = attachMentions(inputTextarea, inputEl);
 
   // Assemble panel
   panelEl.append(headerEl, filterEl, listEl, inputEl);
@@ -561,6 +666,9 @@ export function createCommentsPanel({
     detach: () => {
       if (loadDebounceTimer) clearTimeout(loadDebounceTimer);
       if (markReadTimer) clearTimeout(markReadTimer);
+      for (const d of mentionDetachers) {
+        try { d(); } catch { /* ignore */ }
+      }
       detachFilterMenu();
     },
   };

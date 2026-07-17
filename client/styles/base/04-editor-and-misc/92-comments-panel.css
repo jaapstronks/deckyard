@@ -120,6 +120,77 @@
   margin-bottom: 0;
 }
 
+/* Mentions: chip in the body, inline autocomplete popover */
+.comment-mention-chip {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-primary-600, #4f46e5) 12%, transparent);
+  color: var(--color-primary-600, #4f46e5);
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.has-mention-autocomplete {
+  position: relative;
+}
+
+.mention-autocomplete-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 8px;
+  right: 8px;
+  z-index: 60;
+  display: none;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--color-bg, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+}
+
+.mention-autocomplete-dropdown.is-open {
+  display: block;
+}
+
+.mention-autocomplete-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mention-autocomplete-item:hover,
+.mention-autocomplete-item.is-highlighted {
+  background: var(--color-gray-100, #f3f4f6);
+}
+
+.mention-autocomplete-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color, #333);
+}
+
+.mention-autocomplete-email {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+}
+
+.mention-autocomplete-empty {
+  padding: 8px;
+  font-size: 12px;
+  color: var(--text-muted, #888);
+  font-style: italic;
+}
+
 /* Per-user read-state: unseen activity from others (mail convention) */
 .comment-thread.is-unread > .comment-item .comment-author {
   font-weight: 700;

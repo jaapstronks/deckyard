@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Todo",
   "comments.filter.waitingForMe": "Esperándome",
   "comments.empty.waiting": "Nada pendiente para ti aquí",
-  "comments.unread": "Nueva actividad"
+  "comments.unread": "Nueva actividad",
+  "mentions.noResults": "No hay usuarios coincidentes",
+  "mentions.noAccess.title": "Sin acceso a esta presentación",
+  "mentions.noAccess.message": "{names} no puede ver esta presentación, así que la mención no le servirá. ¿Compartir con permiso de comentario?",
+  "mentions.noAccess.share": "Compartir con permiso de comentario",
+  "mentions.noAccess.postAnyway": "Publicar igualmente",
+  "mentions.shared": "Compartido con permiso de comentario",
+  "mentions.shareFailed": "No se pudo compartir"
 }

@@ -638,5 +638,12 @@
   "comments.filter.everyone": "Everything",
   "comments.filter.waitingForMe": "Waiting for me",
   "comments.empty.waiting": "Nothing waiting for you here",
-  "comments.unread": "New activity"
+  "comments.unread": "New activity",
+  "mentions.noResults": "No matching users",
+  "mentions.noAccess.title": "No access to this presentation",
+  "mentions.noAccess.message": "{names} cannot see this presentation, so the mention will not help them. Share it with comment access?",
+  "mentions.noAccess.share": "Share with comment access",
+  "mentions.noAccess.postAnyway": "Post anyway",
+  "mentions.shared": "Shared with comment access",
+  "mentions.shareFailed": "Could not share the presentation"
 }

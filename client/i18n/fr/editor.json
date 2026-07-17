@@ -328,5 +328,12 @@
   "comments.filter.everyone": "Tout",
   "comments.filter.waitingForMe": "En attente de moi",
   "comments.empty.waiting": "Rien en attente pour vous ici",
-  "comments.unread": "Nouvelle activité"
+  "comments.unread": "Nouvelle activité",
+  "mentions.noResults": "Aucun utilisateur trouvé",
+  "mentions.noAccess.title": "Pas d'accès à cette présentation",
+  "mentions.noAccess.message": "{names} ne peut pas voir cette présentation, la mention ne servira donc à rien. Partager avec droits de commentaire ?",
+  "mentions.noAccess.share": "Partager avec droits de commentaire",
+  "mentions.noAccess.postAnyway": "Publier quand même",
+  "mentions.shared": "Partagé avec droits de commentaire",
+  "mentions.shareFailed": "Le partage a échoué"
 }

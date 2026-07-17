@@ -17,6 +17,7 @@ export function buildCommentNotificationEmail({
   commentBody,
   isReply,
   isOwner,
+  isMention,
   editUrl,
 }) {
   const greeting = tr('email.common.greetingAnonymous', 'Hi there,');
@@ -25,13 +26,18 @@ export function buildCommentNotificationEmail({
     ? tr('email.commentNotification.action.reply', 'View conversation')
     : tr('email.commentNotification.action.new', 'View and reply');
 
-  const bodyText = isReply
-    ? tr('email.commentNotification.body.reply', 'replied to your comment on')
-    : tr('email.commentNotification.body.new', 'commented on your presentation');
+  // Mention is the most specific flavor and wins over reply/created.
+  const bodyText = isMention
+    ? tr('email.commentNotification.body.mention', 'mentioned you in a comment on')
+    : isReply
+      ? tr('email.commentNotification.body.reply', 'replied to your comment on')
+      : tr('email.commentNotification.body.new', 'commented on your presentation');
 
-  const footerText = isOwner
-    ? tr('email.commentNotification.footer.owner', 'This notification was sent because you own this presentation.')
-    : tr('email.commentNotification.footer.commenter', 'This notification was sent because you commented on this presentation.');
+  const footerText = isMention
+    ? tr('email.commentNotification.footer.mention', 'This notification was sent because you were mentioned in a comment.')
+    : isOwner
+      ? tr('email.commentNotification.footer.owner', 'This notification was sent because you own this presentation.')
+      : tr('email.commentNotification.footer.commenter', 'This notification was sent because you commented on this presentation.');
 
   const htmlContent = `
 <!DOCTYPE html>

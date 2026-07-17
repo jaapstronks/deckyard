@@ -5,6 +5,7 @@
 
 import { getOrgId } from '../utils/context.js';
 import { norm, normalizeEmail, nowIso } from '../utils/normalize.js';
+import { parseMentions } from '../../shared/comment-mentions.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { listPresentations } from './presentations.js';
 import { listPresentationsSharedWithUser } from './collaborators.js';
@@ -407,6 +408,9 @@ export async function createComment(presentationId, data, ctx) {
         suggestion_category: suggestionCategory,
         proposed_slide: proposedSlide ? JSON.stringify(proposedSlide) : null,
         slide_snapshot: slideSnapshot ? JSON.stringify(slideSnapshot) : null,
+        // Parsed from the body markup here — single source of truth for
+        // every write path (app, public API v1, MCP).
+        mentions: JSON.stringify(parseMentions(body)),
         created_at: now,
         updated_at: now,
       })
@@ -438,6 +442,7 @@ export async function updateComment(commentId, data, ctx) {
       .updateTable('presentation_comments')
       .set({
         body: body,
+        mentions: JSON.stringify(parseMentions(body)),
         updated_at: now,
       })
       .where('id', '=', commentId)
@@ -661,6 +666,7 @@ function rowToComment(row) {
     suggestionCategory: row.suggestion_category ?? null,
     proposedSlide: row.proposed_slide ?? null,
     slideSnapshot: row.slide_snapshot ?? null,
+    mentions: row.mentions ?? [], // Pre-migration rows read as no mentions
     replies: [], // Populated separately
   };
 }
