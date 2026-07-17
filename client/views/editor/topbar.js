@@ -7,7 +7,7 @@
  * - topbar/more-menu.js - More menu dropdown
  */
 
-import { installDismissOnOutside } from '../../lib/dom.js';
+import { createDropdown } from '../../lib/dropdown.js';
 import { openSettingsModal as openSettingsModalImpl } from './modals/settings-modal.js';
 import { openVersionsModal as openVersionsModalImpl } from './modals/versions-modal.js';
 import { getUiModePreference, setUiModePreference } from '../../lib/ui-mode.js';
@@ -417,16 +417,6 @@ export function createEditorTopbar({
 
   // Present is the primary CTA; the attached caret menu holds the live-
   // presenting extras you never need while editing (Companion phone remote).
-  const presentMenuDetails = h('details', { class: 'dropdown topbar-present-more' });
-  const presentMenuSummary = h(
-    'summary',
-    {
-      class: 'btn btn-primary btn-icon dropdown-trigger topbar-present-caret',
-      title: t('editor.present.more', 'More presenting options'),
-      'aria-label': t('editor.present.more', 'More presenting options'),
-    },
-    [chevronDownIcon({ size: 14 })]
-  );
   const presentCompanionItem = h('button', {
     class: 'dropdown-item',
     type: 'button',
@@ -436,23 +426,21 @@ export function createEditorTopbar({
       'Open speaker notes companion on your phone (QR code).'
     ),
     onclick: () => {
-      presentMenuDetails.open = false;
+      closePresentMenu();
       openNotesQr();
     },
   });
-  presentMenuDetails.append(
-    presentMenuSummary,
-    h('div', { class: 'dropdown-menu dropdown-menu-right' }, [presentCompanionItem])
-  );
-  detachers.push(
-    installDismissOnOutside({
-      rootEl: presentMenuDetails,
-      isOpen: () => !!presentMenuDetails.open,
-      close: () => {
-        presentMenuDetails.open = false;
-      },
-    })
-  );
+  const { details: presentMenuDetails, close: closePresentMenu, detach: detachPresentMenu } = createDropdown({
+    h,
+    triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
+    triggerContent: [chevronDownIcon({ size: 14 })],
+    title: t('editor.present.more', 'More presenting options'),
+    ariaLabel: t('editor.present.more', 'More presenting options'),
+    detailsClass: 'topbar-present-more',
+    menuClass: 'dropdown-menu-right',
+    items: [presentCompanionItem],
+  });
+  detachers.push(detachPresentMenu);
   const presentGroup = h('div', { class: 'topbar-present-group' }, [btnPresent, presentMenuDetails]);
 
   // ============================================================

@@ -5,6 +5,7 @@ import { renderFocusGridField } from './editor-form/focus-picker.js';
 import { newId } from '../../lib/id.js';
 import { debugLog } from '../../lib/debug.js';
 import { installDismissOnOutside } from '../../lib/dom.js';
+import { createDropdown } from '../../lib/dropdown.js';
 import { confirmModal } from '../../lib/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { slidePrimaryLabel } from './editor-utils.js';
@@ -172,17 +173,17 @@ function buildHeaderActions({
     });
   };
 
-  const actionsDetails = h('details', { class: 'dropdown' });
-  const actionsSummary = h(
-    'summary',
-    {
-      class: 'ghost-icon-btn dropdown-trigger',
-      title: t('common.moreOptions', 'More options'),
-      'aria-label': t('common.moreOptions', 'More options'),
-    },
-    [moreIcon({ size: 16 })]
-  );
-  const actionsMenu = h('div', { class: 'dropdown-menu dropdown-menu-right' });
+  // Top-level actions menu. dismissOnOutside is handled below with a custom
+  // close that also collapses the Convert / AI Convert submenus.
+  const { details: actionsDetails, menu: actionsMenu } = createDropdown({
+    h,
+    triggerClass: 'ghost-icon-btn',
+    triggerContent: [moreIcon({ size: 16 })],
+    title: t('common.moreOptions', 'More options'),
+    ariaLabel: t('common.moreOptions', 'More options'),
+    menuClass: 'dropdown-menu-right',
+    dismissOnOutside: false,
+  });
 
   // Build conversion submenu
   const convertible = getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES });
@@ -206,20 +207,21 @@ function buildHeaderActions({
 
   let convertDetails = null;
   if (convertible.length) {
-    convertDetails = h('details', { class: 'dropdown dropdown-submenu' });
-    const convertSummary = h(
-      'summary',
-      {
-        class: 'dropdown-item dropdown-trigger',
-        title: t('editor.slide.convert.title', 'Convert this slide to a different type (best-effort).'),
-      },
-      [
+    const built = createDropdown({
+      h,
+      triggerClass: 'dropdown-item',
+      triggerContent: [
         h('span', { text: t('editor.slide.convert', 'Convert…') }),
         h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
-      ]
-    );
-    const convertMenu = h('div', { class: 'dropdown-menu dropdown-submenu-menu' });
-    positionSubmenu(convertDetails, convertSummary, convertMenu);
+      ],
+      title: t('editor.slide.convert.title', 'Convert this slide to a different type (best-effort).'),
+      detailsClass: 'dropdown-submenu',
+      menuClass: 'dropdown-submenu-menu',
+      dismissOnOutside: false,
+    });
+    convertDetails = built.details;
+    const convertMenu = built.menu;
+    positionSubmenu(convertDetails, built.summary, convertMenu);
 
     for (const toType of convertible) {
       convertMenu.append(
@@ -242,27 +244,27 @@ function buildHeaderActions({
         })
       );
     }
-    convertDetails.append(convertSummary, convertMenu);
   }
 
   // Build AI conversion submenu
   const aiConvertTargets = AI_CONVERT_TARGETS[slide.type] || [];
   let aiConvertDetails = null;
   if (aiConvertTargets.length && api) {
-    aiConvertDetails = h('details', { class: 'dropdown dropdown-submenu' });
-    const aiConvertSummary = h(
-      'summary',
-      {
-        class: 'dropdown-item dropdown-trigger',
-        title: t('editor.slide.aiConvert.title', 'Use AI to intelligently convert this slide to a different type.'),
-      },
-      [
+    const built = createDropdown({
+      h,
+      triggerClass: 'dropdown-item',
+      triggerContent: [
         h('span', { text: t('editor.slide.aiConvert', 'AI Convert…') }),
         h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
-      ]
-    );
-    const aiConvertMenu = h('div', { class: 'dropdown-menu dropdown-submenu-menu' });
-    positionSubmenu(aiConvertDetails, aiConvertSummary, aiConvertMenu);
+      ],
+      title: t('editor.slide.aiConvert.title', 'Use AI to intelligently convert this slide to a different type.'),
+      detailsClass: 'dropdown-submenu',
+      menuClass: 'dropdown-submenu-menu',
+      dismissOnOutside: false,
+    });
+    aiConvertDetails = built.details;
+    const aiConvertMenu = built.menu;
+    positionSubmenu(aiConvertDetails, built.summary, aiConvertMenu);
 
     // Guard against re-triggering a convert while one is already in flight
     // (the menu closes on click, but reopening it must not fire a second call).
@@ -335,7 +337,6 @@ function buildHeaderActions({
         })
       );
     }
-    aiConvertDetails.append(aiConvertSummary, aiConvertMenu);
   }
 
   // Assemble menu items (filter out null entries to avoid "null" text in DOM)
@@ -445,8 +446,6 @@ function buildHeaderActions({
     }),
   ].filter(Boolean);
   actionsMenu.append(...menuItems);
-
-  actionsDetails.append(actionsSummary, actionsMenu);
 
   // Close the dropdown on outside click / Escape
   const detachDismiss = installDismissOnOutside({

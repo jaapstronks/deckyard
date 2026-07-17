@@ -4,29 +4,20 @@
 
 import { normalizeLang, hasLangVersion, otherLang } from '../../lib/i18n.js';
 import { buildExportUrl } from './publish-export/urls.js';
-import { installDismissOnOutside } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { makeDropdownCaret } from '../../lib/icons.js';
+import { createDropdown } from '../../lib/dropdown.js';
 
 export function setupExportDropdown({
   h,
   pres,
   id,
 } = {}) {
-  const exportDetails = h('details', { class: 'dropdown' });
-  const exportSummary = h(
-    'summary',
-    {
-      class: 'btn btn-secondary dropdown-trigger',
-      title: t('editor.export.title', 'Export to file'),
-    },
-    [
-      h('span', { text: t('editor.export.button', 'Export') }),
-      makeDropdownCaret(),
-    ]
-  );
-
-  const menu = h('div', { class: 'dropdown-menu' });
+  const { details: exportDetails, menu, close, detach } = createDropdown({
+    h,
+    triggerClass: 'btn btn-secondary',
+    label: t('editor.export.button', 'Export'),
+    title: t('editor.export.title', 'Export to file'),
+  });
 
   const lang = normalizeLang(pres?.i18n?.active) || 'nl';
   const langLabel = lang === 'nl' ? 'NL' : 'EN';
@@ -42,7 +33,7 @@ export function setupExportDropdown({
       type: 'button',
       text: label,
       onclick: () => {
-        exportDetails.open = false;
+        close();
         const url = buildExportUrl(`/api/presentations/${id}/export/${exportPath}`, lang);
         if (openInTab) {
           window.open(url, '_blank', 'noopener,noreferrer');
@@ -105,16 +96,6 @@ export function setupExportDropdown({
 
     menu.append(h('div', { class: 'dropdown-sep' }), otherHeader, ...otherExportButtons);
   }
-
-  exportDetails.append(exportSummary, menu);
-
-  const detach = installDismissOnOutside({
-    rootEl: exportDetails,
-    isOpen: () => !!exportDetails.open,
-    close: () => {
-      exportDetails.open = false;
-    },
-  });
 
   return { exportEl: exportDetails, detach };
 }

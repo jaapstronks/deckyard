@@ -18,7 +18,7 @@ export const SIDEBAR_VIEWS = [
   { key: 'starterKits', icon: 'package', label: () => t('list.nav.starterKits', 'Starter kits') },
   { key: 'slideLibrary', icon: 'book-open', label: () => t('list.nav.slideLibrary', 'Slide library') },
   { key: 'insights', icon: 'chart-column', label: () => t('list.nav.insights', 'Insights'), action: true, href: '/insights' },
-  { key: 'activity', icon: 'bell', label: () => t('list.nav.activity', 'Activity'), badge: true },
+  { key: 'activity', icon: 'newspaper', label: () => t('list.nav.activity', 'Activity'), badge: true },
   { key: 'trash', icon: 'trash-2', label: () => t('list.nav.trash', 'Trash') },
 ];
 

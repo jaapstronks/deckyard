@@ -6,7 +6,7 @@
 import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { closeIcon, makeDropdownCaret } from '../../lib/icons.js';
-import { installDismissOnOutside } from '../../lib/dom.js';
+import { createDropdown } from '../../lib/dropdown.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
@@ -449,23 +449,18 @@ export function createCommentsPanel({
   ];
 
   const filterMenuLabel = h('span', { class: 'comments-filter-label', text: '' });
-  const filterSummary = h(
-    'summary',
-    {
-      class: 'btn btn-sm btn-secondary dropdown-trigger comments-filter-trigger',
-      title: t('comments.filter.title', 'Filter comments'),
-    },
-    [filterMenuLabel, makeDropdownCaret()]
-  );
-  const filterMenu = h('div', { class: 'dropdown-menu dropdown-menu-right comments-filter-menu' });
-  const filterDetails = h('details', { class: 'dropdown comments-filter-dropdown' }, [
-    filterSummary,
-    filterMenu,
-  ]);
-  const detachFilterMenu = installDismissOnOutside({
-    rootEl: filterDetails,
-    isOpen: () => !!filterDetails.open,
-    close: () => { filterDetails.open = false; },
+  const {
+    details: filterDetails,
+    menu: filterMenu,
+    close: closeFilterMenu,
+    detach: detachFilterMenu,
+  } = createDropdown({
+    h,
+    triggerClass: 'btn btn-sm btn-secondary comments-filter-trigger',
+    triggerContent: [filterMenuLabel, makeDropdownCaret()],
+    title: t('comments.filter.title', 'Filter comments'),
+    detailsClass: 'comments-filter-dropdown',
+    menuClass: 'dropdown-menu-right comments-filter-menu',
   });
 
   const statusItems = STATUS_OPTIONS.map((opt) => {
@@ -474,7 +469,7 @@ export function createCommentsPanel({
       type: 'button',
       text: opt.label(),
       onclick: () => {
-        filterDetails.open = false;
+        closeFilterMenu();
         setFilter({ status: opt.value });
       },
     });
@@ -487,7 +482,7 @@ export function createCommentsPanel({
       type: 'button',
       text: opt.label(),
       onclick: () => {
-        filterDetails.open = false;
+        closeFilterMenu();
         setFilter({ commentType: opt.value });
       },
     });
@@ -500,7 +495,7 @@ export function createCommentsPanel({
       type: 'button',
       text: opt.label(),
       onclick: () => {
-        filterDetails.open = false;
+        closeFilterMenu();
         setFilter({ attention: opt.value });
       },
     });

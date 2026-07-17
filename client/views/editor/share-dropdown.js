@@ -9,8 +9,8 @@ import { openPublishModal } from './publish-export/publish-modal.js';
 import { doPublish, buildPublishModalData } from './publish-export/publish.js';
 import { openShareModal } from './modals/share-modal.js';
 import { openDescriptionModal } from './modals/description-modal.js';
-import { installDismissOnOutside } from '../../lib/dom.js';
 import { makeDropdownCaret } from '../../lib/icons.js';
+import { createDropdown } from '../../lib/dropdown.js';
 import { confirmModal } from '../../lib/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { handleShareToWorkspace, handleMoveToPrivate, handleNotionPublish } from './share-dropdown/share-actions.js';
@@ -59,21 +59,13 @@ export function setupShareDropdown({
       openOverlayClosers,
     });
 
-  const shareDetails = h('details', { class: 'dropdown' });
   const summaryLabel = h('span', { text: t('editor.share.button', 'Share') });
-  const shareSummary = h(
-    'summary',
-    {
-      class: 'btn btn-secondary dropdown-trigger',
-      title: t('editor.share.title', 'Share and publish options'),
-    },
-    [
-      summaryLabel,
-      makeDropdownCaret(),
-    ]
-  );
-
-  const menu = h('div', { class: 'dropdown-menu' });
+  const { details: shareDetails, summary: shareSummary, menu, close, detach } = createDropdown({
+    h,
+    triggerClass: 'btn btn-secondary',
+    triggerContent: [summaryLabel, makeDropdownCaret()],
+    title: t('editor.share.title', 'Share and publish options'),
+  });
 
   // Share links (token-based external sharing)
   const shareLinksItem = h('button', {
@@ -82,7 +74,7 @@ export function setupShareDropdown({
     text: t('editor.share.links', 'Share links...'),
     title: t('editor.share.links.title', 'Create shareable links for external users (no account required).'),
     onclick: () => {
-      shareDetails.open = false;
+      close();
       openShareModal({
         h,
         api,
@@ -105,7 +97,7 @@ export function setupShareDropdown({
     text: t('editor.share.workspace', 'Share to workspace'),
     title: t('editor.share.workspace.title', 'Make this presentation available to everyone in the workspace.'),
     onclick: async () => {
-      shareDetails.open = false;
+      close();
       await handleShareToWorkspace({
         h,
         api,
@@ -130,7 +122,7 @@ export function setupShareDropdown({
     text: t('editor.share.private', 'Move to private'),
     title: t('editor.share.private.title', 'Move this presentation from workspace to your private collection.'),
     onclick: async () => {
-      shareDetails.open = false;
+      close();
       await handleMoveToPrivate({
         api,
         toast,
@@ -150,7 +142,7 @@ export function setupShareDropdown({
     type: 'button',
     text: t('editor.publish.publish', 'Publish'),
     onclick: async () => {
-      shareDetails.open = false;
+      close();
       try {
         // If already published, just open the modal with existing data (fast path)
         if (pres?.published?.id) {
@@ -185,7 +177,7 @@ export function setupShareDropdown({
     type: 'button',
     text: t('editor.publish.unpublish', 'Unpublish'),
     onclick: async () => {
-      shareDetails.open = false;
+      close();
       const publishId = typeof pres?.published?.id === 'string' ? pres.published.id : '';
       if (!publishId) return;
       const ok = await confirmModal(h, root || document.body, {
@@ -214,7 +206,7 @@ export function setupShareDropdown({
     type: 'button',
     text: t('editor.publish.notion', 'Add to Notion page'),
     onclick: async () => {
-      shareDetails.open = false;
+      close();
       await handleNotionPublish({ api, toast, pres });
     },
   });
@@ -244,8 +236,6 @@ export function setupShareDropdown({
   // Initially hide moveToPrivateItem (will be shown via syncShareUi if appropriate)
   moveToPrivateItem.style.display = 'none';
 
-  shareDetails.append(shareSummary, menu);
-
   // Create syncShareUi function
   syncShareUi = createSyncShareUi({
     h,
@@ -260,14 +250,6 @@ export function setupShareDropdown({
     notionPublishItem,
   });
   syncShareUi();
-
-  const detach = installDismissOnOutside({
-    rootEl: shareDetails,
-    isOpen: () => !!shareDetails.open,
-    close: () => {
-      shareDetails.open = false;
-    },
-  });
 
   return { shareEl: shareDetails, syncShareUi, detach };
 }
