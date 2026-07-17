@@ -13,6 +13,7 @@ import { openVersionsModal as openVersionsModalImpl } from './modals/versions-mo
 import { getUiModePreference, setUiModePreference } from '../../lib/ui-mode.js';
 import { logout } from '../../lib/auth.js';
 import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
+import { openSubscriptionModal } from './modals/subscription-modal.js';
 import { createLanguageMode } from './topbar/language-mode.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { createLockRequestUI } from './topbar/lock-request.js';
@@ -338,6 +339,7 @@ export function createEditorTopbar({
     onAnalyze: () => onAnalyze?.(),
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
+    onSubscription: () => openSubscriptionModal({ h, api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
   });
   detachers.push(moreMenu.detach);

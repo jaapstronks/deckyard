@@ -8,22 +8,18 @@
   "settings.tabs.integrations": "Integrations",
   "settings.tabs.ariaLabel": "Settings navigation",
   "settings.tabs.adminSection": "Admin",
-
   "settings.admin.description": "Configure workspace-wide settings that apply to all users.",
   "settings.admin.supportedThemes.title": "Supported themes",
   "settings.admin.supportedThemes.hint": "Controls which presentation themes are available in this workspace.",
   "settings.admin.supportedThemes.comingSoon": "Theme configuration coming soon.",
-
   "settings.admin.aiAssistant.title": "AI Assistant Identity",
   "settings.admin.aiAssistant.hint": "Customize the name and email shown for AI-generated content.",
   "settings.admin.aiAssistant.name": "Name",
   "settings.admin.aiAssistant.email": "Email",
-
   "settings.admin.emailSender.title": "Email Sender Identity",
   "settings.admin.emailSender.hint": "From address for system emails. Falls back to environment variables if empty.",
   "settings.admin.emailSender.email": "Email",
   "settings.admin.emailSender.name": "Name",
-
   "settings.admin.sessionDuration.title": "Session Duration",
   "settings.admin.sessionDuration.hint": "How long users stay logged in before needing to sign in again.",
   "settings.admin.sessionDuration.duration": "Duration",
@@ -33,9 +29,7 @@
   "settings.admin.sessionDuration.30days": "30 days (default)",
   "settings.admin.sessionDuration.90days": "90 days",
   "settings.admin.sessionDuration.365days": "1 year",
-
   "settings.integrations.description": "Connect external services via webhooks to receive notifications about events.",
-
   "settings.mcp.title": "Connect via API / MCP",
   "settings.mcp.description": "Deckyard speaks the Model Context Protocol: point Claude Desktop, Cursor, or a remote agent at this server to create and edit decks in natural language. Remote access authenticates with one of the API keys above.",
   "settings.mcp.remote.label": "Remote agents (HTTP + API key)",
@@ -44,7 +38,6 @@
   "settings.mcp.desktop.help": "Add to claude_desktop_config.json. Local stdio needs no API key; set the owner email so decks are attributed to you.",
   "settings.mcp.rest.label": "Prefer plain REST?",
   "settings.mcp.rest.link": "View the OpenAPI spec",
-
   "admin.users.actions": "Actions",
   "admin.users.addModal.adding": "Adding...",
   "admin.users.addModal.alreadyExists": "A user with this email already exists.",
@@ -133,7 +126,6 @@
   "settings.title": "Settings",
   "settings.uiLocale.hint": "The language of this application's interface, unrelated to the language used in slides.",
   "settings.uiLocale.title": "Application language",
-
   "settings.admin.emailTemplates.title": "Admin: Email Templates",
   "settings.admin.emailTemplates.hint": "Customize email templates sent by the system. Changes override code defaults.",
   "settings.admin.emailTemplates.defaultLocale": "Default language for new user invitations:",
@@ -151,7 +143,6 @@
   "settings.admin.emailTemplates.resetConfirm": "Reset this template to the default? This will remove all customizations for this language.",
   "settings.admin.emailTemplates.testSent": "Test email sent.",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Default language updated.",
-
   "settings.admin.emailTemplates.types.userInvitation": "User Invitation",
   "settings.admin.emailTemplates.types.activationReminder": "Activation Reminder",
   "settings.admin.emailTemplates.types.collaboratorInvite": "Collaborator Invitation",
@@ -160,7 +151,6 @@
   "settings.admin.emailTemplates.types.magicLink": "Magic Link",
   "settings.admin.emailTemplates.types.commentNotification": "Comment Notification",
   "settings.admin.emailTemplates.types.guestVerification": "Guest Verification",
-
   "settings.admin.emailTemplates.locales.en": "English",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
@@ -173,13 +163,11 @@
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.sv": "Svenska",
   "settings.admin.emailTemplates.locales.no": "Norsk",
-
   "settings.admin.emailTemplates.fields.subject": "Subject",
   "settings.admin.emailTemplates.fields.greeting": "Greeting",
   "settings.admin.emailTemplates.fields.body": "Body",
   "settings.admin.emailTemplates.fields.buttonLabel": "Button Label",
   "settings.admin.emailTemplates.fields.footer": "Footer",
-
   "settings.admin.analytics.title": "Engagement Insights",
   "settings.admin.analytics.hint": "Configure how engagement data is collected and displayed.",
   "settings.admin.analytics.enabled": "Enable engagement insights",
@@ -194,14 +182,12 @@
   "settings.admin.analytics.retentionDays": "Keep session data for",
   "settings.admin.analytics.retentionIpDays": "Anonymize IP addresses after",
   "settings.admin.analytics.days": "days",
-
   "settings.privacy.title": "Privacy",
   "settings.privacy.hint": "Control how your activity is tracked and displayed.",
   "settings.privacy.allowAttribution": "Allow my views to be attributed to me",
   "settings.privacy.allowAttributionHint": "When enabled, presenters can see your name when you view their presentations.",
   "settings.privacy.disableTracking": "Opt out of all engagement tracking",
   "settings.privacy.disableTrackingHint": "When enabled, your views won't be recorded in any analytics.",
-
   "settings.digest.title": "Weekly Digest",
   "settings.digest.hint": "Receive a weekly summary of how your presentations are performing.",
   "settings.digest.enabled": "Receive weekly digest emails",
@@ -214,7 +200,6 @@
   "settings.digest.dayOfWeek.5": "Friday",
   "settings.digest.dayOfWeek.6": "Saturday",
   "settings.digest.includeTeam": "Include team analytics in digest",
-
   "settings.admin.stockMedia.title": "Stock Media",
   "settings.admin.stockMedia.hint": "Enable stock photo and GIF integrations for the image picker. Requires API keys in server environment.",
   "settings.admin.stockMedia.unsplash": "Enable Unsplash photos",
@@ -223,18 +208,14 @@
   "settings.admin.stockMedia.giphyHint": "Search and use animated GIFs from Giphy. Requires GIPHY_API_KEY.",
   "settings.admin.stockMedia.notConfigured": "Not configured (API key missing)",
   "settings.admin.stockMedia.configured": "API key configured",
-
   "settings.admin.webhooks.leadSubmitted.title": "When a lead is submitted",
   "settings.admin.webhooks.leadSubmitted.hint": "Event: lead.submitted",
-
   "settings.admin.leads.title": "Lead Capture",
   "settings.admin.leads.hint": "Configure lead capture settings for presentation forms.",
   "settings.admin.leads.retentionDays": "Retain lead data for",
   "settings.admin.leads.days": "days",
-
   "settings.notifications.leadEmails": "Lead notification emails",
   "settings.notifications.leadEmailsHint": "Receive an email when someone submits a lead form on your presentation.",
-
   "settings.themes.description": "Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.",
   "settings.themes.customThemes": "Custom Themes",
   "settings.themes.createTheme": "Create Theme",
@@ -285,7 +266,6 @@
   "settings.themes.hideUrl": "Hide URL",
   "settings.themes.logoSmall": "Title Slide Logo (optional)",
   "settings.themes.logoSmallHint": "Smaller logo for title slides. Uses main logo if not set.",
-
   "settings.tabs.analytics": "External Analytics",
   "settings.analytics.description": "External analytics complement built-in insights by tracking cross-site visitor journeys. Choose privacy-friendly providers that respect your visitors.",
   "settings.analytics.envVarsNote": "Analytics can also be configured via environment variables. Settings configured here will override environment variables.",
@@ -293,22 +273,18 @@
   "settings.analytics.privacyFriendlyDesc": "These providers are designed with privacy in mind. They typically do not use cookies and are GDPR-compliant by default.",
   "settings.analytics.requiresConsentSection": "Requires Consent",
   "settings.analytics.requiresConsentDesc": "These providers set cookies and require a consent banner under GDPR/ePrivacy. Consider privacy-friendly alternatives above.",
-
   "settings.analytics.providers.privacyFriendly": "Privacy-friendly",
   "settings.analytics.providers.requiresConsent": "Requires consent",
-
   "settings.analytics.providers.umami.description": "Cookie-free, GDPR compliant, open-source analytics. Can be self-hosted.",
   "settings.analytics.providers.umami.websiteId": "Website ID",
   "settings.analytics.providers.umami.websiteIdHint": "Found in your Umami dashboard under Settings > Websites",
   "settings.analytics.providers.umami.url": "Server URL",
   "settings.analytics.providers.umami.urlHint": "Leave empty for Umami Cloud, or enter your self-hosted URL",
-
   "settings.analytics.providers.plausible.description": "Lightweight, cookie-free analytics. EU-hosted cloud option available.",
   "settings.analytics.providers.plausible.domain": "Domain",
   "settings.analytics.providers.plausible.domainHint": "The domain you want to track",
   "settings.analytics.providers.plausible.url": "Server URL",
   "settings.analytics.providers.plausible.urlHint": "Leave empty for Plausible Cloud, or enter your self-hosted URL",
-
   "settings.analytics.providers.matomo.description": "Full-featured, self-hostable analytics with cookie-free tracking mode.",
   "settings.analytics.providers.matomo.url": "Matomo URL",
   "settings.analytics.providers.matomo.urlHint": "Your Matomo server URL",
@@ -318,11 +294,15 @@
   "settings.analytics.providers.matomo.disableCookiesHint": "Track without setting any cookies",
   "settings.analytics.providers.matomo.requireConsent": "Require consent",
   "settings.analytics.providers.matomo.requireConsentHint": "Wait for explicit user consent before tracking",
-
   "settings.analytics.providers.googleAnalytics.description": "Google's analytics platform. Widely used but sets cookies.",
   "settings.analytics.providers.googleAnalytics.privacyNote": "Google Analytics sets cookies and shares data with Google. You should display a cookie consent banner and update your privacy policy when using this provider.",
   "settings.analytics.providers.googleAnalytics.measurementId": "Measurement ID",
   "settings.analytics.providers.googleAnalytics.measurementIdHint": "Found in GA4 > Admin > Data Streams > your stream",
-
-  "settings.analytics.validation.enabledButMissing": "Provider is enabled but required fields are missing. It won't be active until configured."
+  "settings.analytics.validation.enabledButMissing": "Provider is enabled but required fields are missing. It won't be active until configured.",
+  "settings.notifications.defaultLevel": "Default level per deck",
+  "settings.notifications.defaultLevel.help": "Applies to decks without their own setting. Direct @mentions always come through.",
+  "settings.notifications.emailByType": "Email me about",
+  "settings.notifications.emailCommentCreated": "New comments",
+  "settings.notifications.emailCommentReply": "Replies to your comments",
+  "settings.notifications.emailCommentMention": "Mentions"
 }

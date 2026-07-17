@@ -38,17 +38,14 @@
   "settings.admin.notifications.title": "Admin: email notifications",
   "settings.admin.supportedSlideLangs.hint": "Dette styrer hvilke språk som er synlige/brukbare i språkmodus og oversettelse.",
   "settings.admin.supportedSlideLangs.title": "Admin: støttede lysbilde-språk",
-
   "settings.admin.aiAssistant.title": "AI-assistent identitet",
   "settings.admin.aiAssistant.hint": "Tilpass navn og e-post som vises for AI-generert innhold.",
   "settings.admin.aiAssistant.name": "Navn",
   "settings.admin.aiAssistant.email": "E-post",
-
   "settings.admin.emailSender.title": "E-post avsender identitet",
   "settings.admin.emailSender.hint": "Avsenderadresse for system-e-poster. Bruker miljøvariabler hvis tom.",
   "settings.admin.emailSender.email": "E-post",
   "settings.admin.emailSender.name": "Navn",
-
   "settings.admin.sessionDuration.title": "Øktvarighet",
   "settings.admin.sessionDuration.hint": "Hvor lenge brukere forblir innlogget før de må logge inn igjen.",
   "settings.admin.sessionDuration.duration": "Varighet",
@@ -58,7 +55,6 @@
   "settings.admin.sessionDuration.30days": "30 dager (standard)",
   "settings.admin.sessionDuration.90days": "90 dager",
   "settings.admin.sessionDuration.365days": "1 år",
-
   "settings.admin.webhooks.commentCreated.hint": "Event: comment.created",
   "settings.admin.webhooks.commentCreated.title": "When a comment is posted",
   "settings.admin.webhooks.hint": "Konfigurer webhook-URL-er for å motta POSTede JSON-payloads når visse hendelser inntreffer.",
@@ -98,7 +94,6 @@
   "settings.title": "Innstillinger",
   "settings.uiLocale.hint": "Språket for dette applikasjonens grensesnitt, ikke relatert til språket brukt i lysbilder.",
   "settings.uiLocale.title": "Applikasjonsspråk",
-
   "settings.admin.analytics.title": "Engasjementsinnsikt",
   "settings.admin.analytics.hint": "Konfigurer hvordan engasjementsdata samles inn og vises.",
   "settings.admin.analytics.enabled": "Aktiver engasjementsinnsikt",
@@ -113,14 +108,12 @@
   "settings.admin.analytics.retentionDays": "Behold øktdata i",
   "settings.admin.analytics.retentionIpDays": "Anonymiser IP-adresser etter",
   "settings.admin.analytics.days": "dager",
-
   "settings.privacy.title": "Personvern",
   "settings.privacy.hint": "Kontroller hvordan din aktivitet spores og vises.",
   "settings.privacy.allowAttribution": "Tillat at mitt navn vises i engasjementsinnsikt",
   "settings.privacy.allowAttributionHint": "Hvis aktivert, kan presentatører se ditt navn i stedet for bare \"teammedlem så\".",
   "settings.privacy.disableTracking": "Avmeld all engasjementssporing",
   "settings.privacy.disableTrackingHint": "Hvis aktivert, registreres ikke dine visninger.",
-
   "settings.digest.title": "Ukentlig Sammendrag",
   "settings.digest.hint": "Motta et ukentlig e-postsammendrag av dine presentasjoners engasjement.",
   "settings.digest.enabled": "Send ukentlig engasjementssammendrag",
@@ -132,5 +125,11 @@
   "settings.digest.dayOfWeek.4": "Torsdag",
   "settings.digest.dayOfWeek.5": "Fredag",
   "settings.digest.dayOfWeek.6": "Lørdag",
-  "settings.digest.includeTeam": "Inkluder team-engasjementsstatistikk"
+  "settings.digest.includeTeam": "Inkluder team-engasjementsstatistikk",
+  "settings.notifications.defaultLevel": "Standardnivå per deck",
+  "settings.notifications.defaultLevel.help": "Gjelder decks uten egen innstilling. Direkte @omtaler kommer alltid gjennom.",
+  "settings.notifications.emailByType": "Send meg e-post om",
+  "settings.notifications.emailCommentCreated": "Nye kommentarer",
+  "settings.notifications.emailCommentReply": "Svar på dine kommentarer",
+  "settings.notifications.emailCommentMention": "Omtaler"
 }

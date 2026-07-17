@@ -38,17 +38,14 @@
   "settings.admin.notifications.title": "Admin: email notifications",
   "settings.admin.supportedSlideLangs.hint": "Detta styr vilka språk som är synliga/användbara i språkläge och översättning.",
   "settings.admin.supportedSlideLangs.title": "Admin: stödda slide-språk",
-
   "settings.admin.aiAssistant.title": "AI-assistent identitet",
   "settings.admin.aiAssistant.hint": "Anpassa namn och e-post som visas för AI-genererat innehåll.",
   "settings.admin.aiAssistant.name": "Namn",
   "settings.admin.aiAssistant.email": "E-post",
-
   "settings.admin.emailSender.title": "E-postavsändare identitet",
   "settings.admin.emailSender.hint": "Avsändaradress för system-e-post. Använder miljövariabler om tom.",
   "settings.admin.emailSender.email": "E-post",
   "settings.admin.emailSender.name": "Namn",
-
   "settings.admin.sessionDuration.title": "Sessionslängd",
   "settings.admin.sessionDuration.hint": "Hur länge användare förblir inloggade innan de måste logga in igen.",
   "settings.admin.sessionDuration.duration": "Längd",
@@ -58,7 +55,6 @@
   "settings.admin.sessionDuration.30days": "30 dagar (standard)",
   "settings.admin.sessionDuration.90days": "90 dagar",
   "settings.admin.sessionDuration.365days": "1 år",
-
   "settings.admin.webhooks.commentCreated.hint": "Event: comment.created",
   "settings.admin.webhooks.commentCreated.title": "When a comment is posted",
   "settings.admin.webhooks.hint": "Konfigurera webhook-URL:er för att ta emot POSTade JSON-payloads när vissa händelser inträffar.",
@@ -98,7 +94,6 @@
   "settings.title": "Inställningar",
   "settings.uiLocale.hint": "Språket för denna applikations gränssnitt, inte relaterat till språket som används i slides.",
   "settings.uiLocale.title": "Applikationsspråk",
-
   "settings.admin.analytics.title": "Engagemangsinsikter",
   "settings.admin.analytics.hint": "Konfigurera hur engagemangsdata samlas in och visas.",
   "settings.admin.analytics.enabled": "Aktivera engagemangsinsikter",
@@ -113,14 +108,12 @@
   "settings.admin.analytics.retentionDays": "Behåll sessionsdata i",
   "settings.admin.analytics.retentionIpDays": "Anonymisera IP-adresser efter",
   "settings.admin.analytics.days": "dagar",
-
   "settings.privacy.title": "Integritet",
   "settings.privacy.hint": "Kontrollera hur din aktivitet spåras och visas.",
   "settings.privacy.allowAttribution": "Tillåt att mitt namn visas i engagemangsinsikter",
   "settings.privacy.allowAttributionHint": "Om aktiverat kan presentatörer se ditt namn istället för bara \"teammedlem tittade\".",
   "settings.privacy.disableTracking": "Avböj all engagemangsspårning",
   "settings.privacy.disableTrackingHint": "Om aktiverat registreras inte dina visningar.",
-
   "settings.digest.title": "Veckosammandrag",
   "settings.digest.hint": "Få ett veckovis e-postsammandrag av dina presentationers engagemang.",
   "settings.digest.enabled": "Skicka veckovis engagemangssammandrag",
@@ -132,5 +125,11 @@
   "settings.digest.dayOfWeek.4": "Torsdag",
   "settings.digest.dayOfWeek.5": "Fredag",
   "settings.digest.dayOfWeek.6": "Lördag",
-  "settings.digest.includeTeam": "Inkludera teamengagemangsstatistik"
+  "settings.digest.includeTeam": "Inkludera teamengagemangsstatistik",
+  "settings.notifications.defaultLevel": "Standardnivå per deck",
+  "settings.notifications.defaultLevel.help": "Gäller decks utan egen inställning. Direkta @omnämnanden kommer alltid fram.",
+  "settings.notifications.emailByType": "Mejla mig om",
+  "settings.notifications.emailCommentCreated": "Nya kommentarer",
+  "settings.notifications.emailCommentReply": "Svar på dina kommentarer",
+  "settings.notifications.emailCommentMention": "Omnämnanden"
 }

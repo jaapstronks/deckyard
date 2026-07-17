@@ -26,6 +26,7 @@ export function createEditorTopbarMoreMenu({
   onShowShortcuts,
   onOpenSettings,
   onOpenOverview,
+  onSubscription,
 } = {}) {
   const detachers = [];
 
@@ -141,6 +142,17 @@ export function createEditorTopbarMoreMenu({
     },
   });
 
+  const btnSubscription = h('button', {
+    class: 'dropdown-item',
+    type: 'button',
+    text: t('editor.more.subscription', 'Deck notifications…'),
+    title: t(
+      'editor.more.subscription.title',
+      'Choose which comment activity on this deck notifies you.'
+    ),
+    onclick: () => onSubscription?.(),
+  });
+
   // Utilities demoted from their own topbar icons (2026-07-16 chrome
   // re-org): still one click away, without crowding the deck-action zone.
   const btnAnalyze = h('button', {
@@ -212,6 +224,7 @@ export function createEditorTopbarMoreMenu({
     btnVersions,
     btnDuplicateDeck,
     h('div', { class: 'dropdown-sep' }),
+    btnSubscription,
     btnSettings,
     btnShortcuts,
     // Responsive overflow item (visible only at narrow viewports)
@@ -250,6 +263,7 @@ export function createEditorTopbarMoreMenu({
   closeMoreOnClick(btnTranslateOther);
   closeMoreOnClick(btnVersions);
   closeMoreOnClick(btnDuplicateDeck);
+  closeMoreOnClick(btnSubscription);
   closeMoreOnClick(btnSettings);
   closeMoreOnClick(btnShortcuts);
   closeMoreOnClick(btnThemeToggle);

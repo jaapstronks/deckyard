@@ -8,22 +8,18 @@
   "settings.tabs.integrations": "Integraatiot",
   "settings.tabs.ariaLabel": "Asetusten navigointi",
   "settings.tabs.adminSection": "Hallinta",
-
   "settings.admin.description": "Määritä työtilan laajuiset asetukset, jotka koskevat kaikkia käyttäjiä.",
   "settings.admin.supportedThemes.title": "Tuetut teemat",
   "settings.admin.supportedThemes.hint": "Määrittää, mitkä esitysteemat ovat käytettävissä tässä työtilassa.",
   "settings.admin.supportedThemes.comingSoon": "Teemojen määritys tulossa pian.",
-
   "settings.admin.aiAssistant.title": "Tekoälyavustajan Identiteetti",
   "settings.admin.aiAssistant.hint": "Mukauta tekoälyn luoman sisällön näytettävää nimeä ja sähköpostia.",
   "settings.admin.aiAssistant.name": "Nimi",
   "settings.admin.aiAssistant.email": "Sähköposti",
-
   "settings.admin.emailSender.title": "Sähköpostin Lähettäjän Identiteetti",
   "settings.admin.emailSender.hint": "Järjestelmäsähköpostien lähettäjäosoite. Käyttää ympäristömuuttujia, jos tyhjä.",
   "settings.admin.emailSender.email": "Sähköposti",
   "settings.admin.emailSender.name": "Nimi",
-
   "settings.admin.sessionDuration.title": "Istunnon Kesto",
   "settings.admin.sessionDuration.hint": "Kuinka kauan käyttäjät pysyvät kirjautuneina ennen kuin heidän on kirjauduttava uudelleen.",
   "settings.admin.sessionDuration.duration": "Kesto",
@@ -33,9 +29,7 @@
   "settings.admin.sessionDuration.30days": "30 päivää (oletus)",
   "settings.admin.sessionDuration.90days": "90 päivää",
   "settings.admin.sessionDuration.365days": "1 vuosi",
-
   "settings.integrations.description": "Yhdistä ulkoisia palveluita webhookien kautta saadaksesi ilmoituksia tapahtumista.",
-
   "admin.users.actions": "Toiminnot",
   "admin.users.addModal.adding": "Lisätään...",
   "admin.users.addModal.alreadyExists": "Tällä sähköpostilla on jo käyttäjä.",
@@ -124,7 +118,6 @@
   "settings.title": "Asetukset",
   "settings.uiLocale.hint": "Tämän sovelluksen käyttöliittymän kieli, ei liity dioissa käytettyyn kieleen.",
   "settings.uiLocale.title": "Sovelluksen kieli",
-
   "settings.admin.emailTemplates.title": "Hallinta: Sähköpostimallit",
   "settings.admin.emailTemplates.hint": "Mukauta järjestelmän lähettämiä sähköpostimalleja. Muutokset korvaavat oletusarvot.",
   "settings.admin.emailTemplates.defaultLocale": "Oletuskieli uusien käyttäjien kutsuille:",
@@ -142,7 +135,6 @@
   "settings.admin.emailTemplates.resetConfirm": "Palautetaanko tämä malli oletusarvoihin? Tämä poistaa kaikki mukautukset tälle kielelle.",
   "settings.admin.emailTemplates.testSent": "Testisähköposti lähetetty.",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Oletuskieli päivitetty.",
-
   "settings.admin.emailTemplates.types.userInvitation": "Käyttäjäkutsu",
   "settings.admin.emailTemplates.types.activationReminder": "Aktivointimuistutus",
   "settings.admin.emailTemplates.types.collaboratorInvite": "Yhteistyökumppanin Kutsu",
@@ -151,7 +143,6 @@
   "settings.admin.emailTemplates.types.magicLink": "Taikaanklinkki",
   "settings.admin.emailTemplates.types.commentNotification": "Kommentti-ilmoitus",
   "settings.admin.emailTemplates.types.guestVerification": "Vierasvahvistus",
-
   "settings.admin.emailTemplates.locales.en": "English",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
@@ -164,13 +155,11 @@
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.sv": "Svenska",
   "settings.admin.emailTemplates.locales.no": "Norsk",
-
   "settings.admin.emailTemplates.fields.subject": "Aihe",
   "settings.admin.emailTemplates.fields.greeting": "Tervehdys",
   "settings.admin.emailTemplates.fields.body": "Sisältö",
   "settings.admin.emailTemplates.fields.buttonLabel": "Painikkeen Teksti",
   "settings.admin.emailTemplates.fields.footer": "Alatunniste",
-
   "settings.admin.analytics.title": "Sitoutumistilastot",
   "settings.admin.analytics.hint": "Määritä, miten sitoutumistietoja kerätään ja näytetään.",
   "settings.admin.analytics.enabled": "Ota sitoutumistilastot käyttöön",
@@ -185,14 +174,12 @@
   "settings.admin.analytics.retentionDays": "Säilytä istuntotietoja",
   "settings.admin.analytics.retentionIpDays": "Anonymisoi IP-osoitteet",
   "settings.admin.analytics.days": "päivää",
-
   "settings.privacy.title": "Yksityisyys",
   "settings.privacy.hint": "Hallitse, miten toimintaasi seurataan ja näytetään.",
   "settings.privacy.allowAttribution": "Salli katselujeni yhdistäminen minuun",
   "settings.privacy.allowAttributionHint": "Kun käytössä, esittäjät voivat nähdä nimesi, kun katsot heidän esityksiään.",
   "settings.privacy.disableTracking": "Kieltäydy kaikesta sitoutumisen seurannasta",
   "settings.privacy.disableTrackingHint": "Kun käytössä, katselujasi ei tallenneta mihinkään analytiikkaan.",
-
   "settings.digest.title": "Viikoittainen Yhteenveto",
   "settings.digest.hint": "Saat viikoittaisen yhteenvedon esitystesi suorituskyvystä.",
   "settings.digest.enabled": "Vastaanota viikoittaiset yhteenvetosähköpostit",
@@ -205,7 +192,6 @@
   "settings.digest.dayOfWeek.5": "Perjantai",
   "settings.digest.dayOfWeek.6": "Lauantai",
   "settings.digest.includeTeam": "Sisällytä tiimin analytiikka yhteenvetoon",
-
   "settings.admin.stockMedia.title": "Kuvapankkimedia",
   "settings.admin.stockMedia.hint": "Ota käyttöön kuvapankki- ja GIF-integraatiot kuvanvalitsimessa. Vaatii API-avaimet palvelinympäristössä.",
   "settings.admin.stockMedia.unsplash": "Ota Unsplash-kuvat käyttöön",
@@ -214,18 +200,14 @@
   "settings.admin.stockMedia.giphyHint": "Etsi ja käytä animoituja GIF-kuvia Giphystä. Vaatii GIPHY_API_KEY.",
   "settings.admin.stockMedia.notConfigured": "Ei määritetty (API-avain puuttuu)",
   "settings.admin.stockMedia.configured": "API-avain määritetty",
-
   "settings.admin.webhooks.leadSubmitted.title": "Kun liidi lähetetään",
   "settings.admin.webhooks.leadSubmitted.hint": "Tapahtuma: lead.submitted",
-
   "settings.admin.leads.title": "Liidien Kerääminen",
   "settings.admin.leads.hint": "Määritä liidien keräämisasetukset esityslomakkeille.",
   "settings.admin.leads.retentionDays": "Säilytä liiditietoja",
   "settings.admin.leads.days": "päivää",
-
   "settings.notifications.leadEmails": "Liidi-ilmoitussähköpostit",
   "settings.notifications.leadEmailsHint": "Saat sähköpostin, kun joku lähettää liidilomakkeen esityksessäsi.",
-
   "settings.themes.description": "Luo ja hallitse mukautettuja teemoja organisaatiollesi. Mukautetut teemat määrittelevät värit, fontit ja logot esityksille.",
   "settings.themes.customThemes": "Mukautetut Teemat",
   "settings.themes.createTheme": "Luo Teema",
@@ -275,5 +257,11 @@
   "settings.themes.useUrl": "Tai käytä URL-osoitetta",
   "settings.themes.hideUrl": "Piilota URL",
   "settings.themes.logoSmall": "Otsikkodiaan Logo (valinnainen)",
-  "settings.themes.logoSmallHint": "Pienempi logo otsikkodioille. Käyttää päälogoa, jos ei asetettu."
+  "settings.themes.logoSmallHint": "Pienempi logo otsikkodioille. Käyttää päälogoa, jos ei asetettu.",
+  "settings.notifications.defaultLevel": "Oletustaso deckiä kohden",
+  "settings.notifications.defaultLevel.help": "Koskee deckejä ilman omaa asetusta. Suorat @maininnat tulevat aina perille.",
+  "settings.notifications.emailByType": "Lähetä sähköpostia aiheesta",
+  "settings.notifications.emailCommentCreated": "Uudet kommentit",
+  "settings.notifications.emailCommentReply": "Vastaukset kommentteihisi",
+  "settings.notifications.emailCommentMention": "Maininnat"
 }

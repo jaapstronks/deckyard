@@ -404,5 +404,22 @@
   "mentions.noAccess.share": "Udostępnij z prawem komentowania",
   "mentions.noAccess.postAnyway": "Opublikuj mimo to",
   "mentions.shared": "Udostępniono z prawem komentowania",
-  "mentions.shareFailed": "Nie udało się udostępnić"
+  "mentions.shareFailed": "Nie udało się udostępnić",
+  "editor.more.subscription": "Powiadomienia decka…",
+  "editor.more.subscription.title": "Wybierz, która aktywność komentarzy w tym decku Cię powiadamia.",
+  "subscription.title": "Powiadomienia dla tego decka",
+  "subscription.hint": "Określa, która aktywność komentarzy w tym decku Cię powiadamia (dzwonek i e-mail). Bezpośrednie @wzmianki zawsze docierają.",
+  "subscription.level.default": "Twoje domyślne",
+  "subscription.level.default.help": "Zgodnie z globalnym ustawieniem powiadomień.",
+  "subscription.level.watching": "Obserwuj wszystko",
+  "subscription.level.watching.help": "Każdy komentarz w tym decku.",
+  "subscription.level.participating": "Uczestniczący",
+  "subscription.level.participating.help": "Wątki, w których piszesz, odpowiedzi do Ciebie i Twoje decki.",
+  "subscription.level.mentionsOnly": "Tylko wzmianki",
+  "subscription.level.mentionsOnly.help": "Tylko gdy ktoś Cię @wzmiankuje.",
+  "subscription.level.mute": "Wycisz",
+  "subscription.level.mute.help": "Wycisza ten deck. Bezpośrednie @wzmianki nadal docierają.",
+  "subscription.saved": "Ustawienie powiadomień zapisane",
+  "subscription.saveFailed": "Nie udało się zapisać ustawienia",
+  "subscription.loadFailed": "Nie udało się wczytać ustawienia"
 }

@@ -404,5 +404,22 @@
   "mentions.noAccess.share": "Condividi con permesso di commento",
   "mentions.noAccess.postAnyway": "Pubblica comunque",
   "mentions.shared": "Condiviso con permesso di commento",
-  "mentions.shareFailed": "Condivisione non riuscita"
+  "mentions.shareFailed": "Condivisione non riuscita",
+  "editor.more.subscription": "Notifiche del deck…",
+  "editor.more.subscription.title": "Scegli quale attività di commenti su questo deck ti notifica.",
+  "subscription.title": "Notifiche per questo deck",
+  "subscription.hint": "Controlla quale attività di commenti su questo deck ti notifica (campanella ed e-mail). Le @menzioni dirette arrivano sempre.",
+  "subscription.level.default": "Il tuo valore predefinito",
+  "subscription.level.default.help": "Segui la tua impostazione globale delle notifiche.",
+  "subscription.level.watching": "Segui tutto",
+  "subscription.level.watching.help": "Ogni commento su questo deck.",
+  "subscription.level.participating": "Partecipante",
+  "subscription.level.participating.help": "Thread in cui scrivi, risposte a te e i tuoi deck.",
+  "subscription.level.mentionsOnly": "Solo menzioni",
+  "subscription.level.mentionsOnly.help": "Solo quando qualcuno ti @menziona.",
+  "subscription.level.mute": "Silenzia",
+  "subscription.level.mute.help": "Silenzia questo deck. Le @menzioni dirette ti raggiungono comunque.",
+  "subscription.saved": "Impostazione notifiche salvata",
+  "subscription.saveFailed": "Impossibile salvare l'impostazione",
+  "subscription.loadFailed": "Impossibile caricare l'impostazione"
 }

@@ -8,22 +8,18 @@
   "settings.tabs.integrations": "Integracje",
   "settings.tabs.ariaLabel": "Nawigacja ustawień",
   "settings.tabs.adminSection": "Administracja",
-
   "settings.admin.description": "Skonfiguruj ustawienia przestrzeni roboczej, które dotyczą wszystkich użytkowników.",
   "settings.admin.supportedThemes.title": "Obsługiwane motywy",
   "settings.admin.supportedThemes.hint": "Określa, które motywy prezentacji są dostępne w tej przestrzeni roboczej.",
   "settings.admin.supportedThemes.comingSoon": "Konfiguracja motywów wkrótce dostępna.",
-
   "settings.admin.aiAssistant.title": "Tożsamość Asystenta AI",
   "settings.admin.aiAssistant.hint": "Dostosuj nazwę i e-mail wyświetlane dla treści generowanych przez AI.",
   "settings.admin.aiAssistant.name": "Nazwa",
   "settings.admin.aiAssistant.email": "E-mail",
-
   "settings.admin.emailSender.title": "Tożsamość Nadawcy E-mail",
   "settings.admin.emailSender.hint": "Adres nadawcy dla wiadomości systemowych. Używa zmiennych środowiskowych, jeśli puste.",
   "settings.admin.emailSender.email": "E-mail",
   "settings.admin.emailSender.name": "Nazwa",
-
   "settings.admin.sessionDuration.title": "Czas Trwania Sesji",
   "settings.admin.sessionDuration.hint": "Jak długo użytkownicy pozostają zalogowani przed koniecznością ponownego logowania.",
   "settings.admin.sessionDuration.duration": "Czas trwania",
@@ -33,9 +29,7 @@
   "settings.admin.sessionDuration.30days": "30 dni (domyślnie)",
   "settings.admin.sessionDuration.90days": "90 dni",
   "settings.admin.sessionDuration.365days": "1 rok",
-
   "settings.integrations.description": "Połącz zewnętrzne usługi przez webhooki, aby otrzymywać powiadomienia o zdarzeniach.",
-
   "admin.users.actions": "Akcje",
   "admin.users.addModal.adding": "Dodawanie...",
   "admin.users.addModal.alreadyExists": "Użytkownik z tym adresem e-mail już istnieje.",
@@ -124,7 +118,6 @@
   "settings.title": "Ustawienia",
   "settings.uiLocale.hint": "Język interfejsu tej aplikacji, niezwiązany z językiem używanym na slajdach.",
   "settings.uiLocale.title": "Język aplikacji",
-
   "settings.admin.emailTemplates.title": "Administracja: Szablony E-mail",
   "settings.admin.emailTemplates.hint": "Dostosuj szablony e-mail wysyłane przez system. Zmiany nadpisują wartości domyślne.",
   "settings.admin.emailTemplates.defaultLocale": "Domyślny język dla zaproszeń nowych użytkowników:",
@@ -142,7 +135,6 @@
   "settings.admin.emailTemplates.resetConfirm": "Przywrócić ten szablon do domyślnych? Spowoduje to usunięcie wszystkich dostosowań dla tego języka.",
   "settings.admin.emailTemplates.testSent": "Testowy e-mail wysłany.",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Domyślny język zaktualizowany.",
-
   "settings.admin.emailTemplates.types.userInvitation": "Zaproszenie Użytkownika",
   "settings.admin.emailTemplates.types.activationReminder": "Przypomnienie o Aktywacji",
   "settings.admin.emailTemplates.types.collaboratorInvite": "Zaproszenie Współpracownika",
@@ -151,7 +143,6 @@
   "settings.admin.emailTemplates.types.magicLink": "Magiczny Link",
   "settings.admin.emailTemplates.types.commentNotification": "Powiadomienie o Komentarzu",
   "settings.admin.emailTemplates.types.guestVerification": "Weryfikacja Gościa",
-
   "settings.admin.emailTemplates.locales.en": "English",
   "settings.admin.emailTemplates.locales.nl": "Nederlands",
   "settings.admin.emailTemplates.locales.de": "Deutsch",
@@ -164,13 +155,11 @@
   "settings.admin.emailTemplates.locales.da": "Dansk",
   "settings.admin.emailTemplates.locales.sv": "Svenska",
   "settings.admin.emailTemplates.locales.no": "Norsk",
-
   "settings.admin.emailTemplates.fields.subject": "Temat",
   "settings.admin.emailTemplates.fields.greeting": "Powitanie",
   "settings.admin.emailTemplates.fields.body": "Treść",
   "settings.admin.emailTemplates.fields.buttonLabel": "Etykieta Przycisku",
   "settings.admin.emailTemplates.fields.footer": "Stopka",
-
   "settings.admin.analytics.title": "Statystyki Zaangażowania",
   "settings.admin.analytics.hint": "Skonfiguruj, jak dane o zaangażowaniu są zbierane i wyświetlane.",
   "settings.admin.analytics.enabled": "Włącz statystyki zaangażowania",
@@ -185,14 +174,12 @@
   "settings.admin.analytics.retentionDays": "Przechowuj dane sesji przez",
   "settings.admin.analytics.retentionIpDays": "Anonimizuj adresy IP po",
   "settings.admin.analytics.days": "dni",
-
   "settings.privacy.title": "Prywatność",
   "settings.privacy.hint": "Kontroluj, jak Twoja aktywność jest śledzona i wyświetlana.",
   "settings.privacy.allowAttribution": "Pozwól przypisywać moje wyświetlenia do mnie",
   "settings.privacy.allowAttributionHint": "Po włączeniu prezenterzy mogą zobaczyć Twoje imię, gdy przeglądasz ich prezentacje.",
   "settings.privacy.disableTracking": "Zrezygnuj z całego śledzenia zaangażowania",
   "settings.privacy.disableTrackingHint": "Po włączeniu Twoje wyświetlenia nie będą rejestrowane w żadnych statystykach.",
-
   "settings.digest.title": "Tygodniowe Podsumowanie",
   "settings.digest.hint": "Otrzymuj cotygodniowe podsumowanie wyników swoich prezentacji.",
   "settings.digest.enabled": "Otrzymuj cotygodniowe e-maile podsumowujące",
@@ -205,7 +192,6 @@
   "settings.digest.dayOfWeek.5": "Piątek",
   "settings.digest.dayOfWeek.6": "Sobota",
   "settings.digest.includeTeam": "Uwzględnij statystyki zespołu w podsumowaniu",
-
   "settings.admin.stockMedia.title": "Media Stockowe",
   "settings.admin.stockMedia.hint": "Włącz integracje zdjęć i GIF-ów stockowych dla selektora obrazów. Wymaga kluczy API w środowisku serwera.",
   "settings.admin.stockMedia.unsplash": "Włącz zdjęcia Unsplash",
@@ -214,18 +200,14 @@
   "settings.admin.stockMedia.giphyHint": "Wyszukuj i używaj animowanych GIF-ów z Giphy. Wymaga GIPHY_API_KEY.",
   "settings.admin.stockMedia.notConfigured": "Nie skonfigurowano (brak klucza API)",
   "settings.admin.stockMedia.configured": "Klucz API skonfigurowany",
-
   "settings.admin.webhooks.leadSubmitted.title": "Gdy zostanie przesłany lead",
   "settings.admin.webhooks.leadSubmitted.hint": "Zdarzenie: lead.submitted",
-
   "settings.admin.leads.title": "Pozyskiwanie Leadów",
   "settings.admin.leads.hint": "Skonfiguruj ustawienia pozyskiwania leadów dla formularzy prezentacji.",
   "settings.admin.leads.retentionDays": "Przechowuj dane leadów przez",
   "settings.admin.leads.days": "dni",
-
   "settings.notifications.leadEmails": "E-maile z powiadomieniami o leadach",
   "settings.notifications.leadEmailsHint": "Otrzymaj e-mail, gdy ktoś prześle formularz leadowy na Twojej prezentacji.",
-
   "settings.themes.description": "Twórz i zarządzaj niestandardowymi motywami dla swojej organizacji. Niestandardowe motywy definiują kolory, czcionki i logo dla prezentacji.",
   "settings.themes.customThemes": "Niestandardowe Motywy",
   "settings.themes.createTheme": "Utwórz Motyw",
@@ -275,5 +257,11 @@
   "settings.themes.useUrl": "Lub użyj URL",
   "settings.themes.hideUrl": "Ukryj URL",
   "settings.themes.logoSmall": "Logo Slajdu Tytułowego (opcjonalne)",
-  "settings.themes.logoSmallHint": "Mniejsze logo dla slajdów tytułowych. Używa głównego logo, jeśli nie ustawione."
+  "settings.themes.logoSmallHint": "Mniejsze logo dla slajdów tytułowych. Używa głównego logo, jeśli nie ustawione.",
+  "settings.notifications.defaultLevel": "Domyślny poziom na deck",
+  "settings.notifications.defaultLevel.help": "Dotyczy decków bez własnego ustawienia. Bezpośrednie @wzmianki zawsze docierają.",
+  "settings.notifications.emailByType": "Wysyłaj mi e-mail o",
+  "settings.notifications.emailCommentCreated": "Nowe komentarze",
+  "settings.notifications.emailCommentReply": "Odpowiedzi na Twoje komentarze",
+  "settings.notifications.emailCommentMention": "Wzmianki"
 }

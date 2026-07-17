@@ -335,5 +335,22 @@
   "mentions.noAccess.share": "Partilhar com acesso de comentário",
   "mentions.noAccess.postAnyway": "Publicar mesmo assim",
   "mentions.shared": "Partilhado com acesso de comentário",
-  "mentions.shareFailed": "Não foi possível partilhar"
+  "mentions.shareFailed": "Não foi possível partilhar",
+  "editor.more.subscription": "Notificações do deck…",
+  "editor.more.subscription.title": "Escolha que atividade de comentários neste deck o notifica.",
+  "subscription.title": "Notificações deste deck",
+  "subscription.hint": "Controla que atividade de comentários neste deck o notifica (sino e e-mail). As @menções diretas chegam sempre.",
+  "subscription.level.default": "A sua predefinição",
+  "subscription.level.default.help": "Seguir a sua definição global de notificações.",
+  "subscription.level.watching": "Seguir tudo",
+  "subscription.level.watching.help": "Cada comentário neste deck.",
+  "subscription.level.participating": "A participar",
+  "subscription.level.participating.help": "Threads onde escreve, respostas a si e os seus decks.",
+  "subscription.level.mentionsOnly": "Apenas menções",
+  "subscription.level.mentionsOnly.help": "Apenas quando alguém o @menciona.",
+  "subscription.level.mute": "Silenciar",
+  "subscription.level.mute.help": "Silencia este deck. As @menções diretas continuam a chegar.",
+  "subscription.saved": "Definição de notificações guardada",
+  "subscription.saveFailed": "Não foi possível guardar a definição",
+  "subscription.loadFailed": "Não foi possível carregar a definição"
 }

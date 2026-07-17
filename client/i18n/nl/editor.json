@@ -658,5 +658,22 @@
   "mentions.noAccess.share": "Delen met comment-rechten",
   "mentions.noAccess.postAnyway": "Toch posten",
   "mentions.shared": "Gedeeld met comment-rechten",
-  "mentions.shareFailed": "Delen is niet gelukt"
+  "mentions.shareFailed": "Delen is niet gelukt",
+  "editor.more.subscription": "Deck-meldingen…",
+  "editor.more.subscription.title": "Kies welke comment-activiteit op dit deck je een melding geeft.",
+  "subscription.title": "Meldingen voor dit deck",
+  "subscription.hint": "Bepaalt welke comment-activiteit op dit deck je een melding geeft (bel en e-mail). Directe @mentions komen altijd door.",
+  "subscription.level.default": "Jouw standaard",
+  "subscription.level.default.help": "Volg je globale meldingsinstelling.",
+  "subscription.level.watching": "Alles volgen",
+  "subscription.level.watching.help": "Elke comment op dit deck.",
+  "subscription.level.participating": "Deelnemend",
+  "subscription.level.participating.help": "Threads waarin je schrijft, reacties op jou en je eigen decks.",
+  "subscription.level.mentionsOnly": "Alleen mentions",
+  "subscription.level.mentionsOnly.help": "Alleen wanneer iemand je @met.",
+  "subscription.level.mute": "Dempen",
+  "subscription.level.mute.help": "Zet dit deck stil. Directe @mentions bereiken je nog wel.",
+  "subscription.saved": "Meldingsinstelling opgeslagen",
+  "subscription.saveFailed": "Meldingsinstelling opslaan mislukt",
+  "subscription.loadFailed": "Meldingsinstelling laden mislukt"
 }

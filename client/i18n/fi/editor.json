@@ -404,5 +404,22 @@
   "mentions.noAccess.share": "Jaa kommentointioikeuksin",
   "mentions.noAccess.postAnyway": "Julkaise silti",
   "mentions.shared": "Jaettu kommentointioikeuksin",
-  "mentions.shareFailed": "Jakaminen epäonnistui"
+  "mentions.shareFailed": "Jakaminen epäonnistui",
+  "editor.more.subscription": "Deckin ilmoitukset…",
+  "editor.more.subscription.title": "Valitse, mikä kommenttitoiminta tässä deckissä ilmoittaa sinulle.",
+  "subscription.title": "Tämän deckin ilmoitukset",
+  "subscription.hint": "Määrittää, mikä kommenttitoiminta tässä deckissä ilmoittaa sinulle (kello ja sähköposti). Suorat @maininnat tulevat aina perille.",
+  "subscription.level.default": "Oma oletuksesi",
+  "subscription.level.default.help": "Noudata yleistä ilmoitusasetustasi.",
+  "subscription.level.watching": "Seuraa kaikkea",
+  "subscription.level.watching.help": "Jokainen kommentti tässä deckissä.",
+  "subscription.level.participating": "Osallistuva",
+  "subscription.level.participating.help": "Ketjut joihin kirjoitat, vastaukset sinulle ja omat deckisi.",
+  "subscription.level.mentionsOnly": "Vain maininnat",
+  "subscription.level.mentionsOnly.help": "Vain kun joku @mainitsee sinut.",
+  "subscription.level.mute": "Mykistä",
+  "subscription.level.mute.help": "Mykistää tämän deckin. Suorat @maininnat tavoittavat sinut silti.",
+  "subscription.saved": "Ilmoitusasetus tallennettu",
+  "subscription.saveFailed": "Asetuksen tallennus epäonnistui",
+  "subscription.loadFailed": "Asetuksen lataus epäonnistui"
 }

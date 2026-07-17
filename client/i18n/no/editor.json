@@ -335,5 +335,22 @@
   "mentions.noAccess.share": "Del med kommentartilgang",
   "mentions.noAccess.postAnyway": "Publiser likevel",
   "mentions.shared": "Delt med kommentartilgang",
-  "mentions.shareFailed": "Kunne ikke dele"
+  "mentions.shareFailed": "Kunne ikke dele",
+  "editor.more.subscription": "Deck-varsler…",
+  "editor.more.subscription.title": "Velg hvilken kommentaraktivitet på dette decket som varsler deg.",
+  "subscription.title": "Varsler for dette decket",
+  "subscription.hint": "Styrer hvilken kommentaraktivitet på dette decket som varsler deg (bjelle og e-post). Direkte @omtaler kommer alltid gjennom.",
+  "subscription.level.default": "Din standard",
+  "subscription.level.default.help": "Følg din globale varselinnstilling.",
+  "subscription.level.watching": "Følg alt",
+  "subscription.level.watching.help": "Hver kommentar på dette decket.",
+  "subscription.level.participating": "Deltakende",
+  "subscription.level.participating.help": "Tråder du skriver i, svar til deg og dine egne decks.",
+  "subscription.level.mentionsOnly": "Kun omtaler",
+  "subscription.level.mentionsOnly.help": "Kun når noen @omtaler deg.",
+  "subscription.level.mute": "Demp",
+  "subscription.level.mute.help": "Demper dette decket. Direkte @omtaler når deg fortsatt.",
+  "subscription.saved": "Varselinnstilling lagret",
+  "subscription.saveFailed": "Kunne ikke lagre innstillingen",
+  "subscription.loadFailed": "Kunne ikke laste innstillingen"
 }
