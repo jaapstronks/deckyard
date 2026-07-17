@@ -11,8 +11,9 @@
 }
 
 .is-editor .slides-panel .slide-item .thumb.thumb-mini {
-  /* Remove any border that takes away from content area */
-  border-width: 1px;
+  /* Elevation comes from the shadow on .thumb; keep the card borderless
+     so the rendered slide bleeds to the rounded edge. */
+  border: none;
 }
 
 /* Slide row item - PowerPoint/Keynote style with thumbnail only */

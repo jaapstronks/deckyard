@@ -5,8 +5,11 @@
   box-sizing: border-box;
   border-radius: var(--ps-radius-md);
   overflow: hidden;
-  border: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-sunken));
+  /* Thumbnails read as elevated "objects" floating on the grey stage:
+     white card + soft shadow, no competing hairline border. */
+  border: none;
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-sm);
   aspect-ratio: 16 / 9;
   position: relative;
   --thumb-scale: 0.35;
