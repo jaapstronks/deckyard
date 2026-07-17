@@ -87,6 +87,20 @@ export function createCommentRenderers({
       threadEl.append(repliesEl);
     }
 
+    // Whole-card jump-to-slide: a click on inert card area (author, body,
+    // whitespace) navigates to the comment's slide, mirroring the
+    // .comment-slide-link chip. Clicks on interactive controls (Reply/
+    // Resolve/Delete buttons, links, the reply box) are ignored so they keep
+    // their own behaviour. Only wire it when a jump target exists (same guard
+    // as the chip: has a slide, and we're not already filtered to one slide).
+    if (comment.slideId && !filter.slideId && getSlideNumber(comment.slideId)) {
+      threadEl.classList.add('is-jumpable');
+      threadEl.addEventListener('click', (e) => {
+        if (e.target.closest('button, a, textarea, input, select, .comment-reply-input')) return;
+        onJumpToSlide?.(comment.slideId);
+      });
+    }
+
     return threadEl;
   }
 

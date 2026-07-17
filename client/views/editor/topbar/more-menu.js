@@ -1,7 +1,7 @@
-import { installDismissOnOutside } from '../../../lib/dom.js';
 import { confirmModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { moreIcon } from '../../../lib/icons.js';
+import { createDropdown } from '../../../lib/dropdown.js';
 
 export function createEditorTopbarMoreMenu({
   h,
@@ -207,51 +207,40 @@ export function createEditorTopbarMoreMenu({
     },
   });
 
-  const moreDetails = h('details', { class: 'dropdown' });
-  const moreSummary = h(
-    'summary',
-    {
-      class: 'ghost-icon-btn dropdown-trigger',
-      title: t('common.moreOptions', 'More options'),
-      'aria-label': t('common.moreOptions', 'More options'),
-    },
-    [moreIcon({ size: 16 })]
-  );
-  const moreMenu = h('div', { class: 'dropdown-menu dropdown-menu-right' }, [
-    btnOverview,
-    btnAnalyze,
-    btnTranslateOther,
-    btnVersions,
-    btnDuplicateDeck,
-    h('div', { class: 'dropdown-sep' }),
-    btnSubscription,
-    btnSettings,
-    btnShortcuts,
-    // Responsive overflow item (visible only at narrow viewports)
-    btnThemeToggle,
-    h('div', { class: 'dropdown-sep' }),
-    btnMoveToTrash,
-    btnLogout,
-  ]);
-  moreDetails.append(moreSummary, moreMenu);
-
-  // Close the "more" menu on outside click / Escape (capture-phase; robust against stopPropagation()).
-  detachers.push(
-    installDismissOnOutside({
-      rootEl: moreDetails,
-      isOpen: () => !!moreDetails.open,
-      close: () => {
-        moreDetails.open = false;
-      },
-    })
-  );
+  // Close the "more" menu on outside click / Escape (capture-phase; robust
+  // against stopPropagation()).
+  const { details: moreDetails, close: closeMore, detach: detachMore } = createDropdown({
+    h,
+    triggerClass: 'ghost-icon-btn',
+    triggerContent: [moreIcon({ size: 16 })],
+    title: t('common.moreOptions', 'More options'),
+    ariaLabel: t('common.moreOptions', 'More options'),
+    menuClass: 'dropdown-menu-right',
+    items: [
+      btnOverview,
+      btnAnalyze,
+      btnTranslateOther,
+      btnVersions,
+      btnDuplicateDeck,
+      h('div', { class: 'dropdown-sep' }),
+      btnSubscription,
+      btnSettings,
+      btnShortcuts,
+      // Responsive overflow item (visible only at narrow viewports)
+      btnThemeToggle,
+      h('div', { class: 'dropdown-sep' }),
+      btnMoveToTrash,
+      btnLogout,
+    ],
+  });
+  detachers.push(detachMore);
 
   // Ensure menu items close the dropdown before executing actions.
   const closeMoreOnClick = (btn) => {
     const prev = btn.onclick;
     btn.onclick = (e) => {
       try {
-        moreDetails.open = false;
+        closeMore();
       } catch {
         // ignore
       }

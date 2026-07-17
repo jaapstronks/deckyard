@@ -120,6 +120,23 @@
   margin-bottom: 0;
 }
 
+/* Whole-card jump affordance: threads that can jump to a slide get a pointer
+   cursor and a subtle hover wash. Negative gutters let the wash reach the
+   panel padding edges without shifting the content. */
+.comment-thread.is-jumpable {
+  margin-left: -8px;
+  margin-right: -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: var(--ps-radius-md, 8px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.comment-thread.is-jumpable:hover {
+  background: hsl(var(--app-bg-hover, 220 14% 94%));
+}
+
 /* Mentions: chip in the body, inline autocomplete popover */
 .comment-mention-chip {
   display: inline-block;
@@ -475,6 +492,84 @@
   background: hsl(var(--app-accent-primary) / 0.1);
   border-radius: var(--ps-radius-md, 8px);
   transition: background 0.4s ease;
+}
+
+/* ============================================================
+   COMMENT MARKERS (positioned pins on the edit canvas)
+   ============================================================ */
+
+/* Overlay layer above the slide content. On backgrounded slides .slide-inner
+   is z-index:2 (plus a z-index:3 content layer), which otherwise swallows
+   pointer clicks meant for the markers. The container spans the whole preview
+   but stays click-through (pointer-events:none) so inline-edit and
+   add-comment position clicks reach the slide underneath; only the marker
+   buttons themselves capture pointer events. */
+.comment-markers-container {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.comment-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid hsl(0 0% 100%);
+  border-radius: 50% 50% 50% 2px;
+  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.1s ease;
+}
+
+.comment-marker:hover {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.comment-marker:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary, 210 70% 50%));
+  outline-offset: 2px;
+}
+
+.comment-marker.is-resolved {
+  background: hsl(var(--app-text-secondary, 220 9% 46%));
+  opacity: 0.7;
+}
+
+.comment-marker-icon {
+  width: 13px;
+  height: 13px;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
+}
+
+.comment-marker-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  background: hsl(var(--app-danger, 4 65% 48%));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Add-comment mode: crosshair over the whole preview to place a new pin. */
+.is-add-comment-mode {
+  cursor: crosshair;
 }
 
 /* ============================================================
