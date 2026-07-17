@@ -55,15 +55,6 @@ scope switch. How it works is documented in
   on focus/online so a tab never grows stale, a merge audit log with
   pre-merge snapshots, and a decision on the admin If-Match bypass.
   Worklist entry in `docs/plans/TODO.md`.
-- **Image + text layout catalogue** — `docs/plans/image-text-layouts.md` —
-  more fixed compositions for image-text (width series 1/3-1/2-2/3, image
-  rows above/below the text with 2-3 equal-height images, stacked duo,
-  corner image) behind a layout switcher in the WYSIWYG slide toolbar;
-  content survives every switch, "text without image" is the zeroth
-  variant. Deliberately a curated catalogue, not free-form placement.
-  Phase 0 ("add an image" on a text slide and "remove the image area" on an
-  image-text slide, with the existing convert seam doing the type switch
-  under water) shipped in PR #47.
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.
