@@ -123,8 +123,10 @@ export function createNotificationBell({ api, onNavigate }) {
       btn.classList.toggle('is-active', active);
       btn.setAttribute('aria-pressed', String(active));
     }
-    // Archiving what's already archived makes no sense.
-    archiveAllBtn.style.display = filter === 'archived' ? 'none' : '';
+    // Only on the All lens: there the visible list is exactly what
+    // {all:true} archives. On a narrowed lens the button would silently
+    // archive items outside the current view.
+    archiveAllBtn.style.display = filter === 'all' ? '' : 'none';
   }
   syncFilterUi();
 
@@ -396,7 +398,7 @@ export function createNotificationBell({ api, onNavigate }) {
         method: 'POST',
         body: JSON.stringify({ all: true }),
       });
-      notifications = filter === 'archived' ? notifications : [];
+      notifications = []; // Button only renders on the All lens
       unreadCount = 0;
       updateBadge();
       renderNotifications();

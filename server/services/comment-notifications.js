@@ -18,6 +18,7 @@ import {
 } from '../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from './notification-events.js';
 import { resolveCommentRecipients, REASON_TO_TYPE } from './comment-subscriptions.js';
+import { getUserByEmail } from '../storage/users.js';
 
 /**
  * Send notifications for a newly created comment.
@@ -54,8 +55,19 @@ export async function notifyCommentCreated(repoRoot, req, {
     actor,
     ctx,
   });
-  if (recipients.length === 0) return;
   const recipientEmails = new Set(recipients.map((r) => r.email));
+
+  // The webhook is a channel-level integration (a shared Slack/Discord
+  // channel): personal subscription levels must not silence it, so it
+  // keeps the pre-subscription recipient set (owner + parent author +
+  // mentions, minus the actor), gated only on slackEnabled below.
+  const webhookRecipients = buildRecipients({ presentation, comment, parentComment, actor });
+
+  // Your own reply archives your open inbox items for this thread — even
+  // when nobody else is left to notify.
+  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
+
+  if (recipientEmails.size === 0 && webhookRecipients.size === 0) return;
 
   const settings = await readAppSettings(repoRoot);
   const origin = getRequestOrigin(req);
@@ -73,15 +85,14 @@ export async function notifyCommentCreated(repoRoot, req, {
     ctx,
   });
 
-  // Your own reply archives your open inbox items for this thread.
-  await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
-
-  // Fetch user preferences for all recipients
+  // Fetch user preferences for all recipients (both channels), in parallel
   const recipientPrefs = new Map();
-  for (const email of recipientEmails) {
-    const userSettings = await readUserSettings(repoRoot, email);
-    recipientPrefs.set(email, userSettings?.notifications || {});
-  }
+  await Promise.all(
+    [...new Set([...recipientEmails, ...webhookRecipients])].map(async (email) => {
+      const userSettings = await readUserSettings(repoRoot, email);
+      recipientPrefs.set(email, userSettings?.notifications || {});
+    })
+  );
 
   // Fire Slack/Discord webhook
   await fireCommentWebhook(repoRoot, req, {
@@ -91,7 +102,7 @@ export async function notifyCommentCreated(repoRoot, req, {
     parentComment,
     actor,
     ownerEmail,
-    recipients: recipientEmails,
+    recipients: webhookRecipients,
     recipientPrefs,
   });
 
@@ -178,6 +189,88 @@ export async function notifyCommentCreatedInApp({
   });
   // Your own reply archives your open inbox items for this thread.
   await autoArchiveOnOwnReply({ presentation, comment, parentComment, actor, ctx });
+}
+
+/**
+ * Notify users newly @mentioned by an edit. Diffs the stored mention list
+ * against the pre-edit one, so re-saving an unchanged body never
+ * re-notifies. Mentions always deliver (no subscription filtering), but
+ * only to existing accounts — same gate as the create path.
+ *
+ * @param {string} repoRoot - Repository root path
+ * @param {Object} req - HTTP request object (for building URLs)
+ * @param {Object} options
+ * @param {Object} options.presentation
+ * @param {Object} options.comment - The updated comment (stored mentions)
+ * @param {Array<{email: string}>} [options.previousMentions] - Mention list
+ *   before the edit
+ * @param {Object} [options.parentComment] - Parent if the comment is a reply
+ * @param {Object} options.actor - The user who edited the comment
+ * @param {Object} [options.ctx] - Route context (org scoping)
+ */
+export async function notifyMentionsAdded(repoRoot, req, {
+  presentation,
+  comment,
+  previousMentions,
+  parentComment,
+  actor,
+  ctx,
+}) {
+  const before = new Set(
+    (Array.isArray(previousMentions) ? previousMentions : [])
+      .map((m) => normalizeEmail(m?.email))
+      .filter(Boolean)
+  );
+  const actorEmail = normalizeEmail(actor?.email);
+  const added = commentMentions(comment)
+    .map((m) => m.email)
+    .filter((email) => !before.has(email) && email !== actorEmail);
+  if (added.length === 0) return;
+
+  const users = await Promise.all(added.map(async (email) => {
+    try {
+      return await getUserByEmail(email, ctx);
+    } catch {
+      return null;
+    }
+  }));
+  const recipients = added
+    .filter((_, i) => users[i])
+    .map((email) => ({ email, reason: 'mention' }));
+  if (recipients.length === 0) return;
+
+  await createInAppNotifications({
+    presentation,
+    comment,
+    parentComment,
+    actor,
+    recipients,
+    ctx,
+  });
+
+  const settings = await readAppSettings(repoRoot);
+  const origin = getRequestOrigin(req);
+  const editUrl = origin && presentation?.id
+    ? `${origin}/app/${presentation.id}`
+    : null;
+  const recipientPrefs = new Map();
+  await Promise.all(recipients.map(async ({ email }) => {
+    const userSettings = await readUserSettings(repoRoot, email);
+    recipientPrefs.set(email, userSettings?.notifications || {});
+  }));
+  await sendCommentEmails({
+    repoRoot,
+    settings,
+    presentation,
+    comment,
+    actor,
+    parentComment,
+    ownerEmail: normalizeEmail(presentation?.ownerEmail),
+    recipients,
+    recipientPrefs,
+    commenterEmail: actorEmail,
+    editUrl,
+  });
 }
 
 /** Trim a comment body to a short notification excerpt (mentions as @Name). */
@@ -349,7 +442,7 @@ async function fireCommentWebhook(repoRoot, req, {
       extra: {
         comment: {
           id: comment.id,
-          body: comment.body,
+          body: stripMentionMarkup(comment.body),
           slideId: comment.slideId,
           parentId: comment.parentId,
           authorEmail: comment.authorEmail,

@@ -202,6 +202,7 @@ export function createCommentRenderers({
             // Toggle reply input
             let replyInput = threadEl.querySelector('.comment-reply-input');
             if (replyInput) {
+              replyInput._detachMentions?.();
               replyInput.remove();
             } else {
               replyInput = createReplyInput(comment.id);
@@ -284,7 +285,7 @@ export function createCommentRenderers({
       onclick: submitReply,
     });
     container.append(textarea, submitBtn);
-    const mentionAc = attachMentions?.(textarea, container);
+    attachMentions?.(textarea, container, { ephemeral: true });
     return container;
   }
 

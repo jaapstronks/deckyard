@@ -6,7 +6,8 @@
  *   mention        - the comment @mentions you (always delivered, even mute)
  *   reply          - you wrote the parent comment
  *   participating  - you own the deck or wrote in this thread
- *   watching       - you explicitly watch the deck
+ *   watching       - you explicitly watch the deck, or you have access
+ *                    (collaborator) and your effective level is 'watching'
  *
  * Effective level per user: per-deck override (presentation_subscriptions)
  * → global default (user settings notifications.defaultLevel) →
@@ -19,9 +20,11 @@
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { parseMentions } from '../../shared/comment-mentions.js';
+import { listCollaborators } from '../storage/collaborators.js';
 import { getThreadParticipants } from '../storage/presentation-comments.js';
 import { listSubscriptions } from '../storage/presentation-subscriptions.js';
 import { readUserSettings } from '../storage/settings.js';
+import { getUserByEmail } from '../storage/users.js';
 
 /** Notification type per recipient reason. */
 export const REASON_TO_TYPE = {
@@ -64,6 +67,8 @@ export function levelAllows(level, reason) {
  * @param {Object} options.actor
  * @param {string[]} [options.threadParticipants] - Author emails in the thread
  * @param {string[]} [options.watchers] - Emails with an explicit watching override
+ * @param {string[]} [options.collaborators] - Emails with standing access to
+ *   the deck; they only deliver when their effective level is 'watching'
  * @returns {Map<string, string>}
  */
 export function buildCandidates({
@@ -73,6 +78,7 @@ export function buildCandidates({
   actor,
   threadParticipants = [],
   watchers = [],
+  collaborators = [],
 }) {
   const candidates = new Map();
   const add = (email, reason) => {
@@ -93,6 +99,7 @@ export function buildCandidates({
   for (const email of threadParticipants) add(email, 'participating');
 
   for (const email of watchers) add(email, 'watching');
+  for (const email of collaborators) add(email, 'watching');
 
   candidates.delete(normalizeEmail(actor?.email)); // Never notify yourself
   return candidates;
@@ -140,6 +147,18 @@ export async function resolveCommentRecipients({
     .filter(([, level]) => level === 'watching')
     .map(([email]) => email);
 
+  // Collaborators join as lowest-priority candidates so a global
+  // 'watching' default actually delivers; for everyone else the level
+  // check below filters them straight out again.
+  let collaborators = [];
+  try {
+    collaborators = (await listCollaborators(presentation?.id, ctx))
+      .map((c) => c?.userEmail)
+      .filter(Boolean);
+  } catch {
+    collaborators = [];
+  }
+
   const candidates = buildCandidates({
     presentation,
     comment,
@@ -147,22 +166,32 @@ export async function resolveCommentRecipients({
     actor,
     threadParticipants,
     watchers,
+    collaborators,
   });
 
-  const recipients = [];
-  for (const [email, reason] of candidates) {
-    let level = overrides.get(email);
-    if (!level) {
-      try {
-        const settings = await readUserSettings(repoRoot || defaultRepoRoot, email);
-        level = settings?.notifications?.defaultLevel || 'participating';
-      } catch {
-        level = 'participating';
+  const resolved = await Promise.all(
+    [...candidates.entries()].map(async ([email, reason]) => {
+      // Mentions must resolve to a real account (org-scoped): the parser
+      // accepts any address, so an unmatched mention must never produce a
+      // notification or email.
+      if (reason === 'mention') {
+        try {
+          if (!(await getUserByEmail(email, ctx))) return null;
+        } catch {
+          return null;
+        }
       }
-    }
-    if (levelAllows(level, reason)) {
-      recipients.push({ email, reason });
-    }
-  }
-  return recipients;
+      let level = overrides.get(email);
+      if (!level) {
+        try {
+          const settings = await readUserSettings(repoRoot || defaultRepoRoot, email);
+          level = settings?.notifications?.defaultLevel || 'participating';
+        } catch {
+          level = 'participating';
+        }
+      }
+      return levelAllows(level, reason) ? { email, reason } : null;
+    })
+  );
+  return resolved.filter(Boolean);
 }

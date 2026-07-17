@@ -122,6 +122,9 @@ export function createCommentsPanel({
       const visibleThreads = filter.attention === 'waiting'
         ? comments.filter((c) => threadWaitsFor(c, user?.email))
         : comments;
+      // The re-render destroys any open reply inputs; release their
+      // autocomplete listeners with them.
+      detachEphemeralMentions();
       renderers.renderCommentList(listEl, visibleThreads);
 
       if (isVisible) {
@@ -289,14 +292,20 @@ export function createCommentsPanel({
   // ========================================
 
   const mentionDetachers = [];
+  const ephemeralMentionDetachers = new Set();
 
   /**
    * Attach @-autocomplete to a comment textarea. The popover mounts inside
    * `host`, which gets position:relative via .has-mention-autocomplete.
    * Guests are not mentionable and guests can't mention (no account): the
    * whole feature is authed-user-only.
+   *
+   * Reply inputs pass `ephemeral: true`: they are created on every Reply
+   * toggle and destroyed by each list re-render, so their document-level
+   * dismiss listeners must be released with them (drained per render;
+   * the toggle path calls `host._detachMentions` directly).
    */
-  function attachMentions(textarea, host) {
+  function attachMentions(textarea, host, { ephemeral = false } = {}) {
     if (!user?.email) return null;
     const ac = attachMentionAutocomplete({
       textarea,
@@ -307,8 +316,21 @@ export function createCommentsPanel({
     host.append(ac.el);
     // Warm the priority list in the background on first attach.
     loadAccessEmails();
-    mentionDetachers.push(ac.detach);
+    if (ephemeral) {
+      const detach = () => {
+        ephemeralMentionDetachers.delete(detach);
+        try { ac.detach(); } catch { /* ignore */ }
+      };
+      ephemeralMentionDetachers.add(detach);
+      host._detachMentions = detach;
+    } else {
+      mentionDetachers.push(ac.detach);
+    }
     return ac;
+  }
+
+  function detachEphemeralMentions() {
+    for (const d of [...ephemeralMentionDetachers]) d();
   }
 
   // ========================================
@@ -669,6 +691,7 @@ export function createCommentsPanel({
       for (const d of mentionDetachers) {
         try { d(); } catch { /* ignore */ }
       }
+      detachEphemeralMentions();
       detachFilterMenu();
     },
   };

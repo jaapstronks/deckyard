@@ -106,6 +106,21 @@ describe('buildCandidates', () => {
     assert.strictEqual(candidates.size, 0);
   });
 
+  it('collaborators join as watching, below every other reason', () => {
+    const candidates = buildCandidates({
+      presentation: PRES,
+      comment: { body: 'x', parentId: 'c-1' },
+      parentComment: { authorEmail: 'author@example.com' },
+      actor: { email: 'someone@example.com' },
+      collaborators: ['author@example.com', 'owner@example.com', 'collab@example.com'],
+    });
+    // A collaborator only delivers when their effective level is watching;
+    // stronger ties keep their more specific reason.
+    assert.strictEqual(candidates.get('collab@example.com'), 'watching');
+    assert.strictEqual(candidates.get('author@example.com'), 'reply');
+    assert.strictEqual(candidates.get('owner@example.com'), 'participating');
+  });
+
   it('createdBy counts as participating next to ownerEmail', () => {
     const candidates = buildCandidates({
       presentation: { ...PRES, createdBy: 'creator@example.com' },
