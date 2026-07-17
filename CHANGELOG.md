@@ -65,6 +65,32 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Stale browser tabs can no longer silently overwrite other users' work.**
+  A tab that slept through remote saves (laptop lid, offline) used to
+  autosave its days-old copy straight over newer edits: the slide-level
+  merge let the stale client win per slide, adopted its slide order
+  wholesale, and reported nothing. Fixed in two rounds (#45, #46):
+  - a staleness cap on the merge route (`MERGE_MAX_REVISION_GAP`, default
+    10) falls back to the existing 409 + conflict modal;
+  - per-slide conflict detection via base fingerprints
+    (`X-Slide-Base-Fingerprints`): a slide changed on both sides since the
+    client's base now 409s with `conflictingSlides` instead of
+    last-writer-wins;
+  - the merge only applies the client's slide order when the client
+    actually reordered (`X-Slides-Order-Changed`); otherwise the server
+    order is authoritative — slides added by others stay at their position
+    instead of being appended, client-new slides are woven in next to
+    their neighbour;
+  - waking tabs refresh themselves: on tab-visible/focus/online the editor
+    probes the new lightweight `GET /api/presentations/:id/revision`
+    endpoint and silently adopts the server state (clean) or saves through
+    the normal merge/conflict flow (dirty) before the user can type into
+    stale content;
+  - every performed merge is audited as a `presentation.merged` activity
+    event, and a merge by a client more than one revision behind first
+    writes an automatic `pre_merge` snapshot to the version history for
+    one-click restore.
+
 - **Security: Home/overviews no longer leak decks without view access.**
   Three related fixes, all enforcing the same invariant (a deck card — title
   + first-slide thumbnail — is only visible when the user could also open
