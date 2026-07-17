@@ -163,7 +163,6 @@
   "editor.preview.clickToZoom": "Clique para abrir pré-visualização maior",
   "editor.preview.largeTitle": "Pré-visualização (grande)",
   "editor.preview.openLarge": "Abrir pré-visualização maior",
-  "editor.preview.title": "Pré-visualização",
   "editor.publish.confirm": "Publicar?\n\nIsto torna a apresentação acessível publicamente a qualquer pessoa com a ligação.",
   "editor.publish.missingAltConfirm": "Aviso: estes diapositivos contêm uma imagem sem texto alternativo (NL/EN): {slides}\n\nPublicar mesmo assim?",
   "editor.publish.noSlides": "Sem diapositivos para publicar",

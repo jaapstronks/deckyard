@@ -196,7 +196,6 @@
   "editor.preview.clickToZoom": "Kliknij, aby otworzyć większy podgląd",
   "editor.preview.largeTitle": "Podgląd (duży)",
   "editor.preview.openLarge": "Otwórz większy podgląd",
-  "editor.preview.title": "Podgląd",
   "editor.publish.confirm": "Opublikować?\n\nTo sprawi, że prezentacja będzie publicznie dostępna dla każdego z linkiem.",
   "editor.publish.missingAltConfirm": "Ostrzeżenie: te slajdy zawierają obraz bez tekstu alternatywnego (NL/EN): {slides}\n\nOpublikować mimo to?",
   "editor.publish.noSlides": "Brak slajdów do opublikowania",

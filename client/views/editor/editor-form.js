@@ -152,7 +152,6 @@ function buildHeaderActions({
   rerenderPreview,
   rerenderSlideList,
   isAuthor,
-  setInspectorCollapsed,
 }) {
   const headerActions = h('div', { class: 'row editor-form-header-actions' });
   const isFollowInviteSlide = slide.type === 'follow-invite-slide';
@@ -502,22 +501,6 @@ function buildHeaderActions({
     btnLock.append(h('img', { class: 'btn-lock-icon', src: isLocked ? iconUrl('lock-open') : iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
   }
 
-  // Collapse button: shrink the inspector to a thin rail so the slide canvas
-  // gets the width (the rail re-expands it). The panel sits on the right, so
-  // it collapses rightward.
-  let btnCollapse = null;
-  if (setInspectorCollapsed) {
-    btnCollapse = h('button', {
-      class: 'btn btn-secondary btn-icon',
-      type: 'button',
-      text: '▶',
-      title: t('editor.inspector.hide', 'Hide inspector'),
-      'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-      onclick: () => setInspectorCollapsed(true),
-    });
-  }
-
-  if (btnCollapse) headerActions.append(btnCollapse);
   if (btnLock) headerActions.append(btnLock);
   headerActions.append(actionsDetails);
   return { el: headerActions, detach: detachDismiss };
@@ -550,6 +533,9 @@ export function createRerenderEditor({
   disabledSlideTypes,
   features,
   setInspectorCollapsed,
+  // Mount points in the canvas header for the slide-scoped toolbar
+  // ({ leftEl, actionsEl }); absent in contentOnly mode and in tests.
+  slideToolbar,
   onOpenBulkEdit,
   // Bulk-edit ("Edit all text") mode: render ONLY the per-type content fields
   // into editorMount - no header/actions, no data-source bar, no duration, no
@@ -593,47 +579,86 @@ export function createRerenderEditor({
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
     if (!slide) return;
 
-    // Build combined header: h2 title + slide type pill + actions
+    // Pane header: pure pane chrome (chrome re-org 2026-07-16). Everything
+    // scoped to the current slide (type chip, "All text", lock, actions
+    // menu) renders into the slide toolbar above the canvas instead.
     if (!contentOnly) {
     const header = h('div', { class: 'row spread editor-form-header' });
-    const headerLeft = h('div', { class: 'row editor-form-header-left' });
-    headerLeft.append(
-      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') }),
-      h('div', {
-        class: 'pill',
-        text: t(
-          SLIDE_TYPES[slide.type]?.labelKey || `slideType.${slide.type}.label`,
-          SLIDE_TYPES[slide.type]?.label || slide.type
-        ),
-      })
+    header.append(
+      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') })
     );
-
-    // Show retired badge if slide type is org-disabled
-    if (isOrgDisabledSlideType(slide.type, disabledSlideTypes)) {
-      headerLeft.append(
-        h('span', {
-          class: 'slide-type-retired-badge',
-          text: t('editor.slide.retiredType', 'Retired type'),
-          title: t('editor.slide.retiredType.title', 'This slide type is no longer available for new slides.'),
+    if (setInspectorCollapsed) {
+      header.append(
+        h('button', {
+          class: 'btn btn-secondary btn-icon editor-form-close-btn',
+          type: 'button',
+          text: '×',
+          title: t('editor.inspector.hide', 'Hide inspector'),
+          'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+          onclick: () => setInspectorCollapsed(true),
         })
       );
     }
+    editorMount.append(header);
 
-    // Show custom type badge
-    const slideDef = SLIDE_TYPES[slide.type];
-    if (slideDef?.isCustom || slide.type.startsWith('custom-')) {
-      const badgeText = t('editor.slide.customType', 'Custom type');
-      const badgeTitle = slideDef?.baseType
-        ? t('editor.slide.customType.basedOn', 'Based on: {base}', { base: slideDef.baseType })
-        : '';
-      headerLeft.append(
-        h('span', {
-          class: 'slide-type-custom-badge',
-          text: badgeText,
-          title: badgeTitle || badgeText,
+    // Slide toolbar above the canvas: type chip + badges + "All text" on the
+    // left; lock + slide-actions menu on the right. Rebuilt per slide.
+    const tbLeft = slideToolbar?.leftEl || null;
+    const tbActions = slideToolbar?.actionsEl || null;
+    if (tbLeft) {
+      tbLeft.innerHTML = '';
+      tbLeft.append(
+        h('div', {
+          class: 'pill',
+          text: t(
+            SLIDE_TYPES[slide.type]?.labelKey || `slideType.${slide.type}.label`,
+            SLIDE_TYPES[slide.type]?.label || slide.type
+          ),
         })
       );
+
+      // Show retired badge if slide type is org-disabled
+      if (isOrgDisabledSlideType(slide.type, disabledSlideTypes)) {
+        tbLeft.append(
+          h('span', {
+            class: 'slide-type-retired-badge',
+            text: t('editor.slide.retiredType', 'Retired type'),
+            title: t('editor.slide.retiredType.title', 'This slide type is no longer available for new slides.'),
+          })
+        );
+      }
+
+      // Show custom type badge
+      const slideDef = SLIDE_TYPES[slide.type];
+      if (slideDef?.isCustom || slide.type.startsWith('custom-')) {
+        const badgeText = t('editor.slide.customType', 'Custom type');
+        const badgeTitle = slideDef?.baseType
+          ? t('editor.slide.customType.basedOn', 'Based on: {base}', { base: slideDef.baseType })
+          : '';
+        tbLeft.append(
+          h('span', {
+            class: 'slide-type-custom-badge',
+            text: badgeText,
+            title: badgeTitle || badgeText,
+          })
+        );
+      }
+
+      // "Edit all text": opens the roomy bulk-edit modal (all content fields
+      // + live preview).
+      if (typeof onOpenBulkEdit === 'function') {
+        tbLeft.append(
+          h('button', {
+            type: 'button',
+            class: 'btn btn-sm editor-bulk-edit-btn',
+            text: t('editor.bulkEdit.open', 'All text'),
+            title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
+            onclick: () => onOpenBulkEdit(),
+          })
+        );
+      }
     }
+
     const headerActionsResult = buildHeaderActions({
       h,
       slide,
@@ -652,24 +677,12 @@ export function createRerenderEditor({
       rerenderPreview,
       rerenderSlideList,
       isAuthor,
-      setInspectorCollapsed,
     });
     headerActionsDetach = headerActionsResult.detach;
-    // "Edit all text": opens the roomy bulk-edit modal (all content fields +
-    // live preview). Sits with the actions so the header row stays one line.
-    if (typeof onOpenBulkEdit === 'function') {
-      headerLeft.append(
-        h('button', {
-          type: 'button',
-          class: 'btn btn-sm editor-bulk-edit-btn',
-          text: t('editor.bulkEdit.open', 'All text'),
-          title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
-          onclick: () => onOpenBulkEdit(),
-        })
-      );
+    if (tbActions) {
+      tbActions.innerHTML = '';
+      tbActions.append(headerActionsResult.el);
     }
-    header.append(headerLeft, headerActionsResult.el);
-    editorMount.append(header);
     } // end !contentOnly header
 
     // Data source indicator (shown for bindable slide types when live data is enabled)

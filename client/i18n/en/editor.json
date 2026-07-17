@@ -251,7 +251,6 @@
   "editor.preview.clickToZoom": "Click to open larger preview",
   "editor.preview.largeTitle": "Preview (large)",
   "editor.preview.openLarge": "Open larger preview",
-  "editor.preview.title": "Slide",
   "editor.publish.confirm": "Publish?\n\nThis makes the presentation publicly accessible to anyone with the link.",
   "editor.publish.missingAltConfirm": "Warning: these slides contain an image without alt text (NL/EN): {slides}\n\nPublish anyway?",
   "editor.publish.noSlides": "No slides to publish",
@@ -590,5 +589,9 @@
   "editor.presence.here": "Also here",
   "editor.presence.viewerTitle": "{name} is in this deck",
   "editor.presence.viewingSlide": "{name} is viewing this slide",
-  "editor.presence.editingSlide": "{name} is editing this slide"
+  "editor.presence.editingSlide": "{name} is editing this slide",
+  "editor.panes.label": "Side panels",
+  "editor.present.more": "More presenting options",
+  "editor.notes.tab": "Notes",
+  "editor.notes.qr": "Notes (QR)"
 }

@@ -163,7 +163,6 @@
   "editor.preview.clickToZoom": "Cliquer pour ouvrir un aperçu plus grand",
   "editor.preview.largeTitle": "Aperçu (grand)",
   "editor.preview.openLarge": "Ouvrir un aperçu plus grand",
-  "editor.preview.title": "Aperçu",
   "editor.publish.confirm": "Publier ?\n\nCela rend la présentation accessible publiquement à toute personne disposant du lien.",
   "editor.publish.missingAltConfirm": "Attention : ces diapositives contiennent une image sans texte alternatif (NL/EN) : {slides}\n\nPublier quand même ?",
   "editor.publish.noSlides": "Aucune diapositive à publier",

@@ -196,7 +196,6 @@
   "editor.preview.clickToZoom": "Klikkaa avataksesi suuremman esikatselun",
   "editor.preview.largeTitle": "Esikatselu (suuri)",
   "editor.preview.openLarge": "Avaa suurempi esikatselu",
-  "editor.preview.title": "Esikatselu",
   "editor.publish.confirm": "Julkaistaanko?\n\nTämä tekee esityksestä julkisesti saatavilla kenelle tahansa linkin kanssa.",
   "editor.publish.missingAltConfirm": "Varoitus: nämä diat sisältävät kuvan ilman vaihtoehtoista tekstiä (NL/EN): {slides}\n\nJulkaistaanko silti?",
   "editor.publish.noSlides": "Ei dioja julkaistavaksi",

@@ -163,7 +163,6 @@
   "editor.preview.clickToZoom": "Klicken für größere Vorschau",
   "editor.preview.largeTitle": "Vorschau (groß)",
   "editor.preview.openLarge": "Größere Vorschau öffnen",
-  "editor.preview.title": "Vorschau",
   "editor.publish.confirm": "Veröffentlichen?\n\nDadurch wird die Präsentation öffentlich für jeden mit dem Link zugänglich.",
   "editor.publish.missingAltConfirm": "Warnung: Diese Folien enthalten ein Bild ohne Alt-Text (NL/EN): {slides}\n\nTrotzdem veröffentlichen?",
   "editor.publish.noSlides": "Keine Folien zum Veröffentlichen",

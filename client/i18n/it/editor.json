@@ -196,7 +196,6 @@
   "editor.preview.clickToZoom": "Clicca per aprire anteprima più grande",
   "editor.preview.largeTitle": "Anteprima (grande)",
   "editor.preview.openLarge": "Apri anteprima più grande",
-  "editor.preview.title": "Anteprima",
   "editor.publish.confirm": "Pubblicare?\n\nQuesto rende la presentazione accessibile pubblicamente a chiunque con il link.",
   "editor.publish.missingAltConfirm": "Attenzione: queste slide contengono un'immagine senza testo alternativo (NL/EN): {slides}\n\nPubblicare comunque?",
   "editor.publish.noSlides": "Nessuna slide da pubblicare",

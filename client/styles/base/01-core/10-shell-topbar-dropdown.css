@@ -53,6 +53,96 @@
   flex-shrink: 0;
 }
 
+/* Far-right topbar zone: the pane switcher (Inspector / Comments / Notes)
+   sits visually above the rail it controls, separated from the deck-level
+   actions. Pressed (is-active) = "rail open on MY pane". */
+.topbar-zone-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 10px 0;
+  background: hsl(var(--app-border-default));
+  flex-shrink: 0;
+}
+
+.topbar-pane-switcher {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px;
+  background: hsl(var(--app-bg-base));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  flex-shrink: 0;
+}
+
+.topbar-pane-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.topbar-pane-tab:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
+}
+
+.topbar-pane-tab:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -1px;
+}
+
+.topbar-pane-tab.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.topbar-pane-tab .topbar-btn-icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). */
+@media (max-width: 1000px) {
+  .topbar-pane-tab-label {
+    display: none;
+  }
+}
+
+/* Present split-button: primary CTA + caret menu with the live-presenting
+   extras (Companion) that you never need while editing. */
+.topbar-present-group {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.topbar-present-group > .btn-primary {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.topbar-present-more {
+  position: relative;
+  display: inline-flex;
+}
+
+.topbar-present-caret {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 1px;
+}
+
 .topbar-presence {
   display: inline-flex;
   align-items: center;
@@ -367,20 +457,48 @@
    Topbar Responsive
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Narrow topbar: shrink title, hide secondary items progressively */
+/* Narrow topbar: shrink title, hide secondary items progressively. The
+   pane switcher at the far right must never be pushed out - it is the only
+   always-visible affordance for the rail. */
 @media (max-width: 1024px) {
   .topbar-pres-title {
     max-width: min(200px, 20vw);
     flex: 0 1 200px;
+    min-width: 56px;
+  }
+
+  /* Deck grid moves into the ⋯ menu at this width */
+  .topbar .topbar-overview-btn {
+    display: none;
+  }
+
+  /* Author chip: redundant with the user avatar, sheds early for headroom */
+  .topbar .topbar-author {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  /* Undo/redo shed from the bar (⌘Z / ⇧⌘Z keep working) */
+  .topbar .topbar-undo-group {
+    display: none;
+  }
+}
+
+/* ⋯-menu mirror of the deck-grid button, shown only when the bar hides it */
+.topbar-overflow-item-lg {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .topbar-overflow-item-lg {
+    display: flex;
   }
 }
 
 @media (max-width: 900px) {
-  /* Hide theme toggle and notes QR button */
+  /* Hide theme toggle */
   .topbar .sb-segmented.is-toggle:not(.is-compact) {
-    display: none;
-  }
-  .topbar .topbar-notes-qr-btn {
     display: none;
   }
   .topbar-presence {
@@ -394,21 +512,29 @@
     flex: 0 1 140px;
     min-width: 80px;
   }
-  /* Settings button hidden (available via More menu) */
-  .topbar .topbar-settings-btn {
-    display: none;
-  }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
   .topbar-pres-title {
     max-width: 100px;
     flex: 0 1 100px;
-    min-width: 60px;
+    min-width: 48px;
   }
   /* Hide language toggle at very narrow widths */
   .topbar .sb-segmented.is-compact {
     display: none;
+  }
+  /* User avatar sheds (sign out stays reachable via the ⋯ menu) */
+  .topbar .user-menu {
+    display: none;
+  }
+  /* Compact the remaining labeled buttons */
+  .topbar .btn {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .topbar {
+    gap: 6px;
   }
 }
 

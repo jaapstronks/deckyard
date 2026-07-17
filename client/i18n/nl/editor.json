@@ -229,7 +229,6 @@
   "editor.preview.clickToZoom": "Klik om het voorbeeld groter te bekijken",
   "editor.preview.largeTitle": "Voorbeeld (groot)",
   "editor.preview.openLarge": "Open voorbeeld groter",
-  "editor.preview.title": "Slide",
   "editor.publish.confirm": "Publiceren?\n\nDit maakt de presentatie publiek toegankelijk voor iedereen met de link.",
   "editor.publish.missingAltConfirm": "Let op: deze slides hebben een afbeelding zonder alt-tekst (NL/EN): {slides}\n\nWil je toch publiceren?",
   "editor.publish.noSlides": "Geen slides om te publiceren",
@@ -603,5 +602,9 @@
   "editor.presence.viewingSlide": "{name} bekijkt deze slide",
   "editor.presence.editingSlide": "{name} bewerkt deze slide",
   "editor.save.slideLocked": "Niet opgeslagen: een gewijzigde slide is vergrendeld door de auteur.",
-  "editor.save.slideLockedBy": "Niet opgeslagen: een gewijzigde slide wordt bewerkt door {name}."
+  "editor.save.slideLockedBy": "Niet opgeslagen: een gewijzigde slide wordt bewerkt door {name}.",
+  "editor.panes.label": "Zijpanelen",
+  "editor.present.more": "Meer presenteeropties",
+  "editor.notes.tab": "Notities",
+  "editor.notes.qr": "Notities (QR)"
 }

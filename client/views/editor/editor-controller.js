@@ -32,6 +32,7 @@ import { createFieldRenderers } from './fields.js';
 import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
+import { createNotesPane } from './notes-pane.js';
 import { createPreviewPanel } from './preview-panel.js';
 import { createInspectorResize } from './inspector-resize.js';
 import { createInspectorPanes } from './inspector-panes.js';
@@ -629,6 +630,7 @@ export async function createEditorController({
     // pane host. Dereferenced at click time (inspectorPanes is built below).
     onToggleComments: () => inspectorPanes.toggle('comments'),
     onToggleInspector: () => inspectorPanes.toggle('settings'),
+    onToggleNotes: () => inspectorPanes.toggle('notes'),
     setCommentsBadge: (fn) => { setCommentsBadgeFn = fn; },
     setLockStateCallback: (fn) => { setLockStateCallbackFn = fn; },
     onOpenOverview: openDeckOverview,
@@ -752,6 +754,19 @@ export async function createEditorController({
   const settingsPane = h('div', {}, [inspectorScroll]);
   inspectorPanes.registerPane('settings', settingsPane);
 
+  // Presenter notes are the third pane (chrome re-org stap 2): rarely used
+  // and only relevant again while presenting, so they live out of sight in
+  // the rail instead of permanently under the canvas.
+  const notesPane = createNotesPane({
+    h,
+    pres,
+    getSelectedSlideId: () => selectedSlideId,
+    markDirty,
+    onOpenQr: () => topbarApi.openNotesQr?.(),
+    onRequestClose: () => setInspectorCollapsed(true),
+  });
+  inspectorPanes.registerPane('notes', notesPane.el);
+
   // Drag-to-resize handle on the left edge: trades inspector width for canvas width.
   const inspectorResize = createInspectorResize({
     h,
@@ -778,7 +793,6 @@ export async function createEditorController({
     renderSlideElement,
     openOverlayClosers,
     getSelectedSlideId: () => selectedSlideId,
-    markDirty,
     nav,
     commentsApi,
     user,
@@ -803,7 +817,10 @@ export async function createEditorController({
     },
   });
 
-  const { previewEl: preview, thumbEl: thumb, previewNotesTa } = previewPanel;
+  const { previewEl: preview, thumbEl: thumb } = previewPanel;
+  // The notes textarea moved into the rail pane; every consumer (live-edits
+  // binder, search focus, slide-change refresh) keeps using this reference.
+  const previewNotesTa = notesPane.textarea;
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
 
   // ============================================================
@@ -998,7 +1015,16 @@ export async function createEditorController({
     onRequestInsert: ({ afterSlideId, parentId } = {}) => openSlideTypeModal({ afterSlideId, parentId }),
     getSearchQuery: () => slidesPanel?.getSearchQuery?.() || '',
     onAfterSelectSlide: ({ slideId, query } = {}) => {
-      focusSearchHitInEditor({ query, slideId, pres, editorMount, previewNotesTa });
+      focusSearchHitInEditor({
+        query,
+        slideId,
+        pres,
+        editorMount,
+        previewNotesTa,
+        // Both live in rail panes now: surface the right pane before focusing.
+        onFocusNotes: () => inspectorPanes.open('notes'),
+        onFocusField: () => inspectorPanes.open('settings'),
+      });
     },
     getSlideCommentCount: (slideId) => slideCommentCounts?.[slideId] || 0,
     getSlideLockInfo: (slideId) => slideLockManager.getLockInfo(slideId),
@@ -1204,6 +1230,10 @@ export async function createEditorController({
     disabledSlideTypes,
     features,
     setInspectorCollapsed,
+    // Canvas-header mounts for the slide-scoped toolbar (type chip, All
+    // text, lock, actions). The contentOnly (bulk modal) instance renders
+    // no chrome, so sharing this dep is harmless there.
+    slideToolbar: previewPanel.slideToolbar,
   };
 
   const bulkEditModal = createBulkEditModal({
