@@ -2,7 +2,7 @@
 
 **Updated: 2026-07-17.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
-is retired: all three layers shipped (38 typed slide types, AI pipeline with
+is retired: all three layers shipped (39 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
 
 ## How this file works
@@ -26,18 +26,17 @@ validation/iteration, MCP server with 27 tools + SSE transport).
 In recommended working order (rationale in `docs/plans/TODO.md`); each is a
 self-contained project.
 
-1. **i18n & copy cleanup** — `docs/plans/ux-i18n-copy-cleanup.md`
-   Hardcoded NL/EN mix in presenter/companion surfaces, `en.json` artifact,
-   locale manifest, date formats, UUID-as-theme-name.
-2. **Onboarding & discoverability** — `docs/plans/ux-onboarding-discoverability.md`
-   Empty states with CTAs, first-run Home, shortcut help, visible undo/redo,
-   surface API/MCP in-product, WYSIWYG coach mark.
-3. **Live-session robustness** — `docs/plans/ux-live-session-robustness.md`
+1. **Live-session robustness** — `docs/plans/ux-live-session-robustness.md`
    Survive presenter refresh, companion auto-recovery, persistent join QR,
    unify follow codes, link Q&A moderation, poll-open affordance.
-4. **Share unification** — `docs/plans/ux-share-unification.md`
+2. **Share unification** — `docs/plans/ux-share-unification.md`
    One Share dialog (live audience / link / workspace), guard the
    presenter-control link, reconcile the permission model.
+
+_(The first two projects of this track — i18n & copy cleanup, onboarding &
+discoverability — shipped in July 2026 except for one decision-blocked
+leftover each: the page-`<title>` brand choice and the in-app help/docs
+link, both tracked in `docs/plans/TODO.md` under "Blocked on a decision".)_
 
 _(The editor-UI track — wysiwyg-first editing, "Edit all text" bulk modal,
 the right-side Inspector rail with settings + comments panes, responsive
@@ -110,5 +109,3 @@ scope switch. How it works is documented in
 - Constraint calibration: review maxLength values against real decks.
 - MCP extras: `compare_versions`, `batch_operations` (`export_presentation`
   shipped 2026-07-12 — PDF/PPTX/HTML/JSON/PNG download URLs).
-- Finish or trim the 10 stub locales (manifest advertises 12, only en/nl are
-  populated — see the i18n cleanup plan).

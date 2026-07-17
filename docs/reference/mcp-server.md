@@ -136,9 +136,14 @@ The MCP server is a thin wrapper around Deckyard's existing modules:
 
 ```
 server/mcp/
-├── index.js        Entry point, initializes storage and starts stdio transport
-├── protocol.js     JSON-RPC 2.0 protocol (no external dependencies)
-└── tools.js        Tool definitions wrapping existing Deckyard functions
+├── index.js               Entry point, initializes storage and starts stdio transport
+├── protocol.js            JSON-RPC 2.0 protocol (no external dependencies)
+├── tools.js               Tool definitions wrapping existing Deckyard functions
+├── prompts.js             Guided prompts for the client's / menu
+├── presentation-access.js Per-deck authorization for tool calls
+├── preview.js             Self-contained HTML previews for preview_* tools
+├── custom-tools-loader.js Auto-loads custom/mcp-tools.js (fork extension seam)
+├── sse.js / sse-mount.js  Streamable HTTP/SSE transport on the main server
 ```
 
 Each tool maps directly to existing Deckyard functionality:

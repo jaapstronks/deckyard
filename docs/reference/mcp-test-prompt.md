@@ -67,7 +67,7 @@ Pick one list-slide and convert it to an icon-card-grid-slide. Show me the befor
 Run compression analysis in preview mode (don't apply yet). Tell me what it suggests.
 
 ### Step 7: Modify Structure
-- Add a new quote-slide at position 3 with: quote "Innovation happens at the intersection of creativity and technology", attribution "Brightwave Manifesto"
+- Add a new quote-slide at position 3 with: quote "Innovation happens at the intersection of creativity and technology", author name "Brightwave Manifesto"
 - Reorder: move the last slide to position 2
 - Then undo that reorder (move it back)
 

@@ -1,7 +1,7 @@
 # ADR 001 — Real-time collaboration: Yjs + Hocuspocus as an optional layer
 
-- **Status**: proposed (awaiting go/no-go per phase)
-- **Date**: 2026-07-15
+- **Status**: accepted — implemented and merged to `main` (2026-07-16); shipped behind `COLLAB_ENABLED` / `COLLAB_LIVE_EDITS` (default off)
+- **Date**: 2026-07-15 (status updated 2026-07-17)
 - **Research**: [docs/reference/collab-research.md](../reference/collab-research.md)
 
 ## Context

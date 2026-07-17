@@ -60,7 +60,7 @@ When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a m
 
 ### Curated vs. Managed Fonts
 
-**Curated fonts** (`shared/theme-fonts.js`): 37 pre-selected Google Fonts with known weights. Downloaded to `/assets/fonts/google/` for local serving. Available to all orgs without configuration.
+**Curated fonts** (`shared/theme-fonts.js`): 40 pre-selected Google Fonts with known weights. Downloaded to `/assets/fonts/google/` for local serving. Available to all orgs without configuration.
 
 **Managed fonts**: org-scoped custom fonts created through the font editor. Stored in the database with source-specific resolution.
 
@@ -178,7 +178,7 @@ When creating/updating a theme:
 - [ ] Verify the generated URL properly encodes the family name without breaking the weights format
 
 ### Theme Integration
-- [ ] Open theme editor — verify all 37 curated fonts appear in both heading and body dropdowns
+- [ ] Open theme editor — verify all 40 curated fonts appear in both heading and body dropdowns
 - [ ] Create a theme and select a managed font for heading and body
 - [ ] Body picker should only show uploaded fonts with weights 400 + 700
 - [ ] Heading picker should show all managed fonts regardless of variants
