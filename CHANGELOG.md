@@ -317,6 +317,43 @@ entries are grouped per release rather than exhaustively listed.
 - Stock background photos replaced with generated demo gradients
 - CI and Docker on Node 22 (matches `engines`)
 
+### Security
+
+Pre-untrusted-exposure hardening pass (nine changes). Safe in the intended
+self-hosted-behind-a-proxy, authenticated deployment already; these close
+default-config foot-guns that matter the moment untrusted users are allowed.
+See `SECURITY.md` for the deployment-facing summary and env vars.
+
+- **Auth no longer fails open (BREAKING).** A deployment with no `AUTH_SECRET`
+  used to run wide open with anonymous admin access. The server now refuses to
+  start unless `AUTH_SECRET` is set or auth is explicitly disabled with
+  `AUTH_ENABLED=false` (sandbox/demo modes still boot without auth). Existing
+  fail-open deployments must set one of the two after upgrading.
+- **Non-root container.** The Docker image runs the app and headless Chromium
+  as a non-root user; Chromium's own sandbox is now opt-in via
+  `PUPPETEER_SANDBOX` (off by default, since Docker's seccomp profile blocks the
+  namespace sandbox). Existing bind mounts may need a one-time
+  `chown -R 1000:1000 ./server/data ./server/uploads`. Also fixes a broken
+  Docker build (`COPY` ordering).
+- **SSRF guard on server-side render/export.** Remote images loaded during PDF
+  and PNG rendering are resolved and blocked when they point at loopback,
+  private, link-local or cloud-metadata addresses, for IPv4 and IPv6 including
+  IPv4-mapped/compatible forms. Blocked images are stripped rather than fetched.
+- **CSRF origin-check.** Cookie-authenticated state-changing requests must be
+  same-origin (`Origin`/`Referer` host must match the app `Host`, `APP_URL` or
+  `DOMAIN`); token and API-key clients are unaffected. Extra trusted origins via
+  `CSRF_ALLOWED_ORIGINS`.
+- **Login brute-force throttle** on password login, keyed per IP and per email;
+  set `TRUST_PROXY=true` behind a reverse proxy so it keys on the real client IP.
+- **Uploaded SVGs served inert** (`Content-Disposition: attachment`, `nosniff`
+  and a script-blocking CSP) to close a stored-XSS vector.
+- **`AUTH_DEV_BYPASS` gated on `NODE_ENV=development`**, so a leftover flag can
+  never grant passwordless admin in staging/production.
+- **Request-body size cap** (`MAX_REQUEST_BODY_BYTES`, default 25 MB) to prevent
+  memory exhaustion from oversized requests.
+- **Media keys confined to the uploads directory**, closing a path-traversal
+  existence oracle in `/api/media/confirm`.
+
 ## [1.0.0] — 2026-07-14
 
 ### Added
