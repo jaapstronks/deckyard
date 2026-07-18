@@ -231,8 +231,12 @@ entries are grouped per release rather than exhaustively listed.
   stacking three bordered cards. Theme and language move into a distinct
   "setup" band below a divider, and Advanced import is now a quiet toggle
   beside the language selector that reveals its panel inline (no more
-  dimmed-but-present primary form crowding it out). All create/import
-  wiring is unchanged; new i18n keys added for EN and NL.
+  dimmed-but-present primary form crowding it out). The second tab is now
+  labelled "Starter kit" consistently (matching the sidebar), replacing the
+  mixed "template / starter deck" wording, and in that mode the theme and
+  language pickers are hidden - a duplicated starter kit keeps its own - with
+  a one-line note explaining why. All create/import wiring is unchanged; new
+  i18n keys added for EN and NL.
 - **Editor chrome re-organized: slide-scoped vs. deck-scoped.** The right
   rail is now driven by an always-visible labeled pane switcher
   (Inspector / Comments) at the far right of the toolbar above the canvas;

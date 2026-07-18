@@ -95,7 +95,7 @@ export function openNewPresentationModal({
   };
 
   const modeBlankBtn = makeModeButton('blank', 'list.newPresentation.tab.blank', 'Blank');
-  const modeTemplateBtn = makeModeButton('template', 'list.newPresentation.tab.template', 'Template');
+  const modeTemplateBtn = makeModeButton('template', 'list.newPresentation.tab.template', 'Starter kit');
   const modeContentBtn = makeModeButton('content', 'list.newPresentation.tab.content', 'Content', { badge: 'AI' });
 
   modeSwitcher.append(modeBlankBtn, modeTemplateBtn);
@@ -118,18 +118,29 @@ export function openNewPresentationModal({
     emptyTitleInput
   );
 
-  // Panel 2: From template
+  // Panel 2: From a starter kit (the app's term for a duplicatable template deck)
   const panelTemplate = h('div', { class: 'new-pres-panel is-hidden', 'data-panel': 'template' });
   const templateHint = h('div', {
     class: 'help modal-hint',
-    text: t('list.newPresentation.section.templateDesc', 'Pick a starter deck to customize.'),
+    text: t('list.newPresentation.section.templateDesc', 'Pick a starter kit and make it your own.'),
   });
-  const starterKitGrid = h('div', { class: 'starter-kit-grid' });
-  const starterKitLoading = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
-  const starterKitEmpty = h('div', { class: 'help', text: t('list.newPresentation.starterKit.empty', 'No templates available yet.') });
+  // Status line (loading / empty / error) lives outside the grid so it lines up
+  // with the hint instead of picking up the grid's inner padding.
+  const starterKitStatus = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
+  const starterKitGrid = h('div', { class: 'starter-kit-grid is-hidden' });
   const templateBody = h('div', { class: 'new-pres-panel-body' });
-  templateBody.append(starterKitLoading);
+  templateBody.append(starterKitStatus, starterKitGrid);
   panelTemplate.append(templateHint, templateBody);
+
+  const setKitStatus = (text, { error = false, hint = true } = {}) => {
+    starterKitStatus.textContent = text || '';
+    starterKitStatus.classList.toggle('is-hidden', !text);
+    starterKitStatus.classList.toggle('is-error', !!error);
+    starterKitGrid.classList.toggle('is-hidden', !!text);
+    // When there are no kits, the "pick one" hint is redundant with the empty
+    // message, so hide it and let the empty state carry the panel.
+    templateHint.classList.toggle('is-hidden', !hint);
+  };
 
   let starterKitsData = [];
   const loadStarterKits = async () => {
@@ -139,7 +150,7 @@ export function openNewPresentationModal({
       starterKitGrid.innerHTML = '';
 
       if (starterKitsData.length === 0) {
-        starterKitGrid.append(starterKitEmpty);
+        setKitStatus(t('list.newPresentation.starterKit.empty', 'No starter kits available yet.'), { hint: false });
         return;
       }
 
@@ -161,9 +172,10 @@ export function openNewPresentationModal({
         );
         starterKitGrid.append(kitCard);
       }
+      setKitStatus('');
     } catch {
       starterKitGrid.innerHTML = '';
-      starterKitGrid.append(h('div', { class: 'help is-error', text: t('common.loadError', 'Failed to load.') }));
+      setKitStatus(t('common.loadError', 'Failed to load.'), { error: true });
     }
   };
 
@@ -282,6 +294,13 @@ export function openNewPresentationModal({
     onChange: (l) => { langMode = l; },
   });
 
+  // A starter kit brings its own theme and language, so the pickers are hidden
+  // in that mode (the duplicate keeps the kit's own). This note explains why.
+  const setupNote = h('div', {
+    class: 'help modal-hint is-hidden',
+    text: t('list.newPresentation.templateSetupNote', 'A starter kit brings its own theme and language.'),
+  });
+
   // Language + advanced-import toggle share one row
   const setupRow = h('div', { class: 'new-pres-setup-row' });
   const advancedToggleBtn = h('button', {
@@ -386,7 +405,7 @@ export function openNewPresentationModal({
   advSubContentWrap.append(panelJson, panelImportMd, panelPasteMd);
   advancedBody.append(advSubtabs, advSubContentWrap);
 
-  setupZone.append(themeSelect.wrap, setupRow, advancedBody);
+  setupZone.append(setupNote, themeSelect.wrap, setupRow, advancedBody);
 
   // ===== Status and actions =====
   const status = h('div', { class: 'help modal-status', text: '' });
@@ -436,7 +455,7 @@ export function openNewPresentationModal({
   const getButtonLabel = (mode) => {
     const labels = {
       'empty': t('common.create', 'Create'),
-      'starter-kit': t('list.newPresentation.starterKit.use', 'Use template'),
+      'starter-kit': t('list.newPresentation.starterKit.use', 'Use starter kit'),
       'paste-text': t('list.aiWizard.generate', 'Generate'),
       'convert-file': t('list.fileConverter.convert', 'Convert'),
       'notion': t('list.newPresentation.notion.import', 'Import'),
@@ -485,14 +504,20 @@ export function openNewPresentationModal({
     advancedToggleBtn.setAttribute('aria-expanded', String(useAdvanced));
     advancedBody.classList.toggle('is-hidden', !useAdvanced);
 
-    // 5. Update action button label
+    // 5. In starter-kit mode the theme + language pickers are irrelevant (the
+    //    kit's own carry over on duplicate), so hide them and show a short note.
+    //    Every other mode — including advanced import — uses them.
+    const templateOnly = section === 'template' && !useAdvanced;
+    themeSelect.wrap.classList.toggle('is-hidden', templateOnly);
+    langSelect.wrap.classList.toggle('is-hidden', templateOnly);
+    setupNote.classList.toggle('is-hidden', !templateOnly);
+
+    // 6. Update action button label
     btnAction.textContent = getButtonLabel(getEffectiveMode());
 
-    // 6. Lazy load starter kits
+    // 7. Lazy load starter kits
     if (section === 'template' && !starterKitsLoaded) {
       starterKitsLoaded = true;
-      templateBody.innerHTML = '';
-      templateBody.append(starterKitGrid);
       loadStarterKits();
     }
   };

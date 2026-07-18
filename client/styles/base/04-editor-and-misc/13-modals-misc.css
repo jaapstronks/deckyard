@@ -127,6 +127,15 @@
   min-width: 0;
 }
 
+/* Contextual hide for fields/status toggled by the modal (theme + language in
+   starter-kit mode, the starter-kit status line and grid, the setup note). */
+.new-pres-panel .is-hidden,
+.new-pres-setup > .is-hidden,
+.new-pres-setup-row > .is-hidden,
+.starter-kit-grid.is-hidden {
+  display: none;
+}
+
 /* ============================================
    Visual Theme Picker Grid
    ============================================ */
