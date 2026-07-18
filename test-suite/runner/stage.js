@@ -28,6 +28,7 @@
  *   --from RUN-ID            Outline run to refine from (refine stage)
  *   --groups N               Refine only the first N sections
  *   --vendor NAME            Generation vendor (claude default, or openai)
+ *   --revise                 Run the phase 1b outline revision pass
  *   --refresh                Bypass the judge cache
  *   --label TEXT             Stored in the stage run metadata
  */
@@ -60,6 +61,7 @@ function parseArgs(argv) {
     vendor: DEFAULT_VENDOR,
     refresh: false,
     label: '',
+    revise: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -70,6 +72,7 @@ function parseArgs(argv) {
     else if (arg === '--groups') options.groups = Math.max(1, Number(next()) || 1);
     else if (arg === '--vendor') options.vendor = next();
     else if (arg === '--refresh') options.refresh = true;
+    else if (arg === '--revise') options.revise = true;
     else if (arg === '--label') options.label = next();
     else throw new Error(`Unknown option: ${arg}`);
   }
@@ -112,6 +115,7 @@ async function main() {
   console.log(`  stage=${options.stage} generation=${options.vendor}/${generation.model}`);
   console.log(`  prompts=${promptVersion.hash} cases=${cases.map((c) => c.id).join(', ')}`);
   if (options.groups) console.log(`  groups=first ${options.groups}`);
+  if (options.revise) console.log('  revision pass=on');
   console.log('');
 
   const results = [];
@@ -158,6 +162,7 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
   const outline = await runOutlineStage(sourceText, {
     targetLang: testCase.language === 'nl' ? 'nl' : 'en-GB',
     vendor: options.vendor,
+    revise: options.revise,
   });
   const durationMs = Date.now() - started;
 
@@ -174,6 +179,13 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
     refresh: options.refresh,
   });
 
+  const rev = outline._revision;
+  if (rev) {
+    console.log(
+      `    revision: ${rev.applied.length}/${rev.proposed} applied` +
+        (rev.rejected.length ? `, ${rev.rejected.length} rejected` : '')
+    );
+  }
   console.log(
     `[${testCase.id}] ${metrics.plannedSlides} planned slides, ${metrics.sectionCount} sections ` +
       `(${metrics.slidesPerSection.min}-${metrics.slidesPerSection.max} each) in ${Math.round(durationMs / 1000)}s` +
@@ -189,6 +201,7 @@ async function doOutline({ testCase, sourceText, caseDir, options, cost }) {
     stage: 'outline',
     durationMs,
     metrics,
+    revision: outline._revision || null,
     structuralSlideCount: structuralSlides.length,
     contentGroupCount: contentGroups.length,
     verdict,

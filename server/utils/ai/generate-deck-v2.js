@@ -10,6 +10,7 @@
 
 import { generateOutline, separateSlidesForProcessing, groupSlidesForPhase2 } from './generate-outline.js';
 import { refineAllSlideGroups } from './refine-slides.js';
+import { reviseOutline } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
@@ -93,6 +94,7 @@ export async function generateDeckV2(rawContent, {
   theme = 'default',
   titleSlideType = 'title-slide',
   enableLogging = true,
+  reviseOutlineBeforeRefine = true,
   disabledSlideTypes = [],
   customSlideTypes = [],
   themeContext = null,
@@ -109,7 +111,7 @@ export async function generateDeckV2(rawContent, {
 
   console.log('[DeckGen V2] Phase 1: Generating outline...');
 
-  const outline = await generateOutline(rawContent, {
+  let outline = await generateOutline(rawContent, {
     userName,
     targetLang,
     vendor,
@@ -117,6 +119,26 @@ export async function generateDeckV2(rawContent, {
   });
 
   console.log(`[DeckGen V2] Phase 1 complete: ${outline.slides.length} slides, title: "${outline.title}"`);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 1b: Revise the outline
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Planning a deck is hard to get right in one pass, but an outline is small
+  // and structured, so reviewing it is cheap relative to the quality it buys.
+  // Failure here is non-fatal: the draft outline is used as-is.
+
+  let outlineRevision = null;
+  if (reviseOutlineBeforeRefine) {
+    console.log('[DeckGen V2] Phase 1b: Revising outline...');
+    const revised = await reviseOutline(outline, rawContent, {
+      vendor,
+      lang: outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en',
+      onLog: logger ? (data) => logger.logPhase1(data) : null,
+    });
+    outline = revised.outline;
+    outlineRevision = revised.revision;
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // SEPARATE STRUCTURAL VS CONTENT SLIDES
@@ -180,6 +202,14 @@ export async function generateDeckV2(rawContent, {
         structuralSlides: structuralSlides.length,
         durationMs: outline.metadata.durationMs,
       },
+      phase1b: outlineRevision
+        ? {
+            proposed: outlineRevision.proposed,
+            applied: outlineRevision.applied.length,
+            rejected: outlineRevision.rejected.length,
+            durationMs: outlineRevision.durationMs,
+          }
+        : null,
       phase2: {
         groupCount: contentGroups.length,
         slideCount: refinedContentSlides.length,
