@@ -4,6 +4,9 @@ import { createNoPresentationsEmptyState } from '../empty-state.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user-format.js';
 import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
+import { renderSlideElement } from '../../../lib/slide-render.js';
+import { attachThumbScale } from '../../../lib/thumb-scale.js';
+import { loadThemeById } from '../../../lib/theme.js';
 
 /**
  * Create the home view with recent presentations and activity preview
@@ -21,6 +24,8 @@ import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
  * @param {Function} [opts.onCreate] - Open the creation view (blank).
  * @param {Function} [opts.onComposeFrom] - Open the creation view seeded from a
  *   building block: `({ collection })` or `({ items })`.
+ * @param {Array<Function>} [opts.detachThumbs] - collector for thumbnail
+ *   cleanup callbacks (shared with the card renderer; run on view teardown).
  * @returns {object} - { el, loadActivityPreview, loadPopularPresentations, loadBuildingBlocks }
  */
 export function createHomeView({
@@ -35,6 +40,7 @@ export function createHomeView({
   user,
   onCreate,
   onComposeFrom,
+  detachThumbs,
 }) {
   const homeView = h('div', { class: 'sidebar-view', 'data-view': 'home' });
 
@@ -234,7 +240,7 @@ export function createHomeView({
         );
       } else {
         for (const bundle of bundles) {
-          homeActivityList.append(renderActivityPreviewItem(h, nav, bundle));
+          homeActivityList.append(renderActivityPreviewItem(h, nav, bundle, detachThumbs));
         }
         homeActivitySection.append(homeActivityList);
       }
@@ -503,8 +509,9 @@ function bundleActivityEvents(events) {
  * @param {Function} h
  * @param {Function} nav
  * @param {{event: object, count: number}} bundle
+ * @param {Array<Function>} [detachThumbs] - collector for thumb cleanup fns
  */
-function renderActivityPreviewItem(h, nav, { event, count }) {
+function renderActivityPreviewItem(h, nav, { event, count }, detachThumbs) {
   const item = h('div', {
     class: 'home-activity-item',
     onclick: () => {
@@ -569,6 +576,12 @@ function renderActivityPreviewItem(h, nav, { event, count }) {
     content.append(h('div', { class: 'home-activity-snippet', text: snippet }));
   }
 
+  // Preview thumb of the commented slide, when the server could resolve it.
+  // Rendered client-side with the same slide renderer the cards use — no
+  // server image render, no caching.
+  const thumb = renderActivityThumb(h, event, detachThumbs);
+  if (thumb) content.append(thumb);
+
   item.append(h('div', { class: 'home-activity-avatar', text: initials }), content);
 
   // Count pill for a bundled run — language-neutral, with an accessible label.
@@ -583,4 +596,42 @@ function renderActivityPreviewItem(h, nav, { event, count }) {
   }
 
   return item;
+}
+
+/**
+ * Build a small preview thumbnail of a commented slide for the rail. The server
+ * attaches a minimal slide projection (`event.slide`) + `event.themeId` to
+ * comment events it can resolve; we render it with the shared slide renderer
+ * and thumb-scaler, exactly like the presentation cards. Returns null when the
+ * event carries no resolvable slide.
+ *
+ * @param {Function} h
+ * @param {object} event - enriched activity event
+ * @param {Array<Function>} [detachThumbs] - collector for cleanup fns
+ * @returns {HTMLElement|null}
+ */
+function renderActivityThumb(h, event, detachThumbs) {
+  const slide = event?.slide;
+  if (!slide || !slide.type) return null;
+
+  const thumb = h('div', { class: 'home-activity-thumb thumb' });
+  const detach = attachThumbScale(thumb, { virtualWidth: 1600 });
+  if (Array.isArray(detachThumbs)) detachThumbs.push(detach);
+
+  (async () => {
+    try {
+      const theme = await loadThemeById(event.themeId);
+      thumb.append(
+        renderSlideElement(slide, {
+          mode: 'thumb',
+          theme,
+          presentationId: event.presentationId,
+        })
+      );
+    } catch {
+      // A thumb that fails to render just stays empty — never break the rail.
+    }
+  })();
+
+  return thumb;
 }

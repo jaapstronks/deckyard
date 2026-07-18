@@ -31,6 +31,13 @@ entries are grouped per release rather than exhaustively listed.
   **Presentations** view with scope chips (All · Mine · Workspace · Shared,
   live counts), a sort control and a tag filter, all over a single list.
 
+- **Home: a slide preview thumb next to comments in the "from others" rail.**
+  When someone comments on a slide, the rail now shows a small live preview of
+  that slide under the comment text, so you can see what they're pointing at
+  without opening the deck. Rendered client-side with the same slide renderer
+  the presentation cards use — no server-side image generation. Completes the
+  Home redesign (phases 1-3).
+
 - **Activity: "added N slides to a deck" now shows in the feed.** Adding slides
   to a deck used to disappear into a generic "updated" event (and only for
   workspace decks); it now records a dedicated `slide.added` event, bundled per
