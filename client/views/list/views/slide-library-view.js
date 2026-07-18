@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
+import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
 import { toast } from '../../../lib/toast.js';
 
 /**
@@ -50,25 +51,19 @@ export function createSlideLibraryView({ api, nav }) {
       const items = Array.isArray(itemOrItems) ? itemOrItems : [itemOrItems];
       if (items.length === 0) return;
 
-      // Use the selected language from the first item (passed via _selectedLang)
-      const selectedLang = items[0]?._selectedLang || 'nl';
+      // Dominant language: the picker's active language (single-slide "Use"
+      // path forwards it via _selectedLang), else fall back to the picker state.
+      const selectedLang = items[0]?._selectedLang || picker?.getActiveLang?.() || 'nl';
       // Use theme from first item
       const theme = items[0]?.themeId || 'deckyard';
 
-      // Build slides array from all items
-      const slides = items.map((item) => ({
-        type: item.slideType,
-        content: item.content || {},
-      }));
-
-      const result = await api('/api/presentations', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
-          slides,
-          theme,
-          lang: selectedLang, // Create presentation in the selected language
-        }),
+      // The shared helper forwards per-language content so the deck keeps NL + EN.
+      const result = await createDeckFromLibraryItems({
+        api,
+        items,
+        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
+        theme,
+        lang: selectedLang,
       });
 
       const msg = items.length === 1
