@@ -25,6 +25,7 @@ import { handleCustomSlideTypes } from './custom-slide-types.js';
 import { handleFontFamilies } from './font-families.js';
 import { handleImageLibrary } from './image-library.js';
 import { handlePresentations } from './presentations.js';
+import { handleHome } from './home.js';
 import { handleAi } from './ai.js';
 import { handleNotion } from './notion.js';
 import { handleUploads } from './uploads.js';
@@ -116,6 +117,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleFontFamilies(ctx)) return;
   if (await handleImageLibrary(ctx)) return;
   if (await handleMedia(ctx)) return;
+  if (await handleHome(ctx)) return;
   if (await handlePresentations(ctx)) return;
   if (await handleNotion(ctx)) return;
   if (!flags.disableAi && (await handleAi(ctx))) return;

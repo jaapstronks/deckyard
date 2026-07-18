@@ -177,10 +177,24 @@ export function createHomeView({
   homeColumns.append(homeMain, homeRail);
   homeView.append(homeHeader, homeColumns);
 
+  // Single aggregation fetch shared by all three section loaders, so Home
+  // hydrates in one round-trip instead of 3-4. Memoized: the loaders are fired
+  // together on mount and await the same promise. A null result (endpoint
+  // missing or failed) makes each loader fall back to its own endpoint, so
+  // `/api/home` stays a pure convenience over the still-live individual routes.
+  let homeAggregatePromise = null;
+  function fetchHomeAggregate() {
+    if (!homeAggregatePromise) {
+      homeAggregatePromise = api('/api/home').catch(() => null);
+    }
+    return homeAggregatePromise;
+  }
+
   // Popular presentations loading
   async function loadPopularPresentations() {
     try {
-      const presentations = await api('/api/presentations/popular');
+      const agg = await fetchHomeAggregate();
+      const presentations = agg ? agg.popular : await api('/api/presentations/popular');
       homePopularLoading.remove();
 
       if (!presentations || presentations.length === 0) {
@@ -206,7 +220,10 @@ export function createHomeView({
   // ("Heleen · 3 comments on X"), which fits far more signal in the rail.
   async function loadActivityPreview() {
     try {
-      const resp = await api('/api/activity?limit=20&excludeSelf=true');
+      const agg = await fetchHomeAggregate();
+      const resp = agg
+        ? agg.activity
+        : await api('/api/activity?limit=20&excludeSelf=true');
       const events = resp?.events || [];
       const bundles = bundleActivityEvents(events).slice(0, 6);
       homeActivityLoading.remove();
@@ -232,12 +249,22 @@ export function createHomeView({
   // A blank-start card is always present so Home keeps a create affordance.
   async function loadBuildingBlocks() {
     try {
-      const collectionsApi = createCollectionsApi({ api });
-      const [collections, teamResp, usageResp] = await Promise.all([
-        collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
-        api('/api/slide-library/team').catch(() => ({ items: [] })),
-        api('/api/slide-library/usage').catch(() => ({ items: [] })),
-      ]);
+      const agg = await fetchHomeAggregate();
+      let collections;
+      let teamResp;
+      let usageResp;
+      if (agg) {
+        collections = agg.buildingBlocks?.collections || { personal: [], team: [] };
+        teamResp = { items: agg.buildingBlocks?.teamSlides || [] };
+        usageResp = agg.usage || { items: [] };
+      } else {
+        const collectionsApi = createCollectionsApi({ api });
+        [collections, teamResp, usageResp] = await Promise.all([
+          collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
+          api('/api/slide-library/team').catch(() => ({ items: [] })),
+          api('/api/slide-library/usage').catch(() => ({ items: [] })),
+        ]);
+      }
       homeBlocksLoading.remove();
 
       // Set of {itemType}:{itemId} the current user has already used, so team
