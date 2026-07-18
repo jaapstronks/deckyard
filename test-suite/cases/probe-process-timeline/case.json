@@ -1,0 +1,40 @@
+{
+  "id": "probe-process-timeline",
+  "title": "Probe: sequential process + dated milestones",
+  "category": "C",
+  "language": "en",
+  "domain": "healthcare operations",
+  "structure": "structured",
+  "note": "Authored probe with known ground truth. Text can always be summarised into a text slide; the value of AI generation is recognising content that deserves a specialised layout a human would find laborious to build. This source contains an explicit five-step sequence where order is load-bearing, and a set of dated milestones.",
+  "sources": [
+    {
+      "local": "test-suite/fixtures/probe-process-timeline.md",
+      "file": "source.md",
+      "type": "markdown"
+    }
+  ],
+  "licence": "Authored for this suite; MIT with the repository.",
+  "expectedSlideTypes": [
+    {
+      "type": "process-slide",
+      "because": "five numbered intake steps where each must complete before the next"
+    },
+    {
+      "type": "timeline-slide",
+      "because": "dated programme milestones from March 2024 to December 2026"
+    },
+    {
+      "type": "kpi-metrics-slide",
+      "because": "pilot outcome figures: 11.4 to 3.2 days, 31% to 9%, 3.1 to 4.4",
+      "acceptable": [
+        "table-slide"
+      ],
+      "acceptableWhy": "before/after pairs are legitimately tabular"
+    }
+  ],
+  "expectedCharacteristics": [
+    "Uses a process layout for the five-step sequence rather than a bulleted list",
+    "Uses a timeline layout for the dated milestones",
+    "Keeps the ordering constraint (validation before triage) visible"
+  ]
+}

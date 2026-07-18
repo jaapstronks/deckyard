@@ -32,7 +32,7 @@ import {
 } from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
 import { judgeDeck, meanScore } from '../eval/judge.js';
-import { deckMetrics, numberFidelity } from '../eval/metrics.js';
+import { deckMetrics, numberFidelity, specialTypeUsage } from '../eval/metrics.js';
 import { compareToReference } from '../eval/reference.js';
 import {
   aggregateScores,
@@ -190,6 +190,7 @@ async function main() {
 
       const metrics = deckMetrics(deck);
       const fidelity = numberFidelity(deck, sourceText);
+      const specialTypes = specialTypeUsage(deck, testCase.expectedSlideTypes || []);
       const referenceComparison = referenceDeck ? compareToReference(deck, referenceDeck) : null;
 
       let verdict = null;
@@ -210,12 +211,20 @@ async function main() {
           `    judge: ${meanScore(verdict.scores).toFixed(2)}/5${judged.cached ? ' (cached)' : ''}`
         );
       }
+      if (specialTypes.expected) {
+        const missed = specialTypes.missing.map((m) => m.type).join(', ');
+        console.log(
+          `    specialised layouts: ${specialTypes.found.length}/${specialTypes.expected}` +
+            (missed ? ` — missed ${missed}` : '')
+        );
+      }
 
       repeats.push({
         repeat: repeat + 1,
         deckPath: path.relative(RUNS_DIR, deckPath),
         metrics,
         numberFidelity: fidelity,
+        specialTypes,
         referenceComparison,
         verdict,
         meanScore: verdict ? meanScore(verdict.scores) : null,
