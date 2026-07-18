@@ -18,11 +18,12 @@ import {
   customHtmlEditViolation,
 } from '../../../utils/route-middleware.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { parseIfMatchRevision } from './helpers.js';
+import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
   recordPresentationUpdated,
   recordPresentationDeleted,
   recordPresentationMovedToWorkspace,
+  recordSlidesAdded,
 } from '../../../services/activity-events.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
@@ -192,6 +193,11 @@ export async function handlePresentationItem(
     // Record activity event (non-blocking)
     if (authedUser?.email) {
       const ctx = createRouteContext(authedUser);
+
+      // Slides this actor added, for the slide.added feed event.
+      const submittedSlides = Array.isArray(body?.slides) ? body.slides : updated.slides;
+      const addedSlideIds = diffAddedSlideIds(existing.slides, submittedSlides, updated.slides);
+
       // Check if scope changed to workspace
       if (existing.scope !== updated.scope && updated.scope === 'workspace') {
         void recordPresentationMovedToWorkspace({
@@ -200,18 +206,27 @@ export async function handlePresentationItem(
           previousScope: existing.scope,
           ctx,
         });
-      } else {
+      } else if (addedSlideIds.length > 0) {
+        // A slide-add is more specific than a generic update, so emit it
+        // instead of `presentation.updated` — and for decks of any scope, since
+        // this is the collaborator-awareness signal. The feed enrichment
+        // filters by read access, so it never leaks to non-readers.
+        void recordSlidesAdded({
+          presentation: updated,
+          actor: authedUser,
+          slideIds: addedSlideIds,
+          ctx,
+        });
+      } else if (updated.scope === 'workspace') {
         // Record general update (only for workspace presentations to reduce noise)
-        if (updated.scope === 'workspace') {
-          void recordPresentationUpdated({
-            presentation: updated,
-            actor: authedUser,
-            changes: {
-              titleChanged: existing.title !== updated.title,
-            },
-            ctx,
-          });
-        }
+        void recordPresentationUpdated({
+          presentation: updated,
+          actor: authedUser,
+          changes: {
+            titleChanged: existing.title !== updated.title,
+          },
+          ctx,
+        });
       }
     }
 

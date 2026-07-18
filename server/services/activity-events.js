@@ -67,6 +67,43 @@ export async function recordPresentationUpdated({
 }
 
 /**
+ * Record slides added to a deck during a save. Emitted for decks of any scope
+ * (the feed enrichment filters by read access, so private/shared decks only
+ * surface this to people who can already open them) — the whole point is
+ * collaborators seeing "someone added slides to a deck I'm on". One bundled
+ * event per save carries the count + ids, so adding N slides is one feed line,
+ * not N. No-op when no slides were added.
+ *
+ * @param {object} args
+ * @param {object} args.presentation - the updated presentation
+ * @param {object} args.actor - the acting user ({ email, name })
+ * @param {string[]} args.slideIds - ids of the newly added slides
+ * @param {object} [args.ctx] - route context
+ * @returns {Promise<object|null>}
+ */
+export async function recordSlidesAdded({ presentation, actor, slideIds, ctx }) {
+  const ids = Array.isArray(slideIds) ? slideIds.filter(Boolean) : [];
+  if (ids.length === 0) return null;
+
+  const context = ctx || createRouteContext(actor);
+
+  return createActivityEvent({
+    eventType: EVENT_TYPES.SLIDE_ADDED,
+    entityType: ENTITY_TYPES.PRESENTATION,
+    entityId: presentation.id,
+    presentationId: presentation.id,
+    actorEmail: actor?.email,
+    actorName: actor?.name || actor?.email,
+    actorType: ACTOR_TYPES.USER,
+    data: {
+      title: presentation.title,
+      count: ids.length,
+      slideIds: ids,
+    },
+  }, context);
+}
+
+/**
  * Record a slide-level merge performed during a save. Audit trail for the
  * stale-tab overwrite class of incidents: without it a silent merge leaves
  * no trace of which slides were taken from whom.

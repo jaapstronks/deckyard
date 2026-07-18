@@ -23,6 +23,7 @@ export const EVENT_TYPES = {
   COMMENT_RESOLVED: 'comment.resolved',
   COMMENT_REOPENED: 'comment.reopened',
   SHARE_ACCESSED: 'share.accessed',
+  SLIDE_ADDED: 'slide.added',
 };
 
 export const ENTITY_TYPES = {

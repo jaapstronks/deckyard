@@ -537,6 +537,11 @@ function renderActivityPreviewItem(h, nav, { event, count }) {
     case 'collaborator.added':
       actionText = t('activity.shared', 'shared');
       break;
+    case 'slide.added': {
+      const n = Number(event.data?.count) || 1;
+      actionText = t('activity.slidesAdded', 'added {count} slides to', { count: n });
+      break;
+    }
     default:
       actionText = t('activity.modified', 'modified');
   }
