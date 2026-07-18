@@ -224,6 +224,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **"New presentation" modal redesigned.** The three stacked radio cards
+  are replaced by a segmented mode switcher (Blank / Template / Content·AI)
+  with a single panel that swaps to the active mode, so the title field,
+  starter-kit grid and content sub-tabs each get room without the modal
+  stacking three bordered cards. Theme and language move into a distinct
+  "setup" band below a divider, and Advanced import is now a quiet toggle
+  beside the language selector that reveals its panel inline (no more
+  dimmed-but-present primary form crowding it out). All create/import
+  wiring is unchanged; new i18n keys added for EN and NL.
 - **Editor chrome re-organized: slide-scoped vs. deck-scoped.** The right
   rail is now driven by an always-visible labeled pane switcher
   (Inspector / Comments) at the far right of the toolbar above the canvas;

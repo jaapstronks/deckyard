@@ -1,93 +1,129 @@
 /* ============================================
-   New Presentation Modal - Section Cards
+   New Presentation Modal
    ============================================ */
 
-.new-pres-sections {
+/* Header: title + one-line subtitle */
+.new-pres-header {
   display: flex;
   flex-direction: column;
-  gap: var(--ps-space-2);
-  margin-bottom: var(--ps-space-3);
+  gap: var(--ps-space-1);
 }
 
-.new-pres-section {
-  border: 2px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg);
-  transition: border-color 0.2s, background 0.2s;
+.new-pres-subtitle {
+  margin: 0;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
 }
 
-.new-pres-section.is-selected {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.03);
-}
-
-.new-pres-section-header {
+/* Primary zone: mode switcher + swapping panel */
+.new-pres-primary {
   display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+/* Segmented mode switcher (Blank / Template / Content) */
+.new-pres-modes {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  transition: opacity 0.2s;
+}
+
+/* While Advanced import is open the switcher recedes but stays clickable
+   (clicking a mode tab closes advanced and brings the panel back). */
+.new-pres-modes.is-muted {
+  opacity: 0.55;
+}
+
+.new-pres-modes.is-muted:hover {
+  opacity: 0.85;
+}
+
+.new-pres-mode {
+  flex: 1;
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--ps-space-2);
-  padding: var(--ps-space-3) var(--ps-space-4);
+  padding: var(--ps-space-3) var(--ps-space-2);
+  border: none;
+  border-radius: var(--ps-radius-md);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
   cursor: pointer;
-  user-select: none;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-.new-pres-section-header input[type="radio"] {
-  flex-shrink: 0;
-  accent-color: hsl(var(--app-accent));
-}
-
-.new-pres-section-title {
-  font-weight: 700;
-  font-size: var(--ps-text-base);
+.new-pres-mode:hover {
   color: hsl(var(--app-text-primary));
 }
 
-.new-pres-section-badge {
-  display: inline-flex;
-  align-items: center;
+.new-pres-mode.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: 0 1px 3px hsl(0 0% 0% / 0.1);
+}
+
+.new-pres-mode-badge {
   font-size: var(--ps-text-xs);
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: hsl(270 60% 45%);
   background: hsl(270 60% 92%);
-  padding: 2px 8px;
+  padding: 1px 6px;
   border-radius: 999px;
-  white-space: nowrap;
 }
 
-.new-pres-section-desc {
-  flex-basis: 100%;
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-secondary));
-  padding-left: calc(16px + var(--ps-space-2)); /* align with title after radio */
-  margin-top: calc(-1 * var(--ps-space-1));
+/* Swapping panel for the active mode */
+.new-pres-panels {
+  min-height: 96px;
 }
 
-.new-pres-section-body {
+.new-pres-panels.is-hidden {
   display: none;
+}
+
+.new-pres-panel {
+  display: flex;
   flex-direction: column;
   gap: var(--ps-space-3);
-  padding: 0 var(--ps-space-4) var(--ps-space-4);
 }
 
-.new-pres-section.is-selected .new-pres-section-body {
-  display: flex;
+.new-pres-panel.is-hidden {
+  display: none;
 }
 
-/* Shared theme + language row */
-.new-pres-shared {
+.new-pres-panel-body {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--ps-space-3);
-  margin-bottom: var(--ps-space-3);
 }
 
-.new-pres-shared > .stack {
-  flex: 1;
-  min-width: 140px;
+/* Setup zone: theme + language + advanced, set apart from the primary choice */
+.new-pres-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding-top: var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
-/* Visual theme picker takes full width, pushing lang selector to next row */
-.new-pres-shared > .theme-picker-wrap {
-  flex: 0 0 100%;
+/* Language selector + advanced-import toggle share a row */
+.new-pres-setup-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  flex-wrap: wrap;
+}
+
+/* Theme picker takes the full width of the setup zone */
+.new-pres-setup > .theme-picker-wrap {
   min-width: 0;
 }
 
@@ -175,36 +211,24 @@
   text-overflow: ellipsis;
 }
 
-/* Advanced import (details/summary) */
-.new-pres-advanced {
-  margin-bottom: var(--ps-space-3);
-}
-
-.new-pres-advanced > summary {
-  cursor: pointer;
-  user-select: none;
-  font-weight: 700;
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-secondary));
+/* Advanced import — quiet toggle that reveals a sunken panel */
+.new-pres-advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
-  padding-left: 28px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  cursor: pointer;
   border-radius: var(--ps-radius-md);
-  position: relative;
   transition: background 0.15s, color 0.15s;
-  list-style: none;
 }
 
-.new-pres-advanced > summary:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.new-pres-advanced > summary::before {
+.new-pres-advanced-toggle::before {
   content: '';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
   width: 0;
   height: 0;
   border-left: 5px solid currentColor;
@@ -213,12 +237,17 @@
   transition: transform 0.15s;
 }
 
-.new-pres-advanced[open] > summary::before {
-  transform: translateY(-50%) rotate(90deg);
+.new-pres-advanced-toggle:hover {
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
 }
 
-.new-pres-advanced > summary::-webkit-details-marker {
-  display: none;
+.new-pres-advanced-toggle.is-active {
+  color: hsl(var(--app-text-primary));
+}
+
+.new-pres-advanced-toggle.is-active::before {
+  transform: rotate(90deg);
 }
 
 .new-pres-advanced-body {
@@ -226,17 +255,12 @@
   flex-direction: column;
   gap: var(--ps-space-3);
   padding: var(--ps-space-3);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
 }
 
-/* Dim main sections when advanced is active */
-.new-pres-sections.is-advanced-active .new-pres-section {
-  opacity: 0.5;
-  pointer-events: auto;
-  transition: opacity 0.2s;
-}
-
-.new-pres-sections.is-advanced-active .new-pres-section:hover {
-  opacity: 0.8;
+.new-pres-advanced-body.is-hidden {
+  display: none;
 }
 
 /* Sub-content containers */
@@ -248,20 +272,21 @@
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
-  .new-pres-section-header {
-    padding: var(--ps-space-2) var(--ps-space-3);
+  .new-pres-mode {
+    padding: var(--ps-space-2) var(--ps-space-2);
   }
 
-  .new-pres-section-body {
-    padding: 0 var(--ps-space-3) var(--ps-space-3);
-  }
-
-  .new-pres-shared {
+  .new-pres-setup-row {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .new-pres-shared > .stack {
-    min-width: 0;
+  .new-pres-setup-row .modal-lang-fixed {
+    width: 100%;
+  }
+
+  .new-pres-advanced-toggle {
+    justify-content: flex-start;
   }
 
   .theme-card {

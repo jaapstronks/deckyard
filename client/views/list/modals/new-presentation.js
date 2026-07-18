@@ -58,45 +58,78 @@ export function openNewPresentationModal({
     'aria-modal': 'true',
     'aria-labelledby': 'new-pres-title',
   });
+  const header = h('div', { class: 'new-pres-header' });
   const titleEl = h('h2', {
     id: 'new-pres-title',
     text: t('list.newPresentation.title', 'New presentation'),
   });
+  const subtitleEl = h('p', {
+    class: 'new-pres-subtitle',
+    text: t('list.newPresentation.subtitle', "Choose how you'd like to begin."),
+  });
+  header.append(titleEl, subtitleEl);
 
-  // ===== Section container =====
-  const sectionsContainer = h('div', { class: 'new-pres-sections' });
+  // ===== Primary zone: mode switcher + swapping panel =====
+  const primaryZone = h('div', { class: 'new-pres-primary' });
 
-  // --- Section 1: Start blank ---
-  const blankSection = h('div', { class: 'new-pres-section is-selected', 'data-section': 'blank' });
-  const blankHeader = h('label', { class: 'new-pres-section-header' });
-  const blankRadio = h('input', { type: 'radio', name: 'new-pres-mode', value: 'blank', checked: true });
-  blankHeader.append(
-    blankRadio,
-    h('span', { class: 'new-pres-section-title', text: t('list.newPresentation.section.blank', 'Start blank') })
-  );
-  const blankBody = h('div', { class: 'new-pres-section-body' });
+  // --- Mode switcher (segmented) ---
+  const modeSwitcher = h('div', { class: 'new-pres-modes', role: 'tablist' });
+
+  const makeModeButton = (value, labelKey, labelFallback, { badge } = {}) => {
+    const btn = h('button', {
+      type: 'button',
+      class: 'new-pres-mode',
+      role: 'tab',
+      'data-mode': value,
+    });
+    btn.append(h('span', { class: 'new-pres-mode-label', text: t(labelKey, labelFallback) }));
+    if (badge) {
+      btn.append(h('span', { class: 'new-pres-mode-badge', text: badge }));
+    }
+    btn.addEventListener('click', () => {
+      section = value;
+      useAdvanced = false;
+      syncUI();
+    });
+    return btn;
+  };
+
+  const modeBlankBtn = makeModeButton('blank', 'list.newPresentation.tab.blank', 'Blank');
+  const modeTemplateBtn = makeModeButton('template', 'list.newPresentation.tab.template', 'Template');
+  const modeContentBtn = makeModeButton('content', 'list.newPresentation.tab.content', 'Content', { badge: 'AI' });
+
+  modeSwitcher.append(modeBlankBtn, modeTemplateBtn);
+  if (!aiDisabled) modeSwitcher.append(modeContentBtn);
+
+  // --- Panels container ---
+  const panelsWrap = h('div', { class: 'new-pres-panels' });
+
+  // Panel 1: Start blank
+  const panelBlank = h('div', { class: 'new-pres-panel', 'data-panel': 'blank' });
   const emptyTitleInput = h('input', {
     class: 'form-input',
     placeholder: t('list.newPresentation.titlePlaceholder', 'Title...'),
   });
-  blankBody.append(emptyTitleInput);
-  blankSection.append(blankHeader, blankBody);
-
-  // --- Section 2: From template ---
-  const templateSection = h('div', { class: 'new-pres-section', 'data-section': 'template' });
-  const templateHeader = h('label', { class: 'new-pres-section-header' });
-  const templateRadio = h('input', { type: 'radio', name: 'new-pres-mode', value: 'template' });
-  templateHeader.append(
-    templateRadio,
-    h('span', { class: 'new-pres-section-title', text: t('list.newPresentation.section.template', 'From template') }),
-    h('span', { class: 'new-pres-section-desc', text: t('list.newPresentation.section.templateDesc', 'Pick a starter deck to customize') })
+  panelBlank.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.newPresentation.section.blankDesc', 'Give it a name now, or rename it later.'),
+    }),
+    emptyTitleInput
   );
-  const templateBody = h('div', { class: 'new-pres-section-body' });
+
+  // Panel 2: From template
+  const panelTemplate = h('div', { class: 'new-pres-panel is-hidden', 'data-panel': 'template' });
+  const templateHint = h('div', {
+    class: 'help modal-hint',
+    text: t('list.newPresentation.section.templateDesc', 'Pick a starter deck to customize.'),
+  });
   const starterKitGrid = h('div', { class: 'starter-kit-grid' });
   const starterKitLoading = h('div', { class: 'help', text: t('common.loading', 'Loading...') });
   const starterKitEmpty = h('div', { class: 'help', text: t('list.newPresentation.starterKit.empty', 'No templates available yet.') });
+  const templateBody = h('div', { class: 'new-pres-panel-body' });
   templateBody.append(starterKitLoading);
-  templateSection.append(templateHeader, templateBody);
+  panelTemplate.append(templateHint, templateBody);
 
   let starterKitsData = [];
   const loadStarterKits = async () => {
@@ -134,20 +167,13 @@ export function openNewPresentationModal({
     }
   };
 
-  // --- Section 3: From content (AI) ---
-  const contentSection = h('div', { class: 'new-pres-section', 'data-section': 'content' });
-  if (aiDisabled) contentSection.classList.add('is-hidden');
+  // Panel 3: From content (AI)
+  const panelContent = h('div', { class: 'new-pres-panel is-hidden', 'data-panel': 'content' });
 
-  const contentHeader = h('label', { class: 'new-pres-section-header' });
-  const contentRadio = h('input', { type: 'radio', name: 'new-pres-mode', value: 'content' });
-  contentHeader.append(
-    contentRadio,
-    h('span', { class: 'new-pres-section-title', text: t('list.newPresentation.section.content', 'From content') }),
-    h('span', { class: 'new-pres-section-badge', text: 'AI' }),
-    h('span', { class: 'new-pres-section-desc', text: t('list.newPresentation.section.contentDesc', 'Paste notes, upload a file, or import from Notion') })
-  );
-
-  const contentBody = h('div', { class: 'new-pres-section-body' });
+  const contentHint = h('div', {
+    class: 'help modal-hint',
+    text: t('list.newPresentation.section.contentDesc', 'Paste notes, upload a file, or import from Notion.'),
+  });
 
   // Content sub-tabs
   const contentSubtabs = h('div', { class: 'sb-segmented' });
@@ -228,8 +254,7 @@ export function openNewPresentationModal({
   );
 
   subContentWrap.append(panelPaste, panelUpload, panelNotion);
-  contentBody.append(contentSubtabs, subContentWrap);
-  contentSection.append(contentHeader, contentBody);
+  panelContent.append(contentHint, contentSubtabs, subContentWrap);
 
   // Check Notion availability
   api('/api/notion/status')
@@ -240,12 +265,14 @@ export function openNewPresentationModal({
     })
     .catch(() => {});
 
-  // Assemble sections
-  sectionsContainer.append(blankSection, templateSection);
-  if (!aiDisabled) sectionsContainer.append(contentSection);
+  // Assemble primary zone
+  panelsWrap.append(panelBlank, panelTemplate);
+  if (!aiDisabled) panelsWrap.append(panelContent);
+  primaryZone.append(modeSwitcher, panelsWrap);
 
-  // ===== Shared theme + language =====
-  const sharedWrap = h('div', { class: 'new-pres-shared' });
+  // ===== Setup zone: theme + language + advanced =====
+  const setupZone = h('div', { class: 'new-pres-setup' });
+
   const themeSelect = createVisualThemePicker({
     h, api, initialTheme: themeId,
     onChange: (id) => { themeId = id; },
@@ -254,16 +281,20 @@ export function openNewPresentationModal({
     h, readLangMode, writeLangMode, getSupportedLangs,
     onChange: (l) => { langMode = l; },
   });
-  sharedWrap.append(themeSelect.wrap, langSelect.wrap);
 
-  // ===== Advanced import =====
-  const advancedDetails = h('details', { class: 'new-pres-advanced' });
-  const advancedSummary = h('summary', {
+  // Language + advanced-import toggle share one row
+  const setupRow = h('div', { class: 'new-pres-setup-row' });
+  const advancedToggleBtn = h('button', {
+    type: 'button',
+    class: 'new-pres-advanced-toggle',
+    'aria-expanded': 'false',
     text: t('list.newPresentation.advancedImport', 'Advanced import'),
   });
-  const advancedBody = h('div', { class: 'new-pres-advanced-body' });
+  setupRow.append(langSelect.wrap, advancedToggleBtn);
 
-  // Advanced sub-tabs
+  // ===== Advanced import body =====
+  const advancedBody = h('div', { class: 'new-pres-advanced-body is-hidden' });
+
   const advSubtabs = h('div', { class: 'sb-segmented' });
   const btnAdvJson = h('button', {
     type: 'button',
@@ -282,7 +313,6 @@ export function openNewPresentationModal({
   });
   advSubtabs.append(btnAdvJson, btnAdvImportMd, btnAdvPasteMd);
 
-  // Advanced sub-content
   const advSubContentWrap = h('div', { class: 'new-pres-adv-subcontent' });
 
   // JSON import panel
@@ -355,7 +385,8 @@ export function openNewPresentationModal({
 
   advSubContentWrap.append(panelJson, panelImportMd, panelPasteMd);
   advancedBody.append(advSubtabs, advSubContentWrap);
-  advancedDetails.append(advancedSummary, advancedBody);
+
+  setupZone.append(themeSelect.wrap, setupRow, advancedBody);
 
   // ===== Status and actions =====
   const status = h('div', { class: 'help modal-status', text: '' });
@@ -417,14 +448,23 @@ export function openNewPresentationModal({
   };
 
   const syncUI = () => {
-    // 1. Toggle is-selected on section cards
-    blankSection.classList.toggle('is-selected', section === 'blank');
-    templateSection.classList.toggle('is-selected', section === 'template');
-    contentSection.classList.toggle('is-selected', section === 'content');
+    // 1. Mode switcher active state + panel visibility. While Advanced import
+    //    is open no mode is "current"; the switcher stays visible (muted) as
+    //    the way back, and the primary panel is hidden so it can't crowd out
+    //    the advanced panel below.
+    modeBlankBtn.classList.toggle('is-active', section === 'blank' && !useAdvanced);
+    modeTemplateBtn.classList.toggle('is-active', section === 'template' && !useAdvanced);
+    modeContentBtn.classList.toggle('is-active', section === 'content' && !useAdvanced);
+    modeBlankBtn.setAttribute('aria-selected', String(section === 'blank' && !useAdvanced));
+    modeTemplateBtn.setAttribute('aria-selected', String(section === 'template' && !useAdvanced));
+    modeContentBtn.setAttribute('aria-selected', String(section === 'content' && !useAdvanced));
+    modeSwitcher.classList.toggle('is-muted', useAdvanced);
+    panelsWrap.classList.toggle('is-hidden', useAdvanced);
+    panelBlank.classList.toggle('is-hidden', section !== 'blank');
+    panelTemplate.classList.toggle('is-hidden', section !== 'template');
+    panelContent.classList.toggle('is-hidden', section !== 'content');
 
-    // 2. Section bodies shown/hidden via CSS (.is-selected .new-pres-section-body)
-
-    // 3. Content sub-tabs
+    // 2. Content sub-tabs
     btnSubPaste.classList.toggle('is-active', contentSubtab === 'paste');
     btnSubUpload.classList.toggle('is-active', contentSubtab === 'upload');
     btnSubNotion.classList.toggle('is-active', contentSubtab === 'notion');
@@ -432,7 +472,7 @@ export function openNewPresentationModal({
     panelUpload.classList.toggle('is-hidden', contentSubtab !== 'upload');
     panelNotion.classList.toggle('is-hidden', contentSubtab !== 'notion');
 
-    // 4. Advanced sub-tabs
+    // 3. Advanced sub-tabs
     btnAdvJson.classList.toggle('is-active', advancedSubtab === 'json');
     btnAdvImportMd.classList.toggle('is-active', advancedSubtab === 'import-md');
     btnAdvPasteMd.classList.toggle('is-active', advancedSubtab === 'paste-md');
@@ -440,13 +480,15 @@ export function openNewPresentationModal({
     panelImportMd.classList.toggle('is-hidden', advancedSubtab !== 'import-md');
     panelPasteMd.classList.toggle('is-hidden', advancedSubtab !== 'paste-md');
 
-    // 5. Dim main sections when advanced is active
-    sectionsContainer.classList.toggle('is-advanced-active', useAdvanced);
+    // 4. Advanced import open/closed — reveals the adv body
+    advancedToggleBtn.classList.toggle('is-active', useAdvanced);
+    advancedToggleBtn.setAttribute('aria-expanded', String(useAdvanced));
+    advancedBody.classList.toggle('is-hidden', !useAdvanced);
 
-    // 6. Update action button label
+    // 5. Update action button label
     btnAction.textContent = getButtonLabel(getEffectiveMode());
 
-    // 7. Lazy load starter kits
+    // 6. Lazy load starter kits
     if (section === 'template' && !starterKitsLoaded) {
       starterKitsLoaded = true;
       templateBody.innerHTML = '';
@@ -456,15 +498,6 @@ export function openNewPresentationModal({
   };
 
   // ===== Event wiring =====
-  const onSectionChange = () => {
-    section = blankRadio.checked ? 'blank' : templateRadio.checked ? 'template' : 'content';
-    useAdvanced = false;
-    syncUI();
-  };
-  blankRadio.addEventListener('change', onSectionChange);
-  templateRadio.addEventListener('change', onSectionChange);
-  contentRadio.addEventListener('change', onSectionChange);
-
   // Content sub-tab clicks
   btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
   btnSubUpload.addEventListener('click', () => { contentSubtab = 'upload'; syncUI(); });
@@ -475,9 +508,9 @@ export function openNewPresentationModal({
   btnAdvImportMd.addEventListener('click', () => { advancedSubtab = 'import-md'; useAdvanced = true; syncUI(); });
   btnAdvPasteMd.addEventListener('click', () => { advancedSubtab = 'paste-md'; useAdvanced = true; syncUI(); });
 
-  // Details toggle
-  advancedDetails.addEventListener('toggle', () => {
-    useAdvanced = advancedDetails.open;
+  // Advanced import toggle
+  advancedToggleBtn.addEventListener('click', () => {
+    useAdvanced = !useAdvanced;
     syncUI();
   });
 
@@ -635,11 +668,11 @@ export function openNewPresentationModal({
   actions.append(btnCancel, btnAction);
 
   // ===== Assemble modal =====
-  // Middle content scrolls; title stays at the top and the actions footer
+  // Middle content scrolls; header stays at the top and the actions footer
   // stays pinned at the bottom so Create is always reachable on short viewports.
   const scrollBody = h('div', { class: 'new-pres-scroll' });
-  scrollBody.append(sectionsContainer, sharedWrap, advancedDetails, status);
-  modal.append(titleEl, scrollBody, actions);
+  scrollBody.append(primaryZone, setupZone, status);
+  modal.append(header, scrollBody, actions);
 
   backdrop.append(modal);
   backdrop.addEventListener('click', (e) => {
