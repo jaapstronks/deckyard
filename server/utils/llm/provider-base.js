@@ -6,6 +6,7 @@
 
 import { LlmError } from './error.js';
 import { safeJsonParse } from '../openai/json.js';
+import { emitLlmUsage } from './usage.js';
 
 /**
  * Create an LLM provider request function with standardized error handling.
@@ -16,9 +17,19 @@ import { safeJsonParse } from '../openai/json.js';
  * @param {Function} config.createHeaders - (apiKey) => headers object
  * @param {Function} config.transformRequest - (params) => request body object
  * @param {Function} config.parseResponse - (bodyText) => content string
+ * @param {Function} [config.parseUsage] - (bodyText) => token counts, reported
+ *   to `subscribeLlmUsage` listeners. Omit for providers whose usage shape
+ *   isn't mapped yet; usage is then simply not reported.
  * @returns {Function} async (params) => content string
  */
-export function createLlmProvider({ name, endpoint, createHeaders, transformRequest, parseResponse }) {
+export function createLlmProvider({
+  name,
+  endpoint,
+  createHeaders,
+  transformRequest,
+  parseResponse,
+  parseUsage = null,
+}) {
   /**
    * Make a request to the LLM provider
    * @param {Object} params - Request parameters
@@ -43,6 +54,11 @@ export function createLlmProvider({ name, endpoint, createHeaders, transformRequ
     const bodyText = await resp.text();
     if (!resp.ok) {
       throw LlmError.fromProviderFailure(name, resp.status, bodyText, params.model);
+    }
+
+    if (parseUsage) {
+      const usage = parseUsage(bodyText);
+      if (usage) emitLlmUsage({ vendor: name, model: params.model, ...usage });
     }
 
     return parseResponse(bodyText);
@@ -82,10 +98,30 @@ export function createOptionalBearerHeaders(apiKey) {
 export function transformOpenAiCompatibleRequest({ model, temperature = 0.2, responseFormat, messages = [] }) {
   return {
     model,
-    temperature,
+    ...(supportsSampling(model) ? { temperature } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
     messages,
   };
+}
+
+/**
+ * Whether a model accepts a non-default `temperature`.
+ *
+ * Newer OpenAI reasoning models reject it outright — gpt-5.5 answers a
+ * non-default value with `400 unsupported_value`, which fails the whole
+ * request rather than degrading. Older models (gpt-5.2 and earlier, gpt-4x)
+ * still accept it, so temperature is kept for them rather than changing
+ * behaviour for existing deployments.
+ *
+ * Mirrors the same guard in the Claude provider, where Opus 4.7+ removed
+ * sampling parameters for the same reason.
+ *
+ * @param {string} model - Model identifier
+ * @returns {boolean}
+ */
+function supportsSampling(model) {
+  // gpt-5.5 and up, any gpt-6+, and the o-series reasoning models.
+  return !/^(gpt-5\.(?:[5-9]|\d{2})|gpt-[6-9]|o[1-9])/i.test(String(model || ''));
 }
 
 /**
@@ -97,4 +133,31 @@ export function transformOpenAiCompatibleRequest({ model, temperature = 0.2, res
 export function parseOpenAiCompatibleResponse(bodyText) {
   const parsed = safeJsonParse(bodyText);
   return parsed?.choices?.[0]?.message?.content ?? '';
+}
+
+/**
+ * Usage parser for OpenAI-compatible APIs.
+ *
+ * These report `prompt_tokens` / `completion_tokens` rather than Anthropic's
+ * `input_tokens` / `output_tokens`, and cached prompt tokens are nested under
+ * `prompt_tokens_details`. Note `prompt_tokens` is the full prompt count with
+ * cached tokens included, so the cached portion is subtracted out to avoid
+ * billing the same tokens twice.
+ *
+ * @param {string} bodyText - Response body text
+ * @returns {Object|null} Normalized token counts, or null if unparseable
+ */
+export function parseOpenAiCompatibleUsage(bodyText) {
+  const usage = safeJsonParse(bodyText)?.usage;
+  if (!usage) return null;
+
+  const num = (value) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : 0);
+  const cachedTokens = num(usage.prompt_tokens_details?.cached_tokens);
+
+  return {
+    inputTokens: Math.max(0, num(usage.prompt_tokens) - cachedTokens),
+    outputTokens: num(usage.completion_tokens),
+    cacheReadTokens: cachedTokens,
+    cacheWriteTokens: 0, // OpenAI caches implicitly; there is no write charge.
+  };
 }

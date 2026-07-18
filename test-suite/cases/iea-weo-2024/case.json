@@ -1,0 +1,28 @@
+{
+  "id": "iea-weo-2024",
+  "title": "IEA World Energy Outlook 2024 (executive summary)",
+  "category": "A",
+  "language": "en",
+  "domain": "intergovernmental agency / global energy",
+  "note": "Heavily chart-driven source, so it tests whether the pipeline produces data slides rather than bullet walls. The full 398-page report is available at the same host if a long-source variant is ever wanted.",
+  "sources": [
+    {
+      "url": "https://iea.blob.core.windows.net/assets/e4d12822-3720-4fa6-8b9c-f2984c4dc638/Executivesummary-WorldEnergyOutlook2024.pdf",
+      "file": "executive-summary.pdf",
+      "type": "pdf"
+    }
+  ],
+  "reference": [
+    {
+      "url": "https://iea.blob.core.windows.net/assets/aaf524cb-8e5e-4eb2-9b24-07a2726ab292/WorldEnergyOutlook2024-LaunchPresentation.pdf",
+      "file": "launch-deck.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "(c) OECD/IEA. Terms of use restrict redistribution; free download permitted. Local evaluation only.",
+  "expectedCharacteristics": [
+    "Names the STEPS, APS and NZE scenarios without conflating them",
+    "Carries the 'age of electricity' framing that the launch deck leads with",
+    "Presents figures as data slides rather than prose bullets"
+  ]
+}

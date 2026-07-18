@@ -1,0 +1,22 @@
+{
+  "id": "wikipedia-zero-knowledge-proof",
+  "title": "Zero-knowledge proof (English Wikipedia)",
+  "category": "B",
+  "language": "en",
+  "domain": "cryptography / computer science",
+  "structure": "structured",
+  "note": "Pinned to a revision id so the source is reproducible across runs.",
+  "sources": [
+    {
+      "url": "https://en.wikipedia.org/w/index.php?title=Zero-knowledge_proof&oldid=1363978829&action=raw",
+      "file": "article.wiki",
+      "type": "wikitext"
+    }
+  ],
+  "licence": "CC BY-SA 4.0 + GFDL. Revision 1363978829.",
+  "expectedCharacteristics": [
+    "Leads with an intuitive analogy (the cave or the colour-blind friend) before the formalism",
+    "Gives completeness, soundness and zero-knowledge their own structural slide",
+    "Drops citation apparatus and 'See also' cruft entirely"
+  ]
+}

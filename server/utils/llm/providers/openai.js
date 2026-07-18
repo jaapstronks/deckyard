@@ -3,6 +3,7 @@ import {
   createBearerHeaders,
   transformOpenAiCompatibleRequest,
   parseOpenAiCompatibleResponse,
+  parseOpenAiCompatibleUsage,
 } from '../provider-base.js';
 
 /**
@@ -14,4 +15,5 @@ export const requestOpenAiChatCompletionContent = createLlmProvider({
   createHeaders: createBearerHeaders,
   transformRequest: transformOpenAiCompatibleRequest,
   parseResponse: parseOpenAiCompatibleResponse,
+  parseUsage: parseOpenAiCompatibleUsage,
 });
