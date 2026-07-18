@@ -7,6 +7,7 @@
  */
 
 import sharp from 'sharp';
+import { assertPublicHttpUrl } from './ssrf-guard.js';
 
 // Overlay dimensions
 const PILL_HEIGHT = 40;
@@ -216,9 +217,18 @@ function escapeXml(str) {
 export async function fetchImageAsBuffer(url) {
   if (!url || typeof url !== 'string') return null;
 
+  // SSRF guard: reject non-public hosts (loopback/private/link-local, incl.
+  // cloud metadata) before fetching a user-controlled author image URL.
+  try {
+    await assertPublicHttpUrl(url);
+  } catch {
+    return null;
+  }
+
   try {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(5000),
+      redirect: 'error',
     });
     if (!response.ok) return null;
 

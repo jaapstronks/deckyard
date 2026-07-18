@@ -75,7 +75,7 @@ export function buildExportStyleContent(bundle) {
 export async function embedSlideImages(
   repoRoot,
   rawSlides,
-  { includeClient = true, transform = null } = {},
+  { includeClient = true, transform = null, embedRemote = false } = {},
 ) {
   const slides = [];
   for (const slide of rawSlides || []) {
@@ -86,7 +86,7 @@ export async function embedSlideImages(
         cloned.content[k] = await toDataUrlIfLocal(
           repoRoot,
           cloned.content[k],
-          { includeClient, transform },
+          { includeClient, transform, embedRemote },
         );
       }
     }
