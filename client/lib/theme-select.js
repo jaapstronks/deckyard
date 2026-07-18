@@ -149,25 +149,50 @@ export function createAndPopulateThemeSelect({
  * Renders a grid of theme cards showing each theme's colors and fonts,
  * replacing the plain <select> dropdown for a richer selection experience.
  *
+ * When `initialTheme` is null/omitted, the picker adopts the workspace default
+ * theme reported by `GET /api/themes`. Only the default-visible subset (the
+ * `enabledThemes` allowlist) is shown up front; the rest sit behind a "Show all
+ * themes" toggle.
+ *
  * @param {Object} options
  * @param {Function} options.h - DOM element helper function
  * @param {Function} options.api - API fetch function
- * @param {string} [options.initialTheme='deckyard'] - Initial theme ID
+ * @param {string|null} [options.initialTheme=null] - Explicit initial theme ID;
+ *   when falsy the workspace default is used
  * @param {Function} [options.onChange] - Called when theme changes
  * @returns {Object} { wrap, getTheme, setTheme, populated: Promise }
  */
 export function createVisualThemePicker({
   h,
   api,
-  initialTheme = DEFAULT_THEME_ID,
+  initialTheme = null,
   onChange,
 } = {}) {
-  let themeId = initialTheme;
+  // An explicit initial theme overrides the workspace default; null means
+  // "adopt whatever the server reports as the default".
+  const explicitInitial = initialTheme ? String(initialTheme) : null;
+  let themeId = explicitInitial;
 
   const wrap = h('div', { class: 'stack is-field theme-picker-wrap' });
   const label = h('div', { class: 'field-label', text: t('common.theme', 'Theme') });
   const grid = h('div', { class: 'theme-picker-grid' });
-  wrap.append(label, grid);
+  // Themes outside the default-visible subset live here, hidden until the
+  // "Show all themes" toggle is expanded.
+  const moreGrid = h('div', { class: 'theme-picker-grid theme-picker-grid-more is-hidden' });
+  const toggleBtn = h('button', {
+    type: 'button',
+    class: 'theme-picker-toggle is-hidden',
+    text: t('common.showAllThemes', 'Show all themes'),
+  });
+  let moreExpanded = false;
+  toggleBtn.addEventListener('click', () => {
+    moreExpanded = !moreExpanded;
+    moreGrid.classList.toggle('is-hidden', !moreExpanded);
+    toggleBtn.textContent = moreExpanded
+      ? t('common.showFewerThemes', 'Show fewer themes')
+      : t('common.showAllThemes', 'Show all themes');
+  });
+  wrap.append(label, grid, moreGrid, toggleBtn);
 
   const cards = new Map(); // id -> card element
   const BORDER_DEFAULT = '2px solid #ddd';
@@ -363,19 +388,39 @@ export function createVisualThemePicker({
       const themes = Array.isArray(resp?.themes) ? resp.themes : [];
       if (!themes.length) return themeId;
 
-      const hasInitial = themes.some((th) => th.id === themeId);
-      if (!hasInitial) {
-        themeId = String(themes[0]?.id || DEFAULT_THEME_ID);
+      const serverDefault = String(resp?.defaultThemeId || DEFAULT_THEME_ID);
+
+      // Resolve the selected theme: explicit initial wins, else the workspace
+      // default, else the first available theme.
+      if (!themeId) themeId = serverDefault;
+      if (!themes.some((th) => th.id === themeId)) {
+        themeId = themes.some((th) => th.id === serverDefault)
+          ? serverDefault
+          : String(themes[0]?.id || DEFAULT_THEME_ID);
       }
 
       const enriched = await Promise.all(themes.map(resolvePreviewData));
       preloadFonts(enriched);
 
+      let hiddenCount = 0;
       for (const theme of enriched) {
         const card = renderCard(theme);
-        grid.append(card);
         cards.set(theme.id, card);
+        // A theme is shown up front when it's in the default-visible subset
+        // (or the allowlist is empty → every theme carries enabled:true), or
+        // when it's the currently-selected theme (so a deck on a hidden theme
+        // still shows its selection).
+        const visibleUpFront = theme.enabled !== false || theme.id === themeId;
+        if (visibleUpFront) {
+          grid.append(card);
+        } else {
+          moreGrid.append(card);
+          hiddenCount += 1;
+        }
       }
+
+      // Only offer the toggle when something is actually hidden.
+      toggleBtn.classList.toggle('is-hidden', hiddenCount === 0);
 
       return themeId;
     } catch {
