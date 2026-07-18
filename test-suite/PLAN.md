@@ -1,6 +1,6 @@
 # Plan — Test suite voor Deckyard AI-slide-generatie
 
-Uitvoeringsplan bij `briefing-ai-test-suite.md`. Autonome uitvoering op
+Uitvoeringsplan bij `BRIEFING.md`. Autonome uitvoering op
 dev-server-1, branch `feat/ai-test-suite`.
 
 > **Status: uitgevoerd.** Dit document beschrijft het plan zoals vooraf
