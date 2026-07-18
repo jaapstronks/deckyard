@@ -58,12 +58,13 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   — create-flow follow-up: persist and return per-language library-item content
   on the Postgres backend (new `i18n` column + adapter + mapper) so composed
   decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
-- **Home redesign, phases 2-3** — `docs/plans/home-redesign.md` — phase 1 (the
-  two-column canvas + a "from others" activity rail) shipped 2026-07-18 (PR
-  #77). Next: a "building blocks" shelf backed by slide collections replacing
-  the create zone, and nav consolidation (Recent/Workspace/My/Shared → one
-  filterable Presentations view). Later: a rich activity feed (slide previews +
-  reuse tracking) and a single `/api/home` aggregation.
+- **Home redesign, phase 3** — `docs/plans/home-redesign.md` — phases 1-2
+  shipped 2026-07-18 (two-column canvas + "from others" rail, PR #77; building-
+  blocks shelf, PR #78; nav consolidation 9→6 into one filterable Presentations
+  view, PR #79). Remaining: a rich activity feed (comment text + slide-preview
+  thumbs, a "slide added to library" event), reuse tracking that powers the
+  shelf's "new to you" signal, and a single `/api/home` aggregation replacing
+  the current client fan-out.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
