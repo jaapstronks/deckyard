@@ -1,0 +1,21 @@
+{
+  "id": "cloudflare-nov-2025-outage",
+  "title": "Cloudflare outage on November 18, 2025",
+  "category": "B",
+  "language": "en",
+  "domain": "infrastructure engineering / incident post-mortem",
+  "structure": "structured",
+  "sources": [
+    {
+      "url": "https://blog.cloudflare.com/18-november-2025-outage/",
+      "file": "post-mortem.html",
+      "type": "html"
+    }
+  ],
+  "licence": "(c) Cloudflare, all rights reserved. Fetched at eval time and never committed; local evaluation only.",
+  "expectedCharacteristics": [
+    "Reconstructs a timeline slide from the incident table",
+    "Keeps the causal chain intact: permissions change -> duplicated feature rows -> file exceeds the preallocation limit -> panic. A weak deck says only 'a config error'",
+    "Treats the DDoS red herring as its own 'why diagnosis was slow' beat and closes on remediations"
+  ]
+}

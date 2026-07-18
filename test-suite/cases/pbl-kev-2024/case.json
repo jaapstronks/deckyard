@@ -1,0 +1,28 @@
+{
+  "id": "pbl-kev-2024",
+  "title": "Klimaat- en Energieverkenning 2024 (PBL)",
+  "category": "A",
+  "language": "nl",
+  "domain": "government / climate and energy policy",
+  "note": "The Dutch-language category A case and the heaviest compression task: 183 pages into roughly 20 slides. Reference deck is PBL's own summary presentation.",
+  "sources": [
+    {
+      "url": "https://www.pbl.nl/system/files/document/2025-01/pbl-2024-klimaat-en-energieverkenning-2024-5490.pdf",
+      "file": "kev-2024.pdf",
+      "type": "pdf"
+    }
+  ],
+  "reference": [
+    {
+      "url": "https://www.pbl.nl/system/files/document/2024-10/pbl-2024-aandachtspunten-voor-klimaatbeleid-2030-nav-de-KEV-2024_5683.pdf",
+      "file": "pbl-summary-deck.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "PBL publication, generally CC BY -- licence page not individually verified. Local evaluation only.",
+  "expectedCharacteristics": [
+    "States the 2030 emission-reduction bandwidth against 1990 and the low probability of hitting the statutory target",
+    "Keeps vastgesteld and voorgenomen beleid separate rather than blending them",
+    "Stays in Dutch and matches the formal policy register of the source"
+  ]
+}

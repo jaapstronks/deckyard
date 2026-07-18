@@ -1,0 +1,28 @@
+{
+  "id": "naacl-good-conversation",
+  "title": "What makes a good conversation? (See et al., NAACL-HLT 2019)",
+  "category": "A",
+  "language": "en",
+  "domain": "NLP / dialogue systems",
+  "note": "Academic paper with author-made conference slides. The only case in the set with clean redistribution rights.",
+  "sources": [
+    {
+      "url": "https://aclanthology.org/N19-1170.pdf",
+      "file": "paper.pdf",
+      "type": "pdf"
+    }
+  ],
+  "reference": [
+    {
+      "url": "https://aclanthology.org/attachments/N19-1170.Presentation.pdf",
+      "file": "author-slides.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "CC BY 4.0 (ACL Anthology).",
+  "expectedCharacteristics": [
+    "Names all four controlled attributes: repetition, specificity, response-relatedness, question-asking",
+    "Distinguishes automatic metrics from human judgements",
+    "Puts a method/setup slide before results"
+  ]
+}

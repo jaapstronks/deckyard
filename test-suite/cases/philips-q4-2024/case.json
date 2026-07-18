@@ -1,0 +1,27 @@
+{
+  "id": "philips-q4-2024",
+  "title": "Philips Q4 and full-year 2024 results",
+  "category": "A",
+  "language": "en",
+  "domain": "health technology / investor relations",
+  "sources": [
+    {
+      "url": "https://www.results.philips.com/publications/q424/downloads/files/en/philips-fourth-quarter-results-2024-report.pdf",
+      "file": "results-report.pdf",
+      "type": "pdf"
+    }
+  ],
+  "reference": [
+    {
+      "url": "https://www.results.philips.com/publications/q424/downloads/files/en/philips-fourth-quarter-results-2024-presentation.pdf",
+      "file": "results-deck.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "(c) Koninklijke Philips N.V., all rights reserved. Freely downloadable IR material; local evaluation only.",
+  "expectedCharacteristics": [
+    "Reports comparable sales growth and the adjusted EBITA margin",
+    "Breaks results down by segment (Diagnosis & Treatment, Connected Care, Personal Health)",
+    "Surfaces free cash flow and the Respironics settlement, which the human deck foregrounds"
+  ]
+}
