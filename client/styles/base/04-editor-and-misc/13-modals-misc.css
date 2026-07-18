@@ -314,6 +314,206 @@
 }
 
 /* ============================================
+   Creation view (two-column "New presentation")
+   Header + footer pinned; only the right pane scrolls.
+   ============================================ */
+
+.modal.creation-view {
+  width: min(960px, 100%);
+  max-height: min(90vh, 760px);
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* sections manage their own padding so borders span edge-to-edge */
+  overflow: hidden;
+}
+
+.creation-view-header {
+  flex: 0 0 auto;
+  padding: var(--ps-space-4) var(--ps-space-5);
+  border-bottom: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-view-header h2 {
+  margin: 0;
+}
+
+.creation-view-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.creation-rail {
+  flex: 0 0 200px;
+  border-right: 1px solid hsl(var(--app-border-default));
+  padding: var(--ps-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  overflow-y: auto;
+}
+
+.creation-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border: none;
+  border-radius: var(--ps-radius-md);
+  background: transparent;
+  color: hsl(var(--app-text-primary));
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.creation-rail-item:hover:not(:disabled) {
+  background: hsl(var(--app-bg-sunken));
+}
+
+.creation-rail-item.is-active {
+  background: hsl(var(--app-accent) / 0.1);
+  color: hsl(var(--app-accent));
+}
+
+.creation-rail-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.creation-rail-item-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font-weight: 600;
+}
+
+.creation-rail-item-desc {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
+.creation-rail-item.is-active .creation-rail-item-desc {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.creation-rail-badge {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(270 60% 45%);
+  background: hsl(270 60% 92%);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.creation-rail-divider {
+  height: 1px;
+  background: hsl(var(--app-border-default));
+  margin: var(--ps-space-2) var(--ps-space-1);
+}
+
+.creation-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--ps-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+.creation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+.creation-panel.is-hidden {
+  display: none;
+}
+
+.creation-subpanels {
+  display: flex;
+  flex-direction: column;
+}
+
+.creation-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  margin-top: var(--ps-space-3);
+}
+
+.creation-subpanel.is-hidden {
+  display: none;
+}
+
+.creation-setup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-4);
+  padding-top: var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-setup.is-hidden {
+  display: none;
+}
+
+/* Theme picker takes the full width; the language selector sits below it. */
+.creation-setup > .theme-picker-wrap {
+  flex: 1 1 100%;
+}
+
+.creation-setup > .theme-picker-wrap.is-hidden {
+  display: none;
+}
+
+.creation-view-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-4) var(--ps-space-5);
+  border-top: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-view-footer .modal-status {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .creation-view-body {
+    flex-direction: column;
+  }
+
+  .creation-rail {
+    flex: 0 0 auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--app-border-default));
+  }
+
+  .creation-rail-divider {
+    display: none;
+  }
+
+  .creation-rail-item {
+    flex: 0 0 auto;
+  }
+
+  .creation-rail-item-desc {
+    display: none;
+  }
+}
+
+/* ============================================
    Import Slides Tab (PDF Import)
    ============================================ */
 
