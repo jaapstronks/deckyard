@@ -46,6 +46,12 @@ import {
 } from '../slide-library-file.js';
 
 import {
+  getSlideCollections as fileGetSlideCollections,
+  saveSlideCollections as fileSaveSlideCollections,
+  normalizeSlideIds,
+} from '../collections-file.js';
+
+import {
   getPublishedIndex,
   upsertPublishedEntry,
   removePublishedEntry,
@@ -64,6 +70,28 @@ import {
   resolveFollowCode as fileResolveFollowCode,
   cleanupExpiredCodes as fileCleanupExpiredCodes,
 } from '../follow-codes.js';
+
+/**
+ * Normalize a stored collection into the adapter's API shape (adds slideCount).
+ * @param {object} item
+ * @returns {object}
+ */
+function shapeCollection(item) {
+  const slideIds = Array.isArray(item?.slideIds) ? item.slideIds.map(String) : [];
+  return {
+    id: String(item?.id || ''),
+    scope: String(item?.scope || ''),
+    ownerEmail: item?.ownerEmail || null,
+    name: String(item?.name || ''),
+    description: String(item?.description || ''),
+    slideIds,
+    slideCount: slideIds.length,
+    createdBy: item?.createdBy || null,
+    updatedBy: item?.updatedBy || null,
+    createdAt: String(item?.createdAt || ''),
+    updatedAt: String(item?.updatedAt || ''),
+  };
+}
 
 export class FileAdapter extends StorageAdapter {
   constructor(repoRoot) {
@@ -338,6 +366,87 @@ export class FileAdapter extends StorageAdapter {
 
     items.splice(idx, 1);
     await fileSaveSlideLibrary(this.repoRoot, { items });
+    return true;
+  }
+
+  // ============================================================
+  // SLIDE COLLECTIONS
+  // ============================================================
+
+  async listSlideCollections(ctx, opts = {}) {
+    const store = await fileGetSlideCollections(this.repoRoot);
+    let items = store?.items || [];
+    if (opts?.scope) {
+      items = items.filter((c) => c.scope === opts.scope);
+    }
+    if (opts?.ownerEmail) {
+      const owner = String(opts.ownerEmail).toLowerCase();
+      items = items.filter((c) => String(c.ownerEmail || '').toLowerCase() === owner);
+    }
+    // Newest first, matching the postgres adapter's ordering.
+    items = [...items].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    return items.map(shapeCollection);
+  }
+
+  async getSlideCollection(id, ctx) {
+    const store = await fileGetSlideCollections(this.repoRoot);
+    const item = (store?.items || []).find((c) => c.id === id);
+    return item ? shapeCollection(item) : null;
+  }
+
+  async createSlideCollection(data, ctx) {
+    const store = await fileGetSlideCollections(this.repoRoot);
+    const items = store?.items || [];
+    const now = new Date().toISOString();
+    const item = {
+      id: data.id || crypto.randomUUID(),
+      scope: data.scope || 'personal',
+      ownerEmail: data.ownerEmail || ctx?.actorEmail || null,
+      name: data.name,
+      description: data.description || '',
+      slideIds: normalizeSlideIds(data.slideIds),
+      createdBy: ctx?.actorEmail || null,
+      updatedBy: ctx?.actorEmail || null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    items.unshift(item);
+    await fileSaveSlideCollections(this.repoRoot, { v: 1, items });
+    return shapeCollection(item);
+  }
+
+  async updateSlideCollection(id, data, ctx) {
+    const store = await fileGetSlideCollections(this.repoRoot);
+    const items = store?.items || [];
+    const idx = items.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+
+    const existing = items[idx];
+    const updated = {
+      ...existing,
+      id: existing.id,
+      scope: existing.scope,
+      ownerEmail: existing.ownerEmail,
+      createdAt: existing.createdAt,
+      createdBy: existing.createdBy,
+      updatedBy: ctx?.actorEmail || existing.updatedBy,
+      updatedAt: new Date().toISOString(),
+    };
+    if (data.name !== undefined) updated.name = data.name;
+    if (data.description !== undefined) updated.description = data.description;
+    if (data.slideIds !== undefined) updated.slideIds = normalizeSlideIds(data.slideIds);
+    items[idx] = updated;
+    await fileSaveSlideCollections(this.repoRoot, { v: 1, items });
+    return shapeCollection(updated);
+  }
+
+  async deleteSlideCollection(id, ctx) {
+    const store = await fileGetSlideCollections(this.repoRoot);
+    const items = store?.items || [];
+    const idx = items.findIndex((c) => c.id === id);
+    if (idx === -1) return false;
+    items.splice(idx, 1);
+    await fileSaveSlideCollections(this.repoRoot, { v: 1, items });
     return true;
   }
 
