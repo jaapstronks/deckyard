@@ -279,9 +279,23 @@
   min-width: 0;
   font-size: var(--ps-text-sm);
   line-height: 1.4;
+}
+
+/* The actor · action · target line stays a single truncated line; the optional
+   comment snippet sits beneath it. */
+.home-activity-line {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.home-activity-snippet {
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
 }
 
 .home-activity-actor {
