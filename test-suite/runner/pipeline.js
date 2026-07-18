@@ -20,6 +20,7 @@ import {
 import { refineAllSlideGroups } from '../../server/utils/ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from '../../server/utils/ai/validate-slides.js';
 import { assembleDeck } from '../../server/utils/ai/generate-deck-v2.js';
+import { reviseOutline } from '../../server/utils/ai/revise-outline.js';
 
 /**
  * Phase 1 only: source document -> outline.
@@ -35,8 +36,17 @@ import { assembleDeck } from '../../server/utils/ai/generate-deck-v2.js';
  * @param {string} [options.userName]
  * @returns {Promise<object>} The outline, including its own metadata
  */
-export async function runOutlineStage(sourceText, { targetLang = null, vendor = null, userName = '' } = {}) {
-  return generateOutline(sourceText, { userName, targetLang, vendor, onLog: null });
+export async function runOutlineStage(
+  sourceText,
+  { targetLang = null, vendor = null, userName = '', revise = false } = {}
+) {
+  const outline = await generateOutline(sourceText, { userName, targetLang, vendor, onLog: null });
+  if (!revise) return outline;
+
+  const lang = outline.metadata?.requestedLang || outline.metadata?.detectedLang || 'en';
+  const revised = await reviseOutline(outline, sourceText, { vendor, lang });
+  // Carry the revision record so a run can report what the pass actually did.
+  return { ...revised.outline, _revision: revised.revision };
 }
 
 /**
