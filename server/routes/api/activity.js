@@ -183,19 +183,17 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
     }
   }
 
-  // Fetch presentations and check access
-  const presentations = new Map();
+  // Fetch presentations and check access. Keep the full presentation around
+  // (request-scoped, in memory) so we can resolve a commented slide for the
+  // activity rail's preview thumbnail without a second read.
+  const presMap = new Map();
   const accessibleIds = new Set();
 
   for (const pid of presentationIds) {
     const pres = await getReadablePresentation(pid, repoRoot, authedUser, ctx);
     if (pres) {
       accessibleIds.add(pid);
-      presentations.set(pid, {
-        id: pres.id,
-        title: pres.title,
-        ownerEmail: pres.ownerEmail,
-      });
+      presMap.set(pid, pres);
     }
   }
 
@@ -207,10 +205,34 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
       // Only include events for presentations the user can access
       return accessibleIds.has(event.presentationId);
     })
-    .map((event) => ({
-      ...event,
-      presentation: event.presentationId
-        ? presentations.get(event.presentationId) || null
-        : null,
-    }));
+    .map((event) => {
+      const pres = event.presentationId ? presMap.get(event.presentationId) : null;
+      const enriched = {
+        ...event,
+        presentation: pres
+          ? { id: pres.id, title: pres.title, ownerEmail: pres.ownerEmail }
+          : null,
+      };
+
+      // Attach the commented slide (a minimal projection) + the deck theme so
+      // the rail can render a small preview thumbnail client-side, reusing the
+      // same slide renderer the presentation cards use. Only for new comments
+      // (the rail's thumb case), and only when the slide still resolves in a
+      // deck the user may already read — so it leaks nothing.
+      if (pres && event.eventType === 'comment.created' && event.data?.slideId) {
+        const slide = (Array.isArray(pres.slides) ? pres.slides : []).find(
+          (s) => s?.id === event.data.slideId
+        );
+        if (slide) {
+          enriched.slide = {
+            id: slide.id,
+            type: slide.type,
+            content: slide.content || {},
+          };
+          enriched.themeId = pres.theme || null;
+        }
+      }
+
+      return enriched;
+    });
 }
