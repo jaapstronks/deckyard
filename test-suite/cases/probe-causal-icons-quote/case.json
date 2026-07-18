@@ -1,0 +1,23 @@
+{
+  "id": "probe-causal-icons-quote",
+  "title": "Probe: causal chain + parallel principles + quotable line",
+  "category": "C",
+  "language": "en",
+  "domain": "product research",
+  "structure": "prose",
+  "note": "Authored probe. The causal chain is explicit and directional (A causes B causes C), which is exactly what text-blocks-slide with arrows exists for. Four named parallel principles suit icon cards. There is one attributed, self-contained quote.",
+  "sources": [
+    { "local": "test-suite/fixtures/probe-causal-icons-quote.md", "file": "source.md", "type": "markdown" }
+  ],
+  "licence": "Authored for this suite; MIT with the repository.",
+  "expectedSlideTypes": [
+    { "type": "text-blocks-slide", "because": "explicit causal chain: early billing -> abandonment -> empty workspace -> failed reactivation" },
+    { "type": "icon-card-grid-slide", "because": "four named parallel principles: Speed, Trust, Clarity, Recovery" },
+    { "type": "quote-slide", "because": "one attributed quote from Marieke de Vries that stands alone" }
+  ],
+  "expectedCharacteristics": [
+    "Uses arrowed text blocks for the causal chain rather than flattening it to bullets",
+    "Gives the four principles an icon-card treatment with sensible icons",
+    "Sets the customer quote as a quote slide, attributed"
+  ]
+}

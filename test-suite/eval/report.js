@@ -268,6 +268,26 @@ export async function writeReport(run, previous, outputPath) {
   }
   lines.push('');
 
+  // Specialised layout recall, for probe cases that declare ground truth.
+  const probes = run.results.filter((r) => r.repeats?.[0]?.specialTypes?.expected);
+  if (probes.length) {
+    lines.push('## Specialised layout recall');
+    lines.push('');
+    lines.push('Whether content whose shape calls for a laborious-to-build layout got it.');
+    lines.push('');
+    lines.push('| Case | Recall | Missed | Fell back to |');
+    lines.push('| --- | ---: | --- | --- |');
+    for (const result of probes) {
+      const st = result.repeats[0].specialTypes;
+      lines.push(
+        `| ${result.caseId} | ${st.found.length}/${st.expected} | ` +
+          `${st.missing.map((m) => `\`${m.type}\``).join(', ') || '—'} | ` +
+          `${st.substitutes.map((s) => `\`${s}\``).join(', ') || '—'} |`
+      );
+    }
+    lines.push('');
+  }
+
   // Lowest-scoring dimensions with rationales — the actionable part.
   const weakest = [...RUBRIC_DIMENSIONS, REFERENCE_DIMENSION]
     .filter((d) => Number.isFinite(scores[d]))

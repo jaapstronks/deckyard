@@ -276,3 +276,47 @@ function countBy(items) {
 function round(n) {
   return Math.round(n * 100) / 100;
 }
+
+/**
+ * Did the deck reach for the specialised slide type the content called for?
+ *
+ * Summarising prose into a text slide is easy and a human can do it quickly.
+ * The value of generated decks is in recognising content whose shape deserves a
+ * layout that is laborious to build by hand — a sequence of steps, a dated
+ * series, tabular data, a causal chain, parallel principles, a quotable line —
+ * and picking that layout. A deck that flattens all of it into bullets has done
+ * the easy part and skipped the valuable part.
+ *
+ * Probe cases (category C) declare `expectedSlideTypes` because their source is
+ * authored, so the ground truth is known rather than inferred.
+ *
+ * @param {object} deck
+ * @param {{type: string, because: string}[]} expected
+ * @returns {{expected: number, found: string[], missing: object[], recall: number, substitutes: string[]}}
+ */
+export function specialTypeUsage(deck, expected = []) {
+  const used = new Set((deck?.slides || []).map((slide) => slide.type));
+  const found = [];
+  const missing = [];
+
+  for (const entry of expected) {
+    if (used.has(entry.type)) found.push(entry.type);
+    else missing.push(entry);
+  }
+
+  // What the deck reached for instead. When a specialised type is missed, the
+  // content nearly always ends up in one of these, and naming it makes the
+  // failure mode legible rather than just "type absent".
+  const GENERIC = new Set(['list-slide', 'content-slide', 'content-columns-slide']);
+  const substitutes = missing.length
+    ? [...used].filter((type) => GENERIC.has(type))
+    : [];
+
+  return {
+    expected: expected.length,
+    found,
+    missing,
+    recall: expected.length ? Math.round((found.length / expected.length) * 100) / 100 : 1,
+    substitutes,
+  };
+}
