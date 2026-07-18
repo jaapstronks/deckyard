@@ -353,6 +353,94 @@ export async function archiveThreadNotifications(userEmail, presentationId, thre
   });
 }
 
+/**
+ * Find an existing unread, unarchived `deck_activity` notification for one
+ * (recipient, deck, actor) that is still inside the debounce window. Used by
+ * the deck-activity coalescer: when found, the caller refreshes it (bumps the
+ * count) instead of inserting a second row.
+ *
+ * @param {string} userEmail - Recipient
+ * @param {string} presentationId
+ * @param {string|null} actorEmail - The editing user (already normalised)
+ * @param {string} [sinceIso] - Only match rows created after this timestamp
+ * @param {Object} ctx - Context object
+ * @returns {Promise<Object|null>} The matching notification, or null.
+ */
+export async function findUnreadDeckActivityNotification(
+  userEmail,
+  presentationId,
+  actorEmail,
+  sinceIso,
+  ctx
+) {
+  const email = normalizeEmail(userEmail);
+  const pid = String(presentationId || '').trim();
+  const actor = normalizeEmail(actorEmail);
+  if (!email || !pid) return null;
+
+  return withDbGuard(null, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    let qb = db
+      .selectFrom('user_notifications')
+      .selectAll()
+      .where('user_email', '=', email)
+      .where('organization_id', '=', orgId)
+      .where('presentation_id', '=', pid)
+      .where('notification_type', '=', 'deck_activity')
+      .where('is_read', '=', false)
+      .where('archived_at', 'is', null);
+
+    qb = actor ? qb.where('actor_email', '=', actor) : qb.where('actor_email', 'is', null);
+    if (sinceIso) qb = qb.where('created_at', '>', sinceIso);
+
+    const row = await qb.orderBy('created_at', 'desc').executeTakeFirst();
+    return row ? formatNotification(row) : null;
+  });
+}
+
+/**
+ * Refresh a coalesced `deck_activity` notification: update its title/body/data
+ * (the bumped count), move it back to the top (`created_at = now`) and make it
+ * unread again. This is the "window extends on each edit" half of the
+ * coalesce-on-write bundling.
+ *
+ * @param {string} notificationId
+ * @param {string} userEmail - Recipient (authorization)
+ * @param {{title?: string, body?: string|null, data?: Object}} updates
+ * @param {Object} ctx - Context object
+ * @returns {Promise<Object>} Result with the updated notification.
+ */
+export async function refreshDeckActivityNotification(notificationId, userEmail, updates, ctx) {
+  const email = normalizeEmail(userEmail);
+  if (!email || !notificationId) {
+    return { ok: false, reason: 'invalid_params' };
+  }
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    const set = { created_at: nowIso(), is_read: false, read_at: null, archived_at: null };
+    if (updates?.title != null) set.title = updates.title;
+    if (updates?.body !== undefined) set.body = updates.body;
+    if (updates?.data !== undefined) set.data = JSON.stringify(updates.data || {});
+
+    const row = await db
+      .updateTable('user_notifications')
+      .set(set)
+      .where('id', '=', notificationId)
+      .where('user_email', '=', email)
+      .where('organization_id', '=', orgId)
+      .returningAll()
+      .executeTakeFirst();
+
+    if (!row) {
+      return { ok: false, reason: 'not_found' };
+    }
+    return { ok: true, notification: formatNotification(row) };
+  });
+}
+
 // ============================================================
 // HELPERS
 // ============================================================
