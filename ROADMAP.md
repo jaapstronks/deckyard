@@ -54,6 +54,10 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 
 ## Next — existing feature plans
 
+- **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
+  — create-flow follow-up: persist and return per-language library-item content
+  on the Postgres backend (new `i18n` column + adapter + mapper) so composed
+  decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
