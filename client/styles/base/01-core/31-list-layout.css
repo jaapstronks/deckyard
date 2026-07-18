@@ -427,6 +427,7 @@
 }
 
 .home-block-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-1);
@@ -509,6 +510,22 @@
   font-weight: 400;
   line-height: 1;
   color: hsl(var(--app-accent-text));
+}
+
+/* "New to you": a subtle corner flag on a team block the user never used. */
+.home-block-new {
+  position: absolute;
+  top: var(--ps-space-2);
+  right: var(--ps-space-2);
+  padding: 1px 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .presentation-brand {

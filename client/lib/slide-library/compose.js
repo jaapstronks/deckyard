@@ -44,23 +44,43 @@ export function buildSlidesFromLibraryItems(items) {
 
 /**
  * Create a new presentation from selected library items via the batch primitive.
+ *
+ * The source item ids (and, when the deck started from a saved collection, its
+ * id) are forwarded so the server can record per-user library usage — this is
+ * what clears the Home "new to you" badge. Sending the ids server-side (rather
+ * than a separate client call) means MCP/agent composes are tracked too.
  * @param {Object} opts
  * @param {Function} opts.api - API client.
  * @param {Array<Object>} opts.items - Selected library items.
  * @param {string} opts.title - Deck title.
  * @param {string} [opts.lang] - Dominant language for the new deck.
  * @param {string} [opts.theme] - Theme id for the new deck.
+ * @param {string} [opts.sourceCollectionId] - Collection the deck started from.
  * @returns {Promise<Object>} The created presentation.
  */
-export function createDeckFromLibraryItems({ api, items, title, lang = 'nl', theme = 'deckyard' }) {
+export function createDeckFromLibraryItems({
+  api,
+  items,
+  title,
+  lang = 'nl',
+  theme = 'deckyard',
+  sourceCollectionId = null,
+}) {
   const slides = buildSlidesFromLibraryItems(items);
+  const sourceLibraryItemIds = (Array.isArray(items) ? items : [])
+    .map((it) => String(it?.id || '').trim())
+    .filter(Boolean);
+  const payload = {
+    title,
+    slides,
+    theme,
+    lang: lang === 'en-GB' ? 'en-GB' : 'nl',
+  };
+  if (sourceLibraryItemIds.length) payload.sourceLibraryItemIds = sourceLibraryItemIds;
+  const collectionId = String(sourceCollectionId || '').trim();
+  if (collectionId) payload.sourceCollectionId = collectionId;
   return api('/api/presentations', {
     method: 'POST',
-    body: JSON.stringify({
-      title,
-      slides,
-      theme,
-      lang: lang === 'en-GB' ? 'en-GB' : 'nl',
-    }),
+    body: JSON.stringify(payload),
   });
 }

@@ -233,11 +233,24 @@ export function createHomeView({
   async function loadBuildingBlocks() {
     try {
       const collectionsApi = createCollectionsApi({ api });
-      const [collections, teamResp] = await Promise.all([
+      const [collections, teamResp, usageResp] = await Promise.all([
         collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
         api('/api/slide-library/team').catch(() => ({ items: [] })),
+        api('/api/slide-library/usage').catch(() => ({ items: [] })),
       ]);
       homeBlocksLoading.remove();
+
+      // Set of {itemType}:{itemId} the current user has already used, so team
+      // building blocks they've never started from get a "new to you" badge.
+      const usedSet = new Set(
+        (Array.isArray(usageResp?.items) ? usageResp.items : [])
+          .map((u) => `${u?.itemType}:${u?.itemId}`)
+      );
+      // The badge is a per-user "you haven't tried this team item yet" nudge, so
+      // it only makes sense on team-scope items (you made your personal ones).
+      const isNewCollection = (col) =>
+        col?.scope === 'team' && !usedSet.has(`collection:${col.id}`);
+      const isNewSlide = (item) => !usedSet.has(`slide:${item.id}`);
 
       const cols = [...(collections?.team || []), ...(collections?.personal || [])];
       const teamSlides = (Array.isArray(teamResp?.items) ? teamResp.items : [])
@@ -250,10 +263,10 @@ export function createHomeView({
 
       homeBlocksList.append(renderBlankBlockCard(h, onCreate));
       for (const col of shownCols) {
-        homeBlocksList.append(renderCollectionBlockCard(h, col, onComposeFrom));
+        homeBlocksList.append(renderCollectionBlockCard(h, col, onComposeFrom, isNewCollection(col)));
       }
       for (const item of teamSlides.slice(0, slideBudget)) {
-        homeBlocksList.append(renderSlideBlockCard(h, item, onComposeFrom));
+        homeBlocksList.append(renderSlideBlockCard(h, item, onComposeFrom, isNewSlide(item)));
       }
       homeBlocksSection.append(homeBlocksList);
 
@@ -323,8 +336,9 @@ function renderBlankBlockCard(h, onCreate) {
  * @param {Function} h
  * @param {object} col - collection ({ id, scope, name, slideIds, slideCount })
  * @param {Function} [onComposeFrom]
+ * @param {boolean} [isNew] - show a "new to you" badge (team item, never used).
  */
-function renderCollectionBlockCard(h, col, onComposeFrom) {
+function renderCollectionBlockCard(h, col, onComposeFrom, isNew = false) {
   const count = col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
   const meta = h('span', { class: 'home-block-meta' });
   if (col.scope === 'team') {
@@ -337,7 +351,7 @@ function renderCollectionBlockCard(h, col, onComposeFrom) {
     })
   );
 
-  return h('button', {
+  const card = h('button', {
     class: 'home-block-card is-collection',
     type: 'button',
     onclick: () => onComposeFrom?.({ collection: col }),
@@ -349,6 +363,8 @@ function renderCollectionBlockCard(h, col, onComposeFrom) {
     }),
     meta,
   ]);
+  if (isNew) card.append(renderNewToYouBadge(h));
+  return card;
 }
 
 /**
@@ -357,9 +373,10 @@ function renderCollectionBlockCard(h, col, onComposeFrom) {
  * @param {Function} h
  * @param {object} item - library item ({ id, name, slideType })
  * @param {Function} [onComposeFrom]
+ * @param {boolean} [isNew] - show a "new to you" badge (team item, never used).
  */
-function renderSlideBlockCard(h, item, onComposeFrom) {
-  return h('button', {
+function renderSlideBlockCard(h, item, onComposeFrom, isNew = false) {
+  const card = h('button', {
     class: 'home-block-card is-slide',
     type: 'button',
     onclick: () => onComposeFrom?.({ items: [item] }),
@@ -370,6 +387,21 @@ function renderSlideBlockCard(h, item, onComposeFrom) {
       text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
     }),
   ]);
+  if (isNew) card.append(renderNewToYouBadge(h));
+  return card;
+}
+
+/**
+ * The "new to you" badge — a subtle corner flag on a team building block the
+ * current user has never started a deck from.
+ * @param {Function} h
+ * @returns {HTMLElement}
+ */
+function renderNewToYouBadge(h) {
+  return h('span', {
+    class: 'home-block-new',
+    text: t('list.home.blocks.newToYou', 'New to you'),
+  });
 }
 
 /**
