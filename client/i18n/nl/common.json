@@ -40,6 +40,8 @@
   "common.settings": "Instellingen",
   "common.signOut": "Uitloggen",
   "common.theme": "Thema",
+  "common.showAllThemes": "Alle thema's tonen",
+  "common.showFewerThemes": "Minder thema's tonen",
   "common.title": "Titel",
   "common.unknown": "Onbekend",
   "common.upload": "Upload",

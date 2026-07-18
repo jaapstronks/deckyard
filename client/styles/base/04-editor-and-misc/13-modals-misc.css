@@ -101,6 +101,36 @@
   flex-wrap: wrap;
 }
 
+/* Themes outside the default-visible subset, revealed by "Show all themes". */
+.theme-picker-grid-more {
+  margin-top: 12px;
+}
+
+.theme-picker-grid-more.is-hidden {
+  display: none;
+}
+
+.theme-picker-toggle {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: hsl(var(--app-accent));
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.theme-picker-toggle:hover {
+  opacity: 0.8;
+}
+
+.theme-picker-toggle.is-hidden {
+  display: none;
+}
+
 .theme-card {
   display: block;
   width: 140px;

@@ -37,7 +37,9 @@ export function openNewPresentationModal({
   let selectedConvertFile = null;
   let selectedImportFile = null;
   let selectedImportMdFile = null;
-  let themeId = preselectedTheme?.id || 'deckyard';
+  // null lets the visual picker adopt the workspace default theme; an explicit
+  // preselected theme (e.g. duplicating within a themed context) overrides it.
+  let themeId = preselectedTheme?.id || null;
   let langMode = readLangMode();
   let onKey = null;
 

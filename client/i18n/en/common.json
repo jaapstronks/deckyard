@@ -40,6 +40,8 @@
   "common.settings": "Settings",
   "common.signOut": "Sign out",
   "common.theme": "Theme",
+  "common.showAllThemes": "Show all themes",
+  "common.showFewerThemes": "Show fewer themes",
   "common.title": "Title",
   "common.unknown": "Unknown",
   "common.upload": "Upload",
