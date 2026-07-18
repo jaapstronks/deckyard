@@ -66,12 +66,6 @@ describe('checkActorAccess — workspace decks', () => {
     // The owner keeps write access
     assert.equal(checkActorAccess({ pres: viewOnly, actorEmail: OWNER, access: 'write' }), true);
   });
-
-  it('starter kits are readable but not writable by non-owners', () => {
-    const starter = { ...workspaceDeck, isStarterKit: true };
-    assert.equal(checkActorAccess({ pres: starter, actorEmail: OTHER, access: 'read' }), true);
-    assert.equal(checkActorAccess({ pres: starter, actorEmail: OTHER, access: 'write' }), false);
-  });
 });
 
 describe('checkActorAccess — edge cases', () => {

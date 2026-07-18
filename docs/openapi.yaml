@@ -110,12 +110,6 @@ paths:
             type: integer
             minimum: 0
             default: 0
-        - name: starterKit
-          in: query
-          description: Filter to starter kit presentations only
-          schema:
-            type: string
-            enum: ['true']
         - name: viewOnly
           in: query
           description: Filter to view-only presentations only

@@ -8,7 +8,6 @@
 export { buildSectionHeader } from './section-header.js';
 export { createHomeView } from './home-view.js';
 export { createRecentView } from './recent-view.js';
-export { createStarterKitsView } from './starter-kits-view.js';
 export { createWorkspaceView } from './workspace-view.js';
 export { createPrivateView } from './private-view.js';
 export { createMyPresentationsView } from './my-presentations-view.js';

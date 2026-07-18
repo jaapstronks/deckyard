@@ -39,7 +39,6 @@ export function withPresentations(Base) {
           'updated_by as updatedBy',
           'scope',
           'revision',
-          'is_starter_kit as isStarterKit',
           'i18n',
           'slides',
         ])
@@ -67,7 +66,6 @@ export function withPresentations(Base) {
           updatedBy: row.updatedBy,
           scope: row.scope,
           revision: row.revision,
-          isStarterKit: !!row.isStarterKit,
           i18n: i18n
             ? {
                 dominant,
@@ -248,10 +246,6 @@ export function withPresentations(Base) {
         updateData.scope = data.scope;
       }
 
-      if (opts?.allowStarterKitChange && typeof data.isStarterKit === 'boolean') {
-        updateData.is_starter_kit = data.isStarterKit;
-      }
-
       const row = await db
         .updateTable('presentations')
         .set(updateData)
@@ -313,7 +307,6 @@ export function withPresentations(Base) {
           'updated_by as updatedBy',
           'scope',
           'revision',
-          'is_starter_kit as isStarterKit',
           'i18n',
           'slides',
         ])
@@ -343,7 +336,6 @@ export function withPresentations(Base) {
           updatedBy: row.updatedBy,
           scope: row.scope,
           revision: row.revision,
-          isStarterKit: !!row.isStarterKit,
           i18n: i18n
             ? {
                 dominant,

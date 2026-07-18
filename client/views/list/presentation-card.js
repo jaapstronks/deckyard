@@ -39,16 +39,12 @@ export function createCardRenderer({
    * @param {boolean} [options.isWorkspace] - Is this a workspace presentation
    * @param {boolean} [options.highlight] - Highlight the card
    * @param {boolean} [options.isSharedWithMe] - Is this from "Shared with me"
-   * @param {boolean} [options.isStarterKit] - Is this a starter kit
    * @param {boolean} [options.isTrashView] - Is this in the trash view
    * @param {string} [options.sharedBy] - Email of the person who shared it
    * @param {string} [options.permission] - Permission level (view, comment, edit)
    * @returns {HTMLElement} Card element
    */
-  const renderCard = (p, { isWorkspace, highlight = false, isSharedWithMe = false, isStarterKit = false, isTrashView = false, sharedBy, permission } = {}) => {
-    // Check if this presentation is a starter kit (from data or options)
-    const showStarterKitBadge = isStarterKit || p?.isStarterKit;
-
+  const renderCard = (p, { isWorkspace, highlight = false, isSharedWithMe = false, isTrashView = false, sharedBy, permission } = {}) => {
     // Check if selection mode is active
     const isSelectionMode = () => selectionState?.isActive?.() ?? false;
     const isSelected = () => selectionState?.isSelected?.(p.id) ?? false;
@@ -423,12 +419,7 @@ export function createCardRenderer({
           ]),
           // Visibility indicator
           getVisibilityIndicator(h, p, t),
-          showStarterKitBadge
-            ? h('span', {
-                class: 'presentation-starter-kit-badge',
-                text: t('list.starterKitBadge', 'Template'),
-              })
-            : isWorkspace
+          isWorkspace
             ? h('span', {
                 class: 'presentation-shared-badge',
                 text: t('list.sharedBadge', 'Shared'),
@@ -543,7 +534,6 @@ export function toListItem(pres) {
     createdBy: p.createdBy || null,
     updatedBy: p.updatedBy || null,
     scope: p.scope || 'private',
-    isStarterKit: !!p.isStarterKit,
     revision: Number(p.revision) || 1,
     i18n: p.i18n || null,
     tags: Array.isArray(p.tags) ? p.tags : [],

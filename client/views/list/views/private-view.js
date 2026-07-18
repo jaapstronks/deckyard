@@ -18,7 +18,6 @@ export function createPrivateView({
   renderCard,
   priv,
   onCreate,
-  onBrowseTemplates,
 }) {
   let allPresentations = [...priv];
   let selectedTags = [];
@@ -55,7 +54,7 @@ export function createPrivateView({
         );
       } else if (typeof onCreate === 'function') {
         privateList.append(
-          createNoPresentationsEmptyState({ h, onCreate, onBrowseTemplates })
+          createNoPresentationsEmptyState({ h, onCreate })
         );
       } else {
         privateList.append(emptyMsg.cloneNode(true));

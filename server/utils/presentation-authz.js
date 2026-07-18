@@ -32,7 +32,6 @@ export {
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
-  canManageStarterKit,
   canChangePresentationScope,
   canClaimOwnership,
   canForceLockRelease,
