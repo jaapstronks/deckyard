@@ -2,6 +2,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
+import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
 import { toast } from '../../../lib/toast.js';
 
 /**
@@ -21,6 +22,7 @@ export function createSlideLibraryView({ api, nav }) {
 
   let loaded = false;
   let picker = null;
+  let collectionsBar = null;
 
   view.append(title, hint, loading);
 
@@ -85,7 +87,12 @@ export function createSlideLibraryView({ api, nav }) {
     try {
       loaded = true;
       view.innerHTML = '';
-      view.append(title, hint, mount);
+
+      // Collections management sits above the grid; membership add hangs off the
+      // per-card more-menu via onAddToCollection.
+      collectionsBar = createCollectionsBar({ api, root: document.body });
+      view.append(title, hint, collectionsBar.el, mount);
+      collectionsBar.refresh();
 
       // Create the slide library picker in browse-only mode with language switching
       picker = createSlideLibraryPicker({
@@ -96,6 +103,8 @@ export function createSlideLibraryView({ api, nav }) {
         initialLang: 'nl', // Default to Dutch
         onCopySlide: copySlide,
         onNewPresentation: createNewPresentation,
+        onAddToCollection: (item, scope) =>
+          collectionsBar?.openAddTo({ ...item, _scope: scope }),
         // Permalink support: update URL when slide opens/closes
         onSlideOpen: ({ scope, slideId }) => {
           const url = `/app/slide-library/${scope}/${slideId}`;

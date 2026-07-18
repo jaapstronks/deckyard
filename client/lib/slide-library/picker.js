@@ -52,6 +52,9 @@ export function createSlideLibraryPicker({
   // selection changes via onSelectionChange so the host owns the action bar.
   compose = false,
   onSelectionChange = null,
+  // Optional: when provided, the card more-menu gains an "Add to collection"
+  // action. Called with (item, scope); the host owns the chooser UI.
+  onAddToCollection = null,
 } = {}) {
   const themeIdNorm = cleanStr(themeId);
   const themeCache = new Map();
@@ -296,6 +299,20 @@ export function createSlideLibraryPicker({
         },
       });
       moreMenu.append(pushBtn);
+    }
+
+    // Add to collection (host owns the chooser; only shown when wired)
+    if (typeof onAddToCollection === 'function') {
+      const addToCollectionBtn = h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('slideLibrary.action.addToCollection', 'Add to collection'),
+        onclick: () => {
+          moreDetails.open = false;
+          onAddToCollection(it, scope);
+        },
+      });
+      moreMenu.append(addToCollectionBtn);
     }
 
     // Move to trash

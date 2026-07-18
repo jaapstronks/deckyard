@@ -37,6 +37,8 @@
   "common.reload": "Reload",
   "common.save": "Save",
   "common.saveFailedAborted": "Could not save; aborted.",
+  "common.saving": "Saving…",
+  "common.saved": "Saved",
   "common.savingFirst": "Saving first…",
   "common.search": "Search",
   "common.settings": "Settings",
