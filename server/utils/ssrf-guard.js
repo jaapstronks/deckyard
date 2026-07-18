@@ -74,6 +74,48 @@ function isPrivateIpv4(ip) {
 }
 
 /**
+ * Expand an IPv6 literal into its 8 hextets (integers 0..0xffff). Handles
+ * `::` compression and a trailing dotted-IPv4 group. Returns null if the
+ * string is not a well-formed IPv6 address. Callers past net.isIP() already
+ * know it is valid, but this stays defensive on its own.
+ * @param {string} addr lowercased, zone-id already stripped
+ * @returns {number[]|null}
+ */
+function expandIpv6(addr) {
+  // Fold a trailing dotted-IPv4 group (::ffff:1.2.3.4) into two hextets.
+  const v4 = addr.match(/^(.*:)((?:\d{1,3}\.){3}\d{1,3})$/);
+  if (v4) {
+    const octets = v4[2].split('.').map((o) => Number(o));
+    if (octets.some((o) => !Number.isInteger(o) || o > 255)) return null;
+    const h1 = ((octets[0] << 8) | octets[1]).toString(16);
+    const h2 = ((octets[2] << 8) | octets[3]).toString(16);
+    addr = `${v4[1]}${h1}:${h2}`;
+  }
+
+  const halves = addr.split('::');
+  if (halves.length > 2) return null; // more than one '::' is invalid
+  const head = halves[0] ? halves[0].split(':') : [];
+  const tail = halves.length === 2 ? (halves[1] ? halves[1].split(':') : []) : null;
+
+  let groups;
+  if (tail === null) {
+    groups = head;
+  } else {
+    const fill = 8 - head.length - tail.length;
+    if (fill < 0) return null;
+    groups = [...head, ...Array(fill).fill('0'), ...tail];
+  }
+  if (groups.length !== 8) return null;
+
+  const out = [];
+  for (const g of groups) {
+    if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+    out.push(parseInt(g, 16));
+  }
+  return out;
+}
+
+/**
  * Is an IPv6 address non-public (loopback, link-local, unique-local, or an
  * IPv4-mapped/embedded address pointing at a private v4)?
  * @param {string} ip
@@ -83,9 +125,21 @@ function isPrivateIpv6(ip) {
   const addr = ip.toLowerCase().split('%')[0]; // strip zone id
   if (addr === '::1' || addr === '::') return true;
 
-  // IPv4-mapped (::ffff:a.b.c.d) or IPv4-compatible — check the embedded v4.
-  const v4mapped = addr.match(/(?:^|:)((?:\d{1,3}\.){3}\d{1,3})$/);
-  if (v4mapped) return isPrivateIpv4(v4mapped[1]);
+  // IPv4-mapped (::ffff:0:0/96) or IPv4-compatible (::/96) — reconstruct the
+  // embedded v4 from the low 32 bits and test it, regardless of whether the
+  // source used dotted-decimal (::ffff:169.254.169.254) or hex-group form
+  // (::ffff:a9fe:a9fe). The hex-group form used to slip past a dotted-only
+  // regex and reach an internal address (169.254.169.254, 127.0.0.1, ...).
+  const hextets = expandIpv6(addr);
+  if (hextets) {
+    const highBitsZero = hextets.slice(0, 5).every((h) => h === 0);
+    const isMapped = highBitsZero && hextets[5] === 0xffff; // ::ffff:0:0/96
+    const isCompatible = highBitsZero && hextets[5] === 0; // ::/96 (deprecated)
+    if (isMapped || isCompatible) {
+      const embedded = `${hextets[6] >> 8}.${hextets[6] & 0xff}.${hextets[7] >> 8}.${hextets[7] & 0xff}`;
+      return isPrivateIpv4(embedded);
+    }
+  }
 
   const first = addr.split(':')[0] || '';
   const head = parseInt(first || '0', 16);

@@ -38,6 +38,34 @@ test('isPrivateAddress flags non-public IPv6', () => {
   assert.equal(isPrivateAddress('2606:4700:4700::1111'), false);
 });
 
+test('isPrivateAddress flags IPv4-mapped/compatible IPv6 in hex-group form', () => {
+  // Regression: the hex-group form of an embedded v4 used to slip past a
+  // dotted-only regex and reach internal addresses (169.254.169.254, 127.0.0.1).
+  for (const ip of [
+    '::ffff:a9fe:a9fe', // ::ffff:169.254.169.254 (cloud metadata)
+    '::ffff:7f00:1', // ::ffff:127.0.0.1 (loopback)
+    '::ffff:0a00:0001', // ::ffff:10.0.0.1 (private)
+    '::7f00:1', // ::127.0.0.1 (deprecated IPv4-compatible loopback)
+  ]) {
+    assert.equal(isPrivateAddress(ip), true, `${ip} should be private`);
+  }
+  // A public v4 embedded in the mapped hex form stays public.
+  assert.equal(isPrivateAddress('::ffff:0808:0808'), false); // ::ffff:8.8.8.8
+});
+
+test('assertPublicHttpUrl blocks hex-group IPv4-mapped literals', async () => {
+  for (const url of [
+    'http://[::ffff:7f00:1]/', // 127.0.0.1
+    'http://[::ffff:a9fe:a9fe]/latest/meta-data/', // 169.254.169.254
+  ]) {
+    await assert.rejects(
+      () => assertPublicHttpUrl(url),
+      (e) => e.code === 'SSRF_BLOCKED_ADDRESS',
+      `should block ${url}`
+    );
+  }
+});
+
 test('isPrivateAddress rejects non-IP input', () => {
   assert.equal(isPrivateAddress('not-an-ip'), true);
   assert.equal(isPrivateAddress(''), true);
