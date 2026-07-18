@@ -199,6 +199,7 @@ export const DIAGRAM_SLIDES = {
       'Recurring/cyclical processes (use cycle-slide)',
       'Timelines with specific dates (use timeline-slide)',
       'Narrowing conversions (use funnel-slide)',
+      'Chains where each item CAUSES the next rather than being carried out in order (use text-blocks-slide). Test: can you name who performs each step? If yes it is a process; if the items are consequences nobody performs, it is a causal chain',
     ],
     schema: {
       title: { type: 'string', required: true, maxLength: 120 },

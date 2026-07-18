@@ -25,7 +25,11 @@
     },
     {
       "type": "kpi-metrics-slide",
-      "because": "headline figures: 1,596 GWh, 2.9 GW peak, 4.1% losses, 0.31 EUR/kWh"
+      "because": "headline figures: 1,596 GWh, 2.9 GW peak, 4.1% losses, 0.31 EUR/kWh",
+      "acceptable": [
+        "table-slide"
+      ],
+      "acceptableWhy": "kpi-metrics-slide caps at 4 metrics; the source gives 5 metric-value pairs, so a table is the correct fallback. The model cited this cap in its own reasoning."
     }
   ],
   "expectedCharacteristics": [
