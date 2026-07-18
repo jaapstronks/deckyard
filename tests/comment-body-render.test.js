@@ -1,0 +1,63 @@
+/**
+ * renderCommentBodyNodes: comment bodies render @mention markers as inline
+ * `.comment-mention-chip` spans and keep the rest as plain text. Shared by the
+ * editor thread, share viewer, and preview lightbox so chips look identical
+ * everywhere.
+ *
+ * Run with: node --test tests/comment-body-render.test.js
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
+
+const dom = new JSDOM('<!doctype html><html><body></body></html>');
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+globalThis.HTMLElement = dom.window.HTMLElement;
+globalThis.Node = dom.window.Node;
+globalThis.Element = dom.window.Element;
+
+const { h } = await import('../client/lib/dom.js');
+const { renderCommentBodyNodes } = await import('../client/lib/comment-body.js');
+
+function render(body) {
+  const el = document.createElement('div');
+  el.append(...renderCommentBodyNodes(body, h));
+  return el;
+}
+
+test('a mention marker renders as a chip with @Name and email title', () => {
+  const el = render('Hey @[Chris de Vries](user:chris@example.com), kijk mee');
+  const chips = el.querySelectorAll('.comment-mention-chip');
+  assert.equal(chips.length, 1);
+  assert.equal(chips[0].textContent, '@Chris de Vries');
+  assert.equal(chips[0].getAttribute('title'), 'chris@example.com');
+  // The raw marker must not leak into the rendered text.
+  assert.ok(!el.textContent.includes('user:'));
+  assert.ok(!el.textContent.includes(']('));
+  assert.equal(el.textContent, 'Hey @Chris de Vries, kijk mee');
+});
+
+test('multiple mentions each become their own chip', () => {
+  const el = render('@[Sam](user:sam@x.com) en @[Chris](user:chris@x.com)');
+  assert.equal(el.querySelectorAll('.comment-mention-chip').length, 2);
+});
+
+test('a plain body with no mentions renders as a single text node', () => {
+  const el = render('gewoon een reactie zonder mention');
+  assert.equal(el.querySelectorAll('.comment-mention-chip').length, 0);
+  assert.equal(el.textContent, 'gewoon een reactie zonder mention');
+});
+
+test('an empty/undefined body renders nothing and does not throw', () => {
+  assert.equal(render('').textContent, '');
+  assert.equal(render(undefined).textContent, '');
+});
+
+test('markup-looking body text is not treated as HTML (rendered as text)', () => {
+  const el = render('<b>@[X](user:x@x.com)</b>');
+  // No <b> element: everything is text/chip nodes, so no injection.
+  assert.equal(el.querySelectorAll('b').length, 0);
+  assert.equal(el.querySelectorAll('.comment-mention-chip').length, 1);
+});
