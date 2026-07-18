@@ -83,7 +83,7 @@ export function createHomeView({
       icon: 'clock',
       title: t('list.home.recent', 'Recent'),
       count: allByDate.length,
-      onViewAll: () => setView('recent'),
+      onViewAll: () => setView('presentations'),
     }),
     allByDate.length
       ? homeRecentList

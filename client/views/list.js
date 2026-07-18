@@ -24,11 +24,7 @@ import { createActivityFeed } from './list/overview-activity.js';
 import { getFeatures } from '../lib/features.js';
 import {
   createHomeView,
-  createRecentView,
-  createWorkspaceView,
-  createPrivateView,
-  createMyPresentationsView,
-  createSharedWithMeView,
+  createPresentationsView,
   createTrashView,
   createSearchView,
   createSlideLibraryView,
@@ -42,7 +38,17 @@ import { createTopbar } from './list/topbar.js';
 
 const LOCAL_STORAGE_KEY_VIEW = 'ps:presentation-list-view';
 const SESSION_KEY_FRESH_LOGIN = 'ps:fresh-login-pending';
-const VALID_VIEWS = ['home', 'recent', 'workspace', 'myPresentations', 'sharedWithMe', 'slideLibrary', 'activity', 'trash'];
+const VALID_VIEWS = ['home', 'presentations', 'slideLibrary', 'activity', 'trash'];
+// Legacy per-source view keys now fold into the unified "presentations" view.
+// Redirect stale persisted values (and any old deep link) so returning users
+// don't land on a dead key.
+const LEGACY_VIEW_REDIRECT = {
+  recent: 'presentations',
+  workspace: 'presentations',
+  myPresentations: 'presentations',
+  sharedWithMe: 'presentations',
+  private: 'presentations',
+};
 
 export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
@@ -79,7 +85,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     } catch { /* sessionStorage may not be available */ }
 
     const raw = storage.get(LOCAL_STORAGE_KEY_VIEW, '').trim();
-    return VALID_VIEWS.includes(raw) ? raw : 'home';
+    const redirected = LEGACY_VIEW_REDIRECT[raw] || raw;
+    return VALID_VIEWS.includes(redirected) ? redirected : 'home';
   })();
 
   let unreadCount = 0;
@@ -278,42 +285,14 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
   });
 
-  const recentViewObj = createRecentView({
+  // Unified "Presentations" view — replaces the Recent / Workspace /
+  // My presentations / Shared with me tabs with one scope-chip + tag surface.
+  const presentationsViewObj = createPresentationsView({
     h,
     api,
     renderCard,
     allByDate,
-  });
-
-  const workspaceViewObj = createWorkspaceView({
-    h,
-    api,
-    renderCard,
-    workspace,
-  });
-
-  const privateViewObj = createPrivateView({
-    h,
-    api,
-    renderCard,
-    priv,
     onCreate: () => openNewPresentationModalWrapper(),
-  });
-
-  // All user-authored presentations (private + workspace, excluding shared with me)
-  const myPresentations = [...priv, ...workspace];
-  const myPresentationsViewObj = createMyPresentationsView({
-    h,
-    api,
-    renderCard,
-    myPresentations,
-    onCreate: () => openNewPresentationModalWrapper(),
-  });
-
-  const sharedWithMeViewObj = createSharedWithMeView({
-    h,
-    api,
-    renderCard,
   });
 
   const trashViewObj = createTrashView({
@@ -351,11 +330,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   frame.append(
     homeViewObj.el,
-    recentViewObj.el,
-    workspaceViewObj.el,
-    privateViewObj.el,
-    myPresentationsViewObj.el,
-    sharedWithMeViewObj.el,
+    presentationsViewObj.el,
     trashViewObj.el,
     slideLibraryViewObj.el,
     activityFeed.el,
@@ -412,15 +387,11 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
     // Load data for specific views
     if (viewKey === 'activity') activityFeed.load();
-    if (viewKey === 'sharedWithMe') sharedWithMeViewObj.load();
     if (viewKey === 'trash') trashViewObj.load();
     if (viewKey === 'slideLibrary') slideLibraryViewObj.load();
 
     // Load tag filters for views that have them
-    if (viewKey === 'private') privateViewObj.tagFilter?.load();
-    if (viewKey === 'myPresentations') myPresentationsViewObj.tagFilter?.load();
-    if (viewKey === 'workspace') workspaceViewObj.tagFilter?.load();
-    if (viewKey === 'recent') recentViewObj.tagFilter?.load();
+    if (viewKey === 'presentations') presentationsViewObj.tagFilter?.load();
   }
 
   // ============================================================
@@ -452,17 +423,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     if (!created?.id) return;
 
     priv.unshift(created);
-    myPresentations.unshift(created);
-    privateViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    myPresentationsViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    recentViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    setView('myPresentations');
+    presentationsViewObj.addPresentation(created);
+    setView('presentations');
   };
 
   onDeckClaimed = (claimedFull) => {
@@ -487,11 +449,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   detachers.push(() => document.removeEventListener('keydown', handleKeyDown));
 
   // Tag filter detachers
-  detachers.push(() => privateViewObj.tagFilter?.detach?.());
-  detachers.push(() => myPresentationsViewObj.tagFilter?.detach?.());
-  detachers.push(() => myPresentationsViewObj.visibilityFilter?.detach?.());
-  detachers.push(() => workspaceViewObj.tagFilter?.detach?.());
-  detachers.push(() => recentViewObj.tagFilter?.detach?.());
+  detachers.push(() => presentationsViewObj.tagFilter?.detach?.());
 
   // ============================================================
   // INITIAL SETUP

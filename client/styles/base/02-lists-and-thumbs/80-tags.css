@@ -340,10 +340,12 @@
 }
 
 /* ============================================================
-   VISIBILITY FILTER (segmented button group)
+   SCOPE FILTER (segmented source chips for the Presentations view)
+   The primary source filter that replaced the Recent/Workspace/Shared tabs,
+   so — unlike the old visibility filter — it stays visible on every viewport.
    ============================================================ */
 
-.visibility-filter {
+.scope-filter {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid hsl(var(--app-border-default));
@@ -352,36 +354,75 @@
   background: hsl(var(--app-bg-elevated));
 }
 
-.visibility-filter-btn {
-  padding: var(--ps-space-1) var(--ps-space-2);
+.scope-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-1) var(--ps-space-3);
   border: none;
   border-right: 1px solid hsl(var(--app-border-default));
   background: transparent;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
   transition: all var(--ps-transition-fast);
   white-space: nowrap;
 }
 
-.visibility-filter-btn:last-child {
+.scope-filter-btn:last-child {
   border-right: none;
 }
 
-.visibility-filter-btn:hover {
+.scope-filter-btn:hover {
   background: hsl(var(--app-bg-hover));
   color: hsl(var(--app-text-primary));
 }
 
-.visibility-filter-btn.is-active {
+.scope-filter-btn.is-active {
   background: hsl(var(--app-accent-soft));
   color: hsl(var(--app-accent-text));
   font-weight: 600;
 }
 
-/* Mobile: hide visibility filter on small screens */
+.scope-filter-btn:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: -2px;
+}
+
+/* Count pill inside each chip. */
+.scope-filter-count {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.scope-filter-btn.is-active .scope-filter-count {
+  color: hsl(var(--app-accent-text));
+}
+
+/* Compact sort control next to the chips. */
+.sort-select {
+  width: auto;
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: 0.8125rem;
+}
+
+/* The Presentations header carries more controls than a single tag filter, so
+   let it wrap instead of overflowing, and let the filter row scroll on very
+   narrow screens rather than squashing the chips. */
+.view-header-with-filter.is-presentations {
+  flex-wrap: wrap;
+}
+
+.view-header-with-filter.is-presentations .view-filters {
+  flex-wrap: wrap;
+}
+
 @media (max-width: 640px) {
-  .visibility-filter {
-    display: none;
+  .view-header-with-filter.is-presentations .view-filters {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 }
