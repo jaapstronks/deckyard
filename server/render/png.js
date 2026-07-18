@@ -19,10 +19,12 @@ async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = n
   const imgKeys = imageFieldKeysForType(cloned?.type);
   for (const k of imgKeys) {
     if (cloned?.content?.[k]) {
+      // embedRemote: inline remote http(s) images through the SSRF guard (or
+      // strip) so no user-supplied URL reaches headless Chrome. Security 2.
       cloned.content[k] = await toDataUrlIfLocal(
         repoRoot,
         cloned.content[k],
-        { includeClient: true }
+        { includeClient: true, embedRemote: true }
       );
     }
   }
@@ -31,7 +33,10 @@ async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = n
     cloned?.type === 'video-slide'
       ? renderVideoSlidePngHtml(cloned)
       : renderSlideHtml(cloned, { theme, slideTypes });
-  slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, { includeClient: true });
+  slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
+    includeClient: true,
+    embedRemote: true,
+  });
   const docLang = resolveDocLangFromPresentation({ slides: [cloned] });
 
   return `<!doctype html>

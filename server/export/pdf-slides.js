@@ -74,9 +74,12 @@ export async function buildSlidesPdfHtml(
   // doesn't drag its original pixels into the PDF (null = compression disabled).
   const imageTransform = pdfImageEmbedTransform();
 
-  // Embed uploads referenced as field values
+  // Embed uploads referenced as field values. embedRemote inlines remote
+  // http(s) images through the SSRF guard (or strips them) so no user-supplied
+  // URL reaches headless Chrome at setContent time. See security-hardening 2.
   const slides = await embedSlideImages(repoRoot, pres.slides, {
     transform: imageTransform,
+    embedRemote: true,
   });
 
   let pagesHtml = slides
@@ -91,6 +94,7 @@ export async function buildSlidesPdfHtml(
   pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
     includeClient: true,
     transform: imageTransform,
+    embedRemote: true,
   });
 
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
