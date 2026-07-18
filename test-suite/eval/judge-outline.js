@@ -152,6 +152,113 @@ export async function judgeOutline({ testCase, sourceText, outline, onUsage = nu
 }
 
 /**
+ * Planned slides that restate each other's material.
+ *
+ * Every allocation rationale in the corpus diagnostic named this same defect —
+ * "slide 5 restates figures already on slide 2", "slide 9 duplicates slide 23,
+ * including the same LULUCF and 1,8 megaton figures". Counting it directly
+ * gives a deterministic metric for the thing the judge is reacting to, which
+ * matters because judge scores at this sample size are noisy and structural
+ * counts are not.
+ *
+ * Overlap is measured on *distinctive* tokens — figures and capitalised terms,
+ * discounted by how often they recur across the deck — rather than on words in
+ * general, because two slides about the same topic naturally share ordinary
+ * vocabulary without duplicating content.
+ *
+ * ⚠️ NOT VALIDATED AS A DECISION METRIC. Checked against the 11-case outline
+ * diagnostic, it correlates with the judge's allocation score only weakly
+ * (mean rate 0.38 / 0.34 / 0.14 for allocation 2 / 3 / 4, but n=1 in the top
+ * bucket and a 0–0.72 range within the middle one), and at the pair level it
+ * disagrees with the judge on every case examined: where the judge found
+ * "slide 5 restates slides 2 and 4" this flags 2+3, 3+4, 9+13 and misses 5.
+ * It appears to measure topic proximity rather than restatement. Use it for
+ * triage — spotting which decks to read — never as a success criterion for a
+ * prompt change.
+ *
+ * @param {object} outline
+ * @param {number} [minShared] - Distinctive tokens two slides must share
+ * @returns {{duplicatePairs: number, slidesInvolved: number, duplicateRate: number, examples: string[]}}
+ */
+export function outlineDuplication(outline, minShared = 2) {
+  const rawSlides = (outline.slides || []).map((slide, index) => ({
+    index: index + 1,
+    tokens: distinctiveTokens(slide.roughContent),
+  }));
+
+  // Discount tokens that recur across the deck. A results deck mentions "2024"
+  // and "gross" on half its slides; sharing those is topic similarity, not
+  // restatement. Only tokens confined to a few slides are evidence that two
+  // slides cover the same specific material.
+  const documentFrequency = new Map();
+  for (const slide of rawSlides) {
+    for (const token of slide.tokens) {
+      documentFrequency.set(token, (documentFrequency.get(token) || 0) + 1);
+    }
+  }
+  const maxFrequency = Math.max(2, Math.floor(rawSlides.length * 0.2));
+
+  const contentSlides = rawSlides
+    .map((slide) => ({
+      index: slide.index,
+      tokens: new Set([...slide.tokens].filter((t) => documentFrequency.get(t) <= maxFrequency)),
+    }))
+    .filter((slide) => slide.tokens.size > 0);
+
+  const pairs = [];
+  const involved = new Set();
+
+  for (let i = 0; i < contentSlides.length; i += 1) {
+    for (let j = i + 1; j < contentSlides.length; j += 1) {
+      const shared = [...contentSlides[i].tokens].filter((t) => contentSlides[j].tokens.has(t));
+      if (shared.length >= minShared) {
+        pairs.push({ a: contentSlides[i].index, b: contentSlides[j].index, shared });
+        involved.add(contentSlides[i].index);
+        involved.add(contentSlides[j].index);
+      }
+    }
+  }
+
+  const total = (outline.slides || []).length;
+  return {
+    duplicatePairs: pairs.length,
+    slidesInvolved: involved.size,
+    duplicateRate: total ? Math.round((involved.size / total) * 100) / 100 : 0,
+    examples: pairs
+      .slice(0, 5)
+      .map((p) => `slides ${p.a}+${p.b} share ${p.shared.slice(0, 3).join(', ')}`),
+  };
+}
+
+/**
+ * Figures and capitalised terms — the tokens that carry content rather than
+ * grammar. A repeated "€7.1B" or "Mayo Clinic" is evidence of duplication;
+ * a repeated "the" is not.
+ *
+ * @param {string} text
+ * @returns {Set<string>}
+ */
+function distinctiveTokens(text) {
+  const source = String(text || '');
+  const tokens = new Set();
+
+  // Figures, including currency/percentage forms and EU decimal commas.
+  for (const match of source.match(/\d[\d.,]*\s*(?:%|[a-zA-Z]{1,3}\b)?/g) || []) {
+    const cleaned = match.trim().replace(/[.,]$/, '');
+    // Bare small integers are list numbering, not content.
+    if (/^\d{1,2}$/.test(cleaned)) continue;
+    tokens.add(cleaned.toLowerCase());
+  }
+
+  // Capitalised terms not at the start of a sentence or line.
+  for (const match of source.match(/(?<![.!?]\s|^|\n)\b[A-Z][A-Za-z]{2,}(?:\s+[A-Z][A-Za-z]{2,})?/gm) || []) {
+    tokens.add(match.toLowerCase());
+  }
+
+  return tokens;
+}
+
+/**
  * Deterministic shape metrics for an outline. Free — no model call.
  *
  * @param {object} outline
