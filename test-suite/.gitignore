@@ -9,3 +9,4 @@ cases/*/reference/
 runs/*/*/
 runs/*/run.json
 .cache/
+stages/

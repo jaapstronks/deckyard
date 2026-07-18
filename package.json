@@ -30,7 +30,8 @@
     "postinstall": "node scripts/vendor-lucide.js && node scripts/download-google-fonts.js",
     "test:ai-suite": "node --env-file=.env test-suite/runner/run.js",
     "ai-suite:fetch": "node --env-file=.env test-suite/scripts/fetch-cases.js",
-    "ai-suite:parse-refs": "node test-suite/scripts/parse-reference.js"
+    "ai-suite:parse-refs": "node test-suite/scripts/parse-reference.js",
+    "ai-suite:stage": "node --env-file=.env test-suite/runner/stage.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",
