@@ -30,6 +30,9 @@ validation/iteration, MCP server with 27 tools + SSE transport).
   kits are retired. The theme picker defaults to a workspace-set theme with the
   rest behind a "Show all themes" toggle (forks default to their own). Built in
   slices on the `create-flow` integration branch.
+  _Progress:_ Slice 1 (theme default + two-column view) and Slice 2 (library
+  compose with the NL/EN round-trip) are done on `create-flow`. Next: Slice 3
+  (Collections), then Slice 4 (retire starter kits).
 
 ## Now — UX improvement track (from the 2026-07-10 UX research)
 
