@@ -18,7 +18,7 @@ import {
  * @param {string} bunnyLibraryId - The Bunny library ID
  * @returns {{ thumbnailUrl: string | null, provider: string | null }}
  */
-function getVideoThumbnailUrl(source, bunnyLibraryId) {
+export function getVideoThumbnailUrl(source, bunnyLibraryId) {
   const parsed = parseVideoSource(source, bunnyLibraryId);
 
   if (!parsed.provider || !parsed.videoId) {

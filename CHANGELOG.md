@@ -8,6 +8,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Video slides export to PDF as a "watch online" placeholder.** A video
+  can't play in a PDF, so the server-rendered PDF export now renders a video
+  slide as a laptop-framed still (with a play badge) plus deck-language copy
+  and a live watch URL. The URL is resolved server-side: a deep-link into the
+  published deck at that slide when the deck is published and a public base URL
+  (`APP_URL`/`DOMAIN`) is set, otherwise the video's own provider URL
+  (YouTube/Vimeo/Bunny). Autoplay follows the slide's own setting. See
+  `docs/reference/video-slide-pdf-export.md`.
+
 - **Home: a two-column canvas with a "from others" activity rail.** The Home
   view now opens with a full-width greeting over two columns: the main column
   carries the returning user's top job (resume recent work) plus discovery and
