@@ -69,9 +69,14 @@ export function buildExportStyleContent(bundle) {
  * @param {Array} rawSlides - Array of slide objects
  * @param {Object} [options]
  * @param {boolean} [options.includeClient=true] - Include client directory in path resolution
+ * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
  * @returns {Promise<Array>} Cloned slides with embedded images
  */
-export async function embedSlideImages(repoRoot, rawSlides, { includeClient = true } = {}) {
+export async function embedSlideImages(
+  repoRoot,
+  rawSlides,
+  { includeClient = true, transform = null } = {},
+) {
   const slides = [];
   for (const slide of rawSlides || []) {
     const cloned = structuredClone(slide);
@@ -81,7 +86,7 @@ export async function embedSlideImages(repoRoot, rawSlides, { includeClient = tr
         cloned.content[k] = await toDataUrlIfLocal(
           repoRoot,
           cloned.content[k],
-          { includeClient },
+          { includeClient, transform },
         );
       }
     }

@@ -9,6 +9,7 @@ import {
 } from '../utils/html-utils.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { pdfImageEmbedTransform } from './image-compress.js';
 
 function renderVideoSlidePdfHtml(slide) {
   const content =
@@ -69,8 +70,14 @@ export async function buildSlidesPdfHtml(
 
   const title = escapeHtml(pres.title || 'Presentation');
 
+  // Downsample + recompress images as they are inlined so a full-res photo
+  // doesn't drag its original pixels into the PDF (null = compression disabled).
+  const imageTransform = pdfImageEmbedTransform();
+
   // Embed uploads referenced as field values
-  const slides = await embedSlideImages(repoRoot, pres.slides);
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    transform: imageTransform,
+  });
 
   let pagesHtml = slides
     .map((s) => {
@@ -81,7 +88,10 @@ export async function buildSlidesPdfHtml(
       return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
     })
     .join('\n');
-  pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, { includeClient: true });
+  pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
+    includeClient: true,
+    transform: imageTransform,
+  });
 
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
   return `<!doctype html>
