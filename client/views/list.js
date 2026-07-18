@@ -88,7 +88,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // MODAL WRAPPERS
   // ============================================================
 
-  const openNewPresentationModalWrapper = (preselectedTheme) =>
+  const openNewPresentationModalWrapper = ({ preselectedTheme, preselect } = {}) =>
     openCreationView({
       h,
       api,
@@ -98,6 +98,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
       getSupportedLangs,
       writeLangMode,
       preselectedTheme,
+      preselect,
     });
 
   // ============================================================
@@ -242,7 +243,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const themePicker = createThemePickerRow({
     h,
     api,
-    onThemeSelect: (theme) => openNewPresentationModalWrapper(theme),
+    onThemeSelect: (theme) => openNewPresentationModalWrapper({ preselectedTheme: theme }),
     onShowAll: () => openNewPresentationModalWrapper(),
   });
   detachers.push(() => themePicker.detach?.());
@@ -274,6 +275,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     unreadCount,
     user,
     onCreate: () => openNewPresentationModalWrapper(),
+    onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
   });
 
   const recentViewObj = createRecentView({
@@ -341,6 +343,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   themePicker.load();
   homeViewObj.loadActivityPreview();
   homeViewObj.loadPopularPresentations();
+  homeViewObj.loadBuildingBlocks();
 
   // ============================================================
   // ADD VIEWS TO FRAME

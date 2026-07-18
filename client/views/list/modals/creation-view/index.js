@@ -40,6 +40,11 @@ export function openCreationView({
   writeLangMode,
   getSupportedLangs,
   preselectedTheme,
+  // Optional: land directly in the library compose flow, seeded from a
+  // building block. `{ collection }` pre-fills the tray from a saved
+  // collection; `{ items }` seeds it from an already-resolved list of
+  // library items (Home "Building blocks" shelf).
+  preselect,
 } = {}) {
   const features = getFeatures() || {};
   const aiDisabled = !!features.disableAi;
@@ -918,5 +923,28 @@ export function openCreationView({
   root.append(backdrop);
   detachFocusTrap = createFocusTrap(modal);
   syncUI();
-  emptyTitleInput.focus();
+
+  // External preselection wins over the default blank focus: open straight into
+  // the library compose flow with the building block seeded.
+  const hasPreselectItems = Array.isArray(preselect?.items) && preselect.items.some(Boolean);
+  if (preselect?.collection || hasPreselectItems) {
+    method = 'library';
+    // Seed via the collections source, whose tray is the source of truth (so a
+    // seeded slide can be removed without a picker round-trip).
+    libraryMode = 'collections';
+    syncUI();
+    if (preselect.collection) {
+      // Render the chooser first so seedFromCollection can flag the active card.
+      ensureCollectionsChooser().then(() => seedFromCollection(preselect.collection));
+    } else {
+      ensureCollectionsChooser();
+      const items = preselect.items.filter(Boolean);
+      selectedById = new Map(items.map((it) => [it.id, it]));
+      selectedOrder = items.map((it) => it.id);
+      renderTray();
+      syncUI();
+    }
+  } else {
+    emptyTitleInput.focus();
+  }
 }

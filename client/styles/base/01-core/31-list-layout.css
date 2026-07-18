@@ -416,6 +416,101 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Building-blocks shelf — the create affordance in the main Home column.
+   Compact cards for reusable collections + team slides, plus a blank-start
+   card. Reflows evenly and never balloons a lone card to full width. */
+.home-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) 0 var(--ps-space-4);
+}
+
+.home-block-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  min-height: 96px;
+  padding: var(--ps-space-3) var(--ps-space-4);
+  text-align: left;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-xl);
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  transition: border-color var(--ps-transition-fast), background var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
+}
+
+.home-block-card:hover {
+  border-color: hsl(var(--app-accent-primary) / 0.5);
+  background: hsl(var(--app-bg-hover));
+  transform: translateY(-1px);
+}
+
+.home-block-card:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 2px;
+}
+
+.home-block-kicker {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.home-block-name {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--app-text-primary));
+  /* Keep long names to two lines so cards stay level. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-block-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin-top: auto;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.home-block-badge {
+  padding: 1px 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-weight: 600;
+}
+
+.home-block-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Blank-start card: a quieter, dashed create affordance with a big plus. */
+.home-block-card.is-blank {
+  align-items: flex-start;
+  border-style: dashed;
+  background: transparent;
+}
+
+.home-block-card.is-blank:hover {
+  background: hsl(var(--app-accent-soft));
+}
+
+.home-block-glyph {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  color: hsl(var(--app-accent-text));
+}
+
 .presentation-brand {
   display: inline-flex;
   align-items: center;
