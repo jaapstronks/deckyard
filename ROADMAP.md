@@ -21,6 +21,16 @@ validation/iteration, MCP server with 27 tools + SSE transport).
 - New idea? Add a line under **Later**. Picking it up? Write the briefing in
   `docs/plans/`, move the line to **Now**.
 
+## Now — create-flow track (active)
+
+- **Creation view + reuse consolidation** — `docs/plans/create-flow.md`
+  A dedicated two-column "New presentation" view replaces the overloaded modal;
+  the slide library becomes the single home for reuse (Duplicate a whole deck /
+  compose from library slides / a named, ordered **Collection**), and starter
+  kits are retired. The theme picker defaults to a workspace-set theme with the
+  rest behind a "Show all themes" toggle (forks default to their own). Built in
+  slices on the `create-flow` integration branch.
+
 ## Now — UX improvement track (from the 2026-07-10 UX research)
 
 In recommended working order (rationale in `docs/plans/TODO.md`); each is a
