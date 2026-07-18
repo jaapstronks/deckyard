@@ -3,6 +3,7 @@ import { buildSectionHeader } from './section-header.js';
 import { createNoPresentationsEmptyState } from '../empty-state.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user-format.js';
+import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
 
 /**
  * Create the home view with recent presentations and activity preview
@@ -17,7 +18,10 @@ import { displayNameFromEmail } from '../../../lib/user-format.js';
  * @param {object} opts.themePicker - Theme picker component
  * @param {number} opts.unreadCount - Initial unread count
  * @param {object} [opts.user] - Current user (for the greeting header)
- * @returns {object} - { el, loadActivityPreview }
+ * @param {Function} [opts.onCreate] - Open the creation view (blank).
+ * @param {Function} [opts.onComposeFrom] - Open the creation view seeded from a
+ *   building block: `({ collection })` or `({ items })`.
+ * @returns {object} - { el, loadActivityPreview, loadPopularPresentations, loadBuildingBlocks }
  */
 export function createHomeView({
   h,
@@ -30,6 +34,7 @@ export function createHomeView({
   unreadCount,
   user,
   onCreate,
+  onComposeFrom,
 }) {
   const homeView = h('div', { class: 'sidebar-view', 'data-view': 'home' });
 
@@ -64,6 +69,7 @@ export function createHomeView({
       el: homeView,
       loadActivityPreview: async () => {},
       loadPopularPresentations: async () => {},
+      loadBuildingBlocks: async () => {},
     };
   }
 
@@ -126,6 +132,25 @@ export function createHomeView({
     homeActivityLoading
   );
 
+  // Building-blocks shelf — the create affordance, backed by reusable slide
+  // collections + individual team slides. Replaces the theme-picker "start
+  // something new" zone: on a returning Home, "start from a building block" is
+  // the more useful create path now that starter kits are gone.
+  const homeBlocksSection = h('div', { class: 'presentation-section', 'data-section': 'building-blocks' });
+  const homeBlocksList = h('div', { class: 'home-blocks-grid' });
+  const homeBlocksLoading = h('div', { class: 'help', text: t('list.home.blocks.loading', 'Loading building blocks...') });
+
+  homeBlocksSection.append(
+    buildSectionHeader({
+      h,
+      icon: 'blocks',
+      title: t('list.home.blocks.title', 'Building blocks'),
+      badge: '',
+      onViewAll: () => setView('slideLibrary'),
+    }),
+    homeBlocksLoading
+  );
+
   // Greeting header — a real page anchor at the top of the column, replacing
   // the old orphan "Welcome" heading that labelled nothing.
   const homeHeader = buildHomeHeader({ h, user, count: allByDate.length });
@@ -144,7 +169,7 @@ export function createHomeView({
     'aria-label': t('list.home.activityFromOthers', 'From others'),
   });
 
-  homeMain.append(homeRecentSection, homePopularSection, themePicker.el);
+  homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
   homeRail.append(homeActivitySection);
   homeColumns.append(homeMain, homeRail);
   homeView.append(homeHeader, homeColumns);
@@ -198,11 +223,137 @@ export function createHomeView({
     }
   }
 
+  // Building-blocks shelf loading. Collections (team first) come first as the
+  // richest reusable unit; we top up the shelf with the most recent individual
+  // team slides so it never looks empty when a workspace has few collections.
+  // A blank-start card is always present so Home keeps a create affordance.
+  async function loadBuildingBlocks() {
+    try {
+      const collectionsApi = createCollectionsApi({ api });
+      const [collections, teamResp] = await Promise.all([
+        collectionsApi.listAll().catch(() => ({ personal: [], team: [] })),
+        api('/api/slide-library/team').catch(() => ({ items: [] })),
+      ]);
+      homeBlocksLoading.remove();
+
+      const cols = [...(collections?.team || []), ...(collections?.personal || [])];
+      const teamSlides = (Array.isArray(teamResp?.items) ? teamResp.items : [])
+        .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
+        .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
+
+      const shownCols = cols.slice(0, 4);
+      // Reserve most of the shelf for collections; fill the rest with slides.
+      const slideBudget = Math.max(2, 6 - shownCols.length);
+
+      homeBlocksList.append(renderBlankBlockCard(h, onCreate));
+      for (const col of shownCols) {
+        homeBlocksList.append(renderCollectionBlockCard(h, col, onComposeFrom));
+      }
+      for (const item of teamSlides.slice(0, slideBudget)) {
+        homeBlocksList.append(renderSlideBlockCard(h, item, onComposeFrom));
+      }
+      homeBlocksSection.append(homeBlocksList);
+
+      if (!cols.length && !teamSlides.length) {
+        homeBlocksSection.append(
+          h('div', {
+            class: 'help',
+            text: t(
+              'list.home.blocks.empty',
+              'Save slides to your team library or group them into a collection to reuse them here.'
+            ),
+          })
+        );
+      }
+    } catch {
+      homeBlocksLoading.textContent = t('list.home.blocks.error', 'Failed to load building blocks.');
+    }
+  }
+
   return {
     el: homeView,
     loadActivityPreview,
     loadPopularPresentations,
+    loadBuildingBlocks,
   };
+}
+
+/** Most-recent-first sort key for a library item. */
+function blockTimestamp(item) {
+  const raw = item?.updatedAt || item?.createdAt || 0;
+  const time = new Date(raw).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+/**
+ * Blank-start card — always present so Home keeps a visible "create" path.
+ * @param {Function} h
+ * @param {Function} [onCreate]
+ */
+function renderBlankBlockCard(h, onCreate) {
+  return h('button', {
+    class: 'home-block-card is-blank',
+    type: 'button',
+    onclick: () => onCreate?.(),
+  }, [
+    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.blankKicker', 'New') }),
+    h('span', { class: 'home-block-glyph', text: '+', 'aria-hidden': 'true' }),
+    h('span', { class: 'home-block-name', text: t('list.home.blocks.blank', 'Blank presentation') }),
+  ]);
+}
+
+/**
+ * Collection card — clicking opens the creation view seeded from the collection.
+ * @param {Function} h
+ * @param {object} col - collection ({ id, scope, name, slideIds, slideCount })
+ * @param {Function} [onComposeFrom]
+ */
+function renderCollectionBlockCard(h, col, onComposeFrom) {
+  const count = col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
+  const meta = h('span', { class: 'home-block-meta' });
+  if (col.scope === 'team') {
+    meta.append(h('span', { class: 'home-block-badge', text: t('slideLibrary.scope.team', 'Team') }));
+  }
+  meta.append(
+    h('span', {
+      class: 'home-block-count',
+      text: t('list.creationView.library.collectionCount', '{count} slides', { count: String(count) }),
+    })
+  );
+
+  return h('button', {
+    class: 'home-block-card is-collection',
+    type: 'button',
+    onclick: () => onComposeFrom?.({ collection: col }),
+  }, [
+    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.collectionKicker', 'Collection') }),
+    h('span', {
+      class: 'home-block-name',
+      text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
+    }),
+    meta,
+  ]);
+}
+
+/**
+ * Reusable-slide card — clicking opens the creation view seeded with that one
+ * slide (the compose tray, ready to add more or create as-is).
+ * @param {Function} h
+ * @param {object} item - library item ({ id, name, slideType })
+ * @param {Function} [onComposeFrom]
+ */
+function renderSlideBlockCard(h, item, onComposeFrom) {
+  return h('button', {
+    class: 'home-block-card is-slide',
+    type: 'button',
+    onclick: () => onComposeFrom?.({ items: [item] }),
+  }, [
+    h('span', { class: 'home-block-kicker', text: t('list.home.blocks.slideKicker', 'Reusable slide') }),
+    h('span', {
+      class: 'home-block-name',
+      text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
+    }),
+  ]);
 }
 
 /**
