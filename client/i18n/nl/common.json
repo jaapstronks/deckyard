@@ -37,6 +37,8 @@
   "common.reload": "Herlaad",
   "common.save": "Opslaan",
   "common.saveFailedAborted": "Kon niet opslaan; afgebroken.",
+  "common.saving": "Opslaan…",
+  "common.saved": "Opgeslagen",
   "common.savingFirst": "Eerst opslaan…",
   "common.search": "Zoek",
   "common.settings": "Instellingen",
