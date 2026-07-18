@@ -92,6 +92,37 @@ export function authEnabled() {
   return enabled && hasSecret;
 }
 
+/**
+ * Guard against auth failing OPEN. authEnabled() returns false when AUTH_SECRET
+ * is missing, which makes getUserFromRequest[/Async] fall back to a hardcoded
+ * anonymous ADMIN user. That silent open-admin is only acceptable when the
+ * operator explicitly opted out of auth (AUTH_ENABLED=false) or is running a
+ * sandbox/demo instance. In every other case a missing secret is a
+ * misconfiguration that must stop startup rather than expose an open admin.
+ *
+ * @returns {string|null} an error message when misconfigured, else null.
+ * @see docs/plans/security-hardening.md item 3b
+ */
+export function authConfigError() {
+  const hasSecret = !!String(process.env.AUTH_SECRET || '').trim();
+  if (hasSecret) return null;
+
+  const explicitlyDisabled =
+    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
+  if (explicitlyDisabled) return null;
+
+  const truthy = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
+  if (truthy(process.env.SANDBOX_MODE) || truthy(process.env.DEMO_MODE)) {
+    return null;
+  }
+
+  return (
+    'AUTH_SECRET is missing while authentication is not explicitly disabled. ' +
+    'Deckyard refuses to start with anonymous admin access. Set AUTH_SECRET to ' +
+    'enable auth, or set AUTH_ENABLED=false to run intentionally without auth.'
+  );
+}
+
 export function devAuthBypassEnabled() {
   const v = String(process.env.AUTH_DEV_BYPASS || '')
     .trim()
