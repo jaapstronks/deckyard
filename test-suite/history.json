@@ -48,5 +48,55 @@
     },
     "overall": 4.37,
     "costUsd": 26.6812
+  },
+  {
+    "runId": "2026-07-18_15-45-37",
+    "startedAt": "2026-07-18T15:45:37.802Z",
+    "label": "baseline (corrected renderer)",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "2f0e86683435",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cbs-veiligheidsmonitor-2025",
+      "cloudflare-nov-2025-outage",
+      "deckyard-readme",
+      "iea-weo-2024",
+      "naacl-good-conversation",
+      "nl-kamerbrief-duurzame-digitalisering",
+      "pbl-kev-2024",
+      "philips-q4-2024",
+      "wikipedia-zero-knowledge-proof"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.73,
+      "structure": 4.64,
+      "slideEconomy": 4,
+      "faithfulness": 4.82,
+      "presentability": 4.09,
+      "humanLikeness": 2.8
+    },
+    "overall": 4.46,
+    "costUsd": 5.3064
   }
 ]
