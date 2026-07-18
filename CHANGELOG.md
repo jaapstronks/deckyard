@@ -31,6 +31,14 @@ entries are grouped per release rather than exhaustively listed.
   **Presentations** view with scope chips (All · Mine · Workspace · Shared,
   live counts), a sort control and a tag filter, all over a single list.
 
+- **Activity: "added N slides to a deck" now shows in the feed.** Adding slides
+  to a deck used to disappear into a generic "updated" event (and only for
+  workspace decks); it now records a dedicated `slide.added` event, bundled per
+  save ("Riley added 3 slides to X"), for decks of any scope. The feed still
+  filters by read access, so it only surfaces to people who can open the deck,
+  and never echoes your own edits back to you. Makes the "from others" rail and
+  the Activity view read as real collaboration rather than vague churn.
+
 - **Home: comment text in the "from others" rail, and no empty Popular badge.**
   The activity rail now shows the comment body under the who-did-what line
   (the event data already carried a ≤100-char preview, so client-only). Popular's
