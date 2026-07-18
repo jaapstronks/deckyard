@@ -5,6 +5,7 @@
 
 import { getPresentation } from '../../../storage/presentations.js';
 import {
+  json,
   methodNotAllowed,
   notFound,
   unauthorized,
@@ -60,22 +61,16 @@ export async function handlePresentationAnalyze(
     return unauthorized(res);
   }
 
-  // Parse request body for optional category filter
+  // Parse request body for optional category filter (body is size-capped by
+  // json()/readRequestBody; oversized or invalid bodies fall back to defaults).
   let categories = null;
   try {
-    const bodyChunks = [];
-    for await (const chunk of req) {
-      bodyChunks.push(chunk);
-    }
-    const bodyStr = Buffer.concat(bodyChunks).toString();
-    if (bodyStr) {
-      const body = JSON.parse(bodyStr);
-      if (Array.isArray(body?.categories)) {
-        categories = body.categories;
-      }
+    const body = await json(req);
+    if (Array.isArray(body?.categories)) {
+      categories = body.categories;
     }
   } catch {
-    // Ignore parse errors, use defaults
+    // Ignore parse/size errors, use defaults
   }
 
   // Set up SSE headers
