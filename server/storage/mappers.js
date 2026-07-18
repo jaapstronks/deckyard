@@ -137,7 +137,6 @@ export function mapPresentationRow(row) {
     ownerEmail: row.owner_email,
     createdBy: row.created_by,
     updatedBy: row.updated_by,
-    isStarterKit: !!row.is_starter_kit,
     settings: row.settings || {},
     i18n: row.i18n || {},
     slides: row.slides || [],

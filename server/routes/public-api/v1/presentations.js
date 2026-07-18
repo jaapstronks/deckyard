@@ -73,7 +73,6 @@ function sanitizeForList(pres, tags = []) {
  * Query parameters:
  * - limit: max results per page (default 50, max 100)
  * - offset: pagination offset (default 0)
- * - starterKit: if 'true', only return starter kit presentations
  * - viewOnly: if 'true', only return view-only presentations
  */
 async function handleList(ctx) {
@@ -85,12 +84,8 @@ async function handleList(ctx) {
   let filtered = filterByOwner(list, apiKey.ownerEmail);
 
   // Optional filters
-  const starterKitFilter = url.searchParams.get('starterKit');
   const viewOnlyFilter = url.searchParams.get('viewOnly');
 
-  if (starterKitFilter === 'true') {
-    filtered = filtered.filter((p) => p?.isStarterKit === true);
-  }
   if (viewOnlyFilter === 'true') {
     filtered = filtered.filter((p) => p?.isViewOnly === true);
   }

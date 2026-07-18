@@ -51,8 +51,8 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
   const createdBy = normalizeEmail(pres?.createdBy);
   if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
 
-  // Starter kits and view-only presentations are read-only for non-owners
-  if (pres?.isStarterKit || pres?.isViewOnly) return false;
+  // View-only presentations are read-only for non-owners
+  if (pres?.isViewOnly) return false;
 
   // Workspace presentations: any workspace user can write
   if (scope === 'workspace') return true;
@@ -74,23 +74,7 @@ export function canDeletePresentation({ user, pres } = {}) {
   const createdBy = normalizeEmail(pres?.createdBy);
   if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
 
-  // Starter kits can only be deleted by owner/admin (already handled above)
-  if (pres?.isStarterKit) return false;
-
   return false;
-}
-
-/**
- * Check if a user can manage starter kit status on a presentation.
- * Only the owner/creator can toggle starter kit status.
- */
-export function canManageStarterKit({ user, pres } = {}) {
-  if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
 }
 
 /**
@@ -232,8 +216,6 @@ export function getEffectivePermission({ user, pres, collaboratorPermission } = 
   // Workspace presentations handling
   const scope = normalizePresentationScope(pres?.scope);
   if (scope === 'workspace') {
-    // Starter kits are view-only (no commenting)
-    if (pres?.isStarterKit) return 'view';
     // View-only presentations allow commenting but not editing
     if (pres?.isViewOnly) return 'comment';
     // Regular workspace presentations give edit to all workspace users
