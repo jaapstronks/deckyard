@@ -276,3 +276,67 @@ each time by pushing the model into an over-correction the guard clause did not
 prevent. On this evidence the generation prompts are already near a local
 optimum for broad stylistic advice, and the remaining wins are in specific
 defects and in the pipeline code — not in telling the model to try harder.
+
+---
+
+## Round 5 — the adjacency bug, retested on its own
+
+The top open question from PR #82. Round 2 bundled this bug fix with a prompt
+variety rule, regressed, and both halves were reverted together — so it was
+unknown whether the fix alone helps. The staged harness makes the experiment
+clean and cheap.
+
+**Method.** Outlines generated once and frozen (`outline-2026-07-18_17-52-24`,
+3 cases, 3–5 sections each — the fix only acts *between* groups, so a
+single-section run would eliminate the effect being measured). Both arms then
+refined the identical frozen outlines, varying only phase 2:
+
+- **Arm A** — current code, bug present.
+- **Arm B** — hints fallback in `buildAdjacentContext`. The prompt template is
+  byte-identical, including the original `ADJACENT CONTEXT (avoid repetition):`
+  label. No variety rule. Only the *data* filling the block changes.
+
+**Aggregate result — a wash:**
+
+| | Arm A (bug) | Arm B (fix) |
+| --- | ---: | ---: |
+| Consecutive same-type repeats | 15 | **12** |
+| Longest run of one type | 4 | **3** |
+| list-slide count | 8 | **6** |
+| Wall-of-text slides | 5 | **4** |
+| Slide economy | 3.33 | 3.67 |
+| Faithfulness | 5.00 | 4.67 |
+| Presentability | 4.00 | 3.67 |
+| Coverage / structure | 4.67 | 4.67 |
+
+**Per case, which is what actually settles it:**
+
+| Case | Repeats | Economy | Faithfulness | Presentability |
+| --- | --- | --- | --- | --- |
+| asml-q4-2024 | 4 → **2** | 3 → **4** | 5 → 5 | 4 → 4 |
+| cloudflare-nov-2025-outage | 6 → **5** | 3 → 3 | 5 → 5 | 4 → 4 |
+| cbs-persbericht-criminaliteit | 5 → 5 | 4 → 4 | 5 → **4** | 4 → **3** |
+
+Every point of the aggregate regression comes from the CBS case — **the one
+case where the mechanism never fired** (repeats unchanged at 5). Its
+faithfulness rationale states every number is traceable and correct, docking it
+only for "minor unsupported interpretive framing" on two slides. That is a
+marginal judge call on an unchanged mechanism, not an effect of this change.
+
+Where the fix did fire, it helped: ASML lost half its consecutive repeats and
+gained a point of slide economy at no cost elsewhere.
+
+**Kept.** It is a correctness fix first — the code intends to pass adjacency
+context and silently passes nothing for most decks. The mechanism improves
+where it fires, and unlike round 2 there is no evidence of harm.
+
+**Honest limits.** n=3, one repeat per arm. This does not establish a quality
+*gain*; it establishes that the fix is not harmful and that round 2's damage
+came from the prompt rule, not from this. Separating the two was the whole
+point of the retest.
+
+**Method note.** The aggregate said "wash, with a faithfulness regression"; the
+per-case table said "works where it fires, unrelated noise elsewhere". At n=3 a
+single case moving one point shifts a dimension by 0.33, so **aggregate means
+over three cases are not a safe basis for a keep/revert decision** — the earlier
+rounds should be read with that in mind too.
