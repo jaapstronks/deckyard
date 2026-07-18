@@ -14,7 +14,13 @@
  *     the owner's default ('participating') and explicit 'watching' deliver.
  *
  * Layer 1 (the `slide.added` activity-feed event) already exists; this is
- * layer 2. See docs/reference/deck-activity-notifications.md.
+ * layer 2. See docs/reference/comments-and-notifications.md.
+ *
+ * Coalescing is a per-recipient read-modify-write, not a single atomic
+ * statement: two concurrent saves by the same actor to the same deck could
+ * race into two rows / a slightly-off count. In practice the save route's
+ * If-Match revision check already serialises same-deck saves, so this is a
+ * documented edge, not a hot path.
  */
 
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';

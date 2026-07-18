@@ -106,7 +106,13 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
     bump replaces the row rather than stacking) followed by an authoritative
     `notification:counts` so the badge stays correct across coalescing.
   - Clicking navigates to the deck (`/app/<id>`). No new columns — it rides the
-    existing `user_notifications.data` JSONB (`{ slideCount, kind }`).
+    existing `user_notifications.data` JSONB
+    (`{ presentationTitle, slideCount, kind: 'slide_added' }`).
+  - **Known limitation**: the coalesce is a per-recipient read-modify-write, not
+    one atomic statement, so two concurrent saves by the same actor to the same
+    deck could momentarily produce two rows / a slightly-off count. The save
+    route's If-Match revision check already serialises same-deck saves, so this
+    is an edge, not the hot path.
 - **Per-deck on/off (layer 3)** — not built; deferred until layer 2 is in use.
 
 Copy note: the only trigger today is slide-adds, so the title reads "added N
