@@ -11,7 +11,7 @@ import { createPromiseModal } from '../../../lib/modal.js';
  * @param {Function} options.h - DOM helper
  * @param {Object} options.pres - Presentation object
  * @param {HTMLElement} options.root - Root element for modal
- * @returns {Promise<{ isStarterKit: boolean, isViewOnly: boolean } | null>}
+ * @returns {Promise<{ isViewOnly: boolean } | null>}
  */
 export function openWorkspaceShareModal({ h, pres, root }) {
   const modalApi = createPromiseModal(h, {
@@ -59,25 +59,8 @@ export function openWorkspaceShareModal({ h, pres, root }) {
   );
   viewOnlyOption.append(viewOnlyRadio, viewOnlyContent);
 
-  // Starter kit option (view + duplicate)
-  const starterKitOption = h('label', { class: 'share-option' });
-  const starterKitRadio = h('input', {
-    type: 'radio',
-    name: 'share-type',
-    value: 'starter-kit',
-  });
-  const starterKitContent = h('div', { class: 'share-option-content' });
-  starterKitContent.append(
-    h('span', { class: 'share-option-title', text: t('editor.share.workspace.starterKit', 'Starter kit') }),
-    h('span', {
-      class: 'share-option-desc',
-      text: t('editor.share.workspace.starterKitDesc', 'Others can view and duplicate, but not edit. Ideal for templates.'),
-    })
-  );
-  starterKitOption.append(starterKitRadio, starterKitContent);
-
   const optionsWrap = h('div', { class: 'share-options' });
-  optionsWrap.append(regularOption, viewOnlyOption, starterKitOption);
+  optionsWrap.append(regularOption, viewOnlyOption);
 
   const actions = h('div', { class: 'row is-end modal-actions' });
   const cancelBtn = h('button', {
@@ -89,9 +72,8 @@ export function openWorkspaceShareModal({ h, pres, root }) {
     class: 'btn btn-primary',
     text: t('editor.share.workspace.share', 'Share'),
     onclick: () => {
-      const isStarterKit = starterKitRadio.checked;
       const isViewOnly = viewOnlyRadio.checked;
-      modalApi.close({ isStarterKit, isViewOnly });
+      modalApi.close({ isViewOnly });
     },
   });
   actions.append(cancelBtn, shareBtn);

@@ -50,6 +50,28 @@ export function mapSlideLibraryRow(row) {
 }
 
 /**
+ * Map a slide collection database row to an API object.
+ * @param {object} row - Database row from slide_collections
+ * @param {string[]} [slideIds] - Ordered member slide-library ids
+ * @returns {object}
+ */
+export function mapSlideCollectionRow(row, slideIds = []) {
+  return {
+    id: row.id,
+    scope: row.scope,
+    ownerEmail: row.owner_email,
+    name: row.name,
+    description: row.description || '',
+    slideIds: Array.isArray(slideIds) ? slideIds : [],
+    slideCount: Array.isArray(slideIds) ? slideIds.length : 0,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
  * Map a published presentation database row to an API object.
  * @param {object} row - Database row
  * @returns {object}
@@ -115,7 +137,6 @@ export function mapPresentationRow(row) {
     ownerEmail: row.owner_email,
     createdBy: row.created_by,
     updatedBy: row.updated_by,
-    isStarterKit: !!row.is_starter_kit,
     settings: row.settings || {},
     i18n: row.i18n || {},
     slides: row.slides || [],

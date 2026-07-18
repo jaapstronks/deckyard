@@ -7,7 +7,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../../utils/http.js';
-import { canChangePresentationScope, canManageStarterKit } from '../../../utils/presentation-authz.js';
+import { canChangePresentationScope, isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 
@@ -31,25 +31,11 @@ export async function handlePresentationScope(
   if (!canChangePresentationScope({ user: authedUser, pres: existing, nextScope }))
     return unauthorized(res);
 
-  // Handle isStarterKit flag (only when sharing to workspace)
-  let nextIsStarterKit = existing.isStarterKit || false;
-  if (typeof body?.isStarterKit === 'boolean') {
-    // Only owner/admin can toggle starter kit status
-    if (!canManageStarterKit({ user: authedUser, pres: existing })) {
-      return unauthorized(res, 'Only the owner can set starter kit status');
-    }
-    // Starter kits must be in workspace scope
-    if (body.isStarterKit && nextScope !== 'workspace') {
-      return badRequest(res, 'Starter kits must be shared with the workspace');
-    }
-    nextIsStarterKit = body.isStarterKit;
-  }
-
   // Handle isViewOnly flag (only when sharing to workspace)
   let nextIsViewOnly = existing.isViewOnly || false;
   if (typeof body?.isViewOnly === 'boolean') {
-    // Only owner/admin can toggle view-only status
-    if (!canManageStarterKit({ user: authedUser, pres: existing })) {
+    // Only owner/creator can toggle view-only status
+    if (!isPresentationAuthor({ user: authedUser, pres: existing })) {
       return unauthorized(res, 'Only the owner can set view-only status');
     }
     // View-only must be in workspace scope
@@ -59,14 +45,8 @@ export async function handlePresentationScope(
     nextIsViewOnly = body.isViewOnly;
   }
 
-  // If moving to private, automatically remove starter kit and view-only status
+  // If moving to private, automatically remove view-only status
   if (nextScope === 'private') {
-    nextIsStarterKit = false;
-    nextIsViewOnly = false;
-  }
-
-  // Starter kit and view-only are mutually exclusive - starter kit takes precedence
-  if (nextIsStarterKit) {
     nextIsViewOnly = false;
   }
 
@@ -74,13 +54,12 @@ export async function handlePresentationScope(
   if (!authedUser?.isAdmin && expectedRevision == null)
     return serveJson(res, 428, { error: 'Missing If-Match revision' });
 
-  const nextPres = { ...existing, scope: nextScope, isStarterKit: nextIsStarterKit, isViewOnly: nextIsViewOnly };
+  const nextPres = { ...existing, scope: nextScope, isViewOnly: nextIsViewOnly };
   try {
     const updated = await updatePresentation(repoRoot, id, nextPres, {
       expectedRevision,
       actorEmail: authedUser?.email || null,
       allowScopeChange: true,
-      allowStarterKitChange: true,
       allowViewOnlyChange: true,
     });
 
@@ -92,7 +71,6 @@ export async function handlePresentationScope(
         extra: {
           fromScope: existing?.scope || 'private',
           toScope: 'workspace',
-          isStarterKit: updated.isStarterKit,
         },
       });
     }

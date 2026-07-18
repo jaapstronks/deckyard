@@ -5,7 +5,7 @@ import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user-format.js';
 
 /**
- * Create the home view with recent presentations, starter kits, and activity preview
+ * Create the home view with recent presentations and activity preview
  *
  * @param {object} opts
  * @param {Function} opts.h - DOM helper
@@ -14,7 +14,6 @@ import { displayNameFromEmail } from '../../../lib/user-format.js';
  * @param {Function} opts.renderCard - Card renderer function
  * @param {Function} opts.setView - View switcher function
  * @param {Array} opts.allByDate - All presentations sorted by date
- * @param {Array} opts.starterKits - Starter kit presentations
  * @param {object} opts.themePicker - Theme picker component
  * @param {number} opts.unreadCount - Initial unread count
  * @param {object} [opts.user] - Current user (for the greeting header)
@@ -27,25 +26,21 @@ export function createHomeView({
   renderCard,
   setView,
   allByDate,
-  starterKits,
   themePicker,
   unreadCount,
   user,
   onCreate,
-  onBrowseTemplates,
 }) {
   const homeView = h('div', { class: 'sidebar-view', 'data-view': 'home' });
 
-  // First-run onboarding checklist (create deck / try template / connect an AI
-  // agent). Returns null for existing or dismissed users; persists progress so
-  // it survives the jump from empty Home to populated Home.
+  // First-run onboarding checklist (create deck / connect an AI agent). Returns
+  // null for existing or dismissed users; persists progress so it survives the
+  // jump from empty Home to populated Home.
   const onboardingChecklist = createOnboardingChecklist({
     h,
     nav,
     allByDate,
-    starterKits,
     onCreate,
-    onBrowseTemplates,
   });
 
   // First run: a brand-new user with nothing yet. Foreground the theme picker
@@ -59,28 +54,9 @@ export function createHomeView({
         h,
         title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
         onCreate,
-        onBrowseTemplates: starterKits.length > 0 ? onBrowseTemplates : null,
       })
     );
     if (onboardingChecklist) homeView.append(onboardingChecklist);
-    if (starterKits.length > 0) {
-      const homeStarterKitsSection = h('div', { class: 'presentation-section', 'data-section': 'starter-kits' });
-      const homeStarterKitsList = h('div', { class: 'list presentation-grid' });
-      homeStarterKitsSection.append(
-        buildSectionHeader({
-          h,
-          icon: 'package',
-          title: t('list.home.starterKits', 'Starter kits'),
-          count: starterKits.length,
-          onViewAll: () => setView('starterKits'),
-        })
-      );
-      for (const p of starterKits.slice(0, 4)) {
-        homeStarterKitsList.append(renderCard(p, { isWorkspace: true, isStarterKit: true }));
-      }
-      homeStarterKitsSection.append(homeStarterKitsList);
-      homeView.append(homeStarterKitsSection);
-    }
 
     // Activity/popular loaders are no-ops here (their sections aren't mounted),
     // but keep the same return shape so the caller doesn't branch.
@@ -149,38 +125,15 @@ export function createHomeView({
     homeActivityLoading
   );
 
-  // Starter kits section
-  const homeStarterKitsSection = h('div', { class: 'presentation-section', 'data-section': 'starter-kits' });
-  const homeStarterKitsList = h('div', { class: 'list presentation-grid' });
-
-  if (starterKits.length > 0) {
-    homeStarterKitsSection.append(
-      buildSectionHeader({
-        h,
-        icon: 'package',
-        title: t('list.home.starterKits', 'Starter kits'),
-        count: starterKits.length,
-        onViewAll: () => setView('starterKits'),
-      })
-    );
-    for (const p of starterKits.slice(0, 4)) {
-      homeStarterKitsList.append(renderCard(p, { isWorkspace: true, isStarterKit: true }));
-    }
-    homeStarterKitsSection.append(homeStarterKitsList);
-  }
-
   // Greeting header — a real page anchor at the top of the column, replacing
   // the old orphan "Welcome" heading that labelled nothing.
   const homeHeader = buildHomeHeader({ h, user, count: allByDate.length });
 
   // Assemble home view. Content-first order for a returning user: their work
-  // (Recent) leads, then create affordances (Start something new / Starter
-  // kits), then discovery (Popular) and finally what's happening (Activity).
+  // (Recent) leads, then the theme picker as a create affordance, then
+  // discovery (Popular) and finally what's happening (Activity).
   if (onboardingChecklist) homeView.append(onboardingChecklist);
   homeView.append(homeHeader, homeRecentSection, themePicker.el);
-  if (starterKits.length > 0) {
-    homeView.append(homeStarterKitsSection);
-  }
   homeView.append(homePopularSection, homeActivitySection);
 
   // Popular presentations loading

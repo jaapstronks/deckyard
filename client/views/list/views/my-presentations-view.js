@@ -19,7 +19,6 @@ export function createMyPresentationsView({
   renderCard,
   myPresentations,
   onCreate,
-  onBrowseTemplates,
 }) {
   let allPresentations = [...myPresentations];
   let selectedTags = [];
@@ -90,7 +89,7 @@ export function createMyPresentationsView({
         );
       } else if (typeof onCreate === 'function') {
         myPresentationsList.append(
-          createNoPresentationsEmptyState({ h, onCreate, onBrowseTemplates })
+          createNoPresentationsEmptyState({ h, onCreate })
         );
       } else {
         myPresentationsList.append(emptyMsg.cloneNode(true));

@@ -43,14 +43,67 @@ export async function prepareNewPresentation(repoRoot, body) {
   }
 
   // If slides are provided in the body, use them instead of the default title slide.
-  const providedSlides = Array.isArray(body?.slides) && body.slides.length > 0
-    ? body.slides.map((s) => ({
-        id: cryptoUuid(),
-        type: typeof s?.type === 'string' ? s.type : 'content-slide',
-        content: s?.content && typeof s.content === 'object' ? s.content : {},
-        notes: typeof s?.notes === 'string' ? s.notes : '',
-      }))
-    : null;
+  //
+  // Each slide may carry per-language content under `contentByLang` (e.g. from
+  // the slide library, which stores nl + en-GB). When present, we build one
+  // i18n version per language so a composed deck keeps both languages instead
+  // of collapsing to the one the picker happened to show. A stable slide id is
+  // shared across every language version so they remain the same slide.
+  const SUPPORTED_LANGS = ['nl', 'en-GB'];
+  const providedSlidesRaw =
+    Array.isArray(body?.slides) && body.slides.length > 0 ? body.slides : null;
+
+  let providedSlides = null; // dominant-language slides for pres.slides
+  let providedVersions = null; // { [lang]: slides[] } when multilingual content is present
+
+  if (providedSlidesRaw) {
+    const base = providedSlidesRaw.map((s) => ({
+      id: cryptoUuid(),
+      type: typeof s?.type === 'string' ? s.type : 'content-slide',
+      notes: typeof s?.notes === 'string' ? s.notes : '',
+      content: s?.content && typeof s.content === 'object' ? s.content : {},
+      contentByLang:
+        s?.contentByLang && typeof s.contentByLang === 'object'
+          ? s.contentByLang
+          : null,
+    }));
+
+    // Which languages appear in any slide's contentByLang?
+    const langSet = new Set();
+    for (const s of base) {
+      if (!s.contentByLang) continue;
+      for (const l of SUPPORTED_LANGS) {
+        if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object') langSet.add(l);
+      }
+    }
+
+    const contentFor = (s, lang) => {
+      const c = s.contentByLang?.[lang];
+      return c && typeof c === 'object' ? c : s.content;
+    };
+
+    if (langSet.size > 0) {
+      // Always include the dominant language so the top-level version exists.
+      langSet.add(initialLang);
+      providedVersions = {};
+      for (const lang of langSet) {
+        providedVersions[lang] = base.map((s) => ({
+          id: s.id,
+          type: s.type,
+          content: contentFor(s, lang),
+          notes: s.notes,
+        }));
+      }
+      providedSlides = providedVersions[initialLang];
+    } else {
+      providedSlides = base.map((s) => ({
+        id: s.id,
+        type: s.type,
+        content: s.content,
+        notes: s.notes,
+      }));
+    }
+  }
 
   const pres = newPresentation({
     title,
@@ -126,15 +179,24 @@ export async function prepareNewPresentation(repoRoot, body) {
   attachSandboxMeta(pres);
 
   // Ensure new presentations immediately include i18n scaffolding + follow-invite slide.
+  // When the provided slides carried multilingual content, seed a version per
+  // language so both survive the round-trip; otherwise seed just the dominant one.
   pres.i18n = {
     dominant: initialLang,
     active: initialLang,
-    versions: {
-      [initialLang]: {
-        title: pres.title,
-        slides: pres.slides,
-      },
-    },
+    versions: providedVersions
+      ? Object.fromEntries(
+          Object.entries(providedVersions).map(([lang, slides]) => [
+            lang,
+            { title: pres.title, slides },
+          ])
+        )
+      : {
+          [initialLang]: {
+            title: pres.title,
+            slides: pres.slides,
+          },
+        },
   };
   normalizeI18n(pres);
 

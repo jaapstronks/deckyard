@@ -180,26 +180,8 @@ export function createAdminTab({ user }) {
   ]);
   sessionCard.append(sessionHint, sessionField);
 
-  // Supported themes card (placeholder for future)
-  const themesCard = h('div', { class: 'stack editor-card' });
-  themesCard.append(
-    h('div', {
-      class: 'field-label',
-      text: t('settings.admin.supportedThemes.title', 'Supported themes'),
-    })
-  );
-  const themesHint = h('div', {
-    class: 'help',
-    text: t(
-      'settings.admin.supportedThemes.hint',
-      'Controls which presentation themes are available in this workspace. Coming soon.'
-    ),
-  });
-  const themesPlaceholder = h('div', {
-    class: 'admin-placeholder',
-    text: t('settings.admin.supportedThemes.comingSoon', 'Theme configuration coming soon.'),
-  });
-  themesCard.append(themesHint, themesPlaceholder);
+  // Theme configuration (default theme + picker visibility) lives in the
+  // Themes settings tab.
 
   // Engagement Insights (Analytics) card
   const analyticsCard = h('div', { class: 'stack editor-card' });
@@ -339,7 +321,6 @@ export function createAdminTab({ user }) {
     sessionCard,
     analyticsCard,
     stockMediaCard,
-    themesCard,
   ]);
 
   container.append(title, description, cards, actions);

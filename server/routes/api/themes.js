@@ -28,6 +28,7 @@ import {
 import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.js';
 import { buildThemeConfig, generatePreviewCSS } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
+import { readAppSettings, getDefaultThemeId } from '../../storage/settings.js';
 
 /**
  * Check if user can manage themes.
@@ -89,7 +90,30 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       return String(a.label).localeCompare(String(b.label));
     });
 
-    serveJson(res, 200, { themes: allThemes });
+    // Annotate with the workspace picker allowlist + default so the creation
+    // picker can show a default-visible subset and hide the rest behind a
+    // "Show all themes" toggle. An empty allowlist means every theme is shown.
+    const [{ enabledThemes }, defaultThemeId] = await Promise.all([
+      readAppSettings(repoRoot),
+      getDefaultThemeId(repoRoot),
+    ]);
+    const allowlist = Array.isArray(enabledThemes) ? enabledThemes : [];
+    const allowSet = new Set(allowlist.map((id) => String(id).toLowerCase()));
+
+    for (const theme of allThemes) {
+      const idLower = String(theme.id).toLowerCase();
+      // The default theme is always visible; an empty allowlist shows all.
+      theme.enabled =
+        allowSet.size === 0 ||
+        allowSet.has(idLower) ||
+        idLower === String(defaultThemeId).toLowerCase();
+    }
+
+    serveJson(res, 200, {
+      themes: allThemes,
+      defaultThemeId,
+      enabledThemes: allowlist,
+    });
     return true;
   }
 
