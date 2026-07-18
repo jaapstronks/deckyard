@@ -212,14 +212,30 @@ function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
 /**
  * Build context string about adjacent slides
  */
-function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
+export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
   const lines = [];
 
-  // Previous group's slide types
+  // Previous group's slide types.
+  //
+  // Groups are refined in parallel batches, and every group in a batch builds
+  // its context before any of them resolve — so for a deck with no more groups
+  // than the batch size (most decks) resolvedTypes is never populated in time
+  // and this block produced nothing at all. Falling back to the previous
+  // group's hints keeps the anti-repetition signal alive without serializing
+  // the batch: hints are known upfront and predict the type choice closely
+  // enough to steer off a third list-slide in a row.
   if (groupIndex > 0) {
     const prevGroup = allGroups[groupIndex - 1];
     if (prevGroup?.resolvedTypes?.length) {
       lines.push(`Previous slides: ${prevGroup.resolvedTypes.join(', ')}`);
+    } else {
+      const prevHints = (prevGroup?.slides || [])
+        .flatMap((slide) => slide.hints || [])
+        .filter((hint, index, all) => all.indexOf(hint) === index)
+        .slice(0, 4);
+      if (prevHints.length) {
+        lines.push(`Previous slides had these hints: ${prevHints.join(', ')}`);
+      }
     }
   }
 
