@@ -150,6 +150,38 @@ paying twice for the same answer:
 
 Every run reports its own cost, and `history.json` records cost per run.
 
+## Results so far
+
+Baseline across all 11 cases, and the state after three iteration rounds:
+
+| Dimension | Baseline (11 cases) | After round 3 (3 cases) |
+| --- | ---: | ---: |
+| Coverage | 4.73 | 4.67 |
+| Structure | 4.64 | 5.00 |
+| Slide economy | 4.00 | 4.00 |
+| Faithfulness | 4.82 | 5.00 |
+| Presentability | 4.09 | 3.67 |
+| Closeness to human deck | 2.80 | 3.00 |
+| **Overall** | **4.46** | **4.47** |
+
+The two columns cover different case sets, so read them as "where the corpus
+stands" rather than as a clean before/after. Per-round like-for-like
+comparisons are in `CHANGES.md`.
+
+What the rounds actually established:
+
+- **Round 1 (kept)** — catalog examples contained escaped newlines, so the
+  model copied literal `\n` onto slides. Slides carrying that defect: 5 → 0.
+- **Round 2 (reverted)** — a slide-type variety rule cut consecutive
+  same-type repeats by 64% and *lowered* every quality dimension
+  (faithfulness −0.55). The proxy improved while the goal got worse.
+- **Round 3 (kept)** — chapter dividers were 22% of every deck; now 15%, with
+  structure at 5.00 and no coverage or faithfulness cost.
+
+Scores cluster in the 4–5 band, so the **rationales carry more signal than the
+numbers**. Most of what was worth fixing came from reading them (and from the
+deck corpus directly) rather than from watching the average move.
+
 ## Reproducibility
 
 `claude-opus-4-8` accepts no `temperature`, so a run is pinned by model ID,

@@ -3,6 +3,23 @@
 Uitvoeringsplan bij `briefing-ai-test-suite.md`. Autonome uitvoering op
 dev-server-1, branch `feat/ai-test-suite`.
 
+> **Status: uitgevoerd.** Dit document beschrijft het plan zoals vooraf
+> opgesteld en is bewust niet achteraf bijgewerkt. Wat er daadwerkelijk
+> gebeurde — inclusief drie harness-bugs die tijdens de nulmeting boven water
+> kwamen en een iteratieronde die is teruggedraaid — staat in
+> `CHANGES.md` en in de PR-beschrijving.
+>
+> Afwijkingen van dit plan, kort:
+> - **Kosten.** Richtbudget was ~$50; werkelijk ~$59. Oorzaak: de nulmeting
+>   kostte $26,68 doordat drie cases ruwe HTML in plaats van geëxtraheerde
+>   tekst kregen, en ronde 2 draaide per ongeluk op alle 11 cases ($13,90)
+>   doordat een lege `--cases`-waarde als "geen filter" werd gelezen. Na de
+>   fixes kost een ronde ~$2.
+> - **Iteratierondes.** Drie gedraaid (minimum gehaald), niet meer, vanwege
+>   het budget.
+> - **Eindmeting.** Op de subset van 3 cases, niet op de volledige set: een
+>   volledige run kost ~$5 en het budget was op.
+
 ## 0. Verkenning (gedaan)
 
 De generatiepipeline is in kaart gebracht voordat dit plan is geschreven.
