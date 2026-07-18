@@ -35,6 +35,7 @@ import { handleShareLinks, handleSharePublic } from './share-links.js';
 import { handleQuestions } from './questions.js';
 import { handleSettings } from './settings.js';
 import { handleSlideLibrary } from './slide-library.js';
+import { handleSlideCollections } from './slide-collections.js';
 import { handleMedia } from './media.js';
 import { handleConvert } from './convert.js';
 import { handleActivity } from './activity.js';
@@ -132,6 +133,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleSettings(ctx)) return;
   if (await handleApiKeys(ctx)) return;
   if (await handleSlideLibrary(ctx)) return;
+  if (await handleSlideCollections(ctx)) return;
   if (flags.enableLiveData && (await handleDataSources(ctx))) return;
   if (await handleActivity(ctx)) return;
   if (await handleAnalytics(ctx)) return;

@@ -260,6 +260,41 @@ export class DualWriteAdapter extends StorageAdapter {
   }
 
   // ============================================================
+  // SLIDE COLLECTIONS
+  // ============================================================
+
+  async listSlideCollections(ctx, opts) {
+    const primary = this._getPrimary();
+    return primary.listSlideCollections(ctx, opts);
+  }
+
+  async getSlideCollection(id, ctx) {
+    const primary = this._getPrimary();
+    return primary.getSlideCollection(id, ctx);
+  }
+
+  async createSlideCollection(data, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.createSlideCollection(data, ctx);
+    this._writeToSecondary('createSlideCollection', [data, ctx], result);
+    return result;
+  }
+
+  async updateSlideCollection(id, data, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.updateSlideCollection(id, data, ctx);
+    this._writeToSecondary('updateSlideCollection', [id, data, ctx], result);
+    return result;
+  }
+
+  async deleteSlideCollection(id, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.deleteSlideCollection(id, ctx);
+    this._writeToSecondary('deleteSlideCollection', [id, ctx], result);
+    return result;
+  }
+
+  // ============================================================
   // PUBLISHED PRESENTATIONS
   // ============================================================
 
