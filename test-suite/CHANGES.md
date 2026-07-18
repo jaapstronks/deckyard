@@ -197,3 +197,82 @@ punctuation before the ellipsis.
 This is a deterministic string function with an obvious correctness criterion,
 so it ships with unit tests rather than an end-to-end measurement run —
 **its effect on the rubric scores is unmeasured**, unlike rounds 1–3.
+
+---
+
+## OpenAI track
+
+The suite was pointed at the OpenAI generation path (`--vendor openai`,
+`gpt-5.5`) with the judge still on `claude-opus-4-8`, so scores stay on one
+scale. Reports refuse to diff across vendors: a deck from a different generator
+is a different experiment.
+
+### Finding: the OpenAI path was broken outright
+
+The very first outline call returned `400 unsupported_value` — Deckyard sends
+`temperature` on every OpenAI request, and `gpt-5.5` accepts only the default.
+Not a degraded result: generation failed completely, so **no current-generation
+OpenAI model could be used at all**. The Claude provider already guards this
+(Opus 4.7+ removed sampling parameters for the same reason); the OpenAI side had
+no equivalent.
+
+Fixed in `provider-base.js`: temperature is omitted for `gpt-5.5+`, `gpt-6+` and
+o-series models, and still sent to `gpt-5.2` and earlier so existing
+deployments do not silently change sampling behaviour. Unit-tested and verified
+against the live API.
+
+This is arguably the most valuable single finding of the exercise, and it came
+from exercising a code path rather than from any rubric score.
+
+### Vendor comparison (3 cases, same judge, prompt version `218d32ce56fc`)
+
+| Dimension | Claude Opus 4.8 | OpenAI gpt-5.5 |
+| --- | ---: | ---: |
+| Coverage | 4.67 | 4.67 |
+| Structure | 4.67 | 4.67 |
+| Slide economy | 4.00 | 3.67 |
+| Faithfulness | 5.00 | 4.67 |
+| Presentability | 3.67 | 4.00 |
+| Closeness to human deck | 3.00 | **4.00** |
+| **Overall** | **4.47** | **4.34** |
+
+Cost was near-identical (~$2.35 per round either way), so there is no cost
+argument between them. Opus edges the overall score, but gpt-5.5 is a full
+point better on closeness to human editorial judgement — the dimension Claude
+was consistently weakest on.
+
+### Round 4 — "no fact twice" (REVERTED)
+
+**Motivated by** the OpenAI judge rationales: figures restated on later slides
+("three of them just restate IBM sales figures already on slide 3"), duplicated
+chart axis labels, and one deck reusing the same six-block layout on nearly
+every body slide.
+
+**Change.** Added a NO FACT TWICE pass to the phase 1 prompt: re-read the
+outline, find any figure/name/claim on more than one slide, keep it where it
+carries most weight and cut it elsewhere.
+
+**Result: reverted.** Coverage −0.67, structure −0.34, faithfulness −0.34,
+closeness-to-human −1.00, overall 4.34 → 4.07.
+
+The mechanism was visible in all three coverage rationales: the decks now
+*omit* facts — ASML's effective tax rate, quantitative detail on victim types,
+the Cloudflare "worst outage since 2019" severity framing. An instruction to
+cut repeated facts made the model cut facts. Reverted to `218d32ce56fc`.
+
+### The pattern across all four rounds
+
+| Round | Kind of change | Outcome |
+| --- | --- | --- |
+| 1 — escaped newlines | Concrete defect fix | Kept; defect 5 → 0 |
+| 2 — slide-type variety | General stylistic nudge | **Reverted** (faithfulness −0.55) |
+| 3 — chapter dividers | Concrete, counted defect | Kept; 23% → 15% |
+| 4 — no fact twice | General stylistic nudge | **Reverted** (coverage −0.67) |
+| OpenAI temperature | Concrete defect fix | Kept; path went broken → working |
+
+Both changes that fixed a **specific, countable defect** held up. Both
+**general instructions about how to write better slides** made the decks worse,
+each time by pushing the model into an over-correction the guard clause did not
+prevent. On this evidence the generation prompts are already near a local
+optimum for broad stylistic advice, and the remaining wins are in specific
+defects and in the pipeline code — not in telling the model to try harder.
