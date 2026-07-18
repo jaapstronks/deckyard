@@ -513,6 +513,82 @@
   }
 }
 
+/* From-the-library compose panel: bound the picker list so the selected-slides
+   tray stays visible below it, and the pane doesn't grow unbounded. */
+.creation-library-picker .ps-lib-list-container {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.creation-library-tray {
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-default));
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.creation-library-tray.is-hidden {
+  display: none;
+}
+
+.creation-tray-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+}
+
+.creation-tray-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: 4px 6px 4px 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-sunken));
+  cursor: grab;
+  max-width: 220px;
+}
+
+.creation-tray-chip.is-dragging {
+  opacity: 0.5;
+}
+
+.creation-tray-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent) / 0.15);
+  color: hsl(var(--app-accent));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+}
+
+.creation-tray-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ps-text-sm);
+}
+
+.creation-tray-remove {
+  border: none;
+  background: none;
+  color: hsl(var(--app-text-secondary));
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.creation-tray-remove:hover {
+  color: hsl(var(--app-text-primary));
+}
+
 /* ============================================
    Import Slides Tab (PDF Import)
    ============================================ */
