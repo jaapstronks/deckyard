@@ -359,6 +359,63 @@
   color: hsl(var(--app-text-tertiary));
 }
 
+/* Home two-column canvas: the returning user's top job — resume recent work —
+   plus create affordances in the main column; an always-visible "from others"
+   activity rail beside it, so awareness is never buried at the bottom of a
+   long scroll. Collapses to a single column on narrow viewports. */
+.home-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--ps-space-8);
+  align-items: start;
+}
+
+.home-main {
+  min-width: 0;
+}
+
+.home-rail {
+  min-width: 0;
+  position: sticky;
+  top: var(--ps-space-4);
+}
+
+/* The rail packs one section tightly — no oversized section margin, and a
+   subtle divider from the main column via its own left rule on wide screens. */
+.home-rail .presentation-section {
+  margin-bottom: var(--ps-space-4);
+}
+
+@media (max-width: 960px) {
+  .home-columns {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-4);
+  }
+
+  .home-rail {
+    position: static;
+    border-top: 1px solid hsl(var(--app-border-subtle));
+    padding-top: var(--ps-space-5);
+  }
+}
+
+/* Bundled-run count for an activity line ("Heleen · 3 comments on X"). */
+.home-activity-count {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-size: var(--ps-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .presentation-brand {
   display: inline-flex;
   align-items: center;
