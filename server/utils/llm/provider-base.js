@@ -6,6 +6,7 @@
 
 import { LlmError } from './error.js';
 import { safeJsonParse } from '../openai/json.js';
+import { emitLlmUsage } from './usage.js';
 
 /**
  * Create an LLM provider request function with standardized error handling.
@@ -16,9 +17,19 @@ import { safeJsonParse } from '../openai/json.js';
  * @param {Function} config.createHeaders - (apiKey) => headers object
  * @param {Function} config.transformRequest - (params) => request body object
  * @param {Function} config.parseResponse - (bodyText) => content string
+ * @param {Function} [config.parseUsage] - (bodyText) => token counts, reported
+ *   to `subscribeLlmUsage` listeners. Omit for providers whose usage shape
+ *   isn't mapped yet; usage is then simply not reported.
  * @returns {Function} async (params) => content string
  */
-export function createLlmProvider({ name, endpoint, createHeaders, transformRequest, parseResponse }) {
+export function createLlmProvider({
+  name,
+  endpoint,
+  createHeaders,
+  transformRequest,
+  parseResponse,
+  parseUsage = null,
+}) {
   /**
    * Make a request to the LLM provider
    * @param {Object} params - Request parameters
@@ -43,6 +54,11 @@ export function createLlmProvider({ name, endpoint, createHeaders, transformRequ
     const bodyText = await resp.text();
     if (!resp.ok) {
       throw LlmError.fromProviderFailure(name, resp.status, bodyText, params.model);
+    }
+
+    if (parseUsage) {
+      const usage = parseUsage(bodyText);
+      if (usage) emitLlmUsage({ vendor: name, model: params.model, ...usage });
     }
 
     return parseResponse(bodyText);
