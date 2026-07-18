@@ -53,24 +53,11 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
       opts.excludeActorEmail = email;
     }
 
-    const result = await listActivityEvents(ctx, opts);
-
-    // Enrich events with presentation titles and filter by access
-    const enrichedEvents = await enrichEventsWithPresentations(
-      result.events,
-      repoRoot,
-      authedUser,
-      ctx
-    );
+    const payload = await getEnrichedActivity({ repoRoot, authedUser, ctx, opts });
 
     serveJson(res, 200, {
       ok: true,
-      events: enrichedEvents,
-      // Note: total may be higher than accessible events; this is acceptable
-      // as the client handles pagination gracefully
-      total: result.total,
-      limit: result.limit,
-      offset: result.offset,
+      ...payload,
     });
     return true;
   }
@@ -118,6 +105,39 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
   }
 
   return false;
+}
+
+/**
+ * List activity events and enrich them with readable presentation info,
+ * dropping events on presentations the user cannot access. Shared by the
+ * standalone `/api/activity` route and the `/api/home` aggregation so both
+ * apply the same access filtering and event shape.
+ *
+ * @param {object} args
+ * @param {string} args.repoRoot
+ * @param {object} args.authedUser
+ * @param {object} args.ctx - storage/route context
+ * @param {object} args.opts - listActivityEvents filters (limit, offset,
+ *   presentationId, eventType, eventTypes[], actorEmail, excludeActorEmail,
+ *   since, until)
+ * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
+ */
+export async function getEnrichedActivity({ repoRoot, authedUser, ctx, opts }) {
+  const result = await listActivityEvents(ctx, opts);
+  const events = await enrichEventsWithPresentations(
+    result.events,
+    repoRoot,
+    authedUser,
+    ctx
+  );
+  return {
+    events,
+    // Note: total may be higher than accessible events; this is acceptable
+    // as the client handles pagination gracefully.
+    total: result.total,
+    limit: result.limit,
+    offset: result.offset,
+  };
 }
 
 /**

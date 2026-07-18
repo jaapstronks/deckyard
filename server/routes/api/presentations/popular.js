@@ -30,8 +30,11 @@ export async function handlePopularPresentations({ res, authedUser }) {
 /**
  * Fetch popular presentations from the database.
  * Uses activity_events to find presentations with recent activity.
+ * Exported so the `/api/home` aggregation can reuse the exact same list.
+ * @param {{ user: object }} ctx
+ * @returns {Promise<object[]>}
  */
-async function getPopularPresentations(ctx) {
+export async function getPopularPresentations(ctx) {
   return withDbGuard([], async (db) => {
     const orgId = getOrgId(ctx);
 
