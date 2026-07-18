@@ -420,6 +420,32 @@ export class StorageAdapter {
   }
 
   // ============================================================
+  // SLIDE LIBRARY USAGE (per-user "new to you" tracking)
+  // ============================================================
+
+  /**
+   * List a user's slide-library usage records.
+   * @param {string} userEmail
+   * @param {StorageContext} ctx
+   * @returns {Promise<Array<{ itemType: string, itemId: string, firstUsedAt: string, useCount: number, updatedAt: string }>>}
+   */
+  async listSlideLibraryUsage(userEmail, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Record usage of one or more library items for a user (upsert; increments
+   * useCount on repeats).
+   * @param {string} userEmail
+   * @param {Array<{ type: 'slide'|'collection', id: string }>} items
+   * @param {StorageContext} ctx
+   * @returns {Promise<number>} number of refs recorded
+   */
+  async recordSlideLibraryUsage(userEmail, items, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  // ============================================================
   // PUBLISHED PRESENTATIONS
   // ============================================================
 

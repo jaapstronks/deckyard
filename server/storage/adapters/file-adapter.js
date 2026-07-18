@@ -52,6 +52,11 @@ import {
 } from '../collections-file.js';
 
 import {
+  listSlideLibraryUsage as fileListSlideLibraryUsage,
+  recordSlideLibraryUsage as fileRecordSlideLibraryUsage,
+} from '../slide-library-usage-file.js';
+
+import {
   getPublishedIndex,
   upsertPublishedEntry,
   removePublishedEntry,
@@ -448,6 +453,20 @@ export class FileAdapter extends StorageAdapter {
     items.splice(idx, 1);
     await fileSaveSlideCollections(this.repoRoot, { v: 1, items });
     return true;
+  }
+
+  // ============================================================
+  // SLIDE LIBRARY USAGE (per-user "new to you" tracking)
+  // ============================================================
+
+  async listSlideLibraryUsage(userEmail, ctx) {
+    const { items } = await fileListSlideLibraryUsage(this.repoRoot, userEmail);
+    return items;
+  }
+
+  async recordSlideLibraryUsage(userEmail, items, ctx) {
+    const { recorded } = await fileRecordSlideLibraryUsage(this.repoRoot, userEmail, items);
+    return recorded;
   }
 
   // ============================================================

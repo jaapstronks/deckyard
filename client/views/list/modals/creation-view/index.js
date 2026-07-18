@@ -329,6 +329,9 @@ export function openCreationView({
   const collectionsApi = createCollectionsApi({ api });
   let collectionsLoaded = false;
   let slideIndexCache = null; // id -> library item (skips trashed)
+  // The collection the current compose started from, if any. Forwarded to the
+  // server so it records collection usage (clears the Home "new to you" badge).
+  let activeCollectionId = null;
 
   // Resolve library items once so a collection's ids can become real slides.
   const ensureSlideIndex = async () => {
@@ -354,6 +357,7 @@ export function openCreationView({
     const index = await ensureSlideIndex();
     const ids = Array.isArray(collection?.slideIds) ? collection.slideIds : [];
     const resolved = ids.map((id) => index.get(id)).filter(Boolean);
+    activeCollectionId = collection?.id || null;
     selectedById = new Map(resolved.map((it) => [it.id, it]));
     selectedOrder = resolved.map((it) => it.id);
     // Reflect the active collection in the chooser.
@@ -435,6 +439,7 @@ export function openCreationView({
     libraryMode = mode;
     // Clear selection on both sides.
     libraryPicker?.clearSelection?.(libraryPickerMount);
+    activeCollectionId = null;
     selectedOrder = [];
     selectedById = new Map();
     renderTray();
@@ -794,6 +799,7 @@ export function openCreationView({
         title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
         theme: themeSelect.getTheme(),
         lang,
+        sourceCollectionId: libraryMode === 'collections' ? activeCollectionId : null,
       });
       close();
       nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);

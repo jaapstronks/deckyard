@@ -363,6 +363,19 @@ export function createSlidesPanel({
     insertLibraryItem: (item, opts) => insertFromLibraryItem(item, opts),
   });
 
+  // Record that this library slide was used (clears the Home "new to you"
+  // badge for the current user). Best-effort: never block or fail the insert.
+  const recordLibraryUsage = (item) => {
+    const id = String(item?.id || '').trim();
+    if (!id) return;
+    try {
+      void api('/api/slide-library/usage', {
+        method: 'POST',
+        body: JSON.stringify({ items: [{ type: 'slide', id }] }),
+      }).catch(() => {});
+    } catch {}
+  };
+
   const insertFromLibraryItem = (item, { afterSlideId } = {}) => {
     const type = String(item?.slideType || '').trim();
     if (!type) return;
@@ -399,6 +412,7 @@ export function createSlidesPanel({
       s.content = { ...s.content, ...nextContent };
     }
     maybeAssignRandomBg(s);
+    recordLibraryUsage(item);
 
     // Check if adding an interactive slide without a follow-invite slide present
     if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {

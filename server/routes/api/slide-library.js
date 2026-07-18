@@ -20,6 +20,10 @@ import {
   getTagsForSlideLibraryItems,
   setTagsForSlideLibraryItem,
 } from '../../storage/slide-library.js';
+import {
+  listSlideLibraryUsage,
+  recordSlideLibraryUsage,
+} from '../../storage/slide-library-usage.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
@@ -36,6 +40,24 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
 
   const themeId = cleanThemeId(url.searchParams.get('theme') || '');
   const email = String(authedUser?.email || '').trim().toLowerCase();
+
+  // Per-user usage ("new to you" tracking). GET returns the current user's set
+  // of used {itemType, itemId}; POST records usage from the insert-into-existing
+  // path (compose records server-side in the create handler instead).
+  if (url.pathname === '/api/slide-library/usage') {
+    if (req.method === 'GET') {
+      const out = await listSlideLibraryUsage(repoRoot, email);
+      serveJson(res, 200, out);
+      return true;
+    }
+    if (req.method === 'POST') {
+      const body = await json(req);
+      const r = await recordSlideLibraryUsage(repoRoot, email, body?.items);
+      serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
+      return true;
+    }
+    return methodNotAllowed(res);
+  }
 
   // Personal library
   if (url.pathname === '/api/slide-library/personal') {

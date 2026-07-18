@@ -295,6 +295,22 @@ export class DualWriteAdapter extends StorageAdapter {
   }
 
   // ============================================================
+  // SLIDE LIBRARY USAGE
+  // ============================================================
+
+  async listSlideLibraryUsage(userEmail, ctx) {
+    const primary = this._getPrimary();
+    return primary.listSlideLibraryUsage(userEmail, ctx);
+  }
+
+  async recordSlideLibraryUsage(userEmail, items, ctx) {
+    const primary = this._getPrimary();
+    const result = await primary.recordSlideLibraryUsage(userEmail, items, ctx);
+    this._writeToSecondary('recordSlideLibraryUsage', [userEmail, items, ctx], result);
+    return result;
+  }
+
+  // ============================================================
   // PUBLISHED PRESENTATIONS
   // ============================================================
 
