@@ -226,7 +226,10 @@ STRUCTURE GUIDELINES
 
 1. Start with a chapter or content slide (NOT opening)
 2. Use chapters ONLY for major sections (prefer fewer chapters)
-3. After each chapter, include 2-4 content slides maximum
+3. Give each chapter 3-5 content slides. A chapter divider carries no content
+   of its own, so a deck that changes chapter every second slide spends a large
+   share of its length on dividers. As a guide: under 10 content slides, use at
+   most 2 chapters; only a long deck needs more than 4.
 4. Stay within the slide budget (target: ${targetSlides} content slides)
 5. Space quote slides apart (never back-to-back)
 6. Consolidation is better than expansion - fewer strong slides beat many weak ones

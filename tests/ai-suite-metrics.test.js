@@ -181,3 +181,25 @@ test('sourceTextFilename maps every fetched asset type to its extracted text', (
   assert.equal(sourceTextFilename('notes.docx'), 'notes.txt');
   assert.equal(sourceTextFilename('already.txt'), 'already.txt');
 });
+
+test('deckMetrics measures type monotony and divider share', () => {
+  const slide = (type) => ({ type, content: { title: 'x', body: 'some words here' } });
+  const deck = {
+    slides: [
+      slide('title-slide'),
+      slide('list-slide'),
+      slide('list-slide'),
+      slide('list-slide'),
+      slide('chapter-title-slide'),
+      slide('kpi-metrics-slide'),
+    ],
+  };
+  const { repetition, dividerShare } = deckMetrics(deck);
+  assert.equal(repetition.consecutiveRepeats, 2, 'three in a row is two repeats');
+  assert.equal(repetition.longestRun, 3);
+  assert.equal(dividerShare, round2(1 / 6));
+
+  function round2(n) {
+    return Math.round(n * 100) / 100;
+  }
+});

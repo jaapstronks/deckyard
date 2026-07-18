@@ -91,9 +91,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Calls | Input | Output | Cache read | USD |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| topics | 11 | 165 | 9242 | 0 | $6.1015 |
-| generation | 66 | 2135030 | 114879 | 0 | $13.5471 |
-| judge | 11 | 80733 | 27167 | 0 | $7.0325 |
-| **Total** | 88 | 2215928 | 151288 | 0 | **$26.6812** |
+| Category | Calls | Input | Output | Cache write | Cache read | USD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| topics | 11 | 165 | 9242 | 939146 | 0 | $6.1015 |
+| generation | 66 | 2135030 | 114879 | 0 | 0 | $13.5471 |
+| judge | 11 | 80733 | 27167 | 951945 | 0 | $7.0325 |
+| **Total** | 88 | 2215928 | 151288 | 1891091 | 0 | **$26.6812** |

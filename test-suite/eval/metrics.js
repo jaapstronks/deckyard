@@ -137,6 +137,14 @@ export function deckMetrics(deck) {
     wallOfTextSlides: contentSlides.filter((s) => s.words > 80).length,
     emptySlides: contentSlides.filter((s) => s.words < 5).length,
     slideTypeDistribution: countBy(perSlide.map((s) => s.type)),
+    // Monotony: how often a slide repeats its predecessor's type, and the
+    // longest such run. A deck can have a healthy type mix overall and still
+    // read as a wall of bullets if the repeats are clustered, so both matter.
+    repetition: typeRepetition(perSlide.map((s) => s.type)),
+    // Share of the deck that is section dividers rather than content.
+    dividerShare: slides.length
+      ? round(perSlide.filter((s) => s.type === 'chapter-title-slide').length / slides.length)
+      : 0,
     structure: {
       hasTitleSlide: slides[0]?.type === 'title-slide',
       hasClosing: /^(payoff|quote|chapter-title)/.test(slides.at(-1)?.type || ''),
@@ -229,6 +237,34 @@ function median(values) {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/**
+ * Measure how often consecutive slides share a type.
+ *
+ * @param {string[]} types - Slide types in deck order
+ * @returns {{consecutiveRepeats: number, longestRun: number, repeatRate: number}}
+ */
+function typeRepetition(types) {
+  let consecutiveRepeats = 0;
+  let longestRun = types.length ? 1 : 0;
+  let currentRun = 1;
+
+  for (let i = 1; i < types.length; i += 1) {
+    if (types[i] === types[i - 1]) {
+      consecutiveRepeats += 1;
+      currentRun += 1;
+      if (currentRun > longestRun) longestRun = currentRun;
+    } else {
+      currentRun = 1;
+    }
+  }
+
+  return {
+    consecutiveRepeats,
+    longestRun,
+    repeatRate: types.length > 1 ? round(consecutiveRepeats / (types.length - 1)) : 0,
+  };
 }
 
 function countBy(items) {
