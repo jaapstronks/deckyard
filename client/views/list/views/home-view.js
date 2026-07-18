@@ -118,8 +118,9 @@ export function createHomeView({
     buildSectionHeader({
       h,
       icon: 'bell',
-      title: t('list.home.activity', 'Recent activity'),
+      title: t('list.home.activityFromOthers', 'From others'),
       count: unreadCount,
+      badge: unreadCount > 0 ? t('list.home.activityNew', '{count} new', { count: unreadCount }) : '',
       onViewAll: () => setView('activity'),
     }),
     homeActivityLoading
@@ -129,12 +130,24 @@ export function createHomeView({
   // the old orphan "Welcome" heading that labelled nothing.
   const homeHeader = buildHomeHeader({ h, user, count: allByDate.length });
 
-  // Assemble home view. Content-first order for a returning user: their work
-  // (Recent) leads, then the theme picker as a create affordance, then
-  // discovery (Popular) and finally what's happening (Activity).
+  // Assemble home view as two columns under a full-width greeting header. The
+  // main column carries the returning user's top job — resume recent work —
+  // plus discovery (Popular) and a de-emphasized create affordance (theme
+  // picker). The right rail carries the always-visible "what did others do"
+  // feed, so awareness is never buried at the bottom of a long scroll.
   if (onboardingChecklist) homeView.append(onboardingChecklist);
-  homeView.append(homeHeader, homeRecentSection, themePicker.el);
-  homeView.append(homePopularSection, homeActivitySection);
+
+  const homeColumns = h('div', { class: 'home-columns' });
+  const homeMain = h('div', { class: 'home-main' });
+  const homeRail = h('aside', {
+    class: 'home-rail',
+    'aria-label': t('list.home.activityFromOthers', 'From others'),
+  });
+
+  homeMain.append(homeRecentSection, homePopularSection, themePicker.el);
+  homeRail.append(homeActivitySection);
+  homeColumns.append(homeMain, homeRail);
+  homeView.append(homeHeader, homeColumns);
 
   // Popular presentations loading
   async function loadPopularPresentations() {
@@ -159,20 +172,24 @@ export function createHomeView({
     }
   }
 
-  // Activity preview loading
+  // Activity preview loading. `excludeSelf` keeps your own comments out — on
+  // Home they're redundant with the work you already see. We over-fetch (raw
+  // events) then bundle consecutive same-actor/same-deck runs into one line
+  // ("Heleen · 3 comments on X"), which fits far more signal in the rail.
   async function loadActivityPreview() {
     try {
-      const resp = await api('/api/activity?limit=5');
+      const resp = await api('/api/activity?limit=20&excludeSelf=true');
       const events = resp?.events || [];
+      const bundles = bundleActivityEvents(events).slice(0, 6);
       homeActivityLoading.remove();
 
-      if (events.length === 0) {
+      if (bundles.length === 0) {
         homeActivitySection.append(
-          h('div', { class: 'help', text: t('list.home.activityEmpty', 'No recent activity.') })
+          h('div', { class: 'help', text: t('list.home.activityNoneOthers', 'Nothing new from others.') })
         );
       } else {
-        for (const event of events) {
-          homeActivityList.append(renderActivityPreviewItem(h, nav, event));
+        for (const bundle of bundles) {
+          homeActivityList.append(renderActivityPreviewItem(h, nav, bundle));
         }
         homeActivitySection.append(homeActivityList);
       }
@@ -228,9 +245,40 @@ function buildHomeHeader({ h, user, count }) {
 }
 
 /**
- * Render a single activity preview item
+ * Collapse consecutive activity events by the same actor, on the same deck,
+ * of the same type into a single bundle. The feed arrives newest-first, so a
+ * run of "Heleen commented / commented / commented on X" becomes one bundle
+ * with `count: 3`. Non-matching events break the run.
+ *
+ * @param {Array<object>} events - raw activity events, newest first
+ * @returns {Array<{event: object, count: number}>}
  */
-function renderActivityPreviewItem(h, nav, event) {
+function bundleActivityEvents(events) {
+  const bundles = [];
+  for (const event of events) {
+    const last = bundles[bundles.length - 1];
+    const sameRun =
+      last &&
+      last.event.eventType === event.eventType &&
+      (last.event.actorEmail || '') === (event.actorEmail || '') &&
+      (last.event.presentationId || '') === (event.presentationId || '');
+    if (sameRun) {
+      last.count += 1;
+    } else {
+      bundles.push({ event, count: 1 });
+    }
+  }
+  return bundles;
+}
+
+/**
+ * Render a single (possibly bundled) activity preview item.
+ *
+ * @param {Function} h
+ * @param {Function} nav
+ * @param {{event: object, count: number}} bundle
+ */
+function renderActivityPreviewItem(h, nav, { event, count }) {
   const item = h('div', {
     class: 'home-activity-item',
     onclick: () => {
@@ -240,7 +288,10 @@ function renderActivityPreviewItem(h, nav, event) {
     },
   });
 
-  const actorName = event.actorName || event.actorEmail?.split('@')[0] || 'Someone';
+  const rawActor = event.actorName || event.actorEmail || 'Someone';
+  // Strip the domain when only an email is available, so the feed reads
+  // "riley commented on…" rather than "riley@example.com commented on…".
+  const actorName = rawActor.includes('@') ? rawActor.split('@')[0] : rawActor;
   const initials = actorName.slice(0, 2).toUpperCase();
 
   let actionText = '';
@@ -257,6 +308,9 @@ function renderActivityPreviewItem(h, nav, event) {
     case 'comment.resolved':
       actionText = t('activity.resolved', 'resolved a comment on');
       break;
+    case 'collaborator.added':
+      actionText = t('activity.shared', 'shared');
+      break;
     default:
       actionText = t('activity.modified', 'modified');
   }
@@ -267,14 +321,24 @@ function renderActivityPreviewItem(h, nav, event) {
     event.data?.presentationTitle ||
     t('activity.untitled', 'Untitled');
 
-  item.append(
-    h('div', { class: 'home-activity-avatar', text: initials }),
-    h('div', { class: 'home-activity-content' }, [
-      h('span', { class: 'home-activity-actor', text: actorName }),
-      h('span', { class: 'home-activity-action', text: ` ${actionText} ` }),
-      h('span', { class: 'home-activity-target', text: `"${targetTitle}"` }),
-    ])
-  );
+  const content = h('div', { class: 'home-activity-content' }, [
+    h('span', { class: 'home-activity-actor', text: actorName }),
+    h('span', { class: 'home-activity-action', text: ` ${actionText} ` }),
+    h('span', { class: 'home-activity-target', text: `"${targetTitle}"` }),
+  ]);
+
+  item.append(h('div', { class: 'home-activity-avatar', text: initials }), content);
+
+  // Count pill for a bundled run — language-neutral, with an accessible label.
+  if (count > 1) {
+    item.append(
+      h('span', {
+        class: 'home-activity-count',
+        text: String(count),
+        title: t('list.home.activityCount', '{count} updates', { count }),
+      })
+    );
+  }
 
   return item;
 }
