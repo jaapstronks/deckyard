@@ -406,7 +406,8 @@ export async function handleStatic({
         return notFound(res);
       }
 
-      return serveFile(res, fsPath);
+      // /uploads/ is user-controlled content: serve risky types (SVG) inert.
+      return serveFile(res, fsPath, { userUpload: urlPrefix === '/uploads/' });
     }
   }
 

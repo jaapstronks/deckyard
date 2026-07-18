@@ -174,14 +174,42 @@ export function methodNotAllowed(res, allowed) {
   res.end(JSON.stringify({ error: 'Method not allowed' }));
 }
 
-export async function serveFile(res, absolutePath) {
+/**
+ * Serve a file from disk with safe content-type and security headers.
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} absolutePath
+ * @param {Object} [opts]
+ * @param {boolean} [opts.userUpload] When true the file is user-uploaded
+ *   content: risky types (SVG) are served inert (CSP sandbox +
+ *   Content-Disposition: attachment) so a stored <script> can't execute in the
+ *   app origin on navigation. See docs/plans/security-hardening.md item 4.
+ */
+export async function serveFile(res, absolutePath, { userUpload = false } = {}) {
   try {
     const stat = await fs.stat(absolutePath);
     if (!stat.isFile()) return notFound(res);
     const ext = path.extname(absolutePath).toLowerCase();
     const ct = MIME[ext] || 'application/octet-stream';
     const buf = await fs.readFile(absolutePath);
-    res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-store' });
+
+    const headers = {
+      'Content-Type': ct,
+      'Cache-Control': 'no-store',
+      // Never let the browser MIME-sniff a response into an executable type.
+      'X-Content-Type-Options': 'nosniff',
+    };
+
+    // User-uploaded SVG is stored XSS bait: served same-origin as
+    // image/svg+xml it executes embedded <script> on direct navigation.
+    // Serve it inert — the sandbox CSP blocks scripts and attachment stops
+    // it rendering as a top-level document. Inline <img>/CSS use is unaffected.
+    if (userUpload && ext === '.svg') {
+      headers['Content-Security-Policy'] =
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+      headers['Content-Disposition'] = 'attachment';
+    }
+
+    res.writeHead(200, headers);
     res.end(buf);
   } catch {
     notFound(res);
