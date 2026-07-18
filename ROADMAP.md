@@ -21,19 +21,6 @@ validation/iteration, MCP server with 27 tools + SSE transport).
 - New idea? Add a line under **Later**. Picking it up? Write the briefing in
   `docs/plans/`, move the line to **Now**.
 
-## Now — create-flow track (active)
-
-- **Creation view + reuse consolidation** — `docs/plans/create-flow.md`
-  A dedicated two-column "New presentation" view replaces the overloaded modal;
-  the slide library becomes the single home for reuse (Duplicate a whole deck /
-  compose from library slides / a named, ordered **Collection**), and starter
-  kits are retired. The theme picker defaults to a workspace-set theme with the
-  rest behind a "Show all themes" toggle (forks default to their own). Built in
-  slices on the `create-flow` integration branch.
-  _Progress:_ Slice 1 (theme default + two-column view) and Slice 2 (library
-  compose with the NL/EN round-trip) are done on `create-flow`. Next: Slice 3
-  (Collections), then Slice 4 (retire starter kits).
-
 ## Now — UX improvement track (from the 2026-07-10 UX research)
 
 In recommended working order (rationale in `docs/plans/TODO.md`); each is a
@@ -58,6 +45,12 @@ editor-chrome redesign: deck-only topbar zones, pane tabs on the slide
 toolbar, presenter notes as a third pane, inline icon picker and a comments
 scope switch. How it works is documented in
 `docs/reference/editor-inspector.md`.)_
+
+_(The create-flow track — a two-column "New presentation" view, library-first
+reuse consolidation (Duplicate a whole deck / compose from library slides / a
+named, ordered **Collection**), retired starter kits, and a workspace-default
+theme picker — shipped in full on 2026-07-18 (Slices 1-4). How it works is
+documented in `docs/reference/deck-creation-and-reuse.md`.)_
 
 ## Next — existing feature plans
 
