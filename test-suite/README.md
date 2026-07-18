@@ -190,3 +190,45 @@ prompt-bearing source files listed in `lib/config.js`. Every report states that
 hash, and a report that diffs against a previous run lists exactly which prompt
 files changed in between. When nothing changed, the report says so, and any
 score movement is variance rather than progress.
+
+## Stage-level iteration (`ai-suite:stage`)
+
+`test:ai-suite` is the benchmark of record: full pipeline, full rubric,
+comparable across runs. It is the wrong tool for tuning a single prompt,
+because a change to phase 1 is measured *through* phase 2's slide-type
+selection, validation and truncation — so the signal is both expensive and hard
+to attribute.
+
+`ai-suite:stage` isolates one stage:
+
+```bash
+# Phase 1 only: is the document split into the right sections, in the right
+# order, with the right number of slides each? One LLM call per case.
+npm run ai-suite:stage -- --stage outline --cases asml-q4-2024
+
+# Phase 2 only, from a frozen outline, first section only. One LLM call plus
+# one judge call — a round costs cents.
+npm run ai-suite:stage -- --stage refine --from <run-id> --groups 1
+```
+
+**Diagnose in that order.** If the outline scores badly, fix the phase 1 prompt
+and stop — running phase 2 would only measure a bad plan being rendered
+faithfully. Only when the outline is sound is a bad deck actually phase 2's
+fault, and then you freeze that outline and iterate on one section.
+
+The outline judge has its own rubric, scoring the *plan* rather than the prose:
+
+| Dimension | Question |
+| --- | --- |
+| Sectioning | Right number of sections, at the right boundaries? |
+| Ordering | Does the sequence build, or does it bury the headline? |
+| Slide allocation | Does each planned slide earn its place, and does section size match what the section has to say? |
+| Content selection | Does the plan keep the important material and drop the rest? |
+
+Measured cost per case (gpt-5.5 generation, Opus judge): **outline stage
+~$0.20, refine-one-section ~$0.24**, against ~$0.78 for a full pipeline run.
+Artifacts land in `test-suite/stages/<run-id>/` (gitignored).
+
+On a partial refine run, coverage and structure are omitted from the summary:
+the deck is a leading fragment and was never meant to be whole, so scoring it
+on wholeness would be misleading.

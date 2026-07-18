@@ -23,7 +23,7 @@ import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
  * @param {string} options.theme - Theme ID
  * @param {string} options.titleSlideType - Title slide type (e.g. 'title-slide')
  */
-function assembleDeck(outline, refinedSlides, { theme = 'default', titleSlideType = 'title-slide' } = {}) {
+export function assembleDeck(outline, refinedSlides, { theme = 'default', titleSlideType = 'title-slide' } = {}) {
   const deck = {
     format: 'slidecreator.deck',
     version: 1,
