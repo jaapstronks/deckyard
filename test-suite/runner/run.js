@@ -13,6 +13,9 @@
  *   --reuse-run ID  Run id to reuse decks from (implies --no-generate)
  *   --refresh       Bypass the judge/topic cache
  *   --label TEXT    Free-text label stored in the run metadata
+ *   --vendor NAME   Generation vendor: claude (default) or openai. The judge
+ *                   always stays on the pinned judge model, so scores from
+ *                   different vendors remain on one scale.
  */
 
 import fs from 'node:fs/promises';
@@ -20,7 +23,13 @@ import path from 'node:path';
 
 import { loadCases, readReferenceDeck, readSourceText } from '../lib/cases.js';
 import { CostTracker } from '../lib/cost.js';
-import { JUDGE_EFFORT, MODEL, RUNS_DIR } from '../lib/config.js';
+import {
+  DEFAULT_VENDOR,
+  GENERATION_VENDORS,
+  JUDGE_EFFORT,
+  MODEL,
+  RUNS_DIR,
+} from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
 import { judgeDeck, meanScore } from '../eval/judge.js';
 import { deckMetrics, numberFidelity } from '../eval/metrics.js';
@@ -48,6 +57,7 @@ function parseArgs(argv) {
     reuseRun: null,
     refresh: false,
     label: '',
+    vendor: DEFAULT_VENDOR,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -61,6 +71,14 @@ function parseArgs(argv) {
       options.generate = false;
     } else if (arg === '--refresh') options.refresh = true;
     else if (arg === '--label') options.label = next();
+    else if (arg === '--vendor') {
+      options.vendor = next();
+      if (!GENERATION_VENDORS[options.vendor]) {
+        throw new Error(
+          `Unknown vendor "${options.vendor}". Known: ${Object.keys(GENERATION_VENDORS).join(', ')}`
+        );
+      }
+    }
     else if (arg === '--help' || arg === '-h') options.help = true;
     else throw new Error(`Unknown option: ${arg}`);
   }
@@ -82,11 +100,12 @@ async function main() {
     return;
   }
 
-  // Pin both pipeline stages to the suite's model. getLlmConfig reads these per
-  // call, so setting them here covers the whole run.
-  process.env.CLAUDE_MODEL = MODEL;
-  process.env.CLAUDE_MODEL_PLAN = MODEL;
-  process.env.LLM_VENDOR = 'claude';
+  // Pin the generation model for the chosen vendor. getLlmConfig reads these
+  // per call, so setting them here covers the whole run. Both Claude stages
+  // (plan and fill) are pinned to one model so the two phases stay comparable.
+  const generation = GENERATION_VENDORS[options.vendor];
+  for (const envVar of generation.envVars) process.env[envVar] = generation.model;
+  process.env.LLM_VENDOR = options.vendor;
   // Keep the app's own debug logging out of the repo during suite runs.
   process.env.AI_VALIDATION_LOGGING = process.env.AI_VALIDATION_LOGGING || 'false';
 
@@ -104,7 +123,10 @@ async function main() {
   const startedAt = new Date().toISOString();
 
   console.log(`\nRun ${runId}`);
-  console.log(`  model=${MODEL} effort=${JUDGE_EFFORT} prompts=${promptVersion.hash}`);
+  console.log(
+    `  generation=${options.vendor}/${generation.model}  judge=${MODEL} (effort ${JUDGE_EFFORT})`
+  );
+  console.log(`  prompts=${promptVersion.hash}`);
   console.log(`  cases=${cases.map((c) => c.id).join(', ')} repeat=${options.repeat}`);
   if (options.dryRun) console.log('  mode=dry-run (no judge)');
   console.log('');
@@ -125,7 +147,7 @@ async function main() {
       const extracted = await extractKeyTopics({
         caseId: testCase.id,
         sourceText,
-        onUsage: (usage) => cost.record('topics', usage),
+        onUsage: (usage) => cost.record('topics', usage, MODEL),
         refresh: options.refresh,
       });
       topics = extracted.topics;
@@ -142,7 +164,7 @@ async function main() {
         const startedGeneration = Date.now();
         deck = await generateDeckV2(sourceText, {
           targetLang: testCase.language === 'nl' ? 'nl' : 'en-GB',
-          vendor: 'claude',
+          vendor: options.vendor,
           enableLogging: false,
         });
         const durationMs = Date.now() - startedGeneration;
@@ -180,7 +202,7 @@ async function main() {
           referenceDeck,
           // Only pays off when the same source is judged more than once.
           cacheContext: options.repeat > 1,
-          onUsage: (usage) => cost.record('judge', usage),
+          onUsage: (usage) => cost.record('judge', usage, MODEL),
           refresh: options.refresh,
         });
         verdict = judged.verdict;
@@ -219,6 +241,8 @@ async function main() {
     finishedAt: new Date().toISOString(),
     label: options.label,
     model: MODEL,
+    generationVendor: options.vendor,
+    generationModel: generation.model,
     effort: JUDGE_EFFORT,
     promptVersion,
     caseIds: cases.map((c) => c.id),
@@ -234,7 +258,7 @@ async function main() {
   await fs.writeFile(path.join(runDir, 'run.json'), JSON.stringify(run, null, 2));
 
   const history = await loadHistory();
-  const previous = await findComparableRun(history, run.caseIds);
+  const previous = await findComparableRun(history, run.caseIds, options.vendor);
   await writeReport(run, previous, path.join(runDir, 'report.md'));
 
   await appendHistory({
@@ -242,6 +266,8 @@ async function main() {
     startedAt,
     label: options.label,
     model: MODEL,
+    generationVendor: options.vendor,
+    generationModel: generation.model,
     effort: JUDGE_EFFORT,
     promptVersion,
     caseIds: run.caseIds,

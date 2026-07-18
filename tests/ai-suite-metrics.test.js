@@ -150,23 +150,44 @@ test('overallScore excludes humanLikeness so mixed case sets stay comparable', (
 });
 
 test('costOf prices cached reads far below fresh input', () => {
-  const fresh = costOf({ inputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 });
-  const cached = costOf({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 1_000_000, cacheWriteTokens: 0 });
+  const empty = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+  const fresh = costOf({ ...empty, inputTokens: 1_000_000 }, 'claude-opus-4-8');
+  const cached = costOf({ ...empty, cacheReadTokens: 1_000_000 }, 'claude-opus-4-8');
   assert.equal(fresh, 5);
   assert.ok(cached < fresh / 5, 'cache reads are an order of magnitude cheaper');
 });
 
-test('CostTracker keeps categories separate and totals them', () => {
+test('costOf prices each model at its own rates', () => {
+  const output = { inputTokens: 0, outputTokens: 1_000_000, cacheReadTokens: 0, cacheWriteTokens: 0 };
+  assert.equal(costOf(output, 'claude-opus-4-8'), 25);
+  assert.equal(costOf(output, 'gpt-5.5'), 30);
+});
+
+test('costOf refuses an unpriced model rather than reporting zero', () => {
+  // Silently under-counting is worse than failing: a cost report that lies is
+  // the one thing worse than no cost report.
+  assert.throws(
+    () => costOf({ inputTokens: 1000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }, 'made-up-model'),
+    /No pricing for model/
+  );
+});
+
+test('CostTracker keeps categories and models separate, and totals them', () => {
   const tracker = new CostTracker();
-  tracker.record('generation', { inputTokens: 1000, outputTokens: 500 });
-  tracker.record('judge', { inputTokens: 2000, outputTokens: 100 });
-  tracker.record('judge', { inputTokens: 1000, outputTokens: 50 });
+  tracker.record('generation', { inputTokens: 1000, outputTokens: 500 }, 'gpt-5.5');
+  tracker.record('judge', { inputTokens: 2000, outputTokens: 100 }, 'claude-opus-4-8');
+  tracker.record('judge', { inputTokens: 1000, outputTokens: 50 }, 'claude-opus-4-8');
 
   const summary = tracker.summary();
-  assert.equal(summary.byCategory.judge.calls, 2);
-  assert.equal(summary.byCategory.judge.inputTokens, 3000);
+  const judge = summary.byCategory['judge|claude-opus-4-8'];
+  const generation = summary.byCategory['generation|gpt-5.5'];
+
+  assert.equal(judge.calls, 2);
+  assert.equal(judge.inputTokens, 3000);
+  assert.equal(generation.model, 'gpt-5.5');
   assert.equal(summary.total.calls, 3);
-  assert.ok(summary.totalUsd > 0);
+  // A mixed-vendor run must price each line at its own rates, not one blended rate.
+  assert.equal(summary.totalUsd, Math.round((judge.usd + generation.usd) * 10000) / 10000);
 });
 
 test('sourceTextFilename maps every fetched asset type to its extracted text', () => {

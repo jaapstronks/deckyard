@@ -46,7 +46,7 @@ async function main() {
       0,
       Math.max(0, history.findIndex((entry) => entry.runId === runId))
     );
-    const previous = await findComparableRun(earlier, run.caseIds);
+    const previous = await findComparableRun(earlier, run.caseIds, run.generationVendor || "claude");
 
     await writeReport(run, previous, path.join(RUNS_DIR, runId, 'report.md'));
     console.log(

@@ -114,3 +114,30 @@ export function parseOpenAiCompatibleResponse(bodyText) {
   const parsed = safeJsonParse(bodyText);
   return parsed?.choices?.[0]?.message?.content ?? '';
 }
+
+/**
+ * Usage parser for OpenAI-compatible APIs.
+ *
+ * These report `prompt_tokens` / `completion_tokens` rather than Anthropic's
+ * `input_tokens` / `output_tokens`, and cached prompt tokens are nested under
+ * `prompt_tokens_details`. Note `prompt_tokens` is the full prompt count with
+ * cached tokens included, so the cached portion is subtracted out to avoid
+ * billing the same tokens twice.
+ *
+ * @param {string} bodyText - Response body text
+ * @returns {Object|null} Normalized token counts, or null if unparseable
+ */
+export function parseOpenAiCompatibleUsage(bodyText) {
+  const usage = safeJsonParse(bodyText)?.usage;
+  if (!usage) return null;
+
+  const num = (value) => (Number.isFinite(Number(value)) && Number(value) > 0 ? Number(value) : 0);
+  const cachedTokens = num(usage.prompt_tokens_details?.cached_tokens);
+
+  return {
+    inputTokens: Math.max(0, num(usage.prompt_tokens) - cachedTokens),
+    outputTokens: num(usage.completion_tokens),
+    cacheReadTokens: cachedTokens,
+    cacheWriteTokens: 0, // OpenAI caches implicitly; there is no write charge.
+  };
+}

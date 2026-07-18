@@ -15,22 +15,54 @@ export const CACHE_DIR = path.join(SUITE_ROOT, '.cache');
 export const HISTORY_FILE = path.join(SUITE_ROOT, 'history.json');
 
 /**
- * The model every part of the suite runs on: deck generation (via the app's
- * own pipeline) and the judge alike. Pinned so results stay comparable across
- * runs; `claude-opus-4-8` accepts no temperature, so effort plus the prompt
- * version hash is what makes a run reproducible.
+ * The model the judge runs on. The judge is the measuring instrument, so it
+ * stays pinned to one model regardless of which vendor generated the deck --
+ * otherwise scores from different runs are not on the same scale.
  */
 export const MODEL = 'claude-opus-4-8';
 
 /** Reasoning effort for the judge and topic extraction. */
 export const JUDGE_EFFORT = 'high';
 
-/** USD per million tokens for MODEL. */
+/**
+ * Generation vendors the suite can drive, and the model it pins for each.
+ *
+ * Deckyard ships multi-vendor support, so "does generation hold up on another
+ * vendor" is a real product question, not just a cost lever. gpt-5.5 is chosen
+ * over the app's gpt-5.2 default because it sits at the same tier as
+ * claude-opus-4-8 ($5/$30 vs $5/$25), which keeps the comparison honest, and
+ * because OpenAI no longer publishes gpt-5.2 pricing -- an unpriced model would
+ * make the cost report guesswork.
+ */
+export const GENERATION_VENDORS = {
+  claude: { model: 'claude-opus-4-8', envVars: ['CLAUDE_MODEL', 'CLAUDE_MODEL_PLAN'] },
+  openai: { model: 'gpt-5.5', envVars: ['OPENAI_MODEL'] },
+};
+
+export const DEFAULT_VENDOR = 'claude';
+
+/**
+ * USD per million tokens, per model.
+ *
+ * Every model the suite can drive must appear here: a run whose model is
+ * missing would silently report a cost of zero, which is worse than no cost
+ * report at all.
+ */
 export const PRICING = {
-  input: 5.0,
-  output: 25.0,
-  cacheRead: 0.5, // ~0.1x input
-  cacheWrite: 6.25, // ~1.25x input
+  'claude-opus-4-8': {
+    input: 5.0,
+    output: 25.0,
+    cacheRead: 0.5, // ~0.1x input
+    cacheWrite: 6.25, // ~1.25x input
+  },
+  'gpt-5.5': {
+    input: 5.0,
+    output: 30.0,
+    cacheRead: 0.5,
+    // OpenAI bills cached input at the read rate and does not charge a
+    // separate write premium, so a write costs the same as plain input.
+    cacheWrite: 5.0,
+  },
 };
 
 /**
