@@ -109,7 +109,10 @@ export function createHomeView({
       h,
       icon: 'flame',
       title: t('list.home.popular', 'Popular'),
-      count: 0,
+      // Popular is a curated top-few strip, not a full list, so a count badge
+      // is meaningless — and it used to render "0 presentations" because the
+      // count was fixed at build time, before the async load. Hide it.
+      badge: '',
       hideViewAll: true,
     }),
     homePopularLoading
@@ -276,6 +279,19 @@ export function createHomeView({
     loadPopularPresentations,
     loadBuildingBlocks,
   };
+}
+
+/**
+ * Normalise a comment body preview for the activity rail: collapse whitespace,
+ * trim, and hint at truncation. The server caps the preview at 100 chars, so a
+ * value at that length was almost certainly cut mid-sentence.
+ * @param {string} [preview]
+ * @returns {string}
+ */
+function cleanSnippet(preview) {
+  const text = String(preview || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  return text.length >= 100 ? `${text}…` : text;
 }
 
 /** Most-recent-first sort key for a library item. */
@@ -473,10 +489,21 @@ function renderActivityPreviewItem(h, nav, { event, count }) {
     t('activity.untitled', 'Untitled');
 
   const content = h('div', { class: 'home-activity-content' }, [
-    h('span', { class: 'home-activity-actor', text: actorName }),
-    h('span', { class: 'home-activity-action', text: ` ${actionText} ` }),
-    h('span', { class: 'home-activity-target', text: `"${targetTitle}"` }),
+    h('div', { class: 'home-activity-line' }, [
+      h('span', { class: 'home-activity-actor', text: actorName }),
+      h('span', { class: 'home-activity-action', text: ` ${actionText} ` }),
+      h('span', { class: 'home-activity-target', text: `"${targetTitle}"` }),
+    ]),
   ]);
+
+  // Show the comment text under the line so the rail carries real signal, not
+  // just "someone commented". The server already ships a ≤100-char preview in
+  // the event data, so this needs no extra fetch. Only for new comments — a
+  // resolved-comment event has no body worth echoing.
+  const snippet = event.eventType === 'comment.created' ? cleanSnippet(event.data?.bodyPreview) : '';
+  if (snippet) {
+    content.append(h('div', { class: 'home-activity-snippet', text: snippet }));
+  }
 
   item.append(h('div', { class: 'home-activity-avatar', text: initials }), content);
 
