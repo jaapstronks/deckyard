@@ -6,25 +6,26 @@
 /** Content keys that carry a slide's heading rather than its body. */
 const TITLE_KEYS = new Set(['title', 'heading', 'tagline']);
 
-/** Keys that are configuration, not prose, and must not count as text. */
-const NON_TEXT_KEYS = new Set([
-  'background',
-  'layout',
-  'variant',
-  'density',
-  'icon',
-  'color',
-  'arrow',
-  'image',
-  'imageUrl',
-  'url',
-  'src',
-  'alt',
-  'logo',
-  'theme',
-  'id',
-  'type',
-]);
+/**
+ * Configuration words. A key counts as configuration if it contains any of
+ * these, case-insensitively.
+ *
+ * Matching on substrings rather than exact names is deliberate: several slide
+ * types use flat numbered keys (`row1Color`, `arrow1`, `row2Enabled`,
+ * `card3Icon`) rather than nested objects. An exact-name blocklist misses
+ * those, and their values ("yellow", "down", "yes") then read as slide prose --
+ * which made the judge penalize decks for text no audience ever sees.
+ */
+const CONFIG_KEY_PATTERN =
+  /(^|[a-z0-9])(background|layout|variant|density|icon|colou?r|arrow|image|url|src|alt|logo|theme|tone|align|direction|enabled|count|size|width|height|position|style|id|type)([A-Z0-9]|$)/i;
+
+/**
+ * @param {string} key
+ * @returns {boolean} true when the key holds configuration rather than text
+ */
+function isConfigKey(key) {
+  return CONFIG_KEY_PATTERN.test(String(key || ''));
+}
 
 /**
  * Pull the human-readable text out of a slide, whatever its type.
@@ -47,7 +48,7 @@ export function extractSlideText(slide) {
     if (value == null) return;
     if (typeof value === 'string') {
       const text = value.trim();
-      if (!text || NON_TEXT_KEYS.has(key)) return;
+      if (!text || isConfigKey(key)) return;
       if (depth === 0 && TITLE_KEYS.has(key)) titleParts.push(text);
       else bodyParts.push(text);
       return;

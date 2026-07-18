@@ -256,17 +256,21 @@ export async function writeReport(run, previous, outputPath) {
 
   lines.push('## Cost breakdown');
   lines.push('');
-  lines.push('| Category | Calls | Input | Output | Cache read | USD |');
-  lines.push('| --- | ---: | ---: | ---: | ---: | ---: |');
+  // Cache writes are billed above plain input, so a table without that column
+  // makes the totals look wrong.
+  lines.push('| Category | Calls | Input | Output | Cache write | Cache read | USD |');
+  lines.push('| --- | ---: | ---: | ---: | ---: | ---: | ---: |');
   for (const [category, bucket] of Object.entries(run.cost.byCategory)) {
     lines.push(
       `| ${category} | ${bucket.calls} | ${bucket.inputTokens} | ${bucket.outputTokens} | ` +
-        `${bucket.cacheReadTokens} | $${bucket.usd.toFixed(4)} |`
+        `${bucket.cacheWriteTokens} | ${bucket.cacheReadTokens} | $${bucket.usd.toFixed(4)} |`
     );
   }
-  lines.push(`| **Total** | ${run.cost.total.calls} | ${run.cost.total.inputTokens} | ` +
-    `${run.cost.total.outputTokens} | ${run.cost.total.cacheReadTokens} | ` +
-    `**$${run.cost.totalUsd.toFixed(4)}** |`);
+  lines.push(
+    `| **Total** | ${run.cost.total.calls} | ${run.cost.total.inputTokens} | ` +
+      `${run.cost.total.outputTokens} | ${run.cost.total.cacheWriteTokens} | ` +
+      `${run.cost.total.cacheReadTokens} | **$${run.cost.totalUsd.toFixed(4)}** |`
+  );
   lines.push('');
 
   const markdown = lines.join('\n');

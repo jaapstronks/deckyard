@@ -136,6 +136,9 @@ function renderReference(reference) {
  * @param {object} options.deck
  * @param {{topic: string}[]} options.topics
  * @param {object|null} [options.referenceDeck]
+ * @param {boolean} [options.cacheContext] - Worth enabling only when the same
+ *   case is judged more than once in a run (`--repeat`), since a cache write
+ *   costs more than a plain read of the same tokens.
  * @param {(usage: object) => void} [options.onUsage]
  * @param {boolean} [options.refresh]
  * @returns {Promise<{verdict: object, cached: boolean}>}
@@ -146,6 +149,7 @@ export async function judgeDeck({
   deck,
   topics,
   referenceDeck = null,
+  cacheContext = false,
   onUsage = null,
   refresh = false,
 }) {
@@ -155,7 +159,7 @@ export async function judgeDeck({
   const topicList = topics.map((t, i) => `${i + 1}. ${t.topic} (${t.importance})`).join('\n');
 
   // The source is the large, stable part of the prompt and is identical across
-  // repeats and runs for a case, so it carries the cache breakpoint.
+  // repeats of a case, so it is what a cache breakpoint would cover.
   const context = `<source_document case="${testCase.id}">\n${sourceText}\n</source_document>`;
 
   const promptParts = [
@@ -187,7 +191,8 @@ export async function judgeDeck({
     async () =>
       requestJson({
         system: SYSTEM,
-        cacheableContext: context,
+        largeContext: context,
+        cacheContext,
         prompt,
         schema,
         maxTokens: 8000,

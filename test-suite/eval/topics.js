@@ -67,7 +67,7 @@ export async function extractKeyTopics({ caseId, sourceText, onUsage = null, ref
     async () =>
       requestJson({
         system: SYSTEM,
-        cacheableContext: `<source_document case="${caseId}">\n${sourceText}\n</source_document>`,
+        largeContext: `<source_document case="${caseId}">\n${sourceText}\n</source_document>`,
         prompt: 'Extract the key topics of the source document above.',
         schema: SCHEMA,
         maxTokens: 4000,

@@ -33,9 +33,13 @@ export function getClient() {
  *
  * @param {Object} options
  * @param {string} options.system - System prompt (cached when large enough)
- * @param {string} options.cacheableContext - Large context reused across calls
- *   for the same case (typically the source document). Marked with a cache
- *   breakpoint so repeat calls read it at ~0.1x input price.
+ * @param {string} options.largeContext - Large context for the call (typically
+ *   the source document).
+ * @param {boolean} [options.cacheContext] - Put a cache breakpoint after
+ *   largeContext. Only worth it when the SAME system prompt and context will
+ *   be sent again within the cache TTL: a cache write costs 1.25x input, so
+ *   caching a single-use prefix is a pure loss. Topic extraction and judging
+ *   use different system prompts, so they cannot share a cached prefix.
  * @param {string} options.prompt - The per-call request
  * @param {object} options.schema - JSON schema for the response
  * @param {string} [options.effort]
@@ -45,7 +49,8 @@ export function getClient() {
  */
 export async function requestJson({
   system,
-  cacheableContext = '',
+  largeContext = '',
+  cacheContext = false,
   prompt,
   schema,
   effort = JUDGE_EFFORT,
@@ -53,11 +58,11 @@ export async function requestJson({
   onUsage = null,
 }) {
   const content = [];
-  if (cacheableContext) {
+  if (largeContext) {
     content.push({
       type: 'text',
-      text: cacheableContext,
-      cache_control: { type: 'ephemeral' },
+      text: largeContext,
+      ...(cacheContext ? { cache_control: { type: 'ephemeral' } } : {}),
     });
   }
   content.push({ type: 'text', text: prompt });

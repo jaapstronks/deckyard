@@ -178,6 +178,8 @@ async function main() {
           deck,
           topics,
           referenceDeck,
+          // Only pays off when the same source is judged more than once.
+          cacheContext: options.repeat > 1,
           onUsage: (usage) => cost.record('judge', usage),
           refresh: options.refresh,
         });
