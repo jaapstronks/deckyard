@@ -46,9 +46,19 @@ export function createSlideLibraryPicker({
   onNewPresentation = null,
   onSlideOpen = null,
   onSlideClose = null,
+  // Compose mode: the picker is embedded in the creation view purely to select
+  // slides for a new deck. It suppresses the trash view, the per-card "Use"
+  // button and the built-in selection bar's management actions, and reports
+  // selection changes via onSelectionChange so the host owns the action bar.
+  compose = false,
+  onSelectionChange = null,
 } = {}) {
   const themeIdNorm = cleanStr(themeId);
   const themeCache = new Map();
+
+  const notifySelection = () => {
+    if (compose) onSelectionChange?.(state.getSelectedItemsInOrder());
+  };
 
   // Initialize state
   const state = createSlideLibraryState({
@@ -237,6 +247,7 @@ export function createSlideLibraryPicker({
         card.classList.toggle('is-selected', state.isSelected(it.id));
         selectCheckbox.classList.toggle('is-checked', state.isSelected(it.id));
         updateSelectionBar?.();
+        notifySelection();
       },
     });
     selectCheckbox.append(checkbox);
@@ -384,7 +395,7 @@ export function createSlideLibraryPicker({
       content.append(insertBtn);
     }
 
-    if (!allowInsert && activeView !== 'trash') {
+    if (!allowInsert && !compose && activeView !== 'trash') {
       const useBtn = h('button', {
         class: 'btn btn-primary is-compact ps-lib-action-btn',
         type: 'button',
@@ -552,7 +563,8 @@ export function createSlideLibraryPicker({
 
     // Header controls
     controls.renderScopeControls(headerRow, rerender);
-    controls.renderViewControls(headerRow, rerender);
+    // Trash is a management view; hide it when composing a new deck.
+    if (!compose) controls.renderViewControls(headerRow, rerender);
     controls.renderLangControls(headerRow, { rerenderList });
     controls.renderSearch(headerRow, { rerenderList });
 
@@ -567,11 +579,17 @@ export function createSlideLibraryPicker({
       }
     }
 
-    // Selection bar
-    const selectionBar = renderSelectionBar(mount, { afterSlideId, onPicked, rerender });
-
-    mount.append(header, listContainer, selectionBar);
-    updateSelectionBar();
+    // Selection bar — in compose mode the host (creation view) owns the action
+    // bar, so we skip the built-in one (and its management actions).
+    if (compose) {
+      mount.append(header, listContainer);
+      // Scope/view rerenders clear the selection; keep the host in sync.
+      notifySelection();
+    } else {
+      const selectionBar = renderSelectionBar(mount, { afterSlideId, onPicked, rerender });
+      mount.append(header, listContainer, selectionBar);
+      updateSelectionBar();
+    }
 
     // Load data if needed
     if (!state.getCache(scope).length && !state.isLoading(scope)) {
@@ -604,10 +622,39 @@ export function createSlideLibraryPicker({
     }
   };
 
+  // Re-sync one card's checkbox UI to the selection state (no-op if not shown).
+  const syncCardChecked = (id, mount, selected) => {
+    const card = (mount || document).querySelector?.(`.ps-lib-card[data-id="${id}"]`);
+    if (!card) return;
+    card.classList.toggle('is-selected', selected);
+    const cb = card.querySelector('.ps-lib-select-checkbox input');
+    if (cb) cb.checked = selected;
+    const label = card.querySelector('.ps-lib-select-checkbox');
+    if (label) label.classList.toggle('is-checked', selected);
+  };
+
+  // Deselect a single item by id (used by the compose tray's remove button).
+  const deselectItem = (id, mount) => {
+    state.deselect(id);
+    syncCardChecked(id, mount, false);
+    notifySelection();
+  };
+
+  // Clear the whole selection and re-sync visible cards.
+  const clearSelection = (mount) => {
+    const ids = [...state.getSelectedIds()];
+    state.clearSelection();
+    for (const id of ids) syncCardChecked(id, mount, false);
+    notifySelection();
+  };
+
   return {
     renderSlideLibraryPicker,
     setState: state.setState,
     getActiveLang: state.getLang,
+    getSelectedItems: state.getSelectedItemsInOrder,
+    deselectItem,
+    clearSelection,
     openSlideById,
   };
 }

@@ -18,6 +18,8 @@ import { createFocusTrap } from '../../../../lib/dom.js';
 import { getFeatures } from '../../../../lib/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme-select.js';
 import { createLangSelector } from '../../../../lib/lang-selector.js';
+import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
+import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
 import {
   handleEmpty,
   handlePasteText,
@@ -57,13 +59,14 @@ export function openCreationView({
   // Resolve which concrete flow a Create click runs, given the active method.
   const getEffectiveMode = () => {
     if (method === 'blank') return 'empty';
+    if (method === 'library') return 'library';
     if (method === 'content') {
       return { paste: 'paste-text', upload: 'convert-file', notion: 'notion' }[contentSubtab];
     }
     if (method === 'import') {
       return { json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab];
     }
-    return null; // library (Slice 2)
+    return null;
   };
 
   // ===== Shell =====
@@ -115,8 +118,7 @@ export function openCreationView({
 
   const blankItem = makeRailItem('blank', t('list.creationView.method.blank', 'Blank'));
   const libraryItem = makeRailItem('library', t('list.creationView.method.library', 'From the library'), {
-    desc: t('common.comingSoon', 'Coming soon'),
-    disabled: true,
+    desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
   });
   rail.append(blankItem, libraryItem);
   if (!aiDisabled) {
@@ -151,16 +153,140 @@ export function openCreationView({
   );
   blankPanel.append(blankTitleField);
 
-  // --- Library panel (Slice 2 placeholder) ---
-  const libraryPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' }, [
-    h('div', {
-      class: 'help modal-hint',
-      text: t(
-        'list.creationView.library.placeholder',
-        'Compose a deck from reusable library slides. Coming soon.'
-      ),
-    }),
-  ]);
+  // --- Library panel (compose from reusable slides) ---
+  const libraryPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' });
+  const libraryHint = h('div', {
+    class: 'help modal-hint',
+    text: t(
+      'list.creationView.library.help',
+      'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.'
+    ),
+  });
+  const libraryPickerMount = h('div', { class: 'creation-library-picker' });
+  const libraryTrayWrap = h('div', { class: 'creation-library-tray is-hidden' });
+  libraryPanel.append(libraryHint, libraryPickerMount, libraryTrayWrap);
+
+  // Selected library slides, in the order they will appear in the new deck.
+  // The picker owns selection; the panel keeps an ordered id list so drag
+  // reorder is stable across selection toggles.
+  let libraryPicker = null;
+  let libraryLoaded = false;
+  let selectedOrder = []; // slide-library item ids, in deck order
+  let selectedById = new Map(); // id -> library item
+
+  const orderedSelectedItems = () =>
+    selectedOrder.map((id) => selectedById.get(id)).filter(Boolean);
+
+  const renderTray = () => {
+    const items = orderedSelectedItems();
+    libraryTrayWrap.classList.toggle('is-hidden', items.length === 0);
+    libraryTrayWrap.innerHTML = '';
+    if (!items.length) return;
+
+    libraryTrayWrap.append(
+      h('div', {
+        class: 'field-label',
+        text: t('list.creationView.library.selected', 'Selected slides ({count})', {
+          count: String(items.length),
+        }),
+      })
+    );
+
+    const list = h('div', { class: 'creation-tray-list' });
+    items.forEach((item, index) => {
+      const chip = h('div', {
+        class: 'creation-tray-chip',
+        draggable: 'true',
+        'data-id': item.id,
+      });
+      chip.append(
+        h('span', { class: 'creation-tray-order', text: String(index + 1) }),
+        h('span', {
+          class: 'creation-tray-name',
+          text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
+        }),
+        h('button', {
+          type: 'button',
+          class: 'creation-tray-remove',
+          'aria-label': t('common.remove', 'Remove'),
+          text: '×',
+          onclick: () => deselectFromTray(item.id),
+        })
+      );
+
+      // Drag to reorder within the tray.
+      chip.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', item.id);
+        e.dataTransfer.effectAllowed = 'move';
+        chip.classList.add('is-dragging');
+      });
+      chip.addEventListener('dragend', () => chip.classList.remove('is-dragging'));
+      chip.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      chip.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (!draggedId || draggedId === item.id) return;
+        const from = selectedOrder.indexOf(draggedId);
+        const to = selectedOrder.indexOf(item.id);
+        if (from < 0 || to < 0) return;
+        selectedOrder.splice(from, 1);
+        selectedOrder.splice(to, 0, draggedId);
+        renderTray();
+      });
+
+      list.append(chip);
+    });
+    libraryTrayWrap.append(list);
+  };
+
+  // Remove a slide from the tray — the picker is the source of truth for
+  // membership, so tell it to deselect; its onSelectionChange reconciles.
+  const deselectFromTray = (id) => {
+    libraryPicker?.deselectItem?.(id, libraryPickerMount);
+  };
+
+  // Reconcile the ordered tray against the picker's current selection:
+  // keep existing order for still-selected items, append newly-checked ones,
+  // drop unchecked ones.
+  const reconcileSelection = (items) => {
+    const nextIds = items.map((it) => it.id);
+    const nextSet = new Set(nextIds);
+    selectedById = new Map(items.map((it) => [it.id, it]));
+    selectedOrder = selectedOrder.filter((id) => nextSet.has(id));
+    for (const id of nextIds) {
+      if (!selectedOrder.includes(id)) selectedOrder.push(id);
+    }
+    renderTray();
+    syncUI();
+  };
+
+  // Lazily mount the library picker the first time the method is selected.
+  const ensureLibraryPicker = async () => {
+    if (libraryLoaded) return;
+    libraryLoaded = true;
+    libraryPicker = createSlideLibraryPicker({
+      h,
+      api,
+      allowInsert: false,
+      compose: true,
+      initialScope: 'team',
+      onSelectionChange: (items) => reconcileSelection(items),
+    });
+    try {
+      await libraryPicker.renderSlideLibraryPicker(libraryPickerMount);
+    } catch {
+      libraryPickerMount.innerHTML = '';
+      libraryPickerMount.append(
+        h('div', {
+          class: 'help is-error',
+          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
+        })
+      );
+    }
+  };
 
   // --- Content (AI) panel ---
   const contentPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
@@ -366,8 +492,6 @@ export function openCreationView({
     for (const el of modal.querySelectorAll('input, textarea, select, button')) {
       el.disabled = v;
     }
-    // Keep the library rail item disabled regardless of busy transitions.
-    if (!v) libraryItem.disabled = true;
   };
 
   const getButtonLabel = (mode) => {
@@ -413,14 +537,24 @@ export function openCreationView({
     panelImportMd.classList.toggle('is-hidden', importSubtab !== 'import-md');
     panelPasteMd.classList.toggle('is-hidden', importSubtab !== 'paste-md');
 
-    // Setup: hidden for the library placeholder; theme hidden for JSON import.
-    setupWrap.classList.toggle('is-hidden', method === 'library');
+    // Setup (theme + language) applies to every method; theme is hidden only
+    // for JSON import (which carries its own theme).
+    setupWrap.classList.remove('is-hidden');
     themeSelect.wrap.classList.toggle('is-hidden', !themeApplies());
 
     // Action button
     const mode = getEffectiveMode();
     btnAction.classList.toggle('is-hidden', !mode);
-    if (mode) btnAction.textContent = getButtonLabel(mode);
+    if (mode === 'library') {
+      const count = selectedOrder.length;
+      btnAction.textContent = count
+        ? t('list.creationView.library.create', 'Create · {count} slides', { count: String(count) })
+        : t('common.create', 'Create');
+      btnAction.disabled = busy || count === 0;
+    } else if (mode) {
+      btnAction.textContent = getButtonLabel(mode);
+      btnAction.disabled = busy;
+    }
   };
 
   function selectMethod(key) {
@@ -428,6 +562,7 @@ export function openCreationView({
     method = key;
     syncUI();
     if (key === 'blank') emptyTitleInput.focus();
+    if (key === 'library') ensureLibraryPicker();
   }
 
   btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
@@ -447,6 +582,7 @@ export function openCreationView({
   const isDirty = () => {
     const mode = getEffectiveMode();
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
+    if (mode === 'library') return selectedOrder.length > 0;
     if (mode === 'paste-text') return !!String(pasteTextarea.value || '').trim();
     if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
     if (mode === 'notion') return !!String(notionUrlInput.value || '').trim();
@@ -471,6 +607,33 @@ export function openCreationView({
     if (e.target === backdrop) requestClose();
   });
 
+  // Compose a new deck from the selected library slides (batch primitive,
+  // preserving both languages via the shared compose helper).
+  async function handleLibraryCompose() {
+    const items = orderedSelectedItems();
+    if (!items.length) {
+      setStatus(t('list.creationView.library.selectFirst', 'Select at least one slide.'));
+      return;
+    }
+    setBusy(true);
+    setStatus(t('list.newPresentation.creating', 'Creating...'));
+    try {
+      const lang = langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl';
+      const created = await createDeckFromLibraryItems({
+        api,
+        items,
+        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
+        theme: themeSelect.getTheme(),
+        lang,
+      });
+      close();
+      nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
+    } catch (e) {
+      setStatus(String(e?.message || e));
+      setBusy(false);
+    }
+  }
+
   // ===== Create =====
   btnAction.addEventListener('click', async () => {
     const mode = getEffectiveMode();
@@ -488,6 +651,9 @@ export function openCreationView({
     };
 
     switch (mode) {
+      case 'library':
+        await handleLibraryCompose();
+        break;
       case 'empty':
         await handleEmpty({
           ...commonOpts,
