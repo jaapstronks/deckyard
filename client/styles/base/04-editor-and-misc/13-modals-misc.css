@@ -589,6 +589,76 @@
   color: hsl(var(--app-text-primary));
 }
 
+/* Source toggle (Collections | All slides) sits above the picker. */
+.creation-library-source {
+  align-self: flex-start;
+  margin-bottom: var(--ps-space-2);
+}
+
+/* Collections chooser (start a deck from a saved collection). */
+.creation-library-collections.is-hidden {
+  display: none;
+}
+
+.creation-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--ps-space-2);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.creation-collection-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-surface));
+  cursor: pointer;
+  color: hsl(var(--app-text-primary));
+  transition: border-color var(--ps-transition-fast), background var(--ps-transition-fast);
+}
+
+.creation-collection-card:hover {
+  border-color: hsl(var(--app-border-strong));
+  background: hsl(var(--app-bg-hover));
+}
+
+.creation-collection-card.is-active {
+  border-color: hsl(var(--app-accent));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent));
+}
+
+.creation-collection-card-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+}
+
+.creation-collection-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.creation-collection-card-badge {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-secondary));
+}
+
+.creation-collection-card-count {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
 /* ============================================
    Import Slides Tab (PDF Import)
    ============================================ */
