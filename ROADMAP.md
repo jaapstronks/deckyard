@@ -81,12 +81,6 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
-- **Video slide → PDF: "watch online" placeholder** —
-  `docs/plans/video-slide-pdf-export.md` — export a video slide to PDF as a
-  laptop-mockup still with a play icon plus a server-generated "watch at
-  <url>" line in the deck's language (open decisions on link target, access,
-  autoplay).
-
 ## Later — cloud / multi-tenant track
 
 - **Custom domains** — `docs/plans/custom-domains.md`
