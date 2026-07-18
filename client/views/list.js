@@ -16,7 +16,7 @@ import {
   getSupportedLangs,
   writeLangMode,
 } from '../lib/i18n.js';
-import { openNewPresentationModal } from './list/modals/new-presentation.js';
+import { openCreationView } from './list/modals/creation-view/index.js';
 import { createCardRenderer, toListItem } from './list/presentation-card.js';
 import { createSidebar, createBottomTabs } from './list/sidebar.js';
 import { createThemePickerRow } from './list/theme-picker-row.js';
@@ -90,7 +90,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   const openNewPresentationModalWrapper = (preselectedTheme) =>
-    openNewPresentationModal({
+    openCreationView({
       h,
       api,
       root,

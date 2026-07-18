@@ -1,0 +1,592 @@
+/**
+ * Creation view — the two-column "New presentation" surface.
+ *
+ * Left rail = creation method; right pane = the selected method, with theme +
+ * language shown only where they apply. Header and action bar are pinned; only
+ * the right pane scrolls. Replaces the single overflowing new-presentation
+ * modal (create-flow track, Slice 1).
+ *
+ * Methods live behind rail items: Blank, From the library (Slice 2 — shown
+ * disabled here), From content · AI (paste / upload / Notion), and — after a
+ * divider — Import (.json / .md). The Content · AI and Import flows reuse the
+ * existing handlers in ../new-presentation/handlers.js unchanged.
+ */
+
+import { t } from '../../../../lib/ui-i18n.js';
+import { confirmModal } from '../../../../lib/modal.js';
+import { createFocusTrap } from '../../../../lib/dom.js';
+import { getFeatures } from '../../../../lib/features.js';
+import { createVisualThemePicker } from '../../../../lib/theme-select.js';
+import { createLangSelector } from '../../../../lib/lang-selector.js';
+import {
+  handleEmpty,
+  handlePasteText,
+  handleConvertFile,
+  handleImportJson,
+  handleImportMarkdown,
+  handlePasteMarkdown,
+  handleNotion,
+} from '../new-presentation/handlers.js';
+
+export function openCreationView({
+  h,
+  api,
+  root,
+  nav,
+  readLangMode,
+  writeLangMode,
+  getSupportedLangs,
+  preselectedTheme,
+} = {}) {
+  const features = getFeatures() || {};
+  const aiDisabled = !!features.disableAi;
+
+  // ===== State =====
+  let method = 'blank'; // blank | library | content | import
+  let contentSubtab = 'paste'; // paste | upload | notion
+  let importSubtab = 'json'; // json | import-md | paste-md
+  let busy = false;
+  let selectedConvertFile = null;
+  let selectedImportFile = null;
+  let selectedImportMdFile = null;
+  // null lets the visual picker adopt the workspace default theme.
+  let themeId = preselectedTheme?.id || null;
+  let onKey = null;
+  let detachFocusTrap = null;
+
+  // Resolve which concrete flow a Create click runs, given the active method.
+  const getEffectiveMode = () => {
+    if (method === 'blank') return 'empty';
+    if (method === 'content') {
+      return { paste: 'paste-text', upload: 'convert-file', notion: 'notion' }[contentSubtab];
+    }
+    if (method === 'import') {
+      return { json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab];
+    }
+    return null; // library (Slice 2)
+  };
+
+  // ===== Shell =====
+  const backdrop = h('div', { class: 'modal-backdrop' });
+  const modal = h('div', {
+    class: 'modal creation-view',
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-labelledby': 'creation-view-title',
+  });
+
+  const header = h('div', { class: 'creation-view-header' }, [
+    h('h2', {
+      id: 'creation-view-title',
+      text: t('list.creationView.title', 'New presentation'),
+    }),
+  ]);
+
+  // ===== Left rail =====
+  const rail = h('nav', {
+    class: 'creation-rail',
+    'aria-label': t('list.creationView.methodsLabel', 'Creation methods'),
+  });
+
+  const railItems = new Map(); // method -> button
+
+  const makeRailItem = (key, label, { badge, desc, disabled } = {}) => {
+    const btn = h('button', {
+      type: 'button',
+      class: 'creation-rail-item',
+      role: 'tab',
+      'aria-selected': String(key === method),
+      disabled: !!disabled,
+    });
+    const titleRow = h('span', { class: 'creation-rail-item-title', text: label });
+    if (badge) {
+      titleRow.append(h('span', { class: 'creation-rail-badge', text: badge }));
+    }
+    btn.append(titleRow);
+    if (desc) {
+      btn.append(h('span', { class: 'creation-rail-item-desc', text: desc }));
+    }
+    if (!disabled) {
+      btn.addEventListener('click', () => selectMethod(key));
+    }
+    railItems.set(key, btn);
+    return btn;
+  };
+
+  const blankItem = makeRailItem('blank', t('list.creationView.method.blank', 'Blank'));
+  const libraryItem = makeRailItem('library', t('list.creationView.method.library', 'From the library'), {
+    desc: t('common.comingSoon', 'Coming soon'),
+    disabled: true,
+  });
+  rail.append(blankItem, libraryItem);
+  if (!aiDisabled) {
+    rail.append(
+      makeRailItem('content', t('list.creationView.method.content', 'From content'), {
+        badge: 'AI',
+        desc: t('list.creationView.method.contentDesc', 'Paste, upload, or Notion'),
+      })
+    );
+  }
+  rail.append(h('div', { class: 'creation-rail-divider' }));
+  rail.append(
+    makeRailItem('import', t('list.creationView.method.import', 'Import'), {
+      desc: t('list.creationView.method.importDesc', '.json or .md'),
+    })
+  );
+
+  // ===== Right pane =====
+  const pane = h('div', { class: 'creation-pane' });
+
+  // --- Blank panel ---
+  const blankPanel = h('div', { class: 'creation-panel', 'data-method': 'blank' });
+  const blankTitleField = h('div', { class: 'stack is-field' });
+  const emptyTitleInput = h('input', {
+    class: 'form-input',
+    placeholder: t('list.newPresentation.titlePlaceholder', 'Title...'),
+    'aria-label': t('list.creationView.nameLabel', 'Give it a name'),
+  });
+  blankTitleField.append(
+    h('label', { class: 'field-label', text: t('list.creationView.nameLabel', 'Give it a name') }),
+    emptyTitleInput
+  );
+  blankPanel.append(blankTitleField);
+
+  // --- Library panel (Slice 2 placeholder) ---
+  const libraryPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' }, [
+    h('div', {
+      class: 'help modal-hint',
+      text: t(
+        'list.creationView.library.placeholder',
+        'Compose a deck from reusable library slides. Coming soon.'
+      ),
+    }),
+  ]);
+
+  // --- Content (AI) panel ---
+  const contentPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
+  const contentSubtabs = h('div', { class: 'sb-segmented' });
+  const btnSubPaste = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn is-active',
+    text: t('list.newPresentation.subtab.pasteText', 'Paste text'),
+  });
+  const btnSubUpload = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn',
+    text: t('list.newPresentation.subtab.uploadFile', 'Upload file'),
+  });
+  const btnSubNotion = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn is-hidden',
+    text: t('list.newPresentation.subtab.notion', 'Notion'),
+  });
+  contentSubtabs.append(btnSubPaste, btnSubUpload, btnSubNotion);
+
+  const panelPaste = h('div', { class: 'creation-subpanel' });
+  panelPaste.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.aiWizard.help', 'Paste your notes or any text. The wizard will turn it into a presentation automatically — you can edit everything afterwards.'),
+    }),
+    h('textarea', {
+      class: 'form-input form-textarea-lg',
+      placeholder: t('list.newPresentation.pasteText.placeholder', 'Paste your notes here...'),
+    })
+  );
+  const pasteTextarea = panelPaste.querySelector('textarea');
+
+  const panelUpload = h('div', { class: 'creation-subpanel is-hidden' });
+  const convertFileInput = h('input', {
+    type: 'file',
+    accept: '.pptx,.pdf,.docx,.rtf,.odt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,application/vnd.oasis.opendocument.text',
+    class: 'form-input',
+  });
+  const convertFileInfo = h('div', { class: 'help', text: '' });
+  convertFileInput.addEventListener('change', () => {
+    const file = convertFileInput.files?.[0];
+    if (file) {
+      selectedConvertFile = file;
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      convertFileInfo.textContent = `${file.name} (${sizeMB} MB)`;
+    } else {
+      selectedConvertFile = null;
+      convertFileInfo.textContent = '';
+    }
+  });
+  panelUpload.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.fileConverter.help', 'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.'),
+    }),
+    convertFileInput,
+    convertFileInfo
+  );
+
+  const panelNotion = h('div', { class: 'creation-subpanel is-hidden' });
+  const notionUrlInput = h('input', {
+    class: 'form-input',
+    placeholder: t('list.newPresentation.notion.placeholder', 'Paste Notion page URL...'),
+  });
+  panelNotion.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.newPresentation.notion.help', 'Import a Notion page as a presentation. Images, tables, and text structure will be converted to appropriate slides.'),
+    }),
+    notionUrlInput
+  );
+
+  const contentSubWrap = h('div', { class: 'creation-subpanels' }, [panelPaste, panelUpload, panelNotion]);
+  contentPanel.append(contentSubtabs, contentSubWrap);
+
+  // Reveal Notion sub-tab only when the integration is configured.
+  api('/api/notion/status')
+    .then((resp) => {
+      if (resp?.enabled && !aiDisabled) btnSubNotion.classList.remove('is-hidden');
+    })
+    .catch(() => {});
+
+  // --- Import panel ---
+  const importPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'import' });
+  const importSubtabs = h('div', { class: 'sb-segmented' });
+  const btnImpJson = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn is-active',
+    text: t('list.newPresentation.mode.importJson', 'Import JSON'),
+  });
+  const btnImpMd = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn',
+    text: t('list.newPresentation.mode.importMarkdown', 'Import Markdown'),
+  });
+  const btnImpPasteMd = h('button', {
+    type: 'button',
+    class: 'sb-segmented-btn',
+    text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
+  });
+  importSubtabs.append(btnImpJson, btnImpMd, btnImpPasteMd);
+
+  const panelJson = h('div', { class: 'creation-subpanel' });
+  const importFileInput = h('input', {
+    type: 'file',
+    accept: 'application/json,.json',
+    class: 'form-input',
+  });
+  const importFileInfo = h('div', { class: 'help', text: '' });
+  importFileInput.addEventListener('change', () => {
+    const file = importFileInput.files?.[0];
+    selectedImportFile = file || null;
+    importFileInfo.textContent = file ? file.name : '';
+  });
+  panelJson.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.newPresentation.importJson.help', 'Import a presentation from a previously exported .json file.'),
+    }),
+    importFileInput,
+    importFileInfo
+  );
+
+  const panelImportMd = h('div', { class: 'creation-subpanel is-hidden' });
+  const importMdFileInput = h('input', {
+    type: 'file',
+    accept: '.md,.markdown,.zip,text/markdown,text/x-markdown,application/zip',
+    class: 'form-input',
+  });
+  const importMdFileInfo = h('div', { class: 'help', text: '' });
+  importMdFileInput.addEventListener('change', () => {
+    const file = importMdFileInput.files?.[0];
+    selectedImportMdFile = file || null;
+    importMdFileInfo.textContent = file ? file.name : '';
+  });
+  panelImportMd.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.newPresentation.importMarkdown.help', 'Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
+    }),
+    importMdFileInput,
+    importMdFileInfo
+  );
+
+  const panelPasteMd = h('div', { class: 'creation-subpanel is-hidden' });
+  const pasteMdTextarea = h('textarea', {
+    class: 'form-input form-textarea-lg',
+    placeholder: t('list.newPresentation.pasteMarkdown.placeholder', 'Paste your markdown here...'),
+  });
+  panelPasteMd.append(
+    h('div', {
+      class: 'help modal-hint',
+      text: t('list.newPresentation.pasteMarkdown.help', 'Paste your markdown directly. Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
+    }),
+    pasteMdTextarea
+  );
+
+  const importSubWrap = h('div', { class: 'creation-subpanels' }, [panelJson, panelImportMd, panelPasteMd]);
+  importPanel.append(importSubtabs, importSubWrap);
+
+  // --- Shared setup (theme + language) ---
+  const setupWrap = h('div', { class: 'creation-setup' });
+  const themeSelect = createVisualThemePicker({
+    h, api, initialTheme: themeId,
+    onChange: (id) => { themeId = id; },
+  });
+  const langSelect = createLangSelector({
+    h, readLangMode, writeLangMode, getSupportedLangs,
+    className: '',
+  });
+  setupWrap.append(themeSelect.wrap, langSelect.wrap);
+
+  pane.append(blankPanel, libraryPanel, contentPanel, importPanel, setupWrap);
+
+  // ===== Footer (pinned) =====
+  const status = h('div', { class: 'help modal-status', text: '' });
+  const btnCancel = h('button', {
+    class: 'btn btn-secondary',
+    type: 'button',
+    text: t('common.cancel', 'Cancel'),
+  });
+  const btnAction = h('button', {
+    class: 'btn btn-primary',
+    type: 'button',
+    text: t('common.create', 'Create'),
+  });
+  const footer = h('div', { class: 'creation-view-footer' }, [
+    status,
+    h('div', { class: 'row is-end gap-2' }, [btnCancel, btnAction]),
+  ]);
+
+  const body = h('div', { class: 'creation-view-body' }, [rail, pane]);
+  modal.append(header, body, footer);
+  backdrop.append(modal);
+
+  // ===== Behavior =====
+  const setStatus = (text) => { status.textContent = text || ''; };
+
+  const setBusy = (v) => {
+    busy = v;
+    for (const el of modal.querySelectorAll('input, textarea, select, button')) {
+      el.disabled = v;
+    }
+    // Keep the library rail item disabled regardless of busy transitions.
+    if (!v) libraryItem.disabled = true;
+  };
+
+  const getButtonLabel = (mode) => {
+    const labels = {
+      'empty': t('common.create', 'Create'),
+      'paste-text': t('list.aiWizard.generate', 'Generate'),
+      'convert-file': t('list.fileConverter.convert', 'Convert'),
+      'notion': t('list.newPresentation.notion.import', 'Import'),
+      'import-json': t('list.importJson', 'Import'),
+      'import-markdown': t('list.importJson', 'Import'),
+      'paste-markdown': t('list.importJson', 'Import'),
+    };
+    return labels[mode] || t('common.create', 'Create');
+  };
+
+  // Theme applies to every method except JSON import (which carries its own).
+  const themeApplies = () => !(method === 'import' && importSubtab === 'json');
+
+  const syncUI = () => {
+    for (const [key, btn] of railItems) {
+      const active = key === method;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', String(active));
+    }
+    blankPanel.classList.toggle('is-hidden', method !== 'blank');
+    libraryPanel.classList.toggle('is-hidden', method !== 'library');
+    contentPanel.classList.toggle('is-hidden', method !== 'content');
+    importPanel.classList.toggle('is-hidden', method !== 'import');
+
+    // Content sub-tabs
+    btnSubPaste.classList.toggle('is-active', contentSubtab === 'paste');
+    btnSubUpload.classList.toggle('is-active', contentSubtab === 'upload');
+    btnSubNotion.classList.toggle('is-active', contentSubtab === 'notion');
+    panelPaste.classList.toggle('is-hidden', contentSubtab !== 'paste');
+    panelUpload.classList.toggle('is-hidden', contentSubtab !== 'upload');
+    panelNotion.classList.toggle('is-hidden', contentSubtab !== 'notion');
+
+    // Import sub-tabs
+    btnImpJson.classList.toggle('is-active', importSubtab === 'json');
+    btnImpMd.classList.toggle('is-active', importSubtab === 'import-md');
+    btnImpPasteMd.classList.toggle('is-active', importSubtab === 'paste-md');
+    panelJson.classList.toggle('is-hidden', importSubtab !== 'json');
+    panelImportMd.classList.toggle('is-hidden', importSubtab !== 'import-md');
+    panelPasteMd.classList.toggle('is-hidden', importSubtab !== 'paste-md');
+
+    // Setup: hidden for the library placeholder; theme hidden for JSON import.
+    setupWrap.classList.toggle('is-hidden', method === 'library');
+    themeSelect.wrap.classList.toggle('is-hidden', !themeApplies());
+
+    // Action button
+    const mode = getEffectiveMode();
+    btnAction.classList.toggle('is-hidden', !mode);
+    if (mode) btnAction.textContent = getButtonLabel(mode);
+  };
+
+  function selectMethod(key) {
+    if (busy) return;
+    method = key;
+    syncUI();
+    if (key === 'blank') emptyTitleInput.focus();
+  }
+
+  btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
+  btnSubUpload.addEventListener('click', () => { contentSubtab = 'upload'; syncUI(); });
+  btnSubNotion.addEventListener('click', () => { contentSubtab = 'notion'; syncUI(); });
+  btnImpJson.addEventListener('click', () => { importSubtab = 'json'; syncUI(); });
+  btnImpMd.addEventListener('click', () => { importSubtab = 'import-md'; syncUI(); });
+  btnImpPasteMd.addEventListener('click', () => { importSubtab = 'paste-md'; syncUI(); });
+
+  // ===== Close handling =====
+  const close = () => {
+    try { if (onKey) window.removeEventListener('keydown', onKey); } catch {}
+    try { detachFocusTrap?.(); } catch {}
+    backdrop.remove();
+  };
+
+  const isDirty = () => {
+    const mode = getEffectiveMode();
+    if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
+    if (mode === 'paste-text') return !!String(pasteTextarea.value || '').trim();
+    if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
+    if (mode === 'notion') return !!String(notionUrlInput.value || '').trim();
+    return false;
+  };
+
+  const requestClose = async () => {
+    if (busy) return;
+    if (isDirty() && !(await confirmModal(h, root, {
+      title: t('list.newPresentation.discard', 'Discard'),
+      message: t('list.newPresentation.confirmDiscard', 'Discard your input?'),
+      confirmLabel: t('list.newPresentation.discard', 'Discard'),
+      danger: true,
+    }))) {
+      return;
+    }
+    close();
+  };
+
+  btnCancel.addEventListener('click', requestClose);
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) requestClose();
+  });
+
+  // ===== Create =====
+  btnAction.addEventListener('click', async () => {
+    const mode = getEffectiveMode();
+    if (!mode) return;
+    const commonOpts = {
+      api,
+      h,
+      root,
+      close,
+      nav,
+      setBusy,
+      setStatus,
+      hideBackdrop: () => { backdrop.style.display = 'none'; },
+      showBackdrop: () => { backdrop.style.display = ''; },
+    };
+
+    switch (mode) {
+      case 'empty':
+        await handleEmpty({
+          ...commonOpts,
+          titleText: String(emptyTitleInput.value || '').trim(),
+          langMode: langSelect.getLang(),
+          themeId: themeSelect.getTheme(),
+          focusTitle: () => emptyTitleInput.focus(),
+        });
+        break;
+      case 'paste-text':
+        await handlePasteText({
+          ...commonOpts,
+          raw: String(pasteTextarea.value || '').trim(),
+          langMode: langSelect.getLang(),
+          themeId: themeSelect.getTheme(),
+          focusTextarea: () => pasteTextarea.focus(),
+        });
+        break;
+      case 'convert-file':
+        await handleConvertFile({
+          ...commonOpts,
+          selectedFile: selectedConvertFile,
+          langMode: langSelect.getLang(),
+          themeId: themeSelect.getTheme(),
+        });
+        break;
+      case 'notion':
+        await handleNotion({
+          ...commonOpts,
+          notionUrl: String(notionUrlInput.value || '').trim(),
+          themeId: themeSelect.getTheme(),
+          focusInput: () => notionUrlInput.focus(),
+        });
+        break;
+      case 'import-json':
+        await handleImportJson({
+          ...commonOpts,
+          selectedFile: selectedImportFile,
+          langMode: langSelect.getLang(),
+        });
+        break;
+      case 'import-markdown':
+        await handleImportMarkdown({
+          ...commonOpts,
+          selectedFile: selectedImportMdFile,
+          langMode: langSelect.getLang(),
+          themeId: themeSelect.getTheme(),
+          showWarnings: makeWarningShower(panelImportMd),
+        });
+        break;
+      case 'paste-markdown':
+        await handlePasteMarkdown({
+          ...commonOpts,
+          raw: String(pasteMdTextarea.value || '').trim(),
+          langMode: langSelect.getLang(),
+          themeId: themeSelect.getTheme(),
+          focusTextarea: () => pasteMdTextarea.focus(),
+          showWarnings: makeWarningShower(panelPasteMd),
+        });
+        break;
+    }
+  });
+
+  // Import warnings render inline in their sub-panel, turning Create into "Open".
+  function makeWarningShower(panel) {
+    return ({ warnings, navUrl }) => {
+      panel.innerHTML = '';
+      panel.append(
+        h('div', {
+          class: 'help modal-hint',
+          text: t(
+            'list.newPresentation.importMarkdown.warningsIntro',
+            `Import succeeded, but ${warnings.length} issue(s) were detected:`
+          ),
+        })
+      );
+      const list = h('ul', { class: 'import-warnings' });
+      for (const w of warnings) list.append(h('li', { class: 'help', text: w }));
+      panel.append(list);
+      setStatus('');
+      setBusy(false);
+      btnAction.textContent = t('list.newPresentation.importMarkdown.open', 'Open presentation');
+      btnAction.onclick = (e) => {
+        e.preventDefault();
+        close();
+        nav?.(navUrl);
+      };
+    };
+  }
+
+  // ===== Mount =====
+  onKey = (e) => {
+    if (e.key === 'Escape' && !busy) requestClose();
+    if (e.key === 'Enter' && !busy && getEffectiveMode() === 'empty') btnAction.click();
+  };
+  window.addEventListener('keydown', onKey);
+
+  root.append(backdrop);
+  detachFocusTrap = createFocusTrap(modal);
+  syncUI();
+  emptyTitleInput.focus();
+}
