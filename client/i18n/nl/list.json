@@ -266,6 +266,7 @@
   "slideLibrary.modal.help": "Je persoonlijke bibliotheek is alleen voor jou. De team bibliotheek is gedeeld met iedereen.",
   "slideLibrary.modal.title": "Dia bibliotheek",
   "slideLibrary.newPresentation.defaultTitle": "Nieuwe presentatie",
+  "slideLibrary.preview.untitled": "Zonder titel",
   "slideLibrary.newPresentation.done": "Presentatie aangemaakt!",
   "slideLibrary.newPresentation.failed": "Aanmaken van presentatie mislukt.",
   "slideLibrary.pushToTeam.done": "Toegevoegd aan team bibliotheek.",
