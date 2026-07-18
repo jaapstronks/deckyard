@@ -52,6 +52,16 @@ export const PROMPT_SOURCE_FILES = [
   'server/utils/ai/slide-catalog/media-slides.js',
   'server/utils/ai/slide-catalog/interactive-slides.js',
   'server/utils/ai/slide-catalog/global-options.js',
+  // The JSON examples are part of the prompt the model sees, and are exactly
+  // where a prompt change is most likely to land -- round 1 edited only these
+  // and the version hash did not move, which made the report claim nothing had
+  // changed.
+  'server/utils/ai/slide-catalog/examples/index.js',
+  'server/utils/ai/slide-catalog/examples/basic-slides.js',
+  'server/utils/ai/slide-catalog/examples/card-slides.js',
+  'server/utils/ai/slide-catalog/examples/data-slides.js',
+  'server/utils/ai/slide-catalog/examples/diagram-slides.js',
+  'server/utils/ai/slide-catalog/examples/text-blocks-slide.js',
 ];
 
 /** Rubric dimensions scored 1-5 by the judge for every case. */

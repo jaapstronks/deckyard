@@ -9,6 +9,7 @@ import {
 } from '../test-suite/eval/metrics.js';
 import { computeDeltas, aggregateScores, overallScore } from '../test-suite/eval/report.js';
 import { costOf, CostTracker } from '../test-suite/lib/cost.js';
+import { sourceTextFilename } from '../test-suite/lib/cases.js';
 
 test('extractSlideText separates the title from body text', () => {
   const { title, body } = extractSlideText({
@@ -166,4 +167,17 @@ test('CostTracker keeps categories separate and totals them', () => {
   assert.equal(summary.byCategory.judge.inputTokens, 3000);
   assert.equal(summary.total.calls, 3);
   assert.ok(summary.totalUsd > 0);
+});
+
+test('sourceTextFilename maps every fetched asset type to its extracted text', () => {
+  // The fetch script and the readers must agree on this name. They previously
+  // used separate regexes: the reader handled only pdf/doc, so .html and .wiki
+  // assets fell through and raw markup was fed to the pipeline.
+  assert.equal(sourceTextFilename('report.pdf'), 'report.txt');
+  assert.equal(sourceTextFilename('persbericht.html'), 'persbericht.txt');
+  assert.equal(sourceTextFilename('post-mortem.htm'), 'post-mortem.txt');
+  assert.equal(sourceTextFilename('article.wiki'), 'article.txt');
+  assert.equal(sourceTextFilename('readme.md'), 'readme.txt');
+  assert.equal(sourceTextFilename('notes.docx'), 'notes.txt');
+  assert.equal(sourceTextFilename('already.txt'), 'already.txt');
 });

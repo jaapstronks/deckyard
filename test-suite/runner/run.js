@@ -234,7 +234,7 @@ async function main() {
   await fs.writeFile(path.join(runDir, 'run.json'), JSON.stringify(run, null, 2));
 
   const history = await loadHistory();
-  const previous = findComparableRun(history, run.caseIds);
+  const previous = await findComparableRun(history, run.caseIds);
   await writeReport(run, previous, path.join(runDir, 'report.md'));
 
   await appendHistory({

@@ -69,6 +69,22 @@ export async function loadCases(ids = null) {
 }
 
 /**
+ * Map a downloaded asset's filename to its extracted-text filename.
+ *
+ * Both the fetch script (which writes the .txt) and the readers (which consume
+ * it) must agree on this. They previously used separate regexes that drifted:
+ * the reader handled only pdf/doc, so for .html and .wiki assets it fell
+ * through to the original file and fed raw markup into the pipeline -- 370 KB
+ * of HTML instead of 17 KB of text for one case.
+ *
+ * @param {string} file - Downloaded filename, e.g. "article.wiki"
+ * @returns {string} e.g. "article.txt"
+ */
+export function sourceTextFilename(file) {
+  return String(file).replace(/\.(pdf|docx?|html?|wiki|md|markdown)$/i, '.txt');
+}
+
+/**
  * Read a case's fetched source text, concatenating multiple source files.
  *
  * @param {CaseManifest} testCase
@@ -78,7 +94,7 @@ export async function loadCases(ids = null) {
 export async function readSourceText(testCase) {
   const parts = [];
   for (const source of testCase.sources || []) {
-    const textFile = source.file.replace(/\.(pdf|docx?)$/i, '.txt');
+    const textFile = sourceTextFilename(source.file);
     const filePath = path.join(testCase.dir, 'source', textFile);
     try {
       parts.push(await fs.readFile(filePath, 'utf8'));

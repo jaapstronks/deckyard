@@ -11,6 +11,7 @@ import {
   HISTORY_FILE,
   REFERENCE_DIMENSION,
   RUBRIC_DIMENSIONS,
+  RUNS_DIR,
 } from '../lib/config.js';
 import { changedPromptFiles } from '../lib/prompt-version.js';
 
@@ -74,18 +75,67 @@ export async function appendHistory(entry) {
 }
 
 /**
- * Find the most recent prior run that covered the same case set, so deltas
- * compare like with like rather than a full run against a 4-case subset.
+ * Find a prior run to compare against, newest first.
+ *
+ * Prefers an exact case-set match. Failing that, falls back to the most recent
+ * run whose case set is a superset, and restricts its scores to the cases in
+ * this run. Without that fallback an iteration round on a 4-case subset has
+ * nothing to diff against the 11-case baseline, and regressions go unnoticed.
+ *
+ * The narrowed comparison needs per-case verdicts, which live in the run's
+ * `run.json` rather than in history, so this reads that file when narrowing.
  *
  * @param {object[]} history
  * @param {string[]} caseIds
+ * @returns {Promise<object|null>} A history-shaped entry, possibly narrowed
  */
-export function findComparableRun(history, caseIds) {
-  const target = [...caseIds].sort().join(',');
+export async function findComparableRun(history, caseIds) {
+  const wanted = [...caseIds].sort();
+  const target = wanted.join(',');
+
   for (let i = history.length - 1; i >= 0; i -= 1) {
     if ([...(history[i].caseIds || [])].sort().join(',') === target) return history[i];
   }
+
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const entry = history[i];
+    const covered = new Set(entry.caseIds || []);
+    if (!wanted.every((id) => covered.has(id))) continue;
+
+    const narrowed = await narrowRunToCases(entry, wanted);
+    if (narrowed) return narrowed;
+  }
+
   return null;
+}
+
+/**
+ * Recompute a past run's scores over a subset of its cases.
+ *
+ * @param {object} entry - History entry
+ * @param {string[]} caseIds
+ * @returns {Promise<object|null>} null when the run record is unavailable
+ */
+async function narrowRunToCases(entry, caseIds) {
+  let run;
+  try {
+    const raw = await fs.readFile(path.join(RUNS_DIR, entry.runId, 'run.json'), 'utf8');
+    run = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  const subset = (run.results || []).filter((result) => caseIds.includes(result.caseId));
+  if (subset.length !== caseIds.length) return null;
+
+  const scores = aggregateScores(subset);
+  return {
+    ...entry,
+    scores,
+    overall: overallScore(scores),
+    caseIds,
+    narrowedFrom: entry.caseIds,
+  };
 }
 
 /**
@@ -143,6 +193,13 @@ export async function writeReport(run, previous, outputPath) {
     lines.push(
       `Compared against run \`${previous.runId}\` (prompt version \`${previous.promptVersion?.hash}\`).`
     );
+    if (previous.narrowedFrom) {
+      lines.push('');
+      lines.push(
+        `That run covered ${previous.narrowedFrom.length} cases; its scores are narrowed ` +
+          `to this run's ${previous.caseIds.length} for a like-for-like comparison.`
+      );
+    }
     if (changed.length) {
       lines.push('');
       lines.push('Prompt files changed since then:');

@@ -14,7 +14,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { loadCases } from '../lib/cases.js';
+import { loadCases, sourceTextFilename } from '../lib/cases.js';
 import { REPO_ROOT } from '../lib/config.js';
 
 const USER_AGENT =
@@ -43,7 +43,7 @@ async function main() {
       const dir = path.join(testCase.dir, asset.kind);
       await fs.mkdir(dir, { recursive: true });
       const originalPath = path.join(dir, asset.file);
-      const textPath = path.join(dir, asset.file.replace(/\.(pdf|docx?|html?|wiki)$/i, '.txt'));
+      const textPath = path.join(dir, sourceTextFilename(asset.file));
 
       if (!force && (await exists(textPath))) {
         console.log(`  · ${asset.file} (already present)`);

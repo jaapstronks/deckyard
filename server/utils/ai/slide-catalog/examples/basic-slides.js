@@ -6,7 +6,7 @@
 export const BASIC_SLIDE_EXAMPLES = {
   'content-slide': [{
     title: 'Key Findings',
-    body: '- First important point with details\\n- Second point explaining the context\\n- Third point with specific examples\\n- Fourth point summarizing implications',
+    body: '- First important point with details\n- Second point explaining the context\n- Third point with specific examples\n- Fourth point summarizing implications',
     layout: 'one-column',
     background: 'lime',
   }],
@@ -66,7 +66,7 @@ export const BASIC_SLIDE_EXAMPLES = {
 
   'image-text-slide': [{
     title: 'Our Approach',
-    body: '- User-centered design process\\n- Iterative development cycles\\n- Continuous feedback integration',
+    body: '- User-centered design process\n- Iterative development cycles\n- Continuous feedback integration',
     image: '',
     imageSide: 'right',
     background: 'lime',
