@@ -263,6 +263,14 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **Home loads in a single request.** A new `GET /api/home` endpoint
+  aggregates everything the Home view used to fetch separately after mount
+  (popular presentations, the "from others" activity feed, the building-blocks
+  shelf's collections and team slides, and your library-usage set) into one
+  round-trip. The individual endpoints stay available for API/MCP callers, and
+  the Home view falls back to them per section if the aggregate ever fails.
+  No visible change; the phase-3 close-out of the Home redesign.
+
 - **Editor chrome re-organized: slide-scoped vs. deck-scoped.** The right
   rail is now driven by an always-visible labeled pane switcher
   (Inspector / Comments) at the far right of the toolbar above the canvas;

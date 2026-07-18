@@ -63,7 +63,7 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   blocks shelf, PR #78; nav consolidation 9→6 into one filterable Presentations
   view, PR #79). Phase 3 in progress: comment text in the rail shipped (PR #80),
   reuse tracking + the shelf's "new to you" badge shipped (PR #81), and the
-  single `/api/home` aggregation replacing the client fan-out shipped (PR #82).
+  single `/api/home` aggregation replacing the client fan-out shipped (PR #83).
   Remaining: the rest of the rich feed (slide-preview thumbs, a "slide added to
   library" event).
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
