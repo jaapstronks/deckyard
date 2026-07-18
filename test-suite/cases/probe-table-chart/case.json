@@ -7,13 +7,26 @@
   "structure": "structured",
   "note": "Authored probe. Four regions each with three comparable measures is tabular by nature; a six-year single series is a chart. Both are laborious to build by hand and are where generation earns its keep.",
   "sources": [
-    { "local": "test-suite/fixtures/probe-table-chart.md", "file": "source.md", "type": "markdown" }
+    {
+      "local": "test-suite/fixtures/probe-table-chart.md",
+      "file": "source.md",
+      "type": "markdown"
+    }
   ],
   "licence": "Authored for this suite; MIT with the repository.",
   "expectedSlideTypes": [
-    { "type": "table-slide", "because": "four regions x three measures (consumption, prior year, connections)" },
-    { "type": "chart-slide", "because": "renewable share as a six-point series from 2021 to 2026" },
-    { "type": "kpi-metrics-slide", "because": "headline figures: 1,596 GWh, 2.9 GW peak, 4.1% losses, 0.31 EUR/kWh" }
+    {
+      "type": "table-slide",
+      "because": "four regions x three measures (consumption, prior year, connections)"
+    },
+    {
+      "type": "chart-slide",
+      "because": "renewable share as a six-point series from 2021 to 2026"
+    },
+    {
+      "type": "kpi-metrics-slide",
+      "because": "headline figures: 1,596 GWh, 2.9 GW peak, 4.1% losses, 0.31 EUR/kWh"
+    }
   ],
   "expectedCharacteristics": [
     "Renders the regional comparison as a table rather than prose bullets",

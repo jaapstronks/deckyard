@@ -39,3 +39,20 @@ test('the generic types the content fell back to are named', () => {
 test('a case declaring no expectations scores a full recall rather than zero', () => {
   assert.equal(specialTypeUsage(deckOf('title-slide'), []).recall, 1);
 });
+
+test('a declared acceptable alternative counts as a hit', () => {
+  // Before/after figures are as legitimately tabular as they are KPI cards;
+  // scoring the table as a miss would manufacture a defect.
+  const withAlt = [
+    { type: 'kpi-metrics-slide', acceptable: ['table-slide'], because: 'before/after pilot figures' },
+  ];
+  const r = specialTypeUsage(deckOf('title-slide', 'table-slide'), withAlt);
+  assert.equal(r.recall, 1);
+  assert.deepEqual(r.found, ['table-slide'], 'the alternative actually used is reported');
+});
+
+test('an alternative that was not declared is still a miss', () => {
+  const strict = [{ type: 'kpi-metrics-slide', because: 'headline figures' }];
+  const r = specialTypeUsage(deckOf('title-slide', 'text-blocks-slide'), strict);
+  assert.equal(r.recall, 0);
+});

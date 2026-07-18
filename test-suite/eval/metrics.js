@@ -288,7 +288,9 @@ function round(n) {
  * the easy part and skipped the valuable part.
  *
  * Probe cases (category C) declare `expectedSlideTypes` because their source is
- * authored, so the ground truth is known rather than inferred.
+ * authored, so the ground truth is known rather than inferred. An entry may
+ * list `acceptable` alternatives where more than one layout is a fair reading
+ * of the content.
  *
  * @param {object} deck
  * @param {{type: string, because: string}[]} expected
@@ -300,7 +302,13 @@ export function specialTypeUsage(deck, expected = []) {
   const missing = [];
 
   for (const entry of expected) {
-    if (used.has(entry.type)) found.push(entry.type);
+    // A manifest may name defensible alternatives. Several layouts can be a
+    // reasonable reading of the same content -- before/after pairs are as
+    // legitimately tabular as they are KPI figures -- and a metric that scores
+    // those as failures manufactures defects and gets ignored.
+    const acceptable = [entry.type, ...(entry.acceptable || [])];
+    const match = acceptable.find((type) => used.has(type));
+    if (match) found.push(match);
     else missing.push(entry);
   }
 
