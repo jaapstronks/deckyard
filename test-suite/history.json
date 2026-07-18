@@ -443,5 +443,55 @@
     },
     "overall": 4.07,
     "costUsd": 1.4679
+  },
+  {
+    "runId": "2026-07-18_21-06-56",
+    "startedAt": "2026-07-18T21:06:56.034Z",
+    "label": "layout triggers: process vs text-blocks disambiguated",
+    "model": "claude-opus-4-8",
+    "generationVendor": "openai",
+    "generationModel": "gpt-5.5",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "e9256c5e0e40",
+      "files": {
+        "server/utils/ai/generate-outline.js": "21f6b93d96bc",
+        "server/utils/ai/refine-slides.js": "14fa693a6cc0",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "e328e570f26e",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "9d9a3e8e1a73",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "probe-causal-icons-quote",
+      "probe-process-timeline",
+      "probe-table-chart"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.67,
+      "structure": 4.33,
+      "slideEconomy": 3.33,
+      "faithfulness": 4,
+      "presentability": 4,
+      "humanLikeness": null
+    },
+    "overall": 4.07,
+    "costUsd": 1.3512
   }
 ]
