@@ -60,14 +60,29 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
       throw err;
     }
 
+    // Sandbox posture (see docs/plans/security-hardening.md item 1).
+    //
+    // The container image runs Chromium as a non-root user, so the old
+    // "renderer escape == root in the container" risk is gone. Chromium's own
+    // sandbox stays OFF by default because its namespace sandbox needs syscalls
+    // that Docker's DEFAULT seccomp profile blocks (CLONE_NEWPID/NEWNET); with
+    // the stock profile a sandboxed launch fails outright, breaking export.
+    //
+    // Operators who harden the runtime (e.g. `--cap-add=SYS_ADMIN` or a
+    // Chromium seccomp profile) can re-enable the in-browser sandbox for
+    // defense-in-depth by setting PUPPETEER_SANDBOX=true.
+    const enableSandbox = /^(1|true|yes)$/i.test(
+      String(process.env.PUPPETEER_SANDBOX || '').trim()
+    );
+    const args = ['--disable-dev-shm-usage'];
+    if (!enableSandbox) {
+      args.unshift('--no-sandbox', '--disable-setuid-sandbox');
+    }
+
     return puppeteer.launch({
       headless: true,
       executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-      ],
+      args,
     });
   })();
   return browserPromise;
