@@ -149,3 +149,28 @@ export function allowRequest(key, { capacity, refillPerSec }) {
 export function allowRequestSync(key, { capacity, refillPerSec }) {
   return allowRequestInMemory(key, { capacity, refillPerSec });
 }
+
+/**
+ * Token-bucket limits for password login (brute-force throttle).
+ * Burst then a slow sustained rate; per-IP catches address rotation, per-email
+ * caps targeted attacks on a single account. Security hardening 3c.
+ */
+export const LOGIN_LIMITS = {
+  ip: { capacity: 10, refillPerSec: 0.1 }, // burst 10, then ~6/min
+  email: { capacity: 8, refillPerSec: 0.1 }, // burst 8, then ~6/min
+};
+
+/**
+ * Throttle a password-login attempt. Consumes one token per attempt from a
+ * per-IP and (only if the IP is still under budget) a per-email bucket.
+ * @param {{ip?: string, email?: string}} p
+ * @returns {Promise<boolean>} false when the attempt should be blocked (429)
+ */
+export async function allowLoginAttempt({ ip, email } = {}) {
+  const ipKey = `login:ip:${String(ip || 'unknown')}`;
+  const ipOk = await allowRequest(ipKey, LOGIN_LIMITS.ip);
+  if (!ipOk) return false;
+  const emailKey = `login:email:${String(email || 'unknown').toLowerCase()}`;
+  const emailOk = await allowRequest(emailKey, LOGIN_LIMITS.email);
+  return emailOk;
+}
