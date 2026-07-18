@@ -82,10 +82,30 @@ export function createOptionalBearerHeaders(apiKey) {
 export function transformOpenAiCompatibleRequest({ model, temperature = 0.2, responseFormat, messages = [] }) {
   return {
     model,
-    temperature,
+    ...(supportsSampling(model) ? { temperature } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
     messages,
   };
+}
+
+/**
+ * Whether a model accepts a non-default `temperature`.
+ *
+ * Newer OpenAI reasoning models reject it outright — gpt-5.5 answers a
+ * non-default value with `400 unsupported_value`, which fails the whole
+ * request rather than degrading. Older models (gpt-5.2 and earlier, gpt-4x)
+ * still accept it, so temperature is kept for them rather than changing
+ * behaviour for existing deployments.
+ *
+ * Mirrors the same guard in the Claude provider, where Opus 4.7+ removed
+ * sampling parameters for the same reason.
+ *
+ * @param {string} model - Model identifier
+ * @returns {boolean}
+ */
+function supportsSampling(model) {
+  // gpt-5.5 and up, any gpt-6+, and the o-series reasoning models.
+  return !/^(gpt-5\.(?:[5-9]|\d{2})|gpt-[6-9]|o[1-9])/i.test(String(model || ''));
 }
 
 /**
