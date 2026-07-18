@@ -8,6 +8,18 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Home: a two-column canvas with a "from others" activity rail.** The Home
+  view now opens with a full-width greeting over two columns: the main column
+  carries the returning user's top job (resume recent work) plus discovery and
+  a de-emphasized create affordance, and a persistent right rail carries the
+  activity feed, so awareness is no longer buried at the bottom of a long
+  scroll. The feed shows other people's activity instead of your own comments,
+  and collapses consecutive same-person, same-deck events into one line with a
+  count ("Heleen commented on X · 3"). Section headers gained an optional badge
+  override so the rail reads "12 new" rather than the deck-oriented
+  "N presentations". Collapses to a single column on narrow viewports. First
+  phase of the Home redesign; no backend changes.
+
 - **Image-text: optional two text columns in the row and duo layouts.**
   A new `textColumns` enum (1/2) on the image-text slide breaks the body
   into two balanced text columns while the composition stays one story -

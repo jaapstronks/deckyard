@@ -58,6 +58,12 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   — create-flow follow-up: persist and return per-language library-item content
   on the Postgres backend (new `i18n` column + adapter + mapper) so composed
   decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
+- **Home redesign, phases 2-3** — `docs/plans/home-redesign.md` — phase 1 (the
+  two-column canvas + a "from others" activity rail) shipped 2026-07-18 (PR
+  #77). Next: a "building blocks" shelf backed by slide collections replacing
+  the create zone, and nav consolidation (Recent/Workspace/My/Shared → one
+  filterable Presentations view). Later: a rich activity feed (slide previews +
+  reuse tracking) and a single `/api/home` aggregation.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
@@ -81,6 +87,13 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
+- **Video slide → PDF: "watch online" placeholder** —
+  `docs/plans/video-slide-pdf-export.md` — export a video slide to PDF as a
+  laptop-mockup still with a play icon plus a server-generated "watch at
+  <url>" line in the deck's language (open decisions on link target, access,
+  autoplay).
+- **Quote slide: up to 3 quotes** — `docs/plans/quote-multi-quote.md` —
+  stack up to three quotes with alternating left/right/left alignment.
 
 ## Later — cloud / multi-tenant track
 
