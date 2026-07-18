@@ -93,6 +93,16 @@ export function authEnabled() {
 }
 
 export function devAuthBypassEnabled() {
+  // Passwordless admin bypass is a development convenience ONLY. Refuse it
+  // unless NODE_ENV is explicitly 'development', so a leftover
+  // AUTH_DEV_BYPASS=1 in a staging/prod/unset-NODE_ENV .env can't silently
+  // grant anonymous admin. Belt-and-suspenders with the startup check in
+  // server.js. See docs/plans/security-hardening.md item 3a.
+  if (
+    String(process.env.NODE_ENV || '').trim().toLowerCase() !== 'development'
+  ) {
+    return false;
+  }
   const v = String(process.env.AUTH_DEV_BYPASS || '')
     .trim()
     .toLowerCase();
