@@ -190,6 +190,59 @@
   display: block;
 }
 
+/* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
+.slide-quote.is-multi .slide-inner {
+  justify-content: center;
+  gap: 40px;
+}
+.slide-quote.is-multi .quote-item {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 74%;
+}
+/* Alternate the alignment down the slide: 1 left, 2 right, 3 left. */
+.slide-quote.is-multi .quote-item:nth-child(odd) {
+  align-self: flex-start;
+  text-align: left;
+}
+.slide-quote.is-multi .quote-item:nth-child(even) {
+  align-self: flex-end;
+  text-align: right;
+}
+/* Quotes shrink from the hero size so 2-3 fit; 3 shrinks a touch more. */
+.slide-quote.is-multi .quote-text {
+  font-size: calc(var(--font-size-title) * 0.6);
+  line-height: 1.1;
+  max-width: none;
+  margin-top: 0;
+}
+.slide-quote.is-multi[data-quote-count='3'] .quote-text {
+  font-size: calc(var(--font-size-title) * 0.46);
+}
+.slide-quote.is-multi .quote-author {
+  font-size: 18px;
+}
+.slide-quote.is-multi .quote-author .name {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+.slide-quote.is-multi .quote-author .role {
+  font-size: 20px;
+}
+.slide-quote.is-multi .quote-portrait {
+  width: 64px;
+  height: 64px;
+}
+.slide-quote.is-multi .quote-author.has-portraits {
+  gap: 16px;
+}
+/* Right-aligned items put the portrait after the text, reading edge-in. */
+.slide-quote.is-multi .quote-item:nth-child(even) .quote-author.has-portraits {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
 @media print {
   /* Print/export: avoid animated gradients (and Safari print oddities). */
   .slide-quote::before {

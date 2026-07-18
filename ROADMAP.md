@@ -86,8 +86,6 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   laptop-mockup still with a play icon plus a server-generated "watch at
   <url>" line in the deck's language (open decisions on link target, access,
   autoplay).
-- **Quote slide: up to 3 quotes** — `docs/plans/quote-multi-quote.md` —
-  stack up to three quotes with alternating left/right/left alignment.
 
 ## Later — cloud / multi-tenant track
 
