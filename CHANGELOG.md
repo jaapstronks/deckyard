@@ -20,6 +20,33 @@ entries are grouped per release rather than exhaustively listed.
   "N presentations". Collapses to a single column on narrow viewports. First
   phase of the Home redesign; no backend changes.
 
+- **Home: a "building blocks" shelf and a consolidated Presentations view.**
+  Phase 2 of the Home redesign. The theme-picker "start something new" zone in
+  the main column became a shelf of reusable **building blocks** - slide
+  collections (team first) plus recent team slides, with a dashed
+  "Blank presentation" card always present; clicking one opens the creation
+  view pre-seeded (a collection fills the compose tray, a loose slide seeds it
+  directly). Separately, the sidebar collapsed from nine items to six: Recent,
+  Workspace, My presentations and Shared-with-me merged into one filterable
+  **Presentations** view with scope chips (All · Mine · Workspace · Shared,
+  live counts), a sort control and a tag filter, all over a single list.
+
+- **Home: comment text in the "from others" rail, and no empty Popular badge.**
+  The activity rail now shows the comment body under the who-did-what line
+  (the event data already carried a ≤100-char preview, so client-only). Popular's
+  section header no longer renders a meaningless "0 presentations" badge on its
+  curated top-few strip.
+
+- **Home: a "New to you" badge on unused team building blocks.** Phase 3 of the
+  Home redesign. A subtle corner badge now flags team-scope collections and
+  reusable slides on the building-blocks shelf that you have never started a
+  deck from; it clears (for you) after first use. Tracking is per-user: a new
+  `slide_library_usage` store records when you use a library slide or collection
+  as a starting point. Both v1 paths count - composing a deck from the library
+  (recorded server-side on create, so MCP/agent composes are tracked too) and
+  inserting a library slide into an existing deck. Personal items you made
+  yourself never get the badge.
+
 - **Image-text: optional two text columns in the row and duo layouts.**
   A new `textColumns` enum (1/2) on the image-text slide breaks the body
   into two balanced text columns while the composition stays one story -

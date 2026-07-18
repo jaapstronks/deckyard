@@ -61,10 +61,11 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **Home redesign, phase 3** — `docs/plans/home-redesign.md` — phases 1-2
   shipped 2026-07-18 (two-column canvas + "from others" rail, PR #77; building-
   blocks shelf, PR #78; nav consolidation 9→6 into one filterable Presentations
-  view, PR #79). Remaining: a rich activity feed (comment text + slide-preview
-  thumbs, a "slide added to library" event), reuse tracking that powers the
-  shelf's "new to you" signal, and a single `/api/home` aggregation replacing
-  the current client fan-out.
+  view, PR #79). Phase 3 in progress: comment text in the rail shipped (PR #80),
+  and reuse tracking + the shelf's "new to you" badge shipped (PR #81).
+  Remaining: the rest of the rich feed (slide-preview thumbs, a "slide added to
+  library" event) and a single `/api/home` aggregation replacing the current
+  client fan-out.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
