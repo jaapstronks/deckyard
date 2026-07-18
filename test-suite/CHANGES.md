@@ -340,3 +340,86 @@ per-case table said "works where it fires, unrelated noise elsewhere". At n=3 a
 single case moving one point shifts a dimension by 0.33, so **aggregate means
 over three cases are not a safe basis for a keep/revert decision** — the earlier
 rounds should be read with that in mind too.
+
+---
+
+## Noise floor: what a score difference has to beat
+
+Three **identical** staged-refine runs — same frozen outlines, same prompts, no
+code change between them. Every difference below is pure run-to-run noise.
+
+| Dimension | Run 1 | Run 2 | Run 3 | Noise spread |
+| --- | ---: | ---: | ---: | ---: |
+| Slide economy | 3.67 | 3.67 | 3.33 | 0.33 |
+| Faithfulness | 5.00 | 4.00 | 4.67 | **1.00** |
+| Presentability | 4.00 | 4.00 | 3.67 | 0.33 |
+| Structure | 4.33 | 4.00 | 4.33 | 0.33 |
+| Coverage | 5.00 | 4.67 | 4.67 | 0.33 |
+| **Consecutive same-type repeats** | **12** | **12** | **12** | **0** |
+
+Two things follow, and they are the most useful results in this document.
+
+**1. A 3-case dimension mean is a weak instrument.** Faithfulness alone swings
+a full point with nothing changed. Anything at or below ±0.33 on three cases is
+indistinguishable from noise, and for faithfulness the bar is a full point.
+
+Re-reading the earlier rounds against that bar:
+
+| Round | Reported delta | Verdict now |
+| --- | --- | --- |
+| 1 — escaped newlines | +0.33 presentability | Inside noise. The *defect count* 5 → 0 was the real evidence, not the score. |
+| 2 — variety rule | −0.55 faithfulness | Measured on **11** cases, not 3. Stands, though the 11-case noise floor is still unmeasured. |
+| 3 — chapter dividers | +0.67 faithfulness, −1.00 presentability | The faithfulness gain is inside the 1.00 faithfulness noise band — it was correctly attributed to variance at the time. The presentability drop was traced to a specific truncation defect, which is why it survived scrutiny. |
+| 4 — no fact twice | −0.67 coverage | Twice the coverage noise band, and corroborated by three rationales naming omitted facts. Revert stands. |
+| 5 — adjacency | −0.33 faithfulness | Comfortably inside noise, as the per-case reading already concluded. |
+
+**2. The deterministic metrics are perfectly stable.** Consecutive same-type
+repeats came out 12, 12, 12. Structural counts do not drift at all while judge
+scores swing by a point.
+
+This retroactively justifies a pattern that had only been an observation:
+**changes fixing a countable defect held up; changes judged by score movement
+alone did not.** The countable metrics were simply a far better instrument.
+Prefer them, and treat the judge's *rationales* — which name specific slides —
+as evidence, while treating its aggregate numbers at n=3 as a weak prior.
+
+Cost: $5.09 for three replicates.
+
+---
+
+## Corpus-wide outline diagnostic (11 cases)
+
+Phase 1 only, judged on the plan rather than the prose. `$5.74` for the corpus.
+
+| Dimension | Mean | Per-case scores |
+| --- | ---: | --- |
+| Ordering | 4.00 | `44444444444` |
+| Sectioning | 3.91 | `44443444444` |
+| Selection | 3.64 | `23443444444` |
+| **Slide allocation** | **2.82** | `24323333323` |
+
+**Slide allocation is the systematic weakness of the whole pipeline** — never
+above 3 on any case, well clear of the noise floor, and measured on 11 cases
+rather than 3. It asks whether each planned slide earns its place and whether a
+section's size matches how much it has to say.
+
+The planned slide counts point at a likely cause. `calculateTargetSlides`
+computes `words ÷ 75`, clamped to `[5, 25]`, and the outcome misses in both
+directions:
+
+- **Dense short sources undershoot the target.** ASML (1,904 words) targets 25
+  and plans 15 — the model sensibly refuses to spin a 4-page press release into
+  25 slides.
+- **Long sources overshoot the cap.** PBL plans 36, CBS Veiligheidsmonitor 32,
+  Wikipedia 31, IEA 30 — all against a hard cap of 25.
+
+So the target is being overridden in both directions, which makes it dead
+weight at best. A word count is a poor proxy for how many slides material
+deserves; information density is what matters.
+
+**Ordering scoring a flat 4.00 on all eleven cases** is worth treating with
+suspicion — a dimension that never varies is more likely to be one the judge
+cannot discriminate on than one the pipeline has solved.
+
+Next experiment: slide allocation, iterated at the outline stage only
+(~$0.20/case, no phase 2 spend).
