@@ -14,6 +14,7 @@ import {
   invalidateSettingsCache,
 } from '../../../lib/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
+import { invalidateTheme } from '../../../lib/theme.js';
 
 /**
  * Create the themes tab component.
@@ -474,6 +475,7 @@ export function createThemesTab({ user }) {
 
     try {
       await api(`/api/themes/custom/${theme.id}`, { method: 'DELETE' });
+      invalidateTheme(theme.id);
       toast.success(t('settings.themes.deleteSuccess', 'Theme deleted.'));
       await loadThemes();
     } catch (err) {
@@ -500,6 +502,9 @@ export function createThemesTab({ user }) {
               method: 'PUT',
               body: JSON.stringify(themeData),
             });
+            // Drop the cached copy (here and in other tabs) so decks on this
+            // theme pick the change up without a reload.
+            invalidateTheme(theme.id);
             toast.success(t('settings.themes.updateSuccess', 'Theme updated.'));
           } else {
             // Create new

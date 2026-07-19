@@ -21,6 +21,73 @@ export function normalizeThemeId(rawThemeId) {
   return safeThemeId(rawThemeId);
 }
 
+const fontStyleId = (key) => `theme-fonts-${key || 'unknown'}`;
+const bgStyleId = (key) => `theme-slide-bgs-${key || 'unknown'}`;
+
+// Editing a theme in one tab has to reach the others: an editor open on a deck
+// keeps rendering the cached copy otherwise. BroadcastChannel is optional
+// (older Safari, some embedded webviews), so guard it — losing cross-tab
+// refresh is a smaller failure than throwing during module load.
+const THEME_CHANNEL = 'deckyard-theme';
+let themeChannel = null;
+try {
+  if (typeof BroadcastChannel === 'function') {
+    themeChannel = new BroadcastChannel(THEME_CHANNEL);
+    // In Node (test runs) a BroadcastChannel is an active handle that keeps the
+    // event loop alive, so importing this module would hang the process on
+    // exit. unref() lets the process end while the channel still delivers
+    // messages whenever the loop is running; it's absent in the browser, where
+    // there is nothing to unref, so the optional call is a no-op there.
+    themeChannel.unref?.();
+    themeChannel.onmessage = (event) => {
+      const id = event?.data?.themeId;
+      if (event?.data?.type !== 'theme-changed') return;
+      dropTheme(id ? safeThemeId(id) : null);
+    };
+  }
+} catch {
+  themeChannel = null;
+}
+
+/** Drop a cached theme (or all of them) plus the style elements it injected. */
+function dropTheme(id) {
+  const keys = id ? [id] : [...themeCache.keys()];
+  for (const key of keys) {
+    themeCache.delete(key);
+    // A fetch already in flight would repopulate the cache with the copy we are
+    // trying to discard.
+    inFlightRequests.delete(key);
+    // The injected <style> elements are idempotent per id, so leaving them
+    // behind would keep serving the old @font-face and .slide-bg-* rules.
+    for (const styleId of [fontStyleId(key), bgStyleId(key)]) {
+      document.getElementById(styleId)?.remove();
+    }
+  }
+}
+
+/**
+ * Forget a cached theme so the next render re-fetches it.
+ *
+ * Call after saving or deleting a theme. Also tells other tabs, so an editor
+ * open on a deck picks the change up without a reload.
+ *
+ * @param {string} rawThemeId
+ */
+export function invalidateTheme(rawThemeId) {
+  const id = safeThemeId(rawThemeId);
+  dropTheme(id);
+  try {
+    themeChannel?.postMessage({ type: 'theme-changed', themeId: id });
+  } catch {
+    // A closed channel must not break the local invalidation above.
+  }
+}
+
+/** Forget every cached theme. Mostly for tests and hard refreshes. */
+export function clearThemeCache() {
+  dropTheme(null);
+}
+
 async function fetchThemeData(id) {
   // Built-in themes live in /themes/, custom themes in /custom/themes/
   // Only try /custom/themes/ for non-built-in themes to avoid 404 errors
@@ -64,6 +131,26 @@ async function fetchThemeData(id) {
   return null;
 }
 
+/**
+ * Did this fetch return the theme we asked for?
+ *
+ * A file theme's `id` is the id we requested. A **database** theme is requested
+ * by UUID but reports its slug as `id` (that is what `buildThemeConfig` emits),
+ * so comparing ids alone rejected every custom theme and fell back to a blank
+ * one — the whole theme rendered unstyled in the browser while server exports
+ * looked correct. `_customThemeId` carries the UUID, so check both.
+ *
+ * @param {Object} theme
+ * @param {string} id - the id `loadThemeById` was asked for
+ * @returns {boolean}
+ */
+function isThemeForId(theme, id) {
+  if (!theme) return false;
+  return (
+    String(theme.id || '') === id || String(theme._customThemeId || '') === id
+  );
+}
+
 export async function loadThemeById(rawThemeId) {
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
@@ -76,7 +163,7 @@ export async function loadThemeById(rawThemeId) {
   const promise = fetchThemeData(id).then((theme) => {
     inFlightRequests.delete(id);
     theme = normalizeTheme(theme);
-    if (!theme || String(theme.id || '') !== id) {
+    if (!isThemeForId(theme, id)) {
       theme = normalizeTheme({
         id,
         label: id,
@@ -84,10 +171,10 @@ export async function loadThemeById(rawThemeId) {
         cssVars: {},
       });
     }
-    // Inject @font-face rules so custom/uploaded fonts render in the editor
-    injectThemeFontFaces(theme);
-    // Inject generated .slide-bg-<id> rules for theme-defined bg variants
-    injectThemeSlideBgStyles(theme);
+    // Style elements are keyed by the id we were asked for, not the theme's own
+    // id, so invalidateTheme() can find and remove them again.
+    injectThemeFontFaces(theme, id);
+    injectThemeSlideBgStyles(theme, id);
     themeCache.set(id, theme);
     return theme;
   });
@@ -101,9 +188,9 @@ export async function loadThemeById(rawThemeId) {
  * Handles both path-based (curated) and URL-based (uploaded) fonts.
  * Idempotent — skips fonts that are already loaded.
  */
-export function injectThemeFontFaces(theme) {
+export function injectThemeFontFaces(theme, key = null) {
   if (!theme?.embedFonts?.length) return;
-  const styleId = `theme-fonts-${theme.id || 'unknown'}`;
+  const styleId = fontStyleId(key || theme.id);
   if (document.getElementById(styleId)) return;
 
   const rules = [];
@@ -139,10 +226,10 @@ export function injectThemeFontFaces(theme) {
  * `--t-slide-bg-<id>*` vars applied per slide element, so rules from different
  * themes coexist. Idempotent per theme id, like injectThemeFontFaces.
  */
-export function injectThemeSlideBgStyles(theme) {
+export function injectThemeSlideBgStyles(theme, key = null) {
   if (!Array.isArray(theme?.slideBackgrounds) || !theme.slideBackgrounds.length)
     return;
-  const styleId = `theme-slide-bgs-${theme.id || 'unknown'}`;
+  const styleId = bgStyleId(key || theme.id);
   if (document.getElementById(styleId)) return;
   const css = slideBackgroundsCssText(theme.slideBackgrounds);
   if (!css) return;
