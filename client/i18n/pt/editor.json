@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Tudo",
   "comments.filter.waitingForMe": "À minha espera",
   "comments.empty.waiting": "Nada à sua espera aqui",
+  "comments.empty.noSlide": "Selecione um slide para ver os seus comentários",
   "comments.unread": "Nova atividade",
   "mentions.noResults": "Nenhum utilizador correspondente",
   "mentions.noAccess.title": "Sem acesso a esta apresentação",

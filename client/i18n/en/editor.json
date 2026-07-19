@@ -635,6 +635,7 @@
   "comments.filter.everyone": "Everything",
   "comments.filter.waitingForMe": "Waiting for me",
   "comments.empty.waiting": "Nothing waiting for you here",
+  "comments.empty.noSlide": "Select a slide to see its comments",
   "comments.unread": "New activity",
   "mentions.noResults": "No matching users",
   "mentions.noAccess.title": "No access to this presentation",

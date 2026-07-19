@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Alt",
   "comments.filter.waitingForMe": "Venter på meg",
   "comments.empty.waiting": "Ingenting venter på deg her",
+  "comments.empty.noSlide": "Velg et lysbilde for å se kommentarene",
   "comments.unread": "Ny aktivitet",
   "mentions.noResults": "Ingen samsvarende brukere",
   "mentions.noAccess.title": "Ingen tilgang til denne presentasjonen",

@@ -397,6 +397,7 @@
   "comments.filter.everyone": "Tutto",
   "comments.filter.waitingForMe": "In attesa di me",
   "comments.empty.waiting": "Niente in attesa per te qui",
+  "comments.empty.noSlide": "Seleziona una diapositiva per vederne i commenti",
   "comments.unread": "Nuova attività",
   "mentions.noResults": "Nessun utente trovato",
   "mentions.noAccess.title": "Nessun accesso a questa presentazione",

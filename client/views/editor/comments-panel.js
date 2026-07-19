@@ -111,6 +111,12 @@ export function createCommentsPanel({
   async function loadComments() {
     try {
       filter.slideId = scope === 'slide' ? (getSelectedSlideId?.() || null) : null;
+      // "This slide" with no slide to scope to (a deck with zero slides, or
+      // before the first selection lands). Leaving slideId off the request
+      // would quietly widen the scope to the whole deck while the switch still
+      // reads "This slide", so the list is emptied explicitly instead. The
+      // request still goes out unscoped: openCount drives the deck-wide badge.
+      filter.slideMissing = scope === 'slide' && !filter.slideId;
       const opts = {};
       if (filter.slideId) opts.slideId = filter.slideId;
       if (filter.status && filter.status !== 'all') opts.status = filter.status;
@@ -119,9 +125,11 @@ export function createCommentsPanel({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       openCount = result.openCount || 0;
-      const visibleThreads = filter.attention === 'waiting'
-        ? comments.filter((c) => threadWaitsFor(c, user?.email))
-        : comments;
+      const visibleThreads = filter.slideMissing
+        ? []
+        : filter.attention === 'waiting'
+          ? comments.filter((c) => threadWaitsFor(c, user?.email))
+          : comments;
       // The re-render destroys any open reply inputs; release their
       // autocomplete listeners with them.
       detachEphemeralMentions();

@@ -397,6 +397,7 @@
   "comments.filter.everyone": "Kaikki",
   "comments.filter.waitingForMe": "Odottaa minua",
   "comments.empty.waiting": "Täällä ei odota mikään sinua",
+  "comments.empty.noSlide": "Valitse dia nähdäksesi sen kommentit",
   "comments.unread": "Uutta toimintaa",
   "mentions.noResults": "Ei vastaavia käyttäjiä",
   "mentions.noAccess.title": "Ei pääsyä tähän esitykseen",

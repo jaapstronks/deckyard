@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Alles",
   "comments.filter.waitingForMe": "Wartet auf mich",
   "comments.empty.waiting": "Hier wartet nichts auf dich",
+  "comments.empty.noSlide": "Wähle eine Folie, um ihre Kommentare zu sehen",
   "comments.unread": "Neue Aktivität",
   "mentions.noResults": "Keine passenden Benutzer",
   "mentions.noAccess.title": "Kein Zugriff auf diese Präsentation",

@@ -50,7 +50,9 @@ export function createCommentRenderers({
     if (comments.length === 0) {
       const emptyEl = h('div', {
         class: 'comments-empty',
-        text: filter.attention === 'waiting'
+        text: filter.slideMissing
+          ? t('comments.empty.noSlide', 'Select a slide to see its comments')
+          : filter.attention === 'waiting'
           ? t('comments.empty.waiting', 'Nothing waiting for you here')
           : filter.status === 'resolved'
             ? t('comments.empty.resolved', 'No resolved comments')

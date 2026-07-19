@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Todo",
   "comments.filter.waitingForMe": "Esperándome",
   "comments.empty.waiting": "Nada pendiente para ti aquí",
+  "comments.empty.noSlide": "Selecciona una diapositiva para ver sus comentarios",
   "comments.unread": "Nueva actividad",
   "mentions.noResults": "No hay usuarios coincidentes",
   "mentions.noAccess.title": "Sin acceso a esta presentación",
