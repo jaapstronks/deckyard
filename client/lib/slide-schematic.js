@@ -19,7 +19,8 @@
 //   { kind: 'numbers' }          heading + numbered rows
 //   { kind: 'quote' }            big centred quote + attribution
 //   { kind: 'statement' }        one big centred line (payoff)
-//   { kind: 'image' }            single full-bleed image
+//   { kind: 'image' }            single full-bleed image (duotone landscape)
+//   { kind: 'code' }             centred `</>` glyph (custom HTML/code)
 //   { kind: 'gallery', cells }   grid of image cells
 //   { kind: 'cards', cells }     grid of image-over-label cards
 //   { kind: 'logos', cells }     grid of rounded logo chips
@@ -76,6 +77,27 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     for (const c of cells) box.append(c);
   };
   const gridCells = (count, make) => Array.from({ length: count }, (_, i) => make(i));
+  // Duotone landscape glyph: a symbolic "photo" (sky + sun + hills), so image
+  // archetypes read as pictures rather than blank grey fills. Fills its box via
+  // preserveAspectRatio="slice"; the two tones come from --sd-fill / --sd-strong.
+  const landscape = () =>
+    h('svg', { class: 'sd-landscape', viewBox: '0 0 32 18', preserveAspectRatio: 'xMidYMid slice', 'aria-hidden': 'true' }, [
+      h('rect', { class: 'sd-ls-sky', x: '0', y: '0', width: '32', height: '18' }),
+      h('circle', { class: 'sd-ls-sun', cx: '23.5', cy: '5', r: '2.6' }),
+      h('path', { class: 'sd-ls-hill', d: 'M0 18 L9 10 L14.5 13.5 L21 7 L27 12 L32 9 L32 18 Z' }),
+    ]);
+  const photoCell = () => h('div', { class: 'layout-tile-image is-cell is-photo' }, [landscape()]);
+  // A few simple line-icon glyphs for the icon-cards archetype (see 'iconCards').
+  const ICON_GLYPHS = {
+    gear: 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm8 3.5a8 8 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a8 8 0 0 0-2-1.2l-.4-2.6H8.9l-.4 2.6a8 8 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a8 8 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 2 1.2l.4 2.6h4.2l.4-2.6a8 8 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.06-.4.1-.8.1-1.2Z',
+    bulb: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.1V16h6v-.4c0-.8.4-1.5 1-2.1A6 6 0 0 0 12 3Z',
+    star: 'M12 3l2.6 5.6 6 .7-4.4 4.1 1.2 6L12 16.9 6.6 19.5l1.2-6L3.4 9.3l6-.7L12 3Z',
+    bolt: 'M13 2 4 14h6l-1 8 9-12h-6l1-8Z',
+  };
+  const iconGlyph = (name) =>
+    h('svg', { class: 'sd-glyph', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.7', 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'aria-hidden': 'true' }, [
+      h('path', { d: ICON_GLYPHS[name] }),
+    ]);
 
   const kind = s.kind || legacyKind(s);
 
@@ -90,8 +112,17 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.append(centerBlock([line('is-big'), line('is-big is-short')]));
       break;
     case 'section':
-      box.classList.add('is-section', 'is-filled');
-      box.append(h('div', { class: 'sd-section-heading' }, [line('is-heading'), line('is-short')]));
+      // A section/chapter divider: a centred heading over a short accent rule.
+      // Deliberately NOT a full accent-green fill — that read as the odd one out
+      // among the neutral tiles; the accent now lives only in the small rule.
+      box.classList.add('is-section');
+      box.append(
+        h('div', { class: 'sd-section-body' }, [
+          h('div', { class: 'sd-section-rule' }),
+          line('is-title'),
+          line('is-sub'),
+        ])
+      );
       break;
     case 'quote':
       box.classList.add('is-quote');
@@ -123,12 +154,13 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       break;
     case 'bullets':
     case 'numbers': {
+      // No title placeholder: the glyph is the bullet/number rows themselves.
+      // Just three big rows read more clearly at tile size than a heading + five
+      // thin ones.
       const isNum = kind === 'numbers';
       box.classList.add(isNum ? 'is-numbers' : 'is-bullets');
-      const rows = Math.max(3, Math.min(Number(s.rows) || 4, 5));
       box.append(
-        line('is-heading'),
-        ...Array.from({ length: rows }, (_, i) =>
+        ...Array.from({ length: 3 }, (_, i) =>
           h('div', { class: 'sd-row' }, [
             isNum
               ? h('span', { class: 'sd-num', text: String(i + 1) })
@@ -143,11 +175,15 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     // --- media family -------------------------------------------------------
     case 'image':
       box.classList.add('is-image');
-      box.append(image('is-full'));
+      box.append(h('div', { class: 'layout-tile-image is-full is-photo' }, [landscape()]));
       break;
     case 'video':
       box.classList.add('is-image', 'is-video');
-      box.append(image('is-full'), h('span', { class: 'sd-play' }));
+      box.append(h('div', { class: 'layout-tile-image is-full is-photo' }, [landscape()]), h('span', { class: 'sd-play' }));
+      break;
+    case 'code':
+      box.classList.add('is-code');
+      box.append(h('span', { class: 'sd-code', text: '</>' }));
       break;
     case 'embed':
       box.classList.add('is-embed');
@@ -161,12 +197,12 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       );
       break;
     case 'gallery':
-      grid(3, 2, gridCells(Number(s.cells) || 6, () => image('is-cell')));
+      grid(3, 2, gridCells(Number(s.cells) || 6, () => photoCell()));
       box.classList.add('is-gallery');
       break;
     case 'cards':
       grid(Number(s.cols) || 3, Number(s.rows) || 2, gridCells(Number(s.cells) || 6, () =>
-        h('div', { class: 'sd-card' }, [image('is-cell'), line('is-short')])
+        h('div', { class: 'sd-card' }, [photoCell(), line('is-short')])
       ));
       box.classList.add('is-cards');
       break;
@@ -189,12 +225,15 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       ));
       box.classList.add('is-blocks');
       break;
-    case 'iconCards':
-      grid(Number(s.cols) || 3, Number(s.rows) || 2, gridCells(Number(s.cells) || 6, () =>
-        h('div', { class: 'sd-card sd-iconcard' }, [h('span', { class: 'sd-icon' }), line('is-short')])
-      ));
+    case 'iconCards': {
+      // Four cards, each a distinct generic icon (gear / bulb / star / bolt).
+      // The old dot-over-line read as person avatars; recognisable glyphs make
+      // it clear these are "icon + label" cards, and four at 2×2 stay legible.
+      const names = ['gear', 'bulb', 'star', 'bolt'];
+      grid(2, 2, names.map((n) => h('div', { class: 'sd-card sd-iconcard' }, [iconGlyph(n)])));
       box.classList.add('is-iconcards');
       break;
+    }
     case 'kpi':
       grid(2, 2, gridCells(Number(s.cells) || 4, () =>
         h('div', { class: 'sd-stat' }, [line('is-stat'), line('is-delta')])

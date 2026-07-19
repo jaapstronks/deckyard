@@ -22,6 +22,10 @@
 .ps-type-thumb.thumb .layout-tile-schematic {
   width: 100%;
   height: 100%;
+  /* Padding (--sd-pad) must stay inside the tile: without border-box the
+     percentage padding was added on top of the 100% width, overflowing the
+     thumb and cropping grid archetypes (gallery/cards) on the right. */
+  box-sizing: border-box;
   aspect-ratio: auto;
   border: none;
   border-radius: 0;
@@ -91,23 +95,26 @@
   flex-direction: column;
 }
 
-/* Section title: a filled accent block with a heading in the lower band. */
-.layout-tile-schematic.is-section.is-filled {
-  background: var(--sd-accent);
-  align-items: flex-start;
-  justify-content: flex-end;
+/* Section title: a centred chapter heading over a short accent rule. Neutral
+   surface (the accent lives only in the rule) so the tile doesn't read as the
+   odd all-green one in the grid. */
+.layout-tile-schematic.is-section {
+  align-items: center;
+  justify-content: center;
 }
-.sd-section-heading {
+.sd-section-body {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  width: 70%;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
 }
-.sd-section-heading .layout-tile-line {
-  background: hsl(var(--app-accent-on-primary, 0 0% 100%) / 0.95);
-}
-.sd-section-heading .layout-tile-line.is-short {
-  opacity: 0.65;
+.sd-section-rule {
+  width: 22%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--sd-accent);
+  margin-bottom: 2px;
 }
 
 /* Quote: a big hanging quotation mark over the quote lines. */
@@ -147,27 +154,29 @@
   flex: 1;
 }
 
-/* Bulleted / numbered rows. */
+/* Bulleted / numbered rows. No heading — just three big rows, spaced out so the
+   marker + bar reads clearly at tile size. */
 .layout-tile-schematic.is-bullets,
 .layout-tile-schematic.is-numbers {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  gap: 6px;
+  gap: 12px;
 }
 .sd-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
 }
 .sd-row .layout-tile-line {
   flex: 1;
   margin: 0;
   width: auto;
+  height: 6px;
 }
 .sd-bullet {
-  width: 5px;
-  height: 5px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--sd-strong);
   flex-shrink: 0;
@@ -176,12 +185,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
   background: var(--sd-strong);
   color: hsl(var(--app-bg-elevated));
-  font-size: 7px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
   flex-shrink: 0;
@@ -197,6 +206,42 @@
   width: 100%;
   height: 100%;
   border-radius: 0;
+}
+
+/* Duotone "photo" glyph (sky + sun + hills) used by image/video/gallery/cards
+   so image archetypes read as pictures, not blank grey blocks. */
+.layout-tile-image.is-photo {
+  position: relative;
+  overflow: hidden;
+  background: none;
+}
+.sd-landscape {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sd-ls-sky {
+  fill: var(--sd-fill);
+}
+.sd-ls-sun {
+  fill: var(--sd-strong);
+  opacity: 0.85;
+}
+.sd-ls-hill {
+  fill: var(--sd-strong);
+}
+
+/* Custom HTML / code: a big centred `</>` glyph. */
+.layout-tile-schematic.is-code {
+  align-items: center;
+  justify-content: center;
+}
+.sd-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--sd-strong);
 }
 .layout-tile-schematic.is-video .sd-play {
   position: absolute;
@@ -269,11 +314,10 @@
   border-radius: 2px;
   padding: 4px;
 }
-.sd-icon {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--sd-strong);
+.sd-iconcard .sd-glyph {
+  width: 58%;
+  height: 58%;
+  color: var(--sd-strong);
 }
 .sd-logo {
   border-radius: 3px;
