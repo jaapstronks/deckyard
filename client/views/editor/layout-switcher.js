@@ -123,7 +123,7 @@ export function createLayoutSwitcherChip({
 
   const chip = h('button', {
     type: 'button',
-    class: 'btn btn-sm layout-switcher-chip',
+    class: 'btn layout-switcher-chip',
     title: t('editor.layoutSwitcher.title', 'Slide layout'),
     'aria-haspopup': 'dialog',
     'aria-expanded': 'false',

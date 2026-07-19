@@ -24,9 +24,6 @@ export function createPreviewPanel({
   onOpenComments,
   // Lightbox navigation
   onLightboxNavigate,
-  // Pane tabs (Inspector / Comments): the far-right group of the slide
-  // toolbar, directly above the rail the tabs control.
-  paneTabsEl,
   // Presenter-notes strip, mounted under the slide (see notes-strip.js).
   notesStripEl,
 } = {}) {
@@ -80,7 +77,7 @@ export function createPreviewPanel({
   let pinModeHint = null;
   if (commentsApi) {
     pinCommentBtn = h('button', {
-      class: 'btn btn-secondary btn-sm pin-comment-btn',
+      class: 'btn btn-secondary pin-comment-btn',
       type: 'button',
       title: t('comments.addPositioned', 'Add comment to specific spot'),
     });
@@ -101,16 +98,14 @@ export function createPreviewPanel({
     pinModeHint.hidden = true;
   }
 
+  // Slide-tools group (right end of the slide toolbar): add-comment, zoom, and
+  // the slide-actions mount (lock + actions menu). The pane openers moved to
+  // the topbar (Keynote model, chrome re-org 2026-07-19), so this row is now
+  // purely slide-scoped.
   const headerActions = h('div', { class: 'row preview-panel-actions' });
   const slideToolbarActions = h('div', { class: 'row slide-toolbar-actions' });
   if (pinCommentBtn) headerActions.append(pinCommentBtn);
   headerActions.append(zoomBtn, slideToolbarActions);
-  if (paneTabsEl) {
-    headerActions.append(
-      h('div', { class: 'slide-toolbar-sep', 'aria-hidden': 'true' }),
-      paneTabsEl
-    );
-  }
   previewHeader.append(headerActions);
   preview.append(previewHeader);
 

@@ -53,14 +53,82 @@
   flex-shrink: 0;
 }
 
-/* Zone separators split the topbar into its three groups: identity/nav,
-   edit-session tools, and the deliver cluster + user avatar. */
+/* Zone separators split the topbar into its groups: identity/nav,
+   edit-session tools, the deliver cluster, the pane openers, and the avatar. */
 .topbar-zone-sep {
   width: 1px;
   align-self: stretch;
   margin: 10px 0;
   background: hsl(var(--app-border-default));
   flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Pane openers (Inspector / Comments): the far-right micro-zone, sitting
+   directly above the inspector column they control (Keynote model, chrome
+   re-org 2026-07-19). Rendered as an icon-only compact segmented pill so the
+   pair reads as one "show side panel" control at ghost-icon-btn height.
+   Pressed (is-active) = "rail open on MY pane".
+   ───────────────────────────────────────────────────────────────────────────── */
+.topbar-pane-openers {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 26px button + 2px pad + 1px border top/bottom = 30px, sitting with the 32px
+   ghost icon buttons without overpowering them. */
+.topbar-pane-openers .pane-tabs.is-compact .pane-tab {
+  position: relative;
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  gap: 0;
+}
+
+.topbar-pane-openers .pane-tab-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Active/pressed = "rail open on MY pane". The outlined control's default
+   active fill is `bg-elevated` - identical to the topbar background, so it
+   vanishes here. Use the accent-soft treatment the topbar's other icon
+   buttons already use (`.ghost-icon-btn.is-active`) so the open pane reads
+   clearly. */
+.topbar-pane-openers .pane-tab.is-active {
+  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  box-shadow: none;
+}
+
+/* No room for an inline count pill in an icon-only opener, so the badge rides
+   as a small superscript on the comments icon. Red = new/unseen, grey = seen
+   but unresolved (`--seen`). The ring masks it against the button fill. */
+.topbar-pane-openers .pane-tab-badge {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: hsl(var(--app-danger, 0 72% 51%));
+  color: hsl(0 0% 100%);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  box-shadow: 0 0 0 1.5px hsl(var(--app-bg-elevated));
+}
+
+.topbar-pane-openers .pane-tab-badge[hidden] {
+  display: none;
+}
+
+.topbar-pane-openers .pane-tab-badge--seen {
+  background: hsl(var(--app-text-tertiary, 0 0% 55%));
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

@@ -648,7 +648,7 @@ export function createRerenderEditor({
         tbLeft.append(
           h('button', {
             type: 'button',
-            class: 'btn btn-sm editor-bulk-edit-btn',
+            class: 'btn editor-bulk-edit-btn',
             text: t('editor.bulkEdit.open', 'All text'),
             title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
             onclick: () => onOpenBulkEdit(),

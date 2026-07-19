@@ -185,63 +185,9 @@
   display: none;
 }
 
-/* Divider between the slide actions and the pane tabs. */
-.slide-toolbar-sep {
-  width: 1px;
-  align-self: stretch;
-  margin: 4px 6px;
-  background: hsl(var(--app-border-default));
-  flex-shrink: 0;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Pane tabs (Inspector / Comments): far right of the slide toolbar, directly
-   above the rail they control. Built on the shared segmented control
-   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`); pressed
-   (is-active) = "rail open on MY pane".
-   ───────────────────────────────────────────────────────────────────────────── */
-/* Container and button styling come from `.sb-segmented.is-outlined` in
-   `03-controls-and-forms.css`; only the icon+label gap is local. */
-.pane-tab {
-  gap: 6px;
-}
-
-.pane-tab-icon {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
-/* Inline count on the Comments tab (never absolute: it must not overlap the
-   label). Red = new/unseen, grey = seen but unresolved. */
-.pane-tab-badge {
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: hsl(var(--app-danger, 0 72% 51%));
-  color: hsl(0 0% 100%);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-}
-
-.pane-tab-badge[hidden] {
-  display: none;
-}
-
-.pane-tab-badge--seen {
-  background: hsl(var(--app-text-tertiary, 0 0% 55%));
-}
-
-/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). The
-   add-comment button collapses to its pin icon on the same breakpoint. */
+/* Narrow widths: the add-comment button collapses to its pin icon. (The pane
+   openers now live in the topbar - see `10-shell-topbar-dropdown.css`.) */
 @media (max-width: 1150px) {
-  .pane-tab-label {
-    display: none;
-  }
-
   .pin-comment-label {
     display: none;
   }

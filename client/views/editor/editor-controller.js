@@ -793,10 +793,16 @@ export async function createEditorController({
   // dereferenced at click time (inspectorPanes is built above).
   const paneTabs = createPaneTabs({
     h,
+    compact: true,
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
+  // The openers live in the topbar's far-right micro-zone, above the inspector
+  // column (Keynote model). The topbar is built before this point, so its slot
+  // is ready; parking them there (not in the slide toolbar) keeps them visible
+  // when the rail collapses, so the rail stays re-openable.
+  topbarApi.paneOpenersEl?.append(paneTabs.el);
 
   const previewPanel = createPreviewPanel({
     h,
@@ -832,7 +838,6 @@ export async function createEditorController({
         } catch { /* ignore */ }
       });
     },
-    paneTabsEl: paneTabs.el,
     notesStripEl: notesStrip.el,
   });
 

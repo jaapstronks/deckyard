@@ -1,14 +1,15 @@
 /**
- * Pane tabs for the inspector rail: Inspector / Comments.
+ * Pane openers for the inspector rail: Inspector / Comments.
  *
- * Lives at the far right of the slide toolbar (the row above the canvas),
- * directly above the rail it controls - the panes are slide-scoped, so they
- * belong in the slide row, not between the deck-level topbar actions (chrome
- * re-org 2026-07-17). Pressed = "rail open on MY pane"; clicking the active
- * tab dismisses the rail. Always visible (also with the rail closed), which
- * is what makes the rail findable.
+ * Lives at the far right of the topbar, directly above the rail it controls
+ * (Keynote model, chrome re-org 2026-07-19). The opener is workspace chrome -
+ * "show the side panel" - even though the panes' CONTENTS are slide-scoped; a
+ * full-width strip is the only home that stays put when the rail collapses, so
+ * the rail is always re-openable. Rendered `compact` (icon-only) there to sit
+ * with the topbar's other icon controls. Pressed = "rail open on MY pane";
+ * clicking the active opener dismisses the rail.
  *
- * Presenter notes are no longer a tab here - they live in a strip under the
+ * Presenter notes are no longer an opener here - they live in a strip under the
  * slide (notes-strip.js), so the rail is Inspector + Comments only.
  */
 
@@ -21,20 +22,27 @@ import { createSegmented } from '../../lib/segmented.js';
  * @param {Function} options.h - DOM helper
  * @param {Function} [options.onToggleInspector]
  * @param {Function} [options.onToggleComments]
+ * @param {boolean} [options.compact] - Icon-only (no visible labels), for the
+ *   topbar. The accessible name moves to `aria-label` on each button.
  * @returns {{ el: HTMLElement, setState: Function, updateBadge: Function }}
  */
 export function createPaneTabs({
   h,
   onToggleInspector,
   onToggleComments,
+  compact = false,
 } = {}) {
-  const tabContent = (icon, label) => [
-    h('img', { class: 'pane-tab-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' }),
-    h('span', { class: 'pane-tab-label', text: label }),
-  ];
+  const tabContent = (icon, label) => {
+    const iconEl = h('img', { class: 'pane-tab-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' });
+    if (compact) return [iconEl];
+    return [iconEl, h('span', { class: 'pane-tab-label', text: label })];
+  };
 
   const badgeEl = h('span', { class: 'pane-tab-badge', text: '' });
   badgeEl.hidden = true;
+
+  const inspectorLabel = t('editor.inspector.title', 'Inspector');
+  const commentsLabel = t('editor.comments', 'Comments');
 
   // The rail owns the selection - clicking the active tab dismisses it rather
   // than re-selecting - so the control reports clicks and setState drives the
@@ -42,7 +50,7 @@ export function createPaneTabs({
   const segmented = createSegmented({
     h,
     outlined: true,
-    className: 'pane-tabs',
+    className: compact ? 'pane-tabs is-compact' : 'pane-tabs',
     buttonClass: 'pane-tab',
     ariaLabel: t('editor.panes.label', 'Side panels'),
     value: null,
@@ -51,12 +59,14 @@ export function createPaneTabs({
       {
         value: 'settings',
         title: t('editor.inspector.toggle', 'Show or hide the inspector'),
-        content: tabContent('sliders-horizontal', t('editor.inspector.title', 'Inspector')),
+        ...(compact ? { ariaLabel: inspectorLabel } : {}),
+        content: tabContent('sliders-horizontal', inspectorLabel),
       },
       {
         value: 'comments',
-        title: t('editor.comments', 'Comments'),
-        content: [...tabContent('message-circle', t('editor.comments', 'Comments')), badgeEl],
+        title: commentsLabel,
+        ...(compact ? { ariaLabel: commentsLabel } : {}),
+        content: [...tabContent('message-circle', commentsLabel), badgeEl],
       },
     ],
     onSelect: (pane) =>
