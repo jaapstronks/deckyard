@@ -4,10 +4,19 @@ import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-render
 import { getSampleContent } from './slide-type-sample-content.js';
 import { storage } from '../../lib/storage.js';
 import { wireGridKeyboardNav } from './slide-type-picker-keyboard.js';
+import { renderSlideSchematic } from '../../lib/slide-schematic.js';
+import { schematicFor } from './slide-type-schematics.js';
 
 // The slide canvas is rendered at this width, then scaled down to fit each
 // thumbnail tile. Scale is computed per tile from its measured width.
 const SLIDE_CANVAS_WIDTH = 1600;
+
+// Thumbnail view mode: 'schematic' shows an abstract symbolic diagram of each
+// slide type (compact, legible at any size); 'preview' shows the real slide
+// rendered small (richer, but text gets tiny). Default schematic — it scans
+// faster and reads clearly even in a dense grid.
+const VIEW_KEY = 'ps-slide-picker-view';
+const VIEW_MODES = new Set(['schematic', 'preview']);
 
 // Which category sections start collapsed when the user has no stored
 // preference. Interactive slides are findable but out of the way by default.
@@ -186,6 +195,12 @@ export function createSlideTypePicker({
 
   // Search query persists across re-renders.
   let searchQuery = '';
+
+  // Thumbnail view mode ('schematic' | 'preview'), persisted locally.
+  let viewMode = (() => {
+    const stored = storage.get(VIEW_KEY, '') || '';
+    return VIEW_MODES.has(stored) ? stored : 'schematic';
+  })();
 
   // Currently forced preview surface ('' = auto). Validated against the surfaces
   // this theme actually offers on each render (see below), so a stale stored
@@ -383,6 +398,16 @@ export function createSlideTypePicker({
     }
   };
 
+  // Fill a thumbnail wrapper with an abstract schematic diagram (view mode
+  // 'schematic'). Cheap and synchronous — no live render, no observers needed.
+  // Reads the type + optional preset id stashed on the wrap.
+  const fillSchematic = (thumbWrap) => {
+    const type = thumbWrap.dataset.thumbType;
+    thumbWrap.classList.remove('is-pending');
+    const spec = schematicFor(type, thumbWrap.__presetId || null, SLIDE_TYPES?.[type]);
+    thumbWrap.append(renderSlideSchematic(h, spec || {}));
+  };
+
   // Searchable haystack for a card: label + raw type key + description +
   // aliases, lowercased, so "big numbers" finds the KPI slide and
   // "smoelenboek" finds team cards.
@@ -570,6 +595,7 @@ export function createSlideTypePicker({
     // scroll into view. Tiles whose type has no background field never change,
     // so they're skipped to avoid needless re-renders/flashes.
     const restyleHydratedThumbs = () => {
+      if (viewMode !== 'preview') return; // schematics don't render a surface
       for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
         const type = wrap.dataset.thumbType;
         if (type === 'video-slide' || type === 'embed-slide') continue;
@@ -596,8 +622,14 @@ export function createSlideTypePicker({
         class: 'ps-type-thumb thumb is-pending',
         'data-thumb-type': type,
       });
-      if (preset) thumbWrap.__presetContent = previewOverridesFor(preset);
-      if (intersectionObserver) {
+      if (preset) {
+        thumbWrap.__presetContent = previewOverridesFor(preset);
+        thumbWrap.__presetId = preset.id || null;
+      }
+      if (viewMode === 'schematic') {
+        // Cheap symbolic diagram — render now, skip observers entirely.
+        fillSchematic(thumbWrap);
+      } else if (intersectionObserver) {
         intersectionObserver.observe(thumbWrap);
       } else {
         // No IO (e.g. jsdom): hydrate immediately.
@@ -800,9 +832,78 @@ export function createSlideTypePicker({
     });
     searchWrap.append(searchInput);
     controls.append(searchWrap);
+
+    // --- Schematic / preview view toggle -----------------------------------
+    // Segmented control: schematic (abstract diagrams, default) vs preview (real
+    // slides rendered small). Swaps every tile's thumbnail in place.
+    const viewToggle = h('div', {
+      class: 'ps-view-toggle',
+      role: 'radiogroup',
+      'aria-label': tr('editor.slideTypePicker.view.label', 'Thumbnail style'),
+    });
+    const VIEW_ICON = {
+      schematic:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="8" height="6" rx="1"/><line x1="13" y1="5" x2="21" y2="5"/><line x1="13" y1="8" x2="19" y2="8"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="17" y2="18"/></svg>',
+      preview:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>',
+    };
+    const makeViewBtn = (mode, label) => {
+      const on = viewMode === mode;
+      const btn = h('button', {
+        class: `ps-view-toggle-btn${on ? ' is-active' : ''}`,
+        type: 'button',
+        role: 'radio',
+        'data-view': mode,
+        'aria-checked': on ? 'true' : 'false',
+        title: label,
+        'aria-label': label,
+        onclick: () => applyViewMode(mode),
+      });
+      btn.innerHTML = VIEW_ICON[mode];
+      btn.append(h('span', { class: 'ps-view-toggle-text', text: label }));
+      return btn;
+    };
+    viewToggle.append(
+      makeViewBtn('schematic', tr('editor.slideTypePicker.view.schematic', 'Schematic')),
+      makeViewBtn('preview', tr('editor.slideTypePicker.view.preview', 'Preview'))
+    );
+    controls.append(viewToggle);
     mount.append(controls);
 
-    const typesWrap = h('div', { class: 'ps-slide-types is-thumb-mode' });
+    const typesWrap = h('div', {
+      class: `ps-slide-types is-thumb-mode ${viewMode === 'schematic' ? 'is-schematic-mode' : 'is-preview-mode'}`,
+    });
+
+    // Swap every tile's thumbnail between schematic and live-preview rendering,
+    // persist the choice, and sync the toggle + surface control. Tiles are
+    // rebuilt in place so scroll position and search state survive.
+    const applyViewMode = (mode) => {
+      if (!VIEW_MODES.has(mode) || mode === viewMode) return;
+      viewMode = mode;
+      storage.set(VIEW_KEY, mode);
+      typesWrap.classList.toggle('is-schematic-mode', mode === 'schematic');
+      typesWrap.classList.toggle('is-preview-mode', mode === 'preview');
+      for (const b of viewToggle.querySelectorAll('.ps-view-toggle-btn')) {
+        const on = (b.dataset.view || '') === mode;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+      // The preview-background swatches only affect live renders.
+      const surfaceEl = controls.querySelector('.ps-surface-toggle');
+      if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
+      for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
+        cleanupSlideRuntimes(wrap);
+        wrap.innerHTML = '';
+        wrap.classList.remove('is-error', 'ps-type-thumb-video', 'ps-type-thumb-embed');
+        if (mode === 'schematic') {
+          fillSchematic(wrap);
+        } else {
+          wrap.classList.add('is-pending');
+          if (intersectionObserver) intersectionObserver.observe(wrap);
+          else hydrateThumb(wrap, resizeObserver);
+        }
+      }
+    };
 
     // --- Preview-background toggle -----------------------------------------
     // Offer only surfaces this theme actually defines (distinct token value) and
@@ -832,6 +933,8 @@ export function createSlideTypePicker({
         class: 'ps-surface-toggle',
         role: 'radiogroup',
         'aria-label': tr('editor.slideTypePicker.surface.label', 'Preview background'),
+        // Only meaningful for live previews; hidden while schematics are shown.
+        hidden: viewMode !== 'preview',
       });
       toggle.append(
         h('span', {

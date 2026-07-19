@@ -106,7 +106,10 @@
 
 .ps-lib-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  /* Larger tiles than the type picker: library items are real saved slides you
+     want to actually recognise, so show them big (thumb scales up with the card
+     via the container queries below). */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--ps-space-3);
 }
 
