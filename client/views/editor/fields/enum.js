@@ -1,3 +1,18 @@
+import { t } from '../../../lib/ui-i18n.js';
+
+/**
+ * The translated visible label for an enum field. Enum fields resolve their
+ * label the same way every other field type does (see render-field.js):
+ * `labelKey` wins, then the field key as an implicit key, with the raw
+ * `label` as fallback. Keeps the inspector's enum labels translatable instead
+ * of hardcoded English.
+ * @param {Object} field
+ * @returns {string}
+ */
+function enumFieldLabel(field) {
+  return t(field?.labelKey || field?.key || '', field?.label || '');
+}
+
 export function createEnumFields({ h, fieldSelect } = {}) {
   const iconEl = (cls) =>
     h('span', {
@@ -146,7 +161,7 @@ export function createEnumFields({ h, fieldSelect } = {}) {
         ? ' is-field-wide'
         : '';
     return h('div', { class: `stack is-field${sizeClass}` }, [
-      h('div', { class: 'field-label', text: field?.label || '' }),
+      h('div', { class: 'field-label', text: enumFieldLabel(field) }),
       group,
     ]);
   };
@@ -157,7 +172,7 @@ export function createEnumFields({ h, fieldSelect } = {}) {
     if (options.length > 0 && options.length <= 6) {
       return fieldSegmented(field, v, options, onChange);
     }
-    return fieldSelect(field?.label || '', v, options, onChange);
+    return fieldSelect(enumFieldLabel(field), v, options, onChange);
   };
 
   // A responsive row of fields. Columns are no longer fixed: `.field-grid` is a

@@ -39,7 +39,10 @@ const INSPECTOR_KEEPS = {
   'lijstje-slide': ['variant', 'layout', 'density'],
   'kpi-metrics-slide': ['accent', 'countUp'],
   'split-partner-title-slide': [],
-  'image-text-slide': ['imageRole', 'density', 'layout', 'textColumns', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
+  // `layout` (structural variant) is intentionally NOT kept: the toolbar
+  // "Layout" chip is its canonical control in the inspector. textColumns /
+  // imageSide stay as precise, distinctly-named sub-settings.
+  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
   'video-slide': ['autoplay'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],
@@ -171,6 +174,8 @@ export function renderInspectorExtrasByType(ctx) {
       }
       appendImageTextLayoutOptions({
         h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
+        // Inspector: the toolbar "Layout" chip owns the structural variant.
+        hideLayoutField: true,
       });
       return;
     }

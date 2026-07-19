@@ -38,6 +38,13 @@ construction; filtering them out would complicate the
 parity-by-construction argument, and the one-list job benefits from having
 layout context next to text).
 
+**Exception - the structural `layout` enum:** the toolbar "Layout" chip is
+its canonical control, so the inspector no longer renders it for
+`image-text` (or the `content` slide, where the same field is relabelled
+"Text columns" because it only toggles 1/2 text columns there). The chip
+covers it on the canvas; the bulk modal keeps the enum (no chip there), so
+the parity invariant still holds.
+
 ## The inspector rail
 
 The editor is a 3-column grid, slides | canvas | inspector
@@ -152,12 +159,12 @@ homed. Not listed per row.
 |---|---|---|---|---|
 | title | title, subheading, byline, attribution | bgImage, bgAlt | logoCorner | bgImage = title-specific hero bg (preset strip in form) |
 | chapter-title | title, subheading | - | layout | |
-| content | title, subheading, body | actions[] (label/url/style) | layout, density | actions = CTA buttons; url/style stay form-only |
+| content | title, subheading, body | actions[] (label/url/style) | layout (labelled "Text columns"), density | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA buttons; url/style stay form-only |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | split-partner-title | label, title, subheading | logos[], logo{n}Alt, bgImage, bgAlt | - | partner logos have no media popover yet |
-| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, layout, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | inspector also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
+| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | source, bunnyLibraryId | autoplay | source is a URL/id (text home = bulk) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |
