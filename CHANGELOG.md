@@ -8,6 +8,28 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Custom slide types: a full template syntax reference.** The template field
+  had a one-line hint naming four directives; `raw`, `bgClass`, `else`,
+  `this`/`this.key` and `@index` existed in the compiler but appeared nowhere in
+  the UI. It is now a collapsible reference covering every directive, plus the
+  type's own field names as ready-to-paste `{{key}}` chips that update as you
+  add or rename fields.
+
+- **Custom slide types: drag-to-reorder in settings.** The `sortOrder` column
+  had been read since it was added but never written, so the grid's order was
+  effectively arbitrary. Cards are now draggable (the drop point is computed for
+  the wrapping grid, so a row break lands where you expect), and the ⋮ menu
+  gained "Move earlier" / "Move later" so reordering is reachable from the
+  keyboard. Backed by a new `PUT /api/custom-slide-types/reorder`.
+
+- **Required slide fields are flagged in the form.** A field a slide type
+  declares `required` now carries an asterisk and `aria-required`, and turns red
+  with "This field is required." once you leave it empty — previously that only
+  failed server-side on save, as a toast that did not say which field. It stays
+  quiet until a field has been visited, and clears on the first keystroke. Most
+  useful for custom slide types, whose fields are author-defined.
+
+
 - **"Someone worked on your deck" notifications, bundled.** When a collaborator
   adds slides to a deck you own or collaborate on, you now get one bundled bell
   notification instead of silence (previously deck edits only surfaced in the
@@ -226,6 +248,25 @@ entries are grouped per release rather than exhaustively listed.
   `collab-editor-binder.md` and ADR 001.
 
 ### Fixed
+
+- **Icon-card "tiles" layout fills its grid again.** Tiles collapsed to small
+  squares stranded at the top of the slide, showed a number prefix, and never
+  rendered the per-card body text. The cards-layout row rules were not scoped to
+  the cards layout, the always-rendered spare cards still claimed grid cells, and
+  the square's size was derived circularly from its own row. Tiles now size from
+  an explicit per-count column width, drop the numbering (which also leaked into
+  the inline-editable title), show the body text under a centred title, and the
+  cards layout is unchanged.
+
+- **Icon cards no longer render blank cards from padded data.** Decks authored
+  outside the editor sometimes pad `items[]` to a fixed length; trailing empty
+  entries are now ignored instead of rendering as empty cards.
+
+- **Comments: "This slide" no longer shows the whole deck.** On a deck with no
+  slides — or in the moment before the first selection lands — the slide-scoped
+  request went out unscoped and came back with every comment in the deck, under
+  a switch that still read "This slide".
+
 
 - **@mentions render as inline chips everywhere, not raw markup.** A mention is
   stored in a comment body as `@[Name](user:email)`; the editor thread already
