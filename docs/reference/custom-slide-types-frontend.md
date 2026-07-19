@@ -13,6 +13,7 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 | `client/views/settings/slide-type-editor/field-editor.js` | Collapsible field list editor with reorder, type selection, nested items support |
 | `client/views/settings/slide-type-editor/preview.js` | Live iframe preview with 16:9 ratio, client-side template rendering (300ms debounce) |
 | `client/views/settings/slide-type-editor/index.js` | Two-column editor component (form + sticky preview), mirrors theme-editor layout |
+| `client/views/settings/slide-type-editor/io.js` | Pure import/export helpers: portable-definition extraction, envelope serialize/parse, client-side slug derivation + collision handling (no DOM, unit-tested) |
 | `client/styles/base/04-editor-and-misc/89-slide-type-editor.css` | All styles: card grid, editor layout, field list, preview, badges, context menus |
 
 ### Modified Files
@@ -93,6 +94,18 @@ Full settings UI for creating, editing, and managing custom slide types. This co
    - Three-dot menu > "Unpublish" on a published type
    - Badge changes to "Draft", type no longer appears in the slide picker
 
+10. **Export a type**
+    - Three-dot menu > "Export as JSON" -- downloads `<slug>.slidetype.json`
+    - The file is a portable envelope carrying only the shape (label, base type,
+      fields, defaults, template, CSS); no id/slug/publish-state/audit columns
+
+11. **Import a type**
+    - Click "Import" in the section header, pick a `.slidetype.json` file
+    - A new **unpublished draft** appears; re-importing the same file resolves the
+      slug clash automatically (`my-type` -> `my-type-2`) instead of erroring
+    - The server always stores an import as a draft even if the payload asks for
+      `isPublished: true`, so nothing goes live without an explicit review
+
 ---
 
 ## Architecture Notes
@@ -105,12 +118,14 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 - **Template syntax reference** lives in `settings/slide-type-editor/template-help.js`, collapsed under the template field. It mirrors the tokenizer in `server/utils/slide-template-compiler.js` — add a helper there and the list needs the same entry.
 - **Required fields** declared in a type's schema are flagged client-side by `editor/fields/required.js`, wired into every builder in `editor/fields/basic.js`. A field is only marked invalid once it has been visited and left empty; the server still validates on save.
 - **Ordering** is `sort_order`, written by `PUT /api/custom-slide-types/reorder` (the full id list, positions become sort orders). The settings grid drags cards using `editor/inline-edit/reorder-geometry.js`, and the ⋮ menu offers "Move earlier"/"Move later" for the keyboard.
+- **Import/export** is pure logic in `slide-type-editor/io.js` (no DOM, no API): `serializeSlideType` wraps `toPortableDefinition` in a self-describing envelope, `parseImportedSlideType` accepts both the envelope and a bare definition and validates the minimum the create endpoint needs (non-empty label + non-empty fields), and `deriveUniqueSlug` slugifies the label the same way the server does and appends `-2`, `-3`, … against the loaded slugs so a re-import never dead-ends on a clash. `slide-types-tab.js` wires these to the ⋮ "Export as JSON" action and the header "Import" button; import posts to the normal create endpoint, which forces the draft state server-side.
 
 ---
 
 ## Open improvements
 
-The remaining backlog for this feature (import/export of type definitions,
-template-editor enhancements such as syntax highlighting and version history,
-markdown-import mapping, export-pipeline verification) is tracked in
-`docs/plans/TODO.md` — this doc describes only what exists.
+The remaining backlog for this feature (template-editor enhancements such as
+syntax highlighting and version history, AI-assisted template generation,
+markdown-import mapping, export-pipeline verification with complex templates) is
+tracked in `docs/plans/TODO.md` — this doc describes only what exists.
+Import/export of type definitions shipped in PR #124 (see above).
