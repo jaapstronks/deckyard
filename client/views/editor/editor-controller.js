@@ -793,16 +793,10 @@ export async function createEditorController({
   // dereferenced at click time (inspectorPanes is built above).
   const paneTabs = createPaneTabs({
     h,
-    compact: true,
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
-  // The openers live in the topbar's far-right micro-zone, above the inspector
-  // column (Keynote model). The topbar is built before this point, so its slot
-  // is ready; parking them there (not in the slide toolbar) keeps them visible
-  // when the rail collapses, so the rail stays re-openable.
-  topbarApi.paneOpenersEl?.append(paneTabs.el);
 
   const previewPanel = createPreviewPanel({
     h,
@@ -841,7 +835,12 @@ export async function createEditorController({
     notesStripEl: notesStrip.el,
   });
 
-  const { previewEl: preview, thumbEl: thumb } = previewPanel;
+  const { previewEl: preview, thumbEl: thumb, slideBarEl: slideBar } = previewPanel;
+  // Dock the pane openers (labeled) at the far right of the slide bar, above
+  // the inspector column they control (Option A). They live in the slide bar,
+  // not the deck-level topbar, and the bar is always present, so the rail stays
+  // re-openable when it collapses.
+  previewPanel.openersSlotEl?.append(paneTabs.el);
   // The notes textarea lives in the under-slide strip; every consumer
   // (live-edits binder, search focus, slide-change refresh) keeps using this
   // reference (the strip is persistent DOM, so it holds).
@@ -932,7 +931,11 @@ export async function createEditorController({
   // ============================================================
 
   // Column order slides | canvas | inspector (Keynote/Figma convention).
-  const layout = h('div', { class: 'layout' }, [left, preview, inspectorPanel]);
+  // Grid children (Option A): the slides column spans both rows; the slide bar
+  // spans preview + inspector on row 1; preview and inspector sit on row 2.
+  // Placement is by class (see 20-editor-layout.css), so DOM order here is not
+  // load-bearing.
+  const layout = h('div', { class: 'layout' }, [left, slideBar, preview, inspectorPanel]);
   shell.append(layout);
 
   // ============================================================

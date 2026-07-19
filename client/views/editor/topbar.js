@@ -479,17 +479,14 @@ export function createEditorTopbar({
   // TOPBAR LAYOUT
   // ============================================================
 
-  // Zones (chrome re-org 2026-07-19). Mostly deck-level, plus a dedicated
-  // pane-openers micro-zone at the far right - directly above the inspector
-  // column it controls (Keynote model), the one home that survives the rail
-  // collapsing so it stays re-openable:
+  // Three zones (chrome re-org 2026-07-19). The topbar is deck-level only: the
+  // pane openers moved to the slide bar (Option A), docked at its far right
+  // above the inspector column they control.
   //   1. identity/navigation: back, title, save status, author + presence
   //   2. edit session: undo/redo, language, lock-request state
   //   3. deliver: overview/analytics/more as quiet ghosts, then Export,
-  //      Share and the Present CTA
-  //   4. pane openers (Inspector / Comments), filled by the controller
-  //   5. the user avatar in the corner, its natural place, the one global
-  //      (non-deck) element.
+  //      Share and the Present CTA - with the user avatar in the corner,
+  //      its natural place, separated as the one global (non-deck) element.
   const backBtn = h('button', {
     class: 'ghost-icon-btn topbar-back-btn',
     'aria-label': t('common.back', 'Back'),
@@ -497,10 +494,6 @@ export function createEditorTopbar({
     onclick: () => nav?.('/app'),
   });
   backBtn.append(h('img', { class: 'topbar-btn-icon', src: iconUrl('arrow-left'), alt: '', 'aria-hidden': 'true' }));
-
-  // Empty mount for the pane openers (Inspector / Comments). The controller
-  // builds the openers once the inspector panes exist and appends them here.
-  const paneOpenersEl = h('div', { class: 'topbar-pane-openers' });
 
   const topbarEl = h('div', { class: 'topbar' }, [
     backBtn,
@@ -518,8 +511,6 @@ export function createEditorTopbar({
     topbarExportEl,
     topbarShareEl,
     presentGroup,
-    h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
-    paneOpenersEl,
     h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
     notificationBell.el,
     userMenu.el,
@@ -540,5 +531,5 @@ export function createEditorTopbar({
     }
   };
 
-  return { topbarEl, topbarTitleEl, paneOpenersEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, openNotesQr, detach };
+  return { topbarEl, topbarTitleEl, setSaveStatus, syncLangUi: languageMode.syncLangUi, syncUndoButtons, openNotesQr, detach };
 }
