@@ -5,7 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
-import { splitMentionSegments } from '../../../shared/comment-mentions.js';
+import { renderCommentBodyNodes } from '../../lib/comment-body.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -167,17 +167,7 @@ export function createCommentRenderers({
     // Body: mention markup renders as a styled chip; everything else stays
     // plain text (h() text nodes, so no escaping worries).
     const bodyEl = h('div', { class: 'comment-body' });
-    for (const seg of splitMentionSegments(comment.body)) {
-      if (seg.type === 'mention') {
-        bodyEl.append(h('span', {
-          class: 'comment-mention-chip',
-          title: seg.email,
-          text: `@${seg.name}`,
-        }));
-      } else {
-        bodyEl.append(seg.text);
-      }
-    }
+    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
     // Actions row
     const actionsEl = h('div', { class: 'comment-actions' });

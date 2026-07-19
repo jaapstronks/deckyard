@@ -6,6 +6,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/modal.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isGuestCommentAuthor } from '../../lib/comment-authz.js';
+import { renderCommentBodyNodes } from '../../lib/comment-body.js';
 
 /**
  * Create a comments section for the share viewer.
@@ -166,11 +167,10 @@ export function createShareViewerCommentsSection({
     });
     headerEl.append(authorEl, timeEl);
 
-    // Body
-    const bodyEl = h('div', {
-      class: 'share-viewer-comment-body',
-      text: comment.body,
-    });
+    // Body: mention markup renders as a styled chip; everything else stays
+    // plain text. Shared with the editor thread (renderCommentBodyNodes).
+    const bodyEl = h('div', { class: 'share-viewer-comment-body' });
+    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
     // Actions
     const actionsEl = h('div', { class: 'share-viewer-comment-actions' });
