@@ -197,6 +197,8 @@
   "list.creationView.library.collectionsError": "Failed to load collections.",
   "list.creationView.library.collectionCount": "{count} slides",
   "list.creationView.library.collectionEmpty": "This collection has no available slides.",
+  "list.creationView.themeOptional": "Theme (optional)",
+  "list.creationView.themeOptionalHint": "Keeps the workspace theme unless you pick another.",
   "slideLibrary.action.addToCollection": "Add to collection",
   "slideLibrary.collections.title": "Collections",
   "slideLibrary.collections.new": "New collection",

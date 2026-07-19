@@ -193,6 +193,8 @@
   "list.creationView.library.collectionsError": "Collecties laden mislukt.",
   "list.creationView.library.collectionCount": "{count} slides",
   "list.creationView.library.collectionEmpty": "Deze collectie heeft geen beschikbare slides.",
+  "list.creationView.themeOptional": "Thema (optioneel)",
+  "list.creationView.themeOptionalHint": "Houdt het workspace-thema aan, tenzij je een ander kiest.",
   "slideLibrary.action.addToCollection": "Aan collectie toevoegen",
   "slideLibrary.collections.title": "Collecties",
   "slideLibrary.collections.new": "Nieuwe collectie",
