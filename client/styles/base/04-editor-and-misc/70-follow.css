@@ -48,9 +48,14 @@
   flex: 1;
   min-height: 0;
   padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+/* attachThumbScaleContain() sets width/height inline to the fitted 16:9 box,
+   so the slide only needs to not stretch inside the centering flex row. */
 .follow-slide {
-  height: 100%;
+  flex: 0 0 auto;
   min-height: 0;
 }
 .follow-interaction {
@@ -322,6 +327,91 @@
   opacity: 0.85;
   min-width: 34px;
   text-align: right;
+}
+
+/* --- Audience view on a phone or tablet -----------------------------------
+   This is the view the audience actually uses, so it is on a handheld more
+   often than not. Three separate concerns, each keyed off what it really
+   depends on rather than off one width. */
+
+/* 1. Portrait: a 16:9 slide only needs 9/16 of the width, so a full-height
+   stage leaves a dead area between the slide and the Q&A. Sizing the stage
+   to the slide lets the Q&A rise to meet it. Keyed off orientation, not
+   width, so it covers a portrait iPad as well as a phone; landscape already
+   fills the stage and is left alone. */
+@media (orientation: portrait) {
+  /* A definite height, not flex:1 — attachThumbScaleContain() measures the
+     stage to size the slide, so the stage must not size itself to the slide
+     in turn. 56vw is 9/16 of the width plus the 12px padding either side. */
+  .follow-stage {
+    flex: 0 0 auto;
+    height: min(56vw, 60vh);
+  }
+  .follow-qa {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .follow-qa-list {
+    max-height: none;
+  }
+}
+
+/* 2. Touch: thumb-sized targets. Keyed off pointer capability, not width —
+   a landscape phone is 844px wide and would miss a width breakpoint while
+   still being operated by a thumb. */
+@media (hover: none) {
+  .follow-lang .btn,
+  .follow-qa-name-btn,
+  .follow-qa-actions .btn,
+  .follow-actions .sb-segmented-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .follow-qa-form .btn {
+    min-height: 44px;
+  }
+}
+
+/* 3. Short and wide (a phone held sideways): vertical space is the scarce
+   resource, and the slide is what the audience came for. Cap the Q&A so it
+   can't push the slide down to a stamp, and tighten the chrome around it. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .follow-qa {
+    flex: 0 0 auto;
+    max-height: 38vh;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 14px;
+  }
+  .follow-qa-list {
+    max-height: none;
+  }
+  .follow-topbar {
+    padding: 4px 14px;
+  }
+  .follow-stage {
+    padding: 6px 14px;
+  }
+}
+
+/* 4. Narrow: the topbar row runs out of room before anything else does. */
+@media (max-width: 820px) {
+  /* The title shares a cramped row with both switches; give it what's left
+     rather than a fixed slice of the viewport. */
+  .follow-title {
+    max-width: none;
+    min-width: 0;
+    flex: 1;
+  }
+  .follow-topbar {
+    gap: 8px;
+  }
+  /* Connection status is a nice-to-have; the controls are not. */
+  .follow-status {
+    display: none;
+  }
 }
 
 
