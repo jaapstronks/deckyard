@@ -59,7 +59,7 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'list-slide': { kind: 'bullets' },
   'end-slide': { kind: 'statement' },
   'lead-capture-slide': { kind: 'feedback' },
-  'custom-html-slide': { kind: 'embed' },
+  'custom-html-slide': { kind: 'code' },
 };
 
 // Per-preset overrides. Keyed "<type>:<presetId>" — presets absent here fall
