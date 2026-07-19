@@ -263,6 +263,18 @@
   }
 }
 
+/* Ultra-wide: the frame used to stop dead at 1400px, so a 34" monitor showed
+   the same column as a 15" laptop with the rest of the screen empty. Keep a
+   readable line length by capping on the viewport rather than a constant —
+   at 3440px this lands near 2400px, still comfortably short of edge-to-edge. */
+@media (min-width: 1800px) {
+  .presentation-grid-frame {
+    /* max() keeps the 1400px floor: 72vw only overtakes it past ~1950px,
+       so this widens the frame and can never narrow it. */
+    max-width: max(1400px, min(2400px, 72vw));
+  }
+}
+
 /* Mobile: Reduce padding for more card space */
 @media (max-width: 600px) {
   .presentation-grid-frame {
