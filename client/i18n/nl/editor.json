@@ -340,6 +340,7 @@
   "editor.slide.background.sectionHelp": "Achtergrondkleur of een eigen afbeelding, plus het thema-logo in de hoek.",
   "editor.slide.background.focus": "Achtergrond uitsnede (focus)",
   "editor.slide.background.focusHelp": "Kies welk deel zichtbaar blijft wanneer de afbeelding wordt bijgesneden om de slide te vullen.",
+  "editor.slide.background.lockedByTheme": "Vastgezet door het thema; niet per slide aan te passen.",
   "editor.slide.layoutSettings": "Lay-out instellingen",
   "editor.slide.animationSettings": "Animatie-instellingen",
   "editor.slide.automatic": "Automatisch",

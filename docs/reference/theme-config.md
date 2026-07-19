@@ -51,12 +51,9 @@ theme reaches parity with a file theme.
   "slideTypes": { "include": [], "exclude": [] },
   "defaultTitleSlide": "title-slide",
 
-  // Coarse per-property override policy. Stored and validated here;
-  // enforcement at edit- and render-time is a later slice.
+  // Coarse per-property override policy, enforced at edit- and render-time.
   "locks": {
     "background": "open" | "locked",
-    "imageRadius": "open" | "locked",
-    "shadow": "open" | "locked",
     "logo": "open" | "locked"
   },
 
@@ -145,6 +142,31 @@ An empty config leaves the derived theme byte-identical. Every row predating the
 column reads as `{}`, which is what makes the migration safe on a live install;
 `tests/theme-builder-config.test.js` pins that against a fixture.
 
-## Notes
+## Override locks
 
-- `locks` is stored and validated but not yet enforced.
+`locks` declares, per brand property, whether a slide may override the theme:
+
+- **`open`** (the default for everything) — the theme supplies a default and a
+  per-slide override wins. Today's behaviour.
+- **`locked`** — the theme wins. The editor omits the control and explains why,
+  *and* the renderer ignores an override the slide already carries, so a deck
+  authored before the lock cannot leak past the branding.
+
+| Lock | Slide content it governs |
+|---|---|
+| `background` | `background`, `bgCustomColor`, `bgImage`, and the whole `slideBg*` group (image, fit, focus, overlay, text, plus the derived contrast hints) |
+| `logo` | `slideLogo` |
+
+**Enforcement is non-destructive.** `applyLocksToContent` returns a filtered
+*view* of the content; stored slide data is never rewritten. Unlocking a
+property restores every slide's own value.
+
+**A missing theme locks nothing.** A render path that forgets to pass
+`ctx.theme`, or a lock mode that isn't exactly `"locked"`, degrades to `open` —
+failing open, so a typo in a theme cannot silently strip every slide.
+
+Only properties with a real per-slide control are lockable. `imageRadius` and
+`shadow` were in the vocabulary before enforcement existed, but no slide type
+offers a per-slide radius or shadow, so a switch for them would have done
+nothing; they are rejected by `validateThemeConfig`. Add them back together with
+the control they would guard.

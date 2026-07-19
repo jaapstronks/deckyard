@@ -105,12 +105,23 @@ test('an override value cannot escape its declaration', () => {
 
 test('lock modes are clamped to open/locked', () => {
   const out = validateThemeConfig({
-    locks: { background: 'locked', shadow: 'nonsense', notALock: 'locked' },
+    locks: { background: 'locked', logo: 'nonsense', notALock: 'locked' },
   });
   assert.equal(out.locks.background, 'locked');
-  assert.equal(out.locks.shadow, 'open');
+  assert.equal(out.locks.logo, 'open');
   assert.equal(out.locks.notALock, undefined);
-  assert.ok(LOCKABLE_PROPERTIES.includes('background'));
+});
+
+test('only properties with a per-slide control are lockable', () => {
+  // `imageRadius` and `shadow` were in the vocabulary before anything enforced
+  // locks, but no slide type offers a per-slide radius or shadow, so a switch
+  // for them would have done nothing.
+  assert.deepEqual(LOCKABLE_PROPERTIES, ['background', 'logo']);
+
+  const out = validateThemeConfig({
+    locks: { background: 'locked', imageRadius: 'locked', shadow: 'locked' },
+  });
+  assert.deepEqual(out.locks, { background: 'locked' });
 });
 
 test('slideBackgrounds go through the same guard as file themes', () => {

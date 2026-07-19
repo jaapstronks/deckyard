@@ -679,5 +679,6 @@
   "comments.cancelPosition": "Cancel",
   "comments.pinModeHint": "Click on the slide to place comment",
   "editor.notes.collapse": "Hide presenter notes",
-  "editor.notes.expand": "Show presenter notes"
+  "editor.notes.expand": "Show presenter notes",
+  "editor.slide.background.lockedByTheme": "Set by the theme and not editable per slide."
 }

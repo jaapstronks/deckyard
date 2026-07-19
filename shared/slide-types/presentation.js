@@ -6,6 +6,7 @@ import {
   esc,
 } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
+import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
@@ -253,7 +254,12 @@ export function renderSlideHtml(slide, ctx = {}) {
       </div>
     `;
   }
-  const content = slide?.content || {};
+  // Theme override locks: strip anything the theme has locked before the type
+  // renders, so a deck authored before the lock cannot leak past the branding.
+  // Doing it here rather than in each type's bgClass() call covers the injected
+  // background and logo in the same pass. Stored slide data is untouched — this
+  // is a filtered view, so unlocking restores every slide's own value.
+  const content = applyLocksToContent(slide?.content || {}, ctx?.theme);
   let out = def.renderHtml(content, slide, ctx);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);

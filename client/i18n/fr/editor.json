@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Rendre ce deck silencieux. Les @mentions directes vous parviennent toujours.",
   "subscription.saved": "Réglage de notification enregistré",
   "subscription.saveFailed": "Impossible d'enregistrer le réglage",
-  "subscription.loadFailed": "Impossible de charger le réglage"
+  "subscription.loadFailed": "Impossible de charger le réglage",
+  "editor.slide.background.lockedByTheme": "Défini par le thème, non modifiable par diapositive."
 }

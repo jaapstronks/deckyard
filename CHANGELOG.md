@@ -8,6 +8,18 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **A theme can lock brand properties against per-slide overrides.** A theme's
+  `config.locks` marks `background` or `logo` as `locked`, and the lock holds in
+  both places at once: the editor omits the control (with a note saying why,
+  rather than a disabled input that invites you to wonder), and the renderer
+  ignores an override a slide already carries — so a deck authored before the
+  lock cannot leak past the branding. Enforcement is a filtered view, never a
+  rewrite: unlocking restores every slide's own value. A missing theme, or a
+  mode that isn't exactly `locked`, fails open. Only properties with a real
+  per-slide control are lockable, so `imageRadius` and `shadow` left the
+  vocabulary until something exists for them to guard. See
+  `docs/reference/theme-config.md`.
+
 - **A theme can set corner rounding and elevation.** `config.surfaces.shadow`
   now reaches the slides: `--t-shadow-scale` multiplies the alpha of all five
   `--slide-shadow-*` tokens at once, so `none` flattens elevation away and

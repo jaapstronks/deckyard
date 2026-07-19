@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Gør dette deck lydløst. Direkte @omtaler når dig stadig.",
   "subscription.saved": "Notifikationsindstilling gemt",
   "subscription.saveFailed": "Kunne ikke gemme indstillingen",
-  "subscription.loadFailed": "Kunne ikke indlæse indstillingen"
+  "subscription.loadFailed": "Kunne ikke indlæse indstillingen",
+  "editor.slide.background.lockedByTheme": "Angivet af temaet og kan ikke redigeres pr. slide."
 }
