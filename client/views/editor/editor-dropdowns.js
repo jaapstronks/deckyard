@@ -41,6 +41,8 @@ export function createEditorDropdowns({
     h,
     pres,
     id,
+    root,
+    overlayClosers: openOverlayClosers,
   });
 
   // Share dropdown (sharing + publishing)
