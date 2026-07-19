@@ -249,6 +249,24 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Countdown, freeform and end slides follow the theme.** Their CSS reads
+  `--t-primary`, `--t-accent`, `--t-bg-dark`, `--t-brand-1` and `--t-brand-2`,
+  but no theme file and no DB theme ever emitted those tokens — so those slides
+  always painted the stylesheet's hardcoded purple/teal, whatever the deck's
+  theme. The tokens are now derived from the theme's accent, dark surface and
+  brand palette, and a theme that sets one explicitly still wins. **Visible
+  change**: existing decks using a countdown/freeform slide on the extended
+  background options (`accent`, `brand-1`, `brand-2`, `dark`) will change
+  colour, as will the freeform editor's outline and handles.
+
+- **One theme normalizer instead of two.** `normalizeTheme` existed as
+  near-identical private copies in `client/lib/theme.js` and
+  `server/utils/themes.js`, and had drifted: the client copy never gained the
+  table-variant contrast derivation, so a themed table could read fine in an
+  export and be unreadable in the editor. Both now import
+  `shared/theme-normalize.js`. It also parses 3-digit hex on the client, which
+  only the server handled before.
+
 - **Icon-card "tiles" layout fills its grid again.** Tiles collapsed to small
   squares stranded at the top of the slide, showed a number prefix, and never
   rendered the per-card body text. The cards-layout row rules were not scoped to
