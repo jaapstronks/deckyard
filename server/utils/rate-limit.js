@@ -78,6 +78,29 @@ export function getClientIp(req) {
 // Not suitable for multi-instance without shared storage.
 const buckets = new Map();
 
+// Cap unbounded growth of the fallback bucket map. Every distinct key
+// (login:ip:<addr>, login:email:<addr>, …) otherwise stays forever, so a
+// stream of unique attackers leaks memory. A token bucket that has been idle
+// long enough to refill to capacity is indistinguishable from a fresh one, so
+// it can be dropped without loosening the limit. We sweep lazily — only when
+// the map grows past a threshold, and only on the cold path where a new key is
+// inserted — to keep the common case allocation-free.
+const PRUNE_THRESHOLD = 10000;
+
+/**
+ * Drop every bucket that has refilled back to (or above) full capacity at
+ * `now`. Such a bucket carries no rate-limit state a fresh one wouldn't, so
+ * this frees memory without changing behaviour. Only currently-throttled keys
+ * (partially depleted buckets) survive.
+ * @param {number} now - Current timestamp (ms), passed in for testability.
+ */
+function pruneBuckets(now) {
+  for (const [key, b] of buckets) {
+    const tokens = Math.min(b.cap, b.tokens + ((now - b.last) / 1000) * b.rps);
+    if (tokens >= b.cap) buckets.delete(key);
+  }
+}
+
 /**
  * In-memory token bucket rate limiting.
  * Used as fallback when Redis is unavailable.
@@ -92,17 +115,38 @@ function allowRequestInMemory(key, { capacity, refillPerSec }) {
 
   let b = buckets.get(key);
   if (!b) {
-    b = { tokens: cap, last: now };
+    if (buckets.size >= PRUNE_THRESHOLD) pruneBuckets(now);
+    b = { tokens: cap, last: now, cap, rps };
     buckets.set(key, b);
   }
 
   const elapsedSec = (now - b.last) / 1000;
   b.last = now;
   b.tokens = Math.min(cap, b.tokens + elapsedSec * rps);
+  // Refresh the limits so a changed capacity/refill (and pruneBuckets) always
+  // sees the current bucket shape.
+  b.cap = cap;
+  b.rps = rps;
 
   if (b.tokens < 1) return false;
   b.tokens -= 1;
   return true;
+}
+
+/**
+ * Number of live in-memory rate-limit buckets. Exposed for tests and
+ * monitoring; not part of the rate-limiting contract.
+ * @returns {number}
+ */
+export function rateLimitBucketCount() {
+  return buckets.size;
+}
+
+/**
+ * Clear all in-memory rate-limit buckets. Test helper only.
+ */
+export function resetRateLimitBuckets() {
+  buckets.clear();
 }
 
 /**
