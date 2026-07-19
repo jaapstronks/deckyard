@@ -530,6 +530,11 @@ export function createThemesTab({ user }) {
    * Close the theme editor.
    */
   function closeEditor() {
+    try {
+      editorInstance?.detach?.();
+    } catch {
+      /* teardown must not block closing the editor */
+    }
     editorSection.classList.add('is-hidden');
     themeListSection.classList.remove('is-hidden');
     editorSection.innerHTML = '';

@@ -304,8 +304,11 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     text: t('settings.themes.preview', 'Preview'),
   });
 
-  const previewComponent = createThemePreview({ theme: state });
+  const previewComponent = createThemePreview();
   previewColumn.append(previewLabel, previewComponent.el);
+  // The preview builds its theme server-side, so the first paint is a fetch
+  // rather than something the constructor can do synchronously.
+  updatePreview();
 
   // Assemble main
   main.append(formColumn, previewColumn);
@@ -408,5 +411,8 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     }
   })();
 
-  return { el: container };
+  // The preview holds ResizeObservers per sample slide; the tab drops the
+  // editor by clearing its container, which would leave them observing
+  // detached nodes.
+  return { el: container, detach: () => previewComponent.detach() };
 }

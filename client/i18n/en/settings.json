@@ -258,8 +258,6 @@
   "settings.themes.headingFont": "Heading Font",
   "settings.themes.bodyFont": "Body Font",
   "settings.themes.preview": "Preview",
-  "settings.themes.previewTitle": "Sample Presentation",
-  "settings.themes.previewSubtitle": "A preview of your custom theme",
   "settings.themes.errorNameRequired": "Theme name is required.",
   "settings.themes.errorInvalidPrimary": "Invalid primary color.",
   "settings.themes.errorInvalidBackground": "Invalid background color.",
@@ -309,5 +307,13 @@
   "settings.notifications.emailByType": "Email me about",
   "settings.notifications.emailCommentCreated": "New comments",
   "settings.notifications.emailCommentReply": "Replies to your comments",
-  "settings.notifications.emailCommentMention": "Mentions"
+  "settings.notifications.emailCommentMention": "Mentions",
+  "settings.themes.preview.title": "Your presentation title",
+  "settings.themes.preview.subtitle": "A subtitle, in the body font",
+  "settings.themes.preview.contentTitle": "A content slide",
+  "settings.themes.preview.body": "- Body text in the body font\n- A second point\n- A third point",
+  "settings.themes.preview.quote": "A quote, on the theme’s dark surface.",
+  "settings.themes.preview.quoteAuthor": "Someone",
+  "settings.themes.preview.quoteRole": "Their role",
+  "settings.themes.preview.error": "Preview unavailable right now."
 }

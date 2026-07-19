@@ -131,5 +131,13 @@
   "settings.notifications.emailByType": "Enviar-me e-mail sobre",
   "settings.notifications.emailCommentCreated": "Novos comentários",
   "settings.notifications.emailCommentReply": "Respostas aos seus comentários",
-  "settings.notifications.emailCommentMention": "Menções"
+  "settings.notifications.emailCommentMention": "Menções",
+  "settings.themes.preview.title": "Título da sua apresentação",
+  "settings.themes.preview.subtitle": "Um subtítulo, na fonte do corpo",
+  "settings.themes.preview.contentTitle": "Um diapositivo de conteúdo",
+  "settings.themes.preview.body": "- Texto na fonte do corpo\n- Um segundo ponto\n- Um terceiro ponto",
+  "settings.themes.preview.quote": "Uma citação, na superfície escura do tema.",
+  "settings.themes.preview.quoteAuthor": "Alguém",
+  "settings.themes.preview.quoteRole": "A sua função",
+  "settings.themes.preview.error": "Pré-visualização indisponível de momento."
 }

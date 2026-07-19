@@ -255,5 +255,13 @@
   "settings.notifications.emailByType": "Mail mij over",
   "settings.notifications.emailCommentCreated": "Nieuwe comments",
   "settings.notifications.emailCommentReply": "Reacties op jouw comments",
-  "settings.notifications.emailCommentMention": "Mentions"
+  "settings.notifications.emailCommentMention": "Mentions",
+  "settings.themes.preview.title": "Jouw presentatietitel",
+  "settings.themes.preview.subtitle": "Een ondertitel, in het bodylettertype",
+  "settings.themes.preview.contentTitle": "Een inhoudsslide",
+  "settings.themes.preview.body": "- Bodytekst in het bodylettertype\n- Een tweede punt\n- Een derde punt",
+  "settings.themes.preview.quote": "Een citaat, op het donkere vlak van het thema.",
+  "settings.themes.preview.quoteAuthor": "Iemand",
+  "settings.themes.preview.quoteRole": "Hun functie",
+  "settings.themes.preview.error": "Preview is nu niet beschikbaar."
 }
