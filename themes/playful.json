@@ -1,0 +1,117 @@
+{
+  "id": "playful",
+  "label": "Sunset",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#431407",
+  "backgroundLabels": {
+    "lime": {
+      "en": "Cream",
+      "nl": "Crème"
+    },
+    "mist": {
+      "en": "Blossom",
+      "nl": "Bloesem"
+    }
+  },
+  "brandColors": [
+    "#db2777",
+    "#ea580c",
+    "#f59e0b",
+    "#fb7185"
+  ],
+  "gradient": {
+    "enabled": false
+  },
+  "slides": {
+    "card-stack-slide": {
+      "colors": [
+        "#db2777",
+        "#ea580c",
+        "#f59e0b",
+        "#fb7185"
+      ]
+    }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#fffbf5",
+    "--t-slide-bg-mist": "#ffe4e6",
+    "--t-slide-bg-dark": "#7c2d12",
+    "--t-color-background": "#fffbf5",
+    "--t-color-text": "#431407",
+    "--t-color-text-muted": "rgba(67, 20, 7, 0.6)",
+    "--t-color-accent": "#ea580c",
+    "--t-quote-author-color": "#db2777",
+    "--t-radius": "22px",
+    "--t-radius-sm": "14px",
+    "--t-radius-lg": "32px",
+    "--t-font-heading": "'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-body": "'Nunito', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "700",
+    "--t-icon-card-grid-icon-bg": "#ffe4e6",
+    "--t-icon-card-grid-body-bg": "#fff1f2",
+    "--t-chart-0": "#ea580c",
+    "--t-chart-1": "#db2777",
+    "--t-chart-2": "#f59e0b",
+    "--t-chart-3": "#14b8a6",
+    "--t-chart-4": "#8b5cf6",
+    "--t-chart-5": "#ef4444",
+    "--t-chart-6": "#22c55e",
+    "--t-chart-7": "#3b82f6",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "Nunito",
+      "path": "assets/fonts/google/nunito/nunito-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Nunito",
+      "path": "assets/fonts/google/nunito/nunito-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Nunito",
+      "path": "assets/fonts/google/nunito/nunito-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    }
+  ],
+  "hiddenSlideTypes": []
+}
