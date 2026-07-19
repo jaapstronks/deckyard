@@ -70,6 +70,10 @@ it would only have been a second path to something that already works.)_
   remove / reorder entirely on the canvas for logo-wall, team-cards (first
   member) and quote (first portrait), via an `ensure` descriptor knob that
   canonicalizes the dual-model types to their array form. In progress.
+- **Responsiveness: mobile, iPad, ultra-wide** — `docs/plans/responsiveness.md` —
+  swipe navigation shared across the viewing modes, a responsive audience
+  `/follow` view, touch-operable editor affordances for quick edits on a phone
+  or iPad, and lifting the width caps that waste an ultra-wide screen.
 - **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
   — create-flow follow-up: persist and return per-language library-item content
   on the Postgres backend (new `i18n` column + adapter + mapper) so composed
