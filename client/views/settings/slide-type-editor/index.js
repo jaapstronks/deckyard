@@ -8,6 +8,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import { createFieldListEditor } from './field-editor.js';
+import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';
 
 /**
@@ -212,10 +213,15 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     h('div', { class: 'field-label', text: t('settings.slideTypes.fields', 'Fields') })
   );
 
+  // Declared here so the field editor's onChange can refresh its field list;
+  // it is appended to the template card further down.
+  const templateHelp = createTemplateHelp({ fields: state.fields });
+
   const fieldEditor = createFieldListEditor({
     fields: state.fields,
     onChange: (fields) => {
       state.fields = fields;
+      templateHelp.setFields(fields);
       updatePreview();
     },
   });
@@ -281,10 +287,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     updatePreview();
   });
 
-  const templateHint = h('div', { class: 'help' });
-  templateHint.innerHTML = 'Syntax: <code>{{esc field}}</code> (escaped), <code>{{markdown field}}</code> (raw HTML), <code>{{#if field}}...{{/if}}</code>, <code>{{#each items}}...{{/each}}</code>';
-
-  templateCard.append(templateArea, templateHint);
+  templateCard.append(templateArea, templateHelp.el);
 
   // --- CSS ---
   const cssCard = h('div', { class: 'editor-card stack' });
