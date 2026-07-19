@@ -184,5 +184,8 @@
   "settings.themes.config.variantBadName": "Un nom doit contenir au moins une lettre ou un chiffre.",
   "settings.themes.config.variantReserved": "Ce nom est déjà celui d’un arrière-plan intégré.",
   "settings.themes.config.variantDuplicate": "Vous avez déjà une variante portant ce nom.",
-  "settings.themes.config.variantsFull": "Un thème ne peut pas contenir plus d’options d’arrière-plan."
+  "settings.themes.config.variantsFull": "Un thème ne peut pas contenir plus d’options d’arrière-plan.",
+  "settings.themes.config.builtinsHint": "Chaque thème a deux arrière-plans intégrés. Ce sont des emplacements, pas des couleurs — nommez-les d’après ce qu’ils sont réellement chez vous, sinon ils s’affichent comme \"Color 1\" et \"Color 2\".",
+  "settings.themes.config.builtinName": "Nom",
+  "settings.themes.config.extraBackgrounds": "Options supplémentaires"
 }

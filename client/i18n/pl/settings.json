@@ -314,5 +314,8 @@
   "settings.themes.config.variantBadName": "Nazwa musi zawierać co najmniej jedną literę lub cyfrę.",
   "settings.themes.config.variantReserved": "Ta nazwa należy do wbudowanego tła.",
   "settings.themes.config.variantDuplicate": "Masz już wariant o tej nazwie.",
-  "settings.themes.config.variantsFull": "Motyw nie pomieści więcej opcji tła."
+  "settings.themes.config.variantsFull": "Motyw nie pomieści więcej opcji tła.",
+  "settings.themes.config.builtinsHint": "Każdy motyw ma dwa wbudowane tła. To miejsca zapisu, nie kolory — nazwij je tym, czym naprawdę są, inaczej pojawią się jako \"Color 1\" i \"Color 2\".",
+  "settings.themes.config.builtinName": "Nazwa",
+  "settings.themes.config.extraBackgrounds": "Dodatkowe opcje"
 }

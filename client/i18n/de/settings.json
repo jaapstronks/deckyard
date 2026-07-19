@@ -184,5 +184,8 @@
   "settings.themes.config.variantBadName": "Ein Name braucht mindestens einen Buchstaben oder eine Ziffer.",
   "settings.themes.config.variantReserved": "Dieser Name gehört bereits einem eingebauten Hintergrund.",
   "settings.themes.config.variantDuplicate": "Es gibt bereits eine Variante mit diesem Namen.",
-  "settings.themes.config.variantsFull": "Mehr Hintergrundoptionen kann ein Theme nicht aufnehmen."
+  "settings.themes.config.variantsFull": "Mehr Hintergrundoptionen kann ein Theme nicht aufnehmen.",
+  "settings.themes.config.builtinsHint": "Jedes Theme hat zwei eingebaute Hintergründe. Es sind Speicherplätze, keine Farben — benennen Sie sie nach dem, was sie bei Ihnen tatsächlich sind, sonst heißen sie \"Color 1\" und \"Color 2\".",
+  "settings.themes.config.builtinName": "Name",
+  "settings.themes.config.extraBackgrounds": "Weitere Optionen"
 }

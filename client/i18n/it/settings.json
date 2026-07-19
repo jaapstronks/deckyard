@@ -314,5 +314,8 @@
   "settings.themes.config.variantBadName": "Un nome deve contenere almeno una lettera o una cifra.",
   "settings.themes.config.variantReserved": "Quel nome appartiene a uno sfondo integrato.",
   "settings.themes.config.variantDuplicate": "Hai già una variante con quel nome.",
-  "settings.themes.config.variantsFull": "Un tema non può contenere altre opzioni di sfondo."
+  "settings.themes.config.variantsFull": "Un tema non può contenere altre opzioni di sfondo.",
+  "settings.themes.config.builtinsHint": "Ogni tema ha due sfondi integrati. Sono slot di archiviazione, non colori: chiamali come sono davvero, altrimenti appaiono come \"Color 1\" e \"Color 2\".",
+  "settings.themes.config.builtinName": "Nome",
+  "settings.themes.config.extraBackgrounds": "Opzioni aggiuntive"
 }

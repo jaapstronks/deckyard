@@ -10,10 +10,34 @@
   },
   "textColorLight": "#ffffff",
   "textColorDark": "#1c1917",
-  "brandColors": ["#9a3412", "#c2410c", "#ea580c", "#f97316"],
-  "gradient": { "enabled": false },
+  "backgroundLabels": {
+    "lime": {
+      "en": "Cream",
+      "nl": "Crème"
+    },
+    "mist": {
+      "en": "Sand",
+      "nl": "Zand"
+    }
+  },
+  "brandColors": [
+    "#9a3412",
+    "#c2410c",
+    "#ea580c",
+    "#f97316"
+  ],
+  "gradient": {
+    "enabled": false
+  },
   "slides": {
-    "card-stack-slide": { "colors": ["#9a3412", "#c2410c", "#ea580c", "#f97316"] }
+    "card-stack-slide": {
+      "colors": [
+        "#9a3412",
+        "#c2410c",
+        "#ea580c",
+        "#f97316"
+      ]
+    }
   },
   "cssVars": {
     "--t-slide-bg-lime": "#fff7ed",
@@ -46,14 +70,54 @@
     "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
   },
   "embedFonts": [
-    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-400.woff2", "weight": 400, "style": "normal" },
-    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-500.woff2", "weight": 500, "style": "normal" },
-    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-700.woff2", "weight": 700, "style": "normal" },
-    { "family": "Red Hat Display", "path": "assets/fonts/google/red-hat-display/red-hat-display-900.woff2", "weight": 900, "style": "normal" },
-    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-400.woff2", "weight": 400, "style": "normal" },
-    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-500.woff2", "weight": 500, "style": "normal" },
-    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-600.woff2", "weight": 600, "style": "normal" },
-    { "family": "Figtree", "path": "assets/fonts/google/figtree/figtree-700.woff2", "weight": 700, "style": "normal" }
+    {
+      "family": "Red Hat Display",
+      "path": "assets/fonts/google/red-hat-display/red-hat-display-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Red Hat Display",
+      "path": "assets/fonts/google/red-hat-display/red-hat-display-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Red Hat Display",
+      "path": "assets/fonts/google/red-hat-display/red-hat-display-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "Red Hat Display",
+      "path": "assets/fonts/google/red-hat-display/red-hat-display-900.woff2",
+      "weight": 900,
+      "style": "normal"
+    },
+    {
+      "family": "Figtree",
+      "path": "assets/fonts/google/figtree/figtree-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Figtree",
+      "path": "assets/fonts/google/figtree/figtree-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Figtree",
+      "path": "assets/fonts/google/figtree/figtree-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Figtree",
+      "path": "assets/fonts/google/figtree/figtree-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    }
   ],
   "hiddenSlideTypes": []
 }

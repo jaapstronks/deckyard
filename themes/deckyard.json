@@ -10,7 +10,22 @@
   },
   "textColorLight": "#ffffff",
   "textColorDark": "#111827",
-  "brandColors": ["#5b21b6", "#7c3aed", "#a78bfa", "#c4b5fd"],
+  "backgroundLabels": {
+    "lime": {
+      "en": "White",
+      "nl": "Wit"
+    },
+    "mist": {
+      "en": "Lilac",
+      "nl": "Lila"
+    }
+  },
+  "brandColors": [
+    "#5b21b6",
+    "#7c3aed",
+    "#a78bfa",
+    "#c4b5fd"
+  ],
   "gradient": {
     "enabled": false
   },
@@ -25,7 +40,12 @@
   ],
   "slides": {
     "card-stack-slide": {
-      "colors": ["#5b21b6", "#7c3aed", "#a78bfa", "#c4b5fd"]
+      "colors": [
+        "#5b21b6",
+        "#7c3aed",
+        "#a78bfa",
+        "#c4b5fd"
+      ]
     }
   },
   "cssVars": {
@@ -59,13 +79,48 @@
     "--t-logo-url": "url('/assets/images/deckyard-mark.svg')"
   },
   "embedFonts": [
-    { "family": "Bricolage Grotesque", "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-400.woff2", "weight": 400, "style": "normal" },
-    { "family": "Bricolage Grotesque", "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-600.woff2", "weight": 600, "style": "normal" },
-    { "family": "Bricolage Grotesque", "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-700.woff2", "weight": 700, "style": "normal" },
-    { "family": "Inter", "path": "assets/fonts/google/inter/inter-400.woff2", "weight": 400, "style": "normal" },
-    { "family": "Inter", "path": "assets/fonts/google/inter/inter-500.woff2", "weight": 500, "style": "normal" },
-    { "family": "Inter", "path": "assets/fonts/google/inter/inter-600.woff2", "weight": 600, "style": "normal" },
-    { "family": "Inter", "path": "assets/fonts/google/inter/inter-700.woff2", "weight": 700, "style": "normal" }
+    {
+      "family": "Bricolage Grotesque",
+      "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Bricolage Grotesque",
+      "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Bricolage Grotesque",
+      "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "Inter",
+      "path": "assets/fonts/google/inter/inter-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Inter",
+      "path": "assets/fonts/google/inter/inter-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Inter",
+      "path": "assets/fonts/google/inter/inter-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Inter",
+      "path": "assets/fonts/google/inter/inter-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    }
   ],
   "hiddenSlideTypes": [],
   "backgroundPresets": [

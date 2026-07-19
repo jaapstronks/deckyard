@@ -184,5 +184,8 @@
   "settings.themes.config.variantBadName": "Um nome precisa de pelo menos uma letra ou algarismo.",
   "settings.themes.config.variantReserved": "Esse nome pertence a um fundo integrado.",
   "settings.themes.config.variantDuplicate": "Já tem uma variante com esse nome.",
-  "settings.themes.config.variantsFull": "Um tema não suporta mais opções de fundo."
+  "settings.themes.config.variantsFull": "Um tema não suporta mais opções de fundo.",
+  "settings.themes.config.builtinsHint": "Cada tema tem dois fundos integrados. São espaços de armazenamento, não cores — dê-lhes o nome do que realmente são, ou aparecem como \"Color 1\" e \"Color 2\".",
+  "settings.themes.config.builtinName": "Nome",
+  "settings.themes.config.extraBackgrounds": "Opções adicionais"
 }
