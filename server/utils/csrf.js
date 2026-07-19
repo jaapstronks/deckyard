@@ -7,17 +7,23 @@
  * navigations, and is per-site not per-origin, so a sibling subdomain could
  * otherwise forge requests).
  *
- * Scope: enforced ONLY when the session cookie is present. Requests
- * authenticated some other way (API key on /api/v1, MCP bearer) or not at all
- * (public audience endpoints) cannot be abused via a victim's browser cookie,
- * so they are exempt — no client changes required.
+ * Scope: enforced ONLY when a browser session cookie is present — either the
+ * regular login cookie (sb_session) or the sandbox-guest cookie (sb_sandbox),
+ * both of which are HttpOnly-ish, SameSite=Lax cookie auth that a victim's
+ * browser would attach automatically. Requests authenticated some other way
+ * (API key on /api/v1, MCP bearer) or not at all (public audience endpoints)
+ * cannot be abused via a victim's browser cookie, so they are exempt — no
+ * client changes required.
  *
  * See docs/plans/security-hardening.md item 5c.
  */
 
 import { parseCookies } from './cookies.js';
 
-const SESSION_COOKIE = 'sb_session';
+// Any of these cookies means the request is browser-session-authenticated and
+// therefore CSRF-able. sb_sandbox authenticates sandbox guests exactly like
+// sb_session authenticates logged-in users, so it must be covered too.
+const SESSION_COOKIES = ['sb_session', 'sb_sandbox'];
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** Extract a lowercased host from a URL/origin string, or null. */
@@ -68,7 +74,7 @@ export function isCsrfSafe(req) {
 
   // Only cookie-authenticated requests are CSRF-able.
   const cookies = parseCookies(req.headers?.cookie);
-  if (!cookies[SESSION_COOKIE]) return true;
+  if (!SESSION_COOKIES.some((name) => cookies[name])) return true;
 
   const origin = req.headers?.origin;
   const referer = req.headers?.referer || req.headers?.referrer;
