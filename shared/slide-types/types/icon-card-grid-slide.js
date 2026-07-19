@@ -277,7 +277,6 @@ export default {
       // editing (which runs in mode 'thumb'/'edit').
       const linkHtml = isEmpty ? '' : cardLinkOverlayHtml(card.link, mode, title || 'Card link');
 
-      // The number prefix is only shown in the tiles layout (hidden via CSS in cards).
       cards.push(`
           <div class="icon-card${isEmpty ? ' is-empty' : ''}${linkHtml ? ' has-link' : ''}" data-morph-role="icon-card-${i - 1}" role="group" ${
         isEmpty ? 'aria-hidden="true"' : ''
@@ -286,7 +285,7 @@ export default {
               ${iconHtml}
             </div>
             <div class="icon-card-body">
-              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto"><span class="icon-card-num" aria-hidden="true">${i}.</span> ${esc(title || 'Title')}</h3>
+              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto">${esc(title || 'Title')}</h3>
               <div class="icon-card-text"${isEmpty ? '' : ` data-inline-field="${bodyPath}"`}>
                 ${markdownToSafeHtml(bodyRaw)}
               </div>
