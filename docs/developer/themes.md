@@ -230,6 +230,66 @@ The URLs may point anywhere the server serves — `custom/themes/<id>/assets/`,
 
 ---
 
+## Surfaces: rounding and elevation
+
+A file theme sets these tokens directly in `cssVars`:
+
+```json
+{
+  "cssVars": {
+    "--t-radius-sm": "20px",
+    "--t-radius": "28px",
+    "--t-radius-lg": "36px",
+    "--t-shadow-scale": "1.8"
+  }
+}
+```
+
+`--t-shadow-scale` multiplies the alpha of all five `--slide-shadow-*` tokens at
+once: `0` flattens elevation away, `1` is the default, higher deepens it. The
+geometry (offset, blur) is fixed, so a theme changes how *present* elevation
+feels rather than moving the light source. Leaving it unset means `1`.
+
+Radius is consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface
+reads. Unset falls back to the design system's own `10px` / `18px` / `24px`.
+
+> Database themes express the same two through named scales
+> (`config.surfaces.radius` / `.shadow`) rather than raw values, because a
+> wizard offers choices rather than pixels. Both end up at the same tokens —
+> see `docs/reference/theme-config.md`.
+
+---
+
+## Override locks
+
+A theme can declare that a brand property is **not** overridable per slide:
+
+```json
+{
+  "locks": {
+    "background": "locked",
+    "logo": "open"
+  }
+}
+```
+
+- **`open`** (the default for everything) — the theme supplies a default and a
+  per-slide override wins.
+- **`locked`** — the theme wins. The editor omits the control and explains why,
+  *and* the renderer ignores an override a slide already carries, so a deck
+  authored before the lock cannot leak past the branding.
+
+`background` governs the slide background as a whole — the colour/variant, the
+custom colour, the per-slide background image and everything positioning it.
+`logo` governs the corner logo (`slideLogo`).
+
+Enforcement is **non-destructive**: stored slide content is never rewritten, so
+unlocking gives every slide its own value back. A property you do not mention
+stays `open`, and a value that is not exactly `"locked"` reads as `open` — a
+typo cannot silently strip every slide in a deck.
+
+---
+
 ## Table style variants
 
 The structured **Table** slide type has a per-slide **Table style** picker with
@@ -313,6 +373,11 @@ Available tokens (each optional; unset falls back to the palette default):
   "slideTypes": {
     "exclude": [],
     "include": []
+  },
+
+  "locks": {
+    "background": "open",
+    "logo": "open"
   }
 }
 ```
