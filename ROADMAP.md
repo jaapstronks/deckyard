@@ -68,10 +68,6 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.
-- **AI review grid: click-to-preview, hover-select, modal nav** —
-  `docs/plans/ai-review-grid-ux.md` — clicking a tile opens the preview modal
-  (selection moves to a hover checkbox); modal shows the AI's why-text and
-  navigates with buttons + arrow keys.
 - **AI: recreate a slide from an image/PDF** — `docs/plans/ai-slide-from-image.md`
   — attach a screenshot/PDF in the AI add + refine flows; recognize the slide
   type + content and rebuild it as a native editable slide.
