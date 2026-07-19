@@ -47,6 +47,11 @@
   overflow: hidden;
   min-height: 0;
   min-width: 0;
+  /* The panel is only visible when there is no background image. Use the
+     theme's dark surface (the same one quote/chapter slides paint white text
+     on) so an image-less slide reads as an intentional dark panel rather than
+     a hole. Falls back to the slide's own black. */
+  background: var(--t-slide-bg-dark, #000);
 }
 .slide-partner-split .right .bg {
   position: absolute;
@@ -103,6 +108,11 @@
   font-size: 22px;
   line-height: 1.25;
   opacity: 0.95;
+  /* `.slide .subtitle` sets `color: var(--color-text-muted)` — a dark, body-text
+     colour meant for light backgrounds — and a direct declaration beats the
+     white this would otherwise inherit from `.text`. On this panel that renders
+     dark-on-dark. Inherit instead so the subtitle follows the panel. */
+  color: inherit;
 }
 
 /* Quote slide */
