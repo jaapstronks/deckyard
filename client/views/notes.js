@@ -12,7 +12,7 @@ import { loadThemeById } from '../lib/theme.js';
 import { clamp, normalizeNotes, normalizePresentation } from './notes/utils.js';
 import { createNotesQaController } from './notes/qa.js';
 import { createNotesSessionSse } from './notes/session-sse.js';
-import { attachSwipeNavigation } from './notes/touch-nav.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { createUiModeSwitcher } from './ui-mode-switcher.js';
 
 export async function renderNotes(

@@ -120,6 +120,9 @@ export function createViewerPreview({
 
   return {
     previewEl,
+    // Exposed so keyboard and swipe navigation in the controller go through
+    // the same clamping as the ← / → buttons, rather than reimplementing it.
+    navigateSlide,
     rerenderPreview,
     detach,
   };
