@@ -128,7 +128,7 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
   'content-columns-slide': {
     title: 'Our Services',
     subheading: 'What we offer',
-    columnCount: '3',
+    columnCount: '2',
     // Column 1
     col1Title: 'Strategy',
     col1Text: '',

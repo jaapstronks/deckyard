@@ -31,7 +31,7 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'team-cards-slide': { kind: 'cards', cells: 6, cols: 3, rows: 2 },
   'logo-wall-slide': { kind: 'logos', cells: 8 },
   // layouts
-  'content-columns-slide': { textCols: 3 },
+  'content-columns-slide': { textCols: 2 },
   'text-blocks-slide': { kind: 'blocks', cells: 4 },
   'icon-card-grid-slide': { kind: 'iconCards', cells: 6, cols: 3, rows: 2 },
   'freeform-slide': { kind: 'freeform' },
@@ -65,8 +65,8 @@ export const SLIDE_TYPE_SCHEMATIC = {
 // Per-preset overrides. Keyed "<type>:<presetId>" — presets absent here fall
 // back to the base type's schematic.
 const SLIDE_TYPE_PRESET_SCHEMATIC = {
-  'content-slide:one-column': { kind: 'oneCol' },
-  'content-slide:two-column': { kind: 'twoCol' },
+  // content-slide has no picker presets (see slide-type-picker.js); its
+  // two-column text-flow layout is reachable via the in-editor layout switcher.
   'lijstje-slide:bullets': { kind: 'bullets' },
   'lijstje-slide:numbers': { kind: 'numbers' },
   'image-text-slide:image-left': { split: 50 },
