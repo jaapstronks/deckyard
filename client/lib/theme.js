@@ -33,6 +33,12 @@ let themeChannel = null;
 try {
   if (typeof BroadcastChannel === 'function') {
     themeChannel = new BroadcastChannel(THEME_CHANNEL);
+    // In Node (test runs) a BroadcastChannel is an active handle that keeps the
+    // event loop alive, so importing this module would hang the process on
+    // exit. unref() lets the process end while the channel still delivers
+    // messages whenever the loop is running; it's absent in the browser, where
+    // there is nothing to unref, so the optional call is a no-op there.
+    themeChannel.unref?.();
     themeChannel.onmessage = (event) => {
       const id = event?.data?.themeId;
       if (event?.data?.type !== 'theme-changed') return;
