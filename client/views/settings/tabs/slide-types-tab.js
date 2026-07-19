@@ -8,7 +8,13 @@ import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/toast.js';
 import { confirmModal } from '../../../lib/modal.js';
+import { readFileAsText } from '../../../lib/file.js';
 import { createSlideTypeEditor } from '../slide-type-editor/index.js';
+import {
+  serializeSlideType,
+  parseImportedSlideType,
+  deriveUniqueSlug,
+} from '../slide-type-editor/io.js';
 import { renderSlideElement } from '../../../lib/slide-render.js';
 import { getSampleContent } from '../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -150,10 +156,13 @@ export function createSlideTypesTab({ user } = {}) {
     customTypesSection.innerHTML = '';
 
     const sectionHeader = h('div', { class: 'themes-list-header row is-between is-center' });
-    sectionHeader.append(
-      h('h3', {
-        class: 'field-label',
-        text: t('settings.slideTypes.customTypes', 'Custom Slide Types'),
+    const headerActions = h('div', { class: 'row gap-2 is-center' });
+    headerActions.append(
+      h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t('settings.slideTypes.importType', 'Import'),
+        onclick: () => importCustomType(),
       }),
       h('button', {
         class: 'btn btn-primary btn-sm',
@@ -161,6 +170,13 @@ export function createSlideTypesTab({ user } = {}) {
         text: t('settings.slideTypes.createType', 'Create Type'),
         onclick: () => openEditor(null),
       })
+    );
+    sectionHeader.append(
+      h('h3', {
+        class: 'field-label',
+        text: t('settings.slideTypes.customTypes', 'Custom Slide Types'),
+      }),
+      headerActions
     );
 
     const grid = h('div', { class: 'custom-types-grid' });
@@ -413,6 +429,17 @@ export function createSlideTypesTab({ user } = {}) {
       },
     }));
 
+    // Export as JSON
+    menu.append(h('button', {
+      class: 'dropdown-item',
+      type: 'button',
+      text: t('settings.slideTypes.export', 'Export as JSON'),
+      onclick: () => {
+        menu.remove();
+        exportCustomType(ct);
+      },
+    }));
+
     // Delete
     menu.append(h('button', {
       class: 'dropdown-item is-danger',
@@ -469,6 +496,72 @@ export function createSlideTypesTab({ user } = {}) {
     } catch (err) {
       toast.error(String(err?.message || err));
     }
+  }
+
+  /**
+   * Download a custom type as a portable `.slidetype.json` file.
+   * @param {Object} ct
+   */
+  function exportCustomType(ct) {
+    const blob = new Blob([serializeSlideType(ct)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = h('a', {
+      href: url,
+      download: `${ct.slug || 'custom-type'}.slidetype.json`,
+    });
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Import a definition from a `.slidetype.json` file and create it as a new,
+   * unpublished draft. The slug is derived client-side and made unique against
+   * the loaded types, so a re-import of the same file never dead-ends on a
+   * slug clash — it lands as a sibling draft the user can rename or publish.
+   */
+  function importCustomType() {
+    const input = h('input', {
+      type: 'file',
+      accept: '.json,application/json',
+      style: 'display:none',
+    });
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+
+      let text;
+      try {
+        text = await readFileAsText(file);
+      } catch {
+        toast.error(t('settings.slideTypes.importReadError', 'Could not read that file.'));
+        return;
+      }
+
+      const parsed = parseImportedSlideType(text);
+      if (!parsed.ok) {
+        toast.error(t('settings.slideTypes.importInvalid', 'That file is not a valid slide type export.'));
+        return;
+      }
+
+      const def = parsed.definition;
+      const slug = deriveUniqueSlug(def.label, customTypes.map((c) => c.slug));
+
+      try {
+        // isPublished is intentionally omitted: the create endpoint always
+        // stores imports as drafts, so nothing goes live without a review.
+        await api('/api/custom-slide-types', {
+          method: 'POST',
+          body: JSON.stringify({ ...def, slug }),
+        });
+        toast.success(t('settings.slideTypes.importSuccess', 'Slide type imported as a draft.'));
+        await reloadCustomTypes();
+      } catch (err) {
+        toast.error(String(err?.message || err));
+      }
+    });
+    document.body.append(input);
+    input.click();
   }
 
   async function confirmDeleteCustomType(ct) {
