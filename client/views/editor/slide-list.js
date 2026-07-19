@@ -635,7 +635,16 @@ export function setupSlideList({
     return true;
   };
 
+  // Android fires a native contextmenu after a long press as well. Opening the
+  // menu twice tears down and rebuilds it mid-dispatch, so ignore a contextmenu
+  // that arrives on the heels of one we opened ourselves.
+  let lastLongPressAt = 0;
+
   const onContextMenu = (e) => {
+    if (Date.now() - lastLongPressAt < 1000) {
+      e.preventDefault();
+      return;
+    }
     if (openSlideMenuAt({ target: e.target, x: e.clientX, y: e.clientY })) {
       e.preventDefault();
     }
@@ -647,7 +656,10 @@ export function setupSlideList({
   // phone or tablet. The menu's "Move to position…" / "Move to end" are the
   // touch path to reordering, so long-press opens the same menu.
   const detachLongPress = attachLongPress(slideListEl, {
-    onLongPress: openSlideMenuAt,
+    onLongPress: (detail) => {
+      lastLongPressAt = Date.now();
+      openSlideMenuAt(detail);
+    },
   });
 
   const detach = () => {

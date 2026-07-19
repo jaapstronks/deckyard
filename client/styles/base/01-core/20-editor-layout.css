@@ -24,8 +24,14 @@
 .is-editor .layout > .preview-panel { grid-column: 2; grid-row: 2; }
 .is-editor .layout > .inspector-panel { grid-column: 3; grid-row: 2; }
 /* Rail dismissed: the grid drops to two columns, so the bar spans only the
-   canvas column (openers stay pinned at its right - above where the rail was). */
-.is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
+   canvas column (openers stay pinned at its right - above where the rail was).
+   Scoped to the desktop layout on purpose: this selector is more specific than
+   the area assignments in the ≤1100 block, so unscoped it would survive into
+   the narrow layouts and force a phantom second column out of a single-column
+   template. */
+@media (min-width: 1101px) {
+  .is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
+}
 
 .is-editor .layout > * {
   /* Critical: allow grid items to shrink so internal .panel-scroll areas can scroll
@@ -608,10 +614,20 @@
     min-height: 44px;
   }
 
+  /* Two exceptions, both sized by their own container rather than by text:
+     growing them to 44px would make them overhang it. The insert "+" sits in
+     a short row between two slide rows — an overhanging, now-clickable button
+     would swallow taps meant for the slides either side (the very overhang the
+     top of 40-insert-and-collapsed.css warns about). The collapsed rail's add
+     button is a fixed square in a 64px rail. */
+  .is-editor .slide-insert-btn,
+  .is-editor.is-slides-collapsed .slides-add-btn {
+    min-height: 0;
+  }
+
   /* Square icon buttons need both dimensions — these are the ones that were
      genuinely too small to hit (24x24 and 36x36). */
   .is-editor .ghost-icon-btn,
-  .is-editor .slide-visibility-toggle,
   .is-editor .notification-bell-btn,
   .is-editor .ie-coach-dismiss {
     min-height: 44px;

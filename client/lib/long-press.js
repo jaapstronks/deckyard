@@ -25,6 +25,7 @@ export function attachLongPress(
   let timer = null;
   let startX = 0;
   let startY = 0;
+  let fired = false;
 
   const cancel = () => {
     if (timer === null) return;
@@ -32,8 +33,38 @@ export function attachLongPress(
     timer = null;
   };
 
+  /**
+   * Swallow the compatibility click the browser synthesizes on release.
+   *
+   * Whatever a long press opens (a menu, a popover) almost always closes
+   * itself on the next document click, so without this the thing appears
+   * under the finger and vanishes the moment it lifts. preventDefault on
+   * touchend is the textbook fix but isn't dependable — the click can arrive
+   * well after touchend on iOS, and some environments don't deliver touchend
+   * to the page at all — so this catches the click itself, once.
+   */
+  const swallowNextClick = () => {
+    const onClick = (e) => {
+      // stopImmediatePropagation, not stopPropagation: the dismiss-on-outside-
+      // click listeners we're guarding against are bound on document too, and
+      // plain stopPropagation doesn't stop other listeners on the same node.
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      done();
+    };
+    const done = () => {
+      clearTimeout(expiry);
+      document.removeEventListener('click', onClick, true);
+    };
+    // Expire on its own, so a press that never produces a click doesn't leave
+    // a listener armed to eat an unrelated one later.
+    const expiry = setTimeout(done, 900);
+    document.addEventListener('click', onClick, true);
+  };
+
   const onTouchStart = (e) => {
     cancel();
+    fired = false;
     if (e.touches?.length !== 1) return;
     const t = e.touches[0];
     startX = t.clientX;
@@ -41,6 +72,10 @@ export function attachLongPress(
     const target = e.target;
     timer = setTimeout(() => {
       timer = null;
+      fired = true;
+      // Arm here rather than on touchend: the press has already succeeded, and
+      // touchend is not guaranteed to reach us before the click does.
+      swallowNextClick();
       onLongPress?.({ target, x: startX, y: startY });
     }, delay);
   };
@@ -57,16 +92,30 @@ export function attachLongPress(
     }
   };
 
+  // Not passive: preventDefault here suppresses the synthetic click outright
+  // where touchend is delivered normally. swallowNextClick covers the rest.
+  const onTouchEnd = (e) => {
+    cancel();
+    if (!fired) return;
+    fired = false;
+    e.preventDefault();
+  };
+
+  const onTouchCancel = () => {
+    cancel();
+    fired = false;
+  };
+
   el.addEventListener('touchstart', onTouchStart, { passive: true });
   el.addEventListener('touchmove', onTouchMove, { passive: true });
-  el.addEventListener('touchend', cancel, { passive: true });
-  el.addEventListener('touchcancel', cancel, { passive: true });
+  el.addEventListener('touchend', onTouchEnd, { passive: false });
+  el.addEventListener('touchcancel', onTouchCancel, { passive: true });
 
   return () => {
     cancel();
     el.removeEventListener('touchstart', onTouchStart);
     el.removeEventListener('touchmove', onTouchMove);
-    el.removeEventListener('touchend', cancel);
-    el.removeEventListener('touchcancel', cancel);
+    el.removeEventListener('touchend', onTouchEnd);
+    el.removeEventListener('touchcancel', onTouchCancel);
   };
 }

@@ -492,6 +492,8 @@
     opacity: 1;
   }
   .thumb.is-inline-edit .ie-overlay .ie-ghost,
+  .thumb.is-inline-edit .ie-overlay .ie-card-add,
+  .thumb.is-inline-edit .ie-overlay .ie-media-hint,
   .thumb.is-inline-edit .ie-overlay .ie-clear,
   .thumb.is-inline-edit .ie-overlay .ie-card-remove,
   .thumb.is-inline-edit .ie-overlay .ie-card-grip {
