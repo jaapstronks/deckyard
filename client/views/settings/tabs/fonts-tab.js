@@ -25,7 +25,7 @@ const SOURCE_LABELS = {
  */
 export function createFontsTab({ user } = {}) {
   const el = h('div', {
-    class: 'settings-tab',
+    class: 'settings-tab-view',
     id: 'settings-tab-fonts',
     role: 'tabpanel',
   });
