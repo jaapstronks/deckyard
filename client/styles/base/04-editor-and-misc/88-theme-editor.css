@@ -126,8 +126,17 @@
   gap: var(--ps-space-4);
 }
 
+/* The form has grown to eight cards, so Save has to travel with it — otherwise
+   you scroll past the only control that commits your edits. Sticks to the
+   settings scroll container, the same one the preview column sticks to; the
+   background is what keeps the form from showing through as it passes under. */
 .theme-editor-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-top: var(--ps-space-3);
   padding-bottom: var(--ps-space-3);
+  background: hsl(var(--app-bg-base));
   border-bottom: 1px solid hsl(var(--app-border-subtle));
 }
 

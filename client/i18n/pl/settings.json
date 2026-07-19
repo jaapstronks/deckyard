@@ -299,5 +299,6 @@
   "settings.themes.config.removeBackground": "Usuń",
   "settings.themes.config.noBackgrounds": "Brak obrazów tła.",
   "settings.themes.config.backgroundsFull": "Motyw nie pomieści więcej obrazów tła.",
-  "settings.themes.config.uploading": "Przesyłanie…"
+  "settings.themes.config.uploading": "Przesyłanie…",
+  "settings.themes.config.backgroundsSomeSkipped": "Zmieści się jeszcze tylko {count} obrazów; resztę pominięto."
 }

@@ -339,6 +339,21 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **The theme editor's Save stays reachable, and is the only one on screen.**
+  The workspace "Theme picker" card stayed visible above an open editor with its
+  own primary Save, so the Save nearer the top was the one that did *not* commit
+  your edits — and with the form now eight cards long, the editor's own Save had
+  scrolled out of sight. The workspace card is hidden while editing and the
+  editor header sticks to the top.
+
+- **`position: sticky` works on the settings page.** `.settings-content` carried
+  an `overflow-y: auto` that never engaged — the shell is `min-height: 100vh`, so
+  the pane grows with its content and the document scrolls, as everywhere else in
+  the app. But a non-visible `overflow` still made it the sticky containing
+  block, so anything sticky inside bound to a box that never scrolls. The theme
+  editor's preview column had been dead for exactly that reason and now follows
+  the form again.
+
 - **Custom database themes render in the browser again.** A DB theme is fetched
   by UUID but reports its *slug* as `id`, so the client's "is this the theme I
   asked for?" check rejected every one of them and substituted a blank fallback

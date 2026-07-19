@@ -299,5 +299,6 @@
   "settings.themes.config.removeBackground": "Poista",
   "settings.themes.config.noBackgrounds": "Ei vielä taustakuvia.",
   "settings.themes.config.backgroundsFull": "Teemaan ei mahdu enempää taustakuvia.",
-  "settings.themes.config.uploading": "Ladataan…"
+  "settings.themes.config.uploading": "Ladataan…",
+  "settings.themes.config.backgroundsSomeSkipped": "Vain {count} kuvaa mahtuu vielä; loput ohitettiin."
 }

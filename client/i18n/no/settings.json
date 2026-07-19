@@ -169,5 +169,6 @@
   "settings.themes.config.removeBackground": "Fjern",
   "settings.themes.config.noBackgrounds": "Ingen bakgrunnsbilder ennå.",
   "settings.themes.config.backgroundsFull": "Et tema kan ikke romme flere bakgrunnsbilder.",
-  "settings.themes.config.uploading": "Laster opp…"
+  "settings.themes.config.uploading": "Laster opp…",
+  "settings.themes.config.backgroundsSomeSkipped": "Det er bare plass til {count} bilder til; resten ble hoppet over."
 }

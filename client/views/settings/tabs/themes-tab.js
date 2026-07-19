@@ -488,6 +488,11 @@ export function createThemesTab({ user }) {
    * @param {Object|null} theme - Theme to edit, or null for new theme
    */
   function openEditor(theme = null) {
+    // The workspace card configures which themes appear in the picker — it is
+    // about the list, not the theme being edited, and it carries its own
+    // primary Save. Leaving it above an open editor puts two primary Saves on
+    // screen, the wrong one nearer the top.
+    workspaceCard.classList.add('is-hidden');
     themeListSection.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
     editorSection.innerHTML = '';
@@ -536,6 +541,7 @@ export function createThemesTab({ user }) {
       /* teardown must not block closing the editor */
     }
     editorSection.classList.add('is-hidden');
+    workspaceCard.classList.remove('is-hidden');
     themeListSection.classList.remove('is-hidden');
     editorSection.innerHTML = '';
     editorInstance = null;
