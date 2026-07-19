@@ -1,4 +1,7 @@
-/* 3-column editor layout (editor route only): slides | canvas | inspector */
+/* 3-column editor layout (editor route only): slides | canvas | inspector.
+   Two rows (Option A): row 1 is the full-width slide bar spanning the canvas +
+   inspector columns; row 2 holds the canvas and inspector. The slides column
+   spans both rows (it keeps its own "Slides" header). */
 .is-editor .layout {
   display: grid;
   /* The slide canvas is the primary editing surface (inline WYSIWYG), so it
@@ -7,11 +10,22 @@
      and the slides column uses --slides-panel-width (also drag-resizable). */
   grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
     minmax(320px, 1fr) minmax(320px, var(--inspector-width, 340px));
+  grid-template-rows: auto 1fr;
   height: calc(100vh - var(--ps-topbar-height));
   height: calc(100dvh - var(--ps-topbar-height));
   gap: 0;
   overflow: hidden;
 }
+
+/* Grid placement (Option A). Column templates change per collapse state below;
+   these row/column spans stay put. */
+.is-editor .layout > .slides-panel { grid-column: 1; grid-row: 1 / 3; }
+.is-editor .layout > .slide-bar { grid-column: 2 / 4; grid-row: 1; }
+.is-editor .layout > .preview-panel { grid-column: 2; grid-row: 2; }
+.is-editor .layout > .inspector-panel { grid-column: 3; grid-row: 2; }
+/* Rail dismissed: the grid drops to two columns, so the bar spans only the
+   canvas column (openers stay pinned at its right - above where the rail was). */
+.is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
 
 .is-editor .layout > * {
   /* Critical: allow grid items to shrink so internal .panel-scroll areas can scroll
@@ -286,24 +300,20 @@
   border-left: 1px solid hsl(var(--app-border-default));
 }
 
-.is-editor .preview-panel-header {
+/* Slide bar (Option A): the full-width bar above the working area. Treatment 1
+   - the topbar is the single elevated chrome bar (it carries the shadow); this
+   bar lies flat and quiet, the same white, separated from the topbar by one
+   hairline and meeting the grey canvas below. Not boxed on four sides (that was
+   the "second slab" look). Layout: everything slide-scoped on the left, the
+   openers pinned alone on the right (see 20-preview.css). */
+.is-editor .slide-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
   padding: var(--ps-space-3) var(--ps-space-4);
-  /* White chrome: this control strip groups with the topbar as "tools",
-     and visually detaches from the grey stage below it. */
   background: hsl(var(--app-bg-elevated));
   border-bottom: 1px solid hsl(var(--app-border-default));
-}
-
-.is-editor .preview-panel-header h2 {
-  margin: 0;
-  padding: 0;
-  border: none;
-  font-size: var(--ps-text-base);
-  font-weight: 700;
-  color: hsl(var(--app-text-primary));
-  /* Match other column titles ("Slides", "Bewerken") */
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  min-width: 0;
 }
 
 .is-editor .preview-panel-scroll {
