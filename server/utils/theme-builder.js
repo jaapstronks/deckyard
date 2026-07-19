@@ -205,10 +205,12 @@ function rgba(hex, alpha) {
  * @param {Array} [options.managedFonts] - Pre-fetched managed font families for the org
  * @returns {Object} - Full theme configuration
  */
-export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
-  const colors = dbTheme.colors || {};
-  const fonts = dbTheme.fonts || {};
-
+export function deriveThemeTokens({
+  colors = {},
+  fonts = {},
+  managedFonts,
+  logoUrl = null,
+} = {}) {
   const primary = colors.primary || '#3B82F6';
   const background = colors.background || '#ffffff';
   const textLight = colors.textLight || '#ffffff';
@@ -248,13 +250,16 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
     : '#111827';
 
-  // Build CSS variables
   const cssVars = {
     // Core colors
     '--t-color-background': background,
     '--t-color-text': textColor,
     '--t-color-text-muted': textMuted,
     '--t-color-accent': primary,
+    '--t-color-accent-contrast': pickTextColorForBg(primary, {
+      light: textLight,
+      dark: textDark,
+    }),
 
     // Slide backgrounds (lime = page surface, mist = soft tint, dark = deep)
     '--t-slide-bg-lime': background,
@@ -294,8 +299,30 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     '--t-chart-7': mistBg,
 
     // Logo URL (if provided)
-    ...(dbTheme.logoUrl ? { '--t-logo-url': `url('${dbTheme.logoUrl}')` } : {}),
+    ...(logoUrl ? { '--t-logo-url': `url('${logoUrl}')` } : {}),
   };
+
+  return {
+    cssVars,
+    brandColors,
+    textLight,
+    textDark,
+    headingManaged,
+    bodyManaged,
+  };
+}
+
+export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
+  const colors = dbTheme.colors || {};
+  const fonts = dbTheme.fonts || {};
+
+  const { cssVars, brandColors, textLight, textDark, headingManaged, bodyManaged } =
+    deriveThemeTokens({
+      colors,
+      fonts,
+      managedFonts,
+      logoUrl: dbTheme.logoUrl,
+    });
 
   // Build embed fonts array and external font links
   const embedFonts = buildEmbedFontsArray(fonts, { headingManaged, bodyManaged });
@@ -486,7 +513,46 @@ function getCategoryFallback(category) {
 }
 
 /**
+ * Tokens the live preview needs. A subset of the full derived set — the preview
+ * paints a single sample slide, not the whole slide-type catalogue.
+ */
+const PREVIEW_TOKENS = [
+  '--t-color-background',
+  '--t-color-text',
+  '--t-color-text-muted',
+  '--t-color-accent',
+  '--t-color-accent-contrast',
+  '--t-slide-bg-lime',
+  '--t-slide-bg-mist',
+  '--t-slide-bg-dark',
+  '--t-quote-author-color',
+  '--t-font-heading',
+  '--t-font-body',
+  '--t-heading-weight',
+  '--t-chart-0',
+  '--t-chart-1',
+  '--t-chart-2',
+  '--t-chart-3',
+];
+
+/**
+ * Strip characters that would let a value escape its declaration and open a new
+ * rule. Values reaching here are not all trusted: the preview route takes them
+ * from the query string, and a managed font's `name` is free text from the DB.
+ * @param {*} value
+ * @returns {string}
+ */
+function cssValueSafe(value) {
+  return String(value ?? '').replace(/[;{}<>]/g, '');
+}
+
+/**
  * Generate CSS for theme preview (live preview in editor).
+ *
+ * Serializes `deriveThemeTokens` rather than re-deriving. The two used to hold
+ * separate copies of the same colour maths, so the preview could drift from
+ * what actually rendered.
+ *
  * @param {Object} options - Theme options
  * @param {Object} options.colors - Color configuration
  * @param {Object} options.fonts - Font configuration
@@ -494,64 +560,13 @@ function getCategoryFallback(category) {
  * @returns {string} - CSS string
  */
 export function generatePreviewCSS({ colors, fonts, managedFonts }) {
-  const primary = colors.primary || '#3B82F6';
-  const background = colors.background || '#ffffff';
-  const textLight = colors.textLight || '#ffffff';
-  const textDark = colors.textDark || '#1f2937';
+  const { cssVars } = deriveThemeTokens({ colors, fonts, managedFonts });
 
-  const headingFont = fonts.heading || 'Inter';
-  const bodyFont = fonts.body || 'Inter';
-  const headingFamilyId = fonts.headingFamilyId || null;
-  const bodyFamilyId = fonts.bodyFamilyId || null;
+  const lines = PREVIEW_TOKENS.filter((token) => cssVars[token] != null).map(
+    (token) => `  ${token}: ${cssValueSafe(cssVars[token])};`
+  );
 
-  // Resolve managed fonts if familyId is present
-  const managedFontMap = {};
-  if (Array.isArray(managedFonts)) {
-    for (const mf of managedFonts) {
-      managedFontMap[mf.id] = mf;
-    }
-  }
-  const headingManaged = headingFamilyId ? managedFontMap[headingFamilyId] : null;
-  const bodyManaged = bodyFamilyId ? managedFontMap[bodyFamilyId] : null;
-
-  const textColor = pickTextColorForBg(background, { light: textLight, dark: textDark });
-  const textMuted = rgba(textColor, 0.7) || 'rgba(31, 41, 55, 0.7)';
-
-  const primaryHsl = hexToHsl(primary);
-  const mistBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(40, primaryHsl.s * 0.5), 97)
-    : '#f8fafc';
-  const darkBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
-    : '#111827';
-
-  const brandColors = deriveColorPalette(primary);
-
-  // Use managed font CSS when available, fall back to curated
-  const headingCSS = getManagedFontCSS(headingManaged, headingFont);
-  const bodyCSS = getManagedFontCSS(bodyManaged, bodyFont);
-
-  return `
-/* Custom Theme Preview CSS */
-.theme-preview {
-  --t-color-background: ${background};
-  --t-color-text: ${textColor};
-  --t-color-text-muted: ${textMuted};
-  --t-color-accent: ${primary};
-  --t-color-accent-contrast: ${pickTextColorForBg(primary, { light: textLight, dark: textDark })};
-  --t-slide-bg-lime: ${background};
-  --t-slide-bg-mist: ${mistBg};
-  --t-slide-bg-dark: ${darkBg};
-  --t-quote-author-color: ${primary};
-  --t-font-heading: ${headingCSS};
-  --t-font-body: ${bodyCSS};
-  --t-heading-weight: 700;
-  --t-chart-0: ${brandColors[0]};
-  --t-chart-1: ${brandColors[1]};
-  --t-chart-2: ${brandColors[2]};
-  --t-chart-3: ${brandColors[3]};
-}
-`.trim();
+  return `/* Custom Theme Preview CSS */\n.theme-preview {\n${lines.join('\n')}\n}`;
 }
 
 /**
