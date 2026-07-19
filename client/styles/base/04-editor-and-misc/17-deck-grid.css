@@ -67,8 +67,8 @@
   background: hsl(var(--app-accent-primary) / 0.06);
 }
 
-/* Selected checkmark badge (multi-select / section-refine mode). */
-.deck-grid-tile.is-selected::after {
+/* Legacy selected checkmark badge (toggle-on-click mode without a checkbox). */
+.deck-grid-tile.is-selected:not(.has-checkbox)::after {
   content: '✓';
   position: absolute;
   top: 12px;
@@ -85,6 +85,51 @@
   font-size: 13px;
   font-weight: 700;
   pointer-events: none;
+}
+
+/* Corner select checkbox (flipped preview-on-click mode): revealed on tile
+   hover / focus-within, and kept visible while checked. */
+.deck-grid-select {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-strong));
+  background: hsl(var(--app-bg-elevated) / 0.94);
+  color: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--ps-transition-fast),
+    background var(--ps-transition-fast), color var(--ps-transition-fast),
+    border-color var(--ps-transition-fast);
+}
+
+.deck-grid-select svg {
+  width: 15px;
+  height: 15px;
+}
+
+.deck-grid-tile:hover .deck-grid-select,
+.deck-grid-select:focus-visible,
+.deck-grid-select.is-checked {
+  opacity: 1;
+}
+
+.deck-grid-select:hover {
+  border-color: hsl(var(--app-accent-primary));
+}
+
+.deck-grid-select.is-checked {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
 }
 
 .deck-grid-thumb {
@@ -245,6 +290,56 @@
   min-height: 0;
 }
 
+/* Stage flanked by prev/next navigation buttons. */
+.deck-grid-peek-stagewrap {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  min-height: 0;
+}
+
+.deck-grid-peek-nav {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-secondary));
+  cursor: pointer;
+}
+
+.deck-grid-peek-nav svg {
+  width: 20px;
+  height: 20px;
+}
+
+.deck-grid-peek-nav:hover:not(:disabled) {
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-primary));
+}
+
+.deck-grid-peek-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.deck-grid-peek-stagewrap .deck-grid-peek-stage {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .deck-grid-peek-nav {
+    width: 34px;
+    height: 34px;
+  }
+}
+
 .deck-grid-peek-stage {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -283,9 +378,32 @@
   flex-wrap: wrap;
 }
 
+.deck-grid-peek-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .deck-grid-peek-title {
   margin: 0;
   font-size: var(--ps-text-lg);
+}
+
+.deck-grid-peek-count {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+  font-variant-numeric: tabular-nums;
+}
+
+/* AI rationale shown inside the peek preview (the grid tile shows it too). */
+.deck-grid-peek-why {
+  margin: 2px 0 0;
+  max-width: 62ch;
+  font-size: var(--ps-text-sm);
+  line-height: 1.5;
+  color: hsl(var(--app-text-secondary));
 }
 
 .deck-grid-peek-actions {

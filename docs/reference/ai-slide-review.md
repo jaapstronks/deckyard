@@ -7,19 +7,38 @@ review layer over slide generation works and where the pieces live.
 
 `client/views/editor/deck-grid.js` — reusable overview grid of a deck's slides
 with truthful thumbnails (same lazy IntersectionObserver + per-tile
-`--thumb-scale` pattern as the insert-slide picker). Features: per-tile peek
-lightbox (capture-phase Escape so the host modal survives), optional
-multi-select with an `is-selected` checkmark, and an `annotationFor(slide,
-index)` hook that renders extra content under a tile. The module itself is
+`--thumb-scale` pattern as the insert-slide picker). The module itself is
 AI-free; the AI review modals are this grid plus an annotation layer.
+
+Interaction is configurable per consumer:
+
+- `annotationFor(slide, index)` — hook that renders extra content under a tile
+  (the AI "why + alternatives" layer).
+- `previewOnClick` — clicking a tile opens the peek lightbox (the AI-review
+  default: preview is the common action). Keyboard on a focused tile: Enter →
+  preview, Space → toggle selection. When off, a tile click picks/toggles and
+  a per-tile magnifier button opens the peek instead.
+- `selectable` — multi-select. In `previewOnClick` mode, selection is a corner
+  **checkbox** (hover-revealed, kept visible while checked); otherwise the
+  whole tile toggles with an `is-selected` checkmark.
+- `peekNoteFor(slide, index)` — extra info rendered inside the peek preview
+  (the AI rationale, so you don't have to close the preview to read the why).
+
+The **peek lightbox** navigates the whole deck without closing — ‹ › buttons
+plus ArrowLeft / ArrowRight, a `n / total` counter, and (capture-phase Escape
+so the host modal survives) closes back to the grid. Selection state is
+untouched while navigating.
 
 Consumers:
 
 - `modals/deck-overview-modal.js` — plain overview, opened from the topbar
   "Slide overview" button (`layout-grid` icon). Click a tile (or peek → "Go to
   slide") to jump to that slide in the editor.
-- `modals/ai-batch-review-modal.js` — add-slides batch review (below).
-- `modals/ai-deck-review-modal.js` — whole-deck review (below).
+- `modals/ai-batch-review-modal.js` — add-slides batch review (below):
+  `previewOnClick`, click a tile to preview with its rationale.
+- `modals/ai-deck-review-modal.js` — whole-deck review (below):
+  `previewOnClick` + `selectable`, so click previews and the corner checkbox
+  selects for section refine.
 
 Shared annotation layer: `ai-review-annotations.js` renders the per-slide "why
 this type" line + swappable alternative-type chips (via the existing
