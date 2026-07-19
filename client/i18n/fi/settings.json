@@ -300,5 +300,19 @@
   "settings.themes.config.noBackgrounds": "Ei vielä taustakuvia.",
   "settings.themes.config.backgroundsFull": "Teemaan ei mahdu enempää taustakuvia.",
   "settings.themes.config.uploading": "Ladataan…",
-  "settings.themes.config.backgroundsSomeSkipped": "Vain {count} kuvaa mahtuu vielä; loput ohitettiin."
+  "settings.themes.config.backgroundsSomeSkipped": "Vain {count} kuvaa mahtuu vielä; loput ohitettiin.",
+  "settings.themes.config.variants": "Taustavaihtoehdot",
+  "settings.themes.config.variantsHint": "Taustavaihtoehtoja sisäänrakennettujen lisäksi. Jokainen näkyy jokaisen dian taustavalitsimessa, ja tekstin väri mukautuu automaattisesti, jotta tumma vaihtoehto pysyy luettavana.",
+  "settings.themes.config.variantName": "Nimi",
+  "settings.themes.config.variantNamePlaceholder": "esim. Rauha",
+  "settings.themes.config.addVariant": "Lisää",
+  "settings.themes.config.removeVariant": "Poista",
+  "settings.themes.config.variantColor": "Tausta",
+  "settings.themes.config.variantTextColor": "Teksti sen päällä",
+  "settings.themes.config.noVariants": "Ei vielä lisätaustoja.",
+  "settings.themes.config.variantNeedsName": "Anna vaihtoehdolle nimi.",
+  "settings.themes.config.variantBadName": "Nimessä on oltava vähintään yksi kirjain tai numero.",
+  "settings.themes.config.variantReserved": "Nimi kuuluu sisäänrakennetulle taustalle.",
+  "settings.themes.config.variantDuplicate": "Sinulla on jo samanniminen vaihtoehto.",
+  "settings.themes.config.variantsFull": "Teemaan ei mahdu enempää taustavaihtoehtoja."
 }

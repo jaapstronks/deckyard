@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Ingen bakgrunnsbilder ennå.",
   "settings.themes.config.backgroundsFull": "Et tema kan ikke romme flere bakgrunnsbilder.",
   "settings.themes.config.uploading": "Laster opp…",
-  "settings.themes.config.backgroundsSomeSkipped": "Det er bare plass til {count} bilder til; resten ble hoppet over."
+  "settings.themes.config.backgroundsSomeSkipped": "Det er bare plass til {count} bilder til; resten ble hoppet over.",
+  "settings.themes.config.variants": "Bakgrunnsvalg",
+  "settings.themes.config.variantsHint": "Ekstra bakgrunnsvalg i tillegg til de innebygde. Hvert vises i bakgrunnsvelgeren på hvert lysbilde, og tekstfargen følger automatisk slik at et mørkt valg forblir lesbart.",
+  "settings.themes.config.variantName": "Navn",
+  "settings.themes.config.variantNamePlaceholder": "f.eks. Rolig",
+  "settings.themes.config.addVariant": "Legg til",
+  "settings.themes.config.removeVariant": "Fjern",
+  "settings.themes.config.variantColor": "Bakgrunn",
+  "settings.themes.config.variantTextColor": "Tekst på den",
+  "settings.themes.config.noVariants": "Ingen ekstra bakgrunner ennå.",
+  "settings.themes.config.variantNeedsName": "Gi varianten et navn.",
+  "settings.themes.config.variantBadName": "Et navn må ha minst én bokstav eller ett siffer.",
+  "settings.themes.config.variantReserved": "Det navnet tilhører en innebygd bakgrunn.",
+  "settings.themes.config.variantDuplicate": "Du har allerede en variant med det navnet.",
+  "settings.themes.config.variantsFull": "Et tema kan ikke romme flere bakgrunnsvalg."
 }

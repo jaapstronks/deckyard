@@ -24,6 +24,7 @@ import {
 } from '../../../../shared/theme-config-schema.js';
 import { LOCKABLE_PROPERTIES } from '../../../../shared/theme-locks.js';
 import { createBackgroundsSection } from './backgrounds-section.js';
+import { createVariantsSection } from './variants-section.js';
 
 /** Sentinel for "leave this to the theme builder's own default". */
 const UNSET = '__unset__';
@@ -231,13 +232,15 @@ export function createLocksSection({ config, onChange }) {
  *
  * @param {Object} opts
  * @param {Object} opts.config - the draft's config (mutated in place)
+ * @param {Object} opts.colors - the draft's four colours, for contrast poles
  * @param {Function} opts.onChange - called after any change, to refresh the preview
  * @returns {HTMLElement[]}
  */
-export function createConfigSections({ config, onChange }) {
+export function createConfigSections({ config, colors, onChange }) {
   return [
     createSurfacesSection({ config, onChange }).el,
     createTypographySection({ config, onChange }).el,
+    createVariantsSection({ config, colors, onChange }).el,
     createBackgroundsSection({ config, onChange }).el,
     createLocksSection({ config, onChange }).el,
   ];

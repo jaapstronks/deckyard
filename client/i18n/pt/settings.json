@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Ainda sem imagens de fundo.",
   "settings.themes.config.backgroundsFull": "Um tema não suporta mais imagens de fundo.",
   "settings.themes.config.uploading": "A carregar…",
-  "settings.themes.config.backgroundsSomeSkipped": "Só cabem mais {count} imagens; as restantes foram ignoradas."
+  "settings.themes.config.backgroundsSomeSkipped": "Só cabem mais {count} imagens; as restantes foram ignoradas.",
+  "settings.themes.config.variants": "Opções de fundo",
+  "settings.themes.config.variantsHint": "Opções de fundo além das integradas. Cada uma aparece no seletor de fundo de cada diapositivo, e a cor do texto ajusta-se automaticamente para que uma opção escura continue legível.",
+  "settings.themes.config.variantName": "Nome",
+  "settings.themes.config.variantNamePlaceholder": "p. ex. Calmo",
+  "settings.themes.config.addVariant": "Adicionar",
+  "settings.themes.config.removeVariant": "Remover",
+  "settings.themes.config.variantColor": "Fundo",
+  "settings.themes.config.variantTextColor": "Texto por cima",
+  "settings.themes.config.noVariants": "Ainda sem fundos adicionais.",
+  "settings.themes.config.variantNeedsName": "Dê um nome à variante.",
+  "settings.themes.config.variantBadName": "Um nome precisa de pelo menos uma letra ou algarismo.",
+  "settings.themes.config.variantReserved": "Esse nome pertence a um fundo integrado.",
+  "settings.themes.config.variantDuplicate": "Já tem uma variante com esse nome.",
+  "settings.themes.config.variantsFull": "Um tema não suporta mais opções de fundo."
 }

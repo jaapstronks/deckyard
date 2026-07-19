@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Noch keine Hintergrundbilder.",
   "settings.themes.config.backgroundsFull": "Mehr Hintergrundbilder kann ein Theme nicht aufnehmen.",
   "settings.themes.config.uploading": "Wird hochgeladen…",
-  "settings.themes.config.backgroundsSomeSkipped": "Es passen nur noch {count} Bilder; der Rest wurde übersprungen."
+  "settings.themes.config.backgroundsSomeSkipped": "Es passen nur noch {count} Bilder; der Rest wurde übersprungen.",
+  "settings.themes.config.variants": "Hintergrund-Optionen",
+  "settings.themes.config.variantsHint": "Zusätzliche Hintergrundoptionen neben den eingebauten. Jede erscheint in der Hintergrund-Auswahl jeder Folie, und die Textfarbe folgt automatisch, damit eine dunkle Option lesbar bleibt.",
+  "settings.themes.config.variantName": "Name",
+  "settings.themes.config.variantNamePlaceholder": "z. B. Ruhig",
+  "settings.themes.config.addVariant": "Hinzufügen",
+  "settings.themes.config.removeVariant": "Entfernen",
+  "settings.themes.config.variantColor": "Hintergrund",
+  "settings.themes.config.variantTextColor": "Text darauf",
+  "settings.themes.config.noVariants": "Noch keine zusätzlichen Hintergründe.",
+  "settings.themes.config.variantNeedsName": "Geben Sie der Variante einen Namen.",
+  "settings.themes.config.variantBadName": "Ein Name braucht mindestens einen Buchstaben oder eine Ziffer.",
+  "settings.themes.config.variantReserved": "Dieser Name gehört bereits einem eingebauten Hintergrund.",
+  "settings.themes.config.variantDuplicate": "Es gibt bereits eine Variante mit diesem Namen.",
+  "settings.themes.config.variantsFull": "Mehr Hintergrundoptionen kann ein Theme nicht aufnehmen."
 }

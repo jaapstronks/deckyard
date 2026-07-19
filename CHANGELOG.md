@@ -8,6 +8,17 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Name your own background options in the theme editor.** A theme could
+  already offer background choices beyond the built-in two — each becomes a
+  token, a generated rule and an entry in every slide's Background picker — but
+  only by hand-editing JSON or calling the API. The editor now has a Background
+  options section: name one, pick its colour, and its text colour follows
+  automatically so a dark option stays readable. Names that the renderer would
+  have quietly discarded (a built-in's name, a duplicate, one with nothing
+  usable in it) are refused up front with the reason, instead of vanishing on
+  save. The id a slide stores is derived from the name once and then fixed,
+  since renaming it would orphan every slide already using it.
+
 - **Upload background images to a theme from the browser.** A theme's
   `backgroundPresets` is the only mechanism for its own title-slide imagery, but
   it could only be set through the API — so a designer working in the app could

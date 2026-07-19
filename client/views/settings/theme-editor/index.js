@@ -303,6 +303,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   // ============================================================
   const configCards = createConfigSections({
     config: state.config,
+    colors: state.colors,
     onChange: updatePreview,
   });
 

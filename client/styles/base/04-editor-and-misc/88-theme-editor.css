@@ -463,6 +463,29 @@
 }
 
 /* ============================================================
+   BACKGROUND VARIANTS
+   ============================================================ */
+
+.theme-variants {
+  gap: var(--ps-space-3);
+}
+
+.theme-variant-row {
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-subtle));
+  background: hsl(var(--app-bg-elevated));
+}
+
+.theme-variant-identity code {
+  /* The id is what slides store, so it is shown but never presented as an
+     editable field. */
+  font-size: var(--ps-text-xs);
+  opacity: 0.8;
+}
+
+/* ============================================================
    BACKGROUND PRESETS
    ============================================================ */
 

@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Ingen baggrundsbilleder endnu.",
   "settings.themes.config.backgroundsFull": "Et tema kan ikke rumme flere baggrundsbilleder.",
   "settings.themes.config.uploading": "Uploader…",
-  "settings.themes.config.backgroundsSomeSkipped": "Der er kun plads til {count} billeder mere; resten blev sprunget over."
+  "settings.themes.config.backgroundsSomeSkipped": "Der er kun plads til {count} billeder mere; resten blev sprunget over.",
+  "settings.themes.config.variants": "Baggrundsvalg",
+  "settings.themes.config.variantsHint": "Ekstra baggrundsvalg ud over de indbyggede. Hvert vises i baggrundsvælgeren på hvert slide, og tekstfarven følger automatisk, så et mørkt valg forbliver læsbart.",
+  "settings.themes.config.variantName": "Navn",
+  "settings.themes.config.variantNamePlaceholder": "f.eks. Rolig",
+  "settings.themes.config.addVariant": "Tilføj",
+  "settings.themes.config.removeVariant": "Fjern",
+  "settings.themes.config.variantColor": "Baggrund",
+  "settings.themes.config.variantTextColor": "Tekst på den",
+  "settings.themes.config.noVariants": "Ingen ekstra baggrunde endnu.",
+  "settings.themes.config.variantNeedsName": "Giv varianten et navn.",
+  "settings.themes.config.variantBadName": "Et navn skal indeholde mindst ét bogstav eller tal.",
+  "settings.themes.config.variantReserved": "Det navn tilhører en indbygget baggrund.",
+  "settings.themes.config.variantDuplicate": "Du har allerede en variant med det navn.",
+  "settings.themes.config.variantsFull": "Et tema kan ikke rumme flere baggrundsvalg."
 }
