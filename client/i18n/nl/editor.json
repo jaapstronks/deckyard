@@ -178,7 +178,7 @@
   "editor.image.bgLibraryTitle": "Beeldbank: kies achtergrondafbeelding",
   "editor.image.chooseFromLibrary": "Kies uit beeldbank…",
   "editor.image.chooseOrUpload": "Kiezen / uploaden…",
-  "editor.image.defaultBackgrounds": "Standaard achtergronden",
+  "editor.image.themeBackgrounds": "Uit dit thema",
   "editor.image.fieldLabel": "Afbeelding",
   "editor.image.help.storage": "Afbeeldingen worden lokaal opgeslagen in /server/uploads en via URL gebruikt.",
   "editor.image.help.uploadsDisabled": "Kies uit de beeldbank (aanbevolen). Uploads zijn uitgeschakeld.",

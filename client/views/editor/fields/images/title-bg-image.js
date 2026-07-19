@@ -117,12 +117,16 @@ export function createFieldTitleBgImage(ctx) {
       wrap.append(h('img', { src: current, alt: '', class: 'editor-img-preview' }));
     }
 
-    // Preset backgrounds from theme
+    // Preset backgrounds declared by the deck's theme. Labelled as such so it's
+    // clear these are the theme's own imagery, not a generic asset dump.
     const presetUrls = getBackgroundPresets(theme);
     if (presetUrls.length) {
       const presetsWrap = h('div', { class: 'stack card-group' });
       presetsWrap.append(
-        h('div', { class: 'card-group-title', text: t('editor.image.defaultBackgrounds', 'Default backgrounds') })
+        h('div', {
+          class: 'card-group-title',
+          text: t('editor.image.themeBackgrounds', 'From this theme'),
+        })
       );
       const grid = h('div', { class: 'row is-wrap is-start' });
       for (const url of presetUrls) {

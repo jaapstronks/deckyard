@@ -197,7 +197,7 @@
   "editor.image.bgLibraryTitle": "Library: choose a background image",
   "editor.image.chooseFromLibrary": "Choose from library…",
   "editor.image.chooseOrUpload": "Choose / upload…",
-  "editor.image.defaultBackgrounds": "Default backgrounds",
+  "editor.image.themeBackgrounds": "From this theme",
   "editor.image.fieldLabel": "Image",
   "editor.image.help.storage": "Images are stored locally in /server/uploads and used via URL.",
   "editor.image.help.uploadsDisabled": "Choose from the library (recommended). Uploads are disabled.",

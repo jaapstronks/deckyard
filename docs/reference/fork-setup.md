@@ -79,6 +79,19 @@ custom/slide-types/*
    Deck-content assets shared across themes (uploaded images, partner logos)
    still live in `custom/assets/`.
 
+   Add `backgroundPresets` if you want title slides to get one of your own
+   background images automatically (on deck import, and when converting a
+   chapter-title slide). Without it they stay flat — Deckyard will never reach
+   for its own demo imagery:
+   ```json
+   {
+     "backgroundPresets": [
+       "/custom/themes/your-org/assets/images/bg-1.jpg",
+       "/custom/themes/your-org/assets/images/bg-2.jpg"
+     ]
+   }
+   ```
+
 2. **Add your assets** in `custom/assets/`:
    ```
    custom/assets/

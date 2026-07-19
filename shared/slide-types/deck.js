@@ -1,4 +1,5 @@
-import { cryptoUuid, pickRandom, TITLE_BG_PRESETS } from './helpers.js';
+import { cryptoUuid } from './helpers.js';
+import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { SLIDE_TYPES } from './registry.js';
 
 // --------
@@ -33,7 +34,17 @@ export function presentationToDeck(pres) {
   };
 }
 
-export function deckToPresentationParts(input) {
+/**
+ * Normalize an imported deck (JSON, markdown, Notion, AI output) into
+ * presentation parts.
+ *
+ * @param {Object|Array} input - a deck object, or a bare slides array
+ * @param {Object} [opts]
+ * @param {Object} [opts.theme] - the loaded theme, when the caller has one.
+ *   Title slides without a background image take one from
+ *   `theme.backgroundPresets`; without a theme they stay empty.
+ */
+export function deckToPresentationParts(input, { theme: themeConfig = null } = {}) {
   // Accept either the full object or a raw slides array (super simple use-case).
   const deck = Array.isArray(input) ? { slides: input } : input || {};
   const title =
@@ -46,7 +57,7 @@ export function deckToPresentationParts(input) {
       : 'default';
   const slidesRaw = Array.isArray(deck.slides) ? deck.slides : [];
 
-  const slides = slidesRaw.map((raw) => normalizeDeckSlide(raw));
+  const slides = slidesRaw.map((raw) => normalizeDeckSlide(raw, themeConfig));
   return { title, theme, slides };
 }
 
@@ -61,7 +72,7 @@ function enumOptionValues(field) {
     .filter(Boolean);
 }
 
-function normalizeDeckSlide(raw) {
+function normalizeDeckSlide(raw, theme = null) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
   const def = SLIDE_TYPES[type];
   if (!def) {
@@ -143,7 +154,7 @@ function normalizeDeckSlide(raw) {
   // Type-specific normalization for back-compat and better defaults.
   if (type === 'title-slide') {
     const bgImage = typeof content.bgImage === 'string' ? content.bgImage.trim() : '';
-    if (!bgImage) content.bgImage = pickRandom(TITLE_BG_PRESETS);
+    if (!bgImage) content.bgImage = pickBackgroundPreset(theme);
   }
   if (type === 'poll-slide') {
     // pollId is required at runtime for interaction state. Deck imports (including AI output)

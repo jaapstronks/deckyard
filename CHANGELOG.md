@@ -247,6 +247,34 @@ entries are grouped per release rather than exhaustively listed.
   See `docs/reference/collab-presence.md`, `collab-deck-doc.md`,
   `collab-editor-binder.md` and ADR 001.
 
+### Added
+
+- **Database themes reach parity with file themes.** A DB theme could only
+  store four colours, two fonts and two logo URLs, so named slide background
+  variants, background presets, gradient, surface tokens and slide-type
+  curation were expressible in a hand-authored `theme.json` but not in a theme
+  built in the app. A new `config` jsonb column (migration `050`) holds that
+  richer shape, and `buildThemeConfig` merges it over the derived defaults —
+  closing the documented `slideBackgrounds` gap. The column defaults to `{}`
+  and an empty config leaves a theme byte-identical, so existing themes render
+  exactly as before. Also stores dark/light logo variants and a coarse
+  `open`/`locked` override policy per brand property (validated now; enforced
+  in a later change). No UI yet — this is the storage the Theme Studio will
+  build on. See `docs/reference/theme-config.md`.
+
+### Changed
+
+- **The theme owns its background presets (BEHAVIOUR CHANGE).** Deckyard shipped
+  a hardcoded `TITLE_BG_PRESETS` list of four demo photos, and title slides
+  created by deck import or by converting a chapter-title slide were handed one
+  at random — regardless of the deck's theme, so a fork's brand decks came out
+  wearing Deckyard's stock imagery. `theme.backgroundPresets` is now the only
+  mechanism. A theme that declares presets supplies them; **a theme that
+  declares none yields a flat title slide** rather than an off-brand photo. The
+  editor's picker labels them "From this theme". JSON and Markdown import load
+  the deck's theme so imported title slides can draw from it; other import paths
+  (AI, Notion, MCP) currently create them flat.
+
 ### Fixed
 
 - **Countdown, freeform and end slides follow the theme.** Their CSS reads
@@ -422,6 +450,13 @@ self-hosted-behind-a-proxy, authenticated deployment already; these close
 default-config foot-guns that matter the moment untrusted users are allowed.
 See `SECURITY.md` for the deployment-facing summary and env vars.
 
+- **`GET /api/themes/preview-css` no longer interpolates raw query params.**
+  Every value went straight into a generated stylesheet, so a crafted `primary`
+  could terminate the declaration and append arbitrary rules. Colours are now
+  matched against a hex pattern, font names against the curated list and
+  `familyId` against a UUID pattern, each falling back to its default rather
+  than passing through; the serializer additionally strips `;{}<>` from every
+  value, which also covers a managed font's free-text `name` from the database.
 - **Auth no longer fails open (BREAKING).** A deployment with no `AUTH_SECRET`
   used to run wide open with anonymous admin access. The server now refuses to
   start unless `AUTH_SECRET` is set or auth is explicitly disabled with

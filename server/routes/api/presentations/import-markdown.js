@@ -9,6 +9,7 @@ import { createPresentation, updatePresentation } from '../../../storage/present
 import { json, serveJson } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
+import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 
 export async function handlePresentationsImportMarkdown({
   repoRoot,
@@ -46,8 +47,17 @@ export async function handlePresentationsImportMarkdown({
 
     console.log('[import-markdown] Converted:', report.slidesConverted, 'slides');
 
+    // Load the deck's theme first so imported title slides can take a
+    // background image from its presets.
+    let themeConfig = null;
+    try {
+      themeConfig = await loadTheme(repoRoot, resolveThemeId(deck?.theme));
+    } catch {
+      // ignore — title slides are imported without a background image
+    }
+
     // Normalize through deckToPresentationParts (same as JSON import)
-    const parts = deckToPresentationParts(deck);
+    const parts = deckToPresentationParts(deck, { theme: themeConfig });
     console.log('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
     // Create presentation

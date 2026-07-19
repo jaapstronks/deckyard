@@ -6,6 +6,7 @@
 import { updatePresentation } from '../../../storage/presentations.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { requireScope, getPresentationWithAccess, parseJsonBody, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
 
@@ -165,10 +166,19 @@ async function handleCreateSlide(ctx, presentationId) {
     return true;
   }
 
+  // The deck's theme supplies the background presets for types that auto-assign
+  // one; without it a new title slide would come out flat.
+  let theme = null;
+  try {
+    theme = await loadTheme(repoRoot, resolveThemeId(pres.theme));
+  } catch {
+    // ignore — the slide is simply created without a background image
+  }
+
   // Create new slide
   let newSlideObj;
   try {
-    newSlideObj = newSlide({ type: slideType });
+    newSlideObj = newSlide({ type: slideType, theme });
   } catch (e) {
     await apiError(ctx, 400, `Failed to create slide: ${e.message}`);
     return true;
