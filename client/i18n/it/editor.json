@@ -140,7 +140,7 @@
   "editor.image.bgHelp.withUploads": "Scegli un'immagine esistente dalla libreria, o carica la tua immagine solo per questa slide.",
   "editor.image.bgLibraryTitle": "Libreria: scegli un'immagine di sfondo",
   "editor.image.chooseFromLibrary": "Scegli dalla libreria…",
-  "editor.image.defaultBackgrounds": "Sfondi predefiniti",
+  "editor.image.themeBackgrounds": "Da questo tema",
   "editor.image.fieldLabel": "Immagine",
   "editor.image.help.storage": "Le immagini sono memorizzate localmente in /server/uploads e usate tramite URL.",
   "editor.image.help.uploadsDisabled": "Scegli dalla libreria (consigliato). I caricamenti sono disabilitati.",

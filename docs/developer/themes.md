@@ -214,7 +214,19 @@ Themes can provide background image presets for title slides:
 }
 ```
 
-These appear in the background picker for slide types that support background images.
+These appear in the background picker (grouped as **"From this theme"**) for
+slide types that support background images, and are the pool a title slide draws
+from when one is assigned automatically — on deck import, and when converting a
+chapter-title slide to a title slide.
+
+`backgroundPresets` is the **only** mechanism for this. A theme that declares
+none gets no automatic background image: title slides stay flat rather than
+picking up imagery that isn't yours. Deckyard used to ship a hardcoded list of
+four demo photos that any deck could land on regardless of its theme; that list
+is gone.
+
+The URLs may point anywhere the server serves — `custom/themes/<id>/assets/`,
+`custom/assets/`, `/uploads/`, or a CDN.
 
 ---
 

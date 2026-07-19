@@ -3,7 +3,7 @@ import { openSlideLibraryModal as openSlideLibraryModalImpl } from './modals/sli
 import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-modal.js';
 import { createSlideTypePicker } from './slide-type-picker.js';
 import { deepClone, makeNewSlide } from './editor-utils.js';
-import { getBackgroundPresets } from '../../lib/theme.js';
+import { pickBackgroundPreset } from '../../../shared/theme-background-presets.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
@@ -205,10 +205,8 @@ export function createSlidesPanel({
     if (!('bgImage' in slide.content)) return;
     const current = String(slide.content?.bgImage || '').trim();
     if (current) return;
-    const pool = getBackgroundPresets(theme);
-    if (pool.length) {
-      slide.content.bgImage = pool[Math.floor(Math.random() * pool.length)];
-    }
+    const preset = pickBackgroundPreset(theme);
+    if (preset) slide.content.bgImage = preset;
   };
 
   const insertSlideObject = (s, { afterSlideId, parentId = null } = {}) => {

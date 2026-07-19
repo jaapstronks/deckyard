@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Escolha uma imagem existente da biblioteca, ou carregue a sua própria imagem apenas para este diapositivo.",
   "editor.image.bgLibraryTitle": "Biblioteca: escolher imagem de fundo",
   "editor.image.chooseFromLibrary": "Escolher da biblioteca…",
-  "editor.image.defaultBackgrounds": "Fundos predefinidos",
+  "editor.image.themeBackgrounds": "Deste tema",
   "editor.image.fieldLabel": "Imagem",
   "editor.image.help.storage": "As imagens são armazenadas localmente em /server/uploads e usadas via URL.",
   "editor.image.help.uploadsDisabled": "Escolher da biblioteca (recomendado). Os carregamentos estão desativados.",

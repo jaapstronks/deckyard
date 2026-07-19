@@ -168,13 +168,10 @@ export function applyThemeVarsToElement(el, theme) {
   }
 }
 
-/**
- * Get background presets from a theme.
- * @param {Object} theme - Theme object
- * @returns {string[]} Array of background image URLs
- */
-export function getBackgroundPresets(theme) {
-  if (!theme || typeof theme !== 'object') return [];
-  if (!Array.isArray(theme.backgroundPresets)) return [];
-  return theme.backgroundPresets.filter((url) => typeof url === 'string' && url.trim());
-}
+// Background presets live in shared/ so the server's slide creation, deck
+// import and convert paths read them the same way the editor does. Re-exported
+// here because the editor's field modules already import from this module.
+export {
+  getBackgroundPresets,
+  pickBackgroundPreset,
+} from '../../shared/theme-background-presets.js';

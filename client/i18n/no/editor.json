@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Velg et eksisterende bilde fra biblioteket, eller last opp ditt eget bilde kun for dette lysbildet.",
   "editor.image.bgLibraryTitle": "Bibliotek: velg et bakgrunnsbilde",
   "editor.image.chooseFromLibrary": "Velg fra bibliotek…",
-  "editor.image.defaultBackgrounds": "Standardbakgrunner",
+  "editor.image.themeBackgrounds": "Fra dette temaet",
   "editor.image.fieldLabel": "Bilde",
   "editor.image.help.storage": "Bilder lagres lokalt i /server/uploads og brukes via URL.",
   "editor.image.help.uploadsDisabled": "Velg fra biblioteket (anbefalt). Opplastinger er deaktivert.",

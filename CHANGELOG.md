@@ -262,6 +262,19 @@ entries are grouped per release rather than exhaustively listed.
   in a later change). No UI yet — this is the storage the Theme Studio will
   build on. See `docs/reference/theme-config.md`.
 
+### Changed
+
+- **The theme owns its background presets (BEHAVIOUR CHANGE).** Deckyard shipped
+  a hardcoded `TITLE_BG_PRESETS` list of four demo photos, and title slides
+  created by deck import or by converting a chapter-title slide were handed one
+  at random — regardless of the deck's theme, so a fork's brand decks came out
+  wearing Deckyard's stock imagery. `theme.backgroundPresets` is now the only
+  mechanism. A theme that declares presets supplies them; **a theme that
+  declares none yields a flat title slide** rather than an off-brand photo. The
+  editor's picker labels them "From this theme". JSON and Markdown import load
+  the deck's theme so imported title slides can draw from it; other import paths
+  (AI, Notion, MCP) currently create them flat.
+
 ### Fixed
 
 - **Countdown, freeform and end slides follow the theme.** Their CSS reads

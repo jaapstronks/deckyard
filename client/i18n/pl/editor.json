@@ -140,7 +140,7 @@
   "editor.image.bgHelp.withUploads": "Wybierz istniejący obraz z biblioteki lub prześlij własny obraz tylko dla tego slajdu.",
   "editor.image.bgLibraryTitle": "Biblioteka: wybierz obraz tła",
   "editor.image.chooseFromLibrary": "Wybierz z biblioteki…",
-  "editor.image.defaultBackgrounds": "Domyślne tła",
+  "editor.image.themeBackgrounds": "Z tego motywu",
   "editor.image.fieldLabel": "Obraz",
   "editor.image.help.storage": "Obrazy są przechowywane lokalnie w /server/uploads i używane przez URL.",
   "editor.image.help.uploadsDisabled": "Wybierz z biblioteki (zalecane). Przesyłanie jest wyłączone.",

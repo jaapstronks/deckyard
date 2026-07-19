@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Wählen Sie ein bestehendes Bild aus der Bibliothek, oder laden Sie Ihr eigenes Bild nur für diese Folie hoch.",
   "editor.image.bgLibraryTitle": "Bibliothek: Hintergrundbild auswählen",
   "editor.image.chooseFromLibrary": "Aus Bibliothek auswählen…",
-  "editor.image.defaultBackgrounds": "Standard-Hintergründe",
+  "editor.image.themeBackgrounds": "Aus diesem Theme",
   "editor.image.fieldLabel": "Bild",
   "editor.image.help.storage": "Bilder werden lokal in /server/uploads gespeichert und über URL verwendet.",
   "editor.image.help.uploadsDisabled": "Aus der Bibliothek auswählen (empfohlen). Uploads sind deaktiviert.",
