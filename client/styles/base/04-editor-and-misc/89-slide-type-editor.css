@@ -484,3 +484,31 @@
     margin-bottom: var(--ps-space-2);
   }
 }
+
+/* ============================================================
+   CUSTOM TYPE REORDERING (drag the cards in the grid)
+   ============================================================ */
+
+.custom-type-card[draggable='true'] {
+  cursor: grab;
+}
+
+.custom-type-card.is-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+/* Insertion marker: a grid item of its own, so it lands in the flow where the
+   card would and the surrounding cards visibly make room. */
+.custom-type-drop-marker {
+  border: 2px dashed hsl(var(--app-accent-primary));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-accent-primary) / 0.06);
+  min-height: 60px;
+  pointer-events: none;
+}
+
+/* Buttons inside a draggable card must not start a card drag of their own. */
+.custom-type-card button {
+  cursor: pointer;
+}
