@@ -90,40 +90,13 @@ const SLIDE_TYPE_PRESETS = {
     { id: 'image-corner', labelKey: 'editor.slideTypePreset.imageText.corner', label: 'Corner image', content: { layout: 'corner', imageSide: 'right' } },
     { id: 'image-row', labelKey: 'editor.slideTypePreset.imageText.row', label: 'Image row', content: { layout: 'row-top' } },
   ],
-  'content-slide': [
-    { id: 'one-column', labelKey: 'editor.slideTypePreset.content.oneColumn', label: 'One column', content: { layout: 'one-column' } },
-    {
-      id: 'two-column',
-      labelKey: 'editor.slideTypePreset.content.twoColumn',
-      label: 'Two columns',
-      content: { layout: 'two-column' },
-      // Preview-only: a longer body so the thumbnail actually flows into the
-      // second column (two-column uses CSS `columns: 2` with column-fill: auto,
-      // so a short sample all sits in the left column and looks one-column).
-      // Not inserted — the new slide keeps the type's real default body.
-      previewContent: {
-        layout: 'two-column',
-        body: [
-          '- First important point with supporting details',
-          '- Second point that really matters here',
-          '- Third supporting argument to consider',
-          '- Fourth consideration worth weighing up',
-          '- Fifth angle that is worth noting',
-          '- Sixth item added for visual balance',
-          '- Seventh supporting detail in the list',
-          '- Eighth point rounding out column one',
-          '- Ninth item flowing into column two',
-          '- Tenth point continuing the second column',
-          '- Eleventh supporting argument here',
-          '- Twelfth consideration to keep in mind',
-          '- Thirteenth angle worth a mention',
-          '- Fourteenth item for extra balance',
-          '- Fifteenth supporting detail listed',
-          '- Final conclusion to remember well',
-        ].join('\n'),
-      },
-    },
-  ],
+  // content-slide has no picker presets on purpose: its two-column layout is a
+  // CSS text-flow variant that only splits once the body is long enough, so it
+  // reads as "one column" in an empty new slide and confused people who picked
+  // it expecting two separate fields. That layout stays reachable in the editor
+  // via the layout switcher (content-slide's layoutVariants); the "I explicitly
+  // want two columns" use case is served by content-columns-slide, which sits
+  // right next to the text slide in the Basic group.
   'lijstje-slide': [
     { id: 'bullets', labelKey: 'editor.slideTypePreset.lijstje.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
     { id: 'numbers', labelKey: 'editor.slideTypePreset.lijstje.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
@@ -1056,6 +1029,10 @@ export function createSlideTypePicker({
       { type: 'title-slide' },
       { type: 'chapter-title-slide' },
       { type: 'content-slide' },
+      // Sits directly after the text slide: this is the "two separate columns"
+      // tile (defaults to 2 columns) that replaces the old, confusing
+      // content-slide two-column preset. See SLIDE_TYPE_PRESETS note above.
+      { type: 'content-columns-slide' },
       { type: 'quote-slide' },
       { type: 'lijstje-slide' },
     ];
@@ -1078,7 +1055,6 @@ export function createSlideTypePicker({
       { type: 'logo-wall-slide' },
     ];
     const layoutDefs = [
-      { type: 'content-columns-slide' },
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
       { type: 'freeform-slide' },
