@@ -199,6 +199,13 @@
   object-fit: cover;
   display: block;
 }
+/* Empty portrait slot: editor canvas only (rendered under ctx.mode==='edit'),
+ * so a first portrait can be added in-slide. Same treatment as an empty
+ * image-blocks photo. */
+.slide-quote .quote-portrait.is-empty {
+  border: 1px dashed rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.04);
+}
 
 /* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
 .slide-quote.is-multi .slide-inner {

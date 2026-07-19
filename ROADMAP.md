@@ -65,6 +65,11 @@ it would only have been a second path to something that already works.)_
 
 ## Next — existing feature plans
 
+- **Inline image-picker parity** — `docs/plans/inline-image-picker-parity.md`
+  — bring the genuine gaps up to the gallery bar: add a first image / add /
+  remove / reorder entirely on the canvas for logo-wall, team-cards (first
+  member) and quote (first portrait), via an `ensure` descriptor knob that
+  canonicalizes the dual-model types to their array form. In progress.
 - **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
   — create-flow follow-up: persist and return per-language library-item content
   on the Postgres backend (new `i18n` column + adapter + mapper) so composed

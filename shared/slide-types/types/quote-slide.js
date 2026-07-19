@@ -24,6 +24,14 @@ function portraitHtml(src, alt, inlineIdx) {
               </div>`;
 }
 
+/** An empty portrait slot rendered on the editor canvas only, so a FIRST
+ * portrait can be added in-slide via the media popover (flat authorImage{n}).
+ * `inlineIdx` is the 1-based slot number. */
+function placeholderPortraitHtml(inlineIdx) {
+  return `
+              <div class="quote-portrait is-empty" data-inline-photo="${inlineIdx}" aria-hidden="true"></div>`;
+}
+
 /** Wrap portrait parts in their container (or nothing when there are none). */
 function portraitsWrap(parts) {
   return parts.length
@@ -66,15 +74,21 @@ function quoteBlockInnerHtml({
             </footer>`;
 }
 
-/** Portrait parts for the primary quote, from the flat authorImage1/2 slots. */
-function primaryPortraitParts(content) {
+/** Portrait parts for the primary quote, from the flat authorImage1/2 slots.
+ * In the editor (`editMode`), the next empty slot renders a clickable
+ * placeholder so a first portrait can be added in-slide. */
+function primaryPortraitParts(content, editMode = false) {
   const parts = [];
+  let firstEmpty = 0;
   for (let n = 1; n <= MAX_PORTRAITS; n++) {
     const src =
       typeof content?.[`authorImage${n}`] === 'string'
         ? content[`authorImage${n}`].trim()
         : '';
-    if (!src) continue;
+    if (!src) {
+      if (!firstEmpty) firstEmpty = n;
+      continue;
+    }
     const alt = pickAltText({
       explicit: content?.[`authorImage${n}Alt`],
       src,
@@ -82,6 +96,9 @@ function primaryPortraitParts(content) {
       hardFallback: 'Portrait',
     });
     parts.push(portraitHtml(src, alt, n));
+  }
+  if (editMode && firstEmpty) {
+    parts.push(placeholderPortraitHtml(firstEmpty));
   }
   return parts;
 }
@@ -251,14 +268,15 @@ export default {
     authorImage2Alt: '',
     quotes: [],
   },
-  renderHtml: (content, slide) => {
+  renderHtml: (content, slide, ctx) => {
+    const editMode = ctx?.mode === 'edit';
     const vars = gradientVarsForSlide(slide?.id, 'quote');
     const extras = activeExtraQuotes(content);
 
     // Single-quote (the common, legacy case): keep the exact hero layout so
     // existing decks render byte-for-byte identically (incl. morph roles).
     if (!extras.length) {
-      const portraitsHtml = portraitsWrap(primaryPortraitParts(content));
+      const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
       const inner = quoteBlockInnerHtml({
         quote: content?.quote,
         authorName: content?.authorName,
@@ -285,7 +303,7 @@ export default {
         quote: content?.quote,
         authorName: content?.authorName,
         authorTitle: content?.authorTitle,
-        portraitsHtml: portraitsWrap(primaryPortraitParts(content)),
+        portraitsHtml: portraitsWrap(primaryPortraitParts(content, editMode)),
         quoteField: 'quote',
         nameField: 'authorName',
         titleField: 'authorTitle',
