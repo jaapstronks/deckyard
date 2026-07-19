@@ -8,6 +8,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **A theme can set corner rounding and elevation.** `config.surfaces.shadow`
+  now reaches the slides: `--t-shadow-scale` multiplies the alpha of all five
+  `--slide-shadow-*` tokens at once, so `none` flattens elevation away and
+  `strong` deepens it, with the geometry left alone. The token was emitted when
+  the config column landed but the stylesheet never read it — the hook had been
+  a comment with nothing behind it since the design system was written. Corner
+  radius was already wired and is now documented alongside it. A theme that
+  says nothing about surfaces renders byte-for-byte as before.
+
 - **Custom slide types: a full template syntax reference.** The template field
   had a one-line hint naming four directives; `raw`, `bgClass`, `else`,
   `this`/`this.key` and `@index` existed in the compiler but appeared nowhere in

@@ -24,7 +24,10 @@ export const RADIUS_SCALES = {
   round: { '--t-radius': '28px', '--t-radius-sm': '20px', '--t-radius-lg': '36px' },
 };
 
-/** Elevation presets → `--t-shadow-opacity`, a multiplier on the shadow alphas. */
+/**
+ * Elevation presets → `--t-shadow-scale`, a multiplier on the shadow alphas.
+ * `none` flattens elevation away; `soft` is the design-system default.
+ */
 export const SHADOW_SCALES = { none: '0', soft: '1', strong: '1.8' };
 
 /** Brand properties a theme can lock against per-slide overrides. */
