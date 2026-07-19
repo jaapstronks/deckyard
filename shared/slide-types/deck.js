@@ -124,7 +124,11 @@ function normalizeDeckSlide(raw, theme = null) {
       }
       continue;
     }
-    if (field.type === 'string' || field.type === 'markdown') {
+    if (
+      field.type === 'string' ||
+      field.type === 'markdown' ||
+      field.type === 'csv'
+    ) {
       if (typeof v !== 'string') continue;
       const t = v;
       if (field.required && !t.trim()) continue; // don't blank required fields

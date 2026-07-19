@@ -382,6 +382,7 @@ export function validateSlide(slide) {
     if (
       field.type === 'string' ||
       field.type === 'markdown' ||
+      field.type === 'csv' ||
       field.type === 'code'
     ) {
       // Optional text fields may be missing/null in older decks or external integrations.

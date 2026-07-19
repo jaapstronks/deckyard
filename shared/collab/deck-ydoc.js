@@ -70,7 +70,8 @@ function specForFields(fields) {
   for (const f of Array.isArray(fields) ? fields : []) {
     const key = typeof f?.key === 'string' ? f.key.trim() : '';
     if (!key || f.hidden === true) continue;
-    if (f.type === 'string' || f.type === 'markdown') spec.textKeys.add(key);
+    if (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+      spec.textKeys.add(key);
     else if (f.type === 'items' && Array.isArray(f.itemFields)) {
       spec.items.set(key, specForFields(f.itemFields));
     }

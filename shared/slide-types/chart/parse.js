@@ -1,4 +1,4 @@
-function normalizeNumber(raw) {
+export function normalizeNumber(raw) {
   let s = String(raw ?? '').trim();
   if (!s) return null;
   s = s.replace(/\u00a0/g, ' '); // nbsp
@@ -21,7 +21,7 @@ function normalizeNumber(raw) {
   return Number.isFinite(n) ? n : null;
 }
 
-function detectDelimiter(text) {
+export function detectDelimiter(text) {
   const t = String(text || '');
   if (t.includes('\t')) return '\t';
   const commas = (t.match(/,/g) || []).length;
@@ -30,7 +30,7 @@ function detectDelimiter(text) {
   return ',';
 }
 
-function parseDelimited(text, delimiter) {
+export function parseDelimited(text, delimiter) {
   // Basic RFC4180-ish parser (handles quotes and escaped quotes).
   const rows = [];
   let row = [];
@@ -100,6 +100,55 @@ function isHeaderRowForLine(rows) {
   const n1 = normalizeNumber(r0[1]);
   const n2 = normalizeNumber(r0[2]);
   return n1 == null && n2 == null;
+}
+
+/**
+ * Whether the first row of a parsed matrix is a header (non-numeric) row, using
+ * the same heuristic the chart parser applies. Exposed so the grid editor shows
+ * the same header/body split the renderer will infer.
+ * @param {string} chartType
+ * @param {string[][]} rows
+ * @returns {boolean}
+ */
+export function detectHeaderRow(chartType, rows) {
+  return chartType === 'line'
+    ? isHeaderRowForLine(rows)
+    : isHeaderRowForBarOrPie(rows);
+}
+
+/**
+ * Serialize a matrix (array of string rows) back to a CSV string the parser
+ * eats: comma-delimited, cells containing a comma / quote / newline are quoted
+ * with doubled inner quotes (RFC 4180). Trailing empty rows/cells are kept as
+ * the caller provides them; callers should trim before serializing if desired.
+ * @param {Array<Array<string|number|null>>} rows
+ * @returns {string}
+ */
+export function serializeCsv(rows) {
+  return (Array.isArray(rows) ? rows : [])
+    .map((row) =>
+      (Array.isArray(row) ? row : [])
+        .map((cell) => {
+          const s = String(cell ?? '');
+          return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+        })
+        .join(',')
+    )
+    .join('\n');
+}
+
+/**
+ * Parse a CSV/TSV string into a lossless matrix (array of trimmed string rows)
+ * for grid editing. Unlike {@link parseChartData}, this does no numeric coercion
+ * or header detection - it just tokenizes with the auto-detected delimiter so a
+ * grid can render every cell as-typed and round-trip via {@link serializeCsv}.
+ * @param {string} text
+ * @returns {string[][]}
+ */
+export function parseCsvToGrid(text) {
+  const raw = String(text || '');
+  if (!raw.trim()) return [];
+  return parseDelimited(raw, detectDelimiter(raw));
 }
 
 export function parseChartData({ chartType, data }) {

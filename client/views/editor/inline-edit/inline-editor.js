@@ -31,6 +31,7 @@ import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createBasicFields } from '../fields/basic.js';
+import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 
 /**
@@ -350,6 +351,113 @@ export function createInlineEditor({
     ta?.focus();
   }
 
+  // ----------------------------------------------------------------
+  // CSV data modal (grid/raw chart-data editor, same modal chrome)
+  // ----------------------------------------------------------------
+  function openCsvModal(_anchorEl, path, meta, { isNew = false } = {}) {
+    if (editing) endTextEdit();
+    dismissMarkdownModal();
+    const slide = getSlide?.();
+    if (!slide) return;
+
+    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
+    const label = fieldLabel(path, meta);
+    const chartType = String(slide.content?.chartType || 'bar');
+    let latest = raw;
+
+    const { el: editorEl } = createCsvGridEditor({
+      h,
+      chartType,
+      value: raw,
+      label,
+      onChange: (v) => {
+        latest = v;
+      },
+    });
+    editorEl.setAttribute('data-collab-field-key', String(path));
+
+    const save = () => {
+      if (latest !== raw) {
+        setByPath(slide.content, path, latest);
+        markDirty?.();
+        requestSave?.();
+        rerenderEditor?.();
+      }
+      dismissMarkdownModal();
+      rerenderPreview?.();
+    };
+    const cancel = () => {
+      dismissMarkdownModal();
+      if (isNew) rerenderPreview?.();
+    };
+
+    const closeBtn = h('button', {
+      class: 'ie-md-close',
+      type: 'button',
+      title: t('common.close', 'Close'),
+      text: '×',
+      onclick: cancel,
+    });
+    const header = h('div', { class: 'ie-md-header row spread' }, [
+      h('div', {
+        class: 'ie-md-mode',
+        text: t('editor.inline.editingField', 'Editing: {label}', { label }),
+      }),
+      closeBtn,
+    ]);
+    const footer = h('div', { class: 'ie-md-footer row spread' }, [
+      h('span', {
+        class: 'help',
+        text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save'),
+      }),
+      h('div', { class: 'row' }, [
+        h('button', {
+          class: 'btn btn-secondary btn-sm',
+          type: 'button',
+          text: t('common.cancel', 'Cancel'),
+          onclick: cancel,
+        }),
+        h('button', {
+          class: 'btn btn-primary btn-sm',
+          type: 'button',
+          text: t('common.save', 'Save'),
+          onclick: save,
+        }),
+      ]),
+    ]);
+
+    const modal = h('div', { class: 'ie-md-modal is-csv' }, [
+      header,
+      editorEl,
+      footer,
+    ]);
+    const backdrop = h('div', { class: 'ie-modal-backdrop' });
+    backdrop.addEventListener('click', cancel);
+
+    mdHost.classList.add('is-ie-modal-open');
+    mdHost.append(backdrop, modal);
+
+    const detach = installDismissOnOutside({
+      rootEl: modal,
+      isOpen: () => true,
+      close: cancel,
+    });
+    closeMarkdownModal = () => {
+      detach?.();
+      backdrop.remove();
+      modal.remove();
+      mdHost.classList.remove('is-ie-modal-open');
+    };
+
+    modal.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        save();
+      }
+    });
+    modal.querySelector('input, textarea')?.focus();
+  }
+
   function dismissMarkdownModal() {
     if (closeMarkdownModal) {
       try {
@@ -472,7 +580,12 @@ export function createInlineEditor({
   }
 
   function placeGhostChip(path, meta, anchor, reanchor) {
-    const kind = meta?.type === 'markdown' ? 'markdown' : 'text';
+    const kind =
+      meta?.type === 'csv'
+        ? 'csv'
+        : meta?.type === 'markdown'
+        ? 'markdown'
+        : 'text';
     const chip = h('button', {
       class: 'ie-ghost',
       type: 'button',
@@ -490,7 +603,11 @@ export function createInlineEditor({
   }
 
   function spawnFromGhost(path, resolveAnchor, meta, kind) {
-    // Markdown edits happen in the modal; no in-slide element is needed.
+    // Markdown / CSV edits happen in the modal; no in-slide element is needed.
+    if (kind === 'csv') {
+      openCsvModal(null, path, meta, { isNew: true });
+      return;
+    }
     if (kind === 'markdown') {
       openMarkdownModal(null, path, meta, { isNew: true });
       return;
@@ -1256,10 +1373,13 @@ export function createInlineEditor({
     const path = fieldEl.getAttribute('data-inline-field');
     const meta = fieldMetaForPath(def, path);
     const kind =
-      meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
+      meta?.type === 'csv'
+        ? 'csv'
+        : meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
         ? 'markdown'
         : 'text';
-    if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
+    if (kind === 'csv') openCsvModal(fieldEl, path, meta);
+    else if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);
   }
 
