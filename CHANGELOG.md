@@ -227,6 +227,14 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Standalone HTML export renders its fonts offline.** A downloaded deck still
+  linked the shared UI font (Bricolage Grotesque) from `/assets/fonts/*.woff2`,
+  so opening the file without a server fell back to system fonts (theme fonts,
+  icons, and images were already embedded). The export now inlines the local
+  font files it references as base64 data URLs — only the handful of small
+  weights actually used (a few KB each), never the whole ~2.5 MB font library.
+  See `docs/reference/standalone-html-export.md`.
+
 - **Bilingual library slides keep both languages on database installs.** A slide
   saved to the library with NL + EN content (`i18n.versions`) silently lost its
   per-language content on Postgres (and, it turned out, on the active file
