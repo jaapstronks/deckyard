@@ -110,6 +110,11 @@ renderer lacks the field.
 - **Markdown** → modal (`.ie-md-modal`) reusing the canonical markdown
   editor from `fields/basic.js` (`fieldMarkdown`, full toolbar) over a
   dimmed backdrop - reads as a separate mode.
+- **CSV / chart data** → modal (`.ie-md-modal.is-csv`, `openCsvModal`)
+  reusing the same modal chrome as markdown but hosting the shared grid
+  editor (`fields/csv-grid.js`, chart-type-aware grid + Raw CSV toggle).
+  Used by the chart `data` field so clicking a chart opens a data grid, not
+  the prose toolbar.
 - **Empty optional field** → hover-revealed "+ Label" ghost chip at an
   anchor; click spawns via the sentinel and starts editing.
 - **Filled optional field** → hover-revealed clear (×, `.ie-clear`) that
