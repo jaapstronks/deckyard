@@ -8,6 +8,29 @@ import {
 import { iconUrl } from '../../icon-names.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
+/** True when an items[] entry carries nothing worth rendering. */
+function isBlankItem(item) {
+  if (!item || typeof item !== 'object') return true;
+  return !['icon', 'title', 'body'].some((k) => String(item[k] || '').trim());
+}
+
+/**
+ * Length of items[] up to and including its last non-blank entry.
+ *
+ * The editor never leaves trailing blanks, but imported or API-authored decks
+ * sometimes pad items[] out to a fixed length (six empty objects, or three
+ * cards followed by three `{}`). Counting those rendered blank cards on the
+ * slide. Trailing blanks are trimmed rather than all blanks filtered out, so
+ * the surviving indices still match the `items.N.field` inline-edit paths.
+ */
+function filledItemCount(items) {
+  let last = -1;
+  for (let i = 0; i < items.length; i += 1) {
+    if (!isBlankItem(items[i])) last = i;
+  }
+  return last + 1;
+}
+
 /**
  * Resolve cards from content — supports both legacy numbered fields
  * (card1Icon, card1Title, card1Body) and the new items[] array.
@@ -231,7 +254,7 @@ export default {
     // counting it would keep rendering an empty slot after a card removal.
     const useItems = Array.isArray(content?.items) && content.items.length > 0;
     let count = useItems
-      ? Math.max(1, Math.min(maxCards, content.items.length))
+      ? Math.max(1, Math.min(maxCards, filledItemCount(content.items)))
       : Math.max(1, Math.min(maxCards, Number(content?.cardCount || maxCards) || maxCards));
     // A bottom subheading eats a row of vertical space in the cards layout, so
     // cap at 4 (2 rows) to keep everything on the slide.
@@ -277,7 +300,6 @@ export default {
       // editing (which runs in mode 'thumb'/'edit').
       const linkHtml = isEmpty ? '' : cardLinkOverlayHtml(card.link, mode, title || 'Card link');
 
-      // The number prefix is only shown in the tiles layout (hidden via CSS in cards).
       cards.push(`
           <div class="icon-card${isEmpty ? ' is-empty' : ''}${linkHtml ? ' has-link' : ''}" data-morph-role="icon-card-${i - 1}" role="group" ${
         isEmpty ? 'aria-hidden="true"' : ''
@@ -286,7 +308,7 @@ export default {
               ${iconHtml}
             </div>
             <div class="icon-card-body">
-              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto"><span class="icon-card-num" aria-hidden="true">${i}.</span> ${esc(title || 'Title')}</h3>
+              <h3 class="icon-card-title"${isEmpty ? '' : ` data-inline-field="${titlePath}"`} dir="auto">${esc(title || 'Title')}</h3>
               <div class="icon-card-text"${isEmpty ? '' : ` data-inline-field="${bodyPath}"`}>
                 ${markdownToSafeHtml(bodyRaw)}
               </div>

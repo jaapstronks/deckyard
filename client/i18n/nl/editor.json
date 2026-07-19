@@ -648,6 +648,7 @@
   "comments.filter.everyone": "Alles",
   "comments.filter.waitingForMe": "Wacht op mij",
   "comments.empty.waiting": "Niets dat op jou wacht",
+  "comments.empty.noSlide": "Selecteer een slide om de opmerkingen te zien",
   "comments.unread": "Nieuwe activiteit",
   "mentions.noResults": "Geen gebruikers gevonden",
   "mentions.noAccess.title": "Geen toegang tot deze presentatie",

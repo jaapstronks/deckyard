@@ -39,47 +39,9 @@
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
-.comments-scope {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
-.comments-scope-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.comments-scope-btn:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.comments-scope-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.comments-scope-btn.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
-}
+/* The scope switch is the shared segmented control in its outlined variant
+   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
+   `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
 
 .comments-filter-trigger {
   padding: 3px 8px;

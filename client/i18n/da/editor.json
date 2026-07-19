@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Alt",
   "comments.filter.waitingForMe": "Venter på mig",
   "comments.empty.waiting": "Intet venter på dig her",
+  "comments.empty.noSlide": "Vælg et slide for at se dets kommentarer",
   "comments.unread": "Ny aktivitet",
   "mentions.noResults": "Ingen matchende brugere",
   "mentions.noAccess.title": "Ingen adgang til denne præsentation",

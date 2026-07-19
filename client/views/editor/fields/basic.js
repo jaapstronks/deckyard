@@ -1,4 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { markFieldRequired } from './required.js';
 
 export function createBasicFields({ h } = {}) {
   const fieldText = (label, value, onChange, opts = {}) => {
@@ -51,7 +52,7 @@ export function createBasicFields({ h } = {}) {
       helpEl = h('div', { class: 'help help-with-action' }, helpChildren);
     }
 
-    return h('div', { class: 'stack is-field' }, [
+    const wrap = h('div', { class: 'stack is-field' }, [
       labelRightEl
         ? h('div', { class: 'field-head' }, [
             h('div', { class: 'field-label', text: label }),
@@ -61,6 +62,7 @@ export function createBasicFields({ h } = {}) {
       input,
       helpEl,
     ]);
+    return opts?.required ? markFieldRequired({ h, wrap, control: input }) : wrap;
   };
 
   const fieldNumber = (label, value, onChange, opts = {}) => {
@@ -93,7 +95,7 @@ export function createBasicFields({ h } = {}) {
     const labelRightEl = opts?.labelRightEl || null;
     // Numbers are short; hint the responsive row that this field wants little
     // width so it packs beside neighbours instead of hogging a full column.
-    return h('div', { class: 'stack is-field is-field-narrow' }, [
+    const wrap = h('div', { class: 'stack is-field is-field-narrow' }, [
       labelRightEl
         ? h('div', { class: 'field-head' }, [
             h('div', { class: 'field-label', text: label }),
@@ -103,6 +105,7 @@ export function createBasicFields({ h } = {}) {
       input,
       helpText ? h('div', { class: 'help', text: helpText }) : null,
     ]);
+    return opts?.required ? markFieldRequired({ h, wrap, control: input }) : wrap;
   };
 
   const fieldTextarea = (label, value, helpText, onChange, opts = {}) => {
@@ -118,7 +121,7 @@ export function createBasicFields({ h } = {}) {
     ta.addEventListener('input', () => onChange(ta.value));
     const labelRightEl = opts?.labelRightEl || null;
     // Multi-line inputs always claim their own line in a responsive row.
-    return h('div', { class: 'stack is-field is-field-full' }, [
+    const wrap = h('div', { class: 'stack is-field is-field-full' }, [
       labelRightEl
         ? h('div', { class: 'field-head' }, [
             h('div', { class: 'field-label', text: label }),
@@ -128,6 +131,7 @@ export function createBasicFields({ h } = {}) {
       ta,
       h('div', { class: 'help', text: helpText }),
     ]);
+    return opts?.required ? markFieldRequired({ h, wrap, control: ta }) : wrap;
   };
 
   /**
@@ -167,7 +171,7 @@ export function createBasicFields({ h } = {}) {
     }
     const labelRightEl = opts?.labelRightEl || null;
     // Code always claims its own line in a responsive row.
-    return h('div', { class: 'stack is-field is-field-full' }, [
+    const wrap = h('div', { class: 'stack is-field is-field-full' }, [
       labelRightEl
         ? h('div', { class: 'field-head' }, [
             h('div', { class: 'field-label', text: label }),
@@ -177,6 +181,10 @@ export function createBasicFields({ h } = {}) {
       ta,
       helpText ? h('div', { class: 'help', text: helpText }) : null,
     ]);
+    // Read-only code fields are capability-gated, not the author's to fill in.
+    return opts?.required && !opts?.readOnly
+      ? markFieldRequired({ h, wrap, control: ta })
+      : wrap;
   };
 
   /**
@@ -403,7 +411,7 @@ export function createBasicFields({ h } = {}) {
 
     const labelRightEl = opts?.labelRightEl || null;
     // Markdown editors (toolbar + textarea) always claim their own line.
-    return h('div', { class: 'stack is-field is-field-full' }, [
+    const wrap = h('div', { class: 'stack is-field is-field-full' }, [
       labelRightEl
         ? h('div', { class: 'field-head' }, [
             h('div', { class: 'field-label', text: label }),
@@ -414,6 +422,7 @@ export function createBasicFields({ h } = {}) {
       ta,
       h('div', { class: 'help', text: helpText }),
     ]);
+    return opts?.required ? markFieldRequired({ h, wrap, control: ta }) : wrap;
   };
 
   const fieldSelect = (label, value, options, onChange) => {

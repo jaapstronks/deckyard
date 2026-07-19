@@ -7,6 +7,7 @@ import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { closeIcon, makeDropdownCaret } from '../../lib/icons.js';
 import { createDropdown } from '../../lib/dropdown.js';
+import { createSegmented } from '../../lib/segmented.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
@@ -111,6 +112,12 @@ export function createCommentsPanel({
   async function loadComments() {
     try {
       filter.slideId = scope === 'slide' ? (getSelectedSlideId?.() || null) : null;
+      // "This slide" with no slide to scope to (a deck with zero slides, or
+      // before the first selection lands). Leaving slideId off the request
+      // would quietly widen the scope to the whole deck while the switch still
+      // reads "This slide", so the list is emptied explicitly instead. The
+      // request still goes out unscoped: openCount drives the deck-wide badge.
+      filter.slideMissing = scope === 'slide' && !filter.slideId;
       const opts = {};
       if (filter.slideId) opts.slideId = filter.slideId;
       if (filter.status && filter.status !== 'all') opts.status = filter.status;
@@ -119,9 +126,11 @@ export function createCommentsPanel({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       openCount = result.openCount || 0;
-      const visibleThreads = filter.attention === 'waiting'
-        ? comments.filter((c) => threadWaitsFor(c, user?.email))
-        : comments;
+      const visibleThreads = filter.slideMissing
+        ? []
+        : filter.attention === 'waiting'
+          ? comments.filter((c) => threadWaitsFor(c, user?.email))
+          : comments;
       // The re-render destroys any open reply inputs; release their
       // autocomplete listeners with them.
       detachEphemeralMentions();
@@ -411,25 +420,23 @@ export function createCommentsPanel({
   // Scope switch: the pane shows the current slide's threads by default (the
   // same order as the inspector/notes panes); "All slides" is the explicit
   // deck-wide overview, where each comment links to its slide.
-  const scopeSlideBtn = h('button', {
-    class: 'comments-scope-btn',
-    type: 'button',
-    text: t('comments.filter.thisSlide', 'This slide'),
-    'aria-pressed': 'true',
-    onclick: () => setScope('slide'),
+  // `setScope` is the single owner of the selection (it also reloads), so the
+  // control reports clicks rather than moving its own highlight.
+  const scopeSegmented = createSegmented({
+    h,
+    outlined: true,
+    className: 'comments-scope',
+    buttonClass: 'comments-scope-btn',
+    ariaLabel: t('comments.scope.label', 'Comments scope'),
+    value: 'slide',
+    selectOnClick: false,
+    segments: [
+      { value: 'slide', label: t('comments.filter.thisSlide', 'This slide') },
+      { value: 'all', label: t('comments.scope.allSlides', 'All slides') },
+    ],
+    onSelect: (next) => setScope(next),
   });
-  const scopeAllBtn = h('button', {
-    class: 'comments-scope-btn',
-    type: 'button',
-    text: t('comments.scope.allSlides', 'All slides'),
-    'aria-pressed': 'false',
-    onclick: () => setScope('all'),
-  });
-  const scopeEl = h(
-    'div',
-    { class: 'comments-scope', role: 'group', 'aria-label': t('comments.scope.label', 'Comments scope') },
-    [scopeSlideBtn, scopeAllBtn]
-  );
+  const scopeEl = scopeSegmented.el;
 
   // Status + type live in one compact filter menu next to the scope switch
   // (they refine the list; scope decides what the list is about).
@@ -549,10 +556,7 @@ export function createCommentsPanel({
   // ========================================
 
   function updateFilterUi() {
-    scopeSlideBtn.classList.toggle('is-active', scope === 'slide');
-    scopeSlideBtn.setAttribute('aria-pressed', String(scope === 'slide'));
-    scopeAllBtn.classList.toggle('is-active', scope === 'all');
-    scopeAllBtn.setAttribute('aria-pressed', String(scope === 'all'));
+    scopeSegmented.setValue(scope);
 
     const statusOpt = STATUS_OPTIONS.find((o) => o.value === filter.status) || STATUS_OPTIONS[0];
     const typeOpt = TYPE_OPTIONS.find((o) => o.value === filter.commentType) || TYPE_OPTIONS[0];

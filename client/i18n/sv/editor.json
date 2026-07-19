@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Allt",
   "comments.filter.waitingForMe": "Väntar på mig",
   "comments.empty.waiting": "Inget väntar på dig här",
+  "comments.empty.noSlide": "Välj en bild för att se dess kommentarer",
   "comments.unread": "Ny aktivitet",
   "mentions.noResults": "Inga matchande användare",
   "mentions.noAccess.title": "Ingen åtkomst till denna presentation",

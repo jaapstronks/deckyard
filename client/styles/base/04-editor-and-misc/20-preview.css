@@ -195,51 +195,15 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Pane tabs (Inspector / Comments / Notes): far right of the slide toolbar,
-   directly above the rail they control. Same segmented-control recipe as the
-   topbar language toggle; pressed (is-active) = "rail open on MY pane".
+   Pane tabs (Inspector / Comments): far right of the slide toolbar, directly
+   above the rail they control. Built on the shared segmented control
+   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`); pressed
+   (is-active) = "rail open on MY pane".
    ───────────────────────────────────────────────────────────────────────────── */
-.pane-tabs {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
+/* Container and button styling come from `.sb-segmented.is-outlined` in
+   `03-controls-and-forms.css`; only the icon+label gap is local. */
 .pane-tab {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.pane-tab:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.pane-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.pane-tab.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
 }
 
 .pane-tab-icon {

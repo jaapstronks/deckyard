@@ -23,6 +23,36 @@ const FILLED = /<div class="icon-card(?:\s(?!is-empty)[^"]*)?"/g;
 const EMPTY = /<div class="icon-card is-empty/g;
 
 describe('icon-card-grid card count', () => {
+  it('ignores trailing blank items[] entries (padded external data)', () => {
+    const html = render({
+      title: 'Deck',
+      items: [
+        { icon: 'target', title: 'Card 1', body: 'x' },
+        { icon: 'users', title: 'Card 2', body: 'y' },
+        {},
+        {},
+        { icon: '', title: '   ', body: '' },
+        {},
+      ],
+    }, { mode: 'edit' });
+    assert.equal(countCards(html, FILLED), 2);
+    assert.equal(countCards(html, EMPTY), 4);
+    assert.match(html, /data-card-count="2"/);
+  });
+
+  it('keeps a blank item that sits between filled ones (indices stay editable)', () => {
+    const html = render({
+      title: 'Deck',
+      items: [
+        { icon: 'target', title: 'Card 1', body: 'x' },
+        {},
+        { icon: 'users', title: 'Card 3', body: 'z' },
+      ],
+    }, { mode: 'edit' });
+    assert.equal(countCards(html, FILLED), 3);
+    assert.match(html, /data-inline-field="items\.2\.title"/);
+  });
+
   it('items[] wins over a stale higher cardCount (post-removal state)', () => {
     const html = render({
       title: 'Deck',

@@ -13,6 +13,7 @@ import { renderSlideElement } from '../../../lib/slide-render.js';
 import { getSampleContent } from '../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { loadThemeById } from '../../../lib/theme.js';
+import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
 
 /**
  * Slide type category definitions.
@@ -183,6 +184,7 @@ export function createSlideTypesTab({ user } = {}) {
       for (const ct of customTypes) {
         grid.append(createCustomTypeCard(ct));
       }
+      attachGridReorder(grid);
     }
 
     customTypesSection.append(sectionHeader, grid, emptyState);
@@ -194,7 +196,11 @@ export function createSlideTypesTab({ user } = {}) {
    * @returns {HTMLElement}
    */
   function createCustomTypeCard(ct) {
-    const card = h('div', { class: 'custom-type-card editor-card' });
+    const card = h('div', {
+      class: 'custom-type-card editor-card',
+      draggable: 'true',
+      'data-type-id': ct.id,
+    });
 
     // Header with name and status
     const cardHeader = h('div', { class: 'custom-type-card-header' });
@@ -238,6 +244,113 @@ export function createSlideTypesTab({ user } = {}) {
     return card;
   }
 
+  // ============================================================
+  // Reordering
+  // ============================================================
+
+  /**
+   * Drag-to-reorder for the custom types grid.
+   *
+   * The grid wraps (`auto-fill` columns), so "before or after the card you are
+   * over" is not enough — at a row break the nearest insertion point can be on
+   * the other row. `computeDrop` from the inline-edit reorder geometry already
+   * solves exactly that and is DOM-free, so the drop target is its answer for
+   * the pointer position rather than a hand-rolled midpoint test.
+   *
+   * @param {HTMLElement} grid
+   */
+  function attachGridReorder(grid) {
+    /** @type {string|null} */
+    let draggingId = null;
+    const marker = h('div', { class: 'custom-type-drop-marker' });
+
+    const cards = () => [...grid.querySelectorAll('.custom-type-card')];
+    const clearMarker = () => marker.remove();
+
+    for (const card of cards()) {
+      card.addEventListener('dragstart', (ev) => {
+        draggingId = card.dataset.typeId;
+        card.classList.add('is-dragging');
+        ev.dataTransfer.effectAllowed = 'move';
+        // Firefox ignores a drag that carries no payload.
+        ev.dataTransfer.setData('text/plain', draggingId);
+      });
+      card.addEventListener('dragend', () => {
+        draggingId = null;
+        card.classList.remove('is-dragging');
+        clearMarker();
+      });
+    }
+
+    /** Insertion index under the pointer, or null. */
+    const dropIndexAt = (ev) => {
+      const rects = cards().map((c) => c.getBoundingClientRect());
+      if (rects.length < 2) return null;
+      const drop = computeDrop(rects, { x: ev.clientX, y: ev.clientY });
+      return drop ? drop.index : null;
+    };
+
+    grid.addEventListener('dragover', (ev) => {
+      if (!draggingId) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      const index = dropIndexAt(ev);
+      if (index == null) return;
+      const list = cards();
+      if (index >= list.length) grid.append(marker);
+      else list[index].before(marker);
+    });
+
+    grid.addEventListener('dragleave', (ev) => {
+      if (!grid.contains(ev.relatedTarget)) clearMarker();
+    });
+
+    grid.addEventListener('drop', async (ev) => {
+      if (!draggingId) return;
+      ev.preventDefault();
+      const index = dropIndexAt(ev);
+      clearMarker();
+      if (index == null) return;
+      const from = customTypes.findIndex((ct) => ct.id === draggingId);
+      if (from < 0) return;
+      const to = resolveMove(from, index);
+      if (to === from) return;
+      await moveCustomType(from, to);
+    });
+  }
+
+  /**
+   * Move a type to a new position and persist the whole order.
+   *
+   * The grid is re-rendered optimistically so the drop feels immediate; a
+   * failed save reloads from the server rather than leaving the UI showing an
+   * order that was never stored.
+   *
+   * @param {number} from
+   * @param {number} to
+   */
+  async function moveCustomType(from, to) {
+    const previous = customTypes;
+    const next = [...customTypes];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    customTypes = next;
+    renderCustomTypesSection();
+
+    try {
+      const res = await api('/api/custom-slide-types/reorder', {
+        method: 'PUT',
+        body: JSON.stringify({ order: next.map((ct) => ct.id) }),
+      });
+      customTypes = res?.customSlideTypes || next;
+      renderCustomTypesSection();
+    } catch (err) {
+      customTypes = previous;
+      renderCustomTypesSection();
+      toast.error(String(err?.message || err));
+    }
+  }
+
   /**
    * Show context menu for a custom slide type.
    */
@@ -262,6 +375,32 @@ export function createSlideTypesTab({ user } = {}) {
         await togglePublish(ct);
       },
     }));
+
+    // Move earlier / later. Dragging is the primary gesture, but it is
+    // mouse-only; these keep reordering reachable from the keyboard.
+    const index = customTypes.findIndex((x) => x.id === ct.id);
+    if (index > 0) {
+      menu.append(h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.moveEarlier', 'Move earlier'),
+        onclick: async () => {
+          menu.remove();
+          await moveCustomType(index, index - 1);
+        },
+      }));
+    }
+    if (index >= 0 && index < customTypes.length - 1) {
+      menu.append(h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.moveLater', 'Move later'),
+        onclick: async () => {
+          menu.remove();
+          await moveCustomType(index, index + 1);
+        },
+      }));
+    }
 
     // Duplicate
     menu.append(h('button', {
