@@ -102,13 +102,15 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 - **Picker** detects custom types via `isCustom` flag on the definition or `custom-` key prefix
 - **Editor form** already handles custom types via the default case in `slide-form-router.js` (renders all fields in order) -- no changes needed there
 - **Rendering pipeline** for actual slides goes through the server: `slide-render.js` detects non-bundled types, fetches from `/api/presentations/:id/render-slide`, server uses compiled templates
+- **Template syntax reference** lives in `settings/slide-type-editor/template-help.js`, collapsed under the template field. It mirrors the tokenizer in `server/utils/slide-template-compiler.js` — add a helper there and the list needs the same entry.
+- **Required fields** declared in a type's schema are flagged client-side by `editor/fields/required.js`, wired into every builder in `editor/fields/basic.js`. A field is only marked invalid once it has been visited and left empty; the server still validates on save.
+- **Ordering** is `sort_order`, written by `PUT /api/custom-slide-types/reorder` (the full id list, positions become sort orders). The settings grid drags cards using `editor/inline-edit/reorder-geometry.js`, and the ⋮ menu offers "Move earlier"/"Move later" for the keyboard.
 
 ---
 
 ## Open improvements
 
-The remaining backlog for this feature (editor-form validation for custom
-required fields, drag-to-reorder via the unused `sortOrder` column, template
-syntax help, import/export of type definitions, template-editor enhancements,
+The remaining backlog for this feature (import/export of type definitions,
+template-editor enhancements such as syntax highlighting and version history,
 markdown-import mapping, export-pipeline verification) is tracked in
 `docs/plans/TODO.md` — this doc describes only what exists.

@@ -524,6 +524,34 @@
   color: hsl(var(--app-text-primary));
 }
 
+/* Required fields.
+
+   A slide type can declare a field `required`; until now that only failed
+   server-side on save, so the form gave no hint which field was missing. The
+   asterisk marks the field up front, and `.is-invalid` is set once the field
+   has been visited and left empty (see `editor/fields/required.js`) — never
+   before anyone has typed, so a new slide is not a wall of red. */
+.field-required-mark {
+  margin-left: 2px;
+  color: hsl(var(--app-danger));
+  font-weight: 700;
+}
+
+.field-error {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-danger));
+}
+
+.is-field.is-invalid > .form-input,
+.is-field.is-invalid > .md-toolbar + .form-input {
+  border-color: hsl(var(--app-danger) / 0.7);
+}
+
+.is-field.is-invalid > .form-input:focus {
+  border-color: hsl(var(--app-danger));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.2);
+}
+
 /* Field header: label above input, optional right-aligned action (e.g. "Vertaal") */
 .field-head {
   display: flex;
