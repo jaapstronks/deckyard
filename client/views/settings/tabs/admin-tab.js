@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { getAppName } from '../../../lib/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import {
@@ -136,7 +137,7 @@ export function createAdminTab({ user }) {
   const senderNameInput = h('input', {
     type: 'text',
     class: 'input',
-    placeholder: 'Presentation System',
+    placeholder: getAppName(),
     maxlength: '128',
   });
   const senderFields = h('div', { class: 'stack gap-2' }, [

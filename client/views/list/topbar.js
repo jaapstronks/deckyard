@@ -4,6 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
+import { getAppName } from '../../lib/branding.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/notification-bell.js';
@@ -34,7 +35,7 @@ export function createTopbar({
   const brandLogo = isSandbox
     ? '/assets/images/deckyard-mark.svg'
     : '/assets/images/logo.svg';
-  const brandAlt = isSandbox ? 'Deckyard' : 'Presentation System';
+  const brandAlt = getAppName();
 
   // Brand section
   const brandSection = h('div', { class: 'presentation-topbar-brand' });

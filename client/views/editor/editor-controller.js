@@ -46,6 +46,7 @@ import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
+import { setDocumentTitle } from '../../lib/branding.js';
 import { openTranslateSlideModal as openTranslateSlideModalImpl } from './modals/translate-slide-modal.js';
 import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals/translate-field-modal.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
@@ -425,6 +426,7 @@ export async function createEditorController({
   const shell = h('div', { class: 'app-shell editor-shell' });
   let topbarTitle = null;
 
+  setDocumentTitle(pres?.title);
   const titleCtl = createEditorTitleController({
     pres,
     markDirty,
@@ -433,6 +435,7 @@ export async function createEditorController({
       if (!topbarTitle) return;
       topbarTitle.textContent = next;
       topbarTitle.title = next;
+      setDocumentTitle(next);
     },
   });
 
@@ -891,6 +894,7 @@ export async function createEditorController({
               if (!topbarTitle) return;
               topbarTitle.textContent = next;
               topbarTitle.title = next;
+              setDocumentTitle(next);
             },
             onUndoStateChanged: () => syncTopbarUndo(),
           });

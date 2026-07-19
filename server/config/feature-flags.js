@@ -7,6 +7,7 @@ import {
   isCollabEnabled,
   isCollabLiveEditsEnabled,
 } from './features.js';
+import { getBranding } from './branding.js';
 import { truthy } from './utils.js';
 
 export function getFeatureFlags() {
@@ -42,5 +43,6 @@ export function getFeatureFlags() {
     enableRssFeed: isRssFeedEnabled(),
     collab: isCollabEnabled(),
     collabLiveEdits: isCollabLiveEditsEnabled(),
+    branding: getBranding(),
   };
 }
