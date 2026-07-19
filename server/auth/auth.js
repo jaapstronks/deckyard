@@ -123,6 +123,30 @@ export function authConfigError() {
   );
 }
 
+/**
+ * Non-fatal auth configuration warnings surfaced at startup. Unlike
+ * authConfigError() (which blocks boot on a fail-open misconfiguration),
+ * these flag settings that work but are weak enough to warrant tightening.
+ * Returns [] when there is nothing to warn about.
+ *
+ * @returns {string[]}
+ */
+export function authConfigWarnings() {
+  const warnings = [];
+  const secret = String(process.env.AUTH_SECRET || '').trim();
+  const explicitlyDisabled =
+    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
+  // A short secret weakens the HMAC that signs session tokens. 32 chars of
+  // randomness is the floor we recommend in .env.example.
+  if (secret && !explicitlyDisabled && secret.length < 32) {
+    warnings.push(
+      `AUTH_SECRET is only ${secret.length} characters; use at least 32 ` +
+        'random characters so session tokens cannot be brute-forced.'
+    );
+  }
+  return warnings;
+}
+
 export function devAuthBypassEnabled() {
   // Passwordless admin bypass is a development convenience ONLY. Refuse it
   // unless NODE_ENV is explicitly 'development', so a leftover
