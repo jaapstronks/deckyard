@@ -277,6 +277,17 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Partner-split: a readable subheading, and no more stock photo.** The
+  subheading rendered in the theme's muted *body* colour — a dark tone meant for
+  light backgrounds — on a dark panel, so it was barely legible even on slides
+  that already had a background image (`.slide .subtitle` sets `color` directly,
+  which beats the white it would otherwise inherit from the text block). It now
+  follows the panel. The slide also carried a hardcoded Deckyard demo photo as
+  both its field default and its render fallback, so it opened wearing stock
+  imagery whatever the deck's theme; the background is now empty by default and
+  the right panel falls back to the theme's own dark surface, with the photo
+  scrim omitted when there is no photo to scrim.
+
 - **Countdown, freeform and end slides follow the theme.** Their CSS reads
   `--t-primary`, `--t-accent`, `--t-bg-dark`, `--t-brand-1` and `--t-brand-2`,
   but no theme file and no DB theme ever emitted those tokens — so those slides

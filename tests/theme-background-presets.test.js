@@ -16,6 +16,7 @@ import {
   pickBackgroundPreset,
 } from '../shared/theme-background-presets.js';
 import { newSlide, deckToPresentationParts, convertSlideToType } from '../shared/slide-types.js';
+import * as SlideTypes from '../shared/slide-types.js';
 
 const PRESETS = ['/custom/a.jpg', '/custom/b.jpg'];
 const themeWithPresets = { id: 't', backgroundPresets: PRESETS };
@@ -117,4 +118,37 @@ test('the title-slide import path never reaches for a demo photo', () => {
     JSON.stringify(parts.slides[0].content),
     /demo-(aurora|dusk|paper|moss)/
   );
+});
+
+test('split-partner-title no longer ships a hardcoded demo background', () => {
+  // The last hardcoded Deckyard demo photo in a shared slide path: it was both
+  // the field default and the render fallback, so the slide always wore stock
+  // imagery whatever the deck's theme.
+  const slide = newSlide({ type: 'split-partner-title-slide' });
+  assert.equal(slide.content.bgImage, '');
+  assert.doesNotMatch(JSON.stringify(slide.content), /demo-(aurora|dusk|paper|moss)/);
+});
+
+test('split-partner-title renders no image and no scrim without a background', () => {
+  const { SLIDE_TYPES } = SlideTypes;
+  const html = SLIDE_TYPES['split-partner-title-slide'].renderHtml({
+    title: 'T',
+    logos: [],
+  });
+
+  assert.doesNotMatch(html, /<img class="bg"/);
+  // The overlay is a scrim for photo legibility; on a bare panel it is a smear.
+  assert.doesNotMatch(html, /class="overlay"/);
+});
+
+test('split-partner-title still renders image and scrim when given one', () => {
+  const { SLIDE_TYPES } = SlideTypes;
+  const html = SLIDE_TYPES['split-partner-title-slide'].renderHtml({
+    title: 'T',
+    logos: [],
+    bgImage: '/custom/photo.jpg',
+  });
+
+  assert.match(html, /<img class="bg" src="\/custom\/photo.jpg"/);
+  assert.match(html, /class="overlay"/);
 });
