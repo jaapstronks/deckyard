@@ -13,6 +13,7 @@ import { createCommentsApi } from '../editor/comments-api.js';
 import { api } from '../../lib/api.js';
 import { initPresentationI18n } from '../editor/bootstrap.js';
 import { syncSlideIdInUrl } from '../editor/slide-url.js';
+import { attachSwipeNavigation } from '../../lib/swipe-nav.js';
 
 export async function createViewerController({
   root,
@@ -168,30 +169,44 @@ export async function createViewerController({
     });
   }
 
+  /** Move `delta` slides from the current one, clamped to the deck. */
+  const navigateSlide = (delta) => {
+    const slides = pres.slides || [];
+    const currentIndex = slides.findIndex((s) => s.id === selectedSlideId);
+    const next = currentIndex + delta;
+    if (currentIndex < 0 || next < 0 || next >= slides.length) return;
+    selectSlide(slides[next].id);
+  };
+
   // Keyboard navigation
   const handleKeydown = (e) => {
     // Don't navigate when typing in inputs
     if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
-    const slides = pres.slides || [];
-    const currentIndex = slides.findIndex((s) => s.id === selectedSlideId);
-
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
-      if (currentIndex > 0) {
-        selectSlide(slides[currentIndex - 1].id);
-      }
+      navigateSlide(-1);
     } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
       e.preventDefault();
-      if (currentIndex < slides.length - 1) {
-        selectSlide(slides[currentIndex + 1].id);
-      }
+      navigateSlide(1);
     }
   };
   document.addEventListener('keydown', handleKeydown);
 
+  // Swipe navigation on the preview only — the slides panel and comments
+  // pane scroll, and a swipe there should not change the slide.
+  const detachSwipe = attachSwipeNavigation(previewApi.previewEl, {
+    onPrev: () => navigateSlide(-1),
+    onNext: () => navigateSlide(1),
+  });
+
   const detach = () => {
     document.removeEventListener('keydown', handleKeydown);
+    try {
+      detachSwipe?.();
+    } catch {
+      // ignore
+    }
     try {
       topbarApi.detach?.();
     } catch {

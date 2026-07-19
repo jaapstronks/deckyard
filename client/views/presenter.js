@@ -23,6 +23,7 @@ import {
   normalizeNotesStrings,
 } from './presenter/deck-controller.js';
 import { attachPresenterKeys } from './presenter/keys.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { ensureOtherLanguageFollowAlong } from './presenter/translate-fill.js';
 import {
   applyLikertInteractionStateToStage,
@@ -767,6 +768,18 @@ export async function renderPresenter(
   );
   syncFullscreenClass();
 
+  // Swipe navigation for presenting from a phone or tablet. Bound to
+  // stageWrap, not stage: the highlighter canvas is layered over stage as a
+  // sibling, so touches never reach stage itself. stageWrap also covers the
+  // letterbox bars, which is where a thumb lands on a phone anyway.
+  // Suppressed while laser or draw mode owns the stage, otherwise every
+  // stroke would also flip the slide.
+  const detachSwipe = attachSwipeNavigation(stageWrap, {
+    enabled: () => !highlighter.getMode(),
+    onPrev: guardNav(() => deckCtl?.prev?.()),
+    onNext: guardNav(() => deckCtl?.next?.()),
+  });
+
   // Auto-hiding chrome: collapses the progress bar (and cursor) after idle in
   // fullscreen so the deck fills a true 16:9 with no pillarbox bars.
   const chromeAutoHide = createChromeAutoHide({ shell });
@@ -940,6 +953,9 @@ export async function renderPresenter(
     } catch {}
     try {
       detachKeys?.();
+    } catch {}
+    try {
+      detachSwipe?.();
     } catch {}
     document.removeEventListener(
       'fullscreenchange',

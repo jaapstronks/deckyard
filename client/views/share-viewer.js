@@ -20,6 +20,7 @@ import { renderGuestJoinPrompt } from './share-viewer/guest-join.js';
 import { createShareViewerCommentsSection } from './share-viewer/viewer-comments.js';
 import { createVideoLayer } from '../lib/video-layer.js';
 import { createAutoAdvance } from './presenter/auto-advance.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
 
 // Guest session state
@@ -356,6 +357,13 @@ export async function renderShareViewer(root, token) {
       }
     }
 
+    // Swipe navigation on the stage only — the comments list below it scrolls,
+    // and a swipe there should never change the slide.
+    shell._detachSwipe = attachSwipeNavigation(stage, {
+      onPrev: () => navigateSlide(-1),
+      onNext: () => navigateSlide(1),
+    });
+
     // Store cleanup for keyboard listener
     shell._keydownHandler = handleKeydown;
   }
@@ -393,6 +401,9 @@ export async function renderShareViewer(root, token) {
     if (shell._keydownHandler) {
       document.removeEventListener('keydown', shell._keydownHandler);
     }
+    try {
+      shell._detachSwipe?.();
+    } catch {}
     try {
       detachThumb();
     } catch {}
