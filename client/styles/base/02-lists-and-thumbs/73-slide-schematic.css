@@ -1,0 +1,567 @@
+/* Shared slide-schematic vocabulary: abstract, symbolic mini-diagrams of a
+   slide's structure (grey image blocks + text bars), drawn by
+   client/lib/slide-schematic.js. Used by both the layout switcher (base shape
+   grammar lives in 109-layout-switcher.css) and the slide-type picker's
+   "Schematic" view mode. This file adds the archetype `kind`s on top of the
+   base grammar, plus the picker-context sizing overrides.
+
+   Palette (matches the layout switcher):
+     image / solid block  -> hsl(var(--app-border-strong))
+     text line            -> hsl(var(--app-border-default))
+     heading / emphasis   -> hsl(var(--app-border-strong))
+     box background       -> hsl(var(--app-bg-sunken))
+     accent fill          -> hsl(var(--app-accent-primary)) */
+
+/* ============================================================
+   Picker context: fill the tile (the switcher keeps its 76px).
+   Intentionally minimal — only structural props — so per-archetype rules
+   (specificity 0,2,0) still win over the base (0,1,0) without a fight with
+   this selector (0,3,0). Padding/gap/background stay on the base + kinds.
+   ============================================================ */
+.ps-type-thumb.thumb .layout-tile-schematic {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+}
+
+/* ============================================================
+   Text / title family
+   ============================================================ */
+.layout-tile-line.is-title {
+  height: 8px;
+  width: 62%;
+  background: hsl(var(--app-border-strong));
+}
+.layout-tile-line.is-sub {
+  width: 40%;
+}
+.layout-tile-line.is-big {
+  height: 7px;
+  width: 78%;
+}
+.layout-tile-line.is-attr {
+  height: 4px;
+  width: 34%;
+  margin-top: 4px;
+}
+.layout-tile-line.is-top {
+  width: 60%;
+  margin-bottom: 6%;
+}
+.layout-tile-line.is-timer {
+  height: 14px;
+  width: 46%;
+  border-radius: 3px;
+  background: hsl(var(--app-border-strong));
+}
+
+.sd-center {
+  margin: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.layout-tile-schematic.is-title,
+.layout-tile-schematic.is-statement,
+.layout-tile-schematic.is-quote,
+.layout-tile-schematic.is-countdown {
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+/* Section title: a filled accent block with a heading in the lower band. */
+.layout-tile-schematic.is-section.is-filled {
+  background: hsl(var(--app-accent-primary));
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+.sd-section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 70%;
+}
+.sd-section-heading .layout-tile-line {
+  background: hsl(var(--app-accent-on-primary, 0 0% 100%) / 0.9);
+}
+.sd-section-heading .layout-tile-line.is-short {
+  opacity: 0.7;
+}
+
+/* Quote: an oversized quote mark over centred lines. */
+.layout-tile-schematic.is-quote {
+  position: relative;
+}
+.sd-quote-mark {
+  font-size: 1.4em;
+  line-height: 0.6;
+  font-weight: 700;
+  color: hsl(var(--app-border-strong));
+  margin-bottom: 2px;
+}
+
+/* One / two column body. */
+.layout-tile-schematic.is-onecol,
+.layout-tile-schematic.is-twocol {
+  flex-direction: column;
+  align-items: stretch;
+}
+.sd-cols {
+  display: flex;
+  gap: 8%;
+  flex: 1;
+}
+.sd-cols .layout-tile-text {
+  flex: 1;
+}
+
+/* Bulleted / numbered rows. */
+.layout-tile-schematic.is-bullets,
+.layout-tile-schematic.is-numbers {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+}
+.sd-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sd-row .layout-tile-line {
+  flex: 1;
+  margin: 0;
+}
+.sd-bullet {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: hsl(var(--app-border-strong));
+  flex-shrink: 0;
+}
+.sd-num {
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+  background: hsl(var(--app-border-strong));
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Media family
+   ============================================================ */
+.layout-tile-schematic.is-image {
+  padding: 0;
+  position: relative;
+}
+.layout-tile-image.is-full {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+.layout-tile-schematic.is-video .sd-play {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 0 7px 12px;
+  border-color: transparent transparent transparent hsl(0 0% 100% / 0.92);
+  filter: drop-shadow(0 1px 1px hsl(0 0% 0% / 0.4));
+}
+
+.layout-tile-schematic.is-embed {
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+}
+.sd-embed-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 5px;
+  height: 22%;
+  background: hsl(var(--app-border-default));
+}
+.sd-embed-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: hsl(var(--app-bg-sunken));
+}
+.sd-embed-body {
+  flex: 1;
+  background: hsl(var(--app-bg-elevated));
+}
+
+/* ============================================================
+   Grid archetypes (gallery, cards, logos, kpi, blocks, table, …)
+   ============================================================ */
+.layout-tile-schematic.is-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--sd-cols, 3), 1fr);
+  grid-template-rows: repeat(var(--sd-rows, 2), 1fr);
+  gap: 5%;
+  align-content: stretch;
+}
+.layout-tile-image.is-cell {
+  width: 100%;
+  height: 100%;
+}
+.sd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 0;
+}
+.sd-card .layout-tile-image.is-cell {
+  flex: 1;
+}
+.sd-card .layout-tile-line {
+  margin: 0;
+  width: 80%;
+}
+.sd-iconcard {
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 2px;
+  padding: 4px;
+}
+.sd-icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--app-border-strong));
+}
+.sd-logo {
+  border-radius: 3px;
+  background: hsl(var(--app-border-default));
+}
+.sd-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+  padding: 4px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 2px;
+}
+.sd-block .layout-tile-line {
+  margin: 0;
+}
+.sd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  justify-content: center;
+  padding: 4px 5px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 2px;
+}
+.layout-tile-line.is-stat {
+  height: 8px;
+  width: 55%;
+  background: hsl(var(--app-border-strong));
+  margin: 0;
+}
+.layout-tile-line.is-delta {
+  height: 3px;
+  width: 40%;
+  margin: 0;
+}
+.sd-cell {
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+}
+.sd-cell.is-head {
+  background: hsl(var(--app-border-default));
+}
+
+/* Partners: title over two logos. */
+.layout-tile-schematic.is-partners {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sd-partner-row {
+  display: flex;
+  gap: 8px;
+}
+.sd-partner-row .sd-logo {
+  width: 20px;
+  height: 12px;
+}
+
+/* ============================================================
+   Data / relationship archetypes
+   ============================================================ */
+.layout-tile-schematic.is-chart {
+  align-items: flex-end;
+  gap: 0;
+  position: relative;
+}
+.sd-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding-bottom: 3px;
+}
+.sd-bar {
+  flex: 1;
+  background: hsl(var(--app-border-strong));
+  border-radius: 1px 1px 0 0;
+}
+.sd-axis {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  bottom: 9%;
+  height: 1px;
+  background: hsl(var(--app-border-default));
+}
+
+.layout-tile-schematic.is-comparison {
+  align-items: stretch;
+  gap: 0;
+}
+.sd-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 5px;
+}
+.sd-divider {
+  width: 1px;
+  background: hsl(var(--app-border-default));
+  align-self: stretch;
+}
+
+.layout-tile-schematic.is-matrix {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 6%;
+}
+.sd-quad {
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 2px;
+}
+.sd-matrix-v {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  bottom: 6%;
+  width: 1px;
+  background: hsl(var(--app-border-strong));
+}
+.sd-matrix-h {
+  position: absolute;
+  top: 50%;
+  left: 6%;
+  right: 6%;
+  height: 1px;
+  background: hsl(var(--app-border-strong));
+}
+
+.layout-tile-schematic.is-process {
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.sd-step {
+  width: 18%;
+  height: 46%;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-strong));
+  border-radius: 2px;
+}
+.sd-arrow {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 3px 0 3px 4px;
+  border-color: transparent transparent transparent hsl(var(--app-border-strong));
+}
+
+.layout-tile-schematic.is-timeline {
+  position: relative;
+  align-items: center;
+}
+.sd-timeline-line {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 50%;
+  height: 2px;
+  background: hsl(var(--app-border-default));
+}
+.sd-timeline-dots {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+.sd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--app-border-strong));
+}
+
+.layout-tile-schematic.is-pyramid,
+.layout-tile-schematic.is-funnel {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+.sd-tier {
+  height: 22%;
+  background: hsl(var(--app-border-strong));
+  border-radius: 1px;
+}
+
+.layout-tile-schematic.is-cycle {
+  align-items: center;
+  justify-content: center;
+}
+.sd-ring {
+  width: 58%;
+  aspect-ratio: 1;
+  border: 2px solid hsl(var(--app-border-default));
+  border-radius: 50%;
+  position: relative;
+}
+.sd-ring .sd-dot {
+  position: absolute;
+}
+.sd-ring .sd-dot:nth-child(1) {
+  top: -3px;
+  left: calc(50% - 3px);
+}
+.sd-ring .sd-dot:nth-child(2) {
+  right: -3px;
+  top: calc(50% - 3px);
+}
+.sd-ring .sd-dot:nth-child(3) {
+  bottom: -3px;
+  left: calc(50% - 3px);
+}
+.sd-ring .sd-dot:nth-child(4) {
+  left: -3px;
+  top: calc(50% - 3px);
+}
+
+/* ============================================================
+   Interaction archetypes
+   ============================================================ */
+.layout-tile-schematic.is-poll {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 5px;
+}
+.sd-pollbar {
+  height: 6px;
+  border-radius: 2px;
+  background: hsl(var(--app-border-default));
+}
+.sd-pollbar:first-of-type {
+  background: hsl(var(--app-border-strong));
+}
+
+.layout-tile-schematic.is-slider {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+}
+.sd-track {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--app-border-default));
+}
+.sd-knob {
+  position: absolute;
+  top: 50%;
+  left: 60%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: hsl(var(--app-accent-primary));
+  transform: translate(-50%, -50%);
+}
+
+.layout-tile-schematic.is-feedback {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.sd-textarea {
+  flex: 1;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 2px;
+  background: hsl(var(--app-bg-elevated));
+}
+
+.layout-tile-schematic.is-qr {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.sd-qr {
+  width: 34%;
+  aspect-ratio: 1;
+  background:
+    repeating-conic-gradient(
+      hsl(var(--app-border-strong)) 0% 25%,
+      hsl(var(--app-bg-sunken)) 0% 50%
+    )
+    0 0 / 33% 33%;
+  border: 2px solid hsl(var(--app-border-strong));
+  border-radius: 2px;
+}
+.sd-qr-cap {
+  width: 40%;
+  display: flex;
+  justify-content: center;
+}
+
+.layout-tile-schematic.is-freeform {
+  position: relative;
+}
+.sd-float {
+  position: absolute;
+  background: hsl(var(--app-border-default));
+  border-radius: 2px;
+}
+.sd-float-a {
+  right: 12%;
+  top: 16%;
+  width: 30%;
+  height: 20%;
+}
+.sd-float-b {
+  right: 20%;
+  bottom: 16%;
+  width: 22%;
+  height: 16%;
+}
