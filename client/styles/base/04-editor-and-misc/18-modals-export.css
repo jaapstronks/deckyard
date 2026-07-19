@@ -1,0 +1,158 @@
+/* Export modal - grouped, colour-coded format picker (see export-modal.js).
+   Each row is an icon tile + name/description + action button(s). The icon is
+   a Lucide SVG painted with the format's accent colour via CSS mask, so it
+   recolours cleanly in both light and dark themes. */
+
+.modal.export-modal {
+  width: min(560px, 100%);
+}
+
+.export-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.export-format-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.export-format-group {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--app-text-muted));
+  margin: 14px 0 6px;
+}
+
+.export-format-group:first-child {
+  margin-top: 0;
+}
+
+.export-format-rowwrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.export-format-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+}
+
+.export-format-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: hsl(var(--fmt-h) var(--fmt-s) var(--fmt-l) / 0.14);
+  position: relative;
+}
+
+.export-format-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 18px;
+  height: 18px;
+  background: hsl(var(--fmt-h) var(--fmt-s) var(--fmt-l));
+  -webkit-mask-image: var(--fmt-icon);
+  mask-image: var(--fmt-icon);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.export-format-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.export-format-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.export-format-desc {
+  font-size: 12px;
+  color: hsl(var(--app-text-muted));
+}
+
+.export-format-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+}
+
+/* Browser-print fallback, revealed only when the server PDF render fails. */
+.export-format-fallback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 4px 10px 58px;
+}
+
+.export-format-fallback .help {
+  margin: 0;
+}
+
+/* Per-format accent colours as HSL parts, so the tile can reuse them at low
+   alpha for its background and full strength for the masked glyph. */
+.export-format-icon[data-color='red'] {
+  --fmt-h: 0;
+  --fmt-s: 72%;
+  --fmt-l: 52%;
+}
+
+.export-format-icon[data-color='green'] {
+  --fmt-h: 145;
+  --fmt-s: 55%;
+  --fmt-l: 42%;
+}
+
+.export-format-icon[data-color='amber'] {
+  --fmt-h: 32;
+  --fmt-s: 82%;
+  --fmt-l: 48%;
+}
+
+.export-format-icon[data-color='blue'] {
+  --fmt-h: 212;
+  --fmt-s: 78%;
+  --fmt-l: 54%;
+}
+
+.export-format-icon[data-color='teal'] {
+  --fmt-h: 178;
+  --fmt-s: 62%;
+  --fmt-l: 40%;
+}
+
+.export-format-icon[data-color='purple'] {
+  --fmt-h: 265;
+  --fmt-s: 62%;
+  --fmt-l: 60%;
+}
+
+.export-format-icon[data-color='slate'] {
+  --fmt-h: 215;
+  --fmt-s: 16%;
+  --fmt-l: 52%;
+}
+
+.export-format-icon[data-color='indigo'] {
+  --fmt-h: 234;
+  --fmt-s: 60%;
+  --fmt-l: 62%;
+}
