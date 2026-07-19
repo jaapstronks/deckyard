@@ -136,7 +136,7 @@ function sanitizeLocks(raw) {
  * Names for the two built-in background slots.
  *
  * `lime` and `mist` are storage keys, not colours: `deckyard` paints lime white
- * and `sandbox-dark` paints it near-black. The picker therefore falls back to
+ * and `midnight` paints it near-black. The picker therefore falls back to
  * "Color 1" / "Color 2", which is accurate and useless — only the theme knows
  * what its own slots are. A file theme may also use `{en, nl}` objects here; a
  * database theme has one label per field, like the rest of its shape.
