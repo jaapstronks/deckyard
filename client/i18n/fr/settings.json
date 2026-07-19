@@ -169,5 +169,6 @@
   "settings.themes.config.removeBackground": "Supprimer",
   "settings.themes.config.noBackgrounds": "Aucune image d’arrière-plan pour l’instant.",
   "settings.themes.config.backgroundsFull": "Un thème ne peut pas contenir plus d’images d’arrière-plan.",
-  "settings.themes.config.uploading": "Envoi…"
+  "settings.themes.config.uploading": "Envoi…",
+  "settings.themes.config.backgroundsSomeSkipped": "Seules {count} images supplémentaires tiennent ; le reste a été ignoré."
 }

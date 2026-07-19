@@ -299,5 +299,6 @@
   "settings.themes.config.removeBackground": "Rimuovi",
   "settings.themes.config.noBackgrounds": "Ancora nessuna immagine di sfondo.",
   "settings.themes.config.backgroundsFull": "Un tema non può contenere altre immagini di sfondo.",
-  "settings.themes.config.uploading": "Caricamento…"
+  "settings.themes.config.uploading": "Caricamento…",
+  "settings.themes.config.backgroundsSomeSkipped": "Ci stanno solo altre {count} immagini; le altre sono state ignorate."
 }

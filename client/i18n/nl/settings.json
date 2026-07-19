@@ -293,5 +293,6 @@
   "settings.themes.config.removeBackground": "Verwijderen",
   "settings.themes.config.noBackgrounds": "Nog geen achtergrondbeelden.",
   "settings.themes.config.backgroundsFull": "Meer achtergrondbeelden passen er niet in een thema.",
-  "settings.themes.config.uploading": "Uploaden…"
+  "settings.themes.config.uploading": "Uploaden…",
+  "settings.themes.config.backgroundsSomeSkipped": "Er passen er nog maar {count}; de rest is overgeslagen."
 }

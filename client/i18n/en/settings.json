@@ -345,5 +345,6 @@
   "settings.themes.config.removeBackground": "Remove",
   "settings.themes.config.noBackgrounds": "No background images yet.",
   "settings.themes.config.backgroundsFull": "That is as many background images as a theme can hold.",
-  "settings.themes.config.uploading": "Uploading…"
+  "settings.themes.config.uploading": "Uploading…",
+  "settings.themes.config.backgroundsSomeSkipped": "Only {count} more images fit; the rest were skipped."
 }

@@ -111,9 +111,21 @@ export function createBackgroundsSection({ config, onChange }) {
         return;
       }
 
+      const accepted = files.slice(0, room);
+      if (accepted.length < files.length) {
+        // Never drop input silently — say what did not fit.
+        toast.error(
+          t(
+            'settings.themes.config.backgroundsSomeSkipped',
+            'Only {count} more images fit; the rest were skipped.',
+            { count: String(room) }
+          )
+        );
+      }
+
       status.textContent = t('settings.themes.config.uploading', 'Uploading…');
       const added = [];
-      for (const file of files.slice(0, room)) {
+      for (const file of accepted) {
         try {
           const { url } = await uploadImage(file);
           if (url) added.push(url);

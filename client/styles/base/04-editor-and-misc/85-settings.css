@@ -123,10 +123,15 @@
 }
 
 /* Settings content area */
+/* No `overflow-y: auto` here. The shell is `min-height: 100vh`, so this pane
+   grows with its content and never scrolls on its own — the document does, as
+   everywhere else in the app. But an `overflow` other than visible still makes
+   this the sticky containing block, so `position: sticky` inside it bound to a
+   box that never scrolls and silently did nothing (the theme editor's preview
+   column had been dead for exactly that reason). */
 .settings-page > .settings-content {
   grid-area: content;
   padding: var(--ps-space-5);
-  overflow-y: auto;
   background: hsl(var(--app-bg-base));
 }
 

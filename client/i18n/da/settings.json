@@ -169,5 +169,6 @@
   "settings.themes.config.removeBackground": "Fjern",
   "settings.themes.config.noBackgrounds": "Ingen baggrundsbilleder endnu.",
   "settings.themes.config.backgroundsFull": "Et tema kan ikke rumme flere baggrundsbilleder.",
-  "settings.themes.config.uploading": "Uploader…"
+  "settings.themes.config.uploading": "Uploader…",
+  "settings.themes.config.backgroundsSomeSkipped": "Der er kun plads til {count} billeder mere; resten blev sprunget over."
 }
