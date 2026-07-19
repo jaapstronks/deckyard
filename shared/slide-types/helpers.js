@@ -133,24 +133,6 @@ export function pickAltText({
   return String(hardFallback || '').trim();
 }
 
-/**
- * Default background presets for title slides.
- * @deprecated Prefer using theme.backgroundPresets from the active theme.
- * This fallback is used by server-side code (newSlide, deck import) when no theme context is available.
- */
-export const TITLE_BG_PRESETS = [
-  '/assets/images/backgrounds/demo-aurora.jpg',
-  '/assets/images/backgrounds/demo-dusk.jpg',
-  '/assets/images/backgrounds/demo-paper.jpg',
-  '/assets/images/backgrounds/demo-moss.jpg',
-];
-
-export function pickRandom(arr) {
-  const a = Array.isArray(arr) ? arr : [];
-  if (!a.length) return '';
-  return a[Math.floor(Math.random() * a.length)];
-}
-
 export function normalizeUrl(s) {
   const t = String(s || '').trim();
   if (!t) return '';

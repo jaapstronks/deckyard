@@ -1,6 +1,7 @@
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
 import { json, serveJson } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 
 export async function handlePresentationsImportJson({
   repoRoot,
@@ -19,7 +20,16 @@ export async function handlePresentationsImportJson({
     console.log('[import-json] Deck title:', deck?.title);
     console.log('[import-json] Deck slides count:', Array.isArray(deck?.slides) ? deck.slides.length : 'not an array');
 
-    const parts = deckToPresentationParts(deck);
+    // Load the deck's theme first so imported title slides can take a
+    // background image from its presets.
+    let themeConfig = null;
+    try {
+      themeConfig = await loadTheme(repoRoot, resolveThemeId(deck?.theme));
+    } catch {
+      // ignore — title slides are imported without a background image
+    }
+
+    const parts = deckToPresentationParts(deck, { theme: themeConfig });
     console.log('[import-json] Parsed parts - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
     const created = await createPresentation(repoRoot, {

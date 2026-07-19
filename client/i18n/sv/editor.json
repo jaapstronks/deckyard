@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Välj en befintlig bild från biblioteket, eller ladda upp din egen bild endast för denna slide.",
   "editor.image.bgLibraryTitle": "Bibliotek: välj en bakgrundsbild",
   "editor.image.chooseFromLibrary": "Välj från bibliotek…",
-  "editor.image.defaultBackgrounds": "Standardbakgrunder",
+  "editor.image.themeBackgrounds": "Från detta tema",
   "editor.image.fieldLabel": "Bild",
   "editor.image.help.storage": "Bilder lagras lokalt i /server/uploads och används via URL.",
   "editor.image.help.uploadsDisabled": "Välj från biblioteket (rekommenderat). Uppladdningar är inaktiverade.",

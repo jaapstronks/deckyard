@@ -34,10 +34,13 @@ export async function prepareNewPresentation(repoRoot, body) {
   // Default title slide differs per theme.
   // Themes can specify a custom title slide via the `defaultTitleSlide` property.
   let defaultTitleSlide = 'title-slide';
+  // Also carried into newPresentation so the default title slide can take its
+  // background image from the theme's own presets.
+  let themeConfig = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);
-    const theme = await loadTheme(repoRoot, themeId);
-    defaultTitleSlide = theme?.defaultTitleSlide || 'title-slide';
+    themeConfig = await loadTheme(repoRoot, themeId);
+    defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
   } catch {
     // ignore
   }
@@ -110,6 +113,7 @@ export async function prepareNewPresentation(repoRoot, body) {
     theme: effectiveTheme,
     lang: initialLang,
     defaultTitleSlide,
+    themeConfig,
   });
   pres.lang = initialLang;
 

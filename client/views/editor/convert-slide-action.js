@@ -11,6 +11,7 @@ import { confirmModal } from '../../lib/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast } from '../../lib/toast.js';
 import { debugLog } from '../../lib/debug.js';
+import { loadThemeById } from '../../lib/theme.js';
 import {
   convertSlideToType,
   getConvertibleSlideTypes,
@@ -86,7 +87,21 @@ export async function convertSlideWithConfirm({
 
   try {
     const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-    const next = convertSlideToType(slide, toType, { slideTypes: SLIDE_TYPES, lang });
+    // Conversions that gain a background image (chapter-title → title) take it
+    // from the theme's own presets. Resolved here rather than threaded through
+    // every caller, so all three entry points behave identically; loadThemeById
+    // is cached, so this is a map lookup after the first call.
+    let theme = null;
+    try {
+      theme = await loadThemeById(pres?.theme);
+    } catch {
+      theme = null;
+    }
+    const next = convertSlideToType(slide, toType, {
+      slideTypes: SLIDE_TYPES,
+      lang,
+      theme,
+    });
     slide.type = next.type;
     slide.content = next.content;
     editorState.dirtyRefreshWithItem();

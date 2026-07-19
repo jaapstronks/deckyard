@@ -140,7 +140,7 @@
   "editor.image.bgHelp.withUploads": "Valitse olemassa oleva kuva kirjastosta tai lataa oma kuvasi vain tälle dialle.",
   "editor.image.bgLibraryTitle": "Kirjasto: valitse taustakuva",
   "editor.image.chooseFromLibrary": "Valitse kirjastosta…",
-  "editor.image.defaultBackgrounds": "Oletustaustaat",
+  "editor.image.themeBackgrounds": "Tästä teemasta",
   "editor.image.fieldLabel": "Kuva",
   "editor.image.help.storage": "Kuvat tallennetaan paikallisesti /server/uploads-kansioon ja käytetään URL:n kautta.",
   "editor.image.help.uploadsDisabled": "Valitse kirjastosta (suositeltu). Lataukset on poistettu käytöstä.",

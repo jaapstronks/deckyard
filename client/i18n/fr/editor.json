@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Choisissez une image existante de la bibliothèque, ou téléchargez votre propre image pour cette diapositive uniquement.",
   "editor.image.bgLibraryTitle": "Bibliothèque : choisir une image d'arrière-plan",
   "editor.image.chooseFromLibrary": "Choisir dans la bibliothèque…",
-  "editor.image.defaultBackgrounds": "Arrière-plans par défaut",
+  "editor.image.themeBackgrounds": "De ce thème",
   "editor.image.fieldLabel": "Image",
   "editor.image.help.storage": "Les images sont stockées localement dans /server/uploads et utilisées via URL.",
   "editor.image.help.uploadsDisabled": "Choisir dans la bibliothèque (recommandé). Les téléchargements sont désactivés.",

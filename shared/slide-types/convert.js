@@ -1,5 +1,5 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
-import { TITLE_BG_PRESETS, pickRandom } from './helpers.js';
+import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
 import { imageTextImageItems } from './image-text-images.js';
 
@@ -190,7 +190,11 @@ export function getConversionLossyKeys(slide, toType, { slideTypes = SLIDE_TYPES
   return extras;
 }
 
-export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
+export function convertSlideToType(
+  slide,
+  toType,
+  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {}
+) {
   const fromType = String(slide?.type || '');
   const targetType = String(toType || '');
   if (!slide || typeof slide !== 'object') throw new Error('convertSlideToType: slide must be an object');
@@ -422,10 +426,11 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
   }
   if (fromType === 'chapter-title-slide' && targetType === 'title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
-    // Keep a nice default background image if the target has the key and it's empty.
+    // Give the target a background from the theme's own presets when it has the
+    // key and it's empty. No theme (or no presets) leaves it flat.
     const hasBgKey = Object.prototype.hasOwnProperty.call(to, 'bgImage');
     const bg = hasBgKey && typeof to.bgImage === 'string' ? to.bgImage.trim() : '';
-    if (hasBgKey && !bg) to.bgImage = pickRandom(TITLE_BG_PRESETS);
+    if (hasBgKey && !bg) to.bgImage = pickBackgroundPreset(theme);
   }
 
   return next;
