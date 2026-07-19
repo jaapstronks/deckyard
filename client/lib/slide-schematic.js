@@ -97,32 +97,44 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
       box.classList.add('is-quote');
       box.append(
         h('span', { class: 'sd-quote-mark', text: '“' }),
-        centerBlock([line('is-big'), line('is-big is-short'), line('is-attr')])
+        h('div', { class: 'sd-quote-body' }, [
+          line('is-big'),
+          line('is-big'),
+          line('is-big is-short'),
+          line('is-attr'),
+        ])
       );
       break;
     case 'oneCol':
       box.classList.add('is-onecol');
-      box.append(h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line(), line('is-short')]));
+      box.append(
+        h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line(), line(), line('is-short')])
+      );
       break;
     case 'twoCol':
       box.classList.add('is-twocol');
       box.append(
         line('is-heading is-top'),
         h('div', { class: 'sd-cols' }, [
-          h('div', { class: 'layout-tile-text' }, [line(), line(), line('is-short')]),
-          h('div', { class: 'layout-tile-text' }, [line(), line(), line('is-short')]),
+          h('div', { class: 'layout-tile-text' }, [line(), line(), line(), line('is-short')]),
+          h('div', { class: 'layout-tile-text' }, [line(), line(), line(), line('is-short')]),
         ])
       );
       break;
     case 'bullets':
     case 'numbers': {
-      box.classList.add(kind === 'numbers' ? 'is-numbers' : 'is-bullets');
-      const rows = Math.max(2, Math.min(Number(s.rows) || 4, 5));
-      const marker = kind === 'numbers' ? 'sd-num' : 'sd-bullet';
+      const isNum = kind === 'numbers';
+      box.classList.add(isNum ? 'is-numbers' : 'is-bullets');
+      const rows = Math.max(3, Math.min(Number(s.rows) || 4, 5));
       box.append(
         line('is-heading'),
-        ...Array.from({ length: rows }, () =>
-          h('div', { class: 'sd-row' }, [h('span', { class: marker }), line()])
+        ...Array.from({ length: rows }, (_, i) =>
+          h('div', { class: 'sd-row' }, [
+            isNum
+              ? h('span', { class: 'sd-num', text: String(i + 1) })
+              : h('span', { class: 'sd-bullet' }),
+            line(),
+          ])
         )
       );
       break;
@@ -302,7 +314,11 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     case 'textCols': {
       const n = Math.min(Math.max(Number(s.textCols) || 2, 2), 3);
       box.classList.add('is-text-cols');
-      for (let i = 0; i < n; i += 1) box.append(textBlock());
+      for (let i = 0; i < n; i += 1) {
+        box.append(
+          h('div', { class: 'layout-tile-text' }, [line('is-heading'), line(), line(), line('is-short')])
+        );
+      }
       break;
     }
     case 'split': {
