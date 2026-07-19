@@ -1250,6 +1250,17 @@ export function createInlineEditor({
     const def = slide ? getSlideDef?.(slide.type) : null;
     const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
     if (!def || !descriptor) return; // opt-in only
+    // Dual-model types (logo-wall, team-cards) canonicalize to their array form
+    // before decorating, so the media popover / card affordances always have a
+    // stable array to write to. Idempotent and non-dirtying (the rendered
+    // output is unchanged); an actual edit is what marks the deck dirty.
+    if (typeof descriptor.ensure === 'function' && slide?.content) {
+      try {
+        descriptor.ensure(slide.content);
+      } catch {
+        /* canonicalization is best-effort; decoration still proceeds */
+      }
+    }
     thumb.classList.add('is-inline-edit');
     // Clicking an editable slide edits text; it does NOT open the lightbox, so
     // the thumb's "Click to open larger preview" tooltip would be wrong here.

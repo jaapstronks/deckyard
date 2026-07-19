@@ -60,6 +60,33 @@ export function resolveLogos(content) {
   return logos;
 }
 
+/**
+ * Canonicalize a logo wall to the array form (editor-only, idempotent).
+ *
+ * The read side (`resolveLogos`) folds the legacy numbered fields and the
+ * preferred `logos[]` array into one view; this mutating helper materializes
+ * `logos[]` so the inline media popover and card affordances have a stable,
+ * mutable array to write to. Never called from `renderHtml` (which stays pure):
+ * the inline editor runs it via the descriptor's `ensure` knob, on a legacy
+ * deck this converts the numbered fields into `logos[]` the first time the deck
+ * is opened for editing. Mirrors `ensureImageTextImages`.
+ * @param {Object} content
+ * @returns {Object} the same content object
+ */
+export function ensureLogos(content) {
+  if (!content || typeof content !== 'object') return content;
+  if (Array.isArray(content.logos) && content.logos.length > 0) {
+    if (content.logos.length > MAX_LOGOS) content.logos.length = MAX_LOGOS;
+    return content;
+  }
+  const folded = resolveLogos(content);
+  // Guarantee one slot so an empty wall still offers a clickable "add a first
+  // logo" cell on the canvas.
+  content.logos =
+    folded.length > 0 ? folded : [{ image: '', name: '', alt: '', link: '' }];
+  return content;
+}
+
 export default {
   label: 'Logo wall',
   fields: [
@@ -93,6 +120,9 @@ export default {
       label: 'Logos',
       type: 'items',
       required: false,
+      minItems: 0,
+      maxItems: MAX_LOGOS,
+      itemDefaults: { image: '', name: '', alt: '', link: '' },
       itemFields: [
         { key: 'image', type: 'image', label: 'Logo image' },
         { key: 'name', type: 'string', label: 'Name', maxLength: 80 },
@@ -149,11 +179,15 @@ export default {
 
   renderHtml: (content, _slide, ctx) => {
     const mode = ctx?.mode;
+    const editMode = mode === 'edit';
     const logos = resolveLogos(content);
 
-    // Inline-edit paths must point at the data source resolveLogos() used. Only
-    // logos[]-backed items carry a stable index, so the photo hook is array-only.
-    const useLogos = Array.isArray(content?.logos) && content.logos.length > 0;
+    // In the editor an empty wall still needs one clickable cell so a FIRST
+    // logo can be added in-slide (the media popover writes logos[0]); present /
+    // export stay empty. The inline editor's `ensure` knob (ensureLogos) has
+    // already materialized content.logos, so index 0 has a live item to mutate.
+    const renderLogos =
+      logos.length > 0 ? logos : editMode ? [{ image: '', name: '', alt: '', link: '' }] : [];
 
     const title = nonEmpty(content?.title);
     const subtitle = nonEmpty(content?.subheading);
@@ -170,8 +204,8 @@ export default {
         : '';
 
     const items = [];
-    for (let i = 0; i < logos.length; i++) {
-      const logo = logos[i];
+    for (let i = 0; i < renderLogos.length; i++) {
+      const logo = renderLogos[i];
       const img = nonEmpty(logo.image);
       const name = nonEmpty(logo.name);
 
@@ -182,9 +216,11 @@ export default {
         hardFallback: 'Logo',
       });
 
-      // Inline-edit hook: clicking the logo in the WYSIWYG editor opens a media
-      // popover (image + alt). Members[]-backed logos only (stable index/path).
-      const photoAttr = useLogos ? ` data-inline-photo="${i}"` : '';
+      // Inline-edit hook: clicking the logo (filled or empty placeholder) in the
+      // WYSIWYG editor opens the media popover (image + alt). The attribute is
+      // inert on present/export; the inline editor's `ensure` knob guarantees a
+      // matching logos[i] to write to.
+      const photoAttr = ` data-inline-photo="${i}"`;
       const imgHtml = img
         ? `<img class="logo-wall-img"${photoAttr} src="${esc(img)}" alt="${esc(alt)}" />`
         : `<div class="logo-wall-placeholder is-empty"${photoAttr} aria-hidden="true">Logo</div>`;
@@ -194,7 +230,7 @@ export default {
       const linkHtml = cardLinkOverlayHtml(logo.link, mode, name || `Logo ${i + 1}`);
 
       items.push(`
-        <div class="logo-wall-item${linkHtml ? ' has-link' : ''}" role="group" aria-label="${esc(
+        <div class="logo-wall-item${linkHtml ? ' has-link' : ''}" role="group" data-inline-item="logos" data-inline-item-index="${i}" aria-label="${esc(
           name || `Logo ${i + 1}`
         )}">
           <div class="logo-wall-frame">

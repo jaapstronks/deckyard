@@ -168,6 +168,7 @@ read from `SLIDE_TYPES[type].fields`.
 
 | Knob | Semantics |
 | --- | --- |
+| `ensure` | Canonicalizer `(content) => content` run once per mount (in `refresh`, before decorating) for dual-model types whose inline attributes target a canonical array. `ensureLogos` / `ensureMembers` migrate the legacy numbered fields into `logos[]` / `members[]`, so the media popover and card affordances always have a stable, mutable target - which lets those renderers emit the inline attributes unconditionally (no `useLogos` / `useMembers` gate). Idempotent, editor-only, mutates in place, does not dirty the deck. Function-valued → core-map-only. Same family as `ensureImageTextImages`. |
 | `ghosts[]` | Chips for empty optional fields: `{ field, anchors: [{sel, pos, chip}] }`. |
 | `ghosts[].anchors` | Ordered fallback list; first selector found in the DOM wins (`.header` when present, `.slide-inner` otherwise). `pos` = DOM insertion for the spawned editable (`prepend`/`append`/`before`/`after`); `chip` = overlay placement mode. Legacy `{ field, anchor, pos }` still works. |
 | `ghosts[].group` | Ghosts sharing a `group` show only the first empty one - sequential fields (poll option1..4, likert option1..10) get one "+ Option N" chip for the next slot. |
@@ -213,7 +214,7 @@ fallbacks).
 | title-slide | title, subheading, byline, attribution | subheading, byline, attribution | – | – | – |
 | content-slide | title | subheading | – | body | convert: + Add image → image-text |
 | list-slide / lijstje-slide | title, items | subheading + item text | ✅ | – | – |
-| quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`) |
+| quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`); empty slot clickable in edit mode (first portrait inline) |
 | chapter-title-slide | title | subheading | – | – | – |
 | image-text-slide | title | caption | – | body | media: `images[]` per cell; convert: × on sole empty placeholder → content-slide |
 | timeline-slide | header + item date/title/text | header set + item text (chip on card) | ✅ (add right-center, × on card) | – | – |
@@ -238,8 +239,8 @@ fallbacks).
 | gallery-slide | header + captions | header set + per-image caption | ✅ (`images`) | – | media: `images[]` |
 | icon-card-grid-slide | header + card title/body | header set | ✅ items-mode only | card bodies | icons: in-slide icon picker (+ numbered re-sync) |
 | card-stack-slide | header + card label/body | header set | – (count enum in inspector) | card bodies | – |
-| team-cards-slide | header, subheading2, name/byline | header set + member name/byline | ✅ members-mode only | – | media: photo + alt + LinkedIn |
-| logo-wall-slide | title, subheading | both | – | – | media: `logos[]` (names stay off-canvas: aria-only) |
+| team-cards-slide | header, subheading2, name/byline | header set + member name/byline | ✅ (`ensure` members[]; first block inline) | – | media: photo + alt + LinkedIn (incl. first photo) |
+| logo-wall-slide | title, subheading | both | ✅ (`ensure` logos[]; add/remove/reorder; first logo inline) | – | media: `logos[]` incl. empty-slot add (names stay off-canvas: aria-only) |
 | text-blocks-slide | header, row titles, block title/body | header set + row title (rows 2+) | ✅ two-level rows → blocks | block bodies | – |
 | content-columns-slide | header, col titles, block title/body | header set | – | col text, block bodies | media: flat `col{n}Image` incl. empty-slot add |
 

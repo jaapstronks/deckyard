@@ -111,7 +111,19 @@
  *         two-step; leftover caption/alt text still triggers the lossy
  *         confirm via the shared action.
  *
+ *   ensure: a canonicalizer run once per mount (in inline-editor `refresh`),
+ *     before decorating, for dual-model types whose inline attributes target a
+ *     canonical array (logo-wall → logos[], team-cards → members[]). It
+ *     migrates the legacy numbered fields into that array so the media popover
+ *     and card affordances always have a stable, mutable target - which lets
+ *     the renderers drop their array-backed gate and emit the inline attributes
+ *     unconditionally. Idempotent, editor-only, mutates content in place, does
+ *     not dirty the deck (a no-op canonicalization). Function-valued, so
+ *     core-map-only (same restriction as function addPlacement / icons.afterWrite).
+ *       ensure: (content) => content
+ *
  * @typedef {Object} InlineDescriptor
+ * @property {(content:Object)=>Object} [ensure]
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
@@ -122,6 +134,8 @@
  */
 
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
+import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
+import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -505,6 +519,9 @@ export const INLINE_DESCRIPTORS = {
       ...HEADER_GHOSTS,
       { field: 'subheading2', anchors: [{ sel: '.team-cards-group-right', pos: 'prepend', chip: 'top-start' }] },
     ],
+    // Dual-model (members[] or legacy card{n}*): canonicalize to members[] on
+    // mount so a first block (and its photo) can be added on the canvas.
+    ensure: ensureMembers,
     itemGhosts: [
       { list: 'members', field: 'name', item: '.team-card', pos: 'append', chip: 'top-start' },
       // Caption ghost sits directly under the title/text block (not over the
@@ -518,11 +535,16 @@ export const INLINE_DESCRIPTORS = {
         chip: 'below-start',
       },
     ],
+    // ensureMembers guarantees members[] in edit mode, so no skipWhenEmpty
+    // guard is needed - add/remove/reorder work from the first block.
     cards: {
       field: 'members',
-      skipWhenEmpty: true,
       container: '.team-cards-grid',
       itemSelector: '.team-card',
+      addLabelKey: 'editor.inline.addMember',
+      addLabel: 'Add block',
+      removeLabelKey: 'editor.inline.removeMember',
+      removeLabel: 'Remove block',
     },
     // Clicking a card photo opens an in-slide media popover (image + alt +
     // LinkedIn), so slide-view users can set the whole block without the side form.
@@ -545,13 +567,29 @@ export const INLINE_DESCRIPTORS = {
   },
   'logo-wall-slide': {
     ghosts: HEADER_GHOSTS,
-    // Clicking a logo opens the media popover (image + alt). Logo names render
-    // only as aria-labels, so name stays in the form (array-backed logos only).
+    // Dual-model (logos[] or legacy logo{n}*): canonicalize to logos[] on mount
+    // so the media popover and card affordances always have a stable array.
+    ensure: ensureLogos,
+    // Clicking a logo (filled or empty placeholder) opens the media popover
+    // (image + alt). Logo names render only as aria-labels, so name stays in
+    // the form.
     media: {
       list: 'logos',
       photoSelector: '.logo-wall-img[data-inline-photo], .logo-wall-placeholder[data-inline-photo]',
       imageField: 'image',
       altField: 'alt',
+    },
+    // Add / remove / reorder logos entirely on the canvas (like gallery). The
+    // empty wall renders one placeholder cell (edit-mode), so a first logo can
+    // be added by clicking it or via "+ Add logo".
+    cards: {
+      field: 'logos',
+      container: '.logo-wall-grid',
+      itemSelector: '.logo-wall-item',
+      addLabelKey: 'editor.inline.addLogo',
+      addLabel: 'Add logo',
+      removeLabelKey: 'editor.inline.removeLogo',
+      removeLabel: 'Remove logo',
     },
     formText: ['title', 'subheading'],
   },

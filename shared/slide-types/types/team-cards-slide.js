@@ -73,6 +73,31 @@ export function resolveMembers(content) {
   return members;
 }
 
+/**
+ * Canonicalize an "Image blocks" slide to the array form (editor-only,
+ * idempotent). Mirrors `ensureLogos` / `ensureImageTextImages`: the read side
+ * (`resolveMembers`) folds legacy numbered fields and the preferred `members[]`
+ * array into one view; this mutating helper materializes `members[]` so the
+ * inline media popover and card affordances have a stable, mutable array to
+ * write to. Never called from `renderHtml` (which stays pure): the inline
+ * editor runs it via the descriptor's `ensure` knob.
+ * @param {Object} content
+ * @returns {Object} the same content object
+ */
+export function ensureMembers(content) {
+  if (!content || typeof content !== 'object') return content;
+  if (Array.isArray(content.members) && content.members.length > 0) {
+    if (content.members.length > MAX_CARDS) content.members.length = MAX_CARDS;
+    return content;
+  }
+  // Fold the legacy numbered fields into members[]. When there is genuinely
+  // nothing, leave an empty array (not a seeded empty member): the renderer
+  // skips all-empty members, so a seed would be an invisible orphan - the
+  // inline "+ Add block" affordance provides the first block instead.
+  content.members = resolveMembers(content);
+  return content;
+}
+
 export default {
   label: 'Image blocks',
   fields: [
@@ -161,6 +186,8 @@ export default {
       label: 'Members',
       type: 'items',
       required: false,
+      minItems: 0,
+      maxItems: MAX_CARDS,
       // Seed placeholder title/caption so a newly added block renders immediately
       // (an all-empty member is skipped by the renderer). Matches the side form's
       // "+ Add block" behaviour.
@@ -291,8 +318,10 @@ export default {
     const columnSplit = clampInt(content?.columnSplit || 0, 0, 5, 0);
     const hasSplit = columnSplit > 0;
 
-    // Inline-edit paths must point at the data source resolveMembers() used.
-    const useMembers = Array.isArray(content?.members) && content.members.length > 0;
+    // Inline-edit paths always target members[] (the canonical array). The
+    // inline editor's `ensure` knob (ensureMembers) materializes members[] from
+    // any legacy numbered deck before decorating, so the paths are always live
+    // in edit mode; on present/export the attributes are inert.
 
     // Helper to build a single card HTML from a member object
     const buildCard = (member, idx) => {
@@ -317,10 +346,10 @@ export default {
         ? objectPositionStyleAttrFromFocus({ focusX, focusY })
         : '';
 
-      // Inline-edit hook: clicking the photo in the WYSIWYG editor opens a media
-      // popover (image + alt + LinkedIn). Only members[]-backed cards carry a
-      // stable index/path, so the attribute is members-only.
-      const photoAttr = useMembers ? ` data-inline-photo="${idx}"` : '';
+      // Inline-edit hook: clicking the photo (filled or empty placeholder) in
+      // the WYSIWYG editor opens a media popover (image + alt + LinkedIn). The
+      // `ensure` knob guarantees a matching members[idx] to write to.
+      const photoAttr = ` data-inline-photo="${idx}"`;
       const photoHtml = img
         ? `
           <div class="team-card-photo"${photoAttr}>
@@ -331,8 +360,8 @@ export default {
           <div class="team-card-photo is-empty"${photoAttr}></div>
         `;
 
-      const namePath = useMembers ? `members.${idx}.name` : `card${idx + 1}Name`;
-      const bylinePath = useMembers ? `members.${idx}.byline` : `card${idx + 1}Byline`;
+      const namePath = `members.${idx}.name`;
+      const bylinePath = `members.${idx}.byline`;
       const nameHtml = name
         ? `<div class="team-card-name" data-inline-field="${namePath}" dir="auto">${esc(name)}</div>`
         : '';
@@ -360,9 +389,7 @@ export default {
         cardContent = `${photoHtml}${textHtml}`;
       }
 
-      const itemAttrs = useMembers
-        ? ` data-inline-item="members" data-inline-item-index="${idx}"`
-        : '';
+      const itemAttrs = ` data-inline-item="members" data-inline-item-index="${idx}"`;
       return `
         <div class="team-card" role="group" aria-label="${esc(
           name || `Block ${idx + 1}`
