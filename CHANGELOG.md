@@ -227,6 +227,13 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **@mentions render as inline chips everywhere, not raw markup.** A mention is
+  stored in a comment body as `@[Name](user:email)`; the editor thread already
+  showed it as a chip, but the share viewer, preview lightbox, and the
+  activity-feed / home-rail previews leaked the raw marker. They now render the
+  same subtle chip (via a shared renderer), and the server strips the marker to
+  plain `@Name` in activity previews before truncation.
+
 - **Placing a comment on a slide now works anywhere, and the affordance is
   visible.** "Add comment" is a labeled toolbar button (was a bare, easily
   missed pin glyph). In placement mode the inline WYSIWYG editor yields its
