@@ -19,8 +19,9 @@
  *     wins), so a ghost can target `.header` when it exists and `.slide-inner`
  *     when the header itself is omitted. `pos` is the DOM insertion position for
  *     the spawned editable ('prepend' | 'append' | 'before' | 'after'); `chip`
- *     is the overlay placement mode ('below-start' | 'top-start' |
- *     'bottom-start'). Legacy `{ field, anchor, pos }` still works.
+ *     is the overlay placement mode ('below-start' | 'below-end' | 'top-start'
+ *     | 'bottom-start'). Legacy `{ field, anchor, pos }` still works (and
+ *     accepts `chip` too).
  *   itemGhosts: ghosts for optional per-item subfields the renderer omits when
  *     empty (e.g. a timeline item's description).
  *       { list, field, item, within?, chipAnchor?, pos?, chip? }
@@ -139,8 +140,10 @@ const HEADER_GHOSTS = [
   {
     field: 'subheading',
     anchors: [
-      { sel: '.heading', pos: 'after', chip: 'below-start' },
-      { sel: '.header', pos: 'append', chip: 'below-start' },
+      // below-end (right-aligned) so the opaque chip clears the first body line
+      // that starts immediately under the heading (issue #113).
+      { sel: '.heading', pos: 'after', chip: 'below-end' },
+      { sel: '.header', pos: 'append', chip: 'below-end' },
       { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
     ],
   },
@@ -167,7 +170,7 @@ export const INLINE_DESCRIPTORS = {
     formText: ['title', 'subheading', 'byline', 'attribution'],
   },
   'content-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     formText: ['title', 'subheading', 'body'],
     convert: {
       // "Add an image" on a text slide = become an image-text slide (empty
@@ -179,7 +182,7 @@ export const INLINE_DESCRIPTORS = {
     },
   },
   'list-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     // "+ Text" chip on any item that has a title but no single-line text yet.
     // The renderer omits the empty .item-text div, so this is the only
     // affordance for adding it inline.
@@ -323,7 +326,7 @@ export const INLINE_DESCRIPTORS = {
 
   // ---- Simple text types ----
   'lijstje-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     itemGhosts: [
       { list: 'items', field: 'text', item: '.lijst-item', within: '.lijst-item-body', pos: 'append' },
     ],

@@ -25,7 +25,7 @@ export function createInlineOverlay({ h, thumb }) {
 
   /**
    * @type {Array<{el:HTMLElement, target:HTMLElement, place:string, gap:number}>}
-   * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start'
+   * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start' | 'below-end'
    */
   let placements = [];
 
@@ -150,6 +150,23 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top + r.height / 2}px`;
         s.transform = 'translate(-50%, -50%)';
         break;
+      case 'below-end': {
+        // Below the anchor, right-aligned to the anchor's right edge. Like
+        // below-start but shifted right: the anchor is a full-width heading and
+        // the body starts immediately under it, so below-start lands the opaque
+        // chip on top of the first body line (issue #113). Body text is
+        // left-aligned, so the top-right of the content area is empty - the chip
+        // sits there instead. Single-chip only (no horizontal packing): the
+        // subheading ghost is alone on its anchor.
+        s.transform = '';
+        const w = p.el.offsetWidth || 90;
+        let left = r.left + r.width - w;
+        // Never push past the anchor's own left edge (short/narrow anchors).
+        if (left < r.left) left = r.left;
+        s.left = `${left}px`;
+        s.top = `${r.top + r.height + p.gap}px`;
+        break;
+      }
       case 'right-center': {
         // At the target's right-edge midpoint, on the (vertical) center line.
         // Used for the "+ Add item" affordance of single-row horizontal layouts
