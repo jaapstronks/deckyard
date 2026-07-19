@@ -404,6 +404,13 @@ self-hosted-behind-a-proxy, authenticated deployment already; these close
 default-config foot-guns that matter the moment untrusted users are allowed.
 See `SECURITY.md` for the deployment-facing summary and env vars.
 
+- **`GET /api/themes/preview-css` no longer interpolates raw query params.**
+  Every value went straight into a generated stylesheet, so a crafted `primary`
+  could terminate the declaration and append arbitrary rules. Colours are now
+  matched against a hex pattern, font names against the curated list and
+  `familyId` against a UUID pattern, each falling back to its default rather
+  than passing through; the serializer additionally strips `;{}<>` from every
+  value, which also covers a managed font's free-text `name` from the database.
 - **Auth no longer fails open (BREAKING).** A deployment with no `AUTH_SECRET`
   used to run wide open with anonymous admin access. The server now refuses to
   start unless `AUTH_SECRET` is set or auth is explicitly disabled with

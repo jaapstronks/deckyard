@@ -40,6 +40,33 @@ function canManageThemes(authedUser) {
   return authedUser?.isDesigner === true || authedUser?.isAdmin === true;
 }
 
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Read a hex colour from the query string, falling back to the default.
+ *
+ * The preview CSS is built by interpolating these into a stylesheet, so an
+ * unvalidated value is a stylesheet-injection vector. Anything that isn't a
+ * plain hex colour is discarded rather than passed through.
+ */
+function hexParam(params, key, fallback) {
+  const raw = String(params.get(key) || '').trim();
+  return HEX_RE.test(raw) ? raw : fallback;
+}
+
+/** Read a font family from the query string; only curated families are accepted. */
+function fontParam(params, key, fallback) {
+  const raw = String(params.get(key) || '').trim();
+  return CURATED_FONTS.some((f) => f.family === raw) ? raw : fallback;
+}
+
+/** Read a managed-font family id; anything not a UUID is dropped. */
+function familyIdParam(params, key) {
+  const raw = String(params.get(key) || '').trim();
+  return UUID_RE.test(raw) ? raw : null;
+}
+
 export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
   const pathname = url.pathname;
 
@@ -133,17 +160,18 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
   // GET /api/themes/preview-css - Generate CSS for live preview
   // ============================================================
   if (pathname === '/api/themes/preview-css' && req.method === 'GET') {
+    const params = url.searchParams;
     const colors = {
-      primary: url.searchParams.get('primary') || '#3B82F6',
-      background: url.searchParams.get('background') || '#ffffff',
-      textLight: url.searchParams.get('textLight') || '#ffffff',
-      textDark: url.searchParams.get('textDark') || '#1f2937',
+      primary: hexParam(params, 'primary', '#3B82F6'),
+      background: hexParam(params, 'background', '#ffffff'),
+      textLight: hexParam(params, 'textLight', '#ffffff'),
+      textDark: hexParam(params, 'textDark', '#1f2937'),
     };
     const fonts = {
-      heading: url.searchParams.get('headingFont') || 'Inter',
-      body: url.searchParams.get('bodyFont') || 'Inter',
-      headingFamilyId: url.searchParams.get('headingFamilyId') || null,
-      bodyFamilyId: url.searchParams.get('bodyFamilyId') || null,
+      heading: fontParam(params, 'headingFont', 'Inter'),
+      body: fontParam(params, 'bodyFont', 'Inter'),
+      headingFamilyId: familyIdParam(params, 'headingFamilyId'),
+      bodyFamilyId: familyIdParam(params, 'bodyFamilyId'),
     };
 
     // Fetch managed fonts if any familyId is referenced
