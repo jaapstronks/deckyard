@@ -4,6 +4,7 @@
  * GET /api/themes - List all themes (system + custom)
  * GET /api/themes/fonts - List available fonts for custom themes
  * GET /api/themes/custom - List custom themes only
+ * POST /api/themes/custom/preview-config - Build a theme from an unsaved draft
  * GET /api/themes/custom/:id - Get a custom theme
  * POST /api/themes/custom - Create a custom theme (admin only)
  * PUT /api/themes/custom/:id - Update a custom theme (admin only)
@@ -125,6 +126,61 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       fonts: CURATED_FONTS,
       grouped,
     });
+    return true;
+  }
+
+  // ============================================================
+  // POST /api/themes/custom/preview-config - Build a theme from an unsaved draft
+  // ============================================================
+  // The theme editor needs to render real slides against settings that have not
+  // been saved yet. Deriving the tokens client-side would be a second copy of
+  // the colour maths, which is exactly the drift #118 removed — so the draft is
+  // built through the same `buildThemeConfig` production uses.
+  if (
+    pathname === '/api/themes/custom/preview-config' &&
+    req.method === 'POST'
+  ) {
+    if (!canManageThemes(authedUser)) {
+      return forbidden(res, 'Admin access required');
+    }
+
+    const parsed = await parseJsonBody(req);
+    if (!parsed.ok) {
+      return badRequest(res, parsed.error || 'Invalid request body');
+    }
+
+    const draft = parsed.body && typeof parsed.body === 'object' ? parsed.body : {};
+
+    // Managed fonts, when the draft references one by id.
+    let managedFonts;
+    const fonts = draft.fonts && typeof draft.fonts === 'object' ? draft.fonts : {};
+    if (fonts.headingFamilyId || fonts.bodyFamilyId) {
+      try {
+        managedFonts = await listAllFontFamiliesWithVariants(
+          createRouteContext(authedUser)
+        );
+      } catch {
+        // Fall back to no managed fonts
+      }
+    }
+
+    // A draft has no row of its own; give it a placeholder identity so the
+    // built theme has the shape the client renderer expects.
+    const theme = buildThemeConfig(
+      {
+        id: 'preview',
+        slug: 'preview',
+        label: typeof draft.label === 'string' ? draft.label : 'Preview',
+        logoUrl: draft.logoUrl || null,
+        logoSmallUrl: draft.logoSmallUrl || null,
+        colors: draft.colors,
+        fonts,
+        config: draft.config,
+      },
+      { managedFonts }
+    );
+
+    serveJson(res, 200, { theme });
     return true;
   }
 

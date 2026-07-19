@@ -295,6 +295,17 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **The theme editor previews real slides.** The live preview was a hand-rolled
+  fake title slide built from a few inline styles, so it could only ever show
+  colours and fonts — never a background variant, a corner radius, a shadow, or
+  how the theme treats a quote — and it approximated the token derivation, so it
+  could quietly disagree with what a deck actually looks like. It now renders a
+  title, content and quote slide through the same renderer the editor and
+  exports use, against a theme built by the same `buildThemeConfig` production
+  uses (a new `POST /api/themes/custom/preview-config` builds one from the
+  unsaved draft). The quote sample makes the derived dark surface visible for
+  the first time.
+
 - **The theme owns its background presets (BEHAVIOUR CHANGE).** Deckyard shipped
   a hardcoded `TITLE_BG_PRESETS` list of four demo photos, and title slides
   created by deck import or by converting a chapter-title slide were handed one

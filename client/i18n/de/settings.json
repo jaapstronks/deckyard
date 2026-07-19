@@ -131,5 +131,13 @@
   "settings.notifications.emailByType": "E-Mail bei",
   "settings.notifications.emailCommentCreated": "Neue Kommentare",
   "settings.notifications.emailCommentReply": "Antworten auf deine Kommentare",
-  "settings.notifications.emailCommentMention": "Erwähnungen"
+  "settings.notifications.emailCommentMention": "Erwähnungen",
+  "settings.themes.preview.title": "Ihr Präsentationstitel",
+  "settings.themes.preview.subtitle": "Ein Untertitel in der Fließtextschrift",
+  "settings.themes.preview.contentTitle": "Eine Inhaltsfolie",
+  "settings.themes.preview.body": "- Fließtext in der Fließtextschrift\n- Ein zweiter Punkt\n- Ein dritter Punkt",
+  "settings.themes.preview.quote": "Ein Zitat auf der dunklen Fläche des Themes.",
+  "settings.themes.preview.quoteAuthor": "Jemand",
+  "settings.themes.preview.quoteRole": "Ihre Rolle",
+  "settings.themes.preview.error": "Vorschau derzeit nicht verfügbar."
 }

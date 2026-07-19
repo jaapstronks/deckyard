@@ -245,8 +245,6 @@
   "settings.themes.headingFont": "Czcionka Nagłówków",
   "settings.themes.bodyFont": "Czcionka Tekstu",
   "settings.themes.preview": "Podgląd",
-  "settings.themes.previewTitle": "Przykładowa Prezentacja",
-  "settings.themes.previewSubtitle": "Podgląd Twojego niestandardowego motywu",
   "settings.themes.errorNameRequired": "Nazwa motywu jest wymagana.",
   "settings.themes.errorInvalidPrimary": "Nieprawidłowy kolor główny.",
   "settings.themes.errorInvalidBackground": "Nieprawidłowy kolor tła.",
@@ -263,5 +261,13 @@
   "settings.notifications.emailByType": "Wysyłaj mi e-mail o",
   "settings.notifications.emailCommentCreated": "Nowe komentarze",
   "settings.notifications.emailCommentReply": "Odpowiedzi na Twoje komentarze",
-  "settings.notifications.emailCommentMention": "Wzmianki"
+  "settings.notifications.emailCommentMention": "Wzmianki",
+  "settings.themes.preview.title": "Tytuł prezentacji",
+  "settings.themes.preview.subtitle": "Podtytuł, czcionką tekstu",
+  "settings.themes.preview.contentTitle": "Slajd z treścią",
+  "settings.themes.preview.body": "- Tekst czcionką tekstu\n- Drugi punkt\n- Trzeci punkt",
+  "settings.themes.preview.quote": "Cytat na ciemnej powierzchni motywu.",
+  "settings.themes.preview.quoteAuthor": "Ktoś",
+  "settings.themes.preview.quoteRole": "Ich rola",
+  "settings.themes.preview.error": "Podgląd chwilowo niedostępny."
 }

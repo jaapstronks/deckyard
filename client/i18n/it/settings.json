@@ -245,8 +245,6 @@
   "settings.themes.headingFont": "Font Titoli",
   "settings.themes.bodyFont": "Font Corpo",
   "settings.themes.preview": "Anteprima",
-  "settings.themes.previewTitle": "Presentazione di Esempio",
-  "settings.themes.previewSubtitle": "Un'anteprima del tuo tema personalizzato",
   "settings.themes.errorNameRequired": "Il nome del tema è obbligatorio.",
   "settings.themes.errorInvalidPrimary": "Colore primario non valido.",
   "settings.themes.errorInvalidBackground": "Colore di sfondo non valido.",
@@ -263,5 +261,13 @@
   "settings.notifications.emailByType": "Inviami e-mail per",
   "settings.notifications.emailCommentCreated": "Nuovi commenti",
   "settings.notifications.emailCommentReply": "Risposte ai tuoi commenti",
-  "settings.notifications.emailCommentMention": "Menzioni"
+  "settings.notifications.emailCommentMention": "Menzioni",
+  "settings.themes.preview.title": "Titolo della presentazione",
+  "settings.themes.preview.subtitle": "Un sottotitolo, nel font del corpo",
+  "settings.themes.preview.contentTitle": "Una slide di contenuto",
+  "settings.themes.preview.body": "- Testo nel font del corpo\n- Un secondo punto\n- Un terzo punto",
+  "settings.themes.preview.quote": "Una citazione, sulla superficie scura del tema.",
+  "settings.themes.preview.quoteAuthor": "Qualcuno",
+  "settings.themes.preview.quoteRole": "Il suo ruolo",
+  "settings.themes.preview.error": "Anteprima non disponibile al momento."
 }

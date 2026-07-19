@@ -245,8 +245,6 @@
   "settings.themes.headingFont": "Otsikkofontti",
   "settings.themes.bodyFont": "Leipätekstifontti",
   "settings.themes.preview": "Esikatselu",
-  "settings.themes.previewTitle": "Esimerkkiesitys",
-  "settings.themes.previewSubtitle": "Mukautetun teemasi esikatselu",
   "settings.themes.errorNameRequired": "Teeman nimi vaaditaan.",
   "settings.themes.errorInvalidPrimary": "Virheellinen pääväri.",
   "settings.themes.errorInvalidBackground": "Virheellinen taustaväri.",
@@ -263,5 +261,13 @@
   "settings.notifications.emailByType": "Lähetä sähköpostia aiheesta",
   "settings.notifications.emailCommentCreated": "Uudet kommentit",
   "settings.notifications.emailCommentReply": "Vastaukset kommentteihisi",
-  "settings.notifications.emailCommentMention": "Maininnat"
+  "settings.notifications.emailCommentMention": "Maininnat",
+  "settings.themes.preview.title": "Esityksesi otsikko",
+  "settings.themes.preview.subtitle": "Alaotsikko leipätekstin fontilla",
+  "settings.themes.preview.contentTitle": "Sisältödia",
+  "settings.themes.preview.body": "- Leipäteksti leipätekstin fontilla\n- Toinen kohta\n- Kolmas kohta",
+  "settings.themes.preview.quote": "Sitaatti teeman tummalla pinnalla.",
+  "settings.themes.preview.quoteAuthor": "Joku",
+  "settings.themes.preview.quoteRole": "Heidän roolinsa",
+  "settings.themes.preview.error": "Esikatselu ei ole juuri nyt käytettävissä."
 }
