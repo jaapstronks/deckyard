@@ -27,7 +27,7 @@ theme reaches parity with a file theme.
   // Named scales rather than raw pixel values, so the wizard can offer choices.
   "surfaces": {
     "radius": "none" | "soft" | "round",   // → --t-radius, -sm, -lg
-    "shadow": "none" | "soft" | "strong"   // → --t-shadow-opacity
+    "shadow": "none" | "soft" | "strong"   // → --t-shadow-scale
   },
 
   "typography": {
@@ -64,6 +64,34 @@ theme reaches parity with a file theme.
   "cssVarOverrides": { "--t-color-accent": "#00aa55" }
 }
 ```
+
+## How `surfaces` reaches the slides
+
+Both surface controls are multipliers/scales over the slide design system in
+`client/styles/slides/00-tokens.css`, not raw values — a theme adjusts the
+*feel*, the design system keeps the proportions.
+
+| `surfaces.radius` | `--t-radius-sm` / `--t-radius` / `--t-radius-lg` |
+|---|---|
+| `none` | `0px` / `0px` / `0px` |
+| `soft` (default) | `12px` / `16px` / `20px` |
+| `round` | `20px` / `28px` / `36px` |
+
+Consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface reads.
+
+| `surfaces.shadow` | `--t-shadow-scale` |
+|---|---|
+| `none` | `0` — elevation flattened away |
+| `soft` (default) | `1` |
+| `strong` | `1.8` |
+
+`--t-shadow-scale` multiplies the **alpha** of all five `--slide-shadow-*`
+tokens at once. The geometry (offset, blur) is fixed: a theme changes how
+present the elevation feels, not the light source. Unset means `1`, so a theme
+that says nothing about shadows renders exactly as before.
+
+`@media print` still nulls all five shadows regardless — Chromium's print
+rasterizer paints blurred shadows as solid grey boxes.
 
 ## Validation
 
@@ -107,7 +135,4 @@ column reads as `{}`, which is what makes the migration safe on a live install;
 
 ## Notes
 
-- `--t-shadow-opacity` is emitted by `surfaces.shadow` but the stylesheet does
-  not consume it yet — `client/styles/slides/00-tokens.css` still hardcodes the
-  shadow alphas. Wiring it up is a separate change.
 - `locks` is stored and validated but not yet enforced.

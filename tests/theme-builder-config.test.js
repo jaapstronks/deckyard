@@ -92,13 +92,13 @@ test('surface config drives the radius triple and the shadow token', () => {
   assert.equal(built.cssVars['--t-radius'], '0px');
   assert.equal(built.cssVars['--t-radius-sm'], '0px');
   assert.equal(built.cssVars['--t-radius-lg'], '0px');
-  assert.equal(built.cssVars['--t-shadow-opacity'], '0');
+  assert.equal(built.cssVars['--t-shadow-scale'], '0');
 });
 
 test('no shadow token is emitted when surfaces are unconfigured', () => {
   // Absent means "leave the stylesheet defaults alone", not "shadow: soft".
   const built = buildThemeConfig({ ...baseRow(), config: {} });
-  assert.equal(built.cssVars['--t-shadow-opacity'], undefined);
+  assert.equal(built.cssVars['--t-shadow-scale'], undefined);
 });
 
 test('typography config overrides the hardcoded heading defaults', () => {

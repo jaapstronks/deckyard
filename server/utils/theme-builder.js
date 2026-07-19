@@ -400,7 +400,7 @@ function applyThemeConfig(theme, rawConfig) {
     Object.assign(cssVars, RADIUS_SCALES[config.surfaces.radius]);
   }
   if (config.surfaces?.shadow) {
-    cssVars['--t-shadow-opacity'] = SHADOW_SCALES[config.surfaces.shadow];
+    cssVars['--t-shadow-scale'] = SHADOW_SCALES[config.surfaces.shadow];
   }
 
   if (config.typography?.headingTransform)
