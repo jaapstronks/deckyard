@@ -40,7 +40,9 @@ export function translateKeysForSlideType(type) {
   const def = SLIDE_TYPES?.[type];
   if (!def || !Array.isArray(def.fields)) return [];
   return def.fields
-    .filter((f) => f && (f.type === 'string' || f.type === 'markdown'))
+    .filter(
+      (f) => f && (f.type === 'string' || f.type === 'markdown' || f.type === 'csv')
+    )
     .map((f) => f.key)
     .filter((k) => typeof k === 'string' && k.trim());
 }

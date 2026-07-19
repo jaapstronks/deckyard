@@ -54,7 +54,7 @@ export default {
     {
       key: 'data',
       label: 'Data (CSV/TSV)',
-      type: 'markdown', // rendered as textarea in editor; validation treats as string
+      type: 'csv', // grid/raw editor in the UI; validation treats as string
       required: true,
       maxLength: 20000,
     },

@@ -281,6 +281,15 @@
   animation: ie-pop-in 0.14s ease;
 }
 
+/* The chart data grid needs more room than the markdown textarea. */
+.ie-md-modal.is-csv {
+  width: min(720px, calc(100% - 32px));
+}
+
+.ie-md-modal.is-csv .csv-grid-raw {
+  min-height: 200px;
+}
+
 @keyframes ie-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
