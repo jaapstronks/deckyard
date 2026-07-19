@@ -308,6 +308,22 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Custom database themes render in the browser again.** A DB theme is fetched
+  by UUID but reports its *slug* as `id`, so the client's "is this the theme I
+  asked for?" check rejected every one of them and substituted a blank fallback
+  — the deck rendered with none of the theme's colours, fonts or background
+  variants in the editor, presenter and thumbnails, while server-side exports
+  looked correct because they never take that path. The tell was the theme
+  picker showing a raw UUID as the label. The check now also accepts the
+  theme's `_customThemeId`.
+
+- **Editing a theme takes effect without a reload.** The client cached themes
+  forever with no way to invalidate, and the `@font-face` / `.slide-bg-*` style
+  elements it injects bail when one with the same id already exists — so a
+  saved theme kept serving its old values, in every open tab. Saving or
+  deleting a theme now drops the cached copy and its style elements, and tells
+  other tabs over a `BroadcastChannel`.
+
 - **Partner-split: a readable subheading, and no more stock photo.** The
   subheading rendered in the theme's muted *body* colour — a dark tone meant for
   light backgrounds — on a dark panel, so it was barely legible even on slides
