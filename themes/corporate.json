@@ -1,0 +1,117 @@
+{
+  "id": "corporate",
+  "label": "Boardroom",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#0f172a",
+  "backgroundLabels": {
+    "lime": {
+      "en": "White",
+      "nl": "Wit"
+    },
+    "mist": {
+      "en": "Sky",
+      "nl": "Lucht"
+    }
+  },
+  "brandColors": [
+    "#1e3a8a",
+    "#1d4ed8",
+    "#3b82f6",
+    "#60a5fa"
+  ],
+  "gradient": {
+    "enabled": false
+  },
+  "slides": {
+    "card-stack-slide": {
+      "colors": [
+        "#1e3a8a",
+        "#1d4ed8",
+        "#3b82f6",
+        "#60a5fa"
+      ]
+    }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#ffffff",
+    "--t-slide-bg-mist": "#eff6ff",
+    "--t-slide-bg-dark": "#0f172a",
+    "--t-color-background": "#ffffff",
+    "--t-color-text": "#0f172a",
+    "--t-color-text-muted": "rgba(15, 23, 42, 0.64)",
+    "--t-color-accent": "#2563eb",
+    "--t-quote-author-color": "#1e3a8a",
+    "--t-radius": "6px",
+    "--t-radius-sm": "4px",
+    "--t-radius-lg": "10px",
+    "--t-font-heading": "'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-body": "'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "700",
+    "--t-icon-card-grid-icon-bg": "#eff6ff",
+    "--t-icon-card-grid-body-bg": "#f8fafc",
+    "--t-chart-0": "#1e3a8a",
+    "--t-chart-1": "#1d4ed8",
+    "--t-chart-2": "#3b82f6",
+    "--t-chart-3": "#60a5fa",
+    "--t-chart-4": "#0f172a",
+    "--t-chart-5": "#64748b",
+    "--t-chart-6": "#334155",
+    "--t-chart-7": "#93c5fd",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Archivo",
+      "path": "assets/fonts/google/archivo/archivo-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Archivo",
+      "path": "assets/fonts/google/archivo/archivo-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Archivo",
+      "path": "assets/fonts/google/archivo/archivo-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    }
+  ],
+  "hiddenSlideTypes": []
+}

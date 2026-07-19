@@ -1,6 +1,6 @@
 # Deckyard Roadmap
 
-**Updated: 2026-07-17.** This is the single overview for ongoing development.
+**Updated: 2026-07-19.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (39 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
@@ -65,19 +65,10 @@ it would only have been a second path to something that already works.)_
 
 ## Next — existing feature plans
 
-- **Inline image-picker parity** — `docs/plans/inline-image-picker-parity.md`
-  — bring the genuine gaps up to the gallery bar: add a first image / add /
-  remove / reorder entirely on the canvas for logo-wall, team-cards (first
-  member) and quote (first portrait), via an `ensure` descriptor knob that
-  canonicalizes the dual-model types to their array form. In progress.
 - **Responsiveness: mobile, iPad, ultra-wide** — `docs/plans/responsiveness.md` —
   swipe navigation shared across the viewing modes, a responsive audience
   `/follow` view, touch-operable editor affordances for quick edits on a phone
   or iPad, and lifting the width caps that waste an ultra-wide screen.
-- **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
-  — create-flow follow-up: persist and return per-language library-item content
-  on the Postgres backend (new `i18n` column + adapter + mapper) so composed
-  decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
