@@ -3,6 +3,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/i18n.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
+import { createCsvGridEditor } from '../fields/csv-grid.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -176,6 +177,23 @@ export function createRenderField({
           showHeading,
         }
       );
+    }
+
+    if (field.type === 'csv') {
+      // Data-grid editor (currently the chart `data` field). The chart side form
+      // renders its own instance; this branch covers the generic dispatch path.
+      const dataEditor = createCsvGridEditor({
+        h,
+        chartType: String(slide.content?.chartType || 'bar'),
+        value: slide.content[field.key] || '',
+        label: t(field.labelKey || field.key, field.label || field.key),
+        onChange: (csv) => {
+          slide.content[field.key] = csv;
+          markDirty?.();
+          scheduleUiRefresh?.();
+        },
+      });
+      return dataEditor.el;
     }
 
     if (field.type === 'code') {

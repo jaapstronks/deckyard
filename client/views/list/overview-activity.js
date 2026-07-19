@@ -43,6 +43,8 @@ function getActionText(eventType) {
     'comment.resolved': t('activity.action.resolvedCommentOn', 'resolved a comment on'),
     'comment.reopened': t('activity.action.reopenedCommentOn', 'reopened a comment on'),
     'share.accessed': t('activity.action.viewed', 'viewed'),
+    // slide.added carries a count, handled separately in createActivityItem.
+    'slide.added': t('activity.action.addedSlidesTo', 'added slides to'),
   };
   return actions[eventType] || t('activity.action.updated', 'updated');
 }
@@ -76,6 +78,7 @@ function getEventIcon(eventType) {
     'comment.resolved': 'circle-check',
     'comment.reopened': 'refresh-cw',
     'share.accessed': 'eye',
+    'slide.added': 'layers',
   };
   return icons[eventType] || 'file-text';
 }
@@ -115,9 +118,17 @@ function createActivityItem(event, h, onNavigate) {
     text: event.actorName || event.actorEmail || t('activity.someone', 'Someone'),
   });
 
+  // slide.added carries a slide count in its data ("added 3 slides to X"); all
+  // other types use the static action map.
+  const actionText = event.eventType === 'slide.added'
+    ? t('activity.action.addedNSlidesTo', 'added {count} slides to', {
+        count: Number(event.data?.count) || 1,
+      })
+    : getActionText(event.eventType);
+
   const action = h('span', {
     class: 'activity-action',
-    text: ' ' + getActionText(event.eventType) + ' ',
+    text: ' ' + actionText + ' ',
   });
 
   const presentationTitle = event.presentation?.title ||

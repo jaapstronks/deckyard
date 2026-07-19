@@ -5,12 +5,12 @@ import { storage } from '../../lib/storage.js';
  * First-run onboarding checklist for the Home view.
  *
  * A small, dismissible card that gives a brand-new user a short list of next
- * steps (create a deck / try a template / connect an AI agent). It only
- * activates for genuinely new users — someone who lands on Home with zero decks
- * — so existing users never get nagged. Progress + dismissal persist in
- * localStorage, so the card survives the jump from the empty Home to the
- * populated Home (where the "create a deck" step reads as done) and disappears
- * once every step is done or the user dismisses it.
+ * steps (create a deck / connect an AI agent). It only activates for genuinely
+ * new users — someone who lands on Home with zero decks — so existing users
+ * never get nagged. Progress + dismissal persist in localStorage, so the card
+ * survives the jump from the empty Home to the populated Home (where the
+ * "create a deck" step reads as done) and disappears once every step is done or
+ * the user dismisses it.
  *
  * @module onboarding-checklist
  */
@@ -21,7 +21,6 @@ const STORAGE_KEY = 'deckyard.onboarding.v1';
  * @typedef {object} OnboardingState
  * @property {boolean} started - Onboarding activated (new user). Sticky once set.
  * @property {boolean} dismissed - User closed the card.
- * @property {boolean} template - "Try a template" step done.
  * @property {boolean} mcp - "Connect an AI agent" step done.
  */
 
@@ -43,34 +42,28 @@ function writeState(state) {
  * @param {Function} opts.h - DOM helper
  * @param {Function} opts.nav - Navigation function
  * @param {Array} opts.allByDate - All presentations (used to derive "has a deck")
- * @param {Array} opts.starterKits - Starter-kit presentations (gates the template step)
  * @param {Function} opts.onCreate - Open the new-presentation modal
- * @param {Function} opts.onBrowseTemplates - Switch to the starter-kits view
  * @returns {HTMLElement|null}
  */
 export function createOnboardingChecklist({
   h,
   nav,
   allByDate,
-  starterKits,
   onCreate,
-  onBrowseTemplates,
 }) {
   const hasDeck = Array.isArray(allByDate) && allByDate.length > 0;
-  const hasTemplates = Array.isArray(starterKits) && starterKits.length > 0;
 
   let state = readState();
   if (!state) {
     // First ever load. Activate onboarding only for genuinely new users (no
     // decks yet); a user who already has decks and no stored state is an
     // existing user and should never see the checklist.
-    state = { started: !hasDeck, dismissed: false, template: false, mcp: false };
+    state = { started: !hasDeck, dismissed: false, mcp: false };
     writeState(state);
   }
 
   const stepDone = {
     create: () => hasDeck,
-    template: () => !!state.template,
     mcp: () => !!state.mcp,
   };
 
@@ -80,15 +73,6 @@ export function createOnboardingChecklist({
       title: t('list.onboarding.createTitle', 'Create your first deck'),
       hint: t('list.onboarding.createHint', 'Start blank, from your notes, or from a template.'),
       onAction: () => onCreate?.(),
-    },
-    hasTemplates && {
-      key: 'template',
-      title: t('list.onboarding.templateTitle', 'Try a starter template'),
-      hint: t('list.onboarding.templateHint', 'See how a finished deck is put together.'),
-      onAction: () => {
-        markStepDone('template');
-        onBrowseTemplates?.();
-      },
     },
     {
       key: 'mcp',

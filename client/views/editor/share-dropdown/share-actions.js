@@ -62,7 +62,7 @@ export async function handleShareToWorkspace({
     if (!r?.ok) return;
   }
 
-  // Show share options modal (full access, view only, or starter kit)
+  // Show share options modal (full access or view only)
   const shareResult = await openWorkspaceShareModal({ h, pres, root });
   if (!shareResult) return;
 
@@ -72,21 +72,17 @@ export async function handleShareToWorkspace({
       headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
       body: JSON.stringify({
         scope: 'workspace',
-        isStarterKit: shareResult.isStarterKit,
         isViewOnly: shareResult.isViewOnly,
       }),
     });
     if (updated && typeof updated === 'object') {
       if (typeof updated.scope === 'string') pres.scope = updated.scope;
-      if (typeof updated.isStarterKit === 'boolean') pres.isStarterKit = updated.isStarterKit;
       if (typeof updated.isViewOnly === 'boolean') pres.isViewOnly = updated.isViewOnly;
       if (typeof updated.revision === 'number') pres.revision = updated.revision;
       if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
     }
     let msg;
-    if (shareResult.isStarterKit) {
-      msg = t('editor.share.workspace.doneStarterKit', 'Shared as starter kit.');
-    } else if (shareResult.isViewOnly) {
+    if (shareResult.isViewOnly) {
       msg = t('editor.share.workspace.doneViewOnly', 'Shared as view only.');
     } else {
       msg = t('editor.share.workspace.done', 'Shared to workspace.');

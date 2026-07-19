@@ -31,7 +31,7 @@ function extractSlideText(slide) {
     if (shouldIgnoreTextKey(key)) continue;
     const val = content[key];
 
-    if (f.type === 'string' || f.type === 'markdown') {
+    if (f.type === 'string' || f.type === 'markdown' || f.type === 'csv') {
       if (typeof val === 'string' && val.trim()) parts.push(val.trim());
       continue;
     }

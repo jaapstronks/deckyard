@@ -53,24 +53,11 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
       opts.excludeActorEmail = email;
     }
 
-    const result = await listActivityEvents(ctx, opts);
-
-    // Enrich events with presentation titles and filter by access
-    const enrichedEvents = await enrichEventsWithPresentations(
-      result.events,
-      repoRoot,
-      authedUser,
-      ctx
-    );
+    const payload = await getEnrichedActivity({ repoRoot, authedUser, ctx, opts });
 
     serveJson(res, 200, {
       ok: true,
-      events: enrichedEvents,
-      // Note: total may be higher than accessible events; this is acceptable
-      // as the client handles pagination gracefully
-      total: result.total,
-      limit: result.limit,
-      offset: result.offset,
+      ...payload,
     });
     return true;
   }
@@ -121,6 +108,39 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
 }
 
 /**
+ * List activity events and enrich them with readable presentation info,
+ * dropping events on presentations the user cannot access. Shared by the
+ * standalone `/api/activity` route and the `/api/home` aggregation so both
+ * apply the same access filtering and event shape.
+ *
+ * @param {object} args
+ * @param {string} args.repoRoot
+ * @param {object} args.authedUser
+ * @param {object} args.ctx - storage/route context
+ * @param {object} args.opts - listActivityEvents filters (limit, offset,
+ *   presentationId, eventType, eventTypes[], actorEmail, excludeActorEmail,
+ *   since, until)
+ * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
+ */
+export async function getEnrichedActivity({ repoRoot, authedUser, ctx, opts }) {
+  const result = await listActivityEvents(ctx, opts);
+  const events = await enrichEventsWithPresentations(
+    result.events,
+    repoRoot,
+    authedUser,
+    ctx
+  );
+  return {
+    events,
+    // Note: total may be higher than accessible events; this is acceptable
+    // as the client handles pagination gracefully.
+    total: result.total,
+    limit: result.limit,
+    offset: result.offset,
+  };
+}
+
+/**
  * Fetch a presentation and return it only if the user can read it
  * (collaborator-aware). Returns null when missing or not accessible.
  */
@@ -163,19 +183,17 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
     }
   }
 
-  // Fetch presentations and check access
-  const presentations = new Map();
+  // Fetch presentations and check access. Keep the full presentation around
+  // (request-scoped, in memory) so we can resolve a commented slide for the
+  // activity rail's preview thumbnail without a second read.
+  const presMap = new Map();
   const accessibleIds = new Set();
 
   for (const pid of presentationIds) {
     const pres = await getReadablePresentation(pid, repoRoot, authedUser, ctx);
     if (pres) {
       accessibleIds.add(pid);
-      presentations.set(pid, {
-        id: pres.id,
-        title: pres.title,
-        ownerEmail: pres.ownerEmail,
-      });
+      presMap.set(pid, pres);
     }
   }
 
@@ -187,10 +205,34 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
       // Only include events for presentations the user can access
       return accessibleIds.has(event.presentationId);
     })
-    .map((event) => ({
-      ...event,
-      presentation: event.presentationId
-        ? presentations.get(event.presentationId) || null
-        : null,
-    }));
+    .map((event) => {
+      const pres = event.presentationId ? presMap.get(event.presentationId) : null;
+      const enriched = {
+        ...event,
+        presentation: pres
+          ? { id: pres.id, title: pres.title, ownerEmail: pres.ownerEmail }
+          : null,
+      };
+
+      // Attach the commented slide (a minimal projection) + the deck theme so
+      // the rail can render a small preview thumbnail client-side, reusing the
+      // same slide renderer the presentation cards use. Only for new comments
+      // (the rail's thumb case), and only when the slide still resolves in a
+      // deck the user may already read — so it leaks nothing.
+      if (pres && event.eventType === 'comment.created' && event.data?.slideId) {
+        const slide = (Array.isArray(pres.slides) ? pres.slides : []).find(
+          (s) => s?.id === event.data.slideId
+        );
+        if (slide) {
+          enriched.slide = {
+            id: slide.id,
+            type: slide.type,
+            content: slide.content || {},
+          };
+          enriched.themeId = pres.theme || null;
+        }
+      }
+
+      return enriched;
+    });
 }

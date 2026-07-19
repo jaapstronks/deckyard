@@ -11,14 +11,10 @@ import { iconUrl } from '../../../shared/icon-names.js';
  */
 export const SIDEBAR_VIEWS = [
   { key: 'home', icon: 'house', label: () => t('list.nav.home', 'Home') },
-  { key: 'recent', icon: 'clock', label: () => t('list.nav.recent', 'Recent') },
-  { key: 'workspace', icon: 'users', label: () => t('list.nav.workspace', 'Workspace') },
-  { key: 'myPresentations', icon: 'file-text', label: () => t('list.nav.myPresentations', 'My presentations') },
-  { key: 'sharedWithMe', icon: 'share-2', label: () => t('list.nav.sharedWithMe', 'Shared with me') },
-  { key: 'starterKits', icon: 'package', label: () => t('list.nav.starterKits', 'Starter kits') },
-  { key: 'slideLibrary', icon: 'book-open', label: () => t('list.nav.slideLibrary', 'Slide library') },
+  { key: 'presentations', icon: 'files', label: () => t('list.nav.presentations', 'Presentations') },
+  { key: 'slideLibrary', icon: 'library', label: () => t('list.nav.library', 'Library') },
   { key: 'insights', icon: 'chart-column', label: () => t('list.nav.insights', 'Insights'), action: true, href: '/insights' },
-  { key: 'activity', icon: 'bell', label: () => t('list.nav.activity', 'Activity'), badge: true },
+  { key: 'activity', icon: 'newspaper', label: () => t('list.nav.activity', 'Activity'), badge: true },
   { key: 'trash', icon: 'trash-2', label: () => t('list.nav.trash', 'Trash') },
 ];
 
@@ -133,9 +129,9 @@ export function createBottomTabs({ h, activeView = 'home', onViewChange, unreadC
   const items = new Map();
   let badgeEl = null;
 
-  // Build tab items (subset for mobile - home, recent, starterKits, workspace, activity)
+  // Build tab items (subset for mobile - home, presentations, slideLibrary, activity)
   const mobileViews = SIDEBAR_VIEWS.filter(v =>
-    ['home', 'recent', 'starterKits', 'workspace', 'activity'].includes(v.key)
+    ['home', 'presentations', 'slideLibrary', 'activity'].includes(v.key)
   );
 
   for (const view of mobileViews) {

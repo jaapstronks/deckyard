@@ -4,6 +4,7 @@ import { readJsonIfExists, writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
+import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
 function settingsPath(repoRoot) {
@@ -83,8 +84,13 @@ export function defaultAppSettings() {
     },
     // Session duration in days (falls back to 30 if not set)
     sessionDurationDays: 30,
-    // Enabled theme IDs (empty = all themes enabled)
+    // Enabled theme IDs (empty = all themes enabled). Governs the subset of
+    // themes shown by default in the creation theme picker; the rest sit behind
+    // a "Show all themes" toggle.
     enabledThemes: [],
+    // Workspace default theme ID (empty = fall back to the DEFAULT_THEME env
+    // var, then the built-in default). Resolve via getDefaultThemeId().
+    defaultThemeId: '',
     // Engagement insights (analytics) settings
     analytics: {
       enabled: true, // Master switch for all analytics
@@ -158,6 +164,13 @@ function normalizePositiveInt(v, fallback, min = 1, max = 365) {
   const n = parseInt(v, 10);
   if (Number.isNaN(n) || n < min) return fallback;
   return Math.min(n, max);
+}
+
+function normalizeThemeId(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  // Short slugs (system/custom folder themes) or UUIDs (DB custom themes).
+  return /^[a-z0-9-]{1,64}$/i.test(s) ? s.toLowerCase() : '';
 }
 
 function normalizeStringArray(arr, maxLen = 50) {
@@ -277,6 +290,9 @@ export async function readAppSettings(repoRoot) {
   // Enabled themes (empty = all enabled)
   const enabledThemes = normalizeStringArray(obj?.enabledThemes);
 
+  // Workspace default theme (empty = resolve via env/built-in default)
+  const defaultThemeId = normalizeThemeId(obj?.defaultThemeId);
+
   // Analytics settings
   const analyticsObj = obj?.analytics && typeof obj.analytics === 'object' ? obj.analytics : {};
   const teamAnalyticsObj = analyticsObj?.teamAnalytics && typeof analyticsObj.teamAnalytics === 'object'
@@ -333,6 +349,7 @@ export async function readAppSettings(repoRoot) {
     emailSender,
     sessionDurationDays,
     enabledThemes,
+    defaultThemeId,
     analytics,
     stockMedia,
     leads,
@@ -416,6 +433,12 @@ export async function writeAppSettings(repoRoot, next) {
       ? normalizeStringArray(next.enabledThemes)
       : null;
 
+  // Workspace default theme
+  const defaultThemeId =
+    next?.defaultThemeId !== undefined
+      ? normalizeThemeId(next.defaultThemeId)
+      : null;
+
   // Analytics settings
   const nextAnalytics =
     next?.analytics && typeof next.analytics === 'object' ? next.analytics : null;
@@ -495,6 +518,7 @@ export async function writeAppSettings(repoRoot, next) {
     ...(emailSender ? { emailSender } : null),
     ...(sessionDurationDays !== null ? { sessionDurationDays } : null),
     ...(enabledThemes !== null ? { enabledThemes } : null),
+    ...(defaultThemeId !== null ? { defaultThemeId } : null),
     ...(analytics ? { analytics } : null),
     ...(stockMedia ? { stockMedia } : null),
     ...(leads ? { leads } : null),
@@ -768,6 +792,23 @@ export async function getEmailSender(repoRoot) {
       process.env.BREVO_SENDER_NAME ||
       getAppName(),
   };
+}
+
+/**
+ * Resolve the workspace default theme ID.
+ *
+ * Precedence: the admin-configured `defaultThemeId` app setting, then the
+ * `DEFAULT_THEME` env var (fork seam, e.g. CIIIC), then the built-in default.
+ * @param {string} repoRoot - Repository root path
+ * @returns {Promise<string>}
+ */
+export async function getDefaultThemeId(repoRoot) {
+  const settings = await readAppSettings(repoRoot);
+  return (
+    settings.defaultThemeId ||
+    normalizeThemeId(process.env.DEFAULT_THEME) ||
+    DEFAULT_THEME_ID
+  );
 }
 
 /**

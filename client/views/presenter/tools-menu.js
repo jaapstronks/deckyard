@@ -1,4 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
+import { confirmModal } from '../../lib/modal.js';
 
 export function createPresenterToolsMenu({
   h,
@@ -43,14 +44,29 @@ export function createPresenterToolsMenu({
     toggleTools();
   });
 
-  // Tools popover: two companion sections (convention).
-  const presenterSectionTitle = h('div', {
-    class: 'presenter-tools-title',
-    text: t('presenter.tools.presenterCompanion', 'Presenter companion'),
+  // Tools popover: two companion sections (convention). They are visually
+  // distinguished — the presenter link is private and grants control, the
+  // audience link is safe to broadcast — so the wrong one is never handed out.
+  const presenterSection = h('div', {
+    class: 'presenter-tools-section presenter-tools-section--private',
   });
+  const presenterSectionTitle = h('div', { class: 'presenter-tools-title' }, [
+    h('span', {
+      class: 'presenter-tools-title-text',
+      text: t('presenter.tools.presenterCompanion', 'Presenter companion'),
+    }),
+    h('span', {
+      class: 'presenter-tools-badge presenter-tools-badge--private',
+      text: t('presenter.tools.presenterBadge', 'Keep private'),
+    }),
+  ]);
   const presenterSectionHint = h('div', {
     class: 'help presenter-tools-hint',
-    text: t('presenter.tools.presenterHint', 'Speaker notes view (for the presenter). Share this link with yourself on another device.'),
+    text: t('presenter.tools.presenterHint', 'Speaker notes view, for you on a second device.'),
+  });
+  const presenterSectionWarn = h('div', {
+    class: 'presenter-tools-warn',
+    text: t('presenter.tools.presenterWarn', 'This link can control your live deck. Do not send it to your audience; use the audience link below.'),
   });
   const presenterOpenBtn = h('button', {
     class: 'btn btn-secondary presenter-tools-item',
@@ -76,6 +92,18 @@ export function createPresenterToolsMenu({
       const sessionId = getSessionId?.() || null;
       if (!sessionId) return;
       closeTools();
+      // Guard: the presenter link grants control over the live deck, so make
+      // the user acknowledge that before it lands on their clipboard.
+      const confirmed = await confirmModal(h, document.body, {
+        title: t('presenter.tools.copyPresenterConfirmTitle', 'Copy the presenter link?'),
+        message: t(
+          'presenter.tools.copyPresenterConfirmBody',
+          'Anyone with this link can see your speaker notes and, once you turn on remote control, drive your live presentation. Only open it on your own device. To share the slides with your audience, use the "Audience companion" link instead.'
+        ),
+        confirmLabel: t('presenter.tools.copyPresenterConfirmBtn', 'Copy presenter link'),
+        danger: true,
+      });
+      if (!confirmed) return;
       const u = new URL(`/notes/${sessionId}`, location.origin);
       await copyText?.(
         t('presenter.tools.copyPresenterPrompt', 'Copy presenter companion link:'),
@@ -88,13 +116,22 @@ export function createPresenterToolsMenu({
   });
   presenterSectionActions.append(presenterOpenBtn, presenterCopyBtn);
 
-  const audienceSectionTitle = h('div', {
-    class: 'presenter-tools-title',
-    text: t('presenter.tools.audienceCompanion', 'Audience companion'),
+  const audienceSection = h('div', {
+    class: 'presenter-tools-section presenter-tools-section--audience',
   });
+  const audienceSectionTitle = h('div', { class: 'presenter-tools-title' }, [
+    h('span', {
+      class: 'presenter-tools-title-text',
+      text: t('presenter.tools.audienceCompanion', 'Audience companion'),
+    }),
+    h('span', {
+      class: 'presenter-tools-badge presenter-tools-badge--audience',
+      text: t('presenter.tools.audienceBadge', 'For your audience'),
+    }),
+  ]);
   const audienceSectionHint = h('div', {
     class: 'help presenter-tools-hint',
-    text: t('presenter.tools.audienceHint', 'Public follow-along view (slides + Q&A + interactions). Share this link with your audience.'),
+    text: t('presenter.tools.audienceHint', 'Public follow-along view (slides + Q&A + interactions). Safe to share with everyone.'),
   });
   const audienceOpenBtn = h('button', {
     class: 'btn btn-secondary presenter-tools-item',
@@ -142,14 +179,18 @@ export function createPresenterToolsMenu({
     });
   }
 
-  toolsPopover.append(
+  presenterSection.append(
     presenterSectionTitle,
     presenterSectionHint,
-    presenterSectionActions,
+    presenterSectionWarn,
+    presenterSectionActions
+  );
+  audienceSection.append(
     audienceSectionTitle,
     audienceSectionHint,
     audienceSectionActions
   );
+  toolsPopover.append(presenterSection, audienceSection);
   if (followCodesPill) toolsPopover.append(followCodesPill);
   toolsWrap.append(toolsBtn, toolsPopover);
 

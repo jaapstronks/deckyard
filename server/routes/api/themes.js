@@ -10,7 +10,6 @@
  * DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
  * POST /api/themes/custom/:id/set-default - Set as org default (admin only)
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
- * GET /api/themes/preview-css - Generate CSS for preview
  */
 
 import { serveJson, badRequest, notFound, parseJsonBody, forbidden } from '../../utils/http.js';
@@ -26,8 +25,9 @@ import {
   setDefaultTheme,
 } from '../../storage/themes.js';
 import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.js';
-import { buildThemeConfig, generatePreviewCSS } from '../../utils/theme-builder.js';
+import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
+import { readAppSettings, getDefaultThemeId } from '../../storage/settings.js';
 
 /**
  * Check if user can manage themes.
@@ -89,7 +89,30 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       return String(a.label).localeCompare(String(b.label));
     });
 
-    serveJson(res, 200, { themes: allThemes });
+    // Annotate with the workspace picker allowlist + default so the creation
+    // picker can show a default-visible subset and hide the rest behind a
+    // "Show all themes" toggle. An empty allowlist means every theme is shown.
+    const [{ enabledThemes }, defaultThemeId] = await Promise.all([
+      readAppSettings(repoRoot),
+      getDefaultThemeId(repoRoot),
+    ]);
+    const allowlist = Array.isArray(enabledThemes) ? enabledThemes : [];
+    const allowSet = new Set(allowlist.map((id) => String(id).toLowerCase()));
+
+    for (const theme of allThemes) {
+      const idLower = String(theme.id).toLowerCase();
+      // The default theme is always visible; an empty allowlist shows all.
+      theme.enabled =
+        allowSet.size === 0 ||
+        allowSet.has(idLower) ||
+        idLower === String(defaultThemeId).toLowerCase();
+    }
+
+    serveJson(res, 200, {
+      themes: allThemes,
+      defaultThemeId,
+      enabledThemes: allowlist,
+    });
     return true;
   }
 
@@ -102,40 +125,6 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       fonts: CURATED_FONTS,
       grouped,
     });
-    return true;
-  }
-
-  // ============================================================
-  // GET /api/themes/preview-css - Generate CSS for live preview
-  // ============================================================
-  if (pathname === '/api/themes/preview-css' && req.method === 'GET') {
-    const colors = {
-      primary: url.searchParams.get('primary') || '#3B82F6',
-      background: url.searchParams.get('background') || '#ffffff',
-      textLight: url.searchParams.get('textLight') || '#ffffff',
-      textDark: url.searchParams.get('textDark') || '#1f2937',
-    };
-    const fonts = {
-      heading: url.searchParams.get('headingFont') || 'Inter',
-      body: url.searchParams.get('bodyFont') || 'Inter',
-      headingFamilyId: url.searchParams.get('headingFamilyId') || null,
-      bodyFamilyId: url.searchParams.get('bodyFamilyId') || null,
-    };
-
-    // Fetch managed fonts if any familyId is referenced
-    let managedFonts;
-    if (fonts.headingFamilyId || fonts.bodyFamilyId) {
-      try {
-        const ctx = createRouteContext(authedUser);
-        managedFonts = await listAllFontFamiliesWithVariants(ctx);
-      } catch {
-        // Fall back to no managed fonts
-      }
-    }
-
-    const css = generatePreviewCSS({ colors, fonts, managedFonts });
-    res.setHeader('Content-Type', 'text/css');
-    res.end(css);
     return true;
   }
 

@@ -23,6 +23,8 @@ import { withSettings } from './settings.js';
 import { withFollowCodes } from './follow-codes.js';
 import { withTags } from './tags.js';
 import { withSlideLibraryTags } from './slide-library-tags.js';
+import { withCollections } from './collections.js';
+import { withSlideLibraryUsage } from './slide-library-usage.js';
 
 /**
  * Base adapter with connection management.
@@ -41,15 +43,19 @@ class BasePostgresAdapter extends StorageAdapter {
 /**
  * Full PostgreSQL adapter composed from all mixins.
  */
-export const PostgresAdapter = withSlideLibraryTags(
-  withTags(
-    withFollowCodes(
-      withSettings(
-        withPublished(
-          withSlides(
-            withImageFavorites(
-              withImages(
-                withPresentations(BasePostgresAdapter)
+export const PostgresAdapter = withSlideLibraryUsage(
+  withCollections(
+    withSlideLibraryTags(
+      withTags(
+        withFollowCodes(
+          withSettings(
+            withPublished(
+              withSlides(
+                withImageFavorites(
+                  withImages(
+                    withPresentations(BasePostgresAdapter)
+                  )
+                )
               )
             )
           )

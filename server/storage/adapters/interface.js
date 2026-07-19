@@ -363,6 +363,89 @@ export class StorageAdapter {
   }
 
   // ============================================================
+  // SLIDE COLLECTIONS
+  // ============================================================
+
+  /**
+   * List slide collections.
+   * @param {StorageContext} ctx
+   * @param {Object} [opts]
+   * @param {string} [opts.scope] - 'personal' or 'team'
+   * @param {string} [opts.ownerEmail]
+   * @returns {Promise<Object[]>}
+   */
+  async listSlideCollections(ctx, opts) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Get a single slide collection (with ordered slideIds).
+   * @param {string} id
+   * @param {StorageContext} ctx
+   * @returns {Promise<Object|null>}
+   */
+  async getSlideCollection(id, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Create a slide collection.
+   * @param {Object} data - { name, description?, scope, ownerEmail?, slideIds[] }
+   * @param {StorageContext} ctx
+   * @returns {Promise<Object>}
+   */
+  async createSlideCollection(data, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Update a slide collection. Passing `slideIds` replaces its ordered membership.
+   * @param {string} id
+   * @param {Object} data - { name?, description?, slideIds? }
+   * @param {StorageContext} ctx
+   * @returns {Promise<Object|null>}
+   */
+  async updateSlideCollection(id, data, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Delete a slide collection.
+   * @param {string} id
+   * @param {StorageContext} ctx
+   * @returns {Promise<boolean>}
+   */
+  async deleteSlideCollection(id, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  // ============================================================
+  // SLIDE LIBRARY USAGE (per-user "new to you" tracking)
+  // ============================================================
+
+  /**
+   * List a user's slide-library usage records.
+   * @param {string} userEmail
+   * @param {StorageContext} ctx
+   * @returns {Promise<Array<{ itemType: string, itemId: string, firstUsedAt: string, useCount: number, updatedAt: string }>>}
+   */
+  async listSlideLibraryUsage(userEmail, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Record usage of one or more library items for a user (upsert; increments
+   * useCount on repeats).
+   * @param {string} userEmail
+   * @param {Array<{ type: 'slide'|'collection', id: string }>} items
+   * @param {StorageContext} ctx
+   * @returns {Promise<number>} number of refs recorded
+   */
+  async recordSlideLibraryUsage(userEmail, items, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  // ============================================================
   // PUBLISHED PRESENTATIONS
   // ============================================================
 

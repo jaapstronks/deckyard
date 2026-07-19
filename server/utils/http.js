@@ -17,10 +17,48 @@ const MIME = {
   '.woff2': 'font/woff2',
 };
 
-export async function json(req) {
+/**
+ * Maximum accepted request-body size in bytes. Bounds memory use so an
+ * authenticated client can't OOM the server with an unbounded body. Generous
+ * default (25 MB) covers large decks with inline data-URL images; override with
+ * MAX_REQUEST_BODY_BYTES. See docs/plans/security-hardening.md item 5a.
+ */
+const DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024;
+
+export function maxRequestBodyBytes() {
+  const raw = process.env.MAX_REQUEST_BODY_BYTES;
+  if (raw == null || raw === '') return DEFAULT_MAX_BODY_BYTES;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_BODY_BYTES;
+}
+
+/**
+ * Read a request body into a Buffer, aborting once the byte cap is exceeded.
+ * Throws an Error with statusCode 413 when the body is too large (the
+ * top-level handler maps that to a 413 response).
+ * @param {import('node:http').IncomingMessage} req
+ * @returns {Promise<Buffer>}
+ */
+export async function readRequestBody(req) {
+  const limit = maxRequestBodyBytes();
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString('utf8');
+  let total = 0;
+  for await (const chunk of req) {
+    total += chunk.length;
+    if (total > limit) {
+      const err = new Error(
+        `Request body too large (limit ${limit} bytes)`
+      );
+      err.statusCode = 413;
+      throw err;
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+export async function json(req) {
+  const raw = (await readRequestBody(req)).toString('utf8');
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -41,14 +79,21 @@ export async function json(req) {
  * @returns {Promise<{ok: boolean, body: *, error?: string}>} Parsed result
  */
 export async function parseJsonBody(req, { required = false, defaultValue = null } = {}) {
-  const chunks = [];
+  let raw;
   try {
-    for await (const chunk of req) chunks.push(chunk);
-  } catch {
+    raw = (await readRequestBody(req)).toString('utf8');
+  } catch (err) {
+    if (err?.statusCode === 413) {
+      return {
+        ok: false,
+        body: defaultValue,
+        error: 'Request body too large',
+        statusCode: 413,
+      };
+    }
     return { ok: false, body: defaultValue, error: 'Failed to read request body' };
   }
 
-  const raw = Buffer.concat(chunks).toString('utf8');
   if (!raw || !raw.trim()) {
     if (required) {
       return { ok: false, body: defaultValue, error: 'Request body is required' };
@@ -75,7 +120,11 @@ export async function parseJsonBody(req, { required = false, defaultValue = null
 export async function requireJsonBody(req, res) {
   const result = await parseJsonBody(req, { required: true });
   if (!result.ok) {
-    badRequest(res, result.error);
+    if (result.statusCode === 413) {
+      payloadTooLarge(res, result.error);
+    } else {
+      badRequest(res, result.error);
+    }
     return { ok: false };
   }
   return result;
@@ -117,6 +166,10 @@ export function rateLimited(res, retryAfter = 5, message = 'Rate limit exceeded'
 
 export function serverError(res, message = 'Internal server error') {
   serveJson(res, 500, { error: message });
+}
+
+export function payloadTooLarge(res, message = 'Request body too large') {
+  serveJson(res, 413, { error: message });
 }
 
 export function noContent(res) {
@@ -174,14 +227,42 @@ export function methodNotAllowed(res, allowed) {
   res.end(JSON.stringify({ error: 'Method not allowed' }));
 }
 
-export async function serveFile(res, absolutePath) {
+/**
+ * Serve a file from disk with safe content-type and security headers.
+ * @param {import('node:http').ServerResponse} res
+ * @param {string} absolutePath
+ * @param {Object} [opts]
+ * @param {boolean} [opts.userUpload] When true the file is user-uploaded
+ *   content: risky types (SVG) are served inert (CSP sandbox +
+ *   Content-Disposition: attachment) so a stored <script> can't execute in the
+ *   app origin on navigation. See docs/plans/security-hardening.md item 4.
+ */
+export async function serveFile(res, absolutePath, { userUpload = false } = {}) {
   try {
     const stat = await fs.stat(absolutePath);
     if (!stat.isFile()) return notFound(res);
     const ext = path.extname(absolutePath).toLowerCase();
     const ct = MIME[ext] || 'application/octet-stream';
     const buf = await fs.readFile(absolutePath);
-    res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-store' });
+
+    const headers = {
+      'Content-Type': ct,
+      'Cache-Control': 'no-store',
+      // Never let the browser MIME-sniff a response into an executable type.
+      'X-Content-Type-Options': 'nosniff',
+    };
+
+    // User-uploaded SVG is stored XSS bait: served same-origin as
+    // image/svg+xml it executes embedded <script> on direct navigation.
+    // Serve it inert — the sandbox CSP blocks scripts and attachment stops
+    // it rendering as a top-level document. Inline <img>/CSS use is unaffected.
+    if (userUpload && ext === '.svg') {
+      headers['Content-Security-Policy'] =
+        "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+      headers['Content-Disposition'] = 'attachment';
+    }
+
+    res.writeHead(200, headers);
     res.end(buf);
   } catch {
     notFound(res);

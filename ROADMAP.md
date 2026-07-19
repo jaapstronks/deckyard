@@ -30,8 +30,9 @@ self-contained project.
    Survive presenter refresh, companion auto-recovery, persistent join QR,
    unify follow codes, link Q&A moderation, poll-open affordance.
 2. **Share unification** — `docs/plans/ux-share-unification.md`
-   One Share dialog (live audience / link / workspace), guard the
-   presenter-control link, reconcile the permission model.
+   PR 1/2 shipped (PR #110): guarded the presenter-control link, inline share
+   link, reconciled the permission model. Remaining = **PR 2**: the unified
+   3-tab Share dialog (live audience / link / workspace).
 
 _(The first two projects of this track — i18n & copy cleanup, onboarding &
 discoverability — shipped in July 2026 except for one decision-blocked
@@ -46,8 +47,18 @@ toolbar, presenter notes as a third pane, inline icon picker and a comments
 scope switch. How it works is documented in
 `docs/reference/editor-inspector.md`.)_
 
+_(The create-flow track — a two-column "New presentation" view, library-first
+reuse consolidation (Duplicate a whole deck / compose from library slides / a
+named, ordered **Collection**), retired starter kits, and a workspace-default
+theme picker — shipped in full on 2026-07-18 (Slices 1-4). How it works is
+documented in `docs/reference/deck-creation-and-reuse.md`.)_
+
 ## Next — existing feature plans
 
+- **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
+  — create-flow follow-up: persist and return per-language library-item content
+  on the Postgres backend (new `i18n` column + adapter + mapper) so composed
+  decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
@@ -57,10 +68,6 @@ scope switch. How it works is documented in
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.
-- **AI review grid: click-to-preview, hover-select, modal nav** —
-  `docs/plans/ai-review-grid-ux.md` — clicking a tile opens the preview modal
-  (selection moves to a hover checkbox); modal shows the AI's why-text and
-  navigates with buttons + arrow keys.
 - **AI: recreate a slide from an image/PDF** — `docs/plans/ai-slide-from-image.md`
   — attach a screenshot/PDF in the AI add + refine flows; recognize the slide
   type + content and rebuild it as a native editable slide.
@@ -71,6 +78,12 @@ scope switch. How it works is documented in
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
+- **Theme building & forker extensibility** — `docs/plans/theme-forker-extensibility.md`
+  — a guided Theme Studio wizard over the `--t-*` token layer (logos, colour
+  roles + contrast, typography, surfaces, backgrounds, per-brand override
+  locks) plus a forker slide-type toolkit (scaffolder, validator, reusable
+  building blocks). Discovery + design draft; folds in the background-presets
+  work. Open call: theme storage model (unify DB + file-JSON).
 ## Later — cloud / multi-tenant track
 
 - **Custom domains** — `docs/plans/custom-domains.md`

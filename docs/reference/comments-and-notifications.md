@@ -76,6 +76,48 @@ stored opt-outs.
 - Mentions added by **editing** a comment notify the newly added users
   (diffed against the pre-edit list, so re-saving never re-notifies).
 
+## Deck-activity notifications ("someone worked on your deck")
+
+Separate from comments: when a collaborator **adds slides** to a deck you own
+or collaborate on, you get one bundled bell notification, not a ping per slide.
+
+- **Activity feed (layer 1)** — the save route emits a granular `slide.added`
+  activity event (`recordSlidesAdded`), so the workspace Activity feed shows
+  "… added N slides to *Deck*" instead of a generic "updated". Feed-only, no
+  inbox load.
+- **Bundled bell notification (layer 2)** — `server/services/deck-activity-notifications.js`
+  fans out a `deck_activity` inbox notification to the deck's members.
+  - **Recipients**: owner + `createdBy` + collaborators, **actor always
+    excluded** (you never get notified of your own edits). Subscription levels
+    are respected by treating deck-activity as a `participating`-grade signal
+    (reusing `levelAllows`): the owner's default level delivers; `mute` and
+    `mentions_only` opt out; an explicit `watching` override delivers.
+  - **Bundling — coalesce-on-write, 60 min window** (env
+    `DECK_ACTIVITY_NOTIFY_WINDOW_MIN`): a slide-add looks for an existing
+    **unread, unarchived** `deck_activity` row for the same
+    `(recipient, deck, actor)` created inside the window
+    (`findUnreadDeckActivityNotification`). Found → bump the count, refresh
+    the title, move it back to the top and re-mark unread
+    (`refreshDeckActivityNotification`); the window extends on each edit. Not
+    found → one new row. So an actor making 40 edits in an hour yields **one**
+    unread notification ("*Riley* added 40 slides to *Deck*"), not 40. No job
+    or queue: the coalescing happens on the write itself.
+  - **Live**: pushes `notification:new` (the bell dedupes by id, so a coalesced
+    bump replaces the row rather than stacking) followed by an authoritative
+    `notification:counts` so the badge stays correct across coalescing.
+  - Clicking navigates to the deck (`/app/<id>`). No new columns — it rides the
+    existing `user_notifications.data` JSONB
+    (`{ presentationTitle, slideCount, kind: 'slide_added' }`).
+  - **Known limitation**: the coalesce is a per-recipient read-modify-write, not
+    one atomic statement, so two concurrent saves by the same actor to the same
+    deck could momentarily produce two rows / a slightly-off count. The save
+    route's If-Match revision check already serialises same-deck saves, so this
+    is an edge, not the hot path.
+- **Per-deck on/off (layer 3)** — not built; deferred until layer 2 is in use.
+
+Copy note: the only trigger today is slide-adds, so the title reads "added N
+slides"; a future edit trigger would generalise it.
+
 ## Deliberate non-features
 
 - No explicit assignment: mention = passing the ball. Could become a

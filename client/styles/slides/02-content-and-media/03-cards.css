@@ -265,11 +265,15 @@
 /* With fewer than 5 cards (≤2 rows) the title and any subheading must stay at
    the top of the slide; only the few cards themselves are centered vertically
    in the space left below the header. Auto top/bottom margins on the grid
-   center it while the header keeps its flex-start position. */
-.slide-icon-card-grid .icon-card-grid[data-card-count='1'],
-.slide-icon-card-grid .icon-card-grid[data-card-count='2'],
-.slide-icon-card-grid .icon-card-grid[data-card-count='3'],
-.slide-icon-card-grid .icon-card-grid[data-card-count='4'] {
+   center it while the header keeps its flex-start position.
+
+   Scoped to the cards layout: these are cards-geometry assumptions (a fixed
+   --icg-row-h row pitch, 2 rows). Unscoped they also hit tiles, whose rows are
+   sized from the tile width instead — which collapsed tiles to min-content. */
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='1'],
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='2'],
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='3'],
+.slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='4'] {
   grid-template-rows: repeat(2, var(--icg-row-h));
   flex: 0 0 auto;
   margin-top: auto;
@@ -304,11 +308,6 @@
   transform: translateY(calc((var(--icg-row-h) + var(--slide-space-5)) / 2));
 }
 
-/* The number prefix ("1.") is only used in the tiles layout. */
-.slide-icon-card-grid .icon-card-num {
-  display: none;
-}
-
 /* Bottom subheading: caption-style line under the cards, light on the dark
    slide background and centered. Applies to both layouts. */
 .slide-icon-card-grid .bottom-subheading {
@@ -331,40 +330,69 @@
 }
 
 /* ── Tiles layout ──────────────────────────────────────────────────────
-   Square, full-bleed accent tiles: large icon on top, number + title below.
-   Up to 4 sit in a single row; 5-6 wrap to two rows of three so every tile
-   stays visible (a fixed 4-column single row clipped the 5th/6th tile).
-   Overrides the default horizontal card layout. */
+   Square, full-bleed accent tiles: large icon on top, centered title and body
+   text below. Up to 4 sit in a single row; 5-6 wrap to two rows of three so
+   every tile stays visible. Overrides the default horizontal card layout.
+
+   Sizing: the tile is a square driven by an explicit per-count column width
+   (--icg-tile) rather than by `1fr` columns. A square needs one definite
+   dimension, and only the width is knowable here — deriving the row height
+   from `1fr` is circular (the row sizes to the tile, the tile sizes to the
+   row) and collapsed tiles to min-content. Values are in the slide's 1600x900
+   design space, like --icg-row-h, and are picked so the widest row fits the
+   1472px content box and the tallest stack fits the ~668px below the header. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid {
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: minmax(0, 1fr);
+  --icg-tile: 350px;
+  grid-template-columns: repeat(4, var(--icg-tile));
+  grid-template-rows: auto;
   gap: 24px;
   width: 100%;
-  margin: auto 0;
-  flex: 0 1 auto;
+  margin: 0;
+  flex: 1 1 auto;
+  justify-content: center;
   align-content: center;
 }
 /* Column count tracks the tile count so 1-4 fill their row without a phantom
-   empty column, and 5-6 break into a 3-wide, 2-row grid. */
+   empty column, and 5-6 break into a 3-wide, 2-row grid. Fewer tiles get a
+   larger square, up to what the height below the header allows. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='1'] {
-  grid-template-columns: repeat(1, 1fr);
+  --icg-tile: 560px;
+  grid-template-columns: repeat(1, var(--icg-tile));
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='2'] {
-  grid-template-columns: repeat(2, 1fr);
+  --icg-tile: 520px;
+  grid-template-columns: repeat(2, var(--icg-tile));
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='3'] {
-  grid-template-columns: repeat(3, 1fr);
+  --icg-tile: 460px;
+  grid-template-columns: repeat(3, var(--icg-tile));
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='5'],
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-grid[data-card-count='6'] {
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  --icg-tile: 306px;
+  grid-template-columns: repeat(3, var(--icg-tile));
+}
+/* A bottom subheading eats a strip of the space below the header. Only the
+   two-row (5-6) case is tight enough to need a smaller square for it. */
+.slide-icon-card-grid.has-bottom-subheading[data-layout='tiles']
+  .icon-card-grid[data-card-count='5'],
+.slide-icon-card-grid.has-bottom-subheading[data-layout='tiles']
+  .icon-card-grid[data-card-count='6'] {
+  --icg-tile: 280px;
+}
+/* renderHtml always emits 6 cards and hides the unused ones, which the cards
+   layout relies on to keep its 3x2 slots. Tiles size their columns to the card
+   count, so a merely-invisible spare still claims a grid cell and pushed the
+   row count up (4 tiles laid out as 4+2, overflowing the slide). Take them out
+   of layout entirely instead. */
+.slide-icon-card-grid[data-layout='tiles'] .icon-card.is-empty {
+  display: none;
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card {
   flex-direction: column;
   align-items: stretch;
+  width: 100%;
   height: auto;
-  max-height: 100%;
   aspect-ratio: 1 / 1;
   border: none;
   background: var(--t-icon-card-grid-icon-bg, var(--color-accent));
@@ -376,13 +404,43 @@
   justify-content: center;
   padding-top: 6%;
 }
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-img {
-  width: 96px;
-  height: 96px;
-}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-img,
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-fallback {
   width: 96px;
   height: 96px;
+}
+/* One or two tiles are big enough that a 96px icon looks lost in them. */
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='1']
+  .icon-card-icon-img,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='1']
+  .icon-card-icon-fallback,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='2']
+  .icon-card-icon-img,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='2']
+  .icon-card-icon-fallback {
+  width: 148px;
+  height: 148px;
+}
+/* Three-across tiles are half the width, so the icon scales down with them to
+   leave room for the title and body text. */
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='5']
+  .icon-card-icon-img,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='5']
+  .icon-card-icon-fallback,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='6']
+  .icon-card-icon-img,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='6']
+  .icon-card-icon-fallback {
+  width: 68px;
+  height: 68px;
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-body {
   flex: 0 0 auto;
@@ -395,15 +453,37 @@
   text-align: center;
   padding: 0 18px 24px;
 }
+/* `.slide h3 { text-align: start }` (base) wins over the parent's centering,
+   so the title has to opt back in explicitly. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-title {
-  margin-bottom: 0;
+  margin-bottom: var(--slide-space-2);
   font-size: 28px;
   line-height: 1.15;
+  text-align: center;
 }
-.slide-icon-card-grid[data-layout='tiles'] .icon-card-num {
-  display: inline;
-  opacity: 0.6;
-}
+/* Body text under the title. Clamped so a long description shrinks the visible
+   text instead of pushing the square out of shape. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-text {
-  display: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  font-size: var(--slide-text-base);
+  line-height: var(--slide-leading-normal);
+  text-align: center;
+  opacity: var(--slide-opacity-prominent, 0.85);
+}
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='5']
+  .icon-card-text,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='6']
+  .icon-card-text {
+  font-size: var(--slide-text-sm);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.slide-icon-card-grid[data-layout='tiles'] .icon-card-text > :last-child {
+  margin-bottom: 0;
 }

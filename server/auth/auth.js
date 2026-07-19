@@ -92,7 +92,72 @@ export function authEnabled() {
   return enabled && hasSecret;
 }
 
+/**
+ * Guard against auth failing OPEN. authEnabled() returns false when AUTH_SECRET
+ * is missing, which makes getUserFromRequest[/Async] fall back to a hardcoded
+ * anonymous ADMIN user. That silent open-admin is only acceptable when the
+ * operator explicitly opted out of auth (AUTH_ENABLED=false) or is running a
+ * sandbox/demo instance. In every other case a missing secret is a
+ * misconfiguration that must stop startup rather than expose an open admin.
+ *
+ * @returns {string|null} an error message when misconfigured, else null.
+ * @see docs/plans/security-hardening.md item 3b
+ */
+export function authConfigError() {
+  const hasSecret = !!String(process.env.AUTH_SECRET || '').trim();
+  if (hasSecret) return null;
+
+  const explicitlyDisabled =
+    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
+  if (explicitlyDisabled) return null;
+
+  const truthy = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
+  if (truthy(process.env.SANDBOX_MODE) || truthy(process.env.DEMO_MODE)) {
+    return null;
+  }
+
+  return (
+    'AUTH_SECRET is missing while authentication is not explicitly disabled. ' +
+    'Deckyard refuses to start with anonymous admin access. Set AUTH_SECRET to ' +
+    'enable auth, or set AUTH_ENABLED=false to run intentionally without auth.'
+  );
+}
+
+/**
+ * Non-fatal auth configuration warnings surfaced at startup. Unlike
+ * authConfigError() (which blocks boot on a fail-open misconfiguration),
+ * these flag settings that work but are weak enough to warrant tightening.
+ * Returns [] when there is nothing to warn about.
+ *
+ * @returns {string[]}
+ */
+export function authConfigWarnings() {
+  const warnings = [];
+  const secret = String(process.env.AUTH_SECRET || '').trim();
+  const explicitlyDisabled =
+    String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
+  // A short secret weakens the HMAC that signs session tokens. 32 chars of
+  // randomness is the floor we recommend in .env.example.
+  if (secret && !explicitlyDisabled && secret.length < 32) {
+    warnings.push(
+      `AUTH_SECRET is only ${secret.length} characters; use at least 32 ` +
+        'random characters so session tokens cannot be brute-forced.'
+    );
+  }
+  return warnings;
+}
+
 export function devAuthBypassEnabled() {
+  // Passwordless admin bypass is a development convenience ONLY. Refuse it
+  // unless NODE_ENV is explicitly 'development', so a leftover
+  // AUTH_DEV_BYPASS=1 in a staging/prod/unset-NODE_ENV .env can't silently
+  // grant anonymous admin. Belt-and-suspenders with the startup check in
+  // server.js. See docs/plans/security-hardening.md item 3a.
+  if (
+    String(process.env.NODE_ENV || '').trim().toLowerCase() !== 'development'
+  ) {
+    return false;
+  }
   const v = String(process.env.AUTH_DEV_BYPASS || '')
     .trim()
     .toLowerCase();

@@ -288,7 +288,10 @@
 
 .is-editor .preview-panel-header {
   padding: var(--ps-space-3) var(--ps-space-4);
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
+  /* White chrome: this control strip groups with the topbar as "tools",
+     and visually detaches from the grey stage below it. */
+  background: hsl(var(--app-bg-elevated));
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .is-editor .preview-panel-header h2 {

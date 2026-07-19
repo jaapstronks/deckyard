@@ -7,6 +7,7 @@
 
 import { createPromiseModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 
 export function openAnalyzeModal({
   h,
@@ -210,7 +211,7 @@ export function openAnalyzeModal({
         });
         const bodyText = h('span', {
           class: 'analyze-suggestion-body',
-          text: truncate(data.comment?.body || '', 80),
+          text: truncate(stripMentionMarkup(data.comment?.body || ''), 80),
         });
         suggestionEl.append(categoryBadge, bodyText);
         suggestionsList.append(suggestionEl);

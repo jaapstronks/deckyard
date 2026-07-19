@@ -20,15 +20,16 @@ export function getExpiresAt(value) {
 }
 
 /**
- * Get human-readable label for a permission level.
- * @param {string} permission - Permission level (view, comment, edit)
+ * Get human-readable label for a share-link permission level.
+ * Share links are only issued as 'view' or 'comment' (there is no
+ * guest-editing flow), so 'edit' is intentionally not represented here.
+ * @param {string} permission - Permission level (view, comment)
  * @returns {string} Human-readable label
  */
 export function getPermissionLabel(permission) {
   const labels = {
     view: 'View',
     comment: 'Comment',
-    edit: 'Edit',
   };
   return labels[permission] || permission;
 }

@@ -9,6 +9,11 @@ import {
   getFontFamilyCSS,
   fontFamilyToSlug,
 } from '../../shared/theme-fonts.js';
+import {
+  validateThemeConfig,
+  RADIUS_SCALES,
+  SHADOW_SCALES,
+} from '../../shared/theme-config-schema.js';
 
 // ============================================================
 // COLOR UTILITIES
@@ -205,10 +210,12 @@ function rgba(hex, alpha) {
  * @param {Array} [options.managedFonts] - Pre-fetched managed font families for the org
  * @returns {Object} - Full theme configuration
  */
-export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
-  const colors = dbTheme.colors || {};
-  const fonts = dbTheme.fonts || {};
-
+export function deriveThemeTokens({
+  colors = {},
+  fonts = {},
+  managedFonts,
+  logoUrl = null,
+} = {}) {
   const primary = colors.primary || '#3B82F6';
   const background = colors.background || '#ffffff';
   const textLight = colors.textLight || '#ffffff';
@@ -248,13 +255,16 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
     : '#111827';
 
-  // Build CSS variables
   const cssVars = {
     // Core colors
     '--t-color-background': background,
     '--t-color-text': textColor,
     '--t-color-text-muted': textMuted,
     '--t-color-accent': primary,
+    '--t-color-accent-contrast': pickTextColorForBg(primary, {
+      light: textLight,
+      dark: textDark,
+    }),
 
     // Slide backgrounds (lime = page surface, mist = soft tint, dark = deep)
     '--t-slide-bg-lime': background,
@@ -294,8 +304,30 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     '--t-chart-7': mistBg,
 
     // Logo URL (if provided)
-    ...(dbTheme.logoUrl ? { '--t-logo-url': `url('${dbTheme.logoUrl}')` } : {}),
+    ...(logoUrl ? { '--t-logo-url': `url('${logoUrl}')` } : {}),
   };
+
+  return {
+    cssVars,
+    brandColors,
+    textLight,
+    textDark,
+    headingManaged,
+    bodyManaged,
+  };
+}
+
+export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
+  const colors = dbTheme.colors || {};
+  const fonts = dbTheme.fonts || {};
+
+  const { cssVars, brandColors, textLight, textDark, headingManaged, bodyManaged } =
+    deriveThemeTokens({
+      colors,
+      fonts,
+      managedFonts,
+      logoUrl: dbTheme.logoUrl,
+    });
 
   // Build embed fonts array and external font links
   const embedFonts = buildEmbedFontsArray(fonts, { headingManaged, bodyManaged });
@@ -305,7 +337,7 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
   const mainLogo = dbTheme.logoUrl || '/assets/images/deckyard-mark.svg';
   const titleLogo = dbTheme.logoSmallUrl || mainLogo;
 
-  return {
+  const theme = {
     id: dbTheme.slug || dbTheme.id,
     label: dbTheme.label,
     defaultTitleSlide: 'title-slide',
@@ -338,6 +370,64 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     _isCustomTheme: true,
     _customThemeId: dbTheme.id,
   };
+
+  // Everything above is derived from the four colours and two fonts. The stored
+  // `config` layers the richer, explicitly-authored shape on top — this is what
+  // brings DB themes to parity with file themes.
+  return applyThemeConfig(theme, dbTheme.config);
+}
+
+/**
+ * Merge a stored theme config over a derived theme.
+ *
+ * Order matters: derived tokens first, then the named surface/typography
+ * controls, then the structural fields, then `cssVarOverrides` last so a raw
+ * token override always wins.
+ *
+ * @param {Object} theme - the derived theme (mutated and returned)
+ * @param {*} rawConfig - the `themes.config` value; validated here
+ * @returns {Object} the theme
+ */
+function applyThemeConfig(theme, rawConfig) {
+  const config = validateThemeConfig(rawConfig);
+  // An empty config must leave the derived theme byte-identical — that is the
+  // back-compat guarantee for every row that predates this column.
+  if (!Object.keys(config).length) return theme;
+
+  const { cssVars } = theme;
+
+  if (config.surfaces?.radius) {
+    Object.assign(cssVars, RADIUS_SCALES[config.surfaces.radius]);
+  }
+  if (config.surfaces?.shadow) {
+    cssVars['--t-shadow-opacity'] = SHADOW_SCALES[config.surfaces.shadow];
+  }
+
+  if (config.typography?.headingTransform)
+    cssVars['--t-heading-transform'] = config.typography.headingTransform;
+  if (config.typography?.headingWeight)
+    cssVars['--t-heading-weight'] = config.typography.headingWeight;
+  if (config.typography?.letterSpacing)
+    cssVars['--t-heading-letter-spacing'] = config.typography.letterSpacing;
+  if (config.typography?.mono) cssVars['--t-font-mono'] = config.typography.mono;
+
+  // Named background variants: the documented DB/file gap. normalizeTheme turns
+  // these into `--t-slide-bg-<id>*` vars and the generated `.slide-bg-<id>` CSS,
+  // exactly as it does for a file theme.
+  if (config.slideBackgrounds) theme.slideBackgrounds = config.slideBackgrounds;
+  if (config.backgroundPresets) theme.backgroundPresets = config.backgroundPresets;
+  if (config.gradient) theme.gradient = config.gradient;
+  if (config.slideTypes) theme.slideTypes = config.slideTypes;
+  if (config.defaultTitleSlide) theme.defaultTitleSlide = config.defaultTitleSlide;
+  if (config.locks) theme.locks = config.locks;
+
+  // Dark/light logo variants sit alongside the existing large/small pair; the
+  // renderer picks by background, which is a later slice's job.
+  if (config.logos) theme.assets = { ...theme.assets, ...config.logos };
+
+  if (config.cssVarOverrides) Object.assign(cssVars, config.cssVarOverrides);
+
+  return theme;
 }
 
 /**
@@ -483,75 +573,6 @@ function getCategoryFallback(category) {
     default:
       return 'sans-serif';
   }
-}
-
-/**
- * Generate CSS for theme preview (live preview in editor).
- * @param {Object} options - Theme options
- * @param {Object} options.colors - Color configuration
- * @param {Object} options.fonts - Font configuration
- * @param {Array} [options.managedFonts] - Managed font families with variants
- * @returns {string} - CSS string
- */
-export function generatePreviewCSS({ colors, fonts, managedFonts }) {
-  const primary = colors.primary || '#3B82F6';
-  const background = colors.background || '#ffffff';
-  const textLight = colors.textLight || '#ffffff';
-  const textDark = colors.textDark || '#1f2937';
-
-  const headingFont = fonts.heading || 'Inter';
-  const bodyFont = fonts.body || 'Inter';
-  const headingFamilyId = fonts.headingFamilyId || null;
-  const bodyFamilyId = fonts.bodyFamilyId || null;
-
-  // Resolve managed fonts if familyId is present
-  const managedFontMap = {};
-  if (Array.isArray(managedFonts)) {
-    for (const mf of managedFonts) {
-      managedFontMap[mf.id] = mf;
-    }
-  }
-  const headingManaged = headingFamilyId ? managedFontMap[headingFamilyId] : null;
-  const bodyManaged = bodyFamilyId ? managedFontMap[bodyFamilyId] : null;
-
-  const textColor = pickTextColorForBg(background, { light: textLight, dark: textDark });
-  const textMuted = rgba(textColor, 0.7) || 'rgba(31, 41, 55, 0.7)';
-
-  const primaryHsl = hexToHsl(primary);
-  const mistBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(40, primaryHsl.s * 0.5), 97)
-    : '#f8fafc';
-  const darkBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
-    : '#111827';
-
-  const brandColors = deriveColorPalette(primary);
-
-  // Use managed font CSS when available, fall back to curated
-  const headingCSS = getManagedFontCSS(headingManaged, headingFont);
-  const bodyCSS = getManagedFontCSS(bodyManaged, bodyFont);
-
-  return `
-/* Custom Theme Preview CSS */
-.theme-preview {
-  --t-color-background: ${background};
-  --t-color-text: ${textColor};
-  --t-color-text-muted: ${textMuted};
-  --t-color-accent: ${primary};
-  --t-color-accent-contrast: ${pickTextColorForBg(primary, { light: textLight, dark: textDark })};
-  --t-slide-bg-lime: ${background};
-  --t-slide-bg-mist: ${mistBg};
-  --t-slide-bg-dark: ${darkBg};
-  --t-quote-author-color: ${primary};
-  --t-font-heading: ${headingCSS};
-  --t-font-body: ${bodyCSS};
-  --t-heading-weight: 700;
-  --t-chart-0: ${brandColors[0]};
-  --t-chart-1: ${brandColors[1]};
-  --t-chart-2: ${brandColors[2]};
-  --t-chart-3: ${brandColors[3]};
-}
-`.trim();
 }
 
 /**

@@ -99,7 +99,11 @@ export class LocalProvider extends MediaProvider {
   }
 
   async confirmUpload(key) {
-    const absolutePath = path.join(this.uploadsDir, key);
+    // Resolve + confine the key under uploadsDir so a traversal key like
+    // '../../server/auth/auth.js' can't be used as an existence/size oracle for
+    // arbitrary files. See docs/plans/security-hardening.md item 5b.
+    const absolutePath = this._resolveKeyPath(key);
+    if (!absolutePath) return { exists: false, publicUrl: '' };
     try {
       const stat = await fs.stat(absolutePath);
       return {
@@ -113,7 +117,8 @@ export class LocalProvider extends MediaProvider {
   }
 
   async deleteFile(key) {
-    const absolutePath = path.join(this.uploadsDir, key);
+    const absolutePath = this._resolveKeyPath(key);
+    if (!absolutePath) return false;
     try {
       await fs.unlink(absolutePath);
       return true;
@@ -127,6 +132,27 @@ export class LocalProvider extends MediaProvider {
   }
 
   // Private helpers
+
+  /**
+   * Resolve a storage key to an absolute path, confined to uploadsDir.
+   * Rejects traversal / absolute / NUL-byte keys by returning null, so callers
+   * can never fs.stat / fs.unlink a path outside the uploads directory.
+   * @param {string} key
+   * @returns {string|null} absolute path under uploadsDir, or null if invalid
+   */
+  _resolveKeyPath(key) {
+    if (typeof key !== 'string' || key === '' || key.includes('\0')) {
+      return null;
+    }
+    const base = path.resolve(this.uploadsDir);
+    const abs = path.resolve(base, key);
+    if (abs !== base && !abs.startsWith(base + path.sep)) {
+      return null;
+    }
+    // A key that resolves to the uploads dir itself is not a file.
+    if (abs === base) return null;
+    return abs;
+  }
 
   _sanitizeFilename(filename) {
     const s = typeof filename === 'string' ? filename : '';

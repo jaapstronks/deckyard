@@ -291,6 +291,59 @@ export async function updateCustomSlideType(typeId, updates, ctx) {
 }
 
 /**
+ * Set the display order of the organization's custom slide types.
+ *
+ * `listCustomSlideTypes` has always ordered by `sort_order`, but nothing ever
+ * wrote it, so every type sat at 0 and the list fell through to its created_at
+ * tiebreaker. This is the write half: the caller sends the ids in the order it
+ * wants, and each one's position becomes its sort_order.
+ *
+ * Partial ids are rejected rather than applied, so a stale client (one that
+ * loaded before someone else added a type) can't silently drop the type it
+ * never saw to the bottom.
+ *
+ * @param {string[]} orderedIds - Every custom type id, in the desired order.
+ * @param {Object} ctx - Context with organizationId
+ * @returns {Promise<{ ok: boolean, reason?: string, customSlideTypes?: Array }>}
+ */
+export async function reorderCustomSlideTypes(orderedIds, ctx) {
+  if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+    return { ok: false, reason: 'invalid_order' };
+  }
+  const ids = orderedIds.map((id) => String(id || '').trim());
+  if (ids.some((id) => !id) || new Set(ids).size !== ids.length) {
+    return { ok: false, reason: 'invalid_order' };
+  }
+
+  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    const existing = await db
+      .selectFrom('custom_slide_types')
+      .select('id')
+      .where('organization_id', '=', orgId)
+      .execute();
+    const known = new Set(existing.map((r) => r.id));
+
+    if (ids.length !== known.size || ids.some((id) => !known.has(id))) {
+      return { ok: false, reason: 'order_mismatch' };
+    }
+
+    const stamp = nowIso();
+    for (let i = 0; i < ids.length; i += 1) {
+      await db
+        .updateTable('custom_slide_types')
+        .set({ sort_order: i, updated_at: stamp })
+        .where('id', '=', ids[i])
+        .where('organization_id', '=', orgId)
+        .execute();
+    }
+
+    return { ok: true, customSlideTypes: await listCustomSlideTypes(ctx) };
+  });
+}
+
+/**
  * Delete a custom slide type.
  * @param {string} typeId - UUID
  * @param {Object} ctx - Context with organizationId

@@ -2,11 +2,10 @@ import {
   isIsoString,
   isNonEmptyString,
   isUuid,
-  pickRandom,
-  TITLE_BG_PRESETS,
   cryptoUuid,
   esc,
 } from './helpers.js';
+import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
@@ -27,6 +26,9 @@ export function newPresentation({
   theme = 'default',
   lang = 'nl',
   defaultTitleSlide = 'title-slide',
+  // The loaded theme object, when the caller has one. `theme` above is just the
+  // id that gets stored on the deck; this is what supplies background presets.
+  themeConfig = null,
 } = {}) {
   const now = new Date().toISOString();
   // Use the provided default title slide, falling back to 'title-slide' if invalid.
@@ -72,11 +74,22 @@ export function newPresentation({
         mode: 'auto', // 'auto' | 'pacing'
       },
     },
-    slides: [newSlide({ type: titleSlideType })],
+    slides: [newSlide({ type: titleSlideType, theme: themeConfig })],
   };
 }
 
-export function newSlide({ type, parentId = null }) {
+/**
+ * Create a blank slide of a given type.
+ *
+ * @param {Object} opts
+ * @param {string} opts.type - slide type id
+ * @param {string|null} [opts.parentId] - parent slide id, or null for top-level
+ * @param {Object} [opts.theme] - the active theme. Types declaring
+ *   `autoBackgroundPreset` take their background image from
+ *   `theme.backgroundPresets`; without a theme (or without presets) the slide
+ *   is created with no background image.
+ */
+export function newSlide({ type, parentId = null, theme = null }) {
   const def = SLIDE_TYPES[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const slide = {
@@ -93,8 +106,7 @@ export function newSlide({ type, parentId = null }) {
       typeof slide.content.bgImage === 'string'
         ? slide.content.bgImage.trim()
         : '';
-    if (!bgImage)
-      slide.content.bgImage = pickRandom(TITLE_BG_PRESETS);
+    if (!bgImage) slide.content.bgImage = pickBackgroundPreset(theme);
   }
   if (type === 'poll-slide') {
     const pollId =
@@ -370,6 +382,7 @@ export function validateSlide(slide) {
     if (
       field.type === 'string' ||
       field.type === 'markdown' ||
+      field.type === 'csv' ||
       field.type === 'code'
     ) {
       // Optional text fields may be missing/null in older decks or external integrations.

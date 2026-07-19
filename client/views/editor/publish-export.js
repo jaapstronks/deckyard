@@ -5,7 +5,7 @@ import { openPublishModal } from './publish-export/publish-modal.js';
 import { doPublish } from './publish-export/publish.js';
 import { createExportButtons, createExportHeader, createOtherLangExportSection } from './publish-export/export-buttons.js';
 import { openShareModal } from './modals/share-modal.js';
-import { installDismissOnOutside } from '../../lib/dom.js';
+import { createDropdown } from '../../lib/dropdown.js';
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/modal.js';
 import { withLoadingModal } from '../../lib/loading-modal.js';
@@ -50,32 +50,27 @@ export function setupPublishExportDropdown({
       openOverlayClosers,
     });
 
-  const publishDetails = h('details', { class: 'dropdown' });
   const summaryLabel = h('span', { text: t('editor.publish.publish', 'Publish') });
-  const publishSummary = h(
-    'summary',
-    {
-      class: 'btn btn-secondary dropdown-trigger',
-      title: t('editor.publish.publish.title', 'Publish (make public via a link)'),
-    },
-    [
+  const { details: publishDetails, summary: publishSummary, menu, close, detach } = createDropdown({
+    h,
+    triggerClass: 'btn btn-secondary',
+    triggerContent: [
       summaryLabel,
       h('span', {
         class: 'dropdown-caret',
         text: '▾',
         'aria-hidden': 'true',
       }),
-    ]
-  );
-
-  const menu = h('div', { class: 'dropdown-menu' });
+    ],
+    title: t('editor.publish.publish.title', 'Publish (make public via a link)'),
+  });
 
   const publishItem = h('button', {
     class: 'dropdown-item',
     type: 'button',
     text: t('editor.publish.publish', 'Publish'),
     onclick: async () => {
-      publishDetails.open = false;
+      close();
       try {
         // If already published, just open the modal again (no republish needed).
         if (pres?.published?.id) {
@@ -97,7 +92,7 @@ export function setupPublishExportDropdown({
     type: 'button',
     text: t('editor.publish.unpublish', 'Unpublish'),
     onclick: async () => {
-      publishDetails.open = false;
+      close();
       const publishId =
         typeof pres?.published?.id === 'string' ? pres.published.id : '';
       if (!publishId) return;
@@ -129,7 +124,7 @@ export function setupPublishExportDropdown({
     type: 'button',
     text: t('editor.publish.notion', 'Add to Notion page'),
     onclick: async () => {
-      publishDetails.open = false;
+      close();
       const notionPageId = pres?.notionSourcePageId;
       const publishId = pres?.published?.id;
       const slug = pres?.published?.slug || '';
@@ -196,7 +191,7 @@ export function setupPublishExportDropdown({
     text: t('editor.more.shareLinks', 'Share links…'),
     title: t('editor.more.shareLinks.title', 'Create shareable links for external users (no account required).'),
     onclick: () => {
-      publishDetails.open = false;
+      close();
       openShareModal({
         h,
         api,
@@ -224,16 +219,15 @@ export function setupPublishExportDropdown({
 
   // Export buttons factory helpers
   const primaryLang = normalizeLang(pres?.i18n?.active) || 'nl';
-  const closeDropdown = () => { publishDetails.open = false; };
 
   const exportHeader = createExportHeader({ h, lang: primaryLang });
-  const exportButtons = createExportButtons({ h, id, lang: primaryLang, closeDropdown });
+  const exportButtons = createExportButtons({ h, id, lang: primaryLang, closeDropdown: close });
 
   const maybeOtherLangExports = (() => {
     const other = otherLang(primaryLang);
     const hasOther = hasLangVersion(pres, other);
     if (!hasOther) return null;
-    return createOtherLangExportSection({ h, id, otherLang: other, closeDropdown });
+    return createOtherLangExportSection({ h, id, otherLang: other, closeDropdown: close });
   })();
 
   menu.append(
@@ -246,7 +240,6 @@ export function setupPublishExportDropdown({
     ...exportButtons
   );
   if (maybeOtherLangExports) menu.append(maybeOtherLangExports);
-  publishDetails.append(publishSummary, menu);
 
   syncPublishUi = () => {
     const isPublished = !!(
@@ -294,14 +287,6 @@ export function setupPublishExportDropdown({
     }
   };
   syncPublishUi();
-
-  const detach = installDismissOnOutside({
-    rootEl: publishDetails,
-    isOpen: () => !!publishDetails.open,
-    close: () => {
-      publishDetails.open = false;
-    },
-  });
 
   return { publishEl: publishDetails, syncPublishUi, detach };
 }

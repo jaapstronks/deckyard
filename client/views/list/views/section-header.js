@@ -11,17 +11,22 @@ import { iconUrl } from '../../../../shared/icon-names.js';
  * @param {number} opts.count - Number of items
  * @param {Function} [opts.onViewAll] - Callback for "View all" button
  * @param {boolean} [opts.hideViewAll=false] - Whether to hide the "View all" button
+ * @param {string} [opts.badge] - Override the badge text. Pass an empty string
+ *   to hide the badge entirely; omit for the default "{count} presentations".
  * @returns {HTMLElement}
  */
-export function buildSectionHeader({ h, icon, title, count, onViewAll, hideViewAll = false }) {
+export function buildSectionHeader({ h, icon, title, count, onViewAll, hideViewAll = false, badge }) {
+  const badgeText = badge !== undefined
+    ? badge
+    : t('list.section.count', '{count} presentations', { count });
+
   return h('div', { class: 'presentation-section-header' }, [
     h('div', { class: 'presentation-section-title' }, [
       h('img', { class: 'presentation-section-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' }),
       document.createTextNode(title + ' '),
-      h('span', {
-        class: 'presentation-section-badge',
-        text: t('list.section.count', '{count} presentations', { count }),
-      }),
+      badgeText
+        ? h('span', { class: 'presentation-section-badge', text: badgeText })
+        : null,
     ]),
     hideViewAll ? null : h('button', {
       class: 'presentation-section-link',

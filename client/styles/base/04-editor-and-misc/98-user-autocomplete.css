@@ -59,6 +59,19 @@
   background: var(--color-primary-200, #c7d2fe);
 }
 
+/* Dark mode. These two rules used to live in 99-notification-bell.css behind a
+   `prefers-color-scheme` query, which never matched the app's own UI-mode
+   toggle — so the chips stayed light in dark mode and went dark whenever the OS
+   was dark, even with the app in light mode. */
+:root[data-ui-mode='dark'] .user-autocomplete-chip {
+  background: var(--color-primary-900, #312e81);
+  color: var(--color-primary-200, #c7d2fe);
+}
+
+:root[data-ui-mode='dark'] .user-autocomplete-chip-remove:hover {
+  background: var(--color-primary-800, #3730a3);
+}
+
 .user-autocomplete-input-wrapper {
   position: relative;
 }

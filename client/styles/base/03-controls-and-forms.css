@@ -331,6 +331,40 @@
   box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
 }
 
+/* Outlined variant: a tighter, bordered segmented control for chrome that sits
+   on the app background rather than in a form — the pane tabs above the
+   inspector rail and the comments scope switch. Both were hand-rolled copies
+   of this recipe (.pane-tabs / .comments-scope) before it moved here.
+
+   It differs from the default in flavour, not structure: a border and the base
+   background instead of a sunken well, the smaller radius, and a tighter,
+   bolder, smaller-text button. */
+.sb-segmented.is-outlined {
+  align-items: stretch;
+  gap: 2px;
+  padding: 2px;
+  background: hsl(var(--app-bg-base));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  flex-shrink: 0;
+}
+
+.sb-segmented.is-outlined .sb-segmented-btn {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  transition: background var(--ps-transition-fast),
+    color var(--ps-transition-fast);
+}
+
+.sb-segmented.is-outlined .sb-segmented-btn:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -1px;
+  box-shadow: none;
+}
+
 /* UI mode switcher: icon buttons (system/light/dark) */
 .ui-mode-switcher .sb-segmented-btn {
   width: 34px;
@@ -488,6 +522,34 @@
   font-size: var(--ps-text-base);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
+}
+
+/* Required fields.
+
+   A slide type can declare a field `required`; until now that only failed
+   server-side on save, so the form gave no hint which field was missing. The
+   asterisk marks the field up front, and `.is-invalid` is set once the field
+   has been visited and left empty (see `editor/fields/required.js`) — never
+   before anyone has typed, so a new slide is not a wall of red. */
+.field-required-mark {
+  margin-left: 2px;
+  color: hsl(var(--app-danger));
+  font-weight: 700;
+}
+
+.field-error {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-danger));
+}
+
+.is-field.is-invalid > .form-input,
+.is-field.is-invalid > .md-toolbar + .form-input {
+  border-color: hsl(var(--app-danger) / 0.7);
+}
+
+.is-field.is-invalid > .form-input:focus {
+  border-color: hsl(var(--app-danger));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset) hsl(var(--app-danger) / 0.2);
 }
 
 /* Field header: label above input, optional right-aligned action (e.g. "Vertaal") */

@@ -77,6 +77,28 @@ Two directories hold all state when using file storage:
 
 With Postgres, back up the database plus `server/uploads/`.
 
+## Security defaults
+
+The container runs as a **non-root user** (`node`, uid 1000) so a compromise of
+the headless-Chromium renderer used for PDF/PNG export lands as an unprivileged
+user rather than root. Two consequences for self-hosters on Linux:
+
+- **Bind-mounted volumes must be writable by uid 1000.** `docker-compose.yml`
+  mounts `./server/data` and `./server/uploads` from the host. On a Linux VPS a
+  bind mount keeps its host ownership, so if those directories are owned by root
+  the app cannot write to them. After the first clone/deploy, run once on the
+  host:
+
+  ```bash
+  sudo chown -R 1000:1000 server/data server/uploads
+  ```
+
+- **Chromium's in-browser sandbox is off by default.** Its namespace sandbox
+  needs syscalls that Docker's default seccomp profile blocks, so enabling it
+  on the stock profile would break export. Non-root already contains the risk.
+  If you want the extra layer, run the container with a Chromium seccomp profile
+  (or `--cap-add=SYS_ADMIN`) and set `PUPPETEER_SANDBOX=true`.
+
 ## Running a public sandbox
 
 Deckyard has a sandbox mode (anonymous guest sessions, 24h auto-cleanup,

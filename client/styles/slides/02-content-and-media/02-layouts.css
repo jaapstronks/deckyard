@@ -47,6 +47,11 @@
   overflow: hidden;
   min-height: 0;
   min-width: 0;
+  /* The panel is only visible when there is no background image. Use the
+     theme's dark surface (the same one quote/chapter slides paint white text
+     on) so an image-less slide reads as an intentional dark panel rather than
+     a hole. Falls back to the slide's own black. */
+  background: var(--t-slide-bg-dark, #000);
 }
 .slide-partner-split .right .bg {
   position: absolute;
@@ -103,6 +108,11 @@
   font-size: 22px;
   line-height: 1.25;
   opacity: 0.95;
+  /* `.slide .subtitle` sets `color: var(--color-text-muted)` — a dark, body-text
+     colour meant for light backgrounds — and a direct declaration beats the
+     white this would otherwise inherit from `.text`. On this panel that renders
+     dark-on-dark. Inherit instead so the subtitle follows the panel. */
+  color: inherit;
 }
 
 /* Quote slide */
@@ -188,6 +198,59 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+/* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
+.slide-quote.is-multi .slide-inner {
+  justify-content: center;
+  gap: 40px;
+}
+.slide-quote.is-multi .quote-item {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 74%;
+}
+/* Alternate the alignment down the slide: 1 left, 2 right, 3 left. */
+.slide-quote.is-multi .quote-item:nth-child(odd) {
+  align-self: flex-start;
+  text-align: left;
+}
+.slide-quote.is-multi .quote-item:nth-child(even) {
+  align-self: flex-end;
+  text-align: right;
+}
+/* Quotes shrink from the hero size so 2-3 fit; 3 shrinks a touch more. */
+.slide-quote.is-multi .quote-text {
+  font-size: calc(var(--font-size-title) * 0.6);
+  line-height: 1.1;
+  max-width: none;
+  margin-top: 0;
+}
+.slide-quote.is-multi[data-quote-count='3'] .quote-text {
+  font-size: calc(var(--font-size-title) * 0.46);
+}
+.slide-quote.is-multi .quote-author {
+  font-size: 18px;
+}
+.slide-quote.is-multi .quote-author .name {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+.slide-quote.is-multi .quote-author .role {
+  font-size: 20px;
+}
+.slide-quote.is-multi .quote-portrait {
+  width: 64px;
+  height: 64px;
+}
+.slide-quote.is-multi .quote-author.has-portraits {
+  gap: 16px;
+}
+/* Right-aligned items put the portrait after the text, reading edge-in. */
+.slide-quote.is-multi .quote-item:nth-child(even) .quote-author.has-portraits {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 
 @media print {

@@ -279,9 +279,32 @@
   min-width: 0;
   font-size: var(--ps-text-sm);
   line-height: 1.4;
+}
+
+/* The actor · action · target line stays a single truncated line; the optional
+   comment snippet sits beneath it. */
+.home-activity-line {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.home-activity-snippet {
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Small preview thumb of the commented slide, under the snippet. Fixed narrow
+   width (stays 16:9 via the shared .thumb aspect-ratio); the slide scaling is
+   handled by .thumb / .thumb .slide. */
+.home-activity-thumb.thumb {
+  width: 96px;
+  margin-top: var(--ps-space-2);
+  box-shadow: var(--app-shadow-xs, var(--app-shadow-sm));
 }
 
 .home-activity-actor {

@@ -1,4 +1,5 @@
-import { notFound, unauthorized } from '../../utils/http.js';
+import { notFound, unauthorized, forbidden } from '../../utils/http.js';
+import { isCsrfSafe } from '../../utils/csrf.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -25,6 +26,7 @@ import { handleCustomSlideTypes } from './custom-slide-types.js';
 import { handleFontFamilies } from './font-families.js';
 import { handleImageLibrary } from './image-library.js';
 import { handlePresentations } from './presentations.js';
+import { handleHome } from './home.js';
 import { handleAi } from './ai.js';
 import { handleNotion } from './notion.js';
 import { handleUploads } from './uploads.js';
@@ -35,6 +37,7 @@ import { handleShareLinks, handleSharePublic } from './share-links.js';
 import { handleQuestions } from './questions.js';
 import { handleSettings } from './settings.js';
 import { handleSlideLibrary } from './slide-library.js';
+import { handleSlideCollections } from './slide-collections.js';
 import { handleMedia } from './media.js';
 import { handleConvert } from './convert.js';
 import { handleActivity } from './activity.js';
@@ -54,6 +57,13 @@ import { handleOrganizationMembers } from './organization-members.js';
 import { handleDataSources } from './data-sources.js';
 
 export async function handleApi({ repoRoot, req, res, url }) {
+  // CSRF defense: reject cookie-authenticated, cross-origin state-changing
+  // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
+  // same-origin requests. See docs/plans/security-hardening.md item 5c.
+  if (!isCsrfSafe(req)) {
+    return forbidden(res, 'Cross-site request blocked (CSRF)');
+  }
+
   // Public API v1 routes (API key authentication, separate from session-based auth)
   if (url.pathname.startsWith('/api/v1')) {
     if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
@@ -115,6 +125,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleFontFamilies(ctx)) return;
   if (await handleImageLibrary(ctx)) return;
   if (await handleMedia(ctx)) return;
+  if (await handleHome(ctx)) return;
   if (await handlePresentations(ctx)) return;
   if (await handleNotion(ctx)) return;
   if (!flags.disableAi && (await handleAi(ctx))) return;
@@ -132,6 +143,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleSettings(ctx)) return;
   if (await handleApiKeys(ctx)) return;
   if (await handleSlideLibrary(ctx)) return;
+  if (await handleSlideCollections(ctx)) return;
   if (flags.enableLiveData && (await handleDataSources(ctx))) return;
   if (await handleActivity(ctx)) return;
   if (await handleAnalytics(ctx)) return;

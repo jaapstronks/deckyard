@@ -104,6 +104,9 @@ export function openAiBatchReviewModal({
     SLIDE_TYPES,
     getSlides: () => slides,
     annotationFor,
+    previewOnClick: true,
+    // The AI's per-slide rationale, shown inside the peek preview too.
+    peekNoteFor: (slide) => String(slide?._aiReasoning || '').trim() || null,
   });
 
   // --- Adjust: feedback textarea + re-generate from prior batch ------------

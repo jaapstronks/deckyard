@@ -16,7 +16,7 @@ import {
   getSupportedLangs,
   writeLangMode,
 } from '../lib/i18n.js';
-import { openNewPresentationModal } from './list/modals/new-presentation.js';
+import { openCreationView } from './list/modals/creation-view/index.js';
 import { createCardRenderer, toListItem } from './list/presentation-card.js';
 import { createSidebar, createBottomTabs } from './list/sidebar.js';
 import { createThemePickerRow } from './list/theme-picker-row.js';
@@ -24,12 +24,7 @@ import { createActivityFeed } from './list/overview-activity.js';
 import { getFeatures } from '../lib/features.js';
 import {
   createHomeView,
-  createRecentView,
-  createStarterKitsView,
-  createWorkspaceView,
-  createPrivateView,
-  createMyPresentationsView,
-  createSharedWithMeView,
+  createPresentationsView,
   createTrashView,
   createSearchView,
   createSlideLibraryView,
@@ -43,7 +38,17 @@ import { createTopbar } from './list/topbar.js';
 
 const LOCAL_STORAGE_KEY_VIEW = 'ps:presentation-list-view';
 const SESSION_KEY_FRESH_LOGIN = 'ps:fresh-login-pending';
-const VALID_VIEWS = ['home', 'recent', 'starterKits', 'workspace', 'myPresentations', 'sharedWithMe', 'slideLibrary', 'activity', 'trash'];
+const VALID_VIEWS = ['home', 'presentations', 'slideLibrary', 'activity', 'trash'];
+// Legacy per-source view keys now fold into the unified "presentations" view.
+// Redirect stale persisted values (and any old deep link) so returning users
+// don't land on a dead key.
+const LEGACY_VIEW_REDIRECT = {
+  recent: 'presentations',
+  workspace: 'presentations',
+  myPresentations: 'presentations',
+  sharedWithMe: 'presentations',
+  private: 'presentations',
+};
 
 export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
@@ -80,7 +85,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     } catch { /* sessionStorage may not be available */ }
 
     const raw = storage.get(LOCAL_STORAGE_KEY_VIEW, '').trim();
-    return VALID_VIEWS.includes(raw) ? raw : 'home';
+    const redirected = LEGACY_VIEW_REDIRECT[raw] || raw;
+    return VALID_VIEWS.includes(redirected) ? redirected : 'home';
   })();
 
   let unreadCount = 0;
@@ -89,8 +95,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // MODAL WRAPPERS
   // ============================================================
 
-  const openNewPresentationModalWrapper = (preselectedTheme) =>
-    openNewPresentationModal({
+  const openNewPresentationModalWrapper = ({ preselectedTheme, preselect } = {}) =>
+    openCreationView({
       h,
       api,
       root,
@@ -99,6 +105,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
       getSupportedLangs,
       writeLangMode,
       preselectedTheme,
+      preselect,
     });
 
   // ============================================================
@@ -167,7 +174,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   ]);
 
   const workspace = [];
-  const starterKits = [];
   const priv = [];
 
   // Track IDs from main list to avoid duplicates with shared
@@ -176,11 +182,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   for (const p of Array.isArray(list) ? list : []) {
     mainListIds.add(p.id);
     if (p?.scope === 'workspace') {
-      if (p?.isStarterKit) {
-        starterKits.push(p);
-      } else {
-        workspace.push(p);
-      }
+      workspace.push(p);
     } else {
       priv.push(p);
     }
@@ -202,7 +204,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     return Number.isNaN(time) ? 0 : time;
   };
 
-  const allByDate = [...workspace, ...starterKits, ...priv, ...sharedPresentations].sort((a, b) =>
+  const allByDate = [...workspace, ...priv, ...sharedPresentations].sort((a, b) =>
     getTimestamp(b) - getTimestamp(a)
   );
 
@@ -248,7 +250,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const themePicker = createThemePickerRow({
     h,
     api,
-    onThemeSelect: (theme) => openNewPresentationModalWrapper(theme),
+    onThemeSelect: (theme) => openNewPresentationModalWrapper({ preselectedTheme: theme }),
     onShowAll: () => openNewPresentationModalWrapper(),
   });
   detachers.push(() => themePicker.detach?.());
@@ -276,58 +278,22 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     renderCard,
     setView,
     allByDate,
-    starterKits,
     themePicker,
     unreadCount,
+    user,
     onCreate: () => openNewPresentationModalWrapper(),
-    onBrowseTemplates: () => setView('starterKits'),
+    onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
+    detachThumbs,
   });
 
-  const recentViewObj = createRecentView({
+  // Unified "Presentations" view — replaces the Recent / Workspace /
+  // My presentations / Shared with me tabs with one scope-chip + tag surface.
+  const presentationsViewObj = createPresentationsView({
     h,
     api,
     renderCard,
     allByDate,
-  });
-
-  const starterKitsViewObj = createStarterKitsView({
-    h,
-    api,
-    renderCard,
-    starterKits,
-  });
-
-  const workspaceViewObj = createWorkspaceView({
-    h,
-    api,
-    renderCard,
-    workspace,
-  });
-
-  const privateViewObj = createPrivateView({
-    h,
-    api,
-    renderCard,
-    priv,
     onCreate: () => openNewPresentationModalWrapper(),
-    onBrowseTemplates: starterKits.length > 0 ? () => setView('starterKits') : null,
-  });
-
-  // All user-authored presentations (private + workspace, excluding shared with me)
-  const myPresentations = [...priv, ...workspace, ...starterKits];
-  const myPresentationsViewObj = createMyPresentationsView({
-    h,
-    api,
-    renderCard,
-    myPresentations,
-    onCreate: () => openNewPresentationModalWrapper(),
-    onBrowseTemplates: starterKits.length > 0 ? () => setView('starterKits') : null,
-  });
-
-  const sharedWithMeViewObj = createSharedWithMeView({
-    h,
-    api,
-    renderCard,
   });
 
   const trashViewObj = createTrashView({
@@ -346,7 +312,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const searchViewObj = createSearchView({
     h,
     renderCard,
-    allPresentations: [...workspace, ...starterKits, ...priv, ...sharedPresentations],
+    allPresentations: [...workspace, ...priv, ...sharedPresentations],
     onClearSearch: () => {
       searchInput.value = '';
       setView(previousView);
@@ -357,6 +323,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   themePicker.load();
   homeViewObj.loadActivityPreview();
   homeViewObj.loadPopularPresentations();
+  homeViewObj.loadBuildingBlocks();
 
   // ============================================================
   // ADD VIEWS TO FRAME
@@ -364,12 +331,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
   frame.append(
     homeViewObj.el,
-    recentViewObj.el,
-    starterKitsViewObj.el,
-    workspaceViewObj.el,
-    privateViewObj.el,
-    myPresentationsViewObj.el,
-    sharedWithMeViewObj.el,
+    presentationsViewObj.el,
     trashViewObj.el,
     slideLibraryViewObj.el,
     activityFeed.el,
@@ -426,16 +388,11 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
 
     // Load data for specific views
     if (viewKey === 'activity') activityFeed.load();
-    if (viewKey === 'sharedWithMe') sharedWithMeViewObj.load();
     if (viewKey === 'trash') trashViewObj.load();
     if (viewKey === 'slideLibrary') slideLibraryViewObj.load();
 
     // Load tag filters for views that have them
-    if (viewKey === 'private') privateViewObj.tagFilter?.load();
-    if (viewKey === 'myPresentations') myPresentationsViewObj.tagFilter?.load();
-    if (viewKey === 'workspace') workspaceViewObj.tagFilter?.load();
-    if (viewKey === 'recent') recentViewObj.tagFilter?.load();
-    if (viewKey === 'starterKits') starterKitsViewObj.tagFilter?.load();
+    if (viewKey === 'presentations') presentationsViewObj.tagFilter?.load();
   }
 
   // ============================================================
@@ -467,17 +424,8 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     if (!created?.id) return;
 
     priv.unshift(created);
-    myPresentations.unshift(created);
-    privateViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    myPresentationsViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    recentViewObj.list.prepend(
-      renderCard(created, { isWorkspace: false, highlight: true })
-    );
-    setView('myPresentations');
+    presentationsViewObj.addPresentation(created);
+    setView('presentations');
   };
 
   onDeckClaimed = (claimedFull) => {
@@ -502,12 +450,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   detachers.push(() => document.removeEventListener('keydown', handleKeyDown));
 
   // Tag filter detachers
-  detachers.push(() => privateViewObj.tagFilter?.detach?.());
-  detachers.push(() => myPresentationsViewObj.tagFilter?.detach?.());
-  detachers.push(() => myPresentationsViewObj.visibilityFilter?.detach?.());
-  detachers.push(() => workspaceViewObj.tagFilter?.detach?.());
-  detachers.push(() => recentViewObj.tagFilter?.detach?.());
-  detachers.push(() => starterKitsViewObj.tagFilter?.detach?.());
+  detachers.push(() => presentationsViewObj.tagFilter?.detach?.());
 
   // ============================================================
   // INITIAL SETUP

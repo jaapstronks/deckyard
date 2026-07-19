@@ -39,47 +39,9 @@
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
-.comments-scope {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
-.comments-scope-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.comments-scope-btn:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.comments-scope-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.comments-scope-btn.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
-}
+/* The scope switch is the shared segmented control in its outlined variant
+   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
+   `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
 
 .comments-filter-trigger {
   padding: 3px 8px;
@@ -118,6 +80,23 @@
 .comment-thread:last-child {
   border-bottom: none;
   margin-bottom: 0;
+}
+
+/* Whole-card jump affordance: threads that can jump to a slide get a pointer
+   cursor and a subtle hover wash. Negative gutters let the wash reach the
+   panel padding edges without shifting the content. */
+.comment-thread.is-jumpable {
+  margin-left: -8px;
+  margin-right: -8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: var(--ps-radius-md, 8px);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.comment-thread.is-jumpable:hover {
+  background: hsl(var(--app-bg-hover, 220 14% 94%));
 }
 
 /* Mentions: chip in the body, inline autocomplete popover */
@@ -475,6 +454,151 @@
   background: hsl(var(--app-accent-primary) / 0.1);
   border-radius: var(--ps-radius-md, 8px);
   transition: background 0.4s ease;
+}
+
+/* ============================================================
+   COMMENT MARKERS (positioned pins on the edit canvas)
+   ============================================================ */
+
+/* Overlay layer above the slide content. On backgrounded slides .slide-inner
+   is z-index:2 (plus a z-index:3 content layer), which otherwise swallows
+   pointer clicks meant for the markers. The container spans the whole preview
+   but stays click-through (pointer-events:none) so inline-edit and
+   add-comment position clicks reach the slide underneath; only the marker
+   buttons themselves capture pointer events. */
+.comment-markers-container {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.comment-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid hsl(0 0% 100%);
+  border-radius: 50% 50% 50% 2px;
+  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.1s ease;
+}
+
+.comment-marker:hover {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.comment-marker:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary, 210 70% 50%));
+  outline-offset: 2px;
+}
+
+.comment-marker.is-resolved {
+  background: hsl(var(--app-text-secondary, 220 9% 46%));
+  opacity: 0.7;
+}
+
+.comment-marker-icon {
+  width: 13px;
+  height: 13px;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
+}
+
+.comment-marker-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  background: hsl(var(--app-danger, 4 65% 48%));
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Add-comment mode: crosshair over the whole preview to place a new pin. */
+.is-add-comment-mode {
+  cursor: crosshair;
+}
+
+/* Positioned-comment composer: the little card that opens where you click to
+   place a pinned comment. Rendered into .preview-stage with inline left/top
+   pixel values at the click point; the anchor-* classes flip it so it never
+   clips past an edge. (Previously unstyled - it collapsed to a bare textarea
+   with no chrome, hence "narrow and nearly invisible".) */
+.positioned-comment-popup {
+  position: absolute;
+  z-index: 9;
+  width: min(260px, 70%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md, 8px);
+  box-shadow: var(--app-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.22));
+  /* Offset down-right from the click point so the cursor doesn't cover it. */
+  transform: translate(14px, 14px);
+}
+
+.positioned-comment-popup.anchor-right {
+  transform: translate(calc(-100% - 14px), 14px);
+}
+
+.positioned-comment-popup.anchor-bottom {
+  transform: translate(14px, calc(-100% - 14px));
+}
+
+.positioned-comment-popup.anchor-right.anchor-bottom {
+  transform: translate(calc(-100% - 14px), calc(-100% - 14px));
+}
+
+/* Small accent dot marking the click point, in the popup corner nearest it. */
+.positioned-comment-marker {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  border: 2px solid hsl(var(--app-bg-elevated));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.positioned-comment-popup.anchor-right .positioned-comment-marker {
+  left: auto;
+  right: -4px;
+}
+
+.positioned-comment-popup.anchor-bottom .positioned-comment-marker {
+  top: auto;
+  bottom: -4px;
+}
+
+.positioned-comment-popup textarea {
+  resize: none;
+  width: 100%;
+}
+
+.positioned-comment-popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 /* ============================================================

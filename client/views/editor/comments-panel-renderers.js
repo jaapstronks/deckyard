@@ -5,7 +5,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
-import { splitMentionSegments } from '../../../shared/comment-mentions.js';
+import { renderCommentBodyNodes } from '../../lib/comment-body.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -50,7 +50,9 @@ export function createCommentRenderers({
     if (comments.length === 0) {
       const emptyEl = h('div', {
         class: 'comments-empty',
-        text: filter.attention === 'waiting'
+        text: filter.slideMissing
+          ? t('comments.empty.noSlide', 'Select a slide to see its comments')
+          : filter.attention === 'waiting'
           ? t('comments.empty.waiting', 'Nothing waiting for you here')
           : filter.status === 'resolved'
             ? t('comments.empty.resolved', 'No resolved comments')
@@ -85,6 +87,20 @@ export function createCommentRenderers({
         repliesEl.append(replyEl);
       }
       threadEl.append(repliesEl);
+    }
+
+    // Whole-card jump-to-slide: a click on inert card area (author, body,
+    // whitespace) navigates to the comment's slide, mirroring the
+    // .comment-slide-link chip. Clicks on interactive controls (Reply/
+    // Resolve/Delete buttons, links, the reply box) are ignored so they keep
+    // their own behaviour. Only wire it when a jump target exists (same guard
+    // as the chip: has a slide, and we're not already filtered to one slide).
+    if (comment.slideId && !filter.slideId && getSlideNumber(comment.slideId)) {
+      threadEl.classList.add('is-jumpable');
+      threadEl.addEventListener('click', (e) => {
+        if (e.target.closest('button, a, textarea, input, select, .comment-reply-input')) return;
+        onJumpToSlide?.(comment.slideId);
+      });
     }
 
     return threadEl;
@@ -153,17 +169,7 @@ export function createCommentRenderers({
     // Body: mention markup renders as a styled chip; everything else stays
     // plain text (h() text nodes, so no escaping worries).
     const bodyEl = h('div', { class: 'comment-body' });
-    for (const seg of splitMentionSegments(comment.body)) {
-      if (seg.type === 'mention') {
-        bodyEl.append(h('span', {
-          class: 'comment-mention-chip',
-          title: seg.email,
-          text: `@${seg.name}`,
-        }));
-      } else {
-        bodyEl.append(seg.text);
-      }
-    }
+    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
     // Actions row
     const actionsEl = h('div', { class: 'comment-actions' });

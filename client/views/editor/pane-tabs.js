@@ -1,5 +1,5 @@
 /**
- * Pane tabs for the inspector rail: Inspector / Comments / Notes.
+ * Pane tabs for the inspector rail: Inspector / Comments.
  *
  * Lives at the far right of the slide toolbar (the row above the canvas),
  * directly above the rail it controls - the panes are slide-scoped, so they
@@ -7,69 +7,62 @@
  * re-org 2026-07-17). Pressed = "rail open on MY pane"; clicking the active
  * tab dismisses the rail. Always visible (also with the rail closed), which
  * is what makes the rail findable.
+ *
+ * Presenter notes are no longer a tab here - they live in a strip under the
+ * slide (notes-strip.js), so the rail is Inspector + Comments only.
  */
 
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { createSegmented } from '../../lib/segmented.js';
 
 /**
  * @param {Object} options
  * @param {Function} options.h - DOM helper
  * @param {Function} [options.onToggleInspector]
  * @param {Function} [options.onToggleComments]
- * @param {Function} [options.onToggleNotes]
  * @returns {{ el: HTMLElement, setState: Function, updateBadge: Function }}
  */
 export function createPaneTabs({
   h,
   onToggleInspector,
   onToggleComments,
-  onToggleNotes,
 } = {}) {
-  const makeTab = ({ icon, label, title, extraClass, onclick }) => {
-    const btn = h('button', {
-      class: `pane-tab${extraClass ? ` ${extraClass}` : ''}`,
-      type: 'button',
-      title,
-      'aria-pressed': 'false',
-      onclick,
-    });
-    btn.append(
-      h('img', { class: 'pane-tab-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' }),
-      h('span', { class: 'pane-tab-label', text: label })
-    );
-    return btn;
-  };
-
-  const btnInspector = makeTab({
-    icon: 'sliders-horizontal',
-    label: t('editor.inspector.title', 'Inspector'),
-    title: t('editor.inspector.toggle', 'Show or hide the inspector'),
-    onclick: () => onToggleInspector?.(),
-  });
+  const tabContent = (icon, label) => [
+    h('img', { class: 'pane-tab-icon', src: iconUrl(icon), alt: '', 'aria-hidden': 'true' }),
+    h('span', { class: 'pane-tab-label', text: label }),
+  ];
 
   const badgeEl = h('span', { class: 'pane-tab-badge', text: '' });
   badgeEl.hidden = true;
-  const btnComments = makeTab({
-    icon: 'message-circle',
-    label: t('editor.comments', 'Comments'),
-    title: t('editor.comments', 'Comments'),
-    onclick: () => onToggleComments?.(),
-  });
-  btnComments.append(badgeEl);
 
-  const btnNotes = makeTab({
-    icon: 'file-text',
-    label: t('editor.notes.tab', 'Notes'),
-    title: t('editor.notes.title', 'Presenter notes'),
-    onclick: () => onToggleNotes?.(),
+  // The rail owns the selection - clicking the active tab dismisses it rather
+  // than re-selecting - so the control reports clicks and setState drives the
+  // highlight.
+  const segmented = createSegmented({
+    h,
+    outlined: true,
+    className: 'pane-tabs',
+    buttonClass: 'pane-tab',
+    ariaLabel: t('editor.panes.label', 'Side panels'),
+    value: null,
+    selectOnClick: false,
+    segments: [
+      {
+        value: 'settings',
+        title: t('editor.inspector.toggle', 'Show or hide the inspector'),
+        content: tabContent('sliders-horizontal', t('editor.inspector.title', 'Inspector')),
+      },
+      {
+        value: 'comments',
+        title: t('editor.comments', 'Comments'),
+        content: [...tabContent('message-circle', t('editor.comments', 'Comments')), badgeEl],
+      },
+    ],
+    onSelect: (pane) =>
+      pane === 'settings' ? onToggleInspector?.() : onToggleComments?.(),
   });
-
-  const el = h(
-    'div',
-    { class: 'pane-tabs', role: 'group', 'aria-label': t('editor.panes.label', 'Side panels') },
-    [btnInspector, btnComments, btnNotes]
-  );
+  const el = segmented.el;
 
   /**
    * Reflect the rail state on the tabs. Pressed means "the rail is open on
@@ -78,15 +71,7 @@ export function createPaneTabs({
    * @param {{ open: boolean, pane: string|null }} state
    */
   const setState = ({ open, pane } = {}) => {
-    for (const [btn, name] of [
-      [btnInspector, 'settings'],
-      [btnComments, 'comments'],
-      [btnNotes, 'notes'],
-    ]) {
-      const active = Boolean(open) && pane === name;
-      btn.setAttribute('aria-pressed', String(active));
-      btn.classList.toggle('is-active', active);
-    }
+    segmented.setValue(open ? pane ?? null : null);
   };
 
   /**

@@ -32,7 +32,7 @@ import { createFieldRenderers } from './fields.js';
 import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
-import { createNotesPane } from './notes-pane.js';
+import { createNotesStrip } from './notes-strip.js';
 import { createPreviewPanel } from './preview-panel.js';
 import { createInspectorResize } from './inspector-resize.js';
 import { createInspectorPanes } from './inspector-panes.js';
@@ -760,18 +760,17 @@ export async function createEditorController({
   const settingsPane = h('div', {}, [inspectorScroll]);
   inspectorPanes.registerPane('settings', settingsPane);
 
-  // Presenter notes are the third pane (chrome re-org stap 2): rarely used
-  // and only relevant again while presenting, so they live out of sight in
-  // the rail instead of permanently under the canvas.
-  const notesPane = createNotesPane({
+  // Presenter notes live in a collapsible strip under the slide preview
+  // (Keynote / PowerPoint convention), not in the rail: notes are not
+  // position-bound the way comments are, and the strip fills the otherwise
+  // empty space beneath the 16:9 stage. Mounted into the preview panel below.
+  const notesStrip = createNotesStrip({
     h,
     pres,
     getSelectedSlideId: () => selectedSlideId,
     markDirty,
     onOpenQr: () => topbarApi.openNotesQr?.(),
-    onRequestClose: () => setInspectorCollapsed(true),
   });
-  inspectorPanes.registerPane('notes', notesPane.el);
 
   // Drag-to-resize handle on the left edge: trades inspector width for canvas width.
   const inspectorResize = createInspectorResize({
@@ -796,7 +795,6 @@ export async function createEditorController({
     h,
     onToggleInspector: () => inspectorPanes.toggle('settings'),
     onToggleComments: () => inspectorPanes.toggle('comments'),
-    onToggleNotes: () => inspectorPanes.toggle('notes'),
   });
   setCommentsBadgeFn = paneTabs.updateBadge;
 
@@ -835,12 +833,14 @@ export async function createEditorController({
       });
     },
     paneTabsEl: paneTabs.el,
+    notesStripEl: notesStrip.el,
   });
 
   const { previewEl: preview, thumbEl: thumb } = previewPanel;
-  // The notes textarea moved into the rail pane; every consumer (live-edits
-  // binder, search focus, slide-change refresh) keeps using this reference.
-  const previewNotesTa = notesPane.textarea;
+  // The notes textarea lives in the under-slide strip; every consumer
+  // (live-edits binder, search focus, slide-change refresh) keeps using this
+  // reference (the strip is persistent DOM, so it holds).
+  const previewNotesTa = notesStrip.textarea;
   cleanup.register('thumbScale', previewPanel.detachThumbScale);
 
   // ============================================================
@@ -1333,6 +1333,9 @@ export async function createEditorController({
     // State-driven, not classList-driven: the lock seam is the source of
     // truth; the shell classes are presentation only.
     getCanEdit: () => !readOnlyMode && !getSlideLockKind(selectedSlideId),
+    // While placing a positioned comment, the inline editor must yield its
+    // click capture so the pin lands anywhere on the slide (not just margins).
+    isCommentAddMode: () => previewPanel.isCommentAddMode?.(),
     markDirty,
     requestSave,
     rerenderPreview: () => rerenderPreview(),

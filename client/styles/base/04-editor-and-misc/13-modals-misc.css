@@ -101,6 +101,36 @@
   flex-wrap: wrap;
 }
 
+/* Themes outside the default-visible subset, revealed by "Show all themes". */
+.theme-picker-grid-more {
+  margin-top: 12px;
+}
+
+.theme-picker-grid-more.is-hidden {
+  display: none;
+}
+
+.theme-picker-toggle {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: hsl(var(--app-accent));
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.theme-picker-toggle:hover {
+  opacity: 0.8;
+}
+
+.theme-picker-toggle.is-hidden {
+  display: none;
+}
+
 .theme-card {
   display: block;
   width: 140px;
@@ -284,6 +314,352 @@
 }
 
 /* ============================================
+   Creation view (two-column "New presentation")
+   Header + footer pinned; only the right pane scrolls.
+   ============================================ */
+
+.modal.creation-view {
+  width: min(960px, 100%);
+  max-height: min(90vh, 760px);
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* sections manage their own padding so borders span edge-to-edge */
+  overflow: hidden;
+}
+
+.creation-view-header {
+  flex: 0 0 auto;
+  padding: var(--ps-space-4) var(--ps-space-5);
+  border-bottom: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-view-header h2 {
+  margin: 0;
+}
+
+.creation-view-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.creation-rail {
+  flex: 0 0 200px;
+  border-right: 1px solid hsl(var(--app-border-default));
+  padding: var(--ps-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  overflow-y: auto;
+}
+
+.creation-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border: none;
+  border-radius: var(--ps-radius-md);
+  background: transparent;
+  color: hsl(var(--app-text-primary));
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.creation-rail-item:hover:not(:disabled) {
+  background: hsl(var(--app-bg-sunken));
+}
+
+.creation-rail-item.is-active {
+  background: hsl(var(--app-accent) / 0.1);
+  color: hsl(var(--app-accent));
+}
+
+.creation-rail-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.creation-rail-item-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font-weight: 600;
+}
+
+.creation-rail-item-desc {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
+.creation-rail-item.is-active .creation-rail-item-desc {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.creation-rail-badge {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(270 60% 45%);
+  background: hsl(270 60% 92%);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.creation-rail-divider {
+  height: 1px;
+  background: hsl(var(--app-border-default));
+  margin: var(--ps-space-2) var(--ps-space-1);
+}
+
+.creation-pane {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--ps-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+.creation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}
+
+.creation-panel.is-hidden {
+  display: none;
+}
+
+.creation-subpanels {
+  display: flex;
+  flex-direction: column;
+}
+
+.creation-subpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  margin-top: var(--ps-space-3);
+}
+
+.creation-subpanel.is-hidden {
+  display: none;
+}
+
+.creation-setup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-4);
+  padding-top: var(--ps-space-4);
+  border-top: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-setup.is-hidden {
+  display: none;
+}
+
+/* Theme picker takes the full width; the language selector sits below it. */
+.creation-setup > .theme-picker-wrap {
+  flex: 1 1 100%;
+}
+
+.creation-setup > .theme-picker-wrap.is-hidden {
+  display: none;
+}
+
+.creation-view-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-4) var(--ps-space-5);
+  border-top: 1px solid hsl(var(--app-border-default));
+}
+
+.creation-view-footer .modal-status {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .creation-view-body {
+    flex-direction: column;
+  }
+
+  .creation-rail {
+    flex: 0 0 auto;
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--app-border-default));
+  }
+
+  .creation-rail-divider {
+    display: none;
+  }
+
+  .creation-rail-item {
+    flex: 0 0 auto;
+  }
+
+  .creation-rail-item-desc {
+    display: none;
+  }
+}
+
+/* From-the-library compose panel: bound the picker list so the selected-slides
+   tray stays visible below it, and the pane doesn't grow unbounded. */
+.creation-library-picker .ps-lib-list-container {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.creation-library-tray {
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-default));
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+}
+
+.creation-library-tray.is-hidden {
+  display: none;
+}
+
+.creation-tray-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+}
+
+.creation-tray-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  padding: 4px 6px 4px 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-sunken));
+  cursor: grab;
+  max-width: 220px;
+}
+
+.creation-tray-chip.is-dragging {
+  opacity: 0.5;
+}
+
+.creation-tray-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent) / 0.15);
+  color: hsl(var(--app-accent));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+}
+
+.creation-tray-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ps-text-sm);
+}
+
+.creation-tray-remove {
+  border: none;
+  background: none;
+  color: hsl(var(--app-text-secondary));
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.creation-tray-remove:hover {
+  color: hsl(var(--app-text-primary));
+}
+
+/* Source toggle (Collections | All slides) sits above the picker. */
+.creation-library-source {
+  align-self: flex-start;
+  margin-bottom: var(--ps-space-2);
+}
+
+/* Collections chooser (start a deck from a saved collection). */
+.creation-library-collections.is-hidden {
+  display: none;
+}
+
+.creation-collection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--ps-space-2);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.creation-collection-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  text-align: left;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-surface));
+  cursor: pointer;
+  color: hsl(var(--app-text-primary));
+  transition: border-color var(--ps-transition-fast), background var(--ps-transition-fast);
+}
+
+.creation-collection-card:hover {
+  border-color: hsl(var(--app-border-strong));
+  background: hsl(var(--app-bg-hover));
+}
+
+.creation-collection-card.is-active {
+  border-color: hsl(var(--app-accent));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent));
+}
+
+.creation-collection-card-name {
+  font-weight: 600;
+  font-size: var(--ps-text-sm);
+}
+
+.creation-collection-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+.creation-collection-card-badge {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-secondary));
+}
+
+.creation-collection-card-count {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-secondary));
+}
+
+/* ============================================
    Import Slides Tab (PDF Import)
    ============================================ */
 
@@ -420,16 +796,8 @@
 }
 
 /* ============================================
-   Starter Kit Share Modal
+   Workspace Share Modal
    ============================================ */
-
-.modal-starter-kit-share {
-  width: min(500px, 100%);
-}
-
-.modal-starter-kit-share h2 {
-  margin-bottom: var(--ps-space-3);
-}
 
 .share-options {
   display: flex;
@@ -480,74 +848,6 @@
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   line-height: 1.4;
-}
-
-/* ============================================
-   Starter Kit Grid (New Presentation Modal)
-   ============================================ */
-
-.starter-kit-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--ps-space-3);
-  max-height: 300px;
-  overflow-y: auto;
-  padding: var(--ps-space-1);
-}
-
-.starter-kit-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-4);
-  border: 2px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg);
-  background: hsl(var(--app-bg-elevated));
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.2s, background 0.2s, transform 0.1s;
-}
-
-.starter-kit-card:hover {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.03);
-}
-
-.starter-kit-card.is-selected {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.08);
-  transform: scale(1.02);
-}
-
-.starter-kit-card-title {
-  font-weight: 700;
-  font-size: var(--ps-text-base);
-  color: hsl(var(--app-text-primary));
-  line-height: 1.3;
-}
-
-.starter-kit-card-desc {
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-secondary));
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Starter Kit Badge on Presentation Cards */
-.presentation-starter-kit-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  color: hsl(270 60% 45%);
-  background: hsl(270 60% 92%);
-  padding: 2px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
 }
 
 /* ============================================

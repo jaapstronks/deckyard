@@ -53,8 +53,9 @@ custom/mcp-tools.js
 # Ad-hoc screenshots dropped at the repo root during manual testing
 /*.png
 
-# Working plans / briefings (local working docs, see docs/README.md)
-docs/plans/
+# Working plans / briefings — a symlink to the private `deckyard-planning`
+# sibling repo (see CLAUDE.md). No trailing slash so the symlink is ignored too.
+docs/plans
 
 # Personal correspondence, never commit
 briefing-maarten.md

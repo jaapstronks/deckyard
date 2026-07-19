@@ -8,6 +8,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/modal.js';
+import {
+  fetchAppSettings,
+  updateAppSettings,
+  invalidateSettingsCache,
+} from '../../../lib/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
 
 /**
@@ -37,6 +42,153 @@ export function createThemesTab({ user }) {
       'Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.'
     ),
   });
+
+  // ============================================================
+  // Workspace theme settings: default theme + picker visibility.
+  // These write app settings (defaultThemeId / enabledThemes) that govern the
+  // creation flow's theme picker.
+  // ============================================================
+  const workspaceCard = h('div', { class: 'stack editor-card themes-workspace-card' });
+  const workspaceTitle = h('h3', {
+    class: 'field-label',
+    text: t('settings.themes.workspace.title', 'Theme picker'),
+  });
+  const workspaceHint = h('p', {
+    class: 'help',
+    text: t(
+      'settings.themes.workspace.hint',
+      'Set the theme new presentations start with, and which themes appear in the picker up front. Hidden themes stay reachable behind "Show all themes".'
+    ),
+  });
+
+  const defaultField = h('div', { class: 'stack is-field' });
+  const defaultLabel = h('label', {
+    class: 'field-label',
+    for: 'settings-default-theme',
+    text: t('settings.themes.workspace.defaultTheme', 'Default theme'),
+  });
+  const defaultSelect = h('select', {
+    class: 'form-input is-compact',
+    id: 'settings-default-theme',
+  });
+  defaultField.append(defaultLabel, defaultSelect);
+
+  const visibleField = h('div', { class: 'stack is-field' });
+  const visibleLabel = h('div', {
+    class: 'field-label',
+    text: t('settings.themes.workspace.visibleInPicker', 'Visible in picker'),
+  });
+  const visibleHint = h('p', {
+    class: 'help',
+    text: t(
+      'settings.themes.workspace.visibleHint',
+      'Check the themes shown up front. The default theme is always visible. With everything checked, new themes are visible automatically.'
+    ),
+  });
+  const visibleList = h('div', { class: 'themes-visible-list stack' });
+  visibleField.append(visibleLabel, visibleHint, visibleList);
+
+  const workspaceSaveBtn = h('button', {
+    class: 'btn btn-primary btn-sm',
+    type: 'button',
+    text: t('common.save', 'Save'),
+  });
+  const workspaceActions = h('div', { class: 'row is-end' }, [workspaceSaveBtn]);
+
+  workspaceCard.append(
+    workspaceTitle,
+    workspaceHint,
+    defaultField,
+    visibleField,
+    workspaceActions
+  );
+
+  // State for the workspace card
+  let allThemes = []; // { id, label, type } from GET /api/themes
+  let visibleCheckboxes = new Map(); // id -> input element
+
+  /** Render the default-theme <select> and the visibility checkbox list. */
+  function renderWorkspaceControls(defaultThemeId, enabledThemes) {
+    defaultSelect.innerHTML = '';
+    for (const th of allThemes) {
+      defaultSelect.append(h('option', { value: th.id, text: th.label || th.id }));
+    }
+    const hasDefault = allThemes.some((th) => th.id === defaultThemeId);
+    defaultSelect.value = hasDefault ? defaultThemeId : (allThemes[0]?.id || '');
+
+    // Empty allowlist means "all visible".
+    const allowSet = new Set((enabledThemes || []).map((id) => String(id).toLowerCase()));
+    const allVisible = allowSet.size === 0;
+
+    visibleList.innerHTML = '';
+    visibleCheckboxes = new Map();
+    for (const th of allThemes) {
+      const isDefault = th.id === defaultSelect.value;
+      const checkbox = h('input', {
+        type: 'checkbox',
+        checked: allVisible || allowSet.has(String(th.id).toLowerCase()) || isDefault,
+      });
+      // The default theme is always visible and can't be unchecked.
+      checkbox.disabled = isDefault;
+      const row = h('label', { class: 'row is-center gap-2 themes-visible-row' }, [
+        checkbox,
+        h('span', { text: th.label || th.id }),
+      ]);
+      visibleList.append(row);
+      visibleCheckboxes.set(th.id, checkbox);
+    }
+  }
+
+  // Keep the "always visible" default checkbox in sync when the default changes.
+  defaultSelect.addEventListener('change', () => {
+    const nextDefault = defaultSelect.value;
+    for (const [id, cb] of visibleCheckboxes) {
+      const isDefault = id === nextDefault;
+      cb.disabled = isDefault;
+      if (isDefault) cb.checked = true;
+    }
+  });
+
+  workspaceSaveBtn.addEventListener('click', async () => {
+    workspaceSaveBtn.disabled = true;
+    try {
+      const checkedIds = [];
+      for (const [id, cb] of visibleCheckboxes) {
+        if (cb.checked) checkedIds.push(id);
+      }
+      // If everything is checked, store an empty allowlist so future themes
+      // stay visible by default.
+      const enabledThemes = checkedIds.length === allThemes.length ? [] : checkedIds;
+
+      await updateAppSettings({
+        defaultThemeId: defaultSelect.value || '',
+        enabledThemes,
+      });
+      invalidateSettingsCache();
+      toast.success(t('settings.saved', 'Saved.'));
+    } catch (err) {
+      toast.error(String(err?.message || err));
+    } finally {
+      workspaceSaveBtn.disabled = false;
+    }
+  });
+
+  /** Load themes + app settings into the workspace controls. */
+  async function loadWorkspaceControls() {
+    try {
+      const [themesResp, app] = await Promise.all([
+        api('/api/themes'),
+        fetchAppSettings(),
+      ]);
+      allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
+      const defaultThemeId = String(
+        app?.defaultThemeId || themesResp?.defaultThemeId || ''
+      );
+      renderWorkspaceControls(defaultThemeId, app?.enabledThemes || []);
+    } catch (err) {
+      toast.error(String(err?.message || err));
+    }
+  }
 
   // Theme list container
   const themeListSection = h('div', { class: 'themes-list-section' });
@@ -73,7 +225,7 @@ export function createThemesTab({ user }) {
   const editorSection = h('div', { class: 'theme-editor-section is-hidden' });
 
   // Assemble container
-  container.append(title, description, themeListSection, editorSection);
+  container.append(title, description, workspaceCard, themeListSection, editorSection);
 
   // State
   let themes = [];
@@ -401,7 +553,7 @@ export function createThemesTab({ user }) {
   const load = async () => {
     if (loaded) return;
     loaded = true;
-    await loadThemes();
+    await Promise.all([loadThemes(), loadWorkspaceControls()]);
   };
 
   return {

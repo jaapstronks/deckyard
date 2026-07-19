@@ -97,6 +97,9 @@ export function createSlideLibraryState({
       }
     },
     isSelected: (id) => selectedItems.has(id),
+    deselect: (id) => {
+      selectedItems.delete(id);
+    },
     clearSelection: () => {
       selectedItems.clear();
     },
@@ -104,6 +107,14 @@ export function createSlideLibraryState({
       const scope = activeScope === 'team' ? 'team' : 'personal';
       const items = cache[scope] || [];
       return items.filter((it) => selectedItems.has(it.id));
+    },
+    // Selected items in the order they were checked (the Set preserves
+    // insertion order). Used by the compose flow so the composed deck follows
+    // the user's selection order rather than the library's sort order.
+    getSelectedItemsInOrder: () => {
+      const scope = activeScope === 'team' ? 'team' : 'personal';
+      const byId = new Map((cache[scope] || []).map((it) => [it.id, it]));
+      return [...selectedItems].map((id) => byId.get(id)).filter(Boolean);
     },
 
     // Cache operations

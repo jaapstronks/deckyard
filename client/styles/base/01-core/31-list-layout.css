@@ -81,12 +81,21 @@
   color: hsl(var(--app-accent-text));
 }
 
-/* Sections (Lovable) */
+/* Sections.
+   Flush by default: no box, no inset — every home section (Recent, Popular,
+   Activity, Start-new) shares the column's left edge for one clean line.
+   A visible box is re-added only on the tinted workspace/private variants
+   below, where the tint carries real grouping meaning. */
 .presentation-section {
-  margin-bottom: var(--ps-space-5);
+  margin-bottom: var(--ps-space-8);
+  overflow: hidden; /* Prevent horizontal overflow */
+}
+
+/* Tinted grouping variants keep their card treatment (padding + radius). */
+.presentation-section[data-section='workspace'],
+.presentation-section[data-section='private'] {
   padding: var(--ps-space-4);
   border-radius: var(--ps-radius-xl);
-  overflow: hidden; /* Prevent horizontal overflow */
 }
 
 .presentation-section[data-section='workspace'] {
@@ -112,7 +121,9 @@
 .presentation-section-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* Cluster title + count + "View all" on the left so the link reads as part
+     of the section, not marooned at the far right edge. */
+  justify-content: flex-start;
   gap: var(--ps-space-3);
   margin-bottom: var(--ps-space-3);
 }
@@ -193,6 +204,16 @@
   padding: var(--ps-space-3) 0 var(--ps-space-4);
 }
 
+/* Home preview rows: `auto-fill` keeps every card the same size regardless of
+   how many a section has (Popular may have 1-2, Recent 4). Cards reflow evenly
+   4/3/2/1 and an under-full row just leaves trailing space — far cleaner than
+   the old fixed-width `.is-row`, which clipped half-cards and left uneven
+   middle gaps, and better than `auto-fit`, which balloons 1-2 cards to full
+   width. */
+.sidebar-view[data-view='home'] .list.presentation-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
 /* Mobile: Single column, cards use full width */
 @media (max-width: 600px) {
   .list.presentation-grid {
@@ -249,8 +270,12 @@
   }
 
   .presentation-section {
+    margin-bottom: var(--ps-space-6);
+  }
+
+  .presentation-section[data-section='workspace'],
+  .presentation-section[data-section='private'] {
     padding: var(--ps-space-3);
-    margin-bottom: var(--ps-space-3);
   }
 }
 
@@ -310,6 +335,197 @@
   color: hsl(var(--app-text-primary));
   padding: var(--ps-space-4) 0 0;
   margin-bottom: var(--ps-space-5);
+}
+
+/* Home greeting header — the page's top anchor. Shares the column's left edge
+   with every section below it. */
+.home-header {
+  padding: var(--ps-space-5) 0 var(--ps-space-5);
+  margin-bottom: var(--ps-space-6);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.home-header-title {
+  margin: 0;
+  font-size: var(--ps-text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: hsl(var(--app-text-primary));
+}
+
+.home-header-subtitle {
+  margin: var(--ps-space-2) 0 0;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-tertiary));
+}
+
+/* Home two-column canvas: the returning user's top job — resume recent work —
+   plus create affordances in the main column; an always-visible "from others"
+   activity rail beside it, so awareness is never buried at the bottom of a
+   long scroll. Collapses to a single column on narrow viewports. */
+.home-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--ps-space-8);
+  align-items: start;
+}
+
+.home-main {
+  min-width: 0;
+}
+
+.home-rail {
+  min-width: 0;
+  position: sticky;
+  top: var(--ps-space-4);
+}
+
+/* The rail packs one section tightly — no oversized section margin, and a
+   subtle divider from the main column via its own left rule on wide screens. */
+.home-rail .presentation-section {
+  margin-bottom: var(--ps-space-4);
+}
+
+@media (max-width: 960px) {
+  .home-columns {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-4);
+  }
+
+  .home-rail {
+    position: static;
+    border-top: 1px solid hsl(var(--app-border-subtle));
+    padding-top: var(--ps-space-5);
+  }
+}
+
+/* Bundled-run count for an activity line ("Heleen · 3 comments on X"). */
+.home-activity-count {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-size: var(--ps-text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Building-blocks shelf — the create affordance in the main Home column.
+   Compact cards for reusable collections + team slides, plus a blank-start
+   card. Reflows evenly and never balloons a lone card to full width. */
+.home-blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) 0 var(--ps-space-4);
+}
+
+.home-block-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  min-height: 96px;
+  padding: var(--ps-space-3) var(--ps-space-4);
+  text-align: left;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-xl);
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  transition: border-color var(--ps-transition-fast), background var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
+}
+
+.home-block-card:hover {
+  border-color: hsl(var(--app-accent-primary) / 0.5);
+  background: hsl(var(--app-bg-hover));
+  transform: translateY(-1px);
+}
+
+.home-block-card:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 2px;
+}
+
+.home-block-kicker {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: hsl(var(--app-text-tertiary));
+}
+
+.home-block-name {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  color: hsl(var(--app-text-primary));
+  /* Keep long names to two lines so cards stay level. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.home-block-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  margin-top: auto;
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}
+
+.home-block-badge {
+  padding: 1px 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  font-weight: 600;
+}
+
+.home-block-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Blank-start card: a quieter, dashed create affordance with a big plus. */
+.home-block-card.is-blank {
+  align-items: flex-start;
+  border-style: dashed;
+  background: transparent;
+}
+
+.home-block-card.is-blank:hover {
+  background: hsl(var(--app-accent-soft));
+}
+
+.home-block-glyph {
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+  color: hsl(var(--app-accent-text));
+}
+
+/* "New to you": a subtle corner flag on a team block the user never used. */
+.home-block-new {
+  position: absolute;
+  top: var(--ps-space-2);
+  right: var(--ps-space-2);
+  padding: 1px 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  pointer-events: none;
 }
 
 .presentation-brand {

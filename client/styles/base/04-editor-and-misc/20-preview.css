@@ -110,6 +110,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Positioning context for the add-comment mode hint overlay and the
+     positioned-comment composer popup. */
+  position: relative;
 }
 
 .preview-panel-actions {
@@ -132,10 +135,54 @@
   display: none;
 }
 
+/* Add-comment button: labeled (icon + text), not a bare pin glyph, so the
+   entry point is discoverable. Flips to a Cancel affordance when active. */
+.pin-comment-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .pin-comment-btn .btn-pin-icon {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   display: block;
+}
+
+.pin-comment-btn.is-active {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(0 0% 100%);
+}
+
+.pin-comment-btn.is-active .btn-pin-icon {
+  filter: brightness(0) invert(1);
+}
+
+/* Mode hint: overlay banner pinned to the top of the slide stage while
+   placing a comment. Kept out of the toolbar flex row (where it wrapped and
+   unbalanced the bar); pointer-through so it never blocks the placement
+   click. Stage is the positioning context (position: relative below). */
+.pin-mode-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent-primary));
+  color: hsl(0 0% 100%);
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--app-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.18));
+  pointer-events: none;
+}
+
+.pin-mode-hint[hidden] {
+  display: none;
 }
 
 /* Divider between the slide actions and the pane tabs. */
@@ -148,51 +195,15 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Pane tabs (Inspector / Comments / Notes): far right of the slide toolbar,
-   directly above the rail they control. Same segmented-control recipe as the
-   topbar language toggle; pressed (is-active) = "rail open on MY pane".
+   Pane tabs (Inspector / Comments): far right of the slide toolbar, directly
+   above the rail they control. Built on the shared segmented control
+   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`); pressed
+   (is-active) = "rail open on MY pane".
    ───────────────────────────────────────────────────────────────────────────── */
-.pane-tabs {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
+/* Container and button styling come from `.sb-segmented.is-outlined` in
+   `03-controls-and-forms.css`; only the icon+label gap is local. */
 .pane-tab {
-  display: inline-flex;
-  align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.pane-tab:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.pane-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.pane-tab.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
 }
 
 .pane-tab-icon {
@@ -224,9 +235,14 @@
   background: hsl(var(--app-text-tertiary, 0 0% 55%));
 }
 
-/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). */
+/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). The
+   add-comment button collapses to its pin icon on the same breakpoint. */
 @media (max-width: 1150px) {
   .pane-tab-label {
+    display: none;
+  }
+
+  .pin-comment-label {
     display: none;
   }
 }
@@ -241,26 +257,13 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Desktop (≥1025px): Allow a larger canvas by making notes scrollable. The
-   canvas column is now the flexible one at every desktop width, so the stage
-   grows 16:9 with its column on all desktop screens (was >1300px only).
+   The slide preview must always be fully visible — no vertical scrollbar on the
+   stage. Presenter notes live in their own strip beneath the scroll container
+   (notes-strip.js), so the stage never needs to scroll: it fills the available
+   height and attachThumbScaleContain() fits the 16:9 slide within it (scaling by
+   whichever of width/height is the limiting dimension). The base rules
+   (.preview-panel-scroll { overflow: hidden } + .preview-stage { flex: 1;
+   min-height: 0 }) already do this, so no desktop override is needed.
    ───────────────────────────────────────────────────────────────────────────── */
-@media (min-width: 1025px) {
-  .is-editor .preview-panel-scroll {
-    /* Allow scrolling so the preview stage can grow larger */
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .is-editor .preview-stage {
-    /* Don't shrink the stage; let the container scroll instead */
-    flex: 0 0 auto;
-    /* Stage should maintain 16:9 aspect ratio so the slide can grow with width */
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    /* Cap the stage so very wide canvases don't force vertical scrolling */
-    max-height: min(78vh, 720px);
-  }
-}
 
 

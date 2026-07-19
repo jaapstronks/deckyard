@@ -3,7 +3,7 @@ import { openSlideLibraryModal as openSlideLibraryModalImpl } from './modals/sli
 import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-modal.js';
 import { createSlideTypePicker } from './slide-type-picker.js';
 import { deepClone, makeNewSlide } from './editor-utils.js';
-import { getBackgroundPresets } from '../../lib/theme.js';
+import { pickBackgroundPreset } from '../../../shared/theme-background-presets.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/id.js';
 import { createSlideLibraryPicker } from './slide-library-picker.js';
@@ -205,10 +205,8 @@ export function createSlidesPanel({
     if (!('bgImage' in slide.content)) return;
     const current = String(slide.content?.bgImage || '').trim();
     if (current) return;
-    const pool = getBackgroundPresets(theme);
-    if (pool.length) {
-      slide.content.bgImage = pool[Math.floor(Math.random() * pool.length)];
-    }
+    const preset = pickBackgroundPreset(theme);
+    if (preset) slide.content.bgImage = preset;
   };
 
   const insertSlideObject = (s, { afterSlideId, parentId = null } = {}) => {
@@ -363,6 +361,19 @@ export function createSlidesPanel({
     insertLibraryItem: (item, opts) => insertFromLibraryItem(item, opts),
   });
 
+  // Record that this library slide was used (clears the Home "new to you"
+  // badge for the current user). Best-effort: never block or fail the insert.
+  const recordLibraryUsage = (item) => {
+    const id = String(item?.id || '').trim();
+    if (!id) return;
+    try {
+      void api('/api/slide-library/usage', {
+        method: 'POST',
+        body: JSON.stringify({ items: [{ type: 'slide', id }] }),
+      }).catch(() => {});
+    } catch {}
+  };
+
   const insertFromLibraryItem = (item, { afterSlideId } = {}) => {
     const type = String(item?.slideType || '').trim();
     if (!type) return;
@@ -399,6 +410,7 @@ export function createSlidesPanel({
       s.content = { ...s.content, ...nextContent };
     }
     maybeAssignRandomBg(s);
+    recordLibraryUsage(item);
 
     // Check if adding an interactive slide without a follow-invite slide present
     if (isInteractiveSlideType(type) && !hasFollowInviteSlide(pres?.slides)) {

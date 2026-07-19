@@ -61,7 +61,10 @@ export default {
   ],
   defaults: {
     logos: ['/assets/images/logo-placeholder.svg'],
-    bgImage: '/assets/images/backgrounds/demo-aurora.jpg',
+    // Empty by default: the editor offers the theme's own background presets
+    // ("From this theme"). A hardcoded demo photo meant every partner-split
+    // slide opened wearing Deckyard's stock imagery, whatever the deck's theme.
+    bgImage: '',
     bgAlt: '',
     label: 'PARTNER',
     title: 'Slide title',
@@ -87,10 +90,11 @@ export default {
       })
       .join('');
 
+    // No image means no <img> and no scrim: the overlay gradient exists to keep
+    // white text readable over a photo, and on a bare panel it is just a black
+    // smear. The panel itself carries the theme's dark surface via CSS.
     const bg =
-      typeof content?.bgImage === 'string' && content.bgImage.trim()
-        ? content.bgImage.trim()
-        : '/assets/images/backgrounds/demo-aurora.jpg';
+      typeof content?.bgImage === 'string' ? content.bgImage.trim() : '';
     const bgAlt =
       typeof content?.bgAlt === 'string' ? content.bgAlt.trim() : '';
     const label = content?.label ? `<div class="badge" data-inline-field="label" dir="auto">${esc(content.label)}</div>` : '';
@@ -107,15 +111,17 @@ export default {
               </div>
               <div class="right">
                 ${
-                  bgAlt
-                    ? `<img class="bg" src="${esc(bg)}" alt="${esc(
-                        bgAlt
-                      )}" />`
-                    : `<img class="bg" src="${esc(
-                        bg
-                      )}" alt="" aria-hidden="true" />`
+                  !bg
+                    ? ''
+                    : bgAlt
+                      ? `<img class="bg" src="${esc(bg)}" alt="${esc(
+                          bgAlt
+                        )}" />`
+                      : `<img class="bg" src="${esc(
+                          bg
+                        )}" alt="" aria-hidden="true" />`
                 }
-                <div class="overlay" aria-hidden="true"></div>
+                ${bg ? '<div class="overlay" aria-hidden="true"></div>' : ''}
                 <div class="text">
                   ${label}
                   <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>

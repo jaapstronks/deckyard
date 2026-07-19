@@ -240,6 +240,7 @@ In `custom/themes/acme-corp.json`:
 | `string` | Single-line text | `maxLength`, `required`, `placeholder`, `helpText` |
 | `markdown` | Multi-line rich text (renders to HTML; **HTML is escaped**) | `maxLength`, `required` |
 | `code` | Monospace textarea storing the raw string verbatim (no markdown, no escaping on input) | `maxLength`, `required`, `capability` |
+| `csv` | Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is (validation, collab text-keys, i18n/translate filters). Used by the chart `data` field. | `maxLength`, `required` |
 | `number` | Numeric input | `min`, `max`, `step` |
 | `enum` | Dropdown selection | `options` (array of strings) |
 
