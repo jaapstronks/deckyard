@@ -49,6 +49,8 @@ export async function renderShareViewer(root, token) {
   let theme = null;
   let currentSlideIndex = 0;
   let detachThumb = () => {};
+  let detachSwipe = () => {};
+  let keydownHandler = null;
   let analyticsTracker = null;
   let videoLayer = null;
   let autoAdvanceInstance = null;
@@ -157,7 +159,31 @@ export async function renderShareViewer(root, token) {
     }
   }
 
+  /**
+   * Release everything renderViewer() binds. It re-runs after a guest joins
+   * the discussion (which wipes shell and rebuilds), so without this each
+   * pass stacked another document-level keydown handler on top of the last —
+   * two handlers sharing currentSlideIndex means one arrow press advances two
+   * slides and double-counts the view in analytics.
+   */
+  function detachViewerListeners() {
+    if (keydownHandler) {
+      document.removeEventListener('keydown', keydownHandler);
+      keydownHandler = null;
+    }
+    try {
+      detachSwipe();
+    } catch {}
+    detachSwipe = () => {};
+    try {
+      detachThumb();
+    } catch {}
+    detachThumb = () => {};
+  }
+
   function renderViewer() {
+    detachViewerListeners();
+
     const topbar = h('div', { class: 'share-viewer-topbar' });
 
     const titleEl = h('div', { class: 'share-viewer-title', text: presentation.title || 'Presentation' });
@@ -359,13 +385,12 @@ export async function renderShareViewer(root, token) {
 
     // Swipe navigation on the stage only — the comments list below it scrolls,
     // and a swipe there should never change the slide.
-    shell._detachSwipe = attachSwipeNavigation(stage, {
+    detachSwipe = attachSwipeNavigation(stage, {
       onPrev: () => navigateSlide(-1),
       onNext: () => navigateSlide(1),
     });
 
-    // Store cleanup for keyboard listener
-    shell._keydownHandler = handleKeydown;
+    keydownHandler = handleKeydown;
   }
 
   function updateSlide(slideWrap, slideCounter) {
@@ -398,15 +423,7 @@ export async function renderShareViewer(root, token) {
 
   function cleanup() {
     document.documentElement.classList.remove('is-share-viewer');
-    if (shell._keydownHandler) {
-      document.removeEventListener('keydown', shell._keydownHandler);
-    }
-    try {
-      shell._detachSwipe?.();
-    } catch {}
-    try {
-      detachThumb();
-    } catch {}
+    detachViewerListeners();
     cleanupSlideRuntimes(shell);
     videoLayer?.destroy();
     videoLayer = null;

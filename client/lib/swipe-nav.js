@@ -15,16 +15,41 @@
  * @returns {() => void} detach function
  */
 export function attachSwipeNavigation(el, { onPrev, onNext, enabled } = {}) {
+  if (!el) return () => {};
+
   const MIN_DX = 60; // horizontal travel before a swipe registers
   const MAX_DY = 80; // beyond this it's a scroll, not a swipe
+
+  /**
+   * True when the gesture started inside something that scrolls sideways —
+   * a wide table or a chart on the slide itself. Dragging those is scrolling,
+   * not navigating, and must not also flip the slide.
+   */
+  const startedInHorizontalScroller = (target) => {
+    let node = target && target.nodeType === 1 ? target : null;
+    while (node && node !== el) {
+      if (node.scrollWidth > node.clientWidth) {
+        const overflowX = getComputedStyle(node).overflowX;
+        if (overflowX === 'auto' || overflowX === 'scroll') return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  };
 
   let touchStartX = 0;
   let touchStartY = 0;
   let tracking = false;
 
   const onTouchStart = (e) => {
-    // Multi-touch is a pinch/zoom, not a navigation gesture.
+    // Multi-touch is a pinch/zoom, not a navigation gesture. This also has to
+    // cancel a gesture already in progress: the browser fires a one-touch
+    // start before the second finger lands.
     if (e.touches?.length !== 1) {
+      tracking = false;
+      return;
+    }
+    if (startedInHorizontalScroller(e.target)) {
       tracking = false;
       return;
     }

@@ -169,14 +169,12 @@ export async function createViewerController({
     });
   }
 
-  /** Move `delta` slides from the current one, clamped to the deck. */
-  const navigateSlide = (delta) => {
-    const slides = pres.slides || [];
-    const currentIndex = slides.findIndex((s) => s.id === selectedSlideId);
-    const next = currentIndex + delta;
-    if (currentIndex < 0 || next < 0 || next >= slides.length) return;
-    selectSlide(slides[next].id);
-  };
+  // One navigation implementation for this view: the preview owns it and the
+  // ← / → buttons already use it, so keyboard and swipe route through it too.
+  // It also keeps the recovery behaviour when the selected id isn't in the
+  // deck (a stale ?slideId= against a deck that changed under a long-lived
+  // tab) — stepping forward lands on the first slide instead of doing nothing.
+  const navigateSlide = (delta) => previewApi.navigateSlide(delta);
 
   // Keyboard navigation
   const handleKeydown = (e) => {
