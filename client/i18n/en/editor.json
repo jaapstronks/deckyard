@@ -341,8 +341,6 @@
   "editor.slideTypePicker.seeAll": "See all",
   "editor.slideTypePreset.imageText.left": "Image left",
   "editor.slideTypePreset.imageText.right": "Image right",
-  "editor.slideTypePreset.content.oneColumn": "One column",
-  "editor.slideTypePreset.content.twoColumn": "Two columns",
   "editor.slideTypePreset.lijstje.bullets": "Bullet list",
   "editor.slideTypePreset.lijstje.numbers": "Numbered list",
   "editor.slideTypePreset.imageText.wide": "Image 2/3",

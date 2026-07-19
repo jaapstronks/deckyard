@@ -318,8 +318,6 @@
   "editor.slideTypePicker.seeAll": "Alles bekijken",
   "editor.slideTypePreset.imageText.left": "Beeld links",
   "editor.slideTypePreset.imageText.right": "Beeld rechts",
-  "editor.slideTypePreset.content.oneColumn": "Eén kolom",
-  "editor.slideTypePreset.content.twoColumn": "Twee kolommen",
   "editor.slideTypePreset.lijstje.bullets": "Opsomming",
   "editor.slideTypePreset.lijstje.numbers": "Genummerd",
   "editor.slideTypePreset.imageText.wide": "Beeld 2/3",
