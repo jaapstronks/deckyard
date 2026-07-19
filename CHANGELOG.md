@@ -8,6 +8,17 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **The theme editor exposes surfaces, heading treatment and locks.** Everything
+  the theme `config` added could only be set with `curl`; the editor still only
+  offered four colours and two fonts. It now has controls for corner rounding
+  and elevation, heading capitalisation and weight, and which brand properties a
+  slide may not override — with the live preview showing each change as you make
+  it. Every choice has an explicit **Default** option that leaves the field
+  *unset* rather than writing the default value, so a theme keeps inheriting the
+  builder's own defaults for anything you did not choose. The list-shaped config
+  fields (background variants, background presets, slide-type curation) still
+  need their own editors.
+
 - **A theme can lock brand properties against per-slide overrides.** A theme's
   `config.locks` marks `background` or `logo` as `locked`, and the lock holds in
   both places at once: the editor omits the control (with a note saying why,
