@@ -30,8 +30,9 @@ self-contained project.
    Survive presenter refresh, companion auto-recovery, persistent join QR,
    unify follow codes, link Q&A moderation, poll-open affordance.
 2. **Share unification** — `docs/plans/ux-share-unification.md`
-   One Share dialog (live audience / link / workspace), guard the
-   presenter-control link, reconcile the permission model.
+   PR 1/2 shipped (PR #110): guarded the presenter-control link, inline share
+   link, reconciled the permission model. Remaining = **PR 2**: the unified
+   3-tab Share dialog (live audience / link / workspace).
 
 _(The first two projects of this track — i18n & copy cleanup, onboarding &
 discoverability — shipped in July 2026 except for one decision-blocked
@@ -81,6 +82,12 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
   — make `theme.backgroundPresets` the single source of default background
   imagery and remove the deprecated hardcoded fallback list.
+- **Theme building & forker extensibility** — `docs/plans/theme-forker-extensibility.md`
+  — a guided Theme Studio wizard over the `--t-*` token layer (logos, colour
+  roles + contrast, typography, surfaces, backgrounds, per-brand override
+  locks) plus a forker slide-type toolkit (scaffolder, validator, reusable
+  building blocks). Discovery + design draft; folds in the background-presets
+  work. Open call: theme storage model (unify DB + file-JSON).
 ## Later — cloud / multi-tenant track
 
 - **Custom domains** — `docs/plans/custom-domains.md`
