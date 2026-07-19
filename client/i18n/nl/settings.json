@@ -286,5 +286,12 @@
   "settings.themes.config.locks": "Vastgezet door het thema",
   "settings.themes.config.locksHint": "Een vastgezette eigenschap is niet per slide aan te passen, en een override die een bestaande slide al heeft wordt bij het renderen genegeerd. Ontgrendelen geeft elke slide z’n eigen waarde terug.",
   "settings.themes.config.lock.background": "Slide-achtergrond",
-  "settings.themes.config.lock.logo": "Hoeklogo"
+  "settings.themes.config.lock.logo": "Hoeklogo",
+  "settings.themes.config.backgrounds": "Achtergrondbeelden",
+  "settings.themes.config.backgroundsHint": "Je eigen beeld voor titelslides. Nieuwe titelslides kiezen er een uit, en de per-slide-picker toont ze eerst. Zonder beelden blijven titelslides plat, in plaats van beeld te lenen dat niet van jou is.",
+  "settings.themes.config.addBackground": "Beelden toevoegen…",
+  "settings.themes.config.removeBackground": "Verwijderen",
+  "settings.themes.config.noBackgrounds": "Nog geen achtergrondbeelden.",
+  "settings.themes.config.backgroundsFull": "Meer achtergrondbeelden passen er niet in een thema.",
+  "settings.themes.config.uploading": "Uploaden…"
 }

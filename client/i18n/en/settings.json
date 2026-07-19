@@ -338,5 +338,12 @@
   "settings.themes.config.locks": "Locked by the theme",
   "settings.themes.config.locksHint": "A locked property is not editable per slide, and an override an existing slide already carries is ignored when it renders. Unlocking gives every slide its own value back.",
   "settings.themes.config.lock.background": "Slide background",
-  "settings.themes.config.lock.logo": "Corner logo"
+  "settings.themes.config.lock.logo": "Corner logo",
+  "settings.themes.config.backgrounds": "Background images",
+  "settings.themes.config.backgroundsHint": "Your own imagery for title slides. New title slides pick one of these, and the per-slide picker offers them first. Without any, title slides stay flat rather than borrowing imagery that is not yours.",
+  "settings.themes.config.addBackground": "Add images…",
+  "settings.themes.config.removeBackground": "Remove",
+  "settings.themes.config.noBackgrounds": "No background images yet.",
+  "settings.themes.config.backgroundsFull": "That is as many background images as a theme can hold.",
+  "settings.themes.config.uploading": "Uploading…"
 }

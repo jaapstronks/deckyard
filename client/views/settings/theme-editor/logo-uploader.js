@@ -5,73 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
-
-/**
- * Read a file as data URL.
- * @param {File} file - File to read
- * @returns {Promise<string>} Data URL
- */
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * Upload a file to the server.
- * @param {File} file - File to upload
- * @returns {Promise<{url: string}>} Upload result
- */
-async function uploadFile(file) {
-  // Check if presigned uploads are supported
-  let mediaStatus;
-  try {
-    mediaStatus = await api('/api/media/status');
-  } catch {
-    mediaStatus = { presignedSupported: false };
-  }
-
-  if (mediaStatus.presignedSupported) {
-    // Use presigned upload (Scaleway/S3)
-    const presign = await api('/api/media/presign', {
-      method: 'POST',
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: file.type,
-        size: file.size,
-      }),
-    });
-
-    const uploadResp = await fetch(presign.uploadUrl, {
-      method: 'PUT',
-      headers: presign.headers || {},
-      body: file,
-    });
-
-    if (!uploadResp.ok) {
-      throw new Error(`Upload failed: ${uploadResp.status}`);
-    }
-
-    const confirm = await api('/api/media/confirm', {
-      method: 'POST',
-      body: JSON.stringify({ key: presign.key }),
-    });
-
-    return { url: confirm.publicUrl };
-  }
-
-  // Fallback: server-side upload
-  const dataUrl = await readFileAsDataUrl(file);
-  const saved = await api('/api/uploads', {
-    method: 'POST',
-    body: JSON.stringify({ dataUrl, originalName: file.name }),
-  });
-  return { url: saved.url };
-}
+import { uploadImage } from './upload-image.js';
 
 /**
  * Create a logo uploader component.
@@ -214,7 +148,7 @@ export function createLogoUploader({ value, onChange }) {
     renderState();
 
     try {
-      const result = await uploadFile(file);
+      const result = await uploadImage(file);
       currentUrl = result.url;
       onChange?.(result.url);
     } catch (err) {

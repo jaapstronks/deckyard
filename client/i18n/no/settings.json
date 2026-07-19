@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Låst av temaet",
   "settings.themes.config.locksHint": "En låst egenskap kan ikke redigeres per lysbilde, og en allerede lagret verdi ignoreres ved rendering. Å låse opp gir hvert lysbilde sin egen verdi tilbake.",
   "settings.themes.config.lock.background": "Lysbildebakgrunn",
-  "settings.themes.config.lock.logo": "Hjørnelogo"
+  "settings.themes.config.lock.logo": "Hjørnelogo",
+  "settings.themes.config.backgrounds": "Bakgrunnsbilder",
+  "settings.themes.config.backgroundsHint": "Dine egne bilder til tittellysbilder. Nye tittellysbilder velger ett av dem, og velgeren viser dem først. Uten bilder forblir tittellysbilder enkle i stedet for å låne bilder som ikke er dine.",
+  "settings.themes.config.addBackground": "Legg til bilder…",
+  "settings.themes.config.removeBackground": "Fjern",
+  "settings.themes.config.noBackgrounds": "Ingen bakgrunnsbilder ennå.",
+  "settings.themes.config.backgroundsFull": "Et tema kan ikke romme flere bakgrunnsbilder.",
+  "settings.themes.config.uploading": "Laster opp…"
 }

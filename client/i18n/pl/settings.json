@@ -292,5 +292,12 @@
   "settings.themes.config.locks": "Zablokowane przez motyw",
   "settings.themes.config.locksHint": "Zablokowanej właściwości nie można zmieniać dla slajdu, a zapisana wartość jest pomijana przy renderowaniu. Odblokowanie przywraca każdemu slajdowi własną wartość.",
   "settings.themes.config.lock.background": "Tło slajdu",
-  "settings.themes.config.lock.logo": "Logo w rogu"
+  "settings.themes.config.lock.logo": "Logo w rogu",
+  "settings.themes.config.backgrounds": "Obrazy tła",
+  "settings.themes.config.backgroundsHint": "Twoje własne obrazy dla slajdów tytułowych. Nowe slajdy wybierają jeden z nich, a selektor pokazuje je najpierw. Bez obrazów slajdy tytułowe pozostają płaskie, zamiast pożyczać cudze wizualizacje.",
+  "settings.themes.config.addBackground": "Dodaj obrazy…",
+  "settings.themes.config.removeBackground": "Usuń",
+  "settings.themes.config.noBackgrounds": "Brak obrazów tła.",
+  "settings.themes.config.backgroundsFull": "Motyw nie pomieści więcej obrazów tła.",
+  "settings.themes.config.uploading": "Przesyłanie…"
 }

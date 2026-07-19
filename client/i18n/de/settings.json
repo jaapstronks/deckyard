@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Vom Theme festgelegt",
   "settings.themes.config.locksHint": "Eine gesperrte Eigenschaft ist pro Folie nicht editierbar, und eine bereits gespeicherte Überschreibung wird beim Rendern ignoriert. Entsperren gibt jeder Folie ihren eigenen Wert zurück.",
   "settings.themes.config.lock.background": "Folienhintergrund",
-  "settings.themes.config.lock.logo": "Ecklogo"
+  "settings.themes.config.lock.logo": "Ecklogo",
+  "settings.themes.config.backgrounds": "Hintergrundbilder",
+  "settings.themes.config.backgroundsHint": "Ihre eigenen Bilder für Titelfolien. Neue Titelfolien wählen eines davon, und die Folien-Auswahl zeigt sie zuerst. Ohne Bilder bleiben Titelfolien schlicht, statt fremdes Bildmaterial zu übernehmen.",
+  "settings.themes.config.addBackground": "Bilder hinzufügen…",
+  "settings.themes.config.removeBackground": "Entfernen",
+  "settings.themes.config.noBackgrounds": "Noch keine Hintergrundbilder.",
+  "settings.themes.config.backgroundsFull": "Mehr Hintergrundbilder kann ein Theme nicht aufnehmen.",
+  "settings.themes.config.uploading": "Wird hochgeladen…"
 }

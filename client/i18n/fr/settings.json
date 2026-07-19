@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Verrouillé par le thème",
   "settings.themes.config.locksHint": "Une propriété verrouillée n’est pas modifiable par diapositive, et une valeur déjà enregistrée est ignorée au rendu. Déverrouiller rend à chaque diapositive sa propre valeur.",
   "settings.themes.config.lock.background": "Arrière-plan de diapositive",
-  "settings.themes.config.lock.logo": "Logo d’angle"
+  "settings.themes.config.lock.logo": "Logo d’angle",
+  "settings.themes.config.backgrounds": "Images d’arrière-plan",
+  "settings.themes.config.backgroundsHint": "Vos propres images pour les diapositives de titre. Les nouvelles diapositives de titre en choisissent une, et le sélecteur les propose en premier. Sans images, les diapositives de titre restent sobres plutôt que d’emprunter des visuels qui ne sont pas les vôtres.",
+  "settings.themes.config.addBackground": "Ajouter des images…",
+  "settings.themes.config.removeBackground": "Supprimer",
+  "settings.themes.config.noBackgrounds": "Aucune image d’arrière-plan pour l’instant.",
+  "settings.themes.config.backgroundsFull": "Un thème ne peut pas contenir plus d’images d’arrière-plan.",
+  "settings.themes.config.uploading": "Envoi…"
 }

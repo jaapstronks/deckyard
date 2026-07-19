@@ -23,6 +23,7 @@ import {
   SHADOW_SCALES,
 } from '../../../../shared/theme-config-schema.js';
 import { LOCKABLE_PROPERTIES } from '../../../../shared/theme-locks.js';
+import { createBackgroundsSection } from './backgrounds-section.js';
 
 /** Sentinel for "leave this to the theme builder's own default". */
 const UNSET = '__unset__';
@@ -237,6 +238,7 @@ export function createConfigSections({ config, onChange }) {
   return [
     createSurfacesSection({ config, onChange }).el,
     createTypographySection({ config, onChange }).el,
+    createBackgroundsSection({ config, onChange }).el,
     createLocksSection({ config, onChange }).el,
   ];
 }
