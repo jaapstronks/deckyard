@@ -85,7 +85,7 @@ const CATEGORIES = [
  */
 export function createSlideTypesTab({ user } = {}) {
   const el = h('div', {
-    class: 'settings-tab',
+    class: 'settings-tab-view',
     id: 'settings-tab-slide-types',
     role: 'tabpanel',
   });
