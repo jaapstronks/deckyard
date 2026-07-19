@@ -397,3 +397,12 @@
   letter-spacing: 0.3px;
   z-index: 5;
 }
+
+/* --- Touch ---
+   Hover-revealed, so unreachable on a touch screen. Show it at rest instead;
+   it sits on the thumbnail corner and stays out of the way. */
+@media (hover: none) {
+  .slide-visibility-toggle {
+    opacity: 0.75;
+  }
+}

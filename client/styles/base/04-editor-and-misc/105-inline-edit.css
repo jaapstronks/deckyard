@@ -479,3 +479,22 @@
     animation: none;
   }
 }
+
+/* --- Touch -----------------------------------------------------------------
+   The whole WYSIWYG affordance layer — which fields are editable, where to
+   add an item, how to remove or reorder one — is revealed by hovering the
+   slide. On a touch screen that reveal never happens, so inline editing has
+   no discoverable surface at all: the canvas just looks like a picture.
+   Selecting the slide is the closest touch equivalent of hovering it, so the
+   same affordances appear once it's the active thumb. */
+@media (hover: none) {
+  .thumb.is-inline-edit .ie-overlay .ie-ol-outline {
+    opacity: 1;
+  }
+  .thumb.is-inline-edit .ie-overlay .ie-ghost,
+  .thumb.is-inline-edit .ie-overlay .ie-clear,
+  .thumb.is-inline-edit .ie-overlay .ie-card-remove,
+  .thumb.is-inline-edit .ie-overlay .ie-card-grip {
+    opacity: 1;
+  }
+}
