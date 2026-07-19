@@ -63,8 +63,10 @@ normalizers use it:
 
 - The AI schemas still only suggest `lime`/`mist`; variants are an authoring
   feature.
-- Database-built custom themes (theme builder wizard) don't expose variants
-  yet — this is a file-theme (fork) feature for now.
+- Database-built custom themes express variants through their `config` column
+  (`config.slideBackgrounds`, same entry shape and same `normalizeSlideBackgrounds`
+  guard as a file theme). There is no UI for it yet — the Theme Studio will add
+  one — but the API accepts it on `POST`/`PUT /api/themes/custom[/:id]`.
 - `theme.gradient.enabled` (quote/chapter gradient) is an older, separate
   mechanism; folding it into a variant entry is a possible future cleanup.
 - Text on opaque light card surfaces (icon-card bodies, card-stack bodies)

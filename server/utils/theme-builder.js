@@ -9,6 +9,11 @@ import {
   getFontFamilyCSS,
   fontFamilyToSlug,
 } from '../../shared/theme-fonts.js';
+import {
+  validateThemeConfig,
+  RADIUS_SCALES,
+  SHADOW_SCALES,
+} from '../../shared/theme-config-schema.js';
 
 // ============================================================
 // COLOR UTILITIES
@@ -305,7 +310,7 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
   const mainLogo = dbTheme.logoUrl || '/assets/images/deckyard-mark.svg';
   const titleLogo = dbTheme.logoSmallUrl || mainLogo;
 
-  return {
+  const theme = {
     id: dbTheme.slug || dbTheme.id,
     label: dbTheme.label,
     defaultTitleSlide: 'title-slide',
@@ -338,6 +343,64 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     _isCustomTheme: true,
     _customThemeId: dbTheme.id,
   };
+
+  // Everything above is derived from the four colours and two fonts. The stored
+  // `config` layers the richer, explicitly-authored shape on top — this is what
+  // brings DB themes to parity with file themes.
+  return applyThemeConfig(theme, dbTheme.config);
+}
+
+/**
+ * Merge a stored theme config over a derived theme.
+ *
+ * Order matters: derived tokens first, then the named surface/typography
+ * controls, then the structural fields, then `cssVarOverrides` last so a raw
+ * token override always wins.
+ *
+ * @param {Object} theme - the derived theme (mutated and returned)
+ * @param {*} rawConfig - the `themes.config` value; validated here
+ * @returns {Object} the theme
+ */
+function applyThemeConfig(theme, rawConfig) {
+  const config = validateThemeConfig(rawConfig);
+  // An empty config must leave the derived theme byte-identical — that is the
+  // back-compat guarantee for every row that predates this column.
+  if (!Object.keys(config).length) return theme;
+
+  const { cssVars } = theme;
+
+  if (config.surfaces?.radius) {
+    Object.assign(cssVars, RADIUS_SCALES[config.surfaces.radius]);
+  }
+  if (config.surfaces?.shadow) {
+    cssVars['--t-shadow-opacity'] = SHADOW_SCALES[config.surfaces.shadow];
+  }
+
+  if (config.typography?.headingTransform)
+    cssVars['--t-heading-transform'] = config.typography.headingTransform;
+  if (config.typography?.headingWeight)
+    cssVars['--t-heading-weight'] = config.typography.headingWeight;
+  if (config.typography?.letterSpacing)
+    cssVars['--t-heading-letter-spacing'] = config.typography.letterSpacing;
+  if (config.typography?.mono) cssVars['--t-font-mono'] = config.typography.mono;
+
+  // Named background variants: the documented DB/file gap. normalizeTheme turns
+  // these into `--t-slide-bg-<id>*` vars and the generated `.slide-bg-<id>` CSS,
+  // exactly as it does for a file theme.
+  if (config.slideBackgrounds) theme.slideBackgrounds = config.slideBackgrounds;
+  if (config.backgroundPresets) theme.backgroundPresets = config.backgroundPresets;
+  if (config.gradient) theme.gradient = config.gradient;
+  if (config.slideTypes) theme.slideTypes = config.slideTypes;
+  if (config.defaultTitleSlide) theme.defaultTitleSlide = config.defaultTitleSlide;
+  if (config.locks) theme.locks = config.locks;
+
+  // Dark/light logo variants sit alongside the existing large/small pair; the
+  // renderer picks by background, which is a later slice's job.
+  if (config.logos) theme.assets = { ...theme.assets, ...config.logos };
+
+  if (config.cssVarOverrides) Object.assign(cssVars, config.cssVarOverrides);
+
+  return theme;
 }
 
 /**
