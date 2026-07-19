@@ -167,8 +167,11 @@ export async function renderShareViewer(root, token) {
 
     const controls = h('div', { class: 'share-viewer-controls' });
 
-    // Add guest join button if permission allows commenting
-    const canComment = ['comment', 'edit'].includes(shareLink.permission);
+    // Add guest join button if permission allows commenting.
+    // Share links are only ever issued as 'view' or 'comment' (see the create
+    // form in share-modal); there is no guest-editing flow, so 'edit' is not
+    // handled here.
+    const canComment = shareLink.permission === 'comment';
 
     // Comments toggle button (shown when guest is authenticated and can comment)
     let commentsToggleBtn = null;
