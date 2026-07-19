@@ -8,6 +8,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **"Someone worked on your deck" notifications, bundled.** When a collaborator
+  adds slides to a deck you own or collaborate on, you now get one bundled bell
+  notification instead of silence (previously deck edits only surfaced in the
+  Activity feed). It coalesces per editor within a 60-minute window
+  (`DECK_ACTIVITY_NOTIFY_WINDOW_MIN`): 40 edits in an hour is one unread
+  "added N slides to <Deck>", not 40. Your own edits never notify you, and
+  muting a deck (or `mentions_only`) opts out. See
+  `docs/reference/comments-and-notifications.md`.
+
 - **Video slides export to PDF as a "watch online" placeholder.** A video
   can't play in a PDF, so the server-rendered PDF export now renders a video
   slide as a laptop-framed still (with a play badge) plus deck-language copy

@@ -468,11 +468,19 @@ export function createNotificationBell({ api, onNavigate }) {
           const belongs = filter === 'all'
             || filter === 'unread'
             || (filter === 'mentions' && notif.notificationType === 'comment_mention');
-          if (belongs) {
-            notifications.unshift(notif);
+          // Coalesced bundles (e.g. deck_activity) re-send the SAME id with a
+          // bumped count. Replace the existing row and move it to the top
+          // instead of adding a duplicate, and don't re-increment the badge —
+          // an authoritative notification:counts follows for those.
+          const existingIdx = notifications.findIndex((n) => n.id === notif.id);
+          if (existingIdx !== -1) {
+            notifications.splice(existingIdx, 1);
+            if (belongs) notifications.unshift(notif);
+          } else {
+            if (belongs) notifications.unshift(notif);
+            unreadCount++;
+            updateBadge();
           }
-          unreadCount++;
-          updateBadge();
           if (isOpen) {
             renderNotifications();
           }
