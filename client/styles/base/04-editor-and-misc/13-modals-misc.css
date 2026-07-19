@@ -354,6 +354,7 @@
 }
 
 .creation-rail-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -374,9 +375,28 @@
   background: hsl(var(--app-bg-sunken));
 }
 
+/* Active method reads unmistakably: accent tint, bolder title, and a left
+   indicator bar (the standard sidebar-nav "you are here" cue). Uses
+   --app-accent-primary/-text — plain --app-accent is not a defined token, so
+   the previous rule silently rendered nothing. */
 .creation-rail-item.is-active {
-  background: hsl(var(--app-accent) / 0.1);
-  color: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary) / 0.1);
+  color: hsl(var(--app-accent-text));
+}
+
+.creation-rail-item.is-active .creation-rail-item-title {
+  font-weight: 700;
+}
+
+.creation-rail-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--ps-space-2);
+  bottom: var(--ps-space-2);
+  width: 3px;
+  border-radius: 999px;
+  background: hsl(var(--app-accent-primary));
 }
 
 .creation-rail-item:disabled {
@@ -464,12 +484,57 @@
   display: none;
 }
 
-/* Theme picker takes the full width; the language selector sits below it. */
-.creation-setup > .theme-picker-wrap {
+/* The theme disclosure takes the full width; the language selector — placed
+   first in the DOM — sits compactly on the row above it. */
+.creation-setup > .creation-theme-disclosure {
   flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
 }
 
-.creation-setup > .theme-picker-wrap.is-hidden {
+.creation-setup > .creation-theme-disclosure.is-hidden {
+  display: none;
+}
+
+/* Summary doubles as the "Theme" field label, with a rotating caret. It hides
+   the picker's own label so there is exactly one. */
+.creation-theme-summary {
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  list-style: none;
+}
+
+.creation-theme-summary::-webkit-details-marker {
+  display: none;
+}
+
+.creation-theme-summary::before {
+  content: '\25B8'; /* ▸ */
+  font-size: 0.85em;
+  transition: transform 0.15s;
+}
+
+.creation-theme-disclosure[open] > .creation-theme-summary::before {
+  transform: rotate(90deg);
+}
+
+.creation-theme-disclosure .theme-picker-wrap > .field-label {
+  display: none;
+}
+
+.creation-theme-hint {
+  margin: 0;
+}
+
+.creation-theme-hint.is-hidden {
   display: none;
 }
 
@@ -506,6 +571,12 @@
 
   .creation-rail-item {
     flex: 0 0 auto;
+  }
+
+  /* The left indicator bar reads wrong on a horizontal strip; the tint +
+     bold title still mark the active tab. */
+  .creation-rail-item.is-active::before {
+    display: none;
   }
 
   .creation-rail-item-desc {

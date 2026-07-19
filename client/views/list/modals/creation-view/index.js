@@ -613,17 +613,52 @@ export function openCreationView({
   const importSubWrap = h('div', { class: 'creation-subpanels' }, [panelJson, panelImportMd, panelPasteMd]);
   importPanel.append(importSubtabs, importSubWrap);
 
-  // --- Shared setup (theme + language) ---
+  // --- Shared setup (language + theme) ---
+  // Language sits first so it stays visible without scrolling past the tall
+  // theme grid — and it only renders at all when the deck supports >1 language.
   const setupWrap = h('div', { class: 'creation-setup' });
-  const themeSelect = createVisualThemePicker({
-    h, api, initialTheme: themeId,
-    onChange: (id) => { themeId = id; },
-  });
   const langSelect = createLangSelector({
     h, readLangMode, writeLangMode, getSupportedLangs,
     className: '',
   });
-  setupWrap.append(themeSelect.wrap, langSelect.wrap);
+  const themeSelect = createVisualThemePicker({
+    h, api, initialTheme: themeId,
+    onChange: (id) => { themeId = id; },
+  });
+  // Theme lives in a disclosure so it can read as optional where re-theming is
+  // rare: composing from the library, you almost always keep the slides' look,
+  // so it starts collapsed there. Every other method keeps it open, so the
+  // change is invisible for blank / AI / import.
+  const themeSummary = h('summary', {
+    class: 'creation-theme-summary',
+    text: t('common.theme', 'Theme'),
+  });
+  const themeDisclosure = h('details', { class: 'creation-theme-disclosure' }, [
+    themeSummary,
+    themeSelect.wrap,
+  ]);
+  themeDisclosure.open = true;
+  // The hint lives outside the disclosure so it stays visible while collapsed —
+  // that is exactly when "what theme do I get if I skip this?" needs answering.
+  const themeHint = h('div', {
+    class: 'help creation-theme-hint is-hidden',
+    text: t('list.creationView.themeOptionalHint', 'Keeps the workspace theme unless you pick another.'),
+  });
+  setupWrap.append(langSelect.wrap, themeDisclosure, themeHint);
+
+  // The hint only makes sense in the optional (library) mode while collapsed.
+  const syncThemeHint = () => {
+    themeHint.classList.toggle('is-hidden', !(method === 'library' && !themeDisclosure.open));
+  };
+  themeDisclosure.addEventListener('toggle', syncThemeHint);
+
+  // Default open state follows the method, but only when the method changes —
+  // syncUI() runs on every library-selection tick, so it must not slam a
+  // manually-opened disclosure shut mid-interaction.
+  const syncThemeDefaultOpen = () => {
+    themeDisclosure.open = method !== 'library';
+    syncThemeHint();
+  };
 
   pane.append(blankPanel, libraryPanel, contentPanel, importPanel, setupWrap);
 
@@ -712,9 +747,17 @@ export function openCreationView({
     panelPasteMd.classList.toggle('is-hidden', importSubtab !== 'paste-md');
 
     // Setup (theme + language) applies to every method; theme is hidden only
-    // for JSON import (which carries its own theme).
+    // for JSON import (which carries its own theme). Composing from the library
+    // reads it as optional (collapsed, with a "keeps the workspace theme" hint);
+    // every other method keeps it prominent.
     setupWrap.classList.remove('is-hidden');
-    themeSelect.wrap.classList.toggle('is-hidden', !themeApplies());
+    const showTheme = themeApplies();
+    const themeOptional = method === 'library';
+    themeDisclosure.classList.toggle('is-hidden', !showTheme);
+    themeSummary.textContent = themeOptional
+      ? t('list.creationView.themeOptional', 'Theme (optional)')
+      : t('common.theme', 'Theme');
+    syncThemeHint();
 
     // Action button
     const mode = getEffectiveMode();
@@ -734,6 +777,7 @@ export function openCreationView({
   function selectMethod(key) {
     if (busy) return;
     method = key;
+    syncThemeDefaultOpen();
     syncUI();
     if (key === 'blank') emptyTitleInput.focus();
     if (key === 'library') ensureLibraryPicker();
@@ -938,6 +982,7 @@ export function openCreationView({
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).
     libraryMode = 'collections';
+    syncThemeDefaultOpen();
     syncUI();
     if (preselect.collection) {
       // Render the chooser first so seedFromCollection can flag the active card.
