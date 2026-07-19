@@ -164,7 +164,7 @@
 }
 
 .auth-link:hover {
-  color: hsl(var(--app-accent-hover));
+  color: hsl(var(--app-accent-text));
   background: hsl(var(--app-accent-soft));
 }
 
