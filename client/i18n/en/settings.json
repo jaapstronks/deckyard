@@ -346,5 +346,19 @@
   "settings.themes.config.noBackgrounds": "No background images yet.",
   "settings.themes.config.backgroundsFull": "That is as many background images as a theme can hold.",
   "settings.themes.config.uploading": "Uploading…",
-  "settings.themes.config.backgroundsSomeSkipped": "Only {count} more images fit; the rest were skipped."
+  "settings.themes.config.backgroundsSomeSkipped": "Only {count} more images fit; the rest were skipped.",
+  "settings.themes.config.variants": "Background options",
+  "settings.themes.config.variantsHint": "Extra background choices on top of the built-in ones. Each appears in the Background picker on every slide, and its text colour follows automatically so a dark option stays readable.",
+  "settings.themes.config.variantName": "Name",
+  "settings.themes.config.variantNamePlaceholder": "e.g. Calm",
+  "settings.themes.config.addVariant": "Add",
+  "settings.themes.config.removeVariant": "Remove",
+  "settings.themes.config.variantColor": "Background",
+  "settings.themes.config.variantTextColor": "Text on it",
+  "settings.themes.config.noVariants": "No extra backgrounds yet.",
+  "settings.themes.config.variantNeedsName": "Give the variant a name.",
+  "settings.themes.config.variantBadName": "A name needs at least one letter or digit.",
+  "settings.themes.config.variantReserved": "That name is taken by a built-in background.",
+  "settings.themes.config.variantDuplicate": "You already have a variant with that name.",
+  "settings.themes.config.variantsFull": "That is as many background options as a theme can hold."
 }

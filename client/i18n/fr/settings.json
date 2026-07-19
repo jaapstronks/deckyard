@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Aucune image d’arrière-plan pour l’instant.",
   "settings.themes.config.backgroundsFull": "Un thème ne peut pas contenir plus d’images d’arrière-plan.",
   "settings.themes.config.uploading": "Envoi…",
-  "settings.themes.config.backgroundsSomeSkipped": "Seules {count} images supplémentaires tiennent ; le reste a été ignoré."
+  "settings.themes.config.backgroundsSomeSkipped": "Seules {count} images supplémentaires tiennent ; le reste a été ignoré.",
+  "settings.themes.config.variants": "Options d’arrière-plan",
+  "settings.themes.config.variantsHint": "Des choix d’arrière-plan en plus de ceux intégrés. Chacun apparaît dans le sélecteur d’arrière-plan de chaque diapositive, et sa couleur de texte suit automatiquement pour qu’une option sombre reste lisible.",
+  "settings.themes.config.variantName": "Nom",
+  "settings.themes.config.variantNamePlaceholder": "p. ex. Calme",
+  "settings.themes.config.addVariant": "Ajouter",
+  "settings.themes.config.removeVariant": "Supprimer",
+  "settings.themes.config.variantColor": "Arrière-plan",
+  "settings.themes.config.variantTextColor": "Texte dessus",
+  "settings.themes.config.noVariants": "Aucun arrière-plan supplémentaire pour l’instant.",
+  "settings.themes.config.variantNeedsName": "Donnez un nom à la variante.",
+  "settings.themes.config.variantBadName": "Un nom doit contenir au moins une lettre ou un chiffre.",
+  "settings.themes.config.variantReserved": "Ce nom est déjà celui d’un arrière-plan intégré.",
+  "settings.themes.config.variantDuplicate": "Vous avez déjà une variante portant ce nom.",
+  "settings.themes.config.variantsFull": "Un thème ne peut pas contenir plus d’options d’arrière-plan."
 }

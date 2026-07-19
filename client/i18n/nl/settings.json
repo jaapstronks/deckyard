@@ -294,5 +294,19 @@
   "settings.themes.config.noBackgrounds": "Nog geen achtergrondbeelden.",
   "settings.themes.config.backgroundsFull": "Meer achtergrondbeelden passen er niet in een thema.",
   "settings.themes.config.uploading": "Uploaden…",
-  "settings.themes.config.backgroundsSomeSkipped": "Er passen er nog maar {count}; de rest is overgeslagen."
+  "settings.themes.config.backgroundsSomeSkipped": "Er passen er nog maar {count}; de rest is overgeslagen.",
+  "settings.themes.config.variants": "Achtergrondopties",
+  "settings.themes.config.variantsHint": "Extra achtergrondkeuzes bovenop de ingebouwde. Elke optie verschijnt in de Achtergrond-picker op elke slide, en de tekstkleur volgt automatisch zodat een donkere optie leesbaar blijft.",
+  "settings.themes.config.variantName": "Naam",
+  "settings.themes.config.variantNamePlaceholder": "bijv. Rustig",
+  "settings.themes.config.addVariant": "Toevoegen",
+  "settings.themes.config.removeVariant": "Verwijderen",
+  "settings.themes.config.variantColor": "Achtergrond",
+  "settings.themes.config.variantTextColor": "Tekst erop",
+  "settings.themes.config.noVariants": "Nog geen extra achtergronden.",
+  "settings.themes.config.variantNeedsName": "Geef de variant een naam.",
+  "settings.themes.config.variantBadName": "Een naam heeft minstens één letter of cijfer nodig.",
+  "settings.themes.config.variantReserved": "Die naam is bezet door een ingebouwde achtergrond.",
+  "settings.themes.config.variantDuplicate": "Je hebt al een variant met die naam.",
+  "settings.themes.config.variantsFull": "Meer achtergrondopties passen er niet in een thema."
 }

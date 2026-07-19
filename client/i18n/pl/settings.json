@@ -300,5 +300,19 @@
   "settings.themes.config.noBackgrounds": "Brak obrazów tła.",
   "settings.themes.config.backgroundsFull": "Motyw nie pomieści więcej obrazów tła.",
   "settings.themes.config.uploading": "Przesyłanie…",
-  "settings.themes.config.backgroundsSomeSkipped": "Zmieści się jeszcze tylko {count} obrazów; resztę pominięto."
+  "settings.themes.config.backgroundsSomeSkipped": "Zmieści się jeszcze tylko {count} obrazów; resztę pominięto.",
+  "settings.themes.config.variants": "Opcje tła",
+  "settings.themes.config.variantsHint": "Dodatkowe opcje tła poza wbudowanymi. Każda pojawia się w selektorze tła na każdym slajdzie, a kolor tekstu dostosowuje się automatycznie, aby ciemna opcja pozostała czytelna.",
+  "settings.themes.config.variantName": "Nazwa",
+  "settings.themes.config.variantNamePlaceholder": "np. Spokój",
+  "settings.themes.config.addVariant": "Dodaj",
+  "settings.themes.config.removeVariant": "Usuń",
+  "settings.themes.config.variantColor": "Tło",
+  "settings.themes.config.variantTextColor": "Tekst na nim",
+  "settings.themes.config.noVariants": "Brak dodatkowych teł.",
+  "settings.themes.config.variantNeedsName": "Nadaj wariantowi nazwę.",
+  "settings.themes.config.variantBadName": "Nazwa musi zawierać co najmniej jedną literę lub cyfrę.",
+  "settings.themes.config.variantReserved": "Ta nazwa należy do wbudowanego tła.",
+  "settings.themes.config.variantDuplicate": "Masz już wariant o tej nazwie.",
+  "settings.themes.config.variantsFull": "Motyw nie pomieści więcej opcji tła."
 }

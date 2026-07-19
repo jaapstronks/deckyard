@@ -300,5 +300,19 @@
   "settings.themes.config.noBackgrounds": "Ancora nessuna immagine di sfondo.",
   "settings.themes.config.backgroundsFull": "Un tema non può contenere altre immagini di sfondo.",
   "settings.themes.config.uploading": "Caricamento…",
-  "settings.themes.config.backgroundsSomeSkipped": "Ci stanno solo altre {count} immagini; le altre sono state ignorate."
+  "settings.themes.config.backgroundsSomeSkipped": "Ci stanno solo altre {count} immagini; le altre sono state ignorate.",
+  "settings.themes.config.variants": "Opzioni di sfondo",
+  "settings.themes.config.variantsHint": "Scelte di sfondo oltre a quelle integrate. Ognuna compare nel selettore Sfondo di ogni slide, e il colore del testo si adatta automaticamente perché un’opzione scura resti leggibile.",
+  "settings.themes.config.variantName": "Nome",
+  "settings.themes.config.variantNamePlaceholder": "es. Calmo",
+  "settings.themes.config.addVariant": "Aggiungi",
+  "settings.themes.config.removeVariant": "Rimuovi",
+  "settings.themes.config.variantColor": "Sfondo",
+  "settings.themes.config.variantTextColor": "Testo sopra",
+  "settings.themes.config.noVariants": "Ancora nessuno sfondo aggiuntivo.",
+  "settings.themes.config.variantNeedsName": "Dai un nome alla variante.",
+  "settings.themes.config.variantBadName": "Un nome deve contenere almeno una lettera o una cifra.",
+  "settings.themes.config.variantReserved": "Quel nome appartiene a uno sfondo integrato.",
+  "settings.themes.config.variantDuplicate": "Hai già una variante con quel nome.",
+  "settings.themes.config.variantsFull": "Un tema non può contenere altre opzioni di sfondo."
 }

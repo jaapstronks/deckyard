@@ -170,5 +170,19 @@
   "settings.themes.config.noBackgrounds": "Inga bakgrundsbilder ännu.",
   "settings.themes.config.backgroundsFull": "Ett tema rymmer inte fler bakgrundsbilder.",
   "settings.themes.config.uploading": "Laddar upp…",
-  "settings.themes.config.backgroundsSomeSkipped": "Bara {count} bilder till får plats; resten hoppades över."
+  "settings.themes.config.backgroundsSomeSkipped": "Bara {count} bilder till får plats; resten hoppades över.",
+  "settings.themes.config.variants": "Bakgrundsalternativ",
+  "settings.themes.config.variantsHint": "Extra bakgrundsval utöver de inbyggda. Varje visas i bakgrundsväljaren på varje bild, och textfärgen följer automatiskt så att ett mörkt val förblir läsbart.",
+  "settings.themes.config.variantName": "Namn",
+  "settings.themes.config.variantNamePlaceholder": "t.ex. Lugn",
+  "settings.themes.config.addVariant": "Lägg till",
+  "settings.themes.config.removeVariant": "Ta bort",
+  "settings.themes.config.variantColor": "Bakgrund",
+  "settings.themes.config.variantTextColor": "Text på den",
+  "settings.themes.config.noVariants": "Inga extra bakgrunder ännu.",
+  "settings.themes.config.variantNeedsName": "Ge varianten ett namn.",
+  "settings.themes.config.variantBadName": "Ett namn behöver minst en bokstav eller siffra.",
+  "settings.themes.config.variantReserved": "Det namnet tillhör en inbyggd bakgrund.",
+  "settings.themes.config.variantDuplicate": "Du har redan en variant med det namnet.",
+  "settings.themes.config.variantsFull": "Ett tema rymmer inte fler bakgrundsval."
 }
