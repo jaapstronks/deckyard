@@ -1,7 +1,17 @@
 import { storage } from '../../lib/storage.js';
 
 const MIN_WIDTH = 320;
-const MAX_WIDTH = 640;
+const BASE_MAX_WIDTH = 640;
+
+/**
+ * The inspector's ceiling. A flat 640px was a sensible cap for a laptop but
+ * an arbitrary one on a 34" monitor, where the extra width all fell to the
+ * canvas whether the canvas wanted it or not. Scaling with the viewport
+ * keeps the old number everywhere it already applied — 28% of 1920px is
+ * 537px, still under 640 — and only opens up on genuinely wide screens.
+ */
+const maxWidth = () =>
+  Math.max(BASE_MAX_WIDTH, Math.round((window.innerWidth || 0) * 0.28));
 
 /**
  * Creates a resize handle for the inspector panel with drag-to-resize.
@@ -25,7 +35,12 @@ export function createInspectorResize({ h, panelEl, isCollapsed }) {
     const stored = storage.get('ps-inspector-width');
     if (stored) {
       const w = parseInt(stored, 10);
-      if (w >= MIN_WIDTH && w <= MAX_WIDTH) return w;
+      // Clamp rather than reject: a width chosen on a wide monitor should
+      // survive as "as wide as this screen allows" when the same profile
+      // opens on a laptop, not silently snap back to the default.
+      if (Number.isFinite(w) && w >= MIN_WIDTH) {
+        return Math.min(w, maxWidth());
+      }
     }
     return null;
   };
@@ -35,7 +50,7 @@ export function createInspectorResize({ h, panelEl, isCollapsed }) {
   };
 
   const applyWidth = (w) => {
-    const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, w));
+    const clamped = Math.max(MIN_WIDTH, Math.min(maxWidth(), w));
     document.documentElement.style.setProperty('--inspector-width', `${clamped}px`);
     return clamped;
   };
