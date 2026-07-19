@@ -38,6 +38,7 @@ const PRE_MIGRATION_CSS_VARS = {
   '--t-color-text': '#1f2937',
   '--t-color-text-muted': 'rgba(31, 41, 55, 0.7)',
   '--t-color-accent': '#7c3aed',
+  '--t-color-accent-contrast': '#ffffff',
   '--t-slide-bg-lime': '#fefefe',
   '--t-slide-bg-mist': '#f7f4fa',
   '--t-slide-bg-dark': '#1f1434',
