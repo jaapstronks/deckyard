@@ -105,6 +105,10 @@ export function appendImageTextLayoutOptions({
   fieldGrid,
   markDirty,
   scheduleUiRefresh,
+  // Inspector passes true: the toolbar "Layout" chip is the canonical control
+  // for the structural variant there, so the duplicate enum is dropped. The
+  // bulk "Edit all text" modal has no chip, so it keeps the enum (parity).
+  hideLayoutField = false,
 } = {}) {
   const layoutField = fieldByKey.get('layout');
   const textColsField = fieldByKey.get('textColumns');
@@ -134,10 +138,11 @@ export function appendImageTextLayoutOptions({
   const layoutBody = h('div', { class: 'editor-advanced-body' });
   layoutDetails.append(layoutSummary, layoutBody);
 
-  // Layout variant (split vs corner); the toolbar's layout switcher is the
-  // primary control - this enum deliberately doubles it (same designkeuze as
-  // the other layout enums, see docs/reference/editor-inspector.md).
-  if (layoutField) {
+  // Layout variant (split vs corner). The toolbar's "Layout" chip is the
+  // canonical control, so the inspector drops this duplicate enum
+  // (hideLayoutField); the bulk modal keeps it (no chip there). `layout` stays
+  // marked used above so nothing else re-renders it.
+  if (layoutField && !hideLayoutField) {
     const layoutEl = renderField(layoutField);
     if (layoutEl) layoutBody.append(layoutEl);
   }
