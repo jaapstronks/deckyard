@@ -8,6 +8,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Upload background images to a theme from the browser.** A theme's
+  `backgroundPresets` is the only mechanism for its own title-slide imagery, but
+  it could only be set through the API — so a designer working in the app could
+  upload a logo and never a background, and every theme they made produced flat
+  title slides. The theme editor now has a Background images section: drop in
+  one or more files, remove them individually, and the live preview and every
+  new title slide pick them up. Uploads go through the same media path as the
+  logo uploader, which is now shared rather than duplicated.
+
 - **The theme editor exposes surfaces, heading treatment and locks.** Everything
   the theme `config` added could only be set with `curl`; the editor still only
   offered four colours and two fonts. It now has controls for corner rounding

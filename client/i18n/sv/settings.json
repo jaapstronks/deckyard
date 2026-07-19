@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Låst av temat",
   "settings.themes.config.locksHint": "En låst egenskap kan inte redigeras per bild, och ett redan sparat värde ignoreras vid rendering. Att låsa upp ger varje bild sitt eget värde tillbaka.",
   "settings.themes.config.lock.background": "Bildbakgrund",
-  "settings.themes.config.lock.logo": "Hörnlogotyp"
+  "settings.themes.config.lock.logo": "Hörnlogotyp",
+  "settings.themes.config.backgrounds": "Bakgrundsbilder",
+  "settings.themes.config.backgroundsHint": "Dina egna bilder för titelbilder. Nya titelbilder väljer en av dem, och väljaren visar dem först. Utan bilder förblir titelbilderna avskalade i stället för att låna bildmaterial som inte är ditt.",
+  "settings.themes.config.addBackground": "Lägg till bilder…",
+  "settings.themes.config.removeBackground": "Ta bort",
+  "settings.themes.config.noBackgrounds": "Inga bakgrundsbilder ännu.",
+  "settings.themes.config.backgroundsFull": "Ett tema rymmer inte fler bakgrundsbilder.",
+  "settings.themes.config.uploading": "Laddar upp…"
 }

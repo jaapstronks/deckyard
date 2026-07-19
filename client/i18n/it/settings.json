@@ -292,5 +292,12 @@
   "settings.themes.config.locks": "Bloccato dal tema",
   "settings.themes.config.locksHint": "Una proprietà bloccata non è modificabile per singola slide, e un valore già salvato viene ignorato nel rendering. Sbloccando, ogni slide riprende il proprio valore.",
   "settings.themes.config.lock.background": "Sfondo della slide",
-  "settings.themes.config.lock.logo": "Logo d’angolo"
+  "settings.themes.config.lock.logo": "Logo d’angolo",
+  "settings.themes.config.backgrounds": "Immagini di sfondo",
+  "settings.themes.config.backgroundsHint": "Le tue immagini per le slide di titolo. Le nuove ne scelgono una e il selettore per slide le propone per prime. Senza immagini, le slide di titolo restano piatte invece di prendere in prestito visual non tuoi.",
+  "settings.themes.config.addBackground": "Aggiungi immagini…",
+  "settings.themes.config.removeBackground": "Rimuovi",
+  "settings.themes.config.noBackgrounds": "Ancora nessuna immagine di sfondo.",
+  "settings.themes.config.backgroundsFull": "Un tema non può contenere altre immagini di sfondo.",
+  "settings.themes.config.uploading": "Caricamento…"
 }

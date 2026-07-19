@@ -292,5 +292,12 @@
   "settings.themes.config.locks": "Teeman lukitsema",
   "settings.themes.config.locksHint": "Lukittua ominaisuutta ei voi muokata diakohtaisesti, ja jo tallennettu arvo ohitetaan renderöinnissä. Lukituksen avaaminen palauttaa jokaiselle dialle oman arvonsa.",
   "settings.themes.config.lock.background": "Dian tausta",
-  "settings.themes.config.lock.logo": "Kulmalogo"
+  "settings.themes.config.lock.logo": "Kulmalogo",
+  "settings.themes.config.backgrounds": "Taustakuvat",
+  "settings.themes.config.backgroundsHint": "Omat kuvasi otsikkodioihin. Uudet otsikkodiat valitsevat yhden näistä, ja diakohtainen valitsin tarjoaa ne ensin. Ilman kuvia otsikkodiat pysyvät tyhjinä sen sijaan että lainaisivat vierasta kuvastoa.",
+  "settings.themes.config.addBackground": "Lisää kuvia…",
+  "settings.themes.config.removeBackground": "Poista",
+  "settings.themes.config.noBackgrounds": "Ei vielä taustakuvia.",
+  "settings.themes.config.backgroundsFull": "Teemaan ei mahdu enempää taustakuvia.",
+  "settings.themes.config.uploading": "Ladataan…"
 }

@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Låst af temaet",
   "settings.themes.config.locksHint": "En låst egenskab kan ikke redigeres pr. slide, og en allerede gemt værdi ignoreres ved rendering. Oplåsning giver hvert slide sin egen værdi tilbage.",
   "settings.themes.config.lock.background": "Slidebaggrund",
-  "settings.themes.config.lock.logo": "Hjørnelogo"
+  "settings.themes.config.lock.logo": "Hjørnelogo",
+  "settings.themes.config.backgrounds": "Baggrundsbilleder",
+  "settings.themes.config.backgroundsHint": "Dine egne billeder til titelslides. Nye titelslides vælger et af dem, og vælgeren viser dem først. Uden billeder forbliver titelslides enkle i stedet for at låne billeder, der ikke er dine.",
+  "settings.themes.config.addBackground": "Tilføj billeder…",
+  "settings.themes.config.removeBackground": "Fjern",
+  "settings.themes.config.noBackgrounds": "Ingen baggrundsbilleder endnu.",
+  "settings.themes.config.backgroundsFull": "Et tema kan ikke rumme flere baggrundsbilleder.",
+  "settings.themes.config.uploading": "Uploader…"
 }

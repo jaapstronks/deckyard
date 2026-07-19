@@ -162,5 +162,12 @@
   "settings.themes.config.locks": "Bloqueado pelo tema",
   "settings.themes.config.locksHint": "Uma propriedade bloqueada não é editável por diapositivo, e um valor já guardado é ignorado ao renderizar. Desbloquear devolve a cada diapositivo o seu valor.",
   "settings.themes.config.lock.background": "Fundo do diapositivo",
-  "settings.themes.config.lock.logo": "Logótipo de canto"
+  "settings.themes.config.lock.logo": "Logótipo de canto",
+  "settings.themes.config.backgrounds": "Imagens de fundo",
+  "settings.themes.config.backgroundsHint": "As suas imagens para diapositivos de título. Os novos escolhem uma, e o seletor por diapositivo mostra-as primeiro. Sem nenhuma, os diapositivos de título ficam simples em vez de usarem imagens que não são suas.",
+  "settings.themes.config.addBackground": "Adicionar imagens…",
+  "settings.themes.config.removeBackground": "Remover",
+  "settings.themes.config.noBackgrounds": "Ainda sem imagens de fundo.",
+  "settings.themes.config.backgroundsFull": "Um tema não suporta mais imagens de fundo.",
+  "settings.themes.config.uploading": "A carregar…"
 }
