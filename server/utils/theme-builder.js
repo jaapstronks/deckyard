@@ -576,63 +576,6 @@ function getCategoryFallback(category) {
 }
 
 /**
- * Tokens the live preview needs. A subset of the full derived set — the preview
- * paints a single sample slide, not the whole slide-type catalogue.
- */
-const PREVIEW_TOKENS = [
-  '--t-color-background',
-  '--t-color-text',
-  '--t-color-text-muted',
-  '--t-color-accent',
-  '--t-color-accent-contrast',
-  '--t-slide-bg-lime',
-  '--t-slide-bg-mist',
-  '--t-slide-bg-dark',
-  '--t-quote-author-color',
-  '--t-font-heading',
-  '--t-font-body',
-  '--t-heading-weight',
-  '--t-chart-0',
-  '--t-chart-1',
-  '--t-chart-2',
-  '--t-chart-3',
-];
-
-/**
- * Strip characters that would let a value escape its declaration and open a new
- * rule. Values reaching here are not all trusted: the preview route takes them
- * from the query string, and a managed font's `name` is free text from the DB.
- * @param {*} value
- * @returns {string}
- */
-function cssValueSafe(value) {
-  return String(value ?? '').replace(/[;{}<>]/g, '');
-}
-
-/**
- * Generate CSS for theme preview (live preview in editor).
- *
- * Serializes `deriveThemeTokens` rather than re-deriving. The two used to hold
- * separate copies of the same colour maths, so the preview could drift from
- * what actually rendered.
- *
- * @param {Object} options - Theme options
- * @param {Object} options.colors - Color configuration
- * @param {Object} options.fonts - Font configuration
- * @param {Array} [options.managedFonts] - Managed font families with variants
- * @returns {string} - CSS string
- */
-export function generatePreviewCSS({ colors, fonts, managedFonts }) {
-  const { cssVars } = deriveThemeTokens({ colors, fonts, managedFonts });
-
-  const lines = PREVIEW_TOKENS.filter((token) => cssVars[token] != null).map(
-    (token) => `  ${token}: ${cssValueSafe(cssVars[token])};`
-  );
-
-  return `/* Custom Theme Preview CSS */\n.theme-preview {\n${lines.join('\n')}\n}`;
-}
-
-/**
  * Generate @font-face CSS for custom fonts.
  * Handles both curated fonts (path-based local files) and managed uploaded fonts (URL-based).
  * @param {Object} fonts - Font configuration { heading, body, headingFamilyId, bodyFamilyId }

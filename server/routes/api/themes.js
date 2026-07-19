@@ -10,7 +10,6 @@
  * DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
  * POST /api/themes/custom/:id/set-default - Set as org default (admin only)
  * POST /api/themes/custom/clear-default - Clear org default (admin only)
- * GET /api/themes/preview-css - Generate CSS for preview
  */
 
 import { serveJson, badRequest, notFound, parseJsonBody, forbidden } from '../../utils/http.js';
@@ -26,7 +25,7 @@ import {
   setDefaultTheme,
 } from '../../storage/themes.js';
 import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.js';
-import { buildThemeConfig, generatePreviewCSS } from '../../utils/theme-builder.js';
+import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
 import { readAppSettings, getDefaultThemeId } from '../../storage/settings.js';
 
@@ -38,33 +37,6 @@ import { readAppSettings, getDefaultThemeId } from '../../storage/settings.js';
  */
 function canManageThemes(authedUser) {
   return authedUser?.isDesigner === true || authedUser?.isAdmin === true;
-}
-
-const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Read a hex colour from the query string, falling back to the default.
- *
- * The preview CSS is built by interpolating these into a stylesheet, so an
- * unvalidated value is a stylesheet-injection vector. Anything that isn't a
- * plain hex colour is discarded rather than passed through.
- */
-function hexParam(params, key, fallback) {
-  const raw = String(params.get(key) || '').trim();
-  return HEX_RE.test(raw) ? raw : fallback;
-}
-
-/** Read a font family from the query string; only curated families are accepted. */
-function fontParam(params, key, fallback) {
-  const raw = String(params.get(key) || '').trim();
-  return CURATED_FONTS.some((f) => f.family === raw) ? raw : fallback;
-}
-
-/** Read a managed-font family id; anything not a UUID is dropped. */
-function familyIdParam(params, key) {
-  const raw = String(params.get(key) || '').trim();
-  return UUID_RE.test(raw) ? raw : null;
 }
 
 export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
@@ -153,41 +125,6 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       fonts: CURATED_FONTS,
       grouped,
     });
-    return true;
-  }
-
-  // ============================================================
-  // GET /api/themes/preview-css - Generate CSS for live preview
-  // ============================================================
-  if (pathname === '/api/themes/preview-css' && req.method === 'GET') {
-    const params = url.searchParams;
-    const colors = {
-      primary: hexParam(params, 'primary', '#3B82F6'),
-      background: hexParam(params, 'background', '#ffffff'),
-      textLight: hexParam(params, 'textLight', '#ffffff'),
-      textDark: hexParam(params, 'textDark', '#1f2937'),
-    };
-    const fonts = {
-      heading: fontParam(params, 'headingFont', 'Inter'),
-      body: fontParam(params, 'bodyFont', 'Inter'),
-      headingFamilyId: familyIdParam(params, 'headingFamilyId'),
-      bodyFamilyId: familyIdParam(params, 'bodyFamilyId'),
-    };
-
-    // Fetch managed fonts if any familyId is referenced
-    let managedFonts;
-    if (fonts.headingFamilyId || fonts.bodyFamilyId) {
-      try {
-        const ctx = createRouteContext(authedUser);
-        managedFonts = await listAllFontFamiliesWithVariants(ctx);
-      } catch {
-        // Fall back to no managed fonts
-      }
-    }
-
-    const css = generatePreviewCSS({ colors, fonts, managedFonts });
-    res.setHeader('Content-Type', 'text/css');
-    res.end(css);
     return true;
   }
 
