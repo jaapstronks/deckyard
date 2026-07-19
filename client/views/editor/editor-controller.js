@@ -1270,6 +1270,9 @@ export async function createEditorController({
     updateSelectedSlideListItem,
     PARTNER_LOGOS,
     fieldRenderers,
+    // Needed for the theme's override locks: a locked brand property hides its
+    // control instead of offering an edit the renderer will ignore.
+    theme,
     onTranslateSlide: ({ slideId }) => openTranslateSlideModal({ slideId }),
     onTranslateField: ({ slideId, key }) => openTranslateFieldModal({ slideId, key }),
     user,

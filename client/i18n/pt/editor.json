@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Silencia este deck. As @menções diretas continuam a chegar.",
   "subscription.saved": "Definição de notificações guardada",
   "subscription.saveFailed": "Não foi possível guardar a definição",
-  "subscription.loadFailed": "Não foi possível carregar a definição"
+  "subscription.loadFailed": "Não foi possível carregar a definição",
+  "editor.slide.background.lockedByTheme": "Definido pelo tema, não editável por diapositivo."
 }

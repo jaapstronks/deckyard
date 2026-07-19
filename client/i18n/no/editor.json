@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Demper dette decket. Direkte @omtaler når deg fortsatt.",
   "subscription.saved": "Varselinnstilling lagret",
   "subscription.saveFailed": "Kunne ikke lagre innstillingen",
-  "subscription.loadFailed": "Kunne ikke laste innstillingen"
+  "subscription.loadFailed": "Kunne ikke laste innstillingen",
+  "editor.slide.background.lockedByTheme": "Angitt av temaet og kan ikke redigeres per lysbilde."
 }

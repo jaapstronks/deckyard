@@ -14,6 +14,7 @@
  */
 
 import { normalizeSlideBackgrounds } from './theme-slide-backgrounds.js';
+import { LOCKABLE_PROPERTIES } from './theme-locks.js';
 
 export const THEME_CONFIG_VERSION = 1;
 
@@ -30,8 +31,11 @@ export const RADIUS_SCALES = {
  */
 export const SHADOW_SCALES = { none: '0', soft: '1', strong: '1.8' };
 
-/** Brand properties a theme can lock against per-slide overrides. */
-export const LOCKABLE_PROPERTIES = ['background', 'imageRadius', 'shadow', 'logo'];
+// Brand properties a theme can lock against per-slide overrides. Defined in
+// shared/theme-locks.js next to the enforcement, so the schema can never accept
+// a lock that nothing honours. Re-exported because callers treat this module as
+// the config vocabulary.
+export { LOCKABLE_PROPERTIES };
 
 const LOCK_MODES = ['open', 'locked'];
 const HEADING_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'];

@@ -422,5 +422,6 @@
   "subscription.level.mute.help": "Mykistää tämän deckin. Suorat @maininnat tavoittavat sinut silti.",
   "subscription.saved": "Ilmoitusasetus tallennettu",
   "subscription.saveFailed": "Asetuksen tallennus epäonnistui",
-  "subscription.loadFailed": "Asetuksen lataus epäonnistui"
+  "subscription.loadFailed": "Asetuksen lataus epäonnistui",
+  "editor.slide.background.lockedByTheme": "Teeman asettama, ei muokattavissa diakohtaisesti."
 }

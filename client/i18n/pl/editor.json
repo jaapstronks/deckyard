@@ -422,5 +422,6 @@
   "subscription.level.mute.help": "Wycisza ten deck. Bezpośrednie @wzmianki nadal docierają.",
   "subscription.saved": "Ustawienie powiadomień zapisane",
   "subscription.saveFailed": "Nie udało się zapisać ustawienia",
-  "subscription.loadFailed": "Nie udało się wczytać ustawienia"
+  "subscription.loadFailed": "Nie udało się wczytać ustawienia",
+  "editor.slide.background.lockedByTheme": "Ustawione przez motyw, nie można zmieniać dla slajdu."
 }

@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Dieses Deck stummschalten. Direkte @Erwähnungen erreichen dich weiterhin.",
   "subscription.saved": "Benachrichtigungseinstellung gespeichert",
   "subscription.saveFailed": "Speichern der Einstellung fehlgeschlagen",
-  "subscription.loadFailed": "Laden der Einstellung fehlgeschlagen"
+  "subscription.loadFailed": "Laden der Einstellung fehlgeschlagen",
+  "editor.slide.background.lockedByTheme": "Vom Theme festgelegt, nicht pro Folie änderbar."
 }

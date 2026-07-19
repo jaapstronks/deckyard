@@ -353,5 +353,6 @@
   "subscription.level.mute.help": "Tystar detta deck. Direkta @omnämnanden når dig ändå.",
   "subscription.saved": "Aviseringsinställning sparad",
   "subscription.saveFailed": "Kunde inte spara inställningen",
-  "subscription.loadFailed": "Kunde inte läsa in inställningen"
+  "subscription.loadFailed": "Kunde inte läsa in inställningen",
+  "editor.slide.background.lockedByTheme": "Anges av temat och kan inte redigeras per bild."
 }

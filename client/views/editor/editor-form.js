@@ -26,6 +26,7 @@ import {
   renderInspectorExtrasByType,
 } from './editor-form/inspector-form.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { detectBgTextContrast } from '../../lib/bg-contrast.js';
 
@@ -505,6 +506,8 @@ export function createRerenderEditor({
   updateSelectedSlideListItem,
   PARTNER_LOGOS,
   fieldRenderers,
+  // The active theme, for its override locks. Absent means nothing is locked.
+  theme = null,
   onTranslateSlide,
   onTranslateField,
   user,
@@ -1065,9 +1068,28 @@ export function createRerenderEditor({
       form.append(el);
     };
 
+    // Theme override locks. A locked property's controls are omitted rather
+    // than disabled — a disabled control invites you to wonder what it would
+    // do, and the renderer ignores the value either way. One note explains the
+    // absence, so the section never just looks broken.
+    const bgLocked = isLocked(theme, 'background');
+    const logoLocked = isLocked(theme, 'logo');
+    if (bgLocked || logoLocked) {
+      bgBody.append(
+        h('p', {
+          class: 'help',
+          text: t(
+            'editor.slide.background.lockedByTheme',
+            'Set by the theme and not editable per slide.'
+          ),
+        })
+      );
+    }
+
     // Populate the Background section. Colour first: the section reads as
     // "colour ór custom image, and optionally the logo on top".
-    const bgColorField = contentOnly ? null : fieldByKey.get('background');
+    const bgColorField =
+      contentOnly || bgLocked ? null : fieldByKey.get('background');
     if (bgColorField) {
       // Inside a section already titled "Background" the field label reads
       // better as "Colour" (it sits next to "Background image").
@@ -1090,7 +1112,8 @@ export function createRerenderEditor({
     }
 
     // Custom image (+ crop focus + fit/overlay once an image is set).
-    const bgImageField = contentOnly ? null : fieldByKey.get('slideBgImage');
+    const bgImageField =
+      contentOnly || bgLocked ? null : fieldByKey.get('slideBgImage');
     if (bgImageField) {
       const imgEl = renderField(bgImageField);
       if (imgEl) bgBody.append(imgEl);
@@ -1134,7 +1157,8 @@ export function createRerenderEditor({
       }
     }
     // Theme logo (corner) toggle — independent of the background image.
-    const logoField = contentOnly ? null : fieldByKey.get('slideLogo');
+    const logoField =
+      contentOnly || logoLocked ? null : fieldByKey.get('slideLogo');
     if (logoField) {
       if (slide.content.slideLogo == null) slide.content.slideLogo = 'none';
       const logoEl = renderField(logoField);

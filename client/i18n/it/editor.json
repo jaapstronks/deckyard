@@ -422,5 +422,6 @@
   "subscription.level.mute.help": "Silenzia questo deck. Le @menzioni dirette ti raggiungono comunque.",
   "subscription.saved": "Impostazione notifiche salvata",
   "subscription.saveFailed": "Impossibile salvare l'impostazione",
-  "subscription.loadFailed": "Impossibile caricare l'impostazione"
+  "subscription.loadFailed": "Impossibile caricare l'impostazione",
+  "editor.slide.background.lockedByTheme": "Impostato dal tema, non modificabile per singola slide."
 }
