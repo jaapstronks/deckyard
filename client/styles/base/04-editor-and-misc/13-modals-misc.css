@@ -16,8 +16,8 @@
 }
 
 .new-pres-section.is-selected {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.03);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.03);
 }
 
 .new-pres-section-header {
@@ -32,7 +32,7 @@
 
 .new-pres-section-header input[type="radio"] {
   flex-shrink: 0;
-  accent-color: hsl(var(--app-accent));
+  accent-color: hsl(var(--app-accent-primary));
 }
 
 .new-pres-section-title {
@@ -116,7 +116,7 @@
   padding: 0;
   background: none;
   border: none;
-  color: hsl(var(--app-accent));
+  color: hsl(var(--app-accent-text));
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -146,13 +146,13 @@
 }
 
 .theme-card:hover {
-  border-color: hsl(var(--app-accent));
+  border-color: hsl(var(--app-accent-primary));
   transform: scale(1.03);
 }
 
 .theme-card.is-selected {
-  border-color: hsl(var(--app-accent));
-  box-shadow: 0 0 0 2px hsl(var(--app-accent) / 0.3);
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
 }
 
 .theme-card-preview {
@@ -376,9 +376,7 @@
 }
 
 /* Active method reads unmistakably: accent tint, bolder title, and a left
-   indicator bar (the standard sidebar-nav "you are here" cue). Uses
-   --app-accent-primary/-text — plain --app-accent is not a defined token, so
-   the previous rule silently rendered nothing. */
+   indicator bar (the standard sidebar-nav "you are here" cue). */
 .creation-rail-item.is-active {
   background: hsl(var(--app-accent-primary) / 0.1);
   color: hsl(var(--app-accent-text));
@@ -633,8 +631,8 @@
   height: 18px;
   padding: 0 4px;
   border-radius: 999px;
-  background: hsl(var(--app-accent) / 0.15);
-  color: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary) / 0.15);
+  color: hsl(var(--app-accent-text));
   font-size: var(--ps-text-xs);
   font-weight: 600;
 }
@@ -701,8 +699,8 @@
 }
 
 .creation-collection-card.is-active {
-  border-color: hsl(var(--app-accent));
-  box-shadow: 0 0 0 1px hsl(var(--app-accent));
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
 }
 
 .creation-collection-card-name {
@@ -763,8 +761,8 @@
 
 .import-slides-dropzone:hover,
 .import-slides-dropzone.is-dragover {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.05);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.05);
 }
 
 .import-slides-dropzone-icon {
@@ -774,7 +772,7 @@
 
 .import-slides-dropzone:hover .import-slides-dropzone-icon,
 .import-slides-dropzone.is-dragover .import-slides-dropzone-icon {
-  color: hsl(var(--app-accent));
+  color: hsl(var(--app-accent-text));
   opacity: 1;
 }
 
@@ -801,7 +799,7 @@
 
 .import-slides-file-icon {
   flex-shrink: 0;
-  color: hsl(var(--app-accent));
+  color: hsl(var(--app-accent-text));
 }
 
 .import-slides-file-details {
@@ -840,7 +838,7 @@
 
 .import-slides-progress-bar {
   height: 100%;
-  background: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary));
   border-radius: 4px;
   transition: width 0.3s ease-out;
   width: 0%;
@@ -889,13 +887,13 @@
 }
 
 .share-option:hover {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.03);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.03);
 }
 
 .share-option:has(input:checked) {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.05);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.05);
 }
 
 .share-option input[type="radio"] {
@@ -1012,13 +1010,13 @@
 }
 
 .change-theme-option:hover {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.03);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.03);
 }
 
 .change-theme-option:has(input:checked) {
-  border-color: hsl(var(--app-accent));
-  background: hsl(var(--app-accent) / 0.06);
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.06);
 }
 
 .change-theme-option input[type="radio"] {
@@ -1310,8 +1308,8 @@
   align-items: flex-start;
   gap: var(--ps-space-3);
   padding: var(--ps-space-3);
-  background: hsl(var(--app-accent) / 0.05);
-  border: 1px solid hsl(var(--app-accent) / 0.2);
+  background: hsl(var(--app-accent-primary) / 0.05);
+  border: 1px solid hsl(var(--app-accent-primary) / 0.2);
   border-radius: var(--ps-radius-md);
   margin-bottom: var(--ps-space-3);
 }
@@ -1326,8 +1324,8 @@
   padding: var(--ps-space-2) var(--ps-space-3);
   margin-top: calc(-1 * var(--ps-space-1));
   margin-bottom: var(--ps-space-2);
-  background: hsl(var(--app-accent) / 0.08);
-  border: 1px solid hsl(var(--app-accent) / 0.2);
+  background: hsl(var(--app-accent-primary) / 0.08);
+  border: 1px solid hsl(var(--app-accent-primary) / 0.2);
   border-top: none;
   border-radius: 0 0 var(--ps-radius-md) var(--ps-radius-md);
   font-size: var(--ps-text-sm);
