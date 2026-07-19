@@ -76,6 +76,20 @@ test('Origin matching APP_URL host (behind proxy, different Host) → allowed', 
   }
 });
 
+test('sandbox-guest cookie + cross-origin → blocked (CSRF-able like sb_session)', () => {
+  assert.equal(
+    isCsrfSafe(req({ cookie: 'sb_sandbox=guest-token', origin: 'https://evil.com' })),
+    false
+  );
+});
+
+test('sandbox-guest cookie + same-origin → allowed', () => {
+  assert.equal(
+    isCsrfSafe(req({ cookie: 'sb_sandbox=guest-token', origin: 'https://app.example.com' })),
+    true
+  );
+});
+
 test('CSRF_ALLOWED_ORIGINS extends the allowlist', () => {
   const saved = process.env.CSRF_ALLOWED_ORIGINS;
   process.env.CSRF_ALLOWED_ORIGINS = 'https://embed.partner.com';
