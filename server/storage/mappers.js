@@ -39,6 +39,7 @@ export function mapSlideLibraryRow(row) {
     slideType: row.slide_type,
     themeId: row.theme_id,
     content: row.content || {},
+    i18n: row.i18n || {},
     favorites: row.favorites || [],
     trashedAt: row.trashed_at,
     trashedBy: row.trashed_by,

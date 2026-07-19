@@ -329,6 +329,9 @@ export class FileAdapter extends StorageAdapter {
       slideType: data.slideType,
       themeId: data.themeId || null,
       content: data.content || {},
+      // Per-language content (nl + en-GB); kept so composed decks survive the
+      // NL/EN round-trip. The update path carries it via the `...data` spread.
+      i18n: data.i18n || {},
       favorites: data.favorites || [],
       trashedAt: null,
       trashedBy: null,

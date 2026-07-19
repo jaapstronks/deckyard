@@ -267,6 +267,20 @@ entries are grouped per release rather than exhaustively listed.
   request went out unscoped and came back with every comment in the deck, under
   a switch that still read "This slide".
 
+- **Standalone HTML export renders its fonts offline.** A downloaded deck still
+  linked the shared UI font (Bricolage Grotesque) from `/assets/fonts/*.woff2`,
+  so opening the file without a server fell back to system fonts (theme fonts,
+  icons, and images were already embedded). The export now inlines the local
+  font files it references as base64 data URLs — only the handful of small
+  weights actually used (a few KB each), never the whole ~2.5 MB font library.
+  See `docs/reference/standalone-html-export.md`.
+
+- **Bilingual library slides keep both languages on database installs.** A slide
+  saved to the library with NL + EN content (`i18n.versions`) silently lost its
+  per-language content on Postgres (and, it turned out, on the active file
+  adapter too) — composed decks fell back to single-language content. The
+  storage layer now persists and returns `i18n` on both backends
+  (migration `049`, no backfill needed).
 
 - **@mentions render as inline chips everywhere, not raw markup.** A mention is
   stored in a comment body as `@[Name](user:email)`; the editor thread already

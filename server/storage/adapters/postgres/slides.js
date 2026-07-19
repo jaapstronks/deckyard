@@ -79,6 +79,7 @@ export function withSlides(Base) {
           slide_type: data.slideType,
           theme_id: data.themeId || null,
           content: jsonb(data.content || {}),
+          i18n: jsonb(data.i18n || {}),
           favorites: sql`${data.favorites || []}::text[]`,
           created_by: ctx?.actorEmail || null,
           updated_by: ctx?.actorEmail || null,
@@ -101,6 +102,7 @@ export function withSlides(Base) {
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.content !== undefined) updateData.content = jsonb(data.content);
+      if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
       if (data.favorites !== undefined) updateData.favorites = sql`${data.favorites}::text[]`;
       if (data.trashedAt !== undefined) updateData.trashed_at = data.trashedAt;
       if (data.trashedBy !== undefined) updateData.trashed_by = data.trashedBy;

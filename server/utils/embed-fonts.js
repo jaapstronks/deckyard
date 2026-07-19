@@ -119,3 +119,60 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
 export function stripFontFacesFromCss(cssText) {
   return stripFontFaceBlocks(cssText);
 }
+
+// Matches root-relative local font URLs inside url(...) — quoted or bare,
+// woff or woff2. Group 1 is the (optional) opening quote, group 2 the path.
+const LOCAL_FONT_URL_RE = /url\(\s*(['"]?)(\/[^'")]+\.woff2?)\1\s*\)/gi;
+
+/**
+ * Inline root-relative local font URLs (woff/woff2 served from the repo) in a
+ * CSS string as base64 data URLs. Used by the standalone HTML export so the
+ * downloaded file renders its fonts offline, without a server to resolve
+ * `/assets/...` paths.
+ *
+ * Only URLs that actually appear in the CSS are embedded — in practice a
+ * couple of small woff2 files (a few KB each, e.g. the shared Bricolage
+ * Grotesque UI weight), never the whole managed font library (~2.5 MB across
+ * all themes). Files that resolve outside the repo, or can't be read, are left
+ * untouched.
+ *
+ * Theme fonts are embedded separately via {@link buildEmbeddedFontCss}; this
+ * covers shared/UI @font-face rules (`client/styles/shared/fonts.css`) that no
+ * theme's `embedFonts` list owns.
+ *
+ * @param {string} repoRoot - Repository root path
+ * @param {string} cssText - CSS source text
+ * @returns {Promise<string>} CSS with local font URLs replaced by data URLs
+ */
+export async function inlineLocalFontUrls(repoRoot, cssText) {
+  const css = String(cssText || '');
+  const paths = new Set();
+  for (const m of css.matchAll(LOCAL_FONT_URL_RE)) paths.add(m[2]);
+  if (!paths.size) return css;
+
+  const rootAbs = path.resolve(repoRoot);
+  const dataUrls = new Map();
+  await Promise.all(
+    [...paths].map(async (urlPath) => {
+      try {
+        const abs = path.resolve(rootAbs, urlPath.replace(/^\/+/, ''));
+        // Stay inside the repo — the CSS is our own, but never read arbitrary
+        // paths if a `..` ever slips into a bundled stylesheet.
+        if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) return;
+        const buf = await fs.readFile(abs);
+        const mime = urlPath.toLowerCase().endsWith('.woff')
+          ? 'font/woff'
+          : 'font/woff2';
+        dataUrls.set(urlPath, `data:${mime};base64,${buf.toString('base64')}`);
+      } catch {
+        // Leave the original URL in place if the file can't be read
+        // (e.g. a curated font whose postinstall download was skipped).
+      }
+    }),
+  );
+
+  return css.replace(LOCAL_FONT_URL_RE, (full, _q, urlPath) => {
+    const dataUrl = dataUrls.get(urlPath);
+    return dataUrl ? `url('${dataUrl}')` : full;
+  });
+}

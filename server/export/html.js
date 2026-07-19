@@ -7,6 +7,7 @@ import {
 } from '../utils/html-utils.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
 import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
 
 export async function buildStandaloneHtml(
@@ -19,6 +20,18 @@ export async function buildStandaloneHtml(
   const docLang = resolveDocLangFromPresentation(pres);
   const docDir = getDocDir(docLang);
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
+
+  // Inline any root-relative local font files (e.g. the shared Bricolage
+  // Grotesque UI weight in client/styles/shared/fonts.css) as data URLs, so a
+  // downloaded standalone file renders its fonts offline instead of falling
+  // back to system fonts on a dead `/assets/fonts/*.woff2` reference. Theme
+  // fonts are already embedded via css.fontCss; this only embeds the handful
+  // of small weights the CSS actually references (a few KB each), not the
+  // whole ~2.5 MB font library. See docs/reference/standalone-html-export.md.
+  const [appCss, slidesCss] = await Promise.all([
+    inlineLocalFontUrls(repoRoot, css.appCss),
+    inlineLocalFontUrls(repoRoot, css.slidesCss),
+  ]);
 
   // Build external font links/scripts for managed fonts (Adobe, Monotype, Google)
   function isSafeUrl(url) {
@@ -100,10 +113,10 @@ export async function buildStandaloneHtml(
     ${buildPrismKatexCdnTags()}
     <style>
 ${css.fontCss}
-${css.appCss}
+${appCss}
 ${css.themeVarsCss}
 ${css.themeCss}
-${css.slidesCss}
+${slidesCss}
 ${css.wmCss}
 
       /* Standalone published view: scale fixed design (1600×900) to fit viewport, letterboxed. */
