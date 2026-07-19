@@ -1,0 +1,117 @@
+{
+  "id": "editorial",
+  "label": "Editorial",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#1c1917",
+  "backgroundLabels": {
+    "lime": {
+      "en": "Paper",
+      "nl": "Papier"
+    },
+    "mist": {
+      "en": "Cream",
+      "nl": "Crème"
+    }
+  },
+  "brandColors": [
+    "#7f1d1d",
+    "#9f1239",
+    "#b45309",
+    "#a16207"
+  ],
+  "gradient": {
+    "enabled": false
+  },
+  "slides": {
+    "card-stack-slide": {
+      "colors": [
+        "#9f1239",
+        "#b45309",
+        "#1c1917",
+        "#78716c"
+      ]
+    }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#fffdf7",
+    "--t-slide-bg-mist": "#f5efe4",
+    "--t-slide-bg-dark": "#1c1917",
+    "--t-color-background": "#fffdf7",
+    "--t-color-text": "#1c1917",
+    "--t-color-text-muted": "rgba(28, 25, 23, 0.6)",
+    "--t-color-accent": "#9f1239",
+    "--t-quote-author-color": "#9f1239",
+    "--t-radius": "2px",
+    "--t-radius-sm": "2px",
+    "--t-radius-lg": "4px",
+    "--t-font-heading": "'Fraunces', Georgia, 'Times New Roman', serif",
+    "--t-font-body": "'Work Sans', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "600",
+    "--t-icon-card-grid-icon-bg": "#f5efe4",
+    "--t-icon-card-grid-body-bg": "#faf6ee",
+    "--t-chart-0": "#9f1239",
+    "--t-chart-1": "#b45309",
+    "--t-chart-2": "#1c1917",
+    "--t-chart-3": "#a16207",
+    "--t-chart-4": "#78716c",
+    "--t-chart-5": "#be123c",
+    "--t-chart-6": "#44403c",
+    "--t-chart-7": "#d6b98c",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Fraunces",
+      "path": "assets/fonts/google/fraunces/fraunces-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Fraunces",
+      "path": "assets/fonts/google/fraunces/fraunces-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Fraunces",
+      "path": "assets/fonts/google/fraunces/fraunces-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-400.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-500.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-600.woff2",
+      "weight": 600,
+      "style": "normal"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-700.woff2",
+      "weight": 700,
+      "style": "normal"
+    }
+  ],
+  "hiddenSlideTypes": []
+}

@@ -254,8 +254,9 @@ export const CUSTOM_SLIDE_TYPE_NAMES = Object.keys(customTypes);
 // Note: Themes are discovered dynamically at runtime from /themes/*.json and /custom/themes/*.json
 export const THEMES = [
   DEFAULT_THEME_ID,
-  // Neutral, non-branded themes for demos/sandbox instances
-  'sandbox-warm',
-  'sandbox-sage',
-  'sandbox-dark',
+  // Neutral, non-branded base themes covering the common archetypes.
+  'corporate',
+  'editorial',
+  'playful',
+  'midnight',
 ];

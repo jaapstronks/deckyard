@@ -234,7 +234,7 @@ The URLs may point anywhere the server serves — `custom/themes/<id>/assets/`,
 
 Every theme has two built-in background slots, stored as `lime` and `mist`.
 Those are **storage keys, not colours**: `deckyard` paints lime white and
-`sandbox-dark` paints it near-black. With nothing else to go on the picker
+`midnight` paints it near-black. With nothing else to go on the picker
 labels them "Color 1" and "Color 2", which is accurate and useless — only the
 theme knows what its own slots are.
 
