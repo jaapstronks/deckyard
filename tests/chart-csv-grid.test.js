@@ -17,6 +17,12 @@ const {
   parseChartData,
 } = await import('../shared/slide-types/chart/parse.js');
 
+const { applyHeaderPaste } = await import(
+  '../client/views/editor/fields/csv-grid.js'
+);
+
+const BAR_MODEL = { min: 2, max: 2, defaultHeaders: ['Label', 'Value'] };
+
 describe('serializeCsv', () => {
   it('joins rows with commas and newlines', () => {
     assert.equal(
@@ -147,5 +153,102 @@ describe('grid round-trip through the chart parser', () => {
     const parsed = parseChartData({ chartType: 'bar', data: csv });
     assert.equal(parsed.ok, true);
     assert.deepEqual(parsed.dataset.labels, ['Amsterdam, NL', 'Berlin, DE']);
+  });
+});
+
+describe('applyHeaderPaste (header-cell paste placement)', () => {
+  it('fills a non-first header column in place without wiping the grid', () => {
+    // Pasting a column (name + values) onto the "Value" header should set that
+    // header and drop the values down its column, keeping the label column.
+    const next = applyHeaderPaste({
+      matrix: [['Revenue'], ['10'], ['25']],
+      startCol: 1,
+      header: ['Label', 'Value'],
+      body: [
+        ['A', ''],
+        ['B', ''],
+      ],
+      cols: 2,
+      chartType: 'bar',
+      model: BAR_MODEL,
+    });
+    assert.deepEqual(next.header, ['Label', 'Revenue']);
+    assert.deepEqual(next.body, [
+      ['A', '10'],
+      ['B', '25'],
+    ]);
+  });
+
+  it('extends the body when the pasted column is taller than the grid', () => {
+    const next = applyHeaderPaste({
+      matrix: [['Rev'], ['1'], ['2'], ['3']],
+      startCol: 1,
+      header: ['Label', 'Value'],
+      body: [['A', '']],
+      cols: 2,
+      chartType: 'bar',
+      model: BAR_MODEL,
+    });
+    assert.equal(next.body.length, 3);
+    assert.deepEqual(next.body, [
+      ['A', '1'],
+      ['', '2'],
+      ['', '3'],
+    ]);
+  });
+
+  it('top-left paste of a headered block splits header from body', () => {
+    const next = applyHeaderPaste({
+      matrix: [
+        ['Month', 'Sales'],
+        ['Jan', '5'],
+      ],
+      startCol: 0,
+      header: ['Label', 'Value'],
+      body: [['', '']],
+      cols: 2,
+      chartType: 'bar',
+      model: BAR_MODEL,
+    });
+    assert.deepEqual(next.header, ['Month', 'Sales']);
+    assert.deepEqual(next.body, [['Jan', '5']]);
+  });
+
+  it('top-left paste of a headerless block keeps every row as data', () => {
+    // Regression: the old handler always ate row 0 as the header, dropping a
+    // real data point when the pasted block had no header row.
+    const next = applyHeaderPaste({
+      matrix: [
+        ['A', '10'],
+        ['B', '25'],
+      ],
+      startCol: 0,
+      header: ['Label', 'Value'],
+      body: [['', '']],
+      cols: 2,
+      chartType: 'bar',
+      model: BAR_MODEL,
+    });
+    assert.deepEqual(next.header, ['Label', 'Value']); // synthesised defaults
+    assert.deepEqual(next.body, [
+      ['A', '10'],
+      ['B', '25'],
+    ]);
+  });
+
+  it('is a no-op for an empty matrix', () => {
+    const header = ['Label', 'Value'];
+    const body = [['A', '10']];
+    const next = applyHeaderPaste({
+      matrix: [],
+      startCol: 0,
+      header,
+      body,
+      cols: 2,
+      chartType: 'bar',
+      model: BAR_MODEL,
+    });
+    assert.deepEqual(next.header, header);
+    assert.deepEqual(next.body, body);
   });
 });

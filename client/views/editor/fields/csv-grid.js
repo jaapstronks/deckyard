@@ -78,6 +78,58 @@ function buildMatrix(value, chartType, model) {
 }
 
 /**
+ * Compute the grid state after pasting a `matrix` (rows of strings) into a
+ * header cell at `startCol`. Pure so it can be unit-tested without the DOM.
+ *
+ * - Into the **top-left** header cell it rebuilds the whole grid via
+ *   {@link buildMatrix}, so the same header-detection the renderer applies
+ *   decides whether the block's first row is column names or data - a headerless
+ *   block keeps every row instead of losing row 0 to the header.
+ * - Into **any other** header cell it fills in place from that column: the first
+ *   pasted row sets the column name(s), following rows drop into the body at the
+ *   same column offset, and other columns are preserved - so pasting a single
+ *   series' values no longer wipes the rest of the grid.
+ *
+ * @param {Object} opts
+ * @param {string[][]} opts.matrix - Parsed clipboard rows.
+ * @param {number} opts.startCol - Header column the paste landed on.
+ * @param {string[]} opts.header
+ * @param {string[][]} opts.body
+ * @param {number} opts.cols
+ * @param {string} opts.chartType
+ * @param {{min:number,max:number,defaultHeaders:string[]}} opts.model
+ * @returns {{ header: string[], body: string[][], cols: number }}
+ */
+export function applyHeaderPaste({
+  matrix,
+  startCol,
+  header,
+  body,
+  cols,
+  chartType,
+  model,
+}) {
+  if (!Array.isArray(matrix) || !matrix.length) return { header, body, cols };
+  if (startCol === 0) return buildMatrix(serializeCsv(matrix), chartType, model);
+
+  const nextHeader = header.slice();
+  const nextBody = body.map((r) => r.slice());
+  const [head, ...rest] = matrix;
+  for (let ci = 0; ci < head.length; ci += 1) {
+    const tc = startCol + ci;
+    if (tc < cols) nextHeader[tc] = head[ci];
+  }
+  for (let ri = 0; ri < rest.length; ri += 1) {
+    while (nextBody.length <= ri) nextBody.push(new Array(cols).fill(''));
+    for (let ci = 0; ci < rest[ri].length; ci += 1) {
+      const tc = startCol + ci;
+      if (tc < cols) nextBody[ri][tc] = rest[ri][ci];
+    }
+  }
+  return { header: nextHeader, body: nextBody, cols };
+}
+
+/**
  * Build a chart-data grid editor.
  *
  * @param {Object} opts
@@ -114,14 +166,17 @@ export function createCsvGridEditor({
   const emit = () => onChange?.(currentCsv());
 
   // -- structural ops (re-render the grid) --------------------------------
-  const focusCell = (r, c) => {
+  const focusCell = (r, c, caret = 'all') => {
     const input = tableEl?.querySelector(
       `input[data-r="${r}"][data-c="${c}"]`
     );
-    if (input) {
-      input.focus();
-      input.select?.();
-    }
+    if (!input) return;
+    input.focus();
+    if (caret === 'start') input.setSelectionRange?.(0, 0);
+    else if (caret === 'end') {
+      const n = input.value.length;
+      input.setSelectionRange?.(n, n);
+    } else input.select?.();
   };
 
   const addRow = () => {
@@ -190,44 +245,68 @@ export function createCsvGridEditor({
     focusCell(startRow, startCol);
   };
 
-  // Pasting a full table (with header) into the top-left header cell replaces
-  // the whole grid: first pasted row becomes the header, the rest the body.
+  // Paste into a header cell: the top-left cell rebuilds the whole grid (with
+  // header auto-detection); any other header cell fills in place from that
+  // column. See applyHeaderPaste for the full semantics.
   const handleHeaderPaste = (e, startCol) => {
     const text = e.clipboardData?.getData('text/plain') || '';
     if (!isMultiCell(text)) return;
     e.preventDefault();
     const matrix = parseCsvToGrid(text);
     if (!matrix.length) return;
-    const [head, ...rest] = matrix;
-    for (let ci = 0; ci < head.length; ci += 1) {
-      const tc = startCol + ci;
-      if (tc < cols) header[tc] = head[ci];
-    }
-    if (rest.length) {
-      body = rest.map((r) => {
-        const row = new Array(cols).fill('');
-        for (let ci = 0; ci < r.length && ci < cols; ci += 1) row[ci] = r[ci];
-        return row;
-      });
-    }
+    const next = applyHeaderPaste({
+      matrix,
+      startCol,
+      header,
+      body,
+      cols,
+      chartType,
+      model,
+    });
+    header = next.header;
+    body = next.body;
+    if (typeof next.cols === 'number') cols = next.cols;
     emit();
     renderContent();
   };
 
-  // -- keyboard: Enter moves down the column, adding a row at the bottom ---
+  // -- keyboard nav -------------------------------------------------------
+  // Enter walks down the column (adding a row past the last one); arrow keys
+  // move between cells like a spreadsheet - Up/Down across rows (the header is
+  // row -1), Left/Right hop columns only when the caret sits at the cell edge so
+  // in-cell text editing still works. ⌘/Ctrl/Alt combos bubble untouched (the
+  // inline modal binds ⌘/Ctrl+Enter to Save).
   const onCellKeydown = (e, rowIdx, colIdx) => {
-    // Let Ctrl/⌘+Enter bubble (the inline modal binds it to Save).
-    if (e.key !== 'Enter' || e.metaKey || e.ctrlKey) return;
-    e.preventDefault();
-    if (rowIdx === -1) {
-      focusCell(0, colIdx);
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (rowIdx === -1) {
+        focusCell(0, colIdx);
+        return;
+      }
+      if (rowIdx >= body.length - 1) addRow();
+      focusCell(rowIdx + 1, colIdx);
       return;
     }
-    if (rowIdx >= body.length - 1) {
-      addRow();
+
+    const input = e.target;
+    const len = input.value.length;
+    const atStart = input.selectionStart === 0 && input.selectionEnd === 0;
+    const atEnd = input.selectionStart === len && input.selectionEnd === len;
+
+    if (e.key === 'ArrowDown' && rowIdx < body.length - 1) {
+      e.preventDefault();
       focusCell(rowIdx + 1, colIdx);
-    } else {
-      focusCell(rowIdx + 1, colIdx);
+    } else if (e.key === 'ArrowUp' && rowIdx > -1) {
+      e.preventDefault();
+      focusCell(rowIdx - 1, colIdx);
+    } else if (e.key === 'ArrowLeft' && atStart && colIdx > 0) {
+      e.preventDefault();
+      focusCell(rowIdx, colIdx - 1, 'end');
+    } else if (e.key === 'ArrowRight' && atEnd && colIdx < cols - 1) {
+      e.preventDefault();
+      focusCell(rowIdx, colIdx + 1, 'start');
     }
   };
 

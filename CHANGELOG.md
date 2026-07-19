@@ -29,6 +29,16 @@ entries are grouped per release rather than exhaustively listed.
   quiet until a field has been visited, and clears on the first keystroke. Most
   useful for custom slide types, whose fields are author-defined.
 
+- **Custom slide types: import and export definitions.** The ⋮ menu on a custom
+  type gained "Export as JSON", which downloads a portable `.slidetype.json`
+  envelope carrying only the shape (label, base type, fields, defaults,
+  template, CSS) — never the id, slug, publish state or audit columns. A new
+  "Import" button in the section header reads such a file back as an
+  **unpublished draft**: the slug is derived client-side and made unique, so
+  re-importing the same file lands a sibling (`my-type-2`) instead of erroring
+  on a clash, and the server stores the import as a draft even if the payload
+  asks otherwise. See `docs/reference/custom-slide-types-frontend.md`.
+
 
 - **"Someone worked on your deck" notifications, bundled.** When a collaborator
   adds slides to a deck you own or collaborate on, you now get one bundled bell
@@ -497,6 +507,14 @@ See `SECURITY.md` for the deployment-facing summary and env vars.
   memory exhaustion from oversized requests.
 - **Media keys confined to the uploads directory**, closing a path-traversal
   existence oracle in `/api/media/confirm`.
+- **Two remaining hand-rolled body readers now honour the cap.**
+  `POST /api/follow-codes` and `PATCH /api/…/publish/:slug` each read their body
+  with a bespoke reader that bypassed `MAX_REQUEST_BODY_BYTES`; both now go
+  through the shared capped parser and answer `413` above the limit.
+- **CSRF origin-check now covers the sandbox-guest cookie.** The check keyed only
+  on the login cookie (`sb_session`), so sandbox guests (authenticated via
+  `sb_sandbox`) slipped past it; both browser-session cookies now count as
+  CSRF-able.
 
 ## [1.0.0] — 2026-07-14
 
