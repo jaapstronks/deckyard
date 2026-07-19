@@ -16,6 +16,7 @@ import {
 } from './slide-list/nested-helpers.js';
 import { createSlideItem } from './slide-list/render-item.js';
 import { attachDragHandlers } from './slide-list/drag-handlers.js';
+import { attachLongPress } from '../../lib/long-press.js';
 import { attachClickHandler } from './slide-list/click-handlers.js';
 import {
   showSlideContextMenu,
@@ -591,14 +592,13 @@ export function setupSlideList({
   // Right-click a slide row for a quick actions menu (duplicate / delete /
   // visibility). Delegated on the list container so a single listener covers
   // every row, including ones added on re-render.
-  const onContextMenu = (e) => {
-    const itemEl = e.target?.closest?.('.slide-item');
-    if (!itemEl || !slideListEl.contains(itemEl)) return;
+  const openSlideMenuAt = ({ target, x, y }) => {
+    const itemEl = target?.closest?.('.slide-item');
+    if (!itemEl || !slideListEl.contains(itemEl)) return false;
     const slideId = itemEl.dataset.slideId;
-    if (!slideId) return;
+    if (!slideId) return false;
     const slide = (pres.slides || []).find((s) => s.id === slideId);
-    if (!slide) return;
-    e.preventDefault();
+    if (!slide) return false;
 
     // Act on the current multi-selection if the clicked row is part of it;
     // otherwise select just this row first, so the menu matches what's shown.
@@ -615,8 +615,8 @@ export function setupSlideList({
     }
 
     showSlideContextMenu({
-      x: e.clientX,
-      y: e.clientY,
+      x,
+      y,
       slide,
       ids,
       ctx: {
@@ -632,12 +632,40 @@ export function setupSlideList({
         moveSlideToPosition,
       },
     });
+    return true;
+  };
+
+  // Android fires a native contextmenu after a long press as well. Opening the
+  // menu twice tears down and rebuilds it mid-dispatch, so ignore a contextmenu
+  // that arrives on the heels of one we opened ourselves.
+  let lastLongPressAt = 0;
+
+  const onContextMenu = (e) => {
+    if (Date.now() - lastLongPressAt < 1000) {
+      e.preventDefault();
+      return;
+    }
+    if (openSlideMenuAt({ target: e.target, x: e.clientX, y: e.clientY })) {
+      e.preventDefault();
+    }
   };
   slideListEl.addEventListener('contextmenu', onContextMenu);
+
+  // Touch has no right-click, and HTML5 drag-and-drop reordering doesn't fire
+  // on touch either — so without this, a slide cannot be reordered at all on a
+  // phone or tablet. The menu's "Move to position…" / "Move to end" are the
+  // touch path to reordering, so long-press opens the same menu.
+  const detachLongPress = attachLongPress(slideListEl, {
+    onLongPress: (detail) => {
+      lastLongPressAt = Date.now();
+      openSlideMenuAt(detail);
+    },
+  });
 
   const detach = () => {
     detachKeyNav?.();
     slideListEl.removeEventListener('contextmenu', onContextMenu);
+    detachLongPress?.();
     closeSlideContextMenu();
   };
 

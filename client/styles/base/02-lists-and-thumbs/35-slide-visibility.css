@@ -397,3 +397,23 @@
   letter-spacing: 0.3px;
   z-index: 5;
 }
+
+/* --- Touch ---
+   Hover-revealed, so unreachable on a touch screen. Show it at rest instead.
+   The visual box stays 24px: a slide thumb in a 200px panel is only ~100px
+   tall, and a 44px badge would cover a quarter of it. The tap target is grown
+   invisibly instead, which is what actually needs to be 44px. */
+@media (hover: none) {
+  .slide-visibility-toggle {
+    opacity: 0.75;
+  }
+  .slide-visibility-toggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}

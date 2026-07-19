@@ -120,3 +120,28 @@
 }
 
 
+/* --- Touch -----------------------------------------------------------------
+   "Insert a slide here" is hover-only, which on a touch screen means it does
+   not exist: there is no hover state to enter, and the button is
+   pointer-events: none until one arrives. Keyboard users already have an
+   escape hatch (.is-kb-active); this is the equivalent for a thumb. The
+   button stays subdued at rest so a phone doesn't read as a wall of plus
+   signs, and the row grows to a tappable height. */
+@media (hover: none) {
+  :where(
+      .app-shell,
+      .modal-backdrop,
+      .notes-shell,
+      .follow-shell,
+      .join-shell,
+      .presenter-shell
+    )
+    .slide-insert-btn {
+    opacity: 0.4;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .is-editor .slides-panel .list > .slide-insert {
+    height: 32px;
+  }
+}
