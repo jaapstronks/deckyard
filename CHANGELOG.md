@@ -227,6 +227,13 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Bilingual library slides keep both languages on database installs.** A slide
+  saved to the library with NL + EN content (`i18n.versions`) silently lost its
+  per-language content on Postgres (and, it turned out, on the active file
+  adapter too) — composed decks fell back to single-language content. The
+  storage layer now persists and returns `i18n` on both backends
+  (migration `049`, no backfill needed).
+
 - **@mentions render as inline chips everywhere, not raw markup.** A mention is
   stored in a comment body as `@[Name](user:email)`; the editor thread already
   showed it as a chip, but the share viewer, preview lightbox, and the
