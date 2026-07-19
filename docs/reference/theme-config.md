@@ -47,6 +47,10 @@ theme reaches parity with a file theme.
   // title-slide background images.
   "backgroundPresets": ["/custom/acme-1.jpg"],
 
+  // Names for the two built-in background slots. They are storage keys, not
+  // colours — see docs/developer/themes.md.
+  "backgroundLabels": { "lime": "White", "mist": "Lilac" },
+
   "gradient": { "enabled": false },
   "slideTypes": { "include": [], "exclude": [] },
   "defaultTitleSlide": "title-slide",

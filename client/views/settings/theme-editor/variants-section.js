@@ -92,6 +92,53 @@ export function createVariantsSection({ config, colors, onChange }) {
     })
   );
 
+  // The two built-in slots come first: they are the options every deck already
+  // has, and they are the ones showing as "Color 1"/"Color 2" until named.
+  const builtins = h('div', { class: 'stack theme-variant-builtins' });
+  builtins.append(
+    h('p', {
+      class: 'help',
+      text: t(
+        'settings.themes.config.builtinsHint',
+        'Every theme has two built-in backgrounds. They are storage slots, not colours — name them for what yours actually are, or they show as "Color 1" and "Color 2".'
+      ),
+    })
+  );
+
+  // No swatch here on purpose: lime and mist are *derived* (mist from the
+  // primary), so anything drawn from the four source colours would be a guess.
+  // The live preview two columns over shows what they actually look like.
+  for (const slot of ['lime', 'mist']) {
+    builtins.append(
+      h('div', { class: 'row is-gap-2 is-items-center theme-builtin-row' }, [
+        h('input', {
+          class: 'input form-input',
+          type: 'text',
+          maxlength: '40',
+          value: config.backgroundLabels?.[slot] || '',
+          placeholder:
+            slot === 'lime'
+              ? t('editor.background.opt1', 'Color 1')
+              : t('editor.background.opt2', 'Color 2'),
+          'aria-label': t('settings.themes.config.builtinName', 'Name'),
+          oninput: (e) => {
+            const label = e.target.value.trim();
+            if (label) {
+              if (!config.backgroundLabels) config.backgroundLabels = {};
+              config.backgroundLabels[slot] = label;
+            } else if (config.backgroundLabels) {
+              delete config.backgroundLabels[slot];
+              if (!Object.keys(config.backgroundLabels).length) {
+                delete config.backgroundLabels;
+              }
+            }
+            onChange();
+          },
+        }),
+      ])
+    );
+  }
+
   const rows = h('div', { class: 'stack theme-variants' });
 
   const list = () =>
@@ -229,6 +276,11 @@ export function createVariantsSection({ config, colors, onChange }) {
 
   render();
   el.append(
+    builtins,
+    h('div', {
+      class: 'field-label field-label-sm',
+      text: t('settings.themes.config.extraBackgrounds', 'Extra options'),
+    }),
     rows,
     h('div', { class: 'row is-gap-2 is-items-start' }, [
       nameInput,

@@ -184,5 +184,8 @@
   "settings.themes.config.variantBadName": "Et navn må ha minst én bokstav eller ett siffer.",
   "settings.themes.config.variantReserved": "Det navnet tilhører en innebygd bakgrunn.",
   "settings.themes.config.variantDuplicate": "Du har allerede en variant med det navnet.",
-  "settings.themes.config.variantsFull": "Et tema kan ikke romme flere bakgrunnsvalg."
+  "settings.themes.config.variantsFull": "Et tema kan ikke romme flere bakgrunnsvalg.",
+  "settings.themes.config.builtinsHint": "Hvert tema har to innebygde bakgrunner. Det er lagringsplasser, ikke farger — gi dem navn etter hva de faktisk er, ellers vises de som \"Color 1\" og \"Color 2\".",
+  "settings.themes.config.builtinName": "Navn",
+  "settings.themes.config.extraBackgrounds": "Ekstra valg"
 }

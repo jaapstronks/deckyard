@@ -360,5 +360,8 @@
   "settings.themes.config.variantBadName": "A name needs at least one letter or digit.",
   "settings.themes.config.variantReserved": "That name is taken by a built-in background.",
   "settings.themes.config.variantDuplicate": "You already have a variant with that name.",
-  "settings.themes.config.variantsFull": "That is as many background options as a theme can hold."
+  "settings.themes.config.variantsFull": "That is as many background options as a theme can hold.",
+  "settings.themes.config.builtinsHint": "Every theme has two built-in backgrounds. They are storage slots, not colours — name them for what yours actually are, or they show as \"Color 1\" and \"Color 2\".",
+  "settings.themes.config.builtinName": "Name",
+  "settings.themes.config.extraBackgrounds": "Extra options"
 }

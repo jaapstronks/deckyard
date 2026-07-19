@@ -326,6 +326,14 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **The background picker names a theme's two built-in backgrounds.** They are
+  stored as `lime` and `mist`, which are storage keys rather than colours —
+  `deckyard` paints lime white, `sandbox-dark` paints it near-black — so the
+  picker fell back to "Color 1" and "Color 2" on every deck. A theme can name
+  them (`backgroundLabels`, already supported and set by nothing), the shipped
+  themes now do, and the theme editor offers the two fields alongside its
+  background options.
+
 - **The theme editor previews real slides.** The live preview was a hand-rolled
   fake title slide built from a few inline styles, so it could only ever show
   colours and fonts — never a background variant, a corner radius, a shadow, or

@@ -414,6 +414,7 @@ function applyThemeConfig(theme, rawConfig) {
   // Named background variants: the documented DB/file gap. normalizeTheme turns
   // these into `--t-slide-bg-<id>*` vars and the generated `.slide-bg-<id>` CSS,
   // exactly as it does for a file theme.
+  if (config.backgroundLabels) theme.backgroundLabels = config.backgroundLabels;
   if (config.slideBackgrounds) theme.slideBackgrounds = config.slideBackgrounds;
   if (config.backgroundPresets) theme.backgroundPresets = config.backgroundPresets;
   if (config.gradient) theme.gradient = config.gradient;

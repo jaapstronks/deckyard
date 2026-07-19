@@ -314,5 +314,8 @@
   "settings.themes.config.variantBadName": "Nimessä on oltava vähintään yksi kirjain tai numero.",
   "settings.themes.config.variantReserved": "Nimi kuuluu sisäänrakennetulle taustalle.",
   "settings.themes.config.variantDuplicate": "Sinulla on jo samanniminen vaihtoehto.",
-  "settings.themes.config.variantsFull": "Teemaan ei mahdu enempää taustavaihtoehtoja."
+  "settings.themes.config.variantsFull": "Teemaan ei mahdu enempää taustavaihtoehtoja.",
+  "settings.themes.config.builtinsHint": "Jokaisessa teemassa on kaksi sisäänrakennettua taustaa. Ne ovat tallennuspaikkoja, eivät värejä — nimeä ne sen mukaan mitä ne todella ovat, muuten ne näkyvät nimillä \"Color 1\" ja \"Color 2\".",
+  "settings.themes.config.builtinName": "Nimi",
+  "settings.themes.config.extraBackgrounds": "Lisävaihtoehdot"
 }

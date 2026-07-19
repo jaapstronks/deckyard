@@ -308,5 +308,8 @@
   "settings.themes.config.variantBadName": "Een naam heeft minstens één letter of cijfer nodig.",
   "settings.themes.config.variantReserved": "Die naam is bezet door een ingebouwde achtergrond.",
   "settings.themes.config.variantDuplicate": "Je hebt al een variant met die naam.",
-  "settings.themes.config.variantsFull": "Meer achtergrondopties passen er niet in een thema."
+  "settings.themes.config.variantsFull": "Meer achtergrondopties passen er niet in een thema.",
+  "settings.themes.config.builtinsHint": "Elk thema heeft twee ingebouwde achtergronden. Het zijn opslagplekken, geen kleuren — geef ze de naam van wat ze bij jou werkelijk zijn, anders heten ze \"Color 1\" en \"Color 2\".",
+  "settings.themes.config.builtinName": "Naam",
+  "settings.themes.config.extraBackgrounds": "Extra opties"
 }
