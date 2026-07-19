@@ -358,6 +358,14 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Fixed
 
+- **Accent highlights that were never drawn.** `var(--app-accent)` was used in
+  ~50 declarations across ten stylesheets and defined nowhere, so every one of
+  them was invalid and silently dropped: selected-state borders, active-tab
+  highlights, accent link colours and focus rings simply did not paint. They now
+  use the token family that exists — `-primary` for shapes, `-text` for text,
+  which is the one that lightens in dark mode so accent text stays legible. The
+  dead `--app-accent-hover` chain went with it.
+
 - **The theme editor's Save stays reachable, and is the only one on screen.**
   The workspace "Theme picker" card stayed visible above an open editor with its
   own primary Save, so the Save nearer the top was the one that did *not* commit

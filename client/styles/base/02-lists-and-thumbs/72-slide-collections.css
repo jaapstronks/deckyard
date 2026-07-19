@@ -93,8 +93,8 @@
   font-size: var(--ps-text-xs);
   font-weight: 600;
   border-radius: var(--ps-radius-full);
-  background: hsl(var(--app-accent) / 0.12);
-  color: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary) / 0.12);
+  color: hsl(var(--app-accent-text));
 }
 
 .collection-chip-actions {

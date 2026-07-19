@@ -219,13 +219,13 @@
 }
 
 .imagekit-tag-chip.is-active {
-  background: hsl(var(--app-accent) / 0.15);
-  border-color: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary) / 0.15);
+  border-color: hsl(var(--app-accent-primary));
   color: hsl(var(--app-text-primary));
 }
 
 .imagekit-tag-chip.is-active .imagekit-tag-chip-hash {
-  background: hsl(var(--app-accent) / 0.25);
+  background: hsl(var(--app-accent-primary) / 0.25);
   color: hsl(var(--app-text-primary));
 }
 

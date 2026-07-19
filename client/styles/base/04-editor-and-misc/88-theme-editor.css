@@ -281,7 +281,7 @@
 }
 
 .theme-logo-url-toggle:hover {
-  color: hsl(var(--app-accent-hover));
+  color: hsl(var(--app-accent-primary-hover));
 }
 
 .theme-logo-url-section {
