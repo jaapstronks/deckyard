@@ -10,10 +10,15 @@ The `themes.config` jsonb column (migration `050_theme_config.js`) holds that
 richer shape. `buildThemeConfig` merges it over the derived defaults, so a DB
 theme reaches parity with a file theme.
 
-> This is the storage and API layer. There is no UI for it yet — the Theme
-> Studio (see `docs/plans/theme-forker-extensibility.md`) is what will expose
-> these fields. Until then, `POST`/`PUT /api/themes/custom[/:id]` accept a
-> `config` object.
+Most of this shape is editable in **Settings → Themes**, alongside the colours
+and fonts: surfaces, heading treatment, background images, named background
+options, the built-in slot names and the override locks. `slideTypes` is the
+exception — slide-type availability is curated org-wide in **Settings → Slide
+Types** instead, so a theme-level control would be a second switch for the same
+outcome.
+
+`POST`/`PUT /api/themes/custom[/:id]` accept a `config` object directly for
+anything the editor does not cover.
 
 ## Shape
 

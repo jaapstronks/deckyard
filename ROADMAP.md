@@ -53,6 +53,16 @@ named, ordered **Collection**), retired starter kits, and a workspace-default
 theme picker — shipped in full on 2026-07-18 (Slices 1-4). How it works is
 documented in `docs/reference/deck-creation-and-reuse.md`.)_
 
+_(The **Theme Studio** — the guided layer over the `--t-*` token system —
+shipped on 2026-07-19 across 17 PRs. A brand theme can now be built two ways: a
+file theme in git (`custom/themes/<id>/theme.json`, documented in
+`docs/developer/themes.md`) or a database theme in the browser, with colours,
+fonts, an uploaded logo, surface scales, heading treatment, background imagery,
+named background options and per-property override locks. The database shape and
+its validation are documented in `docs/reference/theme-config.md`. Ejecting a
+database theme to file-JSON was dropped: both audiences are served directly, so
+it would only have been a second path to something that already works.)_
+
 ## Next — existing feature plans
 
 - **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
@@ -75,15 +85,12 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
-- **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
-  — make `theme.backgroundPresets` the single source of default background
-  imagery and remove the deprecated hardcoded fallback list.
-- **Theme building & forker extensibility** — `docs/plans/theme-forker-extensibility.md`
-  — a guided Theme Studio wizard over the `--t-*` token layer (logos, colour
-  roles + contrast, typography, surfaces, backgrounds, per-brand override
-  locks) plus a forker slide-type toolkit (scaffolder, validator, reusable
-  building blocks). Discovery + design draft; folds in the background-presets
-  work. Open call: theme storage model (unify DB + file-JSON).
+- **Forker slide-type toolkit** — `docs/plans/forker-slide-type-toolkit.md`
+  — a scaffolder and validator for the file-JS custom-slide-type seam, plus a
+  reusable building-block layer (eyebrow, highlight, badge, CTA) that core and
+  custom types both compose. Split out of the theme track when the Theme Studio
+  shipped.
+
 ## Later — cloud / multi-tenant track
 
 - **Custom domains** — `docs/plans/custom-domains.md`
