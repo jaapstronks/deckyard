@@ -8,6 +8,7 @@ import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { isValidSlug } from './utils/helpers.js';
 import { isValidFont, DEFAULT_HEADING_FONT, DEFAULT_BODY_FONT } from '../../shared/theme-fonts.js';
+import { validateThemeConfig } from '../../shared/theme-config-schema.js';
 
 /**
  * Verify that font familyIds referenced in fonts config exist in the org.
@@ -56,6 +57,7 @@ export async function listThemes(ctx) {
         'logo_small_url',
         'colors',
         'fonts',
+        'config',
         'is_default',
         'created_at',
         'updated_at',
@@ -92,6 +94,7 @@ export async function getTheme(themeId, ctx) {
         'logo_small_url',
         'colors',
         'fonts',
+        'config',
         'is_default',
         'created_at',
         'updated_at',
@@ -134,6 +137,7 @@ export async function getThemeBySlug(slug, ctx) {
         'logo_small_url',
         'colors',
         'fonts',
+        'config',
         'is_default',
         'created_at',
         'updated_at',
@@ -166,6 +170,7 @@ export async function getDefaultTheme(ctx) {
         'logo_small_url',
         'colors',
         'fonts',
+        'config',
         'is_default',
         'created_at',
         'updated_at',
@@ -214,6 +219,10 @@ export async function createTheme(data, ctx) {
     return { ok: false, reason: 'invalid_fonts' };
   }
 
+  // Total: junk yields `{}` rather than an error, so a malformed config can
+  // never block creating a theme that is otherwise valid.
+  const config = validateThemeConfig(data?.config);
+
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
 
@@ -246,6 +255,7 @@ export async function createTheme(data, ctx) {
         logo_small_url: data?.logoSmallUrl || null,
         colors,
         fonts,
+        config,
         is_default: false,
         created_at: now,
         updated_at: now,
@@ -337,6 +347,10 @@ export async function updateTheme(themeId, updates, ctx) {
         return { ok: false, reason: 'invalid_fonts' };
       }
       updateData.fonts = fonts;
+    }
+
+    if ('config' in updates) {
+      updateData.config = validateThemeConfig(updates.config);
     }
 
     const row = await db
@@ -440,6 +454,9 @@ function formatTheme(row) {
     logoSmallUrl: row.logo_small_url,
     colors: row.colors || {},
     fonts: row.fonts || {},
+    // Always a validated object, so callers never have to guard it. Rows that
+    // predate the config column read as `{}`.
+    config: validateThemeConfig(row.config),
     isDefault: row.is_default,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

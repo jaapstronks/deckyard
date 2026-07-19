@@ -247,6 +247,21 @@ entries are grouped per release rather than exhaustively listed.
   See `docs/reference/collab-presence.md`, `collab-deck-doc.md`,
   `collab-editor-binder.md` and ADR 001.
 
+### Added
+
+- **Database themes reach parity with file themes.** A DB theme could only
+  store four colours, two fonts and two logo URLs, so named slide background
+  variants, background presets, gradient, surface tokens and slide-type
+  curation were expressible in a hand-authored `theme.json` but not in a theme
+  built in the app. A new `config` jsonb column (migration `050`) holds that
+  richer shape, and `buildThemeConfig` merges it over the derived defaults —
+  closing the documented `slideBackgrounds` gap. The column defaults to `{}`
+  and an empty config leaves a theme byte-identical, so existing themes render
+  exactly as before. Also stores dark/light logo variants and a coarse
+  `open`/`locked` override policy per brand property (validated now; enforced
+  in a later change). No UI yet — this is the storage the Theme Studio will
+  build on. See `docs/reference/theme-config.md`.
+
 ### Fixed
 
 - **Countdown, freeform and end slides follow the theme.** Their CSS reads
