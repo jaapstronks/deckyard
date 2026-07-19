@@ -34,8 +34,10 @@ export async function prepareNewPresentation(repoRoot, body) {
   // Default title slide differs per theme.
   // Themes can specify a custom title slide via the `defaultTitleSlide` property.
   let defaultTitleSlide = 'title-slide';
-  // Also carried into newPresentation so the default title slide can take its
-  // background image from the theme's own presets.
+  // Also carried into newPresentation and on to newSlide, so that a slide type
+  // opting in via `autoBackgroundPreset` can draw a background from the theme's
+  // own presets. No core type sets that flag today, so the default title slide
+  // stays flat here; import/convert apply theme presets on their own paths.
   let themeConfig = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);

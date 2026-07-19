@@ -4156,10 +4156,10 @@
         "client/views/editor/inline-edit/media-popover.js:97"
       ]
     },
-    "editor.image.defaultBackgrounds": {
-      "default": "Default backgrounds",
+    "editor.image.themeBackgrounds": {
+      "default": "From this theme",
       "refs": [
-        "client/views/editor/fields/images/title-bg-image.js:125"
+        "client/views/editor/fields/images/title-bg-image.js:128"
       ]
     },
     "editor.image.fieldLabel": {
