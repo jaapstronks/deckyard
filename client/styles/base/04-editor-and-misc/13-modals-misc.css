@@ -277,7 +277,7 @@
 }
 
 /* Mobile adjustments */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .new-pres-section-header {
     padding: var(--ps-space-2) var(--ps-space-3);
   }
@@ -1411,7 +1411,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .compare-lightbox-content {
     width: 95vw;
   }
@@ -1422,7 +1422,7 @@
 }
 
 /* Mobile adjustments */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .modal.modal-wide,
   .modal.modal-compare {
     width: 100%;

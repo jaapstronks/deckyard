@@ -290,39 +290,37 @@ export function renderInspectorExtrasByType(ctx) {
 
     case 'content-columns-slide': {
       add('columnCount');
-      // A selected column image routes to the element tab: replace/alt/fit/focus
-      // for that column, plus its block count. `idx` is the 1-based column number
-      // (data-inline-photo), matching the col{n} numbered schema.
-      if (selectedElement?.kind === 'image') {
-        const n = selectedElement.idx;
-        if (renderSelectedImageCard(elementForm)) {
-          const blockCountField = fieldByKey.get(`col${n}BlockCount`);
-          if (blockCountField) {
-            used.add(`col${n}BlockCount`);
-            const bcEl = renderField(blockCountField);
-            if (bcEl) elementForm.append(bcEl);
-          }
-          // Mark the numbered image keys used so the generic loop skips them.
-          used.add(`col${n}Image`);
-          used.add(`col${n}Alt`);
-          used.add(`col${n}ImageFit`);
-          used.add(`col${n}ImageFocusX`);
-          used.add(`col${n}ImageFocusY`);
-          return;
-        }
-      }
-      // Per-column image settings (fit + focus) and block count: numbered
-      // schema, so these are plain fields; the column texts live in the bulk
-      // modal. Only active columns render, together in one collapsible group.
       const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
-      const colSection = collapsibleGroup(
-        h,
-        t('editor.inspector.columnsConfig', 'Column images & blocks')
-      );
-      for (let n = 1; n <= count; n += 1) {
+      // A selected column image routes to the element tab: the shared card
+      // (replace/alt/fit/focus grid) plus that column's block count. `idx` is the
+      // 1-based column number (data-inline-photo), matching the col{n} schema.
+      if (selectedElement?.kind === 'image' && renderSelectedImageCard(elementForm)) {
+        const n = selectedElement.idx;
+        const blockCountField = fieldByKey.get(`col${n}BlockCount`);
+        if (blockCountField) {
+          used.add(`col${n}BlockCount`);
+          const bcEl = renderField(blockCountField);
+          if (bcEl) elementForm.append(bcEl);
+        }
+        // Mark every column's numbered image keys used so the generic keeps loop
+        // never leaks a raw col{n}* field into the slide form.
+        for (let n2 = 1; n2 <= count; n2 += 1) {
+          used.add(`col${n2}Image`);
+          used.add(`col${n2}Alt`);
+          used.add(`col${n2}ImageFit`);
+          used.add(`col${n2}ImageFocusX`);
+          used.add(`col${n2}ImageFocusY`);
+          used.add(`col${n2}BlockCount`);
+        }
+        return;
+      }
+      // Nothing selected: all active columns render in one slide-tab collapsible
+      // (fit + contain-alignment + block count per column). Numbered schema, so
+      // these are plain fields; the column texts live in the bulk modal.
+      const renderColumn = (n, container) => {
         const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
         const blockCountField = fieldByKey.get(`col${n}BlockCount`);
-        if (!imgUrl && !blockCountField) continue;
+        if (!imgUrl && !blockCountField) return;
         const group = h('div', { class: 'stack' });
         group.append(h('div', {
           class: 'field-label',
@@ -337,10 +335,12 @@ export function renderInspectorExtrasByType(ctx) {
             const fitEl = renderField(fitField);
             if (fitEl) group.append(fitEl);
           }
+          // Cover focus is on the canvas; a contain column still gets alignment.
           const picker = renderImagePositionPicker({
             h,
-            mode: 'cover',
+            mode: slide.content?.[`col${n}ImageFit`] === 'contain' ? 'contain' : 'cover',
             imageUrl: imgUrl,
+            containerSelector: '.preview-panel .thumb.is-clickable-preview .cc-image',
             focusX: slide.content?.[`col${n}ImageFocusX`] ?? 50,
             focusY: slide.content?.[`col${n}ImageFocusY`] ?? 50,
             onChange: ({ focusX, focusY } = {}) => {
@@ -357,8 +357,13 @@ export function renderInspectorExtrasByType(ctx) {
           const bcEl = renderField(blockCountField);
           if (bcEl) group.append(bcEl);
         }
-        if (group.childNodes.length > 1) colSection.body.append(group);
-      }
+        if (group.childNodes.length > 1) container.append(group);
+      };
+      const colSection = collapsibleGroup(
+        h,
+        t('editor.inspector.columnsConfig', 'Column images & blocks')
+      );
+      for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
       if (colSection.body.childNodes.length) form.append(colSection.el);
       return;
     }

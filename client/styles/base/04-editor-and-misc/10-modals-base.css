@@ -354,7 +354,7 @@
    MODAL MOBILE RESPONSIVENESS
    ============================================================ */
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   /* Full-screen modals on mobile */
   .modal-backdrop {
     padding: 0;

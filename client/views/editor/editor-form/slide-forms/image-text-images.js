@@ -12,6 +12,7 @@
  * legacy flat `image` migrates into images[0] and every rendered cell gets a
  * live item behind it (the WYSIWYG media popover mutates `images[idx]`).
  */
+import { renderImagePositionPicker } from '../image-position-picker.js';
 import { renderFocusGridField } from '../focus-picker.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import {
@@ -210,14 +211,22 @@ export function renderImageTextImagesSection({
     const row = fieldGrid?.([altEl, fitEl].filter(Boolean), 2);
     if (row) card.append(row);
 
-    card.append(
-      renderFocusGridField({
+    // Focus control, consistent with the shared image-element card: a cover
+    // (cropping) cell gets the 3x3 grid as the precise, keyboard-reachable
+    // fallback to the canvas focal-point drag (both write the item's focusX/Y);
+    // a contain cell gets its alignment control instead. Effective fit = the
+    // item's own fit, else the slide-level default.
+    const effFit =
+      typeof image.fit === 'string' && image.fit
+        ? image.fit
+        : content.imageFit || 'cover';
+    if (effFit === 'contain') {
+      const posEl = renderImagePositionPicker({
         h,
-        label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
-        helpText: t(
-          'editor.imageText.imageFocusHelp',
-          'Pick what should stay visible when the image is cropped.'
-        ),
+        mode: 'contain',
+        imageUrl: image.src,
+        containerSelector:
+          '.preview-panel .thumb.is-clickable-preview .slide-image-text.is-image-contain .frame',
         focusX: image.focusX,
         focusY: image.focusY,
         onChange: ({ focusX, focusY }) => {
@@ -226,8 +235,28 @@ export function renderImageTextImagesSection({
           markDirty?.();
           scheduleUiRefresh?.();
         },
-      })
-    );
+      });
+      if (posEl) card.append(posEl);
+    } else {
+      card.append(
+        renderFocusGridField({
+          h,
+          label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
+          helpText: t(
+            'editor.image.focusGridHelp',
+            'Drag the point on the image, or pick a position here.'
+          ),
+          focusX: image.focusX,
+          focusY: image.focusY,
+          onChange: ({ focusX, focusY }) => {
+            images[i].focusX = focusX;
+            images[i].focusY = focusY;
+            markDirty?.();
+            scheduleUiRefresh?.();
+          },
+        })
+      );
+    }
 
     wrap.append(card);
   }

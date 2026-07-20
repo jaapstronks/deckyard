@@ -215,7 +215,7 @@
 }
 
 /* Mobile: Single column, cards use full width */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .list.presentation-grid {
     grid-template-columns: 1fr;
     gap: var(--ps-space-3);
@@ -276,7 +276,7 @@
 }
 
 /* Mobile: Reduce padding for more card space */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .presentation-grid-frame {
     padding: 0 var(--ps-space-3);
   }
@@ -325,7 +325,7 @@
 }
 
 /* Mobile: Compact logo, hide title text */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .presentation-topbar-brand {
     padding: 0 var(--ps-space-2);
   }
@@ -398,7 +398,7 @@
   margin-bottom: var(--ps-space-4);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .home-columns {
     grid-template-columns: 1fr;
     gap: var(--ps-space-4);

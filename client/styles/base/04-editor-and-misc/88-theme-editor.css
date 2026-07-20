@@ -313,7 +313,7 @@
   gap: var(--ps-space-3);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .theme-colors-grid {
     grid-template-columns: 1fr;
   }
@@ -388,7 +388,7 @@
   gap: var(--ps-space-3);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .theme-fonts-grid {
     grid-template-columns: 1fr;
   }
