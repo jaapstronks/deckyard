@@ -305,10 +305,17 @@ export function createRenderField({
                     scheduleUiRefresh?.();
                   }
                 } else if (slide.type === 'image-text-slide') {
-                  // Only auto-switch if user hasn't explicitly set imageFit yet (still on default 'cover')
-                  const currentFit = slide.content.imageFit;
+                  // Fit is per-image (ImageRef, step 2b): auto-switch the first
+                  // item's fit, and only when the user hasn't explicitly set one.
+                  // This path fires from the legacy flat `image` field, so the
+                  // image may not be migrated into images[0] yet - then write
+                  // the legacy slide-level fit, which the next edit folds in.
+                  const items = Array.isArray(slide.content.images) ? slide.content.images : [];
+                  const item0 = items[0] && typeof items[0] === 'object' ? items[0] : null;
+                  const currentFit = item0?.fit || slide.content.imageFit;
                   if (!currentFit || currentFit === 'cover') {
-                    slide.content.imageFit = 'contain';
+                    if (item0) item0.fit = 'contain';
+                    else slide.content.imageFit = 'contain';
                     debugLog('[auto-fit] Switched image-text-slide to contain fit due to aspect ratio mismatch');
                     toast.info(
                       t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout options.'),

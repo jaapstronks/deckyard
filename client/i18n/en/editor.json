@@ -469,6 +469,8 @@
   "editor.imageText.fitContain": "Fit (no crop)",
   "editor.imageText.fitCover": "Fill (crop)",
   "editor.imageText.fitDefault": "Match slide",
+  "editor.imageText.fitDefaultType": "Default · {fit}",
+  "editor.imageText.fitDefaultTypeTitle": "Follow the slide type default",
   "editor.imageText.image": "Image",
   "editor.imageText.imageFit": "Image fit",
   "editor.imageText.imageFocus": "Image focus (crop)",

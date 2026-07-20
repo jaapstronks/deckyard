@@ -43,7 +43,10 @@ const INSPECTOR_KEEPS = {
   // `layout` (structural variant) is intentionally NOT kept: the toolbar
   // "Layout" chip is its canonical control in the inspector. textColumns /
   // imageSide stay as precise, distinctly-named sub-settings.
-  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageFit', 'imageBackground'],
+  // `imageFit` is intentionally absent since datamodel step 2b: fit is a
+  // per-image ImageRef property (images manager / "This image"), no longer a
+  // writable slide-level setting.
+  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground'],
   'video-slide': ['autoplay'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],

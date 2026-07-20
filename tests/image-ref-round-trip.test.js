@@ -118,19 +118,63 @@ test('migration: slide-level alt + focus fold into images[0], render-equivalent'
 
   ensureImageTextImages(legacy);
 
-  // Alt + focus are now canonical on the item.
+  // Alt + focus + fit are now canonical on the item.
   assert.equal(legacy.images[0].src, '/legacy.png');
   assert.equal(legacy.images[0].alt, 'Legacy alt');
   assert.equal(legacy.images[0].focusX, 25);
   assert.equal(legacy.images[0].focusY, 75);
-  // Slide-level alt/focus are cleared...
+  assert.equal(legacy.images[0].fit, 'contain');
+  // Slide-level alt/focus/fit are cleared.
   assert.equal(legacy.alt, '');
   assert.equal(legacy.focusX, '');
   assert.equal(legacy.focusY, '');
-  // ...but imageFit is deliberately left slide-level (step 3, CSS unification).
-  assert.equal(legacy.imageFit, 'contain');
+  assert.equal(legacy.imageFit, '');
   // Render is byte-identical - the resolver already folded the same values.
   assert.equal(render(legacy), before);
+});
+
+// ---- Step-2b fold: fit becomes an ImageRef property -------------------------
+
+test('migration: a default base fit is dropped, never stamped onto the items', () => {
+  // imageFit equal to the type default carries no information: the fold drops
+  // the field and leaves every item fit empty, so the empty-means-follow-the-
+  // type signal survives and a future default change still reaches this deck.
+  const content = slide({ layout: 'duo', imageFit: 'cover', images: [{ src: '/a.png' }, { src: '/b.png' }] });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.imageFit, '');
+  assert.equal(content.images[0].fit ?? '', '');
+  assert.equal(content.images[1].fit ?? '', '');
+  assert.equal(render(content), before, 'render-identical (both resolve to the default)');
+});
+
+test('migration: a deviating base fit fans out to every item without its own fit', () => {
+  const content = slide({
+    layout: 'duo',
+    imageFit: 'contain',
+    images: [{ src: '/a.png' }, { src: '/b.png', fit: 'cover' }, { src: '/extra.png' }],
+  });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.imageFit, '');
+  assert.equal(content.images[0].fit, 'contain');
+  assert.equal(content.images[1].fit, 'cover', 'an item fit is never clobbered');
+  // The remembered extra beyond the duo cell count keeps its look too, so
+  // switching to a 3-image row later still renders it contained.
+  assert.equal(content.images[2].fit, 'contain');
+  assert.equal(render(content), before, 'the fan-out is render-neutral');
+});
+
+test('migration: single-cell deviating base fit is render-neutral (the old double-pad shape)', () => {
+  // Pre-unification this was the shape a blind fan-out would double-pad
+  // (slide contain via `.media` padding + item contain via `.frame` padding).
+  // With one frame-based mechanism the fold is byte-identical.
+  const content = slide({ layout: 'split', imageFit: 'contain', images: [{ src: '/a.png' }] });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.images[0].fit, 'contain');
+  assert.equal(content.imageFit, '');
+  assert.equal(render(content), before);
 });
 
 test('migration fixes the display-baseline bug: the grid seed becomes canonical', () => {

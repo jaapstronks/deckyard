@@ -59,7 +59,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     alt: 'Sample image',
     imageRole: 'content',
     imageSide: 'left',
-    imageFit: 'cover',
     title: 'Visual Storytelling',
     body: '- Engage your audience\n- Communicate complex ideas\n- Leave a lasting impression',
     background: 'lime',

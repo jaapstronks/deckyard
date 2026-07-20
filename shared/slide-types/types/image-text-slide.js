@@ -47,8 +47,8 @@ export default {
           maxLength: 180,
         },
         {
-          // Per-image escape for non-croppable images (logos, diagrams);
-          // empty = follow the slide-level Image fit.
+          // Per-image fit (canonical since step 2b); empty = follow the
+          // type default (imageDefaults.fit).
           key: 'fit',
           label: 'Image fit',
           type: 'enum',
@@ -173,6 +173,10 @@ export default {
       ],
     },
     {
+      // LEGACY slide-level base fit. Since datamodel step 2b fit lives on the
+      // ImageRef (`images[i].fit`, falling back to imageDefaults.fit); this
+      // field stays declared so old decks keep validating and rendering, and
+      // the editor folds it into the items on touch (ensureImageTextImages).
       key: 'imageFit',
       label: 'Image fit',
       type: 'enum',
@@ -342,9 +346,8 @@ export default {
     },
   ],
   // The ImageRef config anchor for this type (looked up, never stored per
-  // slide). `focus` is live as the type-level crop default; `fit` is the step-3
-  // target - the live fit base is still slide-level `imageFit` until the CSS is
-  // unified. See IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
+  // slide): an item without its own fit/focus follows these. See
+  // IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: IMAGE_TEXT_IMAGE_DEFAULTS,
   defaultsByLang: {
     nl: {
@@ -357,7 +360,6 @@ export default {
       imageWidth: 'half',
       layout: 'split',
       textColumns: '1',
-      imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -376,7 +378,6 @@ export default {
       imageWidth: 'half',
       layout: 'split',
       textColumns: '1',
-      imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -396,7 +397,6 @@ export default {
     imageWidth: 'half',
     layout: 'split',
     textColumns: '1',
-    imageFit: 'cover',
     imageBackground: 'white',
     density: 'auto',
     focusX: '',
