@@ -56,9 +56,14 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  * @param {Function} [opts.convertSlideType] - (toType, {openMedia}) => Promise<boolean>;
  *   runs the shared convert action for the selected slide (descriptor `convert`)
  * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
- * @param {Function} [opts.onOpenElementSettings] - (sectionId) => void; opens the
- *   inspector settings pane scrolled to the `[data-inspector-section]` for a
- *   selected canvas element (e.g. an image), the doorway from canvas to rail
+ * @param {Function} [opts.onOpenElementSettings] - (element) => void; selects the
+ *   canvas element and opens the inspector settings pane on its element tab
+ *   (the deliberate doorway from the on-image "Settings" chip)
+ * @param {Function} [opts.onSelectElement] - (element|null) => void; sets the
+ *   selection-aware inspector's current element ({kind:'image'|'card', idx}) or
+ *   clears it. Selecting rebuilds the inspector with the element tab active; it
+ *   only becomes visible if the settings pane is already open (a dismissed rail
+ *   stays dismissed - the chip opens it)
  */
 export function createInlineEditor({
   h,
@@ -81,6 +86,7 @@ export function createInlineEditor({
   convertSlideType,
   canConvertSlideTo,
   onOpenElementSettings,
+  onSelectElement,
 } = {}) {
   if (!thumb)
     return {
@@ -1198,9 +1204,23 @@ export function createInlineEditor({
     return { slide, media, idx, member, imageField, altField, extraFields };
   }
 
+  // The element a canvas interaction selects, for the selection-aware
+  // inspector. Only types with an element tab participate; a click that maps to
+  // nothing selectable clears the selection (back to slide-only).
+  function elementForCardPath(path) {
+    const slide = getSlide?.();
+    if (!slide) return null;
+    if (slide.type === 'icon-card-grid-slide') {
+      const m = /^items\.(\d+)(?:\.|$)/.exec(String(path || ''));
+      if (m) return { kind: 'card', idx: Number(m[1]) };
+    }
+    return null;
+  }
+
   function openMediaFor(photoEl) {
     const target = resolveMediaTarget(photoEl);
     if (!target) return;
+    onSelectElement?.({ kind: 'image', idx: target.idx });
     const { slide, idx, member, imageField, altField, extraFields } = target;
 
     dismissMediaPopover();
@@ -1440,7 +1460,8 @@ export function createInlineEditor({
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
-          onOpenElementSettings('image');
+          const target = resolveMediaTarget(photo);
+          onOpenElementSettings({ kind: 'image', idx: target ? target.idx : 0 });
         },
       }, [
         // sliders icon (two rows with a knob each), inline SVG (no asset host)
@@ -1546,6 +1567,7 @@ export function createInlineEditor({
     if (!slide || !icons) return;
     const path = iconEl.getAttribute('data-inline-icon');
     if (!path) return;
+    onSelectElement?.(elementForCardPath(path));
     const current = getByPath(slide.content, path);
     openIconPicker({
       current: typeof current === 'string' ? current : '',
@@ -1685,7 +1707,7 @@ export function createInlineEditor({
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.
-    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint')) {
+    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point, .ie-fit-toggle, .ie-elem-settings')) {
       coach.dismiss();
       e.preventDefault();
       return;
@@ -1714,7 +1736,11 @@ export function createInlineEditor({
     }
 
     const fieldEl = target.closest('[data-inline-field]');
-    if (!fieldEl || !thumb.contains(fieldEl)) return;
+    if (!fieldEl || !thumb.contains(fieldEl)) {
+      // A click on a non-element area of the slide clears the selection.
+      onSelectElement?.(null);
+      return;
+    }
     coach.dismiss();
     e.preventDefault();
     e.stopPropagation();
@@ -1722,6 +1748,8 @@ export function createInlineEditor({
     const def = currentDef();
     if (!def) return;
     const path = fieldEl.getAttribute('data-inline-field');
+    // Editing a card's text selects that card; any other text clears selection.
+    onSelectElement?.(elementForCardPath(path));
     const meta = fieldMetaForPath(def, path);
     const kind =
       meta?.type === 'csv'

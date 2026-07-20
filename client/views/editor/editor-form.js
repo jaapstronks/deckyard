@@ -98,6 +98,30 @@ function storeBgSectionOpen(open) {
   }
 }
 
+/**
+ * Whether a selected canvas element ({kind, idx}) has an element tab on this
+ * slide type. Images: image / image-text. Cards: icon-card-grid (idx in range).
+ * @returns {boolean}
+ */
+function elementAppliesToSlide(slide, sel) {
+  if (!slide || !sel) return false;
+  if (sel.kind === 'image') {
+    return slide.type === 'image-slide' || slide.type === 'image-text-slide';
+  }
+  if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
+    const items = slide.content?.items;
+    return Array.isArray(items) && sel.idx >= 0 && sel.idx < items.length;
+  }
+  return false;
+}
+
+/** Label for the element tab, by selected element kind. */
+function elementTabLabel(sel) {
+  if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
+  if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
+  return t('editor.inspector.tab.element', 'This element');
+}
+
 // AI conversion targets — which types can each slide type convert to?
 const AI_CONVERT_TARGETS = {
   'content-slide': [
@@ -527,6 +551,9 @@ export function createRerenderEditor({
   // section. Reuses the exact same field renderers, so the modal can never
   // drift from what the form can edit (the phase-2 parity invariant).
   contentOnly = false,
+  // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
+  // element is selected the inspector grows a [This element | Slide] tab bar.
+  getSelectedElement,
 } = {}) {
   const {
     fieldText,
@@ -550,6 +577,12 @@ export function createRerenderEditor({
 
   // Track detachers for cleanup between re-renders
   let headerActionsDetach = null;
+
+  // Which inspector tab is active while an element is selected. A newly
+  // selected element resets to its own tab; clicking "Slide" persists across
+  // rerenders (so editing a slide-wide field doesn't yank you back).
+  let activeElementTab = true;
+  let lastElementKey = null;
 
   return function rerenderEditor() {
     // Clean up previous dropdown listeners
@@ -753,6 +786,22 @@ export function createRerenderEditor({
     const form = h('div', { class: 'stack editor-form' });
     const fieldByKey = new Map((def?.fields || []).map((f) => [f.key, f]));
     const used = new Set();
+
+    // Selection-aware inspector: when a canvas element (image/card) is selected
+    // and applies to this slide, its settings render into `elementForm` (the
+    // "This element" tab) and the tab bar appears; the rest renders into `form`
+    // (the "Slide" tab). With no selection there is no tab bar - just `form`.
+    const selectedElement = contentOnly ? null : getSelectedElement?.() || null;
+    const elementActive = elementAppliesToSlide(slide, selectedElement);
+    const elemKey = elementActive
+      ? `${selectedElement.kind}:${selectedElement.idx}`
+      : null;
+    if (elemKey !== lastElementKey) {
+      // A fresh selection (or a deselect) resets to the element's own tab.
+      activeElementTab = true;
+      lastElementKey = elemKey;
+    }
+    const elementForm = h('div', { class: 'stack editor-form editor-element-form' });
 
     // AI reasoning panel (shown for AI-generated slides)
     if (!contentOnly && slide._aiReasoning) {
@@ -1177,6 +1226,10 @@ export function createRerenderEditor({
     const formTypeCtx = {
       h,
       form,
+      // Selection-aware inspector: element-scoped widgets render into
+      // elementForm for the selected element; slide-wide stays in form.
+      elementForm,
+      selectedElement: elementActive ? selectedElement : null,
       slide,
       def,
       add,
@@ -1228,6 +1281,35 @@ export function createRerenderEditor({
     // AI refine box last: tooling under the settings.
     if (aiIteratePanel) form.append(aiIteratePanel);
 
-    editorMount.append(form);
+    // Selection-aware inspector: with an element selected and its element form
+    // populated, show a [This element | Slide] tab bar over the two panels;
+    // otherwise the pane is just the slide form (identical to pre-tab behavior).
+    if (!contentOnly && elementActive && elementForm.childNodes.length) {
+      const tabBar = h('div', { class: 'inspector-tabs', role: 'tablist' });
+      const mkTab = (label, isEl) => {
+        const on = isEl === activeElementTab;
+        return h('button', {
+          type: 'button',
+          role: 'tab',
+          class: `inspector-tab${on ? ' is-active' : ''}`,
+          'aria-selected': on ? 'true' : 'false',
+          text: label,
+          onclick: () => {
+            activeElementTab = isEl;
+            rerenderEditor();
+          },
+        });
+      };
+      tabBar.append(
+        mkTab(elementTabLabel(selectedElement), true),
+        mkTab(t('editor.inspector.tab.slide', 'Slide'), false)
+      );
+      editorMount.append(tabBar);
+      elementForm.hidden = !activeElementTab;
+      form.hidden = activeElementTab;
+      editorMount.append(elementForm, form);
+    } else {
+      editorMount.append(form);
+    }
   };
 }
