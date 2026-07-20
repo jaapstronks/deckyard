@@ -17,6 +17,7 @@ import { renderFocusGridField } from '../focus-picker.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import {
   IMAGE_TEXT_MAX_IMAGES,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
   ensureImageTextImages,
   imageTextCellCount,
   resolveImageTextCell,
@@ -189,8 +190,14 @@ export function renderImageTextImagesSection({
             slideAltFallback ? { placeholder: slideAltFallback } : {}
           )
         : null;
-    // Per-image fit override: empty follows the slide-level Image fit
-    // (imageFit), a value overrides just this cell.
+    // Per-image fit (canonical since step 2b). Empty = follow the type
+    // default, so the empty option surfaces the derived value plus its origin
+    // ("slide type") and doubles as the back-to-default that empties the
+    // field - the default is looked up, never written into the item.
+    const typeFitLabel =
+      IMAGE_TEXT_IMAGE_DEFAULTS.fit === 'contain'
+        ? t('editor.imageText.fitContain', 'Fit (no crop)')
+        : t('editor.imageText.fitCover', 'Fill (crop)');
     const fitEl =
       typeof fieldEnum === 'function'
         ? fieldEnum(
@@ -198,7 +205,16 @@ export function renderImageTextImagesSection({
               key: 'fit',
               label: t('editor.imageText.imageFit', 'Image fit'),
               options: [
-                { value: '', label: t('editor.imageText.fitDefault', 'Match slide') },
+                {
+                  value: '',
+                  label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
+                    fit: typeFitLabel,
+                  }),
+                  title: t(
+                    'editor.imageText.fitDefaultTypeTitle',
+                    'Follow the slide type default'
+                  ),
+                },
                 { value: 'cover', label: t('editor.imageText.fitCover', 'Fill (crop)') },
                 { value: 'contain', label: t('editor.imageText.fitContain', 'Fit (no crop)') },
               ],
@@ -226,7 +242,7 @@ export function renderImageTextImagesSection({
         mode: 'contain',
         imageUrl: image.src,
         containerSelector:
-          '.preview-panel .thumb.is-clickable-preview .slide-image-text.is-image-contain .frame',
+          '.preview-panel .thumb.is-clickable-preview .slide-image-text .frame.is-fit-contain',
         focusX: image.focusX,
         focusY: image.focusY,
         onChange: ({ focusX, focusY }) => {

@@ -293,20 +293,23 @@ export function convertSlideToType(
 
   // image -> image-text (one-way; reverse isn't offered)
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
-    // Step 2: alt + focus are canonical on images[0]. Fit stays slide-level
-    // (`imageFit`) - its own CSS mechanism; the ImageRef fit is step 3.
+    // alt + focus + fit are canonical on images[0] (the ImageRef). Layout
+    // mapping: full/bleed are cover (cropped), centered is contain; cover
+    // equals the type default, so only contain is written (empty keeps
+    // meaning "follow the type").
     const img = { src: '', alt: '' };
     if (typeof from.image === 'string' && from.image.trim()) img.src = from.image.trim();
     if (typeof from.alt === 'string' && from.alt.trim()) img.alt = from.alt.trim();
     if (from.focusX != null && from.focusX !== '') img.focusX = from.focusX;
     if (from.focusY != null && from.focusY !== '') img.focusY = from.focusY;
-    if (img.src || img.alt || 'focusX' in img || 'focusY' in img) {
+    const fromFit =
+      String(from?.layout || '').trim() === 'centered' ? 'contain' : 'cover';
+    if (fromFit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) img.fit = fromFit;
+    if (img.src || img.alt || 'focusX' in img || 'focusY' in img || 'fit' in img) {
       to.images = [img];
     }
     if (typeof from.caption === 'string') to.caption = from.caption;
     if (typeof from.imageRole === 'string') to.imageRole = from.imageRole;
-    // Layout mapping: full/bleed are cover (cropped), centered is contain.
-    to.imageFit = String(from?.layout || '').trim() === 'centered' ? 'contain' : 'cover';
 
     // Title + body requirements:
     // - image-text requires title + body.

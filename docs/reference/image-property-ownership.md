@@ -46,14 +46,14 @@ inspector write path that disagrees with the render read path.
 | Type | Level | Field(s) | Render reads | Inspector writes | Default |
 |---|---|---|---|---|---|
 | image-slide | S | **`layout`** (`full`/`bleed`/`centered`) 🚩 *name* | `image-slide.js:215` | `inspector-form.js:179` (`renderKeyInto('layout')`) | `full` |
-| image-text | **S + I** 🚩 *pending unwind (step 2b)* | `imageFit` (base) + item `fit` (override) | slide `image-text-slide.js` container class; item wins via `.frame.is-fit-*` | slide via layout-opts `slide-forms/image-slide.js`; item via images manager | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`) |
+| image-text | **I** (was S+I) ✅ | item `fit` canonical | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | images manager only (silent-default UX) | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live) |
 | content-columns | N | `col{n}ImageFit` | `content-columns-slide.js` col render | `inspector-form.js:332`; element card `{n}` mode | none (per column) |
 | gallery / team-cards / logo-wall / quote | — | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | — | — | — |
 
-One concept, **four** storage strategies and **three** names
-(`layout`, `imageFit`+`fit`, `col{n}ImageFit`). `image-slide`'s `layout` also
-folds in a value that is *not* a fit value: `bleed` (edge-to-edge) = `cover`
-plus a frame bit.
+One concept, **three** remaining storage strategies and names
+(`layout`, `fit`, `col{n}ImageFit`); image-text is on the target shape.
+`image-slide`'s `layout` also folds in a value that is *not* a fit value:
+`bleed` (edge-to-edge) = `cover` plus a frame bit.
 
 ### focus — crop point 🚩
 
@@ -195,9 +195,11 @@ imageDefaults = { fit: 'cover', focus: { x: 50, y: 50 }, aspectRatio: null, allo
 > `content-columns`) — the same spread the field-name rule cleans up. Moving to
 > type defaults without enforcing this just re-nests the spread in a new place.
 
-> **Fit is not there yet.** `imageDefaults.fit` above is the *target* for image-text;
-> the live fit base is still slide-level `imageFit` until the CSS mechanisms are
-> unified (migration step 2b). `focus` is live as a type default.
+> **Fit is live since step 2b** (PR #184): an image-text item without its own
+> `fit` follows `imageDefaults.fit`, and the fold in `ensureImageTextImages`
+> deliberately drops a stored base fit that equals the default instead of
+> stamping it onto the items — exactly to preserve the empty/explicit signal
+> described above. `focus` was already live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
@@ -263,28 +265,27 @@ property.
    Guarded by a generic write → render round-trip harness over the ImageRef
    (`tests/image-ref-round-trip.test.js`). **`fit` was deliberately *left out* of
    this step** — see step 2b below for why.
-2b. **Unify the fit CSS mechanisms, then move `fit` onto the `ImageRef`.** Fit
-   could not migrate with focus/alt: slide-level `imageFit` and per-image `fit`
-   render through **two different CSS mechanisms** — `.slide-image-text.is-image-contain
-   .media` (media-column padding, 0.65×) vs `.frame.is-fit-contain` (frame
-   padding, 0.35×). They coincide for multi-cell layouts but **not** single-cell,
-   so a data fan-out (slide `imageFit` → each `images[i].fit`) double-pads a
-   single-cell contain slide. This is a **CSS-unification-then-data-migration**,
-   not a data migration, so it is its own step. Order: (a) build class-level fit
-   snapshots — done, in the round-trip harness — as the guard; (b) unify onto one
-   frame-based mechanism (**first check whether 0.35 or 0.65 is the right target
-   by rendering both on a few of the ~19 single-cell contain slides + the ~10 that
-   already use per-image fit**); (c) *then* the fan-out is render-neutral, because
-   there is only one mechanism left. Fold naturally into step 3.
+2b. ~~**Unify the fit CSS mechanisms, then move `fit` onto the `ImageRef`.**~~
+   ✅ **Shipped — PR #184 (2026-07-20).** Fit could not migrate with focus/alt
+   because slide-level `imageFit` and per-image `fit` rendered through two
+   different CSS mechanisms (`.media` padding 0.65× vs `.frame` padding 0.35×)
+   that coincided for multi-cell but not single-cell layouts. Landed in the
+   planned order: (a) the class-level fit snapshots in the round-trip harness
+   were the guard; (b) the CSS unified onto **one frame-based mechanism** —
+   every frame carries its effective `is-fit-*` class, the container fit class
+   is gone, so the HTML no longer betrays the record level. Padding unified on
+   **0.35×** after rendering both candidates on the real single-cell contain
+   slides in the browser (0.35 shows the contained image larger with ample
+   margin, and matches what multi-cell + per-image fit already used); (c) the
+   then-render-neutral fold in `ensureImageTextImages` fans a *deviating* base
+   fit out to the items and simply drops a default-equal one, and the
+   slide-level fit control is retired (images manager owns fit, silent-default
+   UX). Legacy `imageFit` stays a read-only render fallback for un-migrated
+   decks, like the flat `image`.
 3. **Split image-slide `layout` → `ImageRef.fit` + `bleed`.** Rides on the fit
    CSS unification (2b): content migration + renderer + `convert.js` (lossless).
 4. **Normalize content-columns `col{n}*` → `ImageRef`.** Resolve the
    numbered/array duality by resolving each column into an `ImageRef`.
-
-> **`imageFit` is a pending unwind, not a settled design.** It stays a
-> slide-level base fit *only* because the CSS forces it (2b), not because
-> slide-level fit is the intended home. Do not read the surviving slide-level
-> `imageFit` control as a deliberate choice — the target is `ImageRef.fit`.
 
 The editing-surface UI work (`docs/plans/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split

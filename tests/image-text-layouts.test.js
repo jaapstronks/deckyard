@@ -287,6 +287,26 @@ test('convert: image-slide -> image-text lands in canonical images[0]', () => {
   assert.equal(next.content.images.length, 1);
   assert.equal(next.content.images[0].src, '/photo.png');
   assert.equal(next.content.image, '', 'flat field stays empty');
+  // full/bleed map to cover = the type default, so no fit is written (empty
+  // keeps meaning "follow the type"); no slide-level imageFit either.
+  assert.equal(next.content.images[0].fit ?? '', '');
+  assert.equal(next.content.imageFit ?? '', '');
+});
+
+test('convert: centered image-slide -> image-text contain on the ImageRef', () => {
+  const src = {
+    id: 's1',
+    type: 'image-slide',
+    content: {
+      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
+      image: '/diagram.png',
+      layout: 'centered',
+      title: 'T',
+    },
+  };
+  const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
+  assert.equal(next.content.images[0].fit, 'contain');
+  assert.equal(next.content.imageFit ?? '', '', 'fit lands on the item, not the slide');
 });
 
 test('convert: filled images[] warns as lossy towards content-slide', () => {

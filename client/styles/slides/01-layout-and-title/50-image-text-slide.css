@@ -174,22 +174,8 @@
   white-space: normal;
 }
 
-/* Image + text (contain variant): never crop, keep padding around image */
-.slide-image-text.is-image-contain .media {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Ensure there's always "breathing room" within the half-slide. */
-  padding: calc(var(--slide-padding) * 0.65);
-  box-sizing: border-box;
-  background: #fff;
-}
-
 /* Image background: match slide background color */
 .slide-image-text.is-image-bg-match .media {
-  background: transparent;
-}
-.slide-image-text.is-image-bg-match.is-image-contain .media {
   background: transparent;
 }
 
@@ -246,21 +232,8 @@
 
 /* The placeholder inner (icon + label) is shared across slide types —
    see 00-patterns.css. */
-.slide-image-text.is-image-contain .media img {
-  /* Fill the available padded box and use object-fit contain so `object-position`
-     can align the image within any letterboxed space. */
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: contain;
-  object-position: center;
-  max-width: 100%;
-  max-height: 100%;
-}
 
-/* Multi-cell media (duo/rows): the .media itself is a grid of frames, so the
-   slide-level contain styling moves from the container to the frames. These
-   come after the .is-image-contain .media rules so the grid display wins. */
+/* Multi-cell media (duo/rows): the .media itself is a grid of frames. */
 .slide-image-text .media.is-multi {
   display: grid;
   padding: 0;
@@ -270,21 +243,12 @@
   min-height: 0;
   overflow: hidden;
 }
-.slide-image-text.is-image-contain .media.is-multi {
-  background: rgba(0, 0, 0, 0.08);
-}
-.slide-image-text.is-image-contain .media.is-multi .frame {
-  padding: calc(var(--slide-padding) * 0.35);
-  box-sizing: border-box;
-  background: #fff;
-}
-.slide-image-text.is-image-bg-match.is-image-contain .media.is-multi .frame {
-  background: transparent;
-}
 
-/* Per-image fit override (images[].fit): wins over the slide-level fit
-   classes above on class count. Cover is the base state, so is-fit-cover
-   only needs to undo an inherited contain. */
+/* Fit — the single, frame-based mechanism. Every frame carries its effective
+   fit as an is-fit-* class (renderHtml resolves item override -> slide base ->
+   type default per cell), so slide-level and per-image fit are one and the
+   same CSS path. Cover is the base state (.media img above); contain adds
+   breathing room + a white plate inside the frame. */
 .slide-image-text .media .frame.is-fit-contain {
   padding: calc(var(--slide-padding) * 0.35);
   box-sizing: border-box;
@@ -294,32 +258,9 @@
   background: transparent;
 }
 .slide-image-text .media .frame.is-fit-contain img {
+  /* Fill the padded box; object-fit contain lets `object-position` align the
+     image within any letterboxed space. */
   object-fit: contain;
-}
-.slide-image-text .media .frame.is-fit-cover {
-  padding: 0;
-  background: transparent;
-}
-/* The multi-frame contain rule above carries more classes than the generic
-   cover-undo, so the slide-contain + per-image-cover combo needs its own
-   higher-specificity escape. */
-.slide-image-text.is-image-contain .media.is-multi .frame.is-fit-cover {
-  padding: 0;
-  background: transparent;
-}
-/* Same escape for single-cell layouts (split/corner): there the contain
-   padding sits on .media itself, which a frame-level cover-undo can't reach,
-   so a per-image cover kept the white border. */
-.slide-image-text.is-image-contain .media:not(.is-multi):has(.frame.is-fit-cover) {
-  padding: 0;
-  background: rgba(0, 0, 0, 0.08);
-}
-.slide-image-text.is-image-bg-match.is-image-contain
-  .media:not(.is-multi):has(.frame.is-fit-cover) {
-  background: transparent;
-}
-.slide-image-text .media .frame.is-fit-cover img {
-  object-fit: cover;
 }
 .slide-image-text .copy {
   height: 100%;

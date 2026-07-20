@@ -148,7 +148,10 @@
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
 import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
-import { resolveImageTextCell } from '../../../../shared/slide-types/image-text-images.js';
+import {
+  resolveImageTextCell,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
+} from '../../../../shared/slide-types/image-text-images.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -256,7 +259,7 @@ export const INLINE_DESCRIPTORS = {
     // Draggable focal point on each filled image (crop/cover mode only). Writes
     // the item's own focusX/focusY (the same keys the renderer reads once an
     // item has its own focus), so a drag localizes the crop to that cell. Fit
-    // comes from the item's `fit` override or the slide-level `imageFit`.
+    // is the item's `fit` (falling back to the type default via the resolver).
     focus: {
       xField: 'focusX',
       yField: 'focusY',
@@ -271,12 +274,13 @@ export const INLINE_DESCRIPTORS = {
       },
     },
     // Cover/Contain toggle on each filled image. Writes the item's own `fit`
-    // (which the renderer honours over the slide-level `imageFit` via the
-    // `.frame.is-fit-*` classes), so a toggle localizes to that cell; the
-    // slide-level `imageFit` seeds the initial state when the item has none.
+    // (canonical since step 2b), so a toggle localizes to that cell. The
+    // fallback seeds the initial state for an item without its own fit: the
+    // legacy slide-level `imageFit` on an un-migrated deck, else the type
+    // default - same chain as resolveImageTextCell.
     fit: {
       field: 'fit',
-      fallback: (slide) => slide?.content?.imageFit,
+      fallback: (slide) => slide?.content?.imageFit || IMAGE_TEXT_IMAGE_DEFAULTS.fit,
     },
     formText: ['title', 'caption', 'body'],
     convert: {

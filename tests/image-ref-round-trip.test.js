@@ -118,19 +118,63 @@ test('migration: slide-level alt + focus fold into images[0], render-equivalent'
 
   ensureImageTextImages(legacy);
 
-  // Alt + focus are now canonical on the item.
+  // Alt + focus + fit are now canonical on the item.
   assert.equal(legacy.images[0].src, '/legacy.png');
   assert.equal(legacy.images[0].alt, 'Legacy alt');
   assert.equal(legacy.images[0].focusX, 25);
   assert.equal(legacy.images[0].focusY, 75);
-  // Slide-level alt/focus are cleared...
+  assert.equal(legacy.images[0].fit, 'contain');
+  // Slide-level alt/focus/fit are cleared.
   assert.equal(legacy.alt, '');
   assert.equal(legacy.focusX, '');
   assert.equal(legacy.focusY, '');
-  // ...but imageFit is deliberately left slide-level (step 3, CSS unification).
-  assert.equal(legacy.imageFit, 'contain');
+  assert.equal(legacy.imageFit, '');
   // Render is byte-identical - the resolver already folded the same values.
   assert.equal(render(legacy), before);
+});
+
+// ---- Step-2b fold: fit becomes an ImageRef property -------------------------
+
+test('migration: a default base fit is dropped, never stamped onto the items', () => {
+  // imageFit equal to the type default carries no information: the fold drops
+  // the field and leaves every item fit empty, so the empty-means-follow-the-
+  // type signal survives and a future default change still reaches this deck.
+  const content = slide({ layout: 'duo', imageFit: 'cover', images: [{ src: '/a.png' }, { src: '/b.png' }] });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.imageFit, '');
+  assert.equal(content.images[0].fit ?? '', '');
+  assert.equal(content.images[1].fit ?? '', '');
+  assert.equal(render(content), before, 'render-identical (both resolve to the default)');
+});
+
+test('migration: a deviating base fit fans out to every item without its own fit', () => {
+  const content = slide({
+    layout: 'duo',
+    imageFit: 'contain',
+    images: [{ src: '/a.png' }, { src: '/b.png', fit: 'cover' }, { src: '/extra.png' }],
+  });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.imageFit, '');
+  assert.equal(content.images[0].fit, 'contain');
+  assert.equal(content.images[1].fit, 'cover', 'an item fit is never clobbered');
+  // The remembered extra beyond the duo cell count keeps its look too, so
+  // switching to a 3-image row later still renders it contained.
+  assert.equal(content.images[2].fit, 'contain');
+  assert.equal(render(content), before, 'the fan-out is render-neutral');
+});
+
+test('migration: single-cell deviating base fit is render-neutral (the old double-pad shape)', () => {
+  // Pre-unification this was the shape a blind fan-out would double-pad
+  // (slide contain via `.media` padding + item contain via `.frame` padding).
+  // With one frame-based mechanism the fold is byte-identical.
+  const content = slide({ layout: 'split', imageFit: 'contain', images: [{ src: '/a.png' }] });
+  const before = render(structuredClone(content));
+  ensureImageTextImages(content);
+  assert.equal(content.images[0].fit, 'contain');
+  assert.equal(content.imageFit, '');
+  assert.equal(render(content), before);
 });
 
 test('migration fixes the display-baseline bug: the grid seed becomes canonical', () => {
@@ -171,17 +215,17 @@ test('migration does not clobber an existing item alt/focus with the slide value
   assert.equal(content.images[0].focusX, 90, 'the item focus wins, not overwritten');
 });
 
-// ---- Step-3 guard: fit class-level snapshot over the affected shapes ---------
+// ---- Fit class snapshots: the unified, frame-based mechanism (step 2b) ------
 
 /**
- * Fit does NOT migrate in step 2: slide-level `imageFit` and per-image `fit`
- * render through two different CSS mechanisms (`.media` padding for the slide
- * base, `.frame.is-fit-*` for the per-image override) that only coincide for
- * multi-cell layouts. Step 3 unifies those mechanisms and only then moves fit
- * onto the ImageRef. This snapshot pins the exact fit-bearing classes each
- * shape renders today, so that CSS unification - a pure-render change with no
- * data migration - can be diffed against a concrete baseline: any class that
- * moves is a deliberate, reviewable change, not a silent regression.
+ * Since step 2b there is ONE fit mechanism: every frame carries its *effective*
+ * fit as an is-fit-* class (resolved item override -> slide base -> type
+ * default), and no container-level is-image-cover/contain class exists any
+ * more. Because the emitted HTML no longer distinguishes where the fit came
+ * from, the data fan-out (slide `imageFit` -> images[i].fit) is render-neutral
+ * by construction. These snapshots pin that contract: a container fit class
+ * reappearing, or a frame rendering without an explicit fit class, is a
+ * regression toward the old two-mechanism split.
  */
 const fitClasses = (content) => {
   const html = render(content);
@@ -190,38 +234,33 @@ const fitClasses = (content) => {
   return { container: container[0] || null, frames };
 };
 
-test('fit class snapshot: single-cell base fit rides the container, not the frame', () => {
-  // split + slide-level contain: container is-image-contain, frame carries NO
-  // is-fit class (the `.media` mechanism). This is the shape that a blind
-  // fan-out would double-pad; the snapshot is the guard for step 3.
+test('fit class snapshot: single-cell base fit rides the frame, no container class', () => {
+  // split + slide-level contain: the frame carries the effective fit; the
+  // container carries no fit class at all (the old `.media` mechanism is gone).
   assert.deepEqual(fitClasses(slide({ layout: 'split', imageFit: 'contain', images: [{ src: '/a.png' }] })), {
-    container: 'is-image-contain',
-    frames: ['frame'],
+    container: null,
+    frames: ['frame is-fit-contain'],
   });
   assert.deepEqual(fitClasses(slide({ layout: 'split', imageFit: 'cover', images: [{ src: '/a.png' }] })), {
-    container: 'is-image-cover',
-    frames: ['frame'],
+    container: null,
+    frames: ['frame is-fit-cover'],
   });
 });
 
-test('fit class snapshot: a per-image override rides the frame', () => {
-  // split + per-image contain (no slide-level fit): container is-image-cover,
-  // frame is-fit-contain (the `.frame` mechanism). Different DOM layer than the
-  // slide-level contain above - that is the mechanism split step 3 unifies.
+test('fit class snapshot: a per-image override renders identically to a slide base', () => {
+  // split + per-image contain: byte-for-byte the same fit classes as the
+  // slide-level contain above - the render no longer betrays the record level,
+  // which is exactly what makes the step-2b fan-out render-neutral.
   assert.deepEqual(fitClasses(slide({ layout: 'split', images: [{ src: '/a.png', fit: 'contain' }] })), {
-    container: 'is-image-cover',
+    container: null,
     frames: ['frame is-fit-contain'],
   });
 });
 
-test('fit class snapshot: multi-cell base fit rides the frames (mechanisms coincide)', () => {
-  // duo + slide-level contain: container is-image-contain, and each frame stays
-  // classless - the `.media.is-multi .frame` rule carries the padding. Because
-  // the multi-cell base already lives on the frame, a per-image contain here is
-  // render-equivalent (unlike single-cell); the snapshot records that.
+test('fit class snapshot: multi-cell base fit lands on every frame', () => {
   assert.deepEqual(
     fitClasses(slide({ layout: 'duo', imageFit: 'contain', images: [{ src: '/a.png' }, { src: '/b.png' }] })),
-    { container: 'is-image-contain', frames: ['frame', 'frame'] }
+    { container: null, frames: ['frame is-fit-contain', 'frame is-fit-contain'] }
   );
 });
 
@@ -234,6 +273,6 @@ test('fit class snapshot: multi-cell with a per-image cover override deviates on
         images: [{ src: '/a.png' }, { src: '/b.png', fit: 'cover' }],
       })
     ),
-    { container: 'is-image-contain', frames: ['frame', 'frame is-fit-cover'] }
+    { container: null, frames: ['frame is-fit-contain', 'frame is-fit-cover'] }
   );
 });

@@ -461,6 +461,8 @@
   "editor.imageText.fitContain": "Passend (geen crop)",
   "editor.imageText.fitCover": "Vullend (crop)",
   "editor.imageText.fitDefault": "Zoals slide",
+  "editor.imageText.fitDefaultType": "Standaard · {fit}",
+  "editor.imageText.fitDefaultTypeTitle": "Volg de standaard van het slidetype",
   "editor.imageText.image": "Afbeelding",
   "editor.imageText.imageFit": "Uitsnede",
   "editor.imageText.imageFocus": "Beeldfocus (crop)",

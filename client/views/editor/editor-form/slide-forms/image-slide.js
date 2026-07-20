@@ -91,9 +91,10 @@ export function appendImageZoomSettings({
 }
 
 /**
- * Layout options (side/width/fit/background + focus) for image-text-slide,
- * in a collapsible section. Shared between the content form and the phase-3
- * inspector.
+ * Layout options (side/width/background) for image-text-slide, in a
+ * collapsible section. Shared between the content form and the phase-3
+ * inspector. Fit and focus are per-image (ImageRef) and live in the images
+ * manager.
  */
 export function appendImageTextLayoutOptions({
   h,
@@ -114,17 +115,18 @@ export function appendImageTextLayoutOptions({
   const textColsField = fieldByKey.get('textColumns');
   const sideField = fieldByKey.get('imageSide');
   const widthField = fieldByKey.get('imageWidth');
-  const fitField = fieldByKey.get('imageFit');
   const imgBgField = fieldByKey.get('imageBackground');
   const fxField = fieldByKey.get('focusX');
   const fyField = fieldByKey.get('focusY');
 
-  if (!layoutField && !sideField && !widthField && !fitField && !imgBgField && !fxField && !fyField) return;
+  if (!layoutField && !sideField && !widthField && !imgBgField && !fxField && !fyField) return;
 
   used.add('layout');
   used.add('textColumns');
   used.add('imageSide');
   used.add('imageWidth');
+  // Legacy slide-level base fit: retired as a control (fit is per-image since
+  // datamodel step 2b), marked used so the generic form never resurrects it.
   used.add('imageFit');
   used.add('imageBackground');
   used.add('focusX');
@@ -155,15 +157,13 @@ export function appendImageTextLayoutOptions({
     if (textColsEl) layoutBody.append(textColsEl);
   }
 
-  // First row: side, width, fit. Focus is per-image now (step 2 folds it onto
-  // images[i]); the images manager owns the focus grid, so this slide-level
-  // panel no longer carries a focus picker. `imageFit` stays here as the
-  // slide-level base fit until step 3 makes fit an ImageRef property.
-  if (sideField || widthField || fitField) {
+  // Side + width. Fit and focus are per-image (ImageRef) since datamodel
+  // steps 2/2b: the images manager owns both, so this slide-level panel
+  // carries neither.
+  if (sideField || widthField) {
     const sideEl = sideField ? renderField(sideField) : null;
     const widthEl = widthField ? renderField(widthField) : null;
-    const fitEl = fitField ? renderField(fitField) : null;
-    const row = fieldGrid([sideEl, widthEl, fitEl], 3);
+    const row = fieldGrid([sideEl, widthEl], 2);
     if (row) layoutBody.append(row);
   }
 
