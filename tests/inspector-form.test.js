@@ -41,7 +41,13 @@ const { getInspectorKeepKeys } = await import(
 );
 const { SLIDE_TYPES } = await import('../shared/slide-types/index.js');
 
-function renderForm({ type, content = null, slideTypes = SLIDE_TYPES, contentOnly = false }) {
+function renderForm({
+  type,
+  content = null,
+  slideTypes = SLIDE_TYPES,
+  contentOnly = false,
+  selectedElement = null,
+}) {
   const editorMount = document.createElement('div');
   document.body.append(editorMount);
   const slide = {
@@ -75,6 +81,7 @@ function renderForm({ type, content = null, slideTypes = SLIDE_TYPES, contentOnl
     fieldRenderers: createFieldRenderers(deps),
     openOverlayClosers: new Set(),
     contentOnly,
+    getSelectedElement: () => selectedElement,
   });
   rerender();
   return editorMount;
@@ -84,6 +91,15 @@ const fieldLabels = (mount) =>
   [...mount.querySelectorAll('label, .field-label')].map((el) =>
     el.textContent.trim().toLowerCase()
   );
+
+/** The slide form (the no-selection view / the "Slide" tab). */
+const slideForm = (mount) =>
+  [...mount.querySelectorAll('.editor-form')].find(
+    (el) => !el.classList.contains('editor-element-form')
+  );
+
+/** The element form (the "This image" / "This card" tab), if rendered. */
+const elementFormOf = (mount) => mount.querySelector('.editor-element-form');
 
 test('every keeps key exists in its slide-type schema (no audit/schema drift)', () => {
   for (const [type, def] of Object.entries(SLIDE_TYPES)) {
@@ -147,6 +163,101 @@ test('unknown custom types fall back to rendering all non-inline-covered fields'
   const labels = fieldLabels(mount);
   assert.ok(labels.some((l) => l.includes('headline')), 'unaudited text field stays (parity)');
   assert.ok(labels.some((l) => l.includes('mode')), 'enum stays');
+});
+
+// ---- Editing-surfaces tab split: Slide tab == no-selection view, and the
+// element tab carries only the selected element's own settings. ----
+
+const DUO_CONTENT = {
+  layout: 'duo',
+  title: 'T',
+  body: 'B',
+  images: [
+    { src: '/uploads/a.jpg', alt: 'a' },
+    { src: '/uploads/b.jpg', alt: 'b' },
+  ],
+};
+
+test('image-text: Slide tab renders the same fields as the no-selection view', () => {
+  const noSel = renderForm({ type: 'image-text-slide', content: structuredClone(DUO_CONTENT) });
+  const withSel = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(DUO_CONTENT),
+    selectedElement: { kind: 'image', idx: 0 },
+  });
+  assert.ok(elementFormOf(withSel), 'element tab renders for a selected cell');
+  assert.deepEqual(
+    fieldLabels(slideForm(withSel)),
+    fieldLabels(slideForm(noSel)),
+    'Slide tab and no-selection view render identical fields'
+  );
+});
+
+test('image-text: element tab shows only the selected cell, slide form only slide-wide settings', () => {
+  const mount = renderForm({
+    type: 'image-text-slide',
+    content: structuredClone(DUO_CONTENT),
+    selectedElement: { kind: 'image', idx: 1 },
+  });
+  const elForm = elementFormOf(mount);
+  const elLabels = fieldLabels(elForm);
+  // The selected cell's own controls...
+  assert.ok(elLabels.some((l) => l.includes('alt text')), 'alt renders in element tab');
+  assert.ok(elLabels.some((l) => l.includes('image fit')), 'fit renders in element tab');
+  assert.ok(elLabels.some((l) => l.includes('image focus')), 'focus renders in element tab');
+  // ...and nothing of the collection or the slide-wide settings.
+  assert.ok(!elLabels.some((l) => l === 'images'), 'no collection manager in element tab');
+  assert.equal(
+    [...elForm.querySelectorAll('button')].filter((b) => b.textContent.includes('Add image')).length,
+    0,
+    'no add button in element tab'
+  );
+  assert.ok(!elLabels.some((l) => l.includes('layout')), 'no layout settings in element tab');
+
+  const sLabels = fieldLabels(slideForm(mount));
+  assert.ok(!sLabels.some((l) => l.includes('alt text')), 'no per-image alt on the Slide tab');
+  assert.ok(!sLabels.some((l) => l.includes('image fit')), 'no per-image fit on the Slide tab');
+  assert.ok(!sLabels.some((l) => l.includes('image focus')), 'no per-image focus on the Slide tab');
+  assert.ok(sLabels.some((l) => l === 'images'), 'slim collection section on the Slide tab');
+  assert.ok(sLabels.some((l) => l.includes('layout')), 'layout options on the Slide tab');
+});
+
+test('image-text: layout options render flat on the Slide tab (no collapsed toggle)', () => {
+  const mount = renderForm({ type: 'image-text-slide', content: structuredClone(DUO_CONTENT) });
+  const form = slideForm(mount);
+  const layoutLabel = [...form.querySelectorAll('.field-label')].find((el) =>
+    el.textContent.toLowerCase().includes('layout')
+  );
+  assert.ok(layoutLabel, 'layout options header renders');
+  assert.equal(
+    layoutLabel.closest('details'),
+    null,
+    'layout options are not tucked behind a collapsible'
+  );
+});
+
+test('image-slide: image controls live in the element tab only; Slide tab == no-selection view', () => {
+  const content = { title: '', image: '/uploads/a.jpg', alt: 'a' };
+  const noSel = renderForm({ type: 'image-slide', content: structuredClone(content) });
+  const noSelLabels = fieldLabels(slideForm(noSel));
+  assert.ok(!noSelLabels.some((l) => l.includes('image fit')), 'no fit in the no-selection view');
+  assert.ok(!noSelLabels.some((l) => l.includes('edge-to-edge')), 'no bleed in the no-selection view');
+
+  const withSel = renderForm({
+    type: 'image-slide',
+    content: structuredClone(content),
+    selectedElement: { kind: 'image', idx: 0 },
+  });
+  const elLabels = fieldLabels(elementFormOf(withSel));
+  assert.ok(elLabels.some((l) => l.includes('image fit')), 'fit renders in element tab');
+  assert.ok(elLabels.some((l) => l.includes('edge-to-edge')), 'bleed renders in element tab');
+  assert.ok(elLabels.some((l) => l.includes('alt text')), 'alt renders in element tab');
+
+  assert.deepEqual(
+    fieldLabels(slideForm(withSel)),
+    fieldLabels(slideForm(noSel)),
+    'Slide tab and no-selection view render identical fields'
+  );
 });
 
 test('bulk modal (contentOnly) still renders the content fields the inspector dropped', () => {
