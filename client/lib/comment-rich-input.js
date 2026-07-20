@@ -17,10 +17,18 @@
  */
 
 import { h } from './dom.js';
-import { splitMentionSegments, mentionMarkup } from '../../shared/comment-mentions.js';
+import {
+  splitCommentSegments,
+  mentionMarkup,
+  linkMarkup,
+  safeLinkUrl,
+} from '../../shared/comment-mentions.js';
 
 /** Marks a node as a mention chip. */
 const CHIP_SELECTOR = '[data-mention-email]';
+
+/** Marks a node as a link. Its text stays editable; the URL is metadata. */
+const LINK_SELECTOR = '[data-link-url]';
 
 /**
  * Build one mention chip node.
@@ -42,6 +50,31 @@ export function createMentionChip({ name, email }) {
 /** @returns {boolean} true if the node is a mention chip element. */
 function isChip(node) {
   return node?.nodeType === 1 && node.matches?.(CHIP_SELECTOR);
+}
+
+/** @returns {boolean} true if the node is a link element. */
+function isLink(node) {
+  return node?.nodeType === 1 && node.matches?.(LINK_SELECTOR);
+}
+
+/**
+ * Build one link node for the composer.
+ *
+ * Unlike a mention chip this is **not** atomic: the label stays editable, so
+ * you can retype the words without reopening a dialog. The URL rides along on
+ * a data attribute and is what serialisation reads back.
+ *
+ * @param {{label: string, url: string}} link
+ * @returns {HTMLElement}
+ */
+export function createLinkNode({ label, url }) {
+  return h('a', {
+    class: 'comment-body-link comment-link-input',
+    href: url,
+    'data-link-url': url,
+    title: url,
+    text: String(label || ''),
+  });
 }
 
 /**
@@ -82,6 +115,16 @@ export function serializeRichInput(root) {
         continue;
       }
 
+      if (isLink(child)) {
+        // The label is whatever the user left in the node; an emptied link
+        // carries no text to click, so it collapses to nothing.
+        const label = child.textContent || '';
+        if (label.trim()) {
+          parts.push(linkMarkup({ label, url: child.getAttribute('data-link-url') || '' }));
+        }
+        continue;
+      }
+
       const tag = child.tagName;
       if (tag === 'BR') {
         // A *trailing* <br> is the browser's filler that makes an empty last
@@ -111,9 +154,13 @@ export function serializeRichInput(root) {
  */
 export function deserializeRichInput(body) {
   const nodes = [];
-  for (const seg of splitMentionSegments(body)) {
+  for (const seg of splitCommentSegments(body)) {
     if (seg.type === 'mention') {
       nodes.push(createMentionChip(seg));
+      continue;
+    }
+    if (seg.type === 'link') {
+      nodes.push(createLinkNode(seg));
       continue;
     }
     // Text keeps its newlines, which become <br> in the composer.
@@ -161,14 +208,69 @@ export function createRichCommentInput({
     'data-placeholder': placeholder,
   });
 
-  /** Current selection, but only when it lives inside this composer. */
-  function currentRange() {
+  /**
+   * A selection snapshot taken before focus leaves the composer.
+   *
+   * Anything that opens a dialog (the link button) collapses the live
+   * selection the moment focus moves, so the caller takes a snapshot first —
+   * see `rememberSelection`. Kept explicit rather than tracked continuously:
+   * a `selectionchange` listener lives on `document`, and reply composers are
+   * created and thrown away on every Reply toggle, so that would leak one
+   * listener per toggle.
+   */
+  let rememberedRange = null;
+
+  /** Live selection, but only when it lives inside this composer. */
+  function liveRange() {
     const sel = document.getSelection?.();
     if (!sel || sel.rangeCount === 0) return null;
     const range = sel.getRangeAt(0);
     if (!el.contains(range.startContainer)) return null;
     return range;
   }
+
+  /** The snapshot, if one was taken and is still valid. */
+  function snapshotRange() {
+    // Only usable while its nodes are still in the DOM.
+    if (rememberedRange && el.contains(rememberedRange.startContainer)) {
+      return rememberedRange;
+    }
+    return null;
+  }
+
+  /**
+   * A snapshot wins over the live selection when one was deliberately taken.
+   *
+   * Closing a modal restores focus to whatever had it before, and focusing a
+   * contenteditable puts a fresh caret at its start — a perfectly live
+   * selection that is not the one the user made. Preferring the snapshot is
+   * what keeps "select a word, click Link" from inserting at position 0.
+   */
+  function currentRange() {
+    return snapshotRange() || liveRange();
+  }
+
+  /**
+   * Snapshot the current selection so it survives losing focus. Call this
+   * before opening anything that takes focus away from the composer.
+   */
+  function rememberSelection() {
+    const live = liveRange();
+    rememberedRange = live ? live.cloneRange() : null;
+    return !!rememberedRange;
+  }
+
+  /**
+   * Drop the snapshot. It is meant to bridge one focus excursion, so anything
+   * that proves the user is back in the composer invalidates it — otherwise a
+   * stale range would hijack the next mention insert or backspace.
+   */
+  function forgetSelection() {
+    rememberedRange = null;
+  }
+
+  el.addEventListener('keydown', forgetSelection);
+  el.addEventListener('mousedown', forgetSelection);
 
   function placeCaretAfter(node) {
     const sel = document.getSelection?.();
@@ -225,6 +327,50 @@ export function createRichCommentInput({
     del.insertNode(space);
     del.insertNode(chip);
     placeCaretAfter(space);
+    el.dispatchEvent(new window.Event('input', { bubbles: true }));
+    return true;
+  }
+
+  /**
+   * The plain text currently selected inside the composer, or '' when the
+   * selection is empty or lives elsewhere. Used to seed the link label.
+   * @returns {string}
+   */
+  function getSelectedText() {
+    const range = currentRange();
+    if (!range || range.collapsed) return '';
+    return range.toString();
+  }
+
+  /**
+   * Turn the current selection into a link, or insert a new one at the caret.
+   *
+   * @param {{label?: string, url: string}} link
+   * @returns {boolean} false when the URL is not usable
+   */
+  function applyLink({ label, url }) {
+    const safe = safeLinkUrl(url);
+    if (!safe) return false;
+
+    const range = currentRange();
+    const selected = range && !range.collapsed ? range.toString() : '';
+    const text = String(label || selected || safe).trim();
+    const node = createLinkNode({ label: text, url: safe });
+
+    if (range) {
+      // Replacing a selection drops the link where words already are, so it
+      // needs no padding; inserting at a bare caret does, otherwise the caret
+      // is stuck inside the link and further typing extends the label.
+      const wasCollapsed = range.collapsed;
+      range.deleteContents();
+      const tail = wasCollapsed ? document.createTextNode(' ') : null;
+      if (tail) range.insertNode(tail);
+      range.insertNode(node);
+      placeCaretAfter(tail || node);
+    } else {
+      el.append(node, document.createTextNode(' '));
+    }
+    forgetSelection();
     el.dispatchEvent(new window.Event('input', { bubbles: true }));
     return true;
   }
@@ -327,5 +473,8 @@ export function createRichCommentInput({
     insertMention,
     getTextBeforeCaret,
     replaceQueryWithMention,
+    getSelectedText,
+    rememberSelection,
+    applyLink,
   };
 }

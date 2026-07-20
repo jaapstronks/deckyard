@@ -8,6 +8,7 @@ import { formatRelativeTime } from '../../lib/format-time.js';
 import { isGuestCommentAuthor } from '../../lib/comment-authz.js';
 import { renderCommentBodyNodes } from '../../lib/comment-body.js';
 import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 
 /**
  * Create a comments section for the share viewer.
@@ -80,7 +81,7 @@ export function createShareViewerCommentsSection({
     onclick: () => submitComment(),
   });
   const inputControls = h('div', { class: 'share-viewer-comments-input-controls' });
-  inputControls.append(submitBtn);
+  inputControls.append(createCommentLinkButton({ input: commentInput }), submitBtn);
   inputArea.append(commentInput.el, inputControls);
 
   section.append(header, list, inputArea);
@@ -247,7 +248,7 @@ export function createShareViewerCommentsSection({
       text: t('comments.reply', 'Reply'),
       onclick: submitReply,
     });
-    container.append(replyInput.el, btn);
+    container.append(replyInput.el, createCommentLinkButton({ input: replyInput }), btn);
     return container;
   }
 

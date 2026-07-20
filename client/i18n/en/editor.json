@@ -708,6 +708,11 @@
   "comments.addPositioned": "Add comment to specific spot",
   "comments.cancelPosition": "Cancel",
   "comments.pinModeHint": "Click on the slide to place comment",
+  "comments.link.short": "Link",
+  "comments.link.add": "Add link",
+  "comments.link.message": "Paste a URL. It will show as a link.",
+  "comments.link.messageWithSelection": "Link \"{text}\" to:",
+  "comments.link.invalid": "Use an http://, https:// or mailto: address",
   "editor.notes.collapse": "Hide presenter notes",
   "editor.notes.expand": "Show presenter notes",
   "editor.slide.background.lockedByTheme": "Set by the theme and not editable per slide."

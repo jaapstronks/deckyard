@@ -14,6 +14,7 @@ import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/modal.js';
 import { attachMentionAutocomplete } from '../../lib/mention-autocomplete.js';
 import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
@@ -543,8 +544,11 @@ export function createCommentsPanel({
     text: t('comments.post', 'Post'),
     onclick: () => submitComment(),
   });
-  const inputControls = h('div', { class: 'comments-input-controls' });
-  inputControls.append(inputSubmitBtn);
+  const inputControls = h('div', { class: 'comments-input-controls is-between' });
+  inputControls.append(
+    createCommentLinkButton({ input: commentInput }),
+    inputSubmitBtn
+  );
   inputEl.append(commentInput.el, inputControls);
   mainMentionAc = attachMentions(commentInput, inputEl);
 

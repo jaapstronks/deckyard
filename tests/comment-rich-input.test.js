@@ -228,3 +228,65 @@ test('Enter does not submit while the mention popover claims it', () => {
   assert.equal(submits, 1);
   input.el.remove();
 });
+
+// ============================================================
+// Links (phase 2a)
+// ============================================================
+
+test('a link round-trips unchanged', () => {
+  const body = 'zie [de roadmap](https://example.com/r) even';
+  assert.equal(roundTrip(body), body);
+});
+
+test('links and mentions coexist in one body', () => {
+  const body = '@[Ann](user:ann@x.com) zie [docs](https://d.example/a?b=1#c)';
+  assert.equal(roundTrip(body), body);
+});
+
+test('a mention is never mistaken for a link', () => {
+  // `@[Name](user:…)` also matches the bare link shape once the @ is eaten,
+  // so ordering matters: mentions must win.
+  const el = hydrate('cc @[Ann](user:ann@x.com)');
+  assert.equal(el.querySelectorAll('.comment-mention-chip').length, 1);
+  assert.equal(el.querySelectorAll('[data-link-url]').length, 0);
+});
+
+test('a hydrated link is an anchor carrying its URL', () => {
+  const el = hydrate('zie [roadmap](https://example.com/r)');
+  const a = el.querySelector('[data-link-url]');
+  assert.equal(a.tagName, 'A');
+  assert.equal(a.getAttribute('data-link-url'), 'https://example.com/r');
+  assert.equal(a.textContent, 'roadmap');
+  // The label is editable — that is the difference from a mention chip.
+  assert.notEqual(a.getAttribute('contenteditable'), 'false');
+});
+
+test('an unsafe URL never becomes a link, and its markup survives as text', () => {
+  for (const url of [
+    'javascript:alert(1)',
+    'JavaScript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'vbscript:msgbox(1)',
+  ]) {
+    const body = `klik [hier](${url}) niet`;
+    const el = hydrate(body);
+    assert.equal(el.querySelectorAll('[data-link-url]').length, 0, `${url} must not linkify`);
+    assert.equal(serializeRichInput(el), body, `${url} must round-trip as literal text`);
+  }
+});
+
+test('editing a link label changes only the label, not the URL', () => {
+  const input = createRichCommentInput({});
+  input.setValue('zie [oud](https://example.com/r)');
+  input.el.querySelector('[data-link-url]').textContent = 'nieuw';
+  assert.equal(input.getValue(), 'zie [nieuw](https://example.com/r)');
+});
+
+test('emptying a link label drops the link entirely', () => {
+  // A link with no text is nothing to click, so it must not serialise to
+  // `[](url)` — that markup would render as literal text on the way back.
+  const input = createRichCommentInput({});
+  input.setValue('zie [oud](https://example.com/r) einde');
+  input.el.querySelector('[data-link-url]').textContent = '';
+  assert.equal(input.getValue(), 'zie  einde');
+});

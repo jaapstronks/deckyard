@@ -7,6 +7,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
 import { renderCommentBodyNodes } from '../../lib/comment-body.js';
 import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -286,7 +287,11 @@ export function createCommentRenderers({
       text: t('comments.reply', 'Reply'),
       onclick: submitReply,
     });
-    container.append(replyInput.el, submitBtn);
+    container.append(
+      replyInput.el,
+      createCommentLinkButton({ input: replyInput }),
+      submitBtn
+    );
     mentionAc = attachMentions?.(replyInput, container, { ephemeral: true });
     return container;
   }

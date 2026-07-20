@@ -160,6 +160,36 @@ Autocomplete is wired in the **editor only**: guests have no account, so they
 are neither mentionable nor able to mention. The share viewer gets the same
 composer without it.
 
+### Links
+
+A body may also carry `[label](url)`. `splitCommentSegments` is the full
+grammar (text + mentions + links) and drives both surfaces; `splitMentionSegments`
+still exists for callers that only care about mentions. **Mentions are matched
+first** — `@[Name](user:…)` also matches the bare link shape once the `@` is
+consumed, so running links first would turn every mention into a link.
+
+`safeLinkUrl` is an **allowlist**: `http://`, `https://`, `mailto:`, and no
+embedded control characters (that is how `java\nscript:` slips past a prefix
+check). Anything else is not a link — the markup stays visible as literal
+text, which is the harmless outcome. Comment bodies are written by anyone who
+can comment, guests included, so this is a security boundary, not a nicety.
+Rendered anchors carry `rel="noopener noreferrer nofollow"`.
+
+Unlike a mention chip, a link in the composer is **not atomic**: the label
+stays editable, so you can retype the words without reopening the dialog. The
+URL rides on `data-link-url` and is what serialisation reads back. Emptying the
+label drops the link rather than serialising `[](url)`, which would come back
+as literal text.
+
+The link button (`client/lib/comment-toolbar.js`) lives beside Post rather than
+in a bar of its own, so the composer keeps its height. It snapshots the
+selection on `mousedown` via `rememberSelection()` — by the time the dialog is
+open the live selection is gone, and closing a modal restores focus to the
+composer, which puts a *fresh* caret at position 0. That is why a snapshot
+wins over the live selection, and why it is cleared again on the next
+keydown/mousedown: a stale range would otherwise hijack the next mention
+insert or backspace.
+
 ## Deliberate non-features
 
 - No explicit assignment: mention = passing the ball. Could become a
