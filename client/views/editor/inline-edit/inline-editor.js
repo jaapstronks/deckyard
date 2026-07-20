@@ -28,8 +28,10 @@ import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openMediaPopover } from './media-popover.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
+import { uploadFile } from '../image-library/upload.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { toast } from '../../../lib/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
@@ -37,6 +39,9 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 /**
  * @param {Object} opts
  * @param {Function} opts.h - DOM helper
+ * @param {Function} [opts.api] - fetch wrapper; used to upload dropped image files
+ * @param {boolean} [opts.uploadsEnabled] - whether drag & drop image upload onto
+ *   empty placeholders is available (mirrors `features.disableUploads`)
  * @param {HTMLElement} opts.thumb - the preview slide container (stable element)
  * @param {HTMLElement} [opts.overlayHost] - host for the markdown modal + backdrop
  *   (defaults to the thumb's stage). A larger host (the preview panel) makes the
@@ -54,6 +59,8 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  */
 export function createInlineEditor({
   h,
+  api,
+  uploadsEnabled = false,
   thumb,
   previewStage,
   overlayHost,
@@ -1017,7 +1024,8 @@ export function createInlineEditor({
     const media = descriptor.media;
     if (!media || typeof openImagePicker !== 'function') return;
     for (const photo of root.querySelectorAll(media.photoSelector)) {
-      outlineByField.set(photo, overlay.outline(photo));
+      const outlineBox = overlay.outline(photo);
+      outlineByField.set(photo, outlineBox);
       const isEmpty = photo.classList.contains('is-empty');
       const chip = h('button', {
         class: 'ie-media-hint',
@@ -1036,6 +1044,94 @@ export function createInlineEditor({
         }),
       ]);
       overlay.place(chip, photo, 'center', 0);
+      // Drag an image file straight from the desktop onto an empty placeholder.
+      // Empty-only for now (replacing a filled image is done via the popover);
+      // the chip is a separate drop target because it overlays the placeholder.
+      if (isEmpty && uploadsEnabled && typeof api === 'function') {
+        wireImageDrop([photo, chip], photo, outlineBox);
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Drag & drop image upload onto empty canvas placeholders
+  // ----------------------------------------------------------------
+  /** True only for an external file drag (not an internal card-reorder drag,
+   *  which carries `text/plain`). Guards against hijacking reorder drops. */
+  function isFileDrag(e) {
+    const types = e.dataTransfer?.types;
+    return !!types && Array.from(types).includes('Files');
+  }
+
+  /**
+   * Wire dragenter/over/leave/drop on the given elements so dropping an image
+   * file uploads it and attaches it to `photo`'s slot. `els` share one depth
+   * counter so the highlight doesn't flicker when the cursor crosses between the
+   * placeholder and its centered chip; `outlineBox` gets the drop highlight.
+   */
+  function wireImageDrop(els, photo, outlineBox) {
+    let depth = 0;
+    const setActive = (on) => outlineBox?.classList.toggle('is-drop-active', !!on);
+    for (const el of els) {
+      el.addEventListener('dragenter', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        depth += 1;
+        setActive(true);
+      });
+      el.addEventListener('dragover', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+      el.addEventListener('dragleave', (e) => {
+        if (!isFileDrag(e)) return;
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) setActive(false);
+      });
+      el.addEventListener('drop', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        depth = 0;
+        setActive(false);
+        const file = e.dataTransfer?.files?.[0];
+        if (file) handleDroppedImage(photo, file);
+      });
+    }
+  }
+
+  /** Upload a dropped file and write its URL onto the placeholder's image field,
+   *  through the same dirty/save/rerender path as a popover pick. */
+  async function handleDroppedImage(photoEl, file) {
+    if (!file.type?.startsWith('image/')) {
+      toast(t('editor.inline.media.dropInvalid', 'That is not an image file.'), {
+        type: 'error',
+      });
+      return;
+    }
+    const target = resolveMediaTarget(photoEl);
+    if (!target) return;
+    // Long-lived "Uploading…" toast; dismissed explicitly on completion (there
+    // is no infinite duration, so cap it well past a realistic upload).
+    const uploading = toast(t('imageLibrary.uploading', 'Uploading…'), { durationMs: 60000 });
+    try {
+      const { url } = await uploadFile(api, file);
+      if (!url) throw new Error('no url');
+      target.member[target.imageField] = url;
+      // Raw uploads carry no provider metadata, so clear any stale ImageKit id
+      // and leave alt empty for the user to fill or AI-generate.
+      delete target.member.imagekitFileId;
+      markDirty?.();
+      requestSave?.();
+      rerenderEditor?.();
+      rerenderPreview?.();
+    } catch {
+      toast(t('editor.inline.media.dropFailed', 'Upload failed. Please try again.'), {
+        type: 'error',
+      });
+    } finally {
+      uploading?.dismiss?.();
     }
   }
 
@@ -1052,30 +1148,37 @@ export function createInlineEditor({
     if (el) openMediaFor(el);
   }
 
-  function openMediaFor(photoEl) {
+  /**
+   * Resolve the slide member + field keys a photo placeholder writes to, shared
+   * by the media popover (openMediaFor) and the drag & drop upload handler.
+   *
+   * Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
+   * mutate slide.content directly, substituting `{n}` -> idx in the field keys
+   * (single-image types use plain keys with idx 0; content-columns templates
+   * col{n}Image / col{n}Alt off the 1-based column number).
+   *
+   * @returns {{slide, media, idx, member, imageField, altField, extraFields}|null}
+   */
+  function resolveMediaTarget(photoEl) {
     const slide = getSlide?.();
     const descriptor = slide
       ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
       : null;
     const media = descriptor?.media;
-    if (!slide || !media || typeof openImagePicker !== 'function') return;
+    if (!slide || !media || typeof openImagePicker !== 'function') return null;
     const idx = Number(photoEl.getAttribute('data-inline-photo'));
-    if (!Number.isInteger(idx)) return;
+    if (!Number.isInteger(idx)) return null;
 
-    // Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
-    // mutate slide.content directly, substituting `{n}` -> idx in the field keys
-    // (single-image types use plain keys with idx 0; content-columns templates
-    // col{n}Image / col{n}Alt off the 1-based column number).
     let member;
     let imageField;
     let altField;
     let extraFields;
     if (media.list) {
       const arr = getByPath(slide.content, media.list);
-      if (!Array.isArray(arr)) return;
+      if (!Array.isArray(arr)) return null;
       // Renderers may draw placeholder cells beyond the current array (e.g.
-      // image-text rows padding to their cell count); create the item the
-      // popover will mutate in place.
+      // image-text rows padding to their cell count); create the item we mutate
+      // in place.
       while (arr.length <= idx) arr.push({});
       member = arr[idx];
       imageField = media.imageField;
@@ -1088,6 +1191,13 @@ export function createInlineEditor({
       altField = sub(media.altField);
       extraFields = (media.extraFields || []).map((f) => ({ ...f, key: sub(f.key) }));
     }
+    return { slide, media, idx, member, imageField, altField, extraFields };
+  }
+
+  function openMediaFor(photoEl) {
+    const target = resolveMediaTarget(photoEl);
+    if (!target) return;
+    const { slide, idx, member, imageField, altField, extraFields } = target;
 
     dismissMediaPopover();
     const onEdit = () => {

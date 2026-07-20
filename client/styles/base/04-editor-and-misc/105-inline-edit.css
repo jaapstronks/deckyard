@@ -77,6 +77,16 @@
   background: hsl(var(--app-accent-primary) / 0.07);
 }
 
+/* Drag & drop file hover — a placeholder is a live drop target for an image
+   file being dragged in from the desktop. Solid, tinted, always visible. */
+.ie-overlay .ie-ol-outline.is-drop-active {
+  opacity: 1;
+  border-style: solid;
+  border-width: 2px;
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.12);
+}
+
 /* Active in-place edit ring — always visible, solid, no dashes. */
 .ie-overlay .ie-ol-outline.is-active {
   opacity: 1;
