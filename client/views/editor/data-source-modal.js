@@ -259,7 +259,7 @@ export function openDataSourceConfigModal({
       updateActionStates();
     } catch (err) {
       statusEl.textContent = t('dataSource.error', 'Error: {message}', {
-        message: err.message || 'Failed to fetch data',
+        message: err.message || t('editor.dataSource.fetchFailed', 'Failed to fetch data'),
       });
     } finally {
       previewBtn.disabled = false;

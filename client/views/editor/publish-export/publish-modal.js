@@ -336,7 +336,7 @@ export function openPublishModal({
           href: openHref,
           target: '_blank',
           rel: 'noopener noreferrer',
-          text: 'Open',
+          text: t('common.open', 'Open'),
         })
       );
     }
@@ -400,7 +400,7 @@ export function openPublishModal({
   advanced.append(
     h('summary', {
       class: 'publish-advanced-summary',
-      text: 'Geavanceerd (iframe / SDK)',
+      text: t('editor.publish.advanced', 'Advanced (iframe / SDK)'),
     })
   );
   const advBody = h('div', { class: 'publish-advanced-body' });

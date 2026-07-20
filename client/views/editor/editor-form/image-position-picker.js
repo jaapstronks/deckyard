@@ -119,8 +119,8 @@ export function renderImagePositionPicker({
   if (mode === 'cover') {
     return renderFocusGridField({
       h,
-      label: 'Image focus (crop)',
-      helpText: 'Pick what should stay visible when the image is cropped.',
+      label: t('editor.imagePosition.cropLabel', 'Image focus (crop)'),
+      helpText: t('editor.imagePosition.cropHelp', 'Pick what should stay visible when the image is cropped.'),
       focusX: activeX,
       focusY: activeY,
       disabled: false,

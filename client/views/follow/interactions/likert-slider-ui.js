@@ -1,5 +1,10 @@
-import { t } from '../../../lib/ui-i18n.js';
-
+/**
+ * Likert slider interaction UI.
+ *
+ * Strings come from the follow `copy` object (deck-language scoped, built by
+ * `../i18n.js`), not from the global `t()` — the follow chrome switches with
+ * the deck language, which the UI-locale dictionary does not track.
+ */
 export function renderLikertSliderUi({
   h,
   interaction,
@@ -9,7 +14,13 @@ export function renderLikertSliderUi({
   vote,
   clamp0,
   sliderDrag,
+  copy,
 } = {}) {
+  const scoreText = (n) =>
+    myVote != null
+      ? copy?.likertSliderYourScore?.(n) ?? `Your score: ${n}`
+      : copy?.likertSliderChooseScore?.(n) ?? `Choose a score: ${n}`;
+
   const min = 1;
   const max = 10;
   const currentVal = myVote != null ? clamp0(myVote) + 1 : 5;
@@ -18,10 +29,7 @@ export function renderLikertSliderUi({
 
   const valueText = h('div', {
     class: 'follow-interaction-slider-value',
-    text:
-      myVote != null
-        ? t('follow.likertSlider.yourScore', 'Your score: {n}', { n: currentVal })
-        : t('follow.likertSlider.chooseScore', 'Choose a score: {n}', { n: currentVal }),
+    text: scoreText(currentVal),
   });
 
   const input = h('input', {
@@ -44,10 +52,7 @@ export function renderLikertSliderUi({
   input.addEventListener('input', () => {
     const v = Number(input.value ?? NaN);
     const shown = Number.isFinite(v) ? v : currentVal;
-    valueText.textContent =
-      myVote != null
-        ? t('follow.likertSlider.yourScore', 'Your score: {n}', { n: shown })
-        : t('follow.likertSlider.chooseScore', 'Choose a score: {n}', { n: shown });
+    valueText.textContent = scoreText(shown);
   });
 
   // Mobile quirk: some browsers fire `change` while dragging, which would trigger a re-render

@@ -467,7 +467,9 @@ export function createThemesTab({ user }) {
   async function confirmDeleteTheme(theme) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('settings.themes.deleteConfirm', `Delete theme "${theme.label}"? This cannot be undone.`),
+      message: t('settings.themes.deleteConfirm', 'Delete theme "{label}"? This cannot be undone.', {
+        label: theme.label,
+      }),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });

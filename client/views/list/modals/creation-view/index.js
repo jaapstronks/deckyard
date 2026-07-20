@@ -945,7 +945,8 @@ export function openCreationView({
           class: 'help modal-hint',
           text: t(
             'list.newPresentation.importMarkdown.warningsIntro',
-            `Import succeeded, but ${warnings.length} issue(s) were detected:`
+            'Import succeeded, but {count} issue(s) were detected:',
+            { count: warnings.length }
           ),
         })
       );

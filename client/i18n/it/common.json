@@ -37,8 +37,6 @@
   "common.title": "Titolo",
   "common.unknown": "Sconosciuto",
   "common.upload": "Carica",
-  "follow.likertSlider.chooseScore": "Scegli un punteggio: {n}",
-  "follow.likertSlider.yourScore": "Il tuo punteggio: {n}",
   "viewer.addComment": "Aggiungi commento",
   "viewer.addComment.title": "Visualizza e aggiungi commenti",
   "viewer.comments": "Commenti",

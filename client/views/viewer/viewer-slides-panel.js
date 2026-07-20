@@ -18,7 +18,7 @@ export function createViewerSlidesPanel({
   // Use same structure as editor: panel > panel-scroll > list
   const panelEl = h('div', { class: 'panel slides-panel viewer-slides-panel' });
   const panelHeader = h('div', { class: 'slides-panel-header' }, [
-    h('h2', { text: 'Slides' }),
+    h('h2', { text: t('viewer.slides.title', 'Slides') }),
   ]);
   const panelScroll = h('div', { class: 'panel-scroll' });
   const listEl = h('div', { class: 'list' });

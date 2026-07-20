@@ -279,7 +279,7 @@ export function createImageLibraryDetail({
           onclick: async () => {
             try {
               setBusy(true);
-              setStatus(t('common.save', 'Save') + '…');
+              setStatus(t('common.saving', 'Saving…'));
               const tagsArr = String(inTags.value || '').split(',').map((s) => s.trim()).filter(Boolean);
               const updated = await api(`/api/image-library/${it.id}`, {
                 method: 'PUT',

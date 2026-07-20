@@ -80,7 +80,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
         invalidateProfile(targetUser.email);
       }
     } catch (err) {
-      imageStatus.textContent = String(err?.message || 'Upload failed');
+      imageStatus.textContent = String(err?.message || t('admin.users.uploadFailed', 'Upload failed'));
     } finally {
       uploadBtn.disabled = false;
       fileInput.value = '';
@@ -101,7 +101,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
       imageStatus.textContent = '';
       invalidateProfile(targetUser.email);
     } catch (err) {
-      imageStatus.textContent = String(err?.message || 'Failed to remove');
+      imageStatus.textContent = String(err?.message || t('admin.users.removeFailed', 'Failed to remove'));
     } finally {
       removeBtn.disabled = false;
     }

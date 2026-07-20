@@ -321,7 +321,7 @@ function buildHeaderActions({
                 editorState.dirtyRefreshWithItem();
                 toast.success(t('editor.slide.aiConvert.done', 'Converted successfully!'));
               } else {
-                throw new Error(resp?.error || 'Unknown error');
+                throw new Error(resp?.error || t('common.unknownError', 'Unknown error'));
               }
             } catch (e) {
               converting.dismiss();
@@ -775,12 +775,21 @@ export function createRerenderEditor({
       for (const alt of alternatives) {
         const altDiv = h('div', { class: 'ai-reasoning-alternative' });
         const altLabel = h('strong');
-        altLabel.textContent = `${t('editor.slide.aiAlternative', 'Alternative')}: `;
-        const altConsider = document.createTextNode(`${t('editor.slide.aiAlternative.consider', 'Consider')} `);
+        altLabel.textContent = t('editor.slide.aiAlternativeLabel', 'Alternative:');
         const altCode = h('code');
         altCode.textContent = alt.type;
-        const altReason = document.createTextNode(` — ${alt.reason}`);
-        altDiv.append(altLabel, altConsider, altCode, altReason);
+        // One key for the whole suggestion: {type} marks where the <code> node
+        // goes, so translations control word order and punctuation.
+        const tpl = t('editor.slide.aiAlternativeSuggestion', 'Consider {type} — {reason}');
+        const [beforeType, afterType = ''] = tpl.split('{type}');
+        const fillReason = (s) => s.replace('{reason}', () => String(alt.reason));
+        altDiv.append(
+          altLabel,
+          document.createTextNode(' '),
+          document.createTextNode(fillReason(beforeType)),
+          altCode,
+          document.createTextNode(fillReason(afterType))
+        );
         aiSection.append(altDiv);
       }
 
@@ -792,7 +801,7 @@ export function createRerenderEditor({
       const warningsDiv = h('div', { class: 'ai-warnings' });
       for (const w of slide._aiWarnings) {
         const p = h('p', { class: 'ai-warning-item' });
-        p.textContent = `\u26A0\uFE0F ${w}`;
+        p.textContent = t('editor.slide.aiWarningItem', '\u26A0\uFE0F {warning}', { warning: w });
         warningsDiv.append(p);
       }
       form.append(warningsDiv);

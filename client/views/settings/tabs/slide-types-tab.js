@@ -22,6 +22,20 @@ import { loadThemeById } from '../../../lib/theme.js';
 import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
 
 /**
+ * Category heading labels, resolved lazily (the i18n dictionary is not loaded
+ * at import time). Keyed by the category `key` in CATEGORIES below.
+ */
+const CATEGORY_LABELS = {
+  basic: () => t('settings.slideTypes.group.basic', 'Basic'),
+  media: () => t('settings.slideTypes.group.media', 'Media'),
+  layouts: () => t('settings.slideTypes.group.layouts', 'Layouts'),
+  data: () => t('settings.slideTypes.group.data', 'Data'),
+  process: () => t('settings.slideTypes.group.process', 'Process'),
+  interaction: () => t('settings.slideTypes.group.interaction', 'Interaction'),
+  other: () => t('settings.slideTypes.group.other', 'Other'),
+};
+
+/**
  * Slide type category definitions.
  * Matches the picker categories for familiarity.
  */
@@ -567,7 +581,11 @@ export function createSlideTypesTab({ user } = {}) {
   async function confirmDeleteCustomType(ct) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('settings.slideTypes.deleteConfirm', `Delete custom type "${ct.label}"? This cannot be undone.`),
+      message: t(
+        'settings.slideTypes.deleteConfirm',
+        'Delete custom type "{label}"? This cannot be undone.',
+        { label: ct.label }
+      ),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });
@@ -730,7 +748,7 @@ export function createSlideTypesTab({ user } = {}) {
       const group = h('div', { class: 'slide-type-curation-group' });
       group.append(h('h3', {
         class: 'slide-type-curation-group-title',
-        text: t(`settings.slideTypes.group.${cat.key}`, cat.label),
+        text: CATEGORY_LABELS[cat.key]?.() ?? cat.label,
       }));
 
       const grid = h('div', { class: 'slide-type-curation-grid' });

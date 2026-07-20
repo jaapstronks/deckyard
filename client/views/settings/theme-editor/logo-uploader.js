@@ -152,7 +152,7 @@ export function createLogoUploader({ value, onChange }) {
       currentUrl = result.url;
       onChange?.(result.url);
     } catch (err) {
-      status.textContent = String(err?.message || 'Upload failed');
+      status.textContent = String(err?.message || t('settings.themes.logo.uploadFailed', 'Upload failed'));
     } finally {
       uploading = false;
       renderState();

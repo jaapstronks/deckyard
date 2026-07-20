@@ -74,7 +74,7 @@ function libraryProvider(openLibraryRaw) {
             tags: Array.isArray(it?.tags) ? it.tags : undefined,
             caption:
               applyCaptionCredit && photographer
-                ? `${t('editor.image.photoCreditPrefix', 'Photo:')} ${photographer}`
+                ? t('editor.image.photoCredit', 'Photo: {photographer}', { photographer })
                 : undefined,
             meta: {
               photographer: photographer || undefined,

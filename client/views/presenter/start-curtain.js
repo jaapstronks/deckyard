@@ -42,10 +42,7 @@ export function createStartCurtain({
     slideCount > 0
       ? h('div', {
           class: 'presenter-start-meta',
-          text: t('presenter.start.slides', '{n} slides').replace(
-            '{n}',
-            String(slideCount)
-          ),
+          text: t('presenter.start.slides', '{n} slides', { n: slideCount }),
         })
       : null;
 

@@ -13,18 +13,20 @@ import { createAdobePanel } from './adobe-panel.js';
 import { createMonotypePanel } from './monotype-panel.js';
 import { createGooglePanel } from './google-panel.js';
 
+// Labels carry an i18n key + English fallback; resolved via t() at render time
+// (the dictionary is not loaded yet at import time).
 const SOURCES = [
-  { key: 'upload', label: 'Upload Custom Font' },
-  { key: 'adobe', label: 'Adobe Fonts (Typekit)' },
-  { key: 'monotype', label: 'fonts.com (Monotype)' },
-  { key: 'google', label: 'Google Fonts' },
+  { key: 'upload', labelKey: 'fonts.source.upload', label: 'Upload Custom Font' },
+  { key: 'adobe', labelKey: 'fonts.source.adobe', label: 'Adobe Fonts (Typekit)' },
+  { key: 'monotype', labelKey: 'fonts.source.monotype', label: 'fonts.com (Monotype)' },
+  { key: 'google', labelKey: 'fonts.source.google', label: 'Google Fonts' },
 ];
 
 const CATEGORIES = [
-  { value: 'sans-serif', label: 'Sans-serif' },
-  { value: 'serif', label: 'Serif' },
-  { value: 'display', label: 'Display' },
-  { value: 'monospace', label: 'Monospace' },
+  { value: 'sans-serif', labelKey: 'fonts.category.sansSerif', label: 'Sans-serif' },
+  { value: 'serif', labelKey: 'fonts.category.serif', label: 'Serif' },
+  { value: 'display', labelKey: 'fonts.category.display', label: 'Display' },
+  { value: 'monospace', labelKey: 'fonts.category.monospace', label: 'Monospace' },
 ];
 
 /**
@@ -92,7 +94,9 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       onclick: async () => {
         const confirmed = await confirmModal(h, document.body, {
           title: t('common.delete', 'Delete'),
-          message: t('fonts.confirmDelete', `Delete "${fontFamily.name}" and all its variants?`),
+          message: t('fonts.confirmDelete', 'Delete "{name}" and all its variants?', {
+            name: fontFamily.name,
+          }),
           confirmLabel: t('common.delete', 'Delete'),
           danger: true,
         });
@@ -139,7 +143,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
         }
         updateSourcePanels();
       });
-      const label = h('span', { text: src.label });
+      const label = h('span', { text: t(src.labelKey, src.label) });
       option.append(radio, label);
       sourceGroup.append(option);
     }
@@ -179,7 +183,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     },
   });
   for (const cat of CATEGORIES) {
-    const opt = h('option', { value: cat.value, text: cat.label });
+    const opt = h('option', { value: cat.value, text: t(cat.labelKey, cat.label) });
     if (cat.value === state.category) opt.selected = true;
     categorySelect.append(opt);
   }

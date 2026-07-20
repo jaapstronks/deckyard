@@ -160,7 +160,7 @@ export function openAnalyzeModal({
       if (error?.name === 'AbortError') return;
       console.error('[analyze] Error:', error);
       statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-        message: error?.message || 'Unknown error',
+        message: error?.message || t('common.unknownError', 'Unknown error'),
       });
       btnCancel.style.display = 'none';
       btnClose.style.display = '';
@@ -239,7 +239,7 @@ export function openAnalyzeModal({
       case 'error':
         isRunning = false;
         statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-          message: data.message || 'Unknown error',
+          message: data.message || t('common.unknownError', 'Unknown error'),
         });
         btnCancel.style.display = 'none';
         btnClose.style.display = '';

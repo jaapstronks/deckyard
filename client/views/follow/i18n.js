@@ -101,6 +101,8 @@ export async function createFollowCopy(lang) {
     qaPromoted: tr('follow.qaPromoted', 'Will be addressed (added to the deck)'),
     qaTranslatedFromEn: tr('follow.qaTranslatedFromEn', 'translated from English'),
     qaTranslatedFromNl: tr('follow.qaTranslatedFromNl', 'translated from Dutch'),
+    qaUpvote: tr('follow.qaUpvote', 'Upvote'),
+    qaCancel: tr('follow.qaCancel', 'Cancel my question'),
     qaViewOriginal: tr('follow.qaViewOriginal', 'View original'),
     qaViewTranslation: tr('follow.qaViewTranslation', 'View translation'),
     interactionTitle: tr('follow.interactionTitle', 'Participate'),
@@ -115,6 +117,10 @@ export async function createFollowCopy(lang) {
     interactionFeedbackUpdate: tr('follow.interactionFeedbackUpdate', 'Update'),
     interactionFeedbackUpdating: tr('follow.interactionFeedbackUpdating', 'Updating…'),
     interactionFeedbackPlaceholder: tr('follow.interactionFeedbackPlaceholder', 'Type your feedback…'),
+    likertSliderYourScore: (n) =>
+      tr('follow.likertSlider.yourScore', 'Your score: {n}', { n }),
+    likertSliderChooseScore: (n) =>
+      tr('follow.likertSlider.chooseScore', 'Choose a score: {n}', { n }),
     followInviteSuccess: tr(
       'follow.followInviteSuccess',
       'Follow along mode successful, this view will update automatically.'

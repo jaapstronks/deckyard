@@ -102,9 +102,13 @@ export function createSlideHeatmap({ h, slides, presentation }) {
       const info = h('div', { class: 'analytics-heatmap-info' }, [
         h('div', { class: 'analytics-heatmap-title', text: slideTitle }),
         h('div', { class: 'analytics-heatmap-stats' }, [
-          h('span', { text: `${data.views || 0} ${t('analytics.viewsShort', 'views')}` }),
+          h('span', { text: t('analytics.heatmap.views', '{views} views', { views: data.views || 0 }) }),
           h('span', { text: ' · ' }),
-          h('span', { text: `${formatTime(data.avgTimeSeconds || 0)} ${t('analytics.avgShort', 'avg')}` }),
+          h('span', {
+            text: t('analytics.heatmap.avgTime', '{time} avg', {
+              time: formatTime(data.avgTimeSeconds || 0),
+            }),
+          }),
         ]),
       ]);
 

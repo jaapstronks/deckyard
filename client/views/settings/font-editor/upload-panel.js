@@ -9,17 +9,30 @@ import { api } from '../../../lib/api.js';
 import { formatFileSize } from '../../../lib/format.js';
 import { toast } from '../../../lib/toast.js';
 
-const WEIGHTS = [
-  { value: 100, label: 'Thin' },
-  { value: 200, label: 'Extra Light' },
-  { value: 300, label: 'Light' },
-  { value: 400, label: 'Regular' },
-  { value: 500, label: 'Medium' },
-  { value: 600, label: 'Semibold' },
-  { value: 700, label: 'Bold' },
-  { value: 800, label: 'Extra Bold' },
-  { value: 900, label: 'Black' },
-];
+const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+
+const WEIGHT_FALLBACKS = {
+  100: 'Thin',
+  200: 'Extra Light',
+  300: 'Light',
+  400: 'Regular',
+  500: 'Medium',
+  600: 'Semibold',
+  700: 'Bold',
+  800: 'Extra Bold',
+  900: 'Black',
+};
+
+/**
+ * Translated name for a font weight. Resolved at render time so it follows the
+ * active UI locale (the dictionary is not loaded yet at module evaluation).
+ * @param {number} value - CSS font weight
+ * @returns {string} Weight name
+ */
+function weightName(value) {
+  const fallback = WEIGHT_FALLBACKS[value];
+  return fallback ? t(`fonts.weightName.${value}`, fallback) : String(value);
+}
 
 /**
  * Create the upload panel.
@@ -78,8 +91,13 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
 
     if (variant) {
       const info = h('span', { class: 'font-variant-filename' });
-      const weightLabel = WEIGHTS.find((w) => w.value === weight)?.label || String(weight);
-      info.textContent = `${weightLabel} ${style}`;
+      const styleLabel = style === 'italic'
+        ? t('fonts.italic', 'Italic')
+        : t('fonts.normal', 'Normal');
+      info.textContent = t('fonts.variantLabel', '{weight} {style}', {
+        weight: weightName(weight),
+        style: styleLabel,
+      });
       if (variant.fileSize) {
         const size = h('span', { class: 'font-variant-size', text: formatFileSize(variant.fileSize) });
         cell.append(info, size);
@@ -99,7 +117,7 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
       const uploadBtn = h('button', {
         class: 'btn btn-secondary is-compact',
         type: 'button',
-        text: '+ ' + t('fonts.upload', 'Upload'),
+        text: t('fonts.uploadCta', '+ Upload'),
         onclick: () => handleUploadVariant(weight, style),
       });
       cell.append(uploadBtn);

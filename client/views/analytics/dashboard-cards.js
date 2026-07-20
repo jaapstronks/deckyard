@@ -38,7 +38,10 @@ export function createDashboardCards({ summary, trend }) {
   const trendArrow = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '';
   const trendClass = `dashboard-trend dashboard-trend-${trend.direction}`;
   const trendText = trend.percentChange > 0
-    ? `${trendArrow}${trend.percentChange}% ${t('dashboard.trend.vsPrevious', 'vs previous period')}`
+    ? t('dashboard.trend.change', '{arrow}{percent}% vs previous period', {
+        arrow: trendArrow,
+        percent: trend.percentChange,
+      })
     : t('dashboard.trend.noPrevious', 'No previous data');
 
   const cards = h('div', { class: 'dashboard-cards' }, [
