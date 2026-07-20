@@ -313,13 +313,15 @@ export function createSlidesPanel({
     insertSlideObject(s, { afterSlideId, parentId });
   };
 
-  // Recent/pinned personal-library slides for the inline "From your library"
-  // strip (item 10). Filtered to insertable, non-trashed items, sorted like the
-  // library tab (favourites first), capped to one short row. Errors -> empty, so
-  // the strip simply hides. Matches the library tab's non-theme-filtered fetch.
-  const loadLibraryStripItems = async () => {
+  // Recent/pinned library slides for the inline "From your library" strip
+  // (item 10). One scope's worth: filtered to insertable, non-trashed items and
+  // sorted like the library tab (favourites first). The picker decides how many
+  // of each scope to show, so this returns the full sorted list (uncapped).
+  // Errors -> empty, so a failing scope simply drops out of the strip. Matches
+  // the library tab's non-theme-filtered fetch.
+  const loadLibraryStripScope = async (endpoint) => {
     try {
-      const r = await api('/api/slide-library/personal');
+      const r = await api(endpoint);
       const items = Array.isArray(r?.items) ? r.items : [];
       const usable = items.filter((it) => {
         if (it?.isTrashed || it?.trashedAt) return false;
@@ -335,10 +337,20 @@ export function createSlidesPanel({
           })
         );
       });
-      return sortByPinnedThenName(usable).slice(0, 4);
+      return sortByPinnedThenName(usable);
     } catch {
       return [];
     }
+  };
+
+  // Fetch both scopes in parallel so the strip can show a mix of personal and
+  // team slides (the picker splits the available tiles between them).
+  const loadLibraryStripItems = async () => {
+    const [personal, team] = await Promise.all([
+      loadLibraryStripScope('/api/slide-library/personal'),
+      loadLibraryStripScope('/api/slide-library/team'),
+    ]);
+    return { personal, team };
   };
 
   const { renderSlideTypePicker } = createSlideTypePicker({
