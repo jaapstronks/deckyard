@@ -100,24 +100,60 @@ canonical (`ensureMembers` `descriptors.js:578`, `ensureLogos` `:638`).
 `content-columns` is the exception: **numbered-only, no array**, so its
 per-column fit/focus/alt are flat slide keys masquerading as per-item state.
 
-## Precedence is inline, not central 🚩
+## Precedence, and the display-baseline bug it leaves
 
-There is no single authority for "item vs slide wins". Each `renderHtml` repeats
-the rule itself (`image-text-slide.js:497-500` for focus, `:481-486` for alt,
-`:501-506` for fit). Consequences:
+Until PR #182 there was no single authority for "item vs slide wins": each
+`renderHtml` re-derived the rule inline, and the canvas focal drag and inspector
+each re-derived their own copy. **Step 1 (#182) centralized the read** into
+`resolveImageTextCell(content, idx)` in `shared/slide-types/image-text-images.js`
+— render, the canvas focal-point drag and the inspector's effective-fit all read
+through it, so the three can no longer drift.
 
-- **A dead inspector write.** image-text's "Layout options" focus picker writes
-  slide-level `content.focusX/Y` (`slide-forms/image-slide.js:183-190`), but the
-  renderer ignores those for cell 0 once `images[0]` has its own focus — so that
-  control silently does nothing.
-- **A CRDT footgun.** With Yjs, client A writing `content.focusX` and client B
-  writing `images[0].focusX` both "succeed"; the item silently wins and A's edit
-  vanishes with no conflict and no signal.
+What that did **not** fix — and step 2 must — is a **display-baseline bug**, not
+a dead write. Trace the three focus write paths and every write takes effect: the
+inspector 3×3 grid always writes a number (0/50/100, Center = 50/50), the canvas
+drag localizes to `images[idx]`, and render reads the item as soon as
+`focusX !== ''`. The defect is what the user *sees*: for a cell-0 image with no
+own focus, the inspector grid highlights **center** while the effective (rendered)
+crop is the slide-level fallback (e.g. 25/75) — **the grid shows the wrong
+starting position.** Verified live 2026-07-20 (grid dot = "Middle center" while
+the canvas handle and render sat at 25/75).
+
+The root cause is that fit/focus/alt still live at two record levels
+(slide + item) with the item as the canonical crop but the grid seeded from the
+raw item value. Step 2 removes the duality (below), which removes the wrong
+baseline as a byproduct. (Frame the effect a user sees — "grid shows the wrong
+start position" — not an architecture category like "dead write" or "CRDT
+footgun"; the latter invites a stricter misreading than the code supports.)
 
 ## Target model
 
-Split `image-slide`'s conflated `layout` into two orthogonal, uniformly-named
-axes and drop the word:
+### The canonical shape: `ImageRef`
+
+Every image — the single image of an `image-slide`, an item in an `images[]`
+array, a numbered `col{n}Image` — resolves **to and from one value object**:
+
+```
+ImageRef = { src, alt, fit, focusX, focusY, bleed, role }
+```
+
+Once an image is always an `ImageRef`, the question this document exists to
+answer — "does this property live on the slide or the element?" — **dissolves**:
+an `ImageRef` is the element, always. The flat / numbered / array record-level
+duality falls out as a byproduct of resolving each storage shape into an
+`ImageRef`, rather than being fought property-by-property. This is the target the
+per-step migrations below converge on; do not migrate `fit`, then `focus`, then
+`alt` as independent axes — migrate the *shape*.
+
+A generic **write → render round-trip check** over `ImageRef` (set each field via
+the inspector seam, assert the render reflects it, assert the inspector re-reads
+the same value) catches the whole class of baseline / stale-read bugs in one
+harness — including in image types nobody is actively looking at.
+
+### The fit/bleed split (part of `ImageRef`)
+
+`ImageRef.fit`/`bleed` replace `image-slide`'s conflated `layout`. Split it into
+two orthogonal, uniformly-named axes and drop the word:
 
 ```
 content.fit   = 'cover' | 'contain'     // element-level, same vocab as image-text
@@ -162,18 +198,26 @@ is nothing left to guess.
 
 Ordered so the highest-risk, data-losing item comes before the cosmetic one.
 The matrix above is what fixes the ordering: `image-slide`'s naming is a design
-blemish, but image-text's S+I duplication is the one with silent data loss.
+blemish, but image-text's S+I duplication is the one with silent data loss. All
+steps converge on the `ImageRef` shape above — migrate the shape, not each
+property.
 
-1. **Centralize precedence.** One `resolveImageProps(slide, item, idx)` every
-   renderer calls; removes the inline repetition and the dead-write / CRDT
-   footgun. No migration, immediate effect.
-2. **De-duplicate image-text S + I.** Make `images[i]` canonical for
-   fit/focus/alt and retire the slide-level item-0 fallback (preserving the
-   alt-translation fallback). The only change carrying real data-loss risk.
-3. **Split image-slide `layout` → `fit` + `bleed`.** Cheap once the target
-   shape is fixed here: content migration + renderer + `convert.js`.
-4. **Normalize content-columns `col{n}*`.** Resolve the numbered/array duality.
+1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
+   `resolveImageTextCell(content, idx)` is the single read authority (render +
+   canvas drag + inspector). Pure refactor, render byte-identical. Removed the
+   inline repetition; the display-baseline bug is what remains for step 2.
+2. **De-duplicate image-text S + I → `ImageRef`.** Make `images[i]` the single
+   canonical `ImageRef` for fit/focus/alt; retire the slide-level item-0 fallback
+   (migrating the legacy slide-level alt/focus into `images[0]`, preserving the
+   alt-translation fallback). Fixes the display-baseline bug (grid then reads the
+   canonical value). The only step carrying real data-loss risk — add the generic
+   write → render round-trip check here.
+3. **Split image-slide `layout` → `ImageRef.fit` + `bleed`.** Cheap once the
+   shape is fixed: content migration + renderer + `convert.js` (which becomes
+   lossless).
+4. **Normalize content-columns `col{n}*` → `ImageRef`.** Resolve the
+   numbered/array duality by resolving each column into an `ImageRef`.
 
 The editing-surface UI work (`docs/plans/editing-surfaces.md`) sits on top of
-step 1-2: once "This image" reads a single per-element source, the tab split is
-mechanical.
+step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split
+is mechanical.
