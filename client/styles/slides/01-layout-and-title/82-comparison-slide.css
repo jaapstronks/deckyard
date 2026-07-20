@@ -166,7 +166,7 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .slide-comparison .comparison-split {
     gap: 0;
   }

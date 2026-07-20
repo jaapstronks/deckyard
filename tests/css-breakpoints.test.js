@@ -40,15 +40,6 @@ const LADDER = {
  * See docs/plans/breakpoint-scale.md for the migration order.
  */
 const ALLOWLIST = [
-  // Step 2 — trivial remap (<= 60px shift, cosmetic rules only).
-  'max-width: 420px',
-  'max-width: 500px',
-  'max-width: 600px',
-  'max-width: 680px',
-  'max-width: 720px',
-  'max-width: 800px',
-  'max-width: 960px',
-  'max-width: 980px',
   // Step 3 — needs a visual check (> 60px shift or shared chrome).
   'max-width: 375px',
   'max-width: 520px',

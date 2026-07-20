@@ -281,7 +281,7 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .viewer-slides-panel {
     display: none;
   }
@@ -368,7 +368,7 @@
   min-width: 180px;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .access-error-card {
     padding: 36px 24px;
     border-radius: 20px;

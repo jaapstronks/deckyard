@@ -130,7 +130,7 @@ img.share-link-badge {
   font-size: 12px;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .share-form-row {
     grid-template-columns: 1fr;
     gap: 6px;
@@ -363,7 +363,7 @@ img.share-link-badge {
 }
 
 /* Responsive */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .share-viewer-card {
     margin: 40px 16px;
     padding: 20px 20px;
@@ -555,7 +555,7 @@ img.share-link-badge {
   font-size: 13px;
 }
 
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .share-viewer-modal {
     padding: 20px;
   }
@@ -733,7 +733,7 @@ img.share-link-badge {
   justify-content: flex-end;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .share-viewer-comments-section {
     padding: 12px 14px 16px;
   }

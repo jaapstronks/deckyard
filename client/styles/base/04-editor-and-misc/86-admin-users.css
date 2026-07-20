@@ -223,7 +223,7 @@
 }
 
 /* Responsive: stack actions below info on narrow screens */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .admin-user-main {
     flex-direction: column;
     gap: var(--ps-space-2);

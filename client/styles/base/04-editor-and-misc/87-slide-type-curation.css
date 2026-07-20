@@ -303,7 +303,7 @@
    Responsive
    ============================================ */
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .slide-type-preview-thumb.thumb {
     --thumb-scale: 0.4;
     width: 640px;
@@ -311,7 +311,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .slide-type-curation-grid {
     grid-template-columns: repeat(auto-fill, 160px);
   }

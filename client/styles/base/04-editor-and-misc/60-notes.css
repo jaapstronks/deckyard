@@ -52,7 +52,7 @@
   justify-self: end;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .notes-preview-controls {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
@@ -104,7 +104,7 @@
   justify-content: center;
   background: hsl(var(--app-bg-sunken));
 }
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .notes-next-preview {
     max-width: 70%;
   }

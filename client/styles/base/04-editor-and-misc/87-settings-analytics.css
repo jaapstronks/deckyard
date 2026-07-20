@@ -178,7 +178,7 @@
 }
 
 /* Mobile responsive */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .analytics-provider-description,
   .analytics-provider-privacy-note,
   .analytics-provider-config {
@@ -225,7 +225,7 @@
   border-left: 3px solid hsl(45 90% 50%);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .analytics-provider-warning {
     padding-left: var(--ps-space-3);
   }
