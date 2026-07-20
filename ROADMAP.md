@@ -65,10 +65,6 @@ it would only have been a second path to something that already works.)_
 
 ## Next — existing feature plans
 
-- **Responsiveness: mobile, iPad, ultra-wide** — `docs/plans/responsiveness.md` —
-  swipe navigation shared across the viewing modes, a responsive audience
-  `/follow` view, touch-operable editor affordances for quick edits on a phone
-  or iPad, and lifting the width caps that waste an ultra-wide screen.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
