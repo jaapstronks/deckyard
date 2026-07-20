@@ -128,6 +128,12 @@
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
+ * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain')}} [focus]
+ *   Draggable focal-point handle on filled images. Resolves the write target
+ *   the same way `media` does (item in list mode, `slide.content` in flat mode
+ *   with `{n}` substitution), then writes `xField`/`yField` (0..100). The
+ *   handle only renders when `cropMode` returns `'cover'`. Function-valued, so
+ *   core-map only.
  * @property {string[]} [formText]
  * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
  * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]
@@ -239,6 +245,31 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.frame [data-inline-photo]',
       imageField: 'src',
       altField: 'alt',
+    },
+    // Draggable focal point on each filled image (crop/cover mode only). Writes
+    // the item's own focusX/focusY (the same keys the renderer reads once an
+    // item has its own focus), so a drag localizes the crop to that cell. Fit
+    // comes from the item's `fit` override or the slide-level `imageFit`.
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      cropMode: (slide, idx) => {
+        const items = slide?.content?.images;
+        const item = Array.isArray(items) ? items[idx] : null;
+        const fit = (item && item.fit) || slide?.content?.imageFit;
+        return fit === 'contain' ? 'contain' : 'cover';
+      },
+      // Mirror the renderer's fallback: cell 0 without its own focus reads the
+      // slide-level focusX/Y, so the handle starts where the crop actually is.
+      // (Writes always localize to the item, which then wins on the next render.)
+      get: (slide, idx) => {
+        const items = slide?.content?.images;
+        const item = Array.isArray(items) ? items[idx] : null;
+        const isNum = (v) => v !== '' && v != null && Number.isFinite(Number(v));
+        const hasOwn = item && (isNum(item.focusX) || isNum(item.focusY));
+        const src = hasOwn || idx > 0 ? item : slide?.content;
+        return { x: src?.focusX, y: src?.focusY };
+      },
     },
     formText: ['title', 'caption', 'body'],
     convert: {
@@ -412,6 +443,15 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.image[data-inline-photo], .image-placeholder[data-inline-photo]',
       imageField: 'image',
       altField: 'alt',
+    },
+    // Draggable focal point on the single image, but only in cropped layouts
+    // (full / bleed = cover). `centered` renders contain (no crop), so the
+    // point would have nothing to move - it stays hidden there.
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      cropMode: (slide) =>
+        slide?.content?.layout === 'centered' ? 'contain' : 'cover',
     },
     formText: [...HEADER_TEXT, 'caption'],
   },
