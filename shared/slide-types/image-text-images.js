@@ -79,6 +79,49 @@ export function isMultiImageLayout(content) {
 }
 
 /**
+ * Single authority for image-text's per-cell image resolution: the item-wins +
+ * cell-0-slide-fallback precedence that renderHtml, the canvas focal-point drag
+ * and the inspector each previously inlined (and could silently drift on). Item
+ * values win; cell 0 falls back to the legacy slide-level alt/focus; the
+ * slide-level `imageFit` is the base fit for every cell. Returns everything a
+ * consumer needs so none of them re-derive the rule - the CRDT footgun this
+ * removes is exactly render and editor reading the same field two different
+ * ways (see docs/reference/image-property-ownership.md).
+ *
+ * Does NOT run pickAltText or apply the decorative/aria rules: those are
+ * render-surface concerns. `altExplicit` is the effective explicit alt string
+ * (before the render's own caption/title/hard fallbacks).
+ *
+ * @param {Object} content - slide content
+ * @param {number} idx - cell index (0-based)
+ * @returns {{
+ *   item: {src: string, alt: string, fit: string, focusX: *, focusY: *},
+ *   fit: 'cover'|'contain',
+ *   fitOverride: ''|'cover'|'contain',
+ *   hasOwnFocus: boolean,
+ *   focusSource: {focusX: *, focusY: *},
+ *   altExplicit: string,
+ * }}
+ */
+export function resolveImageTextCell(content, idx) {
+  const items = imageTextImageItems(content);
+  const item = items[idx] || { src: '', alt: '', fit: '', focusX: '', focusY: '' };
+  const slideFit = content?.imageFit === 'contain' ? 'contain' : 'cover';
+  const fitOverride = item.fit === 'contain' || item.fit === 'cover' ? item.fit : '';
+  const fit = fitOverride || slideFit;
+  // A cell has its own crop point once either axis is set; cell 0 without one
+  // reads the legacy slide-level focus, later cells read their own (empty ->
+  // renderer default). Mirrors objectPositionStyleAttrFromFocus's input.
+  const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
+  const focusSource = hasOwnFocus || idx > 0 ? item : content || {};
+  const trimmed = (v) => (typeof v === 'string' ? v.trim() : '');
+  const slideAlt = trimmed(content?.alt) || trimmed(content?.altNl) || trimmed(content?.altEn);
+  const ownAlt = trimmed(item.alt);
+  const altExplicit = ownAlt || (idx === 0 ? slideAlt : '');
+  return { item, fit, fitOverride, hasOwnFocus, focusSource, altExplicit };
+}
+
+/**
  * Editor-side normalization (mutates content): migrate the legacy flat
  * `image` into images[0] and pad empty items up to the active layout's cell
  * count so every rendered cell has a live item behind it (the inline media

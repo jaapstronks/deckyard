@@ -10,8 +10,8 @@ import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 import {
-  imageTextImageItems,
   imageTextCellCount,
+  resolveImageTextCell,
 } from '../image-text-images.js';
 
 export default {
@@ -450,12 +450,6 @@ export default {
     // 'compact' forces the small size up front. 'auto' starts comfortable
     // and the runtime adds is-compact if the body overflows.
     const densityClass = density === 'compact' ? ' is-compact' : '';
-    const altNl =
-      typeof content?.altNl === 'string' ? content.altNl.trim() : '';
-    const altEn =
-      typeof content?.altEn === 'string' ? content.altEn.trim() : '';
-    const altExplicit =
-      typeof content?.alt === 'string' ? content.alt.trim() : '';
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(
           content.caption
@@ -465,43 +459,29 @@ export default {
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const ariaDecorative =
       imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-    const items = imageTextImageItems(content);
     const cells = imageTextCellCount(content);
-    // One <figure class="frame"> per cell. Item 0 falls back to the legacy
-    // slide-level alt/focus so unmigrated decks render identically; a
-    // per-item fit only adds a class when it overrides the slide-level fit.
+    // One <figure class="frame"> per cell. The item-wins + cell-0-slide-fallback
+    // precedence lives in resolveImageTextCell (the single authority render, the
+    // canvas focal drag and the inspector share); a per-item fit only adds a
+    // class when it overrides the slide-level fit.
     const cellHtml = (idx) => {
-      const item = items[idx] || {
-        src: '',
-        alt: '',
-        fit: '',
-        focusX: '',
-        focusY: '',
-      };
-      const itemAlt =
-        typeof item.alt === 'string' && item.alt.trim()
-          ? item.alt.trim()
-          : idx === 0
-            ? altExplicit || altNl || altEn
-            : '';
+      const { item, fitOverride, focusSource, altExplicit } =
+        resolveImageTextCell(content, idx);
       const alt =
         imageRole === 'decorative'
           ? ''
           : pickAltText({
-              explicit: itemAlt,
+              explicit: altExplicit,
               src: item.src,
               fallbacks: idx === 0 ? [content?.caption, content?.title] : [],
               hardFallback: cells > 1 ? `Image ${idx + 1}` : 'Image',
             });
       // For cover this controls crop focus; for contain, alignment.
-      const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
-      const focusStyle = objectPositionStyleAttrFromFocus(
-        hasOwnFocus || idx > 0 ? item : content
-      );
+      const focusStyle = objectPositionStyleAttrFromFocus(focusSource);
       const fitClass =
-        item.fit === 'contain'
+        fitOverride === 'contain'
           ? ' is-fit-contain'
-          : item.fit === 'cover'
+          : fitOverride === 'cover'
             ? ' is-fit-cover'
             : '';
       // data-inline-photo: clicking the image in the editor opens the
