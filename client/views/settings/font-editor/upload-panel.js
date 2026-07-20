@@ -73,15 +73,15 @@ export function createUploadPanel({ familyId, variants = [], onVariantChange }) 
     for (const w of WEIGHTS) {
       const row = h('div', { class: 'font-variant-row' });
 
-      const weightLabel = h('div', { class: 'font-variant-weight', text: `${w.value}` });
-      weightLabel.title = w.label;
+      const weightLabel = h('div', { class: 'font-variant-weight', text: `${w}` });
+      weightLabel.title = weightName(w);
 
-      const normalCell = createVariantCell(w.value, 'normal');
-      const italicCell = createVariantCell(w.value, 'italic');
+      const normalCell = createVariantCell(w, 'normal');
+      const italicCell = createVariantCell(w, 'italic');
 
       row.append(weightLabel, normalCell, italicCell);
       grid.append(row);
-      rowEls[w.value] = row;
+      rowEls[w] = row;
     }
   }
 
