@@ -65,12 +65,6 @@ it would only have been a second path to something that already works.)_
 
 ## Next — existing feature plans
 
-- **Selection-aware inspector + direct image layout** —
-  `docs/plans/selection-aware-inspector.md` — focal point becomes a draggable
-  point on the image (replacing the 3×3 grid), a Cover/Contain toggle on the
-  image, and the inspector becomes selection-aware: slide-only selection shows
-  slide-wide settings, selecting an image/card shows just that one in a "This
-  element" tab. Text stays edit-first. Starts with images; cards follow.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
