@@ -153,6 +153,10 @@ import {
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/image-text-images.js';
 import { resolveImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
+import {
+  resolveContentColumnImage,
+  CONTENT_COLUMNS_IMAGE_DEFAULTS,
+} from '../../../../shared/slide-types/content-columns-images.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -716,15 +720,19 @@ export const INLINE_DESCRIPTORS = {
     },
     // Focal point + Cover/Contain per column image. Flat numbered schema: the
     // {n} token is the 1-based column number (data-inline-photo), same as the
-    // media fields. Focus only bites in cover mode.
+    // media fields. Focus only bites in cover mode. Effective fit comes from
+    // resolveContentColumnImage (own value -> type default, step 4), the
+    // single authority the render shares; the fallback marks the fit as
+    // having a type default, so the shared card offers the empty
+    // back-to-default option.
     focus: {
       xField: 'col{n}ImageFocusX',
       yField: 'col{n}ImageFocusY',
-      cropMode: (slide, idx) =>
-        slide?.content?.[`col${idx}ImageFit`] === 'contain' ? 'contain' : 'cover',
+      cropMode: (slide, idx) => resolveContentColumnImage(slide?.content, idx).fit,
     },
     fit: {
       field: 'col{n}ImageFit',
+      fallback: () => CONTENT_COLUMNS_IMAGE_DEFAULTS.fit,
     },
     formText: HEADER_TEXT,
   },

@@ -7,6 +7,7 @@ import {
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-images.js';
 import { resolveImageSlideImage } from './image-slide-image.js';
+import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './content-columns-images.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'
@@ -276,15 +277,18 @@ export function convertSlideToType(
       if (!entry) {
         to[`col${col}Image`] = '';
         to[`col${col}Alt`] = '';
-        to[`col${col}ImageFit`] = IMAGE_TEXT_IMAGE_DEFAULTS.fit;
         continue;
       }
       // Read fit/focus/alt through the single per-cell authority so both the
-      // canonical items[] shape and un-migrated legacy decks convert identically.
+      // canonical items[] shape and un-migrated legacy decks convert
+      // identically. A fit equal to the content-columns type default is not
+      // written (empty = follow the type, step 4).
       const r = resolveImageTextCell(from, entry.i);
       to[`col${col}Image`] = entry.it.src;
       to[`col${col}Alt`] = r.altExplicit;
-      to[`col${col}ImageFit`] = r.fit;
+      if (r.fit !== CONTENT_COLUMNS_IMAGE_DEFAULTS.fit) {
+        to[`col${col}ImageFit`] = r.fit;
+      }
       const fx = Number(r.focusSource?.focusX);
       const fy = Number(r.focusSource?.focusY);
       if (Number.isFinite(fx)) to[`col${col}ImageFocusX`] = fx;

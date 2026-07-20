@@ -11,6 +11,11 @@ import {
   appendImageTextLayoutOptions,
 } from './slide-forms/image-slide.js';
 import { ensureImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
+import {
+  ensureContentColumnsImages,
+  resolveContentColumnImage,
+  CONTENT_COLUMNS_IMAGE_DEFAULTS,
+} from '../../../../shared/slide-types/content-columns-images.js';
 import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
@@ -303,6 +308,10 @@ export function renderInspectorExtrasByType(ctx) {
     }
 
     case 'content-columns-slide': {
+      // Rendering also canonicalizes: stamped default-equal image values (the
+      // old defaults wrote cover + focus 50/50 onto every column) drop back to
+      // empty = follow the type (datamodel step 4).
+      ensureContentColumnsImages(slide?.content);
       add('columnCount');
       const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
       // A selected column image routes to the element tab: the shared card
@@ -343,20 +352,45 @@ export function renderInspectorExtrasByType(ctx) {
         if (imgUrl) {
           used.add(`col${n}ImageFocusX`);
           used.add(`col${n}ImageFocusY`);
-          const fitField = fieldByKey.get(`col${n}ImageFit`);
-          if (fitField) {
-            used.add(`col${n}ImageFit`);
-            const fitEl = renderField(fitField);
-            if (fitEl) group.append(fitEl);
-          }
+          used.add(`col${n}ImageFit`);
+          const resolved = resolveContentColumnImage(slide.content, n);
+          // Fit with the silent-default UX (step 4): the empty option shows
+          // the derived type default and empties the field when chosen.
+          const fitEl = fieldRenderers?.fieldEnum?.(
+            {
+              key: `col${n}ImageFit`,
+              label: t('editor.contentColumns.imageFit', 'Image fit'),
+              options: [
+                {
+                  value: '',
+                  label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
+                    fit:
+                      CONTENT_COLUMNS_IMAGE_DEFAULTS.fit === 'contain'
+                        ? t('editor.contentColumns.fitContain', 'Fixed height')
+                        : t('editor.contentColumns.fitCover', 'Cropped (16:9)'),
+                  }),
+                },
+                { value: 'cover', label: t('editor.contentColumns.fitCover', 'Cropped (16:9)') },
+                { value: 'contain', label: t('editor.contentColumns.fitContain', 'Fixed height') },
+              ],
+            },
+            resolved.fitExplicit ? resolved.fit : '',
+            (v) => {
+              slide.content[`col${n}ImageFit`] = v;
+              markDirty?.();
+              rerenderEditor?.();
+              scheduleUiRefresh?.();
+            }
+          );
+          if (fitEl) group.append(fitEl);
           // Cover focus is on the canvas; a contain column still gets alignment.
           const picker = renderImagePositionPicker({
             h,
-            mode: slide.content?.[`col${n}ImageFit`] === 'contain' ? 'contain' : 'cover',
+            mode: resolved.fit === 'contain' ? 'contain' : 'cover',
             imageUrl: imgUrl,
             containerSelector: '.preview-panel .thumb.is-clickable-preview .cc-image',
-            focusX: slide.content?.[`col${n}ImageFocusX`] ?? 50,
-            focusY: slide.content?.[`col${n}ImageFocusY`] ?? 50,
+            focusX: resolved.focusX !== '' ? resolved.focusX : 50,
+            focusY: resolved.focusY !== '' ? resolved.focusY : 50,
             onChange: ({ focusX, focusY } = {}) => {
               slide.content[`col${n}ImageFocusX`] = focusX;
               slide.content[`col${n}ImageFocusY`] = focusY;
