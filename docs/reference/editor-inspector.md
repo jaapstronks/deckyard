@@ -12,10 +12,15 @@ one of three surfaces:
 
 1. **The slide canvas (wysiwyg)** - the primary editing surface. In-place
    text editing, ghost chips for empty optional fields, add/remove/reorder
-   of repeatable items (two-level for text-blocks rows/blocks), and a media
-   popover (image + alt + extras) including first-image-into-empty-slot.
-   Descriptor registry: `client/views/editor/inline-edit/descriptors.js`
-   (custom types declare an `inline` descriptor on the type definition, see
+   of repeatable items (two-level for text-blocks rows/blocks), and direct
+   manipulation of images: a draggable focal point, and double-click to
+   replace a filled image. Empty slots keep a "+ Add image" affordance (they
+   have nothing to occlude) and accept a desktop file-drop. Everything
+   *settable* on an image (replace, alt, fit, focus grid, per-item metadata)
+   lives in the inspector's "This image" tab, not on the image - see the
+   editing-surface principle in `docs/plans/editing-surfaces.md`. Descriptor
+   registry: `client/views/editor/inline-edit/descriptors.js` (custom types
+   declare an `inline` descriptor on the type definition, see
    `docs/developer/slide-types.md`).
 2. **The "Edit all text" bulk modal** (`client/views/editor/bulk-edit-modal.js`) -
    the non-wysiwyg mode: all content fields in one list on the left, a live
@@ -128,26 +133,31 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
 
 - **Selection state** lives in the controller (`selectedElement =
   {kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
-  interactions set it: clicking an image (or its "Settings" chip) →
-  `{image, idx}`; editing a card's text or clicking its icon → `{card, idx}`;
-  a plain-text edit or empty-slide click clears it. The inline editor calls
-  `onSelectElement(el)` (updates the pane, visible iff the settings pane is
-  already open) or `onOpenElementSettings(el)` (the chip: also opens the rail).
+  interactions set it: a single click on a filled image →
+  `onOpenElementSettings({image, idx})` (selects it *and* opens the rail on the
+  "This image" tab, the single doorway to everything settable); editing a card's
+  text or clicking its icon → `{card, idx}`; a plain-text edit or empty-slide
+  click clears it. Double-clicking a filled image, or clicking an empty slot,
+  opens the image picker directly (replace / add) rather than the tab.
 - **Rendering** (`editor-form.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
   ("This element" tab) and the rest into `form` ("Slide" tab). The active tab
   persists across rerenders and resets to the element on a fresh selection.
-  `renderInspectorExtrasByType` takes `elementForm` + `selectedElement` and
-  routes each type's controls: image-slide → role/crop-layout/focus/zoom;
-  image-text → the image role + Images section + layout options; icon-card-grid
-  → just the selected card's icon + link (the all-cards list only renders in the
-  slide tab when nothing is selected).
-- **Scope:** images (image-slide, image-text) and icon-cards today; other types
-  have no element tab yet and render everything under Slide.
+  `renderInspectorExtrasByType` routes each type's controls into `elementForm`:
+  most image types use the **shared image-element card**
+  (`editor-form/image-element-card.js`: replace/delete, alt, fit where the type
+  has one, the 3x3 focus grid as the precise fallback to the canvas drag, and
+  per-item metadata like a LinkedIn URL); image-text keeps its own per-image
+  manager (Images section) plus role + layout; icon-card-grid → just the
+  selected card's icon + link.
+- **Scope:** every image type carries a "This image" tab - image-slide,
+  image-text, gallery, team-cards, content-columns (per selected column),
+  logo-wall, quote portraits - plus icon-cards. The shared card is driven by the
+  type's inline descriptor (media/focus/fit), so it writes the same focusX/Y
+  keys the canvas focal-point drag writes: one value, two representations.
 
-The `data-inspector-section="image"` markers (image-slide, image-text) remain
-for the addressing seam; with tabs the element tab surfaces the controls
-directly, so the chip selects + opens rather than scroll-to-section.
+The `data-inspector-section="image"` markers (image-slide, image-text) remain as
+a harmless addressing seam; the element tab now surfaces the controls directly.
 
 ## Per-type coverage audit (executed 2026-07-16)
 
@@ -159,8 +169,11 @@ classified below; **no orphans found**.
 Column semantics:
 
 - **Wysiwyg**: fully editable on the slide surface (in-place text, ghosts
-  for optional fields, cards add/remove/reorder, media popover incl.
-  empty-slot adds).
+  for optional fields, cards add/remove/reorder, images set/replaced via the
+  picker - double-click a filled image or click an empty slot; alt/fit/focus
+  live in the "This image" inspector tab). Where a row below says "via
+  popover" it predates the editing-surfaces track; read it as "via the canvas
+  image picker + the This-image tab".
 - **Bulk modal**: fields whose *only* non-inspector text home is the "Edit
   all text" modal. The modal renders *every* non-Background/non-a11y field
   by construction, so wysiwyg-covered fields are also there; this column

@@ -100,19 +100,37 @@ function storeBgSectionOpen(open) {
 
 /**
  * Whether a selected canvas element ({kind, idx}) has an element tab on this
- * slide type. Images: image / image-text. Cards: icon-card-grid (idx in range).
+ * slide type. Every image type now carries a "This image" tab (the shared
+ * image-element card, or image-text's own images manager). Cards: icon-card-grid
+ * (idx in range).
  * @returns {boolean}
  */
 function elementAppliesToSlide(slide, sel) {
   if (!slide || !sel) return false;
+  const c = slide.content || {};
   if (sel.kind === 'image') {
-    if (slide.type === 'image-slide' || slide.type === 'image-text-slide') return true;
-    // content-columns: the element index is the 1-based column number.
-    if (slide.type === 'content-columns-slide') {
-      const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
-      return sel.idx >= 1 && sel.idx <= count;
+    const inList = (key) =>
+      Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
+    switch (slide.type) {
+      case 'image-slide':
+        return sel.idx === 0;
+      case 'image-text-slide':
+        return true; // images[] is padded to the layout's cell count on demand
+      case 'gallery-slide':
+        return inList('images');
+      case 'team-cards-slide':
+        return inList('members');
+      case 'logo-wall-slide':
+        return inList('logos');
+      case 'content-columns-slide': {
+        const count = Math.max(1, Math.min(7, Number(c.columnCount || 3) || 3));
+        return sel.idx >= 1 && sel.idx <= count; // 1-based column number
+      }
+      case 'quote-slide':
+        return sel.idx >= 1 && sel.idx <= 3; // up to three author portraits
+      default:
+        return false;
     }
-    return false;
   }
   if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
     const items = slide.content?.items;

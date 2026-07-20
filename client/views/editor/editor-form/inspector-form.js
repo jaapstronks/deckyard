@@ -10,6 +10,7 @@ import {
   appendImageTextLayoutOptions,
 } from './slide-forms/image-slide.js';
 import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
+import { renderImageElementCard } from './image-element-card.js';
 
 /**
  * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
@@ -123,10 +124,27 @@ function collapsibleGroup(h, title, { open = false } = {}) {
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderInspectorExtrasByType(ctx) {
-  const { h, form, elementForm, selectedElement, slide, add, used, fieldByKey,
+  const { h, form, elementForm, selectedElement, slide, def, add, used, fieldByKey,
     renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
-    scheduleUiRefresh } = ctx;
+    rerenderPreview, scheduleUiRefresh } = ctx;
   const { fieldGrid } = fieldRenderers || {};
+
+  // The shared "This image" card for a selected image element (all image types
+  // except image-text, which has its own per-image manager). Renders into the
+  // element tab; returns whether it produced anything.
+  const renderSelectedImageCard = (container) =>
+    renderImageElementCard({
+      h,
+      container,
+      slide,
+      def,
+      idx: selectedElement?.idx,
+      fieldRenderers,
+      markDirty,
+      rerenderEditor,
+      rerenderPreview,
+      scheduleUiRefresh,
+    });
 
   // Render a keep field directly into a chosen container (element or slide
   // panel), marking it used so the main keeps loop skips it. `add()` always
@@ -151,12 +169,17 @@ export function renderInspectorExtrasByType(ctx) {
 
     case 'image-slide': {
       // The single image is the element: with it selected, all of its controls
-      // (role, crop layout, focus, zoom) live in the element tab; otherwise
-      // they render in the slide form as before.
-      const target = selectedElement?.kind === 'image' ? elementForm : form;
+      // (replace/alt, role, crop layout, focus grid, zoom) live in the element
+      // tab; otherwise they render in the slide form as before.
+      const imageSelected = selectedElement?.kind === 'image';
+      const target = imageSelected ? elementForm : form;
+      // Replace / alt / focus grid (cover) at the top of the element tab.
+      if (imageSelected) renderSelectedImageCard(elementForm);
       renderKeyInto(target, 'imageRole');
       renderKeyInto(target, 'layout');
       const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
+      // Contain-mode (centered) alignment stays here; the cover focus grid is
+      // rendered by the shared card above, so this is a no-op in cover mode.
       appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
       appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
       target.append(imgSection);
@@ -267,11 +290,33 @@ export function renderInspectorExtrasByType(ctx) {
 
     case 'content-columns-slide': {
       add('columnCount');
-      // Per-column image settings (fit + focus) and block count: numbered
-      // schema, so these are plain fields; the column texts live in the bulk
-      // modal. With a column selected on the canvas its settings render in the
-      // element tab; otherwise all active columns render in one collapsible.
       const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
+      // A selected column image routes to the element tab: the shared card
+      // (replace/alt/fit/focus grid) plus that column's block count. `idx` is the
+      // 1-based column number (data-inline-photo), matching the col{n} schema.
+      if (selectedElement?.kind === 'image' && renderSelectedImageCard(elementForm)) {
+        const n = selectedElement.idx;
+        const blockCountField = fieldByKey.get(`col${n}BlockCount`);
+        if (blockCountField) {
+          used.add(`col${n}BlockCount`);
+          const bcEl = renderField(blockCountField);
+          if (bcEl) elementForm.append(bcEl);
+        }
+        // Mark every column's numbered image keys used so the generic keeps loop
+        // never leaks a raw col{n}* field into the slide form.
+        for (let n2 = 1; n2 <= count; n2 += 1) {
+          used.add(`col${n2}Image`);
+          used.add(`col${n2}Alt`);
+          used.add(`col${n2}ImageFit`);
+          used.add(`col${n2}ImageFocusX`);
+          used.add(`col${n2}ImageFocusY`);
+          used.add(`col${n2}BlockCount`);
+        }
+        return;
+      }
+      // Nothing selected: all active columns render in one slide-tab collapsible
+      // (fit + contain-alignment + block count per column). Numbered schema, so
+      // these are plain fields; the column texts live in the bulk modal.
       const renderColumn = (n, container) => {
         const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
         const blockCountField = fieldByKey.get(`col${n}BlockCount`);
@@ -314,34 +359,24 @@ export function renderInspectorExtrasByType(ctx) {
         }
         if (group.childNodes.length > 1) container.append(group);
       };
-
-      const colIdx =
-        selectedElement?.kind === 'image' &&
-        selectedElement.idx >= 1 &&
-        selectedElement.idx <= count
-          ? selectedElement.idx
-          : null;
-      if (colIdx != null) {
-        // Other columns' numbered keys must be marked used so the main keeps
-        // loop doesn't render them raw in the slide form.
-        for (let n = 1; n <= count; n += 1) {
-          if (n === colIdx) continue;
-          used.add(`col${n}ImageFit`);
-          used.add(`col${n}ImageFocusX`);
-          used.add(`col${n}ImageFocusY`);
-          used.add(`col${n}BlockCount`);
-        }
-        renderColumn(colIdx, elementForm);
-      } else {
-        const colSection = collapsibleGroup(
-          h,
-          t('editor.inspector.columnsConfig', 'Column images & blocks')
-        );
-        for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
-        if (colSection.body.childNodes.length) form.append(colSection.el);
-      }
+      const colSection = collapsibleGroup(
+        h,
+        t('editor.inspector.columnsConfig', 'Column images & blocks')
+      );
+      for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
+      if (colSection.body.childNodes.length) form.append(colSection.el);
       return;
     }
+
+    // Image types whose only per-element settings are the shared card
+    // (replace/alt/fit/focus/extras). Their slide-wide settings render via the
+    // generic keeps loop; add/remove/reorder lives on the canvas.
+    case 'gallery-slide':
+    case 'team-cards-slide':
+    case 'logo-wall-slide':
+    case 'quote-slide':
+      if (selectedElement?.kind === 'image') renderSelectedImageCard(elementForm);
+      return;
 
     default:
   }
