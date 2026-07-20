@@ -177,9 +177,18 @@ Rendered anchors carry `rel="noopener noreferrer nofollow"`.
 
 Unlike a mention chip, a link in the composer is **not atomic**: the label
 stays editable, so you can retype the words without reopening the dialog. The
-URL rides on `data-link-url` and is what serialisation reads back. Emptying the
-label drops the link rather than serialising `[](url)`, which would come back
-as literal text.
+URL rides on `data-link-url` and is what serialisation reads back (the composer
+node deliberately carries no `href`, so a stray Cmd/Ctrl+click cannot navigate
+away mid-compose). Emptying the label drops the link rather than serialising
+`[](url)`, which would come back as literal text.
+
+**Known limitation — parentheses in a URL.** `LINK_RE` reads the URL as
+`[^()\s]+`, so a target that itself contains `(` or `)` (e.g.
+`https://en.wikipedia.org/wiki/Foo_(bar)`) links and stores fine but does not
+round-trip: on the next parse the regex stops at the inner `(` and the whole
+`[label](url)` degrades to literal text. This is the classic
+markdown-link-parsing hard case; acceptable while link demand is light, and the
+fix (balanced-paren or angle-bracket URLs) waits for actual need.
 
 The link button (`client/lib/comment-toolbar.js`) lives beside Post rather than
 in a bar of its own, so the composer keeps its height. It snapshots the
