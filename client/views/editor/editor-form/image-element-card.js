@@ -176,19 +176,33 @@ export function renderImageElementCard({
     }
   }
 
-  // Fit choice (discrete → inspector). Types whose item fit falls back to a
-  // slide-level default get a "Match slide" option (clearing the override);
-  // types with a plain per-image fit field get just Fill / Fit.
+  // Fit choice (discrete → inspector). Types whose fit has a type-level
+  // default (descriptor fit.fallback) get the silent-default empty option: it
+  // shows the derived default - looked up from the type's imageDefaults
+  // config, never hard-coded here - and doubles as back-to-default by
+  // emptying the field. Types with a plain per-image fit get just Fill / Fit.
   if (hasImage && fit && typeof fieldEnum === 'function') {
+    const coverLabel = t('editor.imageText.fitCover', 'Fill (crop)');
+    const containLabel = t('editor.imageText.fitContain', 'Fit (no crop)');
+    const typeDefaultFit = def?.imageDefaults?.fit === 'contain' ? 'contain' : 'cover';
     const options = fit.hasDefault
       ? [
-          { value: '', label: t('editor.imageText.fitDefault', 'Match slide') },
-          { value: 'cover', label: t('editor.imageText.fitCover', 'Fill (crop)') },
-          { value: 'contain', label: t('editor.imageText.fitContain', 'Fit (no crop)') },
+          {
+            value: '',
+            label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
+              fit: typeDefaultFit === 'contain' ? containLabel : coverLabel,
+            }),
+            title: t(
+              'editor.imageText.fitDefaultTypeTitle',
+              'Follow the slide type default'
+            ),
+          },
+          { value: 'cover', label: coverLabel },
+          { value: 'contain', label: containLabel },
         ]
       : [
-          { value: 'cover', label: t('editor.imageText.fitCover', 'Fill (crop)') },
-          { value: 'contain', label: t('editor.imageText.fitContain', 'Fit (no crop)') },
+          { value: 'cover', label: coverLabel },
+          { value: 'contain', label: containLabel },
         ];
     const current = typeof member[fit.key] === 'string' ? member[fit.key] : fit.hasDefault ? '' : 'cover';
     container.append(

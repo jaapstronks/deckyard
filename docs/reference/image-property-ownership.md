@@ -48,14 +48,15 @@ inspector write path that disagrees with the render read path.
 |---|---|---|---|---|---|
 | image-slide | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3) | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit | fit/bleed controls (`appendImageSlideFitControls`, silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live) |
 | image-text | **I** (was S+I) ✅ | item `fit` canonical | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | images manager only (silent-default UX) | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live) |
-| content-columns | N | `col{n}ImageFit` | `content-columns-slide.js` col render | `inspector-form.js:332`; element card `{n}` mode | none (per column) |
+| content-columns | N (resolved to ImageRef) ✅ | `col{n}ImageFit` | `resolveContentColumnImage` (own value → type default, step 4) | silent-default fit controls (form + inspector + element card) | `cover` (`CONTENT_COLUMNS_IMAGE_DEFAULTS.fit`, live — no longer stamped into defaults) |
 | gallery / team-cards / logo-wall / quote | — | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | — | — | — |
 
-One concept, **two** remaining storage strategies and names (`fit` on
-image-slide/image-text — both on the target shape — vs `col{n}ImageFit` on
-content-columns, the step-4 remainder). The old `image-slide.layout`
-conflation (`bleed` = `cover` plus a frame bit) is resolved: `bleed` is its
-own orthogonal axis.
+Every fit now reads through a per-type resolve authority with a config-anchored
+default. The storage *names* still differ (`fit` vs `col{n}ImageFit` — the
+numbered key survives as content-columns' storage shape), but the concept
+resolves to one `ImageRef.fit` everywhere, which is what the target model asks.
+The old `image-slide.layout` conflation (`bleed` = `cover` plus a frame bit) is
+resolved: `bleed` is its own orthogonal axis.
 
 ### focus — crop point 🚩
 
@@ -63,7 +64,7 @@ own orthogonal axis.
 |---|---|---|---|
 | image-slide | S | `focusX`/`focusY` | `content` (`image-slide.js:256`) |
 | image-text | **I** (was S+I) ✅ | item `focusX/Y` canonical | folded to `images[i]` on edit (step 2); slide-level `focusX/Y` is now a read-only fallback for un-migrated decks |
-| content-columns | N | `col{n}ImageFocusX/Y` | per column |
+| content-columns | N (resolved to ImageRef) ✅ | `col{n}ImageFocusX/Y` | `resolveContentColumnImage`; the stamped 50/50 defaults are dropped on edit (step 4), empty = type default focus |
 | gallery | I | `images[i].focusX/Y` | item |
 | team-cards | I | `members[i].`**`imageFocusX/Y`** 🚩 *name diverges* | item |
 
@@ -99,8 +100,11 @@ the smell. Only `fit`, `focus`, `alt` (and the portrait `image` in quote) do.
 (`card{n}`, `logo{n}`, `row{n}`). Render reads the **array first**; the
 inspector writes the array and syncs the numbered mirror — so they agree, array
 canonical (`ensureMembers` `descriptors.js:578`, `ensureLogos` `:638`).
-`content-columns` is the exception: **numbered-only, no array**, so its
-per-column fit/focus/alt are flat slide keys masquerading as per-item state.
+`content-columns` is the exception: **numbered-only, no array**. Since step 4
+that duality is resolved the ImageRef way rather than by a storage rewrite:
+the numbered keys stay the storage shape, but every column's image *resolves*
+to one ImageRef through `resolveContentColumnImage` — which is exactly how the
+target model says the flat/numbered/array duality should dissolve.
 
 ## Precedence, and the display-baseline bug it leaves
 
@@ -302,8 +306,23 @@ property.
    classes (CSS restructured per axis); `contain + bleed` is expressible and
    renders; conversion to image-text is lossless (`bleed` travels on the
    ImageRef). `validateSlide` gained a boolean field type for `bleed`.
-4. **Normalize content-columns `col{n}*` → `ImageRef`.** Resolve the
-   numbered/array duality by resolving each column into an `ImageRef`.
+4. ~~**Normalize content-columns `col{n}*` → `ImageRef`.**~~ ✅ **Shipped —
+   PR #186 (2026-07-20).** `resolveContentColumnImage(content, n)` is the
+   single read authority (own value → `CONTENT_COLUMNS_IMAGE_DEFAULTS`); the
+   type declares `imageDefaults` as config and **no longer stamps** fit/focus
+   into every new deck (the old defaults wrote `cover` + 50/50 onto all seven
+   columns); `ensureContentColumnsImages` drops the historically stamped
+   default-equal values on edit (deviating user choices stay); the editor fit
+   controls got the silent-default UX and the shared element card derives its
+   empty-option label from the type's `imageDefaults`; conversion writes fit
+   only when it deviates.
+
+**The track is complete**: every image-bearing surface reads fit/focus/alt
+through a per-type resolve authority, every default is lookupable in the type
+definition, and the remaining record-level differences are storage shapes, not
+semantics. What deliberately remains outside this track: the `team-cards`
+`imageFocusX/Y` naming divergence, quote's portrait S+I split, and image-text
+not yet *rendering* `bleed` (it travels on the ImageRef).
 
 The editing-surface UI work (`docs/plans/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split

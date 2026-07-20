@@ -503,7 +503,13 @@ export function validateSlide(slide) {
         field.key === 'background' &&
         typeof val === 'string' &&
         SLIDE_BG_ID_RE.test(val);
-      if (val != null && !allowed.includes(val) && !isThemeBgVariant)
+      // Cleared enum fields use the repo's '' convention (see boolean above):
+      // empty = unset / follow the type default. The editor folds and the
+      // silent-default controls write '' (image-slide fit/layout, image-text
+      // imageFit, content-columns col{n}ImageFit), so round-tripping such
+      // content through the API must stay valid. Required enums still reject
+      // '' via the required check above.
+      if (val != null && val !== '' && !allowed.includes(val) && !isThemeBgVariant)
         errors.push(
           `Slide.content.${
             field.key
