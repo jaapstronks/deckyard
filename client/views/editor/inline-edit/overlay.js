@@ -179,6 +179,13 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top + r.height - p.gap}px`;
         s.transform = 'translateY(-100%)';
         break;
+      case 'inset-bottom-right':
+        // Inset just inside the target's bottom-right corner (e.g. the "more
+        // settings" chip), anchored by its own bottom-right.
+        s.left = `${r.left + r.width - p.gap}px`;
+        s.top = `${r.top + r.height - p.gap}px`;
+        s.transform = 'translate(-100%, -100%)';
+        break;
       case 'focus-point': {
         // Positioned at (fx%, fy%) inside the target image, read live from the
         // handle's dataset so a drag repositions it without a rerender.
