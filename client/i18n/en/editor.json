@@ -511,7 +511,7 @@
   "editor.inline.fit.contain": "Contain",
   "editor.inline.fit.cover": "Cover",
   "editor.inline.fit.label": "Image fit",
-  "editor.inline.focus.hint": "Drag to set image focus",
+  "editor.inline.focus.hint": "Drag or use arrow keys to set image focus",
   "editor.inline.markdownHint": "Ctrl/⌘ + Enter to save",
   "editor.inline.media.addImage": "Add image",
   "editor.inline.media.alt": "Alt text (optional)",
