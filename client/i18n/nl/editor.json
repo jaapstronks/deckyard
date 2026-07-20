@@ -503,7 +503,7 @@
   "editor.inline.fit.contain": "Passen",
   "editor.inline.fit.cover": "Vullen",
   "editor.inline.fit.label": "Beeld passen",
-  "editor.inline.focus.hint": "Sleep om het beeldfocuspunt in te stellen",
+  "editor.inline.focus.hint": "Sleep of gebruik de pijltjestoetsen om het beeldfocuspunt in te stellen",
   "editor.inline.markdownHint": "Ctrl/⌘ + Enter om op te slaan",
   "editor.inline.media.addImage": "Afbeelding toevoegen",
   "editor.inline.media.alt": "Alt-tekst (optioneel)",

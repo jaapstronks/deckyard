@@ -88,8 +88,11 @@ export function createInlineOverlay({ h, thumb }) {
     const pt = h('div', {
       class: 'ie-ol-item ie-focus-point',
       role: 'slider',
-      'aria-label': 'Image focus',
-      tabindex: '-1',
+      'aria-label': 'Image focus point',
+      // Keyboard-operable (arrow keys nudge, Home centers) so focus is not a
+      // pointer-only control - the caller wires the keydown handler.
+      tabindex: '0',
+      'aria-valuetext': `${Math.round(x)}% ${Math.round(y)}%`,
     });
     pt.dataset.fx = String(x);
     pt.dataset.fy = String(y);

@@ -1339,8 +1339,15 @@ export function createInlineEditor({
     const apply = ({ x, y }) => {
       pt.dataset.fx = String(x);
       pt.dataset.fy = String(y);
+      pt.setAttribute('aria-valuetext', `${Math.round(x)}% ${Math.round(y)}%`);
       overlay.reposition();
       styleTarget.style.objectPosition = `${x}% ${y}%`;
+    };
+    const commit = () => {
+      ft.member[ft.xKey] = Math.round(focusNum(pt.dataset.fx));
+      ft.member[ft.yKey] = Math.round(focusNum(pt.dataset.fy));
+      markDirty?.();
+      requestSave?.();
     };
     pt.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -1365,13 +1372,29 @@ export function createInlineEditor({
       } catch {
         /* ignore */
       }
-      ft.member[ft.xKey] = Math.round(focusNum(pt.dataset.fx));
-      ft.member[ft.yKey] = Math.round(focusNum(pt.dataset.fy));
-      markDirty?.();
-      requestSave?.();
+      commit();
     };
     pt.addEventListener('pointerup', end);
     pt.addEventListener('pointercancel', end);
+    // Keyboard: arrows nudge (Shift = fine 1%, else 5%), Home centers. Writes +
+    // saves per keypress; no rerender, so focus stays on the handle for repeats.
+    pt.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 1 : 5;
+      let x = focusNum(pt.dataset.fx);
+      let y = focusNum(pt.dataset.fy);
+      switch (e.key) {
+        case 'ArrowLeft': x -= step; break;
+        case 'ArrowRight': x += step; break;
+        case 'ArrowUp': y -= step; break;
+        case 'ArrowDown': y += step; break;
+        case 'Home': x = 50; y = 50; break;
+        default: return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      apply({ x: clampPct(x), y: clampPct(y) });
+      commit();
+    });
     // A tap on the handle must not bubble to the media popover (image click).
     pt.addEventListener('click', (e) => {
       e.preventDefault();
