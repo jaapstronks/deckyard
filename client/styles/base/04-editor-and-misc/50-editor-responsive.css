@@ -78,3 +78,14 @@
   min-height: 0;
   resize: none;
 }
+
+/* --- Narrow screens --------------------------------------------------------
+   The strip shares one stacked row with the slide canvas on a phone, where
+   clamp(110px, 20vh, 240px) resolves near its 240px ceiling and leaves the
+   slide a sliver. The notes still need to be usable — editing them is one of
+   the two things this layout is for — so shrink rather than hide. */
+@media (max-width: 820px) {
+  .notes-strip-body {
+    height: clamp(80px, 12vh, 130px);
+  }
+}

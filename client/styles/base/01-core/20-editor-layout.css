@@ -24,8 +24,14 @@
 .is-editor .layout > .preview-panel { grid-column: 2; grid-row: 2; }
 .is-editor .layout > .inspector-panel { grid-column: 3; grid-row: 2; }
 /* Rail dismissed: the grid drops to two columns, so the bar spans only the
-   canvas column (openers stay pinned at its right - above where the rail was). */
-.is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
+   canvas column (openers stay pinned at its right - above where the rail was).
+   Scoped to the desktop layout on purpose: this selector is more specific than
+   the area assignments in the ≤1100 block, so unscoped it would survive into
+   the narrow layouts and force a phantom second column out of a single-column
+   template. */
+@media (min-width: 1101px) {
+  .is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
+}
 
 .is-editor .layout > * {
   /* Critical: allow grid items to shrink so internal .panel-scroll areas can scroll
@@ -375,8 +381,9 @@
   .is-editor .layout {
     grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
       minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(200px, 38vh);
+    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 38vh);
     grid-template-areas:
+      'slides bar'
       'slides canvas'
       'slides inspector';
   }
@@ -388,19 +395,32 @@
   /* Dismissed rail: the canvas gets the full height. */
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: 'slides canvas';
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'slides bar'
+      'slides canvas';
   }
 
-  .is-editor .slides-panel {
+  /* These must out-specify the desktop line-based placement at the top of the
+     file (`.is-editor .layout > .preview-panel { grid-column: 2 }` and
+     friends), which is a child selector and therefore beat the plain
+     `.is-editor .preview-panel` form these rules used to have. The areas
+     silently did nothing, so below 1100px the canvas and inspector stayed in
+     desktop columns, a phantom third column appeared, and the slide bar's
+     `grid-column: 2 / 4` stretched row 1 into a tall empty band. */
+  .is-editor .layout > .slides-panel {
     grid-area: slides;
   }
 
-  .is-editor .preview-panel {
+  .is-editor .layout > .slide-bar {
+    grid-area: bar;
+  }
+
+  .is-editor .layout > .preview-panel {
     grid-area: canvas;
   }
 
-  .is-editor .inspector-panel {
+  .is-editor .layout > .inspector-panel {
     grid-area: inspector;
     border-left: none;
     border-top: 1px solid hsl(var(--app-border-subtle));
@@ -477,8 +497,9 @@
   .is-editor .layout,
   .is-editor.is-slides-collapsed .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(200px, 42vh);
+    grid-template-rows: auto minmax(0, 1fr) minmax(200px, 42vh);
     grid-template-areas:
+      'bar'
       'canvas'
       'inspector';
     position: relative;
@@ -490,8 +511,10 @@
        outranks the plain ≤820 rule above, and the slides column is a fixed
        drawer here - without this the canvas would sit in a 200px column. */
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
-    grid-template-areas: 'canvas';
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      'bar'
+      'canvas';
   }
 
   /* Slides panel becomes a slide-over drawer */
@@ -573,3 +596,45 @@
 }
 
 
+
+/* --- Touch targets ---------------------------------------------------------
+   The editor's chrome is built for a mouse: icon buttons sit at 24-28px, well
+   under the ~44px a thumb needs. This doesn't try to make the editor a
+   touch-first app — the goal is a quick edit on a phone or an iPad, so the
+   controls you'd reach for need to be hittable. Keyed off pointer capability
+   rather than width, so an iPad in landscape (1366px) is covered too. */
+@media (hover: none) {
+  /* Height for everything clickable: a narrow-but-tall button (28x44) is a
+     fine thumb target, a short one is not. Width is left alone so labelled
+     controls don't stretch into their neighbours' space. */
+  .is-editor .btn,
+  .is-editor .notes-strip-toggle,
+  .is-editor .sb-segmented-btn,
+  .is-editor .bg-picker-trigger {
+    min-height: 44px;
+  }
+
+  /* Two exceptions, both sized by their own container rather than by text:
+     growing them to 44px would make them overhang it. The insert "+" sits in
+     a short row between two slide rows — an overhanging, now-clickable button
+     would swallow taps meant for the slides either side (the very overhang the
+     top of 40-insert-and-collapsed.css warns about). The collapsed rail's add
+     button is a fixed square in a 64px rail. */
+  .is-editor .slide-insert-btn,
+  .is-editor.is-slides-collapsed .slides-add-btn {
+    min-height: 0;
+  }
+
+  /* Square icon buttons need both dimensions — these are the ones that were
+     genuinely too small to hit (24x24 and 36x36). */
+  .is-editor .ghost-icon-btn,
+  .is-editor .notification-bell-btn,
+  .is-editor .ie-coach-dismiss {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Not the inline-edit ghost chips (.ie-ghost): those sit on the scaled
+     slide canvas, where a 44px floor would break the slide's own layout
+     rather than the chrome around it. */
+}

@@ -33,11 +33,16 @@ export function createNotesStrip({
   markDirty,
   onOpenQr,
 } = {}) {
-  let collapsed = false;
+  // On a narrow screen the strip shares one stacked row with the canvas, and
+  // an expanded strip leaves the slide too little height to read. Start
+  // collapsed there — the header stays tappable, and an explicit choice is
+  // still remembered, so this only decides the first visit.
+  let collapsed = window.innerWidth <= 820;
   try {
-    collapsed = localStorage.getItem(COLLAPSE_KEY) === '1';
+    const stored = localStorage.getItem(COLLAPSE_KEY);
+    if (stored !== null) collapsed = stored === '1';
   } catch {
-    /* private mode / storage disabled: default to expanded */
+    /* private mode / storage disabled: keep the width-based default */
   }
 
   const el = h('div', { class: 'notes-strip' });

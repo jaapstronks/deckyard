@@ -38,7 +38,14 @@ export function attachDragHandlers({
 
   if (searchActive) return;
 
-  item.setAttribute('draggable', 'true');
+  // HTML5 drag-and-drop does not fire on touch, so `draggable` buys nothing
+  // there — and it actively hurts: Chrome on Android starts a native drag on
+  // long-press of a draggable element, which cancels the long-press that opens
+  // the reorder menu (the only way to reorder on touch). Leave it off.
+  const isTouch =
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(hover: none)')?.matches;
+  if (!isTouch) item.setAttribute('draggable', 'true');
 
   item.addEventListener('dragstart', (e) => {
     e.dataTransfer.setData('text/plain', s.id);
