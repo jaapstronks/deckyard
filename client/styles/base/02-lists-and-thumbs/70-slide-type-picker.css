@@ -174,67 +174,47 @@
   width: 100%;
 }
 
+/* The tile. Every card in the picker is a thumbnail card: a bordered button
+   that lifts off the section tray, with the preview on top and the label strip
+   flush below it (see .ps-type-labelwrap). This is the single source of truth
+   for the tile box — there is no other card variant and no per-variant box
+   override, so nothing (like a stray flex gap) can leak between preview and
+   label. The `.ps-type-card-thumb` class is kept in the markup for the JS
+   selectors but adds no box styles of its own. */
 .ps-type-card {
   appearance: none;
-  border: 1px solid hsl(var(--app-border-default));
-  /* Lovable: cards are grey (not white), compact */
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-md);
-  padding: var(--ps-space-2);
+  width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ps-space-2);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   cursor: pointer;
-  text-align: center;
-  transition: all var(--ps-transition-fast);
-  box-shadow: none;
+  text-align: left;
   color: hsl(var(--app-text-primary));
-  width: 112px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-strong));
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-sm);
+  transition: border-color var(--ps-transition-fast),
+    box-shadow var(--ps-transition-fast);
 }
+
 .ps-type-card:hover {
-  background: hsl(var(--app-bg-hover));
-  border-color: hsl(var(--app-border-strong));
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
 }
+
+.ps-type-card:hover .ps-type-label {
+  color: hsl(var(--app-accent-text));
+}
+
 .ps-type-card:focus-visible {
   outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.2);
-}
-
-.ps-type-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--ps-radius-md);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: hsl(var(--app-bg-elevated));
-  border: 1px solid hsl(var(--app-border-default));
-  color: hsl(var(--app-text-secondary));
-  font-size: 0.95rem;
-  font-weight: 800;
-  line-height: 1;
-  flex: 0 0 auto;
-}
-
-.ps-type-label {
-  font-size: var(--ps-text-xs);
-  font-weight: 650;
-  color: hsl(var(--app-text-primary));
-  line-height: 1.15;
-  min-width: 0;
-}
-
-@media (max-width: 520px) {
-  .ps-type-grid {
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  }
-  .ps-type-card {
-    width: 104px;
-  }
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
 }
 
 /* ============================================
@@ -449,30 +429,17 @@
   min-width: 0;
 }
 
-.ps-type-card.ps-type-card-thumb {
-  /* Fill the wrap (width comes from the grid track, not a fixed px). */
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  overflow: hidden;
-  flex-direction: column;
-  align-items: stretch;
-  /* Own elevated surface + soft lift so the tile stands off the section tray. */
-  background: hsl(var(--app-bg-elevated));
-  box-shadow: var(--app-shadow-sm);
-}
-
-.ps-type-card.ps-type-card-thumb .ps-type-labelwrap {
+/* Label strip: sits flush under the preview, separated only by the divider
+   line (border-top). Same surface as the card, so preview → label reads as one
+   object with a rule between the two zones — no gap, no floating band. */
+.ps-type-card .ps-type-labelwrap {
   padding: var(--ps-space-2) var(--ps-space-3);
   text-align: left;
-  /* White label strip below the grey thumbnail: the border + surface flip give
-     the label real contrast against the slide preview above it. */
   border-top: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-elevated));
   min-width: 0;
 }
 
-.ps-type-card.ps-type-card-thumb .ps-type-label {
+.ps-type-card .ps-type-label {
   display: block;
   font-size: var(--ps-text-sm);
   font-weight: 650;
@@ -693,21 +660,6 @@
   height: 40px;
 }
 
-/* Hover effect for thumbnail cards */
-.ps-type-card.ps-type-card-thumb:hover {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
-}
-
-.ps-type-card.ps-type-card-thumb:hover .ps-type-label {
-  color: hsl(var(--app-accent-text));
-}
-
-/* Focus state for thumbnail cards */
-.ps-type-card.ps-type-card-thumb:focus-visible {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
-}
 
 /* ============================================
    Responsive adjustments for thumbnail mode
