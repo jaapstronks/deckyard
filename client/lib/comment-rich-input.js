@@ -64,13 +64,17 @@ function isLink(node) {
  * you can retype the words without reopening a dialog. The URL rides along on
  * a data attribute and is what serialisation reads back.
  *
+ * No `href` on purpose: this anchor lives inside a contenteditable, and a real
+ * `href` lets a stray Cmd/Ctrl+click navigate away mid-compose. The URL lives
+ * on `data-link-url` (what serialisation reads) and `title` (what the user
+ * sees on hover); the `.comment-body-link` styling does not depend on `href`.
+ *
  * @param {{label: string, url: string}} link
  * @returns {HTMLElement}
  */
 export function createLinkNode({ label, url }) {
   return h('a', {
     class: 'comment-body-link comment-link-input',
-    href: url,
     'data-link-url': url,
     title: url,
     text: String(label || ''),
