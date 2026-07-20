@@ -255,7 +255,7 @@ property.
    `resolveImageTextCell(content, idx)` is the single read authority (render +
    canvas drag + inspector). Pure refactor, render byte-identical.
 2. ~~**De-duplicate image-text S + I → `ImageRef` (focus + alt).**~~ ✅ **Shipped
-   — datamodel step 2 (2026-07-20).** `ensureImageTextImages` folds the
+   — datamodel step 2, PR #183 merged (2026-07-20).** `ensureImageTextImages` folds the
    slide-level `alt`/`focusX`/`focusY` into `images[0]` and clears them; the
    inspector now reads the canonical per-image focus, so the focus grid shows the
    real crop start — the **display-baseline bug is fixed**. The slide-level focus
