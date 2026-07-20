@@ -9,6 +9,23 @@ import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
 
 /**
+ * Accessible label for a notification list item. Each shape is one full
+ * translatable sentence so translations control order and punctuation.
+ * @param {Object} notif - Notification record
+ * @returns {string} aria-label text
+ */
+function notificationLabel(notif) {
+  const title = notif.title || '';
+  const body = notif.body || '';
+  if (body && !notif.isRead) {
+    return t('notifications.label.bodyUnread', '{title}: {body} (unread)', { title, body });
+  }
+  if (body) return t('notifications.label.body', '{title}: {body}', { title, body });
+  if (!notif.isRead) return t('notifications.label.unread', '{title} (unread)', { title });
+  return title;
+}
+
+/**
  * Create a notification bell component.
  * @param {Object} options
  * @param {Function} options.api - API call function
@@ -187,7 +204,7 @@ export function createNotificationBell({ api, onNavigate }) {
         type: 'button',
         class: `notification-bell-item${notif.isRead ? '' : ' is-unread'}`,
         onclick: () => handleNotificationClick(notif),
-        'aria-label': `${notif.title}${notif.body ? `: ${notif.body}` : ''}${!notif.isRead ? ` (${t('notifications.unread', 'unread')})` : ''}`,
+        'aria-label': notificationLabel(notif),
       });
 
       // Actor avatar with profile image support

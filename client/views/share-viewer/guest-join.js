@@ -129,7 +129,12 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
       successEl.innerHTML = `
         <div class="share-viewer-success-icon">✓</div>
         <h3>${t('share.guest.emailSent', 'Check your email!')}</h3>
-        <p>${t('share.guest.emailSentHelp', 'We sent a verification link to <strong>{email}</strong>. Click the link to start commenting.').replace('{email}', escapeHtml(email))}</p>
+        <p>${t(
+          'share.guest.emailSentHelp',
+          'We sent a verification link to <strong>{email}</strong>. Click the link to start commenting.',
+          // Inserted via innerHTML below: the address must stay escaped.
+          { email: escapeHtml(email) }
+        )}</p>
         <p class="help">${t('share.guest.emailExpires', 'The link expires in 24 hours.')}</p>
       `;
       successEl.style.display = 'block';

@@ -6,7 +6,9 @@
  * - JSON syntax errors
  * - Missing keys (compared to English reference)
  * - Empty values
- * - File line count limits
+ *
+ * Line counts are reported but never enforced: these are generated key/value
+ * maps, so length carries no complexity signal. See docs/developer/i18n.md.
  *
  * Usage: node scripts/i18n-validate.js
  * Exit code: 0 if valid, 1 if errors found
@@ -20,9 +22,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
-const LANGUAGES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
-const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types'];
-const MAX_LINES = 600;
+// Keep in sync with client/i18n/manifest.json (it/fi/pl were shipped but never
+// added here, so they went unvalidated).
+const LANGUAGES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'pl', 'fi', 'da', 'sv', 'no'];
+// `follow` is intentionally absent from I18N_COMPONENTS in client/lib/ui-i18n.js
+// (it is loaded per deck language by client/views/follow/i18n.js), but the files
+// still exist per locale and should be validated like any other module.
+const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types', 'follow'];
 
 let hasErrors = false;
 
@@ -56,11 +62,7 @@ function main() {
   const sharedPath = path.join(I18N_DIR, 'shared.json');
   const { data: shared, content: sharedContent } = loadJson(sharedPath);
   if (shared) {
-    const lines = countLines(sharedContent);
-    console.log(`shared.json: ${Object.keys(shared).length} keys, ${lines} lines`);
-    if (lines > MAX_LINES) {
-      error(`shared.json exceeds ${MAX_LINES} lines (${lines})`);
-    }
+    console.log(`shared.json: ${Object.keys(shared).length} keys, ${countLines(sharedContent)} lines`);
   }
 
   // Load English as reference
@@ -92,13 +94,8 @@ function main() {
       const { data, content } = loadJson(modulePath);
       if (!data) continue;
 
-      const lines = countLines(content);
       const keyCount = Object.keys(data).length;
-      console.log(`  ${moduleName}.json: ${keyCount} keys, ${lines} lines`);
-
-      if (lines > MAX_LINES) {
-        error(`${lang}/${moduleName}.json exceeds ${MAX_LINES} lines (${lines})`);
-      }
+      console.log(`  ${moduleName}.json: ${keyCount} keys, ${countLines(content)} lines`);
 
       // Check for empty values
       for (const [key, value] of Object.entries(data)) {
@@ -122,9 +119,11 @@ function main() {
           warn(`${lang}/index.json key count (${indexKeys}) doesn't match modules + shared (${expectedKeys})`);
         }
       }
-    } else {
-      error(`${lang}/index.json: File missing`);
     }
+    // No `else`: index.json is a leftover from the pre-modularization layout.
+    // No locale ships one and client/lib/ui-i18n.js fetches the per-module
+    // files directly, so its absence is not an error — it is only checked for
+    // consistency when a locale happens to still have one.
 
     // Check for missing keys (compared to English)
     if (lang !== 'en') {

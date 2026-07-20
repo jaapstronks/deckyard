@@ -260,7 +260,7 @@ export function createImageLibraryUpload({
     onclick: async () => {
       if (!newUrl) return;
       setBusy(true);
-      setStatus(t('common.save', 'Save') + '…');
+      setStatus(t('common.saving', 'Saving…'));
       try {
         const created = await api('/api/image-library', {
           method: 'POST',

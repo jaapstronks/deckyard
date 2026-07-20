@@ -4,6 +4,7 @@
  */
 
 import { hasMarketingConsent } from './cookie-consent.js';
+import { t } from './ui-i18n.js';
 
 /**
  * Initialize lead capture slides within a root element.
@@ -144,7 +145,9 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
       // Get presentation ID from the page context
       const presentationId = getPresentationId();
       if (!presentationId) {
-        throw new Error('Could not determine presentation ID');
+        throw new Error(
+          t('leadCapture.error.noPresentationId', 'Could not determine presentation ID')
+        );
       }
 
       const response = await fetch('/api/leads', {
@@ -163,7 +166,9 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || 'Submission failed');
+        throw new Error(
+          data.error || t('leadCapture.error.submitFailed', 'Submission failed')
+        );
       }
 
       // Mark as submitted

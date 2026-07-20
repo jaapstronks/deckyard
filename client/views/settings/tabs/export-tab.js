@@ -210,13 +210,13 @@ export function createExportTab({ user }) {
 
     const parts = [];
     if (stats?.presentations != null) {
-      parts.push(`${stats.presentations} presentation${stats.presentations !== 1 ? 's' : ''}`);
+      parts.push(t('settings.export.presentationCount', '{count} presentation(s)', { count: stats.presentations }));
     }
     if (stats?.size) {
       parts.push(formatBytes(stats.size));
     }
     downloadHint.textContent = parts.length
-      ? t('settings.export.readyHint', 'Ready: ') + parts.join(', ')
+      ? t('settings.export.readySummary', 'Ready: {summary}', { summary: parts.join(', ') })
       : '';
 
     downloadBtn.onclick = () => {

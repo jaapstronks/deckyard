@@ -268,7 +268,7 @@ export function openChangeThemeModal({
       onThemeChanged?.(result.presentation);
       modal.close({ ok: true, presentation: result.presentation });
     } else {
-      throw new Error(result?.error || 'Unknown error');
+      throw new Error(result?.error || t('common.unknownError', 'Unknown error'));
     }
   }
 

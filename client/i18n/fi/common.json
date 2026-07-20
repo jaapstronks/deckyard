@@ -37,8 +37,6 @@
   "common.title": "Otsikko",
   "common.unknown": "Tuntematon",
   "common.upload": "Lataa",
-  "follow.likertSlider.chooseScore": "Valitse pisteet: {n}",
-  "follow.likertSlider.yourScore": "Pisteesi: {n}",
   "viewer.addComment": "Lisää kommentti",
   "viewer.addComment.title": "Näytä ja lisää kommentteja",
   "viewer.comments": "Kommentit",

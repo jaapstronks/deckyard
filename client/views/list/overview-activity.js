@@ -50,6 +50,30 @@ function getActionText(eventType) {
 }
 
 /**
+ * Append a translated sentence to `parent`, substituting `{name}` placeholders
+ * with DOM nodes so the whole sentence stays one translatable key (word order
+ * and punctuation are decided by the translation, not by JS concatenation).
+ * @param {HTMLElement} parent - Element to append into
+ * @param {Function} h - DOM helper function
+ * @param {string} template - Translated string containing {name} placeholders
+ * @param {Object<string, Node>} slots - Nodes keyed by placeholder name
+ * @param {string} textClass - Class for the literal text fragments
+ * @returns {void}
+ */
+function appendSentence(parent, h, template, slots, textClass) {
+  const parts = String(template).split(/(\{[a-zA-Z0-9_]+\})/g);
+  for (const part of parts) {
+    if (!part) continue;
+    const name = /^\{([a-zA-Z0-9_]+)\}$/.exec(part)?.[1];
+    if (name && slots[name]) {
+      parent.append(slots[name]);
+    } else {
+      parent.append(h('span', { class: textClass, text: part }));
+    }
+  }
+}
+
+/**
  * Get icon class for event type.
  * @param {string} eventType - Event type
  * @returns {string} Icon class
@@ -152,15 +176,18 @@ function createActivityItem(event, h, onNavigate) {
 
   // For collaborator.added events, show who it was shared with
   if (event.eventType === 'collaborator.added' && event.data?.collaboratorEmail) {
-    const withText = h('span', {
-      class: 'activity-action',
-      text: ' ' + t('activity.with', 'with') + ' ',
-    });
     const collaborator = h('span', {
       class: 'activity-collaborator',
       text: event.data.collaboratorEmail,
     });
-    header.append(withText, collaborator);
+    header.append(' ');
+    appendSentence(
+      header,
+      h,
+      t('activity.sharedWithCollaborator', 'with {collaborator}'),
+      { collaborator },
+      'activity-action'
+    );
   }
 
   content.append(header);

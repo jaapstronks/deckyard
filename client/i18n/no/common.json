@@ -37,8 +37,6 @@
   "common.title": "Tittel",
   "common.unknown": "Ukjent",
   "common.upload": "Last opp",
-  "follow.likertSlider.chooseScore": "Velg en poengsum: {n}",
-  "follow.likertSlider.yourScore": "Din poengsum: {n}",
   "viewer.addComment": "Kommenter",
   "viewer.addComment.title": "Se og legg til kommentarer",
   "viewer.comments": "Kommentarer",

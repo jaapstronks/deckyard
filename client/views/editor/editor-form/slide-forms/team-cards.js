@@ -304,8 +304,8 @@ export function renderTeamCardsForm({
           class: 'btn btn-secondary btn-icon card-remove-btn',
           type: 'button',
           text: '×',
-          title: `${t('editor.teamCards.removeBlock', 'Remove block')} ${i}`,
-          'aria-label': `${t('editor.teamCards.removeBlock', 'Remove block')} ${i}`,
+          title: t('editor.teamCards.removeBlockN', 'Remove block {n}', { n: i }),
+          'aria-label': t('editor.teamCards.removeBlockN', 'Remove block {n}', { n: i }),
           onclick: () => {
             if (members.length <= 1) return;
             members.splice(i - 1, 1);

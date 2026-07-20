@@ -218,7 +218,7 @@ export function openVersionsModal({
                 pres.modified = updated.modified ?? pres.modified;
                 pres.updatedBy = updated.updatedBy ?? pres.updatedBy;
               }
-              setStatus('Hersteld. Herladen…');
+              setStatus(t('editor.versions.restored', 'Restored. Reloading…'));
               onRestored?.(resp);
               location.reload();
             } catch (e) {

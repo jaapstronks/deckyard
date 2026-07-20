@@ -97,7 +97,7 @@ export function renderImageTextImagesSection({
       head.append(
         h('div', {
           class: 'card-group-title',
-          text: `${t('editor.imageText.image', 'Image')} ${i + 1}`,
+          text: t('editor.imageText.imageN', 'Image {n}', { n: i + 1 }),
         })
       );
       const controls = h('div', { class: 'row' });
@@ -132,7 +132,7 @@ export function renderImageTextImagesSection({
             class: 'btn btn-secondary btn-icon card-remove-btn',
             text: '×',
             title: t('editor.imageText.removeImage', 'Remove image'),
-            'aria-label': `${t('editor.imageText.removeImage', 'Remove image')} ${i + 1}`,
+            'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', { n: i + 1 }),
             onclick: () => {
               images.splice(i, 1);
               ensureImageTextImages(content);

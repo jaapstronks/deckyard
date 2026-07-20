@@ -172,7 +172,7 @@ export async function openTranslateFieldModal({
   });
   const btnApply = h('button', {
     class: 'btn btn-primary',
-    text: 'Toepassen',
+    text: t('common.apply', 'Apply'),
   });
   btnApply.addEventListener('click', async () => {
     try {

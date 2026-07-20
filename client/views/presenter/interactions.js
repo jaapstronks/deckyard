@@ -1,3 +1,4 @@
+import { t } from '../../lib/ui-i18n.js';
 import { mountLikertHill } from '../../lib/likert.js';
 
 function clamp0(n) {
@@ -42,7 +43,7 @@ export function applyPollInteractionStateToStage(stageEl, interactionState) {
   }
 
   const totalEl = pollEl.querySelector?.('[data-poll-total="1"]');
-  if (totalEl) totalEl.textContent = `Totaal: ${total}`;
+  if (totalEl) totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', { n: total });
 
   const statusEl = pollEl.querySelector?.('[data-poll-status="1"]');
   if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';
@@ -94,7 +95,7 @@ export function applyLikertInteractionStateToStage(stageEl, interactionState) {
   }
 
   const totalEl = likertEl.querySelector?.('[data-poll-total="1"]');
-  if (totalEl) totalEl.textContent = `Totaal: ${total}`;
+  if (totalEl) totalEl.textContent = t('presenter.interactions.total', 'Total: {n}', { n: total });
 
   const statusEl = likertEl.querySelector?.('[data-poll-status="1"]');
   if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';

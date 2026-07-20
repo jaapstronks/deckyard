@@ -46,6 +46,6 @@ export async function handleNotionPublish({ api, toast, pres }) {
     toast?.(result?.message || t('editor.publish.notion.success', 'Added to Notion page!'));
   } catch (e) {
     const msg = e?.message || String(e);
-    toast?.(t('editor.publish.notion.failed', 'Failed to add to Notion: ') + msg);
+    toast?.(t('editor.publish.notion.failedWithReason', 'Failed to add to Notion: {reason}', { reason: msg }));
   }
 }

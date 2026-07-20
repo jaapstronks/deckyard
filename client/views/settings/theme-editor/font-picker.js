@@ -261,7 +261,7 @@ export function createFontPicker({ label, value, familyId, managedFonts, context
 
   // Preview text showing the selected font
   const preview = h('div', { class: 'theme-font-picker-preview' });
-  preview.textContent = 'The quick brown fox jumps over the lazy dog';
+  preview.textContent = t('common.pangram', 'The quick brown fox jumps over the lazy dog');
 
   function updatePreview(fontFamily) {
     loadGoogleFont(fontFamily);

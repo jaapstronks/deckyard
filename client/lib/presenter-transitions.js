@@ -1,5 +1,7 @@
+import { t } from './ui-i18n.js';
+
 export const PRESENTER_TRANSITION_PRESETS = [
-  { value: 'none', label: 'Geen' },
+  { value: 'none', label: t('common.none', 'None') },
   { value: 'fade', label: 'Fade' },
   { value: 'slide', label: 'Slide' },
   { value: 'push', label: 'Push' },

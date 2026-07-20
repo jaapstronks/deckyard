@@ -93,7 +93,7 @@ export function createFollowInteractionController({
 
     const copy = getCopy?.() || {};
     const title = copy?.interactionTitle || 'Meedoen';
-    const loading = copy?.interactionLoading || 'Laden…';
+    const loading = copy?.interactionLoading || 'Loading…';
     const closedText = copy?.interactionClosed || 'Stemmen is gesloten.';
     const openText = copy?.interactionOpen || 'Stem nu.';
     const thanks = copy?.interactionThanks || 'Dank! Je stem is opgeslagen.';
@@ -259,6 +259,7 @@ export function createFollowInteractionController({
           vote,
           clamp0,
           sliderDrag,
+          copy,
         })
       : null;
 

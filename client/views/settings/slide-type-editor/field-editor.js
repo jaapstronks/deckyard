@@ -7,13 +7,14 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/modal.js';
 
+// Labels are resolved through t() at render time (the dictionary is not loaded at import time).
 const FIELD_TYPES = [
-  { value: 'string', label: 'String' },
-  { value: 'markdown', label: 'Markdown' },
-  { value: 'image', label: 'Image' },
-  { value: 'images', label: 'Images' },
-  { value: 'enum', label: 'Enum' },
-  { value: 'items', label: 'Items (repeater)' },
+  { value: 'string', labelKey: 'settings.slideTypes.fields.type.string', label: 'String' },
+  { value: 'markdown', labelKey: 'settings.slideTypes.fields.type.markdown', label: 'Markdown' },
+  { value: 'image', labelKey: 'settings.slideTypes.fields.type.image', label: 'Image' },
+  { value: 'images', labelKey: 'settings.slideTypes.fields.type.images', label: 'Images' },
+  { value: 'enum', labelKey: 'settings.slideTypes.fields.type.enum', label: 'Enum' },
+  { value: 'items', labelKey: 'settings.slideTypes.fields.type.items', label: 'Items (repeater)' },
 ];
 
 /**
@@ -125,7 +126,9 @@ export function createFieldListEditor({ fields = [], onChange }) {
         e.stopPropagation();
         const confirmed = await confirmModal(h, document.body, {
           title: t('common.remove', 'Remove'),
-          message: t('settings.slideTypes.fields.removeConfirm', `Remove field "${field.label}"?`),
+          message: t('settings.slideTypes.fields.removeConfirm', 'Remove field "{label}"?', {
+            label: field.label,
+          }),
           confirmLabel: t('common.remove', 'Remove'),
           danger: true,
         });
@@ -144,7 +147,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Key
     const keyRow = h('div', { class: 'field-list-field-row' });
     keyRow.append(
-      h('label', { class: 'field-label field-label-sm', text: 'Key' }),
+      h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.key', 'Key') }),
       createInput(field.key, (val) => {
         field.key = val.replace(/[^a-zA-Z0-9_]/g, '');
         notify();
@@ -154,8 +157,8 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Label
     const labelRow = h('div', { class: 'field-list-field-row' });
     labelRow.append(
-      h('label', { class: 'field-label field-label-sm', text: 'Label' }),
-      createInput(field.label, (val) => { field.label = val; notify(); }, { class: 'input input-sm', placeholder: 'Field label' })
+      h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.label', 'Label') }),
+      createInput(field.label, (val) => { field.label = val; notify(); }, { class: 'input input-sm', placeholder: t('settings.slideTypes.fields.labelPlaceholder', 'Field label') })
     );
 
     // Type
@@ -164,7 +167,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
     for (const ft of FIELD_TYPES) {
       typeSelect.append(h('option', {
         value: ft.value,
-        text: ft.label,
+        text: t(ft.labelKey, ft.label),
         selected: field.type === ft.value,
       }));
     }
@@ -174,7 +177,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
       render();
     });
     typeRow.append(
-      h('label', { class: 'field-label field-label-sm', text: 'Type' }),
+      h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.typeLabel', 'Type') }),
       typeSelect
     );
 
@@ -185,7 +188,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
       checked: field.required === true,
     });
     reqCheckbox.addEventListener('change', () => { field.required = reqCheckbox.checked; notify(); });
-    reqRow.append(reqCheckbox, h('label', { class: 'field-label field-label-sm', text: 'Required' }));
+    reqRow.append(reqCheckbox, h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.required', 'Required') }));
 
     body.append(keyRow, labelRow, typeRow, reqRow);
 
@@ -193,12 +196,12 @@ export function createFieldListEditor({ fields = [], onChange }) {
     if (field.type === 'string' || field.type === 'markdown') {
       const maxRow = h('div', { class: 'field-list-field-row' });
       maxRow.append(
-        h('label', { class: 'field-label field-label-sm', text: 'Max length' }),
+        h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.maxLength', 'Max length') }),
         createInput(field.maxLength != null ? String(field.maxLength) : '', (val) => {
           const n = parseInt(val, 10);
           field.maxLength = Number.isFinite(n) && n > 0 ? n : undefined;
           notify();
-        }, { class: 'input input-sm', type: 'number', placeholder: 'No limit' })
+        }, { class: 'input input-sm', type: 'number', placeholder: t('settings.slideTypes.fields.noLimit', 'No limit') })
       );
       body.append(maxRow);
     }
@@ -206,29 +209,29 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Placeholder
     const phRow = h('div', { class: 'field-list-field-row' });
     phRow.append(
-      h('label', { class: 'field-label field-label-sm', text: 'Placeholder' }),
+      h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.placeholder', 'Placeholder') }),
       createInput(field.placeholder || '', (val) => {
         field.placeholder = val || undefined;
         notify();
-      }, { class: 'input input-sm', placeholder: 'Optional placeholder' })
+      }, { class: 'input input-sm', placeholder: t('settings.slideTypes.fields.placeholderPlaceholder', 'Optional placeholder') })
     );
     body.append(phRow);
 
     // Help text
     const helpRow = h('div', { class: 'field-list-field-row' });
     helpRow.append(
-      h('label', { class: 'field-label field-label-sm', text: 'Help text' }),
+      h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.helpText', 'Help text') }),
       createInput(field.helpText || '', (val) => {
         field.helpText = val || undefined;
         notify();
-      }, { class: 'input input-sm', placeholder: 'Optional help text' })
+      }, { class: 'input input-sm', placeholder: t('settings.slideTypes.fields.helpTextPlaceholder', 'Optional help text') })
     );
     body.append(helpRow);
 
     // Options (enum)
     if (field.type === 'enum') {
       const optRow = h('div', { class: 'field-list-field-row' });
-      const optLabel = h('label', { class: 'field-label field-label-sm', text: 'Options (one per line)' });
+      const optLabel = h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.options', 'Options (one per line)') });
       const optArea = h('textarea', {
         class: 'input input-sm code-textarea',
         rows: '4',
@@ -246,11 +249,11 @@ export function createFieldListEditor({ fields = [], onChange }) {
     // Items sub-fields (nested)
     if (field.type === 'items') {
       const itemsSection = h('div', { class: 'field-list-nested' });
-      itemsSection.append(h('div', { class: 'field-label field-label-sm', text: 'Item fields' }));
+      itemsSection.append(h('div', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.itemFields', 'Item fields') }));
 
       const minRow = h('div', { class: 'field-list-field-row' });
       minRow.append(
-        h('label', { class: 'field-label field-label-sm', text: 'Min items' }),
+        h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.minItems', 'Min items') }),
         createInput(field.minItems != null ? String(field.minItems) : '', (val) => {
           const n = parseInt(val, 10);
           field.minItems = Number.isFinite(n) && n >= 0 ? n : undefined;
@@ -260,12 +263,12 @@ export function createFieldListEditor({ fields = [], onChange }) {
 
       const maxRow = h('div', { class: 'field-list-field-row' });
       maxRow.append(
-        h('label', { class: 'field-label field-label-sm', text: 'Max items' }),
+        h('label', { class: 'field-label field-label-sm', text: t('settings.slideTypes.fields.maxItems', 'Max items') }),
         createInput(field.maxItems != null ? String(field.maxItems) : '', (val) => {
           const n = parseInt(val, 10);
           field.maxItems = Number.isFinite(n) && n > 0 ? n : undefined;
           notify();
-        }, { class: 'input input-sm', type: 'number', placeholder: 'No limit' })
+        }, { class: 'input input-sm', type: 'number', placeholder: t('settings.slideTypes.fields.noLimit', 'No limit') })
       );
 
       const nestedEditor = createFieldListEditor({

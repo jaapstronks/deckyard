@@ -83,7 +83,12 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
           h('div', { class: 'font-discover-family-name', text: family.name }),
           h('div', {
             class: 'font-discover-family-variants',
-            text: `${family.variants.length} variant${family.variants.length !== 1 ? 's' : ''}: ${family.variants.map((v) => `${v.weight}${v.style === 'italic' ? 'i' : ''}`).join(', ')}`,
+            text: t('fonts.variantCountList', '{count} variant(s): {variants}', {
+              count: family.variants.length,
+              variants: family.variants
+                .map((v) => `${v.weight}${v.style === 'italic' ? 'i' : ''}`)
+                .join(', '),
+            }),
           })
         );
 
@@ -106,7 +111,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
                 variants: family.variants,
               }),
             });
-            toast.success(t('fonts.importSuccess', `Imported "${family.name}".`));
+            toast.success(t('fonts.importSuccess', 'Imported "{name}".', { name: family.name }));
             importBtn.textContent = t('fonts.imported', 'Imported');
             if (onImport) onImport(imported);
           } catch (err) {

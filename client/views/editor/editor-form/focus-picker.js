@@ -1,3 +1,5 @@
+import { t } from '../../../lib/ui-i18n.js';
+
 function toNumberOrNull(v) {
   if (v == null) return null;
   if (typeof v === 'string' && !v.trim()) return null;
@@ -33,7 +35,7 @@ function posLabelFor(x, y) {
 
 export function renderFocusGridField({
   h,
-  label = 'Image focus (crop)',
+  label = t('editor.imagePosition.cropLabel', 'Image focus (crop)'),
   helpText = 'Pick what should stay visible when the image is cropped (cover).',
   focusX,
   focusY,
@@ -96,9 +98,9 @@ export function renderFocusGridField({
   const resetBtn = h('button', {
     type: 'button',
     class: 'btn btn-secondary is-compact-sm',
-    text: 'Center',
+    text: t('editor.focusPicker.center', 'Center'),
     disabled,
-    title: 'Reset focus to center',
+    title: t('editor.focusPicker.reset', 'Reset focus to center'),
     onclick: () => {
       if (disabled) return;
       setActive({ x: 50, y: 50 });

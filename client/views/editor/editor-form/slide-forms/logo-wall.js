@@ -221,8 +221,8 @@ export function renderLogoWallForm({
           class: 'btn btn-secondary btn-icon card-remove-btn',
           type: 'button',
           text: '×',
-          title: `Logo ${i} ${t('editor.logoWall.removeSuffix', 'verwijderen')}`,
-          'aria-label': `Logo ${i} ${t('editor.logoWall.removeSuffix', 'verwijderen')}`,
+          title: t('editor.logoWall.removeLogoN', 'Remove logo {n}', { n: i }),
+          'aria-label': t('editor.logoWall.removeLogoN', 'Remove logo {n}', { n: i }),
           onclick: () => {
             if (logos.length <= 1) return;
             logos.splice(i - 1, 1);

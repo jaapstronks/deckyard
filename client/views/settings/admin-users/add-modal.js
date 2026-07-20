@@ -67,7 +67,7 @@ export function showAddModal(onSuccess) {
     const sendInvitation = sendInviteCheck.querySelector('input').checked;
 
     if (!email || !email.includes('@')) {
-      status.textContent = 'Please enter a valid email address.';
+      status.textContent = t('admin.users.addModal.invalidEmail', 'Please enter a valid email address.');
       return;
     }
 

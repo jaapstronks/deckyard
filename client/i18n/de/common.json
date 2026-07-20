@@ -37,8 +37,6 @@
   "common.title": "Titel",
   "common.unknown": "Unbekannt",
   "common.upload": "Hochladen",
-  "follow.likertSlider.chooseScore": "Wählen Sie eine Bewertung: {n}",
-  "follow.likertSlider.yourScore": "Ihre Bewertung: {n}",
   "viewer.addComment": "Kommentieren",
   "viewer.addComment.title": "Kommentare anzeigen und hinzufügen",
   "viewer.comments": "Kommentare",

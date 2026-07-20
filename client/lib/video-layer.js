@@ -15,6 +15,7 @@ import {
   resolvePosition,
 } from '../../shared/video-stream-providers.js';
 import { ensureHlsJs } from './ensure-hls.js';
+import { t } from './ui-i18n.js';
 
 /**
  * @param {Object} opts
@@ -36,9 +37,9 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
   const unmuteBtn = document.createElement('button');
   unmuteBtn.className = 'video-layer-unmute';
-  unmuteBtn.textContent = 'Unmute';
+  unmuteBtn.textContent = t('video.unmute', 'Unmute');
   unmuteBtn.type = 'button';
-  unmuteBtn.setAttribute('aria-label', 'Unmute video stream');
+  unmuteBtn.setAttribute('aria-label', t('video.unmuteAria', 'Unmute video stream'));
   controlsWrap.append(unmuteBtn);
 
   el.append(playerWrap, controlsWrap);
@@ -86,7 +87,7 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     if (isIframeProvider(provider)) {
       const iframe = document.createElement('iframe');
       iframe.src = embedUrl;
-      iframe.title = 'Live video stream';
+      iframe.title = t('video.iframeTitle', 'Live video stream');
       iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
       iframe.allowFullscreen = true;
       iframe.setAttribute('frameborder', '0');
@@ -111,17 +112,20 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
           ensureHlsJs()
             .then(() => {
               if (!globalThis.Hls?.isSupported?.()) {
-                showError('HLS is not supported in this browser.');
+                showError(t('video.error.hlsUnsupported', 'HLS is not supported in this browser.'));
                 return;
               }
               hlsInstance = new globalThis.Hls();
               hlsInstance.loadSource(embedUrl);
               hlsInstance.attachMedia(video);
               hlsInstance.on(globalThis.Hls.Events.ERROR, (_e, data) => {
-                if (data.fatal) showError('Stream error. Check the URL.');
+                if (data.fatal)
+                  showError(t('video.error.stream', 'Stream error. Check the URL.'));
               });
             })
-            .catch(() => showError('Failed to load HLS player.'));
+            .catch(() =>
+              showError(t('video.error.hlsLoadFailed', 'Failed to load HLS player.'))
+            );
         }
       } else {
         // DASH or unknown native - just set src (dash.js deferred to v2)
@@ -185,7 +189,7 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
     if (!embedUrl) {
       hide();
-      showError('Unable to embed this stream URL.');
+      showError(t('video.error.embedFailed', 'Unable to embed this stream URL.'));
       return;
     }
 

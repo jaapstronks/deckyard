@@ -204,7 +204,7 @@ export function openVersionCompareModal({
           });
           content.append(slideEl);
         } catch {
-          content.textContent = 'Could not render slide';
+          content.textContent = t('editor.versions.compare.renderFailed', 'Could not render slide');
         }
         overlay.append(closeBtn, labelEl, content);
         overlay.addEventListener('click', (e) => {
@@ -226,7 +226,13 @@ export function openVersionCompareModal({
           const thumb = h('div', {
             class: 'compare-thumb compare-thumb-clickable',
             title: t('editor.versions.compare.clickToEnlarge', 'Click to enlarge'),
-            onclick: () => showEnlargedSlide(current, t('editor.versions.compare.current', 'Current') + ` - Slide ${i + 1}`),
+            onclick: () => showEnlargedSlide(
+              current,
+              t('editor.versions.compare.sideSlideLabel', '{side} - Slide {n}', {
+                side: t('editor.versions.compare.current', 'Current'),
+                n: i + 1,
+              })
+            ),
           });
           try {
             const slideEl = renderSlideElement(current, {
@@ -256,7 +262,13 @@ export function openVersionCompareModal({
           const thumb = h('div', {
             class: 'compare-thumb compare-thumb-clickable',
             title: t('editor.versions.compare.clickToEnlarge', 'Click to enlarge'),
-            onclick: () => showEnlargedSlide(snapshot, snapshotHeaderText + ` - Slide ${i + 1}`),
+            onclick: () => showEnlargedSlide(
+              snapshot,
+              t('editor.versions.compare.sideSlideLabel', '{side} - Slide {n}', {
+                side: snapshotHeaderText,
+                n: i + 1,
+              })
+            ),
           });
           try {
             const slideEl = renderSlideElement(snapshot, {

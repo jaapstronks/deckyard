@@ -68,7 +68,7 @@ export async function confirmDelete(targetUser, onSuccess) {
 export async function resendInvitation(targetUser, btn) {
   const originalText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '...';
+  btn.textContent = t('admin.users.invitationSending', 'Sending…');
 
   try {
     const res = await fetch(`/api/admin/users/${targetUser.id}/resend-invitation`, {

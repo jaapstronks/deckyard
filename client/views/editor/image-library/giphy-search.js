@@ -196,7 +196,7 @@ export function createGiphySearch({ h, api, onSelect, setStatus, setBusy }) {
         setStatus(t('stockMedia.download.success', 'Added to library'));
         onSelect(data.libraryItem);
       } else {
-        throw new Error(data.error || 'Download failed');
+        throw new Error(data.error || t('stockMedia.download.error', 'Download failed'));
       }
     } catch (e) {
       console.error('Giphy download error:', e);

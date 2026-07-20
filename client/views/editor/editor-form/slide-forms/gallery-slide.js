@@ -213,7 +213,10 @@ export function renderGallerySlideForm({
     headerLeft.append(collapseBtn);
 
     // Image title
-    headerLeft.append(h('div', { class: 'card-group-title', text: `${t('editor.slide.image', 'Image')} ${i + 1}` }));
+    headerLeft.append(h('div', {
+      class: 'card-group-title',
+      text: t('editor.slide.imageN', 'Image {n}', { n: i + 1 }),
+    }));
 
     imageHeader.append(headerLeft);
 
@@ -224,8 +227,8 @@ export function renderGallerySlideForm({
           class: 'btn btn-secondary btn-icon card-remove-btn',
           type: 'button',
           text: '×',
-          title: `${t('editor.slide.removeImage', 'Remove image')} ${i + 1}`,
-          'aria-label': `${t('editor.slide.removeImage', 'Remove image')} ${i + 1}`,
+          title: t('editor.slide.removeImageN', 'Remove image {n}', { n: i + 1 }),
+          'aria-label': t('editor.slide.removeImageN', 'Remove image {n}', { n: i + 1 }),
           onclick: () => {
             const ok = removeImageAtIndex(slide, i);
             if (!ok) return;

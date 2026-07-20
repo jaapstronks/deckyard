@@ -125,7 +125,7 @@ export async function renderPresenter(
   const followCodesPill = h('div', {
     class: 'presenter-followcodes',
     hidden: true,
-    title: 'Follow-along: /go + code',
+    title: t('presenter.followCodes.title', 'Follow-along: /go + code'),
   });
   const followCodesText = h('div', {
     class: 'presenter-followcodes-text',
@@ -133,7 +133,7 @@ export async function renderPresenter(
   });
   const followCodesCopyBtn = h('button', {
     class: 'btn btn-secondary',
-    text: 'Copy /go + code',
+    text: t('presenter.followCodes.copy', 'Copy /go + code'),
     disabled: true,
     onclick: async () => {
       if (!sessionFollowCodes) return;
@@ -221,7 +221,7 @@ export async function renderPresenter(
     text: autoAdvanceMode === 'pacing'
       ? t('presenter.pacingPause', 'Pause timer')
       : t('presenter.autoAdvancePause', 'Pause auto'),
-    title: 'Toggle auto-advance (A)',
+    title: t('presenter.autoAdvanceToggle', 'Toggle auto-advance (A)'),
     hidden: !autoAdvanceEnabled,
   });
 
@@ -229,12 +229,12 @@ export async function renderPresenter(
   const laserBtn = h('button', {
     class: 'btn btn-secondary presenter-highlighter-btn',
     text: t('presenter.laser', 'Laser'),
-    title: 'Toggle laser pointer (L)',
+    title: t('presenter.laserToggle', 'Toggle laser pointer (L)'),
   });
   const drawBtn = h('button', {
     class: 'btn btn-secondary presenter-highlighter-btn',
     text: t('presenter.draw', 'Draw'),
-    title: 'Toggle draw mode (D)',
+    title: t('presenter.drawToggle', 'Toggle draw mode (D)'),
   });
 
   const syncHighlighterButtons = (mode) => {

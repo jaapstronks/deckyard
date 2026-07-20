@@ -578,7 +578,7 @@ export function createSlidesPanel({
   });
 
   leftHeader.append(
-    h('h2', { text: 'Slides' }),
+    h('h2', { text: t('editor.slides.title', 'Slides') }),
     h(
       'div',
       {

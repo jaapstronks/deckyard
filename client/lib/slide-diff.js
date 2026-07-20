@@ -1,3 +1,5 @@
+import { t } from './ui-i18n.js';
+
 /**
  * Slide Diff Utilities
  * Computes differences between slide arrays for version comparison
@@ -148,25 +150,25 @@ export function getCategoryStyle(category) {
       return {
         className: 'diff-added',
         indicator: '🟢',
-        label: 'Added',
+        label: t('editor.versions.compare.added', 'Added'),
       };
     case 'removed':
       return {
         className: 'diff-removed',
         indicator: '🔴',
-        label: 'Removed',
+        label: t('editor.versions.compare.removed', 'Removed'),
       };
     case 'modified':
       return {
         className: 'diff-modified',
         indicator: '🟡',
-        label: 'Modified',
+        label: t('editor.versions.compare.modified', 'Modified'),
       };
     default:
       return {
         className: 'diff-unchanged',
         indicator: '⚪',
-        label: 'Unchanged',
+        label: t('editor.versions.compare.unchanged', 'Unchanged'),
       };
   }
 }

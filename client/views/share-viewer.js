@@ -112,7 +112,7 @@ export async function renderShareViewer(root, token) {
 
     await loadAndRenderPresentation();
   } catch (err) {
-    renderError(h, shell, err.message || 'Failed to load share link');
+    renderError(h, shell, err.message || t('share.error.loadLink', 'Failed to load share link'));
   }
 
   async function loadAndRenderPresentation() {
@@ -130,7 +130,7 @@ export async function renderShareViewer(root, token) {
       presentation = presResp;
 
       if (!presentation) {
-        throw new Error('Presentation not found');
+        throw new Error(t('share.error.notFound', 'Presentation not found'));
       }
 
       // Load theme
@@ -155,7 +155,11 @@ export async function renderShareViewer(root, token) {
       renderViewer();
     } catch (err) {
       shell.innerHTML = '';
-      renderError(h, shell, err.message || 'Failed to load presentation');
+      renderError(
+        h,
+        shell,
+        err.message || t('share.error.loadPresentation', 'Failed to load presentation')
+      );
     }
   }
 
@@ -398,7 +402,10 @@ export async function renderShareViewer(root, token) {
     const slide = slides[currentSlideIndex];
 
     if (!slide) {
-      slideWrap.innerHTML = '<div class="share-viewer-empty">No slides</div>';
+      slideWrap.innerHTML = '';
+      slideWrap.append(
+        h('div', { class: 'share-viewer-empty', text: t('share.noSlides', 'No slides') })
+      );
       return;
     }
 
