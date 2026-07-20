@@ -165,11 +165,13 @@
   display: grid;
 }
 
+/* The grid is always co-classed `ps-type-grid ps-type-grid-thumbs` (see
+   slide-type-picker.js), so column count and gap live on `.ps-type-grid-thumbs`
+   (and are further tuned per view via `.is-schematic-mode`/`.is-preview-mode`).
+   This base only owns what those don't set — display, item alignment, width — so
+   there's no dead column definition here masquerading as a source of truth. */
 .ps-type-grid {
   display: grid;
-  /* Denser: small cards, more per row */
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-  gap: var(--ps-space-2);
   justify-content: start;
   width: 100%;
 }
