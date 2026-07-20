@@ -46,7 +46,7 @@ inspector write path that disagrees with the render read path.
 | Type | Level | Field(s) | Render reads | Inspector writes | Default |
 |---|---|---|---|---|---|
 | image-slide | S | **`layout`** (`full`/`bleed`/`centered`) 🚩 *name* | `image-slide.js:215` | `inspector-form.js:179` (`renderKeyInto('layout')`) | `full` |
-| image-text | **S + I** 🚩 | `imageFit` (base) + item `fit` (override) | slide `image-text-slide.js:437`; item wins `:501-506` | slide via layout-opts `slide-forms/image-slide.js:159-165`; item via `image-text-images.js:203`, `image-element-card.js:198` | `cover` |
+| image-text | **S + I** 🚩 *pending unwind (step 2b)* | `imageFit` (base) + item `fit` (override) | slide `image-text-slide.js` container class; item wins via `.frame.is-fit-*` | slide via layout-opts `slide-forms/image-slide.js`; item via images manager | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`) |
 | content-columns | N | `col{n}ImageFit` | `content-columns-slide.js` col render | `inspector-form.js:332`; element card `{n}` mode | none (per column) |
 | gallery / team-cards / logo-wall / quote | — | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | — | — | — |
 
@@ -60,7 +60,7 @@ plus a frame bit.
 | Type | Level | Field(s) | Render precedence |
 |---|---|---|---|
 | image-slide | S | `focusX`/`focusY` | `content` (`image-slide.js:256`) |
-| image-text | **S + I** 🚩 | slide `focusX/Y` + item `focusX/Y` | item wins; item 0 falls back to slide — `image-text-slide.js:497-500` |
+| image-text | **I** (was S+I) ✅ | item `focusX/Y` canonical | folded to `images[i]` on edit (step 2); slide-level `focusX/Y` is now a read-only fallback for un-migrated decks |
 | content-columns | N | `col{n}ImageFocusX/Y` | per column |
 | gallery | I | `images[i].focusX/Y` | item |
 | team-cards | I | `members[i].`**`imageFocusX/Y`** 🚩 *name diverges* | item |
@@ -73,7 +73,7 @@ rule exists to stop exactly this.
 | Type | Level | Field(s) | Render precedence |
 |---|---|---|---|
 | image-slide | S | `alt` (+`altNl`/`altEn`) | `content` (`image-slide.js:242-252`) |
-| image-text | **S + I** 🚩 | slide `alt` + item `alt` | item wins; item 0 falls back to slide — `image-text-slide.js:481-486` |
+| image-text | **I** (was S+I) ✅ | item `alt` canonical | folded to `images[i]` on edit (step 2); slide `alt`/`altNl`/`altEn` are read-only fallbacks (item alt is translated as an itemKey) |
 | content-columns | N | `col{n}Alt` | per column |
 | gallery / team-cards / logo-wall | I | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (+ numbered mirror synced) |
 | quote | **S + I** 🚩 | primary `authorImage{n}Alt` (flat) + extras `quotes[i].authorImageAlt` | flat for portraits 1-2 `quote-slide.js:85-99`; item for extra quotes `:108-118` |
@@ -109,7 +109,12 @@ each re-derived their own copy. **Step 1 (#182) centralized the read** into
 — render, the canvas focal-point drag and the inspector's effective-fit all read
 through it, so the three can no longer drift.
 
-What that did **not** fix — and step 2 must — is a **display-baseline bug**, not
+> **Fixed in step 2 (2026-07-20).** `ensureImageTextImages` now folds the
+> slide-level focus/alt into `images[0]`, so the inspector's focus grid seeds
+> from the canonical per-image value and shows the real crop start. The rest of
+> this section describes the bug as it was; kept for the reasoning.
+
+What that did **not** fix — and step 2 did — was a **display-baseline bug**, not
 a dead write. Trace the three focus write paths and every write takes effect: the
 inspector 3×3 grid always writes a number (0/50/100, Center = 50/50), the canvas
 drag localizes to `images[idx]`, and render reads the item as soon as
@@ -148,7 +153,51 @@ per-step migrations below converge on; do not migrate `fit`, then `focus`, then
 A generic **write → render round-trip check** over `ImageRef` (set each field via
 the inspector seam, assert the render reflects it, assert the inspector re-reads
 the same value) catches the whole class of baseline / stale-read bugs in one
-harness — including in image types nobody is actively looking at.
+harness — including in image types nobody is actively looking at. Shipped for
+image-text in `tests/image-ref-round-trip.test.js`.
+
+### Defaults live in the type definition, not in a record
+
+What an `ImageRef` field falls back to when the item carries none is **config,
+not a per-slide record** — the right-hand side of `images[i].fit ?? typeDefault`.
+A per-image field being empty means "follow the type"; a value means "the user
+chose this deliberately". That distinction is only preserved if the default is
+never written into the data (a fan-out that stamps the default onto every item
+freezes the deck against a future default change and erases the empty/explicit
+signal).
+
+Each image-bearing type therefore declares an `imageDefaults` bundle, e.g.
+image-text (`IMAGE_TEXT_IMAGE_DEFAULTS` in `shared/slide-types/image-text-images.js`):
+
+```js
+imageDefaults = { fit: 'cover', focus: { x: 50, y: 50 }, aspectRatio: null, allowUpscale: true }
+```
+
+- **`focus` as a type default** is expressive in a way per-slide state is not: a
+  persons-grid sets `focus: { x: 50, y: 35 }` so heads sit high with no per-photo
+  correction. That knowledge belongs to the type.
+- **`allowUpscale` / `aspectRatio`** are reserved in the shape so a later need
+  (e.g. "never upscale a screenshot") does not arrive as a fourth ad-hoc field.
+  Not enforced by the renderer yet.
+- **Retroactive by design.** Changing a type default changes every deck that
+  never overrode it — like a theme. That is usually what you want, but it is a
+  behaviour change relative to stored values, so it is a deliberate, documented
+  property, not a side effect.
+- **Inspector UX for a silent default:** show the effective value as *derived*
+  (ghost/placeholder, distinct from an explicit selection), label its origin
+  ("Contain · from slide type"), and give an explicit "back to default" that
+  **empties** the field (saving the default value would be a fan-out by another
+  name).
+
+> **Audit criterion (add to the scorecard):** *every default is lookupable in
+> the type definition*, not hard-coded in a renderer or an inspector. The old
+> matrix showed defaults scattered per type (`full` here, `cover` there, none for
+> `content-columns`) — the same spread the field-name rule cleans up. Moving to
+> type defaults without enforcing this just re-nests the spread in a new place.
+
+> **Fit is not there yet.** `imageDefaults.fit` above is the *target* for image-text;
+> the live fit base is still slide-level `imageFit` until the CSS mechanisms are
+> unified (migration step 2b). `focus` is live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
@@ -204,19 +253,38 @@ property.
 
 1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
    `resolveImageTextCell(content, idx)` is the single read authority (render +
-   canvas drag + inspector). Pure refactor, render byte-identical. Removed the
-   inline repetition; the display-baseline bug is what remains for step 2.
-2. **De-duplicate image-text S + I → `ImageRef`.** Make `images[i]` the single
-   canonical `ImageRef` for fit/focus/alt; retire the slide-level item-0 fallback
-   (migrating the legacy slide-level alt/focus into `images[0]`, preserving the
-   alt-translation fallback). Fixes the display-baseline bug (grid then reads the
-   canonical value). The only step carrying real data-loss risk — add the generic
-   write → render round-trip check here.
-3. **Split image-slide `layout` → `ImageRef.fit` + `bleed`.** Cheap once the
-   shape is fixed: content migration + renderer + `convert.js` (which becomes
-   lossless).
+   canvas drag + inspector). Pure refactor, render byte-identical.
+2. ~~**De-duplicate image-text S + I → `ImageRef` (focus + alt).**~~ ✅ **Shipped
+   — datamodel step 2 (2026-07-20).** `ensureImageTextImages` folds the
+   slide-level `alt`/`focusX`/`focusY` into `images[0]` and clears them; the
+   inspector now reads the canonical per-image focus, so the focus grid shows the
+   real crop start — the **display-baseline bug is fixed**. The slide-level focus
+   picker is gone (focus is per-image). `altNl`/`altEn` stay as a read fallback.
+   Guarded by a generic write → render round-trip harness over the ImageRef
+   (`tests/image-ref-round-trip.test.js`). **`fit` was deliberately *left out* of
+   this step** — see step 2b below for why.
+2b. **Unify the fit CSS mechanisms, then move `fit` onto the `ImageRef`.** Fit
+   could not migrate with focus/alt: slide-level `imageFit` and per-image `fit`
+   render through **two different CSS mechanisms** — `.slide-image-text.is-image-contain
+   .media` (media-column padding, 0.65×) vs `.frame.is-fit-contain` (frame
+   padding, 0.35×). They coincide for multi-cell layouts but **not** single-cell,
+   so a data fan-out (slide `imageFit` → each `images[i].fit`) double-pads a
+   single-cell contain slide. This is a **CSS-unification-then-data-migration**,
+   not a data migration, so it is its own step. Order: (a) build class-level fit
+   snapshots — done, in the round-trip harness — as the guard; (b) unify onto one
+   frame-based mechanism (**first check whether 0.35 or 0.65 is the right target
+   by rendering both on a few of the ~19 single-cell contain slides + the ~10 that
+   already use per-image fit**); (c) *then* the fan-out is render-neutral, because
+   there is only one mechanism left. Fold naturally into step 3.
+3. **Split image-slide `layout` → `ImageRef.fit` + `bleed`.** Rides on the fit
+   CSS unification (2b): content migration + renderer + `convert.js` (lossless).
 4. **Normalize content-columns `col{n}*` → `ImageRef`.** Resolve the
    numbered/array duality by resolving each column into an `ImageRef`.
+
+> **`imageFit` is a pending unwind, not a settled design.** It stays a
+> slide-level base fit *only* because the CSS forces it (2b), not because
+> slide-level fit is the intended home. Do not read the surviving slide-level
+> `imageFit` control as a deliberate choice — the target is `ImageRef.fit`.
 
 The editing-surface UI work (`docs/plans/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split
