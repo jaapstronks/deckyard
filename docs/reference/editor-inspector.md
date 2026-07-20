@@ -121,6 +121,19 @@ together**.
   the pane leads with the at-a-glance settings (layout/variant enums) and
   ends with Background (sticky-open) and Accessibility.
 
+### Canvas → section deep-link (`data-inspector-section`)
+
+A canvas element can open the inspector scrolled to its own controls. Sections
+that a canvas affordance targets carry a `data-inspector-section="<id>"`
+attribute (image-slide and image-text mark their image controls with
+`"image"`). The inline editor's on-image **"Settings" chip** calls the
+controller's `onOpenElementSettings(id)`, which opens the settings pane, walks
+`openAncestorDetails` (shared with search-focus) to expand any collapsed
+`<details>` on the way, `scrollIntoView`s the section and briefly flashes it.
+This is the doorway from direct-manipulation-on-the-image (focal point + fit)
+to the structural rest that stays in the rail, and the addressing scheme the
+selection-aware inspector work builds on.
+
 ## Per-type coverage audit (executed 2026-07-16)
 
 Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`

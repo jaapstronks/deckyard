@@ -56,6 +56,9 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  * @param {Function} [opts.convertSlideType] - (toType, {openMedia}) => Promise<boolean>;
  *   runs the shared convert action for the selected slide (descriptor `convert`)
  * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
+ * @param {Function} [opts.onOpenElementSettings] - (sectionId) => void; opens the
+ *   inspector settings pane scrolled to the `[data-inspector-section]` for a
+ *   selected canvas element (e.g. an image), the doorway from canvas to rail
  */
 export function createInlineEditor({
   h,
@@ -77,6 +80,7 @@ export function createInlineEditor({
   normalizeLang,
   convertSlideType,
   canConvertSlideTo,
+  onOpenElementSettings,
 } = {}) {
   if (!thumb)
     return {
@@ -1417,6 +1421,46 @@ export function createInlineEditor({
   }
 
   // ----------------------------------------------------------------
+  // "More settings" chip: the doorway from a canvas image to its inspector
+  // section. Focus + fit live on the image; the structural rest (side, width,
+  // background, zoom, role) stays in the rail, opened to the right place here.
+  // ----------------------------------------------------------------
+  function insertSettingsChip(root, _def, descriptor) {
+    if (typeof onOpenElementSettings !== 'function') return;
+    // Only image types that surface on-canvas layout (focus/fit) get the chip;
+    // it points at the inspector's image section for the rest.
+    if (!descriptor.media?.photoSelector || !(descriptor.focus || descriptor.fit)) return;
+    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
+      if (photo.classList.contains('is-empty')) continue; // filled images only
+      const chip = h('button', {
+        class: 'ie-elem-settings',
+        type: 'button',
+        title: t('editor.inline.settings.image', 'More image settings'),
+        'aria-label': t('editor.inline.settings.image', 'More image settings'),
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onOpenElementSettings('image');
+        },
+      }, [
+        // sliders icon (two rows with a knob each), inline SVG (no asset host)
+        h('svg', {
+          viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none',
+          stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round',
+          'aria-hidden': 'true',
+        }, [
+          h('line', { x1: '4', y1: '8', x2: '20', y2: '8' }),
+          h('circle', { cx: '9', cy: '8', r: '2.4', fill: 'currentColor', stroke: 'none' }),
+          h('line', { x1: '4', y1: '16', x2: '20', y2: '16' }),
+          h('circle', { cx: '15', cy: '16', r: '2.4', fill: 'currentColor', stroke: 'none' }),
+        ]),
+        h('span', { text: t('editor.inline.settings.label', 'Settings') }),
+      ]);
+      overlay.place(chip, photo, 'inset-bottom-right', 8);
+    }
+  }
+
+  // ----------------------------------------------------------------
   // Type-switch affordances (descriptor `convert`: add/remove image area)
   // ----------------------------------------------------------------
   /**
@@ -1570,6 +1614,7 @@ export function createInlineEditor({
     insertMediaAffordances(root, def, descriptor);
     insertFocusAffordances(root, def, descriptor);
     insertFitAffordances(root, def, descriptor);
+    insertSettingsChip(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
 

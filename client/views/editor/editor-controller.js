@@ -74,7 +74,7 @@ import { createEditorTitleController } from './title-controller.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import { translatableKeysForType } from './translatable.js';
-import { focusSearchHitInEditor } from './search-focus.js';
+import { focusSearchHitInEditor, openAncestorDetails } from './search-focus.js';
 import { createOverlayRegistry } from './overlays.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/editor-state.js';
@@ -1379,6 +1379,21 @@ export async function createEditorController({
         requestAnimationFrame(() => inlineEditor.openMediaByIndex(0));
       }
       return ok;
+    },
+    // Doorway from a canvas image's "Settings" chip to the inspector: surface
+    // the settings pane and scroll to the element's marked section, expanding
+    // any collapsed groups on the way (reuses the search-focus walk).
+    onOpenElementSettings: (sectionId) => {
+      inspectorPanes.open('settings');
+      requestAnimationFrame(() => {
+        const el = editorMount.querySelector(`[data-inspector-section="${sectionId}"]`);
+        if (!el) return;
+        openAncestorDetails(el);
+        if (el.tagName === 'DETAILS') el.open = true;
+        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        el.classList.add('inspector-section-flash');
+        setTimeout(() => el.classList.remove('inspector-section-flash'), 1200);
+      });
     },
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);
