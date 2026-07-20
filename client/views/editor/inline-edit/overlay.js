@@ -76,6 +76,28 @@ export function createInlineOverlay({ h, thumb }) {
     return el;
   }
 
+  /**
+   * A draggable focal-point handle positioned at (x, y) as a percentage inside
+   * the target image's rect. The caller wires the pointer drag and updates the
+   * handle's `data-fx` / `data-fy` (0..100) during the drag; reposition() reads
+   * them back so the handle tracks the image at any preview zoom / on reflow.
+   * @param {HTMLElement} target - the filled <img> element
+   * @param {{x:number, y:number}} pos - focus percentages (0..100)
+   */
+  function focusPoint(target, { x = 50, y = 50 } = {}) {
+    const pt = h('div', {
+      class: 'ie-ol-item ie-focus-point',
+      role: 'slider',
+      'aria-label': 'Image focus',
+      tabindex: '-1',
+    });
+    pt.dataset.fx = String(x);
+    pt.dataset.fy = String(y);
+    layer.appendChild(pt);
+    placements.push({ el: pt, target, place: 'focus-point', gap: 0 });
+    return pt;
+  }
+
   function reposition() {
     ensureAttached();
     // Chips sharing an anchor (subheading + byline + attribution) pack into a
@@ -150,6 +172,18 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top + r.height / 2}px`;
         s.transform = 'translate(-50%, -50%)';
         break;
+      case 'focus-point': {
+        // Positioned at (fx%, fy%) inside the target image, read live from the
+        // handle's dataset so a drag repositions it without a rerender.
+        const fx = Number(p.el.dataset.fx);
+        const fy = Number(p.el.dataset.fy);
+        const px = Number.isFinite(fx) ? fx : 50;
+        const py = Number.isFinite(fy) ? fy : 50;
+        s.left = `${r.left + (r.width * px) / 100}px`;
+        s.top = `${r.top + (r.height * py) / 100}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
+      }
       case 'below-end': {
         // Below the anchor, right-aligned to the anchor's right edge. Like
         // below-start but shifted right: the anchor is a full-width heading and
@@ -236,5 +270,5 @@ export function createInlineOverlay({ h, thumb }) {
     layer.remove();
   }
 
-  return { layer, clear, outline, place, reposition, ensureAttached, destroy };
+  return { layer, clear, outline, place, focusPoint, reposition, ensureAttached, destroy };
 }

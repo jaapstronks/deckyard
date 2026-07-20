@@ -503,6 +503,69 @@
   }
 }
 
+/* --- Focal-point handle ----------------------------------------------------
+   A draggable crosshair on filled, cropped images (descriptor `focus`). Sets
+   the crop focus (object-position) by direct manipulation, so the 3x3 grid in
+   the inspector is no longer the only way in. Unlike the hover-revealed chips
+   this stays visible: it is the discoverable affordance for "where does this
+   image crop from". */
+.ie-overlay .ie-focus-point {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid hsl(0 0% 100%);
+  background: hsl(var(--app-accent-primary) / 0.28);
+  box-shadow:
+    0 0 0 1.5px hsl(0 0% 0% / 0.45),
+    0 2px 8px hsl(0 0% 0% / 0.45);
+  cursor: grab;
+  touch-action: none;
+  z-index: 4;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+/* Crosshair inside the ring. */
+.ie-overlay .ie-focus-point::before,
+.ie-overlay .ie-focus-point::after {
+  content: '';
+  position: absolute;
+  background: hsl(0 0% 100%);
+  box-shadow: 0 0 2px hsl(0 0% 0% / 0.6);
+}
+.ie-overlay .ie-focus-point::before {
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  transform: translateX(-50%);
+}
+.ie-overlay .ie-focus-point::after {
+  top: 50%;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.ie-overlay .ie-focus-point:hover {
+  background: hsl(var(--app-accent-primary) / 0.45);
+  transform: scale(1.08);
+}
+.ie-overlay .ie-focus-point.is-dragging {
+  cursor: grabbing;
+  background: hsl(var(--app-accent-primary) / 0.55);
+  transform: scale(1.12);
+}
+.ie-overlay .ie-focus-point:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ie-overlay .ie-focus-point {
+    transition: none;
+  }
+}
+
 /* --- Touch -----------------------------------------------------------------
    The whole WYSIWYG affordance layer — which fields are editable, where to
    add an item, how to remove or reorder one — is revealed by hovering the
