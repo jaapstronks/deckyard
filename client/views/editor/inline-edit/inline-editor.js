@@ -26,7 +26,6 @@ import { getByPath, setByPath, fieldMetaForPath, isEmptyValue } from './field-pa
 import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
-import { openMediaPopover } from './media-popover.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { uploadFile } from '../image-library/upload.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
@@ -57,13 +56,13 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  *   runs the shared convert action for the selected slide (descriptor `convert`)
  * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
  * @param {Function} [opts.onOpenElementSettings] - (element) => void; selects the
- *   canvas element and opens the inspector settings pane on its element tab
- *   (the deliberate doorway from the on-image "Settings" chip)
+ *   canvas element and opens the inspector settings pane on its element tab.
+ *   The doorway to everything settable for an element: a single click on an
+ *   image opens its "This image" tab directly (no on-image chip)
  * @param {Function} [opts.onSelectElement] - (element|null) => void; sets the
  *   selection-aware inspector's current element ({kind:'image'|'card', idx}) or
  *   clears it. Selecting rebuilds the inspector with the element tab active; it
- *   only becomes visible if the settings pane is already open (a dismissed rail
- *   stays dismissed - the chip opens it)
+ *   only becomes visible if the settings pane is already open
  */
 export function createInlineEditor({
   h,
@@ -119,8 +118,6 @@ export function createInlineEditor({
   let editing = null;
   let pendingRerenderRaf = 0;
   let closeMarkdownModal = null;
-  /** @type {null | {close:Function, reposition:Function}} */
-  let mediaPopover = null;
 
   const slideEl = () => thumb.querySelector('.slide');
   const currentDef = () => {
@@ -1026,9 +1023,15 @@ export function createInlineEditor({
   // Media popover (per-item image + alt + extra fields, e.g. LinkedIn)
   // ----------------------------------------------------------------
   /**
-   * Decorate item photos: a dashed outline (so they read as editable) plus an
-   * "+ Add image" hint centered on empty ones. Filled photos get a "Change
-   * image" chip. The click itself is routed in onThumbClickCapture.
+   * Decorate item photos with a dashed outline (so they read as editable).
+   *
+   * Empty slots get a centered "+ Add image" chip - they have nothing to
+   * occlude, so an affordance in the middle is fine. Filled images get NO
+   * control on the image itself (it would cover exactly what the user is
+   * judging): they are replaced by double-clicking, hinted by a small,
+   * non-interactive corner label on hover. A single click selects the image
+   * and opens its "This image" inspector tab (routed in onThumbClickCapture),
+   * which carries the explicit Replace / alt / fit / focus controls.
    */
   function insertMediaAffordances(root, _def, descriptor) {
     const media = descriptor.media;
@@ -1037,28 +1040,36 @@ export function createInlineEditor({
       const outlineBox = overlay.outline(photo);
       outlineByField.set(photo, outlineBox);
       const isEmpty = photo.classList.contains('is-empty');
-      const chip = h('button', {
-        class: 'ie-media-hint',
-        type: 'button',
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openMediaFor(photo);
-        },
-      }, [
-        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
-        h('span', {
-          text: isEmpty
-            ? t('editor.inline.media.addImage', 'Add image')
-            : t('editor.inline.media.changeImage', 'Change image'),
-        }),
-      ]);
-      overlay.place(chip, photo, 'center', 0);
-      // Drag an image file straight from the desktop onto an empty placeholder.
-      // Empty-only for now (replacing a filled image is done via the popover);
-      // the chip is a separate drop target because it overlays the placeholder.
-      if (isEmpty && uploadsEnabled && typeof api === 'function') {
-        wireImageDrop([photo, chip], photo, outlineBox);
+      if (isEmpty) {
+        const chip = h('button', {
+          class: 'ie-media-hint',
+          type: 'button',
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openPickerForPhoto(photo);
+          },
+        }, [
+          h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+          h('span', { text: t('editor.inline.media.addImage', 'Add image') }),
+        ]);
+        overlay.place(chip, photo, 'center', 0);
+        // Drag an image file straight from the desktop onto an empty placeholder.
+        // Empty-only: replacing a filled image goes through the picker (double-
+        // click / inspector). The chip is a separate drop target because it
+        // overlays the placeholder.
+        if (uploadsEnabled && typeof api === 'function') {
+          wireImageDrop([photo, chip], photo, outlineBox);
+        }
+      } else {
+        // Non-interactive hover hint (pointer-events: none in CSS) so the click
+        // still lands on the image itself. No control ON the image.
+        const hint = h('div', {
+          class: 'ie-replace-hint',
+          'aria-hidden': 'true',
+          text: t('editor.inline.media.dblClickReplace', 'Double-click to replace'),
+        });
+        overlay.place(hint, photo, 'inset-bottom-right', 8);
       }
     }
   }
@@ -1146,21 +1157,20 @@ export function createInlineEditor({
   }
 
   /**
-   * Open the media popover on the photo element with the given
-   * data-inline-photo index in the CURRENT slide DOM. Used by the convert
-   * flow: after "+ Add image" converts a text slide, the fresh placeholder
-   * gets the popover right away. No-op when the element isn't there (e.g. an
-   * async server-rendered custom type) - the placeholder itself stays
-   * clickable.
+   * Open the image picker on the photo element with the given data-inline-photo
+   * index in the CURRENT slide DOM. Used by the convert flow: after "+ Add
+   * image" converts a text slide, the fresh placeholder opens the picker right
+   * away. No-op when the element isn't there (e.g. an async server-rendered
+   * custom type) - the placeholder itself stays clickable.
    */
   function openMediaByIndex(idx) {
     const el = slideEl()?.querySelector(`[data-inline-photo="${idx}"]`);
-    if (el) openMediaFor(el);
+    if (el) openPickerForPhoto(el);
   }
 
   /**
    * Resolve the slide member + field keys a photo placeholder writes to, shared
-   * by the media popover (openMediaFor) and the drag & drop upload handler.
+   * by the image picker (openPickerForPhoto) and the drag & drop upload handler.
    *
    * Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
    * mutate slide.content directly, substituting `{n}` -> idx in the field keys
@@ -1217,42 +1227,47 @@ export function createInlineEditor({
     return null;
   }
 
-  function openMediaFor(photoEl) {
+  /**
+   * Set or replace a photo's image straight from the canvas: open the shared
+   * image picker (library / upload / ImageKit) on the resolved target and write
+   * the pick. Alt, fit, focus and delete all live in the inspector's "This
+   * image" tab now, so this is purely the pick step. After a pick the element
+   * is selected and its inspector tab opened, so the just-added image's other
+   * settings are one glance away.
+   */
+  function openPickerForPhoto(photoEl) {
     const target = resolveMediaTarget(photoEl);
     if (!target) return;
-    onSelectElement?.({ kind: 'image', idx: target.idx });
-    const { slide, idx, member, imageField, altField, extraFields } = target;
-
-    dismissMediaPopover();
-    const onEdit = () => {
-      markDirty?.();
-      requestSave?.();
-      rerenderEditor?.();
-    };
-    mediaPopover = openMediaPopover({
-      h,
-      host: mdHost,
-      anchorEl: photoEl,
-      member,
-      slide,
-      config: {
-        title: t('editor.inline.media.title', 'Image'),
-        imageField,
-        altField,
-        extraFields,
+    const { slide, idx, member, imageField, altField } = target;
+    const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+    openImagePicker({
+      title: t('editor.image.libraryTitle', 'Images'),
+      docId: pres?.id || '',
+      context: {
+        presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+        slideId: slide?.id || '',
+        slideType: slide?.type || '',
+        slideTitle:
+          slide?.content && typeof slide.content.title === 'string' ? slide.content.title : '',
       },
-      openImagePicker,
-      pres,
-      normalizeLang,
-      onChange: onEdit,
-      onVisualChange: () => {
-        onEdit();
-        rerenderPreview?.(); // image/LinkedIn changed → the card relayouts
-        const fresh = slideEl()?.querySelector(`[data-inline-photo="${idx}"]`);
-        if (fresh) mediaPopover?.reposition(fresh);
-      },
-      onClose: () => {
-        mediaPopover = null;
+      onPick: (picked) => {
+        member[imageField] = picked?.url || '';
+        // Keep the provider id in lock-step with the URL (see applyPickMeta).
+        if (picked?.providerId) member.imagekitFileId = picked.providerId;
+        else delete member.imagekitFileId;
+        // Seed alt from the pick's active-language metadata (or single seed),
+        // but never clobber an alt the user already wrote.
+        const alts = picked?.alts && typeof picked.alts === 'object' ? picked.alts : null;
+        const seed = (alts ? alts[activeLang] : picked?.alt) || '';
+        if (altField && !String(member[altField] || '').trim() && seed) {
+          member[altField] = seed;
+        }
+        markDirty?.();
+        requestSave?.();
+        rerenderEditor?.();
+        rerenderPreview?.();
+        // Show where the rest of this image's settings live.
+        onOpenElementSettings?.({ kind: 'image', idx });
       },
     });
   }
@@ -1395,120 +1410,19 @@ export function createInlineEditor({
       apply({ x: clampPct(x), y: clampPct(y) });
       commit();
     });
-    // A tap on the handle must not bubble to the media popover (image click).
+    // A tap on the handle must not bubble to the image click (select + open tab).
     pt.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
   }
 
-  // ----------------------------------------------------------------
-  // Cover / Contain fit toggle (descriptor `fit`)
-  // ----------------------------------------------------------------
-  // A small segmented control on each filled image, so the crop-vs-fit choice
-  // lives on the image instead of only in the inspector. Toggling rerenders
-  // (the frame relayouts and the focal point appears/disappears with the mode).
-  /**
-   * Resolve where a photo's fit reads/writes: reuse resolveMediaTarget for the
-   * member + index, then the descriptor's `fit` knob for the field key and the
-   * effective current mode (item value, else a slide-level fallback).
-   * @returns {{member:Object, key:string, mode:('cover'|'contain')}|null}
-   */
-  function resolveFitTarget(photoEl) {
-    const base = resolveMediaTarget(photoEl);
-    if (!base) return null;
-    const slide = getSlide?.();
-    const descriptor = slide
-      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
-      : null;
-    const fit = descriptor?.fit;
-    if (!fit) return null;
-    const { idx, member, media } = base;
-    const key = media.list ? fit.field : String(fit.field).replace('{n}', String(idx));
-    const raw =
-      member[key] ||
-      (typeof fit.fallback === 'function' ? fit.fallback(slide) : '');
-    return { member, key, mode: raw === 'contain' ? 'contain' : 'cover' };
-  }
-
-  /** A Cover/Contain segmented toggle on each filled image. */
-  function insertFitAffordances(root, _def, descriptor) {
-    if (!descriptor.fit || !descriptor.media?.photoSelector) return;
-    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
-      if (photo.classList.contains('is-empty')) continue; // filled images only
-      const ft = resolveFitTarget(photo);
-      if (!ft) continue;
-      const seg = h('div', {
-        class: 'ie-fit-toggle',
-        role: 'group',
-        'aria-label': t('editor.inline.fit.label', 'Image fit'),
-      });
-      const mkBtn = (mode, label) => {
-        const btn = h('button', {
-          class: `ie-fit-opt${ft.mode === mode ? ' is-on' : ''}`,
-          type: 'button',
-          'aria-pressed': ft.mode === mode ? 'true' : 'false',
-          text: label,
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (ft.mode === mode) return;
-            ft.member[ft.key] = mode;
-            markDirty?.();
-            requestSave?.();
-            rerenderPreview?.(); // frame relayouts; focal point re-evaluates
-          },
-        });
-        return btn;
-      };
-      seg.append(
-        mkBtn('cover', t('editor.inline.fit.cover', 'Cover')),
-        mkBtn('contain', t('editor.inline.fit.contain', 'Contain'))
-      );
-      overlay.place(seg, photo, 'inset-bottom-left', 8);
-    }
-  }
-
-  // ----------------------------------------------------------------
-  // "More settings" chip: the doorway from a canvas image to its inspector
-  // section. Focus + fit live on the image; the structural rest (side, width,
-  // background, zoom, role) stays in the rail, opened to the right place here.
-  // ----------------------------------------------------------------
-  function insertSettingsChip(root, _def, descriptor) {
-    if (typeof onOpenElementSettings !== 'function') return;
-    // Only image types that surface on-canvas layout (focus/fit) get the chip;
-    // it points at the inspector's image section for the rest.
-    if (!descriptor.media?.photoSelector || !(descriptor.focus || descriptor.fit)) return;
-    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
-      if (photo.classList.contains('is-empty')) continue; // filled images only
-      const chip = h('button', {
-        class: 'ie-elem-settings',
-        type: 'button',
-        title: t('editor.inline.settings.image', 'More image settings'),
-        'aria-label': t('editor.inline.settings.image', 'More image settings'),
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const target = resolveMediaTarget(photo);
-          onOpenElementSettings({ kind: 'image', idx: target ? target.idx : 0 });
-        },
-      }, [
-        // sliders icon (two rows with a knob each), inline SVG (no asset host)
-        h('svg', {
-          viewBox: '0 0 24 24', width: '14', height: '14', fill: 'none',
-          stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round',
-          'aria-hidden': 'true',
-        }, [
-          h('line', { x1: '4', y1: '8', x2: '20', y2: '8' }),
-          h('circle', { cx: '9', cy: '8', r: '2.4', fill: 'currentColor', stroke: 'none' }),
-          h('line', { x1: '4', y1: '16', x2: '20', y2: '16' }),
-          h('circle', { cx: '15', cy: '16', r: '2.4', fill: 'currentColor', stroke: 'none' }),
-        ]),
-        h('span', { text: t('editor.inline.settings.label', 'Settings') }),
-      ]);
-      overlay.place(chip, photo, 'inset-bottom-right', 8);
-    }
-  }
+  // Fit (Cover/Contain) and the per-image "Settings" doorway used to live on
+  // the image itself (a floating pill + a chip). Both moved into the inspector's
+  // "This image" element tab: fit is a discrete choice (inspector material), and
+  // a single click on the image now opens that tab directly, so no chip is
+  // needed. Nothing renders ON the image except the focal-point handle (direct
+  // manipulation) and the empty-slot "+ Add image" affordance.
 
   // ----------------------------------------------------------------
   // Type-switch affordances (descriptor `convert`: add/remove image area)
@@ -1612,17 +1526,6 @@ export function createInlineEditor({
     });
   }
 
-  function dismissMediaPopover() {
-    if (mediaPopover) {
-      try {
-        mediaPopover.close();
-      } catch {
-        /* ignore */
-      }
-      mediaPopover = null;
-    }
-  }
-
   // ----------------------------------------------------------------
   // Public: decorate the freshly-mounted slide
   // ----------------------------------------------------------------
@@ -1664,8 +1567,6 @@ export function createInlineEditor({
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
     insertFocusAffordances(root, def, descriptor);
-    insertFitAffordances(root, def, descriptor);
-    insertSettingsChip(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
 
@@ -1736,7 +1637,7 @@ export function createInlineEditor({
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.
-    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point, .ie-fit-toggle, .ie-elem-settings')) {
+    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point')) {
       coach.dismiss();
       e.preventDefault();
       return;
@@ -1754,13 +1655,21 @@ export function createInlineEditor({
       return;
     }
 
-    // Item photos open the media popover (image + alt + extra fields).
+    // Item photos: a single click selects the image and opens its "This image"
+    // inspector tab (Replace / alt / fit / focus all live there). An empty slot
+    // has nothing to settle on yet, so it opens the picker straight away.
+    // Replacing a filled image is the double-click (see onThumbDblClick).
     const photoEl = target.closest('[data-inline-photo]');
     if (photoEl && thumb.contains(photoEl)) {
       coach.dismiss();
       e.preventDefault();
       e.stopPropagation();
-      openMediaFor(photoEl);
+      if (photoEl.classList.contains('is-empty')) {
+        openPickerForPhoto(photoEl);
+      } else {
+        const target2 = resolveMediaTarget(photoEl);
+        onOpenElementSettings?.({ kind: 'image', idx: target2 ? target2.idx : 0 });
+      }
       return;
     }
 
@@ -1793,12 +1702,30 @@ export function createInlineEditor({
 
   thumb.addEventListener('click', onThumbClickCapture, true);
 
+  // Double-click a filled image to replace it: the fast path that keeps the
+  // slide clear of on-image controls. (Single click selects + opens the tab.)
+  function onThumbDblClick(e) {
+    if (!getCanEdit?.()) return;
+    if (isCommentAddMode?.()) return;
+    const target = e.target;
+    if (!target || !target.closest) return;
+    if (target.closest('.ie-focus-point')) return; // handled by the focal point
+    const photoEl = target.closest('[data-inline-photo]');
+    if (photoEl && thumb.contains(photoEl) && !photoEl.classList.contains('is-empty')) {
+      e.preventDefault();
+      e.stopPropagation();
+      openPickerForPhoto(photoEl);
+    }
+  }
+  thumb.addEventListener('dblclick', onThumbDblClick, true);
+
   function isEditing() {
     return !!editing || !!closeMarkdownModal;
   }
 
   function destroy() {
     thumb.removeEventListener('click', onThumbClickCapture, true);
+    thumb.removeEventListener('dblclick', onThumbDblClick, true);
     thumb.removeEventListener('pointermove', onThumbPointerMove);
     thumb.removeEventListener('pointerleave', onThumbPointerLeave);
     if (repositionRaf) cancelAnimationFrame(repositionRaf);
@@ -1806,7 +1733,6 @@ export function createInlineEditor({
     coach.destroy();
     cancelCommitRerender();
     dismissMarkdownModal();
-    dismissMediaPopover();
     restoreThumbTitle();
     if (editing) {
       try {
