@@ -12,7 +12,7 @@
  * legacy flat `image` migrates into images[0] and every rendered cell gets a
  * live item behind it (the WYSIWYG media popover mutates `images[idx]`).
  */
-import { renderFocusGridField } from '../focus-picker.js';
+import { renderImagePositionPicker } from '../image-position-picker.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import {
   IMAGE_TEXT_MAX_IMAGES,
@@ -210,24 +210,29 @@ export function renderImageTextImagesSection({
     const row = fieldGrid?.([altEl, fitEl].filter(Boolean), 2);
     if (row) card.append(row);
 
-    card.append(
-      renderFocusGridField({
-        h,
-        label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
-        helpText: t(
-          'editor.imageText.imageFocusHelp',
-          'Pick what should stay visible when the image is cropped.'
-        ),
-        focusX: image.focusX,
-        focusY: image.focusY,
-        onChange: ({ focusX, focusY }) => {
-          images[i].focusX = focusX;
-          images[i].focusY = focusY;
-          markDirty?.();
-          scheduleUiRefresh?.();
-        },
-      })
-    );
+    // Cover focus is set on the canvas (the draggable/keyboard focal point), so
+    // the picker returns nothing there; a contain image still gets its
+    // alignment control. Effective fit = the item's own fit, else slide-level.
+    const effFit =
+      typeof image.fit === 'string' && image.fit
+        ? image.fit
+        : content.imageFit || 'cover';
+    const posEl = renderImagePositionPicker({
+      h,
+      mode: effFit === 'contain' ? 'contain' : 'cover',
+      imageUrl: image.src,
+      containerSelector:
+        '.preview-panel .thumb.is-clickable-preview .slide-image-text.is-image-contain .frame',
+      focusX: image.focusX,
+      focusY: image.focusY,
+      onChange: ({ focusX, focusY }) => {
+        images[i].focusX = focusX;
+        images[i].focusY = focusY;
+        markDirty?.();
+        scheduleUiRefresh?.();
+      },
+    });
+    if (posEl) card.append(posEl);
 
     wrap.append(card);
   }
