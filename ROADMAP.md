@@ -122,3 +122,22 @@ it would only have been a second path to something that already works.)_
 - Constraint calibration: review maxLength values against real decks.
 - MCP extras: `compare_versions`, `batch_operations` (`export_presentation`
   shipped 2026-07-12 — PDF/PPTX/HTML/JSON/PNG download URLs).
+- **Comments → issues** — decouple a comment from a single slide: post a
+  deck-level comment, or detach an existing slide comment into a resolvable,
+  ownable "issue" (optional external sync / webhook). The data model is
+  already close (nullable `slide_id`, `open/resolved/dismissed` status,
+  `resolveComment`). Requested 2026-07-20; ready to brief, needs a design
+  session.
+- **Theme Studio form/UX pass** — the functional Theme Studio works but the
+  editor is a long scroll of panels; explore a wizard or other layout.
+  Requested 2026-07-20.
+- **Modern photo frames** — a manual, per-image editorial framing option
+  (beyond rounded corners / shadow) that scales in any aspect ratio and
+  matches the Lucide aesthetic — not a library of raster frame assets.
+  Requested 2026-07-20.
+- **Reusable content blocks on free-form slides** — let users place a
+  constrained palette of editorial components (complex bullet, placed image,
+  timeline element) on free-form slides within strict padding/alignment
+  rules, keeping the "stay strict so slides don't get ugly" philosophy while
+  giving more manual control. Requested 2026-07-20; largest of the four,
+  needs a dedicated session.
