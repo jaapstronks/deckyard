@@ -81,15 +81,15 @@
   width: 100%;
 }
 
+/* Sections are a uniform sunken tray. Tiles sit on their own elevated (white)
+   surface with a border, so each slide reads as a distinct card against the
+   tray — no matter its position. (The old even/odd alternation made tiles in
+   odd sections share the section's fill and vanish into it.) */
 .ps-type-group {
   padding: var(--ps-space-4);
   border-radius: var(--ps-radius-lg);
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
-}
-
-.ps-type-group:nth-child(even) {
-  background: hsl(var(--app-bg-elevated));
 }
 
 .ps-type-group-title {
@@ -368,7 +368,7 @@
 /* Denser tiles for schematics (they read clearly small); roomier for the
    real-slide previews so their text stays legible. */
 .ps-slide-types.is-schematic-mode .ps-type-grid-thumbs {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 124px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
 }
 .ps-slide-types.is-preview-mode .ps-type-grid-thumbs {
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
@@ -392,11 +392,12 @@
   margin-bottom: var(--ps-space-2);
 }
 .ps-slide-types.is-schematic-mode .ps-type-card-thumb .ps-type-labelwrap {
-  padding: 5px var(--ps-space-2);
+  padding: var(--ps-space-2);
 }
+/* Dense grid: the thin description was hard to read at this size, so drop it
+   and let the label breathe. The full text still surfaces as the card tooltip. */
 .ps-slide-types.is-schematic-mode .ps-type-desc {
-  font-size: 10px;
-  line-height: 1.2;
+  display: none;
 }
 
 @media (max-width: 520px) {
@@ -456,35 +457,41 @@
   overflow: hidden;
   flex-direction: column;
   align-items: stretch;
+  /* Own elevated surface + soft lift so the tile stands off the section tray. */
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-sm);
 }
 
 .ps-type-card.ps-type-card-thumb .ps-type-labelwrap {
   padding: var(--ps-space-2) var(--ps-space-3);
   text-align: left;
-  border-top: 1px solid hsl(var(--app-border-subtle));
-  background: hsl(var(--app-bg-sunken));
+  /* White label strip below the grey thumbnail: the border + surface flip give
+     the label real contrast against the slide preview above it. */
+  border-top: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
   min-width: 0;
 }
 
 .ps-type-card.ps-type-card-thumb .ps-type-label {
   display: block;
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  font-weight: 650;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Visible one-line description so a slide's purpose reads at a glance and the
-   right slide is easier to spot. */
+/* One-line description. Legible (secondary text), shown only in preview mode —
+   in the dense schematic grid it's noise, so it's hidden there and the card's
+   title attribute carries it as a tooltip instead (see is-schematic-mode). */
 .ps-type-desc {
   display: block;
-  margin-top: 1px;
-  font-size: 11px;
+  margin-top: 2px;
+  font-size: var(--ps-text-xs);
   font-weight: 400;
   line-height: 1.25;
-  color: hsl(var(--app-text-tertiary));
+  color: hsl(var(--app-text-secondary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -543,7 +550,9 @@
   --thumb-scale: 0.11;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: hsl(var(--app-bg-elevated));
+  /* Grey preview area so the white label strip below it reads as a distinct
+     band (and any slide letterboxing sits on neutral, not white). */
+  background: hsl(var(--app-bg-sunken));
   overflow: hidden;
   position: relative;
 }

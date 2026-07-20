@@ -44,6 +44,7 @@ const SLIDE_TYPE_ALIASES = {
   'content-slide': 'text body paragraph tekst inhoud',
   'quote-slide': 'testimonial pull quote citaat',
   'lijstje-slide': 'bullets list opsomming lijst',
+  'list-slide': 'list styled items opsomming lijst genummerd',
   'image-text-slide': 'photo text foto beeld tekst',
   'image-slide': 'photo full bleed foto beeld',
   'gallery-slide': 'photos images grid fotogalerij beelden',
@@ -113,6 +114,7 @@ const SLIDE_TYPE_DESC = {
   'content-slide': 'A heading with body text',
   'quote-slide': 'A pull quote with attribution',
   'lijstje-slide': 'A simple bulleted list',
+  'list-slide': 'A styled list of items',
   'image-text-slide': 'An image beside text',
   'image-slide': 'A single full-bleed image',
   'gallery-slide': 'A grid of images',
@@ -1035,6 +1037,9 @@ export function createSlideTypePicker({
       { type: 'content-columns-slide' },
       { type: 'quote-slide' },
       { type: 'lijstje-slide' },
+      // The styled "List" slide is a close cousin of the bulleted/numbered
+      // list, so it sits right next to it rather than adrift in "Other".
+      { type: 'list-slide' },
     ];
     const themeBasicTypes = Array.isArray(theme?.basicSlideTypes)
       ? theme.basicSlideTypes
@@ -1054,13 +1059,16 @@ export function createSlideTypePicker({
       { type: 'team-cards-slide' },
       { type: 'logo-wall-slide' },
     ];
+    // Layouts also absorbs the old "Process" group: process/timeline are just
+    // structured layouts, not different enough to warrant a section of their own
+    // (which showed 2 tiles and a wall of whitespace).
     const layoutDefs = [
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
       { type: 'freeform-slide' },
+      { type: 'process-slide' },
+      { type: 'timeline-slide' },
     ];
-    // Process sits above Data by request.
-    const processDefs = [{ type: 'process-slide' }, { type: 'timeline-slide' }];
     const dataDefs = [
       { type: 'table-slide' },
       { type: 'chart-slide' },
@@ -1094,7 +1102,6 @@ export function createSlideTypePicker({
       { key: 'basic', title: tr('editor.slideTypeGroup.basic', 'Basic'), defs: basicDefs.filter((d) => allowed(d.type)) },
       { key: 'media', title: tr('editor.slideTypeGroup.media', 'Media'), defs: mediaDefs.filter((d) => allowed(d.type)) },
       { key: 'layouts', title: tr('editor.slideTypeGroup.layouts', 'Layouts'), defs: layoutDefs.filter((d) => allowed(d.type)) },
-      { key: 'process', title: tr('editor.slideTypeGroup.process', 'Process'), defs: processDefs.filter((d) => allowed(d.type)) },
       { key: 'data', title: tr('editor.slideTypeGroup.data', 'Data'), defs: dataDefs.filter((d) => allowed(d.type)) },
       { key: 'interaction', title: tr('editor.slideTypeGroup.interaction', 'Interaction'), defs: interactionDefs.filter((d) => allowed(d.type)) },
       { key: 'custom', title: tr('editor.slideTypeGroup.custom', 'Custom'), defs: customDefs },
