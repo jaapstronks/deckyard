@@ -35,6 +35,7 @@ export const SLIDE_COPY = {
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Afbeelding',
+    logoPlaceholder: 'Logo',
 
     // Chart slide
     chartLegendLabel: 'Legenda',
@@ -83,6 +84,7 @@ export const SLIDE_COPY = {
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Image',
+    logoPlaceholder: 'Logo',
 
     // Chart slide
     chartLegendLabel: 'Legend',

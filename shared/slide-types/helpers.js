@@ -624,3 +624,43 @@ export function imagePlaceholderInnerHtml(label) {
     : '';
   return `<div class="image-placeholder-inner">${IMAGE_PLACEHOLDER_ICON}${text}</div>`;
 }
+
+/**
+ * A complete empty-image placeholder box.
+ *
+ * Every slide type with an image slot renders one of these, so they share a
+ * base class (`image-placeholder`), the glyph, the `is-empty` hook the inline
+ * editor keys off, and `aria-hidden` — the box is decorative, the accessible
+ * affordance is the editor's "Add image" chip.
+ *
+ * What stays per type is the *modifier* class, because that is what each
+ * type's own CSS targets to size and colour its slot (a 112px round portrait
+ * and a full-bleed image frame have nothing in common there).
+ *
+ * @param {Object} [options]
+ * @param {string} [options.className] - Type modifier, e.g. `quote-portrait`.
+ * @param {string} [options.label] - Localised label; omit for icon-only.
+ * @param {number|string} [options.index] - `data-inline-photo` value. Omit to
+ *   leave the attribute off entirely (freeform uses its own hooks).
+ * @param {boolean} [options.compact] - Small slot: shrink the glyph, drop the
+ *   label. For round portraits and logo cells, where a label cannot fit.
+ * @param {string} [options.attrs] - Extra pre-rendered attributes.
+ * @returns {string}
+ */
+export function imagePlaceholderHtml({
+  className = '',
+  label = '',
+  index,
+  compact = false,
+  attrs = '',
+} = {}) {
+  const classes = ['image-placeholder', className, compact ? 'is-compact' : '', 'is-empty']
+    .filter(Boolean)
+    .join(' ');
+  // String() first: esc() collapses falsy input to '', which would silently
+  // drop index 0 — the first slot of every deck.
+  const photoAttr =
+    index === undefined || index === null ? '' : ` data-inline-photo="${esc(String(index))}"`;
+  const inner = imagePlaceholderInnerHtml(compact ? '' : label);
+  return `<div class="${classes}"${photoAttr}${attrs} aria-hidden="true">${inner}</div>`;
+}

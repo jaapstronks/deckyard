@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  imagePlaceholderInnerHtml,
+  imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
   BACKGROUND_FIELD,
@@ -510,9 +510,7 @@ export default {
         ? `<img src="${esc(item.src)}" alt="${esc(
             alt
           )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
-        : `<div class="image-placeholder is-empty" data-inline-photo="${idx}" aria-hidden="true">
-          ${imagePlaceholderInnerHtml(copy.imagePlaceholder)}
-        </div>`;
+        : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: idx });
       // The shared caption lives in the first frame (absolute, bottom-left).
       return `<figure class="frame${fitClass}">
                   ${inner}

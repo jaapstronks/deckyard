@@ -137,7 +137,31 @@ renderer lacks the field.
 - **Images** → clicking an element tagged `data-inline-photo` opens the
   media popover (image via the shared `openImagePicker` seam + alt text +
   optional extras like a LinkedIn URL), including first-image-into-empty-slot
-  where the type renders a placeholder.
+  where the type renders a placeholder. Preview and alt only appear once
+  there **is** an image; on an empty slot focus starts on "Choose / upload…".
+
+### The empty-image placeholder
+
+Every empty slot is one `imagePlaceholderHtml()` box
+(`shared/slide-types/helpers.js`), used by image, image-text, gallery,
+content-columns, logo-wall, quote, team-cards and freeform. It emits the
+shared `image-placeholder` base class, the glyph, `is-empty` (the hook the
+inline editor keys off), and `aria-hidden` — the box is decorative; the
+accessible affordance is the "Add image" chip.
+
+Each type keeps a **modifier** class (`quote-portrait`, `cc-image-placeholder`,
+…) because that is what its own CSS targets to size and colour the slot; a
+112px round portrait and a full-bleed frame share nothing there. Base styling
+lives in `client/styles/slides/00-patterns.css`.
+
+Labels come from `SLIDE_COPY` via `ctx.lang` — they used to be hardcoded per
+type, which is how image-text said "Afbeelding" while image-slide said "Image"
+in the same deck. Small slots pass `compact: true`: the helper drops the label
+(it cannot fit) and the glyph scales with the slot instead of a fixed 72px.
+
+The chip is centred on the placeholder and says the same thing as the glyph,
+so the placeholder's inner fades on hover — one rule, keyed on the shared base
+class, in `105-inline-edit.css`.
 - **Image drag & drop** → an EMPTY `data-inline-photo` placeholder (and its
   overlaid `+ Add image` chip) is a drop target for an image file dragged from
   the desktop. A dropped file is always an *upload* (browse-vs-upload split), so

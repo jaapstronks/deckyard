@@ -4,6 +4,7 @@ import {
   gradientVarsForSlide,
   pickAltText,
   styleAttrFromVars,
+  imagePlaceholderHtml,
 } from '../helpers.js';
 
 // Portraits on the primary (legacy) quote: two slots so a shared quote (a duo)
@@ -29,7 +30,7 @@ function portraitHtml(src, alt, inlineIdx) {
  * `inlineIdx` is the 1-based slot number. */
 function placeholderPortraitHtml(inlineIdx) {
   return `
-              <div class="quote-portrait is-empty" data-inline-photo="${inlineIdx}" aria-hidden="true"></div>`;
+              ${imagePlaceholderHtml({ className: 'quote-portrait', index: inlineIdx, compact: true })}`;
 }
 
 /** Wrap portrait parts in their container (or nothing when there are none). */

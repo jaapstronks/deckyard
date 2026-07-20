@@ -1,6 +1,6 @@
 import {
   esc,
-  imagePlaceholderInnerHtml,
+  imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
   getSubheadingText,
@@ -260,9 +260,7 @@ export default {
             alt
           )}"${ariaDecorative}${focusStyle} />`;
         })()
-      : `<div class="image-placeholder is-empty" data-inline-photo="0" aria-hidden="true">
-          ${imagePlaceholderInnerHtml(copy.imagePlaceholder)}
-        </div>`;
+      : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(content.caption)}</figcaption>`
       : '';

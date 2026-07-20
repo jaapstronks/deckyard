@@ -104,7 +104,7 @@ test('team-cards: legacy numbered deck emits members[] paths + clickable photo',
   const def = SLIDE_TYPES['team-cards-slide'];
   const content = { cardCount: '1', card1Name: 'Ada', card1Byline: 'Engineer' };
   const html = def.renderHtml(content);
-  assert.match(html, /team-card-photo is-empty[^>]*data-inline-photo="0"/s);
+  assert.match(html, /class="[^"]*team-card-photo[^"]*is-empty"[^>]*data-inline-photo="0"/s);
   assert.match(html, /data-inline-field="members\.0\.name"/);
   assert.match(html, /data-inline-item="members"[^>]*data-inline-item-index="0"/s);
 });
@@ -125,7 +125,7 @@ test('quote: empty primary portrait slot is clickable in edit mode only', () => 
   const content = { quote: 'Hi', authorName: 'Ada', authorTitle: 'Eng' };
 
   const editHtml = def.renderHtml(content, {}, { mode: 'edit' });
-  assert.match(editHtml, /quote-portrait is-empty[^>]*data-inline-photo="1"/s);
+  assert.match(editHtml, /class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="1"/s);
 
   for (const ctx of [undefined, {}, { mode: 'present' }]) {
     const html = def.renderHtml(content, {}, ctx);
@@ -144,7 +144,7 @@ test('quote: a filled first portrait shows the next empty slot as the add target
   const html = def.renderHtml(content, {}, { mode: 'edit' });
   // slot 1 filled (img), slot 2 offered as the empty placeholder
   assert.match(html, /<div class="quote-portrait" data-inline-photo="1">/);
-  assert.match(html, /quote-portrait is-empty[^>]*data-inline-photo="2"/s);
+  assert.match(html, /class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="2"/s);
 });
 
 /**
@@ -155,10 +155,23 @@ test('quote: a filled first portrait shows the next empty slot as the add target
  * image-slide said "Image", regardless of deck language.
  */
 
-const PLACEHOLDER_TYPES = ['image-slide', 'image-text-slide', 'gallery-slide'];
+/** Types that render a labelled placeholder (slot big enough for text). */
+const LABELLED_TYPES = ['image-slide', 'image-text-slide', 'gallery-slide'];
+
+/** Every type with an empty image slot, and content that produces one. */
+const ALL_PLACEHOLDER_TYPES = [
+  ['image-slide', {}],
+  ['image-text-slide', {}],
+  ['gallery-slide', { images: [{}] }],
+  ['content-columns-slide', { columnCount: 2 }],
+  ['logo-wall-slide', {}],
+  ['quote-slide', { quote: 'Hi' }],
+  ['team-cards-slide', { members: [{ name: 'A' }] }],
+  ['freeform-slide', { elements: [{ id: 'e1', type: 'image' }] }],
+];
 
 test('every empty placeholder carries the shared icon + label inner', () => {
-  for (const type of PLACEHOLDER_TYPES) {
+  for (const type of LABELLED_TYPES) {
     const html = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { mode: 'edit' });
     assert.ok(
       html.includes('image-placeholder-inner'),
@@ -172,7 +185,7 @@ test('every empty placeholder carries the shared icon + label inner', () => {
 });
 
 test('the placeholder label follows the deck language', () => {
-  for (const type of PLACEHOLDER_TYPES) {
+  for (const type of LABELLED_TYPES) {
     const nl = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { lang: 'nl' });
     const en = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { lang: 'en-GB' });
     assert.match(nl, /image-placeholder-text">Afbeelding/, `${type}: nl label`);
@@ -196,7 +209,7 @@ test('placeholders stay decorative for screen readers', () => {
   // The accessible affordance is the editor's "Add image" chip; the
   // placeholder box itself must not be announced. Gallery used to be the one
   // that forgot this.
-  for (const type of PLACEHOLDER_TYPES) {
+  for (const type of LABELLED_TYPES) {
     const html = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { mode: 'edit' });
     const boxes = html.match(/<div class="[^"]*placeholder[^"]* is-empty"[^>]*>/g) || [];
     assert.ok(boxes.length > 0, `${type}: expected an empty placeholder box`);
@@ -214,4 +227,76 @@ test('a filled slot renders no placeholder at all', () => {
   );
   assert.ok(!gallery.includes('image-placeholder-inner'));
   assert.match(gallery, /<img[^>]*src="\/a\.png"/);
+});
+
+/**
+ * Consolidation (2026-07-20): every empty image slot is one
+ * `imagePlaceholderHtml()` box, so they share a base class and the glyph
+ * lives in exactly one place. Before this, eight slide types each inlined
+ * their own markup and three carried byte-identical copies of the same SVG.
+ */
+
+test('every slide type with an image slot renders the shared placeholder box', () => {
+  for (const [type, content] of ALL_PLACEHOLDER_TYPES) {
+    const html = SLIDE_TYPES[type].renderHtml(content, {}, { mode: 'edit', lang: 'nl' });
+    assert.match(
+      html,
+      /<div class="image-placeholder[^"]*"/,
+      `${type}: expected the shared placeholder base class`
+    );
+    assert.ok(html.includes('image-placeholder-icon'), `${type}: expected the shared glyph`);
+  }
+});
+
+test('each type keeps its own modifier class for sizing and colour', () => {
+  const modifiers = {
+    'gallery-slide': 'gallery-image-placeholder',
+    'content-columns-slide': 'cc-image-placeholder',
+    'logo-wall-slide': 'logo-wall-placeholder',
+    'quote-slide': 'quote-portrait',
+    'team-cards-slide': 'team-card-photo',
+    'freeform-slide': 'freeform-image-placeholder',
+  };
+  for (const [type, content] of ALL_PLACEHOLDER_TYPES) {
+    const modifier = modifiers[type];
+    if (!modifier) continue; // image/image-text use the base class itself
+    const html = SLIDE_TYPES[type].renderHtml(content, {}, { mode: 'edit', lang: 'nl' });
+    assert.ok(html.includes(modifier), `${type}: lost its ${modifier} modifier`);
+  }
+});
+
+test('small slots are compact and carry no label', () => {
+  // A 112px round portrait or a logo cell cannot fit a label; the helper
+  // drops it rather than each type remembering to leave it out.
+  for (const type of ['quote-slide', 'team-cards-slide', 'freeform-slide']) {
+    const content = ALL_PLACEHOLDER_TYPES.find(([t]) => t === type)[1];
+    const html = SLIDE_TYPES[type].renderHtml(content, {}, { mode: 'edit', lang: 'nl' });
+    assert.ok(html.includes('is-compact'), `${type}: expected the compact modifier`);
+    assert.ok(
+      !html.includes('image-placeholder-text'),
+      `${type}: a compact placeholder must not render a label`
+    );
+  }
+});
+
+test('the logo-wall label is localised, not hardcoded', () => {
+  const def = SLIDE_TYPES['logo-wall-slide'];
+  assert.match(def.renderHtml({}, {}, { mode: 'edit', lang: 'nl' }), /image-placeholder-text">Logo/);
+  assert.match(def.renderHtml({}, {}, { mode: 'edit', lang: 'en-GB' }), /image-placeholder-text">Logo/);
+});
+
+test('content-columns placeholders are labelled and follow the language', () => {
+  const def = SLIDE_TYPES['content-columns-slide'];
+  const content = { columnCount: 2 };
+  assert.match(def.renderHtml(content, {}, { mode: 'edit', lang: 'nl' }), /image-placeholder-text">Afbeelding/);
+  assert.match(def.renderHtml(content, {}, { mode: 'edit', lang: 'en-GB' }), /image-placeholder-text">Image/);
+});
+
+test('the placeholder glyph is defined in exactly one place', () => {
+  // A duplicated SVG is how the label drifted (Afbeelding vs Image) in the
+  // first place, so the helper owning it is the thing worth pinning.
+  const boxes = SLIDE_TYPES['gallery-slide']
+    .renderHtml({ images: [{}, {}] }, {}, { mode: 'edit', lang: 'nl' })
+    .match(/image-placeholder-icon/g);
+  assert.equal(boxes.length, 2, 'one glyph per empty slot, from the shared helper');
 });

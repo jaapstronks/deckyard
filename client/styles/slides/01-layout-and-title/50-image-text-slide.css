@@ -212,9 +212,7 @@
       rgba(0, 0, 0, 0) 55%
     ),
     rgba(255, 255, 255, 0.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* centring comes from the shared .image-placeholder base (00-patterns.css) */
   color: rgba(0, 0, 0, 0.55);
 }
 
