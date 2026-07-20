@@ -256,7 +256,7 @@
    RESPONSIVE
    =========================================== */
 
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .slide-pyramid .pyramid-container {
     gap: 4px;
   }

@@ -557,7 +557,7 @@
    SETTINGS MODAL MOBILE RESPONSIVENESS
    ============================================================ */
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   /* Make modal full-screen on mobile */
   .modal-backdrop .modal.ps-modal {
     width: 100%;
@@ -833,7 +833,7 @@
 }
 
 /* Mobile responsive */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .analytics-provider-description,
   .analytics-provider-privacy-note,
   .analytics-provider-config,
