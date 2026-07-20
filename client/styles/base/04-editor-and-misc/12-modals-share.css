@@ -13,6 +13,127 @@
   margin-bottom: var(--ps-space-4);
 }
 
+/* ---- Tabs + scrollable body (unified Share dialog) ---- */
+.share-tabs {
+  margin: var(--ps-space-3) 0 var(--ps-space-4);
+}
+
+.share-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.share-tab-panel[hidden] {
+  display: none;
+}
+
+/* ---- Workspace visibility section ---- */
+.share-visibility-section {
+  padding: var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-visibility-section .share-options {
+  margin: var(--ps-space-3) 0 0;
+}
+
+.share-option.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.share-option.is-disabled:hover {
+  border-color: hsl(var(--app-border-default));
+  background: transparent;
+}
+
+/* Access sub-choice (view/full), shown under the "everyone" option. */
+.share-visibility-access {
+  display: flex;
+  gap: var(--ps-space-2);
+  margin: calc(var(--ps-space-2) * -1) 0 0 var(--ps-space-4);
+  padding-left: var(--ps-space-4);
+}
+
+.share-access-pill {
+  font-size: var(--ps-text-sm);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-secondary));
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.share-access-pill:hover {
+  border-color: hsl(var(--app-accent-primary));
+}
+
+.share-access-pill.is-active {
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.08);
+  font-weight: 600;
+}
+
+/* Notification hint under the invite form + cross-reference hints. */
+.share-notify-hint {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-success));
+  margin-bottom: var(--ps-space-3);
+}
+
+/* ---- Publish section ---- */
+.share-publish-help {
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-publish-url-row {
+  display: flex;
+  gap: var(--ps-space-2);
+  align-items: center;
+  margin-bottom: var(--ps-space-3);
+}
+
+.share-publish-url {
+  flex: 1;
+  min-width: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: var(--ps-text-sm);
+}
+
+.share-publish-actions {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--ps-space-3);
+}
+
+.share-xref-hint {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.share-xref-hint .link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: hsl(var(--app-accent-primary));
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.share-xref-hint .link-button:hover {
+  text-decoration: none;
+}
+
 .share-section-title {
   font-weight: 700;
   font-size: var(--ps-text-base);

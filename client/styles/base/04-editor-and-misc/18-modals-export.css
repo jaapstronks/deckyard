@@ -37,11 +37,44 @@
   flex-direction: column;
 }
 
+.export-format-list > .export-format-row,
+.export-format-list > .export-format-rowwrap {
+  margin-bottom: 6px;
+}
+
 .export-format-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 4px;
+  padding: 10px 12px;
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-md, 8px);
+  background: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+/* Rows with a single action are clickable anywhere on the strip. The hover
+   state makes the whole target legible and pushes the Export button to accent
+   so the click destination is obvious. */
+.export-format-row.is-clickable {
+  cursor: pointer;
+}
+
+.export-format-row.is-clickable:hover {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-default));
+}
+
+.export-format-row.is-clickable:hover .export-format-actions .btn-secondary {
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-accent-primary));
+}
+
+/* Cross-reference from the HTML export to its hosted twin (Publish). */
+.export-format-hint {
+  font-size: 12px;
+  color: hsl(var(--app-text-muted));
+  padding: 2px 12px 4px 58px;
 }
 
 .export-format-icon {

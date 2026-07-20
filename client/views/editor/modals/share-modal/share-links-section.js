@@ -30,7 +30,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
   header.append(
     h('div', {
       class: 'share-section-title',
-      text: t('share.links.sectionTitle', 'Share Links (External Guests)'),
+      text: t('share.links.sectionTitle', 'Anyone with the link'),
     })
   );
 
@@ -39,7 +39,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     class: 'help share-modal-help',
     text: t(
       'share.modal.help',
-      'Create shareable links to give external users access without requiring an account.'
+      'Create a link that works without a Deckyard account.'
     ),
   });
 

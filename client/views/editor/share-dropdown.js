@@ -1,6 +1,10 @@
 /**
- * Share dropdown - sharing and publishing options.
- * Contains: Share links, Share to workspace, Publish/Unpublish, Add to Notion
+ * Share button — opens the unified Share dialog.
+ *
+ * This used to render a dropdown menu ("Share links…", "Share to workspace",
+ * "Move to private", Publish/Unpublish, Notion). Those overlapping entries are
+ * now one dialog (`modals/share-modal`) with Workspace / Link / Publish tabs;
+ * the button just opens it and keeps its published-state indicator in sync.
  */
 
 import { lockDocumentScroll } from './editor-utils.js';
@@ -9,12 +13,9 @@ import { openPublishModal } from './publish-export/publish-modal.js';
 import { doPublish, buildPublishModalData } from './publish-export/publish.js';
 import { openShareModal } from './modals/share-modal.js';
 import { openDescriptionModal } from './modals/description-modal.js';
-import { makeDropdownCaret } from '../../lib/icons.js';
-import { createDropdown } from '../../lib/dropdown.js';
-import { confirmModal } from '../../lib/modal.js';
+import { openExportModal } from './export-modal.js';
 import { t } from '../../lib/ui-i18n.js';
-import { handleShareToWorkspace, handleMoveToPrivate, handleNotionPublish } from './share-dropdown/share-actions.js';
-import { createSyncShareUi } from './share-dropdown/ui-sync.js';
+import { handleNotionPublish } from './share-dropdown/share-actions.js';
 
 export function setupShareDropdown({
   h,
@@ -31,10 +32,52 @@ export function setupShareDropdown({
   currentUserEmail,
   isAdmin,
 } = {}) {
-  let syncShareUi = () => {};
   let notionAvailable = false;
+  let dialog = null;
 
-  const doPublishWithModal = async () =>
+  const button = h('button', {
+    class: 'btn btn-secondary',
+    type: 'button',
+    text: t('editor.share.button', 'Share'),
+    title: t('editor.share.title', 'Share and publish options'),
+  });
+
+  /** Update the published-state indicator on the button (and any open dialog). */
+  function syncShareUi() {
+    const isPublished = !!(typeof pres?.published?.id === 'string' && pres.published.id);
+    button.classList.toggle('btn-published', isPublished);
+    try {
+      const existingDot = button.querySelector('.live-dot');
+      if (isPublished && !existingDot) {
+        button.insertBefore(
+          h('span', { class: 'live-dot', 'aria-hidden': 'true', text: '●' }),
+          button.firstChild
+        );
+      } else if (!isPublished && existingDot) {
+        existingDot.remove();
+      }
+    } catch {
+      // ignore
+    }
+    dialog?.refresh?.();
+  }
+
+  // Bound helpers passed into the dialog's Publish tab.
+  const openPublishModalBound = (data) =>
+    openPublishModal({
+      ...data,
+      h,
+      api,
+      pres,
+      id,
+      root,
+      openOverlayClosers,
+      lockDocumentScroll,
+      copyToClipboard,
+      syncPublishUi: syncShareUi,
+    });
+
+  const doPublishBound = ({ openPublishModal: opm } = {}) =>
     doPublish({
       h,
       root,
@@ -43,213 +86,59 @@ export function setupShareDropdown({
       pres,
       id,
       requestSave,
-      openPublishModal: (data) =>
-        openPublishModal({
-          ...data,
-          h,
-          api,
-          pres,
-          id,
-          root,
-          openOverlayClosers,
-          lockDocumentScroll,
-          copyToClipboard,
-          syncPublishUi: syncShareUi,
-        }),
+      openPublishModal: opm || openPublishModalBound,
       openOverlayClosers,
     });
 
-  const summaryLabel = h('span', { text: t('editor.share.button', 'Share') });
-  const { details: shareDetails, summary: shareSummary, menu, close, detach } = createDropdown({
-    h,
-    triggerClass: 'btn btn-secondary',
-    triggerContent: [summaryLabel, makeDropdownCaret()],
-    title: t('editor.share.title', 'Share and publish options'),
+  const openExport = () =>
+    openExportModal({ pres, id, root: root || document.body, overlayClosers: openOverlayClosers });
+
+  button.addEventListener('click', () => {
+    dialog = openShareModal({
+      h,
+      api,
+      pres,
+      id,
+      root,
+      openOverlayClosers,
+      lockDocumentScroll,
+      copyToClipboard,
+      toast,
+      currentUserEmail,
+      isAdmin,
+      isDirty,
+      requestSave,
+      editorState,
+      syncShareUi,
+      openDescriptionModal,
+      doPublish: doPublishBound,
+      buildPublishModalData,
+      openPublishModal: openPublishModalBound,
+      handleNotionPublish: () => handleNotionPublish({ api, toast, pres }),
+      notionAvailable: () => notionAvailable,
+      openExport,
+    });
   });
 
-  // Share links (token-based external sharing)
-  const shareLinksItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.share.links', 'Share links...'),
-    title: t('editor.share.links.title', 'Create shareable links for external users (no account required).'),
-    onclick: () => {
-      close();
-      openShareModal({
-        h,
-        api,
-        pres,
-        id,
-        root,
-        openOverlayClosers,
-        lockDocumentScroll,
-        copyToClipboard,
-        toast,
-        currentUserEmail,
-      });
-    },
-  });
-
-  // Share to workspace
-  const shareToWorkspaceItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.share.workspace', 'Share to workspace'),
-    title: t('editor.share.workspace.title', 'Make this presentation available to everyone in the workspace.'),
-    onclick: async () => {
-      close();
-      await handleShareToWorkspace({
-        h,
-        api,
-        toast,
-        pres,
-        id,
-        root,
-        isDirty,
-        requestSave,
-        openDescriptionModal,
-        openOverlayClosers,
-        syncShareUi,
-        editorState,
-      });
-    },
-  });
-
-  // Move to private (admin only)
-  const moveToPrivateItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.share.private', 'Move to private'),
-    title: t('editor.share.private.title', 'Move this presentation from workspace to your private collection.'),
-    onclick: async () => {
-      close();
-      await handleMoveToPrivate({
-        api,
-        toast,
-        pres,
-        id,
-        isDirty,
-        requestSave,
-        syncShareUi,
-        editorState,
-      });
-    },
-  });
-
-  // Publish
-  const publishItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.publish.publish', 'Publish'),
-    onclick: async () => {
-      close();
-      try {
-        // If already published, just open the modal with existing data (fast path)
-        if (pres?.published?.id) {
-          const modalData = buildPublishModalData({ pres });
-          openPublishModal({
-            ...modalData,
-            h,
-            api,
-            pres,
-            id,
-            root,
-            openOverlayClosers,
-            lockDocumentScroll,
-            copyToClipboard,
-            syncPublishUi: syncShareUi,
-          });
-          return;
-        }
-        // Not published yet - go through full publish flow
-        const pub = await doPublishWithModal();
-        if (!pub) return;
-        syncShareUi();
-      } catch (e) {
-        onError?.(e);
-      }
-    },
-  });
-
-  // Unpublish
-  const unpublishItem = h('button', {
-    class: 'dropdown-item is-danger',
-    type: 'button',
-    text: t('editor.publish.unpublish', 'Unpublish'),
-    onclick: async () => {
-      close();
-      const publishId = typeof pres?.published?.id === 'string' ? pres.published.id : '';
-      if (!publishId) return;
-      const ok = await confirmModal(h, root || document.body, {
-        title: t('editor.publish.unpublish', 'Unpublish'),
-        message: t(
-          'editor.publish.unpublish.confirm',
-          'Unpublish?\n\nThis will invalidate the public link and embed links.'
-        ),
-        confirmLabel: t('editor.publish.unpublish', 'Unpublish'),
-        danger: true,
-      });
-      if (!ok) return;
-      try {
-        await api(`/api/presentations/${id}/publish`, { method: 'DELETE' });
-        delete pres.published;
-        syncShareUi();
-      } catch (e) {
-        onError?.(e);
-      }
-    },
-  });
-
-  // Add to Notion page
-  const notionPublishItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.publish.notion', 'Add to Notion page'),
-    onclick: async () => {
-      close();
-      await handleNotionPublish({ api, toast, pres });
-    },
-  });
-  notionPublishItem.style.display = 'none';
-
-  // Check if Notion is available
+  // Check whether Notion publishing is available (drives the Notion action).
   api('/api/notion/status')
     .then((resp) => {
       notionAvailable = !!resp?.enabled;
-      syncShareUi();
     })
     .catch(() => {
       notionAvailable = false;
     });
 
-  // Assemble menu
-  menu.append(
-    shareLinksItem,
-    shareToWorkspaceItem,
-    moveToPrivateItem,
-    h('div', { class: 'dropdown-sep' }),
-    publishItem,
-    unpublishItem,
-    notionPublishItem
-  );
-
-  // Initially hide moveToPrivateItem (will be shown via syncShareUi if appropriate)
-  moveToPrivateItem.style.display = 'none';
-
-  // Create syncShareUi function
-  syncShareUi = createSyncShareUi({
-    h,
-    pres,
-    isAdmin,
-    notionAvailable: () => notionAvailable,
-    summaryLabel,
-    shareSummary,
-    publishItem,
-    unpublishItem,
-    moveToPrivateItem,
-    notionPublishItem,
-  });
   syncShareUi();
 
-  return { shareEl: shareDetails, syncShareUi, detach };
+  const detach = () => {
+    try {
+      dialog?.close?.();
+    } catch {
+      // ignore
+    }
+    dialog = null;
+  };
+
+  return { shareEl: button, syncShareUi, detach };
 }
