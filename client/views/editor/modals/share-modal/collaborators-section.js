@@ -86,10 +86,17 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
 
   form.append(formRow, progressEl);
 
+  // Invited colleagues get a notification — make that explicit, since this is
+  // not link-copying (the reason "Share Links" never described this section).
+  const notifyHint = h('div', {
+    class: 'share-notify-hint',
+    text: t('share.collaborators.notifyHint', 'Invited people get a notification.'),
+  });
+
   // Collaborators list
   const list = h('div', { class: 'share-collaborators-list' });
 
-  section.append(title, helpText, form, list);
+  section.append(title, helpText, form, notifyHint, list);
 
   function updateExcludeEmails() {
     // Exclude owner, current user, and existing collaborators

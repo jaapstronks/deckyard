@@ -177,6 +177,18 @@ function buildFormatRow(fmt, { id, getLang, title }) {
   const actions = h('span', { class: 'export-format-actions' });
   const row = h('div', { class: 'export-format-row' }, [icon, meta, actions]);
 
+  // Make the whole strip trigger a single primary action, so the reader doesn't
+  // have to hunt for the small button. Rows with two actions (Notes) opt out —
+  // there is no unambiguous primary there. Clicks that land on the button/link
+  // itself are ignored here so the action never fires twice.
+  const makeClickable = (trigger) => {
+    row.classList.add('is-clickable');
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('button, a')) return;
+      trigger();
+    });
+  };
+
   if (fmt.key === 'pdf') {
     const fallbackWrap = h('div', { class: 'export-format-fallback', hidden: true });
     const btn = h('button', {
@@ -186,6 +198,7 @@ function buildFormatRow(fmt, { id, getLang, title }) {
       onclick: () => exportPdf({ id, getLang, title, button: btn, fallbackWrap }),
     });
     actions.append(btn);
+    makeClickable(() => btn.click());
     return h('div', { class: 'export-format-rowwrap' }, [row, fallbackWrap]);
   }
 
@@ -211,6 +224,21 @@ function buildFormatRow(fmt, { id, getLang, title }) {
       onclick: () => runExport(id, fmt.path, getLang(), fmt.open),
     })
   );
+  makeClickable(() => runExport(id, fmt.path, getLang(), fmt.open));
+
+  // The self-contained HTML export is the offline twin of Publish (same build).
+  // Point users at the hosted, always-current alternative so they can choose.
+  if (fmt.key === 'html') {
+    const hint = h('div', {
+      class: 'export-format-hint',
+      text: t(
+        'editor.export.publishHint',
+        'Want a link that stays current and revocable? Publish it from the Share menu.'
+      ),
+    });
+    return h('div', { class: 'export-format-rowwrap' }, [row, hint]);
+  }
+
   return row;
 }
 
