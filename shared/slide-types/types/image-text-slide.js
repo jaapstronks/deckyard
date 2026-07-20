@@ -440,14 +440,6 @@ export default {
         layoutRaw === 'row-bottom')
         ? ' is-text-cols-2'
         : '';
-    // Container-level fit = the slide-level base `imageFit` (its own CSS
-    // mechanism: `.media` padding). Per-cell deviations ride `.frame.is-fit-*`.
-    // Fit stays slide-level until step 3 unifies the two CSS mechanisms; see
-    // docs/reference/image-property-ownership.md.
-    const fit =
-      content?.imageFit === 'contain'
-        ? 'is-image-contain'
-        : 'is-image-cover';
     const imgBg =
       content?.imageBackground === 'match'
         ? 'is-image-bg-match'
@@ -470,12 +462,15 @@ export default {
     const ariaDecorative =
       imageRole === 'decorative' ? ' aria-hidden="true"' : '';
     const cells = imageTextCellCount(content);
-    // One <figure class="frame"> per cell. The item-wins + cell-0-slide-fallback
-    // precedence lives in resolveImageTextCell (the single authority render, the
-    // canvas focal drag and the inspector share); a per-item fit only adds a
-    // class when it overrides the slide-level fit.
+    // One <figure class="frame"> per cell, each carrying its *effective* fit as
+    // an is-fit-* class - the single CSS mechanism for fit (frame padding). The
+    // item-wins precedence lives in resolveImageTextCell (the single authority
+    // render, the canvas focal drag and the inspector share); whether the fit
+    // came from the item, the slide-level base or the type default is invisible
+    // in the emitted HTML, which is what makes the step-2b data fan-out
+    // render-neutral (see docs/reference/image-property-ownership.md).
     const cellHtml = (idx) => {
-      const { item, fitOverride, focusSource, altExplicit } =
+      const { item, fit: cellFit, focusSource, altExplicit } =
         resolveImageTextCell(content, idx);
       const alt =
         imageRole === 'decorative'
@@ -488,12 +483,7 @@ export default {
             });
       // For cover this controls crop focus; for contain, alignment.
       const focusStyle = objectPositionStyleAttrFromFocus(focusSource);
-      const fitClass =
-        fitOverride === 'contain'
-          ? ' is-fit-contain'
-          : fitOverride === 'cover'
-            ? ' is-fit-cover'
-            : '';
+      const fitClass = cellFit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
       // data-inline-photo: clicking the image in the editor opens the
       // media popover (image + alt); inert on every other surface.
       const inner = item.src
@@ -512,7 +502,7 @@ export default {
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
+        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
           <div class="slide-inner">
             <div class="split ${side}">
               <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">

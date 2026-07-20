@@ -226,7 +226,7 @@ export function renderImageTextImagesSection({
         mode: 'contain',
         imageUrl: image.src,
         containerSelector:
-          '.preview-panel .thumb.is-clickable-preview .slide-image-text.is-image-contain .frame',
+          '.preview-panel .thumb.is-clickable-preview .slide-image-text .frame.is-fit-contain',
         focusX: image.focusX,
         focusY: image.focusY,
         onChange: ({ focusX, focusY }) => {
