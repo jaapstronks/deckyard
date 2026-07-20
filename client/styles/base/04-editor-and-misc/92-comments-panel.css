@@ -335,6 +335,41 @@
   user-select: all;
 }
 
+/* Links look the same while you type them and after you post, which is the
+   whole point of showing them as links rather than as `[text](url)` markup. */
+.comment-body-link {
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.comment-body-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* In the composer the label stays editable, so it must not read as a
+   navigation target — no pointer cursor, and typing into it is normal. */
+.comment-link-input {
+  cursor: text;
+}
+
+.comments-input-controls.is-between {
+  justify-content: space-between;
+}
+
+.comment-toolbar-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted, #666);
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.comment-toolbar-btn:hover {
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  border-color: hsl(var(--app-accent-primary) / 0.6);
+}
+
 .comments-input-controls {
   display: flex;
   justify-content: flex-end;

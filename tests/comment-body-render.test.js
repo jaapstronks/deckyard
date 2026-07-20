@@ -61,3 +61,42 @@ test('markup-looking body text is not treated as HTML (rendered as text)', () =>
   assert.equal(el.querySelectorAll('b').length, 0);
   assert.equal(el.querySelectorAll('.comment-mention-chip').length, 1);
 });
+
+/**
+ * Links (phase 2a). A comment body may carry `[label](url)` alongside
+ * mentions. The URL is allowlisted at parse time, so an unsafe scheme never
+ * reaches an `href` — the markup just stays visible as text.
+ */
+
+test('a link renders as an anchor that is safe to open', () => {
+  const el = render('zie [de roadmap](https://example.com/r) even');
+  const a = el.querySelector('a.comment-body-link');
+  assert.equal(a.getAttribute('href'), 'https://example.com/r');
+  assert.equal(a.textContent, 'de roadmap');
+  assert.equal(a.getAttribute('target'), '_blank');
+  // noopener: an untrusted link must not get a handle on our window.
+  const rel = a.getAttribute('rel');
+  assert.ok(rel.includes('noopener'));
+  assert.ok(rel.includes('noreferrer'));
+  assert.equal(el.textContent, 'zie de roadmap even');
+});
+
+test('a mention and a link can sit in the same body', () => {
+  const el = render('@[Ann](user:ann@x.com) zie [docs](https://d.example)');
+  assert.equal(el.querySelectorAll('.comment-mention-chip').length, 1);
+  assert.equal(el.querySelectorAll('a.comment-body-link').length, 1);
+});
+
+test('an unsafe URL produces no anchor at all', () => {
+  for (const url of ['javascript:alert(1)', 'data:text/html,x', 'vbscript:x']) {
+    const el = render(`klik [hier](${url})`);
+    assert.equal(el.querySelectorAll('a').length, 0, `${url} must not become an anchor`);
+    // The raw markup stays readable, which is the harmless outcome.
+    assert.ok(el.textContent.includes('[hier]'), `${url} should stay literal`);
+  }
+});
+
+test('mailto is allowed', () => {
+  const el = render('mail [Ann](mailto:ann@x.com)');
+  assert.equal(el.querySelector('a').getAttribute('href'), 'mailto:ann@x.com');
+});

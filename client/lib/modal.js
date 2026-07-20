@@ -377,6 +377,15 @@ export function promptModal(h, root, options = {}, overlayClosers) {
     children.push(field.wrap, actions);
     modalApi.content.append(...children);
     modalApi.show(root, overlayClosers);
+    // The field carries an `autofocus` attribute, but that only applies to
+    // markup present at page load, so the prompt opened with focus on its
+    // first focusable element — the Cancel button. Typing went nowhere and
+    // Enter cancelled the dialog.
+    //
+    // The focus trap claims focus in a requestAnimationFrame of its own
+    // (createFocusTrap), so this has to be queued after it: same frame,
+    // registered later, therefore last writer wins.
+    requestAnimationFrame(() => field.focus());
   });
 }
 

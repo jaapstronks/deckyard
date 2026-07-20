@@ -10,7 +10,7 @@
  * preview lightbox) so a chip looks the same everywhere.
  */
 
-import { splitMentionSegments } from '../../shared/comment-mentions.js';
+import { splitCommentSegments } from '../../shared/comment-mentions.js';
 
 /**
  * Build DOM nodes for a comment body: mention markers become chips, the rest
@@ -23,13 +23,26 @@ import { splitMentionSegments } from '../../shared/comment-mentions.js';
  */
 export function renderCommentBodyNodes(body, h) {
   const nodes = [];
-  for (const seg of splitMentionSegments(body)) {
+  for (const seg of splitCommentSegments(body)) {
     if (seg.type === 'mention') {
       nodes.push(
         h('span', {
           class: 'comment-mention-chip',
           title: seg.email,
           text: `@${seg.name}`,
+        })
+      );
+    } else if (seg.type === 'link') {
+      // The URL is already scheme-checked by the parser (`safeLinkUrl`), so an
+      // unsafe target never reaches this branch — it stays literal text.
+      nodes.push(
+        h('a', {
+          class: 'comment-body-link',
+          href: seg.url,
+          target: '_blank',
+          rel: 'noopener noreferrer nofollow',
+          title: seg.url,
+          text: seg.label,
         })
       );
     } else {

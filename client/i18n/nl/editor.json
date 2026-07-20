@@ -722,6 +722,11 @@
   "comments.addPositioned": "Opmerking op een specifieke plek",
   "comments.cancelPosition": "Annuleren",
   "comments.pinModeHint": "Klik op de slide om een opmerking te plaatsen",
+  "comments.link.short": "Link",
+  "comments.link.add": "Link toevoegen",
+  "comments.link.message": "Plak een URL. Die wordt als link getoond.",
+  "comments.link.messageWithSelection": "\"{text}\" linken naar:",
+  "comments.link.invalid": "Gebruik een http://-, https://- of mailto:-adres",
   "editor.notes.collapse": "Notities verbergen",
   "editor.notes.expand": "Notities tonen"
 }
