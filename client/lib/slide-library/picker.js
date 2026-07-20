@@ -553,7 +553,14 @@ export function createSlideLibraryPicker({
     return selectionBar;
   };
 
-  const renderSlideLibraryPicker = async (mount, { afterSlideId, onPicked } = {}) => {
+  const renderSlideLibraryPicker = async (
+    mount,
+    { afterSlideId, onPicked, scope: scopeOverride } = {}
+  ) => {
+    // Optional one-shot scope override (e.g. the insert picker's per-scope
+    // "See all"): switch the active scope before rendering, then let the
+    // picker's own state drive subsequent re-renders.
+    if (scopeOverride === 'team' || scopeOverride === 'personal') state.setScope(scopeOverride);
     mount.innerHTML = '';
 
     const header = h('div', { class: 'ps-lib-header' });

@@ -158,6 +158,10 @@ export function openSlideTypeModal({
   // Assigned by the tabs builder below; lets the types picker's "See all" jump
   // to the library tab. Stays null when there is no library tab.
   let selectLibraryTab = null;
+  // One-shot scope to apply the next time the library tab renders, set when the
+  // types picker's per-scope "See all" is clicked. Consumed (cleared) on render
+  // so later re-renders keep whatever scope the user picked in the library tab.
+  let pendingLibraryScope = null;
 
   const renderActive = () => {
     if (activeTab === 'import' && api && pres?.id) {
@@ -187,9 +191,12 @@ export function openSlideTypeModal({
       typesMount.hidden = true;
       libraryMount.hidden = false;
       importMount.hidden = true;
+      const scope = pendingLibraryScope;
+      pendingLibraryScope = null;
       renderSlideLibraryPicker?.(libraryMount, {
         afterSlideId: insertAfterSlideId,
         onPicked: () => close(),
+        ...(scope ? { scope } : {}),
       });
       return;
     }
@@ -225,7 +232,11 @@ export function openSlideTypeModal({
       renderActive();
     };
     // Expose library-tab switching to the types picker's "See all" affordance.
-    selectLibraryTab = () => selectTab('library');
+    // An optional scope ('personal' | 'team') routes straight to that scope.
+    selectLibraryTab = (scope) => {
+      if (scope === 'personal' || scope === 'team') pendingLibraryScope = scope;
+      selectTab('library');
+    };
 
     const btnTypes = h('button', {
       class: `sb-segmented-btn ${activeTab === 'types' ? 'is-active' : ''}`,

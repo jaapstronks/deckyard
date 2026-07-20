@@ -378,6 +378,8 @@
   "editor.imageText.imageFocus": "Image focus (crop)",
   "editor.imageText.imageFocusHelp": "Pick what should stay visible when the image is cropped.",
   "editor.slideTypeGroup.library": "From your library",
+  "editor.slideTypeGroup.libraryPersonal": "Personal library",
+  "editor.slideTypeGroup.libraryTeam": "Team library",
   "editor.slide.accessibility": "Accessibility",
   "editor.slide.accessibility.title": "Optional fields to improve screen-reader output and exports.",
   "editor.slide.layoutSettings": "Layout settings",

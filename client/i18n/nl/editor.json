@@ -355,6 +355,8 @@
   "editor.imageText.imageFocus": "Beeldfocus (crop)",
   "editor.imageText.imageFocusHelp": "Kies wat in beeld moet blijven als de afbeelding wordt bijgesneden.",
   "editor.slideTypeGroup.library": "Uit je bibliotheek",
+  "editor.slideTypeGroup.libraryPersonal": "Persoonlijke bibliotheek",
+  "editor.slideTypeGroup.libraryTeam": "Teambibliotheek",
   "editor.slide.accessibility": "Toegankelijkheid",
   "editor.slide.accessibility.title": "Optionele velden om schermlezer-uitvoer en exports te verbeteren.",
   "editor.slide.background.colour": "Kleur",
