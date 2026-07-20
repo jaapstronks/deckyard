@@ -198,8 +198,10 @@ export function renderImageElementCard({
         (v) => {
           member[fit.key] = v;
           markDirty?.();
-          rerenderPreview?.(); // frame relayouts; the focal point re-evaluates
-          scheduleUiRefresh?.();
+          // Rebuild the element tab so the cover-only focus grid appears /
+          // disappears with the mode, and repaint the canvas frame + focal point.
+          rerenderEditor?.();
+          rerenderPreview?.();
         }
       )
     );
