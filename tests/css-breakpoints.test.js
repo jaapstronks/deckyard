@@ -6,10 +6,12 @@
  * step to compile `@custom-media`, so the ladder cannot be a variable — it is
  * enforced here instead.
  *
- * Three checks:
+ * Four checks:
  *  1. every width condition in client/styles/** is on the ladder (or allowlisted)
  *  2. width conditions are expressed in px
- *  3. the allowlist has no stale entries, so migrations shrink it monotonically
+ *  3. width conditions use the `min-width:`/`max-width:` colon form, so the
+ *     Media Queries 4 range syntax cannot silently bypass check 1
+ *  4. the allowlist has no stale entries, so migrations shrink it monotonically
  *
  * Run with: node --test tests/css-breakpoints.test.js
  */
@@ -78,6 +80,18 @@ async function cssFiles(dir) {
 }
 
 /**
+ * Blank out `/* … *\/` comments, keeping newlines so line numbers stay right.
+ * Without this a commented-out query counts as live, which both breaks CI on a
+ * harmless edit and keeps a finished migration's allowlist entry looking used.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+}
+
+/**
  * @typedef {object} WidthCondition
  * @property {string} key       normalized `"max-width: 600px"`
  * @property {'min'|'max'} side
@@ -87,34 +101,59 @@ async function cssFiles(dir) {
  */
 
 /**
- * Pull every width condition out of the `@media` preludes in one stylesheet.
+ * @typedef {object} Prelude
+ * @property {WidthCondition[]} conditions parsed `min-width:`/`max-width:` pairs
+ * @property {string} text                 the raw prelude, for the syntax check
+ * @property {string} where                `"path/to.css:12"`
+ */
+
+/**
+ * Pull every `@media` prelude, and the width conditions in it, out of one
+ * stylesheet. At-rule names are case-insensitive in CSS, hence the `i` flag.
  *
  * @param {string} source
  * @param {string} label relative path, used in failure messages
- * @returns {WidthCondition[]}
+ * @returns {Prelude[]}
  */
-function widthConditions(source, label) {
+function mediaPreludes(source, label) {
+  const clean = stripComments(source);
   const out = [];
-  for (const media of source.matchAll(/@media([^{]*)\{/g)) {
-    const line = source.slice(0, media.index).split('\n').length;
-    for (const cond of media[1].matchAll(/(min|max)-width\s*:\s*([\d.]+)([a-z%]*)/gi)) {
-      const side = /** @type {'min'|'max'} */ (cond[1].toLowerCase());
-      const value = Number(cond[2]);
-      const unit = cond[3].toLowerCase();
-      out.push({ key: `${side}-width: ${cond[2]}${unit}`, side, value, unit, where: `${label}:${line}` });
-    }
+  for (const media of clean.matchAll(/@media([^{]*)\{/gi)) {
+    const where = `${label}:${clean.slice(0, media.index).split('\n').length}`;
+    const conditions = [...media[1].matchAll(/(min|max)-width\s*:\s*([\d.]+)([a-z%]*)/gi)].map(
+      (cond) => {
+        const side = /** @type {'min'|'max'} */ (cond[1].toLowerCase());
+        const unit = cond[3].toLowerCase();
+        return { key: `${side}-width: ${cond[2]}${unit}`, side, value: Number(cond[2]), unit, where };
+      }
+    );
+    out.push({ conditions, text: media[1], where });
   }
   return out;
 }
 
+/**
+ * True when a prelude mentions `width` in a form the condition regex did not
+ * consume — i.e. the Media Queries 4 range syntax (`(width <= 600px)`,
+ * `(400px <= width <= 900px)`), which would otherwise slip past the ladder.
+ *
+ * @param {Prelude} prelude
+ * @returns {boolean}
+ */
+function hasUnparsedWidth(prelude) {
+  const rest = prelude.text.replace(/(min|max)-width\s*:\s*[\d.]+[a-z%]*/gi, '');
+  return /\bwidth\b/i.test(rest);
+}
+
 const files = await cssFiles(stylesDir);
-const found = (
+const preludes = (
   await Promise.all(
     files.map(async (file) =>
-      widthConditions(await fs.readFile(file, 'utf8'), path.relative(repoRoot, file))
+      mediaPreludes(await fs.readFile(file, 'utf8'), path.relative(repoRoot, file))
     )
   )
 ).flat();
+const found = preludes.flatMap((p) => p.conditions);
 
 const allowed = new Set(ALLOWLIST);
 const onLadder = (c) => c.unit === 'px' && LADDER[c.side].includes(c.value);
@@ -130,6 +169,16 @@ describe('css breakpoints', () => {
       wrong.map((c) => `${c.where}  ${c.key}`).sort(),
       [],
       'Media query widths must use px (see docs/reference/css-breakpoints.md).'
+    );
+  });
+
+  it('uses the min-width:/max-width: colon form only', () => {
+    const ranged = preludes.filter(hasUnparsedWidth);
+    assert.deepStrictEqual(
+      ranged.map((p) => `${p.where}  @media${p.text.trim()}`).sort(),
+      [],
+      'Media Queries 4 range syntax such as (width <= 600px) is not checkable\n' +
+        'against the ladder. Use (max-width: 600px) / (min-width: 601px).'
     );
   });
 

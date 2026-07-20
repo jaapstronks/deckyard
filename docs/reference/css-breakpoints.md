@@ -42,6 +42,10 @@ displays. `min-width` only — these never appear as a `max-width`.
    `pointer`, `orientation`, `prefers-reduced-motion`, `prefers-color-scheme`,
    `print`, `max-height`, `min-resolution`.
 5. **Widths are always `px`.** `em`/`rem` media widths are not used.
+6. **Always the `min-width:` / `max-width:` colon form.** The Media Queries 4
+   range syntax — `(width <= 600px)`, `(400px <= width <= 900px)` — is rejected:
+   it expresses the same thing in a shape the ladder check cannot compare, so
+   allowing it would leave a way to write an off-ladder breakpoint that passes.
 
 ## Why not a variable
 
