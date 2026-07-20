@@ -616,6 +616,18 @@ export const INLINE_DESCRIPTORS = {
         },
       ],
     },
+    // Focal point per member photo. The photo only crops (and honours focus)
+    // when the effective aspect is square - circle forces square; an 'original'
+    // aspect shows the whole image, so the handle stays hidden there.
+    focus: {
+      xField: 'imageFocusX',
+      yField: 'imageFocusY',
+      cropMode: (slide) => {
+        const shape = slide?.content?.imageShape;
+        const aspect = shape === 'circle' ? 'square' : slide?.content?.imageAspect;
+        return aspect === 'square' ? 'cover' : 'contain';
+      },
+    },
     // Member cards stay in the side form too: they carry focus points.
     formText: [...HEADER_TEXT, 'subheading2'],
   },
@@ -704,6 +716,18 @@ export const INLINE_DESCRIPTORS = {
       imageField: 'col{n}Image',
       altField: 'col{n}Alt',
     },
+    // Focal point + Cover/Contain per column image. Flat numbered schema: the
+    // {n} token is the 1-based column number (data-inline-photo), same as the
+    // media fields. Focus only bites in cover mode.
+    focus: {
+      xField: 'col{n}ImageFocusX',
+      yField: 'col{n}ImageFocusY',
+      cropMode: (slide, idx) =>
+        slide?.content?.[`col${idx}ImageFit`] === 'contain' ? 'contain' : 'cover',
+    },
+    fit: {
+      field: 'col{n}ImageFit',
+    },
     formText: HEADER_TEXT,
   },
 
@@ -731,6 +755,13 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.gallery-image[data-inline-photo], .gallery-image-placeholder[data-inline-photo]',
       imageField: 'src',
       altField: 'alt',
+    },
+    // Focal point per gallery image. Gallery tiles always crop (cover), so the
+    // handle is always available on a filled image.
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      cropMode: () => 'cover',
     },
     // images stays: the per-image cards also carry focus-point controls.
     formText: HEADER_TEXT,
