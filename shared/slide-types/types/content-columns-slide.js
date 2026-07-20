@@ -5,7 +5,9 @@ import {
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   objectPositionStyleAttrFromFocus,
+  imagePlaceholderHtml,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export const MAX_COLUMNS = 7;
@@ -205,6 +207,7 @@ export default {
   },
 
   renderHtml: (content, _slide, ctx) => {
+    const copy = getSlideCopy(ctx?.lang);
     const title = typeof content?.title === 'string' && content.title.trim()
       ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
       : '';
@@ -265,7 +268,7 @@ export default {
         // no placeholder ships to present/export - but in the editor an empty
         // slot must be clickable to add a FIRST image (media popover).
         imageHtml = `
-          <div class="cc-image is-cover cc-image-placeholder is-empty" data-inline-photo="${colNum}" aria-hidden="true"></div>
+          ${imagePlaceholderHtml({ className: 'cc-image is-cover cc-image-placeholder', label: copy.imagePlaceholder, index: colNum })}
         `;
       }
 

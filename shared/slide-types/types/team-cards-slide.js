@@ -8,6 +8,7 @@ import {
   bgClass,
   nonEmpty,
   objectPositionStyleAttrFromFocus,
+  imagePlaceholderHtml,
 } from '../helpers.js';
 
 const MAX_CARDS = 25;
@@ -357,7 +358,7 @@ export default {
           </div>
         `
         : `
-          <div class="team-card-photo is-empty"${photoAttr}></div>
+          ${imagePlaceholderHtml({ className: 'team-card-photo', compact: true, attrs: photoAttr })}
         `;
 
       const namePath = `members.${idx}.name`;

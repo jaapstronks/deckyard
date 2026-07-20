@@ -171,6 +171,10 @@
 }
 
 .slide-logo-wall .logo-wall-placeholder {
+  /* Fill the frame, which is what carries the cell size. Without this the
+     placeholder sizes to its own content and collapses to a stamp. */
+  width: 100%;
+  height: 100%;
   font-family: var(--font-body);
   font-size: 18px;
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 45%, transparent);

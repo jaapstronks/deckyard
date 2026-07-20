@@ -8,7 +8,7 @@ import {
   clampInt,
   pickAltText,
   objectPositionStyleAttrFromFocus,
-  imagePlaceholderInnerHtml,
+  imagePlaceholderHtml,
 } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
@@ -25,9 +25,7 @@ function imageHtml(image, idx, copy) {
   if (!src) {
     return `
       <div class="gallery-item" data-item="${imageNum}" data-inline-item="images" data-inline-item-index="${idx}">
-        <div class="gallery-image-placeholder is-empty" data-inline-photo="${idx}" aria-hidden="true">
-          ${imagePlaceholderInnerHtml(`${copy.imagePlaceholder} ${imageNum}`)}
-        </div>
+        ${imagePlaceholderHtml({ className: 'gallery-image-placeholder', label: `${copy.imagePlaceholder} ${imageNum}`, index: idx })}
         ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${esc(caption)}</div>` : ''}
       </div>
     `;

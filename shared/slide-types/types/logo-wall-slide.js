@@ -5,7 +5,9 @@ import {
   cardLinkOverlayHtml,
   bgClass,
   BACKGROUND_FIELD,
+  imagePlaceholderHtml,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 // Cap for the logos[] array. The legacy numbered fields (logo{N}*) stay at 12:
 // they predate logos[], and logoCount is a strictly validated enum — walls
@@ -178,6 +180,7 @@ export default {
   },
 
   renderHtml: (content, _slide, ctx) => {
+    const copy = getSlideCopy(ctx?.lang);
     const mode = ctx?.mode;
     const editMode = mode === 'edit';
     const logos = resolveLogos(content);
@@ -223,7 +226,7 @@ export default {
       const photoAttr = ` data-inline-photo="${i}"`;
       const imgHtml = img
         ? `<img class="logo-wall-img"${photoAttr} src="${esc(img)}" alt="${esc(alt)}" />`
-        : `<div class="logo-wall-placeholder is-empty"${photoAttr} aria-hidden="true">Logo</div>`;
+        : imagePlaceholderHtml({ className: 'logo-wall-placeholder', label: copy.logoPlaceholder, attrs: photoAttr });
 
       // Optional click behavior: a full-item overlay anchor (shared helper).
       // Suppressed in the editor so it never blocks the media popover.

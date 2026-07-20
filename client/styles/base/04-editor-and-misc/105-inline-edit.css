@@ -169,13 +169,11 @@
    hover. The chip says the same thing and is the actual affordance, so the
    placeholder's inner content steps aside while it is visible. Fades with the
    chip, and only for placeholders that are still empty. */
-.thumb.is-inline-edit .image-placeholder.is-empty .image-placeholder-inner,
-.thumb.is-inline-edit .gallery-image-placeholder.is-empty .image-placeholder-inner {
+.thumb.is-inline-edit .image-placeholder.is-empty .image-placeholder-inner {
   transition: opacity 0.12s ease;
 }
 
-.thumb.is-inline-edit:hover .image-placeholder.is-empty .image-placeholder-inner,
-.thumb.is-inline-edit:hover .gallery-image-placeholder.is-empty .image-placeholder-inner {
+.thumb.is-inline-edit:hover .image-placeholder.is-empty .image-placeholder-inner {
   opacity: 0;
 }
 
