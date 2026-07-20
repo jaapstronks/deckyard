@@ -16,6 +16,19 @@
  * @param {number} [opts.moveTolerance=10] - px of drift allowed while holding
  * @returns {() => void} detach function
  */
+/**
+ * How long the compat-click guard stays armed after a press fires.
+ *
+ * A synthetic ("ghost") click follows touchend within a few hundred ms at
+ * most, so this only has to outlast that. It must NOT outlast it by much: the
+ * press has just opened something the user operates by tapping (a menu), and
+ * whatever this window is still open for, it eats their first real tap on that
+ * thing. 900ms did exactly that — long-press a slide, tap a menu item within
+ * ~900ms, and the item no-op'd because this guard swallowed the click. Keep it
+ * shorter than a human can see a menu appear and reach for an item.
+ */
+export const SYNTHETIC_CLICK_WINDOW_MS = 350;
+
 export function attachLongPress(
   el,
   { onLongPress, delay = 500, moveTolerance = 10 } = {}
@@ -57,8 +70,9 @@ export function attachLongPress(
       document.removeEventListener('click', onClick, true);
     };
     // Expire on its own, so a press that never produces a click doesn't leave
-    // a listener armed to eat an unrelated one later.
-    const expiry = setTimeout(done, 900);
+    // a listener armed to eat an unrelated one later — including the user's
+    // first real tap on whatever the press just opened.
+    const expiry = setTimeout(done, SYNTHETIC_CLICK_WINDOW_MS);
     document.addEventListener('click', onClick, true);
   };
 
