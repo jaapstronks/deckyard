@@ -83,12 +83,17 @@ export function openMediaPopover({
   });
 
   function refreshImageRow() {
+    const hasImage = !!member[imageKey];
+    // Preview and alt describe an image, so they only make sense once there
+    // is one. On an empty slot they used to render anyway: an empty grey box
+    // and an enabled "describe the image" field for an image that does not
+    // exist. Choosing one reveals both.
     previewWrap.replaceChildren(
-      member[imageKey]
-        ? h('img', { src: member[imageKey], alt: '', class: 'ie-media-thumb' })
-        : h('div', { class: 'ie-media-thumb is-empty', 'aria-hidden': 'true' })
+      hasImage ? h('img', { src: member[imageKey], alt: '', class: 'ie-media-thumb' }) : ''
     );
-    removeBtn.style.display = member[imageKey] ? '' : 'none';
+    previewWrap.style.display = hasImage ? '' : 'none';
+    altField.style.display = hasImage ? '' : 'none';
+    removeBtn.style.display = hasImage ? '' : 'none';
   }
 
   const chooseBtn = h('button', {
@@ -216,7 +221,10 @@ export function openMediaPopover({
     onClose?.();
   }
 
-  altInput.focus();
+  // On an empty slot the alt field is hidden, and picking an image is the
+  // only thing to do — so focus that instead of an input the user cannot see.
+  if (member[imageKey]) altInput.focus();
+  else chooseBtn.focus();
 
   return { close, reposition };
 }

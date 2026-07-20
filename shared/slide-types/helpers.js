@@ -593,3 +593,34 @@ export function cardLinkOverlayHtml(raw, mode, ariaLabel) {
     return `<a class="card-link" data-card-nav-id="${esc(info.id)}" href="#" aria-label="${aria}"></a>`;
   return `<a class="card-link" href="${esc(info.href)}" target="_blank" rel="noopener noreferrer" aria-label="${aria}"></a>`;
 }
+
+/**
+ * The picture glyph used inside every empty-image placeholder. Decorative:
+ * the placeholder itself is `aria-hidden`, and the accessible affordance is
+ * the editor's "Add image" chip, not this.
+ */
+const IMAGE_PLACEHOLDER_ICON =
+  '<svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">' +
+  '<path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>' +
+  '</svg>';
+
+/**
+ * Inner content of an empty-image placeholder: icon + label.
+ *
+ * Every slide type used to inline its own copy of the SVG, and the label was
+ * hardcoded per type — image-text said "Afbeelding", image-slide said "Image",
+ * neither localised. One helper keeps the glyph in one place and routes the
+ * label through the presentation language.
+ *
+ * Callers own the outer box, because its class is what each type's CSS targets
+ * (`.image-placeholder`, `.gallery-image-placeholder`, …).
+ *
+ * @param {string} [label] Localised label; omit for an icon-only placeholder.
+ * @returns {string} HTML for the placeholder's inner content
+ */
+export function imagePlaceholderInnerHtml(label) {
+  const text = nonEmpty(label)
+    ? `<div class="image-placeholder-text">${esc(label)}</div>`
+    : '';
+  return `<div class="image-placeholder-inner">${IMAGE_PLACEHOLDER_ICON}${text}</div>`;
+}

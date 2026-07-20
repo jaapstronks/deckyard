@@ -146,3 +146,72 @@ test('quote: a filled first portrait shows the next empty slot as the add target
   assert.match(html, /<div class="quote-portrait" data-inline-photo="1">/);
   assert.match(html, /quote-portrait is-empty[^>]*data-inline-photo="2"/s);
 });
+
+/**
+ * Placeholder consistency (polish round, 2026-07-20). The icon+label inner is
+ * one shared helper (`imagePlaceholderInnerHtml`) instead of a per-type copy
+ * of the same SVG, and the label follows the presentation language — it used
+ * to be hardcoded, and inconsistently: image-text said "Afbeelding" while
+ * image-slide said "Image", regardless of deck language.
+ */
+
+const PLACEHOLDER_TYPES = ['image-slide', 'image-text-slide', 'gallery-slide'];
+
+test('every empty placeholder carries the shared icon + label inner', () => {
+  for (const type of PLACEHOLDER_TYPES) {
+    const html = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { mode: 'edit' });
+    assert.ok(
+      html.includes('image-placeholder-inner'),
+      `${type}: expected the shared placeholder inner`
+    );
+    assert.ok(
+      html.includes('image-placeholder-icon'),
+      `${type}: expected the shared placeholder icon`
+    );
+  }
+});
+
+test('the placeholder label follows the deck language', () => {
+  for (const type of PLACEHOLDER_TYPES) {
+    const nl = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { lang: 'nl' });
+    const en = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { lang: 'en-GB' });
+    assert.match(nl, /image-placeholder-text">Afbeelding/, `${type}: nl label`);
+    assert.match(en, /image-placeholder-text">Image/, `${type}: en label`);
+  }
+});
+
+test('an unknown language falls back to Dutch, matching getSlideCopy', () => {
+  const html = SLIDE_TYPES['image-slide'].renderHtml({}, {}, { lang: 'de' });
+  assert.match(html, /image-placeholder-text">Afbeelding/);
+});
+
+test('gallery keeps its slot numbering, now localised', () => {
+  const def = SLIDE_TYPES['gallery-slide'];
+  const nl = def.renderHtml({ images: [{}, {}] }, {}, { lang: 'nl' });
+  const labels = [...nl.matchAll(/image-placeholder-text">([^<]*)/g)].map((m) => m[1]);
+  assert.deepEqual(labels, ['Afbeelding 1', 'Afbeelding 2']);
+});
+
+test('placeholders stay decorative for screen readers', () => {
+  // The accessible affordance is the editor's "Add image" chip; the
+  // placeholder box itself must not be announced. Gallery used to be the one
+  // that forgot this.
+  for (const type of PLACEHOLDER_TYPES) {
+    const html = SLIDE_TYPES[type].renderHtml({ images: [{}] }, {}, { mode: 'edit' });
+    const boxes = html.match(/<div class="[^"]*placeholder[^"]* is-empty"[^>]*>/g) || [];
+    assert.ok(boxes.length > 0, `${type}: expected an empty placeholder box`);
+    for (const box of boxes) {
+      assert.ok(box.includes('aria-hidden="true"'), `${type}: placeholder must be aria-hidden: ${box}`);
+    }
+  }
+});
+
+test('a filled slot renders no placeholder at all', () => {
+  const gallery = SLIDE_TYPES['gallery-slide'].renderHtml(
+    { images: [{ src: '/a.png', alt: 'a' }] },
+    {},
+    { lang: 'nl' }
+  );
+  assert.ok(!gallery.includes('image-placeholder-inner'));
+  assert.match(gallery, /<img[^>]*src="\/a\.png"/);
+});
