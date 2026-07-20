@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SLIDE_TYPES } from '../shared/slide-types/index.js';
+import { SLIDE_TYPES, validateSlide } from '../shared/slide-types/index.js';
 import {
   resolveContentColumnImage,
   ensureContentColumnsImages,
@@ -137,4 +137,53 @@ test('convert: image-text -> content-columns writes fit only when it deviates', 
     { lang: 'nl' }
   );
   assert.equal(contained.content.col1ImageFit, 'contain');
+});
+
+// ---- Validation: folded '' values survive an API round-trip -----------------
+
+test('validate: folded/cleared image values (the \'\' convention) stay valid', () => {
+  // The editor fold and the silent-default controls write '' into cleared
+  // fields. validateSlide gates the public API PUT path, so this content must
+  // round-trip without errors — for every type the datamodel track folds.
+  const cases = [
+    {
+      type: 'content-columns-slide',
+      content: {
+        ...structuredClone(DEF.defaults),
+        col1Image: '/a.png',
+        col1ImageFit: '',
+        col1ImageFocusX: '',
+        col1ImageFocusY: '',
+      },
+    },
+    { type: 'image-slide', content: { image: '/a.png', fit: '', layout: '' } },
+    {
+      type: 'image-text-slide',
+      content: {
+        ...structuredClone(SLIDE_TYPES['image-text-slide'].defaults),
+        images: [{ src: '/a.png' }],
+        imageFit: '',
+      },
+    },
+  ];
+  for (const { type, content } of cases) {
+    const errors = validateSlide({
+      id: 'bf5b964b-1561-4451-a692-47adf5bf7bbb',
+      type,
+      content,
+    });
+    assert.deepEqual(errors, [], `${type} folded content validates`);
+  }
+});
+
+test('validate: a bogus enum value is still rejected', () => {
+  const errors = validateSlide({
+    id: 'bf5b964b-1561-4451-a692-47adf5bf7bbb',
+    type: 'content-columns-slide',
+    content: { ...structuredClone(DEF.defaults), col1Image: '/a.png', col1ImageFit: 'stretch' },
+  });
+  assert.ok(
+    errors.some((e) => e.includes('col1ImageFit')),
+    'non-empty invalid enum value still errors'
+  );
 });
