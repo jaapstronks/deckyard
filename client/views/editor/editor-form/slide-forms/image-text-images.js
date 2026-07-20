@@ -19,6 +19,7 @@ import {
   IMAGE_TEXT_MAX_IMAGES,
   ensureImageTextImages,
   imageTextCellCount,
+  resolveImageTextCell,
 } from '../../../../../shared/slide-types/image-text-images.js';
 
 /**
@@ -214,12 +215,9 @@ export function renderImageTextImagesSection({
     // Focus control, consistent with the shared image-element card: a cover
     // (cropping) cell gets the 3x3 grid as the precise, keyboard-reachable
     // fallback to the canvas focal-point drag (both write the item's focusX/Y);
-    // a contain cell gets its alignment control instead. Effective fit = the
-    // item's own fit, else the slide-level default.
-    const effFit =
-      typeof image.fit === 'string' && image.fit
-        ? image.fit
-        : content.imageFit || 'cover';
+    // a contain cell gets its alignment control instead. Effective fit comes
+    // from resolveImageTextCell (the single authority render/canvas share).
+    const effFit = resolveImageTextCell(content, i).fit;
     if (effFit === 'contain') {
       const posEl = renderImagePositionPicker({
         h,

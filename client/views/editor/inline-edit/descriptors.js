@@ -148,6 +148,7 @@
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
 import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
+import { resolveImageTextCell } from '../../../../shared/slide-types/image-text-images.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -259,22 +260,14 @@ export const INLINE_DESCRIPTORS = {
     focus: {
       xField: 'focusX',
       yField: 'focusY',
-      cropMode: (slide, idx) => {
-        const items = slide?.content?.images;
-        const item = Array.isArray(items) ? items[idx] : null;
-        const fit = (item && item.fit) || slide?.content?.imageFit;
-        return fit === 'contain' ? 'contain' : 'cover';
-      },
-      // Mirror the renderer's fallback: cell 0 without its own focus reads the
-      // slide-level focusX/Y, so the handle starts where the crop actually is.
-      // (Writes always localize to the item, which then wins on the next render.)
+      // Effective fit and crop-point both come from resolveImageTextCell (the
+      // single authority render shares), so the handle starts where the crop
+      // actually is - cell 0 without its own focus reads the slide-level focus.
+      // Writes always localize to the item, which then wins on the next render.
+      cropMode: (slide, idx) => resolveImageTextCell(slide?.content, idx).fit,
       get: (slide, idx) => {
-        const items = slide?.content?.images;
-        const item = Array.isArray(items) ? items[idx] : null;
-        const isNum = (v) => v !== '' && v != null && Number.isFinite(Number(v));
-        const hasOwn = item && (isNum(item.focusX) || isNum(item.focusY));
-        const src = hasOwn || idx > 0 ? item : slide?.content;
-        return { x: src?.focusX, y: src?.focusY };
+        const { focusSource } = resolveImageTextCell(slide?.content, idx);
+        return { x: focusSource.focusX, y: focusSource.focusY };
       },
     },
     // Cover/Contain toggle on each filled image. Writes the item's own `fit`
