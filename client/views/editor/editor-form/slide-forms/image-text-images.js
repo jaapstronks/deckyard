@@ -189,6 +189,8 @@ export function renderImageTextImagesSection({
             slideAltFallback ? { placeholder: slideAltFallback } : {}
           )
         : null;
+    // Per-image fit override: empty follows the slide-level Image fit
+    // (imageFit), a value overrides just this cell.
     const fitEl =
       typeof fieldEnum === 'function'
         ? fieldEnum(

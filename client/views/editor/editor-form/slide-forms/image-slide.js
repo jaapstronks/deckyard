@@ -155,7 +155,10 @@ export function appendImageTextLayoutOptions({
     if (textColsEl) layoutBody.append(textColsEl);
   }
 
-  // First row: side, width, fit
+  // First row: side, width, fit. Focus is per-image now (step 2 folds it onto
+  // images[i]); the images manager owns the focus grid, so this slide-level
+  // panel no longer carries a focus picker. `imageFit` stays here as the
+  // slide-level base fit until step 3 makes fit an ImageRef property.
   if (sideField || widthField || fitField) {
     const sideEl = sideField ? renderField(sideField) : null;
     const widthEl = widthField ? renderField(widthField) : null;
@@ -168,27 +171,6 @@ export function appendImageTextLayoutOptions({
   if (imgBgField) {
     const imgBgEl = renderField(imgBgField);
     if (imgBgEl) layoutBody.append(imgBgEl);
-  }
-
-  // Image position picker
-  if (fxField || fyField) {
-    const isCropping = String(slide?.content?.imageFit || 'cover') !== 'contain';
-    const el = renderImagePositionPicker({
-      h,
-      mode: isCropping ? 'cover' : 'contain',
-      imageUrl: slide?.content?.image,
-      containerSelector:
-        '.preview-panel .thumb.is-clickable-preview .slide-image-text.is-image-contain .frame',
-      focusX: slide?.content?.focusX,
-      focusY: slide?.content?.focusY,
-      onChange: ({ focusX, focusY } = {}) => {
-        slide.content.focusX = focusX;
-        slide.content.focusY = focusY;
-        markDirty?.();
-        scheduleUiRefresh?.();
-      },
-    });
-    if (el) layoutBody.append(el);
   }
 
   form.append(layoutDetails);

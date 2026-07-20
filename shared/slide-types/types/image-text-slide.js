@@ -12,6 +12,7 @@ import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 import {
   imageTextCellCount,
   resolveImageTextCell,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
 } from '../image-text-images.js';
 
 export default {
@@ -340,6 +341,11 @@ export default {
       schematic: { cols: 3 },
     },
   ],
+  // The ImageRef config anchor for this type (looked up, never stored per
+  // slide). `focus` is live as the type-level crop default; `fit` is the step-3
+  // target - the live fit base is still slide-level `imageFit` until the CSS is
+  // unified. See IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
+  imageDefaults: IMAGE_TEXT_IMAGE_DEFAULTS,
   defaultsByLang: {
     nl: {
       image: '',
@@ -434,6 +440,10 @@ export default {
         layoutRaw === 'row-bottom')
         ? ' is-text-cols-2'
         : '';
+    // Container-level fit = the slide-level base `imageFit` (its own CSS
+    // mechanism: `.media` padding). Per-cell deviations ride `.frame.is-fit-*`.
+    // Fit stays slide-level until step 3 unifies the two CSS mechanisms; see
+    // docs/reference/image-property-ownership.md.
     const fit =
       content?.imageFit === 'contain'
         ? 'is-image-contain'

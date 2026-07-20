@@ -1,14 +1,48 @@
 /**
- * images[] helpers for the image-text slide (layout catalogue phase 2).
+ * images[] helpers for the image-text slide (layout catalogue phase 2 +
+ * datamodel-normalisation step 2: the canonical ImageRef for focus + alt).
  *
- * The canonical multi-image field is `images` (type 'items', max 3, per-image
- * src/alt/fit/focusX/focusY). Legacy decks carry a single flat `image` with
- * slide-level alt/imageFit/focusX/focusY; the read helpers fold that shape
- * into item 0 so unmigrated content renders identically. The mutating helper
- * (`ensureImageTextImages`) migrates flat -> images[0] and pads placeholder
- * items up to the active layout's cell count; it is only called from the
- * editor - renderHtml stays pure and pads visually.
+ * The canonical multi-image field is `images` (type 'items', max 3): every
+ * item is one ImageRef `{ src, alt, fit, focusX, focusY }`. Step 2 makes the
+ * item the single home for **alt and focus** - `ensureImageTextImages` folds
+ * the legacy slide-level `alt`/`focusX`/`focusY` into images[0] on edit, and
+ * the inspector reads the item, so the focus grid finally shows the real crop
+ * start (the display-baseline bug).
+ *
+ * **`fit` is deliberately NOT migrated yet.** Slide-level `imageFit` and
+ * per-image `fit` render through two *different* CSS mechanisms (`.media`
+ * padding vs `.frame` padding) that only coincide for multi-cell layouts, so a
+ * data fan-out is not render-equivalent for single-cell slides. Fit becomes an
+ * ImageRef property in step 3, *after* the CSS is unified onto one mechanism -
+ * see docs/reference/image-property-ownership.md. Until then `imageFit` stays a
+ * slide-level base fit (pending unwind), and `IMAGE_TEXT_IMAGE_DEFAULTS.fit`
+ * below is only the eventual config target, not yet the live authority.
+ *
+ * Read fallbacks that stay (read-only) for un-migrated / legacy decks, since
+ * renderHtml is pure and never migrates: the flat `image`, the slide-level
+ * alt/focus (folded on next edit), the slide-level `imageFit` base, and the
+ * vestigial inline `altNl`/`altEn` per-language alt (0 live decks, forks might).
  */
+
+/**
+ * Type-level image config for image-text (the ImageRef defaults, right-hand
+ * side of the eventual `images[i].fit ?? imageDefaults.fit`). Looked up, not
+ * stored: an empty per-image field means "follow the type", a value means "the
+ * user chose this deliberately". Retroactive by design - changing a default
+ * here changes every deck that never overrode it, like a theme.
+ *
+ * `focus` is the type-level crop default (a persons-grid would set 50/35 so
+ * heads sit high); image-text uses centre. `aspectRatio`/`allowUpscale` are
+ * reserved so a later need does not arrive as a fourth ad-hoc field; the
+ * renderer does not enforce them yet. `fit` is the config target for step 3
+ * (see the file header) - the live fit base is still slide-level `imageFit`.
+ */
+export const IMAGE_TEXT_IMAGE_DEFAULTS = Object.freeze({
+  fit: 'cover',
+  focus: Object.freeze({ x: 50, y: 50 }),
+  aspectRatio: null,
+  allowUpscale: true,
+});
 
 export const IMAGE_TEXT_MAX_IMAGES = 3;
 
@@ -20,7 +54,7 @@ function clamp(n, min, max) {
 }
 
 /**
- * Sanitize one images[] item to the canonical shape.
+ * Sanitize one images[] item to the canonical ImageRef shape.
  * @param {Object} raw
  * @returns {{src: string, alt: string, fit: string, focusX: *, focusY: *}}
  */
@@ -79,14 +113,23 @@ export function isMultiImageLayout(content) {
 }
 
 /**
- * Single authority for image-text's per-cell image resolution: the item-wins +
- * cell-0-slide-fallback precedence that renderHtml, the canvas focal-point drag
- * and the inspector each previously inlined (and could silently drift on). Item
- * values win; cell 0 falls back to the legacy slide-level alt/focus; the
- * slide-level `imageFit` is the base fit for every cell. Returns everything a
- * consumer needs so none of them re-derive the rule - the CRDT footgun this
- * removes is exactly render and editor reading the same field two different
- * ways (see docs/reference/image-property-ownership.md).
+ * Slide-level base fit (`imageFit`), the fit for any cell without its own
+ * override. This is still a live slide-level field (pending unwind to the
+ * ImageRef in step 3 - see the file header); it is not a legacy read.
+ */
+function slideBaseFit(content) {
+  return content?.imageFit === 'contain' || content?.imageFit === 'cover'
+    ? content.imageFit
+    : '';
+}
+
+/**
+ * Single authority for image-text's per-cell image resolution. Resolution:
+ *  - fit:   item override -> slide-level base `imageFit` -> type default config
+ *  - focus: item own crop -> slide-level focus (cell 0 only, un-migrated) -> default
+ *  - alt:   item own alt   -> slide-level alt/altNl/altEn (cell 0 only) -> ''
+ * renderHtml, the canvas focal-point drag and the inspector all read through
+ * this, so the three cannot drift (see docs/reference/image-property-ownership.md).
  *
  * Does NOT run pickAltText or apply the decorative/aria rules: those are
  * render-surface concerns. `altExplicit` is the effective explicit alt string
@@ -106,12 +149,13 @@ export function isMultiImageLayout(content) {
 export function resolveImageTextCell(content, idx) {
   const items = imageTextImageItems(content);
   const item = items[idx] || { src: '', alt: '', fit: '', focusX: '', focusY: '' };
-  const slideFit = content?.imageFit === 'contain' ? 'contain' : 'cover';
+  // Fit: item override -> slide-level base fit -> type default config.
   const fitOverride = item.fit === 'contain' || item.fit === 'cover' ? item.fit : '';
-  const fit = fitOverride || slideFit;
+  const fit = fitOverride || slideBaseFit(content) || IMAGE_TEXT_IMAGE_DEFAULTS.fit;
   // A cell has its own crop point once either axis is set; cell 0 without one
   // reads the legacy slide-level focus, later cells read their own (empty ->
-  // renderer default). Mirrors objectPositionStyleAttrFromFocus's input.
+  // renderer default, which equals IMAGE_TEXT_IMAGE_DEFAULTS.focus 50/50).
+  // Mirrors objectPositionStyleAttrFromFocus's input.
   const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
   const focusSource = hasOwnFocus || idx > 0 ? item : content || {};
   const trimmed = (v) => (typeof v === 'string' ? v.trim() : '');
@@ -122,13 +166,25 @@ export function resolveImageTextCell(content, idx) {
 }
 
 /**
- * Editor-side normalization (mutates content): migrate the legacy flat
- * `image` into images[0] and pad empty items up to the active layout's cell
- * count so every rendered cell has a live item behind it (the inline media
- * popover mutates `images[idx]` in place). Idempotent; never destructive -
- * extra items beyond the cell count are kept so switching layouts remembers
- * the images. Slide-level alt/fit/focus are NOT copied into the item: they
- * keep working as item-0 fallbacks, which preserves alt translations.
+ * Editor-side normalization (mutates content). Two jobs:
+ *
+ *  1. Shape: migrate the legacy flat `image` into images[0] and pad empty
+ *     items up to the active layout's cell count, so every rendered cell has a
+ *     live item behind it (the inline media popover mutates `images[idx]`).
+ *
+ *  2. Step-2 migration to the canonical ImageRef (alt + focus only): fold the
+ *     slide-level `alt`/`focusX`/`focusY` into images[0] and clear them. This
+ *     is render-equivalent (the resolver already folded the same values), so
+ *     snapshots stay green; what it fixes is *editing after* - the inspector
+ *     now reads the canonical per-image focus, so the focus grid shows the real
+ *     crop start (the display-baseline bug), not a stale empty centre.
+ *
+ * `imageFit` is deliberately left slide-level (see the file header): its
+ * fan-out is not render-equivalent, so it waits for step 3's CSS unification.
+ *
+ * Idempotent and non-destructive: an item's own value always wins over the
+ * folded slide value, extra items beyond the cell count are kept, and the
+ * legacy `altNl`/`altEn` are left untouched as a read fallback.
  * @param {Object} content
  * @returns {Object} the same content object
  */
@@ -155,5 +211,34 @@ export function ensureImageTextImages(content) {
   if (content.images.length > IMAGE_TEXT_MAX_IMAGES) {
     content.images.length = IMAGE_TEXT_MAX_IMAGES;
   }
+
+  // --- Step-2 fold: canonicalize the slide-level ImageRef props into items ---
+  if (content.images.length) {
+    const first = content.images[0];
+    if (first && typeof first === 'object') {
+      // Alt: fold into item 0 (item.alt already wins). Keep altNl/altEn.
+      if (!(typeof first.alt === 'string' && first.alt.trim())) {
+        const slideAlt = typeof content.alt === 'string' ? content.alt : '';
+        if (slideAlt.trim()) first.alt = slideAlt;
+      }
+      // Focus: fold into item 0 when it has no own crop point.
+      const itemHasFocus = first.focusX !== '' && first.focusX != null
+        || first.focusY !== '' && first.focusY != null;
+      if (!itemHasFocus) {
+        if (content.focusX !== '' && content.focusX != null) first.focusX = content.focusX;
+        if (content.focusY !== '' && content.focusY != null) first.focusY = content.focusY;
+      }
+    }
+  }
+  if (typeof content.alt === 'string' && content.alt.trim()) content.alt = '';
+  if (content.focusX !== '' && content.focusX != null) content.focusX = '';
+  if (content.focusY !== '' && content.focusY != null) content.focusY = '';
+
+  // NB: `imageFit` is intentionally NOT folded here. Slide-level and per-image
+  // fit render through different CSS mechanisms (see the file header), so a
+  // fan-out is not render-equivalent for single-cell layouts. Fit migrates to
+  // the ImageRef in step 3, after the CSS is unified; until then it stays a
+  // slide-level base and the resolver reads it via slideBaseFit().
+
   return content;
 }
