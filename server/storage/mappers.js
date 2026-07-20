@@ -134,6 +134,7 @@ export function mapPresentationRow(row) {
     theme: row.theme,
     lang: row.lang,
     scope: row.scope,
+    isViewOnly: !!row.is_view_only,
     revision: row.revision,
     ownerEmail: row.owner_email,
     createdBy: row.created_by,
