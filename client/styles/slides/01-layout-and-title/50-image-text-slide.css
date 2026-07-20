@@ -246,26 +246,8 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
-.image-placeholder-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 18px;
-  text-align: center;
-}
-.image-placeholder-icon {
-  width: 72px;
-  height: 72px;
-  display: block;
-  fill: currentColor;
-  opacity: 0.9;
-}
-.image-placeholder-text {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  letter-spacing: 0.02em;
-}
+/* The placeholder inner (icon + label) is shared across slide types —
+   see 00-patterns.css. */
 .slide-image-text.is-image-contain .media img {
   /* Fill the available padded box and use object-fit contain so `object-position`
      can align the image within any letterboxed space. */

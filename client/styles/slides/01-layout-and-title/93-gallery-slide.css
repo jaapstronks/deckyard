@@ -195,7 +195,9 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-.slide-gallery .placeholder-text {
+/* Gallery placeholders use the shared icon+label inner (helpers.js) like every
+   other slide type; only the label size is gallery-specific. */
+.slide-gallery .image-placeholder-text {
   font-family: var(--font-body);
   font-size: 16px;
   color: var(--color-text-muted, rgba(11, 11, 11, 0.5));

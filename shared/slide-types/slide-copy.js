@@ -33,6 +33,9 @@ export const SLIDE_COPY = {
     feedbackAccessCodeNlLabel: 'Toegangscode NL',
     feedbackAccessCodeEnLabel: 'Toegangscode EN',
 
+    // Empty image placeholder (editor canvas only)
+    imagePlaceholder: 'Afbeelding',
+
     // Chart slide
     chartLegendLabel: 'Legenda',
 
@@ -77,6 +80,9 @@ export const SLIDE_COPY = {
     feedbackQrCodeLabel: 'QR code',
     feedbackAccessCodeNlLabel: 'Access code NL',
     feedbackAccessCodeEnLabel: 'Access code EN',
+
+    // Empty image placeholder (editor canvas only)
+    imagePlaceholder: 'Image',
 
     // Chart slide
     chartLegendLabel: 'Legend',
