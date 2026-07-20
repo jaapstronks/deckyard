@@ -79,10 +79,6 @@ it would only have been a second path to something that already works.)_
   type + content and rebuild it as a native editable slide.
 - **Interactive behaviors** — `docs/plans/interactive-behaviors.md` —
   click/hover interactions on content blocks.
-- **Drag & drop images into placeholders** —
-  `docs/plans/drag-drop-image-placeholders.md` — drop an image file from the
-  desktop straight onto an empty "Add image" slot on the canvas; reuses the
-  existing upload + attach path.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
 - **Forker slide-type toolkit** — `docs/plans/forker-slide-type-toolkit.md`

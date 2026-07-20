@@ -138,6 +138,16 @@ renderer lacks the field.
   media popover (image via the shared `openImagePicker` seam + alt text +
   optional extras like a LinkedIn URL), including first-image-into-empty-slot
   where the type renders a placeholder.
+- **Image drag & drop** → an EMPTY `data-inline-photo` placeholder (and its
+  overlaid `+ Add image` chip) is a drop target for an image file dragged from
+  the desktop. A dropped file is always an *upload* (browse-vs-upload split), so
+  it goes straight to the single upload destination via the exported
+  `uploadFile()` (`image-library/upload.js`) — no source chooser, ImageKit stays
+  browse-only. The attach reuses `resolveMediaTarget()` + the popover's
+  markDirty/requestSave/rerender path (collab + undo parity). Gated on
+  `features.disableUploads` (off in imagekit-only / sandbox / demo);
+  `isFileDrag()` ignores internal card-reorder drags. Empty slots only —
+  replacing a filled image stays a popover action.
 - **Icons** → clicking an element tagged `data-inline-icon` opens the
   canonical icon-picker modal and writes to the emitted path.
 - **Type conversion** → "+ Add image" / remove-image-area affordances that
