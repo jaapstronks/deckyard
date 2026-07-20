@@ -134,6 +134,12 @@
  *   with `{n}` substitution), then writes `xField`/`yField` (0..100). The
  *   handle only renders when `cropMode` returns `'cover'`. Function-valued, so
  *   core-map only.
+ * @property {{field:string, fallback?:(slide:Object)=>string}} [fit]
+ *   Cover/Contain toggle on filled images. Resolves the write target like
+ *   `media` (item in list mode, `{n}`-substituted content key in flat mode) and
+ *   writes `field` = 'cover'|'contain'. `fallback` seeds the initial mode from a
+ *   slide-level default when the per-image field is empty. Function-valued
+ *   fallback, so core-map only.
  * @property {string[]} [formText]
  * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
  * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]
@@ -270,6 +276,14 @@ export const INLINE_DESCRIPTORS = {
         const src = hasOwn || idx > 0 ? item : slide?.content;
         return { x: src?.focusX, y: src?.focusY };
       },
+    },
+    // Cover/Contain toggle on each filled image. Writes the item's own `fit`
+    // (which the renderer honours over the slide-level `imageFit` via the
+    // `.frame.is-fit-*` classes), so a toggle localizes to that cell; the
+    // slide-level `imageFit` seeds the initial state when the item has none.
+    fit: {
+      field: 'fit',
+      fallback: (slide) => slide?.content?.imageFit,
     },
     formText: ['title', 'caption', 'body'],
     convert: {
