@@ -137,12 +137,16 @@ export function renderInspectorExtrasByType(ctx) {
       });
       return;
 
-    case 'image-slide':
+    case 'image-slide': {
       add('imageRole');
       add('layout');
-      appendImageFocusPicker({ h, form, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
-      appendImageZoomSettings({ h, form, slide, used, fieldByKey, renderField });
+      // Marked so the canvas image's "Settings" chip can scroll here.
+      const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
+      appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
+      appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
+      form.append(imgSection);
       return;
+    }
 
     case 'image-text-slide': {
       add('imageRole');
@@ -169,6 +173,8 @@ export function renderInspectorExtrasByType(ctx) {
           h,
           t('editor.imageText.images', 'Images')
         );
+        // Marked so the canvas image's "Settings" chip can scroll here.
+        section.el.setAttribute('data-inspector-section', 'image');
         section.body.append(imagesSection);
         form.append(section.el);
       }
