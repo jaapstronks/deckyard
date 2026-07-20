@@ -258,7 +258,7 @@
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .cookie-consent-banner {
     padding: 12px 16px;
   }

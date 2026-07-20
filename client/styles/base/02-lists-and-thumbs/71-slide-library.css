@@ -793,7 +793,7 @@
 }
 
 /* Responsive: stack columns on smaller screens */
-@media (max-width: 800px) {
+@media (max-width: 768px) {
   .ps-lib-edit-body {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;

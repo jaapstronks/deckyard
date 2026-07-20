@@ -229,7 +229,7 @@
    RESPONSIVE
    =========================================== */
 
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .slide-gallery .gallery-container {
     gap: 8px;
   }
