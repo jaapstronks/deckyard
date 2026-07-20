@@ -1,17 +1,20 @@
 /**
- * Inline @-mention autocomplete for a textarea.
+ * Inline @-mention autocomplete for a comment composer.
  *
- * Typing `@` opens a popover under the textarea; the query is whatever
- * follows the `@` up to the caret. Selecting a user (mouse or ↑/↓ + Enter/
- * Tab) replaces `@query` with mention markup (`@[Name](user:email)`).
+ * Typing `@` opens a popover under the field; the query is whatever follows
+ * the `@` up to the caret. Selecting a user (mouse or ↑/↓ + Enter/Tab)
+ * replaces `@query` with the mention.
+ *
+ * The caret layer is abstracted behind a small adapter so the same logic
+ * drives both a plain `<textarea>` (which gets the raw
+ * `@[Name](user:email)` markup spliced in) and the contenteditable rich
+ * composer (which gets an atomic chip node). Everything else — the `@`
+ * detection, search, ranking and keyboard nav — is shared.
  *
  * Search goes through /api/users/search (org-scoped); the deck's
  * collaborators (+ owner) rank first via the `priorityEmails` option.
  * Guests are not mentionable: they have no account, so they never appear
  * in the source.
- *
- * Same dropdown conventions as user-autocomplete.js, but inline in an
- * existing textarea instead of an input-with-chips.
  */
 
 import { h, installDismissOnOutside } from './dom.js';
@@ -21,28 +24,58 @@ import { mentionMarkup } from '../../shared/comment-mentions.js';
 const DEBOUNCE_MS = 200;
 
 /**
- * Attach mention autocomplete to a textarea.
+ * Caret adapter for a plain textarea: the mention goes in as raw markup.
+ * @param {HTMLTextAreaElement} textarea
+ * @returns {{el: HTMLElement, getTextBeforeCaret: Function, replaceQueryWithMention: Function, focus: Function}}
+ */
+export function textareaCaretAdapter(textarea) {
+  return {
+    el: textarea,
+    getTextBeforeCaret: () => textarea.value.slice(0, textarea.selectionStart),
+    replaceQueryWithMention: (queryLength, user) => {
+      const caret = textarea.selectionStart;
+      const atStart = caret - queryLength - 1;
+      if (atStart < 0 || textarea.value[atStart] !== '@') return false;
+      const before = textarea.value.slice(0, atStart);
+      const after = textarea.value.slice(caret);
+      const markup = mentionMarkup({ name: user.name || user.email, email: user.email });
+      textarea.value = `${before}${markup} ${after}`;
+      const newCaret = before.length + markup.length + 1;
+      textarea.setSelectionRange(newCaret, newCaret);
+      return true;
+    },
+    focus: () => textarea.focus(),
+  };
+}
+
+/**
+ * Attach mention autocomplete to a composer.
  * @param {Object} options
- * @param {HTMLTextAreaElement} options.textarea - Target textarea
+ * @param {HTMLTextAreaElement} [options.textarea] - Target textarea (shorthand
+ *   for passing the matching adapter)
+ * @param {Object} [options.adapter] - Caret adapter (see
+ *   `textareaCaretAdapter`; the rich input exposes the same shape)
  * @param {Function} options.api - API call function
  * @param {Function} [options.getPriorityEmails] - () => string[] emails
  *   ranked above other search results (deck collaborators + owner)
  * @param {Function} [options.onMention] - Called with the picked user after
  *   insertion
  * @returns {{el: HTMLElement, detach: Function, isOpen: Function}} the
- *   popover element (caller mounts it near the textarea) and a detach fn
+ *   popover element (caller mounts it near the field) and a detach fn
  */
 export function attachMentionAutocomplete({
   textarea,
+  adapter,
   api,
   getPriorityEmails,
   onMention,
 }) {
+  const caret = adapter || textareaCaretAdapter(textarea);
+  const target = caret.el;
   let isOpen = false;
   let results = [];
   let highlightIndex = 0;
   let debounceTimer = null;
-  let atStart = -1; // index of the '@' that opened the popover
   let lastQueryId = 0;
 
   const dropdown = h('div', { class: 'mention-autocomplete-dropdown' });
@@ -62,7 +95,6 @@ export function attachMentionAutocomplete({
   function close() {
     if (!isOpen) return;
     isOpen = false;
-    atStart = -1;
     results = [];
     dropdown.classList.remove('is-open');
     dropdown.innerHTML = '';
@@ -94,12 +126,21 @@ export function attachMentionAutocomplete({
     });
   }
 
-  /** Current query between the opening '@' and the caret, or null. */
+  /**
+   * The mention query currently being typed, or null if the caret is not in
+   * one. Recomputed from the text before the caret every time rather than
+   * remembered, so a moved caret can never leave a stale anchor behind.
+   *
+   * Only `@` at start-of-text or after whitespace counts, so email addresses
+   * keep working.
+   * @returns {string|null}
+   */
   function currentQuery() {
-    if (atStart < 0) return null;
-    const caret = textarea.selectionStart;
-    if (caret <= atStart) return null;
-    const q = textarea.value.slice(atStart + 1, caret);
+    const before = caret.getTextBeforeCaret();
+    const atIdx = before.lastIndexOf('@');
+    if (atIdx < 0) return null;
+    if (atIdx > 0 && !/\s/.test(before[atIdx - 1])) return null;
+    const q = before.slice(atIdx + 1);
     // A space/newline ends the mention attempt.
     if (/[\s@]/.test(q)) return null;
     return q;
@@ -124,22 +165,17 @@ export function attachMentionAutocomplete({
   }
 
   function pick(user) {
-    const caret = textarea.selectionStart;
-    if (caret <= atStart) {
-      // Caret moved before the '@' (e.g. via arrow keys): the stored
-      // anchor is stale, inserting would corrupt the text.
+    const query = currentQuery();
+    if (query === null) {
+      // The caret left the mention (arrow keys, click): replacing now would
+      // corrupt the text.
       close();
       return;
     }
-    const before = textarea.value.slice(0, atStart);
-    const after = textarea.value.slice(caret);
-    const markup = mentionMarkup({ name: user.name || user.email, email: user.email });
-    textarea.value = `${before}${markup} ${after}`;
-    const newCaret = before.length + markup.length + 1;
-    textarea.setSelectionRange(newCaret, newCaret);
-    textarea.focus();
+    const replaced = caret.replaceQueryWithMention(query.length, user);
+    caret.focus();
     close();
-    onMention?.(user);
+    if (replaced) onMention?.(user);
   }
 
   function onKeydown(e) {
@@ -172,39 +208,29 @@ export function attachMentionAutocomplete({
   }
 
   function onInput() {
-    const caret = textarea.selectionStart;
-    const value = textarea.value;
-
-    if (!isOpen) {
-      // Did the user just produce an '@' that starts a mention? Only open
-      // at start-of-text or after whitespace, so emails keep working.
-      const before = value.slice(0, caret);
-      const atIdx = before.lastIndexOf('@');
-      if (atIdx < 0) return;
-      if (atIdx > 0 && !/\s/.test(before[atIdx - 1])) return;
-      const partial = before.slice(atIdx + 1);
-      if (/[\s@]/.test(partial)) return;
-      atStart = atIdx;
-      open();
-      render();
-      search(partial);
-      return;
-    }
-
     const q = currentQuery();
+
     if (q === null) {
       close();
       return;
     }
+
+    if (!isOpen) {
+      open();
+      render();
+      search(q);
+      return;
+    }
+
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => search(q), DEBOUNCE_MS);
   }
 
-  // Capture phase so Enter-to-pick wins over the textarea's own
+  // Capture phase so Enter-to-pick wins over the composer's own
   // Enter-to-submit handler.
-  textarea.addEventListener('keydown', onKeydown, true);
-  textarea.addEventListener('input', onInput);
-  textarea.addEventListener('blur', () => {
+  target.addEventListener('keydown', onKeydown, true);
+  target.addEventListener('input', onInput);
+  target.addEventListener('blur', () => {
     // Give a mousedown on the dropdown time to run first.
     setTimeout(() => {
       if (!dropdown.matches(':hover')) close();
@@ -216,8 +242,8 @@ export function attachMentionAutocomplete({
     isOpen: () => isOpen,
     detach: () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      textarea.removeEventListener('keydown', onKeydown, true);
-      textarea.removeEventListener('input', onInput);
+      target.removeEventListener('keydown', onKeydown, true);
+      target.removeEventListener('input', onInput);
       detachDismiss();
       dropdown.remove();
     },

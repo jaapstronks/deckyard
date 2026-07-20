@@ -118,6 +118,48 @@ or collaborate on, you get one bundled bell notification, not a ping per slide.
 Copy note: the only trigger today is slide-adds, so the title reads "added N
 slides"; a future edit trigger would generalise it.
 
+## The comment composer
+
+All four composers (editor main + reply, share-viewer main + reply) are the
+same component: `createRichCommentInput` in `client/lib/comment-rich-input.js`.
+It is a `contenteditable`, not a `<textarea>`, so a mention can show as a chip
+**while typing** instead of as raw `@[Name](user:email)` markup.
+
+**The storage format did not change.** The composer is a view over the same
+canonical string:
+
+- `getValue()` walks the DOM back to markup (chip → `mentionMarkup`, `<br>` and
+  block wrappers → `\n`). This is what gets posted.
+- `setValue(body)` is the inverse, so an existing body re-hydrates into chips.
+
+`serialize(deserialize(x)) === x` is the load-bearing invariant — pinned by
+`tests/comment-rich-input.test.js`. Break it and bodies drift every time one is
+re-hydrated. Two subtleties it protects:
+
+- A **trailing `<br>`** is the browser's filler that makes an empty last line
+  visible; it must not read back as a newline. `deserialize` emits the same
+  filler, so both sides agree.
+- **Shift+Enter is deliberately left to the browser.** It already inserts a
+  plain break and places the caret correctly (blocks only come from *plain*
+  Enter, which the component intercepts to submit). Hand-rolling it silently
+  loses the newline: a caret anchored between child nodes gets normalised back
+  into the preceding text, so the next keystroke lands on the wrong side.
+
+Other invariants: chips are `contenteditable="false"` and deleted as a unit by
+backspace; **paste is forced to plain text**, so no HTML can enter the composer
+and reach the body.
+
+The mention autocomplete (`client/lib/mention-autocomplete.js`) works through a
+small **caret adapter** — `getTextBeforeCaret()` + `replaceQueryWithMention()` —
+so the same search, ranking and keyboard nav drive both the contenteditable
+(inserts a chip) and a plain textarea (`textareaCaretAdapter`, inserts markup).
+The `@`-query is recomputed from the text before the caret on every keystroke
+rather than remembered, so a moved caret cannot leave a stale anchor behind.
+
+Autocomplete is wired in the **editor only**: guests have no account, so they
+are neither mentionable nor able to mention. The share viewer gets the same
+composer without it.
+
 ## Deliberate non-features
 
 - No explicit assignment: mention = passing the ball. Could become a

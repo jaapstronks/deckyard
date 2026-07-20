@@ -306,6 +306,35 @@
   border-color: var(--primary-color, #007bff);
 }
 
+/* Rich composer: a contenteditable standing in for the old textarea, so it
+   has to reproduce the bits a textarea gives for free (wrapping, scrolling,
+   and a placeholder). Mentions live inside it as atomic chips. */
+.comment-rich-input {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  max-height: 160px;
+  cursor: text;
+}
+
+.comment-rich-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+}
+
+.comment-rich-input:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted, #999);
+  pointer-events: none;
+}
+
+/* A chip inside the composer is a single object: it must not be split by a
+   line break, and text selection should treat it as one unit. */
+.comment-mention-chip-input {
+  white-space: nowrap;
+  user-select: all;
+}
+
 .comments-input-controls {
   display: flex;
   justify-content: flex-end;

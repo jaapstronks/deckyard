@@ -710,12 +710,11 @@ img.share-link-badge {
   margin-left: 20px;
   align-items: flex-start;
 }
-.share-viewer-comment-reply-input textarea {
+.share-viewer-comment-reply-input .comment-rich-input {
   flex: 1;
   min-height: 32px;
   font-size: 13px;
   padding: 6px 10px;
-  resize: vertical;
 }
 
 .share-viewer-comments-input {
@@ -723,11 +722,11 @@ img.share-link-badge {
   flex-direction: column;
   gap: 10px;
 }
-.share-viewer-comments-input textarea {
+.share-viewer-comments-input .comment-rich-input {
   width: 100%;
+  min-height: 48px;
   font-size: 14px;
   padding: 10px 12px;
-  resize: vertical;
 }
 .share-viewer-comments-input-controls {
   display: flex;

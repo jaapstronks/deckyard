@@ -13,6 +13,7 @@ import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/modal.js';
 import { attachMentionAutocomplete } from '../../lib/mention-autocomplete.js';
+import { createRichCommentInput } from '../../lib/comment-rich-input.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
@@ -265,7 +266,7 @@ export function createCommentsPanel({
   // ========================================
 
   async function submitComment() {
-    const body = inputTextarea.value.trim();
+    const body = commentInput.getValue().trim();
     if (!body) return;
 
     try {
@@ -274,14 +275,14 @@ export function createCommentsPanel({
         body,
         slideId: getSelectedSlideId?.() || null,
       });
-      inputTextarea.value = '';
+      commentInput.clear();
       loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.postFailed', 'Failed to post comment'));
     }
   }
 
-  async function handleReply(parentId, body, textarea) {
+  async function handleReply(parentId, body, replyInput) {
     try {
       await checkMentionAccess(body);
       await commentsApi.createComment({
@@ -289,7 +290,7 @@ export function createCommentsPanel({
         parentId,
         slideId: getSelectedSlideId?.() || null,
       });
-      textarea.value = '';
+      replyInput.clear();
       loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.replyFailed', 'Failed to post reply'));
@@ -304,20 +305,24 @@ export function createCommentsPanel({
   const ephemeralMentionDetachers = new Set();
 
   /**
-   * Attach @-autocomplete to a comment textarea. The popover mounts inside
+   * Attach @-autocomplete to a comment composer. The popover mounts inside
    * `host`, which gets position:relative via .has-mention-autocomplete.
    * Guests are not mentionable and guests can't mention (no account): the
    * whole feature is authed-user-only.
+   *
+   * `richInput` is a `createRichCommentInput` instance; it doubles as the
+   * caret adapter (same `getTextBeforeCaret` / `replaceQueryWithMention`
+   * shape a textarea adapter provides), so a picked user lands as a chip.
    *
    * Reply inputs pass `ephemeral: true`: they are created on every Reply
    * toggle and destroyed by each list re-render, so their document-level
    * dismiss listeners must be released with them (drained per render;
    * the toggle path calls `host._detachMentions` directly).
    */
-  function attachMentions(textarea, host, { ephemeral = false } = {}) {
+  function attachMentions(richInput, host, { ephemeral = false } = {}) {
     if (!user?.email) return null;
     const ac = attachMentionAutocomplete({
-      textarea,
+      adapter: richInput,
       api,
       getPriorityEmails: () => (accessEmails ? [...accessEmails] : []),
     });
@@ -522,19 +527,15 @@ export function createCommentsPanel({
 
   filterEl.append(scopeEl, filterDetails);
 
-  // Input area
-  const inputTextarea = h('textarea', {
-    class: 'comments-input-textarea',
+  // Input area. Mentions show as chips while typing; `getValue()` serialises
+  // back to the canonical `@[Name](user:email)` markup the server parses.
+  let mainMentionAc = null;
+  const commentInput = createRichCommentInput({
+    className: 'comments-input-textarea',
     placeholder: t('comments.addPlaceholder', 'Add a comment...'),
-    rows: 2,
-  });
-  inputTextarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      // With the mention popover open, Enter picks a user instead.
-      if (mainMentionAc?.isOpen()) return;
-      e.preventDefault();
-      submitComment();
-    }
+    onSubmit: () => submitComment(),
+    // With the mention popover open, Enter picks a user instead.
+    isSubmitBlocked: () => !!mainMentionAc?.isOpen(),
   });
   const inputSubmitBtn = h('button', {
     class: 'btn btn-primary btn-sm',
@@ -544,8 +545,8 @@ export function createCommentsPanel({
   });
   const inputControls = h('div', { class: 'comments-input-controls' });
   inputControls.append(inputSubmitBtn);
-  inputEl.append(inputTextarea, inputControls);
-  const mainMentionAc = attachMentions(inputTextarea, inputEl);
+  inputEl.append(commentInput.el, inputControls);
+  mainMentionAc = attachMentions(commentInput, inputEl);
 
   // Assemble panel
   panelEl.append(headerEl, filterEl, listEl, inputEl);
