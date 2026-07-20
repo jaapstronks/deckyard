@@ -74,7 +74,7 @@ import { createEditorTitleController } from './title-controller.js';
 import { attachEditorFindShortcut } from './find-shortcut.js';
 import { attachEditorShortcutsHelp } from './shortcuts.js';
 import { translatableKeysForType } from './translatable.js';
-import { focusSearchHitInEditor, openAncestorDetails } from './search-focus.js';
+import { focusSearchHitInEditor } from './search-focus.js';
 import { createOverlayRegistry } from './overlays.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
 import { createEditorStateUpdater } from '../../lib/editor-state.js';
@@ -186,6 +186,10 @@ export async function createEditorController({
   }
 
   let selectedSlideIds = new Set();
+  // Selection-aware inspector: the canvas element ({kind:'image'|'card', idx})
+  // whose settings the inspector's element tab shows, or null for slide-only.
+  // Cleared on slide change; set by canvas interactions via setSelectedElement.
+  let selectedElement = null;
   let uiRefreshTimer = null;
   let commentsPanel = null;
   let setCommentsBadgeFn = () => {};
@@ -272,6 +276,9 @@ export async function createEditorController({
   // here, so this is also where the URL learns about the selection.
   const setSelectedSlideIdWithLock = (v) => {
     selectedSlideId = v;
+    // A different slide means a different element context; drop any selection
+    // so the new slide opens on its slide-only inspector (no stale element tab).
+    selectedElement = null;
     syncSlideIdInUrl(v);
     presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
@@ -1328,7 +1335,16 @@ export async function createEditorController({
   rerenderEditor = createRerenderEditor({
     ...editorFormDeps,
     onOpenBulkEdit: () => bulkEditModal.open(),
+    getSelectedElement: () => selectedElement,
   });
+
+  // Set (or clear) the selection-aware inspector's current element and rebuild
+  // the inspector. Kept non-intrusive: it does not open a dismissed rail (the
+  // element tab just becomes the active view when the pane is next shown).
+  const setSelectedElement = (el) => {
+    selectedElement = el || null;
+    rerenderEditor();
+  };
 
   // ============================================================
   // INLINE (WYSIWYG) EDITOR
@@ -1380,20 +1396,13 @@ export async function createEditorController({
       }
       return ok;
     },
-    // Doorway from a canvas image's "Settings" chip to the inspector: surface
-    // the settings pane and scroll to the element's marked section, expanding
-    // any collapsed groups on the way (reuses the search-focus walk).
-    onOpenElementSettings: (sectionId) => {
+    // Canvas → inspector selection. Clicking an element updates the inspector
+    // (visible iff the settings pane is already open). The "Settings" chip is
+    // the deliberate doorway: it also opens the pane on the element tab.
+    onSelectElement: (el) => setSelectedElement(el),
+    onOpenElementSettings: (el) => {
+      setSelectedElement(el);
       inspectorPanes.open('settings');
-      requestAnimationFrame(() => {
-        const el = editorMount.querySelector(`[data-inspector-section="${sectionId}"]`);
-        if (!el) return;
-        openAncestorDetails(el);
-        if (el.tagName === 'DETAILS') el.open = true;
-        el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        el.classList.add('inspector-section-flash');
-        setTimeout(() => el.classList.remove('inspector-section-flash'), 1200);
-      });
     },
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);

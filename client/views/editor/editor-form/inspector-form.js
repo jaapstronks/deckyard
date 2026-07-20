@@ -123,9 +123,21 @@ function collapsibleGroup(h, title, { open = false } = {}) {
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderInspectorExtrasByType(ctx) {
-  const { h, form, slide, add, used, fieldByKey, renderField, deckSlides,
-    fieldRenderers, markDirty, rerenderEditor, scheduleUiRefresh } = ctx;
+  const { h, form, elementForm, selectedElement, slide, add, used, fieldByKey,
+    renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
+    scheduleUiRefresh } = ctx;
   const { fieldGrid } = fieldRenderers || {};
+
+  // Render a keep field directly into a chosen container (element or slide
+  // panel), marking it used so the main keeps loop skips it. `add()` always
+  // targets the slide form, so element-scoped keeps use this instead.
+  const renderKeyInto = (container, key) => {
+    used.add(key);
+    const f = fieldByKey.get(key);
+    if (!f) return;
+    const node = renderField(f);
+    if (node) container.append(node);
+  };
 
   switch (slide.type) {
     case 'chart-slide':
@@ -138,18 +150,24 @@ export function renderInspectorExtrasByType(ctx) {
       return;
 
     case 'image-slide': {
-      add('imageRole');
-      add('layout');
-      // Marked so the canvas image's "Settings" chip can scroll here.
+      // The single image is the element: with it selected, all of its controls
+      // (role, crop layout, focus, zoom) live in the element tab; otherwise
+      // they render in the slide form as before.
+      const target = selectedElement?.kind === 'image' ? elementForm : form;
+      renderKeyInto(target, 'imageRole');
+      renderKeyInto(target, 'layout');
       const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
       appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
       appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
-      form.append(imgSection);
+      target.append(imgSection);
       return;
     }
 
     case 'image-text-slide': {
-      add('imageRole');
+      // Image controls (role, per-image alt/fit/focus, image-area layout) move
+      // to the element tab when an image is selected; density stays slide-wide.
+      const target = selectedElement?.kind === 'image' ? elementForm : form;
+      renderKeyInto(target, 'imageRole');
       add('density');
       // Images manager (images[], phase 2): the canvas media popover covers
       // pick/change per cell; this section adds per-image alt/fit/focus,
@@ -176,10 +194,10 @@ export function renderInspectorExtrasByType(ctx) {
         // Marked so the canvas image's "Settings" chip can scroll here.
         section.el.setAttribute('data-inspector-section', 'image');
         section.body.append(imagesSection);
-        form.append(section.el);
+        target.append(section.el);
       }
       appendImageTextLayoutOptions({
-        h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
+        h, form: target, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
         // Inspector: the toolbar "Layout" chip owns the structural variant.
         hideLayoutField: true,
       });
@@ -189,17 +207,12 @@ export function renderInspectorExtrasByType(ctx) {
     case 'icon-card-grid-slide': {
       add('layout');
       // Per-card icon picker + link: settings the wysiwyg deliberately never
-      // covers. Card texts and add/remove live on the slide and in the bulk
-      // modal; this list only carries the two config controls per card.
+      // covers. With a card selected, only that card's controls render in the
+      // element tab; otherwise all cards render in the slide-tab collapsible.
       const items = Array.isArray(slide.content?.items) ? slide.content.items : [];
       if (!items.length) return;
-      const section = collapsibleGroup(
-        h,
-        t('editor.inspector.cardsConfig', 'Card icons & links')
-      );
-      const wrap = section.body;
       const { fieldIconPicker } = fieldRenderers || {};
-      items.forEach((item, idx) => {
+      const renderCard = (item, idx, container) => {
         const group = h('div', { class: 'stack card-group' });
         group.append(h('div', {
           class: 'help',
@@ -232,9 +245,23 @@ export function renderInspectorExtrasByType(ctx) {
             'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
           ),
         }));
-        wrap.append(group);
-      });
-      form.append(section.el);
+        container.append(group);
+      };
+
+      const cardIdx =
+        selectedElement?.kind === 'card' && selectedElement.idx < items.length
+          ? selectedElement.idx
+          : null;
+      if (cardIdx != null) {
+        renderCard(items[cardIdx], cardIdx, elementForm);
+      } else {
+        const section = collapsibleGroup(
+          h,
+          t('editor.inspector.cardsConfig', 'Card icons & links')
+        );
+        items.forEach((item, idx) => renderCard(item, idx, section.body));
+        form.append(section.el);
+      }
       return;
     }
 

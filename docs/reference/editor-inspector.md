@@ -121,18 +121,33 @@ together**.
   the pane leads with the at-a-glance settings (layout/variant enums) and
   ends with Background (sticky-open) and Accessibility.
 
-### Canvas → section deep-link (`data-inspector-section`)
+### Selection-aware tabs (`[This element | Slide]`)
 
-A canvas element can open the inspector scrolled to its own controls. Sections
-that a canvas affordance targets carry a `data-inspector-section="<id>"`
-attribute (image-slide and image-text mark their image controls with
-`"image"`). The inline editor's on-image **"Settings" chip** calls the
-controller's `onOpenElementSettings(id)`, which opens the settings pane, walks
-`openAncestorDetails` (shared with search-focus) to expand any collapsed
-`<details>` on the way, `scrollIntoView`s the section and briefly flashes it.
-This is the doorway from direct-manipulation-on-the-image (focal point + fit)
-to the structural rest that stays in the rail, and the addressing scheme the
-selection-aware inspector work builds on.
+Selecting a canvas element grows the pane a **tab bar**; with nothing selected
+there is no tab bar - just the slide form (identical to the pre-tab pane).
+
+- **Selection state** lives in the controller (`selectedElement =
+  {kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
+  interactions set it: clicking an image (or its "Settings" chip) →
+  `{image, idx}`; editing a card's text or clicking its icon → `{card, idx}`;
+  a plain-text edit or empty-slide click clears it. The inline editor calls
+  `onSelectElement(el)` (updates the pane, visible iff the settings pane is
+  already open) or `onOpenElementSettings(el)` (the chip: also opens the rail).
+- **Rendering** (`editor-form.js`): when the selection applies to the slide
+  (`elementAppliesToSlide`), per-element widgets render into `elementForm`
+  ("This element" tab) and the rest into `form` ("Slide" tab). The active tab
+  persists across rerenders and resets to the element on a fresh selection.
+  `renderInspectorExtrasByType` takes `elementForm` + `selectedElement` and
+  routes each type's controls: image-slide → role/crop-layout/focus/zoom;
+  image-text → the image role + Images section + layout options; icon-card-grid
+  → just the selected card's icon + link (the all-cards list only renders in the
+  slide tab when nothing is selected).
+- **Scope:** images (image-slide, image-text) and icon-cards today; other types
+  have no element tab yet and render everything under Slide.
+
+The `data-inspector-section="image"` markers (image-slide, image-text) remain
+for the addressing seam; with tabs the element tab surfaces the controls
+directly, so the chip selects + opens rather than scroll-to-section.
 
 ## Per-type coverage audit (executed 2026-07-16)
 
