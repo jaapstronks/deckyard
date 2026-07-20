@@ -456,6 +456,7 @@
   "editor.imagePosition.top": "Boven",
   "editor.imagePosition.verticalAlignment": "Verticale uitlijning",
   "editor.imagePosition.widerThanBox": "Afbeelding is breder dan het kader: kies boven/midden/onder.",
+  "editor.imageSlide.bleed": "Tot de rand",
   "editor.imageText.addImage": "+ Afbeelding",
   "editor.imageText.altText": "Alt-tekst",
   "editor.imageText.fitContain": "Passend (geen crop)",

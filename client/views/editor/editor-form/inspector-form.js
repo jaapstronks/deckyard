@@ -6,9 +6,11 @@ import { renderChartConfigControls } from './slide-forms/chart.js';
 import { syncIconCardsToNumbered } from './slide-forms/icon-card-grid.js';
 import {
   appendImageFocusPicker,
+  appendImageSlideFitControls,
   appendImageZoomSettings,
   appendImageTextLayoutOptions,
 } from './slide-forms/image-slide.js';
+import { ensureImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
 import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
@@ -54,7 +56,10 @@ const INSPECTOR_KEEPS = {
   'icon-card-grid-slide': ['layout'],
   'payoff-slide': [],
   'quote-slide': [],
-  'image-slide': ['imageRole', 'layout', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
+  // `layout` is intentionally absent since datamodel step 3: the conflated
+  // enum split into the ImageRef axes `fit` + `bleed` (rendered via
+  // appendImageSlideFitControls, not the generic keeps loop).
+  'image-slide': ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
   'embed-slide': ['aspectRatio', 'sandbox'],
   'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
   'poll-slide': ['onClose'],
@@ -172,14 +177,20 @@ export function renderInspectorExtrasByType(ctx) {
 
     case 'image-slide': {
       // The single image is the element: with it selected, all of its controls
-      // (replace/alt, role, crop layout, focus grid, zoom) live in the element
-      // tab; otherwise they render in the slide form as before.
+      // (replace/alt, role, fit/bleed, focus grid, zoom) live in the element
+      // tab; otherwise they render in the slide form as before. Rendering also
+      // folds the legacy `layout` into fit + bleed (datamodel step 3).
+      ensureImageSlideImage(slide?.content);
       const imageSelected = selectedElement?.kind === 'image';
       const target = imageSelected ? elementForm : form;
       // Replace / alt / focus grid (cover) at the top of the element tab.
       if (imageSelected) renderSelectedImageCard(elementForm);
       renderKeyInto(target, 'imageRole');
-      renderKeyInto(target, 'layout');
+      appendImageSlideFitControls({
+        h, form: target, slide, used,
+        fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
+        markDirty, scheduleUiRefresh,
+      });
       const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
       // Contain-mode (centered) alignment stays here; the cover focus grid is
       // rendered by the shared card above, so this is a no-op in cover mode.

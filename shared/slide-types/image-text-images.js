@@ -49,19 +49,24 @@ function clamp(n, min, max) {
 }
 
 /**
- * Sanitize one images[] item to the canonical ImageRef shape.
+ * Sanitize one images[] item to the canonical ImageRef shape. `bleed` is
+ * carried through when set (an ImageRef property image-text does not render
+ * yet, but that e.g. an image-slide conversion delivers losslessly - see the
+ * fit/bleed split in docs/reference/image-property-ownership.md).
  * @param {Object} raw
- * @returns {{src: string, alt: string, fit: string, focusX: *, focusY: *}}
+ * @returns {{src: string, alt: string, fit: string, focusX: *, focusY: *, bleed?: boolean}}
  */
 function sanitizeItem(raw) {
   const it = raw && typeof raw === 'object' ? raw : {};
-  return {
+  const out = {
     src: typeof it.src === 'string' ? it.src.trim() : '',
     alt: typeof it.alt === 'string' ? it.alt : '',
     fit: it.fit === 'contain' || it.fit === 'cover' ? it.fit : '',
     focusX: it.focusX ?? '',
     focusY: it.focusY ?? '',
   };
+  if (it.bleed === true) out.bleed = true;
+  return out;
 }
 
 /**

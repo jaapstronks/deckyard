@@ -1,4 +1,15 @@
-/* Image slide */
+/* Image slide.
+
+   Two orthogonal axis classes replace the old conflated
+   slide-image-{full,bleed,centered} layout class (datamodel step 3):
+     is-fit-cover / is-fit-contain  - how the image fills its frame
+     is-bleed                       - frame runs edge-to-edge (no slide
+                                      padding, no radius, overlay heading)
+   The old variants map to cover, cover+bleed and contain; contain+bleed is
+   newly expressible (image fits, frame hits the slide edge). */
+.slide-image {
+  position: relative;
+}
 .slide-image .slide-inner {
   padding: 0;
   justify-content: center;
@@ -12,6 +23,9 @@
   /* `figure` has browser default margins (often 1em 40px) which creates an
      unintended left/right gutter and breaks alignment between heading and image. */
   margin: 0;
+  width: 100%;
+  height: 100%;
+  position: relative;
 }
 
 .slide-image .img-heading {
@@ -43,18 +57,30 @@
   align-items: center;
   justify-content: center;
 }
-.slide-image-full .frame {
+
+/* Fit axis */
+.slide-image .image {
+  display: block;
   width: 100%;
   height: 100%;
-  position: relative;
-}
-.slide-image-full .image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   border-radius: var(--t-radius, 18px);
 }
-.slide-image-full .caption {
+.slide-image.is-fit-cover .image {
+  object-fit: cover;
+}
+.slide-image.is-fit-contain .image {
+  object-fit: contain;
+  object-position: center;
+}
+.slide-image.is-fit-contain .frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Caption (shared by every variant; on a bleed frame it reads as an overlay
+   because the frame runs to the slide edge). */
+.slide-image .caption {
   position: absolute;
   left: 18px;
   right: auto;
@@ -70,35 +96,23 @@
   max-width: calc(100% - 36px);
   white-space: normal;
 }
-.slide-image-full {
-  position: relative;
-}
 
-/* Full-bleed image slide (edge-to-edge, no "frame" background around it) */
-.slide-image-bleed {
+/* Bleed axis: edge-to-edge frame, heading/subheading overlay the image. */
+.slide-image.is-bleed {
   padding: 0; /* override default slide padding so image can hit the edges */
-  position: relative;
 }
-.slide-image-bleed .slide-inner {
+.slide-image.is-bleed .slide-inner {
   padding: 0;
   justify-content: center; /* heading overlays; don't reserve vertical space */
 }
-.slide-image-bleed .frame {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-.slide-image-bleed .image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.slide-image.is-bleed .image {
   border-radius: 0;
 }
-.slide-image-bleed .image-placeholder {
+.slide-image.is-bleed .image-placeholder {
   border-radius: 0;
   border: 0;
 }
-.slide-image-bleed .img-heading {
+.slide-image.is-bleed .img-heading {
   position: absolute;
   left: 18px;
   top: 18px;
@@ -112,14 +126,14 @@
   max-width: calc(100% - 36px);
   margin: 0;
 }
-.slide-image-bleed .img-title {
+.slide-image.is-bleed .img-title {
   color: rgba(255, 255, 255, 0.92);
 }
-.slide-image-bleed .img-subtitle,
-.slide-image-bleed .subheading {
+.slide-image.is-bleed .img-subtitle,
+.slide-image.is-bleed .subheading {
   color: rgba(255, 255, 255, 0.86);
 }
-.slide-image-bleed .bottom-subheading {
+.slide-image.is-bleed .bottom-subheading {
   /* Overlay style above caption */
   position: absolute;
   left: 18px;
@@ -138,76 +152,19 @@
   margin: 0;
 }
 /* When both bottom subheading and caption are present, stack them (subheading above caption) */
-.slide-image-bleed .bottom-subheading:has(+ .caption) {
+.slide-image.is-bleed .bottom-subheading:has(+ .caption) {
   bottom: 100px;
 }
-.slide-image-bleed .caption {
-  /* Same backdrop treatment as the caption overlay used elsewhere */
-  position: absolute;
-  left: 18px;
-  right: auto;
-  bottom: 18px;
-  padding: 16px 22px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
-  font-family: var(--font-caption);
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.92);
-  display: inline-block;
-  width: fit-content;
-  max-width: calc(100% - 36px);
-  white-space: normal;
-}
-.slide-image-centered .slide-inner {
-  /* Keep centered layout aligned with the heading; `.slide` already pads. */
-  padding: 0;
-}
-.slide-image-centered .frame {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.slide-image-centered .image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  border-radius: var(--t-radius, 18px);
-}
-.slide-image-centered .caption {
-  position: absolute;
-  left: 18px;
-  right: auto;
-  bottom: 18px;
-  padding: 16px 22px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
-  font-family: var(--font-caption);
-  font-size: 20px;
-  color: rgba(255, 255, 255, 0.92);
-  display: inline-block;
-  width: fit-content;
-  max-width: calc(100% - 36px);
-  white-space: normal;
-}
 
-/* When bottom subheading is present, shrink the image area (except for bleed layout where it overlays) */
-.slide-image-full.has-bottom-subheading,
-.slide-image-centered.has-bottom-subheading {
+/* When bottom subheading is present, shrink the image area (except on a bleed
+   frame, where it overlays) */
+.slide-image:not(.is-bleed).has-bottom-subheading {
   padding-bottom: calc(var(--slide-padding) - 20px);
 }
-.slide-image-full.has-bottom-subheading .media,
-.slide-image-centered.has-bottom-subheading .media {
+.slide-image:not(.is-bleed).has-bottom-subheading .media {
   flex: 0 1 auto;
   max-height: calc(100% - 100px);
 }
-.slide-image-full.has-bottom-subheading .bottom-subheading,
-.slide-image-centered.has-bottom-subheading .bottom-subheading {
+.slide-image:not(.is-bleed).has-bottom-subheading .bottom-subheading {
   padding-top: 12px;
 }
-
-

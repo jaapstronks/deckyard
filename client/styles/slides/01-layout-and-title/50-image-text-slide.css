@@ -202,8 +202,8 @@
   color: rgba(0, 0, 0, 0.55);
 }
 
-/* Centered image slide needs a bounded placeholder, not full-bleed height */
-.slide-image-centered .image-placeholder {
+/* Contain image slide needs a bounded placeholder, not full-bleed height */
+.slide-image.is-fit-contain:not(.is-bleed) .image-placeholder {
   max-width: 100%;
   max-height: calc(100% - 58px);
   aspect-ratio: 16 / 9;

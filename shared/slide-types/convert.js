@@ -6,6 +6,7 @@ import {
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-images.js';
+import { resolveImageSlideImage } from './image-slide-image.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'
@@ -293,19 +294,22 @@ export function convertSlideToType(
 
   // image -> image-text (one-way; reverse isn't offered)
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
-    // alt + focus + fit are canonical on images[0] (the ImageRef). Layout
-    // mapping: full/bleed are cover (cropped), centered is contain; cover
-    // equals the type default, so only contain is written (empty keeps
-    // meaning "follow the type").
+    // alt + focus + fit + bleed are canonical on images[0] (the ImageRef).
+    // Fit/bleed resolve through the image-slide authority (own fit/bleed ->
+    // legacy `layout` -> type default); only values deviating from the
+    // image-text default are written (empty keeps meaning "follow the type").
+    // `bleed` travels losslessly as an ImageRef property image-text does not
+    // render yet - nothing is guessed away, so a reverse conversion stays
+    // possible.
     const img = { src: '', alt: '' };
     if (typeof from.image === 'string' && from.image.trim()) img.src = from.image.trim();
     if (typeof from.alt === 'string' && from.alt.trim()) img.alt = from.alt.trim();
     if (from.focusX != null && from.focusX !== '') img.focusX = from.focusX;
     if (from.focusY != null && from.focusY !== '') img.focusY = from.focusY;
-    const fromFit =
-      String(from?.layout || '').trim() === 'centered' ? 'contain' : 'cover';
-    if (fromFit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) img.fit = fromFit;
-    if (img.src || img.alt || 'focusX' in img || 'focusY' in img || 'fit' in img) {
+    const r = resolveImageSlideImage(from);
+    if (r.fit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) img.fit = r.fit;
+    if (r.bleed) img.bleed = true;
+    if (img.src || img.alt || 'focusX' in img || 'focusY' in img || 'fit' in img || 'bleed' in img) {
       to.images = [img];
     }
     if (typeof from.caption === 'string') to.caption = from.caption;

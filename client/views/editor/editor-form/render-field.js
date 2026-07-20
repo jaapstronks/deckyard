@@ -291,11 +291,16 @@ export function createRenderField({
             .then(({ shouldContain }) => {
               if (shouldContain) {
                 if (slide.type === 'image-slide') {
-                  // Only auto-switch if user hasn't explicitly set a layout yet (still on default 'full')
-                  const currentLayout = slide.content.layout;
-                  if (!currentLayout || currentLayout === 'full') {
-                    slide.content.layout = 'centered';
-                    debugLog('[auto-fit] Switched image-slide to centered layout due to aspect ratio mismatch');
+                  // Fit is an ImageRef axis (step 3): only auto-switch when the
+                  // user hasn't explicitly chosen one (no own fit, no legacy
+                  // layout beyond the old default 'full').
+                  const c = slide.content;
+                  const explicit =
+                    c.fit === 'cover' || c.fit === 'contain' ||
+                    (c.layout && c.layout !== 'full');
+                  if (!explicit) {
+                    c.fit = 'contain';
+                    debugLog('[auto-fit] Switched image-slide to contain fit due to aspect ratio mismatch');
                     toast.info(
                       t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.'),
                       { id: 'auto-fit-toast' }
