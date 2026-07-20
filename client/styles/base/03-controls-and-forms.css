@@ -837,6 +837,18 @@
   border: 1px solid hsl(var(--app-border-default));
 }
 
+/* Slim image-collection rows (inspector Slide tab): thumbnail + label +
+   reorder controls, no per-image settings. */
+.editor-collection-thumb {
+  width: 56px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
 .editor-toggle-row {
   padding-top: 4px;
 }

@@ -467,6 +467,7 @@
   "editor.imageSlide.bleed": "Edge-to-edge",
   "editor.imageText.addImage": "+ Add image",
   "editor.imageText.altText": "Alt text",
+  "editor.imageText.collectionHelp": "Click an image on the slide to edit its alt text, fit and focus.",
   "editor.imageText.fitContain": "Fit (no crop)",
   "editor.imageText.fitCover": "Fill (crop)",
   "editor.imageText.fitDefault": "Match slide",

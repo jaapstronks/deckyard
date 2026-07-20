@@ -16,7 +16,10 @@ import {
   resolveContentColumnImage,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/content-columns-images.js';
-import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
+import {
+  renderImageTextCellCard,
+  renderImageTextCollectionSection,
+} from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
 /**
@@ -63,7 +66,10 @@ const INSPECTOR_KEEPS = {
   'quote-slide': [],
   // `layout` is intentionally absent since datamodel step 3: the conflated
   // enum split into the ImageRef axes `fit` + `bleed` (rendered via
-  // appendImageSlideFitControls, not the generic keeps loop).
+  // appendImageSlideFitControls, not the generic keeps loop). Since the
+  // editing-surfaces tab split ALL of these render in the "This image"
+  // element tab only — the single image is the element; the slide form
+  // carries just Background/Accessibility.
   'image-slide': ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
   'embed-slide': ['aspectRatio', 'sandbox'],
   'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
@@ -181,67 +187,87 @@ export function renderInspectorExtrasByType(ctx) {
       return;
 
     case 'image-slide': {
-      // The single image is the element: with it selected, all of its controls
-      // (replace/alt, role, fit/bleed, focus grid, zoom) live in the element
-      // tab; otherwise they render in the slide form as before. Rendering also
-      // folds the legacy `layout` into fit + bleed (datamodel step 3).
+      // The single image IS the element (editing-surfaces tab split): ALL of
+      // its controls (replace/alt, role, fit/bleed, focus, zoom) live in the
+      // "This image" element tab, reached by clicking the image. The slide
+      // form — the no-selection view AND the Slide tab, identical by
+      // construction — carries only slide-wide settings (Background,
+      // Accessibility). Rendering also folds the legacy `layout` into
+      // fit + bleed (datamodel step 3).
       ensureImageSlideImage(slide?.content);
-      const imageSelected = selectedElement?.kind === 'image';
-      const target = imageSelected ? elementForm : form;
-      // Replace / alt / focus grid (cover) at the top of the element tab.
-      if (imageSelected) renderSelectedImageCard(elementForm);
-      renderKeyInto(target, 'imageRole');
-      appendImageSlideFitControls({
-        h, form: target, slide, used,
-        fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
-        markDirty, scheduleUiRefresh,
-      });
-      const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
-      // Contain-mode (centered) alignment stays here; the cover focus grid is
-      // rendered by the shared card above, so this is a no-op in cover mode.
-      appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
-      appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
-      target.append(imgSection);
+      if (selectedElement?.kind === 'image') {
+        // Replace / alt / focus grid (cover) at the top of the element tab.
+        renderSelectedImageCard(elementForm);
+        renderKeyInto(elementForm, 'imageRole');
+        appendImageSlideFitControls({
+          h, form: elementForm, slide, used,
+          fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
+          markDirty, scheduleUiRefresh,
+        });
+        const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
+        // Contain-mode (centered) alignment stays here; the cover focus grid
+        // is rendered by the shared card above, so this is a no-op in cover
+        // mode.
+        appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
+        appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
+        elementForm.append(imgSection);
+      } else {
+        // No selection: the element-only keys must not leak into the slide
+        // form via the generic keeps loop.
+        for (const key of ['imageRole', 'fit', 'bleed', 'layout', 'focusX', 'focusY',
+          'zoomSteps', 'zoomLevel', 'zoomPositions']) {
+          used.add(key);
+        }
+      }
       return;
     }
 
     case 'image-text-slide': {
-      // Image controls (role, per-image alt/fit/focus, image-area layout) move
-      // to the element tab when an image is selected; density stays slide-wide.
-      const target = selectedElement?.kind === 'image' ? elementForm : form;
-      renderKeyInto(target, 'imageRole');
-      add('density');
-      // Images manager (images[], phase 2): the canvas media popover covers
-      // pick/change per cell; this section adds per-image alt/fit/focus,
-      // reorder, and the row model's third image. Rendering it also migrates
-      // legacy flat content and pads items to the layout's cell count.
+      // Editing-surfaces tab split: the "This image" tab carries ONLY the
+      // selected cell's card (picker/alt/fit/focus); the slide form — the
+      // no-selection view AND the Slide tab, identical by construction —
+      // carries the slide-wide settings: role (applies to all cells),
+      // density, the slim image collection (add/reorder — no per-image
+      // settings) and the layout options, flat.
       const { fieldText, fieldEnum, fieldImage } = fieldRenderers || {};
-      const imagesSection = renderImageTextImagesSection({
+      if (selectedElement?.kind === 'image') {
+        const cellCard = renderImageTextCellCard({
+          h,
+          slide,
+          used,
+          idx: selectedElement.idx,
+          fieldGrid,
+          fieldText,
+          fieldEnum,
+          fieldImage,
+          markDirty,
+          rerenderEditor,
+          scheduleUiRefresh,
+        });
+        if (cellCard) elementForm.append(cellCard);
+      }
+      renderKeyInto(form, 'imageRole');
+      add('density');
+      // Slide-level collection management (option a of the tab-split plan):
+      // thumbnails + add/reorder/remove, per-image settings deliberately
+      // excluded (they live in the element tab — one home per setting).
+      const collectionSection = renderImageTextCollectionSection({
         h,
         slide,
         used,
-        fieldGrid,
-        fieldText,
-        fieldEnum,
-        fieldImage,
         markDirty,
         rerenderEditor,
         scheduleUiRefresh,
       });
-      if (imagesSection) {
-        const section = collapsibleGroup(
-          h,
-          t('editor.imageText.images', 'Images')
-        );
-        // Marked so the canvas image's "Settings" chip can scroll here.
-        section.el.setAttribute('data-inspector-section', 'image');
-        section.body.append(imagesSection);
-        target.append(section.el);
+      if (collectionSection) {
+        collectionSection.setAttribute('data-inspector-section', 'image');
+        form.append(collectionSection);
       }
       appendImageTextLayoutOptions({
-        h, form: target, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
+        h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
         // Inspector: the toolbar "Layout" chip owns the structural variant.
         hideLayoutField: true,
+        flat: true,
       });
       return;
     }

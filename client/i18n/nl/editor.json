@@ -459,6 +459,7 @@
   "editor.imageSlide.bleed": "Tot de rand",
   "editor.imageText.addImage": "+ Afbeelding",
   "editor.imageText.altText": "Alt-tekst",
+  "editor.imageText.collectionHelp": "Klik op een afbeelding in de slide om alt-tekst, uitsnede en focus te bewerken.",
   "editor.imageText.fitContain": "Passend (geen crop)",
   "editor.imageText.fitCover": "Vullend (crop)",
   "editor.imageText.fitDefault": "Zoals slide",
