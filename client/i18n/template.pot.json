@@ -2,7 +2,7 @@
   "meta": {
     "format": "presentation-system-ui-i18n-template",
     "defaultLocale": "en",
-    "generatedAt": "2026-07-19T12:38:08.460Z",
+    "generatedAt": "2026-07-20T07:09:19.509Z",
     "note": "Translate the values into <locale>.json. Keys are stable and referenced from code as t(key, englishFallback)."
   },
   "strings": {
@@ -209,13 +209,13 @@
     "admin.jsonDebug.menuItem": {
       "default": "View JSON (Debug)",
       "refs": [
-        "client/views/editor/editor-form.js:400"
+        "client/views/editor/editor-form.js:401"
       ]
     },
     "admin.jsonDebug.menuItemTitle": {
       "default": "View and edit raw slide JSON data",
       "refs": [
-        "client/views/editor/editor-form.js:401"
+        "client/views/editor/editor-form.js:402"
       ]
     },
     "admin.jsonDebug.reset": {
@@ -1194,8 +1194,8 @@
     "comments.addLabel": {
       "default": "Add comment",
       "refs": [
-        "client/views/editor/preview-panel.js:89",
-        "client/views/editor/preview-panel.js:165"
+        "client/views/editor/preview-panel.js:87",
+        "client/views/editor/preview-panel.js:168"
       ]
     },
     "comments.addPlaceholder": {
@@ -1203,7 +1203,7 @@
       "refs": [
         "client/views/editor/comments-panel.js:528",
         "client/views/editor/modals/preview-lightbox.js:264",
-        "client/views/editor/preview-panel.js:215",
+        "client/views/editor/preview-panel.js:218",
         "client/views/share-viewer/viewer-comments.js:70"
       ]
     },
@@ -1211,8 +1211,8 @@
       "default": "Add comment to specific spot",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:59",
-        "client/views/editor/preview-panel.js:85",
-        "client/views/editor/preview-panel.js:161"
+        "client/views/editor/preview-panel.js:83",
+        "client/views/editor/preview-panel.js:164"
       ]
     },
     "comments.addSlide": {
@@ -1230,8 +1230,8 @@
     "comments.cancelPosition": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/preview-panel.js:160",
-        "client/views/editor/preview-panel.js:164"
+        "client/views/editor/preview-panel.js:163",
+        "client/views/editor/preview-panel.js:167"
       ]
     },
     "comments.close": {
@@ -1459,7 +1459,7 @@
       "default": "Click on the slide to place comment",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:67",
-        "client/views/editor/preview-panel.js:99"
+        "client/views/editor/preview-panel.js:97"
       ]
     },
     "comments.post": {
@@ -1467,7 +1467,7 @@
       "refs": [
         "client/views/editor/comments-panel.js:542",
         "client/views/editor/modals/preview-lightbox.js:283",
-        "client/views/editor/preview-panel.js:233",
+        "client/views/editor/preview-panel.js:236",
         "client/views/share-viewer/viewer-comments.js:76"
       ]
     },
@@ -1552,7 +1552,7 @@
       "refs": [
         "client/views/editor/comments-panel.js:407",
         "client/views/share-viewer/viewer-comments.js:37",
-        "client/views/share-viewer.js:186"
+        "client/views/share-viewer.js:213"
       ]
     },
     "comments.unknownAuthor": {
@@ -1581,7 +1581,7 @@
       "default": "Apply",
       "refs": [
         "client/views/editor/modals/translate-slide-modal.js:203",
-        "client/views/settings/theme-editor/logo-uploader.js:152"
+        "client/views/settings/theme-editor/logo-uploader.js:86"
       ]
     },
     "common.back": {
@@ -1590,16 +1590,16 @@
         "client/views/analytics/index.js:87",
         "client/views/analytics/index.js:127",
         "client/views/editor/image-library/detail.js:123",
-        "client/views/editor/topbar.js:491",
         "client/views/editor/topbar.js:492",
+        "client/views/editor/topbar.js:493",
         "client/views/settings/font-editor/index.js:59",
         "client/views/settings/font-editor/index.js:60",
         "client/views/settings/index.js:87",
         "client/views/settings/index.js:88",
         "client/views/settings/slide-type-editor/index.js:92",
         "client/views/settings/slide-type-editor/index.js:93",
-        "client/views/settings/theme-editor/index.js:34",
-        "client/views/settings/theme-editor/index.js:35",
+        "client/views/settings/theme-editor/index.js:36",
+        "client/views/settings/theme-editor/index.js:37",
         "client/views/viewer/viewer-topbar.js:29",
         "client/views/viewer/viewer-topbar.js:30"
       ]
@@ -1618,8 +1618,8 @@
         "client/views/editor/ai-append.js:150",
         "client/views/editor/ai-append.js:166",
         "client/views/editor/ai-append.js:175",
-        "client/views/editor/inline-edit/inline-editor.js:317",
-        "client/views/editor/inline-edit/inline-editor.js:417",
+        "client/views/editor/inline-edit/inline-editor.js:324",
+        "client/views/editor/inline-edit/inline-editor.js:424",
         "client/views/editor/modals/analyze-modal.js:63",
         "client/views/editor/modals/analyze-modal.js:107",
         "client/views/editor/modals/change-theme-modal.js:165",
@@ -1628,10 +1628,10 @@
         "client/views/editor/modals/revoke-message-modal.js:135",
         "client/views/editor/modals/save-to-library-modal.js:315",
         "client/views/editor/modals/versions-modal.js:34",
-        "client/views/editor/preview-panel.js:223",
+        "client/views/editor/preview-panel.js:226",
         "client/views/editor/share-dropdown/workspace-share-modal.js:68",
         "client/views/list/modals/ai-wizard.js:400",
-        "client/views/list/modals/creation-view/index.js:635",
+        "client/views/list/modals/creation-view/index.js:670",
         "client/views/list/modals/file-converter.js:174",
         "client/views/settings/admin-users/add-modal.js:56",
         "client/views/settings/admin-users/edit-modal.js:206",
@@ -1639,7 +1639,7 @@
         "client/views/settings/api-keys/revoke-modal.js:55",
         "client/views/settings/font-editor/index.js:77",
         "client/views/settings/slide-type-editor/index.js:109",
-        "client/views/settings/theme-editor/index.js:51",
+        "client/views/settings/theme-editor/index.js:53",
         "client/views/shared/cookie-consent-banner.js:131"
       ]
     },
@@ -1659,8 +1659,8 @@
         "client/views/editor/deck-grid.js:178",
         "client/views/editor/image-library/picker.js:135",
         "client/views/editor/imagekit-picker.js:144",
-        "client/views/editor/inline-edit/inline-editor.js:303",
-        "client/views/editor/inline-edit/inline-editor.js:397",
+        "client/views/editor/inline-edit/inline-editor.js:310",
+        "client/views/editor/inline-edit/inline-editor.js:404",
         "client/views/editor/inline-edit/media-popover.js:66",
         "client/views/editor/modals/ai-deck-review-modal.js:282",
         "client/views/editor/modals/analyze-modal.js:83",
@@ -1678,11 +1678,10 @@
         "client/views/editor/slide-visibility-menu.js:101",
         "client/views/editor/slides-panel.js:194",
         "client/views/editor/topbar/language-mode.js:440",
-        "client/views/list/modals/settings.js:38",
         "client/views/notes-join.js:95",
         "client/views/settings/api-keys/create-modal.js:66",
         "client/views/settings/api-keys/usage-panel.js:32",
-        "client/views/settings/tabs/slide-types-tab.js:783",
+        "client/views/settings/tabs/slide-types-tab.js:876",
         "client/views/share-viewer/guest-join.js:48",
         "client/views/shared/cookie-consent-banner.js:75"
       ]
@@ -1745,17 +1744,17 @@
       "refs": [
         "client/lib/modal.js:488",
         "client/lib/slide-collections/collection-modals.js:105",
-        "client/views/list/modals/creation-view/index.js:640",
-        "client/views/list/modals/creation-view/index.js:663",
-        "client/views/list/modals/creation-view/index.js:671",
-        "client/views/list/modals/creation-view/index.js:726"
+        "client/views/list/modals/creation-view/index.js:675",
+        "client/views/list/modals/creation-view/index.js:698",
+        "client/views/list/modals/creation-view/index.js:706",
+        "client/views/list/modals/creation-view/index.js:769"
       ]
     },
     "common.default": {
       "default": "default",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:238",
-        "client/views/settings/tabs/admin-tab.js:249"
+        "client/views/settings/tabs/admin-tab.js:239",
+        "client/views/settings/tabs/admin-tab.js:250"
       ]
     },
     "common.delete": {
@@ -1769,7 +1768,7 @@
         "client/views/analytics/leads-tab.js:174",
         "client/views/analytics/leads-tab.js:199",
         "client/views/editor/comments-panel-actions.js:109",
-        "client/views/editor/editor-form.js:433",
+        "client/views/editor/editor-form.js:434",
         "client/views/editor/fields/images/multiple-images.js:96",
         "client/views/editor/fields/images/single-image.js:76",
         "client/views/editor/fields/images/title-bg-image.js:46",
@@ -1785,12 +1784,12 @@
         "client/views/settings/tabs/fonts-tab.js:171",
         "client/views/settings/tabs/fonts-tab.js:264",
         "client/views/settings/tabs/fonts-tab.js:266",
-        "client/views/settings/tabs/slide-types-tab.js:420",
-        "client/views/settings/tabs/slide-types-tab.js:476",
-        "client/views/settings/tabs/slide-types-tab.js:478",
-        "client/views/settings/tabs/themes-tab.js:377",
-        "client/views/settings/tabs/themes-tab.js:468",
-        "client/views/settings/tabs/themes-tab.js:470"
+        "client/views/settings/tabs/slide-types-tab.js:447",
+        "client/views/settings/tabs/slide-types-tab.js:569",
+        "client/views/settings/tabs/slide-types-tab.js:571",
+        "client/views/settings/tabs/themes-tab.js:378",
+        "client/views/settings/tabs/themes-tab.js:469",
+        "client/views/settings/tabs/themes-tab.js:471"
       ]
     },
     "common.deleting": {
@@ -1828,8 +1827,8 @@
       "refs": [
         "client/lib/slide-library/modals.js:72",
         "client/views/settings/tabs/fonts-tab.js:165",
-        "client/views/settings/tabs/slide-types-tab.js:231",
-        "client/views/settings/tabs/themes-tab.js:304"
+        "client/views/settings/tabs/slide-types-tab.js:247",
+        "client/views/settings/tabs/themes-tab.js:305"
       ]
     },
     "common.emDash": {
@@ -1849,6 +1848,12 @@
       "default": "Failed",
       "refs": [
         "client/views/analytics/leads-tab.js:197"
+      ]
+    },
+    "common.help": {
+      "default": "Help & docs",
+      "refs": [
+        "client/lib/user-menu.js:105"
       ]
     },
     "common.keepEditing": {
@@ -1887,16 +1892,16 @@
     "common.more": {
       "default": "More",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:237",
-        "client/views/settings/tabs/themes-tab.js:311"
+        "client/views/settings/tabs/slide-types-tab.js:253",
+        "client/views/settings/tabs/themes-tab.js:312"
       ]
     },
     "common.moreOptions": {
       "default": "More options",
       "refs": [
         "client/lib/slide-library/picker.js:283",
-        "client/views/editor/editor-form.js:182",
         "client/views/editor/editor-form.js:183",
+        "client/views/editor/editor-form.js:184",
         "client/views/editor/topbar/more-menu.js:216",
         "client/views/editor/topbar/more-menu.js:217"
       ]
@@ -1919,7 +1924,7 @@
       "default": "Next slide",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:89",
-        "client/views/settings/tabs/slide-types-tab.js:773"
+        "client/views/settings/tabs/slide-types-tab.js:866"
       ]
     },
     "common.none": {
@@ -1951,7 +1956,7 @@
       "default": "Previous slide",
       "refs": [
         "client/views/editor/modals/preview-lightbox.js:78",
-        "client/views/settings/tabs/slide-types-tab.js:763"
+        "client/views/settings/tabs/slide-types-tab.js:856"
       ]
     },
     "common.reject": {
@@ -1975,7 +1980,7 @@
         "client/views/settings/slide-type-editor/field-editor.js:121",
         "client/views/settings/slide-type-editor/field-editor.js:127",
         "client/views/settings/slide-type-editor/field-editor.js:129",
-        "client/views/settings/theme-editor/logo-uploader.js:128"
+        "client/views/settings/theme-editor/logo-uploader.js:62"
       ]
     },
     "common.save": {
@@ -1986,22 +1991,21 @@
         "client/lib/slide-library/edit-modal.js:229",
         "client/views/editor/image-library/detail.js:278",
         "client/views/editor/image-library/detail.js:282",
-        "client/views/editor/image-library/upload.js:259",
-        "client/views/editor/inline-edit/inline-editor.js:323",
-        "client/views/editor/inline-edit/inline-editor.js:423",
+        "client/views/editor/image-library/upload.js:263",
+        "client/views/editor/inline-edit/inline-editor.js:330",
+        "client/views/editor/inline-edit/inline-editor.js:430",
         "client/views/editor/publish-export/publish-modal.js:184",
         "client/views/settings/email-templates-panel/index.js:113",
         "client/views/settings/font-editor/index.js:83",
-        "client/views/settings/panel.js:341",
         "client/views/settings/slide-type-editor/index.js:115",
         "client/views/settings/tabs/account-tab.js:169",
-        "client/views/settings/tabs/admin-tab.js:313",
+        "client/views/settings/tabs/admin-tab.js:314",
         "client/views/settings/tabs/analytics-tab.js:399",
         "client/views/settings/tabs/email-tab.js:46",
         "client/views/settings/tabs/integrations-tab.js:263",
         "client/views/settings/tabs/preferences-tab.js:347",
-        "client/views/settings/tabs/themes-tab.js:94",
-        "client/views/settings/theme-editor/index.js:57"
+        "client/views/settings/tabs/themes-tab.js:95",
+        "client/views/settings/theme-editor/index.js:59"
       ]
     },
     "common.saveFailedAborted": {
@@ -2056,7 +2060,7 @@
     "common.settings": {
       "default": "Settings",
       "refs": [
-        "client/lib/user-menu.js:88",
+        "client/lib/user-menu.js:89",
         "client/views/editor/topbar/more-menu.js:168"
       ]
     },
@@ -2076,7 +2080,7 @@
     "common.signOut": {
       "default": "Sign out",
       "refs": [
-        "client/lib/user-menu.js:103",
+        "client/lib/user-menu.js:120",
         "client/views/editor/topbar/more-menu.js:199"
       ]
     },
@@ -2086,6 +2090,8 @@
         "client/lib/theme-select.js:30",
         "client/lib/theme-select.js:177",
         "client/views/list/modals/ai-wizard.js:85",
+        "client/views/list/modals/creation-view/index.js:634",
+        "client/views/list/modals/creation-view/index.js:759",
         "client/views/list/modals/file-converter.js:69"
       ]
     },
@@ -2116,7 +2122,7 @@
     "common.userMenu": {
       "default": "User menu",
       "refs": [
-        "client/lib/user-menu.js:64"
+        "client/lib/user-menu.js:65"
       ]
     },
     "cookies.acceptAll": {
@@ -2815,9 +2821,9 @@
       "default": "This slide is locked by the author",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:143",
-        "client/views/editor/editor-controller.js:233",
-        "client/views/editor/editor-controller.js:282",
-        "client/views/editor/editor-controller.js:1423"
+        "client/views/editor/editor-controller.js:234",
+        "client/views/editor/editor-controller.js:283",
+        "client/views/editor/editor-controller.js:1443"
       ]
     },
     "editor.autoFit.applied": {
@@ -2836,13 +2842,15 @@
     "editor.background.opt1": {
       "default": "Color 1",
       "refs": [
-        "client/views/editor/fields/background.js:48"
+        "client/views/editor/fields/background.js:48",
+        "client/views/settings/theme-editor/variants-section.js:121"
       ]
     },
     "editor.background.opt2": {
       "default": "Color 2",
       "refs": [
-        "client/views/editor/fields/background.js:52"
+        "client/views/editor/fields/background.js:52",
+        "client/views/settings/theme-editor/variants-section.js:122"
       ]
     },
     "editor.background.transparent": {
@@ -2872,13 +2880,13 @@
     "editor.bulkEdit.open": {
       "default": "All text",
       "refs": [
-        "client/views/editor/editor-form.js:649"
+        "client/views/editor/editor-form.js:652"
       ]
     },
     "editor.bulkEdit.openTitle": {
       "default": "Edit all text fields of this slide in one view",
       "refs": [
-        "client/views/editor/editor-form.js:650"
+        "client/views/editor/editor-form.js:653"
       ]
     },
     "editor.bulkEdit.prev": {
@@ -2957,7 +2965,7 @@
     "editor.cards.icon": {
       "default": "Icon",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:199",
+        "client/views/editor/editor-form/inspector-form.js:204",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:257"
       ]
     },
@@ -2982,7 +2990,7 @@
     "editor.cards.linkHelp2": {
       "default": "Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:219",
+        "client/views/editor/editor-form/inspector-form.js:224",
         "client/views/editor/editor-form/slide-forms/icon-card-grid.js:308",
         "client/views/editor/editor-form/slide-forms/logo-wall.js:298"
       ]
@@ -3125,80 +3133,80 @@
     "editor.chart.example": {
       "default": "Example",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:420"
+        "client/views/editor/fields/csv-grid.js:499"
       ]
     },
     "editor.chart.grid.addRow": {
       "default": "+ Row",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:327"
+        "client/views/editor/fields/csv-grid.js:406"
       ]
     },
     "editor.chart.grid.addSeries": {
       "default": "+ Series",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:340"
+        "client/views/editor/fields/csv-grid.js:419"
       ]
     },
     "editor.chart.grid.columnName": {
       "default": "Column {n} name",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:249"
+        "client/views/editor/fields/csv-grid.js:328"
       ]
     },
     "editor.chart.grid.helpBarPie": {
       "default": "A label and a numeric value per row. Paste a block from Sheets/Excel into any cell.",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:435"
+        "client/views/editor/fields/csv-grid.js:514"
       ]
     },
     "editor.chart.grid.helpLine": {
       "default": "X label in the first column, then one or two numeric series. The header row sets the series names.",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:431"
+        "client/views/editor/fields/csv-grid.js:510"
       ]
     },
     "editor.chart.grid.removeRow": {
       "default": "Remove row",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:309"
+        "client/views/editor/fields/csv-grid.js:388"
       ]
     },
     "editor.chart.grid.removeRowN": {
       "default": "Remove row {n}",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:310"
+        "client/views/editor/fields/csv-grid.js:389"
       ]
     },
     "editor.chart.grid.removeSeries": {
       "default": "Remove series",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:266",
-        "client/views/editor/fields/csv-grid.js:267"
+        "client/views/editor/fields/csv-grid.js:345",
+        "client/views/editor/fields/csv-grid.js:346"
       ]
     },
     "editor.chart.grid.tabGrid": {
       "default": "Grid",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:380"
+        "client/views/editor/fields/csv-grid.js:459"
       ]
     },
     "editor.chart.grid.tabRaw": {
       "default": "Raw CSV",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:381"
+        "client/views/editor/fields/csv-grid.js:460"
       ]
     },
     "editor.chart.grid.viewLabel": {
       "default": "Data editor view",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:378"
+        "client/views/editor/fields/csv-grid.js:457"
       ]
     },
     "editor.chart.importCsv": {
       "default": "Import CSV",
       "refs": [
-        "client/views/editor/fields/csv-grid.js:414"
+        "client/views/editor/fields/csv-grid.js:493"
       ]
     },
     "editor.code.readOnly": {
@@ -3210,7 +3218,7 @@
     "editor.collab.liveEditsUnavailable": {
       "default": "Live collaboration failed to load; changes are not being saved. Reload the editor.",
       "refs": [
-        "client/views/editor/editor-controller.js:911"
+        "client/views/editor/editor-controller.js:919"
       ]
     },
     "editor.color.pickColor": {
@@ -3222,8 +3230,7 @@
     "editor.comments": {
       "default": "Comments",
       "refs": [
-        "client/views/editor/pane-tabs.js:58",
-        "client/views/editor/pane-tabs.js:59"
+        "client/views/editor/pane-tabs.js:45"
       ]
     },
     "editor.companion": {
@@ -3235,7 +3242,7 @@
     "editor.companion.title": {
       "default": "Open speaker notes companion on your phone (QR code).",
       "refs": [
-        "client/views/editor/notes-strip.js:64",
+        "client/views/editor/notes-strip.js:69",
         "client/views/editor/topbar.js:424"
       ]
     },
@@ -3954,51 +3961,109 @@
     "editor.export.button": {
       "default": "Export",
       "refs": [
-        "client/views/editor/export-dropdown.js:18"
+        "client/views/editor/export-dropdown.js:24"
+      ]
+    },
+    "editor.export.descHandoff": {
+      "default": "Everything bundled (PDF, PPTX, PNG, notes)",
+      "refs": [
+        "client/views/editor/export-modal.js:74"
+      ]
+    },
+    "editor.export.descHtml": {
+      "default": "Self-contained web page",
+      "refs": [
+        "client/views/editor/export-modal.js:48"
+      ]
+    },
+    "editor.export.descJson": {
+      "default": "Raw deck data",
+      "refs": [
+        "client/views/editor/export-modal.js:73"
+      ]
+    },
+    "editor.export.descNotes": {
+      "default": "Speaker notes",
+      "refs": [
+        "client/views/editor/export-modal.js:59"
+      ]
+    },
+    "editor.export.descPdf": {
+      "default": "One slide per page (16:9)",
+      "refs": [
+        "client/views/editor/export-modal.js:45"
+      ]
+    },
+    "editor.export.descPng": {
+      "default": "Image of each slide",
+      "refs": [
+        "client/views/editor/export-modal.js:46"
+      ]
+    },
+    "editor.export.descPptx": {
+      "default": "PowerPoint file",
+      "refs": [
+        "client/views/editor/export-modal.js:47"
+      ]
+    },
+    "editor.export.descTextPdf": {
+      "default": "Readable handout, no slide layout",
+      "refs": [
+        "client/views/editor/export-modal.js:55"
+      ]
+    },
+    "editor.export.groupData": {
+      "default": "Data & bundle",
+      "refs": [
+        "client/views/editor/export-modal.js:71"
+      ]
+    },
+    "editor.export.groupDocuments": {
+      "default": "Documents",
+      "refs": [
+        "client/views/editor/export-modal.js:53"
+      ]
+    },
+    "editor.export.groupSlides": {
+      "default": "Slides",
+      "refs": [
+        "client/views/editor/export-modal.js:43"
       ]
     },
     "editor.export.handoff": {
       "default": "Handoff ZIP",
       "refs": [
-        "client/views/editor/export-dropdown.js:58"
+        "client/views/editor/export-modal.js:74"
       ]
     },
-    "editor.export.header": {
-      "default": "Export ({lang})",
+    "editor.export.notes": {
+      "default": "Notes",
       "refs": [
-        "client/views/editor/export-dropdown.js:27",
-        "client/views/editor/export-dropdown.js:69",
-        "client/views/editor/publish-export/export-buttons.js:59"
+        "client/views/editor/export-modal.js:58"
       ]
     },
-    "editor.export.notesDocx": {
-      "default": "Notes (Word)",
+    "editor.export.notesWordShort": {
+      "default": "Word",
       "refs": [
-        "client/views/editor/export-dropdown.js:57"
+        "client/views/editor/export-modal.js:64"
       ]
     },
-    "editor.export.notesMd": {
-      "default": "Notes (Markdown)",
+    "editor.export.textPdf": {
+      "default": "Text handout",
       "refs": [
-        "client/views/editor/export-dropdown.js:56"
-      ]
-    },
-    "editor.export.pdfPrint": {
-      "default": "PDF (print in browser)",
-      "refs": [
-        "client/views/editor/export-dropdown.js:49"
-      ]
-    },
-    "editor.export.printText": {
-      "default": "Print text",
-      "refs": [
-        "client/views/editor/export-dropdown.js:55"
+        "client/views/editor/export-modal.js:55"
       ]
     },
     "editor.export.title": {
       "default": "Export to file",
       "refs": [
-        "client/views/editor/export-dropdown.js:19"
+        "client/views/editor/export-dropdown.js:25"
+      ]
+    },
+    "editor.field.textColumns": {
+      "default": "Text columns",
+      "refs": [
+        "shared/slide-types:content-slide"
       ]
     },
     "editor.fields.copied": {
@@ -4588,7 +4653,7 @@
     "editor.imageText.images": {
       "default": "Images",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:167",
+        "client/views/editor/editor-form/inspector-form.js:170",
         "client/views/editor/editor-form/slide-forms/image-text-images.js:60"
       ]
     },
@@ -4724,7 +4789,7 @@
     "editor.inline.clearField": {
       "default": "Clear {label}",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:662"
+        "client/views/editor/inline-edit/inline-editor.js:669"
       ]
     },
     "editor.inline.coach": {
@@ -4742,22 +4807,22 @@
     "editor.inline.editingField": {
       "default": "Editing: {label}",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:308",
-        "client/views/editor/inline-edit/inline-editor.js:404"
+        "client/views/editor/inline-edit/inline-editor.js:315",
+        "client/views/editor/inline-edit/inline-editor.js:411"
       ]
     },
     "editor.inline.markdownHint": {
       "default": "Ctrl/⌘ + Enter to save",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:312",
-        "client/views/editor/inline-edit/inline-editor.js:411"
+        "client/views/editor/inline-edit/inline-editor.js:319",
+        "client/views/editor/inline-edit/inline-editor.js:418"
       ]
     },
     "editor.inline.media.addImage": {
       "default": "Add image",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:1034",
-        "client/views/editor/inline-edit/inline-editor.js:1157"
+        "client/views/editor/inline-edit/inline-editor.js:1042",
+        "client/views/editor/inline-edit/inline-editor.js:1267"
       ]
     },
     "editor.inline.media.alt": {
@@ -4775,19 +4840,31 @@
     "editor.inline.media.changeImage": {
       "default": "Change image",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:1035"
+        "client/views/editor/inline-edit/inline-editor.js:1043"
+      ]
+    },
+    "editor.inline.media.dropFailed": {
+      "default": "Upload failed. Please try again.",
+      "refs": [
+        "client/views/editor/inline-edit/inline-editor.js:1130"
+      ]
+    },
+    "editor.inline.media.dropInvalid": {
+      "default": "That is not an image file.",
+      "refs": [
+        "client/views/editor/inline-edit/inline-editor.js:1108"
       ]
     },
     "editor.inline.media.removeImageArea": {
       "default": "Remove image area (becomes a text slide)",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:1170"
+        "client/views/editor/inline-edit/inline-editor.js:1280"
       ]
     },
     "editor.inline.media.title": {
       "default": "Image",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:1105",
+        "client/views/editor/inline-edit/inline-editor.js:1215",
         "client/views/editor/inline-edit/media-popover.js:57",
         "client/views/editor/inline-edit/media-popover.js:62"
       ]
@@ -4795,45 +4872,45 @@
     "editor.inline.reorderItem": {
       "default": "Drag to reorder",
       "refs": [
-        "client/views/editor/inline-edit/inline-editor.js:808"
+        "client/views/editor/inline-edit/inline-editor.js:815"
       ]
     },
     "editor.inspector.cardsConfig": {
       "default": "Card icons & links",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:187"
+        "client/views/editor/editor-form/inspector-form.js:192"
       ]
     },
     "editor.inspector.column": {
       "default": "Column {n}",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:247"
+        "client/views/editor/editor-form/inspector-form.js:252"
       ]
     },
     "editor.inspector.columnsConfig": {
       "default": "Column images & blocks",
       "refs": [
-        "client/views/editor/editor-form/inspector-form.js:238"
+        "client/views/editor/editor-form/inspector-form.js:243"
       ]
     },
     "editor.inspector.hide": {
       "default": "Hide inspector",
       "refs": [
-        "client/views/editor/editor-form.js:576",
-        "client/views/editor/editor-form.js:577"
+        "client/views/editor/editor-form.js:579",
+        "client/views/editor/editor-form.js:580"
       ]
     },
     "editor.inspector.title": {
       "default": "Inspector",
       "refs": [
-        "client/views/editor/editor-form.js:568",
-        "client/views/editor/pane-tabs.js:54"
+        "client/views/editor/editor-form.js:571",
+        "client/views/editor/pane-tabs.js:44"
       ]
     },
     "editor.inspector.toggle": {
       "default": "Show or hide the inspector",
       "refs": [
-        "client/views/editor/pane-tabs.js:53"
+        "client/views/editor/pane-tabs.js:61"
       ]
     },
     "editor.items.add": {
@@ -4913,50 +4990,50 @@
     "editor.layoutSwitcher.chip": {
       "default": "Layout",
       "refs": [
-        "client/views/editor/layout-switcher.js:195"
+        "client/views/editor/layout-switcher.js:134"
       ]
     },
     "editor.layoutSwitcher.imageLeft": {
       "default": "Image left",
       "refs": [
-        "client/views/editor/layout-switcher.js:227"
+        "client/views/editor/layout-switcher.js:166"
       ]
     },
     "editor.layoutSwitcher.imagePosition": {
       "default": "Image position",
       "refs": [
-        "client/views/editor/layout-switcher.js:243"
+        "client/views/editor/layout-switcher.js:182"
       ]
     },
     "editor.layoutSwitcher.imageRight": {
       "default": "Image right",
       "refs": [
-        "client/views/editor/layout-switcher.js:233"
+        "client/views/editor/layout-switcher.js:172"
       ]
     },
     "editor.layoutSwitcher.textCols1": {
       "default": "1 column",
       "refs": [
-        "client/views/editor/layout-switcher.js:296"
+        "client/views/editor/layout-switcher.js:235"
       ]
     },
     "editor.layoutSwitcher.textCols2": {
       "default": "2 columns",
       "refs": [
-        "client/views/editor/layout-switcher.js:302"
+        "client/views/editor/layout-switcher.js:241"
       ]
     },
     "editor.layoutSwitcher.textColumns": {
       "default": "Text columns",
       "refs": [
-        "client/views/editor/layout-switcher.js:312"
+        "client/views/editor/layout-switcher.js:251"
       ]
     },
     "editor.layoutSwitcher.title": {
       "default": "Slide layout",
       "refs": [
-        "client/views/editor/layout-switcher.js:188",
-        "client/views/editor/layout-switcher.js:204"
+        "client/views/editor/layout-switcher.js:127",
+        "client/views/editor/layout-switcher.js:143"
       ]
     },
     "editor.loading.deck": {
@@ -5053,7 +5130,7 @@
       "default": "Supports paragraphs, lists, bold/italic, links, and markdown tables.",
       "refs": [
         "client/views/editor/editor-form/render-field.js:164",
-        "client/views/editor/inline-edit/inline-editor.js:274"
+        "client/views/editor/inline-edit/inline-editor.js:281"
       ]
     },
     "editor.markdown.inlineCode": {
@@ -5110,18 +5187,6 @@
       "default": "Create a private copy of this presentation.",
       "refs": [
         "client/views/editor/topbar/more-menu.js:57"
-      ]
-    },
-    "editor.more.shareLinks": {
-      "default": "Share links…",
-      "refs": [
-        "client/views/editor/publish-export.js:191"
-      ]
-    },
-    "editor.more.shareLinks.title": {
-      "default": "Create shareable links for external users (no account required).",
-      "refs": [
-        "client/views/editor/publish-export.js:192"
       ]
     },
     "editor.more.subscription": {
@@ -5195,37 +5260,37 @@
     "editor.notes.collapse": {
       "default": "Hide presenter notes",
       "refs": [
-        "client/views/editor/notes-strip.js:98"
+        "client/views/editor/notes-strip.js:103"
       ]
     },
     "editor.notes.expand": {
       "default": "Show presenter notes",
       "refs": [
-        "client/views/editor/notes-strip.js:97"
+        "client/views/editor/notes-strip.js:102"
       ]
     },
     "editor.notes.placeholder": {
       "default": "Text you write here shows on your phone. Click 'Notes (QR)' to show a QR code for your phone.",
       "refs": [
-        "client/views/editor/notes-strip.js:77"
+        "client/views/editor/notes-strip.js:82"
       ]
     },
     "editor.notes.qr": {
       "default": "Notes (QR)",
       "refs": [
-        "client/views/editor/notes-strip.js:63"
+        "client/views/editor/notes-strip.js:68"
       ]
     },
     "editor.notes.title": {
       "default": "Presenter notes",
       "refs": [
-        "client/views/editor/notes-strip.js:54"
+        "client/views/editor/notes-strip.js:59"
       ]
     },
     "editor.panes.label": {
       "default": "Side panels",
       "refs": [
-        "client/views/editor/pane-tabs.js:47"
+        "client/views/editor/pane-tabs.js:55"
       ]
     },
     "editor.pendingRequests": {
@@ -5282,14 +5347,14 @@
     "editor.preview.clickToZoom": {
       "default": "Click to open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:121"
+        "client/views/editor/preview-panel.js:124"
       ]
     },
     "editor.preview.openLarge": {
       "default": "Open larger preview",
       "refs": [
-        "client/views/editor/preview-panel.js:67",
-        "client/views/editor/preview-panel.js:68"
+        "client/views/editor/preview-panel.js:65",
+        "client/views/editor/preview-panel.js:66"
       ]
     },
     "editor.publish.confirm": {
@@ -5299,9 +5364,8 @@
       ]
     },
     "editor.publish.manage": {
-      "default": "Published (manage…)",
+      "default": "Manage published...",
       "refs": [
-        "client/views/editor/publish-export.js:250",
         "client/views/editor/share-dropdown/ui-sync.js:30"
       ]
     },
@@ -5326,51 +5390,31 @@
     "editor.publish.notion": {
       "default": "Add to Notion page",
       "refs": [
-        "client/views/editor/publish-export.js:125",
-        "client/views/editor/publish-export.js:143",
-        "client/views/editor/publish-export.js:161",
         "client/views/editor/share-dropdown/share-actions.js:180",
         "client/views/editor/share-dropdown.js:207"
       ]
     },
-    "editor.publish.notion.add": {
-      "default": "Add",
-      "refs": [
-        "client/views/editor/publish-export.js:148"
-      ]
-    },
-    "editor.publish.notion.adding": {
-      "default": "Adding to Notion…",
-      "refs": [
-        "client/views/editor/publish-export.js:162"
-      ]
-    },
     "editor.publish.notion.confirm": {
-      "default": "Add presentation embed to the source Notion page?\n\nThis will add a divider, heading, and embedded presentation at the bottom of the Notion page.",
+      "default": "Add presentation embed to the source Notion page?",
       "refs": [
-        "client/views/editor/publish-export.js:144",
         "client/views/editor/share-dropdown/share-actions.js:181"
       ]
     },
     "editor.publish.notion.failed": {
       "default": "Failed to add to Notion: ",
       "refs": [
-        "client/views/editor/publish-export.js:177",
         "client/views/editor/share-dropdown/share-actions.js:196"
       ]
     },
     "editor.publish.notion.notAvailable": {
       "default": "Notion publishing not available for this presentation.",
       "refs": [
-        "client/views/editor/publish-export.js:133",
         "client/views/editor/share-dropdown/share-actions.js:171"
       ]
     },
     "editor.publish.notion.success": {
       "default": "Added to Notion page!",
       "refs": [
-        "client/views/editor/publish-export.js:163",
-        "client/views/editor/publish-export.js:174",
         "client/views/editor/share-dropdown/share-actions.js:193"
       ]
     },
@@ -5379,37 +5423,14 @@
       "refs": [
         "client/views/editor/publish-export/publish.js:122",
         "client/views/editor/publish-export/publish.js:127",
-        "client/views/editor/publish-export.js:53",
-        "client/views/editor/publish-export.js:71",
-        "client/views/editor/publish-export.js:251",
-        "client/views/editor/publish-export.js:266",
         "client/views/editor/share-dropdown/ui-sync.js:31",
         "client/views/editor/share-dropdown.js:143"
-      ]
-    },
-    "editor.publish.publish.title": {
-      "default": "Publish (make public via a link)",
-      "refs": [
-        "client/views/editor/publish-export.js:65",
-        "client/views/editor/publish-export.js:272"
       ]
     },
     "editor.publish.publishAnyway": {
       "default": "Publish anyway",
       "refs": [
         "client/views/editor/publish-export/publish.js:162"
-      ]
-    },
-    "editor.publish.published": {
-      "default": "Published",
-      "refs": [
-        "client/views/editor/publish-export.js:265"
-      ]
-    },
-    "editor.publish.published.title": {
-      "default": "Published (manage links and settings)",
-      "refs": [
-        "client/views/editor/publish-export.js:268"
       ]
     },
     "editor.publish.rssFeedNotice": {
@@ -5424,9 +5445,6 @@
         "client/views/editor/publish-export/publish-modal.js:240",
         "client/views/editor/publish-export/publish-modal.js:243",
         "client/views/editor/publish-export/publish-modal.js:248",
-        "client/views/editor/publish-export.js:93",
-        "client/views/editor/publish-export.js:100",
-        "client/views/editor/publish-export.js:105",
         "client/views/editor/share-dropdown.js:178",
         "client/views/editor/share-dropdown.js:184",
         "client/views/editor/share-dropdown.js:189"
@@ -5436,7 +5454,6 @@
       "default": "Unpublish?\n\nThis will invalidate the public link and embed links. Anyone with a shared /p/ or /embed/ link will no longer be able to open the presentation.\n\nIf you use this link in a website, invite, follow-along, notes/QR or other tooling, it will stop working there too.",
       "refs": [
         "client/views/editor/publish-export/publish-modal.js:244",
-        "client/views/editor/publish-export.js:101",
         "client/views/editor/share-dropdown.js:185"
       ]
     },
@@ -5541,19 +5558,19 @@
     "editor.readOnly.banner": {
       "default": "View only - someone else is editing",
       "refs": [
-        "client/views/editor/editor-controller.js:664"
+        "client/views/editor/editor-controller.js:667"
       ]
     },
     "editor.readOnly.someone": {
       "default": "someone else",
       "refs": [
-        "client/views/editor/editor-controller.js:668"
+        "client/views/editor/editor-controller.js:671"
       ]
     },
     "editor.readOnly.toast": {
       "default": "This presentation is being edited by {who}. You can view but not edit.",
       "refs": [
-        "client/views/editor/editor-controller.js:670"
+        "client/views/editor/editor-controller.js:673"
       ]
     },
     "editor.redo": {
@@ -5634,13 +5651,13 @@
     "editor.save.remoteMerged": {
       "default": "Changes from another editor were merged in",
       "refs": [
-        "client/views/editor/editor-controller.js:336"
+        "client/views/editor/editor-controller.js:337"
       ]
     },
     "editor.save.remoteMergedSee": {
       "default": "See what changed",
       "refs": [
-        "client/views/editor/editor-controller.js:341"
+        "client/views/editor/editor-controller.js:342"
       ]
     },
     "editor.save.saved": {
@@ -5915,13 +5932,13 @@
     "editor.slide.accessibility": {
       "default": "Accessibility",
       "refs": [
-        "client/views/editor/editor-form.js:948"
+        "client/views/editor/editor-form.js:951"
       ]
     },
     "editor.slide.accessibility.title": {
       "default": "Optional fields to improve screen-reader output and exports.",
       "refs": [
-        "client/views/editor/editor-form.js:949"
+        "client/views/editor/editor-form.js:952"
       ]
     },
     "editor.slide.addImage": {
@@ -5933,110 +5950,110 @@
     "editor.slide.aiConvert": {
       "default": "AI Convert…",
       "refs": [
-        "client/views/editor/editor-form.js:257"
+        "client/views/editor/editor-form.js:258"
       ]
     },
     "editor.slide.aiConvert.cancel": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/editor-form.js:293"
+        "client/views/editor/editor-form.js:294"
       ]
     },
     "editor.slide.aiConvert.cancelled": {
       "default": "Conversion cancelled.",
       "refs": [
-        "client/views/editor/editor-form.js:328"
+        "client/views/editor/editor-form.js:329"
       ]
     },
     "editor.slide.aiConvert.converting": {
       "default": "Converting with AI…",
       "refs": [
-        "client/views/editor/editor-form.js:288"
+        "client/views/editor/editor-form.js:289"
       ]
     },
     "editor.slide.aiConvert.done": {
       "default": "Converted successfully!",
       "refs": [
-        "client/views/editor/editor-form.js:321"
+        "client/views/editor/editor-form.js:322"
       ]
     },
     "editor.slide.aiConvert.failed": {
       "default": "Conversion failed: {error}",
       "refs": [
-        "client/views/editor/editor-form.js:331"
+        "client/views/editor/editor-form.js:332"
       ]
     },
     "editor.slide.aiConvert.title": {
       "default": "Use AI to intelligently convert this slide to a different type.",
       "refs": [
-        "client/views/editor/editor-form.js:260"
+        "client/views/editor/editor-form.js:261"
       ]
     },
     "editor.slide.aiIterate.applied": {
       "default": "Changes applied",
       "refs": [
-        "client/views/editor/editor-form.js:888"
+        "client/views/editor/editor-form.js:891"
       ]
     },
     "editor.slide.aiIterate.button": {
       "default": "Refine",
       "refs": [
-        "client/views/editor/editor-form.js:815",
-        "client/views/editor/editor-form.js:827"
+        "client/views/editor/editor-form.js:818",
+        "client/views/editor/editor-form.js:830"
       ]
     },
     "editor.slide.aiIterate.cancel": {
       "default": "Cancel",
       "refs": [
-        "client/views/editor/editor-form.js:826"
+        "client/views/editor/editor-form.js:829"
       ]
     },
     "editor.slide.aiIterate.cancelled": {
       "default": "Refinement cancelled.",
       "refs": [
-        "client/views/editor/editor-form.js:913"
+        "client/views/editor/editor-form.js:916"
       ]
     },
     "editor.slide.aiIterate.failed": {
       "default": "Refinement failed: {error}",
       "refs": [
-        "client/views/editor/editor-form.js:916"
+        "client/views/editor/editor-form.js:919"
       ]
     },
     "editor.slide.aiIterate.noChanges": {
       "default": "No changes suggested",
       "refs": [
-        "client/views/editor/editor-form.js:909"
+        "client/views/editor/editor-form.js:912"
       ]
     },
     "editor.slide.aiIterate.placeholder": {
       "default": "Make this punchier, split this slide...",
       "refs": [
-        "client/views/editor/editor-form.js:808"
+        "client/views/editor/editor-form.js:811"
       ]
     },
     "editor.slide.aiIterate.reverted": {
       "default": "Reverted the change.",
       "refs": [
-        "client/views/editor/editor-form.js:903"
+        "client/views/editor/editor-form.js:906"
       ]
     },
     "editor.slide.aiIterate.title": {
       "default": "Use AI to refine this slide",
       "refs": [
-        "client/views/editor/editor-form.js:813"
+        "client/views/editor/editor-form.js:816"
       ]
     },
     "editor.slide.aiIterate.undo": {
       "default": "Undo",
       "refs": [
-        "client/views/editor/editor-form.js:892"
+        "client/views/editor/editor-form.js:895"
       ]
     },
     "editor.slide.aiReasoning": {
       "default": "AI type reasoning",
       "refs": [
-        "client/views/editor/editor-form.js:758"
+        "client/views/editor/editor-form.js:761"
       ]
     },
     "editor.slide.altText": {
@@ -6054,31 +6071,37 @@
     "editor.slide.background.colour": {
       "default": "Color",
       "refs": [
-        "client/views/editor/editor-form.js:1076"
+        "client/views/editor/editor-form.js:1098"
       ]
     },
     "editor.slide.background.focus": {
       "default": "Background focus (crop)",
       "refs": [
-        "client/views/editor/editor-form.js:1101"
+        "client/views/editor/editor-form.js:1124"
       ]
     },
     "editor.slide.background.focusHelp": {
       "default": "Pick which part stays visible when the image is cropped to fill the slide.",
       "refs": [
-        "client/views/editor/editor-form.js:1102"
+        "client/views/editor/editor-form.js:1125"
+      ]
+    },
+    "editor.slide.background.lockedByTheme": {
+      "default": "Set by the theme and not editable per slide.",
+      "refs": [
+        "client/views/editor/editor-form.js:1081"
       ]
     },
     "editor.slide.background.section": {
       "default": "Background",
       "refs": [
-        "client/views/editor/editor-form.js:984"
+        "client/views/editor/editor-form.js:987"
       ]
     },
     "editor.slide.background.sectionHelp": {
       "default": "Background colour or a custom image, plus the theme corner logo.",
       "refs": [
-        "client/views/editor/editor-form.js:985"
+        "client/views/editor/editor-form.js:988"
       ]
     },
     "editor.slide.caption": {
@@ -6092,7 +6115,7 @@
       "refs": [
         "client/views/editor/convert-slide-action.js:72",
         "client/views/editor/convert-slide-action.js:82",
-        "client/views/editor/editor-form.js:214"
+        "client/views/editor/editor-form.js:215"
       ]
     },
     "editor.slide.convert.confirmLossy": {
@@ -6104,25 +6127,25 @@
     "editor.slide.convert.title": {
       "default": "Convert this slide to a different type (best-effort).",
       "refs": [
-        "client/views/editor/editor-form.js:217"
+        "client/views/editor/editor-form.js:218"
       ]
     },
     "editor.slide.customType": {
       "default": "Custom type",
       "refs": [
-        "client/views/editor/editor-form.js:617"
+        "client/views/editor/editor-form.js:620"
       ]
     },
     "editor.slide.customType.basedOn": {
       "default": "Based on: {base}",
       "refs": [
-        "client/views/editor/editor-form.js:619"
+        "client/views/editor/editor-form.js:622"
       ]
     },
     "editor.slide.delete": {
       "default": "Delete slide",
       "refs": [
-        "client/views/editor/editor-form.js:431",
+        "client/views/editor/editor-form.js:432",
         "client/views/editor/slide-list/context-menu.js:94",
         "client/views/editor/slide-list/slide-actions.js:141"
       ]
@@ -6130,45 +6153,45 @@
     "editor.slide.deleteConfirm": {
       "default": "Delete this slide?",
       "refs": [
-        "client/views/editor/editor-form.js:432",
+        "client/views/editor/editor-form.js:433",
         "client/views/editor/slide-list/slide-actions.js:126"
       ]
     },
     "editor.slide.deleteMenu": {
       "default": "Delete slide…",
       "refs": [
-        "client/views/editor/editor-form.js:425"
+        "client/views/editor/editor-form.js:426"
       ]
     },
     "editor.slide.duplicate": {
       "default": "Duplicate",
       "refs": [
-        "client/views/editor/editor-form.js:380",
+        "client/views/editor/editor-form.js:381",
         "client/views/editor/slide-list/context-menu.js:86"
       ]
     },
     "editor.slide.duration.help": {
       "default": "Leave empty to use the deck default ({default}s). Override for this slide only.",
       "refs": [
-        "client/views/editor/editor-form.js:710"
+        "client/views/editor/editor-form.js:713"
       ]
     },
     "editor.slide.duration.label": {
       "default": "Slide duration (seconds)",
       "refs": [
-        "client/views/editor/editor-form.js:698"
+        "client/views/editor/editor-form.js:701"
       ]
     },
     "editor.slide.fillTranslation": {
       "default": "Fill slide…",
       "refs": [
-        "client/views/editor/editor-form.js:347"
+        "client/views/editor/editor-form.js:348"
       ]
     },
     "editor.slide.fillTranslation.title": {
       "default": "Fill this slide from the other language (with preview).",
       "refs": [
-        "client/views/editor/editor-form.js:348"
+        "client/views/editor/editor-form.js:349"
       ]
     },
     "editor.slide.fillTranslationToEn": {
@@ -6211,15 +6234,15 @@
       "default": "Layout settings",
       "refs": [
         "client/views/editor/editor-form/slide-forms/gallery-slide.js:75",
-        "client/views/editor/editor-form/slide-forms/image-slide.js:132",
+        "client/views/editor/editor-form/slide-forms/image-slide.js:136",
         "client/views/editor/editor-form/slide-forms/team-cards.js:85"
       ]
     },
     "editor.slide.lock": {
       "default": "Lock slide",
       "refs": [
-        "client/views/editor/editor-form.js:470",
-        "client/views/editor/editor-form.js:473"
+        "client/views/editor/editor-form.js:471",
+        "client/views/editor/editor-form.js:474"
       ]
     },
     "editor.slide.moveTo": {
@@ -6250,38 +6273,38 @@
     "editor.slide.retiredType": {
       "default": "Retired type",
       "refs": [
-        "client/views/editor/editor-form.js:608"
+        "client/views/editor/editor-form.js:611"
       ]
     },
     "editor.slide.retiredType.title": {
       "default": "This slide type is no longer available for new slides.",
       "refs": [
-        "client/views/editor/editor-form.js:609"
+        "client/views/editor/editor-form.js:612"
       ]
     },
     "editor.slide.unlock": {
       "default": "Unlock slide",
       "refs": [
-        "client/views/editor/editor-form.js:469",
-        "client/views/editor/editor-form.js:472"
+        "client/views/editor/editor-form.js:470",
+        "client/views/editor/editor-form.js:473"
       ]
     },
     "editor.slideLibrary.save": {
       "default": "Save to slide library…",
       "refs": [
-        "client/views/editor/editor-form.js:363"
+        "client/views/editor/editor-form.js:364"
       ]
     },
     "editor.slideLibrary.save.disabled": {
       "default": "This slide is managed automatically and can't be saved.",
       "refs": [
-        "client/views/editor/editor-form.js:366"
+        "client/views/editor/editor-form.js:367"
       ]
     },
     "editor.slideLibrary.save.title": {
       "default": "Save this slide so you can reuse it later.",
       "refs": [
-        "client/views/editor/editor-form.js:365"
+        "client/views/editor/editor-form.js:366"
       ]
     },
     "editor.slideLibrary.saveModal.bothLangsAvailable": {
@@ -6439,7 +6462,7 @@
     "editor.slideList.empty": {
       "default": "No slides found.",
       "refs": [
-        "client/views/editor/slide-list.js:376"
+        "client/views/editor/slide-list.js:377"
       ]
     },
     "editor.slideList.expand": {
@@ -6457,13 +6480,13 @@
     "editor.slideList.nestHint": {
       "default": "Drop to nest",
       "refs": [
-        "client/views/editor/slide-list.js:284"
+        "client/views/editor/slide-list.js:285"
       ]
     },
     "editor.slideList.searchHint": {
       "default": "Search results — clear the search box to reorder or add slides.",
       "refs": [
-        "client/views/editor/slide-list.js:362"
+        "client/views/editor/slide-list.js:363"
       ]
     },
     "editor.slideList.selectSlideN": {
@@ -6496,13 +6519,13 @@
       "default": "This slide is being edited by someone else",
       "refs": [
         "client/views/editor/bulk-edit-modal.js:145",
-        "client/views/editor/editor-controller.js:230"
+        "client/views/editor/editor-controller.js:231"
       ]
     },
     "editor.slideLocked.toast": {
       "default": "This slide is being edited by {name}",
       "refs": [
-        "client/views/editor/editor-controller.js:242"
+        "client/views/editor/editor-controller.js:243"
       ]
     },
     "editor.slideTypeModal.aiAdd": {
@@ -6628,7 +6651,7 @@
     "editor.slides.dragMultiple": {
       "default": "{n} slides",
       "refs": [
-        "client/views/editor/slide-list/drag-handlers.js:74"
+        "client/views/editor/slide-list/drag-handlers.js:81"
       ]
     },
     "editor.slides.duplicated": {
@@ -6653,7 +6676,7 @@
     "editor.slides.movingSlides": {
       "default": "Moving",
       "refs": [
-        "client/views/editor/slide-list/drag-handlers.js:77"
+        "client/views/editor/slide-list/drag-handlers.js:84"
       ]
     },
     "editor.slides.paste": {
@@ -7808,27 +7831,27 @@
     "imageLibrary.addButton": {
       "default": "Save to library",
       "refs": [
-        "client/views/editor/image-library/upload.js:255"
+        "client/views/editor/image-library/upload.js:259"
       ]
     },
     "imageLibrary.addNew": {
       "default": "Add new",
       "refs": [
-        "client/views/editor/image-library/upload.js:101",
-        "client/views/editor/image-library/upload.js:430"
+        "client/views/editor/image-library/upload.js:105",
+        "client/views/editor/image-library/upload.js:434"
       ]
     },
     "imageLibrary.added": {
       "default": "Added.",
       "refs": [
-        "client/views/editor/image-library/upload.js:272"
+        "client/views/editor/image-library/upload.js:276"
       ]
     },
     "imageLibrary.alt.generate": {
       "default": "Generate alt text (AI)",
       "refs": [
         "client/views/editor/image-library/detail.js:221",
-        "client/views/editor/image-library/upload.js:205"
+        "client/views/editor/image-library/upload.js:209"
       ]
     },
     "imageLibrary.alt.generated": {
@@ -7836,8 +7859,8 @@
       "refs": [
         "client/views/editor/image-library/detail.js:200",
         "client/views/editor/image-library/detail.js:243",
-        "client/views/editor/image-library/upload.js:224",
-        "client/views/editor/image-library/upload.js:313"
+        "client/views/editor/image-library/upload.js:228",
+        "client/views/editor/image-library/upload.js:317"
       ]
     },
     "imageLibrary.alt.generating": {
@@ -7845,23 +7868,23 @@
       "refs": [
         "client/views/editor/image-library/detail.js:184",
         "client/views/editor/image-library/detail.js:235",
-        "client/views/editor/image-library/upload.js:210",
-        "client/views/editor/image-library/upload.js:299"
+        "client/views/editor/image-library/upload.js:214",
+        "client/views/editor/image-library/upload.js:303"
       ]
     },
     "imageLibrary.alt.missingConfirmUse": {
       "default": "Alt text is still empty. Use this image anyway?",
       "refs": [
         "client/views/editor/image-library/detail.js:213",
-        "client/views/editor/image-library/upload.js:323",
-        "client/views/editor/image-library/upload.js:330"
+        "client/views/editor/image-library/upload.js:327",
+        "client/views/editor/image-library/upload.js:334"
       ]
     },
     "imageLibrary.alt.missingSuggestGenerate": {
       "default": "Alt text is empty. Generate it with AI now? (Recommended)",
       "refs": [
         "client/views/editor/image-library/detail.js:179",
-        "client/views/editor/image-library/upload.js:294"
+        "client/views/editor/image-library/upload.js:298"
       ]
     },
     "imageLibrary.alt.missingTitle": {
@@ -7869,9 +7892,9 @@
       "refs": [
         "client/views/editor/image-library/detail.js:178",
         "client/views/editor/image-library/detail.js:212",
-        "client/views/editor/image-library/upload.js:293",
-        "client/views/editor/image-library/upload.js:322",
-        "client/views/editor/image-library/upload.js:329"
+        "client/views/editor/image-library/upload.js:297",
+        "client/views/editor/image-library/upload.js:326",
+        "client/views/editor/image-library/upload.js:333"
       ]
     },
     "imageLibrary.alt.overwrite": {
@@ -7895,7 +7918,7 @@
     "imageLibrary.altEn": {
       "default": "Alt text (EN)",
       "refs": [
-        "client/views/editor/image-library/upload.js:191"
+        "client/views/editor/image-library/upload.js:195"
       ]
     },
     "imageLibrary.altEn.label": {
@@ -7907,7 +7930,7 @@
     "imageLibrary.altNl": {
       "default": "Alt text (NL)",
       "refs": [
-        "client/views/editor/image-library/upload.js:187"
+        "client/views/editor/image-library/upload.js:191"
       ]
     },
     "imageLibrary.altNl.label": {
@@ -7919,13 +7942,13 @@
     "imageLibrary.altText": {
       "default": "Alt text (accessibility)",
       "refs": [
-        "client/views/editor/image-library/upload.js:236"
+        "client/views/editor/image-library/upload.js:240"
       ]
     },
     "imageLibrary.changeImage": {
       "default": "Change image",
       "refs": [
-        "client/views/editor/image-library/upload.js:140"
+        "client/views/editor/image-library/upload.js:144"
       ]
     },
     "imageLibrary.count": {
@@ -7985,7 +8008,7 @@
     "imageLibrary.description": {
       "default": "Brief description (optional)",
       "refs": [
-        "client/views/editor/image-library/upload.js:169"
+        "client/views/editor/image-library/upload.js:173"
       ]
     },
     "imageLibrary.description.label": {
@@ -8015,13 +8038,13 @@
     "imageLibrary.dropzone.hint": {
       "default": "PNG, JPG, SVG supported",
       "refs": [
-        "client/views/editor/image-library/upload.js:128"
+        "client/views/editor/image-library/upload.js:132"
       ]
     },
     "imageLibrary.dropzone.text": {
       "default": "Drop image here or click to upload",
       "refs": [
-        "client/views/editor/image-library/upload.js:124"
+        "client/views/editor/image-library/upload.js:128"
       ]
     },
     "imageLibrary.empty": {
@@ -8040,7 +8063,7 @@
     "imageLibrary.hideUrl": {
       "default": "Hide URL field",
       "refs": [
-        "client/views/editor/image-library/upload.js:163"
+        "client/views/editor/image-library/upload.js:167"
       ]
     },
     "imageLibrary.loading": {
@@ -8052,7 +8075,7 @@
     "imageLibrary.metadata": {
       "default": "Image details (optional)",
       "refs": [
-        "client/views/editor/image-library/upload.js:241"
+        "client/views/editor/image-library/upload.js:245"
       ]
     },
     "imageLibrary.noResults": {
@@ -8082,13 +8105,13 @@
     "imageLibrary.photographerField": {
       "default": "Photographer name (optional)",
       "refs": [
-        "client/views/editor/image-library/upload.js:183"
+        "client/views/editor/image-library/upload.js:187"
       ]
     },
     "imageLibrary.readOnly": {
       "default": "Uploads are disabled. The library is read-only.",
       "refs": [
-        "client/views/editor/image-library/upload.js:104"
+        "client/views/editor/image-library/upload.js:108"
       ]
     },
     "imageLibrary.replace": {
@@ -8124,7 +8147,7 @@
     "imageLibrary.tags": {
       "default": "Tags, comma-separated (optional)",
       "refs": [
-        "client/views/editor/image-library/upload.js:173"
+        "client/views/editor/image-library/upload.js:177"
       ]
     },
     "imageLibrary.tags.all": {
@@ -8168,25 +8191,26 @@
       "default": "Image URL",
       "refs": [
         "client/views/editor/image-library/detail.js:424",
-        "client/views/editor/image-library/upload.js:156"
+        "client/views/editor/image-library/upload.js:160"
       ]
     },
     "imageLibrary.uploaded": {
       "default": "Uploaded.",
       "refs": [
-        "client/views/editor/image-library/upload.js:386"
+        "client/views/editor/image-library/upload.js:390"
       ]
     },
     "imageLibrary.uploading": {
       "default": "Uploading…",
       "refs": [
-        "client/views/editor/image-library/upload.js:382"
+        "client/views/editor/image-library/upload.js:386",
+        "client/views/editor/inline-edit/inline-editor.js:1117"
       ]
     },
     "imageLibrary.urlPlaceholder": {
       "default": "Paste URL (e.g. /uploads/image.jpg)",
       "refs": [
-        "client/views/editor/image-library/upload.js:148"
+        "client/views/editor/image-library/upload.js:152"
       ]
     },
     "imageLibrary.usage.loading": {
@@ -8235,14 +8259,14 @@
     "imageLibrary.useUrl": {
       "default": "Or use existing URL",
       "refs": [
-        "client/views/editor/image-library/upload.js:152",
-        "client/views/editor/image-library/upload.js:162"
+        "client/views/editor/image-library/upload.js:156",
+        "client/views/editor/image-library/upload.js:166"
       ]
     },
     "imageLibrary.useWithoutSaving": {
       "default": "Use without saving",
       "refs": [
-        "client/views/editor/image-library/upload.js:284"
+        "client/views/editor/image-library/upload.js:288"
       ]
     },
     "imagekit.alt": {
@@ -8483,7 +8507,7 @@
       "default": "Generate",
       "refs": [
         "client/views/list/modals/ai-wizard.js:429",
-        "client/views/list/modals/creation-view/index.js:664"
+        "client/views/list/modals/creation-view/index.js:699"
       ]
     },
     "list.aiWizard.help": {
@@ -8756,20 +8780,20 @@
     "list.creationView.library.collectionsHelp": {
       "default": "Pick a collection to pre-fill the deck. Reorder or remove slides below, then create.",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:703"
+        "client/views/list/modals/creation-view/index.js:738"
       ]
     },
     "list.creationView.library.create": {
       "default": "Create · {count} slides",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:725"
+        "client/views/list/modals/creation-view/index.js:768"
       ]
     },
     "list.creationView.library.help": {
       "default": "Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.",
       "refs": [
         "client/views/list/modals/creation-view/index.js:182",
-        "client/views/list/modals/creation-view/index.js:704"
+        "client/views/list/modals/creation-view/index.js:739"
       ]
     },
     "list.creationView.library.noCollections": {
@@ -8781,7 +8805,7 @@
     "list.creationView.library.selectFirst": {
       "default": "Select at least one slide.",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:789"
+        "client/views/list/modals/creation-view/index.js:833"
       ]
     },
     "list.creationView.library.selected": {
@@ -8855,6 +8879,18 @@
       "refs": [
         "client/views/list/modals/creation-view/index.js:154",
         "client/views/list/modals/creation-view/index.js:157"
+      ]
+    },
+    "list.creationView.themeOptional": {
+      "default": "Theme (optional)",
+      "refs": [
+        "client/views/list/modals/creation-view/index.js:758"
+      ]
+    },
+    "list.creationView.themeOptionalHint": {
+      "default": "Keeps the workspace theme unless you pick another.",
+      "refs": [
+        "client/views/list/modals/creation-view/index.js:645"
       ]
     },
     "list.creationView.title": {
@@ -8936,7 +8972,7 @@
     "list.fileConverter.convert": {
       "default": "Convert",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:665",
+        "client/views/list/modals/creation-view/index.js:700",
         "client/views/list/modals/file-converter.js:180"
       ]
     },
@@ -9185,9 +9221,9 @@
     "list.importJson": {
       "default": "Import",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:667",
-        "client/views/list/modals/creation-view/index.js:668",
-        "client/views/list/modals/creation-view/index.js:669"
+        "client/views/list/modals/creation-view/index.js:702",
+        "client/views/list/modals/creation-view/index.js:703",
+        "client/views/list/modals/creation-view/index.js:704"
       ]
     },
     "list.moreActions": {
@@ -9247,21 +9283,21 @@
     "list.newPresentation.confirmDiscard": {
       "default": "Discard your input?",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:770"
+        "client/views/list/modals/creation-view/index.js:814"
       ]
     },
     "list.newPresentation.creating": {
       "default": "Creating...",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:793",
+        "client/views/list/modals/creation-view/index.js:837",
         "client/views/list/modals/new-presentation/handlers.js:35"
       ]
     },
     "list.newPresentation.discard": {
       "default": "Discard",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:769",
-        "client/views/list/modals/creation-view/index.js:771"
+        "client/views/list/modals/creation-view/index.js:813",
+        "client/views/list/modals/creation-view/index.js:815"
       ]
     },
     "list.newPresentation.generatingTitle": {
@@ -9292,7 +9328,7 @@
     "list.newPresentation.importMarkdown.open": {
       "default": "Open presentation",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:913"
+        "client/views/list/modals/creation-view/index.js:957"
       ]
     },
     "list.newPresentation.importing": {
@@ -9337,7 +9373,7 @@
     "list.newPresentation.notion.import": {
       "default": "Import",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:666"
+        "client/views/list/modals/creation-view/index.js:701"
       ]
     },
     "list.newPresentation.notion.importing": {
@@ -9587,7 +9623,7 @@
     "list.search.aria": {
       "default": "Search presentations",
       "refs": [
-        "client/views/list/topbar.js:58"
+        "client/views/list/topbar.js:59"
       ]
     },
     "list.search.clear": {
@@ -9617,7 +9653,7 @@
     "list.search.placeholder": {
       "default": "Search presentations…",
       "refs": [
-        "client/views/list/topbar.js:57"
+        "client/views/list/topbar.js:58"
       ]
     },
     "list.search.resultCount.many": {
@@ -10353,14 +10389,14 @@
     "presenter.autoAdvancePause": {
       "default": "Pause auto",
       "refs": [
-        "client/views/presenter.js:220",
-        "client/views/presenter.js:439"
+        "client/views/presenter.js:223",
+        "client/views/presenter.js:442"
       ]
     },
     "presenter.autoAdvanceResume": {
       "default": "Resume auto",
       "refs": [
-        "client/views/presenter.js:440"
+        "client/views/presenter.js:443"
       ]
     },
     "presenter.console.elapsed": {
@@ -10452,14 +10488,14 @@
     "presenter.console.toggle": {
       "default": "Console",
       "refs": [
-        "client/views/presenter.js:248",
-        "client/views/presenter.js:261"
+        "client/views/presenter.js:251",
+        "client/views/presenter.js:264"
       ]
     },
     "presenter.console.toggleTitle": {
       "default": "Presenter console: notes, next slide and elapsed time on your own screen",
       "refs": [
-        "client/views/presenter.js:254"
+        "client/views/presenter.js:257"
       ]
     },
     "presenter.control.short": {
@@ -10477,25 +10513,25 @@
     "presenter.draw": {
       "default": "Draw",
       "refs": [
-        "client/views/presenter.js:233"
+        "client/views/presenter.js:236"
       ]
     },
     "presenter.edit": {
       "default": "Edit",
       "refs": [
-        "client/views/presenter.js:307"
+        "client/views/presenter.js:310"
       ]
     },
     "presenter.fullscreen": {
       "default": "Fullscreen",
       "refs": [
-        "client/views/presenter.js:312"
+        "client/views/presenter.js:315"
       ]
     },
     "presenter.help": {
       "default": "←/→ move · F fullscreen · ? shortcuts",
       "refs": [
-        "client/views/presenter.js:318"
+        "client/views/presenter.js:321"
       ]
     },
     "presenter.interaction.close": {
@@ -10588,68 +10624,68 @@
     "presenter.laser": {
       "default": "Laser",
       "refs": [
-        "client/views/presenter.js:228"
+        "client/views/presenter.js:231"
       ]
     },
     "presenter.leave.confirm": {
       "default": "Leave",
       "refs": [
-        "client/views/presenter.js:753"
+        "client/views/presenter.js:756"
       ]
     },
     "presenter.leave.message": {
       "default": "Return to the editor? You can start presenting again anytime.",
       "refs": [
-        "client/views/presenter.js:749"
+        "client/views/presenter.js:752"
       ]
     },
     "presenter.leave.stay": {
       "default": "Stay",
       "refs": [
-        "client/views/presenter.js:754"
+        "client/views/presenter.js:757"
       ]
     },
     "presenter.leave.title": {
       "default": "Leave presentation?",
       "refs": [
-        "client/views/presenter.js:748"
+        "client/views/presenter.js:751"
       ]
     },
     "presenter.pacingPause": {
       "default": "Pause timer",
       "refs": [
-        "client/views/presenter.js:219",
-        "client/views/presenter.js:435"
+        "client/views/presenter.js:222",
+        "client/views/presenter.js:438"
       ]
     },
     "presenter.pacingResume": {
       "default": "Resume timer",
       "refs": [
-        "client/views/presenter.js:436"
+        "client/views/presenter.js:439"
       ]
     },
     "presenter.persistentDrawOff": {
       "default": "Drawings: fading",
       "refs": [
-        "client/views/presenter.js:717"
+        "client/views/presenter.js:720"
       ]
     },
     "presenter.persistentDrawOn": {
       "default": "Drawings: persistent",
       "refs": [
-        "client/views/presenter.js:716"
+        "client/views/presenter.js:719"
       ]
     },
     "presenter.projector.open": {
       "default": "Second screen",
       "refs": [
-        "client/views/presenter.js:298"
+        "client/views/presenter.js:301"
       ]
     },
     "presenter.projector.openTitle": {
       "default": "Open the clean deck in a second window for the projector, and keep the console on this screen",
       "refs": [
-        "client/views/presenter.js:299"
+        "client/views/presenter.js:302"
       ]
     },
     "presenter.shortcuts.autoAdvance": {
@@ -10787,13 +10823,13 @@
     "presenter.strictNav": {
       "default": "Timer only — manual navigation is off",
       "refs": [
-        "client/views/presenter.js:682"
+        "client/views/presenter.js:685"
       ]
     },
     "presenter.timesUp": {
       "default": "Time's up",
       "refs": [
-        "client/views/presenter.js:426"
+        "client/views/presenter.js:429"
       ]
     },
     "presenter.tools.audienceBadge": {
@@ -11043,144 +11079,144 @@
     "settings.admin.aiAssistant.email": {
       "default": "Email",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:109"
+        "client/views/settings/tabs/admin-tab.js:110"
       ]
     },
     "settings.admin.aiAssistant.hint": {
       "default": "Customize the name and email shown for AI-generated content.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:86"
+        "client/views/settings/tabs/admin-tab.js:87"
       ]
     },
     "settings.admin.aiAssistant.name": {
       "default": "Name",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:105"
+        "client/views/settings/tabs/admin-tab.js:106"
       ]
     },
     "settings.admin.aiAssistant.title": {
       "default": "AI Assistant Identity",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:81"
+        "client/views/settings/tabs/admin-tab.js:82"
       ]
     },
     "settings.admin.analytics.allowDetailedOptIn": {
       "default": "Allow presenters to request detailed team analytics",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:224"
+        "client/views/settings/tabs/admin-tab.js:225"
       ]
     },
     "settings.admin.analytics.days": {
       "default": "days",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:236",
         "client/views/settings/tabs/admin-tab.js:237",
         "client/views/settings/tabs/admin-tab.js:238",
         "client/views/settings/tabs/admin-tab.js:239",
         "client/views/settings/tabs/admin-tab.js:240",
-        "client/views/settings/tabs/admin-tab.js:248",
+        "client/views/settings/tabs/admin-tab.js:241",
         "client/views/settings/tabs/admin-tab.js:249",
         "client/views/settings/tabs/admin-tab.js:250",
-        "client/views/settings/tabs/admin-tab.js:251"
+        "client/views/settings/tabs/admin-tab.js:251",
+        "client/views/settings/tabs/admin-tab.js:252"
       ]
     },
     "settings.admin.analytics.enabled": {
       "default": "Enable engagement insights",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:206"
+        "client/views/settings/tabs/admin-tab.js:207"
       ]
     },
     "settings.admin.analytics.externalEnabled": {
       "default": "Track external/anonymous viewers",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:231"
+        "client/views/settings/tabs/admin-tab.js:232"
       ]
     },
     "settings.admin.analytics.hint": {
       "default": "Configure how presentation engagement is tracked and reported.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:196"
+        "client/views/settings/tabs/admin-tab.js:197"
       ]
     },
     "settings.admin.analytics.retention": {
       "default": "Data retention",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:263"
+        "client/views/settings/tabs/admin-tab.js:264"
       ]
     },
     "settings.admin.analytics.retentionDays": {
       "default": "Keep session data for",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:235",
-        "client/views/settings/tabs/admin-tab.js:243"
+        "client/views/settings/tabs/admin-tab.js:236",
+        "client/views/settings/tabs/admin-tab.js:244"
       ]
     },
     "settings.admin.analytics.retentionIpDays": {
       "default": "Anonymize IP addresses after",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:247",
-        "client/views/settings/tabs/admin-tab.js:254"
+        "client/views/settings/tabs/admin-tab.js:248",
+        "client/views/settings/tabs/admin-tab.js:255"
       ]
     },
     "settings.admin.analytics.teamPolicy": {
       "default": "Team analytics policy",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:210",
-        "client/views/settings/tabs/admin-tab.js:216"
+        "client/views/settings/tabs/admin-tab.js:211",
+        "client/views/settings/tabs/admin-tab.js:217"
       ]
     },
     "settings.admin.analytics.teamPolicyAggregate": {
       "default": "Aggregate - Show counts without names",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:212"
+        "client/views/settings/tabs/admin-tab.js:213"
       ]
     },
     "settings.admin.analytics.teamPolicyOff": {
       "default": "Off - Don't track team member views",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:211"
+        "client/views/settings/tabs/admin-tab.js:212"
       ]
     },
     "settings.admin.analytics.teamPolicyOptIn": {
       "default": "Opt-in detailed - Show names if viewer allows",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:213"
+        "client/views/settings/tabs/admin-tab.js:214"
       ]
     },
     "settings.admin.analytics.title": {
       "default": "Engagement Insights",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:191"
+        "client/views/settings/tabs/admin-tab.js:192"
       ]
     },
     "settings.admin.description": {
       "default": "Configure workspace-wide settings that apply to all users.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:39"
+        "client/views/settings/tabs/admin-tab.js:40"
       ]
     },
     "settings.admin.emailSender.email": {
       "default": "Email",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:144"
+        "client/views/settings/tabs/admin-tab.js:145"
       ]
     },
     "settings.admin.emailSender.hint": {
       "default": "From address for system emails. Falls back to environment variables if empty.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:125"
+        "client/views/settings/tabs/admin-tab.js:126"
       ]
     },
     "settings.admin.emailSender.name": {
       "default": "Name",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:148"
+        "client/views/settings/tabs/admin-tab.js:149"
       ]
     },
     "settings.admin.emailSender.title": {
       "default": "Email Sender Identity",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:120"
+        "client/views/settings/tabs/admin-tab.js:121"
       ]
     },
     "settings.admin.emailTemplates.customized": {
@@ -11447,105 +11483,103 @@
     "settings.admin.sessionDuration.14days": {
       "default": "14 days",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:172"
+        "client/views/settings/tabs/admin-tab.js:173"
       ]
     },
     "settings.admin.sessionDuration.1day": {
       "default": "1 day",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:170"
+        "client/views/settings/tabs/admin-tab.js:171"
       ]
     },
     "settings.admin.sessionDuration.30days": {
       "default": "30 days (default)",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:173"
+        "client/views/settings/tabs/admin-tab.js:174"
       ]
     },
     "settings.admin.sessionDuration.365days": {
       "default": "1 year",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:175"
+        "client/views/settings/tabs/admin-tab.js:176"
       ]
     },
     "settings.admin.sessionDuration.7days": {
       "default": "7 days",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:171"
+        "client/views/settings/tabs/admin-tab.js:172"
       ]
     },
     "settings.admin.sessionDuration.90days": {
       "default": "90 days",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:174"
+        "client/views/settings/tabs/admin-tab.js:175"
       ]
     },
     "settings.admin.sessionDuration.duration": {
       "default": "Duration",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:178"
+        "client/views/settings/tabs/admin-tab.js:179"
       ]
     },
     "settings.admin.sessionDuration.hint": {
       "default": "How long users stay logged in before needing to sign in again.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:164"
+        "client/views/settings/tabs/admin-tab.js:165"
       ]
     },
     "settings.admin.sessionDuration.title": {
       "default": "Session Duration",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:159"
+        "client/views/settings/tabs/admin-tab.js:160"
       ]
     },
     "settings.admin.stockMedia.configured": {
       "default": "API key configured",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:404"
+        "client/views/settings/tabs/admin-tab.js:405"
       ]
     },
     "settings.admin.stockMedia.giphy": {
       "default": "Enable Giphy GIFs",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:299"
+        "client/views/settings/tabs/admin-tab.js:300"
       ]
     },
     "settings.admin.stockMedia.hint": {
       "default": "Enable stock photo and GIF integrations for the image picker.",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:279"
+        "client/views/settings/tabs/admin-tab.js:280"
       ]
     },
     "settings.admin.stockMedia.notConfigured": {
       "default": "Not configured",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:403"
+        "client/views/settings/tabs/admin-tab.js:404"
       ]
     },
     "settings.admin.stockMedia.title": {
       "default": "Stock Media",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:274"
+        "client/views/settings/tabs/admin-tab.js:275"
       ]
     },
     "settings.admin.stockMedia.unsplash": {
       "default": "Enable Unsplash photos",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:290"
+        "client/views/settings/tabs/admin-tab.js:291"
       ]
     },
     "settings.admin.supportedSlideLangs.hint": {
-      "default": "This controls which languages are visible/usable in language mode and translation.",
+      "default": "Controls which languages are available in language mode and translation tools.",
       "refs": [
-        "client/views/settings/panel.js:313",
-        "client/views/settings/tabs/admin-tab.js:58"
+        "client/views/settings/tabs/admin-tab.js:59"
       ]
     },
     "settings.admin.supportedSlideLangs.title": {
-      "default": "Admin: supported slide languages",
+      "default": "Supported slide languages",
       "refs": [
-        "client/views/settings/panel.js:305",
-        "client/views/settings/tabs/admin-tab.js:50"
+        "client/views/settings/tabs/admin-tab.js:51"
       ]
     },
     "settings.admin.webhooks.hint": {
@@ -12484,12 +12518,6 @@
         "client/views/settings/tabs/export-tab.js:87"
       ]
     },
-    "settings.help": {
-      "default": "Profile and UI language are stored per user. Slide language support is managed centrally (admin).",
-      "refs": [
-        "client/views/settings/panel.js:44"
-      ]
-    },
     "settings.highlighter.color": {
       "default": "Color",
       "refs": [
@@ -12590,12 +12618,6 @@
       "default": "RSS Feed",
       "refs": [
         "client/views/settings/tabs/integrations-tab.js:56"
-      ]
-    },
-    "settings.langMode.nl": {
-      "default": "NL",
-      "refs": [
-        "client/views/settings/panel.js:321"
       ]
     },
     "settings.mcp.description": {
@@ -12745,111 +12767,96 @@
     "settings.profile.hint": {
       "default": "Used as your name in the app (instead of the auth name).",
       "refs": [
-        "client/views/settings/panel.js:172",
         "client/views/settings/tabs/account-tab.js:158"
       ]
     },
     "settings.profile.imageRemoved": {
       "default": "Profile photo removed.",
       "refs": [
-        "client/views/settings/panel.js:151",
         "client/views/settings/tabs/account-tab.js:137"
       ]
     },
     "settings.profile.imageTooLarge": {
       "default": "Image must be smaller than 5MB.",
       "refs": [
-        "client/views/settings/panel.js:102",
         "client/views/settings/tabs/account-tab.js:88"
       ]
     },
     "settings.profile.imageUploaded": {
       "default": "Profile photo updated.",
       "refs": [
-        "client/views/settings/panel.js:128",
         "client/views/settings/tabs/account-tab.js:114"
       ]
     },
     "settings.profile.invalidImageType": {
       "default": "Please select a PNG, JPEG, or WebP image.",
       "refs": [
-        "client/views/settings/panel.js:96",
         "client/views/settings/tabs/account-tab.js:82"
       ]
     },
     "settings.profile.placeholder": {
       "default": "Display name (optional)",
       "refs": [
-        "client/views/settings/panel.js:167",
         "client/views/settings/tabs/account-tab.js:153"
       ]
     },
     "settings.profile.removeImage": {
       "default": "Remove",
       "refs": [
-        "client/views/settings/panel.js:83",
         "client/views/settings/tabs/account-tab.js:69"
       ]
     },
     "settings.profile.removing": {
       "default": "Removing...",
       "refs": [
-        "client/views/settings/panel.js:144",
         "client/views/settings/tabs/account-tab.js:130"
       ]
     },
     "settings.profile.title": {
       "default": "Profile",
       "refs": [
-        "client/views/settings/panel.js:52",
         "client/views/settings/tabs/account-tab.js:38"
       ]
     },
     "settings.profile.uploadImage": {
       "default": "Upload photo",
       "refs": [
-        "client/views/settings/panel.js:77",
         "client/views/settings/tabs/account-tab.js:63"
       ]
     },
     "settings.profile.uploading": {
       "default": "Uploading...",
       "refs": [
-        "client/views/settings/panel.js:107",
         "client/views/settings/tabs/account-tab.js:93"
       ]
     },
     "settings.saved": {
       "default": "Saved.",
       "refs": [
-        "client/views/settings/panel.js:510",
         "client/views/settings/tabs/account-tab.js:217",
-        "client/views/settings/tabs/admin-tab.js:480",
+        "client/views/settings/tabs/admin-tab.js:481",
         "client/views/settings/tabs/analytics-tab.js:469",
         "client/views/settings/tabs/email-tab.js:87",
         "client/views/settings/tabs/integrations-tab.js:316",
         "client/views/settings/tabs/preferences-tab.js:507",
-        "client/views/settings/tabs/themes-tab.js:168"
+        "client/views/settings/tabs/themes-tab.js:169"
       ]
     },
     "settings.slideLangMode.hint": {
       "default": "Used for the editor's \"language mode\", AI output, and slide translation tools.",
       "refs": [
-        "client/views/settings/panel.js:283",
         "client/views/settings/tabs/preferences-tab.js:157"
       ]
     },
     "settings.slideLangMode.title": {
       "default": "Slides language mode",
       "refs": [
-        "client/views/settings/panel.js:200",
         "client/views/settings/tabs/preferences-tab.js:74"
       ]
     },
     "settings.slideLangMode.titleHint": {
       "default": "Language mode (default for new presentations and AI)",
       "refs": [
-        "client/views/settings/panel.js:210",
         "client/views/settings/tabs/preferences-tab.js:84"
       ]
     },
@@ -12874,20 +12881,20 @@
     "settings.slideTypes.basedOn": {
       "default": "Based on: {type}",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:222"
+        "client/views/settings/tabs/slide-types-tab.js:238"
       ]
     },
     "settings.slideTypes.createSuccess": {
       "default": "Slide type created.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:542"
+        "client/views/settings/tabs/slide-types-tab.js:635"
       ]
     },
     "settings.slideTypes.createType": {
       "default": "Create Slide Type",
       "refs": [
         "client/views/settings/slide-type-editor/index.js:102",
-        "client/views/settings/tabs/slide-types-tab.js:161"
+        "client/views/settings/tabs/slide-types-tab.js:170"
       ]
     },
     "settings.slideTypes.css": {
@@ -12905,19 +12912,19 @@
     "settings.slideTypes.curation": {
       "default": "Slide Type Curation",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:589"
+        "client/views/settings/tabs/slide-types-tab.js:682"
       ]
     },
     "settings.slideTypes.curationDescription": {
       "default": "Control which core slide types are available for new slides. Disabling a type hides it from the picker but existing slides remain unaffected.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:593"
+        "client/views/settings/tabs/slide-types-tab.js:686"
       ]
     },
     "settings.slideTypes.customTypes": {
       "default": "Custom Slide Types",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:156"
+        "client/views/settings/tabs/slide-types-tab.js:177"
       ]
     },
     "settings.slideTypes.defaults": {
@@ -12941,37 +12948,37 @@
     "settings.slideTypes.deleteSuccess": {
       "default": "Slide type deleted.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:484"
+        "client/views/settings/tabs/slide-types-tab.js:577"
       ]
     },
     "settings.slideTypes.description": {
       "default": "Create custom slide types and control which types are available in the slide picker.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:105"
+        "client/views/settings/tabs/slide-types-tab.js:111"
       ]
     },
     "settings.slideTypes.draft": {
       "default": "Draft",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:212"
+        "client/views/settings/tabs/slide-types-tab.js:228"
       ]
     },
     "settings.slideTypes.duplicate": {
       "default": "Duplicate",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:409"
+        "client/views/settings/tabs/slide-types-tab.js:425"
       ]
     },
     "settings.slideTypes.duplicateAsCustom": {
       "default": "Duplicate as custom type",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:820"
+        "client/views/settings/tabs/slide-types-tab.js:913"
       ]
     },
     "settings.slideTypes.duplicateSuccess": {
       "default": "Slide type duplicated.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:467"
+        "client/views/settings/tabs/slide-types-tab.js:494"
       ]
     },
     "settings.slideTypes.editType": {
@@ -12983,7 +12990,7 @@
     "settings.slideTypes.enabledInPicker": {
       "default": "Enabled in picker",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:797"
+        "client/views/settings/tabs/slide-types-tab.js:890"
       ]
     },
     "settings.slideTypes.errorFieldsRequired": {
@@ -13008,6 +13015,12 @@
       "default": "Slide type name is required.",
       "refs": [
         "client/views/settings/slide-type-editor/index.js:393"
+      ]
+    },
+    "settings.slideTypes.export": {
+      "default": "Export as JSON",
+      "refs": [
+        "client/views/settings/tabs/slide-types-tab.js:436"
       ]
     },
     "settings.slideTypes.fields": {
@@ -13100,22 +13113,46 @@
         "client/views/settings/slide-type-editor/template-help.js:25"
       ]
     },
+    "settings.slideTypes.importInvalid": {
+      "default": "That file is not a valid slide type export.",
+      "refs": [
+        "client/views/settings/tabs/slide-types-tab.js:543"
+      ]
+    },
+    "settings.slideTypes.importReadError": {
+      "default": "Could not read that file.",
+      "refs": [
+        "client/views/settings/tabs/slide-types-tab.js:537"
+      ]
+    },
+    "settings.slideTypes.importSuccess": {
+      "default": "Slide type imported as a draft.",
+      "refs": [
+        "client/views/settings/tabs/slide-types-tab.js:557"
+      ]
+    },
+    "settings.slideTypes.importType": {
+      "default": "Import",
+      "refs": [
+        "client/views/settings/tabs/slide-types-tab.js:164"
+      ]
+    },
     "settings.slideTypes.loadError": {
       "default": "Failed to load slide type settings.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:139"
+        "client/views/settings/tabs/slide-types-tab.js:145"
       ]
     },
     "settings.slideTypes.moveEarlier": {
       "default": "Move earlier",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:386"
+        "client/views/settings/tabs/slide-types-tab.js:402"
       ]
     },
     "settings.slideTypes.moveLater": {
       "default": "Move later",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:397"
+        "client/views/settings/tabs/slide-types-tab.js:413"
       ]
     },
     "settings.slideTypes.name": {
@@ -13133,13 +13170,13 @@
     "settings.slideTypes.noCustomTypes": {
       "default": "No custom slide types yet.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:168"
+        "client/views/settings/tabs/slide-types-tab.js:184"
       ]
     },
     "settings.slideTypes.noCustomTypesHint": {
       "default": "Create a custom slide type to define your own layout with fields, templates, and CSS.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:171"
+        "client/views/settings/tabs/slide-types-tab.js:187"
       ]
     },
     "settings.slideTypes.preview": {
@@ -13158,7 +13195,7 @@
       "default": "Publish",
       "refs": [
         "client/views/settings/slide-type-editor/index.js:319",
-        "client/views/settings/tabs/slide-types-tab.js:372"
+        "client/views/settings/tabs/slide-types-tab.js:388"
       ]
     },
     "settings.slideTypes.publishHint": {
@@ -13176,25 +13213,25 @@
     "settings.slideTypes.published": {
       "default": "Published",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:211"
+        "client/views/settings/tabs/slide-types-tab.js:227"
       ]
     },
     "settings.slideTypes.publishedMsg": {
       "default": "Slide type published.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:456"
+        "client/views/settings/tabs/slide-types-tab.js:483"
       ]
     },
     "settings.slideTypes.saveError": {
       "default": "Failed to save settings.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:577"
+        "client/views/settings/tabs/slide-types-tab.js:670"
       ]
     },
     "settings.slideTypes.saved": {
       "default": "Slide type settings saved.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:575"
+        "client/views/settings/tabs/slide-types-tab.js:668"
       ]
     },
     "settings.slideTypes.slug": {
@@ -13224,31 +13261,31 @@
     "settings.slideTypes.title": {
       "default": "Slide Types",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:102"
+        "client/views/settings/tabs/slide-types-tab.js:108"
       ]
     },
     "settings.slideTypes.toggleType": {
       "default": "Toggle {type}",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:719"
+        "client/views/settings/tabs/slide-types-tab.js:812"
       ]
     },
     "settings.slideTypes.unpublish": {
       "default": "Unpublish",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:371"
+        "client/views/settings/tabs/slide-types-tab.js:387"
       ]
     },
     "settings.slideTypes.unpublished": {
       "default": "Slide type unpublished.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:455"
+        "client/views/settings/tabs/slide-types-tab.js:482"
       ]
     },
     "settings.slideTypes.updateSuccess": {
       "default": "Slide type updated.",
       "refs": [
-        "client/views/settings/tabs/slide-types-tab.js:536"
+        "client/views/settings/tabs/slide-types-tab.js:629"
       ]
     },
     "settings.tabs.account": {
@@ -13260,7 +13297,7 @@
     "settings.tabs.admin": {
       "default": "Admin",
       "refs": [
-        "client/views/settings/tabs/admin-tab.js:34"
+        "client/views/settings/tabs/admin-tab.js:35"
       ]
     },
     "settings.tabs.adminSection": {
@@ -13314,7 +13351,7 @@
     "settings.tabs.themes": {
       "default": "Themes",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:35"
+        "client/views/settings/tabs/themes-tab.js:36"
       ]
     },
     "settings.tabs.users": {
@@ -13326,350 +13363,599 @@
     "settings.themes.backgroundColor": {
       "default": "Background",
       "refs": [
-        "client/views/settings/theme-editor/index.js:192"
+        "client/views/settings/theme-editor/index.js:198"
       ]
     },
     "settings.themes.bodyFont": {
       "default": "Body Font",
       "refs": [
-        "client/views/settings/theme-editor/index.js:280",
-        "client/views/settings/theme-editor/index.js:392"
+        "client/views/settings/theme-editor/index.js:286",
+        "client/views/settings/theme-editor/index.js:413"
       ]
     },
     "settings.themes.changeLogo": {
       "default": "Change",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:122"
+        "client/views/settings/theme-editor/logo-uploader.js:56"
       ]
     },
     "settings.themes.clearDefault": {
       "default": "Clear default",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:352"
+        "client/views/settings/tabs/themes-tab.js:353"
       ]
     },
     "settings.themes.clearDefaultSuccess": {
       "default": "Default theme cleared.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:426"
+        "client/views/settings/tabs/themes-tab.js:427"
       ]
     },
     "settings.themes.colors": {
       "default": "Colors",
       "refs": [
-        "client/views/settings/theme-editor/index.js:169"
+        "client/views/settings/theme-editor/index.js:175"
       ]
     },
     "settings.themes.colorsHint": {
       "default": "Define your brand colors. Accent colors are derived from the primary color.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:174"
+        "client/views/settings/theme-editor/index.js:180"
+      ]
+    },
+    "settings.themes.config.addBackground": {
+      "default": "Add images…",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:145"
+      ]
+    },
+    "settings.themes.config.addVariant": {
+      "default": "Add",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:290"
+      ]
+    },
+    "settings.themes.config.backgrounds": {
+      "default": "Background images",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:35"
+      ]
+    },
+    "settings.themes.config.backgroundsFull": {
+      "default": "That is as many background images as a theme can hold.",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:109"
+      ]
+    },
+    "settings.themes.config.backgroundsHint": {
+      "default": "Your own imagery for title slides. New title slides pick one of these, and the per-slide picker offers them first. Without any, title slides stay flat rather than borrowing imagery that is not yours.",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:39"
+      ]
+    },
+    "settings.themes.config.backgroundsSomeSkipped": {
+      "default": "Only {count} more images fit; the rest were skipped.",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:118"
+      ]
+    },
+    "settings.themes.config.builtinName": {
+      "default": "Name",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:123"
+      ]
+    },
+    "settings.themes.config.builtinsHint": {
+      "default": "Every theme has two built-in backgrounds. They are storage slots, not colours — name them for what yours actually are, or they show as \"Color 1\" and \"Color 2\".",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:101"
+      ]
+    },
+    "settings.themes.config.default": {
+      "default": "Default",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:79"
+      ]
+    },
+    "settings.themes.config.extraBackgrounds": {
+      "default": "Extra options",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:282"
+      ]
+    },
+    "settings.themes.config.headingTransform": {
+      "default": "Capitalisation",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:151"
+      ]
+    },
+    "settings.themes.config.headingWeight": {
+      "default": "Weight",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:163"
+      ]
+    },
+    "settings.themes.config.locks": {
+      "default": "Locked by the theme",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:190"
+      ]
+    },
+    "settings.themes.config.locksHint": {
+      "default": "A locked property is not editable per slide, and an override an existing slide already carries is ignored when it renders. Unlocking gives every slide its own value back.",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:191"
+      ]
+    },
+    "settings.themes.config.noBackgrounds": {
+      "default": "No background images yet.",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:90"
+      ]
+    },
+    "settings.themes.config.noVariants": {
+      "default": "No extra backgrounds yet.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:228"
+      ]
+    },
+    "settings.themes.config.radius": {
+      "default": "Corner rounding",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:108"
+      ]
+    },
+    "settings.themes.config.removeBackground": {
+      "default": "Remove",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:79",
+        "client/views/settings/theme-editor/backgrounds-section.js:80"
+      ]
+    },
+    "settings.themes.config.removeVariant": {
+      "default": "Remove",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:185"
+      ]
+    },
+    "settings.themes.config.shadow": {
+      "default": "Elevation",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:120"
+      ]
+    },
+    "settings.themes.config.surfaces": {
+      "default": "Surfaces",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:99"
+      ]
+    },
+    "settings.themes.config.surfacesHint": {
+      "default": "How rounded and how raised the shapes on a slide feel. Both scale the design system rather than replacing it.",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:100"
+      ]
+    },
+    "settings.themes.config.typography": {
+      "default": "Heading treatment",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:142"
+      ]
+    },
+    "settings.themes.config.typographyHint": {
+      "default": "Applies to headings across every slide type. The fonts themselves are set above.",
+      "refs": [
+        "client/views/settings/theme-editor/config-sections.js:143"
+      ]
+    },
+    "settings.themes.config.uploading": {
+      "default": "Uploading…",
+      "refs": [
+        "client/views/settings/theme-editor/backgrounds-section.js:126"
+      ]
+    },
+    "settings.themes.config.variantBadName": {
+      "default": "A name needs at least one letter or digit.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:53"
+      ]
+    },
+    "settings.themes.config.variantColor": {
+      "default": "Background",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:191"
+      ]
+    },
+    "settings.themes.config.variantDuplicate": {
+      "default": "You already have a variant with that name.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:65"
+      ]
+    },
+    "settings.themes.config.variantName": {
+      "default": "Name",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:239"
+      ]
+    },
+    "settings.themes.config.variantNamePlaceholder": {
+      "default": "e.g. Calm",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:238"
+      ]
+    },
+    "settings.themes.config.variantNeedsName": {
+      "default": "Give the variant a name.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:50"
+      ]
+    },
+    "settings.themes.config.variantReserved": {
+      "default": "That name is taken by a built-in background.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:59"
+      ]
+    },
+    "settings.themes.config.variantTextColor": {
+      "default": "Text on it",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:206"
+      ]
+    },
+    "settings.themes.config.variants": {
+      "default": "Background options",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:84"
+      ]
+    },
+    "settings.themes.config.variantsFull": {
+      "default": "That is as many background options as a theme can hold.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:262"
+      ]
+    },
+    "settings.themes.config.variantsHint": {
+      "default": "Extra background choices on top of the built-in ones. Each appears in the Background picker on every slide, and its text colour follows automatically so a dark option stays readable.",
+      "refs": [
+        "client/views/settings/theme-editor/variants-section.js:88"
       ]
     },
     "settings.themes.createSuccess": {
       "default": "Theme created.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:510"
+        "client/views/settings/tabs/themes-tab.js:520"
       ]
     },
     "settings.themes.createTheme": {
       "default": "Create Theme",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:205",
-        "client/views/settings/theme-editor/index.js:44"
+        "client/views/settings/tabs/themes-tab.js:206",
+        "client/views/settings/theme-editor/index.js:46"
       ]
     },
     "settings.themes.customThemes": {
       "default": "Custom Themes",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:199"
+        "client/views/settings/tabs/themes-tab.js:200"
       ]
     },
     "settings.themes.default": {
       "default": "Default",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:288"
+        "client/views/settings/tabs/themes-tab.js:289"
       ]
     },
     "settings.themes.deleteSuccess": {
       "default": "Theme deleted.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:477"
+        "client/views/settings/tabs/themes-tab.js:479"
       ]
     },
     "settings.themes.derivedColors": {
       "default": "Derived accent colors:",
       "refs": [
-        "client/views/settings/theme-editor/index.js:227"
+        "client/views/settings/theme-editor/index.js:233"
       ]
     },
     "settings.themes.description": {
       "default": "Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:40"
+        "client/views/settings/tabs/themes-tab.js:41"
       ]
     },
     "settings.themes.dropLogoHere": {
       "default": "Drop logo here or click to upload",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:106"
+        "client/views/settings/theme-editor/logo-uploader.js:40"
       ]
     },
     "settings.themes.duplicate": {
       "default": "Duplicate",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:365"
+        "client/views/settings/tabs/themes-tab.js:366"
       ]
     },
     "settings.themes.duplicateSuccess": {
       "default": "Theme duplicated.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:452"
+        "client/views/settings/tabs/themes-tab.js:453"
       ]
     },
     "settings.themes.editTheme": {
       "default": "Edit Theme",
       "refs": [
-        "client/views/settings/theme-editor/index.js:43"
+        "client/views/settings/theme-editor/index.js:45"
       ]
     },
     "settings.themes.errorInvalidBackground": {
       "default": "Invalid background color.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:333"
+        "client/views/settings/theme-editor/index.js:351"
       ]
     },
     "settings.themes.errorInvalidPrimary": {
       "default": "Invalid primary color.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:328"
+        "client/views/settings/theme-editor/index.js:346"
       ]
     },
     "settings.themes.errorNameRequired": {
       "default": "Theme name is required.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:322"
+        "client/views/settings/theme-editor/index.js:340"
       ]
     },
     "settings.themes.fonts": {
       "default": "Fonts",
       "refs": [
-        "client/views/settings/theme-editor/index.js:254"
+        "client/views/settings/theme-editor/index.js:260"
       ]
     },
     "settings.themes.fontsHint": {
       "default": "Choose fonts for headings and body text.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:259"
+        "client/views/settings/theme-editor/index.js:265"
       ]
     },
     "settings.themes.headingFont": {
       "default": "Heading Font",
       "refs": [
-        "client/views/settings/theme-editor/index.js:266",
-        "client/views/settings/theme-editor/index.js:379"
+        "client/views/settings/theme-editor/index.js:272",
+        "client/views/settings/theme-editor/index.js:400"
       ]
     },
     "settings.themes.hideUrl": {
       "default": "Hide URL",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:168"
+        "client/views/settings/theme-editor/logo-uploader.js:102"
       ]
     },
     "settings.themes.invalidLogo": {
       "default": "Invalid URL",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:197"
+        "client/views/settings/theme-editor/logo-uploader.js:131"
       ]
     },
     "settings.themes.logo": {
       "default": "Logo",
       "refs": [
-        "client/views/settings/theme-editor/index.js:127"
+        "client/views/settings/theme-editor/index.js:133"
       ]
     },
     "settings.themes.logoFormats": {
       "default": "SVG, PNG, or JPG",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:110"
+        "client/views/settings/theme-editor/logo-uploader.js:44"
       ]
     },
     "settings.themes.logoHint": {
       "default": "Main logo used on payoff slide. SVG format recommended.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:140"
+        "client/views/settings/theme-editor/index.js:146"
       ]
     },
     "settings.themes.logoSmall": {
       "default": "Title Slide Logo (optional)",
       "refs": [
-        "client/views/settings/theme-editor/index.js:146"
+        "client/views/settings/theme-editor/index.js:152"
       ]
     },
     "settings.themes.logoSmallHint": {
       "default": "Smaller logo for title slides. Uses main logo if not set.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:159"
+        "client/views/settings/theme-editor/index.js:165"
       ]
     },
     "settings.themes.logoUrlPlaceholder": {
       "default": "https://example.com/logo.svg",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:147"
+        "client/views/settings/theme-editor/logo-uploader.js:81"
       ]
     },
     "settings.themes.noLogo": {
       "default": "No logo",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:205"
+        "client/views/settings/theme-editor/logo-uploader.js:139"
       ]
     },
     "settings.themes.noThemes": {
       "default": "No custom themes yet.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:212"
+        "client/views/settings/tabs/themes-tab.js:213"
       ]
     },
     "settings.themes.noThemesHint": {
       "default": "Create a custom theme to define your organization's brand colors and fonts.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:215"
+        "client/views/settings/tabs/themes-tab.js:216"
       ]
     },
     "settings.themes.preview": {
       "default": "Preview",
       "refs": [
-        "client/views/settings/theme-editor/index.js:304"
+        "client/views/settings/theme-editor/index.js:319"
       ]
     },
-    "settings.themes.previewSubtitle": {
-      "default": "A preview of your custom theme",
+    "settings.themes.preview.body": {
+      "default": "- Body text in the body font\n- A second point\n- A third point",
       "refs": [
-        "client/views/settings/theme-editor/preview.js:62"
+        "client/views/settings/theme-editor/preview.js:42"
       ]
     },
-    "settings.themes.previewTitle": {
-      "default": "Sample Presentation",
+    "settings.themes.preview.contentTitle": {
+      "default": "A content slide",
       "refs": [
-        "client/views/settings/theme-editor/preview.js:56"
+        "client/views/settings/theme-editor/preview.js:41"
+      ]
+    },
+    "settings.themes.preview.error": {
+      "default": "Preview unavailable right now.",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:143"
+      ]
+    },
+    "settings.themes.preview.quote": {
+      "default": "A quote, on the theme’s dark surface.",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:53"
+      ]
+    },
+    "settings.themes.preview.quoteAuthor": {
+      "default": "Someone",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:57"
+      ]
+    },
+    "settings.themes.preview.quoteRole": {
+      "default": "Their role",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:58"
+      ]
+    },
+    "settings.themes.preview.subtitle": {
+      "default": "A subtitle, in the body font",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:30"
+      ]
+    },
+    "settings.themes.preview.title": {
+      "default": "Your presentation title",
+      "refs": [
+        "client/views/settings/theme-editor/preview.js:29"
       ]
     },
     "settings.themes.primaryColor": {
       "default": "Primary",
       "refs": [
-        "client/views/settings/theme-editor/index.js:181"
+        "client/views/settings/theme-editor/index.js:187"
       ]
     },
     "settings.themes.setAsDefault": {
       "default": "Set as default",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:341"
+        "client/views/settings/tabs/themes-tab.js:342"
       ]
     },
     "settings.themes.setDefaultSuccess": {
       "default": "Theme set as default.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:413"
+        "client/views/settings/tabs/themes-tab.js:414"
       ]
     },
     "settings.themes.textDark": {
       "default": "Text Dark",
       "refs": [
-        "client/views/settings/theme-editor/index.js:212"
+        "client/views/settings/theme-editor/index.js:218"
       ]
     },
     "settings.themes.textLight": {
       "default": "Text Light",
       "refs": [
-        "client/views/settings/theme-editor/index.js:202"
+        "client/views/settings/theme-editor/index.js:208"
       ]
     },
     "settings.themes.themeName": {
       "default": "Theme Name",
       "refs": [
-        "client/views/settings/theme-editor/index.js:101"
+        "client/views/settings/theme-editor/index.js:107"
       ]
     },
     "settings.themes.themeNameHint": {
       "default": "Give your theme a descriptive name.",
       "refs": [
-        "client/views/settings/theme-editor/index.js:117"
+        "client/views/settings/theme-editor/index.js:123"
       ]
     },
     "settings.themes.themeNamePlaceholder": {
       "default": "My Custom Theme",
       "refs": [
-        "client/views/settings/theme-editor/index.js:107"
+        "client/views/settings/theme-editor/index.js:113"
       ]
     },
     "settings.themes.updateSuccess": {
       "default": "Theme updated.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:503"
+        "client/views/settings/tabs/themes-tab.js:513"
       ]
     },
     "settings.themes.uploading": {
       "default": "Uploading...",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:180"
+        "client/views/settings/theme-editor/logo-uploader.js:114"
       ]
     },
     "settings.themes.useUrl": {
       "default": "Or use URL",
       "refs": [
-        "client/views/settings/theme-editor/logo-uploader.js:141",
-        "client/views/settings/theme-editor/logo-uploader.js:167"
+        "client/views/settings/theme-editor/logo-uploader.js:75",
+        "client/views/settings/theme-editor/logo-uploader.js:101"
       ]
     },
     "settings.themes.workspace.defaultTheme": {
       "default": "Default theme",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:68"
+        "client/views/settings/tabs/themes-tab.js:69"
       ]
     },
     "settings.themes.workspace.hint": {
       "default": "Set the theme new presentations start with, and which themes appear in the picker up front. Hidden themes stay reachable behind \"Show all themes\".",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:58"
+        "client/views/settings/tabs/themes-tab.js:59"
       ]
     },
     "settings.themes.workspace.title": {
       "default": "Theme picker",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:54"
+        "client/views/settings/tabs/themes-tab.js:55"
       ]
     },
     "settings.themes.workspace.visibleHint": {
       "default": "Check the themes shown up front. The default theme is always visible. With everything checked, new themes are visible automatically.",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:83"
+        "client/views/settings/tabs/themes-tab.js:84"
       ]
     },
     "settings.themes.workspace.visibleInPicker": {
       "default": "Visible in picker",
       "refs": [
-        "client/views/settings/tabs/themes-tab.js:79"
+        "client/views/settings/tabs/themes-tab.js:80"
       ]
     },
     "settings.title": {
       "default": "Settings",
       "refs": [
-        "client/views/list/modals/settings.js:15",
-        "client/views/settings/index.js:98",
-        "client/views/settings/panel.js:41"
+        "client/views/settings/index.js:98"
       ]
     },
     "settings.uiLocale.hint": {
       "default": "The language of this application's interface, unrelated to the language used in slides.",
       "refs": [
-        "client/views/settings/panel.js:189",
         "client/views/settings/tabs/preferences-tab.js:62"
       ]
     },
     "settings.uiLocale.title": {
       "default": "Application language",
       "refs": [
-        "client/views/settings/panel.js:183",
         "client/views/settings/tabs/preferences-tab.js:56"
       ]
     },
@@ -14060,7 +14346,7 @@
     "share.guest.join": {
       "default": "Join discussion",
       "refs": [
-        "client/views/share-viewer.js:224"
+        "client/views/share-viewer.js:251"
       ]
     },
     "share.guest.name": {
@@ -14275,7 +14561,7 @@
     "share.loading": {
       "default": "Loading presentation...",
       "refs": [
-        "client/views/share-viewer.js:120"
+        "client/views/share-viewer.js:123"
       ]
     },
     "share.modal.help": {
@@ -14875,7 +15161,7 @@
     "slideLibrary.newPresentation.defaultTitle": {
       "default": "New Presentation",
       "refs": [
-        "client/views/list/modals/creation-view/index.js:799",
+        "client/views/list/modals/creation-view/index.js:843",
         "client/views/list/views/slide-library-view.js:66"
       ]
     },
@@ -19523,12 +19809,6 @@
     },
     "slideType.content-slide.field.density.option.compact.title": {
       "default": "Small",
-      "refs": [
-        "shared/slide-types:content-slide"
-      ]
-    },
-    "slideType.content-slide.field.layout.label": {
-      "default": "Layout",
       "refs": [
         "shared/slide-types:content-slide"
       ]

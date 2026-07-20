@@ -626,6 +626,8 @@
   "editor.inline.media.alt": "Alt-tekst (optioneel)",
   "editor.inline.media.altPlaceholder": "Omschrijf de afbeelding",
   "editor.inline.media.linkedin": "LinkedIn-URL (optioneel)",
+  "editor.inline.media.dropInvalid": "Dat is geen afbeeldingsbestand.",
+  "editor.inline.media.dropFailed": "Uploaden mislukt. Probeer het opnieuw.",
   "editor.deckGrid.open": "Slide-overzicht",
   "editor.deckGrid.title": "Slide-overzicht",
   "editor.deckGrid.hint": "Alle {count} slides in één oogopslag. Klik op een slide om ernaartoe te springen in de editor.",

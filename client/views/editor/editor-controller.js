@@ -1336,6 +1336,11 @@ export async function createEditorController({
 
   const inlineEditor = createInlineEditor({
     h,
+    api,
+    // Drag & drop image upload onto empty canvas placeholders is gated on the
+    // same flag as every other upload path (off in imagekit-only / sandbox /
+    // demo, where there is no upload destination).
+    uploadsEnabled: !features?.disableUploads,
     thumb,
     previewStage: thumb.parentElement || thumb,
     overlayHost: preview,
