@@ -84,11 +84,13 @@ export function createWorkspaceVisibilitySection({
         if (typeof updated.isViewOnly === 'boolean') pres.isViewOnly = updated.isViewOnly;
         if (typeof updated.revision === 'number') pres.revision = updated.revision;
         if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
+      } else if (scope === 'workspace') {
+        // Fallback for an unexpectedly empty response: reflect the requested
+        // value so the pills stay in sync until the next refresh. The /scope
+        // endpoint and the presentation GET now both echo isViewOnly, so the
+        // branch above is normally what keeps the state correct across reloads.
+        pres.isViewOnly = isViewOnly;
       }
-      // The /scope endpoint stores isViewOnly but does not echo it back (nor does
-      // the presentation GET expose it), so reflect the requested value locally to
-      // keep the access pills in sync for the rest of this session.
-      if (scope === 'workspace') pres.isViewOnly = isViewOnly;
       let msg;
       if (scope === 'private') msg = t('editor.share.private.done', 'Moved to private.');
       else if (isViewOnly) msg = t('editor.share.workspace.doneViewOnly', 'Shared as view only.');

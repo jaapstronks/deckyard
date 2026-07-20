@@ -38,6 +38,7 @@ export function withPresentations(Base) {
           'created_by as createdBy',
           'updated_by as updatedBy',
           'scope',
+          'is_view_only as isViewOnly',
           'revision',
           'i18n',
           'slides',
@@ -65,6 +66,7 @@ export function withPresentations(Base) {
           createdBy: row.createdBy,
           updatedBy: row.updatedBy,
           scope: row.scope,
+          isViewOnly: !!row.isViewOnly,
           revision: row.revision,
           i18n: i18n
             ? {
@@ -244,6 +246,12 @@ export function withPresentations(Base) {
 
       if (opts?.allowScopeChange && data.scope) {
         updateData.scope = data.scope;
+      }
+
+      // Only the /scope route passes allowViewOnlyChange; regular editor saves
+      // must not touch the stored flag (their body may omit it entirely).
+      if (opts?.allowViewOnlyChange && typeof data.isViewOnly === 'boolean') {
+        updateData.is_view_only = data.isViewOnly;
       }
 
       const row = await db
