@@ -16,11 +16,12 @@ image type's fit / focus / alt / role is stored or rendered.
 > (split / corner / duo / rows / grid) and never fit. A new image-bearing slide
 > type uses these names, or documents in its type definition why it must not.
 
-The whole confusion this document exists to end is that `layout` today carries
-two unrelated axes under one word: in `image-slide` it *is* the fit/crop axis,
-in `image-text` it is the structural arrangement. Freeing the word — so `layout`
-means structure everywhere and fit is always `fit` — is the point of the target
-model below, not a side effect of it.
+The whole confusion this document exists to end is that `layout` carried
+two unrelated axes under one word: in `image-slide` it *was* the fit/crop axis
+(until step 3 split it into `fit` + `bleed`), in `image-text` it is the
+structural arrangement. Freeing the word — so `layout` means structure
+everywhere and fit is always `fit` — is the point of the target model below,
+not a side effect of it.
 
 ### The element-vs-slide test
 
@@ -45,15 +46,16 @@ inspector write path that disagrees with the render read path.
 
 | Type | Level | Field(s) | Render reads | Inspector writes | Default |
 |---|---|---|---|---|---|
-| image-slide | S | **`layout`** (`full`/`bleed`/`centered`) 🚩 *name* | `image-slide.js:215` | `inspector-form.js:179` (`renderKeyInto('layout')`) | `full` |
+| image-slide | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3) | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit | fit/bleed controls (`appendImageSlideFitControls`, silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live) |
 | image-text | **I** (was S+I) ✅ | item `fit` canonical | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | images manager only (silent-default UX) | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live) |
 | content-columns | N | `col{n}ImageFit` | `content-columns-slide.js` col render | `inspector-form.js:332`; element card `{n}` mode | none (per column) |
 | gallery / team-cards / logo-wall / quote | — | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | — | — | — |
 
-One concept, **three** remaining storage strategies and names
-(`layout`, `fit`, `col{n}ImageFit`); image-text is on the target shape.
-`image-slide`'s `layout` also folds in a value that is *not* a fit value:
-`bleed` (edge-to-edge) = `cover` plus a frame bit.
+One concept, **two** remaining storage strategies and names (`fit` on
+image-slide/image-text — both on the target shape — vs `col{n}ImageFit` on
+content-columns, the step-4 remainder). The old `image-slide.layout`
+conflation (`bleed` = `cover` plus a frame bit) is resolved: `bleed` is its
+own orthogonal axis.
 
 ### focus — crop point 🚩
 
@@ -84,7 +86,7 @@ rule exists to stop exactly this.
 |---|---|---|---|---|---|---|---|
 | `imageRole` (a11y exposure) | S `content` | S `content` (all cells) | — | — | — | — | — |
 | `background` (slide bg) | S | S (+ `imageBackground` = *different* axis: image-area bg) | S | S | S | S | S |
-| **structural `layout`** | ❌ none (its `layout` is fit) | S `split/corner/duo/rows` (toolbar chip) | ❌ (`columnCount`) | S `layout` (grid) | — | — | — |
+| **structural `layout`** | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner/duo/rows` (toolbar chip) | ❌ (`columnCount`) | S `layout` (grid) | — | — | — |
 | media collection | flat `image` | **`images[]`** (legacy flat → item 0) | flat `col{n}Image` | `images[]` | `members[]` (+`card{n}` mirror) | `logos[]` (+`logo{n}` mirror) | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
 
 `imageRole` and `background` are **uniformly slide-level** — they do not exhibit
@@ -203,6 +205,12 @@ imageDefaults = { fit: 'cover', focus: { x: 50, y: 50 }, aspectRatio: null, allo
 
 ### The fit/bleed split (part of `ImageRef`)
 
+> ✅ **Shipped — step 3, PR #185 (2026-07-20).** Everything below is live:
+> `resolveImageSlideImage` resolves own `fit`/`bleed` → legacy `layout` →
+> `IMAGE_SLIDE_IMAGE_DEFAULTS`; the renderer emits orthogonal
+> `is-fit-*`/`is-bleed` classes; `contain + bleed` renders; the editor fold
+> (`ensureImageSlideImage`) retires `layout` on touch.
+
 `ImageRef.fit`/`bleed` replace `image-slide`'s conflated `layout`. Split it into
 two orthogonal, uniformly-named axes and drop the word:
 
@@ -239,9 +247,13 @@ the field is cheaper.
 
 ### Conversion becomes lossless
 
-Today `convert.js:306` demotes both `full` and `bleed` to `cover`; the
-edge-to-edge distinction is lost. After the split, `bleed` simply travels as a
-property image-text does not yet use, and the reverse direction
+> ✅ **Shipped with step 3 (PR #185).** The image-slide → image-text seam
+> resolves fit through `resolveImageSlideImage` and carries `bleed` on
+> `images[0]`; the image-text item sanitizer preserves it.
+
+Before the split, conversion demoted both `full` and `bleed` to `cover`; the
+edge-to-edge distinction was lost. Now `bleed` simply travels as a property
+image-text does not yet render, and the reverse direction
 (image-text → image-slide, currently not offered) becomes worth building — there
 is nothing left to guess.
 
@@ -282,8 +294,14 @@ property.
    slide-level fit control is retired (images manager owns fit, silent-default
    UX). Legacy `imageFit` stays a read-only render fallback for un-migrated
    decks, like the flat `image`.
-3. **Split image-slide `layout` → `ImageRef.fit` + `bleed`.** Rides on the fit
-   CSS unification (2b): content migration + renderer + `convert.js` (lossless).
+3. ~~**Split image-slide `layout` → `ImageRef.fit` + `bleed`.**~~ ✅ **Shipped —
+   PR #185 (2026-07-20).** `resolveImageSlideImage` (own value → legacy
+   `layout` → `IMAGE_SLIDE_IMAGE_DEFAULTS`) is the single read authority;
+   `ensureImageSlideImage` folds `layout` on edit (default-equal values
+   dropped, not stamped); the renderer emits orthogonal `is-fit-*`/`is-bleed`
+   classes (CSS restructured per axis); `contain + bleed` is expressible and
+   renders; conversion to image-text is lossless (`bleed` travels on the
+   ImageRef). `validateSlide` gained a boolean field type for `bleed`.
 4. **Normalize content-columns `col{n}*` → `ImageRef`.** Resolve the
    numbered/array duality by resolving each column into an `ImageRef`.
 

@@ -152,6 +152,7 @@ import {
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/image-text-images.js';
+import { resolveImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -455,14 +456,14 @@ export const INLINE_DESCRIPTORS = {
       imageField: 'image',
       altField: 'alt',
     },
-    // Draggable focal point on the single image, but only in cropped layouts
-    // (full / bleed = cover). `centered` renders contain (no crop), so the
-    // point would have nothing to move - it stays hidden there.
+    // Draggable focal point on the single image, but only in cover mode -
+    // contain (no crop) has nothing to move, so the point stays hidden there.
+    // Effective fit comes from resolveImageSlideImage (own `fit` -> legacy
+    // `layout` -> type default), the single authority the render shares.
     focus: {
       xField: 'focusX',
       yField: 'focusY',
-      cropMode: (slide) =>
-        slide?.content?.layout === 'centered' ? 'contain' : 'cover',
+      cropMode: (slide) => resolveImageSlideImage(slide?.content).fit,
     },
     formText: [...HEADER_TEXT, 'caption'],
   },

@@ -485,6 +485,14 @@ export function validateSlide(slide) {
         }
       }
     }
+    if (field.type === 'boolean') {
+      // Cleared boolean fields use the repo's '' convention (like enums); only
+      // a present non-empty value must be an actual boolean.
+      if (val != null && val !== '' && typeof val !== 'boolean')
+        errors.push(
+          `Slide.content.${field.key} must be a boolean`
+        );
+    }
     if (field.type === 'enum') {
       const allowed = enumOptionValues(field);
       // The background field also accepts theme-defined variant ids

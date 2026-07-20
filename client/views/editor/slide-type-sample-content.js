@@ -71,7 +71,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     alt: 'Sample image',
     imageRole: 'content',
     caption: 'Caption for context',
-    layout: 'full',
   },
 
   'video-slide': {

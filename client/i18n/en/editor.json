@@ -464,6 +464,7 @@
   "editor.imagePosition.top": "Top",
   "editor.imagePosition.verticalAlignment": "Vertical alignment",
   "editor.imagePosition.widerThanBox": "Image is wider than the box: choose top/center/bottom.",
+  "editor.imageSlide.bleed": "Edge-to-edge",
   "editor.imageText.addImage": "+ Add image",
   "editor.imageText.altText": "Alt text",
   "editor.imageText.fitContain": "Fit (no crop)",
