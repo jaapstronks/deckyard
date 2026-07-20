@@ -1350,6 +1350,73 @@ export function createInlineEditor({
   }
 
   // ----------------------------------------------------------------
+  // Cover / Contain fit toggle (descriptor `fit`)
+  // ----------------------------------------------------------------
+  // A small segmented control on each filled image, so the crop-vs-fit choice
+  // lives on the image instead of only in the inspector. Toggling rerenders
+  // (the frame relayouts and the focal point appears/disappears with the mode).
+  /**
+   * Resolve where a photo's fit reads/writes: reuse resolveMediaTarget for the
+   * member + index, then the descriptor's `fit` knob for the field key and the
+   * effective current mode (item value, else a slide-level fallback).
+   * @returns {{member:Object, key:string, mode:('cover'|'contain')}|null}
+   */
+  function resolveFitTarget(photoEl) {
+    const base = resolveMediaTarget(photoEl);
+    if (!base) return null;
+    const slide = getSlide?.();
+    const descriptor = slide
+      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
+      : null;
+    const fit = descriptor?.fit;
+    if (!fit) return null;
+    const { idx, member, media } = base;
+    const key = media.list ? fit.field : String(fit.field).replace('{n}', String(idx));
+    const raw =
+      member[key] ||
+      (typeof fit.fallback === 'function' ? fit.fallback(slide) : '');
+    return { member, key, mode: raw === 'contain' ? 'contain' : 'cover' };
+  }
+
+  /** A Cover/Contain segmented toggle on each filled image. */
+  function insertFitAffordances(root, _def, descriptor) {
+    if (!descriptor.fit || !descriptor.media?.photoSelector) return;
+    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
+      if (photo.classList.contains('is-empty')) continue; // filled images only
+      const ft = resolveFitTarget(photo);
+      if (!ft) continue;
+      const seg = h('div', {
+        class: 'ie-fit-toggle',
+        role: 'group',
+        'aria-label': t('editor.inline.fit.label', 'Image fit'),
+      });
+      const mkBtn = (mode, label) => {
+        const btn = h('button', {
+          class: `ie-fit-opt${ft.mode === mode ? ' is-on' : ''}`,
+          type: 'button',
+          'aria-pressed': ft.mode === mode ? 'true' : 'false',
+          text: label,
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (ft.mode === mode) return;
+            ft.member[ft.key] = mode;
+            markDirty?.();
+            requestSave?.();
+            rerenderPreview?.(); // frame relayouts; focal point re-evaluates
+          },
+        });
+        return btn;
+      };
+      seg.append(
+        mkBtn('cover', t('editor.inline.fit.cover', 'Cover')),
+        mkBtn('contain', t('editor.inline.fit.contain', 'Contain'))
+      );
+      overlay.place(seg, photo, 'inset-bottom-left', 8);
+    }
+  }
+
+  // ----------------------------------------------------------------
   // Type-switch affordances (descriptor `convert`: add/remove image area)
   // ----------------------------------------------------------------
   /**
@@ -1502,6 +1569,7 @@ export function createInlineEditor({
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
     insertFocusAffordances(root, def, descriptor);
+    insertFitAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
 
