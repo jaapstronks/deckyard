@@ -106,7 +106,13 @@ function storeBgSectionOpen(open) {
 function elementAppliesToSlide(slide, sel) {
   if (!slide || !sel) return false;
   if (sel.kind === 'image') {
-    return slide.type === 'image-slide' || slide.type === 'image-text-slide';
+    if (slide.type === 'image-slide' || slide.type === 'image-text-slide') return true;
+    // content-columns: the element index is the 1-based column number.
+    if (slide.type === 'content-columns-slide') {
+      const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
+      return sel.idx >= 1 && sel.idx <= count;
+    }
+    return false;
   }
   if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
     const items = slide.content?.items;

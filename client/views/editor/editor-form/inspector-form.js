@@ -269,16 +269,13 @@ export function renderInspectorExtrasByType(ctx) {
       add('columnCount');
       // Per-column image settings (fit + focus) and block count: numbered
       // schema, so these are plain fields; the column texts live in the bulk
-      // modal. Only active columns render, together in one collapsible group.
+      // modal. With a column selected on the canvas its settings render in the
+      // element tab; otherwise all active columns render in one collapsible.
       const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
-      const colSection = collapsibleGroup(
-        h,
-        t('editor.inspector.columnsConfig', 'Column images & blocks')
-      );
-      for (let n = 1; n <= count; n += 1) {
+      const renderColumn = (n, container) => {
         const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
         const blockCountField = fieldByKey.get(`col${n}BlockCount`);
-        if (!imgUrl && !blockCountField) continue;
+        if (!imgUrl && !blockCountField) return;
         const group = h('div', { class: 'stack' });
         group.append(h('div', {
           class: 'field-label',
@@ -293,10 +290,12 @@ export function renderInspectorExtrasByType(ctx) {
             const fitEl = renderField(fitField);
             if (fitEl) group.append(fitEl);
           }
+          // Cover focus is on the canvas; a contain column still gets alignment.
           const picker = renderImagePositionPicker({
             h,
-            mode: 'cover',
+            mode: slide.content?.[`col${n}ImageFit`] === 'contain' ? 'contain' : 'cover',
             imageUrl: imgUrl,
+            containerSelector: '.preview-panel .thumb.is-clickable-preview .cc-image',
             focusX: slide.content?.[`col${n}ImageFocusX`] ?? 50,
             focusY: slide.content?.[`col${n}ImageFocusY`] ?? 50,
             onChange: ({ focusX, focusY } = {}) => {
@@ -313,9 +312,34 @@ export function renderInspectorExtrasByType(ctx) {
           const bcEl = renderField(blockCountField);
           if (bcEl) group.append(bcEl);
         }
-        if (group.childNodes.length > 1) colSection.body.append(group);
+        if (group.childNodes.length > 1) container.append(group);
+      };
+
+      const colIdx =
+        selectedElement?.kind === 'image' &&
+        selectedElement.idx >= 1 &&
+        selectedElement.idx <= count
+          ? selectedElement.idx
+          : null;
+      if (colIdx != null) {
+        // Other columns' numbered keys must be marked used so the main keeps
+        // loop doesn't render them raw in the slide form.
+        for (let n = 1; n <= count; n += 1) {
+          if (n === colIdx) continue;
+          used.add(`col${n}ImageFit`);
+          used.add(`col${n}ImageFocusX`);
+          used.add(`col${n}ImageFocusY`);
+          used.add(`col${n}BlockCount`);
+        }
+        renderColumn(colIdx, elementForm);
+      } else {
+        const colSection = collapsibleGroup(
+          h,
+          t('editor.inspector.columnsConfig', 'Column images & blocks')
+        );
+        for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
+        if (colSection.body.childNodes.length) form.append(colSection.el);
       }
-      if (colSection.body.childNodes.length) form.append(colSection.el);
       return;
     }
 
