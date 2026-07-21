@@ -5,7 +5,7 @@
  * configure bindings, and preview fetched data.
  */
 
-import { createModal } from '../../lib/modal.js';
+import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
   DATA_SOURCE_PROVIDERS,

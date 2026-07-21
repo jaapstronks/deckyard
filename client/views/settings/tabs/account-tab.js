@@ -5,12 +5,12 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { createAvatar, updateAvatar } from '../../../lib/avatar.js';
-import { invalidateProfile } from '../../../lib/user-profiles.js';
+import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
+import { invalidateProfile } from '../../../lib/user/user-profiles.js';
 import { createPasswordSection } from '../sections/index.js';
-import { fetchMySettings, updateMySettings, invalidateSettingsCache } from '../../../lib/settings.js';
+import { fetchMySettings, updateMySettings, invalidateSettingsCache } from '../../../lib/net/settings.js';
 
 /**
  * Create the account tab component.

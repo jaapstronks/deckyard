@@ -1,6 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { readFileAsDataUrl } from '../../../lib/file.js';
-import { formatFileSize } from '../../../lib/format.js';
+import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { formatFileSize } from '../../../lib/format/format.js';
 
 /**
  * Creates the "Import from file" tab content for the slide-type-modal.

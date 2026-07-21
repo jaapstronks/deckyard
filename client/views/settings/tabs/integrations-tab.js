@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createAdminWebhooksSection } from '../sections/index.js';
 import {
   fetchAppSettings,
@@ -13,7 +13,7 @@ import {
   fetchOrgSettings,
   updateOrgSettings,
   invalidateSettingsCache,
-} from '../../../lib/settings.js';
+} from '../../../lib/net/settings.js';
 
 /**
  * Create the integrations tab component.

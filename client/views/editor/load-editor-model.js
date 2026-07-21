@@ -1,6 +1,6 @@
 import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
 import { api as defaultApi } from '../../lib/api.js';
-import { loadThemeById } from '../../lib/theme.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
 import {
   initNewDeckTitlePromptFlag,
   initPresentationI18n,

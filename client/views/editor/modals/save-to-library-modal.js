@@ -1,6 +1,6 @@
-import { createModal, createModalActions } from '../../../lib/modal.js';
+import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createTagEditor } from '../../list/tag-editor.js';
 
 const SUPPORTED_LANGS = ['nl', 'en-GB'];

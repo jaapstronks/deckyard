@@ -6,8 +6,8 @@
  */
 
 import { h } from '../../../lib/dom.js';
-import { normalizeLang } from '../../../lib/i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { normalizeLang } from '../../../lib/format/i18n.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

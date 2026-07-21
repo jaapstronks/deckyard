@@ -4,7 +4,7 @@
  */
 
 import { h } from '../../lib/dom.js';
-import { loadThemeById } from '../../lib/theme.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
 import { createViewerTopbar } from './viewer-topbar.js';
 import { createViewerSlidesPanel } from './viewer-slides-panel.js';
 import { createViewerPreview } from './viewer-preview.js';
@@ -13,7 +13,7 @@ import { createCommentsApi } from '../editor/comments-api.js';
 import { api } from '../../lib/api.js';
 import { initPresentationI18n } from '../editor/bootstrap.js';
 import { syncSlideIdInUrl } from '../editor/slide-url.js';
-import { attachSwipeNavigation } from '../../lib/swipe-nav.js';
+import { attachSwipeNavigation } from '../../lib/dom/swipe-nav.js';
 
 export async function createViewerController({
   root,

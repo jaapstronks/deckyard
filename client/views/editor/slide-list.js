@@ -16,7 +16,7 @@ import {
 } from './slide-list/nested-helpers.js';
 import { createSlideItem } from './slide-list/render-item.js';
 import { attachDragHandlers } from './slide-list/drag-handlers.js';
-import { attachLongPress } from '../../lib/long-press.js';
+import { attachLongPress } from '../../lib/dom/long-press.js';
 import { attachClickHandler } from './slide-list/click-handlers.js';
 import {
   showSlideContextMenu,

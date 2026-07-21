@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { chevronDownIcon } from '../../lib/icons.js';
+import { chevronDownIcon } from '../../lib/dom/icons.js';
 
 const COLLAPSE_KEY = 'deckyard.notesStrip.collapsed';
 

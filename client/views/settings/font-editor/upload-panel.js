@@ -6,8 +6,8 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { formatFileSize } from '../../../lib/format.js';
-import { toast } from '../../../lib/toast.js';
+import { formatFileSize } from '../../../lib/format/format.js';
+import { toast } from '../../../lib/dom/toast.js';
 
 const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 

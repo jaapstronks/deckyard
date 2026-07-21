@@ -1,4 +1,4 @@
-import { prefersReducedMotion } from '../../lib/motion.js';
+import { prefersReducedMotion } from '../../lib/dom/motion.js';
 
 function retriggerCssAnimation(el, { preClass, animClass } = {}) {
   if (!el || !el.classList) return;

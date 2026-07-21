@@ -9,7 +9,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { promptModal } from '../../../lib/modal.js';
+import { promptModal } from '../../../lib/dom/modal.js';
 import { duplicateSlides, deleteSlides } from './slide-actions.js';
 import {
   createVisibilityMenu,

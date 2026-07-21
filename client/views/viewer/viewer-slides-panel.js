@@ -3,7 +3,7 @@
  * Reuses the same layout/structure as the editor's slide list for consistency.
  */
 
-import { renderSlideElement } from '../../lib/slide-render.js';
+import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { t } from '../../lib/ui-i18n.js';
 import { isDraftSlide } from '../../../shared/slide-visibility.js';
 

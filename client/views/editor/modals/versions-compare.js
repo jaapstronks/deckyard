@@ -3,10 +3,10 @@
  * Side-by-side diff view showing changes between current version and a snapshot
  */
 
-import { createPromiseModal } from '../../../lib/modal.js';
-import { renderSlideElement } from '../../../lib/slide-render.js';
-import { computeSlideDiff, alignSlidesForComparison, getCategoryStyle } from '../../../lib/slide-diff.js';
-import { fmtDate } from '../../../lib/format.js';
+import { createPromiseModal } from '../../../lib/dom/modal.js';
+import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { computeSlideDiff, alignSlidesForComparison, getCategoryStyle } from '../../../lib/slide-authoring/slide-diff.js';
+import { fmtDate } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

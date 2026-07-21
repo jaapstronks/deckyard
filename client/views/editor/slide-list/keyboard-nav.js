@@ -1,10 +1,10 @@
 import {
   copySlides,
   getClipboardSlides,
-} from '../../../lib/slide-clipboard.js';
-import { newId } from '../../../lib/id.js';
+} from '../../../lib/slide-authoring/slide-clipboard.js';
+import { newId } from '../../../lib/util/id.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import {
   duplicateSlides,
   deleteSlides,

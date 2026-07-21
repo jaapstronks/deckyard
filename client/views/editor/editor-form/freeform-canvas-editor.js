@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { trashIcon } from '../../../lib/icons.js';
+import { trashIcon } from '../../../lib/dom/icons.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 
 /**

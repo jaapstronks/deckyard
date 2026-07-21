@@ -4,15 +4,15 @@
  */
 
 import { h } from '../../../lib/dom.js';
-import { getAppName } from '../../../lib/branding.js';
+import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import {
   fetchAppSettings,
   updateAppSettings,
   invalidateSettingsCache,
-} from '../../../lib/settings.js';
-import { getSupportedLangs, setSupportedLangs } from '../../../lib/i18n.js';
+} from '../../../lib/net/settings.js';
+import { getSupportedLangs, setSupportedLangs } from '../../../lib/format/i18n.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../../../shared/constants/ai.js';
 
 /**

@@ -5,9 +5,9 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { loadThemeById } from '../../lib/theme.js';
-import { renderSlideElement } from '../../lib/slide-render.js';
-import { attachThumbScale } from '../../lib/thumb-scale.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
+import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 
 /**
  * Create a real slide thumbnail preview for a theme.

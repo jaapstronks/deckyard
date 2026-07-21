@@ -1,18 +1,18 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
-import { attachThumbScale } from '../lib/thumb-scale.js';
+import { attachThumbScale } from '../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
   mountSlideInto,
-} from '../lib/slide-render.js';
+} from '../lib/slide-runtime/slide-render.js';
 import { markdownToSafeHtml } from '../../shared/markdown.js';
-import { normalizeLang } from '../lib/i18n.js';
+import { normalizeLang } from '../lib/format/i18n.js';
 import { t } from '../lib/ui-i18n.js';
-import { loadThemeById } from '../lib/theme.js';
+import { loadThemeById } from '../lib/theme/theme.js';
 import { clamp, normalizeNotes, normalizePresentation } from './notes/utils.js';
 import { createNotesQaController } from './notes/qa.js';
 import { createNotesSessionSse } from './notes/session-sse.js';
-import { attachSwipeNavigation } from '../lib/swipe-nav.js';
+import { attachSwipeNavigation } from '../lib/dom/swipe-nav.js';
 import { createUiModeSwitcher } from './ui-mode-switcher.js';
 
 export async function renderNotes(

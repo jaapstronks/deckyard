@@ -1,8 +1,8 @@
 import { t } from '../../../../lib/ui-i18n.js';
-import { dragHandleIcon, chevronDownIcon } from '../../../../lib/icons.js';
-import { createCollapsedState } from '../../../../lib/collapsed-state.js';
+import { dragHandleIcon, chevronDownIcon } from '../../../../lib/dom/icons.js';
+import { createCollapsedState } from '../../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
-import { createItemSwapper } from '../../../../lib/item-swap.js';
+import { createItemSwapper } from '../../../../lib/slide-authoring/item-swap.js';
 
 // Collapsed state manager for cards
 const cardsState = createCollapsedState('card');

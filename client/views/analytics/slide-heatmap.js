@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatTimeShort as formatTime } from '../../lib/analytics-format.js';
+import { formatTimeShort as formatTime } from '../../lib/format/analytics-format.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**

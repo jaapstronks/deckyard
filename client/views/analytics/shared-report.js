@@ -4,7 +4,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatDate, getSourceLabel } from '../../lib/analytics-format.js';
+import { formatDuration, formatDate, getSourceLabel } from '../../lib/format/analytics-format.js';
 
 /**
  * Render shared report view.

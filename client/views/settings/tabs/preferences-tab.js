@@ -5,13 +5,13 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import {
   defaultLang,
   getSupportedLangs,
   readLangMode,
   writeLangMode,
-} from '../../../lib/i18n.js';
+} from '../../../lib/format/i18n.js';
 import {
   fetchUiLocaleManifest,
   getUiLocale,
@@ -22,8 +22,8 @@ import {
   fetchMySettings,
   invalidateSettingsCache,
   updateMySettings,
-} from '../../../lib/settings.js';
-import { getLangShortLabel, getLangDisplayName } from '../../../lib/lang-selector.js';
+} from '../../../lib/net/settings.js';
+import { getLangShortLabel, getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 

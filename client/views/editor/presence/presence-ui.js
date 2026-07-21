@@ -8,8 +8,8 @@
  * MutationObservers — never stored in the DOM as the source of truth.
  */
 
-import { createAvatar } from '../../../lib/avatar.js';
-import { displayNameFromEmail } from '../../../lib/user-format.js';
+import { createAvatar } from '../../../lib/user/avatar.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 const MAX_STACK_AVATARS = 5;

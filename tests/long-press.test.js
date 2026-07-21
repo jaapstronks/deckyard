@@ -18,7 +18,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
 const { attachLongPress, SYNTHETIC_CLICK_WINDOW_MS } = await import(
-  '../client/lib/long-press.js'
+  '../client/lib/dom/long-press.js'
 );
 
 /** Dispatch one touch event with the given touch-list shape. */

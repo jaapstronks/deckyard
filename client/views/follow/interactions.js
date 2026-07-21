@@ -1,4 +1,4 @@
-import { debugLog } from '../../lib/debug.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { createFollowInteractionStorage } from './interactions/storage.js';
 import { createFollowInteractionLocalCache } from './interactions/local-cache.js';
 import { renderLikertSliderUi } from './interactions/likert-slider-ui.js';

@@ -5,14 +5,14 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createEmailTemplatesPanel } from '../email-templates-panel.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
 import {
   fetchAppSettings,
   updateAppSettings,
   invalidateSettingsCache,
-} from '../../../lib/settings.js';
+} from '../../../lib/net/settings.js';
 
 /**
  * Create the email tab component.

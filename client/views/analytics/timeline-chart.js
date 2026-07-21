@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatDate } from '../../lib/analytics-format.js';
+import { formatDate } from '../../lib/format/analytics-format.js';
 
 /**
  * Format date for chart display (short format: M/D).

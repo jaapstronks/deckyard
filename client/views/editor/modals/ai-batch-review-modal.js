@@ -9,8 +9,8 @@
  * name deliberately differs from the per-slide "Refine" flow.
  */
 import { t } from '../../../lib/ui-i18n.js';
-import { openModal } from '../../../lib/modal.js';
-import { toast } from '../../../lib/toast.js';
+import { openModal } from '../../../lib/dom/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
 

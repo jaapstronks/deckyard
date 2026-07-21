@@ -1,7 +1,7 @@
-import { createModal } from '../../../lib/modal.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createTagEditor } from '../../list/tag-editor.js';
-import { createAndPopulateThemeSelect } from '../../../lib/theme-select.js';
+import { createAndPopulateThemeSelect } from '../../../lib/theme/theme-select.js';
 import { analyzeAndApplyThemeChange } from './change-theme-modal.js';
 import {
   detectStreamProvider,

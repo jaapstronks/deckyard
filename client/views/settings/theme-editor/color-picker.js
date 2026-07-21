@@ -4,7 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
-import { isValidHexColor, normalizeHex } from '../../../lib/color-utils.js';
+import { isValidHexColor, normalizeHex } from '../../../lib/theme/color-utils.js';
 
 /**
  * Create a color picker component.

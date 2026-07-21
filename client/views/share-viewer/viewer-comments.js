@@ -3,12 +3,12 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { confirmModal } from '../../lib/modal.js';
-import { formatRelativeTime } from '../../lib/format-time.js';
-import { isGuestCommentAuthor } from '../../lib/comment-authz.js';
-import { renderCommentBodyNodes } from '../../lib/comment-body.js';
-import { createRichCommentInput } from '../../lib/comment-rich-input.js';
-import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
+import { isGuestCommentAuthor } from '../../lib/comments/comment-authz.js';
+import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
+import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
 
 /**
  * Create a comments section for the share viewer.

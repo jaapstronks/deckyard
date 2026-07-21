@@ -4,8 +4,8 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { toast } from '../toast.js';
-import { renderSlideElement } from '../slide-render.js';
+import { toast } from '../dom/toast.js';
+import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 

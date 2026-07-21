@@ -1,7 +1,7 @@
-import { createModal } from '../../lib/modal.js';
+import { createModal } from '../../lib/dom/modal.js';
 import { createCsvGridEditor } from './fields/csv-grid.js';
-import { mountSlideInto } from '../../lib/slide-render.js';
-import { attachThumbScaleContain } from '../../lib/thumb-scale.js';
+import { mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
+import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /**

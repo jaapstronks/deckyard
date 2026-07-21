@@ -1,11 +1,11 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { generatePresentationStreaming } from '../../../lib/ai-stream.js';
-import { showLoadingModal } from '../../../lib/loading-modal.js';
-import { createMessageRotator } from '../../../lib/status-message-rotator.js';
-import { populateThemes } from '../../../lib/theme-select.js';
-import { createLangSelector } from '../../../lib/lang-selector.js';
-import { createLlmSelector } from '../../../lib/llm-vendor.js';
-import { createQuickModal as createModal, createModalStatus } from '../../../lib/modal.js';
+import { generatePresentationStreaming } from '../../../lib/net/ai-stream.js';
+import { showLoadingModal } from '../../../lib/dom/loading-modal.js';
+import { createMessageRotator } from '../../../lib/dom/status-message-rotator.js';
+import { populateThemes } from '../../../lib/theme/theme-select.js';
+import { createLangSelector } from '../../../lib/format/lang-selector.js';
+import { createLlmSelector } from '../../../lib/net/llm-vendor.js';
+import { createQuickModal as createModal, createModalStatus } from '../../../lib/dom/modal.js';
 import { DEFAULT_THEME_ID, DEFAULT_THEME_NAME } from '../../../../shared/constants/themes.js';
 
 export function openAiWizard({
@@ -167,7 +167,7 @@ export function openAiWizard({
   const transitionsSelect = h('select', { class: 'form-input is-compact' });
   const initTransitions = async () => {
     try {
-      const m = await import('../../../lib/presenter-transitions.js');
+      const m = await import('../../../lib/slide-authoring/presenter-transitions.js');
       transitionsSelect.innerHTML = '';
       for (const opt of m.PRESENTER_TRANSITION_PRESETS) {
         transitionsSelect.append(h('option', { value: opt.value, text: opt.label }));

@@ -6,8 +6,8 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/toast.js';
-import { isValidHexColor, deriveColorPalette } from '../../../lib/color-utils.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { isValidHexColor, deriveColorPalette } from '../../../lib/theme/color-utils.js';
 import { createFontPicker } from './font-picker.js';
 import { createColorPicker } from './color-picker.js';
 import { createThemePreview } from './preview.js';

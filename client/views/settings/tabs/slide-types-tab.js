@@ -6,19 +6,19 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/toast.js';
-import { confirmModal } from '../../../lib/modal.js';
-import { readFileAsText } from '../../../lib/file.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
+import { readFileAsText } from '../../../lib/util/file.js';
 import { createSlideTypeEditor } from '../slide-type-editor/index.js';
 import {
   serializeSlideType,
   parseImportedSlideType,
   deriveUniqueSlug,
 } from '../slide-type-editor/io.js';
-import { renderSlideElement } from '../../../lib/slide-render.js';
+import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from '../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { loadThemeById } from '../../../lib/theme.js';
+import { loadThemeById } from '../../../lib/theme/theme.js';
 import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
 
 /**

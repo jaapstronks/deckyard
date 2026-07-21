@@ -1,20 +1,20 @@
 import { t } from '../../lib/ui-i18n.js';
-import { confirmModal } from '../../lib/modal.js';
-import { newId } from '../../lib/id.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { newId } from '../../lib/util/id.js';
 import { deepClone } from './editor-utils.js';
 import { getChildIds } from './slide-list/nested-helpers.js';
 import {
   copySlides,
   getClipboardSlides,
   getClipboardCount,
-} from '../../lib/slide-clipboard.js';
+} from '../../lib/slide-authoring/slide-clipboard.js';
 import {
   copyIcon,
   trashIcon,
   closeIcon,
   lockIcon,
   unlockIcon,
-} from '../../lib/icons.js';
+} from '../../lib/dom/icons.js';
 
 /**
  * Expand selection to include children of any selected parents

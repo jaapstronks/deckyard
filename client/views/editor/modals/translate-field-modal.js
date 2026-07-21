@@ -68,7 +68,7 @@ export async function openTranslateFieldModal({
 
   let translated = '';
   try {
-    const { readPreferredLlmVendor } = await import('../../../lib/llm-vendor.js');
+    const { readPreferredLlmVendor } = await import('../../../lib/net/llm-vendor.js');
     const vendor = readPreferredLlmVendor?.() || null;
     const resp = await api?.(
       `/api/presentations/${id}/translate/fields`,

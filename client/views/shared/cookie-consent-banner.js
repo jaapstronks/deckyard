@@ -12,7 +12,7 @@ import {
   acceptNecessaryOnly,
   hasConsentChoice,
   shouldShowConsentBanner,
-} from '../../lib/cookie-consent.js';
+} from '../../lib/util/cookie-consent.js';
 
 /**
  * Create and mount the cookie consent banner.

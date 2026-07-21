@@ -5,7 +5,7 @@
  * are this grid plus an annotation layer (see deck-grid.js).
  */
 import { t } from '../../../lib/ui-i18n.js';
-import { openModal } from '../../../lib/modal.js';
+import { openModal } from '../../../lib/dom/modal.js';
 import { createDeckGridView } from '../deck-grid.js';
 
 /**

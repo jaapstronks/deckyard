@@ -1,7 +1,7 @@
 import { h } from '../lib/dom.js';
-import { login, me } from '../lib/auth.js';
+import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
-import { createBusyManager } from '../lib/busy.js';
+import { createBusyManager } from '../lib/dom/busy.js';
 
 export async function renderLogin(root, { nav } = {}) {
   const url = new URL(location.href);

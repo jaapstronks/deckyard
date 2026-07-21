@@ -1,5 +1,5 @@
 // Small, shared helpers for the editor view.
-import { newId } from '../../lib/id.js';
+import { newId } from '../../lib/util/id.js';
 import { t } from '../../lib/ui-i18n.js';
 
 // Scroll locking for overlay modals (ref-counted; safe for nested modals).

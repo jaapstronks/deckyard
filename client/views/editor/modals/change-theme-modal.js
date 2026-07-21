@@ -8,7 +8,7 @@
  * - Proceed anyway
  */
 
-import { createPromiseModal } from '../../../lib/modal.js';
+import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

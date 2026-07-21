@@ -12,14 +12,14 @@
  */
 
 import { api } from '../../lib/api.js';
-import { toast } from '../../lib/toast.js';
+import { toast } from '../../lib/dom/toast.js';
 import { h } from '../../lib/dom.js';
-import { attachThumbScale, attachThumbScaleContain } from '../../lib/thumb-scale.js';
+import { attachThumbScale, attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
   mountSlideInto,
   renderSlideElement,
-} from '../../lib/slide-render.js';
+} from '../../lib/slide-runtime/slide-render.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
 import {
@@ -47,7 +47,7 @@ import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
-import { setDocumentTitle } from '../../lib/branding.js';
+import { setDocumentTitle } from '../../lib/theme/branding.js';
 import { openTranslateSlideModal as openTranslateSlideModalImpl } from './modals/translate-slide-modal.js';
 import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals/translate-field-modal.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
@@ -55,7 +55,7 @@ import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
 import { openDeckOverviewModal } from './modals/deck-overview-modal.js';
 import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
-import { normalizeLang, otherLang } from '../../lib/i18n.js';
+import { normalizeLang, otherLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import {
@@ -65,7 +65,7 @@ import {
 } from './bootstrap.js';
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
-import { getFeatures } from '../../lib/features.js';
+import { getFeatures } from '../../lib/state/features.js';
 import { attachPresentationPresenceLock } from './presence-lock.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { syncSlideIdInUrl } from './slide-url.js';
@@ -78,11 +78,11 @@ import { translatableKeysForType } from './translatable.js';
 import { focusSearchHitInEditor } from './search-focus.js';
 import { createOverlayRegistry } from './overlays.js';
 import { createResponsiveDrawers } from './responsive-drawers.js';
-import { createEditorStateUpdater } from '../../lib/editor-state.js';
+import { createEditorStateUpdater } from '../../lib/state/editor-state.js';
 import { createEditorDropdowns } from './editor-dropdowns.js';
 import { createEditorCleanupRegistry } from './editor-cleanup.js';
-import { isPresentationAuthor, isSlideLockedForUser } from '../../lib/slide-lock-authz.js';
-import { createUndoManager } from '../../lib/undo-manager.js';
+import { isPresentationAuthor, isSlideLockedForUser } from '../../lib/slide-authoring/slide-lock-authz.js';
+import { createUndoManager } from '../../lib/state/undo-manager.js';
 import { createUndoActions } from './slide-list/undo-actions.js';
 import { createSlideUpdateHandler } from './slide-update-handler.js';
 import { createRemoteRefresh } from './remote-refresh.js';

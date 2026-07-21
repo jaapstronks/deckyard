@@ -35,7 +35,7 @@ const {
   serializeMarkdownDom,
   markdownNeedsModal,
   canInlineEditMarkdown,
-} = await import('../client/lib/markdown-serialize.js');
+} = await import('../client/lib/slide-authoring/markdown-serialize.js');
 
 /** Parse an HTML string into a detached container. */
 function domOf(html) {

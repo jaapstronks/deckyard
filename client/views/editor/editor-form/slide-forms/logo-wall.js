@@ -1,7 +1,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { MAX_LOGOS } from '../../../../../shared/slide-types/types/logo-wall-slide.js';
-import { dragHandleIcon, chevronDownIcon } from '../../../../lib/icons.js';
-import { createCollapsedState } from '../../../../lib/collapsed-state.js';
+import { dragHandleIcon, chevronDownIcon } from '../../../../lib/dom/icons.js';
+import { createCollapsedState } from '../../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
 import { fieldCardLink } from '../../fields/card-link-field.js';
 

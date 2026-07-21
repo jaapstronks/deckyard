@@ -4,10 +4,10 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { createAvatar, updateAvatar } from '../../../lib/avatar.js';
-import { invalidateProfile, getUserProfileAsync } from '../../../lib/user-profiles.js';
+import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
+import { invalidateProfile, getUserProfileAsync } from '../../../lib/user/user-profiles.js';
 
 /**
  * Create profile image section with upload/remove buttons.

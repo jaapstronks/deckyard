@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { openShortcutsOverlay } from '../../lib/shortcuts-overlay.js';
+import { openShortcutsOverlay } from '../../lib/dom/shortcuts-overlay.js';
 
 /**
  * Editor keyboard-shortcut reference + help-overlay trigger.

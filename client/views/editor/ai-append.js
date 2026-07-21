@@ -1,4 +1,4 @@
-import { normalizeLang } from '../../lib/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 import {
   fetchLlmStatus,
   labelForVendor,
@@ -6,9 +6,9 @@ import {
   pickInitialVendor,
   readPreferredLlmVendor,
   writePreferredLlmVendor,
-} from '../../lib/llm-vendor.js';
+} from '../../lib/net/llm-vendor.js';
 import { t } from '../../lib/ui-i18n.js';
-import { openModal } from '../../lib/modal.js';
+import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
 

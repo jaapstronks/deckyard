@@ -11,10 +11,10 @@ import {
   nav,
   setRenderer,
   startRouter,
-} from './lib/router.js';
-import { meWithMeta } from './lib/auth.js';
-import { setFeatures } from './lib/features.js';
-import { setDocumentTitle } from './lib/branding.js';
+} from './lib/state/router.js';
+import { meWithMeta } from './lib/user/auth.js';
+import { setFeatures } from './lib/state/features.js';
+import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list.js';
 import { renderEditor } from './views/editor.js';
 import { renderPresenter } from './views/presenter.js';
@@ -32,9 +32,9 @@ import { renderSettings } from './views/settings.js';
 import { renderAnalytics } from './views/analytics/index.js';
 import { renderSharedReport } from './views/analytics/shared-report.js';
 import { renderDashboard } from './views/analytics/dashboard.js';
-import { initUiMode } from './lib/ui-mode.js';
-import { fetchAppSettings, fetchMySettings } from './lib/settings.js';
-import { setSupportedLangs, writeLangMode } from './lib/i18n.js';
+import { initUiMode } from './lib/theme/ui-mode.js';
+import { fetchAppSettings, fetchMySettings } from './lib/net/settings.js';
+import { setSupportedLangs, writeLangMode } from './lib/format/i18n.js';
 import { getUiLocale, readUiLocale, setUiLocale, t } from './lib/ui-i18n.js';
 import { escapeHtml } from '../shared/slide-types/helpers.js';
 import { showEditorLoadingSkeleton } from './views/editor/loading-skeleton.js';
