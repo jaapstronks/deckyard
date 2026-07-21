@@ -1,5 +1,8 @@
 # `.deck` bundle format
 
+> The container. For the portable deck envelope it carries (`deck.json`), see
+> [`deck-format.md`](./deck-format.md) — the `slidecreator.deck` format spec.
+
 A `.deck` bundle is a self-contained, portable archive of a presentation and
 its assets. Where the JSON export (`/export/json`) carries only the deck and
 still points at server-hosted `/uploads/…` images, the bundle **carries its own
