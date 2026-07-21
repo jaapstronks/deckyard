@@ -23,23 +23,45 @@ describe('normalizeTextStyles', () => {
     );
   });
 
+  it('keeps a non-default size', () => {
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'lg' } }), { body: { size: 'lg' } });
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'sm' } }), { body: { size: 'sm' } });
+  });
+
   it('prunes defaults and empty results (no no-op overrides stored)', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'left', color: 'default' } }), {});
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'md' } }), {});
+    assert.deepEqual(
+      normalizeTextStyles({ body: { align: 'left', color: 'default', size: 'md' } }),
+      {}
+    );
     assert.deepEqual(normalizeTextStyles({ title: {} }), {});
   });
 
   it('drops unknown keys, values and non-objects', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'justify' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: { color: 'rebeccapurple' } }), {});
+    assert.deepEqual(normalizeTextStyles({ body: { size: 'xl' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: 'center' }), {});
     assert.deepEqual(normalizeTextStyles(null), {});
     assert.deepEqual(normalizeTextStyles('x'), {});
   });
 
-  it('keeps one property when the other is default', () => {
+  it('keeps one property when the others are default', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'right', color: 'default' } }), {
       body: { align: 'right' },
     });
+    assert.deepEqual(
+      normalizeTextStyles({ body: { align: 'left', color: 'default', size: 'lg' } }),
+      { body: { size: 'lg' } }
+    );
+  });
+
+  it('keeps all three properties together', () => {
+    assert.deepEqual(
+      normalizeTextStyles({ body: { align: 'center', color: 'accent', size: 'lg' } }),
+      { body: { align: 'center', color: 'accent', size: 'lg' } }
+    );
   });
 });
 
@@ -47,8 +69,15 @@ describe('textStyleClasses', () => {
   it('maps to tf-* classes', () => {
     assert.equal(textStyleClasses({ align: 'center', color: 'muted' }), 'tf-align-center tf-color-muted');
   });
+  it('includes tf-size-* for a non-default size', () => {
+    assert.equal(textStyleClasses({ size: 'lg' }), 'tf-size-lg');
+    assert.equal(
+      textStyleClasses({ align: 'center', color: 'accent', size: 'sm' }),
+      'tf-align-center tf-color-accent tf-size-sm'
+    );
+  });
   it('is empty for defaults', () => {
-    assert.equal(textStyleClasses({ align: 'left', color: 'default' }), '');
+    assert.equal(textStyleClasses({ align: 'left', color: 'default', size: 'md' }), '');
     assert.equal(textStyleClasses({}), '');
   });
 });
@@ -87,11 +116,17 @@ describe('injectTextStyles', () => {
     assert.equal(injectTextStyles(html, { textStyles: { body: { align: 'left' } } }), html);
   });
 
-  it('applies both classes together', () => {
+  it('applies all classes together', () => {
     const html = '<p class="body" data-inline-field="body">x</p>';
     const out = injectTextStyles(html, {
-      textStyles: { body: { align: 'center', color: 'inverse' } },
+      textStyles: { body: { align: 'center', color: 'inverse', size: 'lg' } },
     });
-    assert.match(out, /class="body tf-align-center tf-color-inverse"/);
+    assert.match(out, /class="body tf-align-center tf-color-inverse tf-size-lg"/);
+  });
+
+  it('injects a size-only override', () => {
+    const html = '<p data-inline-field="body">x</p>';
+    const out = injectTextStyles(html, { textStyles: { body: { size: 'sm' } } });
+    assert.equal(out, '<p class="tf-size-sm" data-inline-field="body">x</p>');
   });
 });

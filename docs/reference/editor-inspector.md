@@ -173,12 +173,12 @@ a harmless addressing seam; the element tab now surfaces the controls directly.
 
 A click on a text field selects `{kind:'text', fieldKey}` (a card's text still
 selects the card; chart-data/csv selects nothing), which shows a type-agnostic
-**"This text"** element tab: **alignment** and a **theme colour token**
-(`text-element-card.js`). It writes a generic, additive override map keyed by
-the field's `data-inline-field` value:
+**"This text"** element tab: **alignment**, a **theme colour token** and a
+3-step **size** scale (S/M/L, default M) (`text-element-card.js`). It writes a
+generic, additive override map keyed by the field's `data-inline-field` value:
 
 ```json
-content.textStyles = { "body": { "align": "center", "color": "accent" } }
+content.textStyles = { "body": { "align": "center", "color": "accent", "size": "lg" } }
 ```
 
 `normalizeTextStyles` (`shared/slide-types/text-styles.js`) prunes defaults, so
@@ -188,9 +188,18 @@ that adds `tf-*` classes to the matching field element — **one code path**, so
 the editor canvas, present mode and exports all reflect it. Styles live outside
 the markdown, so the WYSIWYG round-trip gate is untouched. Colour uses theme
 tokens (`--t-color-text-muted/-accent/-background`) so decks stay portable.
-Text **size** (S/M/L) is a planned follow-up (`text-block-controls.md` PR 2):
-an `em` multiplier would break the px font-sizes several types set, so it needs
-a `--tf-size-scale` hook plumbed per type.
+
+**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would *replace* the
+px font-sizes several types set (content body 28/25/22px per density) with a
+fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
+only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
+`lg` 1.2, `md` = no class → fallback 1), and each primary text element
+expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled
+out **per type**. Types wired so far: **content** (heading + body, all density
+steps), **image-text** (body, all width/density steps), **lijstje** (per-item
+title + text, all density steps), **quote** (quote text), **chapter-title**
+(title). Other types/fields store the value cleanly but do not yet scale — add
+the `calc()` to their primary text element to enable it.
 
 ## Per-type coverage audit (executed 2026-07-16, re-audited 2026-07-21)
 

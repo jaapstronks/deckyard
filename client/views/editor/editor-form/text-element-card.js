@@ -1,26 +1,31 @@
 /**
  * "This text" element-tab card (editing-surfaces text phase, step 3).
  *
- * Block-level styling for the selected text field: alignment and a theme
- * colour token. Writes to the generic `content.textStyles[fieldKey]` map
- * (see shared/slide-types/text-styles.js); the shared render post-pass turns
- * that into the `tf-*` classes on the field element, so the preview, present
- * mode and exports all reflect it from one code path.
+ * Block-level styling for the selected text field: alignment, a theme colour
+ * token and a 3-step size scale (S/M/L). Writes to the generic
+ * `content.textStyles[fieldKey]` map (see shared/slide-types/text-styles.js);
+ * the shared render post-pass turns that into the `tf-*` classes on the field
+ * element, so the preview, present mode and exports all reflect it from one
+ * code path.
  *
  * Defaults are pruned on write, so a click-to-default leaves stored JSON
- * clean (no no-op overrides). Text SIZE (S/M/L) is a follow-up (needs a
- * per-type `--tf-size-scale` hook) and is intentionally not here yet.
+ * clean (no no-op overrides). Size scaling is rolled out per slide type
+ * (see docs/reference/editor-inspector.md); on a type/field that doesn't yet
+ * consume `--tf-size-scale`, the control still stores cleanly but has no
+ * visible effect.
  */
 
 import { t } from '../../../lib/ui-i18n.js';
 import {
   TEXT_ALIGN_VALUES,
   TEXT_COLOR_VALUES,
+  TEXT_SIZE_VALUES,
   normalizeTextStyles,
 } from '../../../../shared/slide-types/text-styles.js';
 
 const ALIGN_DEFAULT = 'left';
 const COLOR_DEFAULT = 'default';
+const SIZE_DEFAULT = 'md';
 
 /**
  * Write one style property for a field, pruning defaults so the stored map
@@ -99,16 +104,27 @@ export function renderTextElementCard({
     commit();
   });
 
+  const sizeField = {
+    key: 'textSize',
+    label: t('editor.textStyle.size', 'Text size'),
+    options: TEXT_SIZE_VALUES.map((v) => ({
+      value: v,
+      label: t(`editor.textStyle.size.${v}`, v.toUpperCase()),
+    })),
+  };
+  const sizeEl = fieldEnum(sizeField, current.size || SIZE_DEFAULT, (v) => {
+    setTextStyle(slide, fieldKey, 'size', v, SIZE_DEFAULT);
+    commit();
+  });
+
   container.append(
     h('div', {
       class: 'help',
-      text: t(
-        'editor.textStyle.hint',
-        'Styling for this text block. Size options are coming soon.'
-      ),
+      text: t('editor.textStyle.hint', 'Styling for this text block.'),
     }),
     alignEl,
-    colorEl
+    colorEl,
+    sizeEl
   );
   return true;
 }

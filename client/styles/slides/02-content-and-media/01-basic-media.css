@@ -4,19 +4,21 @@
    - 37% image (narrow): text gets even more room → 32px
    The is-compact variant (forced via the density field, or set by the
    auto-fit runtime when the copy overflows) drops back to a denser size. */
+/* Each width/density step multiplies by --tf-size-scale (per-field S/M/L,
+   default 1) so the field scale composes on top of the active base size. */
 .slide-image-text .copy .body {
   font-family: var(--font-body);
-  font-size: 28px;
+  font-size: calc(28px * var(--tf-size-scale, 1));
   line-height: var(--line-height-body);
 }
 .slide-image-text.is-image-narrow .copy .body {
-  font-size: 32px;
+  font-size: calc(32px * var(--tf-size-scale, 1));
 }
 .slide-image-text.is-compact .copy .body {
-  font-size: 22px;
+  font-size: calc(22px * var(--tf-size-scale, 1));
 }
 .slide-image-text.is-image-narrow.is-compact .copy .body {
-  font-size: 24px;
+  font-size: calc(24px * var(--tf-size-scale, 1));
 }
 .slide-image-text .copy .body p {
   margin: 0 0 14px;
