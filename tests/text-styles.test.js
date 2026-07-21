@@ -41,6 +41,8 @@ describe('normalizeTextStyles', () => {
   it('drops unknown keys, values and non-objects', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'justify' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: { color: 'rebeccapurple' } }), {});
+    // 'inverse' was removed from the vocabulary; it now prunes like any unknown value.
+    assert.deepEqual(normalizeTextStyles({ body: { color: 'inverse' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: { size: 'xl' } }), {});
     assert.deepEqual(normalizeTextStyles({ body: 'center' }), {});
     assert.deepEqual(normalizeTextStyles(null), {});
@@ -119,9 +121,9 @@ describe('injectTextStyles', () => {
   it('applies all classes together', () => {
     const html = '<p class="body" data-inline-field="body">x</p>';
     const out = injectTextStyles(html, {
-      textStyles: { body: { align: 'center', color: 'inverse', size: 'lg' } },
+      textStyles: { body: { align: 'center', color: 'muted', size: 'lg' } },
     });
-    assert.match(out, /class="body tf-align-center tf-color-inverse tf-size-lg"/);
+    assert.match(out, /class="body tf-align-center tf-color-muted tf-size-lg"/);
   });
 
   it('injects a size-only override', () => {
