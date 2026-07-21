@@ -11,9 +11,10 @@
  *
  * Absent key / absent property = theme default. The values are a small fixed
  * vocabulary (no free input): alignment is left/center/right, colour is a
- * theme TOKEN (default/muted/accent/inverse) so decks stay portable across
- * themes. Styles live OUTSIDE the markdown, so the step-1 HTML↔markdown
- * round-trip gate is untouched.
+ * theme TOKEN (default/muted/accent/inverse), and size is a 3-step relative
+ * scale (sm/md/lg, md = default) so decks stay portable across themes. Styles
+ * live OUTSIDE the markdown, so the step-1 HTML↔markdown round-trip gate is
+ * untouched.
  *
  * Rendering is a single string post-pass (`injectTextStyles`) run inside the
  * shared `renderSlideHtml`, mirroring `injectSlideBackground` — one code path,
@@ -21,27 +22,32 @@
  * `tf-*` classes (see `03-components/97-text-styles.css`) to the matching
  * field element.
  *
- * NOTE: text SIZE (S/M/L) is a follow-up (PR2): a per-field `em` multiplier
- * would replace the px font-sizes many types set (28px body, …) with a
- * fraction of the parent size instead of scaling them, so size needs a
- * `--tf-size-scale` custom property plumbed into each primary text element.
- * Alignment and colour compose cleanly as plain overrides and ship first.
+ * Text SIZE is NOT a plain `em` multiplier (that would replace the px
+ * font-sizes many types set — 28px body, … — with a fraction of the PARENT
+ * size instead of scaling the field). Instead `tf-size-sm/lg` set a
+ * `--tf-size-scale` custom property on the field element, and each primary
+ * text element expresses its `font-size` as `calc(<base> * var(--tf-size-scale,
+ * 1))`, rolled out per type (see `docs/reference/editor-inspector.md` for which
+ * types scale). `md` is the default and emits no class (scale = 1 fallback).
  */
 
 /** Alignment vocabulary; `left` is the default (no override stored/emitted). */
 export const TEXT_ALIGN_VALUES = ['left', 'center', 'right'];
 /** Colour vocabulary (theme tokens); `default` means no override. */
 export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', 'inverse'];
+/** Size vocabulary (relative scale); `md` is the default (no override). */
+export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
 const DEFAULT_ALIGN = 'left';
 const DEFAULT_COLOR = 'default';
+const DEFAULT_SIZE = 'md';
 
 /**
  * Normalize a raw `textStyles` map: keep only known keys/values and drop
  * defaults, so stored JSON never carries no-op overrides (a click-in-click-out
  * leaves the deck unchanged). Returns a fresh object; input is not mutated.
  * @param {unknown} raw
- * @returns {Record<string, {align?: string, color?: string}>}
+ * @returns {Record<string, {align?: string, color?: string, size?: string}>}
  */
 export function normalizeTextStyles(raw) {
   if (!raw || typeof raw !== 'object') return {};
@@ -55,6 +61,9 @@ export function normalizeTextStyles(raw) {
     if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
       clean.color = style.color;
     }
+    if (TEXT_SIZE_VALUES.includes(style.size) && style.size !== DEFAULT_SIZE) {
+      clean.size = style.size;
+    }
     if (Object.keys(clean).length) out[key] = clean;
   }
   return out;
@@ -62,7 +71,7 @@ export function normalizeTextStyles(raw) {
 
 /**
  * The CSS classes for one field's style, or '' when it is all defaults.
- * @param {{align?: string, color?: string}} style
+ * @param {{align?: string, color?: string, size?: string}} style
  * @returns {string}
  */
 export function textStyleClasses(style) {
@@ -73,6 +82,9 @@ export function textStyleClasses(style) {
   }
   if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
     classes.push(`tf-color-${style.color}`);
+  }
+  if (TEXT_SIZE_VALUES.includes(style.size) && style.size !== DEFAULT_SIZE) {
+    classes.push(`tf-size-${style.size}`);
   }
   return classes.join(' ');
 }

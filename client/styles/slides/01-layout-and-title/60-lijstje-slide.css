@@ -87,9 +87,11 @@
   min-width: 0;
   flex: 1;
 }
+/* Per-item title/text are em-relative to .lijst; multiplying by
+   --tf-size-scale (per-field S/M/L, default 1) scales just the clicked item. */
 .slide-lijstje .item-title {
   font-family: var(--font-heading);
-  font-size: 0.95em; /* slightly smaller than body */
+  font-size: calc(0.95em * var(--tf-size-scale, 1)); /* slightly smaller than body */
   line-height: 1.12;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -99,7 +101,7 @@
 }
 .slide-lijstje .item-text {
   font-family: var(--font-body);
-  font-size: 0.95em;
+  font-size: calc(0.95em * var(--tf-size-scale, 1));
   line-height: 1.22;
 }
 
@@ -112,11 +114,11 @@
   font-size: calc(var(--font-size-body) + 7px);
 }
 .slide-lijstje.is-comfortable .item-title {
-  font-size: 1.18em; /* bigger titles are the main win for sparse slides */
+  font-size: calc(1.18em * var(--tf-size-scale, 1)); /* bigger titles are the main win for sparse slides */
   margin-bottom: 8px;
 }
 .slide-lijstje.is-comfortable .item-text {
-  font-size: 1em;
+  font-size: calc(1em * var(--tf-size-scale, 1));
 }
 .slide-lijstje.is-comfortable .lijst-item {
   padding: 30px 0;
@@ -129,10 +131,10 @@
   font-size: var(--font-size-body);
 }
 .slide-lijstje.is-compact .item-title {
-  font-size: 0.9em;
+  font-size: calc(0.9em * var(--tf-size-scale, 1));
 }
 .slide-lijstje.is-compact .item-text {
-  font-size: 0.9em;
+  font-size: calc(0.9em * var(--tf-size-scale, 1));
 }
 .slide-lijstje.is-compact .lijst-item {
   padding: 16px 0;

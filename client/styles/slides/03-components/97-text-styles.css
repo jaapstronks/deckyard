@@ -1,8 +1,6 @@
 /* Per-field block-level text styling (editing-surfaces text phase, step 3).
    Emitted by shared/slide-types/text-styles.js as tf-* classes on the
-   element carrying data-inline-field. Alignment + colour ship here; text
-   SIZE (S/M/L) is a follow-up needing a --tf-size-scale hook per type (a
-   plain em multiplier would break the px font-sizes several types set).
+   element carrying data-inline-field: alignment, colour and SIZE.
 
    Scoped under [data-inline-field] so these only ever touch real editable
    fields, and kept low-specificity (one class) — a type's own alignment for
@@ -30,4 +28,19 @@
 }
 [data-inline-field].tf-color-inverse {
   color: var(--t-color-background, #fff);
+}
+
+/* Size scale. tf-size-* only SET the custom property here; the actual
+   scaling lives per type, where each primary text element expresses its
+   font-size as calc(<base> * var(--tf-size-scale, 1)). `md` is the default
+   and emits no class, so its font-size falls back to scale 1. This keeps
+   the hard px sizes several types set (content body 28/25/22px per density)
+   as the base being scaled, instead of a plain em multiplier replacing them
+   with a fraction of the parent size. Which types scale is documented in
+   docs/reference/editor-inspector.md. */
+[data-inline-field].tf-size-sm {
+  --tf-size-scale: 0.85;
+}
+[data-inline-field].tf-size-lg {
+  --tf-size-scale: 1.2;
 }

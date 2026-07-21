@@ -1,8 +1,9 @@
 /* Content slide + shared markdown tables */
 .slide-content .heading {
   font-family: var(--font-heading);
-  /* Content-slide headings should read a touch more like "titles" */
-  font-size: calc(var(--font-size-heading) + 6px);
+  /* Content-slide headings should read a touch more like "titles".
+     --tf-size-scale (per-field S/M/L, default 1) scales this heading when set. */
+  font-size: calc((var(--font-size-heading) + 6px) * var(--tf-size-scale, 1));
   line-height: 1.1;
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
@@ -76,8 +77,10 @@
   font-family: var(--font-body);
   /* Comfortable default for two-column layouts. The auto-fit runtime steps
      down through is-fit-medium → is-compact (or the density field forces a
-     size) when the body would overflow. */
-  font-size: 28px;
+     size) when the body would overflow. Every density step multiplies by
+     --tf-size-scale (per-field S/M/L, default 1) so the field scale composes
+     on top of whichever density size is active. */
+  font-size: calc(28px * var(--tf-size-scale, 1));
   line-height: var(--line-height-body);
   columns: 2;
   column-gap: 64px;
@@ -94,26 +97,26 @@
    auto-fit runtime uses this as the first step down, and as the floor for the
    forced "Large" (comfortable) density so it never shrinks to the small size. */
 .slide-content.is-fit-medium .body {
-  font-size: 25px;
+  font-size: calc(25px * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-compact .body {
-  font-size: 22px;
+  font-size: calc(22px * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-one-col .body {
   columns: 1;
   column-gap: 0;
   /* One-column content is typically used for “big type” slides. */
-  font-size: 36px;
+  font-size: calc(36px * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-one-col.is-fit-medium .body {
-  font-size: 31px;
+  font-size: calc(31px * var(--tf-size-scale, 1));
 }
 
 .slide-content.is-one-col.is-compact .body {
-  font-size: 28px;
+  font-size: calc(28px * var(--tf-size-scale, 1));
 }
 
 /* In single-column mode, keep text line-length comfortable (tables are excluded). */

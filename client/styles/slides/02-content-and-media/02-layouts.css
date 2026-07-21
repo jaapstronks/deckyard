@@ -162,6 +162,12 @@
   max-width: 32ch;
   margin-top: 8px;
 }
+/* The inline field is the inner <p>; it inherits the .quote-text size (single
+   AND multi variants), so scale it with 1em * --tf-size-scale (per-field S/M/L,
+   default 1) here rather than touching every .quote-text size rule. */
+.slide-quote .quote-text > p {
+  font-size: calc(1em * var(--tf-size-scale, 1));
+}
 .slide-quote .quote-author {
   color: var(--quote-author-color);
   font-family: var(--font-mono);
