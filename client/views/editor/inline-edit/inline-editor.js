@@ -14,8 +14,12 @@
  *   rerender wiping an active edit, the controller skips `rerenderPreview()`
  *   while `isEditing()` is true, and commits trigger a *deferred* rerender that
  *   is cancelled if the user immediately starts editing another field.
- * - Markdown fields open a modal with the canonical markdown editor (toolbar +
- *   dimmed backdrop) instead of editing the rendered HTML in place.
+ * - Markdown fields edit their RENDERED HTML in place (rich contenteditable,
+ *   editing-surfaces text phase) and commit through the HTML→markdown
+ *   serializer — but only when the round-trip gate proves the serializer can
+ *   faithfully reproduce this content (canInlineEditMarkdown). Content that
+ *   fails the gate (tables, code, math, renderer edge cases) keeps the modal
+ *   with the canonical raw-markdown editor.
  *
  * Only slide types with a descriptor (see ./descriptors.js) and renderer
  * `data-inline-field` attributes participate; everything else is untouched.
@@ -34,6 +38,11 @@ import { toast } from '../../../lib/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
+import { markdownToSafeHtml } from '../../../../shared/markdown.js';
+import {
+  serializeMarkdownDom,
+  canInlineEditMarkdown,
+} from '../../../lib/markdown-serialize.js';
 
 /**
  * @param {Object} opts
@@ -154,8 +163,37 @@ export function createInlineEditor({
     return v;
   }
 
+  /** Rich (markdown) commit value: keep newlines, only cap the length. */
+  function normalizeRichValue(raw, meta) {
+    let v = String(raw ?? '');
+    if (typeof meta?.maxLength === 'number' && v.length > meta.maxLength) {
+      v = v.slice(0, meta.maxLength);
+    }
+    return v;
+  }
+
   function onEditKeydown(e) {
     if (!editing) return;
+    if (editing.rich) {
+      // Multi-line rich edit: Enter makes a new paragraph/list item (browser
+      // default), Cmd/Ctrl+Enter commits, Escape cancels, Cmd/Ctrl+B/I toggle
+      // the two inline styles the dialect can store.
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        editing.cancel = true;
+        editing.el.blur();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        editing.el.blur();
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        document.execCommand('bold');
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        document.execCommand('italic');
+      }
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       editing.el.blur();
@@ -164,6 +202,14 @@ export function createInlineEditor({
       editing.cancel = true;
       editing.el.blur();
     }
+  }
+
+  /** Rich edits accept plain text only on paste (formatting comes from the
+   *  dialect, not from whatever HTML the clipboard carries). */
+  function onRichPaste(e) {
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text/plain') || '';
+    if (text) document.execCommand('insertText', false, text);
   }
 
   function onEditInput() {
@@ -205,13 +251,53 @@ export function createInlineEditor({
     placeCaretAtEnd(el);
   }
 
+  /**
+   * In-place rich edit for a markdown field: the element keeps its RENDERED
+   * HTML (it already is the value's rendering) and the commit serializes the
+   * edited DOM back to dialect markdown. Only entered through the round-trip
+   * gate (canInlineEditMarkdown), so serialization is proven faithful for
+   * this content before any edit can happen.
+   */
+  function beginRichEdit(el, path, meta, { isNew = false } = {}) {
+    if (editing) endTextEdit();
+    cancelCommitRerender();
+    const slide = getSlide?.();
+    if (!slide) return;
+    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
+    editing = {
+      el, path, meta, original: raw, isNew, cancel: false, slideId: slide.id,
+      rich: true, originalHtml: el.innerHTML,
+    };
+    setHotField(null);
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('ie-editing', 'ie-editing-rich');
+    overlay.clear();
+    const ring = overlay.outline(el);
+    ring.classList.add('is-active');
+    overlay.reposition();
+    // A ghost-spawned field renders only the spawn sentinel; start blank.
+    if (isNew) el.innerHTML = '';
+    // "Did the user change anything?" is judged against the serialization of
+    // the UNTOUCHED render, not the stored raw: the serializer normalizes
+    // (list renumbering, whitespace), so comparing against the raw would make
+    // a click-in-click-out dirty the deck without an actual edit.
+    editing.baseline = serializeMarkdownDom(el);
+    el.addEventListener('keydown', onEditKeydown);
+    el.addEventListener('input', onEditInput);
+    el.addEventListener('paste', onRichPaste);
+    el.addEventListener('blur', endTextEdit, { once: true });
+    el.focus();
+    placeCaretAtEnd(el);
+  }
+
   function endTextEdit() {
     if (!editing) return;
-    const { el, path, meta, original, isNew, cancel } = editing;
+    const { el, path, meta, original, isNew, cancel, rich, originalHtml } = editing;
     el.removeEventListener('keydown', onEditKeydown);
     el.removeEventListener('input', onEditInput);
+    el.removeEventListener('paste', onRichPaste);
     el.removeAttribute('contenteditable');
-    el.classList.remove('ie-editing');
+    el.classList.remove('ie-editing', 'ie-editing-rich');
     const done = editing;
     editing = null;
 
@@ -220,6 +306,9 @@ export function createInlineEditor({
       if (isNew) {
         clearSentinel(path);
         scheduleCommitRerender();
+      } else if (rich) {
+        el.innerHTML = originalHtml;
+        refresh();
       } else {
         el.textContent = original;
         refresh(); // restore affordances the active ring replaced
@@ -227,7 +316,9 @@ export function createInlineEditor({
       return;
     }
 
-    const value = normalizeText(el.textContent, meta);
+    const value = rich
+      ? normalizeRichValue(serializeMarkdownDom(el), meta)
+      : normalizeText(el.textContent, meta);
     // Commit to the slide the edit STARTED on, never the current selection:
     // a collaborator can delete the edited slide mid-edit (live collab), which
     // makes the selection fall back to another slide — resolving via
@@ -245,7 +336,7 @@ export function createInlineEditor({
     // The spawn sentinel counts as "still empty": typing nothing into a fresh
     // field must not dirty/save, just drop back to the ghost.
     const currentVal = current === NEW_FIELD_SENTINEL ? '' : (current ?? '');
-    const changed = value !== currentVal;
+    const changed = rich ? value !== (done.baseline ?? '') : value !== currentVal;
     if (changed || (isNew && value !== '')) {
       setByPath(slide.content, path, value);
       markDirty?.();
@@ -254,8 +345,11 @@ export function createInlineEditor({
     } else if (current === NEW_FIELD_SENTINEL) {
       clearSentinel(path);
     }
-    // Normalize the rendered DOM (transforms, ghost restore) on the next frame.
-    if (isNew || changed) scheduleCommitRerender();
+    // Normalize the rendered DOM (transforms, ghost restore) on the next
+    // frame. A rich edit always repaints: even a no-op commit can leave
+    // contenteditable artifacts (<b> instead of <strong>, <div> wrappers)
+    // that serialize identically but differ from the canonical render.
+    if (isNew || changed || rich) scheduleCommitRerender();
     else refresh(); // no change: just restore the affordances
     void done;
   }
@@ -617,12 +711,27 @@ export function createInlineEditor({
   }
 
   function spawnFromGhost(path, resolveAnchor, meta, kind) {
-    // Markdown / CSV edits happen in the modal; no in-slide element is needed.
+    // CSV edits happen in the modal; no in-slide element is needed.
     if (kind === 'csv') {
       openCsvModal(null, path, meta, { isNew: true });
       return;
     }
     if (kind === 'markdown') {
+      // Same sentinel flow as plain text: let the renderer emit the real
+      // field element, then edit it in place (rich). A fresh field is empty,
+      // so the round-trip gate is trivially satisfied.
+      const slide = getSlide?.();
+      if (!slide) return;
+      setByPath(slide.content, path, NEW_FIELD_SENTINEL);
+      rerenderPreview?.();
+      const el = slideEl()?.querySelector(`[data-inline-field="${path}"]`);
+      if (el) {
+        beginRichEdit(el, path, meta, { isNew: true });
+        return;
+      }
+      // Renderer didn't emit the element for this path: modal fallback.
+      setByPath(slide.content, path, '');
+      rerenderPreview?.();
       openMarkdownModal(null, path, meta, { isNew: true });
       return;
     }
@@ -1696,8 +1805,23 @@ export function createInlineEditor({
         ? 'markdown'
         : 'text';
     if (kind === 'csv') openCsvModal(fieldEl, path, meta);
-    else if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
+    else if (kind === 'markdown') openMarkdownEdit(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);
+  }
+
+  /**
+   * Markdown field entry: edit in place when the serializer provably
+   * round-trips this content; otherwise the canonical raw-markdown modal
+   * (tables, code, math, renderer edge cases).
+   */
+  function openMarkdownEdit(fieldEl, path, meta) {
+    const slide = getSlide?.();
+    const raw = slide ? String(getByPath(slide.content, path) ?? '') : '';
+    if (canInlineEditMarkdown(raw, markdownToSafeHtml)) {
+      beginRichEdit(fieldEl, path, meta);
+    } else {
+      openMarkdownModal(fieldEl, path, meta);
+    }
   }
 
   thumb.addEventListener('click', onThumbClickCapture, true);
@@ -1738,7 +1862,9 @@ export function createInlineEditor({
       try {
         editing.el.removeEventListener('keydown', onEditKeydown);
         editing.el.removeEventListener('input', onEditInput);
+        editing.el.removeEventListener('paste', onRichPaste);
         editing.el.removeAttribute('contenteditable');
+        editing.el.classList.remove('ie-editing', 'ie-editing-rich');
         clearSentinel(editing.path);
       } catch {
         /* ignore */

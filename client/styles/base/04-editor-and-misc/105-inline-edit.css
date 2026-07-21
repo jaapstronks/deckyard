@@ -104,6 +104,18 @@
   white-space: pre-wrap;
 }
 
+/* Rich (markdown) in-place edit: the content is block HTML, so whitespace
+   follows the blocks, not pre-wrap (which would render inter-tag newlines). */
+.thumb.is-inline-edit [data-inline-field].ie-editing-rich {
+  white-space: normal;
+}
+
+/* A ghost-spawned rich field starts empty; keep a caret-height line so the
+   edit target doesn't collapse to zero. */
+.thumb.is-inline-edit [data-inline-field].ie-editing-rich:empty::after {
+  content: '\200b';
+}
+
 /* A freshly-spawned (from ghost) editable element */
 .ie-ghost-input {
   min-width: 2ch;
