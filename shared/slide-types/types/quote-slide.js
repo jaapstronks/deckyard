@@ -118,6 +118,38 @@ function extraPortraitParts(item) {
   return [portraitHtml(src, alt, null)];
 }
 
+/**
+ * Font scale for the quote text, chosen from how much content there is so short
+ * quotes stay large and long ones shrink to fit - within a per-count bandwidth.
+ * A single hero quote barely shrinks (default is fine; it only gives a little
+ * when a long quote would overflow); 2-3 stacked quotes start smaller but grow
+ * back toward the top of their band when the quotes are short one-liners. The
+ * SAME scale is applied to every quote on the slide, so they stay uniform.
+ *
+ * @param {number} count 1-3 rendered quotes
+ * @param {string[]} quoteTexts the quote strings on the slide
+ * @returns {number} multiplier for --font-size-title
+ */
+export function quoteFontScale(count, quoteTexts) {
+  // [min, max] multiplier per quote count. min = the dense/long-content size
+  // (the old fixed sizes: 1 / 0.6 / 0.46); max = the roomy/short-content size.
+  const bands = { 1: [0.78, 1], 2: [0.6, 0.82], 3: [0.46, 0.62] };
+  const [min, max] = bands[count] || bands[3];
+  const lengths = quoteTexts.map((q) =>
+    typeof q === 'string' ? q.trim().length : 0
+  );
+  const avg = lengths.length
+    ? lengths.reduce((a, b) => a + b, 0) / lengths.length
+    : 0;
+  // Ramp on average chars-per-quote: at/below LO use the largest size, at/above
+  // HI use the smallest, linear in between.
+  const LO = 70;
+  const HI = 240;
+  const t = Math.max(0, Math.min(1, (avg - LO) / (HI - LO)));
+  const scale = max - (max - min) * t;
+  return Math.round(scale * 1000) / 1000;
+}
+
 /** Extra quotes worth rendering: those with actual quote text. */
 function activeExtraQuotes(content) {
   const arr = Array.isArray(content?.quotes) ? content.quotes : [];
@@ -190,10 +222,15 @@ export default {
       required: false,
       minItems: 0,
       maxItems: MAX_EXTRA_QUOTES,
+      // Seeded with placeholder copy (like the primary quote's defaults) so a
+      // quote added on the canvas renders and is click-to-edit immediately -
+      // an empty quote is filtered out by activeExtraQuotes and would appear to
+      // do nothing. The user replaces the placeholders, or removes the quote
+      // with its × badge.
       itemDefaults: {
-        quote: '',
-        authorName: '',
-        authorTitle: '',
+        quote: 'A strong quote goes here.',
+        authorName: 'Name Surname',
+        authorTitle: 'Role / title',
         authorImage: '',
         authorImageAlt: '',
       },
@@ -274,9 +311,14 @@ export default {
     const vars = gradientVarsForSlide(slide?.id, 'quote');
     const extras = activeExtraQuotes(content);
 
-    // Single-quote (the common, legacy case): keep the exact hero layout so
-    // existing decks render byte-for-byte identically (incl. morph roles).
+    // Single-quote (the common, legacy case): keep the hero layout. The font
+    // scale only dips below 1 for long quotes, so short/typical quotes still
+    // render at the default hero size.
     if (!extras.length) {
+      const styleVars = {
+        ...(vars || {}),
+        '--quote-scale': quoteFontScale(1, [content?.quote]),
+      };
       const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
       const inner = quoteBlockInnerHtml({
         quote: content?.quote,
@@ -289,7 +331,7 @@ export default {
         morph: true,
       });
       return `
-        <div class="slide slide-quote"${styleAttrFromVars(vars)}>
+        <div class="slide slide-quote"${styleAttrFromVars(styleVars)}>
           <div class="slide-inner">${inner}
           </div>
         </div>
@@ -298,9 +340,12 @@ export default {
 
     // Multi-quote: primary + extras stacked, alignment alternating L / R / L
     // via :nth-child CSS. Font scales down with the count (data-quote-count).
-    const blocks = [];
-    blocks.push(
-      quoteBlockInnerHtml({
+    // `inlineIdx` is the item's index into quotes[] for the editor's card
+    // affordances (remove ×); the primary quote lives in the flat top-level
+    // fields, so it carries no index and gets no remove badge.
+    const items = [];
+    items.push({
+      inner: quoteBlockInnerHtml({
         quote: content?.quote,
         authorName: content?.authorName,
         authorTitle: content?.authorTitle,
@@ -308,11 +353,12 @@ export default {
         quoteField: 'quote',
         nameField: 'authorName',
         titleField: 'authorTitle',
-      })
-    );
+      }),
+      inlineIdx: null,
+    });
     for (const { item, i } of extras) {
-      blocks.push(
-        quoteBlockInnerHtml({
+      items.push({
+        inner: quoteBlockInnerHtml({
           quote: item?.quote,
           authorName: item?.authorName,
           authorTitle: item?.authorTitle,
@@ -320,18 +366,33 @@ export default {
           quoteField: `quotes.${i}.quote`,
           nameField: `quotes.${i}.authorName`,
           titleField: `quotes.${i}.authorTitle`,
-        })
-      );
+        }),
+        inlineIdx: i,
+      });
     }
 
-    const count = blocks.length;
-    const itemsHtml = blocks
-      .map((b) => `<div class="quote-item">${b}\n            </div>`)
+    const count = items.length;
+    const itemsHtml = items
+      .map(({ inner, inlineIdx }) => {
+        const idxAttr =
+          inlineIdx != null
+            ? ` data-inline-item="quotes" data-inline-item-index="${inlineIdx}"`
+            : '';
+        return `<div class="quote-item"${idxAttr}>${inner}\n            </div>`;
+      })
       .join('\n            ');
+
+    const styleVars = {
+      ...(vars || {}),
+      '--quote-scale': quoteFontScale(
+        count,
+        [content?.quote, ...extras.map(({ item }) => item?.quote)]
+      ),
+    };
 
     return `
         <div class="slide slide-quote is-multi" data-quote-count="${count}"${styleAttrFromVars(
-          vars
+          styleVars
         )}>
           <div class="slide-inner">
             ${itemsHtml}

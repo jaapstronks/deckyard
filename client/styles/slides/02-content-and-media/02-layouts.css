@@ -154,7 +154,9 @@
 }
 .slide-quote .quote-text {
   font-family: var(--font-heading);
-  font-size: var(--font-size-title);
+  /* --quote-scale is set per slide by the renderer from the amount of content
+     (quoteFontScale): a hero quote stays at 1 and only dips for long text. */
+  font-size: calc(var(--font-size-title) * var(--quote-scale, 1));
   line-height: 1.05;
   letter-spacing: -0.02em;
   text-transform: var(--heading-transform, none);
@@ -218,6 +220,11 @@
   justify-content: center;
   gap: 40px;
 }
+/* Two quotes read as too centered - push them apart so the first sits high and
+   the second drops low, using the slide's full height (3 already fill it). */
+.slide-quote.is-multi[data-quote-count='2'] .slide-inner {
+  justify-content: space-between;
+}
 .slide-quote.is-multi .quote-item {
   display: flex;
   flex-direction: column;
@@ -233,15 +240,16 @@
   align-self: flex-end;
   text-align: right;
 }
-/* Quotes shrink from the hero size so 2-3 fit; 3 shrinks a touch more. */
+/* Quotes shrink from the hero size so 2-3 fit. The exact size comes from
+   --quote-scale (renderer/quoteFontScale): it accounts for BOTH the count and
+   how long the quotes are, so short one-liners grow back toward the top of the
+   band instead of always sitting at the dense size. Same scale for every quote
+   on the slide, so they stay uniform. Fallback 0.6 = the old 2-quote size. */
 .slide-quote.is-multi .quote-text {
-  font-size: calc(var(--font-size-title) * 0.6);
+  font-size: calc(var(--font-size-title) * var(--quote-scale, 0.6));
   line-height: 1.1;
   max-width: none;
   margin-top: 0;
-}
-.slide-quote.is-multi[data-quote-count='3'] .quote-text {
-  font-size: calc(var(--font-size-title) * 0.46);
 }
 .slide-quote.is-multi .quote-author {
   font-size: 18px;
