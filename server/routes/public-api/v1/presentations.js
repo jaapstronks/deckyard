@@ -29,15 +29,31 @@ function filterByOwner(presentations, ownerEmail) {
 
 /**
  * Strip internal fields from presentation for API response.
+ * @param {object} pres
+ * @param {string[]} [tags]
+ * @param {string|null} [requesterEmail] - the API-key owner; the owner email is
+ *   only returned to the owner themselves, redacted otherwise.
  */
-function sanitizePresentation(pres, tags = []) {
+export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
   if (!pres) return null;
+
+  const owner = pres.ownerEmail || null;
+  // Only expose the owner's raw email to the owner themselves; redact it for
+  // decks reached via workspace/collaborator access so one user's address never
+  // leaks to another. The full identity/user-id decoupling is tracked in
+  // docs/plans/identity-decoupling.md.
+  const ownerEmail =
+    requesterEmail &&
+    owner &&
+    owner.toLowerCase() === String(requesterEmail).toLowerCase()
+      ? owner
+      : null;
 
   return {
     id: pres.id,
     title: pres.title,
     description: pres.description || null,
-    ownerEmail: pres.ownerEmail || null,
+    ownerEmail,
     scope: pres.scope || 'private',
     themeId: pres.themeId || null,
     language: pres.language || 'en-GB',
@@ -54,8 +70,8 @@ function sanitizePresentation(pres, tags = []) {
 /**
  * Strip slides for list view (summary only).
  */
-function sanitizeForList(pres, tags = []) {
-  const sanitized = sanitizePresentation(pres, tags);
+function sanitizeForList(pres, tags = [], requesterEmail = null) {
+  const sanitized = sanitizePresentation(pres, tags, requesterEmail);
   if (!sanitized) return null;
 
   // Remove full slide content for list view, keep only summary
@@ -102,7 +118,7 @@ async function handleList(ctx) {
 
   // Build response
   const presentations = paginated.map((p) =>
-    sanitizeForList(p, tagsMap.get(p.id) || [])
+    sanitizeForList(p, tagsMap.get(p.id) || [], apiKey.ownerEmail)
   );
 
   await apiSuccess(ctx, {
@@ -141,7 +157,7 @@ async function handleCreate(ctx) {
 
   const tags = await getTagsForPresentation(created.id);
   await apiCreated(ctx, {
-    presentation: sanitizePresentation(created, tags),
+    presentation: sanitizePresentation(created, tags, apiKey.ownerEmail),
   });
   return true;
 }
@@ -157,7 +173,7 @@ async function handleGet(ctx, id) {
 
   const tags = await getTagsForPresentation(id);
   await apiSuccess(ctx, {
-    presentation: sanitizePresentation(pres, tags),
+    presentation: sanitizePresentation(pres, tags, ctx.apiKey?.ownerEmail),
   });
   return true;
 }
@@ -205,7 +221,7 @@ async function handleUpdate(ctx, id) {
 
   const tags = await getTagsForPresentation(id);
   await apiSuccess(ctx, {
-    presentation: sanitizePresentation(updated, tags),
+    presentation: sanitizePresentation(updated, tags, apiKey.ownerEmail),
   });
   return true;
 }
@@ -267,7 +283,7 @@ async function handleDuplicate(ctx, id) {
 
   const tags = await getTagsForPresentation(duplicated.id);
   await apiCreated(ctx, {
-    presentation: sanitizePresentation(duplicated, tags),
+    presentation: sanitizePresentation(duplicated, tags, apiKey.ownerEmail),
   });
   return true;
 }
