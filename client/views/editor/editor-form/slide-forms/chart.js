@@ -53,7 +53,7 @@ export function renderChartConfigControls({
         class: 'help',
         text: t(
           'editor.chart.editDataHelp',
-          'Opens the data grid in the panel below the slide.'
+          'Opens the data editor with a live chart preview.'
         ),
       }),
     ]);
