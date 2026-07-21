@@ -7,7 +7,7 @@ import {
 } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { applyLocksToContent } from '../theme-locks.js';
-import { SLIDE_TYPES, THEMES } from './registry.js';
+import { SLIDE_TYPES, THEMES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
@@ -334,7 +334,7 @@ export function validateSlide(slide) {
     errors.push('Slide.id must be a UUID');
   if (
     !isNonEmptyString(slide.type) ||
-    !SLIDE_TYPES[slide.type]
+    !getSlideType(slide.type)
   )
     errors.push(
       `Slide.type must be a known slide type (got: ${JSON.stringify(
@@ -363,7 +363,7 @@ export function validateSlide(slide) {
   // visibility validation
   const visibilityErrors = validateVisibility(slide.visibility);
   for (const e of visibilityErrors) errors.push(e);
-  const def = SLIDE_TYPES[slide.type];
+  const def = getSlideType(slide.type);
   if (!def) return errors;
 
   // Per-field validation is delegated to the single declared field-type
