@@ -116,6 +116,58 @@
   content: '\200b';
 }
 
+/* ---- Floating selection toolbar (rich edits) ----
+   Anchored to the selection's Range rect on the unscaled overlay, so it
+   renders at real screen px like every other affordance. Hidden via
+   visibility (not display) so it can be measured before placement. */
+.ie-overlay .ie-sel-toolbar {
+  position: absolute;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: 8px;
+  box-shadow: 0 4px 14px hsl(0 0% 0% / 0.18);
+  pointer-events: auto;
+  visibility: hidden;
+  z-index: 5; /* above the active ring outline */
+}
+
+.ie-overlay .ie-sel-toolbar.is-visible {
+  visibility: visible;
+}
+
+.ie-sel-toolbar .ie-sel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: hsl(var(--app-text-default));
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ie-sel-toolbar .ie-sel-btn:hover {
+  background: hsl(var(--app-accent-primary) / 0.12);
+}
+
+.ie-sel-toolbar .ie-sel-btn.is-active {
+  color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.16);
+}
+
+.ie-sel-toolbar .ie-sel-btn:disabled {
+  color: hsl(var(--app-text-muted));
+  opacity: 0.45;
+  cursor: default;
+  background: transparent;
+}
+
 /* A freshly-spawned (from ghost) editable element */
 .ie-ghost-input {
   min-width: 2ch;

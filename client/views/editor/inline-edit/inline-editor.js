@@ -43,6 +43,9 @@ import {
   serializeMarkdownDom,
   canInlineEditMarkdown,
 } from '../../../lib/markdown-serialize.js';
+import { promptModal } from '../../../lib/modal.js';
+import { createSelectionToolbar } from './selection-toolbar.js';
+import { slideLinkUrl } from './selection-toolbar-logic.js';
 
 /**
  * @param {Object} opts
@@ -172,6 +175,16 @@ export function createInlineEditor({
     return v;
   }
 
+  /**
+   * Blur commits the edit — except while the link modal has focus on
+   * purpose: `suspendBlur` bridges that one excursion (openLinkPrompt) so
+   * the edit survives it, mirroring the comment composer's snapshot trick.
+   */
+  function onEditBlur() {
+    if (editing?.suspendBlur) return;
+    endTextEdit();
+  }
+
   function onEditKeydown(e) {
     if (!editing) return;
     if (editing.rich) {
@@ -212,6 +225,54 @@ export function createInlineEditor({
     if (text) document.execCommand('insertText', false, text);
   }
 
+  /**
+   * Toolbar link flow. Opening the modal moves focus (which collapses the
+   * live selection AND would blur-commit the edit), so this: snapshots the
+   * Range first, suspends the blur-commit for the excursion, and after the
+   * modal closes re-focuses the field and re-asserts the snapshot — the
+   * modal's own focus restore leaves a fresh caret at position 0 (the
+   * PR #167 lesson), so the restore must run after it, hence the rAF.
+   * The URL is gated by slideLinkUrl (http/https only): the serializer
+   * degrades any other scheme to bare text, so it is rejected up front.
+   */
+  async function openLinkPrompt() {
+    if (!editing?.rich) return;
+    const ed = editing;
+    const el = ed.el;
+    const sel = document.getSelection?.();
+    const live = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (!live || live.collapsed || !el.contains(live.startContainer)) return;
+    const snapshot = live.cloneRange();
+    const selected = live.toString();
+    ed.suspendBlur = true;
+    try {
+      const url = await promptModal(h, mdHost, {
+        title: t('editor.inline.link.title', 'Add link'),
+        message: t('editor.inline.link.message', 'Link "{text}" to:', {
+          text: selected.length > 40 ? `${selected.slice(0, 40)}…` : selected,
+        }),
+        placeholder: 'https://',
+        validate: (value) =>
+          slideLinkUrl(value)
+            ? null
+            : t('editor.inline.link.invalid', 'Use an http:// or https:// address'),
+      });
+      await new Promise((r) => requestAnimationFrame(r));
+      if (editing !== ed) return; // the edit ended while the modal was open
+      el.focus();
+      if (el.contains(snapshot.startContainer)) {
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(snapshot);
+        const safe = slideLinkUrl(url || '');
+        if (safe) document.execCommand('createLink', false, safe);
+      }
+      ed.toolbar?.update();
+    } finally {
+      if (editing === ed) ed.suspendBlur = false;
+    }
+  }
+
   function onEditInput() {
     if (!editing) return;
     const { meta } = editing;
@@ -249,7 +310,7 @@ export function createInlineEditor({
     el.textContent = raw;
     el.addEventListener('keydown', onEditKeydown);
     el.addEventListener('input', onEditInput);
-    el.addEventListener('blur', endTextEdit, { once: true });
+    el.addEventListener('blur', onEditBlur);
     el.focus();
     placeCaretAtEnd(el);
   }
@@ -288,7 +349,16 @@ export function createInlineEditor({
     el.addEventListener('keydown', onEditKeydown);
     el.addEventListener('input', onEditInput);
     el.addEventListener('paste', onRichPaste);
-    el.addEventListener('blur', endTextEdit, { once: true });
+    el.addEventListener('blur', onEditBlur);
+    // Selection-bound formatting (bold/italic/link/list) above the selection.
+    // Rich edits only: plain-text fields cannot store formatting.
+    editing.toolbar = createSelectionToolbar({
+      h,
+      layer: overlay.layer,
+      thumb,
+      editEl: el,
+      onLinkRequest: openLinkPrompt,
+    });
     el.focus();
     placeCaretAtEnd(el);
   }
@@ -296,9 +366,11 @@ export function createInlineEditor({
   function endTextEdit() {
     if (!editing) return;
     const { el, path, meta, original, isNew, cancel, rich, originalHtml } = editing;
+    editing.toolbar?.destroy();
     el.removeEventListener('keydown', onEditKeydown);
     el.removeEventListener('input', onEditInput);
     el.removeEventListener('paste', onRichPaste);
+    el.removeEventListener('blur', onEditBlur);
     el.removeAttribute('contenteditable');
     el.classList.remove('ie-editing', 'ie-editing-rich');
     const done = editing;
@@ -1749,7 +1821,7 @@ export function createInlineEditor({
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.
-    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point')) {
+    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point, .ie-sel-toolbar')) {
       coach.dismiss();
       e.preventDefault();
       return;
@@ -1863,9 +1935,11 @@ export function createInlineEditor({
     restoreThumbTitle();
     if (editing) {
       try {
+        editing.toolbar?.destroy();
         editing.el.removeEventListener('keydown', onEditKeydown);
         editing.el.removeEventListener('input', onEditInput);
         editing.el.removeEventListener('paste', onRichPaste);
+        editing.el.removeEventListener('blur', onEditBlur);
         editing.el.removeAttribute('contenteditable');
         editing.el.classList.remove('ie-editing', 'ie-editing-rich');
         clearSentinel(editing.path);
