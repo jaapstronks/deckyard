@@ -11,6 +11,7 @@ import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
+import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 
 export function newPresentation({
   title = 'Untitled presentation',
@@ -28,6 +29,9 @@ export function newPresentation({
     : 'title-slide';
   return {
     id: cryptoUuid(),
+    // Durable schema version of this deck's envelope. Reads migrate older decks
+    // up to CURRENT_SCHEMA_VERSION; see shared/slide-types/schema-version.js.
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     title,
     // Used for public sharing (meta description) and integrations (webhooks).
     // Keep it short; UI/AI tooling can help generate this later.
@@ -288,6 +292,17 @@ export function validatePresentation(pres, opts = {}) {
     errors.push('Presentation.created must be ISO-8601');
   if (!isIsoString(pres.modified))
     errors.push('Presentation.modified must be ISO-8601');
+  // schemaVersion is optional (legacy decks predate it and migrate up on read).
+  // When present it must be a non-negative integer this build understands.
+  if (pres.schemaVersion != null) {
+    const sv = Number(pres.schemaVersion);
+    if (!Number.isInteger(sv) || sv < 0)
+      errors.push('Presentation.schemaVersion must be a non-negative integer');
+    else if (sv > CURRENT_SCHEMA_VERSION)
+      errors.push(
+        `Presentation.schemaVersion ${sv} is newer than this build supports (max ${CURRENT_SCHEMA_VERSION})`
+      );
+  }
   if (
     pres.lang != null &&
     pres.lang !== 'nl' &&
