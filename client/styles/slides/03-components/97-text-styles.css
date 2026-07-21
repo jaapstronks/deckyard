@@ -1,0 +1,33 @@
+/* Per-field block-level text styling (editing-surfaces text phase, step 3).
+   Emitted by shared/slide-types/text-styles.js as tf-* classes on the
+   element carrying data-inline-field. Alignment + colour ship here; text
+   SIZE (S/M/L) is a follow-up needing a --tf-size-scale hook per type (a
+   plain em multiplier would break the px font-sizes several types set).
+
+   Scoped under [data-inline-field] so these only ever touch real editable
+   fields, and kept low-specificity (one class) — a type's own alignment for
+   a field can still win via a more specific selector where intended. */
+
+[data-inline-field].tf-align-left {
+  text-align: left;
+}
+[data-inline-field].tf-align-center {
+  text-align: center;
+}
+[data-inline-field].tf-align-right {
+  text-align: right;
+}
+
+/* Colour overrides use theme TOKENS (not raw hex) so a deck stays legible
+   when the theme changes. `inverse` = the background colour, for a field that
+   sits on an accent/dark band. currentColor fallbacks keep old/again-themed
+   decks from losing their text if a token is ever absent. */
+[data-inline-field].tf-color-muted {
+  color: var(--t-color-text-muted, currentColor);
+}
+[data-inline-field].tf-color-accent {
+  color: var(--t-color-accent, currentColor);
+}
+[data-inline-field].tf-color-inverse {
+  color: var(--t-color-background, #fff);
+}
