@@ -6,6 +6,35 @@ const CODE_BLOCK_PLACEHOLDER = '\x00CB\x00';
 const INLINE_CODE_PLACEHOLDER = '\x00IC\x00';
 const MATH_BLOCK_PLACEHOLDER = '\x00MB\x00';
 const INLINE_MATH_PLACEHOLDER = '\x00IM\x00';
+// Links and backslash-escapes are also parked as placeholders during inline
+// formatting so emphasis passes can't reach inside an <a> (URLs contain
+// underscores) and so an escaped marker like \* never triggers emphasis.
+const LINK_PLACEHOLDER = '\x00LK\x00';
+const ESCAPE_PLACEHOLDER = '\x00ES\x00';
+
+// CommonMark backslash escapes: a backslash before any ASCII punctuation
+// (backslash itself included) yields that literal punctuation character.
+const BACKSLASH_ESCAPE_RE =
+  /\\([!"#$%&'()*+,\-.\/:;<=>?@\[\\\]^_`{|}~])/g;
+
+/**
+ * Pull CommonMark backslash escapes out of `text` into placeholders so an
+ * escaped marker (`\*`, `\_`, `\[`, `\|`, …) never triggers emphasis, a link,
+ * or a table cell. Run this AFTER code/math extraction so literal backslashes
+ * inside code spans and math survive (e.g. a `\d` in inline code); escaped
+ * code/math delimiters themselves (`` \` ``, `\$`) are therefore not honoured,
+ * which is an accepted boundary. The escaped character is restored
+ * (HTML-escaped) at the very end of inlineFormat.
+ * @returns {{ text: string, escapes: string[] }}
+ */
+function extractBackslashEscapes(text) {
+  const escapes = [];
+  const result = String(text).replace(BACKSLASH_ESCAPE_RE, (_m, ch) => {
+    escapes.push(ch);
+    return `${ESCAPE_PLACEHOLDER}${escapes.length - 1}${ESCAPE_PLACEHOLDER}`;
+  });
+  return { text: result, escapes };
+}
 
 /**
  * Extract code blocks (```lang\n...\n```) and replace with placeholders.
@@ -136,30 +165,45 @@ function restoreInlineMath(html, maths) {
   });
 }
 
-function inlineFormat(s, { inlineCodes = [], inlineMaths = [] } = {}) {
+function inlineFormat(s, { inlineCodes = [], inlineMaths = [], escapes = [] } = {}) {
+  // `s` already carries escape placeholders (extracted after code/math so an
+  // escaped marker like \* never triggers emphasis); they are restored as
+  // literal characters at the very end.
+
   // Start from escaped text; then allow a tiny safe subset.
   let out = escapeHtml(s);
 
-  // Links: [text](https://example.com)
+  // Links: [text](https://example.com). Parked as placeholders so the emphasis
+  // passes below can't mangle an <a> whose href/text contains * or _.
+  const links = [];
   out = out.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
     (_m, text, href) => {
       const safeText = escapeHtml(text);
       const safeHref = escapeHtml(href);
-      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`;
+      links.push(
+        `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${safeText}</a>`
+      );
+      return `${LINK_PLACEHOLDER}${links.length - 1}${LINK_PLACEHOLDER}`;
     }
   );
 
-  // Bold + italic. Keep simple, non-nested.
-  out = out.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong>$1</strong>'
-  );
+  // Bold + italic with `*`. Keep simple, non-nested.
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-  // Restore inline code and math
+  // Bold + italic with `_`. CommonMark intraword rule: an underscore flanked
+  // by word characters stays literal, so snake_case and file_names survive.
+  out = out.replace(/(?<![A-Za-z0-9])__([^_]+)__(?![A-Za-z0-9])/g, '<strong>$1</strong>');
+  out = out.replace(/(?<![A-Za-z0-9])_([^_]+)_(?![A-Za-z0-9])/g, '<em>$1</em>');
+
+  // Restore links first (they may carry inline-code/math placeholders in their
+  // text), then code/math, then the literal escaped characters last.
+  out = restorePlaceholders(out, LINK_PLACEHOLDER, links, (link) => link);
   out = restoreInlineCode(out, inlineCodes);
   out = restoreInlineMath(out, inlineMaths);
+  // Literal escaped characters last (after every marker pass has run).
+  out = restorePlaceholders(out, ESCAPE_PLACEHOLDER, escapes, (ch) => escapeHtml(ch));
 
   return out;
 }
@@ -169,11 +213,13 @@ function inlineFormat(s, { inlineCodes = [], inlineMaths = [] } = {}) {
 export function inlineMarkdownToSafeHtml(s) {
   let text = String(s || '');
 
-  // Extract inline code and math before other processing
+  // Extract inline code and math first, then backslash escapes on the prose
+  // that remains (so a literal backslash inside code/math survives).
   const { text: t1, codes: inlineCodes } = extractInlineCode(text);
   const { text: t2, maths: inlineMaths } = extractInlineMath(t1);
+  const { text: t3, escapes } = extractBackslashEscapes(t2);
 
-  const result = inlineFormat(t2, { inlineCodes, inlineMaths });
+  const result = inlineFormat(t3, { inlineCodes, inlineMaths, escapes });
   // Apply DOMPurify as defense-in-depth (strips any tags that shouldn't be inline)
   return sanitizeInlineSync(result);
 }
@@ -208,9 +254,12 @@ function isTableSeparatorLine(line) {
   );
 }
 
-// A list item: leading indentation, a marker (- unordered, or "N." ordered),
-// then the content. Indentation determines nesting depth.
-const LIST_ITEM_RE = /^(\s*)(-|\d+\.)\s+(.*)$/;
+// A list item: leading indentation, a marker (-, *, + unordered, or "N."
+// ordered), then the content. Indentation determines nesting depth.
+const LIST_ITEM_RE = /^(\s*)([-*+]|\d+\.)\s+(.*)$/;
+
+// A blockquote line: optional indent, `>`, optional single space, content.
+const BLOCKQUOTE_LINE_RE = /^\s*>\s?/;
 
 /**
  * Build (possibly nested) list HTML from a run of consecutive list-item lines.
@@ -272,7 +321,12 @@ export function markdownToSafeHtml(markdown) {
   const { text: t3, codes: inlineCodes } = extractInlineCode(t2);
   const { text: t4, maths: inlineMaths } = extractInlineMath(t3);
 
-  const lines = t4.split('\n');
+  // 4. Extract backslash escapes LAST (prose only, so literal backslashes
+  //    inside code/math survive). Shared inline options for every inlineFormat.
+  const { text: t5, escapes } = extractBackslashEscapes(t4);
+  const inlineOpts = { inlineCodes, inlineMaths, escapes };
+
+  const lines = t5.split('\n');
 
   const blocks = [];
   let i = 0;
@@ -351,13 +405,13 @@ export function markdownToSafeHtml(markdown) {
 
       const thead = `<thead><tr>${headerCells
         .slice(0, colCount)
-        .map((c) => `<th dir="auto">${inlineFormat(c, { inlineCodes, inlineMaths })}</th>`)
+        .map((c) => `<th dir="auto">${inlineFormat(c, inlineOpts)}</th>`)
         .join('')}</tr></thead>`;
       const tbody = `<tbody>${rows
         .map(
           (r) =>
             `<tr>${r
-              .map((c) => `<td dir="auto">${inlineFormat(c, { inlineCodes, inlineMaths })}</td>`)
+              .map((c) => `<td dir="auto">${inlineFormat(c, inlineOpts)}</td>`)
               .join('')}</tr>`
         )
         .join('')}</tbody>`;
@@ -373,9 +427,40 @@ export function markdownToSafeHtml(markdown) {
     if (/^\s*##\s+/.test(lines[i])) {
       const raw = lines[i].replace(/^\s*##\s+/, '');
       blocks.push(
-        `<h3 class="md-subheading" dir="auto">${inlineFormat(raw, { inlineCodes, inlineMaths })}</h3>`
+        `<h3 class="md-subheading" dir="auto">${inlineFormat(raw, inlineOpts)}</h3>`
       );
       i += 1;
+      continue;
+    }
+
+    // Blockquotes: a run of consecutive lines starting with `>`. Inner content
+    // is rendered as paragraphs (blank `>` lines split paragraphs); nested
+    // blocks inside a quote (lists, headings, fences) are not supported here.
+    if (BLOCKQUOTE_LINE_RE.test(lines[i])) {
+      const quoteLines = [];
+      while (i < lines.length && BLOCKQUOTE_LINE_RE.test(lines[i])) {
+        quoteLines.push(lines[i].replace(BLOCKQUOTE_LINE_RE, ''));
+        i += 1;
+      }
+      const inner = [];
+      let qpara = [];
+      const flushQuotePara = () => {
+        const txt = qpara.join(' ').replace(/\s+/g, ' ').trim();
+        if (txt) {
+          inner.push(
+            `<p dir="auto">${inlineFormat(txt, inlineOpts)}</p>`
+          );
+        }
+        qpara = [];
+      };
+      for (const ql of quoteLines) {
+        if (!ql.trim()) flushQuotePara();
+        else qpara.push(ql);
+      }
+      flushQuotePara();
+      if (inner.length) {
+        blocks.push(`<blockquote dir="auto">${inner.join('')}</blockquote>`);
+      }
       continue;
     }
 
@@ -388,7 +473,7 @@ export function markdownToSafeHtml(markdown) {
         itemLines.push(lines[i]);
         i += 1;
       }
-      blocks.push(buildList(itemLines, { inlineCodes, inlineMaths }));
+      blocks.push(buildList(itemLines, inlineOpts));
       continue;
     }
 
@@ -397,9 +482,10 @@ export function markdownToSafeHtml(markdown) {
     while (
       i < lines.length &&
       lines[i].trim() &&
-      !/^\s*-\s+/.test(lines[i]) &&
+      !/^\s*[-*+]\s+/.test(lines[i]) &&
       !/^\s*\d+\.\s+/.test(lines[i]) &&
       !/^\s*#{1,3}\s+/.test(lines[i]) &&
+      !BLOCKQUOTE_LINE_RE.test(lines[i]) &&
       !codeBlockPlaceholderRegex.test(lines[i]) &&
       !mathBlockPlaceholderRegex.test(lines[i]) &&
       !(
@@ -420,7 +506,7 @@ export function markdownToSafeHtml(markdown) {
     }
     const paraText = para.join(' ').replace(/\s+/g, ' ').trim();
     if (paraText) {
-      blocks.push(`<p dir="auto">${inlineFormat(paraText, { inlineCodes, inlineMaths })}</p>`);
+      blocks.push(`<p dir="auto">${inlineFormat(paraText, inlineOpts)}</p>`);
     }
   }
 
