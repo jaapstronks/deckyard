@@ -527,7 +527,7 @@
   gap: var(--ps-space-3);
 }
 
-@media (min-width: 600px) {
+@media (min-width: 641px) {
   .settings-modal-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -632,7 +632,7 @@
 }
 
 /* Small phones */
-@media (max-width: 375px) {
+@media (max-width: 480px) {
   .modal-backdrop .ps-modal-body {
     padding: var(--ps-space-3);
   }

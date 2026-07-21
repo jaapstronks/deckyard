@@ -384,10 +384,10 @@
 }
 
 /* ============================================================
-   TABLET+ RESPONSIVE (min-width: 480px)
+   TABLET+ RESPONSIVE (min-width: 481px)
    ============================================================ */
 
-@media (min-width: 480px) {
+@media (min-width: 481px) {
   .auth-shell {
     padding: var(--ps-space-6);
   }
@@ -428,10 +428,10 @@
 }
 
 /* ============================================================
-   DESKTOP RESPONSIVE (min-width: 768px)
+   DESKTOP RESPONSIVE (min-width: 769px)
    ============================================================ */
 
-@media (min-width: 768px) {
+@media (min-width: 769px) {
   .auth-shell {
     padding: var(--ps-space-8);
   }
@@ -727,7 +727,7 @@
 }
 
 /* Legacy responsive for tablet+ */
-@media (min-width: 480px) {
+@media (min-width: 481px) {
   .login-panel {
     max-width: 420px;
     padding: var(--ps-space-8);
