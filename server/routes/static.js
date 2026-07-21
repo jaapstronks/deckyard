@@ -5,6 +5,7 @@ import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { getPresentation } from '../storage/presentations.js';
 import { getPublishedById } from '../storage/published.js';
 import { buildStandaloneHtml } from '../export/html.js';
+import { buildReaderHtml } from '../export/reader.js';
 import { loadTheme } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../config/database.js';
@@ -233,6 +234,54 @@ export async function handleStatic({
 </html>`);
       return;
     }
+  }
+
+  // Semantic reflowable "reader" view of a published deck (open web, no auth).
+  // A JS-optional, accessible document projection of the same model; the canvas
+  // page lives at /p/:id-:slug. Served at /p/:id-:slug/reader.
+  const pubReaderMatch = url.pathname.match(
+    /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/
+  );
+  if (pubReaderMatch && req.method === 'GET') {
+    const publishId = pubReaderMatch[1];
+    const reqSlug = String(pubReaderMatch[2] || '').trim();
+    const entry = await getPublishedById(repoRoot, publishId);
+    if (!entry?.presentationId) return notFound(res);
+
+    const pres = await getPresentation(repoRoot, entry.presentationId);
+    if (!pres) return notFound(res);
+
+    const slug = String(entry.slug || '').trim() || 'presentation';
+    const canonicalCanvasPath = `/p/${publishId}-${slug}`;
+    if (!reqSlug || reqSlug !== slug) {
+      res.writeHead(302, {
+        Location: `${canonicalCanvasPath}/reader`,
+        'Cache-Control': 'no-store',
+      });
+      res.end();
+      return;
+    }
+
+    const modeLang = resolveLangModeFromPresOrUrl(pres, url);
+    const projected = projectPresentationForLang(pres, modeLang);
+    const orgId = pres?.organizationId || getDefaultOrganizationId();
+    const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
+    const readerHeadHtml = `<meta name="robots" content="${
+      sandboxEnabled() ? 'noindex,nofollow' : 'index,follow'
+    }" />`;
+
+    const html = buildReaderHtml(repoRoot, projected, {
+      context: 'published',
+      slideTypes,
+      canonicalUrl: `${canonicalCanvasPath}?lang=${encodeURIComponent(modeLang)}`,
+      headHtml: readerHeadHtml,
+    });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end(html);
+    return;
   }
 
   // Published public pages (open web, no auth)
