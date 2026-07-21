@@ -5,6 +5,7 @@ import { buildSlidesPngExportHtml } from '../../export/png-slides.js';
 import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
 import { buildPptxBuffer } from '../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
+import { buildDeckBundle } from '../../export/deck-bundle.js';
 import { buildNotesDocxBuffer, buildNotesMarkdown } from '../../export/notes.js';
 import { renderSlideToPngBuffer } from '../../render/png.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
@@ -33,6 +34,16 @@ const exportRoutes = [
       const deck = presentationToDeck(ctx.pres);
       return JSON.stringify(deck, null, 2);
     },
+  }),
+
+  // .deck bundle: self-contained portable deck (deck.json + content-addressed
+  // assets + manifest inventory). Renders/round-trips without the server.
+  createExportRoute({
+    pattern: /^\/api\/presentations\/([^/]+)\/export\/deck\.zip$/,
+    contentType: 'application/vnd.slidecreator.deck',
+    extension: '.deck',
+    stripLiveOnly: false,
+    buildContent: async (ctx, { repoRoot }) => buildDeckBundle(repoRoot, ctx.pres),
   }),
 
   // HTML export (download)
