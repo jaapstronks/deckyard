@@ -50,6 +50,13 @@ test('shipped prompts object exposes every base builder as a function', () => {
   for (const name of BASE_PROMPT_NAMES) {
     assert.equal(typeof prompts[name], 'function', `${name} should resolve to a function`);
   }
+  // `buildThemeContextSection` is a module-local helper of buildPhase2SystemPrompt,
+  // not routed through the registry — advertising it would accept a fork override
+  // that never fires, so it must stay out of the override set.
+  assert.ok(
+    !BASE_PROMPT_NAMES.includes('buildThemeContextSection'),
+    'buildThemeContextSection must not be advertised as an override name',
+  );
 });
 
 test('base outline builder produces its copy and honours the language label', () => {

@@ -11,11 +11,13 @@
  */
 
 export { buildPhase1SystemPrompt, buildPhase1UserPrompt } from './outline.js';
-export {
-  buildPhase2SystemPrompt,
-  buildThemeContextSection,
-  buildPhase2UserPrompt,
-} from './refine-slides.js';
+// `buildThemeContextSection` is deliberately NOT re-exported: it's an internal
+// helper that `buildPhase2SystemPrompt` calls as a module-local sibling, not
+// through the resolved `prompts` registry (base modules can't import `prompts`
+// without a cycle). Advertising it as an override name would accept and log a
+// fork's override while never actually invoking it. Forks tune the theme
+// section by overriding the enclosing `buildPhase2SystemPrompt` instead.
+export { buildPhase2SystemPrompt, buildPhase2UserPrompt } from './refine-slides.js';
 export { buildRevisionSystemPrompt, buildRevisionUserPrompt } from './revise-outline.js';
 export { buildSectionSystemPrompt, buildSectionUserPrompt } from './refine-section.js';
 export { buildSlideIterationPrompt, buildDeckIterationPrompt } from './iterate-deck.js';
