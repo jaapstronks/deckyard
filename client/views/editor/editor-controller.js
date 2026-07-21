@@ -776,6 +776,9 @@ export async function createEditorController({
     pres,
     getSelectedSlideId: () => selectedSlideId,
     markDirty,
+    // Chart-data edits repaint the slide live (debounced), same seam the
+    // inline grid used.
+    scheduleUiRefresh,
     onOpenQr: () => topbarApi.openNotesQr?.(),
   });
 
@@ -1336,6 +1339,10 @@ export async function createEditorController({
     ...editorFormDeps,
     onOpenBulkEdit: () => bulkEditModal.open(),
     getSelectedElement: () => selectedElement,
+    // Chart inspector's "Edit data…" entry point opens the bottom-panel Data
+    // tab (editing-surfaces §4.3). Only the inspector instance gets this; the
+    // bulk modal keeps its inline grid.
+    onEditChartData: () => notesStrip.openDataTab(),
   });
 
   // Set (or clear) the selection-aware inspector's current element and rebuild
@@ -1446,6 +1453,11 @@ export async function createEditorController({
       // so positioned comments stay visible during edit-time rerenders too.
       previewPanel.reattachCommentMarkers?.();
     }
+    // Reconcile the strip's Data tab: available (and grid mounted) for chart
+    // slides, hidden otherwise. Cheap on repeat — it only remounts the grid
+    // when the slide or chartType changes, so a data edit (which triggers this
+    // via scheduleUiRefresh) never yanks the caret.
+    notesStrip.syncData?.(slide);
     // Re-apply inline-edit affordances (ghosts, card buttons, hover class).
     inlineEditor.refresh();
   };

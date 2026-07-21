@@ -587,6 +587,9 @@ export function createRerenderEditor({
   // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
+  // Opens the bottom-panel Data tab for a chart slide (editing-surfaces §4.3).
+  // Inspector-only: the bulk modal has no bottom panel and keeps its inline grid.
+  onEditChartData,
 } = {}) {
   const {
     fieldText,
@@ -1322,6 +1325,7 @@ export function createRerenderEditor({
       rerenderSlideList,
       rerenderPreview,
       scheduleUiRefresh,
+      onEditChartData,
     };
 
     if (contentOnly) {

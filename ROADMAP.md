@@ -68,10 +68,10 @@ Inspector as single source of truth for settings, the canvas for direct
 manipulation, a dedicated surface for what fits neither (chart data) — shipped
 across 2026-07-20/21. Image surfaces, the `ImageRef` data-model normalisation,
 a selection-aware inspector with per-element tabs, a coverage audit of all 40
-types, and per-field text controls (alignment / theme-token colour / size) all
-landed. Documented in `docs/reference/editor-inspector.md`,
-`image-property-ownership.md` and `wysiwyg-inline-editing.md`. Remaining tail:
-the chart-data "Data" tab, tracked in `docs/plans/TODO.md`.)_
+types, per-field text controls (alignment / theme-token colour / size), and the
+chart-data "Data" tab (a tabbed bottom panel beside presenter notes) all landed.
+Documented in `docs/reference/editor-inspector.md`,
+`image-property-ownership.md` and `wysiwyg-inline-editing.md`.)_
 
 ## Next — existing feature plans
 
