@@ -1,7 +1,16 @@
 import { storage } from '../../lib/storage.js';
 
 const MIN_WIDTH = 200;
-const MAX_WIDTH = 500;
+const BASE_MAX_WIDTH = 500;
+
+/**
+ * The slides panel's ceiling. Like the inspector's, a flat cap meant a very
+ * wide screen could not buy bigger slide thumbnails with the space it had
+ * going spare. 20% of 1920px is 384px, under the old 500, so nothing changes
+ * below roughly a 2500px-wide display.
+ */
+const maxWidth = () =>
+  Math.max(BASE_MAX_WIDTH, Math.round((window.innerWidth || 0) * 0.2));
 
 /**
  * Creates a resize handle for the slides panel with drag-to-resize functionality.
@@ -21,7 +30,11 @@ export function createSlidesPanelResize({ h, panelEl, isSlidesCollapsed }) {
     const stored = storage.get('ps-slides-panel-width');
     if (stored) {
       const w = parseInt(stored, 10);
-      if (w >= MIN_WIDTH && w <= MAX_WIDTH) return w;
+      // Clamp rather than reject, so a width chosen on a wide monitor
+      // degrades gracefully instead of resetting on a smaller one.
+      if (Number.isFinite(w) && w >= MIN_WIDTH) {
+        return Math.min(w, maxWidth());
+      }
     }
     return null;
   };
@@ -31,7 +44,7 @@ export function createSlidesPanelResize({ h, panelEl, isSlidesCollapsed }) {
   };
 
   const applyWidth = (w) => {
-    const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, w));
+    const clamped = Math.max(MIN_WIDTH, Math.min(maxWidth(), w));
     document.documentElement.style.setProperty('--slides-panel-width', `${clamped}px`);
     // Calculate thumb scale: panel width minus padding, borders, and scrollbar gutter divided by slide width (1600)
     // List padding: 8px each side = 16px, Thumb border: 1px each side = 2px, Scrollbar gutter: ~15px

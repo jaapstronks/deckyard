@@ -72,10 +72,12 @@ export function showEditorLoadingSkeleton(root) {
       text: t('editor.loading.deck', 'Loading presentation…'),
     }),
   ]);
+  // Slide bar is a grid child (Option A), spanning the preview + inspector
+  // columns above them - mirror that here so the skeleton doesn't shift on swap.
+  const slideBar = h('div', { class: 'slide-bar skeleton-slide-bar' }, [
+    block('skeleton-heading'),
+  ]);
   const preview = h('div', { class: 'panel preview-panel' }, [
-    h('div', { class: 'preview-panel-header skeleton-preview-header' }, [
-      block('skeleton-heading'),
-    ]),
     h('div', { class: 'panel-scroll preview-panel-scroll' }, [
       h('div', { class: 'skeleton-canvas' }, [status]),
     ]),
@@ -84,7 +86,7 @@ export function showEditorLoadingSkeleton(root) {
   const shell = h(
     'div',
     { class: `app-shell editor-shell ${SKELETON_CLASS}` },
-    [topbar, h('div', { class: 'layout' }, [left, preview, inspector])]
+    [topbar, h('div', { class: 'layout' }, [left, slideBar, preview, inspector])]
   );
   root.append(shell);
   return () => shell.remove();

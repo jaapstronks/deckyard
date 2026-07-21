@@ -110,6 +110,17 @@ renderer lacks the field.
 - **Markdown** → modal (`.ie-md-modal`) reusing the canonical markdown
   editor from `fields/basic.js` (`fieldMarkdown`, full toolbar) over a
   dimmed backdrop - reads as a separate mode.
+- **CSV / chart data** → modal (`.ie-md-modal.is-csv`, `openCsvModal`)
+  reusing the same modal chrome as markdown but hosting the shared grid
+  editor (`fields/csv-grid.js`, chart-type-aware grid + Raw CSV toggle).
+  Used by the chart `data` field so clicking a chart opens a data grid, not
+  the prose toolbar. Grid keyboard nav is spreadsheet-like: Up/Down across
+  rows (the header is row -1), Enter walks down and appends a row at the
+  bottom, Left/Right hop columns only when the caret is at the cell edge.
+  Pasting into the top-left header cell rebuilds the grid (header
+  auto-detected via `applyHeaderPaste`); pasting into any other header cell
+  fills that column in place; pasting a TSV/CSV block into a body cell fills
+  outward from it (Sheets/Excel paste).
 - **Empty optional field** → hover-revealed "+ Label" ghost chip at an
   anchor; click spawns via the sentinel and starts editing.
 - **Filled optional field** → hover-revealed clear (×, `.ie-clear`) that
@@ -126,7 +137,41 @@ renderer lacks the field.
 - **Images** → clicking an element tagged `data-inline-photo` opens the
   media popover (image via the shared `openImagePicker` seam + alt text +
   optional extras like a LinkedIn URL), including first-image-into-empty-slot
-  where the type renders a placeholder.
+  where the type renders a placeholder. Preview and alt only appear once
+  there **is** an image; on an empty slot focus starts on "Choose / upload…".
+
+### The empty-image placeholder
+
+Every empty slot is one `imagePlaceholderHtml()` box
+(`shared/slide-types/helpers.js`), used by image, image-text, gallery,
+content-columns, logo-wall, quote, team-cards and freeform. It emits the
+shared `image-placeholder` base class, the glyph, `is-empty` (the hook the
+inline editor keys off), and `aria-hidden` — the box is decorative; the
+accessible affordance is the "Add image" chip.
+
+Each type keeps a **modifier** class (`quote-portrait`, `cc-image-placeholder`,
+…) because that is what its own CSS targets to size and colour the slot; a
+112px round portrait and a full-bleed frame share nothing there. Base styling
+lives in `client/styles/slides/00-patterns.css`.
+
+Labels come from `SLIDE_COPY` via `ctx.lang` — they used to be hardcoded per
+type, which is how image-text said "Afbeelding" while image-slide said "Image"
+in the same deck. Small slots pass `compact: true`: the helper drops the label
+(it cannot fit) and the glyph scales with the slot instead of a fixed 72px.
+
+The chip is centred on the placeholder and says the same thing as the glyph,
+so the placeholder's inner fades on hover — one rule, keyed on the shared base
+class, in `105-inline-edit.css`.
+- **Image drag & drop** → an EMPTY `data-inline-photo` placeholder (and its
+  overlaid `+ Add image` chip) is a drop target for an image file dragged from
+  the desktop. A dropped file is always an *upload* (browse-vs-upload split), so
+  it goes straight to the single upload destination via the exported
+  `uploadFile()` (`image-library/upload.js`) — no source chooser, ImageKit stays
+  browse-only. The attach reuses `resolveMediaTarget()` + the popover's
+  markDirty/requestSave/rerender path (collab + undo parity). Gated on
+  `features.disableUploads` (off in imagekit-only / sandbox / demo);
+  `isFileDrag()` ignores internal card-reorder drags. Empty slots only —
+  replacing a filled image stays a popover action.
 - **Icons** → clicking an element tagged `data-inline-icon` opens the
   canonical icon-picker modal and writes to the emitted path.
 - **Type conversion** → "+ Add image" / remove-image-area affordances that
@@ -157,6 +202,7 @@ read from `SLIDE_TYPES[type].fields`.
 
 | Knob | Semantics |
 | --- | --- |
+| `ensure` | Canonicalizer `(content) => content` run once per mount (in `refresh`, before decorating) for dual-model types whose inline attributes target a canonical array. `ensureLogos` / `ensureMembers` migrate the legacy numbered fields into `logos[]` / `members[]`, so the media popover and card affordances always have a stable, mutable target - which lets those renderers emit the inline attributes unconditionally (no `useLogos` / `useMembers` gate). Idempotent, editor-only, mutates in place, does not dirty the deck. Function-valued → core-map-only. Same family as `ensureImageTextImages`. |
 | `ghosts[]` | Chips for empty optional fields: `{ field, anchors: [{sel, pos, chip}] }`. |
 | `ghosts[].anchors` | Ordered fallback list; first selector found in the DOM wins (`.header` when present, `.slide-inner` otherwise). `pos` = DOM insertion for the spawned editable (`prepend`/`append`/`before`/`after`); `chip` = overlay placement mode. Legacy `{ field, anchor, pos }` still works. |
 | `ghosts[].group` | Ghosts sharing a `group` show only the first empty one - sequential fields (poll option1..4, likert option1..10) get one "+ Option N" chip for the next slot. |
@@ -172,6 +218,8 @@ read from `SLIDE_TYPES[type].fields`.
 | `cards.addLabelKey`/`addLabel`, `removeLabelKey`/`removeLabel` | Override the generic "Add item"/"Remove item" copy per level. |
 | `cards.reorder` / `cards.reorderPlacement` | `reorder: false` disables the grip (default: shown when the array has >1 item); `reorderPlacement` moves the grip (default `top-center`; text-blocks rows use `bottom-left` because the top edge collides with the first block's own grip). |
 | `cards.child` | A nested card level for two-level list types (text-blocks rows → blocks). One card set per parent item element, scoped to it, writing to `${field}.{parentIdx}.${child.field}`; min/max/defaults from the nested `itemFields`. Same knobs as `cards` plus `ghosts[]` (`{ field, pos?, chip? }`) for cleared child subfields. |
+| `focus` | Draggable focal-point handle on filled images: `{ xField, yField, cropMode(slide, idx), get?(slide, idx) }`. Resolves the write target the same way `media` does (item in array mode, `slide.content` with `{n}` substitution in flat mode), then writes `xField`/`yField` (0..100) live as `object-position` on drag, saving on pointerup. The handle renders only when `cropMode` returns `'cover'` (a contain/no-crop image has nothing to move). Optional `get` mirrors a renderer fallback so the handle starts where the crop actually is (image-text cell 0 reads slide-level focus until it has its own). Function-valued → core-map only. The inspector's 3×3 grid still exists as a parallel control. |
+| `fit` | Cover/Contain segmented toggle on filled images: `{ field, fallback?(slide) }`. Resolves the write target like `media` (item in array mode, `{n}`-substituted content key in flat mode) and writes `field` = `'cover'`/`'contain'`, then rerenders (the frame relayouts and the focal-point handle appears/disappears with the mode). `fallback` seeds the initial mode from a slide-level default (image-text `imageFit`) when the per-image field is empty; writes localize to the image. Hover-revealed. Only where a binary fit exists - image-slide keeps its ternary `layout` enum (full/bleed/centered) instead. Function-valued fallback → core-map only. |
 | `media` | Per-image popover on `data-inline-photo="<n>"` elements. **Array mode** (`list` set): `<n>` indexes into `list`, popover mutates the item (`imageField`/`altField`/`extraFields[].key` are item keys). **Flat mode** (no `list`): keys are content keys; a `{n}` token is replaced with `<n>` (`col{n}Image`); single-image types use plain keys, `<n>`=0. `extraFields` entries: `{key, type, label, i18nKey}`. |
 | `icons` | Per-icon affordance on `data-inline-icon="<path>"` elements: `{ selector, afterWrite? }`. `afterWrite(slide)` keeps a legacy mirror in sync (icon-card-grid re-syncs numbered fields in items-mode only); function-valued, so core-map-only. |
 | `convert` | Type-switch affordances for the "add/remove an image" intent. `addMedia: { toType, anchors }` shows a "+ Add image" chip on a type without an image side; clicking converts (content-slide → image-text-slide) and opens the media popover on the fresh placeholder. `removeMedia: { toType, selector }` shows a hover × on the EMPTY image placeholder; clicking converts back (image-text-slide → content-slide). Both only render when `canConvertSlideTo` approves, so custom types overriding a core name keep working. A filled image must first be cleared via the popover, so removal stays a deliberate two-step. |
@@ -202,7 +250,7 @@ fallbacks).
 | title-slide | title, subheading, byline, attribution | subheading, byline, attribution | – | – | – |
 | content-slide | title | subheading | – | body | convert: + Add image → image-text |
 | list-slide / lijstje-slide | title, items | subheading + item text | ✅ | – | – |
-| quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`) |
+| quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`); empty slot clickable in edit mode (first portrait inline) |
 | chapter-title-slide | title | subheading | – | – | – |
 | image-text-slide | title | caption | – | body | media: `images[]` per cell; convert: × on sole empty placeholder → content-slide |
 | timeline-slide | header + item date/title/text | header set + item text (chip on card) | ✅ (add right-center, × on card) | – | – |
@@ -227,8 +275,8 @@ fallbacks).
 | gallery-slide | header + captions | header set + per-image caption | ✅ (`images`) | – | media: `images[]` |
 | icon-card-grid-slide | header + card title/body | header set | ✅ items-mode only | card bodies | icons: in-slide icon picker (+ numbered re-sync) |
 | card-stack-slide | header + card label/body | header set | – (count enum in inspector) | card bodies | – |
-| team-cards-slide | header, subheading2, name/byline | header set + member name/byline | ✅ members-mode only | – | media: photo + alt + LinkedIn |
-| logo-wall-slide | title, subheading | both | – | – | media: `logos[]` (names stay off-canvas: aria-only) |
+| team-cards-slide | header, subheading2, name/byline | header set + member name/byline | ✅ (`ensure` members[]; first block inline) | – | media: photo + alt + LinkedIn (incl. first photo) |
+| logo-wall-slide | title, subheading | both | ✅ (`ensure` logos[]; add/remove/reorder; first logo inline) | – | media: `logos[]` incl. empty-slot add (names stay off-canvas: aria-only) |
 | text-blocks-slide | header, row titles, block title/body | header set + row title (rows 2+) | ✅ two-level rows → blocks | block bodies | – |
 | content-columns-slide | header, col titles, block title/body | header set | – | col text, block bodies | media: flat `col{n}Image` incl. empty-slot add |
 

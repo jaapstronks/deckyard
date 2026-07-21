@@ -5,7 +5,9 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
-import { splitMentionSegments } from '../../../shared/comment-mentions.js';
+import { renderCommentBodyNodes } from '../../lib/comment-body.js';
+import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 
 /**
  * Creates comment rendering functions with bound dependencies.
@@ -50,7 +52,9 @@ export function createCommentRenderers({
     if (comments.length === 0) {
       const emptyEl = h('div', {
         class: 'comments-empty',
-        text: filter.attention === 'waiting'
+        text: filter.slideMissing
+          ? t('comments.empty.noSlide', 'Select a slide to see its comments')
+          : filter.attention === 'waiting'
           ? t('comments.empty.waiting', 'Nothing waiting for you here')
           : filter.status === 'resolved'
             ? t('comments.empty.resolved', 'No resolved comments')
@@ -167,17 +171,7 @@ export function createCommentRenderers({
     // Body: mention markup renders as a styled chip; everything else stays
     // plain text (h() text nodes, so no escaping worries).
     const bodyEl = h('div', { class: 'comment-body' });
-    for (const seg of splitMentionSegments(comment.body)) {
-      if (seg.type === 'mention') {
-        bodyEl.append(h('span', {
-          class: 'comment-mention-chip',
-          title: seg.email,
-          text: `@${seg.name}`,
-        }));
-      } else {
-        bodyEl.append(seg.text);
-      }
-    }
+    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
     // Actions row
     const actionsEl = h('div', { class: 'comment-actions' });
@@ -221,7 +215,7 @@ export function createCommentRenderers({
             } else {
               replyInput = createReplyInput(comment.id);
               threadEl.append(replyInput);
-              replyInput.querySelector('textarea')?.focus();
+              replyInput.querySelector('.comment-rich-input')?.focus();
             }
           },
         });
@@ -270,26 +264,21 @@ export function createCommentRenderers({
    */
   function createReplyInput(parentId) {
     const container = h('div', { class: 'comment-reply-input' });
-    const textarea = h('textarea', {
-      class: 'comment-reply-textarea',
-      placeholder: t('comments.replyPlaceholder', 'Reply...'),
-      rows: 1,
-    });
 
     const submitReply = () => {
-      const body = textarea.value.trim();
+      const body = replyInput.getValue().trim();
       if (!body) return;
-      onReply?.(parentId, body, textarea);
+      onReply?.(parentId, body, replyInput);
     };
 
     // Enter to send, Shift+Enter for newline; with the mention popover
     // open, Enter picks a user instead.
-    textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        if (mentionAc?.isOpen()) return;
-        e.preventDefault();
-        submitReply();
-      }
+    let mentionAc = null;
+    const replyInput = createRichCommentInput({
+      className: 'comment-reply-textarea',
+      placeholder: t('comments.replyPlaceholder', 'Reply...'),
+      onSubmit: submitReply,
+      isSubmitBlocked: () => !!mentionAc?.isOpen(),
     });
 
     const submitBtn = h('button', {
@@ -298,8 +287,12 @@ export function createCommentRenderers({
       text: t('comments.reply', 'Reply'),
       onclick: submitReply,
     });
-    container.append(textarea, submitBtn);
-    attachMentions?.(textarea, container, { ephemeral: true });
+    container.append(
+      replyInput.el,
+      createCommentLinkButton({ input: replyInput }),
+      submitBtn
+    );
+    mentionAc = attachMentions?.(replyInput, container, { ephemeral: true });
     return container;
   }
 

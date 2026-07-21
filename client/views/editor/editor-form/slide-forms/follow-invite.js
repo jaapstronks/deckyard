@@ -1,3 +1,5 @@
+import { t } from '../../../../lib/ui-i18n.js';
+
 export function renderFollowInviteForm({
   h,
   form,
@@ -17,7 +19,10 @@ export function renderFollowInviteForm({
 
   const expl = h('div', {
     class: 'help editor-callout',
-    text: 'Deze "Follow-along invite" slide toont een QR-code waarmee je publiek kan meekijken in hun eigen taal en kan reageren op interactieve slides (polls, feedback). De slide wordt niet meegenomen in publiceren of exports. Je kunt hem uitzetten; hij blijft dan in de lijst staan (grijs) maar wordt overgeslagen tijdens presenteren.',
+    text: t(
+      'editor.followInvite.explanation',
+      'This "Follow-along invite" slide shows a QR code that lets your audience follow along in their own language and respond to interactive slides (polls, feedback). The slide is left out of publishing and exports. You can switch it off; it then stays in the list (greyed out) but is skipped while presenting.'
+    ),
   });
   form.append(expl);
 

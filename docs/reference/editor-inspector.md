@@ -12,10 +12,15 @@ one of three surfaces:
 
 1. **The slide canvas (wysiwyg)** - the primary editing surface. In-place
    text editing, ghost chips for empty optional fields, add/remove/reorder
-   of repeatable items (two-level for text-blocks rows/blocks), and a media
-   popover (image + alt + extras) including first-image-into-empty-slot.
-   Descriptor registry: `client/views/editor/inline-edit/descriptors.js`
-   (custom types declare an `inline` descriptor on the type definition, see
+   of repeatable items (two-level for text-blocks rows/blocks), and direct
+   manipulation of images: a draggable focal point, and double-click to
+   replace a filled image. Empty slots keep a "+ Add image" affordance (they
+   have nothing to occlude) and accept a desktop file-drop. Everything
+   *settable* on an image (replace, alt, fit, focus grid, per-item metadata)
+   lives in the inspector's "This image" tab, not on the image - see the
+   editing-surface principle in `docs/plans/editing-surfaces.md`. Descriptor
+   registry: `client/views/editor/inline-edit/descriptors.js` (custom types
+   declare an `inline` descriptor on the type definition, see
    `docs/developer/slide-types.md`).
 2. **The "Edit all text" bulk modal** (`client/views/editor/bulk-edit-modal.js`) -
    the non-wysiwyg mode: all content fields in one list on the left, a live
@@ -37,6 +42,13 @@ render in the bulk modal too (it mounts the whole content half by
 construction; filtering them out would complicate the
 parity-by-construction argument, and the one-list job benefits from having
 layout context next to text).
+
+**Exception - the structural `layout` enum:** the toolbar "Layout" chip is
+its canonical control, so the inspector no longer renders it for
+`image-text` (or the `content` slide, where the same field is relabelled
+"Text columns" because it only toggles 1/2 text columns there). The chip
+covers it on the canvas; the bulk modal keeps the enum (no chip there), so
+the parity invariant still holds.
 
 ## The inspector rail
 
@@ -114,6 +126,39 @@ together**.
   the pane leads with the at-a-glance settings (layout/variant enums) and
   ends with Background (sticky-open) and Accessibility.
 
+### Selection-aware tabs (`[This element | Slide]`)
+
+Selecting a canvas element grows the pane a **tab bar**; with nothing selected
+there is no tab bar - just the slide form (identical to the pre-tab pane).
+
+- **Selection state** lives in the controller (`selectedElement =
+  {kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
+  interactions set it: a single click on a filled image →
+  `onOpenElementSettings({image, idx})` (selects it *and* opens the rail on the
+  "This image" tab, the single doorway to everything settable); editing a card's
+  text or clicking its icon → `{card, idx}`; a plain-text edit or empty-slide
+  click clears it. Double-clicking a filled image, or clicking an empty slot,
+  opens the image picker directly (replace / add) rather than the tab.
+- **Rendering** (`editor-form.js`): when the selection applies to the slide
+  (`elementAppliesToSlide`), per-element widgets render into `elementForm`
+  ("This element" tab) and the rest into `form` ("Slide" tab). The active tab
+  persists across rerenders and resets to the element on a fresh selection.
+  `renderInspectorExtrasByType` routes each type's controls into `elementForm`:
+  most image types use the **shared image-element card**
+  (`editor-form/image-element-card.js`: replace/delete, alt, fit where the type
+  has one, the 3x3 focus grid as the precise fallback to the canvas drag, and
+  per-item metadata like a LinkedIn URL); image-text keeps its own per-image
+  manager (Images section) plus role + layout; icon-card-grid → just the
+  selected card's icon + link.
+- **Scope:** every image type carries a "This image" tab - image-slide,
+  image-text, gallery, team-cards, content-columns (per selected column),
+  logo-wall, quote portraits - plus icon-cards. The shared card is driven by the
+  type's inline descriptor (media/focus/fit), so it writes the same focusX/Y
+  keys the canvas focal-point drag writes: one value, two representations.
+
+The `data-inspector-section="image"` markers (image-slide, image-text) remain as
+a harmless addressing seam; the element tab now surfaces the controls directly.
+
 ## Per-type coverage audit (executed 2026-07-16)
 
 Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`
@@ -124,8 +169,11 @@ classified below; **no orphans found**.
 Column semantics:
 
 - **Wysiwyg**: fully editable on the slide surface (in-place text, ghosts
-  for optional fields, cards add/remove/reorder, media popover incl.
-  empty-slot adds).
+  for optional fields, cards add/remove/reorder, images set/replaced via the
+  picker - double-click a filled image or click an empty slot; alt/fit/focus
+  live in the "This image" inspector tab). Where a row below says "via
+  popover" it predates the editing-surfaces track; read it as "via the canvas
+  image picker + the This-image tab".
 - **Bulk modal**: fields whose *only* non-inspector text home is the "Edit
   all text" modal. The modal renders *every* non-Background/non-a11y field
   by construction, so wysiwyg-covered fields are also there; this column
@@ -152,12 +200,12 @@ homed. Not listed per row.
 |---|---|---|---|---|
 | title | title, subheading, byline, attribution | bgImage, bgAlt | logoCorner | bgImage = title-specific hero bg (preset strip in form) |
 | chapter-title | title, subheading | - | layout | |
-| content | title, subheading, body | actions[] (label/url/style) | layout, density | actions = CTA buttons; url/style stay form-only |
+| content | title, subheading, body | actions[] (label/url/style) | layout (labelled "Text columns"), density | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA buttons; url/style stay form-only |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | split-partner-title | label, title, subheading | logos[], logo{n}Alt, bgImage, bgAlt | - | partner logos have no media popover yet |
-| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, layout, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | inspector also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
+| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | source, bunnyLibraryId | autoplay | source is a URL/id (text home = bulk) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |

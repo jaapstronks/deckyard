@@ -123,10 +123,15 @@
 }
 
 /* Settings content area */
+/* No `overflow-y: auto` here. The shell is `min-height: 100vh`, so this pane
+   grows with its content and never scrolls on its own — the document does, as
+   everywhere else in the app. But an `overflow` other than visible still makes
+   this the sticky containing block, so `position: sticky` inside it bound to a
+   box that never scrolls and silently did nothing (the theme editor's preview
+   column had been dead for exactly that reason). */
 .settings-page > .settings-content {
   grid-area: content;
   padding: var(--ps-space-5);
-  overflow-y: auto;
   background: hsl(var(--app-bg-base));
 }
 
@@ -154,24 +159,62 @@
   max-width: 600px;
 }
 
+/* Single reading column, top to bottom — the way real settings apps read.
+   (This used to be a two-column masonry at >=900px, which produced jagged card
+   heights and big empty gaps; settings are a list, not a dashboard.) */
 .settings-tab-cards {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--ps-space-4);
 }
 
-/* Use horizontal space better on wider screens */
-@media (min-width: 900px) {
-  .settings-tab-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
+/* ============================================================
+   SETTINGS CARDS — elevated surfaces, titled sections
+   ============================================================ */
 
-  /* Full-width cards */
-  .settings-tab-cards > .editor-card.admin-users-card,
-  .settings-tab-cards > .email-templates-panel {
-    grid-column: 1 / -1;
-  }
+/* The base .editor-card is bg-sunken (a recessed grey), which muddies against
+   the settings content background. On this page a settings card is an elevated
+   surface: a clear white/raised panel with a hairline border. */
+.settings-page .settings-tab-view .editor-card,
+.settings-page .settings-admin-cards > .editor-card {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-lg);
+  box-shadow: var(--app-shadow-sm);
+  padding: var(--ps-space-5);
+  gap: var(--ps-space-3);
+}
+
+.settings-page .settings-tab-view .editor-card:focus-within {
+  border-color: hsl(var(--app-border-focus));
+  box-shadow:
+    var(--app-shadow-sm),
+    0 0 0 3px hsl(var(--app-accent-primary) / 0.12);
+}
+
+/* The first field-label in a settings card is its section title. Give it a
+   hairline rule so each card reads as a titled section rather than a loose
+   heading stacked on controls. */
+.settings-page .editor-card > .field-label:first-child {
+  margin: 0;
+  padding-bottom: var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+  color: hsl(var(--app-text-primary));
+}
+
+/* Native form controls adopt the app accent instead of the browser default
+   blue, so checkboxes, radios and sliders match the rest of the UI. */
+.settings-page input[type="checkbox"],
+.settings-page input[type="radio"],
+.settings-page input[type="range"] {
+  accent-color: hsl(var(--app-accent-primary));
+}
+
+.settings-page .settings-tab-view input[type="checkbox"],
+.settings-page .settings-tab-view input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 /* Admin settings cards - always single column */
@@ -331,37 +374,8 @@
 }
 
 /* ============================================================
-   LEGACY SETTINGS PANEL (for backward compatibility)
+   SHARED SETTINGS CONTROLS
    ============================================================ */
-
-.settings-panel {
-  /* Keep it feeling like a dedicated screen, not an editor sub-panel */
-  padding: var(--ps-space-5);
-}
-
-.settings-panel > h2 {
-  margin-top: 0;
-}
-
-.settings-cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--ps-space-4);
-  margin-top: var(--ps-space-4);
-}
-
-/* Use horizontal space better on wider screens (modal + /settings page). */
-@media (min-width: 820px) {
-  .settings-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  /* Admin card is usually the biggest; let it span full width. */
-  .settings-cards > .editor-card:last-child {
-    grid-column: 1 / -1;
-  }
-}
 
 .settings-compact-control {
   width: 100%;
@@ -401,23 +415,6 @@
   .profile-image-actions {
     flex-direction: row;
   }
-}
-
-.settings-panel .editor-card {
-  background: hsl(var(--app-bg-elevated));
-  border-color: hsl(var(--app-border-subtle));
-  box-shadow: var(--app-shadow-sm);
-}
-
-.settings-panel .editor-card:focus-within {
-  border-color: hsl(var(--app-border-focus));
-  box-shadow:
-    var(--app-shadow-sm),
-    0 0 0 3px hsl(var(--app-accent-primary) / 0.12);
-}
-
-.settings-panel .editor-card .field-label {
-  margin-top: 0;
 }
 
 /* Admin users panel */
@@ -560,7 +557,7 @@
    SETTINGS MODAL MOBILE RESPONSIVENESS
    ============================================================ */
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   /* Make modal full-screen on mobile */
   .modal-backdrop .modal.ps-modal {
     width: 100%;
@@ -836,7 +833,7 @@
 }
 
 /* Mobile responsive */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .analytics-provider-description,
   .analytics-provider-privacy-note,
   .analytics-provider-config,

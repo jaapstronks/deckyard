@@ -3,12 +3,13 @@
  */
 
 import { getEmailSender } from '../../storage/settings.js';
+import { getAppName } from '../../config/branding.js';
 
 export const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-// Default fallbacks for sender identity
+// Default fallbacks for sender identity. The name follows the configured
+// app name (APP_NAME) so white-label deployments send under their own brand.
 const DEFAULT_SENDER_EMAIL = 'noreply@example.com';
-const DEFAULT_SENDER_NAME = 'Presentation System';
 
 /**
  * Get sender identity from settings or env vars.
@@ -19,7 +20,7 @@ export async function getSenderIdentity(repoRoot) {
   if (!repoRoot) {
     return {
       email: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,
-      name: process.env.BREVO_SENDER_NAME || DEFAULT_SENDER_NAME,
+      name: process.env.BREVO_SENDER_NAME || getAppName(),
     };
   }
   try {
@@ -27,7 +28,7 @@ export async function getSenderIdentity(repoRoot) {
   } catch {
     return {
       email: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,
-      name: process.env.BREVO_SENDER_NAME || DEFAULT_SENDER_NAME,
+      name: process.env.BREVO_SENDER_NAME || getAppName(),
     };
   }
 }
@@ -59,7 +60,7 @@ export async function sendEmail({ to, toName, subject, htmlContent, textContent,
   const senderName =
     senderOverride?.name ||
     process.env.BREVO_SENDER_NAME ||
-    DEFAULT_SENDER_NAME;
+    getAppName();
 
   const payload = {
     sender: {

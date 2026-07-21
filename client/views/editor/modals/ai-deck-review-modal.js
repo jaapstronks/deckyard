@@ -57,7 +57,7 @@ export function openAiDeckReviewModal({
         : t('editor.deckReview.title', 'Review deck'),
       hint: t(
         'editor.deckReview.hint',
-        'Each slide shows why its type was picked. Select one or more slides and describe a change to revise that section; use the magnifier for a closer look.'
+        'Each slide shows why its type was picked. Click a slide for a closer look; tick one or more to revise that section as a group.'
       ),
       modalClass: 'modal-ai-review',
       onClose: () => grid?.teardown(),
@@ -132,8 +132,12 @@ export function openAiDeckReviewModal({
     getSlides: () => pres?.slides || [],
     annotationFor,
     selectable: true,
+    previewOnClick: true,
+    // The AI's per-slide rationale, shown inside the peek preview too.
+    peekNoteFor: (slide) => String(slide?._aiReasoning || '').trim() || null,
     onSelectionChange: syncSelectionUi,
-    // Tile click toggles selection; the peek lightbox offers the jump.
+    // Tile click opens the preview; a corner checkbox selects. The peek
+    // lightbox offers the jump into the editor.
     onTilePick: (slide) => {
       if (!slide?.id) return;
       modalApi.close();

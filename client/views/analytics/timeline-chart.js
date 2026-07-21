@@ -158,7 +158,10 @@ export function createTimelineChart({ h, data }) {
     function showTooltip(e, d) {
       const rect = e.target.getBoundingClientRect();
       const containerRect = chartContainer.getBoundingClientRect();
-      tooltip.textContent = `${formatDateShort(d.date)}: ${d.views} ${t('analytics.views', 'views')}`;
+      tooltip.textContent = t('analytics.timeline.tooltip', '{date}: {views} views', {
+        date: formatDateShort(d.date),
+        views: d.views,
+      });
       tooltip.style.display = 'block';
       tooltip.style.left = `${rect.left - containerRect.left + rect.width / 2}px`;
       tooltip.style.top = `${rect.top - containerRect.top - 30}px`;

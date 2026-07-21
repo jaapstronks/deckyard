@@ -25,8 +25,8 @@
   align-items: center;
   gap: var(--ps-space-3);
   flex-wrap: wrap;
-  margin-bottom: var(--ps-space-4);
-  padding-bottom: var(--ps-space-3);
+  margin-bottom: var(--ps-space-3);
+  padding-bottom: var(--ps-space-2);
   border-bottom: 1px solid hsl(var(--app-border-subtle));
 }
 
@@ -81,15 +81,15 @@
   width: 100%;
 }
 
+/* Sections are a uniform sunken tray. Tiles sit on their own elevated (white)
+   surface with a border, so each slide reads as a distinct card against the
+   tray — no matter its position. (The old even/odd alternation made tiles in
+   odd sections share the section's fill and vanish into it.) */
 .ps-type-group {
   padding: var(--ps-space-4);
   border-radius: var(--ps-radius-lg);
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
-}
-
-.ps-type-group:nth-child(even) {
-  background: hsl(var(--app-bg-elevated));
 }
 
 .ps-type-group-title {
@@ -165,76 +165,58 @@
   display: grid;
 }
 
+/* The grid is always co-classed `ps-type-grid ps-type-grid-thumbs` (see
+   slide-type-picker.js), so column count and gap live on `.ps-type-grid-thumbs`
+   (and are further tuned per view via `.is-schematic-mode`/`.is-preview-mode`).
+   This base only owns what those don't set — display, item alignment, width — so
+   there's no dead column definition here masquerading as a source of truth. */
 .ps-type-grid {
   display: grid;
-  /* Denser: small cards, more per row */
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-  gap: var(--ps-space-2);
   justify-content: start;
   width: 100%;
 }
 
+/* The tile. Every card in the picker is a thumbnail card: a bordered button
+   that lifts off the section tray, with the preview on top and the label strip
+   flush below it (see .ps-type-labelwrap). This is the single source of truth
+   for the tile box — there is no other card variant and no per-variant box
+   override, so nothing (like a stray flex gap) can leak between preview and
+   label. The `.ps-type-card-thumb` class is kept in the markup for the JS
+   selectors but adds no box styles of its own. */
 .ps-type-card {
   appearance: none;
-  border: 1px solid hsl(var(--app-border-default));
-  /* Lovable: cards are grey (not white), compact */
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-md);
-  padding: var(--ps-space-2);
+  width: 100%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ps-space-2);
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
   cursor: pointer;
-  text-align: center;
-  transition: all var(--ps-transition-fast);
-  box-shadow: none;
+  text-align: left;
   color: hsl(var(--app-text-primary));
-  width: 112px;
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-strong));
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-sm);
+  transition: border-color var(--ps-transition-fast),
+    box-shadow var(--ps-transition-fast);
 }
+
 .ps-type-card:hover {
-  background: hsl(var(--app-bg-hover));
-  border-color: hsl(var(--app-border-strong));
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
 }
+
+.ps-type-card:hover .ps-type-label {
+  color: hsl(var(--app-accent-text));
+}
+
 .ps-type-card:focus-visible {
   outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.2);
-}
-
-.ps-type-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--ps-radius-md);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: hsl(var(--app-bg-elevated));
-  border: 1px solid hsl(var(--app-border-default));
-  color: hsl(var(--app-text-secondary));
-  font-size: 0.95rem;
-  font-weight: 800;
-  line-height: 1;
-  flex: 0 0 auto;
-}
-
-.ps-type-label {
-  font-size: var(--ps-text-xs);
-  font-weight: 650;
-  color: hsl(var(--app-text-primary));
-  line-height: 1.15;
-  min-width: 0;
-}
-
-@media (max-width: 520px) {
-  .ps-type-grid {
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  }
-  .ps-type-card {
-    width: 104px;
-  }
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
 }
 
 /* ============================================
@@ -252,7 +234,7 @@
   justify-content: space-between;
   gap: var(--ps-space-3);
   flex-wrap: wrap;
-  margin-bottom: var(--ps-space-4);
+  margin-bottom: var(--ps-space-3);
 }
 
 .ps-picker-controls .ps-picker-search {
@@ -318,7 +300,92 @@
   box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
 }
 
+/* Schematic / preview view toggle: a compact segmented control. */
+.ps-view-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.ps-view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--ps-radius-sm);
+  background: transparent;
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
+}
+
+.ps-view-toggle-btn svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.ps-view-toggle-btn:hover {
+  color: hsl(var(--app-text-primary));
+}
+
+.ps-view-toggle-btn.is-active {
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.ps-view-toggle-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.5);
+}
+
+/* Denser tiles for schematics (they read clearly small); roomier for the
+   real-slide previews so their text stays legible. */
+.ps-slide-types.is-schematic-mode .ps-type-grid-thumbs {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+}
+.ps-slide-types.is-preview-mode .ps-type-grid-thumbs {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+
+/* In schematic mode the diagram supplies its own background; keep the tile
+   surface neutral (no elevated fill peeking through the padding). */
+.ps-slide-types.is-schematic-mode .ps-type-thumb.thumb {
+  background: hsl(var(--app-bg-sunken));
+}
+
+/* Schematic tiles are cheap and legible small, so tighten the whole tab: less
+   section chrome and shorter labels put more slide types above the fold. */
+.ps-slide-types.is-schematic-mode {
+  gap: var(--ps-space-3);
+}
+.ps-slide-types.is-schematic-mode .ps-type-group {
+  padding: var(--ps-space-3);
+}
+.ps-slide-types.is-schematic-mode .ps-type-group-title {
+  margin-bottom: var(--ps-space-2);
+}
+.ps-slide-types.is-schematic-mode .ps-type-card-thumb .ps-type-labelwrap {
+  padding: var(--ps-space-2);
+}
+/* Dense grid: the thin description was hard to read at this size, so drop it
+   and let the label breathe. The full text still surfaces as the card tooltip. */
+.ps-slide-types.is-schematic-mode .ps-type-desc {
+  display: none;
+}
+
 @media (max-width: 520px) {
+  .ps-view-toggle-text {
+    display: none;
+  }
   .ps-surface-label {
     display: none;
   }
@@ -364,43 +431,36 @@
   min-width: 0;
 }
 
-.ps-type-card.ps-type-card-thumb {
-  /* Fill the wrap (width comes from the grid track, not a fixed px). */
-  width: 100%;
-  min-width: 0;
-  padding: 0;
-  overflow: hidden;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-.ps-type-card.ps-type-card-thumb .ps-type-labelwrap {
+/* Label strip: sits flush under the preview, separated only by the divider
+   line (border-top). Same surface as the card, so preview → label reads as one
+   object with a rule between the two zones — no gap, no floating band. */
+.ps-type-card .ps-type-labelwrap {
   padding: var(--ps-space-2) var(--ps-space-3);
   text-align: left;
-  border-top: 1px solid hsl(var(--app-border-subtle));
-  background: hsl(var(--app-bg-sunken));
+  border-top: 1px solid hsl(var(--app-border-default));
   min-width: 0;
 }
 
-.ps-type-card.ps-type-card-thumb .ps-type-label {
+.ps-type-card .ps-type-label {
   display: block;
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
+  font-size: var(--ps-text-sm);
+  font-weight: 650;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Visible one-line description so a slide's purpose reads at a glance and the
-   right slide is easier to spot. */
+/* One-line description. Legible (secondary text), shown only in preview mode —
+   in the dense schematic grid it's noise, so it's hidden there and the card's
+   title attribute carries it as a tooltip instead (see is-schematic-mode). */
 .ps-type-desc {
   display: block;
-  margin-top: 1px;
-  font-size: 11px;
+  margin-top: 2px;
+  font-size: var(--ps-text-xs);
   font-weight: 400;
   line-height: 1.25;
-  color: hsl(var(--app-text-tertiary));
+  color: hsl(var(--app-text-secondary));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -459,7 +519,9 @@
   --thumb-scale: 0.11;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: hsl(var(--app-bg-elevated));
+  /* Grey preview area so the white label strip below it reads as a distinct
+     band (and any slide letterboxing sits on neutral, not white). */
+  background: hsl(var(--app-bg-sunken));
   overflow: hidden;
   position: relative;
 }
@@ -600,21 +662,6 @@
   height: 40px;
 }
 
-/* Hover effect for thumbnail cards */
-.ps-type-card.ps-type-card-thumb:hover {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 1px hsl(var(--app-accent-primary));
-}
-
-.ps-type-card.ps-type-card-thumb:hover .ps-type-label {
-  color: hsl(var(--app-accent-text));
-}
-
-/* Focus state for thumbnail cards */
-.ps-type-card.ps-type-card-thumb:focus-visible {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 3px hsl(var(--app-accent-primary) / 0.2);
-}
 
 /* ============================================
    Responsive adjustments for thumbnail mode

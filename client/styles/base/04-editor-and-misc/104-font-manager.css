@@ -157,7 +157,7 @@
 }
 
 .font-source-option input[type="radio"] {
-  accent-color: hsl(var(--app-accent));
+  accent-color: hsl(var(--app-accent-primary));
 }
 
 /* Common fields */
@@ -167,7 +167,7 @@
   gap: var(--ps-space-3);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .font-editor-fields {
     grid-template-columns: 1fr;
   }

@@ -5,7 +5,7 @@
  *
  * Usage:
  *   npm run start           # in one terminal (AUTH_DEV_BYPASS=true)
- *   node scripts/seed-bg-contrast-demo.js [baseUrl] [--themes=deckyard,sandbox-warm,sandbox-dark]
+ *   node scripts/seed-bg-contrast-demo.js [baseUrl] [--themes=deckyard,playful,midnight]
  *
  * It is idempotent: existing decks whose title starts with the demo prefix are
  * deleted first, then recreated. Neutral test images (a dark, a light and a
@@ -31,7 +31,7 @@ const BASE =
 const themesArg = args.find((a) => a.startsWith('--themes='));
 const THEMES = themesArg
   ? themesArg.slice('--themes='.length).split(',').filter(Boolean)
-  : ['deckyard', 'sandbox-warm', 'sandbox-dark'];
+  : ['deckyard', 'playful', 'midnight'];
 
 const DEMO_PREFIX = 'BG contrast demo';
 const repoRoot = path.resolve(fileURLToPath(import.meta.url), '../..');
@@ -170,7 +170,7 @@ async function main() {
   const removed = await deleteExistingDemos();
   if (removed) console.log(`Removed ${removed} existing demo deck(s).`);
 
-  const darkThemes = new Set(['sandbox-dark']);
+  const darkThemes = new Set(['midnight']);
   const created = [];
   for (const themeId of THEMES) {
     const title = `${DEMO_PREFIX} — ${themeId}`;

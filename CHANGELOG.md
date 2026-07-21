@@ -8,6 +8,108 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Name your own background options in the theme editor.** A theme could
+  already offer background choices beyond the built-in two — each becomes a
+  token, a generated rule and an entry in every slide's Background picker — but
+  only by hand-editing JSON or calling the API. The editor now has a Background
+  options section: name one, pick its colour, and its text colour follows
+  automatically so a dark option stays readable. Names that the renderer would
+  have quietly discarded (a built-in's name, a duplicate, one with nothing
+  usable in it) are refused up front with the reason, instead of vanishing on
+  save. The id a slide stores is derived from the name once and then fixed,
+  since renaming it would orphan every slide already using it.
+
+- **Upload background images to a theme from the browser.** A theme's
+  `backgroundPresets` is the only mechanism for its own title-slide imagery, but
+  it could only be set through the API — so a designer working in the app could
+  upload a logo and never a background, and every theme they made produced flat
+  title slides. The theme editor now has a Background images section: drop in
+  one or more files, remove them individually, and the live preview and every
+  new title slide pick them up. Uploads go through the same media path as the
+  logo uploader, which is now shared rather than duplicated.
+
+- **The theme editor exposes surfaces, heading treatment and locks.** Everything
+  the theme `config` added could only be set with `curl`; the editor still only
+  offered four colours and two fonts. It now has controls for corner rounding
+  and elevation, heading capitalisation and weight, and which brand properties a
+  slide may not override — with the live preview showing each change as you make
+  it. Every choice has an explicit **Default** option that leaves the field
+  *unset* rather than writing the default value, so a theme keeps inheriting the
+  builder's own defaults for anything you did not choose. The list-shaped config
+  fields (background variants, background presets, slide-type curation) still
+  need their own editors.
+
+- **A theme can lock brand properties against per-slide overrides.** A theme's
+  `config.locks` marks `background` or `logo` as `locked`, and the lock holds in
+  both places at once: the editor omits the control (with a note saying why,
+  rather than a disabled input that invites you to wonder), and the renderer
+  ignores an override a slide already carries — so a deck authored before the
+  lock cannot leak past the branding. Enforcement is a filtered view, never a
+  rewrite: unlocking restores every slide's own value. A missing theme, or a
+  mode that isn't exactly `locked`, fails open. Only properties with a real
+  per-slide control are lockable, so `imageRadius` and `shadow` left the
+  vocabulary until something exists for them to guard. See
+  `docs/reference/theme-config.md`.
+
+- **A theme can set corner rounding and elevation.** `config.surfaces.shadow`
+  now reaches the slides: `--t-shadow-scale` multiplies the alpha of all five
+  `--slide-shadow-*` tokens at once, so `none` flattens elevation away and
+  `strong` deepens it, with the geometry left alone. The token was emitted when
+  the config column landed but the stylesheet never read it — the hook had been
+  a comment with nothing behind it since the design system was written. Corner
+  radius was already wired and is now documented alongside it. A theme that
+  says nothing about surfaces renders byte-for-byte as before.
+
+- **Custom slide types: a full template syntax reference.** The template field
+  had a one-line hint naming four directives; `raw`, `bgClass`, `else`,
+  `this`/`this.key` and `@index` existed in the compiler but appeared nowhere in
+  the UI. It is now a collapsible reference covering every directive, plus the
+  type's own field names as ready-to-paste `{{key}}` chips that update as you
+  add or rename fields.
+
+- **Custom slide types: drag-to-reorder in settings.** The `sortOrder` column
+  had been read since it was added but never written, so the grid's order was
+  effectively arbitrary. Cards are now draggable (the drop point is computed for
+  the wrapping grid, so a row break lands where you expect), and the ⋮ menu
+  gained "Move earlier" / "Move later" so reordering is reachable from the
+  keyboard. Backed by a new `PUT /api/custom-slide-types/reorder`.
+
+- **Required slide fields are flagged in the form.** A field a slide type
+  declares `required` now carries an asterisk and `aria-required`, and turns red
+  with "This field is required." once you leave it empty — previously that only
+  failed server-side on save, as a toast that did not say which field. It stays
+  quiet until a field has been visited, and clears on the first keystroke. Most
+  useful for custom slide types, whose fields are author-defined.
+
+- **Custom slide types: import and export definitions.** The ⋮ menu on a custom
+  type gained "Export as JSON", which downloads a portable `.slidetype.json`
+  envelope carrying only the shape (label, base type, fields, defaults,
+  template, CSS) — never the id, slug, publish state or audit columns. A new
+  "Import" button in the section header reads such a file back as an
+  **unpublished draft**: the slug is derived client-side and made unique, so
+  re-importing the same file lands a sibling (`my-type-2`) instead of erroring
+  on a clash, and the server stores the import as a draft even if the payload
+  asks otherwise. See `docs/reference/custom-slide-types-frontend.md`.
+
+
+- **"Someone worked on your deck" notifications, bundled.** When a collaborator
+  adds slides to a deck you own or collaborate on, you now get one bundled bell
+  notification instead of silence (previously deck edits only surfaced in the
+  Activity feed). It coalesces per editor within a 60-minute window
+  (`DECK_ACTIVITY_NOTIFY_WINDOW_MIN`): 40 edits in an hour is one unread
+  "added N slides to <Deck>", not 40. Your own edits never notify you, and
+  muting a deck (or `mentions_only`) opts out. See
+  `docs/reference/comments-and-notifications.md`.
+
+- **Video slides export to PDF as a "watch online" placeholder.** A video
+  can't play in a PDF, so the server-rendered PDF export now renders a video
+  slide as a laptop-framed still (with a play badge) plus deck-language copy
+  and a live watch URL. The URL is resolved server-side: a deep-link into the
+  published deck at that slide when the deck is published and a public base URL
+  (`APP_URL`/`DOMAIN`) is set, otherwise the video's own provider URL
+  (YouTube/Vimeo/Bunny). Autoplay follows the slide's own setting. See
+  `docs/reference/video-slide-pdf-export.md`.
+
 - **Home: a two-column canvas with a "from others" activity rail.** The Home
   view now opens with a full-width greeting over two columns: the main column
   carries the returning user's top job (resume recent work) plus discovery and
@@ -30,6 +132,13 @@ entries are grouped per release rather than exhaustively listed.
   Workspace, My presentations and Shared-with-me merged into one filterable
   **Presentations** view with scope chips (All · Mine · Workspace · Shared,
   live counts), a sort control and a tag filter, all over a single list.
+
+- **Home: a slide preview thumb next to comments in the "from others" rail.**
+  When someone comments on a slide, the rail now shows a small live preview of
+  that slide under the comment text, so you can see what they're pointing at
+  without opening the deck. Rendered client-side with the same slide renderer
+  the presentation cards use — no server-side image generation. Completes the
+  Home redesign (phases 1-3).
 
 - **Activity: "added N slides to a deck" now shows in the feed.** Adding slides
   to a deck used to disappear into a generic "updated" event (and only for
@@ -200,7 +309,162 @@ entries are grouped per release rather than exhaustively listed.
   See `docs/reference/collab-presence.md`, `collab-deck-doc.md`,
   `collab-editor-binder.md` and ADR 001.
 
+### Added
+
+- **Database themes reach parity with file themes.** A DB theme could only
+  store four colours, two fonts and two logo URLs, so named slide background
+  variants, background presets, gradient, surface tokens and slide-type
+  curation were expressible in a hand-authored `theme.json` but not in a theme
+  built in the app. A new `config` jsonb column (migration `050`) holds that
+  richer shape, and `buildThemeConfig` merges it over the derived defaults —
+  closing the documented `slideBackgrounds` gap. The column defaults to `{}`
+  and an empty config leaves a theme byte-identical, so existing themes render
+  exactly as before. Also stores dark/light logo variants and a coarse
+  `open`/`locked` override policy per brand property (validated now; enforced
+  in a later change). No UI yet — this is the storage the Theme Studio will
+  build on. See `docs/reference/theme-config.md`.
+
+### Changed
+
+- **The background picker names a theme's two built-in backgrounds.** They are
+  stored as `lime` and `mist`, which are storage keys rather than colours —
+  `deckyard` paints lime white, `sandbox-dark` paints it near-black — so the
+  picker fell back to "Color 1" and "Color 2" on every deck. A theme can name
+  them (`backgroundLabels`, already supported and set by nothing), the shipped
+  themes now do, and the theme editor offers the two fields alongside its
+  background options.
+
+- **The theme editor previews real slides.** The live preview was a hand-rolled
+  fake title slide built from a few inline styles, so it could only ever show
+  colours and fonts — never a background variant, a corner radius, a shadow, or
+  how the theme treats a quote — and it approximated the token derivation, so it
+  could quietly disagree with what a deck actually looks like. It now renders a
+  title, content and quote slide through the same renderer the editor and
+  exports use, against a theme built by the same `buildThemeConfig` production
+  uses (a new `POST /api/themes/custom/preview-config` builds one from the
+  unsaved draft). The quote sample makes the derived dark surface visible for
+  the first time.
+
+- **The theme owns its background presets (BEHAVIOUR CHANGE).** Deckyard shipped
+  a hardcoded `TITLE_BG_PRESETS` list of four demo photos, and title slides
+  created by deck import or by converting a chapter-title slide were handed one
+  at random — regardless of the deck's theme, so a fork's brand decks came out
+  wearing Deckyard's stock imagery. `theme.backgroundPresets` is now the only
+  mechanism. A theme that declares presets supplies them; **a theme that
+  declares none yields a flat title slide** rather than an off-brand photo. The
+  editor's picker labels them "From this theme". JSON and Markdown import load
+  the deck's theme so imported title slides can draw from it; other import paths
+  (AI, Notion, MCP) currently create them flat.
+
 ### Fixed
+
+- **Accent highlights that were never drawn.** `var(--app-accent)` was used in
+  ~50 declarations across ten stylesheets and defined nowhere, so every one of
+  them was invalid and silently dropped: selected-state borders, active-tab
+  highlights, accent link colours and focus rings simply did not paint. They now
+  use the token family that exists — `-primary` for shapes, `-text` for text,
+  which is the one that lightens in dark mode so accent text stays legible. The
+  dead `--app-accent-hover` chain went with it.
+
+- **The theme editor's Save stays reachable, and is the only one on screen.**
+  The workspace "Theme picker" card stayed visible above an open editor with its
+  own primary Save, so the Save nearer the top was the one that did *not* commit
+  your edits — and with the form now eight cards long, the editor's own Save had
+  scrolled out of sight. The workspace card is hidden while editing and the
+  editor header sticks to the top.
+
+- **`position: sticky` works on the settings page.** `.settings-content` carried
+  an `overflow-y: auto` that never engaged — the shell is `min-height: 100vh`, so
+  the pane grows with its content and the document scrolls, as everywhere else in
+  the app. But a non-visible `overflow` still made it the sticky containing
+  block, so anything sticky inside bound to a box that never scrolls. The theme
+  editor's preview column had been dead for exactly that reason and now follows
+  the form again.
+
+- **Custom database themes render in the browser again.** A DB theme is fetched
+  by UUID but reports its *slug* as `id`, so the client's "is this the theme I
+  asked for?" check rejected every one of them and substituted a blank fallback
+  — the deck rendered with none of the theme's colours, fonts or background
+  variants in the editor, presenter and thumbnails, while server-side exports
+  looked correct because they never take that path. The tell was the theme
+  picker showing a raw UUID as the label. The check now also accepts the
+  theme's `_customThemeId`.
+
+- **Editing a theme takes effect without a reload.** The client cached themes
+  forever with no way to invalidate, and the `@font-face` / `.slide-bg-*` style
+  elements it injects bail when one with the same id already exists — so a
+  saved theme kept serving its old values, in every open tab. Saving or
+  deleting a theme now drops the cached copy and its style elements, and tells
+  other tabs over a `BroadcastChannel`.
+
+- **Partner-split: a readable subheading, and no more stock photo.** The
+  subheading rendered in the theme's muted *body* colour — a dark tone meant for
+  light backgrounds — on a dark panel, so it was barely legible even on slides
+  that already had a background image (`.slide .subtitle` sets `color` directly,
+  which beats the white it would otherwise inherit from the text block). It now
+  follows the panel. The slide also carried a hardcoded Deckyard demo photo as
+  both its field default and its render fallback, so it opened wearing stock
+  imagery whatever the deck's theme; the background is now empty by default and
+  the right panel falls back to the theme's own dark surface, with the photo
+  scrim omitted when there is no photo to scrim.
+
+- **Countdown, freeform and end slides follow the theme.** Their CSS reads
+  `--t-primary`, `--t-accent`, `--t-bg-dark`, `--t-brand-1` and `--t-brand-2`,
+  but no theme file and no DB theme ever emitted those tokens — so those slides
+  always painted the stylesheet's hardcoded purple/teal, whatever the deck's
+  theme. The tokens are now derived from the theme's accent, dark surface and
+  brand palette, and a theme that sets one explicitly still wins. **Visible
+  change**: existing decks using a countdown/freeform slide on the extended
+  background options (`accent`, `brand-1`, `brand-2`, `dark`) will change
+  colour, as will the freeform editor's outline and handles.
+
+- **One theme normalizer instead of two.** `normalizeTheme` existed as
+  near-identical private copies in `client/lib/theme.js` and
+  `server/utils/themes.js`, and had drifted: the client copy never gained the
+  table-variant contrast derivation, so a themed table could read fine in an
+  export and be unreadable in the editor. Both now import
+  `shared/theme-normalize.js`. It also parses 3-digit hex on the client, which
+  only the server handled before.
+
+- **Icon-card "tiles" layout fills its grid again.** Tiles collapsed to small
+  squares stranded at the top of the slide, showed a number prefix, and never
+  rendered the per-card body text. The cards-layout row rules were not scoped to
+  the cards layout, the always-rendered spare cards still claimed grid cells, and
+  the square's size was derived circularly from its own row. Tiles now size from
+  an explicit per-count column width, drop the numbering (which also leaked into
+  the inline-editable title), show the body text under a centred title, and the
+  cards layout is unchanged.
+
+- **Icon cards no longer render blank cards from padded data.** Decks authored
+  outside the editor sometimes pad `items[]` to a fixed length; trailing empty
+  entries are now ignored instead of rendering as empty cards.
+
+- **Comments: "This slide" no longer shows the whole deck.** On a deck with no
+  slides — or in the moment before the first selection lands — the slide-scoped
+  request went out unscoped and came back with every comment in the deck, under
+  a switch that still read "This slide".
+
+- **Standalone HTML export renders its fonts offline.** A downloaded deck still
+  linked the shared UI font (Bricolage Grotesque) from `/assets/fonts/*.woff2`,
+  so opening the file without a server fell back to system fonts (theme fonts,
+  icons, and images were already embedded). The export now inlines the local
+  font files it references as base64 data URLs — only the handful of small
+  weights actually used (a few KB each), never the whole ~2.5 MB font library.
+  See `docs/reference/standalone-html-export.md`.
+
+- **Bilingual library slides keep both languages on database installs.** A slide
+  saved to the library with NL + EN content (`i18n.versions`) silently lost its
+  per-language content on Postgres (and, it turned out, on the active file
+  adapter too) — composed decks fell back to single-language content. The
+  storage layer now persists and returns `i18n` on both backends
+  (migration `049`, no backfill needed).
+
+- **@mentions render as inline chips everywhere, not raw markup.** A mention is
+  stored in a comment body as `@[Name](user:email)`; the editor thread already
+  showed it as a chip, but the share viewer, preview lightbox, and the
+  activity-feed / home-rail previews leaked the raw marker. They now render the
+  same subtle chip (via a shared renderer), and the server strips the marker to
+  plain `@Name` in activity previews before truncation.
 
 - **Placing a comment on a slide now works anywhere, and the affordance is
   visible.** "Add comment" is a labeled toolbar button (was a bare, easily
@@ -309,6 +573,58 @@ entries are grouped per release rather than exhaustively listed.
   locked slide). See `docs/reference/editor-inspector.md`.
 - Stock background photos replaced with generated demo gradients
 - CI and Docker on Node 22 (matches `engines`)
+
+### Security
+
+Pre-untrusted-exposure hardening pass (nine changes). Safe in the intended
+self-hosted-behind-a-proxy, authenticated deployment already; these close
+default-config foot-guns that matter the moment untrusted users are allowed.
+See `SECURITY.md` for the deployment-facing summary and env vars.
+
+- **`GET /api/themes/preview-css` no longer interpolates raw query params.**
+  Every value went straight into a generated stylesheet, so a crafted `primary`
+  could terminate the declaration and append arbitrary rules. Colours are now
+  matched against a hex pattern, font names against the curated list and
+  `familyId` against a UUID pattern, each falling back to its default rather
+  than passing through; the serializer additionally strips `;{}<>` from every
+  value, which also covers a managed font's free-text `name` from the database.
+- **Auth no longer fails open (BREAKING).** A deployment with no `AUTH_SECRET`
+  used to run wide open with anonymous admin access. The server now refuses to
+  start unless `AUTH_SECRET` is set or auth is explicitly disabled with
+  `AUTH_ENABLED=false` (sandbox/demo modes still boot without auth). Existing
+  fail-open deployments must set one of the two after upgrading.
+- **Non-root container.** The Docker image runs the app and headless Chromium
+  as a non-root user; Chromium's own sandbox is now opt-in via
+  `PUPPETEER_SANDBOX` (off by default, since Docker's seccomp profile blocks the
+  namespace sandbox). Existing bind mounts may need a one-time
+  `chown -R 1000:1000 ./server/data ./server/uploads`. Also fixes a broken
+  Docker build (`COPY` ordering).
+- **SSRF guard on server-side render/export.** Remote images loaded during PDF
+  and PNG rendering are resolved and blocked when they point at loopback,
+  private, link-local or cloud-metadata addresses, for IPv4 and IPv6 including
+  IPv4-mapped/compatible forms. Blocked images are stripped rather than fetched.
+- **CSRF origin-check.** Cookie-authenticated state-changing requests must be
+  same-origin (`Origin`/`Referer` host must match the app `Host`, `APP_URL` or
+  `DOMAIN`); token and API-key clients are unaffected. Extra trusted origins via
+  `CSRF_ALLOWED_ORIGINS`.
+- **Login brute-force throttle** on password login, keyed per IP and per email;
+  set `TRUST_PROXY=true` behind a reverse proxy so it keys on the real client IP.
+- **Uploaded SVGs served inert** (`Content-Disposition: attachment`, `nosniff`
+  and a script-blocking CSP) to close a stored-XSS vector.
+- **`AUTH_DEV_BYPASS` gated on `NODE_ENV=development`**, so a leftover flag can
+  never grant passwordless admin in staging/production.
+- **Request-body size cap** (`MAX_REQUEST_BODY_BYTES`, default 25 MB) to prevent
+  memory exhaustion from oversized requests.
+- **Media keys confined to the uploads directory**, closing a path-traversal
+  existence oracle in `/api/media/confirm`.
+- **Two remaining hand-rolled body readers now honour the cap.**
+  `POST /api/follow-codes` and `PATCH /api/…/publish/:slug` each read their body
+  with a bespoke reader that bypassed `MAX_REQUEST_BODY_BYTES`; both now go
+  through the shared capped parser and answer `413` above the limit.
+- **CSRF origin-check now covers the sandbox-guest cookie.** The check keyed only
+  on the login cookie (`sb_session`), so sandbox guests (authenticated via
+  `sb_sandbox`) slipped past it; both browser-session cookies now count as
+  CSRF-able.
 
 ## [1.0.0] — 2026-07-14
 

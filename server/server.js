@@ -7,6 +7,8 @@ import {
   repoRoot,
 } from './config/paths.js';
 import { loadDotEnv } from './config/env.js';
+import { authConfigError, authConfigWarnings } from './auth/auth.js';
+import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
 import { getFeatureFlags } from './config/feature-flags.js';
@@ -150,6 +152,23 @@ if (process.env.NODE_ENV === 'production') {
     );
     process.exit(1);
   }
+}
+
+// Security check: refuse to fail OPEN. A missing AUTH_SECRET makes auth fall
+// back to anonymous admin; that is only allowed when auth is explicitly
+// disabled (AUTH_ENABLED=false) or in sandbox/demo mode. See security 3b.
+{
+  const authErr = authConfigError();
+  if (authErr) {
+    console.error(`\n⚠️  SECURITY: ${authErr}\n`);
+    process.exit(1);
+  }
+}
+
+// Non-fatal configuration warnings (weak secret, missing public URL). These
+// don't block boot but should be fixed before exposing the instance.
+for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
+  console.warn(`⚠️  CONFIG: ${w}`);
 }
 
 await ensureDirs();

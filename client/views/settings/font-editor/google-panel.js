@@ -55,7 +55,7 @@ export function createGooglePanel({ sourceConfig = {}, onChange }) {
 
   // Preview
   const preview = h('div', { class: 'font-preview-text' });
-  preview.textContent = 'The quick brown fox jumps over the lazy dog';
+  preview.textContent = t('common.pangram', 'The quick brown fox jumps over the lazy dog');
 
   function loadPreview() {
     const spec = specInput.value.trim();

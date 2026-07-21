@@ -25,7 +25,7 @@ export function createInlineOverlay({ h, thumb }) {
 
   /**
    * @type {Array<{el:HTMLElement, target:HTMLElement, place:string, gap:number}>}
-   * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start'
+   * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start' | 'below-end'
    */
   let placements = [];
 
@@ -74,6 +74,31 @@ export function createInlineOverlay({ h, thumb }) {
     layer.appendChild(el);
     placements.push({ el, target, place: placeMode, gap });
     return el;
+  }
+
+  /**
+   * A draggable focal-point handle positioned at (x, y) as a percentage inside
+   * the target image's rect. The caller wires the pointer drag and updates the
+   * handle's `data-fx` / `data-fy` (0..100) during the drag; reposition() reads
+   * them back so the handle tracks the image at any preview zoom / on reflow.
+   * @param {HTMLElement} target - the filled <img> element
+   * @param {{x:number, y:number}} pos - focus percentages (0..100)
+   */
+  function focusPoint(target, { x = 50, y = 50 } = {}) {
+    const pt = h('div', {
+      class: 'ie-ol-item ie-focus-point',
+      role: 'slider',
+      'aria-label': 'Image focus point',
+      // Keyboard-operable (arrow keys nudge, Home centers) so focus is not a
+      // pointer-only control - the caller wires the keydown handler.
+      tabindex: '0',
+      'aria-valuetext': `${Math.round(x)}% ${Math.round(y)}%`,
+    });
+    pt.dataset.fx = String(x);
+    pt.dataset.fy = String(y);
+    layer.appendChild(pt);
+    placements.push({ el: pt, target, place: 'focus-point', gap: 0 });
+    return pt;
   }
 
   function reposition() {
@@ -150,6 +175,49 @@ export function createInlineOverlay({ h, thumb }) {
         s.top = `${r.top + r.height / 2}px`;
         s.transform = 'translate(-50%, -50%)';
         break;
+      case 'inset-bottom-left':
+        // Inset just inside the target's bottom-left corner (on-image controls
+        // like the fit toggle), anchored by its own bottom-left.
+        s.left = `${r.left + p.gap}px`;
+        s.top = `${r.top + r.height - p.gap}px`;
+        s.transform = 'translateY(-100%)';
+        break;
+      case 'inset-bottom-right':
+        // Inset just inside the target's bottom-right corner (e.g. the "more
+        // settings" chip), anchored by its own bottom-right.
+        s.left = `${r.left + r.width - p.gap}px`;
+        s.top = `${r.top + r.height - p.gap}px`;
+        s.transform = 'translate(-100%, -100%)';
+        break;
+      case 'focus-point': {
+        // Positioned at (fx%, fy%) inside the target image, read live from the
+        // handle's dataset so a drag repositions it without a rerender.
+        const fx = Number(p.el.dataset.fx);
+        const fy = Number(p.el.dataset.fy);
+        const px = Number.isFinite(fx) ? fx : 50;
+        const py = Number.isFinite(fy) ? fy : 50;
+        s.left = `${r.left + (r.width * px) / 100}px`;
+        s.top = `${r.top + (r.height * py) / 100}px`;
+        s.transform = 'translate(-50%, -50%)';
+        break;
+      }
+      case 'below-end': {
+        // Below the anchor, right-aligned to the anchor's right edge. Like
+        // below-start but shifted right: the anchor is a full-width heading and
+        // the body starts immediately under it, so below-start lands the opaque
+        // chip on top of the first body line (issue #113). Body text is
+        // left-aligned, so the top-right of the content area is empty - the chip
+        // sits there instead. Single-chip only (no horizontal packing): the
+        // subheading ghost is alone on its anchor.
+        s.transform = '';
+        const w = p.el.offsetWidth || 90;
+        let left = r.left + r.width - w;
+        // Never push past the anchor's own left edge (short/narrow anchors).
+        if (left < r.left) left = r.left;
+        s.left = `${left}px`;
+        s.top = `${r.top + r.height + p.gap}px`;
+        break;
+      }
       case 'right-center': {
         // At the target's right-edge midpoint, on the (vertical) center line.
         // Used for the "+ Add item" affordance of single-row horizontal layouts
@@ -219,5 +287,5 @@ export function createInlineOverlay({ h, thumb }) {
     layer.remove();
   }
 
-  return { layer, clear, outline, place, reposition, ensureAttached, destroy };
+  return { layer, clear, outline, place, focusPoint, reposition, ensureAttached, destroy };
 }

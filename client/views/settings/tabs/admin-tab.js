@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom.js';
+import { getAppName } from '../../../lib/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import {
@@ -136,7 +137,7 @@ export function createAdminTab({ user }) {
   const senderNameInput = h('input', {
     type: 'text',
     class: 'input',
-    placeholder: 'Presentation System',
+    placeholder: getAppName(),
     maxlength: '128',
   });
   const senderFields = h('div', { class: 'stack gap-2' }, [
@@ -233,11 +234,11 @@ export function createAdminTab({ user }) {
 
   // Retention settings
   const retentionSessionSelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.retentionDays', 'Keep session data for') }, [
-    h('option', { value: '30', text: '30 ' + t('settings.admin.analytics.days', 'days') }),
-    h('option', { value: '60', text: '60 ' + t('settings.admin.analytics.days', 'days') }),
-    h('option', { value: '90', text: '90 ' + t('settings.admin.analytics.days', 'days') + ' (' + t('common.default', 'default') + ')' }),
-    h('option', { value: '180', text: '180 ' + t('settings.admin.analytics.days', 'days') }),
-    h('option', { value: '365', text: '365 ' + t('settings.admin.analytics.days', 'days') }),
+    h('option', { value: '30', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }) }),
+    h('option', { value: '60', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 60 }) }),
+    h('option', { value: '90', text: t('settings.admin.analytics.daysOptionDefault', '{n} days (default)', { n: 90 }) }),
+    h('option', { value: '180', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 180 }) }),
+    h('option', { value: '365', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 365 }) }),
   ]);
   const retentionSessionField = h('label', { class: 'field-row' }, [
     h('span', { class: 'field-row-label', text: t('settings.admin.analytics.retentionDays', 'Keep session data for') }),
@@ -245,10 +246,10 @@ export function createAdminTab({ user }) {
   ]);
 
   const retentionIpSelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.retentionIpDays', 'Anonymize IP addresses after') }, [
-    h('option', { value: '1', text: '1 ' + t('settings.admin.analytics.days', 'days') }),
-    h('option', { value: '7', text: '7 ' + t('settings.admin.analytics.days', 'days') + ' (' + t('common.default', 'default') + ')' }),
-    h('option', { value: '14', text: '14 ' + t('settings.admin.analytics.days', 'days') }),
-    h('option', { value: '30', text: '30 ' + t('settings.admin.analytics.days', 'days') }),
+    h('option', { value: '1', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 1 }) }),
+    h('option', { value: '7', text: t('settings.admin.analytics.daysOptionDefault', '{n} days (default)', { n: 7 }) }),
+    h('option', { value: '14', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 14 }) }),
+    h('option', { value: '30', text: t('settings.admin.analytics.daysOption', '{n} days', { n: 30 }) }),
   ]);
   const retentionIpField = h('label', { class: 'field-row' }, [
     h('span', { class: 'field-row-label', text: t('settings.admin.analytics.retentionIpDays', 'Anonymize IP addresses after') }),
@@ -400,23 +401,23 @@ export function createAdminTab({ user }) {
         const resp = await fetch('/api/stock-media/status');
         if (resp.ok) {
           const status = await resp.json();
-          const notConfigured = t('settings.admin.stockMedia.notConfigured', 'Not configured');
-          const configured = t('settings.admin.stockMedia.configured', 'API key configured');
+          const notConfigured = t('settings.admin.stockMedia.notConfiguredParen', '(Not configured)');
+          const configured = t('settings.admin.stockMedia.configuredParen', '(API key configured)');
 
           if (status?.unsplash?.configured) {
-            unsplashStatusSpan.textContent = ` (${configured})`;
+            unsplashStatusSpan.textContent = ` ${configured}`;
             unsplashStatusSpan.classList.remove('is-warning');
           } else {
-            unsplashStatusSpan.textContent = ` (${notConfigured})`;
+            unsplashStatusSpan.textContent = ` ${notConfigured}`;
             unsplashStatusSpan.classList.add('is-warning');
             unsplashEnabledCheck.disabled = true;
           }
 
           if (status?.giphy?.configured) {
-            giphyStatusSpan.textContent = ` (${configured})`;
+            giphyStatusSpan.textContent = ` ${configured}`;
             giphyStatusSpan.classList.remove('is-warning');
           } else {
-            giphyStatusSpan.textContent = ` (${notConfigured})`;
+            giphyStatusSpan.textContent = ` ${notConfigured}`;
             giphyStatusSpan.classList.add('is-warning');
             giphyEnabledCheck.disabled = true;
           }

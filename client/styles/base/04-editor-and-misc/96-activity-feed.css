@@ -298,6 +298,15 @@
   color: hsl(var(--app-text-tertiary));
 }
 
+/* Small preview thumb of the commented slide, under the snippet. Fixed narrow
+   width (stays 16:9 via the shared .thumb aspect-ratio); the slide scaling is
+   handled by .thumb / .thumb .slide. */
+.home-activity-thumb.thumb {
+  width: 96px;
+  margin-top: var(--ps-space-2);
+  box-shadow: var(--app-shadow-xs, var(--app-shadow-sm));
+}
+
 .home-activity-actor {
   font-weight: 600;
   color: hsl(var(--app-text-primary));

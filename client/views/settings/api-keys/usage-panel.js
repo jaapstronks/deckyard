@@ -72,7 +72,11 @@ export async function showUsagePanel(key) {
   const totalsSection = h('div', { class: 'api-key-usage-section' });
   const totals = usage.totals || {};
   totalsSection.append(
-    h('h4', { text: t('settings.apiKeys.usageModal.totals', 'Total (Last ' + (usage.days || 30) + ' Days)') }),
+    h('h4', {
+      text: t('settings.apiKeys.usageModal.totals', 'Total (last {days} days)', {
+        days: usage.days || 30,
+      }),
+    }),
     h('div', { class: 'api-key-usage-stats' }, [
       createStatCard(t('settings.apiKeys.usageModal.requests', 'Requests'), totals.requestCount || 0),
       createStatCard(t('settings.apiKeys.usageModal.aiCalls', 'AI Calls'), totals.aiRequestCount || 0),

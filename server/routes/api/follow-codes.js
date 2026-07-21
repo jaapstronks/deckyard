@@ -1,5 +1,12 @@
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
-import { badRequest, methodNotAllowed, serveJson, unauthorized } from '../../utils/http.js';
+import {
+  badRequest,
+  methodNotAllowed,
+  parseJsonBody,
+  payloadTooLarge,
+  serveJson,
+  unauthorized,
+} from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 
 // ============================================================
@@ -68,8 +75,18 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
       return true;
     }
 
+    const parsed = await parseJsonBody(req);
+    if (!parsed.ok) {
+      if (parsed.statusCode === 413) {
+        payloadTooLarge(res, parsed.error);
+      } else {
+        badRequest(res, parsed.error);
+      }
+      return true;
+    }
+
     try {
-      const body = JSON.parse(await readRequestBody(req));
+      const body = parsed.body || {};
       const { followUrl } = body;
 
       if (typeof followUrl !== 'string' || !followUrl.trim()) {
@@ -129,17 +146,4 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
   }
 
   return false;
-}
-
-async function readRequestBody(req) {
-  return new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      resolve(body);
-    });
-    req.on('error', reject);
-  });
 }

@@ -19,8 +19,9 @@
  *     wins), so a ghost can target `.header` when it exists and `.slide-inner`
  *     when the header itself is omitted. `pos` is the DOM insertion position for
  *     the spawned editable ('prepend' | 'append' | 'before' | 'after'); `chip`
- *     is the overlay placement mode ('below-start' | 'top-start' |
- *     'bottom-start'). Legacy `{ field, anchor, pos }` still works.
+ *     is the overlay placement mode ('below-start' | 'below-end' | 'top-start'
+ *     | 'bottom-start'). Legacy `{ field, anchor, pos }` still works (and
+ *     accepts `chip` too).
  *   itemGhosts: ghosts for optional per-item subfields the renderer omits when
  *     empty (e.g. a timeline item's description).
  *       { list, field, item, within?, chipAnchor?, pos?, chip? }
@@ -110,17 +111,52 @@
  *         two-step; leftover caption/alt text still triggers the lossy
  *         confirm via the shared action.
  *
+ *   ensure: a canonicalizer run once per mount (in inline-editor `refresh`),
+ *     before decorating, for dual-model types whose inline attributes target a
+ *     canonical array (logo-wall → logos[], team-cards → members[]). It
+ *     migrates the legacy numbered fields into that array so the media popover
+ *     and card affordances always have a stable, mutable target - which lets
+ *     the renderers drop their array-backed gate and emit the inline attributes
+ *     unconditionally. Idempotent, editor-only, mutates content in place, does
+ *     not dirty the deck (a no-op canonicalization). Function-valued, so
+ *     core-map-only (same restriction as function addPlacement / icons.afterWrite).
+ *       ensure: (content) => content
+ *
  * @typedef {Object} InlineDescriptor
+ * @property {(content:Object)=>Object} [ensure]
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
+ * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain')}} [focus]
+ *   Draggable focal-point handle on filled images. Resolves the write target
+ *   the same way `media` does (item in list mode, `slide.content` in flat mode
+ *   with `{n}` substitution), then writes `xField`/`yField` (0..100). The
+ *   handle only renders when `cropMode` returns `'cover'`. Function-valued, so
+ *   core-map only.
+ * @property {{field:string, fallback?:(slide:Object)=>string}} [fit]
+ *   Cover/Contain toggle on filled images. Resolves the write target like
+ *   `media` (item in list mode, `{n}`-substituted content key in flat mode) and
+ *   writes `field` = 'cover'|'contain'. `fallback` seeds the initial mode from a
+ *   slide-level default when the per-image field is empty. Function-valued
+ *   fallback, so core-map only.
  * @property {string[]} [formText]
  * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
  * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]
  */
 
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
+import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
+import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
+import {
+  resolveImageTextCell,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
+} from '../../../../shared/slide-types/image-text-images.js';
+import { resolveImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
+import {
+  resolveContentColumnImage,
+  CONTENT_COLUMNS_IMAGE_DEFAULTS,
+} from '../../../../shared/slide-types/content-columns-images.js';
 
 /**
  * The standard header pattern shared by most content/data-viz types: optional
@@ -139,8 +175,10 @@ const HEADER_GHOSTS = [
   {
     field: 'subheading',
     anchors: [
-      { sel: '.heading', pos: 'after', chip: 'below-start' },
-      { sel: '.header', pos: 'append', chip: 'below-start' },
+      // below-end (right-aligned) so the opaque chip clears the first body line
+      // that starts immediately under the heading (issue #113).
+      { sel: '.heading', pos: 'after', chip: 'below-end' },
+      { sel: '.header', pos: 'append', chip: 'below-end' },
       { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
     ],
   },
@@ -167,7 +205,7 @@ export const INLINE_DESCRIPTORS = {
     formText: ['title', 'subheading', 'byline', 'attribution'],
   },
   'content-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     formText: ['title', 'subheading', 'body'],
     convert: {
       // "Add an image" on a text slide = become an image-text slide (empty
@@ -179,7 +217,7 @@ export const INLINE_DESCRIPTORS = {
     },
   },
   'list-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     // "+ Text" chip on any item that has a title but no single-line text yet.
     // The renderer omits the empty .item-text div, so this is the only
     // affordance for adding it inline.
@@ -222,6 +260,32 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.frame [data-inline-photo]',
       imageField: 'src',
       altField: 'alt',
+    },
+    // Draggable focal point on each filled image (crop/cover mode only). Writes
+    // the item's own focusX/focusY (the same keys the renderer reads once an
+    // item has its own focus), so a drag localizes the crop to that cell. Fit
+    // is the item's `fit` (falling back to the type default via the resolver).
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      // Effective fit and crop-point both come from resolveImageTextCell (the
+      // single authority render shares), so the handle starts where the crop
+      // actually is - cell 0 without its own focus reads the slide-level focus.
+      // Writes always localize to the item, which then wins on the next render.
+      cropMode: (slide, idx) => resolveImageTextCell(slide?.content, idx).fit,
+      get: (slide, idx) => {
+        const { focusSource } = resolveImageTextCell(slide?.content, idx);
+        return { x: focusSource.focusX, y: focusSource.focusY };
+      },
+    },
+    // Cover/Contain toggle on each filled image. Writes the item's own `fit`
+    // (canonical since step 2b), so a toggle localizes to that cell. The
+    // fallback seeds the initial state for an item without its own fit: the
+    // legacy slide-level `imageFit` on an un-migrated deck, else the type
+    // default - same chain as resolveImageTextCell.
+    fit: {
+      field: 'fit',
+      fallback: (slide) => slide?.content?.imageFit || IMAGE_TEXT_IMAGE_DEFAULTS.fit,
     },
     formText: ['title', 'caption', 'body'],
     convert: {
@@ -323,7 +387,7 @@ export const INLINE_DESCRIPTORS = {
 
   // ---- Simple text types ----
   'lijstje-slide': {
-    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after' }],
+    ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
     itemGhosts: [
       { list: 'items', field: 'text', item: '.lijst-item', within: '.lijst-item-body', pos: 'append' },
     ],
@@ -395,6 +459,15 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.image[data-inline-photo], .image-placeholder[data-inline-photo]',
       imageField: 'image',
       altField: 'alt',
+    },
+    // Draggable focal point on the single image, but only in cover mode -
+    // contain (no crop) has nothing to move, so the point stays hidden there.
+    // Effective fit comes from resolveImageSlideImage (own `fit` -> legacy
+    // `layout` -> type default), the single authority the render shares.
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      cropMode: (slide) => resolveImageSlideImage(slide?.content).fit,
     },
     formText: [...HEADER_TEXT, 'caption'],
   },
@@ -502,6 +575,9 @@ export const INLINE_DESCRIPTORS = {
       ...HEADER_GHOSTS,
       { field: 'subheading2', anchors: [{ sel: '.team-cards-group-right', pos: 'prepend', chip: 'top-start' }] },
     ],
+    // Dual-model (members[] or legacy card{n}*): canonicalize to members[] on
+    // mount so a first block (and its photo) can be added on the canvas.
+    ensure: ensureMembers,
     itemGhosts: [
       { list: 'members', field: 'name', item: '.team-card', pos: 'append', chip: 'top-start' },
       // Caption ghost sits directly under the title/text block (not over the
@@ -515,11 +591,16 @@ export const INLINE_DESCRIPTORS = {
         chip: 'below-start',
       },
     ],
+    // ensureMembers guarantees members[] in edit mode, so no skipWhenEmpty
+    // guard is needed - add/remove/reorder work from the first block.
     cards: {
       field: 'members',
-      skipWhenEmpty: true,
       container: '.team-cards-grid',
       itemSelector: '.team-card',
+      addLabelKey: 'editor.inline.addMember',
+      addLabel: 'Add block',
+      removeLabelKey: 'editor.inline.removeMember',
+      removeLabel: 'Remove block',
     },
     // Clicking a card photo opens an in-slide media popover (image + alt +
     // LinkedIn), so slide-view users can set the whole block without the side form.
@@ -537,18 +618,46 @@ export const INLINE_DESCRIPTORS = {
         },
       ],
     },
+    // Focal point per member photo. The photo only crops (and honours focus)
+    // when the effective aspect is square - circle forces square; an 'original'
+    // aspect shows the whole image, so the handle stays hidden there.
+    focus: {
+      xField: 'imageFocusX',
+      yField: 'imageFocusY',
+      cropMode: (slide) => {
+        const shape = slide?.content?.imageShape;
+        const aspect = shape === 'circle' ? 'square' : slide?.content?.imageAspect;
+        return aspect === 'square' ? 'cover' : 'contain';
+      },
+    },
     // Member cards stay in the side form too: they carry focus points.
     formText: [...HEADER_TEXT, 'subheading2'],
   },
   'logo-wall-slide': {
     ghosts: HEADER_GHOSTS,
-    // Clicking a logo opens the media popover (image + alt). Logo names render
-    // only as aria-labels, so name stays in the form (array-backed logos only).
+    // Dual-model (logos[] or legacy logo{n}*): canonicalize to logos[] on mount
+    // so the media popover and card affordances always have a stable array.
+    ensure: ensureLogos,
+    // Clicking a logo (filled or empty placeholder) opens the media popover
+    // (image + alt). Logo names render only as aria-labels, so name stays in
+    // the form.
     media: {
       list: 'logos',
       photoSelector: '.logo-wall-img[data-inline-photo], .logo-wall-placeholder[data-inline-photo]',
       imageField: 'image',
       altField: 'alt',
+    },
+    // Add / remove / reorder logos entirely on the canvas (like gallery). The
+    // empty wall renders one placeholder cell (edit-mode), so a first logo can
+    // be added by clicking it or via "+ Add logo".
+    cards: {
+      field: 'logos',
+      container: '.logo-wall-grid',
+      itemSelector: '.logo-wall-item',
+      addLabelKey: 'editor.inline.addLogo',
+      addLabel: 'Add logo',
+      removeLabelKey: 'editor.inline.removeLogo',
+      removeLabel: 'Remove logo',
     },
     formText: ['title', 'subheading'],
   },
@@ -609,6 +718,22 @@ export const INLINE_DESCRIPTORS = {
       imageField: 'col{n}Image',
       altField: 'col{n}Alt',
     },
+    // Focal point + Cover/Contain per column image. Flat numbered schema: the
+    // {n} token is the 1-based column number (data-inline-photo), same as the
+    // media fields. Focus only bites in cover mode. Effective fit comes from
+    // resolveContentColumnImage (own value -> type default, step 4), the
+    // single authority the render shares; the fallback marks the fit as
+    // having a type default, so the shared card offers the empty
+    // back-to-default option.
+    focus: {
+      xField: 'col{n}ImageFocusX',
+      yField: 'col{n}ImageFocusY',
+      cropMode: (slide, idx) => resolveContentColumnImage(slide?.content, idx).fit,
+    },
+    fit: {
+      field: 'col{n}ImageFit',
+      fallback: () => CONTENT_COLUMNS_IMAGE_DEFAULTS.fit,
+    },
     formText: HEADER_TEXT,
   },
 
@@ -636,6 +761,13 @@ export const INLINE_DESCRIPTORS = {
       photoSelector: '.gallery-image[data-inline-photo], .gallery-image-placeholder[data-inline-photo]',
       imageField: 'src',
       altField: 'alt',
+    },
+    // Focal point per gallery image. Gallery tiles always crop (cover), so the
+    // handle is always available on a filled image.
+    focus: {
+      xField: 'focusX',
+      yField: 'focusY',
+      cropMode: () => 'cover',
     },
     // images stays: the per-image cards also carry focus-point controls.
     formText: HEADER_TEXT,

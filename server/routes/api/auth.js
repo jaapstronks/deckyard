@@ -16,6 +16,7 @@ import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp } from '../../utils/context.js';
+import { allowLoginAttempt } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
@@ -40,6 +41,30 @@ export async function handleAuth({ repoRoot, req, res, url }) {
     const password =
       typeof body?.password === 'string' ? body.password : '';
 
+    // Brute-force throttle (per-IP + per-email) before the expensive password
+    // verification, so login can't be hammered. See security-hardening 3c.
+    const ip = getClientIp(req);
+    const allowed = await allowLoginAttempt({
+      ip,
+      email: normalizeEmail(email),
+    });
+    if (!allowed) {
+      await logAuthEvent({
+        type: 'login',
+        email: normalizeEmail(email),
+        success: false,
+        ipAddress: ip,
+        userAgent: req.headers?.['user-agent'] || '',
+      });
+      serveJson(res, 429, {
+        error: t(
+          'api.error.tooManyLoginAttempts',
+          'Too many login attempts. Please try again later.'
+        ),
+      });
+      return true;
+    }
+
     // Use async verification to support database users
     const user = await verifyLoginAsync(email, password, ctx);
 
@@ -48,7 +73,7 @@ export async function handleAuth({ repoRoot, req, res, url }) {
       type: 'login',
       email: normalizeEmail(email),
       success: !!user,
-      ipAddress: getClientIp(req),
+      ipAddress: ip,
       userAgent: req.headers?.['user-agent'] || '',
     });
 

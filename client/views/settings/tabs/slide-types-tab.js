@@ -8,11 +8,32 @@ import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/toast.js';
 import { confirmModal } from '../../../lib/modal.js';
+import { readFileAsText } from '../../../lib/file.js';
 import { createSlideTypeEditor } from '../slide-type-editor/index.js';
+import {
+  serializeSlideType,
+  parseImportedSlideType,
+  deriveUniqueSlug,
+} from '../slide-type-editor/io.js';
 import { renderSlideElement } from '../../../lib/slide-render.js';
 import { getSampleContent } from '../../editor/slide-type-sample-content.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { loadThemeById } from '../../../lib/theme.js';
+import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
+
+/**
+ * Category heading labels, resolved lazily (the i18n dictionary is not loaded
+ * at import time). Keyed by the category `key` in CATEGORIES below.
+ */
+const CATEGORY_LABELS = {
+  basic: () => t('settings.slideTypes.group.basic', 'Basic'),
+  media: () => t('settings.slideTypes.group.media', 'Media'),
+  layouts: () => t('settings.slideTypes.group.layouts', 'Layouts'),
+  data: () => t('settings.slideTypes.group.data', 'Data'),
+  process: () => t('settings.slideTypes.group.process', 'Process'),
+  interaction: () => t('settings.slideTypes.group.interaction', 'Interaction'),
+  other: () => t('settings.slideTypes.group.other', 'Other'),
+};
 
 /**
  * Slide type category definitions.
@@ -78,7 +99,7 @@ const CATEGORIES = [
  */
 export function createSlideTypesTab({ user } = {}) {
   const el = h('div', {
-    class: 'settings-tab',
+    class: 'settings-tab-view',
     id: 'settings-tab-slide-types',
     role: 'tabpanel',
   });
@@ -149,10 +170,13 @@ export function createSlideTypesTab({ user } = {}) {
     customTypesSection.innerHTML = '';
 
     const sectionHeader = h('div', { class: 'themes-list-header row is-between is-center' });
-    sectionHeader.append(
-      h('h3', {
-        class: 'field-label',
-        text: t('settings.slideTypes.customTypes', 'Custom Slide Types'),
+    const headerActions = h('div', { class: 'row gap-2 is-center' });
+    headerActions.append(
+      h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t('settings.slideTypes.importType', 'Import'),
+        onclick: () => importCustomType(),
       }),
       h('button', {
         class: 'btn btn-primary btn-sm',
@@ -160,6 +184,13 @@ export function createSlideTypesTab({ user } = {}) {
         text: t('settings.slideTypes.createType', 'Create Type'),
         onclick: () => openEditor(null),
       })
+    );
+    sectionHeader.append(
+      h('h3', {
+        class: 'field-label',
+        text: t('settings.slideTypes.customTypes', 'Custom Slide Types'),
+      }),
+      headerActions
     );
 
     const grid = h('div', { class: 'custom-types-grid' });
@@ -183,6 +214,7 @@ export function createSlideTypesTab({ user } = {}) {
       for (const ct of customTypes) {
         grid.append(createCustomTypeCard(ct));
       }
+      attachGridReorder(grid);
     }
 
     customTypesSection.append(sectionHeader, grid, emptyState);
@@ -194,7 +226,11 @@ export function createSlideTypesTab({ user } = {}) {
    * @returns {HTMLElement}
    */
   function createCustomTypeCard(ct) {
-    const card = h('div', { class: 'custom-type-card editor-card' });
+    const card = h('div', {
+      class: 'custom-type-card editor-card',
+      draggable: 'true',
+      'data-type-id': ct.id,
+    });
 
     // Header with name and status
     const cardHeader = h('div', { class: 'custom-type-card-header' });
@@ -238,6 +274,113 @@ export function createSlideTypesTab({ user } = {}) {
     return card;
   }
 
+  // ============================================================
+  // Reordering
+  // ============================================================
+
+  /**
+   * Drag-to-reorder for the custom types grid.
+   *
+   * The grid wraps (`auto-fill` columns), so "before or after the card you are
+   * over" is not enough — at a row break the nearest insertion point can be on
+   * the other row. `computeDrop` from the inline-edit reorder geometry already
+   * solves exactly that and is DOM-free, so the drop target is its answer for
+   * the pointer position rather than a hand-rolled midpoint test.
+   *
+   * @param {HTMLElement} grid
+   */
+  function attachGridReorder(grid) {
+    /** @type {string|null} */
+    let draggingId = null;
+    const marker = h('div', { class: 'custom-type-drop-marker' });
+
+    const cards = () => [...grid.querySelectorAll('.custom-type-card')];
+    const clearMarker = () => marker.remove();
+
+    for (const card of cards()) {
+      card.addEventListener('dragstart', (ev) => {
+        draggingId = card.dataset.typeId;
+        card.classList.add('is-dragging');
+        ev.dataTransfer.effectAllowed = 'move';
+        // Firefox ignores a drag that carries no payload.
+        ev.dataTransfer.setData('text/plain', draggingId);
+      });
+      card.addEventListener('dragend', () => {
+        draggingId = null;
+        card.classList.remove('is-dragging');
+        clearMarker();
+      });
+    }
+
+    /** Insertion index under the pointer, or null. */
+    const dropIndexAt = (ev) => {
+      const rects = cards().map((c) => c.getBoundingClientRect());
+      if (rects.length < 2) return null;
+      const drop = computeDrop(rects, { x: ev.clientX, y: ev.clientY });
+      return drop ? drop.index : null;
+    };
+
+    grid.addEventListener('dragover', (ev) => {
+      if (!draggingId) return;
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'move';
+      const index = dropIndexAt(ev);
+      if (index == null) return;
+      const list = cards();
+      if (index >= list.length) grid.append(marker);
+      else list[index].before(marker);
+    });
+
+    grid.addEventListener('dragleave', (ev) => {
+      if (!grid.contains(ev.relatedTarget)) clearMarker();
+    });
+
+    grid.addEventListener('drop', async (ev) => {
+      if (!draggingId) return;
+      ev.preventDefault();
+      const index = dropIndexAt(ev);
+      clearMarker();
+      if (index == null) return;
+      const from = customTypes.findIndex((ct) => ct.id === draggingId);
+      if (from < 0) return;
+      const to = resolveMove(from, index);
+      if (to === from) return;
+      await moveCustomType(from, to);
+    });
+  }
+
+  /**
+   * Move a type to a new position and persist the whole order.
+   *
+   * The grid is re-rendered optimistically so the drop feels immediate; a
+   * failed save reloads from the server rather than leaving the UI showing an
+   * order that was never stored.
+   *
+   * @param {number} from
+   * @param {number} to
+   */
+  async function moveCustomType(from, to) {
+    const previous = customTypes;
+    const next = [...customTypes];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    customTypes = next;
+    renderCustomTypesSection();
+
+    try {
+      const res = await api('/api/custom-slide-types/reorder', {
+        method: 'PUT',
+        body: JSON.stringify({ order: next.map((ct) => ct.id) }),
+      });
+      customTypes = res?.customSlideTypes || next;
+      renderCustomTypesSection();
+    } catch (err) {
+      customTypes = previous;
+      renderCustomTypesSection();
+      toast.error(String(err?.message || err));
+    }
+  }
+
   /**
    * Show context menu for a custom slide type.
    */
@@ -263,6 +406,32 @@ export function createSlideTypesTab({ user } = {}) {
       },
     }));
 
+    // Move earlier / later. Dragging is the primary gesture, but it is
+    // mouse-only; these keep reordering reachable from the keyboard.
+    const index = customTypes.findIndex((x) => x.id === ct.id);
+    if (index > 0) {
+      menu.append(h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.moveEarlier', 'Move earlier'),
+        onclick: async () => {
+          menu.remove();
+          await moveCustomType(index, index - 1);
+        },
+      }));
+    }
+    if (index >= 0 && index < customTypes.length - 1) {
+      menu.append(h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('settings.slideTypes.moveLater', 'Move later'),
+        onclick: async () => {
+          menu.remove();
+          await moveCustomType(index, index + 1);
+        },
+      }));
+    }
+
     // Duplicate
     menu.append(h('button', {
       class: 'dropdown-item',
@@ -271,6 +440,17 @@ export function createSlideTypesTab({ user } = {}) {
       onclick: async () => {
         menu.remove();
         await duplicateCustomType(ct);
+      },
+    }));
+
+    // Export as JSON
+    menu.append(h('button', {
+      class: 'dropdown-item',
+      type: 'button',
+      text: t('settings.slideTypes.export', 'Export as JSON'),
+      onclick: () => {
+        menu.remove();
+        exportCustomType(ct);
       },
     }));
 
@@ -332,10 +512,80 @@ export function createSlideTypesTab({ user } = {}) {
     }
   }
 
+  /**
+   * Download a custom type as a portable `.slidetype.json` file.
+   * @param {Object} ct
+   */
+  function exportCustomType(ct) {
+    const blob = new Blob([serializeSlideType(ct)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = h('a', {
+      href: url,
+      download: `${ct.slug || 'custom-type'}.slidetype.json`,
+    });
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Import a definition from a `.slidetype.json` file and create it as a new,
+   * unpublished draft. The slug is derived client-side and made unique against
+   * the loaded types, so a re-import of the same file never dead-ends on a
+   * slug clash — it lands as a sibling draft the user can rename or publish.
+   */
+  function importCustomType() {
+    const input = h('input', {
+      type: 'file',
+      accept: '.json,application/json',
+      style: 'display:none',
+    });
+    input.addEventListener('change', async () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+
+      let text;
+      try {
+        text = await readFileAsText(file);
+      } catch {
+        toast.error(t('settings.slideTypes.importReadError', 'Could not read that file.'));
+        return;
+      }
+
+      const parsed = parseImportedSlideType(text);
+      if (!parsed.ok) {
+        toast.error(t('settings.slideTypes.importInvalid', 'That file is not a valid slide type export.'));
+        return;
+      }
+
+      const def = parsed.definition;
+      const slug = deriveUniqueSlug(def.label, customTypes.map((c) => c.slug));
+
+      try {
+        // isPublished is intentionally omitted: the create endpoint always
+        // stores imports as drafts, so nothing goes live without a review.
+        await api('/api/custom-slide-types', {
+          method: 'POST',
+          body: JSON.stringify({ ...def, slug }),
+        });
+        toast.success(t('settings.slideTypes.importSuccess', 'Slide type imported as a draft.'));
+        await reloadCustomTypes();
+      } catch (err) {
+        toast.error(String(err?.message || err));
+      }
+    });
+    document.body.append(input);
+    input.click();
+  }
+
   async function confirmDeleteCustomType(ct) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('settings.slideTypes.deleteConfirm', `Delete custom type "${ct.label}"? This cannot be undone.`),
+      message: t(
+        'settings.slideTypes.deleteConfirm',
+        'Delete custom type "{label}"? This cannot be undone.',
+        { label: ct.label }
+      ),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });
@@ -498,7 +748,7 @@ export function createSlideTypesTab({ user } = {}) {
       const group = h('div', { class: 'slide-type-curation-group' });
       group.append(h('h3', {
         class: 'slide-type-curation-group-title',
-        text: t(`settings.slideTypes.group.${cat.key}`, cat.label),
+        text: CATEGORY_LABELS[cat.key]?.() ?? cat.label,
       }));
 
       const grid = h('div', { class: 'slide-type-curation-grid' });

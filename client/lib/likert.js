@@ -1,5 +1,6 @@
 const NS = 'http://www.w3.org/2000/svg';
 import { newId } from './id.js';
+import { t } from './ui-i18n.js';
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -50,7 +51,7 @@ export function mountLikertHill(container, { optionCount = 5 } = {}) {
   const svg = svgEl('svg', {
     viewBox: `0 0 ${W} ${H}`,
     role: 'img',
-    'aria-label': 'Verdeling',
+    'aria-label': t('likert.distributionAria', 'Distribution'),
     preserveAspectRatio: 'none',
   });
 

@@ -12,7 +12,7 @@ import { loadThemeById } from '../lib/theme.js';
 import { clamp, normalizeNotes, normalizePresentation } from './notes/utils.js';
 import { createNotesQaController } from './notes/qa.js';
 import { createNotesSessionSse } from './notes/session-sse.js';
-import { attachSwipeNavigation } from './notes/touch-nav.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { createUiModeSwitcher } from './ui-mode-switcher.js';
 
 export async function renderNotes(
@@ -55,12 +55,12 @@ export async function renderNotes(
   });
   const previewPrevBtn = h('button', {
     class: 'btn btn-secondary notes-preview-prev',
-    text: `◀︎ ${t('notes.preview', 'Preview')}`,
+    text: t('notes.previewPrev', '◀︎ Preview'),
     title: t('notes.prevSlide.title', 'Previous slide (local only)'),
   });
   const previewNextBtn = h('button', {
     class: 'btn btn-secondary notes-preview-next',
-    text: `${t('notes.preview', 'Preview')} ▶︎`,
+    text: t('notes.previewNext', 'Preview ▶︎'),
     title: t('notes.nextSlide.title', 'Next slide (local only)'),
   });
   const previewMeta = h('div', {
@@ -207,7 +207,10 @@ export async function renderNotes(
         presentationId: pres?.id,
       });
       nextPreviewWrap.classList.remove('is-empty');
-      nextLabel.textContent = `${t('notes.upNext', 'Up next')} · ${t('notes.slideOf', 'Slide {current} / {total}', { current: idx + 2, total: slides.length })}`;
+      nextLabel.textContent = t('notes.upNextSlideOf', 'Up next · Slide {current} / {total}', {
+        current: idx + 2,
+        total: slides.length,
+      });
     } else {
       cleanupSlideRuntimes(nextPreviewWrap);
       nextPreviewWrap.innerHTML = '';
@@ -227,7 +230,10 @@ export async function renderNotes(
       : `<p class="help">${t('notes.noNotes', 'No notes for this slide.')}</p>`;
     notesBody.innerHTML = html;
 
-    notesTitle.textContent = `${t('notes.notes', 'Notes')} · ${t('notes.slideOf', 'Slide {current} / {total}', { current: idx + 1, total: slides.length })}`;
+    notesTitle.textContent = t('notes.notesSlideOf', 'Notes · Slide {current} / {total}', {
+      current: idx + 1,
+      total: slides.length,
+    });
     previewMeta.textContent = t('notes.slideOf', 'Slide {current} / {total}', { current: idx + 1, total: slides.length });
 
     if (!follow) {

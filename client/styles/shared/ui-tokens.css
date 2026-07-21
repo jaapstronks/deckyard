@@ -3,7 +3,7 @@
 
 /* Typography + spacing scale (app chrome only) */
 :root {
-  --ps-font-sans: ui-sans-serif, system-ui, -apple-system,
+  --ps-font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     'Apple Color Emoji', 'Segoe UI Emoji';
   --ps-font-mono: 'JetBrains Mono', ui-monospace,
@@ -75,12 +75,18 @@
   --app-border-strong: 220 13% 80%;
   --app-border-focus: 160 45% 33%;
 
+  /* Accent comes in three flavours and they are not interchangeable:
+     `-primary` paints shapes (fills, borders, accent-color) and holds the same
+     hue in dark mode; `-text` is the one that lightens in dark mode so accent
+     text stays legible; `-soft` is a tinted surface and inverts between modes.
+     There is deliberately no plain `--app-accent` — one existed only in call
+     sites, never as a definition, so ~50 declarations silently rendered
+     nothing until they were swept onto these. */
   --app-accent-primary: 160 45% 33%;
   --app-accent-primary-hover: 160 45% 28%;
   --app-accent-primary-active: 160 45% 24%;
   --app-accent-soft: 160 40% 95%;
   --app-accent-soft-hover: 160 40% 90%;
-  /* Foreground text in accent color (same as primary in light mode) */
   --app-accent-text: 160 45% 33%;
 
   --app-danger: 4 65% 48%;

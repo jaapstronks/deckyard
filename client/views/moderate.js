@@ -4,8 +4,8 @@ import { t } from '../lib/ui-i18n.js';
 
 export async function renderModerate(root, presentationId, { user } = {}) {
   const pid = String(presentationId || '').trim();
-  if (!pid) throw new Error('Missing presentationId');
-  if (!user?.isAdmin) throw new Error('Moderator access requires admin login');
+  if (!pid) throw new Error(t('moderate.missingId', 'Missing presentationId'));
+  if (!user?.isAdmin) throw new Error(t('moderate.adminRequired', 'Moderator access requires admin login'));
 
   const shell = h('div', { class: 'app-shell' });
   const panel = h('div', { class: 'panel moderate-panel' });

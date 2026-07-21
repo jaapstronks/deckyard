@@ -11,6 +11,7 @@ import {
   ACTOR_TYPES,
 } from '../storage/activity-events.js';
 import { createRouteContext } from '../utils/context.js';
+import { stripMentionMarkup } from '../../shared/comment-mentions.js';
 
 // Re-export constants for convenience
 export { EVENT_TYPES, ENTITY_TYPES, ACTOR_TYPES };
@@ -209,7 +210,11 @@ export async function recordCommentCreated({
     data: {
       presentationTitle: presentation.title,
       slideId: comment.slideId,
-      bodyPreview: comment.body?.substring(0, 100),
+      // Strip mention markup so the preview reads "@Name", not the raw
+      // `@[Name](user:email)` marker (surfaced in the home rail + Activity feed,
+      // which render this preview as plain text). Strip before truncating so a
+      // 100-char cut never splits a marker mid-token.
+      bodyPreview: stripMentionMarkup(comment.body).substring(0, 100),
       isReply: !!comment.parentId,
     },
   }, context);

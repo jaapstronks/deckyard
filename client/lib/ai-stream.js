@@ -5,6 +5,7 @@
  */
 
 import { processSSEStream } from './sse.js';
+import { t } from './ui-i18n.js';
 
 /**
  * Generate a presentation using the streaming V2 endpoint
@@ -78,12 +79,12 @@ export async function generatePresentationStreaming({
       },
       onError: (data) => {
         onError(data);
-        throw new Error(data.error || 'Generation failed');
+        throw new Error(data.error || t('ai.generationFailed', 'Generation failed'));
       },
     });
 
     if (!result) {
-      throw new Error('Stream ended without completion');
+      throw new Error(t('ai.streamIncomplete', 'Stream ended without completion'));
     }
 
     return result.presentation;

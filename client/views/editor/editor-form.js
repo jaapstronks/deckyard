@@ -26,6 +26,7 @@ import {
   renderInspectorExtrasByType,
 } from './editor-form/inspector-form.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { detectBgTextContrast } from '../../lib/bg-contrast.js';
 
@@ -95,6 +96,54 @@ function storeBgSectionOpen(open) {
   } catch {
     /* ignore */
   }
+}
+
+/**
+ * Whether a selected canvas element ({kind, idx}) has an element tab on this
+ * slide type. Every image type now carries a "This image" tab (the shared
+ * image-element card, or image-text's own images manager). Cards: icon-card-grid
+ * (idx in range).
+ * @returns {boolean}
+ */
+function elementAppliesToSlide(slide, sel) {
+  if (!slide || !sel) return false;
+  const c = slide.content || {};
+  if (sel.kind === 'image') {
+    const inList = (key) =>
+      Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
+    switch (slide.type) {
+      case 'image-slide':
+        return sel.idx === 0;
+      case 'image-text-slide':
+        return true; // images[] is padded to the layout's cell count on demand
+      case 'gallery-slide':
+        return inList('images');
+      case 'team-cards-slide':
+        return inList('members');
+      case 'logo-wall-slide':
+        return inList('logos');
+      case 'content-columns-slide': {
+        const count = Math.max(1, Math.min(7, Number(c.columnCount || 3) || 3));
+        return sel.idx >= 1 && sel.idx <= count; // 1-based column number
+      }
+      case 'quote-slide':
+        return sel.idx >= 1 && sel.idx <= 3; // up to three author portraits
+      default:
+        return false;
+    }
+  }
+  if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
+    const items = slide.content?.items;
+    return Array.isArray(items) && sel.idx >= 0 && sel.idx < items.length;
+  }
+  return false;
+}
+
+/** Label for the element tab, by selected element kind. */
+function elementTabLabel(sel) {
+  if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
+  if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
+  return t('editor.inspector.tab.element', 'This element');
 }
 
 // AI conversion targets — which types can each slide type convert to?
@@ -320,7 +369,7 @@ function buildHeaderActions({
                 editorState.dirtyRefreshWithItem();
                 toast.success(t('editor.slide.aiConvert.done', 'Converted successfully!'));
               } else {
-                throw new Error(resp?.error || 'Unknown error');
+                throw new Error(resp?.error || t('common.unknownError', 'Unknown error'));
               }
             } catch (e) {
               converting.dismiss();
@@ -505,6 +554,8 @@ export function createRerenderEditor({
   updateSelectedSlideListItem,
   PARTNER_LOGOS,
   fieldRenderers,
+  // The active theme, for its override locks. Absent means nothing is locked.
+  theme = null,
   onTranslateSlide,
   onTranslateField,
   user,
@@ -524,6 +575,9 @@ export function createRerenderEditor({
   // section. Reuses the exact same field renderers, so the modal can never
   // drift from what the form can edit (the phase-2 parity invariant).
   contentOnly = false,
+  // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
+  // element is selected the inspector grows a [This element | Slide] tab bar.
+  getSelectedElement,
 } = {}) {
   const {
     fieldText,
@@ -547,6 +601,12 @@ export function createRerenderEditor({
 
   // Track detachers for cleanup between re-renders
   let headerActionsDetach = null;
+
+  // Which inspector tab is active while an element is selected. A newly
+  // selected element resets to its own tab; clicking "Slide" persists across
+  // rerenders (so editing a slide-wide field doesn't yank you back).
+  let activeElementTab = true;
+  let lastElementKey = null;
 
   return function rerenderEditor() {
     // Clean up previous dropdown listeners
@@ -645,7 +705,7 @@ export function createRerenderEditor({
         tbLeft.append(
           h('button', {
             type: 'button',
-            class: 'btn btn-sm editor-bulk-edit-btn',
+            class: 'btn editor-bulk-edit-btn',
             text: t('editor.bulkEdit.open', 'All text'),
             title: t('editor.bulkEdit.openTitle', 'Edit all text fields of this slide in one view'),
             onclick: () => onOpenBulkEdit(),
@@ -751,6 +811,22 @@ export function createRerenderEditor({
     const fieldByKey = new Map((def?.fields || []).map((f) => [f.key, f]));
     const used = new Set();
 
+    // Selection-aware inspector: when a canvas element (image/card) is selected
+    // and applies to this slide, its settings render into `elementForm` (the
+    // "This element" tab) and the tab bar appears; the rest renders into `form`
+    // (the "Slide" tab). With no selection there is no tab bar - just `form`.
+    const selectedElement = contentOnly ? null : getSelectedElement?.() || null;
+    const elementActive = elementAppliesToSlide(slide, selectedElement);
+    const elemKey = elementActive
+      ? `${selectedElement.kind}:${selectedElement.idx}`
+      : null;
+    if (elemKey !== lastElementKey) {
+      // A fresh selection (or a deselect) resets to the element's own tab.
+      activeElementTab = true;
+      lastElementKey = elemKey;
+    }
+    const elementForm = h('div', { class: 'stack editor-form editor-element-form' });
+
     // AI reasoning panel (shown for AI-generated slides)
     if (!contentOnly && slide._aiReasoning) {
       const aiSection = h('details', { class: 'ai-reasoning-panel' });
@@ -772,12 +848,21 @@ export function createRerenderEditor({
       for (const alt of alternatives) {
         const altDiv = h('div', { class: 'ai-reasoning-alternative' });
         const altLabel = h('strong');
-        altLabel.textContent = `${t('editor.slide.aiAlternative', 'Alternative')}: `;
-        const altConsider = document.createTextNode(`${t('editor.slide.aiAlternative.consider', 'Consider')} `);
+        altLabel.textContent = t('editor.slide.aiAlternativeLabel', 'Alternative:');
         const altCode = h('code');
         altCode.textContent = alt.type;
-        const altReason = document.createTextNode(` — ${alt.reason}`);
-        altDiv.append(altLabel, altConsider, altCode, altReason);
+        // One key for the whole suggestion: {type} marks where the <code> node
+        // goes, so translations control word order and punctuation.
+        const tpl = t('editor.slide.aiAlternativeSuggestion', 'Consider {type} — {reason}');
+        const [beforeType, afterType = ''] = tpl.split('{type}');
+        const fillReason = (s) => s.replace('{reason}', () => String(alt.reason));
+        altDiv.append(
+          altLabel,
+          document.createTextNode(' '),
+          document.createTextNode(fillReason(beforeType)),
+          altCode,
+          document.createTextNode(fillReason(afterType))
+        );
         aiSection.append(altDiv);
       }
 
@@ -789,7 +874,7 @@ export function createRerenderEditor({
       const warningsDiv = h('div', { class: 'ai-warnings' });
       for (const w of slide._aiWarnings) {
         const p = h('p', { class: 'ai-warning-item' });
-        p.textContent = `\u26A0\uFE0F ${w}`;
+        p.textContent = t('editor.slide.aiWarningItem', '\u26A0\uFE0F {warning}', { warning: w });
         warningsDiv.append(p);
       }
       form.append(warningsDiv);
@@ -1065,9 +1150,28 @@ export function createRerenderEditor({
       form.append(el);
     };
 
+    // Theme override locks. A locked property's controls are omitted rather
+    // than disabled — a disabled control invites you to wonder what it would
+    // do, and the renderer ignores the value either way. One note explains the
+    // absence, so the section never just looks broken.
+    const bgLocked = isLocked(theme, 'background');
+    const logoLocked = isLocked(theme, 'logo');
+    if (bgLocked || logoLocked) {
+      bgBody.append(
+        h('p', {
+          class: 'help',
+          text: t(
+            'editor.slide.background.lockedByTheme',
+            'Set by the theme and not editable per slide.'
+          ),
+        })
+      );
+    }
+
     // Populate the Background section. Colour first: the section reads as
     // "colour ór custom image, and optionally the logo on top".
-    const bgColorField = contentOnly ? null : fieldByKey.get('background');
+    const bgColorField =
+      contentOnly || bgLocked ? null : fieldByKey.get('background');
     if (bgColorField) {
       // Inside a section already titled "Background" the field label reads
       // better as "Colour" (it sits next to "Background image").
@@ -1090,7 +1194,8 @@ export function createRerenderEditor({
     }
 
     // Custom image (+ crop focus + fit/overlay once an image is set).
-    const bgImageField = contentOnly ? null : fieldByKey.get('slideBgImage');
+    const bgImageField =
+      contentOnly || bgLocked ? null : fieldByKey.get('slideBgImage');
     if (bgImageField) {
       const imgEl = renderField(bgImageField);
       if (imgEl) bgBody.append(imgEl);
@@ -1134,7 +1239,8 @@ export function createRerenderEditor({
       }
     }
     // Theme logo (corner) toggle — independent of the background image.
-    const logoField = contentOnly ? null : fieldByKey.get('slideLogo');
+    const logoField =
+      contentOnly || logoLocked ? null : fieldByKey.get('slideLogo');
     if (logoField) {
       if (slide.content.slideLogo == null) slide.content.slideLogo = 'none';
       const logoEl = renderField(logoField);
@@ -1144,6 +1250,10 @@ export function createRerenderEditor({
     const formTypeCtx = {
       h,
       form,
+      // Selection-aware inspector: element-scoped widgets render into
+      // elementForm for the selected element; slide-wide stays in form.
+      elementForm,
+      selectedElement: elementActive ? selectedElement : null,
       slide,
       def,
       add,
@@ -1195,6 +1305,35 @@ export function createRerenderEditor({
     // AI refine box last: tooling under the settings.
     if (aiIteratePanel) form.append(aiIteratePanel);
 
-    editorMount.append(form);
+    // Selection-aware inspector: with an element selected and its element form
+    // populated, show a [This element | Slide] tab bar over the two panels;
+    // otherwise the pane is just the slide form (identical to pre-tab behavior).
+    if (!contentOnly && elementActive && elementForm.childNodes.length) {
+      const tabBar = h('div', { class: 'inspector-tabs', role: 'tablist' });
+      const mkTab = (label, isEl) => {
+        const on = isEl === activeElementTab;
+        return h('button', {
+          type: 'button',
+          role: 'tab',
+          class: `inspector-tab${on ? ' is-active' : ''}`,
+          'aria-selected': on ? 'true' : 'false',
+          text: label,
+          onclick: () => {
+            activeElementTab = isEl;
+            rerenderEditor();
+          },
+        });
+      };
+      tabBar.append(
+        mkTab(elementTabLabel(selectedElement), true),
+        mkTab(t('editor.inspector.tab.slide', 'Slide'), false)
+      );
+      editorMount.append(tabBar);
+      elementForm.hidden = !activeElementTab;
+      form.hidden = activeElementTab;
+      editorMount.append(elementForm, form);
+    } else {
+      editorMount.append(form);
+    }
   };
 }

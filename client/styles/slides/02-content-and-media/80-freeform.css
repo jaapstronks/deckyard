@@ -185,16 +185,9 @@
   width: 100%;
   height: 100%;
   background: var(--slide-border-light, rgba(0, 0, 0, 0.12));
-  display: flex;
-  align-items: center;
-  justify-content: center;
   border-radius: var(--slide-radius-sm, 10px);
-}
-
-.freeform-element--image.is-placeholder .freeform-image-placeholder svg {
-  width: 48px;
-  height: 48px;
-  fill: var(--slide-border-strong, rgba(0, 0, 0, 0.18));
+  /* centring + glyph sizing come from .image-placeholder / .is-compact */
+  color: var(--slide-border-strong, rgba(0, 0, 0, 0.18));
 }
 
 /* -----------------------------------------------------------------------------

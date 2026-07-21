@@ -86,13 +86,13 @@ export function createIntegrationsTab({ user }) {
     type: 'text',
     class: 'form-input',
     maxlength: '200',
-    placeholder: 'My Presentations',
+    placeholder: t('settings.integrations.rss.titlePlaceholder', 'My Presentations'),
   });
   const rssDescInput = h('input', {
     type: 'text',
     class: 'form-input',
     maxlength: '500',
-    placeholder: 'Published presentations from our team',
+    placeholder: t('settings.integrations.rss.descPlaceholder', 'Published presentations from our team'),
   });
   const rssLangSel = h('select', { class: 'form-input' });
   for (const [val, label] of [

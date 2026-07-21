@@ -407,3 +407,108 @@
 .custom-type-context-menu .dropdown-item.is-danger:hover {
   background: hsl(var(--app-danger) / 0.1);
 }
+
+/* ============================================================
+   TEMPLATE SYNTAX HELP (collapsible reference under the template)
+   ============================================================ */
+
+.template-help {
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-2) var(--ps-space-3);
+}
+
+.template-help > summary {
+  cursor: pointer;
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.template-help > summary:hover {
+  color: hsl(var(--app-text-primary));
+}
+
+.template-help[open] > summary {
+  margin-bottom: var(--ps-space-3);
+}
+
+/* Two columns on room, stacked when narrow: the syntax is the label and the
+   sentence next to it is the explanation. */
+.template-help-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--ps-space-2) var(--ps-space-4);
+  margin: 0;
+  font-size: var(--ps-text-sm);
+}
+
+.template-help-list dt {
+  margin: 0;
+}
+
+.template-help-list dd {
+  margin: 0;
+  color: hsl(var(--app-text-secondary));
+}
+
+.template-help code,
+.template-help-field-list code {
+  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace);
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: hsl(var(--app-bg-sunken));
+  white-space: nowrap;
+}
+
+.template-help-fields {
+  margin-top: var(--ps-space-4);
+  padding-top: var(--ps-space-3);
+  border-top: 1px solid hsl(var(--app-border-subtle));
+}
+
+.template-help-field-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+}
+
+@media (max-width: 640px) {
+  .template-help-list {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-1) 0;
+  }
+  .template-help-list dd {
+    margin-bottom: var(--ps-space-2);
+  }
+}
+
+/* ============================================================
+   CUSTOM TYPE REORDERING (drag the cards in the grid)
+   ============================================================ */
+
+.custom-type-card[draggable='true'] {
+  cursor: grab;
+}
+
+.custom-type-card.is-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
+
+/* Insertion marker: a grid item of its own, so it lands in the flow where the
+   card would and the surrounding cards visibly make room. */
+.custom-type-drop-marker {
+  border: 2px dashed hsl(var(--app-accent-primary));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-accent-primary) / 0.06);
+  min-height: 60px;
+  pointer-events: none;
+}
+
+/* Buttons inside a draggable card must not start a card drag of their own. */
+.custom-type-card button {
+  cursor: pointer;
+}

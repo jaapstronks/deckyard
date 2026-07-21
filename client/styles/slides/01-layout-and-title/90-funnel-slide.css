@@ -197,7 +197,7 @@
    RESPONSIVE
    =========================================== */
 
-@media (max-width: 980px) {
+@media (max-width: 1024px) {
   .slide-funnel .funnel-container {
     gap: 6px;
   }

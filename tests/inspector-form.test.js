@@ -105,7 +105,9 @@ test('inspector renders settings but no content text fields (content-slide)', ()
   assert.equal(mount.querySelector('.editor-text-fields'), null, 'Text section is gone');
 
   const labels = fieldLabels(mount);
-  assert.ok(labels.some((l) => l.includes('layout')), 'layout enum renders');
+  // The content slide's layout enum only toggles 1/2 text columns, so it's
+  // labelled "Text columns" (the toolbar chip owns the structural "Layout").
+  assert.ok(labels.some((l) => l.includes('text columns')), 'text-columns enum renders');
   assert.ok(labels.some((l) => l.includes('text size')), 'density enum renders');
   // Content fields (title/body live on the slide + bulk modal) must not
   // render. Inputs inside the Background/Accessibility sections

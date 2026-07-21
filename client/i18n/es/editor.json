@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Elija una imagen existente de la biblioteca, o suba su propia imagen solo para esta diapositiva.",
   "editor.image.bgLibraryTitle": "Biblioteca: elegir imagen de fondo",
   "editor.image.chooseFromLibrary": "Elegir de la biblioteca…",
-  "editor.image.defaultBackgrounds": "Fondos predeterminados",
+  "editor.image.themeBackgrounds": "De este tema",
   "editor.image.fieldLabel": "Imagen",
   "editor.image.help.storage": "Las imágenes se almacenan localmente en /server/uploads y se usan vía URL.",
   "editor.image.help.uploadsDisabled": "Elegir de la biblioteca (recomendado). Las subidas están desactivadas.",
@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Todo",
   "comments.filter.waitingForMe": "Esperándome",
   "comments.empty.waiting": "Nada pendiente para ti aquí",
+  "comments.empty.noSlide": "Selecciona una diapositiva para ver sus comentarios",
   "comments.unread": "Nueva actividad",
   "mentions.noResults": "No hay usuarios coincidentes",
   "mentions.noAccess.title": "Sin acceso a esta presentación",
@@ -352,5 +353,6 @@
   "subscription.level.mute.help": "Silencia este deck. Las @menciones directas aún te llegan.",
   "subscription.saved": "Ajuste de notificaciones guardado",
   "subscription.saveFailed": "No se pudo guardar el ajuste",
-  "subscription.loadFailed": "No se pudo cargar el ajuste"
+  "subscription.loadFailed": "No se pudo cargar el ajuste",
+  "editor.slide.background.lockedByTheme": "Definido por el tema, no editable por diapositiva."
 }

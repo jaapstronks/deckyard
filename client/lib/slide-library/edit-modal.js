@@ -258,7 +258,7 @@ export function openEditModal({
       }
       close(true);
     } else {
-      status.textContent = String(result.error?.message || result.error || 'Save failed');
+      status.textContent = String(result.error?.message || result.error || t('common.saveFailed', 'Save failed'));
       toast.error(t('slideLibrary.edit.saveFailed', 'Failed to save slide.'));
       saving = false;
       saveBtn.disabled = false;

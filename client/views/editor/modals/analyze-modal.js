@@ -7,6 +7,7 @@
 
 import { createPromiseModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 
 export function openAnalyzeModal({
   h,
@@ -159,7 +160,7 @@ export function openAnalyzeModal({
       if (error?.name === 'AbortError') return;
       console.error('[analyze] Error:', error);
       statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-        message: error?.message || 'Unknown error',
+        message: error?.message || t('common.unknownError', 'Unknown error'),
       });
       btnCancel.style.display = 'none';
       btnClose.style.display = '';
@@ -210,7 +211,7 @@ export function openAnalyzeModal({
         });
         const bodyText = h('span', {
           class: 'analyze-suggestion-body',
-          text: truncate(data.comment?.body || '', 80),
+          text: truncate(stripMentionMarkup(data.comment?.body || ''), 80),
         });
         suggestionEl.append(categoryBadge, bodyText);
         suggestionsList.append(suggestionEl);
@@ -238,7 +239,7 @@ export function openAnalyzeModal({
       case 'error':
         isRunning = false;
         statusText.textContent = t('editor.analyzeModal.error', 'Analysis failed: {message}', {
-          message: data.message || 'Unknown error',
+          message: data.message || t('common.unknownError', 'Unknown error'),
         });
         btnCancel.style.display = 'none';
         btnClose.style.display = '';

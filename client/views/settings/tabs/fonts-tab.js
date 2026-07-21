@@ -25,7 +25,7 @@ const SOURCE_LABELS = {
  */
 export function createFontsTab({ user } = {}) {
   const el = h('div', {
-    class: 'settings-tab',
+    class: 'settings-tab-view',
     id: 'settings-tab-fonts',
     role: 'tabpanel',
   });
@@ -102,7 +102,7 @@ export function createFontsTab({ user } = {}) {
     const addBtn = h('button', {
       class: 'btn btn-primary',
       type: 'button',
-      text: '+ ' + t('fonts.addFamily', 'Add Font Family'),
+      text: t('fonts.addFamilyCta', '+ Add Font Family'),
       onclick: () => showEditor(null),
     });
     header.append(addBtn);
@@ -145,7 +145,7 @@ export function createFontsTab({ user } = {}) {
       meta.append(badge);
 
       const variantCount = family.variants?.length || family.variantCount || 0;
-      const variantText = `${variantCount} variant${variantCount !== 1 ? 's' : ''}`;
+      const variantText = t('fonts.variantCount', '{count} variant(s)', { count: variantCount });
       meta.append(h('span', { text: variantText }));
       meta.append(h('span', { text: family.category }));
 
@@ -154,7 +154,7 @@ export function createFontsTab({ user } = {}) {
 
       // Preview text
       const preview = h('div', { class: 'font-preview-text' });
-      preview.textContent = 'The quick brown fox jumps over the lazy dog';
+      preview.textContent = t('fonts.pangram', 'The quick brown fox jumps over the lazy dog');
       loadFontPreview(family, preview);
 
       // Actions
@@ -262,7 +262,9 @@ export function createFontsTab({ user } = {}) {
   async function handleDelete(family) {
     const confirmed = await confirmModal(h, document.body, {
       title: t('common.delete', 'Delete'),
-      message: t('fonts.confirmDelete', `Delete "${family.name}" and all its variants?`),
+      message: t('fonts.confirmDelete', 'Delete "{name}" and all its variants?', {
+        name: family.name,
+      }),
       confirmLabel: t('common.delete', 'Delete'),
       danger: true,
     });

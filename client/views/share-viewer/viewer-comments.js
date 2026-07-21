@@ -6,6 +6,9 @@ import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/modal.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isGuestCommentAuthor } from '../../lib/comment-authz.js';
+import { renderCommentBodyNodes } from '../../lib/comment-body.js';
+import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 
 /**
  * Create a comments section for the share viewer.
@@ -62,12 +65,14 @@ export function createShareViewerCommentsSection({
   // Comments list
   const list = h('div', { class: 'share-viewer-comments-list' });
 
-  // Input area
+  // Input area. Same rich composer as the editor so a mention already in a
+  // body renders as a chip here too; no autocomplete, because guests have no
+  // account and cannot mention (see docs/reference/comments-and-notifications.md).
   const inputArea = h('div', { class: 'share-viewer-comments-input' });
-  const textarea = h('textarea', {
-    class: 'form-input',
+  const commentInput = createRichCommentInput({
+    className: 'form-input',
     placeholder: t('comments.addPlaceholder', 'Add a comment...'),
-    rows: 2,
+    onSubmit: () => submitComment(),
   });
   const submitBtn = h('button', {
     class: 'btn btn-primary btn-sm',
@@ -76,8 +81,8 @@ export function createShareViewerCommentsSection({
     onclick: () => submitComment(),
   });
   const inputControls = h('div', { class: 'share-viewer-comments-input-controls' });
-  inputControls.append(submitBtn);
-  inputArea.append(textarea, inputControls);
+  inputControls.append(createCommentLinkButton({ input: commentInput }), submitBtn);
+  inputArea.append(commentInput.el, inputControls);
 
   section.append(header, list, inputArea);
 
@@ -166,11 +171,10 @@ export function createShareViewerCommentsSection({
     });
     headerEl.append(authorEl, timeEl);
 
-    // Body
-    const bodyEl = h('div', {
-      class: 'share-viewer-comment-body',
-      text: comment.body,
-    });
+    // Body: mention markup renders as a styled chip; everything else stays
+    // plain text. Shared with the editor thread (renderCommentBodyNodes).
+    const bodyEl = h('div', { class: 'share-viewer-comment-body' });
+    bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
     // Actions
     const actionsEl = h('div', { class: 'share-viewer-comment-actions' });
@@ -188,7 +192,7 @@ export function createShareViewerCommentsSection({
           } else {
             replyInput = createReplyInput(comment.id);
             threadEl.append(replyInput);
-            replyInput.querySelector('textarea')?.focus();
+            replyInput.querySelector('.comment-rich-input')?.focus();
           }
         },
       });
@@ -212,41 +216,44 @@ export function createShareViewerCommentsSection({
 
   function createReplyInput(parentId) {
     const container = h('div', { class: 'share-viewer-comment-reply-input' });
-    const ta = h('textarea', {
-      class: 'form-input',
+
+    const submitReply = async () => {
+      const body = replyInput.getValue().trim();
+      if (!body) return;
+      try {
+        btn.disabled = true;
+        await commentsApi.createComment({
+          body,
+          parentId,
+          slideId: getCurrentSlideId?.() || null,
+        });
+        replyInput.clear();
+        loadComments();
+      } catch (err) {
+        // Show inline error
+        console.error('Failed to post reply:', err);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    const replyInput = createRichCommentInput({
+      className: 'form-input',
       placeholder: t('comments.replyPlaceholder', 'Reply...'),
-      rows: 1,
+      onSubmit: submitReply,
     });
     const btn = h('button', {
       class: 'btn btn-xs btn-primary',
       type: 'button',
       text: t('comments.reply', 'Reply'),
-      onclick: async () => {
-        const body = ta.value.trim();
-        if (!body) return;
-        try {
-          btn.disabled = true;
-          await commentsApi.createComment({
-            body,
-            parentId,
-            slideId: getCurrentSlideId?.() || null,
-          });
-          ta.value = '';
-          loadComments();
-        } catch (err) {
-          // Show inline error
-          console.error('Failed to post reply:', err);
-        } finally {
-          btn.disabled = false;
-        }
-      },
+      onclick: submitReply,
     });
-    container.append(ta, btn);
+    container.append(replyInput.el, createCommentLinkButton({ input: replyInput }), btn);
     return container;
   }
 
   async function submitComment() {
-    const body = textarea.value.trim();
+    const body = commentInput.getValue().trim();
     if (!body) return;
 
     try {
@@ -255,7 +262,7 @@ export function createShareViewerCommentsSection({
         body,
         slideId: getCurrentSlideId?.() || null,
       });
-      textarea.value = '';
+      commentInput.clear();
       loadComments();
     } catch (err) {
       console.error('Failed to post comment:', err);

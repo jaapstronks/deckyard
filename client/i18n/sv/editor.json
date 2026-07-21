@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Välj en befintlig bild från biblioteket, eller ladda upp din egen bild endast för denna slide.",
   "editor.image.bgLibraryTitle": "Bibliotek: välj en bakgrundsbild",
   "editor.image.chooseFromLibrary": "Välj från bibliotek…",
-  "editor.image.defaultBackgrounds": "Standardbakgrunder",
+  "editor.image.themeBackgrounds": "Från detta tema",
   "editor.image.fieldLabel": "Bild",
   "editor.image.help.storage": "Bilder lagras lokalt i /server/uploads och används via URL.",
   "editor.image.help.uploadsDisabled": "Välj från biblioteket (rekommenderat). Uppladdningar är inaktiverade.",
@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Allt",
   "comments.filter.waitingForMe": "Väntar på mig",
   "comments.empty.waiting": "Inget väntar på dig här",
+  "comments.empty.noSlide": "Välj en bild för att se dess kommentarer",
   "comments.unread": "Ny aktivitet",
   "mentions.noResults": "Inga matchande användare",
   "mentions.noAccess.title": "Ingen åtkomst till denna presentation",
@@ -352,5 +353,6 @@
   "subscription.level.mute.help": "Tystar detta deck. Direkta @omnämnanden når dig ändå.",
   "subscription.saved": "Aviseringsinställning sparad",
   "subscription.saveFailed": "Kunde inte spara inställningen",
-  "subscription.loadFailed": "Kunde inte läsa in inställningen"
+  "subscription.loadFailed": "Kunde inte läsa in inställningen",
+  "editor.slide.background.lockedByTheme": "Anges av temat och kan inte redigeras per bild."
 }

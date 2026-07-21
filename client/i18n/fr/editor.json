@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Choisissez une image existante de la bibliothèque, ou téléchargez votre propre image pour cette diapositive uniquement.",
   "editor.image.bgLibraryTitle": "Bibliothèque : choisir une image d'arrière-plan",
   "editor.image.chooseFromLibrary": "Choisir dans la bibliothèque…",
-  "editor.image.defaultBackgrounds": "Arrière-plans par défaut",
+  "editor.image.themeBackgrounds": "De ce thème",
   "editor.image.fieldLabel": "Image",
   "editor.image.help.storage": "Les images sont stockées localement dans /server/uploads et utilisées via URL.",
   "editor.image.help.uploadsDisabled": "Choisir dans la bibliothèque (recommandé). Les téléchargements sont désactivés.",
@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Tout",
   "comments.filter.waitingForMe": "En attente de moi",
   "comments.empty.waiting": "Rien en attente pour vous ici",
+  "comments.empty.noSlide": "Sélectionnez une diapositive pour voir ses commentaires",
   "comments.unread": "Nouvelle activité",
   "mentions.noResults": "Aucun utilisateur trouvé",
   "mentions.noAccess.title": "Pas d'accès à cette présentation",
@@ -352,5 +353,6 @@
   "subscription.level.mute.help": "Rendre ce deck silencieux. Les @mentions directes vous parviennent toujours.",
   "subscription.saved": "Réglage de notification enregistré",
   "subscription.saveFailed": "Impossible d'enregistrer le réglage",
-  "subscription.loadFailed": "Impossible de charger le réglage"
+  "subscription.loadFailed": "Impossible de charger le réglage",
+  "editor.slide.background.lockedByTheme": "Défini par le thème, non modifiable par diapositive."
 }

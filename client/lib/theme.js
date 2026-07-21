@@ -1,10 +1,7 @@
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { THEMES as BUILTIN_THEMES } from '../../shared/slide-types/registry.js';
-import {
-  normalizeSlideBackgrounds,
-  slideBackgroundCssVars,
-  slideBackgroundsCssText,
-} from '../../shared/theme-slide-backgrounds.js';
+import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
+import { normalizeTheme } from '../../shared/theme-normalize.js';
 
 function safeThemeId(raw) {
   const s = String(raw || '').trim();
@@ -22,6 +19,73 @@ const inFlightRequests = new Map(); // id -> Promise (prevents duplicate fetches
 
 export function normalizeThemeId(rawThemeId) {
   return safeThemeId(rawThemeId);
+}
+
+const fontStyleId = (key) => `theme-fonts-${key || 'unknown'}`;
+const bgStyleId = (key) => `theme-slide-bgs-${key || 'unknown'}`;
+
+// Editing a theme in one tab has to reach the others: an editor open on a deck
+// keeps rendering the cached copy otherwise. BroadcastChannel is optional
+// (older Safari, some embedded webviews), so guard it — losing cross-tab
+// refresh is a smaller failure than throwing during module load.
+const THEME_CHANNEL = 'deckyard-theme';
+let themeChannel = null;
+try {
+  if (typeof BroadcastChannel === 'function') {
+    themeChannel = new BroadcastChannel(THEME_CHANNEL);
+    // In Node (test runs) a BroadcastChannel is an active handle that keeps the
+    // event loop alive, so importing this module would hang the process on
+    // exit. unref() lets the process end while the channel still delivers
+    // messages whenever the loop is running; it's absent in the browser, where
+    // there is nothing to unref, so the optional call is a no-op there.
+    themeChannel.unref?.();
+    themeChannel.onmessage = (event) => {
+      const id = event?.data?.themeId;
+      if (event?.data?.type !== 'theme-changed') return;
+      dropTheme(id ? safeThemeId(id) : null);
+    };
+  }
+} catch {
+  themeChannel = null;
+}
+
+/** Drop a cached theme (or all of them) plus the style elements it injected. */
+function dropTheme(id) {
+  const keys = id ? [id] : [...themeCache.keys()];
+  for (const key of keys) {
+    themeCache.delete(key);
+    // A fetch already in flight would repopulate the cache with the copy we are
+    // trying to discard.
+    inFlightRequests.delete(key);
+    // The injected <style> elements are idempotent per id, so leaving them
+    // behind would keep serving the old @font-face and .slide-bg-* rules.
+    for (const styleId of [fontStyleId(key), bgStyleId(key)]) {
+      document.getElementById(styleId)?.remove();
+    }
+  }
+}
+
+/**
+ * Forget a cached theme so the next render re-fetches it.
+ *
+ * Call after saving or deleting a theme. Also tells other tabs, so an editor
+ * open on a deck picks the change up without a reload.
+ *
+ * @param {string} rawThemeId
+ */
+export function invalidateTheme(rawThemeId) {
+  const id = safeThemeId(rawThemeId);
+  dropTheme(id);
+  try {
+    themeChannel?.postMessage({ type: 'theme-changed', themeId: id });
+  } catch {
+    // A closed channel must not break the local invalidation above.
+  }
+}
+
+/** Forget every cached theme. Mostly for tests and hard refreshes. */
+export function clearThemeCache() {
+  dropTheme(null);
 }
 
 async function fetchThemeData(id) {
@@ -67,6 +131,26 @@ async function fetchThemeData(id) {
   return null;
 }
 
+/**
+ * Did this fetch return the theme we asked for?
+ *
+ * A file theme's `id` is the id we requested. A **database** theme is requested
+ * by UUID but reports its slug as `id` (that is what `buildThemeConfig` emits),
+ * so comparing ids alone rejected every custom theme and fell back to a blank
+ * one — the whole theme rendered unstyled in the browser while server exports
+ * looked correct. `_customThemeId` carries the UUID, so check both.
+ *
+ * @param {Object} theme
+ * @param {string} id - the id `loadThemeById` was asked for
+ * @returns {boolean}
+ */
+function isThemeForId(theme, id) {
+  if (!theme) return false;
+  return (
+    String(theme.id || '') === id || String(theme._customThemeId || '') === id
+  );
+}
+
 export async function loadThemeById(rawThemeId) {
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
@@ -79,7 +163,7 @@ export async function loadThemeById(rawThemeId) {
   const promise = fetchThemeData(id).then((theme) => {
     inFlightRequests.delete(id);
     theme = normalizeTheme(theme);
-    if (!theme || String(theme.id || '') !== id) {
+    if (!isThemeForId(theme, id)) {
       theme = normalizeTheme({
         id,
         label: id,
@@ -87,10 +171,10 @@ export async function loadThemeById(rawThemeId) {
         cssVars: {},
       });
     }
-    // Inject @font-face rules so custom/uploaded fonts render in the editor
-    injectThemeFontFaces(theme);
-    // Inject generated .slide-bg-<id> rules for theme-defined bg variants
-    injectThemeSlideBgStyles(theme);
+    // Style elements are keyed by the id we were asked for, not the theme's own
+    // id, so invalidateTheme() can find and remove them again.
+    injectThemeFontFaces(theme, id);
+    injectThemeSlideBgStyles(theme, id);
     themeCache.set(id, theme);
     return theme;
   });
@@ -104,9 +188,9 @@ export async function loadThemeById(rawThemeId) {
  * Handles both path-based (curated) and URL-based (uploaded) fonts.
  * Idempotent — skips fonts that are already loaded.
  */
-export function injectThemeFontFaces(theme) {
+export function injectThemeFontFaces(theme, key = null) {
   if (!theme?.embedFonts?.length) return;
-  const styleId = `theme-fonts-${theme.id || 'unknown'}`;
+  const styleId = fontStyleId(key || theme.id);
   if (document.getElementById(styleId)) return;
 
   const rules = [];
@@ -142,10 +226,10 @@ export function injectThemeFontFaces(theme) {
  * `--t-slide-bg-<id>*` vars applied per slide element, so rules from different
  * themes coexist. Idempotent per theme id, like injectThemeFontFaces.
  */
-export function injectThemeSlideBgStyles(theme) {
+export function injectThemeSlideBgStyles(theme, key = null) {
   if (!Array.isArray(theme?.slideBackgrounds) || !theme.slideBackgrounds.length)
     return;
-  const styleId = `theme-slide-bgs-${theme.id || 'unknown'}`;
+  const styleId = bgStyleId(key || theme.id);
   if (document.getElementById(styleId)) return;
   const css = slideBackgroundsCssText(theme.slideBackgrounds);
   if (!css) return;
@@ -171,185 +255,10 @@ export function applyThemeVarsToElement(el, theme) {
   }
 }
 
-function hexToRgb(hex) {
-  const s = String(hex || '').trim();
-  const m = s.match(/^#?([0-9a-f]{6})$/i);
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
-
-function rgba(hex, a) {
-  const c = hexToRgb(hex);
-  if (!c) return null;
-  const alpha = Math.max(0, Math.min(1, Number(a)));
-  return `rgba(${c.r}, ${c.g}, ${c.b}, ${alpha})`;
-}
-
-function normalizeTheme(theme) {
-  if (!theme || typeof theme !== 'object') return theme;
-  if (!theme.cssVars || typeof theme.cssVars !== 'object') theme.cssVars = {};
-  if (!Array.isArray(theme.hiddenSlideTypes)) theme.hiddenSlideTypes = [];
-
-  // Theme-defined slide background variants → `--t-slide-bg-<id>*` vars
-  // (picker options + generated CSS read theme.slideBackgrounds directly).
-  theme.slideBackgrounds = normalizeSlideBackgrounds(theme.slideBackgrounds);
-  Object.assign(theme.cssVars, slideBackgroundCssVars(theme.slideBackgrounds));
-
-  // Slide type visibility & theme-specific slide types.
-  // Back-compat: `hiddenSlideTypes` is treated as `slideTypes.exclude`.
-  theme.slideTypes =
-    theme.slideTypes && typeof theme.slideTypes === 'object'
-      ? theme.slideTypes
-      : {};
-  const clean = (arr) =>
-    (Array.isArray(arr) ? arr : [])
-      .map((x) => (typeof x === 'string' ? x.trim() : ''))
-      .filter(Boolean);
-  const uniq = (arr) => {
-    const out = [];
-    const seen = new Set();
-    for (const s of clean(arr)) {
-      if (seen.has(s)) continue;
-      seen.add(s);
-      out.push(s);
-    }
-    return out;
-  };
-  theme.hiddenSlideTypes = uniq(theme.hiddenSlideTypes);
-  theme.slideTypes.exclude = uniq([
-    ...(Array.isArray(theme.slideTypes.exclude) ? theme.slideTypes.exclude : []),
-    ...theme.hiddenSlideTypes,
-  ]);
-  theme.slideTypes.include = uniq(theme.slideTypes.include);
-
-  const enabled = !!theme?.gradient?.enabled;
-  theme.cssVars['--t-gradient-enabled'] = enabled ? '1' : '0';
-
-  if (enabled && !theme.cssVars['--t-slide-gradient-bg']) {
-    const c1 = String(theme.cssVars['--t-quote-author-color'] || '').trim();
-    const c2 = String(theme.cssVars['--t-color-accent'] || '').trim();
-    const c3 = String(theme.cssVars['--t-slide-bg-mist'] || '').trim();
-    const base = '#06090b';
-    const r1 = rgba(c1, 1);
-    const r1b = rgba(c1, 0.65);
-    const r1c = rgba(c1, 0.22);
-    const r2 = rgba(c2, 0.95);
-    const r2b = rgba(c2, 0.55);
-    const r2c = rgba(c2, 0.18);
-    const r3 = rgba(c3, 0.75);
-    const r3b = rgba(c3, 0.38);
-    const r3c = rgba(c3, 0.14);
-    if (r1 && r2 && r3) {
-      theme.cssVars['--t-slide-gradient-bg'] = [
-        `radial-gradient(circle at var(--g1x) var(--g1y), ${r1} 0%, ${r1b} 18%, ${r1c} 42%, rgba(0,0,0,0) 72%)`,
-        `radial-gradient(circle at var(--g2x) var(--g2y), ${r2} 0%, ${r2b} 22%, ${r2c} 48%, rgba(0,0,0,0) 78%)`,
-        `radial-gradient(circle at var(--g3x) var(--g3y), ${r3} 0%, ${r3b} 26%, ${r3c} 52%, rgba(0,0,0,0) 82%)`,
-        base,
-      ].join(', ');
-    }
-  }
-
-  // Theme-wide light/dark text tokens (for auto-contrast).
-  const lightText = String(theme.textColorLight || '#ffffff').trim() || '#ffffff';
-  const darkText = String(theme.textColorDark || '#212121').trim() || '#212121';
-
-  if (!enabled) {
-    if (!theme.cssVars['--t-chapter-text-color']) {
-      // Chapter-title renders on the theme's dark surface
-      // (background: var(--t-slide-bg-dark)) — defaulting to the regular text
-      // colour paints dark-on-dark there. Derive from the surface's luminance.
-      const chapterBgHex = String(theme.cssVars['--t-slide-bg-dark'] || '').trim();
-      theme.cssVars['--t-chapter-text-color'] = hexToRgb(chapterBgHex)
-        ? pickTextColorForBg(chapterBgHex, { light: lightText, dark: darkText })
-        : 'var(--t-color-text, #0b0b0b)';
-    }
-    if (!theme.cssVars['--t-quote-text-color']) {
-      // Quote slides render on the theme's dark surface
-      // (background: var(--t-slide-bg-dark)), same as chapter-title — so the
-      // text colour must derive from that surface's luminance, not the regular
-      // (page-background) text colour, which paints dark-on-dark there.
-      const quoteBgHex = String(theme.cssVars['--t-slide-bg-dark'] || '').trim();
-      theme.cssVars['--t-quote-text-color'] = hexToRgb(quoteBgHex)
-        ? pickTextColorForBg(quoteBgHex, { light: lightText, dark: darkText })
-        : 'var(--t-color-text, #0b0b0b)';
-    }
-  } else {
-    if (!theme.cssVars['--t-chapter-text-color'])
-      theme.cssVars['--t-chapter-text-color'] = '#ffffff';
-  }
-  theme.cssVars['--t-text-color-light'] = lightText;
-  theme.cssVars['--t-text-color-dark'] = darkText;
-
-  // Accent contrast token.
-  const accentHex = String(theme.cssVars['--t-color-accent'] || '').trim();
-  const accentContrast = pickTextColorForBg(accentHex, {
-    light: lightText,
-    dark: darkText,
-  });
-  theme.cssVars['--t-color-accent-contrast'] = accentContrast;
-
-  // Icon card grid defaults.
-  theme.cssVars['--t-icon-card-grid-text-color'] = enabled
-    ? '#ffffff'
-    : String(theme.cssVars['--t-color-text'] || '#0b0b0b');
-  theme.cssVars['--t-icon-card-grid-subtitle-color'] = enabled
-    ? 'rgba(255, 255, 255, 0.82)'
-    : String(
-        theme.cssVars['--t-color-text-muted'] ||
-          'rgba(11, 11, 11, 0.65)'
-      );
-
-  // Icon-card-grid (Iconen kaarten) icon block:
-  // Theme can override via `--t-icon-card-grid-icon-bg`. If not set, prefer the theme's
-  // bright slide "lime" when it's a real color (and not white), otherwise fall back to accent.
-  if (!theme.cssVars['--t-icon-card-grid-icon-bg']) {
-    const limeHex = String(theme.cssVars['--t-slide-bg-lime'] || '').trim();
-    const accentHex2 = String(theme.cssVars['--t-color-accent'] || '#385c5c').trim();
-    const limeLower = limeHex.toLowerCase();
-    const useLime =
-      !!hexToRgb(limeHex) && limeLower !== '#fff' && limeLower !== '#ffffff';
-    theme.cssVars['--t-icon-card-grid-icon-bg'] = useLime ? limeHex : accentHex2;
-  }
-
-  const iconBgHex = String(theme.cssVars['--t-icon-card-grid-icon-bg'] || '').trim();
-  const iconFg = pickTextColorForBg(iconBgHex, {
-    light: lightText,
-    dark: darkText,
-  });
-  theme.cssVars['--t-icon-card-grid-icon-fg'] = iconFg;
-  // Best-effort: recolor monochrome SVG <img> icons on icon-block backgrounds.
-  theme.cssVars['--t-icon-card-grid-icon-filter'] =
-    iconFg === lightText ? 'brightness(0) invert(1)' : 'none';
-
-  return theme;
-}
-
-function pickTextColorForBg(bgHex, { light = '#ffffff', dark = '#212121' } = {}) {
-  const rgb = hexToRgb(bgHex);
-  if (!rgb) return dark;
-  const lum = relLuminance(rgb);
-  return lum < 0.5 ? light : dark;
-}
-
-function relLuminance({ r, g, b }) {
-  const toLin = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  const R = toLin(r);
-  const G = toLin(g);
-  const B = toLin(b);
-  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-}
-
-/**
- * Get background presets from a theme.
- * @param {Object} theme - Theme object
- * @returns {string[]} Array of background image URLs
- */
-export function getBackgroundPresets(theme) {
-  if (!theme || typeof theme !== 'object') return [];
-  if (!Array.isArray(theme.backgroundPresets)) return [];
-  return theme.backgroundPresets.filter((url) => typeof url === 'string' && url.trim());
-}
+// Background presets live in shared/ so the server's slide creation, deck
+// import and convert paths read them the same way the editor does. Re-exported
+// here because the editor's field modules already import from this module.
+export {
+  getBackgroundPresets,
+  pickBackgroundPreset,
+} from '../../shared/theme-background-presets.js';

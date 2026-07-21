@@ -18,8 +18,12 @@ async function getMediaStatus(api) {
 /**
  * Upload a file using the best available method.
  * Uses presigned URLs for Scaleway/S3, falls back to server-side upload for local storage.
+ *
+ * Exported so the inline WYSIWYG editor's drag & drop path reuses the exact same
+ * upload plumbing as the image-library modal (single upload destination: the
+ * built-in library). Returns `{ url }`.
  */
-async function uploadFile(api, file) {
+export async function uploadFile(api, file) {
   const status = await getMediaStatus(api);
 
   if (status.presignedSupported) {
@@ -256,7 +260,7 @@ export function createImageLibraryUpload({
     onclick: async () => {
       if (!newUrl) return;
       setBusy(true);
-      setStatus(t('common.save', 'Save') + '…');
+      setStatus(t('common.saving', 'Saving…'));
       try {
         const created = await api('/api/image-library', {
           method: 'POST',

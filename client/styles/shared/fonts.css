@@ -9,6 +9,21 @@
   font-display: swap;
 }
 
+/* Inter — the app-chrome UI sans (NOT slide themes, which stay theme-driven
+   via --font-heading/--font-body). Reuses the curated Inter asset the Google
+   Fonts postinstall already downloads for theme use; it is a single variable
+   woff2 spanning the whole weight axis, so one @font-face with a weight range
+   covers 400 body / 500-600 labels / 700 headings. Falls back to the native
+   system stack in --ps-font-sans while loading (font-display: swap) or if the
+   optional download was skipped. */
+@font-face {
+  font-family: 'Inter';
+  src: url('/assets/fonts/google/inter/inter-400.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 
 
 

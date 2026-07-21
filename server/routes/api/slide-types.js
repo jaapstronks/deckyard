@@ -15,6 +15,10 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         label: def.label,
         fields: def.fields,
         defaults: def.defaults,
+        // Deprecated types stay renderable (existing slides) but the editor's
+        // insertion policy hides them from the picker + AI. The client needs
+        // the flag to enforce that, so it travels in the metadata.
+        deprecated: def.deprecated === true ? true : undefined,
         themeId:
           typeof def.themeId === 'string' && def.themeId.trim()
             ? def.themeId.trim()

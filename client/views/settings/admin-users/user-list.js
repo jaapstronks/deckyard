@@ -73,7 +73,9 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
   const loginIndicator = h('span', {
     class: 'admin-user-status-item',
     title: hasLoggedIn
-      ? t('admin.users.status.loggedIn', 'Has logged in') + `: ${new Date(u.lastLoginAt).toLocaleDateString()}`
+      ? t('admin.users.status.loggedInOn', 'Has logged in: {date}', {
+          date: new Date(u.lastLoginAt).toLocaleDateString(),
+        })
       : t('admin.users.status.neverLoggedIn', 'Never logged in'),
   });
   const loginDot = h('span', {
@@ -115,7 +117,9 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
   const lastLoginText = h('div', {
     class: 'admin-user-last-login',
     text: hasLoggedIn
-      ? t('admin.users.lastLogin', 'Last login') + ': ' + new Date(u.lastLoginAt).toLocaleString()
+      ? t('admin.users.lastLoginAt', 'Last login: {date}', {
+          date: new Date(u.lastLoginAt).toLocaleString(),
+        })
       : t('admin.users.neverLoggedIn', 'Never logged in'),
   });
   userInfo.append(lastLoginText);

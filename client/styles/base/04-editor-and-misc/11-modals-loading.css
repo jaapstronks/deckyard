@@ -53,7 +53,7 @@
 .loading-modal-spinner {
   width: 80px;
   height: 80px;
-  color: hsl(var(--app-accent));
+  color: hsl(var(--app-accent-text));
 }
 
 .loading-spinner-svg {
@@ -105,7 +105,7 @@
   color: hsl(var(--app-text-primary));
   min-height: 1.5em;
   padding: var(--ps-space-3) var(--ps-space-4);
-  background: hsl(var(--app-accent) / 0.1);
+  background: hsl(var(--app-accent-primary) / 0.1);
   border-radius: var(--ps-radius-md);
   transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
@@ -142,7 +142,7 @@
 
 .loading-modal-progress-bar {
   height: 100%;
-  background: hsl(var(--app-accent));
+  background: hsl(var(--app-accent-primary));
   border-radius: 4px;
   transition: width 0.4s ease-out;
 }

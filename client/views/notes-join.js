@@ -63,7 +63,7 @@ export async function renderNotesJoin(
   const canvas = h('canvas', {
     class: 'join-qr',
     role: 'img',
-    'aria-label': 'QR code',
+    'aria-label': t('qr.alt', 'QR code'),
   });
 
   const link = h('div', {

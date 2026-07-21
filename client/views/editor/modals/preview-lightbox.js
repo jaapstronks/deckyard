@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
+import { renderCommentBodyNodes } from '../../../lib/comment-body.js';
 
 export function createPreviewLightbox({
   h,
@@ -187,11 +188,9 @@ export function createPreviewLightbox({
       });
       headerEl.append(authorEl, timeEl, closeBtn);
 
-      // Body with comment text
-      const bodyEl = h('div', {
-        class: 'comment-detail-body',
-        text: comment.body,
-      });
+      // Body with comment text (mention markers render as chips)
+      const bodyEl = h('div', { class: 'comment-detail-body' });
+      bodyEl.append(...renderCommentBodyNodes(comment.body, h));
 
       // Replies if any
       const repliesEl = h('div', { class: 'comment-detail-replies' });
@@ -202,10 +201,8 @@ export function createPreviewLightbox({
             class: 'comment-detail-reply-author',
             text: reply.authorName || reply.authorEmail || t('comments.unknownAuthor', 'Unknown'),
           });
-          const replyBody = h('span', {
-            class: 'comment-detail-reply-body',
-            text: reply.body,
-          });
+          const replyBody = h('span', { class: 'comment-detail-reply-body' });
+          replyBody.append(...renderCommentBodyNodes(reply.body, h));
           replyEl.append(replyAuthor, replyBody);
           repliesEl.append(replyEl);
         }

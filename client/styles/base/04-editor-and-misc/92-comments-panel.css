@@ -39,47 +39,9 @@
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
-.comments-scope {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
-.comments-scope-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.comments-scope-btn:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.comments-scope-btn:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.comments-scope-btn.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
-}
+/* The scope switch is the shared segmented control in its outlined variant
+   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
+   `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
 
 .comments-filter-trigger {
   padding: 3px 8px;
@@ -342,6 +304,70 @@
 .comments-input-textarea:focus {
   outline: none;
   border-color: var(--primary-color, #007bff);
+}
+
+/* Rich composer: a contenteditable standing in for the old textarea, so it
+   has to reproduce the bits a textarea gives for free (wrapping, scrolling,
+   and a placeholder). Mentions live inside it as atomic chips. */
+.comment-rich-input {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  max-height: 160px;
+  cursor: text;
+}
+
+.comment-rich-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #007bff);
+}
+
+.comment-rich-input:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-muted, #999);
+  pointer-events: none;
+}
+
+/* A chip inside the composer is a single object: it must not be split by a
+   line break, and text selection should treat it as one unit. */
+.comment-mention-chip-input {
+  white-space: nowrap;
+  user-select: all;
+}
+
+/* Links look the same while you type them and after you post, which is the
+   whole point of showing them as links rather than as `[text](url)` markup. */
+.comment-body-link {
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.comment-body-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* In the composer the label stays editable, so it must not read as a
+   navigation target — no pointer cursor, and typing into it is normal. */
+.comment-link-input {
+  cursor: text;
+}
+
+.comments-input-controls.is-between {
+  justify-content: space-between;
+}
+
+.comment-toolbar-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-muted, #666);
+  background: transparent;
+  border: 1px solid var(--border-color, #e0e0e0);
+}
+
+.comment-toolbar-btn:hover {
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  border-color: hsl(var(--app-accent-primary) / 0.6);
 }
 
 .comments-input-controls {

@@ -8,13 +8,15 @@ import {
   clampInt,
   pickAltText,
   objectPositionStyleAttrFromFocus,
+  imagePlaceholderHtml,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 function safeImagesArr(images) {
   return Array.isArray(images) ? images : [];
 }
 
-function imageHtml(image, idx) {
+function imageHtml(image, idx, copy) {
   const src = typeof image?.src === 'string' ? image.src.trim() : '';
   const caption = typeof image?.caption === 'string' ? image.caption.trim() : '';
   const altExplicit = typeof image?.alt === 'string' ? image.alt.trim() : '';
@@ -23,9 +25,7 @@ function imageHtml(image, idx) {
   if (!src) {
     return `
       <div class="gallery-item" data-item="${imageNum}" data-inline-item="images" data-inline-item-index="${idx}">
-        <div class="gallery-image-placeholder is-empty" data-inline-photo="${idx}">
-          <span class="placeholder-text">Image ${imageNum}</span>
-        </div>
+        ${imagePlaceholderHtml({ className: 'gallery-image-placeholder', label: `${copy.imagePlaceholder} ${imageNum}`, index: idx })}
         ${caption ? `<div class="gallery-caption" data-inline-field="images.${idx}.caption" dir="auto">${esc(caption)}</div>` : ''}
       </div>
     `;
@@ -203,7 +203,7 @@ export default {
 
     const imagesHtml = images
       .slice(0, count)
-      .map((image, idx) => imageHtml(image, idx))
+      .map((image, idx) => imageHtml(image, idx, getSlideCopy(ctx?.lang)))
       .join('');
 
     return `

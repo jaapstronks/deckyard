@@ -30,7 +30,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
   header.append(
     h('div', {
       class: 'share-section-title',
-      text: t('share.links.sectionTitle', 'Share Links (External Guests)'),
+      text: t('share.links.sectionTitle', 'Anyone with the link'),
     })
   );
 
@@ -39,7 +39,7 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     class: 'help share-modal-help',
     text: t(
       'share.modal.help',
-      'Create shareable links to give external users access without requiring an account.'
+      'Create a link that works without a Deckyard account.'
     ),
   });
 
@@ -120,7 +120,35 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
     h('div', { class: 'share-form-actions' }, [createBtn]),
   ]);
 
-  createSection.append(createTitle, createForm);
+  // Inline panel for a freshly-created link: shows the URL in a copyable field
+  // so the user can see exactly what landed on their clipboard (auto-copy alone
+  // left people unsure whether they had a link to paste).
+  const createdLinkInput = h('input', {
+    class: 'form-input share-created-link-input',
+    readonly: true,
+    'aria-label': t('share.create.newLinkTitle', 'New share link'),
+  });
+  createdLinkInput.addEventListener('focus', () => createdLinkInput.select());
+  const createdLinkCopyBtn = h('button', {
+    class: 'btn btn-primary btn-sm share-created-link-copy',
+    text: t('common.copy', 'Copy'),
+    onclick: async () => {
+      const ok = await copyToClipboard(createdLinkInput.value);
+      if (ok) {
+        toast?.success(t('common.copied', 'Copied!'), { durationMs: 1500 });
+      }
+      createdLinkInput.focus();
+    },
+  });
+  const createdLinkPanel = h('div', { class: 'share-created-link', hidden: true }, [
+    h('div', {
+      class: 'share-created-link-title',
+      text: t('share.create.newLinkTitle', 'New share link'),
+    }),
+    h('div', { class: 'share-created-link-row' }, [createdLinkInput, createdLinkCopyBtn]),
+  ]);
+
+  createSection.append(createTitle, createForm, createdLinkPanel);
 
   // Links list section
   const linksSection = h('div', { class: 'share-links-section' });
@@ -153,14 +181,17 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
         }),
       });
 
-      // Copy the new link
+      // Surface the new link inline (and auto-copy it as a convenience).
       if (resp?.url) {
+        createdLinkInput.value = resp.url;
+        createdLinkPanel.hidden = false;
         const ok = await copyToClipboard(resp.url);
         if (ok) {
           toast?.success(t('share.create.copiedToClipboard', 'Link copied to clipboard!'), {
             durationMs: 2500,
           });
         }
+        createdLinkInput.focus();
       }
 
       // Reset form

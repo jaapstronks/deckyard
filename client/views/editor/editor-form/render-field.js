@@ -3,6 +3,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/i18n.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
+import { createCsvGridEditor } from '../fields/csv-grid.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -178,6 +179,23 @@ export function createRenderField({
       );
     }
 
+    if (field.type === 'csv') {
+      // Data-grid editor (currently the chart `data` field). The chart side form
+      // renders its own instance; this branch covers the generic dispatch path.
+      const dataEditor = createCsvGridEditor({
+        h,
+        chartType: String(slide.content?.chartType || 'bar'),
+        value: slide.content[field.key] || '',
+        label: t(field.labelKey || field.key, field.label || field.key),
+        onChange: (csv) => {
+          slide.content[field.key] = csv;
+          markDirty?.();
+          scheduleUiRefresh?.();
+        },
+      });
+      return dataEditor.el;
+    }
+
     if (field.type === 'code') {
       if (!fieldCode) return null;
       // Capability-gated fields (e.g. raw HTML/CSS) are read-only unless the
@@ -273,11 +291,16 @@ export function createRenderField({
             .then(({ shouldContain }) => {
               if (shouldContain) {
                 if (slide.type === 'image-slide') {
-                  // Only auto-switch if user hasn't explicitly set a layout yet (still on default 'full')
-                  const currentLayout = slide.content.layout;
-                  if (!currentLayout || currentLayout === 'full') {
-                    slide.content.layout = 'centered';
-                    debugLog('[auto-fit] Switched image-slide to centered layout due to aspect ratio mismatch');
+                  // Fit is an ImageRef axis (step 3): only auto-switch when the
+                  // user hasn't explicitly chosen one (no own fit, no legacy
+                  // layout beyond the old default 'full').
+                  const c = slide.content;
+                  const explicit =
+                    c.fit === 'cover' || c.fit === 'contain' ||
+                    (c.layout && c.layout !== 'full');
+                  if (!explicit) {
+                    c.fit = 'contain';
+                    debugLog('[auto-fit] Switched image-slide to contain fit due to aspect ratio mismatch');
                     toast.info(
                       t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout.'),
                       { id: 'auto-fit-toast' }
@@ -287,10 +310,17 @@ export function createRenderField({
                     scheduleUiRefresh?.();
                   }
                 } else if (slide.type === 'image-text-slide') {
-                  // Only auto-switch if user hasn't explicitly set imageFit yet (still on default 'cover')
-                  const currentFit = slide.content.imageFit;
+                  // Fit is per-image (ImageRef, step 2b): auto-switch the first
+                  // item's fit, and only when the user hasn't explicitly set one.
+                  // This path fires from the legacy flat `image` field, so the
+                  // image may not be migrated into images[0] yet - then write
+                  // the legacy slide-level fit, which the next edit folds in.
+                  const items = Array.isArray(slide.content.images) ? slide.content.images : [];
+                  const item0 = items[0] && typeof items[0] === 'object' ? items[0] : null;
+                  const currentFit = item0?.fit || slide.content.imageFit;
                   if (!currentFit || currentFit === 'cover') {
-                    slide.content.imageFit = 'contain';
+                    if (item0) item0.fit = 'contain';
+                    else slide.content.imageFit = 'contain';
                     debugLog('[auto-fit] Switched image-text-slide to contain fit due to aspect ratio mismatch');
                     toast.info(
                       t('editor.autoFit.applied', 'Switched to "Fit (no crop)" to show your full image. You can change this in Layout options.'),

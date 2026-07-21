@@ -26,16 +26,21 @@ import { getByPath, setByPath, fieldMetaForPath, isEmptyValue } from './field-pa
 import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
-import { openMediaPopover } from './media-popover.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
+import { uploadFile } from '../image-library/upload.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { toast } from '../../../lib/toast.js';
 import { createBasicFields } from '../fields/basic.js';
+import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 
 /**
  * @param {Object} opts
  * @param {Function} opts.h - DOM helper
+ * @param {Function} [opts.api] - fetch wrapper; used to upload dropped image files
+ * @param {boolean} [opts.uploadsEnabled] - whether drag & drop image upload onto
+ *   empty placeholders is available (mirrors `features.disableUploads`)
  * @param {HTMLElement} opts.thumb - the preview slide container (stable element)
  * @param {HTMLElement} [opts.overlayHost] - host for the markdown modal + backdrop
  *   (defaults to the thumb's stage). A larger host (the preview panel) makes the
@@ -50,9 +55,19 @@ import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
  * @param {Function} [opts.convertSlideType] - (toType, {openMedia}) => Promise<boolean>;
  *   runs the shared convert action for the selected slide (descriptor `convert`)
  * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
+ * @param {Function} [opts.onOpenElementSettings] - (element) => void; selects the
+ *   canvas element and opens the inspector settings pane on its element tab.
+ *   The doorway to everything settable for an element: a single click on an
+ *   image opens its "This image" tab directly (no on-image chip)
+ * @param {Function} [opts.onSelectElement] - (element|null) => void; sets the
+ *   selection-aware inspector's current element ({kind:'image'|'card', idx}) or
+ *   clears it. Selecting rebuilds the inspector with the element tab active; it
+ *   only becomes visible if the settings pane is already open
  */
 export function createInlineEditor({
   h,
+  api,
+  uploadsEnabled = false,
   thumb,
   previewStage,
   overlayHost,
@@ -69,6 +84,8 @@ export function createInlineEditor({
   normalizeLang,
   convertSlideType,
   canConvertSlideTo,
+  onOpenElementSettings,
+  onSelectElement,
 } = {}) {
   if (!thumb)
     return {
@@ -101,8 +118,6 @@ export function createInlineEditor({
   let editing = null;
   let pendingRerenderRaf = 0;
   let closeMarkdownModal = null;
-  /** @type {null | {close:Function, reposition:Function}} */
-  let mediaPopover = null;
 
   const slideEl = () => thumb.querySelector('.slide');
   const currentDef = () => {
@@ -350,6 +365,113 @@ export function createInlineEditor({
     ta?.focus();
   }
 
+  // ----------------------------------------------------------------
+  // CSV data modal (grid/raw chart-data editor, same modal chrome)
+  // ----------------------------------------------------------------
+  function openCsvModal(_anchorEl, path, meta, { isNew = false } = {}) {
+    if (editing) endTextEdit();
+    dismissMarkdownModal();
+    const slide = getSlide?.();
+    if (!slide) return;
+
+    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
+    const label = fieldLabel(path, meta);
+    const chartType = String(slide.content?.chartType || 'bar');
+    let latest = raw;
+
+    const { el: editorEl } = createCsvGridEditor({
+      h,
+      chartType,
+      value: raw,
+      label,
+      onChange: (v) => {
+        latest = v;
+      },
+    });
+    editorEl.setAttribute('data-collab-field-key', String(path));
+
+    const save = () => {
+      if (latest !== raw) {
+        setByPath(slide.content, path, latest);
+        markDirty?.();
+        requestSave?.();
+        rerenderEditor?.();
+      }
+      dismissMarkdownModal();
+      rerenderPreview?.();
+    };
+    const cancel = () => {
+      dismissMarkdownModal();
+      if (isNew) rerenderPreview?.();
+    };
+
+    const closeBtn = h('button', {
+      class: 'ie-md-close',
+      type: 'button',
+      title: t('common.close', 'Close'),
+      text: '×',
+      onclick: cancel,
+    });
+    const header = h('div', { class: 'ie-md-header row spread' }, [
+      h('div', {
+        class: 'ie-md-mode',
+        text: t('editor.inline.editingField', 'Editing: {label}', { label }),
+      }),
+      closeBtn,
+    ]);
+    const footer = h('div', { class: 'ie-md-footer row spread' }, [
+      h('span', {
+        class: 'help',
+        text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save'),
+      }),
+      h('div', { class: 'row' }, [
+        h('button', {
+          class: 'btn btn-secondary btn-sm',
+          type: 'button',
+          text: t('common.cancel', 'Cancel'),
+          onclick: cancel,
+        }),
+        h('button', {
+          class: 'btn btn-primary btn-sm',
+          type: 'button',
+          text: t('common.save', 'Save'),
+          onclick: save,
+        }),
+      ]),
+    ]);
+
+    const modal = h('div', { class: 'ie-md-modal is-csv' }, [
+      header,
+      editorEl,
+      footer,
+    ]);
+    const backdrop = h('div', { class: 'ie-modal-backdrop' });
+    backdrop.addEventListener('click', cancel);
+
+    mdHost.classList.add('is-ie-modal-open');
+    mdHost.append(backdrop, modal);
+
+    const detach = installDismissOnOutside({
+      rootEl: modal,
+      isOpen: () => true,
+      close: cancel,
+    });
+    closeMarkdownModal = () => {
+      detach?.();
+      backdrop.remove();
+      modal.remove();
+      mdHost.classList.remove('is-ie-modal-open');
+    };
+
+    modal.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        save();
+      }
+    });
+    modal.querySelector('input, textarea')?.focus();
+  }
+
   function dismissMarkdownModal() {
     if (closeMarkdownModal) {
       try {
@@ -472,7 +594,12 @@ export function createInlineEditor({
   }
 
   function placeGhostChip(path, meta, anchor, reanchor) {
-    const kind = meta?.type === 'markdown' ? 'markdown' : 'text';
+    const kind =
+      meta?.type === 'csv'
+        ? 'csv'
+        : meta?.type === 'markdown'
+        ? 'markdown'
+        : 'text';
     const chip = h('button', {
       class: 'ie-ghost',
       type: 'button',
@@ -490,7 +617,11 @@ export function createInlineEditor({
   }
 
   function spawnFromGhost(path, resolveAnchor, meta, kind) {
-    // Markdown edits happen in the modal; no in-slide element is needed.
+    // Markdown / CSV edits happen in the modal; no in-slide element is needed.
+    if (kind === 'csv') {
+      openCsvModal(null, path, meta, { isNew: true });
+      return;
+    }
     if (kind === 'markdown') {
       openMarkdownModal(null, path, meta, { isNew: true });
       return;
@@ -892,73 +1023,182 @@ export function createInlineEditor({
   // Media popover (per-item image + alt + extra fields, e.g. LinkedIn)
   // ----------------------------------------------------------------
   /**
-   * Decorate item photos: a dashed outline (so they read as editable) plus an
-   * "+ Add image" hint centered on empty ones. Filled photos get a "Change
-   * image" chip. The click itself is routed in onThumbClickCapture.
+   * Decorate item photos with a dashed outline (so they read as editable).
+   *
+   * Empty slots get a centered "+ Add image" chip - they have nothing to
+   * occlude, so an affordance in the middle is fine. Filled images get NO
+   * control on the image itself (it would cover exactly what the user is
+   * judging): they are replaced by double-clicking, hinted by a small,
+   * non-interactive corner label on hover. A single click selects the image
+   * and opens its "This image" inspector tab (routed in onThumbClickCapture),
+   * which carries the explicit Replace / alt / fit / focus controls.
    */
   function insertMediaAffordances(root, _def, descriptor) {
     const media = descriptor.media;
     if (!media || typeof openImagePicker !== 'function') return;
     for (const photo of root.querySelectorAll(media.photoSelector)) {
-      outlineByField.set(photo, overlay.outline(photo));
+      const outlineBox = overlay.outline(photo);
+      outlineByField.set(photo, outlineBox);
       const isEmpty = photo.classList.contains('is-empty');
-      const chip = h('button', {
-        class: 'ie-media-hint',
-        type: 'button',
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openMediaFor(photo);
-        },
-      }, [
-        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
-        h('span', {
-          text: isEmpty
-            ? t('editor.inline.media.addImage', 'Add image')
-            : t('editor.inline.media.changeImage', 'Change image'),
-        }),
-      ]);
-      overlay.place(chip, photo, 'center', 0);
+      if (isEmpty) {
+        const chip = h('button', {
+          class: 'ie-media-hint',
+          type: 'button',
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openPickerForPhoto(photo);
+          },
+        }, [
+          h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+          h('span', { text: t('editor.inline.media.addImage', 'Add image') }),
+        ]);
+        overlay.place(chip, photo, 'center', 0);
+        // Drag an image file straight from the desktop onto an empty placeholder.
+        // Empty-only: replacing a filled image goes through the picker (double-
+        // click / inspector). The chip is a separate drop target because it
+        // overlays the placeholder.
+        if (uploadsEnabled && typeof api === 'function') {
+          wireImageDrop([photo, chip], photo, outlineBox);
+        }
+      } else {
+        // Non-interactive hover hint (pointer-events: none in CSS) so the click
+        // still lands on the image itself. No control ON the image.
+        const hint = h('div', {
+          class: 'ie-replace-hint',
+          'aria-hidden': 'true',
+          text: t('editor.inline.media.dblClickReplace', 'Double-click to replace'),
+        });
+        overlay.place(hint, photo, 'inset-bottom-right', 8);
+      }
+    }
+  }
+
+  // ----------------------------------------------------------------
+  // Drag & drop image upload onto empty canvas placeholders
+  // ----------------------------------------------------------------
+  /** True only for an external file drag (not an internal card-reorder drag,
+   *  which carries `text/plain`). Guards against hijacking reorder drops. */
+  function isFileDrag(e) {
+    const types = e.dataTransfer?.types;
+    return !!types && Array.from(types).includes('Files');
+  }
+
+  /**
+   * Wire dragenter/over/leave/drop on the given elements so dropping an image
+   * file uploads it and attaches it to `photo`'s slot. `els` share one depth
+   * counter so the highlight doesn't flicker when the cursor crosses between the
+   * placeholder and its centered chip; `outlineBox` gets the drop highlight.
+   */
+  function wireImageDrop(els, photo, outlineBox) {
+    let depth = 0;
+    const setActive = (on) => outlineBox?.classList.toggle('is-drop-active', !!on);
+    for (const el of els) {
+      el.addEventListener('dragenter', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        depth += 1;
+        setActive(true);
+      });
+      el.addEventListener('dragover', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+      });
+      el.addEventListener('dragleave', (e) => {
+        if (!isFileDrag(e)) return;
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) setActive(false);
+      });
+      el.addEventListener('drop', (e) => {
+        if (!isFileDrag(e)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        depth = 0;
+        setActive(false);
+        const file = e.dataTransfer?.files?.[0];
+        if (file) handleDroppedImage(photo, file);
+      });
+    }
+  }
+
+  /** Upload a dropped file and write its URL onto the placeholder's image field,
+   *  through the same dirty/save/rerender path as a popover pick. */
+  async function handleDroppedImage(photoEl, file) {
+    if (!file.type?.startsWith('image/')) {
+      toast(t('editor.inline.media.dropInvalid', 'That is not an image file.'), {
+        type: 'error',
+      });
+      return;
+    }
+    const target = resolveMediaTarget(photoEl);
+    if (!target) return;
+    // Long-lived "Uploading…" toast; dismissed explicitly on completion (there
+    // is no infinite duration, so cap it well past a realistic upload).
+    const uploading = toast(t('imageLibrary.uploading', 'Uploading…'), { durationMs: 60000 });
+    try {
+      const { url } = await uploadFile(api, file);
+      if (!url) throw new Error('no url');
+      target.member[target.imageField] = url;
+      // Raw uploads carry no provider metadata, so clear any stale ImageKit id
+      // and leave alt empty for the user to fill or AI-generate.
+      delete target.member.imagekitFileId;
+      markDirty?.();
+      requestSave?.();
+      rerenderEditor?.();
+      rerenderPreview?.();
+    } catch {
+      toast(t('editor.inline.media.dropFailed', 'Upload failed. Please try again.'), {
+        type: 'error',
+      });
+    } finally {
+      uploading?.dismiss?.();
     }
   }
 
   /**
-   * Open the media popover on the photo element with the given
-   * data-inline-photo index in the CURRENT slide DOM. Used by the convert
-   * flow: after "+ Add image" converts a text slide, the fresh placeholder
-   * gets the popover right away. No-op when the element isn't there (e.g. an
-   * async server-rendered custom type) - the placeholder itself stays
-   * clickable.
+   * Open the image picker on the photo element with the given data-inline-photo
+   * index in the CURRENT slide DOM. Used by the convert flow: after "+ Add
+   * image" converts a text slide, the fresh placeholder opens the picker right
+   * away. No-op when the element isn't there (e.g. an async server-rendered
+   * custom type) - the placeholder itself stays clickable.
    */
   function openMediaByIndex(idx) {
     const el = slideEl()?.querySelector(`[data-inline-photo="${idx}"]`);
-    if (el) openMediaFor(el);
+    if (el) openPickerForPhoto(el);
   }
 
-  function openMediaFor(photoEl) {
+  /**
+   * Resolve the slide member + field keys a photo placeholder writes to, shared
+   * by the image picker (openPickerForPhoto) and the drag & drop upload handler.
+   *
+   * Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
+   * mutate slide.content directly, substituting `{n}` -> idx in the field keys
+   * (single-image types use plain keys with idx 0; content-columns templates
+   * col{n}Image / col{n}Alt off the 1-based column number).
+   *
+   * @returns {{slide, media, idx, member, imageField, altField, extraFields}|null}
+   */
+  function resolveMediaTarget(photoEl) {
     const slide = getSlide?.();
     const descriptor = slide
       ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
       : null;
     const media = descriptor?.media;
-    if (!slide || !media || typeof openImagePicker !== 'function') return;
+    if (!slide || !media || typeof openImagePicker !== 'function') return null;
     const idx = Number(photoEl.getAttribute('data-inline-photo'));
-    if (!Number.isInteger(idx)) return;
+    if (!Number.isInteger(idx)) return null;
 
-    // Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
-    // mutate slide.content directly, substituting `{n}` -> idx in the field keys
-    // (single-image types use plain keys with idx 0; content-columns templates
-    // col{n}Image / col{n}Alt off the 1-based column number).
     let member;
     let imageField;
     let altField;
     let extraFields;
     if (media.list) {
       const arr = getByPath(slide.content, media.list);
-      if (!Array.isArray(arr)) return;
+      if (!Array.isArray(arr)) return null;
       // Renderers may draw placeholder cells beyond the current array (e.g.
-      // image-text rows padding to their cell count); create the item the
-      // popover will mutate in place.
+      // image-text rows padding to their cell count); create the item we mutate
+      // in place.
       while (arr.length <= idx) arr.push({});
       member = arr[idx];
       imageField = media.imageField;
@@ -971,40 +1211,218 @@ export function createInlineEditor({
       altField = sub(media.altField);
       extraFields = (media.extraFields || []).map((f) => ({ ...f, key: sub(f.key) }));
     }
+    return { slide, media, idx, member, imageField, altField, extraFields };
+  }
 
-    dismissMediaPopover();
-    const onEdit = () => {
-      markDirty?.();
-      requestSave?.();
-      rerenderEditor?.();
-    };
-    mediaPopover = openMediaPopover({
-      h,
-      host: mdHost,
-      anchorEl: photoEl,
-      member,
-      slide,
-      config: {
-        title: t('editor.inline.media.title', 'Image'),
-        imageField,
-        altField,
-        extraFields,
+  // The element a canvas interaction selects, for the selection-aware
+  // inspector. Only types with an element tab participate; a click that maps to
+  // nothing selectable clears the selection (back to slide-only).
+  function elementForCardPath(path) {
+    const slide = getSlide?.();
+    if (!slide) return null;
+    if (slide.type === 'icon-card-grid-slide') {
+      const m = /^items\.(\d+)(?:\.|$)/.exec(String(path || ''));
+      if (m) return { kind: 'card', idx: Number(m[1]) };
+    }
+    return null;
+  }
+
+  /**
+   * Set or replace a photo's image straight from the canvas: open the shared
+   * image picker (library / upload / ImageKit) on the resolved target and write
+   * the pick. Alt, fit, focus and delete all live in the inspector's "This
+   * image" tab now, so this is purely the pick step. After a pick the element
+   * is selected and its inspector tab opened, so the just-added image's other
+   * settings are one glance away.
+   */
+  function openPickerForPhoto(photoEl) {
+    const target = resolveMediaTarget(photoEl);
+    if (!target) return;
+    const { slide, idx, member, imageField, altField } = target;
+    const activeLang = normalizeLang?.(pres?.i18n?.active) || 'nl';
+    openImagePicker({
+      title: t('editor.image.libraryTitle', 'Images'),
+      docId: pres?.id || '',
+      context: {
+        presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+        slideId: slide?.id || '',
+        slideType: slide?.type || '',
+        slideTitle:
+          slide?.content && typeof slide.content.title === 'string' ? slide.content.title : '',
       },
-      openImagePicker,
-      pres,
-      normalizeLang,
-      onChange: onEdit,
-      onVisualChange: () => {
-        onEdit();
-        rerenderPreview?.(); // image/LinkedIn changed → the card relayouts
-        const fresh = slideEl()?.querySelector(`[data-inline-photo="${idx}"]`);
-        if (fresh) mediaPopover?.reposition(fresh);
-      },
-      onClose: () => {
-        mediaPopover = null;
+      onPick: (picked) => {
+        member[imageField] = picked?.url || '';
+        // Keep the provider id in lock-step with the URL (see applyPickMeta).
+        if (picked?.providerId) member.imagekitFileId = picked.providerId;
+        else delete member.imagekitFileId;
+        // Seed alt from the pick's active-language metadata (or single seed),
+        // but never clobber an alt the user already wrote.
+        const alts = picked?.alts && typeof picked.alts === 'object' ? picked.alts : null;
+        const seed = (alts ? alts[activeLang] : picked?.alt) || '';
+        if (altField && !String(member[altField] || '').trim() && seed) {
+          member[altField] = seed;
+        }
+        markDirty?.();
+        requestSave?.();
+        rerenderEditor?.();
+        rerenderPreview?.();
+        // Show where the rest of this image's settings live.
+        onOpenElementSettings?.({ kind: 'image', idx });
       },
     });
   }
+
+  // ----------------------------------------------------------------
+  // Focal-point drag (descriptor `focus`)
+  // ----------------------------------------------------------------
+  // A handle on each filled, cropped image sets the crop focus
+  // (object-position) by direct manipulation, replacing a trip to the 3x3 grid
+  // in the inspector. The handle updates the image live during the drag; the
+  // model write + save happens on pointerup (same dirty/save path as the
+  // popover), with no rerender mid-drag - the inline style already reflects it.
+  const clampPct = (n) => Math.max(0, Math.min(100, n));
+  const focusNum = (v) => {
+    if (v === '' || v == null) return 50;
+    const n = Number(v);
+    return Number.isFinite(n) ? clampPct(n) : 50;
+  };
+
+  /**
+   * Resolve where a photo's focal point reads/writes: reuse resolveMediaTarget
+   * for the member object + index, then the descriptor's `focus` knob for the
+   * field keys, the crop mode, and (optionally) the effective initial value.
+   * @returns {{idx:number, member:Object, xKey:string, yKey:string,
+   *   cropMode:string, initial:{x:number, y:number}}|null}
+   */
+  function resolveFocusTarget(photoEl) {
+    const base = resolveMediaTarget(photoEl);
+    if (!base) return null;
+    const slide = getSlide?.();
+    const descriptor = slide
+      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
+      : null;
+    const focus = descriptor?.focus;
+    if (!focus) return null;
+    const { idx, member, media } = base;
+    const sub = (s) => (media.list ? s : String(s).replace('{n}', String(idx)));
+    const xKey = sub(focus.xField);
+    const yKey = sub(focus.yField);
+    const cropMode =
+      typeof focus.cropMode === 'function' ? focus.cropMode(slide, idx) : 'cover';
+    const raw =
+      typeof focus.get === 'function'
+        ? focus.get(slide, idx)
+        : { x: member[xKey], y: member[yKey] };
+    return {
+      idx,
+      member,
+      xKey,
+      yKey,
+      cropMode,
+      initial: { x: focusNum(raw?.x), y: focusNum(raw?.y) },
+    };
+  }
+
+  /** A draggable focal point on each filled image whose current mode crops. */
+  function insertFocusAffordances(root, _def, descriptor) {
+    if (!descriptor.focus || !descriptor.media?.photoSelector) return;
+    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
+      if (photo.classList.contains('is-empty')) continue; // filled images only
+      const ft = resolveFocusTarget(photo);
+      if (!ft || ft.cropMode !== 'cover') continue; // crop focus only
+      const pt = overlay.focusPoint(photo, ft.initial);
+      pt.title = t('editor.inline.focus.hint', 'Drag to set image focus');
+      wireFocusDrag(pt, photo, ft);
+    }
+  }
+
+  function wireFocusDrag(pt, photo, ft) {
+    let dragging = false;
+    // object-position lives on the <img>. Some types tag the wrapper as the
+    // photo element (content-columns' .cc-image div holds the img inside), so
+    // resolve the actual image for the live style; the wrapper still gives the
+    // rect for pointer mapping (the img fills it).
+    const styleTarget =
+      photo.tagName === 'IMG' ? photo : photo.querySelector('img') || photo;
+    const toPct = (e) => {
+      const r = photo.getBoundingClientRect();
+      return {
+        x: clampPct(((e.clientX - r.left) / (r.width || 1)) * 100),
+        y: clampPct(((e.clientY - r.top) / (r.height || 1)) * 100),
+      };
+    };
+    const apply = ({ x, y }) => {
+      pt.dataset.fx = String(x);
+      pt.dataset.fy = String(y);
+      pt.setAttribute('aria-valuetext', `${Math.round(x)}% ${Math.round(y)}%`);
+      overlay.reposition();
+      styleTarget.style.objectPosition = `${x}% ${y}%`;
+    };
+    const commit = () => {
+      ft.member[ft.xKey] = Math.round(focusNum(pt.dataset.fx));
+      ft.member[ft.yKey] = Math.round(focusNum(pt.dataset.fy));
+      markDirty?.();
+      requestSave?.();
+    };
+    pt.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      pt.classList.add('is-dragging');
+      try {
+        pt.setPointerCapture(e.pointerId);
+      } catch {
+        /* pointer capture is best-effort */
+      }
+    });
+    pt.addEventListener('pointermove', (e) => {
+      if (dragging) apply(toPct(e));
+    });
+    const end = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      pt.classList.remove('is-dragging');
+      try {
+        pt.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      commit();
+    };
+    pt.addEventListener('pointerup', end);
+    pt.addEventListener('pointercancel', end);
+    // Keyboard: arrows nudge (Shift = fine 1%, else 5%), Home centers. Writes +
+    // saves per keypress; no rerender, so focus stays on the handle for repeats.
+    pt.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 1 : 5;
+      let x = focusNum(pt.dataset.fx);
+      let y = focusNum(pt.dataset.fy);
+      switch (e.key) {
+        case 'ArrowLeft': x -= step; break;
+        case 'ArrowRight': x += step; break;
+        case 'ArrowUp': y -= step; break;
+        case 'ArrowDown': y += step; break;
+        case 'Home': x = 50; y = 50; break;
+        default: return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      apply({ x: clampPct(x), y: clampPct(y) });
+      commit();
+    });
+    // A tap on the handle must not bubble to the image click (select + open tab).
+    pt.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+  }
+
+  // Fit (Cover/Contain) and the per-image "Settings" doorway used to live on
+  // the image itself (a floating pill + a chip). Both moved into the inspector's
+  // "This image" element tab: fit is a discrete choice (inspector material), and
+  // a single click on the image now opens that tab directly, so no chip is
+  // needed. Nothing renders ON the image except the focal-point handle (direct
+  // manipulation) and the empty-slot "+ Add image" affordance.
 
   // ----------------------------------------------------------------
   // Type-switch affordances (descriptor `convert`: add/remove image area)
@@ -1092,6 +1510,7 @@ export function createInlineEditor({
     if (!slide || !icons) return;
     const path = iconEl.getAttribute('data-inline-icon');
     if (!path) return;
+    onSelectElement?.(elementForCardPath(path));
     const current = getByPath(slide.content, path);
     openIconPicker({
       current: typeof current === 'string' ? current : '',
@@ -1105,17 +1524,6 @@ export function createInlineEditor({
         afterStructuralChange(); // dirty + save + form rebuild + preview remount
       },
     });
-  }
-
-  function dismissMediaPopover() {
-    if (mediaPopover) {
-      try {
-        mediaPopover.close();
-      } catch {
-        /* ignore */
-      }
-      mediaPopover = null;
-    }
   }
 
   // ----------------------------------------------------------------
@@ -1133,6 +1541,17 @@ export function createInlineEditor({
     const def = slide ? getSlideDef?.(slide.type) : null;
     const descriptor = slide ? getInlineDescriptor(slide.type, def) : null;
     if (!def || !descriptor) return; // opt-in only
+    // Dual-model types (logo-wall, team-cards) canonicalize to their array form
+    // before decorating, so the media popover / card affordances always have a
+    // stable array to write to. Idempotent and non-dirtying (the rendered
+    // output is unchanged); an actual edit is what marks the deck dirty.
+    if (typeof descriptor.ensure === 'function' && slide?.content) {
+      try {
+        descriptor.ensure(slide.content);
+      } catch {
+        /* canonicalization is best-effort; decoration still proceeds */
+      }
+    }
     thumb.classList.add('is-inline-edit');
     // Clicking an editable slide edits text; it does NOT open the lightbox, so
     // the thumb's "Click to open larger preview" tooltip would be wrong here.
@@ -1147,6 +1566,7 @@ export function createInlineEditor({
     insertClearButtons(root, def, descriptor);
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
+    insertFocusAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
 
@@ -1217,7 +1637,7 @@ export function createInlineEditor({
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.
-    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint')) {
+    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point')) {
       coach.dismiss();
       e.preventDefault();
       return;
@@ -1235,18 +1655,30 @@ export function createInlineEditor({
       return;
     }
 
-    // Item photos open the media popover (image + alt + extra fields).
+    // Item photos: a single click selects the image and opens its "This image"
+    // inspector tab (Replace / alt / fit / focus all live there). An empty slot
+    // has nothing to settle on yet, so it opens the picker straight away.
+    // Replacing a filled image is the double-click (see onThumbDblClick).
     const photoEl = target.closest('[data-inline-photo]');
     if (photoEl && thumb.contains(photoEl)) {
       coach.dismiss();
       e.preventDefault();
       e.stopPropagation();
-      openMediaFor(photoEl);
+      if (photoEl.classList.contains('is-empty')) {
+        openPickerForPhoto(photoEl);
+      } else {
+        const target2 = resolveMediaTarget(photoEl);
+        onOpenElementSettings?.({ kind: 'image', idx: target2 ? target2.idx : 0 });
+      }
       return;
     }
 
     const fieldEl = target.closest('[data-inline-field]');
-    if (!fieldEl || !thumb.contains(fieldEl)) return;
+    if (!fieldEl || !thumb.contains(fieldEl)) {
+      // A click on a non-element area of the slide clears the selection.
+      onSelectElement?.(null);
+      return;
+    }
     coach.dismiss();
     e.preventDefault();
     e.stopPropagation();
@@ -1254,16 +1686,38 @@ export function createInlineEditor({
     const def = currentDef();
     if (!def) return;
     const path = fieldEl.getAttribute('data-inline-field');
+    // Editing a card's text selects that card; any other text clears selection.
+    onSelectElement?.(elementForCardPath(path));
     const meta = fieldMetaForPath(def, path);
     const kind =
-      meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
+      meta?.type === 'csv'
+        ? 'csv'
+        : meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
         ? 'markdown'
         : 'text';
-    if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
+    if (kind === 'csv') openCsvModal(fieldEl, path, meta);
+    else if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);
   }
 
   thumb.addEventListener('click', onThumbClickCapture, true);
+
+  // Double-click a filled image to replace it: the fast path that keeps the
+  // slide clear of on-image controls. (Single click selects + opens the tab.)
+  function onThumbDblClick(e) {
+    if (!getCanEdit?.()) return;
+    if (isCommentAddMode?.()) return;
+    const target = e.target;
+    if (!target || !target.closest) return;
+    if (target.closest('.ie-focus-point')) return; // handled by the focal point
+    const photoEl = target.closest('[data-inline-photo]');
+    if (photoEl && thumb.contains(photoEl) && !photoEl.classList.contains('is-empty')) {
+      e.preventDefault();
+      e.stopPropagation();
+      openPickerForPhoto(photoEl);
+    }
+  }
+  thumb.addEventListener('dblclick', onThumbDblClick, true);
 
   function isEditing() {
     return !!editing || !!closeMarkdownModal;
@@ -1271,6 +1725,7 @@ export function createInlineEditor({
 
   function destroy() {
     thumb.removeEventListener('click', onThumbClickCapture, true);
+    thumb.removeEventListener('dblclick', onThumbDblClick, true);
     thumb.removeEventListener('pointermove', onThumbPointerMove);
     thumb.removeEventListener('pointerleave', onThumbPointerLeave);
     if (repositionRaf) cancelAnimationFrame(repositionRaf);
@@ -1278,7 +1733,6 @@ export function createInlineEditor({
     coach.destroy();
     cancelCommitRerender();
     dismissMarkdownModal();
-    dismissMediaPopover();
     restoreThumbTitle();
     if (editing) {
       try {

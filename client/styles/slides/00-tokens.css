@@ -101,14 +101,24 @@
   /* =========================================================================
      SHADOWS
      =========================================================================
-     Consistent elevation shadows. Theme-adjustable via --t-shadow-opacity.
+     Consistent elevation shadows. A theme scales all five at once through
+     `--t-shadow-scale`, a multiplier on the alpha: 0 flattens them away, 1 is
+     the default, higher deepens them. The geometry (offset, blur) is fixed —
+     a theme changes how present the elevation feels, not the light source.
      ========================================================================= */
 
-  --slide-shadow-sm: 0 2px 6px rgba(0, 0, 0, var(--slide-opacity-subtle));
-  --slide-shadow-md: 0 4px 12px rgba(0, 0, 0, var(--slide-opacity-light));
-  --slide-shadow-lg: 0 10px 22px rgba(0, 0, 0, var(--slide-opacity-muted));
-  --slide-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.10);
-  --slide-shadow-elevated: 0 12px 32px rgba(0, 0, 0, 0.15);
+  --slide-shadow-scale: var(--t-shadow-scale, 1);
+
+  --slide-shadow-sm: 0 2px 6px
+    rgba(0, 0, 0, calc(var(--slide-opacity-subtle) * var(--slide-shadow-scale)));
+  --slide-shadow-md: 0 4px 12px
+    rgba(0, 0, 0, calc(var(--slide-opacity-light) * var(--slide-shadow-scale)));
+  --slide-shadow-lg: 0 10px 22px
+    rgba(0, 0, 0, calc(var(--slide-opacity-muted) * var(--slide-shadow-scale)));
+  --slide-shadow-card: 0 8px 24px
+    rgba(0, 0, 0, calc(0.1 * var(--slide-shadow-scale)));
+  --slide-shadow-elevated: 0 12px 32px
+    rgba(0, 0, 0, calc(0.15 * var(--slide-shadow-scale)));
 
   /* =========================================================================
      SEMANTIC COLORS (using opacity tokens)

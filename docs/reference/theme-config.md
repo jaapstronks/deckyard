@@ -1,0 +1,181 @@
+# Theme config (database themes)
+
+Database themes store four colours, two fonts and two logo URLs, from which
+`server/utils/theme-builder.js` derives a full `--t-*` token set. Everything a
+**file** theme can additionally express — named background variants, background
+presets, gradient, surface tokens, slide-type curation — used to have nowhere to
+live on a DB theme.
+
+The `themes.config` jsonb column (migration `050_theme_config.js`) holds that
+richer shape. `buildThemeConfig` merges it over the derived defaults, so a DB
+theme reaches parity with a file theme.
+
+Most of this shape is editable in **Settings → Themes**, alongside the colours
+and fonts: surfaces, heading treatment, background images, named background
+options, the built-in slot names and the override locks. `slideTypes` is the
+exception — slide-type availability is curated org-wide in **Settings → Slide
+Types** instead, so a theme-level control would be a second switch for the same
+outcome.
+
+`POST`/`PUT /api/themes/custom[/:id]` accept a `config` object directly for
+anything the editor does not cover.
+
+## Shape
+
+```jsonc
+{
+  "version": 1,
+
+  // Dark/light logo variants, alongside the existing large/small pair.
+  "logos": { "dark": "…", "darkSmall": "…", "light": "…", "lightSmall": "…" },
+
+  // Named scales rather than raw pixel values, so the wizard can offer choices.
+  "surfaces": {
+    "radius": "none" | "soft" | "round",   // → --t-radius, -sm, -lg
+    "shadow": "none" | "soft" | "strong"   // → --t-shadow-scale
+  },
+
+  "typography": {
+    "headingTransform": "none" | "uppercase" | "lowercase" | "capitalize",
+    "headingWeight": 100–900,              // rounded to the nearest 100
+    "letterSpacing": "0.02em",
+    "mono": "…font stack…"
+  },
+
+  // Same entry shape and same guards as a file theme's slideBackgrounds.
+  // See docs/reference/theme-slide-backgrounds.md.
+  "slideBackgrounds": [
+    { "id": "calm", "label": "Calm", "value": "#e8f0ee", "textColor": "#0b0b0b" }
+  ],
+
+  // See docs/developer/themes.md — the only mechanism for automatic
+  // title-slide background images.
+  "backgroundPresets": ["/custom/acme-1.jpg"],
+
+  // Names for the two built-in background slots. They are storage keys, not
+  // colours — see docs/developer/themes.md.
+  "backgroundLabels": { "lime": "White", "mist": "Lilac" },
+
+  "gradient": { "enabled": false },
+  "slideTypes": { "include": [], "exclude": [] },
+  "defaultTitleSlide": "title-slide",
+
+  // Coarse per-property override policy, enforced at edit- and render-time.
+  "locks": {
+    "background": "open" | "locked",
+    "logo": "open" | "locked"
+  },
+
+  // Escape hatch: raw token values, applied last so they win.
+  "cssVarOverrides": { "--t-color-accent": "#00aa55" }
+}
+```
+
+## How `surfaces` reaches the slides
+
+Both surface controls are multipliers/scales over the slide design system in
+`client/styles/slides/00-tokens.css`, not raw values — a theme adjusts the
+*feel*, the design system keeps the proportions.
+
+| `surfaces.radius` | `--t-radius-sm` / `--t-radius` / `--t-radius-lg` |
+|---|---|
+| `none` | `0px` / `0px` / `0px` |
+| `soft` | `12px` / `16px` / `20px` |
+| `round` | `20px` / `28px` / `36px` |
+
+Consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface reads.
+
+**Leaving `radius` unset is not the same as `soft`.** `buildThemeConfig` always
+emits its own radius triple, which currently happens to match `soft`, so an
+unconfigured *DB* theme lands on `12/16/20`. A *file* theme that sets no
+`--t-radius*` at all falls through to the stylesheet's own fallbacks —
+`10px` / `18px` / `24px` (`00-tokens.css`) — which are deliberately a slightly
+different scale. Setting `soft` explicitly is therefore meaningful on a file
+theme and a no-op on a DB one.
+
+(An *invalid* radius value clamps to `soft`; an *absent* one stays absent. Same
+for shadow.)
+
+| `surfaces.shadow` | `--t-shadow-scale` |
+|---|---|
+| `none` | `0` — elevation flattened away |
+| `soft` | `1` — same as leaving it unset |
+| `strong` | `1.8` |
+
+`--t-shadow-scale` multiplies the **alpha** of all five `--slide-shadow-*`
+tokens at once. The geometry (offset, blur) is fixed: a theme changes how
+present the elevation feels, not the light source. Unlike radius, unset really
+does equal `soft` here: nothing is emitted and the stylesheet reads
+`var(--t-shadow-scale, 1)`.
+
+`@media print` still nulls all five shadows regardless — Chromium's print
+rasterizer paints blurred shadows as solid grey boxes.
+
+## Validation
+
+`shared/theme-config-schema.js` exports `validateThemeConfig(raw)`. It is
+**total**: it never throws and never returns null.
+
+- Junk input (a string, an array, `null`) yields `{}`.
+- Unknown keys are dropped.
+- Out-of-range enums fall back to their default rather than erroring.
+- A key the input did not set stays **absent**, so the builder can tell
+  "not configured" from "configured to the default value" and leave its own
+  defaults in place.
+
+A malformed config therefore can never block saving an otherwise-valid theme,
+and a stored config is always safe to merge without further checking.
+
+### `cssVarOverrides` rules
+
+- Keys must match `--t-[a-z0-9-]+`.
+- **`--t-ui-*` is rejected.** The application chrome is deliberately
+  theme-independent (see the header comment in `client/styles/theme.css`); a
+  theme must not be able to restyle the app around the slides.
+- Values are stripped of `;{}<>`, so a value cannot terminate its declaration
+  and open a new rule — the same guard `shared/theme-slide-backgrounds.js`
+  applies to variant values.
+
+## Merge order
+
+`buildThemeConfig` applies, in order:
+
+1. tokens derived from `colors` and `fonts`
+2. `surfaces` and `typography`
+3. `slideBackgrounds`, `backgroundPresets`, `gradient`, `slideTypes`,
+   `defaultTitleSlide`, `locks`
+4. `logos` into `assets`
+5. `cssVarOverrides` — **last, so a raw override always wins**
+
+An empty config leaves the derived theme byte-identical. Every row predating the
+column reads as `{}`, which is what makes the migration safe on a live install;
+`tests/theme-builder-config.test.js` pins that against a fixture.
+
+## Override locks
+
+`locks` declares, per brand property, whether a slide may override the theme:
+
+- **`open`** (the default for everything) — the theme supplies a default and a
+  per-slide override wins. Today's behaviour.
+- **`locked`** — the theme wins. The editor omits the control and explains why,
+  *and* the renderer ignores an override the slide already carries, so a deck
+  authored before the lock cannot leak past the branding.
+
+| Lock | Slide content it governs |
+|---|---|
+| `background` | `background`, `bgCustomColor`, `bgImage`, and the whole `slideBg*` group (image, fit, focus, overlay, text, plus the derived contrast hints) |
+| `logo` | `slideLogo` |
+
+**Enforcement is non-destructive.** `applyLocksToContent` returns a filtered
+*view* of the content; stored slide data is never rewritten. Unlocking a
+property restores every slide's own value.
+
+**A missing theme locks nothing.** A render path that forgets to pass
+`ctx.theme`, or a lock mode that isn't exactly `"locked"`, degrades to `open` —
+failing open, so a typo in a theme cannot silently strip every slide.
+
+Only properties with a real per-slide control are lockable. `imageRadius` and
+`shadow` were in the vocabulary before enforcement existed, but no slide type
+offers a per-slide radius or shadow, so a switch for them would have done
+nothing; they are rejected by `validateThemeConfig`. Add them back together with
+the control they would guard.

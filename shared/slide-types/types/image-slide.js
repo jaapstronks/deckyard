@@ -1,5 +1,6 @@
 import {
   esc,
+  imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
   getSubheadingText,
@@ -8,6 +9,11 @@ import {
   BACKGROUND_FIELD,
   bgClass,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
+import {
+  resolveImageSlideImage,
+  IMAGE_SLIDE_IMAGE_DEFAULTS,
+} from '../image-slide-image.js';
 
 export default {
   label: 'Image slide',
@@ -98,33 +104,35 @@ export default {
         'Only used in cropped layouts. 0 = top, 50 = center, 100 = bottom.',
     },
     {
+      // Canonical fit axis (ImageRef, datamodel step 3); empty = follow the
+      // type default (imageDefaults.fit).
+      key: 'fit',
+      label: 'Image fit',
+      type: 'enum',
+      required: false,
+      options: ['cover', 'contain'],
+    },
+    {
+      // Canonical frame axis (ImageRef): edge-to-edge, orthogonal to fit -
+      // contain + bleed (image fits, frame runs to the slide edge) is a state
+      // the old three-value `layout` could not express. Boolean; absent =
+      // follow the type default (imageDefaults.bleed).
+      key: 'bleed',
+      label: 'Edge-to-edge',
+      type: 'boolean',
+      required: false,
+    },
+    {
+      // LEGACY conflated fit+frame enum. Since datamodel step 3 the canonical
+      // axes are `fit` + `bleed` above (full -> cover, bleed -> cover+bleed,
+      // centered -> contain); this field stays declared so old decks keep
+      // validating and rendering, and the editor folds it on touch
+      // (ensureImageSlideImage).
       key: 'layout',
       label: 'Layout',
       type: 'enum',
       required: false,
-      // Note: values are persisted in decks; keep them stable.
-      // Labels explain the real behavior (cover/crop vs contain/no-crop).
-      options: [
-        {
-          value: 'full',
-          label: 'Fill (cropped)',
-          title: 'Fills the frame and may crop the image (cover).',
-          ariaLabel: 'Fill (cropped)',
-        },
-        {
-          value: 'bleed',
-          label: 'Full-bleed (cropped)',
-          title:
-            'Fills the entire slide edge-to-edge and may crop the image (cover).',
-          ariaLabel: 'Full-bleed (cropped)',
-        },
-        {
-          value: 'centered',
-          label: 'Fit (no crop)',
-          title: 'Shows the full image without cropping (contain).',
-          ariaLabel: 'Fit (no crop)',
-        },
-      ],
+      options: ['full', 'bleed', 'centered'],
     },
     BACKGROUND_FIELD,
     {
@@ -192,6 +200,10 @@ export default {
       helpCopyExample: '[{"x":25,"y":25},{"x":75,"y":25},{"x":25,"y":75},{"x":75,"y":75}]',
     },
   ],
+  // The ImageRef config anchor for this type (looked up, never stored per
+  // slide): an image without its own fit/bleed follows these. See
+  // IMAGE_SLIDE_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
+  imageDefaults: IMAGE_SLIDE_IMAGE_DEFAULTS,
   defaults: {
     title: '',
     subheading: '',
@@ -202,19 +214,19 @@ export default {
     caption: '',
     focusX: '',
     focusY: '',
-    layout: 'full',
     background: 'lime',
     zoomSteps: '',
     zoomLevel: 2,
     zoomPositions: '',
   },
-  renderHtml: (content) => {
-    const layout =
-      content?.layout === 'centered'
-        ? 'centered'
-        : content?.layout === 'bleed'
-          ? 'bleed'
-          : 'full';
+  renderHtml: (content, slide, ctx) => {
+    const copy = getSlideCopy(ctx?.lang);
+    // Two orthogonal axis classes (is-fit-* + is-bleed) replace the old
+    // conflated slide-image-{full,bleed,centered} layout class. Resolution
+    // (own value -> legacy `layout` -> type default) lives in
+    // resolveImageSlideImage - the single authority render, the editor
+    // controls and the conversion seam share.
+    const { fit, bleed } = resolveImageSlideImage(content);
     const title = content?.title
       ? `<h2 class="img-title" data-inline-field="title" dir="auto">${esc(content.title)}</h2>`
       : '';
@@ -225,11 +237,13 @@ export default {
     const heading =
       title || subheading ? `<div class="img-heading">${title}${subheading}</div>` : '';
     const hasBottom = hasBottomSubheading(content);
-    const overlayHeading = layout === 'bleed' ? heading : '';
-    const topHeading = layout === 'bleed' ? '' : heading;
-    // For bleed layout, bottom subheading goes inside the frame as an overlay
-    const bottomSubheadingOverlay = layout === 'bleed' ? renderBottomSubheadingHtml(content) : '';
-    const bottomSubheadingBelow = layout === 'bleed' ? '' : renderBottomSubheadingHtml(content);
+    // On a bleed frame the heading and bottom subheading overlay the image
+    // (there is no padded area to sit in) - keyed on the bleed axis alone, so
+    // contain + bleed overlays too.
+    const overlayHeading = bleed ? heading : '';
+    const topHeading = bleed ? '' : heading;
+    const bottomSubheadingOverlay = bleed ? renderBottomSubheadingHtml(content) : '';
+    const bottomSubheadingBelow = bleed ? '' : renderBottomSubheadingHtml(content);
     const imageRole =
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const altNl =
@@ -257,14 +271,7 @@ export default {
             alt
           )}"${ariaDecorative}${focusStyle} />`;
         })()
-      : `<div class="image-placeholder is-empty" data-inline-photo="0" aria-hidden="true">
-          <div class="image-placeholder-inner">
-            <svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">
-              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>
-            </svg>
-            <div class="image-placeholder-text">Image</div>
-          </div>
-        </div>`;
+      : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: 0 });
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(content.caption)}</figcaption>`
       : '';
@@ -279,7 +286,7 @@ export default {
         }`
       : '';
     return `
-        <div class="slide slide-image slide-image-${layout} ${bgClass(content?.background)}${
+        <div class="slide slide-image is-fit-${fit}${bleed ? ' is-bleed' : ''} ${bgClass(content?.background)}${
       topHeading ? ' has-heading' : ''
     }${hasBottom ? ' has-bottom-subheading' : ''}${zoomSteps ? ' has-zoom-steps' : ''}"${zoomAttrs}>
           <div class="slide-inner">

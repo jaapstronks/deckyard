@@ -85,7 +85,9 @@
 .modal.ps-modal.slide-type-modal {
   /* Wider modal on desktop to show more thumbnails */
   width: min(1200px, 100%);
-  max-height: min(86vh, 860px);
+  /* Taller: the picker has a lot of content, so use most of the viewport
+     height instead of leaving a big empty band below. */
+  max-height: min(94vh, 940px);
   display: flex;
   flex-direction: column;
 }
@@ -127,8 +129,14 @@
 .slide-type-modal .ps-modal-body {
   /* Denser like Lovable; keep header fixed and scroll content if needed. */
   padding: var(--ps-space-4);
+  gap: var(--ps-space-3);
   overflow: auto;
   min-height: 0;
+}
+
+/* Trim the picker's chrome so the slide grid starts higher up the modal. */
+.slide-type-modal .ps-modal-header {
+  padding: var(--ps-space-3) var(--ps-space-5);
 }
 
 .ps-modal-close.btn-icon {
@@ -346,7 +354,7 @@
    MODAL MOBILE RESPONSIVENESS
    ============================================================ */
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   /* Full-screen modals on mobile */
   .modal-backdrop {
     padding: 0;

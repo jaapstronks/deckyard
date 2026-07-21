@@ -1,161 +1,14 @@
 /**
- * Share actions - handlers for workspace sharing and private move.
+ * Share actions — handler for adding a published deck's embed to Notion.
+ *
+ * Workspace scope changes (share-to-workspace / move-to-private) now live inline
+ * in the Share dialog's Workspace tab (`modals/share-modal/workspace-visibility-section.js`).
  */
 
 import { h } from '../../../lib/dom.js';
 import { normalizeLang } from '../../../lib/i18n.js';
 import { confirmModal } from '../../../lib/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { ifMatchRevision } from '../if-match-revision.js';
-import { openWorkspaceShareModal } from './workspace-share-modal.js';
-
-/**
- * Handle sharing to workspace.
- * @param {Object} options
- * @returns {Promise<void>}
- */
-export async function handleShareToWorkspace({
-  h,
-  api,
-  toast,
-  pres,
-  id,
-  root,
-  isDirty,
-  requestSave,
-  openDescriptionModal,
-  openOverlayClosers,
-  syncShareUi,
-  editorState,
-}) {
-  if (String(pres?.scope || 'private') === 'workspace') {
-    toast.info(t('editor.share.workspace.already', 'Already shared to workspace.'), {
-      id: 'share-workspace',
-      durationMs: 2400,
-    });
-    return;
-  }
-
-  if (isDirty?.()) {
-    toast.info(t('common.savingFirst', 'Saving first...'), { id: 'share-workspace', durationMs: 5200 });
-    await requestSave?.();
-    if (isDirty?.()) {
-      toast.error(t('common.saveFailedAborted', 'Could not save; aborted.'), { id: 'share-workspace' });
-      return;
-    }
-  }
-
-  // Require a deck description before sharing
-  const hasDesc = typeof pres?.description === 'string' && pres.description.trim();
-  if (!hasDesc) {
-    const r = await openDescriptionModal({
-      h,
-      root,
-      api,
-      toast,
-      pres,
-      id,
-      context: 'share',
-      openOverlayClosers,
-      requestSave,
-    });
-    if (!r?.ok) return;
-  }
-
-  // Show share options modal (full access or view only)
-  const shareResult = await openWorkspaceShareModal({ h, pres, root });
-  if (!shareResult) return;
-
-  try {
-    const updated = await api(`/api/presentations/${id}/scope`, {
-      method: 'PATCH',
-      headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
-      body: JSON.stringify({
-        scope: 'workspace',
-        isViewOnly: shareResult.isViewOnly,
-      }),
-    });
-    if (updated && typeof updated === 'object') {
-      if (typeof updated.scope === 'string') pres.scope = updated.scope;
-      if (typeof updated.isViewOnly === 'boolean') pres.isViewOnly = updated.isViewOnly;
-      if (typeof updated.revision === 'number') pres.revision = updated.revision;
-      if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
-    }
-    let msg;
-    if (shareResult.isViewOnly) {
-      msg = t('editor.share.workspace.doneViewOnly', 'Shared as view only.');
-    } else {
-      msg = t('editor.share.workspace.done', 'Shared to workspace.');
-    }
-    toast.success(msg, { id: 'share-workspace', durationMs: 2200 });
-    syncShareUi();
-    editorState.refreshAll();
-  } catch (e) {
-    toast.error(String(e?.message || e), { id: 'share-workspace' });
-  }
-}
-
-/**
- * Handle moving presentation to private.
- * @param {Object} options
- * @returns {Promise<void>}
- */
-export async function handleMoveToPrivate({
-  api,
-  toast,
-  pres,
-  id,
-  isDirty,
-  requestSave,
-  syncShareUi,
-  editorState,
-}) {
-  if (String(pres?.scope || 'private') === 'private') {
-    toast.info(t('editor.share.private.already', 'Already private.'), {
-      id: 'move-private',
-      durationMs: 2400,
-    });
-    return;
-  }
-
-  if (isDirty?.()) {
-    toast.info(t('common.savingFirst', 'Saving first...'), { id: 'move-private', durationMs: 5200 });
-    await requestSave?.();
-    if (isDirty?.()) {
-      toast.error(t('common.saveFailedAborted', 'Could not save; aborted.'), { id: 'move-private' });
-      return;
-    }
-  }
-
-  const ok = await confirmModal(h, document.body, {
-    title: t('editor.share.private', 'Move to private'),
-    message: t(
-      'editor.share.private.confirm',
-      'Move "{title}" to private? It will no longer be visible to other workspace members.',
-      { title: pres?.title || t('editor.share.thisPresentation', 'this presentation') }
-    ),
-    confirmLabel: t('editor.share.private', 'Move to private'),
-  });
-  if (!ok) return;
-
-  try {
-    const updated = await api(`/api/presentations/${id}/scope`, {
-      method: 'PATCH',
-      headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
-      body: JSON.stringify({ scope: 'private' }),
-    });
-    if (updated && typeof updated === 'object') {
-      if (typeof updated.scope === 'string') pres.scope = updated.scope;
-      if (typeof updated.revision === 'number') pres.revision = updated.revision;
-      if (typeof updated.updatedBy === 'string') pres.updatedBy = updated.updatedBy;
-    }
-    toast.success(t('editor.share.private.done', 'Moved to private.'), { id: 'move-private', durationMs: 2200 });
-    syncShareUi();
-    editorState.refreshAll();
-  } catch (e) {
-    toast.error(String(e?.message || e), { id: 'move-private' });
-  }
-}
 
 /**
  * Handle publishing to Notion.
@@ -193,6 +46,6 @@ export async function handleNotionPublish({ api, toast, pres }) {
     toast?.(result?.message || t('editor.publish.notion.success', 'Added to Notion page!'));
   } catch (e) {
     const msg = e?.message || String(e);
-    toast?.(t('editor.publish.notion.failed', 'Failed to add to Notion: ') + msg);
+    toast?.(t('editor.publish.notion.failedWithReason', 'Failed to add to Notion: {reason}', { reason: msg }));
   }
 }

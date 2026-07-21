@@ -12,12 +12,15 @@
  * legacy flat `image` migrates into images[0] and every rendered cell gets a
  * live item behind it (the WYSIWYG media popover mutates `images[idx]`).
  */
+import { renderImagePositionPicker } from '../image-position-picker.js';
 import { renderFocusGridField } from '../focus-picker.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import {
   IMAGE_TEXT_MAX_IMAGES,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
   ensureImageTextImages,
   imageTextCellCount,
+  resolveImageTextCell,
 } from '../../../../../shared/slide-types/image-text-images.js';
 
 /**
@@ -97,7 +100,7 @@ export function renderImageTextImagesSection({
       head.append(
         h('div', {
           class: 'card-group-title',
-          text: `${t('editor.imageText.image', 'Image')} ${i + 1}`,
+          text: t('editor.imageText.imageN', 'Image {n}', { n: i + 1 }),
         })
       );
       const controls = h('div', { class: 'row' });
@@ -132,7 +135,7 @@ export function renderImageTextImagesSection({
             class: 'btn btn-secondary btn-icon card-remove-btn',
             text: '×',
             title: t('editor.imageText.removeImage', 'Remove image'),
-            'aria-label': `${t('editor.imageText.removeImage', 'Remove image')} ${i + 1}`,
+            'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', { n: i + 1 }),
             onclick: () => {
               images.splice(i, 1);
               ensureImageTextImages(content);
@@ -187,6 +190,14 @@ export function renderImageTextImagesSection({
             slideAltFallback ? { placeholder: slideAltFallback } : {}
           )
         : null;
+    // Per-image fit (canonical since step 2b). Empty = follow the type
+    // default, so the empty option surfaces the derived value plus its origin
+    // ("slide type") and doubles as the back-to-default that empties the
+    // field - the default is looked up, never written into the item.
+    const typeFitLabel =
+      IMAGE_TEXT_IMAGE_DEFAULTS.fit === 'contain'
+        ? t('editor.imageText.fitContain', 'Fit (no crop)')
+        : t('editor.imageText.fitCover', 'Fill (crop)');
     const fitEl =
       typeof fieldEnum === 'function'
         ? fieldEnum(
@@ -194,7 +205,16 @@ export function renderImageTextImagesSection({
               key: 'fit',
               label: t('editor.imageText.imageFit', 'Image fit'),
               options: [
-                { value: '', label: t('editor.imageText.fitDefault', 'Match slide') },
+                {
+                  value: '',
+                  label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
+                    fit: typeFitLabel,
+                  }),
+                  title: t(
+                    'editor.imageText.fitDefaultTypeTitle',
+                    'Follow the slide type default'
+                  ),
+                },
                 { value: 'cover', label: t('editor.imageText.fitCover', 'Fill (crop)') },
                 { value: 'contain', label: t('editor.imageText.fitContain', 'Fit (no crop)') },
               ],
@@ -210,14 +230,19 @@ export function renderImageTextImagesSection({
     const row = fieldGrid?.([altEl, fitEl].filter(Boolean), 2);
     if (row) card.append(row);
 
-    card.append(
-      renderFocusGridField({
+    // Focus control, consistent with the shared image-element card: a cover
+    // (cropping) cell gets the 3x3 grid as the precise, keyboard-reachable
+    // fallback to the canvas focal-point drag (both write the item's focusX/Y);
+    // a contain cell gets its alignment control instead. Effective fit comes
+    // from resolveImageTextCell (the single authority render/canvas share).
+    const effFit = resolveImageTextCell(content, i).fit;
+    if (effFit === 'contain') {
+      const posEl = renderImagePositionPicker({
         h,
-        label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
-        helpText: t(
-          'editor.imageText.imageFocusHelp',
-          'Pick what should stay visible when the image is cropped.'
-        ),
+        mode: 'contain',
+        imageUrl: image.src,
+        containerSelector:
+          '.preview-panel .thumb.is-clickable-preview .slide-image-text .frame.is-fit-contain',
         focusX: image.focusX,
         focusY: image.focusY,
         onChange: ({ focusX, focusY }) => {
@@ -226,8 +251,28 @@ export function renderImageTextImagesSection({
           markDirty?.();
           scheduleUiRefresh?.();
         },
-      })
-    );
+      });
+      if (posEl) card.append(posEl);
+    } else {
+      card.append(
+        renderFocusGridField({
+          h,
+          label: t('editor.imageText.imageFocus', 'Image focus (crop)'),
+          helpText: t(
+            'editor.image.focusGridHelp',
+            'Drag the point on the image, or pick a position here.'
+          ),
+          focusX: image.focusX,
+          focusY: image.focusY,
+          onChange: ({ focusX, focusY }) => {
+            images[i].focusX = focusX;
+            images[i].focusY = focusY;
+            markDirty?.();
+            scheduleUiRefresh?.();
+          },
+        })
+      );
+    }
 
     wrap.append(card);
   }

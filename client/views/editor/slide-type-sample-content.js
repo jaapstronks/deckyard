@@ -59,7 +59,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     alt: 'Sample image',
     imageRole: 'content',
     imageSide: 'left',
-    imageFit: 'cover',
     title: 'Visual Storytelling',
     body: '- Engage your audience\n- Communicate complex ideas\n- Leave a lasting impression',
     background: 'lime',
@@ -72,7 +71,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     alt: 'Sample image',
     imageRole: 'content',
     caption: 'Caption for context',
-    layout: 'full',
   },
 
   'video-slide': {
@@ -128,12 +126,11 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
   'content-columns-slide': {
     title: 'Our Services',
     subheading: 'What we offer',
-    columnCount: '3',
+    columnCount: '2',
     // Column 1
     col1Title: 'Strategy',
     col1Text: '',
     col1Image: 'https://picsum.photos/seed/col1/400/300',
-    col1ImageFit: 'cover',
     col1Alt: 'Strategy illustration',
     col1BlockCount: '2',
     col1Block1Title: 'Planning',
@@ -144,7 +141,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     col2Title: 'Design',
     col2Text: '',
     col2Image: 'https://picsum.photos/seed/col2/400/300',
-    col2ImageFit: 'cover',
     col2Alt: 'Design illustration',
     col2BlockCount: '2',
     col2Block1Title: 'Creative',
@@ -155,7 +151,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     col3Title: 'Development',
     col3Text: '',
     col3Image: 'https://picsum.photos/seed/col3/400/300',
-    col3ImageFit: 'cover',
     col3Alt: 'Development illustration',
     col3BlockCount: '2',
     col3Block1Title: 'Engineering',

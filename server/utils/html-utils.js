@@ -7,6 +7,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
 
 // Re-export from shared helpers
 export { escapeHtml } from '../../shared/slide-types/helpers.js';
@@ -56,9 +57,20 @@ export function mimeFromExt(ext) {
  * @param {string} urlOrPath - URL or path to convert
  * @param {Object} options - Options
  * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
+ * @param {(buf: Buffer, ext: string, mime: string) => Promise<{buf: Buffer, mime: string}>} [options.transform]
+ *   Optional async transform applied to the image bytes before base64-encoding
+ *   (e.g. downsample/recompress for PDF). Must resolve to `{ buf, mime }`.
+ * @param {boolean} [options.embedRemote] When true, remote http(s) image URLs
+ *   are fetched through the SSRF guard and inlined as data URLs; a blocked or
+ *   failed fetch returns '' (stripped) so the URL never reaches headless Chrome.
+ *   Only enable on server-side export/render paths. See security-hardening 2.
  * @returns {Promise<string>} Data URL or original string
  */
-export async function toDataUrlIfLocal(repoRoot, urlOrPath, { includeClient = false } = {}) {
+export async function toDataUrlIfLocal(
+  repoRoot,
+  urlOrPath,
+  { includeClient = false, transform = null, embedRemote = false } = {},
+) {
   const s = String(urlOrPath || '');
   const isUpload = s.startsWith('/uploads/');
   const isAsset = s.startsWith('/assets/');
@@ -69,6 +81,23 @@ export async function toDataUrlIfLocal(repoRoot, urlOrPath, { includeClient = fa
     s.startsWith('/custom/assets/') || s.startsWith('/custom/themes/');
 
   if (!isUpload && !isAsset && !isCustom && !(includeClient && isClient)) {
+    // Remote http(s) images: on export/render paths, inline through the SSRF
+    // guard or strip. Everything else (data: URIs, other schemes) is untouched.
+    if (embedRemote && isRemoteHttpUrl(s)) {
+      const fetched = await safeFetchRemoteImage(s);
+      if (!fetched) return '';
+      let buf = fetched.buffer;
+      let mime = fetched.contentType || 'application/octet-stream';
+      const ext = mime.startsWith('image/') ? mime.slice(6) : '';
+      if (typeof transform === 'function') {
+        const r = await transform(buf, ext, mime);
+        if (r && Buffer.isBuffer(r.buf)) {
+          buf = r.buf;
+          if (r.mime) mime = r.mime;
+        }
+      }
+      return `data:${mime};base64,${buf.toString('base64')}`;
+    }
     return s;
   }
 
@@ -77,9 +106,16 @@ export async function toDataUrlIfLocal(repoRoot, urlOrPath, { includeClient = fa
     : path.join(repoRoot, s.replace(/^\//, ''));
 
   try {
-    const buf = await fs.readFile(abs);
+    let buf = await fs.readFile(abs);
     const ext = path.extname(abs).slice(1).toLowerCase();
-    const mime = mimeFromExt(ext);
+    let mime = mimeFromExt(ext);
+    if (typeof transform === 'function') {
+      const r = await transform(buf, ext, mime);
+      if (r && Buffer.isBuffer(r.buf)) {
+        buf = r.buf;
+        if (r.mime) mime = r.mime;
+      }
+    }
     return `data:${mime};base64,${buf.toString('base64')}`;
   } catch {
     return s;
@@ -92,23 +128,37 @@ export async function toDataUrlIfLocal(repoRoot, urlOrPath, { includeClient = fa
  * @param {string} html - HTML string
  * @param {Object} options - Options
  * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
+ * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
  * @returns {Promise<string>} HTML with embedded images
  */
-export async function embedImgSrcDataUrls(repoRoot, html, { includeClient = false } = {}) {
+export async function embedImgSrcDataUrls(
+  repoRoot,
+  html,
+  { includeClient = false, transform = null, embedRemote = false } = {},
+) {
   const s = String(html || '');
-  const pattern = includeClient
+  const localPattern = includeClient
     ? /\ssrc="(\/(?:uploads|assets|client|custom\/assets|custom\/themes)\/[^"]+)"/g
     : /\ssrc="(\/(?:uploads|assets|custom\/assets|custom\/themes)\/[^"]+)"/g;
 
-  const matches = [...s.matchAll(pattern)];
-  if (!matches.length) return s;
-
   const uniq = new Map();
-  for (const m of matches) uniq.set(m[1], true);
+  for (const m of s.matchAll(localPattern)) uniq.set(m[1], true);
+  // Safety net: when inlining remote images, also catch raw remote <img src>
+  // (e.g. from custom HTML) so no http(s) src reaches headless Chrome.
+  if (embedRemote) {
+    for (const m of s.matchAll(/\ssrc="(https?:\/\/[^"]+)"/gi)) {
+      uniq.set(m[1], true);
+    }
+  }
+  if (!uniq.size) return s;
 
   let out = s;
   for (const src of uniq.keys()) {
-    const data = await toDataUrlIfLocal(repoRoot, src, { includeClient });
+    const data = await toDataUrlIfLocal(repoRoot, src, {
+      includeClient,
+      transform,
+      embedRemote,
+    });
     if (data !== src) {
       out = out.split(`src="${src}"`).join(`src="${data}"`);
     }

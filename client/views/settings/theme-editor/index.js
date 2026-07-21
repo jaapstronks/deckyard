@@ -12,6 +12,8 @@ import { createFontPicker } from './font-picker.js';
 import { createColorPicker } from './color-picker.js';
 import { createThemePreview } from './preview.js';
 import { createLogoUploader } from './logo-uploader.js';
+import { createConfigSections } from './config-sections.js';
+import { validateThemeConfig } from '../../../../shared/theme-config-schema.js';
 
 /**
  * Create the theme editor component.
@@ -83,6 +85,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
       body: theme?.fonts?.body || 'Inter',
       bodyFamilyId: theme?.fonts?.bodyFamilyId || null,
     },
+    // The richer half of a theme (surfaces, typography, locks, background
+    // variants). Validated on the way in so an older or hand-edited config
+    // cannot put the form into a state the server would reject on save.
+    config: validateThemeConfig(theme?.config),
     managedFonts: [],
   };
 
@@ -292,8 +298,17 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   fontsGrid.append(headingFontPicker.el, bodyFontPicker.el);
   fontsCard.append(fontsHint, fontsGrid);
 
+  // ============================================================
+  // Config sections (surfaces, heading treatment, locks)
+  // ============================================================
+  const configCards = createConfigSections({
+    config: state.config,
+    colors: state.colors,
+    onChange: updatePreview,
+  });
+
   // Assemble form column
-  formColumn.append(nameCard, logoCard, colorsCard, fontsCard);
+  formColumn.append(nameCard, logoCard, colorsCard, fontsCard, ...configCards);
 
   // ============================================================
   // Right column: Live Preview
@@ -304,8 +319,11 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     text: t('settings.themes.preview', 'Preview'),
   });
 
-  const previewComponent = createThemePreview({ theme: state });
+  const previewComponent = createThemePreview();
   previewColumn.append(previewLabel, previewComponent.el);
+  // The preview builds its theme server-side, so the first paint is a fetch
+  // rather than something the constructor can do synchronously.
+  updatePreview();
 
   // Assemble main
   main.append(formColumn, previewColumn);
@@ -351,6 +369,9 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
         body: state.fonts.body,
         bodyFamilyId: state.fonts.bodyFamilyId || undefined,
       },
+      // Sent whole. The sections delete keys rather than writing defaults, so
+      // an untouched field stays absent and the builder keeps its own default.
+      config: state.config,
     };
 
     // Disable buttons while saving
@@ -408,5 +429,8 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     }
   })();
 
-  return { el: container };
+  // The preview holds ResizeObservers per sample slide; the tab drops the
+  // editor by clearing its container, which would leave them observing
+  // detached nodes.
+  return { el: container, detach: () => previewComponent.detach() };
 }

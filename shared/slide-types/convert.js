@@ -1,7 +1,13 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
-import { TITLE_BG_PRESETS, pickRandom } from './helpers.js';
+import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
-import { imageTextImageItems } from './image-text-images.js';
+import {
+  imageTextImageItems,
+  resolveImageTextCell,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
+} from './image-text-images.js';
+import { resolveImageSlideImage } from './image-slide-image.js';
+import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './content-columns-images.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'
@@ -190,7 +196,11 @@ export function getConversionLossyKeys(slide, toType, { slideTypes = SLIDE_TYPES
   return extras;
 }
 
-export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
+export function convertSlideToType(
+  slide,
+  toType,
+  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {}
+) {
   const fromType = String(slide?.type || '');
   const targetType = String(toType || '');
   if (!slide || typeof slide !== 'object') throw new Error('convertSlideToType: slide must be an object');
@@ -231,11 +241,16 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
   // a column; a flat-list body is distributed one item per column (extras
   // append to the last column), any other body lands in column 1.
   if (fromType === 'image-text-slide' && targetType === 'content-columns-slide') {
-    const items = imageTextImageItems(from).filter((it) => it.src);
+    // Keep each filled image's original cell index so the canonical per-cell
+    // resolution (item -> legacy slide fallback -> type default) applies to the
+    // right cell - only cell 0 inherits the slide-level alt/focus.
+    const filled = imageTextImageItems(from)
+      .map((it, i) => ({ it, i }))
+      .filter((x) => x.it.src);
     const listItems = parseFlatMarkdownList(from?.body);
     const columnCount = Math.max(
       2,
-      Math.min(3, Math.max(items.length, listItems ? listItems.length : 0))
+      Math.min(3, Math.max(filled.length, listItems ? listItems.length : 0))
     );
     to.columnCount = String(columnCount);
 
@@ -251,7 +266,7 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
     );
 
     for (let col = 1; col <= columnCount; col += 1) {
-      const item = items[col - 1] || null;
+      const entry = filled[col - 1] || null;
       // The defaults ship placeholder titles/blocks; converted columns start
       // with just their image and text.
       to[`col${col}Title`] = '';
@@ -259,24 +274,23 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
       to[`col${col}BlockCount`] = '0';
       to[`col${col}Block1Title`] = '';
       to[`col${col}Block1Body`] = '';
-      to[`col${col}Image`] = item ? item.src : '';
-      // Item 0 keeps its slide-level alt/fit/focus fallbacks (same rule as
-      // the image-text renderer), so unmigrated legacy decks convert cleanly.
-      const alt =
-        item && nonEmptyString(item.alt)
-          ? item.alt.trim()
-          : col === 1 && nonEmptyString(from?.alt)
-            ? from.alt.trim()
-            : '';
-      to[`col${col}Alt`] = alt;
-      const fit =
-        (item && (item.fit === 'contain' || item.fit === 'cover') && item.fit) ||
-        (from?.imageFit === 'contain' ? 'contain' : 'cover');
-      to[`col${col}ImageFit`] = fit;
-      const hasOwnFocus = item && (item.focusX !== '' || item.focusY !== '');
-      const focusSource = hasOwnFocus ? item : col === 1 ? from : null;
-      const fx = Number(focusSource?.focusX);
-      const fy = Number(focusSource?.focusY);
+      if (!entry) {
+        to[`col${col}Image`] = '';
+        to[`col${col}Alt`] = '';
+        continue;
+      }
+      // Read fit/focus/alt through the single per-cell authority so both the
+      // canonical items[] shape and un-migrated legacy decks convert
+      // identically. A fit equal to the content-columns type default is not
+      // written (empty = follow the type, step 4).
+      const r = resolveImageTextCell(from, entry.i);
+      to[`col${col}Image`] = entry.it.src;
+      to[`col${col}Alt`] = r.altExplicit;
+      if (r.fit !== CONTENT_COLUMNS_IMAGE_DEFAULTS.fit) {
+        to[`col${col}ImageFit`] = r.fit;
+      }
+      const fx = Number(r.focusSource?.focusX);
+      const fy = Number(r.focusSource?.focusY);
       if (Number.isFinite(fx)) to[`col${col}ImageFocusX`] = fx;
       if (Number.isFinite(fy)) to[`col${col}ImageFocusY`] = fy;
     }
@@ -284,22 +298,26 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
 
   // image -> image-text (one-way; reverse isn't offered)
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
-    // images[] is the canonical field since the phase-2 catalogue; the
-    // slide-level caption/alt/focus keep working as item-0 fallbacks.
-    if (typeof from.image === 'string' && from.image.trim()) {
-      to.images = [{ src: from.image, alt: '' }];
+    // alt + focus + fit + bleed are canonical on images[0] (the ImageRef).
+    // Fit/bleed resolve through the image-slide authority (own fit/bleed ->
+    // legacy `layout` -> type default); only values deviating from the
+    // image-text default are written (empty keeps meaning "follow the type").
+    // `bleed` travels losslessly as an ImageRef property image-text does not
+    // render yet - nothing is guessed away, so a reverse conversion stays
+    // possible.
+    const img = { src: '', alt: '' };
+    if (typeof from.image === 'string' && from.image.trim()) img.src = from.image.trim();
+    if (typeof from.alt === 'string' && from.alt.trim()) img.alt = from.alt.trim();
+    if (from.focusX != null && from.focusX !== '') img.focusX = from.focusX;
+    if (from.focusY != null && from.focusY !== '') img.focusY = from.focusY;
+    const r = resolveImageSlideImage(from);
+    if (r.fit !== IMAGE_TEXT_IMAGE_DEFAULTS.fit) img.fit = r.fit;
+    if (r.bleed) img.bleed = true;
+    if (img.src || img.alt || 'focusX' in img || 'focusY' in img || 'fit' in img || 'bleed' in img) {
+      to.images = [img];
     }
     if (typeof from.caption === 'string') to.caption = from.caption;
-    if (typeof from.alt === 'string') to.alt = from.alt;
     if (typeof from.imageRole === 'string') to.imageRole = from.imageRole;
-    if (from.focusX != null) to.focusX = from.focusX;
-    if (from.focusY != null) to.focusY = from.focusY;
-
-    // Layout mapping:
-    // - full/bleed are "cover" (cropped)
-    // - centered is "contain" (no crop)
-    const layout = String(from?.layout || '').trim();
-    to.imageFit = layout === 'centered' ? 'contain' : 'cover';
 
     // Title + body requirements:
     // - image-text requires title + body.
@@ -422,10 +440,11 @@ export function convertSlideToType(slide, toType, { slideTypes = SLIDE_TYPES, la
   }
   if (fromType === 'chapter-title-slide' && targetType === 'title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
-    // Keep a nice default background image if the target has the key and it's empty.
+    // Give the target a background from the theme's own presets when it has the
+    // key and it's empty. No theme (or no presets) leaves it flat.
     const hasBgKey = Object.prototype.hasOwnProperty.call(to, 'bgImage');
     const bg = hasBgKey && typeof to.bgImage === 'string' ? to.bgImage.trim() : '';
-    if (hasBgKey && !bg) to.bgImage = pickRandom(TITLE_BG_PRESETS);
+    if (hasBgKey && !bg) to.bgImage = pickBackgroundPreset(theme);
   }
 
   return next;

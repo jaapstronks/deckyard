@@ -46,6 +46,7 @@ import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
+import { setDocumentTitle } from '../../lib/branding.js';
 import { openTranslateSlideModal as openTranslateSlideModalImpl } from './modals/translate-slide-modal.js';
 import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals/translate-field-modal.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
@@ -185,6 +186,10 @@ export async function createEditorController({
   }
 
   let selectedSlideIds = new Set();
+  // Selection-aware inspector: the canvas element ({kind:'image'|'card', idx})
+  // whose settings the inspector's element tab shows, or null for slide-only.
+  // Cleared on slide change; set by canvas interactions via setSelectedElement.
+  let selectedElement = null;
   let uiRefreshTimer = null;
   let commentsPanel = null;
   let setCommentsBadgeFn = () => {};
@@ -271,6 +276,9 @@ export async function createEditorController({
   // here, so this is also where the URL learns about the selection.
   const setSelectedSlideIdWithLock = (v) => {
     selectedSlideId = v;
+    // A different slide means a different element context; drop any selection
+    // so the new slide opens on its slide-only inspector (no stale element tab).
+    selectedElement = null;
     syncSlideIdInUrl(v);
     presenceHandle?.setViewSlide?.(v);
     // Check for author lock on the newly selected slide
@@ -425,6 +433,7 @@ export async function createEditorController({
   const shell = h('div', { class: 'app-shell editor-shell' });
   let topbarTitle = null;
 
+  setDocumentTitle(pres?.title);
   const titleCtl = createEditorTitleController({
     pres,
     markDirty,
@@ -433,6 +442,7 @@ export async function createEditorController({
       if (!topbarTitle) return;
       topbarTitle.textContent = next;
       topbarTitle.title = next;
+      setDocumentTitle(next);
     },
   });
 
@@ -829,11 +839,15 @@ export async function createEditorController({
         } catch { /* ignore */ }
       });
     },
-    paneTabsEl: paneTabs.el,
     notesStripEl: notesStrip.el,
   });
 
-  const { previewEl: preview, thumbEl: thumb } = previewPanel;
+  const { previewEl: preview, thumbEl: thumb, slideBarEl: slideBar } = previewPanel;
+  // Dock the pane openers (labeled) at the far right of the slide bar, above
+  // the inspector column they control (Option A). They live in the slide bar,
+  // not the deck-level topbar, and the bar is always present, so the rail stays
+  // re-openable when it collapses.
+  previewPanel.openersSlotEl?.append(paneTabs.el);
   // The notes textarea lives in the under-slide strip; every consumer
   // (live-edits binder, search focus, slide-change refresh) keeps using this
   // reference (the strip is persistent DOM, so it holds).
@@ -891,6 +905,7 @@ export async function createEditorController({
               if (!topbarTitle) return;
               topbarTitle.textContent = next;
               topbarTitle.title = next;
+              setDocumentTitle(next);
             },
             onUndoStateChanged: () => syncTopbarUndo(),
           });
@@ -923,7 +938,11 @@ export async function createEditorController({
   // ============================================================
 
   // Column order slides | canvas | inspector (Keynote/Figma convention).
-  const layout = h('div', { class: 'layout' }, [left, preview, inspectorPanel]);
+  // Grid children (Option A): the slides column spans both rows; the slide bar
+  // spans preview + inspector on row 1; preview and inspector sit on row 2.
+  // Placement is by class (see 20-editor-layout.css), so DOM order here is not
+  // load-bearing.
+  const layout = h('div', { class: 'layout' }, [left, slideBar, preview, inspectorPanel]);
   shell.append(layout);
 
   // ============================================================
@@ -1266,6 +1285,9 @@ export async function createEditorController({
     updateSelectedSlideListItem,
     PARTNER_LOGOS,
     fieldRenderers,
+    // Needed for the theme's override locks: a locked brand property hides its
+    // control instead of offering an edit the renderer will ignore.
+    theme,
     onTranslateSlide: ({ slideId }) => openTranslateSlideModal({ slideId }),
     onTranslateField: ({ slideId, key }) => openTranslateFieldModal({ slideId, key }),
     user,
@@ -1313,7 +1335,16 @@ export async function createEditorController({
   rerenderEditor = createRerenderEditor({
     ...editorFormDeps,
     onOpenBulkEdit: () => bulkEditModal.open(),
+    getSelectedElement: () => selectedElement,
   });
+
+  // Set (or clear) the selection-aware inspector's current element and rebuild
+  // the inspector. Kept non-intrusive: it does not open a dismissed rail (the
+  // element tab just becomes the active view when the pane is next shown).
+  const setSelectedElement = (el) => {
+    selectedElement = el || null;
+    rerenderEditor();
+  };
 
   // ============================================================
   // INLINE (WYSIWYG) EDITOR
@@ -1321,6 +1352,11 @@ export async function createEditorController({
 
   const inlineEditor = createInlineEditor({
     h,
+    api,
+    // Drag & drop image upload onto empty canvas placeholders is gated on the
+    // same flag as every other upload path (off in imagekit-only / sandbox /
+    // demo, where there is no upload destination).
+    uploadsEnabled: !features?.disableUploads,
     thumb,
     previewStage: thumb.parentElement || thumb,
     overlayHost: preview,
@@ -1359,6 +1395,14 @@ export async function createEditorController({
         requestAnimationFrame(() => inlineEditor.openMediaByIndex(0));
       }
       return ok;
+    },
+    // Canvas → inspector selection. Clicking an element updates the inspector
+    // (visible iff the settings pane is already open). The "Settings" chip is
+    // the deliberate doorway: it also opens the pane on the element tab.
+    onSelectElement: (el) => setSelectedElement(el),
+    onOpenElementSettings: (el) => {
+      setSelectedElement(el);
+      inspectorPanes.open('settings');
     },
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);

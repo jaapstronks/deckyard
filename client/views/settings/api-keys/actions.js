@@ -2,6 +2,8 @@
  * API Key actions - fetch helpers for API key management.
  */
 
+import { t } from '../../../lib/ui-i18n.js';
+
 /**
  * Fetch all API keys for the current user.
  * @param {Object} options
@@ -17,9 +19,9 @@ export async function fetchApiKeys({ includeRevoked = false } = {}) {
     if (res.ok) {
       return { keys: data.keys || [] };
     }
-    return { error: data.error || 'Failed to fetch API keys' };
+    return { error: data.error || t('settings.apiKeys.fetchError', 'Failed to fetch API keys') };
   } catch (e) {
-    return { error: 'Failed to fetch API keys' };
+    return { error: t('settings.apiKeys.fetchError', 'Failed to fetch API keys') };
   }
 }
 
@@ -43,9 +45,9 @@ export async function createApiKey({ name, scopes }) {
     if (res.ok) {
       return { key: data };
     }
-    return { error: data.error || 'Failed to create API key' };
+    return { error: data.error || t('settings.apiKeys.createError', 'Failed to create API key') };
   } catch (e) {
-    return { error: 'Failed to create API key' };
+    return { error: t('settings.apiKeys.createError', 'Failed to create API key') };
   }
 }
 
@@ -64,9 +66,9 @@ export async function revokeApiKey(id) {
       return { success: true };
     }
     const data = await res.json();
-    return { error: data.error || 'Failed to revoke API key' };
+    return { error: data.error || t('settings.apiKeys.revokeError', 'Failed to revoke API key') };
   } catch (e) {
-    return { error: 'Failed to revoke API key' };
+    return { error: t('settings.apiKeys.revokeError', 'Failed to revoke API key') };
   }
 }
 
@@ -84,8 +86,8 @@ export async function fetchKeyUsage(id, days = 30) {
     if (res.ok) {
       return { usage: data };
     }
-    return { error: data.error || 'Failed to fetch usage stats' };
+    return { error: data.error || t('settings.apiKeys.usageError', 'Failed to fetch usage stats') };
   } catch (e) {
-    return { error: 'Failed to fetch usage stats' };
+    return { error: t('settings.apiKeys.usageError', 'Failed to fetch usage stats') };
   }
 }

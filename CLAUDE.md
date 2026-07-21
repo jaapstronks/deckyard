@@ -14,6 +14,14 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
   to an elaborated briefing in `docs/plans/<slug>.md` (problem, scope with
   file references, "done when").
 
+> **Where the plans actually live.** `docs/plans/` is a **symlink** to the
+> private `deckyard-planning` sibling repo (kept out of this OSS repo on
+> purpose). Read/edit `docs/plans/*` as normal — the paths resolve — but
+> **commit those changes in `deckyard-planning`, not here**. On a fresh machine
+> the symlink is absent (it's gitignored): clone `deckyard-planning` as a
+> sibling and run its `setup-symlink.sh`. Repo:
+> `github.com/jaapstronks/deckyard-planning` (private).
+
 ## Docs discipline (maintain this in every session)
 
 - **New docs go in the right folder, never loose in `docs/`**:

@@ -306,7 +306,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 /* Hide the chip on narrow viewports to protect the title/action row. */
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .topbar-save-status {
     display: none !important;
   }
@@ -543,7 +543,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .topbar-pres-title {
     max-width: 100px;
     flex: 0 1 100px;

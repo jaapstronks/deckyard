@@ -12,6 +12,7 @@ import { STEP_DEPS } from './presenter/step.js';
 import { startPresenterSession } from './presenter/session.js';
 import { normalizeLang } from '../lib/i18n.js';
 import { t } from '../lib/ui-i18n.js';
+import { setDocumentTitle } from '../lib/branding.js';
 import { copyToClipboardWithPromptFallback } from '../lib/clipboard.js';
 import { loadThemeById } from '../lib/theme.js';
 import { attachStageScale } from './presenter/stage-scale.js';
@@ -22,6 +23,7 @@ import {
   normalizeNotesStrings,
 } from './presenter/deck-controller.js';
 import { attachPresenterKeys } from './presenter/keys.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { ensureOtherLanguageFollowAlong } from './presenter/translate-fill.js';
 import {
   applyLikertInteractionStateToStage,
@@ -57,6 +59,7 @@ export async function renderPresenter(
   const startUrl = new URL(location.href);
   const { activeLang, langQs } = readDeckLangFromUrl(startUrl);
   let pres = await api(`/api/presentations/${id}${langQs}`);
+  setDocumentTitle(pres?.title);
   const theme = await loadThemeById(pres?.theme);
   const modeLang =
     activeLang ||
@@ -122,7 +125,7 @@ export async function renderPresenter(
   const followCodesPill = h('div', {
     class: 'presenter-followcodes',
     hidden: true,
-    title: 'Follow-along: /go + code',
+    title: t('presenter.followCodes.title', 'Follow-along: /go + code'),
   });
   const followCodesText = h('div', {
     class: 'presenter-followcodes-text',
@@ -130,7 +133,7 @@ export async function renderPresenter(
   });
   const followCodesCopyBtn = h('button', {
     class: 'btn btn-secondary',
-    text: 'Copy /go + code',
+    text: t('presenter.followCodes.copy', 'Copy /go + code'),
     disabled: true,
     onclick: async () => {
       if (!sessionFollowCodes) return;
@@ -218,7 +221,7 @@ export async function renderPresenter(
     text: autoAdvanceMode === 'pacing'
       ? t('presenter.pacingPause', 'Pause timer')
       : t('presenter.autoAdvancePause', 'Pause auto'),
-    title: 'Toggle auto-advance (A)',
+    title: t('presenter.autoAdvanceToggle', 'Toggle auto-advance (A)'),
     hidden: !autoAdvanceEnabled,
   });
 
@@ -226,12 +229,12 @@ export async function renderPresenter(
   const laserBtn = h('button', {
     class: 'btn btn-secondary presenter-highlighter-btn',
     text: t('presenter.laser', 'Laser'),
-    title: 'Toggle laser pointer (L)',
+    title: t('presenter.laserToggle', 'Toggle laser pointer (L)'),
   });
   const drawBtn = h('button', {
     class: 'btn btn-secondary presenter-highlighter-btn',
     text: t('presenter.draw', 'Draw'),
-    title: 'Toggle draw mode (D)',
+    title: t('presenter.drawToggle', 'Toggle draw mode (D)'),
   });
 
   const syncHighlighterButtons = (mode) => {
@@ -765,6 +768,18 @@ export async function renderPresenter(
   );
   syncFullscreenClass();
 
+  // Swipe navigation for presenting from a phone or tablet. Bound to
+  // stageWrap, not stage: the highlighter canvas is layered over stage as a
+  // sibling, so touches never reach stage itself. stageWrap also covers the
+  // letterbox bars, which is where a thumb lands on a phone anyway.
+  // Suppressed while laser or draw mode owns the stage, otherwise every
+  // stroke would also flip the slide.
+  const detachSwipe = attachSwipeNavigation(stageWrap, {
+    enabled: () => !highlighter.getMode(),
+    onPrev: guardNav(() => deckCtl?.prev?.()),
+    onNext: guardNav(() => deckCtl?.next?.()),
+  });
+
   // Auto-hiding chrome: collapses the progress bar (and cursor) after idle in
   // fullscreen so the deck fills a true 16:9 with no pillarbox bars.
   const chromeAutoHide = createChromeAutoHide({ shell });
@@ -938,6 +953,9 @@ export async function renderPresenter(
     } catch {}
     try {
       detachKeys?.();
+    } catch {}
+    try {
+      detachSwipe?.();
     } catch {}
     document.removeEventListener(
       'fullscreenchange',

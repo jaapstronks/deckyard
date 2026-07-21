@@ -8,6 +8,7 @@ import { buildStandaloneHtml } from '../export/html.js';
 import { loadTheme } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { getAppName } from '../config/branding.js';
 import {
   buildEmbedHtml,
   parseEmbedOptionsFromUrl,
@@ -303,7 +304,7 @@ export async function handleStatic({
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="${sandboxNoindex ? 'Deckyard Sandbox' : 'Presentation System'}" />
+    <meta property="og:site_name" content="${escapeHtml(sandboxNoindex ? `${getAppName()} Sandbox` : getAppName())}" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
     <meta property="og:url" content="${canonicalUrl}" />
@@ -406,7 +407,8 @@ export async function handleStatic({
         return notFound(res);
       }
 
-      return serveFile(res, fsPath);
+      // /uploads/ is user-controlled content: serve risky types (SVG) inert.
+      return serveFile(res, fsPath, { userUpload: urlPrefix === '/uploads/' });
     }
   }
 
@@ -451,7 +453,7 @@ export async function handleStatic({
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Presentation System" />
+    <meta property="og:site_name" content="${escapeHtml(getAppName())}" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
     <meta property="og:url" content="${canonicalUrl}" />

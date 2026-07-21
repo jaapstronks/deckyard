@@ -7,12 +7,12 @@ import { t } from '../../../lib/ui-i18n.js';
 export function createColorFields({ h } = {}) {
   // Common preset colors from the theme
   const PRESET_COLORS = [
-    { value: '#7c3aed', label: 'Purple' },
-    { value: '#f5f5f5', label: 'Mist' },
-    { value: '#212121', label: 'Dark' },
-    { value: '#2563eb', label: 'Blue' },
-    { value: '#ffffff', label: 'White' },
-    { value: '#000000', label: 'Black' },
+    { value: '#7c3aed', label: t('editor.color.preset.purple', 'Purple') },
+    { value: '#f5f5f5', label: t('editor.color.preset.mist', 'Mist') },
+    { value: '#212121', label: t('editor.color.preset.dark', 'Dark') },
+    { value: '#2563eb', label: t('editor.color.preset.blue', 'Blue') },
+    { value: '#ffffff', label: t('editor.color.preset.white', 'White') },
+    { value: '#000000', label: t('editor.color.preset.black', 'Black') },
   ];
 
   /**

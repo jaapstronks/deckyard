@@ -34,10 +34,15 @@ export async function prepareNewPresentation(repoRoot, body) {
   // Default title slide differs per theme.
   // Themes can specify a custom title slide via the `defaultTitleSlide` property.
   let defaultTitleSlide = 'title-slide';
+  // Also carried into newPresentation and on to newSlide, so that a slide type
+  // opting in via `autoBackgroundPreset` can draw a background from the theme's
+  // own presets. No core type sets that flag today, so the default title slide
+  // stays flat here; import/convert apply theme presets on their own paths.
+  let themeConfig = null;
   try {
     const themeId = resolveThemeId(effectiveTheme);
-    const theme = await loadTheme(repoRoot, themeId);
-    defaultTitleSlide = theme?.defaultTitleSlide || 'title-slide';
+    themeConfig = await loadTheme(repoRoot, themeId);
+    defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
   } catch {
     // ignore
   }
@@ -110,6 +115,7 @@ export async function prepareNewPresentation(repoRoot, body) {
     theme: effectiveTheme,
     lang: initialLang,
     defaultTitleSlide,
+    themeConfig,
   });
   pres.lang = initialLang;
 
@@ -143,20 +149,20 @@ export async function prepareNewPresentation(repoRoot, body) {
     // ignore
   }
 
-  // New presentation UX: make the first title slide read naturally.
-  // Keep the presentation title itself as the concise name, but use a friendlier
-  // slide title like "Presentatie over <name>" / "Presentation about <name>".
+  // New presentation UX: the opening title slide carries the deck's own name.
+  // It used to read "Presentatie over <name>" / "Presentation about <name>",
+  // which is stiff and is never what someone would type themselves — a title
+  // slide's title simply *is* the deck title. Dropping the prefix also makes
+  // this language-independent.
   // Only apply this to default slides, not to provided slides (e.g., from slide library).
   if (!providedSlides) {
     try {
       const s0 = Array.isArray(pres.slides) ? pres.slides[0] : null;
       if (s0?.type === 'title-slide') {
         s0.content = s0.content && typeof s0.content === 'object' ? s0.content : {};
-        const prefix = initialLang === 'en-GB' ? 'Presentation about ' : 'Presentatie over ';
-        const wanted = `${prefix}${title}`;
         // Respect schema max length (120) with a conservative trim.
         s0.content.title =
-          wanted.length > 120 ? wanted.slice(0, 117).trimEnd() + '…' : wanted;
+          title.length > 120 ? title.slice(0, 119).trimEnd() + '…' : title;
       }
     } catch {
       // ignore

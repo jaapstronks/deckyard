@@ -479,8 +479,9 @@ export function createEditorTopbar({
   // TOPBAR LAYOUT
   // ============================================================
 
-  // Three zones (chrome re-org 2026-07-17). The topbar is deck-level only:
-  // the pane switcher moved to the slide toolbar, above the rail it controls.
+  // Three zones (chrome re-org 2026-07-19). The topbar is deck-level only: the
+  // pane openers moved to the slide bar (Option A), docked at its far right
+  // above the inspector column they control.
   //   1. identity/navigation: back, title, save status, author + presence
   //   2. edit session: undo/redo, language, lock-request state
   //   3. deliver: overview/analytics/more as quiet ghosts, then Export,

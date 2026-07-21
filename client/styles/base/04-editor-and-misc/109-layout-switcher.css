@@ -66,14 +66,16 @@
   aspect-ratio: 16 / 9;
   display: flex;
   gap: 3px;
-  padding: 3px;
+  padding: var(--sd-pad, 3px);
   border-radius: 4px;
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
   overflow: hidden;
 }
 .layout-tile-image {
-  background: hsl(var(--app-border-strong));
+  /* --sd-fill lets the slide-type picker raise contrast; the fallback keeps the
+     switcher's original subtle look. Same pattern for --sd-line/--sd-strong. */
+  background: var(--sd-fill, hsl(var(--app-border-strong)));
   border-radius: 2px;
   flex-shrink: 0;
   align-self: stretch;
@@ -94,13 +96,13 @@
 .layout-tile-line {
   height: 4px;
   border-radius: 2px;
-  background: hsl(var(--app-border-default));
+  background: var(--sd-line, hsl(var(--app-border-default)));
   width: 90%;
 }
 .layout-tile-line.is-heading {
   height: 6px;
   width: 70%;
-  background: hsl(var(--app-border-strong));
+  background: var(--sd-strong, hsl(var(--app-border-strong)));
 }
 .layout-tile-line.is-short {
   width: 55%;

@@ -20,8 +20,13 @@ export default {
       maxLength: 200,
     },
     {
+      // On the text slide this enum only toggles 1 vs 2 *text* columns
+      // (renderHtml maps it to is-one-col/is-two-col). The toolbar "Layout"
+      // chip owns the structural variant choice, so this inspector control is
+      // labelled "Text columns" - reserving the word "Layout" for the chip.
       key: 'layout',
-      label: 'Layout',
+      label: 'Text columns',
+      labelKey: 'editor.field.textColumns',
       type: 'enum',
       required: false,
       options: ['two-column', 'one-column'],
@@ -66,7 +71,9 @@ export default {
     {
       id: 'two-column',
       labelKey: 'editor.layoutVariant.twoColumn',
-      label: 'Two columns',
+      // "Text in two columns" (not just "Two columns") so it doesn't read as
+      // the separate "Content columns" slide type (own fields per column).
+      label: 'Text in two columns',
       set: { layout: 'two-column' },
       schematic: { textCols: 2 },
     },

@@ -5,8 +5,14 @@ import {
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   objectPositionStyleAttrFromFocus,
+  imagePlaceholderHtml,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
+import {
+  resolveContentColumnImage,
+  CONTENT_COLUMNS_IMAGE_DEFAULTS,
+} from '../content-columns-images.js';
 
 export const MAX_COLUMNS = 7;
 export const MAX_TEXT_BLOCKS = 5;
@@ -106,13 +112,15 @@ function generateColumnDefaults(colNum, lang) {
     ? { title: `Kolom ${colNum}`, text: '', blockTitle: 'Blok', blockBody: 'Tekst hier' }
     : { title: `Column ${colNum}`, text: '', blockTitle: 'Block', blockBody: 'Text here' };
 
+  // NB: no col{n}ImageFit / col{n}ImageFocusX/Y here (datamodel step 4).
+  // Those are ImageRef properties whose defaults live in the type config
+  // (CONTENT_COLUMNS_IMAGE_DEFAULTS); stamping them onto every new deck
+  // would freeze the deck against a future default change and erase the
+  // empty-means-follow-the-type signal.
   const defaults = {
     [`col${colNum}Title`]: labels.title,
     [`col${colNum}Text`]: labels.text,
     [`col${colNum}Image`]: '',
-    [`col${colNum}ImageFit`]: 'cover',
-    [`col${colNum}ImageFocusX`]: 50,
-    [`col${colNum}ImageFocusY`]: 50,
     [`col${colNum}Alt`]: '',
     [`col${colNum}BlockCount`]: '1',
   };
@@ -162,12 +170,17 @@ export default {
     ...Array.from({ length: MAX_COLUMNS }, (_, i) => generateColumnFields(i + 1)).flat(),
   ],
 
+  // The ImageRef config anchor for this type (looked up, never stored per
+  // slide): a column image without its own fit/focus follows these. See
+  // CONTENT_COLUMNS_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
+  imageDefaults: CONTENT_COLUMNS_IMAGE_DEFAULTS,
+
   defaultsByLang: {
     nl: {
       title: '',
       subheading: '',
       bottomSubheading: '',
-      columnCount: '3',
+      columnCount: '2',
       ...generateColumnDefaults(1, 'nl'),
       ...generateColumnDefaults(2, 'nl'),
       ...generateColumnDefaults(3, 'nl'),
@@ -180,7 +193,7 @@ export default {
       title: '',
       subheading: '',
       bottomSubheading: '',
-      columnCount: '3',
+      columnCount: '2',
       ...generateColumnDefaults(1, 'en'),
       ...generateColumnDefaults(2, 'en'),
       ...generateColumnDefaults(3, 'en'),
@@ -205,6 +218,7 @@ export default {
   },
 
   renderHtml: (content, _slide, ctx) => {
+    const copy = getSlideCopy(ctx?.lang);
     const title = typeof content?.title === 'string' && content.title.trim()
       ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
       : '';
@@ -221,11 +235,9 @@ export default {
     function renderColumn(colNum) {
       const colTitle = content?.[`col${colNum}Title`] || '';
       const colText = content?.[`col${colNum}Text`] || '';
-      const colImage = content?.[`col${colNum}Image`] || '';
-      const colImageFit = content?.[`col${colNum}ImageFit`] || 'cover';
-      const colImageFocusX = content?.[`col${colNum}ImageFocusX`];
-      const colImageFocusY = content?.[`col${colNum}ImageFocusY`];
-      const colAlt = content?.[`col${colNum}Alt`] || '';
+      // Per-column image resolution (own value -> type default) through the
+      // single ImageRef authority the editor controls and conversion share.
+      const img = resolveContentColumnImage(content, colNum);
       const blockCount = Math.max(0, Math.min(MAX_TEXT_BLOCKS, Number(content?.[`col${colNum}BlockCount`]) || 0));
 
       // Title block
@@ -241,23 +253,23 @@ export default {
 
       // Image
       let imageHtml = '';
-      if (colImage) {
+      if (img.src) {
         const alt = pickAltText({
-          explicit: colAlt,
-          src: colImage,
+          explicit: img.alt,
+          src: img.src,
           fallbacks: [colTitle],
           hardFallback: 'Image',
         });
-        const fitClass = colImageFit === 'contain' ? 'is-contain' : 'is-cover';
+        const fitClass = img.fit === 'contain' ? 'is-contain' : 'is-cover';
         // Only apply focus position for cover mode (cropped images)
-        const focusStyle = colImageFit === 'cover'
-          ? objectPositionStyleAttrFromFocus({ focusX: colImageFocusX, focusY: colImageFocusY })
+        const focusStyle = img.fit === 'cover'
+          ? objectPositionStyleAttrFromFocus({ focusX: img.focusX, focusY: img.focusY })
           : '';
         // Inline-edit hook: clicking a column image opens a media popover
         // (image + alt) writing to the flat col{n}Image / col{n}Alt fields.
         imageHtml = `
           <div class="cc-image ${fitClass}" data-inline-photo="${colNum}">
-            <img src="${esc(colImage)}" alt="${esc(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
+            <img src="${esc(img.src)}" alt="${esc(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
           </div>
         `;
       } else if (ctx?.mode === 'edit') {
@@ -265,7 +277,7 @@ export default {
         // no placeholder ships to present/export - but in the editor an empty
         // slot must be clickable to add a FIRST image (media popover).
         imageHtml = `
-          <div class="cc-image is-cover cc-image-placeholder is-empty" data-inline-photo="${colNum}" aria-hidden="true"></div>
+          ${imagePlaceholderHtml({ className: 'cc-image is-cover cc-image-placeholder', label: copy.imagePlaceholder, index: colNum })}
         `;
       }
 

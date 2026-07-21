@@ -1,4 +1,3 @@
-import { renderFocusGridField } from './focus-picker.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 const imgSizeCache = new Map();
@@ -117,15 +116,13 @@ export function renderImagePositionPicker({
   const activeY = nearestSnap(focusY, snap) ?? 50;
 
   if (mode === 'cover') {
-    return renderFocusGridField({
-      h,
-      label: 'Image focus (crop)',
-      helpText: 'Pick what should stay visible when the image is cropped.',
-      focusX: activeX,
-      focusY: activeY,
-      disabled: false,
-      onChange,
-    });
+    // Cover-crop focus is now set by direct manipulation on the canvas: a
+    // draggable, keyboard-operable focal point on the image itself. The old 3x3
+    // grid here is retired so there's one control per value, not two. Only the
+    // cover path goes; contain-mode alignment (below) stays, as do the
+    // slide-background and freeform focus grids that use renderFocusGridField
+    // directly elsewhere.
+    return null;
   }
 
   // Contain mode: determine whether X or Y alignment is meaningful.

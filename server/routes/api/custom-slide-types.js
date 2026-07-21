@@ -7,6 +7,7 @@
  * PUT    /api/custom-slide-types/:id      - Update (designer only)
  * DELETE /api/custom-slide-types/:id      - Delete (designer only)
  * POST   /api/custom-slide-types/:id/duplicate - Duplicate (designer only)
+ * PUT    /api/custom-slide-types/reorder - Set display order (designer only)
  */
 
 import {
@@ -23,6 +24,7 @@ import {
   createCustomSlideType,
   updateCustomSlideType,
   deleteCustomSlideType,
+  reorderCustomSlideTypes,
 } from '../../storage/custom-slide-types.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { canManage } from '../../utils/route-middleware.js';
@@ -35,6 +37,8 @@ const ERROR_MESSAGES = {
   not_found: 'Slide type not found.',
   unavailable: 'Database unavailable.',
   invalid_id: 'Invalid slide type ID.',
+  invalid_order: 'Invalid slide type order.',
+  order_mismatch: 'The order does not list exactly the current slide types. Reload and try again.',
 };
 
 export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
@@ -67,6 +71,28 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
 
   if (pathname === '/api/custom-slide-types') {
     return methodNotAllowed(res, ['GET', 'POST']);
+  }
+
+  // ─── REORDER ──────────────────────────────────────────────
+  // A collection-level route, matched before the /:id block for the same
+  // reason /duplicate is (the hex-only id pattern would not match "reorder"
+  // today, but ordering the routes by shape is what keeps that true).
+  // One call for the whole order: N single-field PUTs would leave a
+  // half-applied order behind if one of them failed.
+  if (pathname === '/api/custom-slide-types/reorder') {
+    if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
+    if (!canManage(authedUser)) return unauthorized(res);
+
+    const body = await json(req);
+    if (!body || typeof body !== 'object') return badRequest(res, 'Missing JSON body.');
+
+    const ctx = createRouteContext(authedUser);
+    const result = await reorderCustomSlideTypes(body.order, ctx);
+    if (!result.ok) {
+      return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to reorder slide types.');
+    }
+    serveJson(res, 200, { customSlideTypes: result.customSlideTypes });
+    return true;
   }
 
   // ─── DUPLICATE ─────────────────────────────────────────────

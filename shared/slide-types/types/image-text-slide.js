@@ -1,15 +1,18 @@
 import {
   bgClass,
   esc,
+  imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 import {
-  imageTextImageItems,
   imageTextCellCount,
+  resolveImageTextCell,
+  IMAGE_TEXT_IMAGE_DEFAULTS,
 } from '../image-text-images.js';
 
 export default {
@@ -44,8 +47,8 @@ export default {
           maxLength: 180,
         },
         {
-          // Per-image escape for non-croppable images (logos, diagrams);
-          // empty = follow the slide-level Image fit.
+          // Per-image fit (canonical since step 2b); empty = follow the
+          // type default (imageDefaults.fit).
           key: 'fit',
           label: 'Image fit',
           type: 'enum',
@@ -170,6 +173,10 @@ export default {
       ],
     },
     {
+      // LEGACY slide-level base fit. Since datamodel step 2b fit lives on the
+      // ImageRef (`images[i].fit`, falling back to imageDefaults.fit); this
+      // field stays declared so old decks keep validating and rendering, and
+      // the editor folds it into the items on touch (ensureImageTextImages).
       key: 'imageFit',
       label: 'Image fit',
       type: 'enum',
@@ -338,6 +345,10 @@ export default {
       schematic: { cols: 3 },
     },
   ],
+  // The ImageRef config anchor for this type (looked up, never stored per
+  // slide): an item without its own fit/focus follows these. See
+  // IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
+  imageDefaults: IMAGE_TEXT_IMAGE_DEFAULTS,
   defaultsByLang: {
     nl: {
       image: '',
@@ -349,7 +360,6 @@ export default {
       imageWidth: 'half',
       layout: 'split',
       textColumns: '1',
-      imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -368,7 +378,6 @@ export default {
       imageWidth: 'half',
       layout: 'split',
       textColumns: '1',
-      imageFit: 'cover',
       imageBackground: 'white',
       focusX: '',
       focusY: '',
@@ -388,7 +397,6 @@ export default {
     imageWidth: 'half',
     layout: 'split',
     textColumns: '1',
-    imageFit: 'cover',
     imageBackground: 'white',
     density: 'auto',
     focusX: '',
@@ -398,7 +406,8 @@ export default {
     background: 'lime',
     actions: [],
   },
-  renderHtml: (content) => {
+  renderHtml: (content, slide, ctx) => {
+    const copy = getSlideCopy(ctx?.lang);
     const bg = bgClass(content?.background);
     const side =
       content?.imageSide === 'right'
@@ -431,10 +440,6 @@ export default {
         layoutRaw === 'row-bottom')
         ? ' is-text-cols-2'
         : '';
-    const fit =
-      content?.imageFit === 'contain'
-        ? 'is-image-contain'
-        : 'is-image-cover';
     const imgBg =
       content?.imageBackground === 'match'
         ? 'is-image-bg-match'
@@ -447,12 +452,6 @@ export default {
     // 'compact' forces the small size up front. 'auto' starts comfortable
     // and the runtime adds is-compact if the body overflows.
     const densityClass = density === 'compact' ? ' is-compact' : '';
-    const altNl =
-      typeof content?.altNl === 'string' ? content.altNl.trim() : '';
-    const altEn =
-      typeof content?.altEn === 'string' ? content.altEn.trim() : '';
-    const altExplicit =
-      typeof content?.alt === 'string' ? content.alt.trim() : '';
     const caption = content?.caption
       ? `<figcaption class="caption" data-inline-field="caption" dir="auto">${esc(
           content.caption
@@ -462,59 +461,36 @@ export default {
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
     const ariaDecorative =
       imageRole === 'decorative' ? ' aria-hidden="true"' : '';
-    const items = imageTextImageItems(content);
     const cells = imageTextCellCount(content);
-    // One <figure class="frame"> per cell. Item 0 falls back to the legacy
-    // slide-level alt/focus so unmigrated decks render identically; a
-    // per-item fit only adds a class when it overrides the slide-level fit.
+    // One <figure class="frame"> per cell, each carrying its *effective* fit as
+    // an is-fit-* class - the single CSS mechanism for fit (frame padding). The
+    // item-wins precedence lives in resolveImageTextCell (the single authority
+    // render, the canvas focal drag and the inspector share); whether the fit
+    // came from the item, the slide-level base or the type default is invisible
+    // in the emitted HTML, which is what makes the step-2b data fan-out
+    // render-neutral (see docs/reference/image-property-ownership.md).
     const cellHtml = (idx) => {
-      const item = items[idx] || {
-        src: '',
-        alt: '',
-        fit: '',
-        focusX: '',
-        focusY: '',
-      };
-      const itemAlt =
-        typeof item.alt === 'string' && item.alt.trim()
-          ? item.alt.trim()
-          : idx === 0
-            ? altExplicit || altNl || altEn
-            : '';
+      const { item, fit: cellFit, focusSource, altExplicit } =
+        resolveImageTextCell(content, idx);
       const alt =
         imageRole === 'decorative'
           ? ''
           : pickAltText({
-              explicit: itemAlt,
+              explicit: altExplicit,
               src: item.src,
               fallbacks: idx === 0 ? [content?.caption, content?.title] : [],
               hardFallback: cells > 1 ? `Image ${idx + 1}` : 'Image',
             });
       // For cover this controls crop focus; for contain, alignment.
-      const hasOwnFocus = item.focusX !== '' || item.focusY !== '';
-      const focusStyle = objectPositionStyleAttrFromFocus(
-        hasOwnFocus || idx > 0 ? item : content
-      );
-      const fitClass =
-        item.fit === 'contain'
-          ? ' is-fit-contain'
-          : item.fit === 'cover'
-            ? ' is-fit-cover'
-            : '';
+      const focusStyle = objectPositionStyleAttrFromFocus(focusSource);
+      const fitClass = cellFit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';
       // data-inline-photo: clicking the image in the editor opens the
       // media popover (image + alt); inert on every other surface.
       const inner = item.src
         ? `<img src="${esc(item.src)}" alt="${esc(
             alt
           )}" data-inline-photo="${idx}"${ariaDecorative}${focusStyle} />`
-        : `<div class="image-placeholder is-empty" data-inline-photo="${idx}" aria-hidden="true">
-          <div class="image-placeholder-inner">
-            <svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">
-              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>
-            </svg>
-            <div class="image-placeholder-text">Afbeelding</div>
-          </div>
-        </div>`;
+        : imagePlaceholderHtml({ label: copy.imagePlaceholder, index: idx });
       // The shared caption lives in the first frame (absolute, bottom-left).
       return `<figure class="frame${fitClass}">
                   ${inner}
@@ -526,7 +502,7 @@ export default {
     const mediaCount = cells > 1 ? ` data-count="${cells}"` : '';
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
-        <div class="slide slide-image-text ${bg} ${fit} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
+        <div class="slide slide-image-text ${bg} ${width} ${imgBg}${layoutClass}${textColsClass}${densityClass}" data-density="${density}">
           <div class="slide-inner">
             <div class="split ${side}">
               <div class="media${mediaMulti}"${mediaCount} data-morph-role="image">

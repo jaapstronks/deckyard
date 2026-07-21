@@ -208,7 +208,7 @@ export function createReportModal({ h, root, presentationId, presentation, dateR
 
     successEl.append(
       h('div', { class: 'analytics-report-success-message' }, [
-        h('span', { text: '✓ ' + t('analytics.reportGenerated', 'Report generated successfully!') }),
+        h('span', { text: t('analytics.reportGeneratedCheck', '✓ Report generated successfully!') }),
       ])
     );
 

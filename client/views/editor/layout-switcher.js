@@ -18,6 +18,7 @@ import {
   applyLayoutVariant,
 } from '../../../shared/slide-types.js';
 import { canConvertSlideTo, convertSlideWithConfirm, slideTypeLabel } from './convert-slide-action.js';
+import { renderSlideSchematic } from '../../lib/slide-schematic.js';
 
 /**
  * The definition's mirror declaration (`layoutMirror`): which enum field
@@ -83,79 +84,17 @@ function getLayoutTextColumns(def) {
 }
 
 /**
- * Draw the mini-schematic for one variant tile: a 16:9 box with an "image"
- * block and "text" lines, driven by the variant's declared `schematic`
- * ({ split: <image %> } | { corner: <image %> } | { duo: <image %> } |
- * { row: 'top'|'bottom' } | { textCols: 2 } for two text columns |
- * { cols: <n> } for n image+text columns | {} for text-only). Rows and
- * columns don't mirror.
+ * Draw the mini-schematic for one variant tile via the shared schematic
+ * renderer, so the layout switcher and the slide-type picker speak one visual
+ * language. Reads the variant's declared `schematic` spec (see
+ * client/lib/slide-schematic.js for the grammar).
  * @param {Function} h
  * @param {Object} variant
  * @param {boolean} mirrored
  * @returns {HTMLElement}
  */
 function renderSchematic(h, variant, mirrored) {
-  const box = h('div', { class: 'layout-tile-schematic', 'aria-hidden': 'true' });
-  const sch = variant?.schematic && typeof variant.schematic === 'object' ? variant.schematic : {};
-  const textBlock = () =>
-    h('div', { class: 'layout-tile-text' }, [
-      h('div', { class: 'layout-tile-line is-heading' }),
-      h('div', { class: 'layout-tile-line' }),
-      h('div', { class: 'layout-tile-line is-short' }),
-    ]);
-
-  const splitPct = Number(sch.split);
-  const cornerPct = Number(sch.corner);
-  const duoPct = Number(sch.duo);
-  const textCols = Number(sch.textCols);
-  const cols = Number(sch.cols);
-  const row = sch.row === 'top' || sch.row === 'bottom' ? sch.row : '';
-  const rowBlock = () =>
-    h('div', { class: 'layout-tile-row' }, [
-      h('div', { class: 'layout-tile-image' }),
-      h('div', { class: 'layout-tile-image' }),
-    ]);
-  if (Number.isFinite(cols) && cols > 1) {
-    box.classList.add('is-cols');
-    for (let i = 0; i < Math.min(cols, 3); i += 1) {
-      box.append(
-        h('div', { class: 'layout-tile-col' }, [
-          h('div', { class: 'layout-tile-image' }),
-          h('div', { class: 'layout-tile-line' }),
-          h('div', { class: 'layout-tile-line is-short' }),
-        ])
-      );
-    }
-  } else if (Number.isFinite(textCols) && textCols > 1) {
-    box.classList.add('is-text-cols');
-    box.append(textBlock(), textBlock());
-  } else if (Number.isFinite(splitPct) && splitPct > 0) {
-    const img = h('div', { class: 'layout-tile-image', style: `width:${splitPct}%` });
-    box.classList.add('is-split');
-    if (mirrored) box.append(textBlock(), img);
-    else box.append(img, textBlock());
-  } else if (Number.isFinite(cornerPct) && cornerPct > 0) {
-    const img = h('div', { class: 'layout-tile-image is-corner', style: `width:${cornerPct}%` });
-    box.classList.add('is-corner');
-    if (mirrored) box.append(textBlock(), img);
-    else box.append(img, textBlock());
-  } else if (Number.isFinite(duoPct) && duoPct > 0) {
-    const stack = h('div', { class: 'layout-tile-duo', style: `width:${duoPct}%` }, [
-      h('div', { class: 'layout-tile-image' }),
-      h('div', { class: 'layout-tile-image' }),
-    ]);
-    box.classList.add('is-duo');
-    if (mirrored) box.append(textBlock(), stack);
-    else box.append(stack, textBlock());
-  } else if (row) {
-    box.classList.add('is-row', row === 'top' ? 'is-row-top' : 'is-row-bottom');
-    if (row === 'top') box.append(rowBlock(), textBlock());
-    else box.append(textBlock(), rowBlock());
-  } else {
-    box.classList.add('is-text-only');
-    box.append(textBlock());
-  }
-  return box;
+  return renderSlideSchematic(h, variant?.schematic, { mirrored });
 }
 
 /**
@@ -184,7 +123,7 @@ export function createLayoutSwitcherChip({
 
   const chip = h('button', {
     type: 'button',
-    class: 'btn btn-sm layout-switcher-chip',
+    class: 'btn layout-switcher-chip',
     title: t('editor.layoutSwitcher.title', 'Slide layout'),
     'aria-haspopup': 'dialog',
     'aria-expanded': 'false',

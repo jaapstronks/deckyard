@@ -25,6 +25,7 @@ import {
   recordPresentationMovedToWorkspace,
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
+import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
 import { broadcastToPresentation, PresentationEventTypes } from '../../../services/comment-events.js';
@@ -215,6 +216,15 @@ export async function handlePresentationItem(
           presentation: updated,
           actor: authedUser,
           slideIds: addedSlideIds,
+          ctx,
+        });
+        // Bundled "someone worked on your deck" bell notification for the
+        // owner/collaborators (coalesced per actor within the debounce window;
+        // the actor never notifies themselves). Fire-and-forget.
+        void notifyDeckActivity({
+          presentation: updated,
+          actor: authedUser,
+          slideCount: addedSlideIds.length,
           ctx,
         });
       } else if (updated.scope === 'workspace') {

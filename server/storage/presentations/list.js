@@ -79,6 +79,7 @@ export async function listPresentations(repoRoot) {
       createdBy: pres.createdBy || null,
       updatedBy: pres.updatedBy || null,
       scope: pres.scope || 'private',
+      isViewOnly: pres.isViewOnly === true,
       revision: Number(pres.revision) || 1,
       i18n:
         pres?.i18n && typeof pres.i18n === 'object'

@@ -7,11 +7,14 @@ import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { closeIcon, makeDropdownCaret } from '../../lib/icons.js';
 import { createDropdown } from '../../lib/dropdown.js';
+import { createSegmented } from '../../lib/segmented.js';
 import { formatRelativeTime } from '../../lib/format-time.js';
 import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/modal.js';
 import { attachMentionAutocomplete } from '../../lib/mention-autocomplete.js';
+import { createRichCommentInput } from '../../lib/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';
@@ -111,6 +114,12 @@ export function createCommentsPanel({
   async function loadComments() {
     try {
       filter.slideId = scope === 'slide' ? (getSelectedSlideId?.() || null) : null;
+      // "This slide" with no slide to scope to (a deck with zero slides, or
+      // before the first selection lands). Leaving slideId off the request
+      // would quietly widen the scope to the whole deck while the switch still
+      // reads "This slide", so the list is emptied explicitly instead. The
+      // request still goes out unscoped: openCount drives the deck-wide badge.
+      filter.slideMissing = scope === 'slide' && !filter.slideId;
       const opts = {};
       if (filter.slideId) opts.slideId = filter.slideId;
       if (filter.status && filter.status !== 'all') opts.status = filter.status;
@@ -119,9 +128,11 @@ export function createCommentsPanel({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       openCount = result.openCount || 0;
-      const visibleThreads = filter.attention === 'waiting'
-        ? comments.filter((c) => threadWaitsFor(c, user?.email))
-        : comments;
+      const visibleThreads = filter.slideMissing
+        ? []
+        : filter.attention === 'waiting'
+          ? comments.filter((c) => threadWaitsFor(c, user?.email))
+          : comments;
       // The re-render destroys any open reply inputs; release their
       // autocomplete listeners with them.
       detachEphemeralMentions();
@@ -256,7 +267,7 @@ export function createCommentsPanel({
   // ========================================
 
   async function submitComment() {
-    const body = inputTextarea.value.trim();
+    const body = commentInput.getValue().trim();
     if (!body) return;
 
     try {
@@ -265,14 +276,14 @@ export function createCommentsPanel({
         body,
         slideId: getSelectedSlideId?.() || null,
       });
-      inputTextarea.value = '';
+      commentInput.clear();
       loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.postFailed', 'Failed to post comment'));
     }
   }
 
-  async function handleReply(parentId, body, textarea) {
+  async function handleReply(parentId, body, replyInput) {
     try {
       await checkMentionAccess(body);
       await commentsApi.createComment({
@@ -280,7 +291,7 @@ export function createCommentsPanel({
         parentId,
         slideId: getSelectedSlideId?.() || null,
       });
-      textarea.value = '';
+      replyInput.clear();
       loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.replyFailed', 'Failed to post reply'));
@@ -295,20 +306,24 @@ export function createCommentsPanel({
   const ephemeralMentionDetachers = new Set();
 
   /**
-   * Attach @-autocomplete to a comment textarea. The popover mounts inside
+   * Attach @-autocomplete to a comment composer. The popover mounts inside
    * `host`, which gets position:relative via .has-mention-autocomplete.
    * Guests are not mentionable and guests can't mention (no account): the
    * whole feature is authed-user-only.
+   *
+   * `richInput` is a `createRichCommentInput` instance; it doubles as the
+   * caret adapter (same `getTextBeforeCaret` / `replaceQueryWithMention`
+   * shape a textarea adapter provides), so a picked user lands as a chip.
    *
    * Reply inputs pass `ephemeral: true`: they are created on every Reply
    * toggle and destroyed by each list re-render, so their document-level
    * dismiss listeners must be released with them (drained per render;
    * the toggle path calls `host._detachMentions` directly).
    */
-  function attachMentions(textarea, host, { ephemeral = false } = {}) {
+  function attachMentions(richInput, host, { ephemeral = false } = {}) {
     if (!user?.email) return null;
     const ac = attachMentionAutocomplete({
-      textarea,
+      adapter: richInput,
       api,
       getPriorityEmails: () => (accessEmails ? [...accessEmails] : []),
     });
@@ -411,25 +426,23 @@ export function createCommentsPanel({
   // Scope switch: the pane shows the current slide's threads by default (the
   // same order as the inspector/notes panes); "All slides" is the explicit
   // deck-wide overview, where each comment links to its slide.
-  const scopeSlideBtn = h('button', {
-    class: 'comments-scope-btn',
-    type: 'button',
-    text: t('comments.filter.thisSlide', 'This slide'),
-    'aria-pressed': 'true',
-    onclick: () => setScope('slide'),
+  // `setScope` is the single owner of the selection (it also reloads), so the
+  // control reports clicks rather than moving its own highlight.
+  const scopeSegmented = createSegmented({
+    h,
+    outlined: true,
+    className: 'comments-scope',
+    buttonClass: 'comments-scope-btn',
+    ariaLabel: t('comments.scope.label', 'Comments scope'),
+    value: 'slide',
+    selectOnClick: false,
+    segments: [
+      { value: 'slide', label: t('comments.filter.thisSlide', 'This slide') },
+      { value: 'all', label: t('comments.scope.allSlides', 'All slides') },
+    ],
+    onSelect: (next) => setScope(next),
   });
-  const scopeAllBtn = h('button', {
-    class: 'comments-scope-btn',
-    type: 'button',
-    text: t('comments.scope.allSlides', 'All slides'),
-    'aria-pressed': 'false',
-    onclick: () => setScope('all'),
-  });
-  const scopeEl = h(
-    'div',
-    { class: 'comments-scope', role: 'group', 'aria-label': t('comments.scope.label', 'Comments scope') },
-    [scopeSlideBtn, scopeAllBtn]
-  );
+  const scopeEl = scopeSegmented.el;
 
   // Status + type live in one compact filter menu next to the scope switch
   // (they refine the list; scope decides what the list is about).
@@ -515,19 +528,15 @@ export function createCommentsPanel({
 
   filterEl.append(scopeEl, filterDetails);
 
-  // Input area
-  const inputTextarea = h('textarea', {
-    class: 'comments-input-textarea',
+  // Input area. Mentions show as chips while typing; `getValue()` serialises
+  // back to the canonical `@[Name](user:email)` markup the server parses.
+  let mainMentionAc = null;
+  const commentInput = createRichCommentInput({
+    className: 'comments-input-textarea',
     placeholder: t('comments.addPlaceholder', 'Add a comment...'),
-    rows: 2,
-  });
-  inputTextarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      // With the mention popover open, Enter picks a user instead.
-      if (mainMentionAc?.isOpen()) return;
-      e.preventDefault();
-      submitComment();
-    }
+    onSubmit: () => submitComment(),
+    // With the mention popover open, Enter picks a user instead.
+    isSubmitBlocked: () => !!mainMentionAc?.isOpen(),
   });
   const inputSubmitBtn = h('button', {
     class: 'btn btn-primary btn-sm',
@@ -535,10 +544,13 @@ export function createCommentsPanel({
     text: t('comments.post', 'Post'),
     onclick: () => submitComment(),
   });
-  const inputControls = h('div', { class: 'comments-input-controls' });
-  inputControls.append(inputSubmitBtn);
-  inputEl.append(inputTextarea, inputControls);
-  const mainMentionAc = attachMentions(inputTextarea, inputEl);
+  const inputControls = h('div', { class: 'comments-input-controls is-between' });
+  inputControls.append(
+    createCommentLinkButton({ input: commentInput }),
+    inputSubmitBtn
+  );
+  inputEl.append(commentInput.el, inputControls);
+  mainMentionAc = attachMentions(commentInput, inputEl);
 
   // Assemble panel
   panelEl.append(headerEl, filterEl, listEl, inputEl);
@@ -549,10 +561,7 @@ export function createCommentsPanel({
   // ========================================
 
   function updateFilterUi() {
-    scopeSlideBtn.classList.toggle('is-active', scope === 'slide');
-    scopeSlideBtn.setAttribute('aria-pressed', String(scope === 'slide'));
-    scopeAllBtn.classList.toggle('is-active', scope === 'all');
-    scopeAllBtn.setAttribute('aria-pressed', String(scope === 'all'));
+    scopeSegmented.setValue(scope);
 
     const statusOpt = STATUS_OPTIONS.find((o) => o.value === filter.status) || STATUS_OPTIONS[0];
     const typeOpt = TYPE_OPTIONS.find((o) => o.value === filter.commentType) || TYPE_OPTIONS[0];

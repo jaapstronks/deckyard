@@ -77,6 +77,16 @@
   background: hsl(var(--app-accent-primary) / 0.07);
 }
 
+/* Drag & drop file hover — a placeholder is a live drop target for an image
+   file being dragged in from the desktop. Solid, tinted, always visible. */
+.ie-overlay .ie-ol-outline.is-drop-active {
+  opacity: 1;
+  border-style: solid;
+  border-width: 2px;
+  border-color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-primary) / 0.12);
+}
+
 /* Active in-place edit ring — always visible, solid, no dashes. */
 .ie-overlay .ie-ol-outline.is-active {
   opacity: 1;
@@ -152,6 +162,19 @@
     ),
     hsl(var(--app-bg-elevated, 0 0% 100%));
   border-color: hsl(var(--app-accent-primary) / 0.9);
+}
+
+/* The "Add image" chip is centred on top of an empty placeholder, which
+   already shows its own icon + label — so the two stacked on each other on
+   hover. The chip says the same thing and is the actual affordance, so the
+   placeholder's inner content steps aside while it is visible. Fades with the
+   chip, and only for placeholders that are still empty. */
+.thumb.is-inline-edit .image-placeholder.is-empty .image-placeholder-inner {
+  transition: opacity 0.12s ease;
+}
+
+.thumb.is-inline-edit:hover .image-placeholder.is-empty .image-placeholder-inner {
+  opacity: 0;
 }
 
 /* ---- Clear (×) for a filled optional field, and card remove (×) ---- */
@@ -281,6 +304,15 @@
   animation: ie-pop-in 0.14s ease;
 }
 
+/* The chart data grid needs more room than the markdown textarea. */
+.ie-md-modal.is-csv {
+  width: min(720px, calc(100% - 32px));
+}
+
+.ie-md-modal.is-csv .csv-grid-raw {
+  min-height: 200px;
+}
+
 @keyframes ie-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -339,72 +371,6 @@
 .ie-md-modal .ie-md-footer {
   align-items: center;
   gap: 8px;
-}
-
-/* ---- Media popover (in-slide image + alt + extra fields) ---- */
-/* A compact popover anchored to the clicked card photo. Fixed-positioned so it
-   stays put over the transform-scaled slide; positioning is done in JS. */
-.ie-media-popover {
-  position: fixed;
-  z-index: 46;
-  width: min(300px, calc(100vw - 24px));
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg, 12px);
-  box-shadow: 0 18px 48px hsl(0 0% 0% / 0.3);
-  animation: ie-pop-in-plain 0.12s ease;
-}
-
-@keyframes ie-pop-in-plain {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.ie-media-popover .ie-media-header {
-  align-items: center;
-}
-
-.ie-media-popover .ie-media-title {
-  font-weight: 600;
-  font-size: 14px;
-  color: hsl(var(--app-text-default, 0 0% 10%));
-}
-
-.ie-media-popover .ie-media-preview {
-  display: flex;
-  justify-content: center;
-}
-
-.ie-media-popover .ie-media-thumb {
-  max-width: 100%;
-  max-height: 140px;
-  border-radius: 8px;
-  object-fit: contain;
-}
-
-.ie-media-popover .ie-media-thumb.is-empty {
-  width: 100%;
-  height: 92px;
-  background: hsl(var(--app-bg-sunken, 0 0% 94%) / 0.7);
-  border: 1px dashed hsl(var(--app-border-default));
-}
-
-.ie-media-popover .ie-media-field {
-  gap: 4px;
-}
-
-.ie-media-popover .field-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: hsl(var(--app-text-muted, 0 0% 40%));
-}
-
-.ie-media-popover .form-input {
-  width: 100%;
 }
 
 /* One-time "click any text to edit" coach mark ---------------------------- */
@@ -468,5 +434,120 @@
 @media (prefers-reduced-motion: reduce) {
   .ie-coach {
     animation: none;
+  }
+}
+
+/* --- Focal-point handle ----------------------------------------------------
+   A draggable crosshair on filled, cropped images (descriptor `focus`). Sets
+   the crop focus (object-position) by direct manipulation, so the 3x3 grid in
+   the inspector is no longer the only way in. Unlike the hover-revealed chips
+   this stays visible: it is the discoverable affordance for "where does this
+   image crop from". */
+.ie-overlay .ie-focus-point {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid hsl(0 0% 100%);
+  background: hsl(var(--app-accent-primary) / 0.28);
+  box-shadow:
+    0 0 0 1.5px hsl(0 0% 0% / 0.45),
+    0 2px 8px hsl(0 0% 0% / 0.45);
+  cursor: grab;
+  touch-action: none;
+  z-index: 4;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+/* Crosshair inside the ring. */
+.ie-overlay .ie-focus-point::before,
+.ie-overlay .ie-focus-point::after {
+  content: '';
+  position: absolute;
+  background: hsl(0 0% 100%);
+  box-shadow: 0 0 2px hsl(0 0% 0% / 0.6);
+}
+.ie-overlay .ie-focus-point::before {
+  left: 50%;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  transform: translateX(-50%);
+}
+.ie-overlay .ie-focus-point::after {
+  top: 50%;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.ie-overlay .ie-focus-point:hover {
+  background: hsl(var(--app-accent-primary) / 0.45);
+  transform: scale(1.08);
+}
+.ie-overlay .ie-focus-point.is-dragging {
+  cursor: grabbing;
+  background: hsl(var(--app-accent-primary) / 0.55);
+  transform: scale(1.12);
+}
+.ie-overlay .ie-focus-point:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ie-overlay .ie-focus-point {
+    transition: none;
+  }
+}
+
+/* --- "Double-click to replace" hint ----------------------------------------
+   A small, NON-INTERACTIVE label inset at a filled image's bottom-right,
+   revealed on slide hover. Fit and the per-image settings moved into the
+   inspector's "This image" tab (a single click opens it); nothing on the image
+   is a control any more, so this only signals the double-click gesture and lets
+   the click fall through to the image (pointer-events: none). */
+.ie-overlay .ie-replace-hint {
+  pointer-events: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  white-space: nowrap;
+  padding: 3px 9px;
+  color: hsl(0 0% 100% / 0.92);
+  background: hsl(220 15% 12% / 0.82);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.thumb.is-inline-edit:hover .ie-overlay .ie-replace-hint {
+  opacity: 1;
+}
+@media (hover: none) {
+  .thumb.is-inline-edit .ie-overlay .ie-replace-hint {
+    opacity: 1;
+  }
+}
+
+/* --- Touch -----------------------------------------------------------------
+   The whole WYSIWYG affordance layer — which fields are editable, where to
+   add an item, how to remove or reorder one — is revealed by hovering the
+   slide. On a touch screen that reveal never happens, so inline editing has
+   no discoverable surface at all: the canvas just looks like a picture.
+   Selecting the slide is the closest touch equivalent of hovering it, so the
+   same affordances appear once it's the active thumb. */
+@media (hover: none) {
+  .thumb.is-inline-edit .ie-overlay .ie-ol-outline {
+    opacity: 1;
+  }
+  .thumb.is-inline-edit .ie-overlay .ie-ghost,
+  .thumb.is-inline-edit .ie-overlay .ie-card-add,
+  .thumb.is-inline-edit .ie-overlay .ie-media-hint,
+  .thumb.is-inline-edit .ie-overlay .ie-clear,
+  .thumb.is-inline-edit .ie-overlay .ie-card-remove,
+  .thumb.is-inline-edit .ie-overlay .ie-card-grip {
+    opacity: 1;
   }
 }

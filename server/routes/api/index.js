@@ -1,4 +1,5 @@
-import { notFound, unauthorized } from '../../utils/http.js';
+import { notFound, unauthorized, forbidden } from '../../utils/http.js';
+import { isCsrfSafe } from '../../utils/csrf.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -56,6 +57,13 @@ import { handleOrganizationMembers } from './organization-members.js';
 import { handleDataSources } from './data-sources.js';
 
 export async function handleApi({ repoRoot, req, res, url }) {
+  // CSRF defense: reject cookie-authenticated, cross-origin state-changing
+  // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
+  // same-origin requests. See docs/plans/security-hardening.md item 5c.
+  if (!isCsrfSafe(req)) {
+    return forbidden(res, 'Cross-site request blocked (CSRF)');
+  }
+
   // Public API v1 routes (API key authentication, separate from session-based auth)
   if (url.pathname.startsWith('/api/v1')) {
     if (await handlePublicApiV1({ repoRoot, req, res, url })) return;

@@ -57,8 +57,18 @@ export async function renderSharedReport(root, token) {
     const header = h('div', { class: 'shared-report-header' }, [
       h('h1', { text: data.title || 'Analytics Report' }),
       h('div', { class: 'shared-report-meta' }, [
-        h('span', { text: `${t('analytics.period', 'Period')}: ${formatDate(data.startDate)} - ${formatDate(data.endDate)}` }),
-        h('span', { text: ` · ${t('analytics.generatedAt', 'Generated')}: ${formatDate(data.generatedAt)}` }),
+        h('span', {
+          text: t('analytics.periodRange', 'Period: {start} - {end}', {
+            start: formatDate(data.startDate),
+            end: formatDate(data.endDate),
+          }),
+        }),
+        h('span', { text: ' · ' }),
+        h('span', {
+          text: t('analytics.generatedAtDate', 'Generated: {date}', {
+            date: formatDate(data.generatedAt),
+          }),
+        }),
       ]),
     ]);
 

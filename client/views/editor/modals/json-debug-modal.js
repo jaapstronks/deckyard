@@ -212,7 +212,7 @@ export function openJsonDebugModal({
       jsonError.style.display = 'none';
       jsonTextarea.classList.remove('is-invalid');
     } catch (e) {
-      jsonError.textContent = `JSON Error: ${e.message}`;
+      jsonError.textContent = t('editor.jsonDebug.parseError', 'JSON error: {message}', { message: e.message });
       jsonError.style.display = 'block';
       jsonTextarea.classList.add('is-invalid');
       editedJson = null;
@@ -248,7 +248,7 @@ export function openJsonDebugModal({
       jsonError.style.display = 'none';
       jsonTextarea.classList.remove('is-invalid');
     } catch (e) {
-      jsonError.textContent = `JSON Error: ${e.message}`;
+      jsonError.textContent = t('editor.jsonDebug.parseError', 'JSON error: {message}', { message: e.message });
       jsonError.style.display = 'block';
     }
   };

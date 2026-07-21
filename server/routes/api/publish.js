@@ -157,14 +157,12 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
 
     let body = {};
     try {
-      const raw = await new Promise((resolve, reject) => {
-        let buf = '';
-        req.on('data', (c) => (buf += c));
-        req.on('end', () => resolve(buf));
-        req.on('error', reject);
-      });
-      body = raw ? JSON.parse(raw) : {};
-    } catch {
+      body = (await json(req)) || {};
+    } catch (err) {
+      if (err?.statusCode === 413) {
+        serveJson(res, 413, { error: 'Request body too large' });
+        return true;
+      }
       body = {};
     }
     const nextSlug = body?.slug;

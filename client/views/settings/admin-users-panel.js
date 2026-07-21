@@ -41,7 +41,7 @@ export function renderAdminUsersPanel({ user }) {
   const usersList = h('div', { class: 'admin-users-list' });
   const loading = h('div', {
     class: 'help',
-    text: 'Loading...',
+    text: t('common.loading', 'Loading…'),
   });
   usersList.append(loading);
 
@@ -63,7 +63,7 @@ export function renderAdminUsersPanel({ user }) {
         usersList.innerHTML = '';
         usersList.append(h('div', {
           class: 'help',
-          text: 'Failed to load users.',
+          text: t('admin.users.loadFailed', 'Failed to load users.'),
         }));
       }
     );

@@ -44,6 +44,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Theme variables are scoped to `.slide` to keep **application UI** theme-independent (`client/styles/theme.css`).
   - Slide styling lives under `client/styles/slides/*` and is included via `client/styles/slides.css`.
   - Don’t hardcode brand colors/fonts inside slide templates. Prefer CSS vars (`--t-*` theme vars → `.slide` vars → component CSS).
+  - Width-based `@media` queries must sit on the shared breakpoint ladder (480/640/768/1024/1280, `min-width` counterparts one pixel up, plus the ultra-wide 1400/1600/1800). See **`docs/reference/css-breakpoints.md`**; enforced by `tests/css-breakpoints.test.js`.
 
 - **Avoid hardcoded copy scattered across templates**
   - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/copy.js`).

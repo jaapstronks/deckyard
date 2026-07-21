@@ -218,7 +218,7 @@ Google Fonts are added by entering a spec string with no validation that the fon
 There's no UI to see which themes use a given font family. The deletion flow now clears references automatically, but users have no way to preview the impact before deleting.
 
 ### External fonts require network
-Adobe, Monotype, and Google fonts need network access to load. Standalone HTML exports include the external `<link>`/`<script>` tags but won't work fully offline. Only uploaded fonts are base64-embedded for true offline use.
+Adobe, Monotype, and Google fonts need network access to load. Standalone HTML exports include the external `<link>`/`<script>` tags but won't work fully offline. Local (curated `/assets/...`) and uploaded fonts *are* base64-embedded for true offline use — see `docs/reference/standalone-html-export.md`.
 
 ### No font subsetting
 Uploaded fonts are embedded in full. For exports with large font files, this increases the HTML file size. Subsetting to commonly used character ranges would reduce this.

@@ -207,6 +207,132 @@
   cursor: not-allowed;
 }
 
+/* ---- Chart data grid editor (client/views/editor/fields/csv-grid.js) ---- */
+.csv-grid-field {
+  gap: 8px;
+}
+
+.csv-grid-toolbar {
+  align-items: center;
+  gap: 8px;
+}
+
+.csv-grid-toolbar-actions {
+  gap: 6px;
+}
+
+.csv-grid-scroll {
+  overflow-x: auto;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md, 8px);
+}
+
+table.csv-grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.csv-grid th,
+.csv-grid td {
+  padding: 0;
+  border: 1px solid hsl(var(--app-border-default));
+  border-top: none;
+  border-left: none;
+}
+
+.csv-grid th:first-child,
+.csv-grid td:first-child {
+  border-left: none;
+}
+
+.csv-grid thead th {
+  background: hsl(var(--app-bg-sunken, 0 0% 96%) / 0.6);
+  position: relative;
+}
+
+.csv-grid-input {
+  width: 100%;
+  min-width: 96px;
+  padding: 7px 9px;
+  border: none;
+  background: transparent;
+  color: hsl(var(--app-text-default, 0 0% 12%));
+  font: inherit;
+}
+
+.csv-grid-input:focus {
+  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: -2px;
+  background: hsl(var(--app-accent-primary) / 0.06);
+}
+
+.csv-grid-head-input {
+  font-weight: 600;
+  padding-right: 22px;
+}
+
+/* Row/column remove affordances: quiet ×, revealed on row/header hover. */
+.csv-grid-rowremove,
+.csv-grid-colremove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  color: hsl(var(--app-text-muted, 0 0% 45%));
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s ease, background 0.1s ease, color 0.1s ease;
+}
+
+.csv-grid-colremove {
+  position: absolute;
+  top: 50%;
+  right: 3px;
+  transform: translateY(-50%);
+}
+
+.csv-grid-td-actions {
+  border-right: none !important;
+  width: 26px;
+  text-align: center;
+}
+
+.csv-grid tbody tr:hover .csv-grid-rowremove,
+.csv-grid thead th:hover .csv-grid-colremove,
+.csv-grid-input:focus ~ .csv-grid-colremove {
+  opacity: 1;
+}
+
+.csv-grid-rowremove:hover,
+.csv-grid-colremove:hover {
+  color: hsl(var(--app-danger, 0 70% 50%));
+  background: hsl(var(--app-danger, 0 70% 50%) / 0.12);
+}
+
+.csv-grid-th-actions {
+  border-right: none !important;
+  width: 26px;
+}
+
+.csv-grid-actions {
+  gap: 6px;
+}
+
+.csv-grid-raw {
+  min-height: 160px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.82rem;
+}
+
 .ui-status-line {
   min-height: 18px;
 }

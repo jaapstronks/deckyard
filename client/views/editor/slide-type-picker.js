@@ -4,10 +4,19 @@ import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-render
 import { getSampleContent } from './slide-type-sample-content.js';
 import { storage } from '../../lib/storage.js';
 import { wireGridKeyboardNav } from './slide-type-picker-keyboard.js';
+import { renderSlideSchematic } from '../../lib/slide-schematic.js';
+import { schematicFor } from './slide-type-schematics.js';
 
 // The slide canvas is rendered at this width, then scaled down to fit each
 // thumbnail tile. Scale is computed per tile from its measured width.
 const SLIDE_CANVAS_WIDTH = 1600;
+
+// Thumbnail view mode: 'schematic' shows an abstract symbolic diagram of each
+// slide type (compact, legible at any size); 'preview' shows the real slide
+// rendered small (richer, but text gets tiny). Default schematic — it scans
+// faster and reads clearly even in a dense grid.
+const VIEW_KEY = 'ps-slide-picker-view';
+const VIEW_MODES = new Set(['schematic', 'preview']);
 
 // Which category sections start collapsed when the user has no stored
 // preference. Interactive slides are findable but out of the way by default.
@@ -35,6 +44,7 @@ const SLIDE_TYPE_ALIASES = {
   'content-slide': 'text body paragraph tekst inhoud',
   'quote-slide': 'testimonial pull quote citaat',
   'lijstje-slide': 'bullets list opsomming lijst',
+  'list-slide': 'list styled items opsomming lijst genummerd',
   'image-text-slide': 'photo text foto beeld tekst',
   'image-slide': 'photo full bleed foto beeld',
   'gallery-slide': 'photos images grid fotogalerij beelden',
@@ -81,40 +91,13 @@ const SLIDE_TYPE_PRESETS = {
     { id: 'image-corner', labelKey: 'editor.slideTypePreset.imageText.corner', label: 'Corner image', content: { layout: 'corner', imageSide: 'right' } },
     { id: 'image-row', labelKey: 'editor.slideTypePreset.imageText.row', label: 'Image row', content: { layout: 'row-top' } },
   ],
-  'content-slide': [
-    { id: 'one-column', labelKey: 'editor.slideTypePreset.content.oneColumn', label: 'One column', content: { layout: 'one-column' } },
-    {
-      id: 'two-column',
-      labelKey: 'editor.slideTypePreset.content.twoColumn',
-      label: 'Two columns',
-      content: { layout: 'two-column' },
-      // Preview-only: a longer body so the thumbnail actually flows into the
-      // second column (two-column uses CSS `columns: 2` with column-fill: auto,
-      // so a short sample all sits in the left column and looks one-column).
-      // Not inserted — the new slide keeps the type's real default body.
-      previewContent: {
-        layout: 'two-column',
-        body: [
-          '- First important point with supporting details',
-          '- Second point that really matters here',
-          '- Third supporting argument to consider',
-          '- Fourth consideration worth weighing up',
-          '- Fifth angle that is worth noting',
-          '- Sixth item added for visual balance',
-          '- Seventh supporting detail in the list',
-          '- Eighth point rounding out column one',
-          '- Ninth item flowing into column two',
-          '- Tenth point continuing the second column',
-          '- Eleventh supporting argument here',
-          '- Twelfth consideration to keep in mind',
-          '- Thirteenth angle worth a mention',
-          '- Fourteenth item for extra balance',
-          '- Fifteenth supporting detail listed',
-          '- Final conclusion to remember well',
-        ].join('\n'),
-      },
-    },
-  ],
+  // content-slide has no picker presets on purpose: its two-column layout is a
+  // CSS text-flow variant that only splits once the body is long enough, so it
+  // reads as "one column" in an empty new slide and confused people who picked
+  // it expecting two separate fields. That layout stays reachable in the editor
+  // via the layout switcher (content-slide's layoutVariants); the "I explicitly
+  // want two columns" use case is served by content-columns-slide, which sits
+  // right next to the text slide in the Basic group.
   'lijstje-slide': [
     { id: 'bullets', labelKey: 'editor.slideTypePreset.lijstje.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
     { id: 'numbers', labelKey: 'editor.slideTypePreset.lijstje.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
@@ -131,6 +114,7 @@ const SLIDE_TYPE_DESC = {
   'content-slide': 'A heading with body text',
   'quote-slide': 'A pull quote with attribution',
   'lijstje-slide': 'A simple bulleted list',
+  'list-slide': 'A styled list of items',
   'image-text-slide': 'An image beside text',
   'image-slide': 'A single full-bleed image',
   'gallery-slide': 'A grid of images',
@@ -186,6 +170,12 @@ export function createSlideTypePicker({
 
   // Search query persists across re-renders.
   let searchQuery = '';
+
+  // Thumbnail view mode ('schematic' | 'preview'), persisted locally.
+  let viewMode = (() => {
+    const stored = storage.get(VIEW_KEY, '') || '';
+    return VIEW_MODES.has(stored) ? stored : 'schematic';
+  })();
 
   // Currently forced preview surface ('' = auto). Validated against the surfaces
   // this theme actually offers on each render (see below), so a stale stored
@@ -383,6 +373,16 @@ export function createSlideTypePicker({
     }
   };
 
+  // Fill a thumbnail wrapper with an abstract schematic diagram (view mode
+  // 'schematic'). Cheap and synchronous — no live render, no observers needed.
+  // Reads the type + optional preset id stashed on the wrap.
+  const fillSchematic = (thumbWrap) => {
+    const type = thumbWrap.dataset.thumbType;
+    thumbWrap.classList.remove('is-pending');
+    const spec = schematicFor(type, thumbWrap.__presetId || null, SLIDE_TYPES?.[type]);
+    thumbWrap.append(renderSlideSchematic(h, spec || {}));
+  };
+
   // Searchable haystack for a card: label + raw type key + description +
   // aliases, lowercased, so "big numbers" finds the KPI slide and
   // "smoelenboek" finds team cards.
@@ -570,6 +570,7 @@ export function createSlideTypePicker({
     // scroll into view. Tiles whose type has no background field never change,
     // so they're skipped to avoid needless re-renders/flashes.
     const restyleHydratedThumbs = () => {
+      if (viewMode !== 'preview') return; // schematics don't render a surface
       for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
         const type = wrap.dataset.thumbType;
         if (type === 'video-slide' || type === 'embed-slide') continue;
@@ -596,8 +597,14 @@ export function createSlideTypePicker({
         class: 'ps-type-thumb thumb is-pending',
         'data-thumb-type': type,
       });
-      if (preset) thumbWrap.__presetContent = previewOverridesFor(preset);
-      if (intersectionObserver) {
+      if (preset) {
+        thumbWrap.__presetContent = previewOverridesFor(preset);
+        thumbWrap.__presetId = preset.id || null;
+      }
+      if (viewMode === 'schematic') {
+        // Cheap symbolic diagram — render now, skip observers entirely.
+        fillSchematic(thumbWrap);
+      } else if (intersectionObserver) {
         intersectionObserver.observe(thumbWrap);
       } else {
         // No IO (e.g. jsdom): hydrate immediately.
@@ -800,9 +807,78 @@ export function createSlideTypePicker({
     });
     searchWrap.append(searchInput);
     controls.append(searchWrap);
+
+    // --- Schematic / preview view toggle -----------------------------------
+    // Segmented control: schematic (abstract diagrams, default) vs preview (real
+    // slides rendered small). Swaps every tile's thumbnail in place.
+    const viewToggle = h('div', {
+      class: 'ps-view-toggle',
+      role: 'radiogroup',
+      'aria-label': tr('editor.slideTypePicker.view.label', 'Thumbnail style'),
+    });
+    const VIEW_ICON = {
+      schematic:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="8" height="6" rx="1"/><line x1="13" y1="5" x2="21" y2="5"/><line x1="13" y1="8" x2="19" y2="8"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="17" y2="18"/></svg>',
+      preview:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>',
+    };
+    const makeViewBtn = (mode, label) => {
+      const on = viewMode === mode;
+      const btn = h('button', {
+        class: `ps-view-toggle-btn${on ? ' is-active' : ''}`,
+        type: 'button',
+        role: 'radio',
+        'data-view': mode,
+        'aria-checked': on ? 'true' : 'false',
+        title: label,
+        'aria-label': label,
+        onclick: () => applyViewMode(mode),
+      });
+      btn.innerHTML = VIEW_ICON[mode];
+      btn.append(h('span', { class: 'ps-view-toggle-text', text: label }));
+      return btn;
+    };
+    viewToggle.append(
+      makeViewBtn('schematic', tr('editor.slideTypePicker.view.schematic', 'Schematic')),
+      makeViewBtn('preview', tr('editor.slideTypePicker.view.preview', 'Preview'))
+    );
+    controls.append(viewToggle);
     mount.append(controls);
 
-    const typesWrap = h('div', { class: 'ps-slide-types is-thumb-mode' });
+    const typesWrap = h('div', {
+      class: `ps-slide-types is-thumb-mode ${viewMode === 'schematic' ? 'is-schematic-mode' : 'is-preview-mode'}`,
+    });
+
+    // Swap every tile's thumbnail between schematic and live-preview rendering,
+    // persist the choice, and sync the toggle + surface control. Tiles are
+    // rebuilt in place so scroll position and search state survive.
+    const applyViewMode = (mode) => {
+      if (!VIEW_MODES.has(mode) || mode === viewMode) return;
+      viewMode = mode;
+      storage.set(VIEW_KEY, mode);
+      typesWrap.classList.toggle('is-schematic-mode', mode === 'schematic');
+      typesWrap.classList.toggle('is-preview-mode', mode === 'preview');
+      for (const b of viewToggle.querySelectorAll('.ps-view-toggle-btn')) {
+        const on = (b.dataset.view || '') === mode;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      }
+      // The preview-background swatches only affect live renders.
+      const surfaceEl = controls.querySelector('.ps-surface-toggle');
+      if (surfaceEl) surfaceEl.hidden = mode !== 'preview';
+      for (const wrap of typesWrap.querySelectorAll('.ps-type-thumb.thumb')) {
+        cleanupSlideRuntimes(wrap);
+        wrap.innerHTML = '';
+        wrap.classList.remove('is-error', 'ps-type-thumb-video', 'ps-type-thumb-embed');
+        if (mode === 'schematic') {
+          fillSchematic(wrap);
+        } else {
+          wrap.classList.add('is-pending');
+          if (intersectionObserver) intersectionObserver.observe(wrap);
+          else hydrateThumb(wrap, resizeObserver);
+        }
+      }
+    };
 
     // --- Preview-background toggle -----------------------------------------
     // Offer only surfaces this theme actually defines (distinct token value) and
@@ -832,6 +908,8 @@ export function createSlideTypePicker({
         class: 'ps-surface-toggle',
         role: 'radiogroup',
         'aria-label': tr('editor.slideTypePicker.surface.label', 'Preview background'),
+        // Only meaningful for live previews; hidden while schematics are shown.
+        hidden: viewMode !== 'preview',
       });
       toggle.append(
         h('span', {
@@ -953,8 +1031,15 @@ export function createSlideTypePicker({
       { type: 'title-slide' },
       { type: 'chapter-title-slide' },
       { type: 'content-slide' },
+      // Sits directly after the text slide: this is the "two separate columns"
+      // tile (defaults to 2 columns) that replaces the old, confusing
+      // content-slide two-column preset. See SLIDE_TYPE_PRESETS note above.
+      { type: 'content-columns-slide' },
       { type: 'quote-slide' },
       { type: 'lijstje-slide' },
+      // The styled "List" slide is a close cousin of the bulleted/numbered
+      // list, so it sits right next to it rather than adrift in "Other".
+      { type: 'list-slide' },
     ];
     const themeBasicTypes = Array.isArray(theme?.basicSlideTypes)
       ? theme.basicSlideTypes
@@ -974,14 +1059,16 @@ export function createSlideTypePicker({
       { type: 'team-cards-slide' },
       { type: 'logo-wall-slide' },
     ];
+    // Layouts also absorbs the old "Process" group: process/timeline are just
+    // structured layouts, not different enough to warrant a section of their own
+    // (which showed 2 tiles and a wall of whitespace).
     const layoutDefs = [
-      { type: 'content-columns-slide' },
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
       { type: 'freeform-slide' },
+      { type: 'process-slide' },
+      { type: 'timeline-slide' },
     ];
-    // Process sits above Data by request.
-    const processDefs = [{ type: 'process-slide' }, { type: 'timeline-slide' }];
     const dataDefs = [
       { type: 'table-slide' },
       { type: 'chart-slide' },
@@ -1015,7 +1102,6 @@ export function createSlideTypePicker({
       { key: 'basic', title: tr('editor.slideTypeGroup.basic', 'Basic'), defs: basicDefs.filter((d) => allowed(d.type)) },
       { key: 'media', title: tr('editor.slideTypeGroup.media', 'Media'), defs: mediaDefs.filter((d) => allowed(d.type)) },
       { key: 'layouts', title: tr('editor.slideTypeGroup.layouts', 'Layouts'), defs: layoutDefs.filter((d) => allowed(d.type)) },
-      { key: 'process', title: tr('editor.slideTypeGroup.process', 'Process'), defs: processDefs.filter((d) => allowed(d.type)) },
       { key: 'data', title: tr('editor.slideTypeGroup.data', 'Data'), defs: dataDefs.filter((d) => allowed(d.type)) },
       { key: 'interaction', title: tr('editor.slideTypeGroup.interaction', 'Interaction'), defs: interactionDefs.filter((d) => allowed(d.type)) },
       { key: 'custom', title: tr('editor.slideTypeGroup.custom', 'Custom'), defs: customDefs },
@@ -1153,44 +1239,96 @@ export function createSlideTypePicker({
         );
       };
 
-      (async () => {
-        let items = [];
-        try {
-          items = await loadLibraryStripItems();
-        } catch {
-          items = [];
+      // Split the strip's tile budget across the personal and team scopes,
+      // weighted by how many slides each has but guaranteeing at least one tile
+      // from every non-empty scope. So a lone personal slide is never hidden
+      // behind a large team library (and vice versa), while the bulk of the row
+      // goes to whichever library actually has more to offer.
+      const LIBRARY_STRIP_TOTAL = 8;
+      const splitLibraryBudget = (pCount, tCount) => {
+        let pShow = pCount ? 1 : 0;
+        let tShow = tCount ? 1 : 0;
+        const remaining = LIBRARY_STRIP_TOTAL - pShow - tShow;
+        if (remaining > 0) {
+          const pRem = pCount - pShow;
+          const tRem = tCount - tShow;
+          if (pRem + tRem > 0) {
+            let addP = Math.min(pRem, Math.round((remaining * pRem) / (pRem + tRem)));
+            let addT = Math.min(tRem, remaining - addP);
+            addP = Math.min(pRem, remaining - addT);
+            pShow += addP;
+            tShow += addT;
+          }
         }
-        if (!Array.isArray(items) || !items.length) return;
+        return { pShow, tShow };
+      };
+
+      (async () => {
+        let data = {};
+        try {
+          data = (await loadLibraryStripItems()) || {};
+        } catch {
+          data = {};
+        }
+        // Back-compat: the loader used to return a flat array of personal items;
+        // now it returns { personal, team }. Accept either.
+        const personal = Array.isArray(data)
+          ? data
+          : Array.isArray(data.personal)
+            ? data.personal
+            : [];
+        const team = Array.isArray(data) ? [] : Array.isArray(data.team) ? data.team : [];
+        if (!personal.length && !team.length) return;
         // A newer render replaced this pass while we were loading.
         if (!typesWrap.isConnected) return;
 
-        const group = h('div', {
-          class: 'ps-type-group ps-type-group-library',
-          'data-group-key': 'library',
-        });
-        const seeAll = h('button', {
-          class: 'ps-lib-strip-seeall',
-          type: 'button',
-          text: tr('editor.slideTypePicker.seeAll', 'See all'),
-          onclick: () => {
-            try {
-              onSeeAllLibrary();
-            } catch {
-              // ignore
-            }
-          },
-        });
-        const head = h('div', { class: 'ps-lib-strip-head' }, [
-          h('span', {
-            class: 'ps-lib-strip-name',
-            text: tr('editor.slideTypeGroup.library', 'From your library'),
-          }),
-          seeAll,
-        ]);
-        const grid = h('div', { class: 'ps-type-grid ps-type-grid-thumbs' });
-        for (const it of items) grid.append(buildLibraryTile(it));
-        group.append(head, grid);
-        typesWrap.prepend(group);
+        const { pShow, tShow } = splitLibraryBudget(personal.length, team.length);
+        const groups = [];
+        if (pShow) {
+          groups.push({
+            scope: 'personal',
+            label: tr('editor.slideTypeGroup.libraryPersonal', 'Personal library'),
+            items: personal.slice(0, pShow),
+          });
+        }
+        if (tShow) {
+          groups.push({
+            scope: 'team',
+            label: tr('editor.slideTypeGroup.libraryTeam', 'Team library'),
+            items: team.slice(0, tShow),
+          });
+        }
+
+        const buildGroup = (g) => {
+          const group = h('div', {
+            class: 'ps-type-group ps-type-group-library',
+            'data-group-key': `library-${g.scope}`,
+          });
+          const seeAll = h('button', {
+            class: 'ps-lib-strip-seeall',
+            type: 'button',
+            text: tr('editor.slideTypePicker.seeAll', 'See all'),
+            onclick: () => {
+              try {
+                onSeeAllLibrary(g.scope);
+              } catch {
+                // ignore
+              }
+            },
+          });
+          const head = h('div', { class: 'ps-lib-strip-head' }, [
+            h('span', { class: 'ps-lib-strip-name', text: g.label }),
+            seeAll,
+          ]);
+          const grid = h('div', { class: 'ps-type-grid ps-type-grid-thumbs' });
+          for (const it of g.items) grid.append(buildLibraryTile(it));
+          group.append(head, grid);
+          return group;
+        };
+
+        // Prepend in reverse so the groups land above the category grid in
+        // order (personal on top, then team).
+        for (const g of [...groups].reverse()) typesWrap.prepend(buildGroup(g));
         // Re-apply the current filter so a persisted query also filters the strip.
         applyFilter();
       })();

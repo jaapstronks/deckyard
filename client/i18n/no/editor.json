@@ -119,7 +119,7 @@
   "editor.image.bgHelp.withUploads": "Velg et eksisterende bilde fra biblioteket, eller last opp ditt eget bilde kun for dette lysbildet.",
   "editor.image.bgLibraryTitle": "Bibliotek: velg et bakgrunnsbilde",
   "editor.image.chooseFromLibrary": "Velg fra bibliotek…",
-  "editor.image.defaultBackgrounds": "Standardbakgrunner",
+  "editor.image.themeBackgrounds": "Fra dette temaet",
   "editor.image.fieldLabel": "Bilde",
   "editor.image.help.storage": "Bilder lagres lokalt i /server/uploads og brukes via URL.",
   "editor.image.help.uploadsDisabled": "Velg fra biblioteket (anbefalt). Opplastinger er deaktivert.",
@@ -328,6 +328,7 @@
   "comments.filter.everyone": "Alt",
   "comments.filter.waitingForMe": "Venter på meg",
   "comments.empty.waiting": "Ingenting venter på deg her",
+  "comments.empty.noSlide": "Velg et lysbilde for å se kommentarene",
   "comments.unread": "Ny aktivitet",
   "mentions.noResults": "Ingen samsvarende brukere",
   "mentions.noAccess.title": "Ingen tilgang til denne presentasjonen",
@@ -352,5 +353,6 @@
   "subscription.level.mute.help": "Demper dette decket. Direkte @omtaler når deg fortsatt.",
   "subscription.saved": "Varselinnstilling lagret",
   "subscription.saveFailed": "Kunne ikke lagre innstillingen",
-  "subscription.loadFailed": "Kunne ikke laste innstillingen"
+  "subscription.loadFailed": "Kunne ikke laste innstillingen",
+  "editor.slide.background.lockedByTheme": "Angitt av temaet og kan ikke redigeres per lysbilde."
 }

@@ -1,6 +1,6 @@
 # Deckyard Roadmap
 
-**Updated: 2026-07-17.** This is the single overview for ongoing development.
+**Updated: 2026-07-19.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (39 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
@@ -30,8 +30,9 @@ self-contained project.
    Survive presenter refresh, companion auto-recovery, persistent join QR,
    unify follow codes, link Q&A moderation, poll-open affordance.
 2. **Share unification** — `docs/plans/ux-share-unification.md`
-   One Share dialog (live audience / link / workspace), guard the
-   presenter-control link, reconcile the permission model.
+   PR 1/2 shipped (PR #110): guarded the presenter-control link, inline share
+   link, reconciled the permission model. Remaining = **PR 2**: the unified
+   3-tab Share dialog (live audience / link / workspace).
 
 _(The first two projects of this track — i18n & copy cleanup, onboarding &
 discoverability — shipped in July 2026 except for one decision-blocked
@@ -52,21 +53,18 @@ named, ordered **Collection**), retired starter kits, and a workspace-default
 theme picker — shipped in full on 2026-07-18 (Slices 1-4). How it works is
 documented in `docs/reference/deck-creation-and-reuse.md`.)_
 
+_(The **Theme Studio** — the guided layer over the `--t-*` token system —
+shipped on 2026-07-19 across 17 PRs. A brand theme can now be built two ways: a
+file theme in git (`custom/themes/<id>/theme.json`, documented in
+`docs/developer/themes.md`) or a database theme in the browser, with colours,
+fonts, an uploaded logo, surface scales, heading treatment, background imagery,
+named background options and per-property override locks. The database shape and
+its validation are documented in `docs/reference/theme-config.md`. Ejecting a
+database theme to file-JSON was dropped: both audiences are served directly, so
+it would only have been a second path to something that already works.)_
+
 ## Next — existing feature plans
 
-- **Slide-library i18n on Postgres** — `docs/plans/slide-library-i18n-postgres.md`
-  — create-flow follow-up: persist and return per-language library-item content
-  on the Postgres backend (new `i18n` column + adapter + mapper) so composed
-  decks and collections keep NL/EN on DB installs, matching file-mode. Next up.
-- **Home redesign, phase 3** — `docs/plans/home-redesign.md` — phases 1-2
-  shipped 2026-07-18 (two-column canvas + "from others" rail, PR #77; building-
-  blocks shelf, PR #78; nav consolidation 9→6 into one filterable Presentations
-  view, PR #79). Phase 3 in progress: comment text in the rail shipped (PR #80),
-  reuse tracking + the shelf's "new to you" badge shipped (PR #81), the single
-  `/api/home` aggregation shipped (PR #83), and a bundled `slide.added` feed
-  event ("N slides added to a deck") shipped (PR #84). Remaining: the
-  slide-preview thumbnail next to a comment in the rail (the render/caching
-  path).
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab
   merge guard that shipped 2026-07-17 (staleness cap + per-slide conflict
   detection via base fingerprints): order-preserving merges, client refresh
@@ -76,10 +74,6 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - **AI generation: content-based live status** — `docs/plans/ai-generation-live-status.md`
   — a parallel fast-model prompt gives content-specific progress lines within
   seconds, instead of the generic "processing" message.
-- **AI review grid: click-to-preview, hover-select, modal nav** —
-  `docs/plans/ai-review-grid-ux.md` — clicking a tile opens the preview modal
-  (selection moves to a hover checkbox); modal shows the AI's why-text and
-  navigates with buttons + arrow keys.
 - **AI: recreate a slide from an image/PDF** — `docs/plans/ai-slide-from-image.md`
   — attach a screenshot/PDF in the AI add + refine flows; recognize the slide
   type + content and rebuild it as a native editable slide.
@@ -87,16 +81,11 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
   click/hover interactions on content blocks.
 - **Export pipeline DRY cleanup, P3-4** — `docs/plans/code-quality-dry-cleanup.md`
   (P1-2 done).
-- **Theme-owned background presets** — `docs/plans/theme-background-presets.md`
-  — make `theme.backgroundPresets` the single source of default background
-  imagery and remove the deprecated hardcoded fallback list.
-- **Video slide → PDF: "watch online" placeholder** —
-  `docs/plans/video-slide-pdf-export.md` — export a video slide to PDF as a
-  laptop-mockup still with a play icon plus a server-generated "watch at
-  <url>" line in the deck's language (open decisions on link target, access,
-  autoplay).
-- **Quote slide: up to 3 quotes** — `docs/plans/quote-multi-quote.md` —
-  stack up to three quotes with alternating left/right/left alignment.
+- **Forker slide-type toolkit** — `docs/plans/forker-slide-type-toolkit.md`
+  — a scaffolder and validator for the file-JS custom-slide-type seam, plus a
+  reusable building-block layer (eyebrow, highlight, badge, CTA) that core and
+  custom types both compose. Split out of the theme track when the Theme Studio
+  shipped.
 
 ## Later — cloud / multi-tenant track
 
@@ -127,3 +116,22 @@ documented in `docs/reference/deck-creation-and-reuse.md`.)_
 - Constraint calibration: review maxLength values against real decks.
 - MCP extras: `compare_versions`, `batch_operations` (`export_presentation`
   shipped 2026-07-12 — PDF/PPTX/HTML/JSON/PNG download URLs).
+- **Comments → issues** — decouple a comment from a single slide: post a
+  deck-level comment, or detach an existing slide comment into a resolvable,
+  ownable "issue" (optional external sync / webhook). The data model is
+  already close (nullable `slide_id`, `open/resolved/dismissed` status,
+  `resolveComment`). Requested 2026-07-20; ready to brief, needs a design
+  session.
+- **Theme Studio form/UX pass** — the functional Theme Studio works but the
+  editor is a long scroll of panels; explore a wizard or other layout.
+  Requested 2026-07-20.
+- **Modern photo frames** — a manual, per-image editorial framing option
+  (beyond rounded corners / shadow) that scales in any aspect ratio and
+  matches the Lucide aesthetic — not a library of raster frame assets.
+  Requested 2026-07-20.
+- **Reusable content blocks on free-form slides** — let users place a
+  constrained palette of editorial components (complex bullet, placed image,
+  timeline element) on free-form slides within strict padding/alignment
+  rules, keeping the "stay strict so slides don't get ugly" philosophy while
+  giving more manual control. Requested 2026-07-20; largest of the four,
+  needs a dedicated session.

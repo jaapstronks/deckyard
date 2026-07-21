@@ -217,7 +217,7 @@ export function createImportSlidesTab({
                 }
                 setProgress(pct, 100, message);
               } else if (event === 'error') {
-                throw new Error(parsed.error || 'Import failed');
+                throw new Error(parsed.error || t('editor.import.failed', 'Import failed'));
               } else if (event === 'complete') {
                 setProgress(100, 100, t('editor.importSlides.progress.complete', 'Complete!'));
                 showStatus(
@@ -239,7 +239,7 @@ export function createImportSlidesTab({
       }
     } catch (err) {
       console.error('[import-slides] Error:', err);
-      showStatus(err.message || 'Import failed', true);
+      showStatus(err.message || t('editor.import.failed', 'Import failed'), true);
       onError?.(err);
     } finally {
       importing = false;

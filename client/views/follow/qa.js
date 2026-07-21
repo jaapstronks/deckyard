@@ -83,7 +83,7 @@ export function createFollowQaController({
       const upvoteBtn = h('button', {
         class: 'btn btn-secondary',
         text: '▲',
-        title: 'Upvote',
+        title: copy.qaUpvote || 'Upvote',
         onclick: async () => {
           if (!qid || qaBusy) return;
           if (isPromoted) return;
@@ -117,7 +117,7 @@ export function createFollowQaController({
         const cancelBtn = h('button', {
           class: 'btn btn-secondary',
           text: '✕',
-          title: 'Cancel my question',
+          title: copy.qaCancel || 'Cancel my question',
           onclick: async () => {
             if (!qid || qaBusy) return;
             if (isPromoted) return;

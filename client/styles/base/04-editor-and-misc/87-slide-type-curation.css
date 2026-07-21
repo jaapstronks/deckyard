@@ -153,7 +153,7 @@
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  accent-color: hsl(var(--app-accent));
+  accent-color: hsl(var(--app-accent-primary));
   cursor: pointer;
 }
 
@@ -281,7 +281,7 @@
 .slide-type-preview-toggle input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: hsl(var(--app-accent));
+  accent-color: hsl(var(--app-accent-primary));
   cursor: pointer;
 }
 
@@ -303,7 +303,7 @@
    Responsive
    ============================================ */
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .slide-type-preview-thumb.thumb {
     --thumb-scale: 0.4;
     width: 640px;
@@ -311,7 +311,7 @@
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .slide-type-curation-grid {
     grid-template-columns: repeat(auto-fill, 160px);
   }

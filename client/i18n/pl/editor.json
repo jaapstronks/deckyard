@@ -140,7 +140,7 @@
   "editor.image.bgHelp.withUploads": "Wybierz istniejący obraz z biblioteki lub prześlij własny obraz tylko dla tego slajdu.",
   "editor.image.bgLibraryTitle": "Biblioteka: wybierz obraz tła",
   "editor.image.chooseFromLibrary": "Wybierz z biblioteki…",
-  "editor.image.defaultBackgrounds": "Domyślne tła",
+  "editor.image.themeBackgrounds": "Z tego motywu",
   "editor.image.fieldLabel": "Obraz",
   "editor.image.help.storage": "Obrazy są przechowywane lokalnie w /server/uploads i używane przez URL.",
   "editor.image.help.uploadsDisabled": "Wybierz z biblioteki (zalecane). Przesyłanie jest wyłączone.",
@@ -397,6 +397,7 @@
   "comments.filter.everyone": "Wszystko",
   "comments.filter.waitingForMe": "Czeka na mnie",
   "comments.empty.waiting": "Nic tu na Ciebie nie czeka",
+  "comments.empty.noSlide": "Wybierz slajd, aby zobaczyć jego komentarze",
   "comments.unread": "Nowa aktywność",
   "mentions.noResults": "Brak pasujących użytkowników",
   "mentions.noAccess.title": "Brak dostępu do tej prezentacji",
@@ -421,5 +422,6 @@
   "subscription.level.mute.help": "Wycisza ten deck. Bezpośrednie @wzmianki nadal docierają.",
   "subscription.saved": "Ustawienie powiadomień zapisane",
   "subscription.saveFailed": "Nie udało się zapisać ustawienia",
-  "subscription.loadFailed": "Nie udało się wczytać ustawienia"
+  "subscription.loadFailed": "Nie udało się wczytać ustawienia",
+  "editor.slide.background.lockedByTheme": "Ustawione przez motyw, nie można zmieniać dla slajdu."
 }

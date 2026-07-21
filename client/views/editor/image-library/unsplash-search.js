@@ -52,10 +52,17 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
     hidden: true,
   });
 
-  // Attribution footer
+  // Attribution footer. One translatable sentence with the source name as a
+  // link: interpolate a marker, then split on it so translators can move the
+  // link within the sentence.
+  const ATTR_MARK = '\u0000';
+  const [attrBefore, attrAfter = ''] = t('stockMedia.attribution', 'Photos from {source}', {
+    source: ATTR_MARK,
+  }).split(ATTR_MARK);
   const attribution = h('div', { class: 'stock-media-attribution' }, [
-    h('span', { text: 'Photos from ' }),
+    h('span', { text: attrBefore }),
     h('a', { href: 'https://unsplash.com', target: '_blank', rel: 'noopener', text: 'Unsplash' }),
+    h('span', { text: attrAfter }),
   ]);
 
   container.append(searchRow, grid, loadMoreBtn, attribution);
@@ -145,7 +152,7 @@ export function createUnsplashSearch({ h, api, onSelect, setStatus, setBusy }) {
         setStatus(t('stockMedia.download.success', 'Added to library'));
         onSelect(data.libraryItem);
       } else {
-        throw new Error(data.error || 'Download failed');
+        throw new Error(data.error || t('stockMedia.download.error', 'Download failed'));
       }
     } catch (e) {
       console.error('Unsplash download error:', e);

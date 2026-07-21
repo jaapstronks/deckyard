@@ -20,6 +20,7 @@ import { renderGuestJoinPrompt } from './share-viewer/guest-join.js';
 import { createShareViewerCommentsSection } from './share-viewer/viewer-comments.js';
 import { createVideoLayer } from '../lib/video-layer.js';
 import { createAutoAdvance } from './presenter/auto-advance.js';
+import { attachSwipeNavigation } from '../lib/swipe-nav.js';
 import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
 
 // Guest session state
@@ -48,6 +49,8 @@ export async function renderShareViewer(root, token) {
   let theme = null;
   let currentSlideIndex = 0;
   let detachThumb = () => {};
+  let detachSwipe = () => {};
+  let keydownHandler = null;
   let analyticsTracker = null;
   let videoLayer = null;
   let autoAdvanceInstance = null;
@@ -109,7 +112,7 @@ export async function renderShareViewer(root, token) {
 
     await loadAndRenderPresentation();
   } catch (err) {
-    renderError(h, shell, err.message || 'Failed to load share link');
+    renderError(h, shell, err.message || t('share.error.loadLink', 'Failed to load share link'));
   }
 
   async function loadAndRenderPresentation() {
@@ -127,7 +130,7 @@ export async function renderShareViewer(root, token) {
       presentation = presResp;
 
       if (!presentation) {
-        throw new Error('Presentation not found');
+        throw new Error(t('share.error.notFound', 'Presentation not found'));
       }
 
       // Load theme
@@ -152,11 +155,39 @@ export async function renderShareViewer(root, token) {
       renderViewer();
     } catch (err) {
       shell.innerHTML = '';
-      renderError(h, shell, err.message || 'Failed to load presentation');
+      renderError(
+        h,
+        shell,
+        err.message || t('share.error.loadPresentation', 'Failed to load presentation')
+      );
     }
   }
 
+  /**
+   * Release everything renderViewer() binds. It re-runs after a guest joins
+   * the discussion (which wipes shell and rebuilds), so without this each
+   * pass stacked another document-level keydown handler on top of the last —
+   * two handlers sharing currentSlideIndex means one arrow press advances two
+   * slides and double-counts the view in analytics.
+   */
+  function detachViewerListeners() {
+    if (keydownHandler) {
+      document.removeEventListener('keydown', keydownHandler);
+      keydownHandler = null;
+    }
+    try {
+      detachSwipe();
+    } catch {}
+    detachSwipe = () => {};
+    try {
+      detachThumb();
+    } catch {}
+    detachThumb = () => {};
+  }
+
   function renderViewer() {
+    detachViewerListeners();
+
     const topbar = h('div', { class: 'share-viewer-topbar' });
 
     const titleEl = h('div', { class: 'share-viewer-title', text: presentation.title || 'Presentation' });
@@ -167,8 +198,11 @@ export async function renderShareViewer(root, token) {
 
     const controls = h('div', { class: 'share-viewer-controls' });
 
-    // Add guest join button if permission allows commenting
-    const canComment = ['comment', 'edit'].includes(shareLink.permission);
+    // Add guest join button if permission allows commenting.
+    // Share links are only ever issued as 'view' or 'comment' (see the create
+    // form in share-modal); there is no guest-editing flow, so 'edit' is not
+    // handled here.
+    const canComment = shareLink.permission === 'comment';
 
     // Comments toggle button (shown when guest is authenticated and can comment)
     let commentsToggleBtn = null;
@@ -353,8 +387,14 @@ export async function renderShareViewer(root, token) {
       }
     }
 
-    // Store cleanup for keyboard listener
-    shell._keydownHandler = handleKeydown;
+    // Swipe navigation on the stage only — the comments list below it scrolls,
+    // and a swipe there should never change the slide.
+    detachSwipe = attachSwipeNavigation(stage, {
+      onPrev: () => navigateSlide(-1),
+      onNext: () => navigateSlide(1),
+    });
+
+    keydownHandler = handleKeydown;
   }
 
   function updateSlide(slideWrap, slideCounter) {
@@ -362,7 +402,10 @@ export async function renderShareViewer(root, token) {
     const slide = slides[currentSlideIndex];
 
     if (!slide) {
-      slideWrap.innerHTML = '<div class="share-viewer-empty">No slides</div>';
+      slideWrap.innerHTML = '';
+      slideWrap.append(
+        h('div', { class: 'share-viewer-empty', text: t('share.noSlides', 'No slides') })
+      );
       return;
     }
 
@@ -387,12 +430,7 @@ export async function renderShareViewer(root, token) {
 
   function cleanup() {
     document.documentElement.classList.remove('is-share-viewer');
-    if (shell._keydownHandler) {
-      document.removeEventListener('keydown', shell._keydownHandler);
-    }
-    try {
-      detachThumb();
-    } catch {}
+    detachViewerListeners();
     cleanupSlideRuntimes(shell);
     videoLayer?.destroy();
     videoLayer = null;

@@ -1,4 +1,9 @@
 import { MAX_COLUMNS, MAX_TEXT_BLOCKS } from '../../../../../shared/slide-types/types/content-columns-slide.js';
+import {
+  ensureContentColumnsImages,
+  resolveContentColumnImage,
+  CONTENT_COLUMNS_IMAGE_DEFAULTS,
+} from '../../../../../shared/slide-types/content-columns-images.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import { renderFocusGridField } from '../focus-picker.js';
 import { dragHandleIcon, chevronDownIcon } from '../../../../lib/icons.js';
@@ -24,6 +29,10 @@ export function renderContentColumnsForm({
   rerenderEditor,
   scheduleUiRefresh,
 } = {}) {
+  // Rendering the form also canonicalizes the content: stamped default-equal
+  // image values (the old defaults wrote cover + focus 50/50 onto every
+  // column) drop back to empty = follow the type (datamodel step 4).
+  ensureContentColumnsImages(slide?.content);
   // Title and subheading
   add('title');
   add('subheading');
@@ -241,17 +250,29 @@ export function renderContentColumnsForm({
       // Image fit and alt in a compact row
       const imageOptionsRow = h('div', { class: 'row gap-md is-wrap' });
 
-      // Image fit selector
+      // Image fit selector - silent-default UX (step 4): the empty option
+      // shows the derived type default plus its origin and doubles as
+      // back-to-default by emptying the field (the default is looked up from
+      // CONTENT_COLUMNS_IMAGE_DEFAULTS, never written into the column).
       const fitWrap = h('div', { class: 'stack' });
       fitWrap.append(
         h('div', { class: 'field-label', text: t('editor.contentColumns.imageFit', 'Image fit') })
       );
       const fitSelect = h('select', { class: 'form-select' });
+      const typeFitLabel =
+        CONTENT_COLUMNS_IMAGE_DEFAULTS.fit === 'contain'
+          ? t('editor.contentColumns.fitContain', 'Fixed height')
+          : t('editor.contentColumns.fitCover', 'Cropped (16:9)');
       const fitOptions = [
+        {
+          value: '',
+          label: t('editor.imageText.fitDefaultType', 'Default · {fit}', { fit: typeFitLabel }),
+        },
         { value: 'cover', label: t('editor.contentColumns.fitCover', 'Cropped (16:9)') },
         { value: 'contain', label: t('editor.contentColumns.fitContain', 'Fixed height') },
       ];
-      const currentFit = slide.content?.[`col${colNum}ImageFit`] || 'cover';
+      const resolved = resolveContentColumnImage(slide.content, colNum);
+      const currentFit = resolved.fitExplicit ? resolved.fit : '';
       for (const opt of fitOptions) {
         const option = h('option', { value: opt.value, text: opt.label });
         if (opt.value === currentFit) option.selected = true;
@@ -287,14 +308,14 @@ export function renderContentColumnsForm({
 
       colContent.append(imageOptionsRow);
 
-      // Focus picker - only show when fit is 'cover' (cropped)
-      if (currentFit === 'cover') {
+      // Focus picker - only show when the effective fit is 'cover' (cropped)
+      if (resolved.fit === 'cover') {
         const focusEl = renderFocusGridField({
           h,
           label: t('editor.contentColumns.imageFocus', 'Image focus (crop)'),
           helpText: t('editor.contentColumns.imageFocusHelp', 'Pick what should stay visible when the image is cropped.'),
-          focusX: slide.content?.[`col${colNum}ImageFocusX`] ?? 50,
-          focusY: slide.content?.[`col${colNum}ImageFocusY`] ?? 50,
+          focusX: resolved.focusX !== '' ? resolved.focusX : CONTENT_COLUMNS_IMAGE_DEFAULTS.focus.x,
+          focusY: resolved.focusY !== '' ? resolved.focusY : CONTENT_COLUMNS_IMAGE_DEFAULTS.focus.y,
           onChange: ({ focusX, focusY }) => {
             slide.content[`col${colNum}ImageFocusX`] = focusX;
             slide.content[`col${colNum}ImageFocusY`] = focusY;

@@ -93,10 +93,6 @@
   text-align: center;
 }
 
-.preview-panel-header h2 {
-  margin: 0;
-}
-
 .preview-panel-scroll {
   display: flex;
   flex-direction: column;
@@ -115,16 +111,44 @@
   position: relative;
 }
 
-.preview-panel-actions {
-  gap: 4px;
+/* ─────────────────────────────────────────────────────────────────────────────
+   Slide bar contents (Option A). Everything slide-scoped groups on the LEFT
+   (identity/structure + tools, split by a subtle divider); the pane openers
+   dock ALONE on the right via margin-left:auto, so the tools never crowd them.
+   The bar shell (background, padding, borders) lives in 20-editor-layout.css.
+   ───────────────────────────────────────────────────────────────────────────── */
+.slide-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+  min-width: 0;
 }
 
-/* Slide toolbar in the canvas header: slide-scoped controls (type chip,
-   "All text", lock, actions menu) rendered by rerenderEditor. */
+.slide-bar-openers {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Seam between slide identity/structure and the slide tools. */
+.slide-bar-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 2px;
+  background: hsl(var(--app-border-default));
+  flex-shrink: 0;
+}
+
+/* Identity/structure cluster (type chip, Layout, "All text") rendered by
+   rerenderEditor. */
 .slide-toolbar-left {
   gap: 8px;
   min-width: 0;
   flex-wrap: wrap;
+}
+
+/* Tools cluster: add-comment, zoom, and the actions mount (lock + menu). */
+.slide-bar-tools {
+  gap: 4px;
 }
 
 .slide-toolbar-actions {
@@ -133,6 +157,61 @@
 
 .slide-toolbar-actions:empty {
   display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Pane openers (Inspector / Comments): labeled segmented pair, docked at the
+   far right of the slide bar, above the inspector column they control. Built on
+   the shared outlined segmented control (`.sb-segmented.is-outlined`); pressed
+   (is-active) = "rail open on MY pane".
+   ───────────────────────────────────────────────────────────────────────────── */
+.pane-tab {
+  gap: 6px;
+}
+
+.pane-tab-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+/* Active fill = accent-soft: the outlined control's default active fill is
+   `bg-elevated`, identical to the white bar, so it would vanish. Matches the
+   `.ghost-icon-btn.is-active` treatment used elsewhere in the chrome. */
+.pane-tab.is-active {
+  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
+  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  box-shadow: none;
+}
+
+/* Inline count on the Comments tab. Red = new/unseen, grey = seen but
+   unresolved. */
+.pane-tab-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: hsl(var(--app-danger, 0 72% 51%));
+  color: hsl(0 0% 100%);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.pane-tab-badge[hidden] {
+  display: none;
+}
+
+.pane-tab-badge--seen {
+  background: hsl(var(--app-text-tertiary, 0 0% 55%));
+}
+
+/* Narrow widths: drop the opener labels (icons + badge stay). */
+@media (max-width: 1150px) {
+  .pane-tab-label {
+    display: none;
+  }
 }
 
 /* Add-comment button: labeled (icon + text), not a bare pin glyph, so the
@@ -185,99 +264,9 @@
   display: none;
 }
 
-/* Divider between the slide actions and the pane tabs. */
-.slide-toolbar-sep {
-  width: 1px;
-  align-self: stretch;
-  margin: 4px 6px;
-  background: hsl(var(--app-border-default));
-  flex-shrink: 0;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   Pane tabs (Inspector / Comments / Notes): far right of the slide toolbar,
-   directly above the rail they control. Same segmented-control recipe as the
-   topbar language toggle; pressed (is-active) = "rail open on MY pane".
-   ───────────────────────────────────────────────────────────────────────────── */
-.pane-tabs {
-  display: inline-flex;
-  align-items: stretch;
-  gap: 2px;
-  padding: 2px;
-  background: hsl(var(--app-bg-base));
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  flex-shrink: 0;
-}
-
-.pane-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--ps-transition-fast), color var(--ps-transition-fast);
-}
-
-.pane-tab:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-
-.pane-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-.pane-tab.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
-}
-
-.pane-tab-icon {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
-/* Inline count on the Comments tab (never absolute: it must not overlap the
-   label). Red = new/unseen, grey = seen but unresolved. */
-.pane-tab-badge {
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: hsl(var(--app-danger, 0 72% 51%));
-  color: hsl(0 0% 100%);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 16px;
-  text-align: center;
-}
-
-.pane-tab-badge[hidden] {
-  display: none;
-}
-
-.pane-tab-badge--seen {
-  background: hsl(var(--app-text-tertiary, 0 0% 55%));
-}
-
-/* Narrow widths: keep the tabs but drop the labels (icons + badge stay). The
-   add-comment button collapses to its pin icon on the same breakpoint. */
+/* Narrow widths: the add-comment button collapses to its pin icon. (The pane
+   openers now live in the topbar - see `10-shell-topbar-dropdown.css`.) */
 @media (max-width: 1150px) {
-  .pane-tab-label {
-    display: none;
-  }
-
   .pin-comment-label {
     display: none;
   }

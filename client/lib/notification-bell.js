@@ -9,6 +9,23 @@ import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
 
 /**
+ * Accessible label for a notification list item. Each shape is one full
+ * translatable sentence so translations control order and punctuation.
+ * @param {Object} notif - Notification record
+ * @returns {string} aria-label text
+ */
+function notificationLabel(notif) {
+  const title = notif.title || '';
+  const body = notif.body || '';
+  if (body && !notif.isRead) {
+    return t('notifications.label.bodyUnread', '{title}: {body} (unread)', { title, body });
+  }
+  if (body) return t('notifications.label.body', '{title}: {body}', { title, body });
+  if (!notif.isRead) return t('notifications.label.unread', '{title} (unread)', { title });
+  return title;
+}
+
+/**
  * Create a notification bell component.
  * @param {Object} options
  * @param {Function} options.api - API call function
@@ -187,7 +204,7 @@ export function createNotificationBell({ api, onNavigate }) {
         type: 'button',
         class: `notification-bell-item${notif.isRead ? '' : ' is-unread'}`,
         onclick: () => handleNotificationClick(notif),
-        'aria-label': `${notif.title}${notif.body ? `: ${notif.body}` : ''}${!notif.isRead ? ` (${t('notifications.unread', 'unread')})` : ''}`,
+        'aria-label': notificationLabel(notif),
       });
 
       // Actor avatar with profile image support
@@ -468,11 +485,19 @@ export function createNotificationBell({ api, onNavigate }) {
           const belongs = filter === 'all'
             || filter === 'unread'
             || (filter === 'mentions' && notif.notificationType === 'comment_mention');
-          if (belongs) {
-            notifications.unshift(notif);
+          // Coalesced bundles (e.g. deck_activity) re-send the SAME id with a
+          // bumped count. Replace the existing row and move it to the top
+          // instead of adding a duplicate, and don't re-increment the badge —
+          // an authoritative notification:counts follows for those.
+          const existingIdx = notifications.findIndex((n) => n.id === notif.id);
+          if (existingIdx !== -1) {
+            notifications.splice(existingIdx, 1);
+            if (belongs) notifications.unshift(notif);
+          } else {
+            if (belongs) notifications.unshift(notif);
+            unreadCount++;
+            updateBadge();
           }
-          unreadCount++;
-          updateBadge();
           if (isOpen) {
             renderNotifications();
           }

@@ -283,6 +283,7 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     user,
     onCreate: () => openNewPresentationModalWrapper(),
     onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
+    detachThumbs,
   });
 
   // Unified "Presentations" view — replaces the Recent / Workspace /

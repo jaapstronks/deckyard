@@ -1,6 +1,6 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
-import { attachThumbScale } from '../lib/thumb-scale.js';
+import { attachThumbScaleContain } from '../lib/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
 } from '../lib/slide-render.js';
@@ -133,9 +133,17 @@ export async function renderFollow(root, presentationId) {
   shell.append(topbar, stageWrap, qaWrap);
   root.append(shell);
 
+  // Contain, not the width-driven scale: the audience view is the one place a
+  // slide has to share the screen with the Q&A panel, and a width-driven thumb
+  // claims the stage's full height while the 16:9 slide only occupies a band
+  // of it. Containing sizes the box to the slide itself, so on a phone the
+  // Q&A rises to meet it instead of sitting below a dead area.
   let detachThumb = () => {};
-  detachThumb = attachThumbScale(slideWrap, {
+  detachThumb = attachThumbScaleContain(slideWrap, {
     virtualWidth: 1600,
+    virtualHeight: 900,
+    containerEl: stageWrap,
+    padding: 0,
   });
 
   let pres = null;

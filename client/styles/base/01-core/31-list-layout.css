@@ -215,7 +215,7 @@
 }
 
 /* Mobile: Single column, cards use full width */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .list.presentation-grid {
     grid-template-columns: 1fr;
     gap: var(--ps-space-3);
@@ -263,8 +263,20 @@
   }
 }
 
+/* Ultra-wide: the frame used to stop dead at 1400px, so a 34" monitor showed
+   the same column as a 15" laptop with the rest of the screen empty. Keep a
+   readable line length by capping on the viewport rather than a constant —
+   at 3440px this lands near 2400px, still comfortably short of edge-to-edge. */
+@media (min-width: 1800px) {
+  .presentation-grid-frame {
+    /* max() keeps the 1400px floor: 72vw only overtakes it past ~1950px,
+       so this widens the frame and can never narrow it. */
+    max-width: max(1400px, min(2400px, 72vw));
+  }
+}
+
 /* Mobile: Reduce padding for more card space */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .presentation-grid-frame {
     padding: 0 var(--ps-space-3);
   }
@@ -313,7 +325,7 @@
 }
 
 /* Mobile: Compact logo, hide title text */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .presentation-topbar-brand {
     padding: 0 var(--ps-space-2);
   }
@@ -386,7 +398,7 @@
   margin-bottom: var(--ps-space-4);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1024px) {
   .home-columns {
     grid-template-columns: 1fr;
     gap: var(--ps-space-4);

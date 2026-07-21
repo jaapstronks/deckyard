@@ -2,11 +2,11 @@ import {
   isIsoString,
   isNonEmptyString,
   isUuid,
-  pickRandom,
-  TITLE_BG_PRESETS,
   cryptoUuid,
   esc,
 } from './helpers.js';
+import { pickBackgroundPreset } from '../theme-background-presets.js';
+import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
@@ -27,6 +27,9 @@ export function newPresentation({
   theme = 'default',
   lang = 'nl',
   defaultTitleSlide = 'title-slide',
+  // The loaded theme object, when the caller has one. `theme` above is just the
+  // id that gets stored on the deck; this is what supplies background presets.
+  themeConfig = null,
 } = {}) {
   const now = new Date().toISOString();
   // Use the provided default title slide, falling back to 'title-slide' if invalid.
@@ -72,11 +75,22 @@ export function newPresentation({
         mode: 'auto', // 'auto' | 'pacing'
       },
     },
-    slides: [newSlide({ type: titleSlideType })],
+    slides: [newSlide({ type: titleSlideType, theme: themeConfig })],
   };
 }
 
-export function newSlide({ type, parentId = null }) {
+/**
+ * Create a blank slide of a given type.
+ *
+ * @param {Object} opts
+ * @param {string} opts.type - slide type id
+ * @param {string|null} [opts.parentId] - parent slide id, or null for top-level
+ * @param {Object} [opts.theme] - the active theme. Types declaring
+ *   `autoBackgroundPreset` take their background image from
+ *   `theme.backgroundPresets`; without a theme (or without presets) the slide
+ *   is created with no background image.
+ */
+export function newSlide({ type, parentId = null, theme = null }) {
   const def = SLIDE_TYPES[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const slide = {
@@ -93,8 +107,7 @@ export function newSlide({ type, parentId = null }) {
       typeof slide.content.bgImage === 'string'
         ? slide.content.bgImage.trim()
         : '';
-    if (!bgImage)
-      slide.content.bgImage = pickRandom(TITLE_BG_PRESETS);
+    if (!bgImage) slide.content.bgImage = pickBackgroundPreset(theme);
   }
   if (type === 'poll-slide') {
     const pollId =
@@ -241,7 +254,12 @@ export function renderSlideHtml(slide, ctx = {}) {
       </div>
     `;
   }
-  const content = slide?.content || {};
+  // Theme override locks: strip anything the theme has locked before the type
+  // renders, so a deck authored before the lock cannot leak past the branding.
+  // Doing it here rather than in each type's bgClass() call covers the injected
+  // background and logo in the same pass. Stored slide data is untouched — this
+  // is a filtered view, so unlocking restores every slide's own value.
+  const content = applyLocksToContent(slide?.content || {}, ctx?.theme);
   let out = def.renderHtml(content, slide, ctx);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);
@@ -370,6 +388,7 @@ export function validateSlide(slide) {
     if (
       field.type === 'string' ||
       field.type === 'markdown' ||
+      field.type === 'csv' ||
       field.type === 'code'
     ) {
       // Optional text fields may be missing/null in older decks or external integrations.
@@ -466,6 +485,14 @@ export function validateSlide(slide) {
         }
       }
     }
+    if (field.type === 'boolean') {
+      // Cleared boolean fields use the repo's '' convention (like enums); only
+      // a present non-empty value must be an actual boolean.
+      if (val != null && val !== '' && typeof val !== 'boolean')
+        errors.push(
+          `Slide.content.${field.key} must be a boolean`
+        );
+    }
     if (field.type === 'enum') {
       const allowed = enumOptionValues(field);
       // The background field also accepts theme-defined variant ids
@@ -476,7 +503,13 @@ export function validateSlide(slide) {
         field.key === 'background' &&
         typeof val === 'string' &&
         SLIDE_BG_ID_RE.test(val);
-      if (val != null && !allowed.includes(val) && !isThemeBgVariant)
+      // Cleared enum fields use the repo's '' convention (see boolean above):
+      // empty = unset / follow the type default. The editor folds and the
+      // silent-default controls write '' (image-slide fit/layout, image-text
+      // imageFit, content-columns col{n}ImageFit), so round-tripping such
+      // content through the API must stay valid. Required enums still reject
+      // '' via the required check above.
+      if (val != null && val !== '' && !allowed.includes(val) && !isThemeBgVariant)
         errors.push(
           `Slide.content.${
             field.key

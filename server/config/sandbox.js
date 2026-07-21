@@ -19,7 +19,7 @@ export function sandboxDefaultThemeId() {
   // Keep it explicit so sandbox instances look neutral/non-branded by default.
   const id = String(process.env.SANDBOX_DEFAULT_THEME || '').trim();
   if (id) return id;
-  return 'sandbox-sage';
+  return 'editorial';
 }
 
 export function sandboxCookieMaxAgeDays() {

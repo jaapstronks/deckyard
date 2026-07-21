@@ -133,24 +133,6 @@ export function pickAltText({
   return String(hardFallback || '').trim();
 }
 
-/**
- * Default background presets for title slides.
- * @deprecated Prefer using theme.backgroundPresets from the active theme.
- * This fallback is used by server-side code (newSlide, deck import) when no theme context is available.
- */
-export const TITLE_BG_PRESETS = [
-  '/assets/images/backgrounds/demo-aurora.jpg',
-  '/assets/images/backgrounds/demo-dusk.jpg',
-  '/assets/images/backgrounds/demo-paper.jpg',
-  '/assets/images/backgrounds/demo-moss.jpg',
-];
-
-export function pickRandom(arr) {
-  const a = Array.isArray(arr) ? arr : [];
-  if (!a.length) return '';
-  return a[Math.floor(Math.random() * a.length)];
-}
-
 export function normalizeUrl(s) {
   const t = String(s || '').trim();
   if (!t) return '';
@@ -610,4 +592,75 @@ export function cardLinkOverlayHtml(raw, mode, ariaLabel) {
   if (info.kind === 'nav-id')
     return `<a class="card-link" data-card-nav-id="${esc(info.id)}" href="#" aria-label="${aria}"></a>`;
   return `<a class="card-link" href="${esc(info.href)}" target="_blank" rel="noopener noreferrer" aria-label="${aria}"></a>`;
+}
+
+/**
+ * The picture glyph used inside every empty-image placeholder. Decorative:
+ * the placeholder itself is `aria-hidden`, and the accessible affordance is
+ * the editor's "Add image" chip, not this.
+ */
+const IMAGE_PLACEHOLDER_ICON =
+  '<svg class="image-placeholder-icon" viewBox="0 0 24 24" role="presentation" focusable="false" aria-hidden="true">' +
+  '<path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H5V5h14v14Zm-3-4-2.5-3.2a1 1 0 0 0-1.6 0L10 14l-.9-1.2a1 1 0 0 0-1.6 0L6 15.2V18h13v-3Zm-8.5-6.5A1.5 1.5 0 1 0 9 7a1.5 1.5 0 0 0-1.5 1.5Z"></path>' +
+  '</svg>';
+
+/**
+ * Inner content of an empty-image placeholder: icon + label.
+ *
+ * Every slide type used to inline its own copy of the SVG, and the label was
+ * hardcoded per type — image-text said "Afbeelding", image-slide said "Image",
+ * neither localised. One helper keeps the glyph in one place and routes the
+ * label through the presentation language.
+ *
+ * Callers own the outer box, because its class is what each type's CSS targets
+ * (`.image-placeholder`, `.gallery-image-placeholder`, …).
+ *
+ * @param {string} [label] Localised label; omit for an icon-only placeholder.
+ * @returns {string} HTML for the placeholder's inner content
+ */
+export function imagePlaceholderInnerHtml(label) {
+  const text = nonEmpty(label)
+    ? `<div class="image-placeholder-text">${esc(label)}</div>`
+    : '';
+  return `<div class="image-placeholder-inner">${IMAGE_PLACEHOLDER_ICON}${text}</div>`;
+}
+
+/**
+ * A complete empty-image placeholder box.
+ *
+ * Every slide type with an image slot renders one of these, so they share a
+ * base class (`image-placeholder`), the glyph, the `is-empty` hook the inline
+ * editor keys off, and `aria-hidden` — the box is decorative, the accessible
+ * affordance is the editor's "Add image" chip.
+ *
+ * What stays per type is the *modifier* class, because that is what each
+ * type's own CSS targets to size and colour its slot (a 112px round portrait
+ * and a full-bleed image frame have nothing in common there).
+ *
+ * @param {Object} [options]
+ * @param {string} [options.className] - Type modifier, e.g. `quote-portrait`.
+ * @param {string} [options.label] - Localised label; omit for icon-only.
+ * @param {number|string} [options.index] - `data-inline-photo` value. Omit to
+ *   leave the attribute off entirely (freeform uses its own hooks).
+ * @param {boolean} [options.compact] - Small slot: shrink the glyph, drop the
+ *   label. For round portraits and logo cells, where a label cannot fit.
+ * @param {string} [options.attrs] - Extra pre-rendered attributes.
+ * @returns {string}
+ */
+export function imagePlaceholderHtml({
+  className = '',
+  label = '',
+  index,
+  compact = false,
+  attrs = '',
+} = {}) {
+  const classes = ['image-placeholder', className, compact ? 'is-compact' : '', 'is-empty']
+    .filter(Boolean)
+    .join(' ');
+  // String() first: esc() collapses falsy input to '', which would silently
+  // drop index 0 — the first slot of every deck.
+  const photoAttr =
+    index === undefined || index === null ? '' : ` data-inline-photo="${esc(String(index))}"`;
+  const inner = imagePlaceholderInnerHtml(compact ? '' : label);
+  return `<div class="${classes}"${photoAttr}${attrs} aria-hidden="true">${inner}</div>`;
 }

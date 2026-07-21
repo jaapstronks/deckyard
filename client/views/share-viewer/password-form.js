@@ -56,7 +56,7 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
       const data = await resp.json();
 
       if (!resp.ok) {
-        throw new Error(data.error || 'Invalid password');
+        throw new Error(data.error || t('share.passwordInvalid', 'Invalid password'));
       }
 
       onSuccess(data);
