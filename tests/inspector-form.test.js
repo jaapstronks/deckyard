@@ -148,6 +148,17 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
   assert.ok(!labels.some((l) => l === 'title'), 'no title field');
 });
 
+test('video/embed source fields render in the inspector (no orphaned fields)', () => {
+  // `source`/`embedUrl` cannot be edited on the canvas (only the title is
+  // inline-editable), so per the parity invariant the inspector must carry
+  // them — before this they were orphaned to the bulk "All text" modal.
+  const video = fieldLabels(renderForm({ type: 'video-slide' }));
+  assert.ok(video.some((l) => l.includes('video url')), 'video source renders');
+  assert.ok(video.some((l) => l.includes('autoplay')), 'autoplay still renders');
+  const embed = fieldLabels(renderForm({ type: 'embed-slide' }));
+  assert.ok(embed.some((l) => l.includes('url')), 'embed url renders');
+});
+
 test('unknown custom types fall back to rendering all non-inline-covered fields', () => {
   const customTypes = {
     'my-custom-slide': {

@@ -57,7 +57,12 @@ const INSPECTOR_KEEPS = {
   // per-image ImageRef property (images manager / "This image"), no longer a
   // writable slide-level setting.
   'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground'],
-  'video-slide': ['autoplay'],
+  // `source` and `bunnyLibraryId` were misclassified as content at the
+  // phase-3 audit: a video URL/ID is a discrete input you cannot edit on the
+  // canvas (the descriptor only inline-edits the title), so leaving them out
+  // orphaned them to the bulk modal — a parity-invariant violation. They are
+  // inspector material (editing-surfaces decision 2026-07-21).
+  'video-slide': ['source', 'autoplay', 'bunnyLibraryId'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],
   'card-stack-slide': ['cardCount'],
@@ -71,7 +76,9 @@ const INSPECTOR_KEEPS = {
   // element tab only — the single image is the element; the slide form
   // carries just Background/Accessibility.
   'image-slide': ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
-  'embed-slide': ['aspectRatio', 'sandbox'],
+  // `embedUrl`: same misclassification as video-slide's `source` — the embed
+  // URL had no surface besides the bulk modal.
+  'embed-slide': ['embedUrl', 'aspectRatio', 'sandbox'],
   'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
   'poll-slide': ['onClose'],
   'likert-slide': ['onClose'],
