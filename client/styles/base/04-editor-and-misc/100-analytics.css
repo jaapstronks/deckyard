@@ -1287,8 +1287,8 @@ img.analytics-viewer-badge {
   }
 }
 
-/* Extra small mobile (375px) */
-@media (max-width: 375px) {
+/* Small phones */
+@media (max-width: 480px) {
   .analytics-overview-cards {
     grid-template-columns: 1fr 1fr;
     gap: 6px;

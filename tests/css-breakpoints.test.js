@@ -40,22 +40,19 @@ const LADDER = {
  * See docs/plans/breakpoint-scale.md for the migration order.
  */
 const ALLOWLIST = [
-  // Step 3 — needs a visual check (> 60px shift or shared chrome).
-  'max-width: 375px',
+  // Step 3 — the topbar's progressive-collapse rungs. The topbar (shared chrome
+  // on every view) needs finer granularity than the 5-rung ladder: 520/700/900
+  // are intermediate collapse points between 640/768/1024, so remapping them to
+  // the nearest rung drops a graceful step and must be re-tuned in the browser,
+  // not mechanically. Migrated together in the topbar pass.
   'max-width: 520px',
   'max-width: 700px',
-  'max-width: 860px',
   'max-width: 900px',
-  'max-width: 1150px',
   // Step 4 — the load-bearing editor ladder (820/1024/1100 and counterparts).
   'max-width: 820px',
   'max-width: 1100px',
   'min-width: 821px',
   'min-width: 1101px',
-  // Overlapping min-width counterparts (rule 3 in the reference doc).
-  'min-width: 480px',
-  'min-width: 600px',
-  'min-width: 768px',
 ];
 
 /** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */

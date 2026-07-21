@@ -84,7 +84,7 @@
 }
 
 /* Single column on narrow viewports: preview above, fields below. */
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .bulk-edit-body {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(160px, 2fr) 3fr;

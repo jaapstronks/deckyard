@@ -432,7 +432,7 @@
 }
 
 /* Small phones */
-@media (max-width: 375px) {
+@media (max-width: 480px) {
   .modal {
     padding: var(--ps-space-3);
   }
