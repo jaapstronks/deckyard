@@ -10,8 +10,10 @@ import assert from 'node:assert';
 
 import {
   isUploadRef,
+  isBundleRef,
   collectAssetRefs,
   rewriteAssetRefs,
+  rewriteBundleRefs,
   assetRefForHash,
 } from '../shared/slide-types/deck-assets.js';
 
@@ -85,6 +87,51 @@ describe('rewriteAssetRefs', () => {
     assert.equal(there.slides[0].content.image, 'assets/aa.png');
     assert.equal(there.slides[0].content.x[1].y, 'assets/bb.jpg');
     assert.ok(back['assets/aa.png'] === '/uploads/a.png');
+  });
+});
+
+describe('isBundleRef', () => {
+  it('accepts a content-addressed bundle ref', () => {
+    assert.equal(isBundleRef('assets/deadbeef.png'), true);
+    assert.equal(isBundleRef('assets/deadbeef'), true);
+  });
+  it('rejects uploads, traversal, nested, and non-strings', () => {
+    assert.equal(isBundleRef('/uploads/a.png'), false);
+    assert.equal(isBundleRef('assets/'), false);
+    assert.equal(isBundleRef('assets/../secret'), false);
+    assert.equal(isBundleRef('assets/sub/x.png'), false);
+    assert.equal(isBundleRef(42), false);
+  });
+});
+
+describe('rewriteBundleRefs', () => {
+  it('rewrites bundle refs back to uploads (inverse of rewriteAssetRefs)', () => {
+    const deck = {
+      slides: [
+        { content: { image: 'assets/aa.png', title: 'keep' } },
+        { content: { items: [{ src: 'assets/bb.jpg' }] } },
+      ],
+    };
+    const map = { 'assets/aa.png': '/uploads/a-1.png', 'assets/bb.jpg': '/uploads/b-2.jpg' };
+    const out = rewriteBundleRefs(deck, (r) => map[r]);
+    assert.equal(out.slides[0].content.image, '/uploads/a-1.png');
+    assert.equal(out.slides[0].content.title, 'keep');
+    assert.equal(out.slides[1].content.items[0].src, '/uploads/b-2.jpg');
+    // input untouched
+    assert.equal(deck.slides[0].content.image, 'assets/aa.png');
+  });
+  it('keeps the original ref when mapFn returns falsy (missing asset)', () => {
+    const deck = { slides: [{ content: { image: 'assets/gone.png' } }] };
+    const out = rewriteBundleRefs(deck, () => undefined);
+    assert.equal(out.slides[0].content.image, 'assets/gone.png');
+  });
+  it('round-trips: rewriteAssetRefs then rewriteBundleRefs is identity', () => {
+    const deck = { slides: [{ content: { image: '/uploads/a.png', x: [1, { y: '/uploads/b.jpg' }] } }] };
+    const fwd = { '/uploads/a.png': 'assets/aa.png', '/uploads/b.jpg': 'assets/bb.jpg' };
+    const back = { 'assets/aa.png': '/uploads/a.png', 'assets/bb.jpg': '/uploads/b.jpg' };
+    const there = rewriteAssetRefs(deck, (r) => fwd[r]);
+    const backAgain = rewriteBundleRefs(there, (r) => back[r]);
+    assert.deepEqual(backAgain, deck);
   });
 });
 
