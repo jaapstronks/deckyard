@@ -8,6 +8,24 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Added
 
+- **Fork-overridable AI prompts and slide catalogue.** The tuned prompt copy
+  and per-type catalogue text were inline in the generation pipeline, so a fork
+  could only change them by patching the code. There is now a `custom/ai/` seam,
+  matching the existing `custom/themes` and `custom/slide-types` loaders: drop a
+  `custom/ai/prompts.js` to override a prompt builder by name, or a
+  `custom/ai/catalog.js` to replace a core slide type's description/bestFor/notFor
+  (its schema and allowed icons stay intact). Both are base-then-overlay — you
+  override only what you name, the shipped defaults answer for the rest — and a
+  missing or malformed file is ignored rather than fatal. See
+  `docs/reference/fork-setup.md`.
+
+- **An outline-revision pass before slides are built.** AI generation now reviews
+  its own draft outline against the source and applies auditable
+  merge/drop/reorder operations — with a safety cap that rejects a revision that
+  would gut the deck — before spending tokens on slide content. This cuts
+  restated slides and over-weighted sections, so decks come out tighter. Per-call
+  token usage is now reported via an observer for cost visibility.
+
 - **Name your own background options in the theme editor.** A theme could
   already offer background choices beyond the built-in two — each becomes a
   token, a generated rule and an entry in every slide's Background picker — but
