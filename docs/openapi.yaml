@@ -1739,6 +1739,12 @@ components:
           type: string
         ownerEmail:
           type: string
+          nullable: true
+          description: >-
+            The deck owner's email, returned only when the requesting API key
+            belongs to the owner. For decks reached via workspace or
+            collaborator access it is null, so one user's address is never
+            disclosed to another.
         scope:
           type: string
           enum: [private, workspace]
