@@ -37,7 +37,17 @@ one of three surfaces:
 
 **A field may only be removed from the inspector when the wysiwyg or the
 bulk modal demonstrably covers it - shipped and verified, never "because
-it's coming".** Conversely, double coverage is harmless: enums deliberately
+it's coming".**
+
+**Tightened 2026-07-21** (editing-surfaces decision, plan §6b corollary):
+the bulk modal only counts as coverage for **content text**. For
+**settings, config and metadata** - anything the user cannot point at on
+the canvas: URLs, IDs, config texts, alt text, background images - the
+bulk modal is never a sufficient home; those must render in the inspector.
+Trigger: the video-slide's `source` had ended up bulk-only (fixed in
+PR #191); the re-audit below restored every field in the same class.
+
+Conversely, double coverage is harmless: enums deliberately
 render in the bulk modal too (it mounts the whole content half by
 construction; filtering them out would complicate the
 parity-by-construction argument, and the one-list job benefits from having
@@ -159,7 +169,26 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
 The `data-inspector-section="image"` markers (image-slide, image-text) remain as
 a harmless addressing seam; the element tab now surfaces the controls directly.
 
-## Per-type coverage audit (executed 2026-07-16)
+## Per-type coverage audit (executed 2026-07-16, re-audited 2026-07-21)
+
+**Re-audit 2026-07-21** (scripted schema-vs-surfaces walk + hand review,
+under the tightened invariant above): every field the 2026-07-16 table had
+parked in its "Bulk modal (only home)" column was reclassified. Config/
+metadata fields moved to the inspector keeps (the table below reflects the
+new state): title `bgImage`/`bgAlt`; content + image-text `actions`;
+split-partner `logos`/`logo{n}Alt`/`bgImage`/`bgAlt`; video
+`source`/`bunnyLibraryId` (PR #191); embed `embedUrl` (PR #191); countdown
+`zeroText`; poll/likert `onCloseTarget`; feedback `placeholder`;
+lead-capture `thankYouTitle`/`thankYouMessage`/`privacyText`/`privacyUrl`;
+chart `xLabel`/`yLabel`/`series1Label`/`series2Label` (rendered inside the
+chart-config block, per chart type, in inspector AND bulk); end
+`contactUrl`/`social1/2Label`/`social1/2Url`. **Content text** that relies
+on the bulk modal stays accepted: kpi metric subfields (delta/note), table
+row cell ops (column add/remove), content-columns numbered texts,
+text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
+(code editors are the bulk surface by design), freeform `elements[]` (own
+canvas editor). Deprecated/hidden fields (card-stack `card{n}Label`) need
+no surface.
 
 Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`
 against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
@@ -198,31 +227,31 @@ homed. Not listed per row.
 
 | Type | Wysiwyg | Bulk modal (only home) | Inspector keeps | Notes |
 |---|---|---|---|---|
-| title | title, subheading, byline, attribution | bgImage, bgAlt | logoCorner | bgImage = title-specific hero bg (preset strip in form) |
+| title | title, subheading, byline, attribution | - | logoCorner, bgImage, bgAlt | bgImage = title-specific hero bg → inspector (design setting, re-audit 2026-07-21) |
 | chapter-title | title, subheading | - | layout | |
-| content | title, subheading, body | actions[] (label/url/style) | layout (labelled "Text columns"), density | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA buttons; url/style stay form-only |
+| content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
-| split-partner-title | label, title, subheading | logos[], logo{n}Alt, bgImage, bgAlt | - | partner logos have no media popover yet |
+| split-partner-title | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | logos manager + alts + bg → inspector (re-audit 2026-07-21) |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
-| video | title | source, bunnyLibraryId | autoplay | source is a URL/id (text home = bulk) |
+| video | title | - | source, autoplay, bunnyLibraryId | source is a URL/ID → inspector (PR #191) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |
-| card-stack | title, subheading | card{n}Title/Label/Body (active numbered schema) | cardCount | no array migration yet; count stays inspector (known residue) |
+| card-stack | title, subheading; card{n}Title/Body in-place | - | cardCount | card{n}Title/Body are canvas-inline; card{n}Label is deprecated+hidden (no surface needed); no array migration yet |
 | icon-card-grid | title, subheading, bottomSubheading; items add/remove/reorder | items[] title/body | icon (picker), link, layout | icon picker + link keep the form |
 | payoff | - | - | - | zero content fields (theme-driven logo) |
 | quote | quote, authorName, authorTitle; author images via popover | - | - | |
 | image | title, subheading, bottomSubheading, caption; image+alt via popover | - | imageRole, layout, focusX/Y, zoomSteps, zoomLevel, zoomPositions | zoom config is settings |
-| embed | title | embedUrl | aspectRatio, sandbox | |
-| countdown | title | zeroText | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero | |
-| poll | question, option1-4 (ghosts) | onCloseTarget | onClose | |
-| likert | question, option1-10 (ghosts) | onCloseTarget | onClose | |
+| embed | title | - | embedUrl, aspectRatio, sandbox | embedUrl → inspector (PR #191) |
+| countdown | title | - | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero, zeroText | |
+| poll | question, option1-4 (ghosts) | - | onClose, onCloseTarget | |
+| likert | question, option1-10 (ghosts) | - | onClose, onCloseTarget | |
 | likert-slider | question, minLabel, maxLabel | - | - | |
-| feedback | question | placeholder | - | |
-| lead-capture | title, description, nameLabel, emailLabel, submitLabel | thankYouTitle, thankYouMessage, privacyText, privacyUrl | - | thank-you state not visible on canvas |
+| feedback | question | - | placeholder | |
+| lead-capture | title, description, nameLabel, emailLabel, submitLabel | - | thankYouTitle, thankYouMessage, privacyText, privacyUrl | thank-you state not visible on canvas → inspector (re-audit 2026-07-21) |
 | follow-invite | - | - | - | zero content fields (content auto-managed) |
-| chart | title, subheading, bottomSubheading | xLabel, yLabel, series1/2Label | chartType, data (own markdown modal), showLegend, showValues, pieLabelMode | chart data keeps its dedicated modal (known residue) |
+| chart | title, subheading, bottomSubheading | - | chartType, data (own markdown modal), showLegend, showValues, pieLabelMode, xLabel, yLabel, series1/2Label (per chart type) | chart data keeps its dedicated modal (known residue); axis/series labels render inside the config block, inspector AND bulk |
 | text-blocks | title, subheading, bottomSubheading; rows[]+blocks two-level add/remove/reorder + texts | rows[] editor (incl. per-row color/arrow enums) | - | array-canonical; texts also inline |
 | content-columns | title, subheading, bottomSubheading; col{n}Image/Alt via popover incl. empty-slot add | col{n}Title/Text, col{n}Block{m}Title/Body (active numbered schema) | columnCount, col{n}ImageFit, col{n}ImageFocusX/Y, col{n}BlockCount | array migration is a parked follow-up |
 | comparison | title, subheading, bottomSubheading, leftTitle/Body, rightTitle/Body, verdict | - | - | fully inline |
@@ -235,7 +264,7 @@ homed. Not listed per row.
 | gallery | title, subheading, bottomSubheading; images[] popover (src/alt) + caption inline + add/remove/reorder | images[] cards (per-image focusX/Y) | layout | |
 | freeform | - | elements[] via the dedicated freeform canvas editor | snapToGrid | freeform has its own editing surface; bulk modal renders the raw items as fallback |
 | custom-html | - | html, css (code editors, capability-gated) | - | |
-| end | title, body, contactName, contactEmail, contactPhone | contactUrl, social1/2Label, social1/2Url | - | |
+| end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
 
 Documented deviations from the audit's original shorthand, all in the safe
 direction (already folded into the table above; repeated here because

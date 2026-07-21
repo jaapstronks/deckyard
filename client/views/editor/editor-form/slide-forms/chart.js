@@ -74,25 +74,34 @@ export function renderChartConfigControls({
   }
   const toggleRow = fieldGrid(toggles.filter(Boolean), 2);
   if (toggleRow) form.append(toggleRow);
+
+  // Axis and series labels only apply to bar and line charts. They render on
+  // the chart but are not inline-editable, so they are chart config — they
+  // must render wherever the config block renders (inspector AND bulk modal),
+  // never bulk-only (coverage audit 2026-07-21). `add` re-renders them via
+  // fieldByKey even though they are already marked used above.
+  const renderLabel = (key) => {
+    const f = fieldByKey.get(key);
+    const el = f ? renderField(f) : null;
+    if (el) form.append(el);
+  };
+  if (ct === 'line') {
+    renderLabel('xLabel');
+    renderLabel('yLabel');
+    renderLabel('series1Label');
+    renderLabel('series2Label');
+  } else if (ct === 'bar') {
+    renderLabel('xLabel');
+    renderLabel('yLabel');
+  }
 }
 
 export function renderChartSlideForm(ctx = {}) {
-  const { add, slide } = ctx;
+  const { add } = ctx;
   add('title');
   add('subheading');
   add('bottomSubheading');
 
   renderChartConfigControls(ctx);
-
-  // Axis and series labels only apply to bar and line charts.
-  const ct = String(slide?.content?.chartType || 'bar');
-  if (ct === 'line') {
-    add('xLabel');
-    add('yLabel');
-    add('series1Label');
-    add('series2Label');
-  } else if (ct === 'bar') {
-    add('xLabel');
-    add('yLabel');
-  }
+  // Axis/series labels render inside the config block (per chart type).
 }
