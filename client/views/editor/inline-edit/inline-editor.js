@@ -215,8 +215,11 @@ export function createInlineEditor({
   function onEditInput() {
     if (!editing) return;
     const { meta } = editing;
-    // Enforce single-line + maxLength live without fighting the caret when under.
-    if (typeof meta?.maxLength === 'number') {
+    // Enforce single-line + maxLength live without fighting the caret when
+    // under. Never for rich edits: assigning textContent would flatten the
+    // block HTML (headings, lists, bold) to one text node — the commit-time
+    // cap in normalizeRichValue covers the limit instead.
+    if (!editing.rich && typeof meta?.maxLength === 'number') {
       const text = editing.el.textContent || '';
       if (text.length > meta.maxLength) {
         editing.el.textContent = text.slice(0, meta.maxLength);
