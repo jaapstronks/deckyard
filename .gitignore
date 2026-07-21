@@ -45,6 +45,8 @@ custom/assets/*
 !custom/assets/.gitkeep
 custom/slide-types/*
 !custom/slide-types/.gitkeep
+custom/ai/*
+!custom/ai/.gitkeep
 custom/mcp-tools.js
 
 # Playwright MCP screenshots
