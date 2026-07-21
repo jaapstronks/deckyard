@@ -134,6 +134,22 @@
   overflow: auto;
 }
 
+/* The bottom panel is as wide as the canvas, so a full-bleed 100%-width grid
+   stretches each column to ~600px and the cell focus ring reads as oversized.
+   Size the grid to its content instead (spreadsheet convention): the bordered
+   box hugs the table, columns follow the data (min 96px per input), and it
+   scrolls once it would exceed the panel. */
+.notes-strip-data .csv-grid-field {
+  max-width: 100%;
+}
+.notes-strip-data .csv-grid-scroll {
+  width: fit-content;
+  max-width: 100%;
+}
+.notes-strip-data table.csv-grid {
+  width: auto;
+}
+
 .notes-strip-input {
   flex: 1;
   min-height: 0;

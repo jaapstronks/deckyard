@@ -36,7 +36,6 @@ import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/toast.js';
 import { createBasicFields } from '../fields/basic.js';
-import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 import { markdownToSafeHtml } from '../../../../shared/markdown.js';
 import {
@@ -98,6 +97,9 @@ export function createInlineEditor({
   canConvertSlideTo,
   onOpenElementSettings,
   onSelectElement,
+  // Chart data edits open the bottom-panel Data tab, not a canvas modal
+  // (editing-surfaces §4.3). Clicking a chart on the canvas calls this.
+  onEditChartData,
 } = {}) {
   if (!thumb)
     return {
@@ -534,113 +536,6 @@ export function createInlineEditor({
     ta?.focus();
   }
 
-  // ----------------------------------------------------------------
-  // CSV data modal (grid/raw chart-data editor, same modal chrome)
-  // ----------------------------------------------------------------
-  function openCsvModal(_anchorEl, path, meta, { isNew = false } = {}) {
-    if (editing) endTextEdit();
-    dismissMarkdownModal();
-    const slide = getSlide?.();
-    if (!slide) return;
-
-    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
-    const label = fieldLabel(path, meta);
-    const chartType = String(slide.content?.chartType || 'bar');
-    let latest = raw;
-
-    const { el: editorEl } = createCsvGridEditor({
-      h,
-      chartType,
-      value: raw,
-      label,
-      onChange: (v) => {
-        latest = v;
-      },
-    });
-    editorEl.setAttribute('data-collab-field-key', String(path));
-
-    const save = () => {
-      if (latest !== raw) {
-        setByPath(slide.content, path, latest);
-        markDirty?.();
-        requestSave?.();
-        rerenderEditor?.();
-      }
-      dismissMarkdownModal();
-      rerenderPreview?.();
-    };
-    const cancel = () => {
-      dismissMarkdownModal();
-      if (isNew) rerenderPreview?.();
-    };
-
-    const closeBtn = h('button', {
-      class: 'ie-md-close',
-      type: 'button',
-      title: t('common.close', 'Close'),
-      text: '×',
-      onclick: cancel,
-    });
-    const header = h('div', { class: 'ie-md-header row spread' }, [
-      h('div', {
-        class: 'ie-md-mode',
-        text: t('editor.inline.editingField', 'Editing: {label}', { label }),
-      }),
-      closeBtn,
-    ]);
-    const footer = h('div', { class: 'ie-md-footer row spread' }, [
-      h('span', {
-        class: 'help',
-        text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save'),
-      }),
-      h('div', { class: 'row' }, [
-        h('button', {
-          class: 'btn btn-secondary btn-sm',
-          type: 'button',
-          text: t('common.cancel', 'Cancel'),
-          onclick: cancel,
-        }),
-        h('button', {
-          class: 'btn btn-primary btn-sm',
-          type: 'button',
-          text: t('common.save', 'Save'),
-          onclick: save,
-        }),
-      ]),
-    ]);
-
-    const modal = h('div', { class: 'ie-md-modal is-csv' }, [
-      header,
-      editorEl,
-      footer,
-    ]);
-    const backdrop = h('div', { class: 'ie-modal-backdrop' });
-    backdrop.addEventListener('click', cancel);
-
-    mdHost.classList.add('is-ie-modal-open');
-    mdHost.append(backdrop, modal);
-
-    const detach = installDismissOnOutside({
-      rootEl: modal,
-      isOpen: () => true,
-      close: cancel,
-    });
-    closeMarkdownModal = () => {
-      detach?.();
-      backdrop.remove();
-      modal.remove();
-      mdHost.classList.remove('is-ie-modal-open');
-    };
-
-    modal.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        save();
-      }
-    });
-    modal.querySelector('input, textarea')?.focus();
-  }
-
   function dismissMarkdownModal() {
     if (closeMarkdownModal) {
       try {
@@ -786,9 +681,10 @@ export function createInlineEditor({
   }
 
   function spawnFromGhost(path, resolveAnchor, meta, kind) {
-    // CSV edits happen in the modal; no in-slide element is needed.
+    // Chart data lives on the bottom-panel Data tab (editing-surfaces §4.3),
+    // not an in-slide element or a modal.
     if (kind === 'csv') {
-      openCsvModal(null, path, meta, { isNew: true });
+      onEditChartData?.();
       return;
     }
     if (kind === 'markdown') {
@@ -1886,7 +1782,10 @@ export function createInlineEditor({
     else if (kind === 'text' || kind === 'markdown')
       onSelectElement?.({ kind: 'text', fieldKey: path });
     else onSelectElement?.(null);
-    if (kind === 'csv') openCsvModal(fieldEl, path, meta);
+    // Chart data opens on the bottom-panel Data tab, not a canvas modal
+    // (editing-surfaces §4.3): one data surface, reachable from the chart or
+    // the inspector's "Edit data…".
+    if (kind === 'csv') onEditChartData?.();
     else if (kind === 'markdown') openMarkdownEdit(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);
   }

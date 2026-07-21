@@ -1411,6 +1411,9 @@ export async function createEditorController({
       setSelectedElement(el);
       inspectorPanes.open('settings');
     },
+    // Clicking a chart on the canvas opens the bottom-panel Data tab — the same
+    // single data surface the inspector's "Edit data…" reaches (no canvas modal).
+    onEditChartData: () => notesStrip.openDataTab(),
   });
   cleanup.register('inlineEditor', inlineEditor.destroy);
 
