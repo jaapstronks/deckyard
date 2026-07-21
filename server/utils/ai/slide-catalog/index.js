@@ -46,6 +46,9 @@ export {
   getCustomAiCatalogForTheme,
 } from './custom-loader.js';
 
+// Re-export the core-type override loader (custom/ai/catalog.js)
+export { loadCustomCatalogOverrides } from './custom-catalog-loader.js';
+
 // Re-export global per-slide options (background image, logo, text colour)
 export {
   GLOBAL_SLIDE_OPTIONS,
@@ -53,9 +56,29 @@ export {
 } from './global-options.js';
 
 // Import for initialization
-import { mergeCustomAiCatalog } from './definitions.js';
+import { mergeCustomAiCatalog, getCoreSlideCatalog } from './definitions.js';
 import { loadCustomAiCatalog, loadCustomAiExamples } from './custom-loader.js';
+import { loadCustomCatalogOverrides } from './custom-catalog-loader.js';
 import { mergeCustomExamples } from './examples.js';
+
+/**
+ * Build the combined custom-catalog delta: new types added via
+ * `custom/slide-types/*.js` plus core-type copy overrides from
+ * `custom/ai/catalog.js`. Overrides win on a key collision (they are the
+ * explicit override mechanism), and are validated against the known type set
+ * (core types + any freshly-added custom types) so a typo is dropped loudly.
+ *
+ * @returns {Promise<Record<string, Object>>}
+ */
+async function loadCombinedCustomCatalog() {
+  const customCatalog = await loadCustomAiCatalog();
+  const knownTypes = new Set([
+    ...Object.keys(getCoreSlideCatalog()),
+    ...Object.keys(customCatalog),
+  ]);
+  const overrides = await loadCustomCatalogOverrides({ knownTypes });
+  return { combined: { ...customCatalog, ...overrides }, added: customCatalog, overrides };
+}
 
 /**
  * Initialize the AI catalog with custom slide type definitions
@@ -63,14 +86,15 @@ import { mergeCustomExamples } from './examples.js';
  */
 export async function initializeAiCatalog() {
   try {
-    const customCatalog = await loadCustomAiCatalog();
+    const { combined, added, overrides } = await loadCombinedCustomCatalog();
     const customExamples = await loadCustomAiExamples();
 
-    if (Object.keys(customCatalog).length > 0) {
-      mergeCustomAiCatalog(customCatalog);
-      console.log(
-        `[ai-catalog] Merged ${Object.keys(customCatalog).length} custom slide type(s) into AI catalog`
-      );
+    if (Object.keys(combined).length > 0) {
+      mergeCustomAiCatalog(combined);
+      const parts = [];
+      if (Object.keys(added).length > 0) parts.push(`${Object.keys(added).length} custom slide type(s)`);
+      if (Object.keys(overrides).length > 0) parts.push(`${Object.keys(overrides).length} core-type override(s)`);
+      console.log(`[ai-catalog] Merged ${parts.join(' + ')} into AI catalog`);
     }
 
     if (Object.keys(customExamples).length > 0) {
@@ -87,11 +111,11 @@ export async function initializeAiCatalog() {
 // Auto-initialize on module load (server-side only)
 // This ensures custom AI metadata is available as soon as the module is imported
 try {
-  const customCatalog = await loadCustomAiCatalog();
+  const { combined } = await loadCombinedCustomCatalog();
   const customExamples = await loadCustomAiExamples();
 
-  if (Object.keys(customCatalog).length > 0) {
-    mergeCustomAiCatalog(customCatalog);
+  if (Object.keys(combined).length > 0) {
+    mergeCustomAiCatalog(combined);
   }
 
   if (Object.keys(customExamples).length > 0) {
