@@ -1,6 +1,6 @@
 # Deckyard Roadmap
 
-**Updated: 2026-07-19.** This is the single overview for ongoing development.
+**Updated: 2026-07-21.** This is the single overview for ongoing development.
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
 is retired: all three layers shipped (39 typed slide types, AI pipeline with
 validation/iteration, MCP server with 27 tools + SSE transport).
@@ -62,6 +62,16 @@ named background options and per-property override locks. The database shape and
 its validation are documented in `docs/reference/theme-config.md`. Ejecting a
 database theme to file-JSON was dropped: both audiences are served directly, so
 it would only have been a second path to something that already works.)_
+
+_(The **editing-surfaces track** — one setting in exactly one place: the
+Inspector as single source of truth for settings, the canvas for direct
+manipulation, a dedicated surface for what fits neither (chart data) — shipped
+across 2026-07-20/21. Image surfaces, the `ImageRef` data-model normalisation,
+a selection-aware inspector with per-element tabs, a coverage audit of all 40
+types, and per-field text controls (alignment / theme-token colour / size) all
+landed. Documented in `docs/reference/editor-inspector.md`,
+`image-property-ownership.md` and `wysiwyg-inline-editing.md`. Remaining tail:
+the chart-data "Data" tab, tracked in `docs/plans/TODO.md`.)_
 
 ## Next — existing feature plans
 
