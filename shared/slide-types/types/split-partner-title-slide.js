@@ -2,8 +2,9 @@ import { esc, pickAltText } from '../helpers.js';
 
 export default {
   label: 'Partner split',
-  // Archived 2026-07-21: unused (0 active decks) and a generic
-  // placeholder-y layout. Hidden from every insertion path (picker + AI) via
+  // Archived 2026-07-21: rarely used and a generic placeholder-y layout (a
+  // handful of stored decks still carry it — they keep rendering, see below).
+  // Hidden from every insertion path (picker + AI) via
   // this flag — isInsertableSlideType returns false for deprecated types — but
   // the type stays REGISTERED so any stored/forked deck keeps rendering
   // unchanged (rendering never goes through the insertability gate). The

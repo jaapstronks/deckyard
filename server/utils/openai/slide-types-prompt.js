@@ -34,9 +34,8 @@ const LEGACY_WHEN_TO_USE = {
   'lead-capture-slide': [
     'Use for collecting email addresses or signup forms.',
   ],
-  'split-partner-title-slide': [
-    'Use only if the prompt provides actual logo URLs (logos[] is required).',
-  ],
+  // split-partner-title-slide is archived (in EXCLUDED_TYPES) — no legacy
+  // when-to-use entry needed; the catalog loop skips it before this map.
 };
 
 // ─── Manual JSON examples for types that need specific patterns ───
