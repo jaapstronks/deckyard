@@ -7,8 +7,10 @@
  * declined to describe itself. This module derives a real, versioned JSON
  * Schema straight from the single `fields[]` registry (via the declared
  * field-type vocabulary), so validation, the docs and the published contract
- * all trace back to one source. The committed artifact is regenerated and
- * diffed in CI, so the schema can never silently drift from the code.
+ * all trace back to one source. The schema is generated live from
+ * `SLIDE_TYPES` on every request rather than committed as an artifact, so
+ * there is no second copy that can drift; a test validates every core slide
+ * type's real default content against its generated schema.
  *
  * The generated deck schema is self-contained: every slide type's content
  * schema lives under `$defs`, and a discriminated `slide` (`if type === X then
