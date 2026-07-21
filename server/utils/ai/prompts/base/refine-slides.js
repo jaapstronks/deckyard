@@ -107,6 +107,11 @@ REMINDER: All slide content (titles, body text, etc.) MUST be written in ${langL
 /**
  * Build a theme context section for the system prompt.
  * Tells the AI about available backgrounds, brand colors, and slide background options.
+ *
+ * Internal helper of `buildPhase2SystemPrompt` — intentionally NOT part of the
+ * fork override set (not re-exported from `base/index.js`). It's called as a
+ * module-local sibling above, so a registry override would never fire; forks
+ * override `buildPhase2SystemPrompt` to change this section.
  */
 export function buildThemeContextSection(themeContext) {
   if (!themeContext) return '';
