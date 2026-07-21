@@ -22,6 +22,8 @@ import {
   TEXT_SIZE_VALUES,
   normalizeTextStyles,
 } from '../../../../shared/slide-types/text-styles.js';
+import { fieldAllowsAlign } from '../../../../shared/slide-types/text-roles.js';
+import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 const ALIGN_DEFAULT = 'left';
 const COLOR_DEFAULT = 'default';
@@ -184,6 +186,12 @@ export function renderTextElementCard({
     rerenderPreview?.();
   };
 
+  // Alignment is only offered where the field's role allows block alignment.
+  // Marker-anchored text (list/step items) forces logical start and shows no
+  // control — aligning it would detach the text from its bullet/number marker.
+  // See shared/slide-types/text-roles.js.
+  const slideFields = getSlideType(slide?.type)?.fields || null;
+  const allowAlign = fieldAllowsAlign(slideFields, fieldKey);
   // Some slide types don't offer right-align: the quote slide's block layout
   // only supports left (hero) and centre. A value already stored as 'right'
   // stays selectable so it's never a stuck, invisible override.
@@ -198,10 +206,12 @@ export function renderTextElementCard({
       label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
     })),
   };
-  const alignEl = fieldEnum(alignField, current.align || ALIGN_DEFAULT, (v) => {
-    setTextStyle(slide, fieldKey, 'align', v, ALIGN_DEFAULT);
-    commit();
-  });
+  const alignEl = allowAlign
+    ? fieldEnum(alignField, current.align || ALIGN_DEFAULT, (v) => {
+        setTextStyle(slide, fieldKey, 'align', v, ALIGN_DEFAULT);
+        commit();
+      })
+    : null;
 
   const colorEl = renderColorControl({ h, slide, fieldKey, theme, current, commit });
 
@@ -219,13 +229,15 @@ export function renderTextElementCard({
   });
 
   container.append(
-    h('div', {
-      class: 'help',
-      text: t('editor.textStyle.hint', 'Styling for this text block.'),
-    }),
-    alignEl,
-    colorEl,
-    sizeEl
+    ...[
+      h('div', {
+        class: 'help',
+        text: t('editor.textStyle.hint', 'Styling for this text block.'),
+      }),
+      alignEl,
+      colorEl,
+      sizeEl,
+    ].filter(Boolean)
   );
   return true;
 }

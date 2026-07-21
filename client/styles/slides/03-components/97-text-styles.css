@@ -16,6 +16,20 @@
   text-align: right;
 }
 
+/* Structural invariant (text-role affordance model): a block may be aligned,
+   but marker-anchored descendants can't be — a bullet/number ::marker sits at
+   the content-box start and doesn't move, so centering/right-aligning the
+   block would detach each list line from its marker. Reset lists inside an
+   aligned prose field to the logical start; surrounding prose still aligns.
+   This handles the content-dependent case (a markdown body that happens to
+   contain a list) without the editor having to sniff content. List/step SLIDE
+   types instead carry role:'list-item', so their item text never gets an
+   align class in the first place. See shared/slide-types/text-roles.js. */
+[data-inline-field].tf-align-center :is(ul, ol),
+[data-inline-field].tf-align-right :is(ul, ol) {
+  text-align: start;
+}
+
 /* Colour overrides use theme TOKENS (not raw hex) so a deck stays legible
    when the theme changes.
 
