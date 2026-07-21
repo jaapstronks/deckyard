@@ -258,7 +258,7 @@ export function renderSlideHtml(slide, ctx = {}) {
   // Per-field block-level text styling (alignment/colour): adds tf-* classes
   // to the matching data-inline-field element. Runs on the type's own output
   // (its field elements), before the slide-wrapper injections below.
-  out = injectTextStyles(out, content);
+  out = injectTextStyles(out, content, def?.fields);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);
   return out;

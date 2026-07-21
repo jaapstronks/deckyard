@@ -58,6 +58,8 @@ export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SW
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
+import { fieldAllowsAlign } from './text-roles.js';
+
 const DEFAULT_ALIGN = 'left';
 const DEFAULT_COLOR = 'default';
 const DEFAULT_SIZE = 'md';
@@ -92,12 +94,15 @@ export function normalizeTextStyles(raw) {
 /**
  * The CSS classes for one field's style, or '' when it is all defaults.
  * @param {{align?: string, color?: string, size?: string}} style
+ * @param {{allowAlign?: boolean}} [opts] - when `allowAlign` is false the
+ *   alignment class is dropped (colour/size still apply); used for fields whose
+ *   role forbids block alignment (marker-anchored text). See text-roles.js.
  * @returns {string}
  */
-export function textStyleClasses(style) {
+export function textStyleClasses(style, { allowAlign = true } = {}) {
   if (!style || typeof style !== 'object') return '';
   const classes = [];
-  if (TEXT_ALIGN_VALUES.includes(style.align) && style.align !== DEFAULT_ALIGN) {
+  if (allowAlign && TEXT_ALIGN_VALUES.includes(style.align) && style.align !== DEFAULT_ALIGN) {
     classes.push(`tf-align-${style.align}`);
   }
   if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
@@ -121,15 +126,19 @@ function escapeRegExp(s) {
  * (or adds one). Unknown / default-only keys emit nothing.
  * @param {string} html - rendered slide HTML
  * @param {Object} content - slide content (reads `content.textStyles`)
+ * @param {Array<Object>} [fields] - the slide type's `fields[]`, so a field's
+ *   role can gate its alignment (a list item never block-aligns). Omitted =
+ *   every field may align (back-compat for callers without the schema).
  * @returns {string}
  */
-export function injectTextStyles(html, content) {
+export function injectTextStyles(html, content, fields = null) {
   const styles = normalizeTextStyles(content?.textStyles);
   const keys = Object.keys(styles);
   if (!keys.length || typeof html !== 'string') return html;
   let out = html;
   for (const key of keys) {
-    const cls = textStyleClasses(styles[key]);
+    const allowAlign = fields ? fieldAllowsAlign(fields, key) : true;
+    const cls = textStyleClasses(styles[key], { allowAlign });
     if (!cls) continue;
     // The `"` after the key anchors the match, so `card1` never matches
     // `card1Body`; `data-morph-role="body"` never matches field `body`.

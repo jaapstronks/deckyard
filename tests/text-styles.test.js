@@ -147,3 +147,42 @@ describe('injectTextStyles', () => {
     assert.equal(out, '<p class="tf-size-sm" data-inline-field="body">x</p>');
   });
 });
+
+describe('injectTextStyles — role-gated alignment', () => {
+  // A list-slide-shaped schema: item text/title carry role:'list-item'.
+  const listFields = [
+    { key: 'title', type: 'string' },
+    {
+      key: 'items',
+      type: 'items',
+      itemFields: [
+        { key: 'title', type: 'string', role: 'list-item' },
+        { key: 'text', type: 'string', role: 'list-item' },
+      ],
+    },
+  ];
+
+  it('drops the align class on a list-item field but keeps colour/size', () => {
+    const html = '<div data-inline-field="items.0.text">x</div>';
+    const out = injectTextStyles(
+      html,
+      { textStyles: { 'items.0.text': { align: 'center', color: 'accent', size: 'lg' } } },
+      listFields
+    );
+    assert.doesNotMatch(out, /tf-align-center/);
+    assert.match(out, /tf-color-accent/);
+    assert.match(out, /tf-size-lg/);
+  });
+
+  it('keeps the align class on a default (non-list) field', () => {
+    const html = '<div data-inline-field="title">T</div>';
+    const out = injectTextStyles(html, { textStyles: { title: { align: 'center' } } }, listFields);
+    assert.match(out, /tf-align-center/);
+  });
+
+  it('allows alignment when no fields schema is passed (back-compat)', () => {
+    const html = '<div data-inline-field="items.0.text">x</div>';
+    const out = injectTextStyles(html, { textStyles: { 'items.0.text': { align: 'center' } } });
+    assert.match(out, /tf-align-center/);
+  });
+});

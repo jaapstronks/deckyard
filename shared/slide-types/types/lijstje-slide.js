@@ -68,6 +68,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 80,
+          // Sits in a flex row next to the bullet/number marker; block
+          // alignment would detach the text from its marker. See text-roles.js.
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -75,6 +78,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          role: 'list-item',
         },
       ],
     },
