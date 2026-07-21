@@ -4,6 +4,7 @@ import { handlePopularPresentations } from './presentations/popular.js';
 import { handlePresentationsSearch } from './presentations/search.js';
 import { handlePresentationsCreate } from './presentations/create.js';
 import { handlePresentationsImportJson } from './presentations/import-json.js';
+import { handlePresentationsImportDeck } from './presentations/import-deck.js';
 import { handlePresentationsImportMarkdown } from './presentations/import-markdown.js';
 import { handlePresentationScope } from './presentations/scope.js';
 import { handlePresentationItem, handlePresentationRevision } from './presentations/presentation.js';
@@ -156,6 +157,11 @@ export async function handlePresentations({
   // Import (portable JSON deck format)
   if (url.pathname === '/api/presentations/import/json' && req.method === 'POST') {
     return handlePresentationsImportJson({ repoRoot, req, res, url, authedUser });
+  }
+
+  // Import (self-contained .deck bundle — re-hydrates embedded assets)
+  if (url.pathname === '/api/presentations/import/deck' && req.method === 'POST') {
+    return handlePresentationsImportDeck({ repoRoot, req, res, url, authedUser });
   }
 
   // Import (markdown deck format — deterministic, no AI)

@@ -72,18 +72,46 @@ they are already portable and are not fetched into the bundle.
   slides reference them.
 - **Enumerable:** the manifest is a complete inventory of the deck's assets.
 
+## Import (re-hydrating a bundle)
+
+`POST /api/presentations/import/deck` takes a raw `.deck` body and creates a
+presentation from it — the mirror of the export. The flow:
+
+1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
+   asset (integrity), yielding `{ manifest, deck, assets }`.
+2. For each manifest asset, write its bytes back into `/uploads/` via
+   `saveUploadedFile`, using the manifest `sources[0]` as the human basename.
+   This builds a `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
+3. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
+   upload URLs (the inverse of the export's `rewriteAssetRefs`).
+4. `deckToPresentationParts` + `createPresentation`/`updatePresentation` —
+   the same normalization + creation path as the JSON import.
+
+**Round-trip:** for content-bearing slides, `export → import → export` is a
+fixpoint (identical content-addressed refs, since identical bytes hash the same).
+
+**Graceful degradation:**
+
+- An asset whose mime is unsupported by `saveUploadedFile` (or that otherwise
+  fails to write) is skipped — its ref is left in place and reported in a
+  `failedAssets` field on the response, rather than crashing the import.
+- Unknown slide types become a harmless `content-slide` placeholder
+  (via `deckToPresentationParts`).
+- Local refs that were already missing at export time (`missingAssets`) keep
+  their original `/uploads/…` ref and import as dangling (harmless) references.
+
 ## Code
 
 - Build: `server/export/deck-bundle.js` → `buildDeckBundle(repoRoot, pres)`.
 - Read/validate: `readDeckBundle(buffer)` → `{ mimetype, manifest, deck, assets }`.
+- Import: `server/routes/api/presentations/import-deck.js` →
+  `handlePresentationsImportDeck` (route `POST /api/presentations/import/deck`).
 - Pure ref layer: `shared/slide-types/deck-assets.js`
-  (`collectAssetRefs`, `rewriteAssetRefs`, `assetRefForHash`).
+  (`collectAssetRefs`, `rewriteAssetRefs`, `rewriteBundleRefs`, `assetRefForHash`).
 - Export route: `GET /api/presentations/:id/export/deck.zip` (downloads
   `<title>.deck`).
 
 ## Not yet covered
 
-- **Import** (re-hydrating a `.deck` bundle back into Deckyard: unpacking assets
-  to uploads, rewriting refs, creating the presentation) is a follow-up.
 - Theme assets (logos referenced on the theme, not on slides) and external image
   URLs are not embedded.
