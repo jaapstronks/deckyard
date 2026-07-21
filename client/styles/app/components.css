@@ -333,6 +333,75 @@ table.csv-grid {
   font-size: 0.82rem;
 }
 
+/* ---- Chart data modal (grid + live preview, chart-data-modal.js) ---- */
+.modal.chart-data-modal {
+  width: min(1040px, calc(100% - 32px));
+  max-height: min(90vh, 860px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+.modal.chart-data-modal .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-4);
+}
+
+/* Grid on the left, preview on the right; each half min-0 so neither forces
+   the modal wider than its cap. */
+.chart-data-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--ps-space-5);
+}
+.chart-data-grid {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+.chart-data-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  min-width: 0;
+  min-height: 0;
+}
+.chart-data-preview-label {
+  margin: 0;
+}
+.chart-data-preview-stage {
+  flex: 1 1 auto;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md, 8px);
+  background: hsl(var(--app-bg-sunken) / 0.5);
+  overflow: hidden;
+}
+.chart-data-modal-footer {
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+/* Narrow: stack the preview above the grid so neither is cramped. */
+@media (max-width: 768px) {
+  .chart-data-modal-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .chart-data-preview {
+    order: -1;
+  }
+  .chart-data-preview-stage {
+    min-height: 160px;
+  }
+}
+
 .ui-status-line {
   min-height: 18px;
 }

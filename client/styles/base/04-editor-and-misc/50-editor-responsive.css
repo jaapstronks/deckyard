@@ -20,52 +20,6 @@
   padding: var(--ps-space-2) var(--ps-space-4);
 }
 
-.notes-strip-header-left {
-  align-items: center;
-  gap: var(--ps-space-3);
-  min-width: 0;
-}
-
-/* Tab bar (Notes | Data): only shown for chart slides, where it replaces the
-   standalone title next to the collapse chevron. */
-.notes-strip-tabs {
-  display: inline-flex;
-  gap: 2px;
-}
-.notes-strip-tabs[hidden] {
-  display: none;
-}
-
-.notes-strip-tab {
-  padding: 4px 10px;
-  border: none;
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-xs);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  cursor: pointer;
-  border-radius: var(--ps-radius-sm);
-}
-.notes-strip-tab:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-.notes-strip-tab.is-active {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-.notes-strip-tab:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary) / 0.5);
-  outline-offset: -1px;
-}
-
-/* Header QR action is notes-only; hidden (overriding .row's flex) on Data. */
-.notes-strip-actions[hidden] {
-  display: none;
-}
-
 /* The header title doubles as the collapse toggle (whole-title hit target). */
 .notes-strip-toggle {
   display: inline-flex;
@@ -117,37 +71,6 @@
 
 .notes-strip.is-collapsed .notes-strip-body {
   display: none;
-}
-
-/* Panes swap Notes ↔ Data; the active one fills the body, the other is
-   [hidden]. The data grid can outgrow the strip, so its pane scrolls. */
-.notes-strip-pane {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-.notes-strip-pane[hidden] {
-  display: none;
-}
-.notes-strip-data {
-  overflow: auto;
-}
-
-/* The bottom panel is as wide as the canvas, so a full-bleed 100%-width grid
-   stretches each column to ~600px and the cell focus ring reads as oversized.
-   Size the grid to its content instead (spreadsheet convention): the bordered
-   box hugs the table, columns follow the data (min 96px per input), and it
-   scrolls once it would exceed the panel. */
-.notes-strip-data .csv-grid-field {
-  max-width: 100%;
-}
-.notes-strip-data .csv-grid-scroll {
-  width: fit-content;
-  max-width: 100%;
-}
-.notes-strip-data table.csv-grid {
-  width: auto;
 }
 
 .notes-strip-input {
