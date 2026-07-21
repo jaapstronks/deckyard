@@ -111,6 +111,7 @@ export const CARD_SLIDES = {
       'Before→after transformations',
       'Strategy→tactics→results chains',
       'Any 2-3 row structure where each row LEADS TO the next',
+      'Consequence chains: X causes Y, which causes Z. Prefer this over process-slide when nobody performs the steps -- the items are outcomes, not actions',
     ],
     notFor: [
       'Plain enumerations or lists of points (use list-slide or content-slide)',

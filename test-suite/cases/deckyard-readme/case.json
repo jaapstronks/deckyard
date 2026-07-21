@@ -1,0 +1,23 @@
+{
+  "id": "deckyard-readme",
+  "title": "Deckyard README (meta-case)",
+  "category": "B",
+  "language": "en",
+  "domain": "open source project documentation",
+  "structure": "structured",
+  "note": "Read from the working tree rather than fetched, so it always reflects the current checkout.",
+  "sources": [
+    {
+      "local": "README.md",
+      "url": "https://github.com/jaapstronks/deckyard/blob/main/README.md",
+      "file": "readme.md",
+      "type": "markdown"
+    }
+  ],
+  "licence": "MIT (this repository).",
+  "expectedCharacteristics": [
+    "Leads with what Deckyard is and who it is for, not with installation steps",
+    "Treats the MCP/agent-native angle as a distinct point rather than burying it in a feature list",
+    "Does not turn every markdown heading into its own slide"
+  ]
+}

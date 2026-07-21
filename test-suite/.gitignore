@@ -1,0 +1,12 @@
+# Fetched test material: licences vary (most sources are all-rights-reserved,
+# free-to-download) and some are large. case.json records the origin;
+# scripts/fetch-cases.js retrieves it.
+cases/*/source/
+cases/*/reference/
+
+# Generated decks and the full run record are bulky working data. The per-run
+# report.md and history.json ARE committed -- they are the deliverable.
+runs/*/*/
+runs/*/run.json
+.cache/
+stages/

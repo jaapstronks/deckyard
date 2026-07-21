@@ -169,7 +169,14 @@ const MAX_LENGTHS = {
 function truncate(str, maxLen, fieldName = 'unknown') {
   if (typeof str !== 'string') return str;
   if (str.length <= maxLen) return str;
-  const truncated = str.slice(0, maxLen - 3) + '...';
+  // Cut at a word boundary. A hard slice leaves a visible half-word on the
+  // slide ("we apologize for the p"), which a presenter has to fix by hand.
+  // Fall back to the hard cut when there is no sensible break point near the
+  // limit, so a single very long token still gets bounded.
+  const hardCut = str.slice(0, maxLen - 3);
+  const lastBreak = hardCut.search(/\s\S*$/);
+  const body = lastBreak > maxLen * 0.6 ? hardCut.slice(0, lastBreak) : hardCut;
+  const truncated = `${body.replace(/[\s,;:.–—-]+$/, '')}...`;
   logValidation('truncate-field', {
     field: fieldName,
     originalLength: str.length,

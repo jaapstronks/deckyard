@@ -1,0 +1,28 @@
+{
+  "id": "asml-q4-2024",
+  "title": "ASML Q4 and full-year 2024 results",
+  "category": "A",
+  "language": "en",
+  "domain": "semiconductors / investor relations",
+  "note": "Tightest pair in the set: a 4-page press release expanded into a 25-slide investor deck. Tests whether the pipeline expands a dense source rather than compressing it.",
+  "sources": [
+    {
+      "url": "https://ourbrand.asml.com/m/6b258133e67b602c/original/2025_01_29-Press-Release-ASML-Financial-Results-Q4-FY-2024.pdf",
+      "file": "press-release.pdf",
+      "type": "pdf"
+    }
+  ],
+  "reference": [
+    {
+      "url": "https://ourbrand.asml.com/m/62a213cac2117ee6/original/2025_01_29-Presentation-Investor-Relations-Q4-FY-2024.pdf",
+      "file": "investor-deck.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "(c) ASML, all rights reserved. Freely downloadable IR material; used locally for evaluation only, never redistributed.",
+  "expectedCharacteristics": [
+    "States Q4 net sales and full-year total net sales with the gross margin percentage",
+    "Includes a bookings/backlog slide -- the figure the market actually reacts to",
+    "Carries forward the published 2025 guidance range rather than inventing one"
+  ]
+}

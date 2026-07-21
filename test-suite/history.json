@@ -1,0 +1,497 @@
+[
+  {
+    "runId": "2026-07-18_15-19-06",
+    "startedAt": "2026-07-18T15:19:06.382Z",
+    "label": "baseline (nulmeting)",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "2f0e86683435",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cbs-veiligheidsmonitor-2025",
+      "cloudflare-nov-2025-outage",
+      "deckyard-readme",
+      "iea-weo-2024",
+      "naacl-good-conversation",
+      "nl-kamerbrief-duurzame-digitalisering",
+      "pbl-kev-2024",
+      "philips-q4-2024",
+      "wikipedia-zero-knowledge-proof"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.64,
+      "structure": 4.64,
+      "slideEconomy": 3.91,
+      "faithfulness": 4.73,
+      "presentability": 3.91,
+      "humanLikeness": 2.8
+    },
+    "overall": 4.37,
+    "costUsd": 26.6812
+  },
+  {
+    "runId": "2026-07-18_15-45-37",
+    "startedAt": "2026-07-18T15:45:37.802Z",
+    "label": "baseline (corrected renderer)",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "2f0e86683435",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cbs-veiligheidsmonitor-2025",
+      "cloudflare-nov-2025-outage",
+      "deckyard-readme",
+      "iea-weo-2024",
+      "naacl-good-conversation",
+      "nl-kamerbrief-duurzame-digitalisering",
+      "pbl-kev-2024",
+      "philips-q4-2024",
+      "wikipedia-zero-knowledge-proof"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.73,
+      "structure": 4.64,
+      "slideEconomy": 4,
+      "faithfulness": 4.82,
+      "presentability": 4.09,
+      "humanLikeness": 2.8
+    },
+    "overall": 4.46,
+    "costUsd": 5.3064
+  },
+  {
+    "runId": "2026-07-18_15-51-29",
+    "startedAt": "2026-07-18T15:51:29.563Z",
+    "label": "round 1: escaped newlines in catalog examples",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "2f0e86683435",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cloudflare-nov-2025-outage",
+      "wikipedia-zero-knowledge-proof"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.75,
+      "structure": 4.5,
+      "slideEconomy": 4,
+      "faithfulness": 4,
+      "presentability": 4.25,
+      "humanLikeness": 3
+    },
+    "overall": 4.3,
+    "costUsd": 8.2259
+  },
+  {
+    "runId": "2026-07-18_16-02-14",
+    "startedAt": "2026-07-18T16:02:14.743Z",
+    "label": "R1: corrected inputs + round-1 newline fix",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "b11a78726ab7",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cloudflare-nov-2025-outage"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.67,
+      "structure": 4.67,
+      "slideEconomy": 4,
+      "faithfulness": 4.33,
+      "presentability": 4.67,
+      "humanLikeness": 3
+    },
+    "overall": 4.47,
+    "costUsd": 2.3572
+  },
+  {
+    "runId": "2026-07-18_16-07-20",
+    "startedAt": "2026-07-18T16:07:20.367Z",
+    "label": "round 2: adjacency fix + variety rule",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "150a00b0d9da",
+      "files": {
+        "server/utils/ai/generate-outline.js": "c4ce10000b32",
+        "server/utils/ai/refine-slides.js": "d3c70818af1c",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cbs-veiligheidsmonitor-2025",
+      "cloudflare-nov-2025-outage",
+      "deckyard-readme",
+      "iea-weo-2024",
+      "naacl-good-conversation",
+      "nl-kamerbrief-duurzame-digitalisering",
+      "pbl-kev-2024",
+      "philips-q4-2024",
+      "wikipedia-zero-knowledge-proof"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.36,
+      "structure": 4.55,
+      "slideEconomy": 3.82,
+      "faithfulness": 4.27,
+      "presentability": 3.91,
+      "humanLikeness": 2.8
+    },
+    "overall": 4.18,
+    "costUsd": 13.9026
+  },
+  {
+    "runId": "2026-07-18_16-29-02",
+    "startedAt": "2026-07-18T16:29:02.233Z",
+    "label": "round 3: fewer chapter dividers",
+    "model": "claude-opus-4-8",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "218d32ce56fc",
+      "files": {
+        "server/utils/ai/generate-outline.js": "21f6b93d96bc",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cloudflare-nov-2025-outage"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.67,
+      "structure": 5,
+      "slideEconomy": 4,
+      "faithfulness": 5,
+      "presentability": 3.67,
+      "humanLikeness": 3
+    },
+    "overall": 4.47,
+    "costUsd": 1.9795
+  },
+  {
+    "runId": "2026-07-18_16-57-07",
+    "startedAt": "2026-07-18T16:57:07.568Z",
+    "label": "OpenAI gpt-5.5 baseline",
+    "model": "claude-opus-4-8",
+    "generationVendor": "openai",
+    "generationModel": "gpt-5.5",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "218d32ce56fc",
+      "files": {
+        "server/utils/ai/generate-outline.js": "21f6b93d96bc",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cloudflare-nov-2025-outage"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.67,
+      "structure": 4.67,
+      "slideEconomy": 3.67,
+      "faithfulness": 4.67,
+      "presentability": 4,
+      "humanLikeness": 4
+    },
+    "overall": 4.34,
+    "costUsd": 2.354
+  },
+  {
+    "runId": "2026-07-18_17-04-12",
+    "startedAt": "2026-07-18T17:04:12.384Z",
+    "label": "OpenAI round 4: no-fact-twice rule",
+    "model": "claude-opus-4-8",
+    "generationVendor": "openai",
+    "generationModel": "gpt-5.5",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "12facb0ab6cf",
+      "files": {
+        "server/utils/ai/generate-outline.js": "49b1a0a0886b",
+        "server/utils/ai/refine-slides.js": "1509e428d953",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "asml-q4-2024",
+      "cbs-persbericht-criminaliteit",
+      "cloudflare-nov-2025-outage"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4,
+      "structure": 4.33,
+      "slideEconomy": 3.67,
+      "faithfulness": 4.33,
+      "presentability": 4,
+      "humanLikeness": 3
+    },
+    "overall": 4.07,
+    "costUsd": 2.2192
+  },
+  {
+    "runId": "2026-07-18_20-42-14",
+    "startedAt": "2026-07-18T20:42:14.060Z",
+    "label": "specialised layout probes (revision on)",
+    "model": "claude-opus-4-8",
+    "generationVendor": "openai",
+    "generationModel": "gpt-5.5",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "2fc50a04f013",
+      "files": {
+        "server/utils/ai/generate-outline.js": "21f6b93d96bc",
+        "server/utils/ai/refine-slides.js": "14fa693a6cc0",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "8b5286bde4a8",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "e10bdb128912",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "probe-causal-icons-quote",
+      "probe-process-timeline",
+      "probe-table-chart"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.33,
+      "structure": 4.67,
+      "slideEconomy": 3.67,
+      "faithfulness": 4,
+      "presentability": 3.67,
+      "humanLikeness": null
+    },
+    "overall": 4.07,
+    "costUsd": 1.4679
+  },
+  {
+    "runId": "2026-07-18_21-06-56",
+    "startedAt": "2026-07-18T21:06:56.034Z",
+    "label": "layout triggers: process vs text-blocks disambiguated",
+    "model": "claude-opus-4-8",
+    "generationVendor": "openai",
+    "generationModel": "gpt-5.5",
+    "effort": "high",
+    "promptVersion": {
+      "hash": "e9256c5e0e40",
+      "files": {
+        "server/utils/ai/generate-outline.js": "21f6b93d96bc",
+        "server/utils/ai/refine-slides.js": "14fa693a6cc0",
+        "server/utils/ai/slide-catalog/basic-content-slides.js": "abf2bd705f5d",
+        "server/utils/ai/slide-catalog/builders.js": "46e285b0b91c",
+        "server/utils/ai/slide-catalog/card-slides.js": "e328e570f26e",
+        "server/utils/ai/slide-catalog/content-slides.js": "0e1479f1949f",
+        "server/utils/ai/slide-catalog/diagram-slides.js": "9d9a3e8e1a73",
+        "server/utils/ai/slide-catalog/examples/basic-slides.js": "9ce12e80c7bd",
+        "server/utils/ai/slide-catalog/examples/card-slides.js": "cde7773792e4",
+        "server/utils/ai/slide-catalog/examples/data-slides.js": "ef5bb57d93f5",
+        "server/utils/ai/slide-catalog/examples/diagram-slides.js": "bb121a1ab324",
+        "server/utils/ai/slide-catalog/examples/index.js": "75f6f72ea9d2",
+        "server/utils/ai/slide-catalog/examples/text-blocks-slide.js": "6198c8084629",
+        "server/utils/ai/slide-catalog/global-options.js": "430c6582bb76",
+        "server/utils/ai/slide-catalog/interactive-slides.js": "04258557c1d6",
+        "server/utils/ai/slide-catalog/media-slides.js": "b340509360f7",
+        "server/utils/ai/slide-catalog/people-slides.js": "b8af865c769c",
+        "server/utils/ai/slide-catalog/structural-slides.js": "bf88eff29597",
+        "server/utils/ai/slide-catalog/visual-content-slides.js": "3b748bc2de6d"
+      }
+    },
+    "caseIds": [
+      "probe-causal-icons-quote",
+      "probe-process-timeline",
+      "probe-table-chart"
+    ],
+    "repeats": 1,
+    "dryRun": false,
+    "scores": {
+      "coverage": 4.67,
+      "structure": 4.33,
+      "slideEconomy": 3.33,
+      "faithfulness": 4,
+      "presentability": 4,
+      "humanLikeness": null
+    },
+    "overall": 4.07,
+    "costUsd": 1.3512
+  }
+]

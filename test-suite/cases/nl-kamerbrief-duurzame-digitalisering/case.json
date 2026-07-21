@@ -1,0 +1,22 @@
+{
+  "id": "nl-kamerbrief-duurzame-digitalisering",
+  "title": "Kamerbrief Actieprogramma Duurzame Digitalisering 2026-2028",
+  "category": "B",
+  "language": "nl",
+  "domain": "government policy",
+  "structure": "prose",
+  "note": "The deliberately unstructured case: a flowing ministerial letter with almost no headings. Tests whether the pipeline imposes structure the source does not supply.",
+  "sources": [
+    {
+      "url": "https://open.overheid.nl/documenten/eaf7c9d2-f284-4df8-bde8-6720fc997faf/file",
+      "file": "kamerbrief.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "Rijksoverheid / open.overheid.nl -- public-domain equivalent (Wet hergebruik overheidsinformatie).",
+  "expectedCharacteristics": [
+    "Imposes an arc (aanleiding -> kern -> vervolgstappen) on a letter that has no headings",
+    "Turns prose sentences into discrete bullets without inventing numbered action items that are not in the letter",
+    "Preserves the formal register and correct actor attribution (minister, ministerie, Tweede Kamer)"
+  ]
+}

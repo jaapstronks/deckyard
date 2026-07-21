@@ -1,0 +1,22 @@
+{
+  "id": "cbs-veiligheidsmonitor-2025",
+  "title": "Veiligheidsmonitor 2025 (CBS / Ministerie van JenV)",
+  "category": "B",
+  "language": "nl",
+  "domain": "official statistics / public safety",
+  "structure": "structured",
+  "note": "The long half of the pair with cbs-persbericht-criminaliteit. 127 pages: the long-context stress test.",
+  "sources": [
+    {
+      "url": "https://download.cbs.nl/maatwerk/Veiligheidsmonitor%202025%20_%20CBS.pdf",
+      "file": "veiligheidsmonitor-2025.pdf",
+      "type": "pdf"
+    }
+  ],
+  "licence": "CBS content is reusable with source attribution ('Bron: CBS').",
+  "expectedCharacteristics": [
+    "Converges on the same headline numbers the CBS press release chose, out of 127 pages of tables",
+    "Reports the trend (stability after the earlier rise) rather than enumerating chapters",
+    "Does not degenerate into a table of contents of the report's structure"
+  ]
+}

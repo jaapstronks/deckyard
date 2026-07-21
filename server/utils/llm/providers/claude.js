@@ -1,4 +1,5 @@
 import { createLlmProvider } from '../provider-base.js';
+import { normalizeUsage } from '../usage.js';
 
 /**
  * Extract text content from Claude's response format
@@ -78,5 +79,12 @@ export const requestClaudeMessagesContent = createLlmProvider({
       parsed = null;
     }
     return coerceClaudeText(parsed) || '';
+  },
+  parseUsage: (bodyText) => {
+    try {
+      return normalizeUsage(JSON.parse(bodyText)?.usage);
+    } catch {
+      return null;
+    }
   },
 });

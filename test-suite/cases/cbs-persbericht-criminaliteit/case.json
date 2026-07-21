@@ -1,0 +1,22 @@
+{
+  "id": "cbs-persbericht-criminaliteit",
+  "title": "CBS persbericht: traditionele criminaliteit gelijk gebleven",
+  "category": "B",
+  "language": "nl",
+  "domain": "official statistics / public safety",
+  "structure": "structured",
+  "note": "The short half of a deliberate pair with cbs-veiligheidsmonitor-2025: same underlying findings, ~700 words versus 127 pages. A deck from the long source should land on roughly the same headline message as a deck from this one; divergence means the pipeline is drowning in long context.",
+  "sources": [
+    {
+      "url": "https://www.cbs.nl/nl-nl/nieuws/2026/10/traditionele-criminaliteit-zoals-diefstal-en-geweld-gelijk-gebleven",
+      "file": "persbericht.html",
+      "type": "html"
+    }
+  ],
+  "licence": "CBS content is reusable with source attribution ('Bron: CBS').",
+  "expectedCharacteristics": [
+    "Leads on the headline victim percentages for traditional and online crime",
+    "Frames stability as the story rather than listing every figure",
+    "Stays in Dutch with correct Dutch number and percentage conventions, crediting CBS"
+  ]
+}
