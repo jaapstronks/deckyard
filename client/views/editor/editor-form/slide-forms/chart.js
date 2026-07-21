@@ -3,9 +3,10 @@ import { createCsvGridEditor } from '../../fields/csv-grid.js';
 
 /**
  * Chart configuration controls: type, the data editor (CSV/TSV textarea with
- * import + example) and the per-type display toggles. Shared between the full
- * content form below and the phase-3 inspector (which renders ONLY this
- * config; the text and axis-label fields live in the bulk modal).
+ * import + example), the per-type display toggles and the per-type axis/series
+ * labels. Shared between the full content form below and the phase-3 inspector
+ * (which renders ONLY this config; the title/subheading text stays in the
+ * bulk modal, but axis/series labels render here in both surfaces).
  */
 export function renderChartConfigControls({
   h,

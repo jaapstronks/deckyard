@@ -208,8 +208,8 @@ export function renderInspectorExtrasByType(ctx) {
 
   switch (slide.type) {
     case 'chart-slide':
-      // chartType + data editor + per-type display toggles, exactly like the
-      // form's config half (axis/series labels stay bulk-modal-only).
+      // chartType + data editor + per-type display toggles + axis/series
+      // labels, exactly like the form's config half (one shared code path).
       renderChartConfigControls({
         h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
         markDirty, rerenderEditor, scheduleUiRefresh,
