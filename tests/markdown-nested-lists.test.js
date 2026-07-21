@@ -29,7 +29,7 @@ function decode(html) {
 // on structure, e.g. "<ul><li>...<ul><li>...".
 function skeleton(html) {
   return decode(html)
-    .replace(/<(ul|ol|li)[^>]*>/g, '<$1>')
+    .replace(/<(ul|ol|li|p|h3)[^>]*>/g, '<$1>')
     .replace(/\s+/g, ' ');
 }
 
@@ -79,5 +79,34 @@ describe('markdown nested lists', () => {
       html.includes('<ol><li>First<ul><li>detail</li></ul></li><li>Second</li></ol>'),
       `unexpected structure: ${html}`
     );
+  });
+});
+
+describe('unsupported heading levels (#, ###)', () => {
+  // Regression guard: these lines used to spin markdownToSafeHtml in an
+  // infinite loop — the paragraph pass refused to consume `#{1,3}` lines but
+  // nothing else consumed them either, so the line cursor never advanced.
+  // The test completing at all is the point; the structure asserts are bonus.
+  it('renders a single-# line as a plain paragraph (and terminates)', () => {
+    const html = skeleton(markdownToSafeHtml('# not a heading'));
+    assert.ok(
+      html.includes('<p># not a heading</p>'),
+      `unexpected structure: ${html}`
+    );
+  });
+
+  it('renders a ### line as a plain paragraph (and terminates)', () => {
+    const html = skeleton(markdownToSafeHtml('### also not a heading'));
+    assert.ok(
+      html.includes('<p>### also not a heading</p>'),
+      `unexpected structure: ${html}`
+    );
+  });
+
+  it('keeps ## working as the one supported heading, surrounded by # lines', () => {
+    const html = skeleton(markdownToSafeHtml('# a\n\n## real\n\n### b'));
+    assert.ok(html.includes('<h3>real</h3>'), `unexpected structure: ${html}`);
+    assert.ok(html.includes('<p># a</p>'), `unexpected structure: ${html}`);
+    assert.ok(html.includes('<p>### b</p>'), `unexpected structure: ${html}`);
   });
 });

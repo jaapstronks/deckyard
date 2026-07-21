@@ -25,7 +25,9 @@ import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
 } from './editor-form/inspector-form.js';
+import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
 import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { detectBgTextContrast } from '../../lib/bg-contrast.js';
@@ -108,6 +110,12 @@ function storeBgSectionOpen(open) {
 function elementAppliesToSlide(slide, sel) {
   if (!slide || !sel) return false;
   const c = slide.content || {};
+  // Any text field the user selected on this slide is stylable (block-level
+  // alignment/colour, editing-surfaces text step 3). The selection is cleared
+  // on slide change, so a non-empty fieldKey is enough — no schema lookup.
+  if (sel.kind === 'text') {
+    return typeof sel.fieldKey === 'string' && sel.fieldKey.length > 0;
+  }
   if (sel.kind === 'image') {
     const inList = (key) =>
       Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
@@ -143,6 +151,7 @@ function elementAppliesToSlide(slide, sel) {
 function elementTabLabel(sel) {
   if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
   if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
+  if (sel?.kind === 'text') return t('editor.inspector.tab.text', 'This text');
   return t('editor.inspector.tab.element', 'This element');
 }
 
@@ -1022,17 +1031,39 @@ export function createRerenderEditor({
       aiIteratePanel = iteratePanel;
     }
 
-    // Accessibility fields (global) are tucked behind a toggle
+    // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
+    // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present
+    // announce a slide by its own heading and only fall back to a11yTitle when
+    // set (server/export/html.js slideA11yLabel). So an empty section does NOT
+    // mean "undescribed" — the summary reflects the honest state instead of
+    // nagging, and force-opens only when a custom override exists.
     const hasA11yValue =
       Boolean(String(slide?.content?.a11yTitle || '').trim()) ||
       Boolean(String(slide?.content?.a11ySummary || '').trim());
-    const a11yDetails = h('details', { class: 'editor-advanced' });
+    // Heading proxy: the visible h1 is the slide's `title` for every core type
+    // that has one; types without a title (payoff, follow-invite, freeform,
+    // quote, …) announce as bare "Slide N of M" until an a11yTitle is set —
+    // exactly where the override earns its keep, so those get the nudge.
+    const hasHeading = Boolean(String(slide?.content?.title || '').trim());
+    const a11yState = hasA11yValue ? 'custom' : hasHeading ? 'auto' : 'no-heading';
+    const a11yDetails = h('details', { class: 'editor-advanced editor-a11y-section' });
     if (hasA11yValue) a11yDetails.open = true;
+    const a11yStatusText = {
+      custom: t('editor.slide.accessibility.status.custom', 'custom description'),
+      auto: t('editor.slide.accessibility.status.auto', 'auto (from the heading)'),
+      'no-heading': t('editor.slide.accessibility.status.noHeading', 'no heading — add a title'),
+    }[a11yState];
     const a11ySummary = h('summary', {
       class: 'editor-advanced-summary',
-      text: t('editor.slide.accessibility', 'Accessibility'),
       title: t('editor.slide.accessibility.title', 'Optional fields to improve screen-reader output and exports.'),
     });
+    a11ySummary.append(
+      h('span', { text: t('editor.slide.accessibility', 'Accessibility') }),
+      h('span', {
+        class: `editor-a11y-status is-${a11yState}`,
+        text: a11yStatusText,
+      })
+    );
     const a11yBody = h('div', { class: 'editor-advanced-body' });
     a11yDetails.append(a11ySummary, a11yBody);
 
@@ -1059,6 +1090,13 @@ export function createRerenderEditor({
     // top-level colour dropdown and a collapsed "Background & logo" panel).
     // Sticky open preference (default open); force-open when a non-default
     // image/logo is set so active settings are never hidden.
+    // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
+    // slideBgImage before the Background section reads it, so the shared picker
+    // shows the (now single) background and the legacy render fallback stops
+    // firing. Idempotent; inspector mode only (the bulk modal never renders bg).
+    if (!contentOnly && slide?.type === 'title-slide') {
+      ensureTitleSlideBackground(slide.content);
+    }
     const hasBgImage = Boolean(String(slide?.content?.slideBgImage || '').trim());
     const hasCornerLogo = slide?.content?.slideLogo === 'top-right';
     const bgDetails = h('details', { class: 'editor-advanced editor-bg-section' });
@@ -1286,6 +1324,21 @@ export function createRerenderEditor({
       // (chart config, focus pickers, per-card icon/link, per-column image
       // settings); the loop below renders the remaining keeps.
       renderInspectorExtrasByType(formTypeCtx);
+      // Type-agnostic: a selected text field gets a "This text" element tab
+      // with block-level alignment/colour (editing-surfaces text step 3).
+      if (elementActive && selectedElement?.kind === 'text') {
+        renderTextElementCard({
+          h,
+          container: elementForm,
+          slide,
+          fieldKey: selectedElement.fieldKey,
+          theme,
+          fieldRenderers: { fieldEnum },
+          markDirty,
+          rerenderPreview,
+          scheduleUiRefresh,
+        });
+      }
     }
 
     // Add any remaining fields not handled above. In inspector mode add()

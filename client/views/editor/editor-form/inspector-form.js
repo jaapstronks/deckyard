@@ -16,7 +16,10 @@ import {
   resolveContentColumnImage,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/content-columns-images.js';
-import { renderImageTextImagesSection } from './slide-forms/image-text-images.js';
+import {
+  renderImageTextCellCard,
+  renderImageTextCollectionSection,
+} from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
 /**
@@ -38,23 +41,41 @@ import { renderImageElementCard } from './image-element-card.js';
  *
  * Keys handled by the shared Background/Accessibility sections are not listed.
  */
+// Coverage-audit rule (editing-surfaces §"Status: per-type coverage audit",
+// re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + bulk modal;
+// SETTINGS/CONFIG/METADATA may never be bulk-only — a field the user cannot
+// point at on the canvas (URLs, config texts, alt/bg images) must render in
+// the inspector. The 2026-07-21 additions below restore exactly the fields
+// the 2026-07-16 audit had parked in its "Bulk modal (only home)" column.
 const INSPECTOR_KEEPS = {
+  // The title background is now the shared slideBgImage (rendered by the
+  // Background section); the type's own bgImage/bgAlt were removed
+  // (title-bg-unification). logoCorner is the only title-specific keep.
   'title-slide': ['logoCorner'],
   'chapter-title-slide': ['layout'],
-  'content-slide': ['layout', 'density'],
+  // actions: CTA buttons (label/url/style) have no canvas surface — config.
+  'content-slide': ['layout', 'density', 'actions'],
   'table-slide': ['headerRow', 'tableStyle', 'animateByCell'],
   'list-slide': ['variant', 'layout', 'density'],
   'lijstje-slide': ['variant', 'layout', 'density'],
   'kpi-metrics-slide': ['accent', 'countUp'],
-  'split-partner-title-slide': [],
+  // Partner logos manager + per-logo alts + the split-specific bg image:
+  // none had a canvas surface — were bulk-only (audit 2026-07-21).
+  'split-partner-title-slide': ['logos', 'logo1Alt', 'logo2Alt', 'logo3Alt',
+    'logo4Alt', 'logo5Alt', 'bgImage', 'bgAlt'],
   // `layout` (structural variant) is intentionally NOT kept: the toolbar
   // "Layout" chip is its canonical control in the inspector. textColumns /
   // imageSide stay as precise, distinctly-named sub-settings.
   // `imageFit` is intentionally absent since datamodel step 2b: fit is a
   // per-image ImageRef property (images manager / "This image"), no longer a
   // writable slide-level setting.
-  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground'],
-  'video-slide': ['autoplay'],
+  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground', 'actions'],
+  // `source` and `bunnyLibraryId` were misclassified as content at the
+  // phase-3 audit: a video URL/ID is a discrete input you cannot edit on the
+  // canvas (the descriptor only inline-edits the title), so leaving them out
+  // orphaned them to the bulk modal — a parity-invariant violation. They are
+  // inspector material (editing-surfaces decision 2026-07-21).
+  'video-slide': ['source', 'autoplay', 'bunnyLibraryId'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],
   'card-stack-slide': ['cardCount'],
@@ -63,17 +84,31 @@ const INSPECTOR_KEEPS = {
   'quote-slide': [],
   // `layout` is intentionally absent since datamodel step 3: the conflated
   // enum split into the ImageRef axes `fit` + `bleed` (rendered via
-  // appendImageSlideFitControls, not the generic keeps loop).
+  // appendImageSlideFitControls, not the generic keeps loop). Since the
+  // editing-surfaces tab split ALL of these render in the "This image"
+  // element tab only — the single image is the element; the slide form
+  // carries just Background/Accessibility.
   'image-slide': ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
-  'embed-slide': ['aspectRatio', 'sandbox'],
-  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
-  'poll-slide': ['onClose'],
-  'likert-slide': ['onClose'],
+  // `embedUrl`: same misclassification as video-slide's `source` — the embed
+  // URL had no surface besides the bulk modal.
+  'embed-slide': ['embedUrl', 'aspectRatio', 'sandbox'],
+  // zeroText: shown only when the timer hits zero — config, no canvas surface.
+  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart',
+    'flashOnZero', 'soundOnZero', 'zeroText'],
+  // onCloseTarget: companion of the kept onClose enum — was bulk-only.
+  'poll-slide': ['onClose', 'onCloseTarget'],
+  'likert-slide': ['onClose', 'onCloseTarget'],
   'likert-slider-slide': [],
-  'feedback-slide': [],
-  'lead-capture-slide': [],
+  // placeholder: input placeholder — config, not canvas-editable text.
+  'feedback-slide': ['placeholder'],
+  // Thank-you state + privacy line are invisible on the canvas pre-submit —
+  // config texts, were bulk-only (audit 2026-07-21).
+  'lead-capture-slide': ['thankYouTitle', 'thankYouMessage', 'privacyText', 'privacyUrl'],
   'follow-invite-slide': [],
-  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode'],
+  // Axis/series labels render on the chart but are not inline-editable —
+  // chart config, were bulk-only (audit 2026-07-21).
+  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode',
+    'xLabel', 'yLabel', 'series1Label', 'series2Label'],
   'text-blocks-slide': [],
   'content-columns-slide': ['columnCount'],
   'comparison-slide': [],
@@ -86,7 +121,9 @@ const INSPECTOR_KEEPS = {
   'gallery-slide': ['layout'],
   'freeform-slide': ['snapToGrid'],
   'custom-html-slide': [],
-  'end-slide': [],
+  // Contact/social URLs and labels have no canvas surface (the canvas
+  // inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).
+  'end-slide': ['contactUrl', 'social1Label', 'social1Url', 'social2Label', 'social2Url'],
 };
 
 /**
@@ -172,8 +209,8 @@ export function renderInspectorExtrasByType(ctx) {
 
   switch (slide.type) {
     case 'chart-slide':
-      // chartType + data editor + per-type display toggles, exactly like the
-      // form's config half (axis/series labels stay bulk-modal-only).
+      // chartType + data editor + per-type display toggles + axis/series
+      // labels, exactly like the form's config half (one shared code path).
       renderChartConfigControls({
         h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
         markDirty, rerenderEditor, scheduleUiRefresh,
@@ -181,67 +218,87 @@ export function renderInspectorExtrasByType(ctx) {
       return;
 
     case 'image-slide': {
-      // The single image is the element: with it selected, all of its controls
-      // (replace/alt, role, fit/bleed, focus grid, zoom) live in the element
-      // tab; otherwise they render in the slide form as before. Rendering also
-      // folds the legacy `layout` into fit + bleed (datamodel step 3).
+      // The single image IS the element (editing-surfaces tab split): ALL of
+      // its controls (replace/alt, role, fit/bleed, focus, zoom) live in the
+      // "This image" element tab, reached by clicking the image. The slide
+      // form — the no-selection view AND the Slide tab, identical by
+      // construction — carries only slide-wide settings (Background,
+      // Accessibility). Rendering also folds the legacy `layout` into
+      // fit + bleed (datamodel step 3).
       ensureImageSlideImage(slide?.content);
-      const imageSelected = selectedElement?.kind === 'image';
-      const target = imageSelected ? elementForm : form;
-      // Replace / alt / focus grid (cover) at the top of the element tab.
-      if (imageSelected) renderSelectedImageCard(elementForm);
-      renderKeyInto(target, 'imageRole');
-      appendImageSlideFitControls({
-        h, form: target, slide, used,
-        fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
-        markDirty, scheduleUiRefresh,
-      });
-      const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
-      // Contain-mode (centered) alignment stays here; the cover focus grid is
-      // rendered by the shared card above, so this is a no-op in cover mode.
-      appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
-      appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
-      target.append(imgSection);
+      if (selectedElement?.kind === 'image') {
+        // Replace / alt / focus grid (cover) at the top of the element tab.
+        renderSelectedImageCard(elementForm);
+        renderKeyInto(elementForm, 'imageRole');
+        appendImageSlideFitControls({
+          h, form: elementForm, slide, used,
+          fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
+          markDirty, scheduleUiRefresh,
+        });
+        const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
+        // Contain-mode (centered) alignment stays here; the cover focus grid
+        // is rendered by the shared card above, so this is a no-op in cover
+        // mode.
+        appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
+        appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
+        elementForm.append(imgSection);
+      } else {
+        // No selection: the element-only keys must not leak into the slide
+        // form via the generic keeps loop.
+        for (const key of ['imageRole', 'fit', 'bleed', 'layout', 'focusX', 'focusY',
+          'zoomSteps', 'zoomLevel', 'zoomPositions']) {
+          used.add(key);
+        }
+      }
       return;
     }
 
     case 'image-text-slide': {
-      // Image controls (role, per-image alt/fit/focus, image-area layout) move
-      // to the element tab when an image is selected; density stays slide-wide.
-      const target = selectedElement?.kind === 'image' ? elementForm : form;
-      renderKeyInto(target, 'imageRole');
-      add('density');
-      // Images manager (images[], phase 2): the canvas media popover covers
-      // pick/change per cell; this section adds per-image alt/fit/focus,
-      // reorder, and the row model's third image. Rendering it also migrates
-      // legacy flat content and pads items to the layout's cell count.
+      // Editing-surfaces tab split: the "This image" tab carries ONLY the
+      // selected cell's card (picker/alt/fit/focus); the slide form — the
+      // no-selection view AND the Slide tab, identical by construction —
+      // carries the slide-wide settings: role (applies to all cells),
+      // density, the slim image collection (add/reorder — no per-image
+      // settings) and the layout options, flat.
       const { fieldText, fieldEnum, fieldImage } = fieldRenderers || {};
-      const imagesSection = renderImageTextImagesSection({
+      if (selectedElement?.kind === 'image') {
+        const cellCard = renderImageTextCellCard({
+          h,
+          slide,
+          used,
+          idx: selectedElement.idx,
+          fieldGrid,
+          fieldText,
+          fieldEnum,
+          fieldImage,
+          markDirty,
+          rerenderEditor,
+          scheduleUiRefresh,
+        });
+        if (cellCard) elementForm.append(cellCard);
+      }
+      renderKeyInto(form, 'imageRole');
+      add('density');
+      // Slide-level collection management (option a of the tab-split plan):
+      // thumbnails + add/reorder/remove, per-image settings deliberately
+      // excluded (they live in the element tab — one home per setting).
+      const collectionSection = renderImageTextCollectionSection({
         h,
         slide,
         used,
-        fieldGrid,
-        fieldText,
-        fieldEnum,
-        fieldImage,
         markDirty,
         rerenderEditor,
         scheduleUiRefresh,
       });
-      if (imagesSection) {
-        const section = collapsibleGroup(
-          h,
-          t('editor.imageText.images', 'Images')
-        );
-        // Marked so the canvas image's "Settings" chip can scroll here.
-        section.el.setAttribute('data-inspector-section', 'image');
-        section.body.append(imagesSection);
-        target.append(section.el);
+      if (collectionSection) {
+        collectionSection.setAttribute('data-inspector-section', 'image');
+        form.append(collectionSection);
       }
       appendImageTextLayoutOptions({
-        h, form: target, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
+        h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
         // Inspector: the toolbar "Layout" chip owns the structural variant.
         hideLayoutField: true,
+        flat: true,
       });
       return;
     }

@@ -393,6 +393,21 @@
   background: var(--sb-swatch);
   box-shadow: 0 0 0 1px hsl(var(--app-border-default));
 }
+
+/* "This text" colour control: labelled swatch chips that wrap onto a second
+   row when the theme adds on-brand swatches (title-bg text-palette feature). */
+.sb-segmented.tf-color-swatches {
+  flex-wrap: wrap;
+}
+.sb-segmented.tf-color-swatches .sb-segmented-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.sb-swatch-label {
+  font-size: 12px;
+}
 .sb-swatch.sb-swatch-transparent {
   background:
     linear-gradient(
@@ -657,6 +672,40 @@
   border-radius: 10px 10px 0 0;
 }
 
+/* Accessibility section status chip: makes the "is this slide described for
+   screen readers?" state legible without opening the drawer. a11yTitle is an
+   override, so `auto` (announced by the slide's own heading) is the neutral
+   normal state; `custom` confirms an override; `no-heading` is the one case
+   that actually warrants a nudge. */
+.editor-a11y-status {
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.editor-a11y-status.is-auto {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-text-secondary) / 0.1);
+}
+.editor-a11y-status.is-custom {
+  color: hsl(var(--app-success));
+  background: hsl(var(--app-success) / 0.14);
+}
+.editor-a11y-status.is-custom::before {
+  content: '✓ ';
+}
+/* Warning yellow is too light as text; use a darker amber for the label and
+   the soft warning tint for the chip. */
+.editor-a11y-status.is-no-heading {
+  color: hsl(35 88% 36%);
+  background: hsl(var(--app-warning) / 0.16);
+}
+.editor-a11y-status.is-no-heading::before {
+  content: '⚠ ';
+}
+
 .editor-form-header {
   align-items: center;
   flex-wrap: wrap;
@@ -835,6 +884,18 @@
   background: hsl(var(--app-surface-white));
   border-radius: 10px;
   border: 1px solid hsl(var(--app-border-default));
+}
+
+/* Slim image-collection rows (inspector Slide tab): thumbnail + label +
+   reorder controls, no per-image settings. */
+.editor-collection-thumb {
+  width: 56px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
 }
 
 .editor-toggle-row {

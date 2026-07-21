@@ -107,9 +107,24 @@ renderer lacks the field.
   commits, Escape cancels; `maxLength` and single-line are enforced. Commit
   writes to content, syncs the side surface (`rerenderEditor`, thumb-safe),
   saves.
-- **Markdown** → modal (`.ie-md-modal`) reusing the canonical markdown
-  editor from `fields/basic.js` (`fieldMarkdown`, full toolbar) over a
-  dimmed backdrop - reads as a separate mode.
+- **Markdown** → in-place rich `contentEditable` on the RENDERED block
+  (editing-surfaces text phase, 2026-07-21): the commit serializes the
+  edited DOM back to dialect markdown via
+  `client/lib/markdown-serialize.js`. Gated per edit by
+  `canInlineEditMarkdown`: the content must avoid modal-only constructs
+  (tables, code, math) AND the serializer must provably round-trip it
+  (`render(serialize(render(raw))) === render(raw)`); anything that fails
+  the gate keeps the modal below. During the edit: Enter = new
+  paragraph/list item (browser default), Cmd/Ctrl+Enter commits, Escape
+  cancels, Cmd/Ctrl+B/I toggle bold/italic, paste is forced to plain text.
+  "Changed?" is judged against the serialization of the untouched render
+  (the serializer normalizes list numbering/whitespace), so
+  click-in-click-out never dirties the deck. Known dialect limitation:
+  there is no escape syntax, so literal `*asterisks*` italicize on the
+  next render — same as typing them in the modal.
+- **Markdown (modal fallback)** → modal (`.ie-md-modal`) reusing the
+  canonical markdown editor from `fields/basic.js` (`fieldMarkdown`, full
+  toolbar) over a dimmed backdrop - for content the in-place gate refuses.
 - **CSV / chart data** → modal (`.ie-md-modal.is-csv`, `openCsvModal`)
   reusing the same modal chrome as markdown but hosting the shared grid
   editor (`fields/csv-grid.js`, chart-type-aware grid + Raw CSV toggle).

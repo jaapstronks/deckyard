@@ -10,6 +10,7 @@ import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
+import { injectTextStyles } from './text-styles.js';
 
 function enumOptionValues(field) {
   const opts = Array.isArray(field?.options) ? field.options : [];
@@ -261,6 +262,10 @@ export function renderSlideHtml(slide, ctx = {}) {
   // is a filtered view, so unlocking restores every slide's own value.
   const content = applyLocksToContent(slide?.content || {}, ctx?.theme);
   let out = def.renderHtml(content, slide, ctx);
+  // Per-field block-level text styling (alignment/colour): adds tf-* classes
+  // to the matching data-inline-field element. Runs on the type's own output
+  // (its field elements), before the slide-wrapper injections below.
+  out = injectTextStyles(out, content);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);
   return out;

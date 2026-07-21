@@ -108,7 +108,6 @@ export async function generateDeckJsonFromRawContent(
     '  - Alternate imageSide left/right across multiple image-text-slide(s) for variety.',
     '  - If you cannot provide a real image URL, you MUST still provide a valid placeholder URL: "/assets/images/backgrounds/demo-aurora.jpg".',
     '  - Add a clear TODO marker in the body (last bullet) so the user knows to replace the image, e.g. "- TODO: replace image".',
-    '- Do NOT use split-partner-title-slide unless the input explicitly provides partner logo URLs (logos is required).',
     '',
     'Card slides (IMPORTANT):',
     '- Use card slides when the content naturally forms 4–6 parallel items of the SAME kind (pillars, principles, workstreams, categories).',

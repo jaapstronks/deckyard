@@ -1,0 +1,67 @@
+/* Per-field block-level text styling (editing-surfaces text phase, step 3).
+   Emitted by shared/slide-types/text-styles.js as tf-* classes on the
+   element carrying data-inline-field: alignment, colour and SIZE.
+
+   Scoped under [data-inline-field] so these only ever touch real editable
+   fields, and kept low-specificity (one class) — a type's own alignment for
+   a field can still win via a more specific selector where intended. */
+
+[data-inline-field].tf-align-left {
+  text-align: left;
+}
+[data-inline-field].tf-align-center {
+  text-align: center;
+}
+[data-inline-field].tf-align-right {
+  text-align: right;
+}
+
+/* Colour overrides use theme TOKENS (not raw hex) so a deck stays legible
+   when the theme changes.
+
+   `muted` is derived from currentColor — the field's inherited (default) text
+   colour — NOT a fixed light-theme grey. That keeps it band-aware: on a light
+   slide currentColor is dark → a mid-grey; on a dark band (quote/chapter, whose
+   text is white via --quote-text-color and which bypass the --color-text
+   system) currentColor is white → a dimmed white. A fixed --t-color-text-muted
+   would render dark-grey-on-dark-purple (~1.5:1, unreadable) there. The 72%
+   mix mirrors the house --slide-bg-text-muted convention.
+
+   (A former `inverse` = --t-color-background token was dropped: on text that
+   sits directly on the slide background it is invisible by construction.) */
+[data-inline-field].tf-color-muted {
+  color: color-mix(in srgb, currentColor 72%, transparent);
+}
+[data-inline-field].tf-color-accent {
+  color: var(--t-color-accent, currentColor);
+}
+
+/* Theme text-palette swatches (title-bg text-palette feature). Fixed slots so
+   the CSS stays static; a theme opts a slot in by declaring --t-color-brand-N
+   and listing it in theme.textSwatches. The currentColor fallback makes an
+   undeclared token a no-op, so a deck carrying brand-N stays legible (falls
+   back to the default text colour) on a theme that never defined it. */
+[data-inline-field].tf-color-brand-1 {
+  color: var(--t-color-brand-1, currentColor);
+}
+[data-inline-field].tf-color-brand-2 {
+  color: var(--t-color-brand-2, currentColor);
+}
+[data-inline-field].tf-color-brand-3 {
+  color: var(--t-color-brand-3, currentColor);
+}
+
+/* Size scale. tf-size-* only SET the custom property here; the actual
+   scaling lives per type, where each primary text element expresses its
+   font-size as calc(<base> * var(--tf-size-scale, 1)). `md` is the default
+   and emits no class, so its font-size falls back to scale 1. This keeps
+   the hard px sizes several types set (content body 28/25/22px per density)
+   as the base being scaled, instead of a plain em multiplier replacing them
+   with a fraction of the parent size. Which types scale is documented in
+   docs/reference/editor-inspector.md. */
+[data-inline-field].tf-size-sm {
+  --tf-size-scale: 0.85;
+}
+[data-inline-field].tf-size-lg {
+  --tf-size-scale: 1.2;
+}

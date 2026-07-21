@@ -50,7 +50,9 @@ export async function resolveSlideImages(slides, opts = {}) {
 /**
  * Image field keys that may contain image URLs across all slide types.
  */
-const IMAGE_FIELDS = ['image', 'bgImage'];
+// `slideBgImage` is the canonical per-slide background (title-bg-unification);
+// `bgImage` stays for legacy/custom (e.g. ciiic-title-slide) imports.
+const IMAGE_FIELDS = ['image', 'slideBgImage', 'bgImage'];
 
 /**
  * Resolve a single image reference.

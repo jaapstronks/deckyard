@@ -176,10 +176,9 @@ export function appendImageZoomSettings({
 }
 
 /**
- * Layout options (side/width/background) for image-text-slide, in a
- * collapsible section. Shared between the content form and the phase-3
- * inspector. Fit and focus are per-image (ImageRef) and live in the images
- * manager.
+ * Layout options (side/width/background) for image-text-slide. Shared between
+ * the content form and the phase-3 inspector. Fit and focus are per-image
+ * (ImageRef) and live in the per-image surfaces.
  */
 export function appendImageTextLayoutOptions({
   h,
@@ -195,6 +194,11 @@ export function appendImageTextLayoutOptions({
   // for the structural variant there, so the duplicate enum is dropped. The
   // bulk "Edit all text" modal has no chip, so it keeps the enum (parity).
   hideLayoutField = false,
+  // Inspector passes true: after the tab split the Slide tab carries few
+  // enough settings that hiding these behind a collapsed toggle costs more
+  // than it saves — render them flat under a plain label. The bulk modal
+  // keeps the collapsible (it lists every content field too).
+  flat = false,
 } = {}) {
   const layoutField = fieldByKey.get('layout');
   const textColsField = fieldByKey.get('textColumns');
@@ -217,13 +221,23 @@ export function appendImageTextLayoutOptions({
   used.add('focusX');
   used.add('focusY');
 
-  const layoutDetails = h('details', { class: 'editor-advanced' });
-  const layoutSummary = h('summary', {
-    class: 'editor-advanced-summary',
-    text: t('editor.slide.layoutSettings', 'Layout options'),
-  });
-  const layoutBody = h('div', { class: 'editor-advanced-body' });
-  layoutDetails.append(layoutSummary, layoutBody);
+  let layoutDetails;
+  let layoutBody;
+  if (flat) {
+    layoutBody = h('div', { class: 'stack' });
+    layoutBody.append(
+      h('div', { class: 'field-label', text: t('editor.slide.layoutSettings', 'Layout options') })
+    );
+    layoutDetails = layoutBody;
+  } else {
+    layoutDetails = h('details', { class: 'editor-advanced' });
+    const layoutSummary = h('summary', {
+      class: 'editor-advanced-summary',
+      text: t('editor.slide.layoutSettings', 'Layout options'),
+    });
+    layoutBody = h('div', { class: 'editor-advanced-body' });
+    layoutDetails.append(layoutSummary, layoutBody);
+  }
 
   // Layout variant (split vs corner). The toolbar's "Layout" chip is the
   // canonical control, so the inspector drops this duplicate enum

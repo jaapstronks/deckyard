@@ -255,3 +255,35 @@ test('pickTextColorForBg falls back to the dark pole for unparseable input', () 
   assert.equal(pickTextColorForBg('nonsense'), '#212121');
   assert.equal(pickTextColorForBg('nonsense', { dark: '#123456' }), '#123456');
 });
+
+test('normalizeTheme keeps only valid, token-backed textSwatches', () => {
+  const out = normalizeTheme({
+    id: 't',
+    label: 'T',
+    cssVars: {
+      '--t-color-accent': '#7c3aed',
+      '--t-color-brand-1': '#db2777',
+      '--t-color-brand-2': '#c2410c',
+    },
+    textSwatches: [
+      { id: 'brand-1', label: { en: 'Pink', nl: 'Roze' } }, // valid + token present
+      'brand-2',                                             // string form, token present
+      { id: 'brand-3' },                                     // valid slot but NO token → dropped
+      { id: 'brand-1' },                                     // duplicate → dropped
+      { id: 'accent' },                                      // not a swatch slot → dropped
+      { id: 'lime' },                                        // unknown slot → dropped
+      'garbage',
+    ],
+  });
+  assert.deepEqual(out.textSwatches, [
+    { id: 'brand-1', label: { en: 'Pink', nl: 'Roze' } },
+    { id: 'brand-2' },
+  ]);
+});
+
+test('normalizeTheme defaults textSwatches to an empty array', () => {
+  const out = normalizeTheme({ id: 't', label: 'T', cssVars: {} });
+  assert.deepEqual(out.textSwatches, []);
+  const out2 = normalizeTheme({ id: 't', label: 'T', cssVars: {}, textSwatches: 'nope' });
+  assert.deepEqual(out2.textSwatches, []);
+});

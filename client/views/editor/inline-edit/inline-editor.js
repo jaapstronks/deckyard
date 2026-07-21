@@ -14,8 +14,12 @@
  *   rerender wiping an active edit, the controller skips `rerenderPreview()`
  *   while `isEditing()` is true, and commits trigger a *deferred* rerender that
  *   is cancelled if the user immediately starts editing another field.
- * - Markdown fields open a modal with the canonical markdown editor (toolbar +
- *   dimmed backdrop) instead of editing the rendered HTML in place.
+ * - Markdown fields edit their RENDERED HTML in place (rich contenteditable,
+ *   editing-surfaces text phase) and commit through the HTML→markdown
+ *   serializer — but only when the round-trip gate proves the serializer can
+ *   faithfully reproduce this content (canInlineEditMarkdown). Content that
+ *   fails the gate (tables, code, math, renderer edge cases) keeps the modal
+ *   with the canonical raw-markdown editor.
  *
  * Only slide types with a descriptor (see ./descriptors.js) and renderer
  * `data-inline-field` attributes participate; everything else is untouched.
@@ -34,6 +38,14 @@ import { toast } from '../../../lib/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
+import { markdownToSafeHtml } from '../../../../shared/markdown.js';
+import {
+  serializeMarkdownDom,
+  canInlineEditMarkdown,
+} from '../../../lib/markdown-serialize.js';
+import { promptModal } from '../../../lib/modal.js';
+import { createSelectionToolbar } from './selection-toolbar.js';
+import { slideLinkUrl } from './selection-toolbar-logic.js';
 
 /**
  * @param {Object} opts
@@ -154,8 +166,47 @@ export function createInlineEditor({
     return v;
   }
 
+  /** Rich (markdown) commit value: keep newlines, only cap the length. */
+  function normalizeRichValue(raw, meta) {
+    let v = String(raw ?? '');
+    if (typeof meta?.maxLength === 'number' && v.length > meta.maxLength) {
+      v = v.slice(0, meta.maxLength);
+    }
+    return v;
+  }
+
+  /**
+   * Blur commits the edit — except while the link modal has focus on
+   * purpose: `suspendBlur` bridges that one excursion (openLinkPrompt) so
+   * the edit survives it, mirroring the comment composer's snapshot trick.
+   */
+  function onEditBlur() {
+    if (editing?.suspendBlur) return;
+    endTextEdit();
+  }
+
   function onEditKeydown(e) {
     if (!editing) return;
+    if (editing.rich) {
+      // Multi-line rich edit: Enter makes a new paragraph/list item (browser
+      // default), Cmd/Ctrl+Enter commits, Escape cancels, Cmd/Ctrl+B/I toggle
+      // the two inline styles the dialect can store.
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        editing.cancel = true;
+        editing.el.blur();
+      } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        editing.el.blur();
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        document.execCommand('bold');
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        document.execCommand('italic');
+      }
+      return;
+    }
     if (e.key === 'Enter') {
       e.preventDefault();
       editing.el.blur();
@@ -166,11 +217,70 @@ export function createInlineEditor({
     }
   }
 
+  /** Rich edits accept plain text only on paste (formatting comes from the
+   *  dialect, not from whatever HTML the clipboard carries). */
+  function onRichPaste(e) {
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text/plain') || '';
+    if (text) document.execCommand('insertText', false, text);
+  }
+
+  /**
+   * Toolbar link flow. Opening the modal moves focus (which collapses the
+   * live selection AND would blur-commit the edit), so this: snapshots the
+   * Range first, suspends the blur-commit for the excursion, and after the
+   * modal closes re-focuses the field and re-asserts the snapshot — the
+   * modal's own focus restore leaves a fresh caret at position 0 (the
+   * PR #167 lesson), so the restore must run after it, hence the rAF.
+   * The URL is gated by slideLinkUrl (http/https only): the serializer
+   * degrades any other scheme to bare text, so it is rejected up front.
+   */
+  async function openLinkPrompt() {
+    if (!editing?.rich) return;
+    const ed = editing;
+    const el = ed.el;
+    const sel = document.getSelection?.();
+    const live = sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+    if (!live || live.collapsed || !el.contains(live.startContainer)) return;
+    const snapshot = live.cloneRange();
+    const selected = live.toString();
+    ed.suspendBlur = true;
+    try {
+      const url = await promptModal(h, mdHost, {
+        title: t('editor.inline.link.title', 'Add link'),
+        message: t('editor.inline.link.message', 'Link "{text}" to:', {
+          text: selected.length > 40 ? `${selected.slice(0, 40)}…` : selected,
+        }),
+        placeholder: 'https://',
+        validate: (value) =>
+          slideLinkUrl(value)
+            ? null
+            : t('editor.inline.link.invalid', 'Use an http:// or https:// address'),
+      });
+      await new Promise((r) => requestAnimationFrame(r));
+      if (editing !== ed) return; // the edit ended while the modal was open
+      el.focus();
+      if (el.contains(snapshot.startContainer)) {
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(snapshot);
+        const safe = slideLinkUrl(url || '');
+        if (safe) document.execCommand('createLink', false, safe);
+      }
+      ed.toolbar?.update();
+    } finally {
+      if (editing === ed) ed.suspendBlur = false;
+    }
+  }
+
   function onEditInput() {
     if (!editing) return;
     const { meta } = editing;
-    // Enforce single-line + maxLength live without fighting the caret when under.
-    if (typeof meta?.maxLength === 'number') {
+    // Enforce single-line + maxLength live without fighting the caret when
+    // under. Never for rich edits: assigning textContent would flatten the
+    // block HTML (headings, lists, bold) to one text node — the commit-time
+    // cap in normalizeRichValue covers the limit instead.
+    if (!editing.rich && typeof meta?.maxLength === 'number') {
       const text = editing.el.textContent || '';
       if (text.length > meta.maxLength) {
         editing.el.textContent = text.slice(0, meta.maxLength);
@@ -200,18 +310,69 @@ export function createInlineEditor({
     el.textContent = raw;
     el.addEventListener('keydown', onEditKeydown);
     el.addEventListener('input', onEditInput);
-    el.addEventListener('blur', endTextEdit, { once: true });
+    el.addEventListener('blur', onEditBlur);
+    el.focus();
+    placeCaretAtEnd(el);
+  }
+
+  /**
+   * In-place rich edit for a markdown field: the element keeps its RENDERED
+   * HTML (it already is the value's rendering) and the commit serializes the
+   * edited DOM back to dialect markdown. Only entered through the round-trip
+   * gate (canInlineEditMarkdown), so serialization is proven faithful for
+   * this content before any edit can happen.
+   */
+  function beginRichEdit(el, path, meta, { isNew = false } = {}) {
+    if (editing) endTextEdit();
+    cancelCommitRerender();
+    const slide = getSlide?.();
+    if (!slide) return;
+    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
+    editing = {
+      el, path, meta, original: raw, isNew, cancel: false, slideId: slide.id,
+      rich: true, originalHtml: el.innerHTML,
+    };
+    setHotField(null);
+    el.setAttribute('contenteditable', 'true');
+    el.classList.add('ie-editing', 'ie-editing-rich');
+    overlay.clear();
+    const ring = overlay.outline(el);
+    ring.classList.add('is-active');
+    overlay.reposition();
+    // A ghost-spawned field renders only the spawn sentinel; start blank.
+    if (isNew) el.innerHTML = '';
+    // "Did the user change anything?" is judged against the serialization of
+    // the UNTOUCHED render, not the stored raw: the serializer normalizes
+    // (list renumbering, whitespace), so comparing against the raw would make
+    // a click-in-click-out dirty the deck without an actual edit.
+    editing.baseline = serializeMarkdownDom(el);
+    el.addEventListener('keydown', onEditKeydown);
+    el.addEventListener('input', onEditInput);
+    el.addEventListener('paste', onRichPaste);
+    el.addEventListener('blur', onEditBlur);
+    // Selection-bound formatting (bold/italic/link/list) above the selection.
+    // Rich edits only: plain-text fields cannot store formatting.
+    editing.toolbar = createSelectionToolbar({
+      h,
+      layer: overlay.layer,
+      thumb,
+      editEl: el,
+      onLinkRequest: openLinkPrompt,
+    });
     el.focus();
     placeCaretAtEnd(el);
   }
 
   function endTextEdit() {
     if (!editing) return;
-    const { el, path, meta, original, isNew, cancel } = editing;
+    const { el, path, meta, original, isNew, cancel, rich, originalHtml } = editing;
+    editing.toolbar?.destroy();
     el.removeEventListener('keydown', onEditKeydown);
     el.removeEventListener('input', onEditInput);
+    el.removeEventListener('paste', onRichPaste);
+    el.removeEventListener('blur', onEditBlur);
     el.removeAttribute('contenteditable');
-    el.classList.remove('ie-editing');
+    el.classList.remove('ie-editing', 'ie-editing-rich');
     const done = editing;
     editing = null;
 
@@ -220,6 +381,9 @@ export function createInlineEditor({
       if (isNew) {
         clearSentinel(path);
         scheduleCommitRerender();
+      } else if (rich) {
+        el.innerHTML = originalHtml;
+        refresh();
       } else {
         el.textContent = original;
         refresh(); // restore affordances the active ring replaced
@@ -227,7 +391,9 @@ export function createInlineEditor({
       return;
     }
 
-    const value = normalizeText(el.textContent, meta);
+    const value = rich
+      ? normalizeRichValue(serializeMarkdownDom(el), meta)
+      : normalizeText(el.textContent, meta);
     // Commit to the slide the edit STARTED on, never the current selection:
     // a collaborator can delete the edited slide mid-edit (live collab), which
     // makes the selection fall back to another slide — resolving via
@@ -245,7 +411,7 @@ export function createInlineEditor({
     // The spawn sentinel counts as "still empty": typing nothing into a fresh
     // field must not dirty/save, just drop back to the ghost.
     const currentVal = current === NEW_FIELD_SENTINEL ? '' : (current ?? '');
-    const changed = value !== currentVal;
+    const changed = rich ? value !== (done.baseline ?? '') : value !== currentVal;
     if (changed || (isNew && value !== '')) {
       setByPath(slide.content, path, value);
       markDirty?.();
@@ -254,8 +420,11 @@ export function createInlineEditor({
     } else if (current === NEW_FIELD_SENTINEL) {
       clearSentinel(path);
     }
-    // Normalize the rendered DOM (transforms, ghost restore) on the next frame.
-    if (isNew || changed) scheduleCommitRerender();
+    // Normalize the rendered DOM (transforms, ghost restore) on the next
+    // frame. A rich edit always repaints: even a no-op commit can leave
+    // contenteditable artifacts (<b> instead of <strong>, <div> wrappers)
+    // that serialize identically but differ from the canonical render.
+    if (isNew || changed || rich) scheduleCommitRerender();
     else refresh(); // no change: just restore the affordances
     void done;
   }
@@ -617,12 +786,27 @@ export function createInlineEditor({
   }
 
   function spawnFromGhost(path, resolveAnchor, meta, kind) {
-    // Markdown / CSV edits happen in the modal; no in-slide element is needed.
+    // CSV edits happen in the modal; no in-slide element is needed.
     if (kind === 'csv') {
       openCsvModal(null, path, meta, { isNew: true });
       return;
     }
     if (kind === 'markdown') {
+      // Same sentinel flow as plain text: let the renderer emit the real
+      // field element, then edit it in place (rich). A fresh field is empty,
+      // so the round-trip gate is trivially satisfied.
+      const slide = getSlide?.();
+      if (!slide) return;
+      setByPath(slide.content, path, NEW_FIELD_SENTINEL);
+      rerenderPreview?.();
+      const el = slideEl()?.querySelector(`[data-inline-field="${path}"]`);
+      if (el) {
+        beginRichEdit(el, path, meta, { isNew: true });
+        return;
+      }
+      // Renderer didn't emit the element for this path: modal fallback.
+      setByPath(slide.content, path, '');
+      rerenderPreview?.();
       openMarkdownModal(null, path, meta, { isNew: true });
       return;
     }
@@ -1637,7 +1821,7 @@ export function createInlineEditor({
     const target = e.target;
     if (!target || !target.closest) return;
     // Our own affordance buttons manage themselves; just block the lightbox.
-    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point')) {
+    if (target.closest('.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point, .ie-sel-toolbar')) {
       coach.dismiss();
       e.preventDefault();
       return;
@@ -1686,8 +1870,6 @@ export function createInlineEditor({
     const def = currentDef();
     if (!def) return;
     const path = fieldEl.getAttribute('data-inline-field');
-    // Editing a card's text selects that card; any other text clears selection.
-    onSelectElement?.(elementForCardPath(path));
     const meta = fieldMetaForPath(def, path);
     const kind =
       meta?.type === 'csv'
@@ -1695,9 +1877,33 @@ export function createInlineEditor({
         : meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
         ? 'markdown'
         : 'text';
+    // Selection for the inspector element tab: a card's text selects the card
+    // (icon/link controls); a stylable text field (plain or markdown) selects
+    // itself for block-level alignment/colour ("This text"); csv (chart data)
+    // selects nothing.
+    const cardSel = elementForCardPath(path);
+    if (cardSel) onSelectElement?.(cardSel);
+    else if (kind === 'text' || kind === 'markdown')
+      onSelectElement?.({ kind: 'text', fieldKey: path });
+    else onSelectElement?.(null);
     if (kind === 'csv') openCsvModal(fieldEl, path, meta);
-    else if (kind === 'markdown') openMarkdownModal(fieldEl, path, meta);
+    else if (kind === 'markdown') openMarkdownEdit(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);
+  }
+
+  /**
+   * Markdown field entry: edit in place when the serializer provably
+   * round-trips this content; otherwise the canonical raw-markdown modal
+   * (tables, code, math, renderer edge cases).
+   */
+  function openMarkdownEdit(fieldEl, path, meta) {
+    const slide = getSlide?.();
+    const raw = slide ? String(getByPath(slide.content, path) ?? '') : '';
+    if (canInlineEditMarkdown(raw, markdownToSafeHtml)) {
+      beginRichEdit(fieldEl, path, meta);
+    } else {
+      openMarkdownModal(fieldEl, path, meta);
+    }
   }
 
   thumb.addEventListener('click', onThumbClickCapture, true);
@@ -1736,9 +1942,13 @@ export function createInlineEditor({
     restoreThumbTitle();
     if (editing) {
       try {
+        editing.toolbar?.destroy();
         editing.el.removeEventListener('keydown', onEditKeydown);
         editing.el.removeEventListener('input', onEditInput);
+        editing.el.removeEventListener('paste', onRichPaste);
+        editing.el.removeEventListener('blur', onEditBlur);
         editing.el.removeAttribute('contenteditable');
+        editing.el.classList.remove('ie-editing', 'ie-editing-rich');
         clearSentinel(editing.path);
       } catch {
         /* ignore */

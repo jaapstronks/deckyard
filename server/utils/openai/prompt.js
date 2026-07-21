@@ -65,9 +65,12 @@ export function summarizeDeckForPrompt(deck, { maxSlides = 60 } = {}) {
       summaryBits.push(
         `image="${truncateForPrompt(c.image, 120)}"`
       );
-    if (typeof c.bgImage === 'string' && c.bgImage.trim())
+    const bgImg =
+      (typeof c.slideBgImage === 'string' && c.slideBgImage.trim()) ||
+      (typeof c.bgImage === 'string' && c.bgImage.trim());
+    if (bgImg)
       summaryBits.push(
-        `bgImage="${truncateForPrompt(c.bgImage, 120)}"`
+        `slideBgImage="${truncateForPrompt(bgImg, 120)}"`
       );
 
     const bitStr = summaryBits.length

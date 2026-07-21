@@ -37,7 +37,17 @@ one of three surfaces:
 
 **A field may only be removed from the inspector when the wysiwyg or the
 bulk modal demonstrably covers it - shipped and verified, never "because
-it's coming".** Conversely, double coverage is harmless: enums deliberately
+it's coming".**
+
+**Tightened 2026-07-21** (editing-surfaces decision, plan §6b corollary):
+the bulk modal only counts as coverage for **content text**. For
+**settings, config and metadata** - anything the user cannot point at on
+the canvas: URLs, IDs, config texts, alt text, background images - the
+bulk modal is never a sufficient home; those must render in the inspector.
+Trigger: the video-slide's `source` had ended up bulk-only (fixed in
+PR #191); the re-audit below restored every field in the same class.
+
+Conversely, double coverage is harmless: enums deliberately
 render in the bulk modal too (it mounts the whole content half by
 construction; filtering them out would complicate the
 parity-by-construction argument, and the one-list job benefits from having
@@ -126,6 +136,29 @@ together**.
   the pane leads with the at-a-glance settings (layout/variant enums) and
   ends with Background (sticky-open) and Accessibility.
 
+### Collapsible vs flat — the rule
+
+A section is **flat** (always visible) by default: the at-a-glance per-type
+settings (enum/variant controls) and the selection element tabs are the common
+path and stay in view. A section is **collapsible** only when it is (a) bulky
+(the widget blocks above), (b) read-only / rarely opened (AI type reasoning),
+or (c) an **override that is usually left at its default** (Background,
+Accessibility). The consistency rule for case (c): a collapsible holding a
+**non-default value force-opens** and its summary carries a **filled
+indicator**, so an active setting is never hidden and its state is legible
+without opening the drawer.
+
+**Accessibility status chip.** `a11yTitle`/`a11ySummary` are *overrides*, not
+the primary mechanism: export and present announce a slide by its own heading
+and only fall back to `a11yTitle` when set (`server/export/html.js`
+`slideA11yLabel`). So an empty section is not "undescribed", and the summary
+reflects the honest state instead of nagging — `auto (from the heading)` when
+the slide has a title (neutral), `custom description ✓` when an override is set
+(force-opens), and `no heading — add a title ⚠` only for the slides that
+actually announce as bare "Slide N of M" (types with no `title`: payoff,
+follow-invite, freeform, quote, image without a title). The heading proxy is
+`content.title` (the visible `<h1>` for every core type that has one).
+
 ### Selection-aware tabs (`[This element | Slide]`)
 
 Selecting a canvas element grows the pane a **tab bar**; with nothing selected
@@ -159,7 +192,86 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
 The `data-inspector-section="image"` markers (image-slide, image-text) remain as
 a harmless addressing seam; the element tab now surfaces the controls directly.
 
-## Per-type coverage audit (executed 2026-07-16)
+### "This text" tab (block-level text styling)
+
+A click on a text field selects `{kind:'text', fieldKey}` (a card's text still
+selects the card; chart-data/csv selects nothing), which shows a type-agnostic
+**"This text"** element tab: **alignment**, a **theme colour token** and a
+3-step **size** scale (S/M/L, default M) (`text-element-card.js`). It writes a
+generic, additive override map keyed by the field's `data-inline-field` value:
+
+```json
+content.textStyles = { "body": { "align": "center", "color": "accent", "size": "lg" } }
+```
+
+`normalizeTextStyles` (`shared/slide-types/text-styles.js`) prunes defaults, so
+a click-to-default leaves stored JSON unchanged. The shared `renderSlideHtml`
+runs a string post-pass (`injectTextStyles`, mirroring `injectSlideBackground`)
+that adds `tf-*` classes to the matching field element — **one code path**, so
+the editor canvas, present mode and exports all reflect it. Styles live outside
+the markdown, so the WYSIWYG round-trip gate is untouched.
+
+**Colour tokens (`tf-color-muted/-accent`).** Base values: `default` (no
+override — follows the slide's automatic, background-aware text colour),
+`muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
+inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
+light slide, a dimmed white on a dark band (quote/chapter, whose text is white
+via `--quote-text-color` and which bypass the `--color-text` system). A fixed
+light-theme muted grey rendered ~1.5:1 (unreadable) there. `accent` is the
+brand accent (`--t-color-accent`); on a same-hue coloured band it can be
+low-contrast — a deliberate-choice caveat, not a bug. A former `inverse` =
+background-colour token was **dropped** (rollout QA): on text sitting directly
+on the slide background it is invisible by construction; old `inverse` values
+prune to no override. Alignment (`tf-align-*`) is generic and needs no per-type
+work — no core type sets a competing `text-align` on its primary fields.
+
+**Theme text swatches (`tf-color-brand-1/-2/-3`).** The colour control is a
+swatch row: the three base tokens above plus any on-brand text colours the
+active theme declares via **`theme.textSwatches`** — a list of fixed slots
+(`brand-1`/`brand-2`/`brand-3`) each backed by a `--t-color-<slot>` token, with
+an optional label (string or `{ nl, en }`, like `backgroundLabels`). Rationale
+for a curated theme palette rather than exposing the background swatches
+directly: the `--t-slide-bg-*` swatches are *surface fills* (e.g. `lime` is
+often white), so they fail as text colours — a theme picks legible on-brand
+colours here instead. Normalization (`normalizeTheme`) keeps only slots the
+theme actually coloured, so the control never shows a swatch that would resolve
+to a no-op `currentColor`; a theme that declares none leaves the three base
+tokens. Stored values stay portable tokens: a deck carrying `brand-1` on a
+theme that never defined it falls back to the default text colour (the
+`currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
+
+**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would *replace* the
+px font-sizes several types set (content body 28/25/22px per density) with a
+fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
+only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
+`lg` 1.2, `md` = no class → fallback 1), and each primary text element
+expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled
+out **per type**. Types wired so far: **content** (heading + body, all density
+steps), **image-text** (body, all width/density steps), **lijstje** (per-item
+title + text, all density steps), **quote** (quote text), **chapter-title**
+(title). Other types/fields store the value cleanly but do not yet scale — add
+the `calc()` to their primary text element to enable it.
+
+## Per-type coverage audit (executed 2026-07-16, re-audited 2026-07-21)
+
+**Re-audit 2026-07-21** (scripted schema-vs-surfaces walk + hand review,
+under the tightened invariant above): every field the 2026-07-16 table had
+parked in its "Bulk modal (only home)" column was reclassified. Config/
+metadata fields moved to the inspector keeps (the table below reflects the
+new state): content + image-text `actions`;
+split-partner `logos`/`logo{n}Alt`/`bgImage`/`bgAlt`; video
+`source`/`bunnyLibraryId` (PR #191); embed `embedUrl` (PR #191); countdown
+`zeroText`; poll/likert `onCloseTarget`; feedback `placeholder`;
+lead-capture `thankYouTitle`/`thankYouMessage`/`privacyText`/`privacyUrl`;
+chart `xLabel`/`yLabel`/`series1Label`/`series2Label` (rendered inside the
+chart-config block, per chart type, in inspector AND bulk); end
+`contactUrl`/`social1/2Label`/`social1/2Url`. **Content text** that relies
+on the bulk modal stays accepted: kpi metric subfields (delta/note), table
+row cell ops (column add/remove), content-columns numbered texts,
+text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
+(code editors are the bulk surface by design), freeform `elements[]` (own
+canvas editor). Deprecated/hidden fields (card-stack `card{n}Label`) need
+no surface.
 
 Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`
 against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
@@ -198,31 +310,31 @@ homed. Not listed per row.
 
 | Type | Wysiwyg | Bulk modal (only home) | Inspector keeps | Notes |
 |---|---|---|---|---|
-| title | title, subheading, byline, attribution | bgImage, bgAlt | logoCorner | bgImage = title-specific hero bg (preset strip in form) |
+| title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
 | chapter-title | title, subheading | - | layout | |
-| content | title, subheading, body | actions[] (label/url/style) | layout (labelled "Text columns"), density | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA buttons; url/style stay form-only |
+| content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
-| split-partner-title | label, title, subheading | logos[], logo{n}Alt, bgImage, bgAlt | - | partner logos have no media popover yet |
+| split-partner-title _(archived)_ | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | archived 2026-07-21 (`deprecated: true`): hidden from picker + AI, but existing decks still render and their inspector keeps these |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
-| video | title | source, bunnyLibraryId | autoplay | source is a URL/id (text home = bulk) |
+| video | title | - | source, autoplay, bunnyLibraryId | source is a URL/ID → inspector (PR #191) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |
-| card-stack | title, subheading | card{n}Title/Label/Body (active numbered schema) | cardCount | no array migration yet; count stays inspector (known residue) |
+| card-stack | title, subheading; card{n}Title/Body in-place | - | cardCount | card{n}Title/Body are canvas-inline; card{n}Label is deprecated+hidden (no surface needed); no array migration yet |
 | icon-card-grid | title, subheading, bottomSubheading; items add/remove/reorder | items[] title/body | icon (picker), link, layout | icon picker + link keep the form |
 | payoff | - | - | - | zero content fields (theme-driven logo) |
 | quote | quote, authorName, authorTitle; author images via popover | - | - | |
 | image | title, subheading, bottomSubheading, caption; image+alt via popover | - | imageRole, layout, focusX/Y, zoomSteps, zoomLevel, zoomPositions | zoom config is settings |
-| embed | title | embedUrl | aspectRatio, sandbox | |
-| countdown | title | zeroText | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero | |
-| poll | question, option1-4 (ghosts) | onCloseTarget | onClose | |
-| likert | question, option1-10 (ghosts) | onCloseTarget | onClose | |
+| embed | title | - | embedUrl, aspectRatio, sandbox | embedUrl → inspector (PR #191) |
+| countdown | title | - | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero, zeroText | |
+| poll | question, option1-4 (ghosts) | - | onClose, onCloseTarget | |
+| likert | question, option1-10 (ghosts) | - | onClose, onCloseTarget | |
 | likert-slider | question, minLabel, maxLabel | - | - | |
-| feedback | question | placeholder | - | |
-| lead-capture | title, description, nameLabel, emailLabel, submitLabel | thankYouTitle, thankYouMessage, privacyText, privacyUrl | - | thank-you state not visible on canvas |
+| feedback | question | - | placeholder | |
+| lead-capture | title, description, nameLabel, emailLabel, submitLabel | - | thankYouTitle, thankYouMessage, privacyText, privacyUrl | thank-you state not visible on canvas → inspector (re-audit 2026-07-21) |
 | follow-invite | - | - | - | zero content fields (content auto-managed) |
-| chart | title, subheading, bottomSubheading | xLabel, yLabel, series1/2Label | chartType, data (own markdown modal), showLegend, showValues, pieLabelMode | chart data keeps its dedicated modal (known residue) |
+| chart | title, subheading, bottomSubheading | - | chartType, data (own markdown modal), showLegend, showValues, pieLabelMode, xLabel, yLabel, series1/2Label (per chart type) | chart data keeps its dedicated modal (known residue); axis/series labels render inside the config block, inspector AND bulk |
 | text-blocks | title, subheading, bottomSubheading; rows[]+blocks two-level add/remove/reorder + texts | rows[] editor (incl. per-row color/arrow enums) | - | array-canonical; texts also inline |
 | content-columns | title, subheading, bottomSubheading; col{n}Image/Alt via popover incl. empty-slot add | col{n}Title/Text, col{n}Block{m}Title/Body (active numbered schema) | columnCount, col{n}ImageFit, col{n}ImageFocusX/Y, col{n}BlockCount | array migration is a parked follow-up |
 | comparison | title, subheading, bottomSubheading, leftTitle/Body, rightTitle/Body, verdict | - | - | fully inline |
@@ -235,7 +347,7 @@ homed. Not listed per row.
 | gallery | title, subheading, bottomSubheading; images[] popover (src/alt) + caption inline + add/remove/reorder | images[] cards (per-image focusX/Y) | layout | |
 | freeform | - | elements[] via the dedicated freeform canvas editor | snapToGrid | freeform has its own editing surface; bulk modal renders the raw items as fallback |
 | custom-html | - | html, css (code editors, capability-gated) | - | |
-| end | title, body, contactName, contactEmail, contactPhone | contactUrl, social1/2Label, social1/2Url | - | |
+| end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
 
 Documented deviations from the audit's original shorthand, all in the safe
 direction (already folded into the table above; repeated here because
