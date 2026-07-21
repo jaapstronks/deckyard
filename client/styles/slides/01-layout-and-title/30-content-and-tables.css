@@ -66,7 +66,7 @@
 }
 
 .md-table a {
-  color: var(--color-accent);
+  color: var(--color-link);
 }
 
 .slide-content .slide-inner {
@@ -168,11 +168,11 @@
   color: var(--color-accent);
 }
 .slide-content .body a {
-  color: var(--color-accent);
+  color: var(--color-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-accent);
+  text-decoration-color: var(--color-link);
   transition: text-decoration-color 0.15s ease;
 }
 .slide-content .body a:hover {
