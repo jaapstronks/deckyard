@@ -34,9 +34,8 @@ const LEGACY_WHEN_TO_USE = {
   'lead-capture-slide': [
     'Use for collecting email addresses or signup forms.',
   ],
-  'split-partner-title-slide': [
-    'Use only if the prompt provides actual logo URLs (logos[] is required).',
-  ],
+  // split-partner-title-slide is archived (in EXCLUDED_TYPES) — no legacy
+  // when-to-use entry needed; the catalog loop skips it before this map.
 };
 
 // ─── Manual JSON examples for types that need specific patterns ───
@@ -303,9 +302,10 @@ export function buildSlideTypesPrompt({
 
   // Types excluded from AI generation (app-managed or deprecated)
   const EXCLUDED_TYPES = new Set([
-    'follow-invite-slide',   // app-managed
-    'card-stack-slide',      // deprecated — use icon-card-grid-slide
-    'lijstje-slide',         // alias for list-slide (avoid duplicate entry)
+    'follow-invite-slide',        // app-managed
+    'card-stack-slide',           // deprecated — use icon-card-grid-slide
+    'split-partner-title-slide',  // archived (deprecated) — returns via freeform
+    'lijstje-slide',              // alias for list-slide (avoid duplicate entry)
   ]);
 
   for (const [type, def] of stableSlideTypeEntries()) {
