@@ -15,10 +15,18 @@
  * the constructs listed in markdownNeedsModal) keeps the raw-markdown modal.
  *
  * Dialect notes (mirror shared/markdown.js precisely):
- * - blocks: paragraphs, `## ` → h3 (the ONLY heading level), nested -/1.
- *   lists (2-space indent per level), fenced code, $$ math, pipe tables
- * - inline: [text](http(s)://…), **bold**, *italic*, `code`, $math$
- * - there is NO escape syntax; literal asterisks re-italicize on render.
+ * - blocks: paragraphs, `## ` → h3 (the ONLY heading level), nested lists with
+ *   any of the `-`, `*`, `+`, `N.` markers (2-space indent per level), `> `
+ *   blockquotes, fenced code, $$ math, pipe tables
+ * - inline: [text](http(s)://…), bold (`**`/`__`), italic (`*`/`_`), `code`,
+ *   $math$.
+ *   Underscore emphasis follows the CommonMark intraword rule (snake_case
+ *   stays literal). Serialization canonicalizes to `-` bullets and `*`/`**`
+ *   emphasis, so `_`/`*`-bullet input round-trips render-equivalent, not
+ *   byte-equal.
+ * - CommonMark backslash escapes (`\*`, `\_`, …) render as the literal char.
+ *   The serializer does NOT re-emit escapes, so fully-escaped would-be
+ *   emphasis (e.g. `\*x\*`) fails the round-trip gate and keeps the modal.
  */
 
 /**
@@ -192,6 +200,19 @@ function serializeBlockElement(el, blocks) {
   if (el.classList.contains('md-table-wrap') || tag === 'TABLE') {
     const table = tag === 'TABLE' ? el : el.querySelector('table');
     if (table) serializeTable(table, blocks);
+    return;
+  }
+  if (tag === 'BLOCKQUOTE') {
+    // Serialize the quote's inner blocks, then prefix each line with `> `
+    // (a bare `>` for the blank line between quote paragraphs).
+    const inner = [];
+    serializeBlocks(el, inner);
+    const quoted = inner
+      .join('\n\n')
+      .split('\n')
+      .map((l) => (l ? `> ${l}` : '>'))
+      .join('\n');
+    if (quoted.trim()) blocks.push(quoted);
     return;
   }
   // P, DIV, BLOCKQUOTE, …: a paragraph-ish container. A contenteditable

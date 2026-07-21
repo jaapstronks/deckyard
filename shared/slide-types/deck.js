@@ -1,7 +1,11 @@
 import { cryptoUuid } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { resolveTitleSlideBackground } from './title-slide-background.js';
-import { SLIDE_TYPES } from './registry.js';
+import {
+  collectSlideTypeManifest,
+  getSlideType,
+} from './registry.js';
+import { tryParseTypeId } from './type-id.js';
 
 // --------
 // Portable deck format (for export/import)
@@ -16,22 +20,32 @@ import { SLIDE_TYPES } from './registry.js';
 //   "version": 1,
 //   "title": "My deck",
 //   "theme": "default",
+//   "slideTypes": { "title-slide": "core/title-slide" },
 //   "slides": [
 //     { "type": "title-slide", "content": { "title": "...", "subtitle": "", "background": "lime" } }
 //   ]
 // }
+//
+// `slideTypes` records which slide-type DEFINITIONS this deck was written
+// against, as a map of the bare type key -> its `namespace/name[@version]`
+// identity. It is recomputed from the registry on every export (never
+// hand-maintained, so it can't drift) and lets a second implementation see
+// which type definitions/versions a deck needs. `slides[].type` stays the bare
+// key for back-compat.
 // --------
 
 export function presentationToDeck(pres) {
+  const slides = (pres?.slides || []).map((s) => ({
+    type: s?.type,
+    content: s?.content || {},
+  }));
   return {
     format: 'slidecreator.deck',
     version: 1,
     title: pres?.title || 'Untitled presentation',
     theme: pres?.theme || 'default',
-    slides: (pres?.slides || []).map((s) => ({
-      type: s?.type,
-      content: s?.content || {},
-    })),
+    slideTypes: collectSlideTypeManifest(slides),
+    slides,
   };
 }
 
@@ -75,7 +89,10 @@ function enumOptionValues(field) {
 
 function normalizeDeckSlide(raw, theme = null) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
-  const def = SLIDE_TYPES[type];
+  // Resolve by identity so a qualified ref (core/title-slide, acme/hero) imports;
+  // storage keeps the bare local name so downstream bare lookups keep working.
+  const def = getSlideType(type);
+  const localName = tryParseTypeId(type)?.name || type;
   if (!def) {
     // Unknown types are preserved as a harmless placeholder so imports never crash.
     return {
@@ -153,7 +170,7 @@ function normalizeDeckSlide(raw, theme = null) {
   }
 
   // Type-specific normalization for back-compat and better defaults.
-  if (type === 'title-slide') {
+  if (localName === 'title-slide') {
     // Seed a theme background on the canonical key only when the slide has no
     // background at all (canonical or legacy). An imported deck that still
     // carries a legacy bgImage is left as-is — it renders via the fallback and
@@ -163,7 +180,7 @@ function normalizeDeckSlide(raw, theme = null) {
       if (preset) content.slideBgImage = preset;
     }
   }
-  if (type === 'poll-slide') {
+  if (localName === 'poll-slide') {
     // pollId is required at runtime for interaction state. Deck imports (including AI output)
     // may omit it, so we ensure it exists here (mirrors newSlide()).
     const pollId =
@@ -171,5 +188,5 @@ function normalizeDeckSlide(raw, theme = null) {
     if (!pollId) content.pollId = cryptoUuid();
   }
 
-  return { id: cryptoUuid(), type, content };
+  return { id: cryptoUuid(), type: localName, content };
 }

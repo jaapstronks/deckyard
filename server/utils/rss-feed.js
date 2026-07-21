@@ -47,9 +47,9 @@ export function buildFeed({ org, presentations, baseUrl, format = 'rss' }) {
       description: pres.description || '',
       date: new Date(pres.modified || pres.created),
       published: new Date(pres.published?.created || pres.created),
-      author: pres.ownerEmail
-        ? [{ name: pres.ownerEmail.split('@')[0], email: pres.ownerEmail }]
-        : [],
+      // Attribution by display handle only; the owner's raw email is never
+      // published to the feed (see docs/plans/identity-decoupling.md).
+      author: pres.ownerName ? [{ name: pres.ownerName }] : [],
       image: pres.published?.ogImageUrl
         ? (pres.published.ogImageUrl.startsWith('http') ? pres.published.ogImageUrl : `${baseUrl}${pres.published.ogImageUrl}`)
         : undefined,

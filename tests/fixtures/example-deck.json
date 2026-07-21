@@ -1,0 +1,55 @@
+{
+  "format": "slidecreator.deck",
+  "version": 1,
+  "title": "The slidecreator.deck format",
+  "theme": "default",
+  "slideTypes": {
+    "title-slide": "core/title-slide",
+    "content-slide": "core/content-slide",
+    "image-slide": "core/image-slide",
+    "quote-slide": "core/quote-slide",
+    "end-slide": "core/end-slide"
+  },
+  "slides": [
+    {
+      "type": "title-slide",
+      "content": {
+        "title": "The slidecreator.deck format",
+        "subheading": "A portable, versioned deck interchange format",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "Why a format",
+        "layout": "one-column",
+        "body": "A deck is **data**, not a rendering. The `slidecreator.deck` envelope lets a second implementation read, render, and round-trip a presentation without Deckyard.",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "image-slide",
+      "content": {
+        "image": "/uploads/diagram.png",
+        "alt": "Envelope, slideTypes manifest, and slides array",
+        "caption": "Local assets are referenced by upload URL; a .deck bundle embeds their bytes.",
+        "fit": "contain"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "The format is the product.",
+        "authorName": "data-model purity track",
+        "authorTitle": "Deckyard"
+      }
+    },
+    {
+      "type": "end-slide",
+      "content": {
+        "title": "Thanks"
+      }
+    }
+  ]
+}

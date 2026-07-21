@@ -3,12 +3,17 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { presDir, presPath } from './paths.js';
 import { readJsonIfExists } from '../io.js';
+import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 
 // Re-exported for callers that import it from this presentations-scoped module.
 export { readJsonIfExists };
 
+// The single durable read funnel: every stored deck is migrated up to the
+// current schema version in memory here, so callers never see a legacy shape.
+// Reads don't write; the upgraded deck is persisted on the next writePresentation.
 export async function readPresentation(repoRoot, id) {
-  return await readJsonIfExists(presPath(repoRoot, id));
+  const pres = await readJsonIfExists(presPath(repoRoot, id));
+  return pres ? migratePresentation(pres) : pres;
 }
 
 export async function writePresentation(repoRoot, pres) {
