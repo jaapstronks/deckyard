@@ -152,7 +152,8 @@ test('no config field is bulk-modal-only (coverage audit 2026-07-21)', () => {
   // Settings/config/metadata may never rely on the bulk modal as their only
   // surface (content text may). One distinctive pin per restored field group.
   const pins = [
-    ['title-slide', 'background image alt text'], // bgAlt (bgImage shares the bg-section label)
+    // title-slide: bgImage/bgAlt were removed (title-bg-unification) — the
+    // background is now the shared slideBgImage in the Background section.
     ['content-slide', 'action buttons'],
     ['split-partner-title-slide', 'partnerlogo'],
     ['countdown-slide', 'text at zero'],

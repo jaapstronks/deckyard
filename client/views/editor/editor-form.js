@@ -27,6 +27,7 @@ import {
 } from './editor-form/inspector-form.js';
 import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
 import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme.js';
 import { detectBgTextContrast } from '../../lib/bg-contrast.js';
@@ -1067,6 +1068,13 @@ export function createRerenderEditor({
     // top-level colour dropdown and a collapsed "Background & logo" panel).
     // Sticky open preference (default open); force-open when a non-default
     // image/logo is set so active settings are never hidden.
+    // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
+    // slideBgImage before the Background section reads it, so the shared picker
+    // shows the (now single) background and the legacy render fallback stops
+    // firing. Idempotent; inspector mode only (the bulk modal never renders bg).
+    if (!contentOnly && slide?.type === 'title-slide') {
+      ensureTitleSlideBackground(slide.content);
+    }
     const hasBgImage = Boolean(String(slide?.content?.slideBgImage || '').trim());
     const hasCornerLogo = slide?.content?.slideLogo === 'top-right';
     const bgDetails = h('details', { class: 'editor-advanced editor-bg-section' });

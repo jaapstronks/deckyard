@@ -63,7 +63,7 @@ function extractImageUrls(obj, urls) {
     return;
   }
 
-  const urlFields = ['bgImage', 'image', 'src', 'url', 'logoUrl', 'imageUrl', 'logoSmallUrl'];
+  const urlFields = ['slideBgImage', 'bgImage', 'image', 'src', 'url', 'logoUrl', 'imageUrl', 'logoSmallUrl'];
   for (const field of urlFields) {
     const val = obj[field];
     if (typeof val === 'string' && val.trim() && isImageUrl(val)) {

@@ -440,11 +440,14 @@ export function convertSlideToType(
   }
   if (fromType === 'chapter-title-slide' && targetType === 'title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
-    // Give the target a background from the theme's own presets when it has the
-    // key and it's empty. No theme (or no presets) leaves it flat.
-    const hasBgKey = Object.prototype.hasOwnProperty.call(to, 'bgImage');
-    const bg = hasBgKey && typeof to.bgImage === 'string' ? to.bgImage.trim() : '';
-    if (hasBgKey && !bg) to.bgImage = pickBackgroundPreset(theme);
+    // Give the target a background from the theme's own presets when it has
+    // none. Canonical key is slideBgImage. No theme (or no presets) leaves it
+    // flat.
+    const bg = typeof to.slideBgImage === 'string' ? to.slideBgImage.trim() : '';
+    if (!bg) {
+      const preset = pickBackgroundPreset(theme);
+      if (preset) to.slideBgImage = preset;
+    }
   }
 
   return next;

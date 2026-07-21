@@ -220,7 +220,7 @@ the `calc()` to their primary text element to enable it.
 under the tightened invariant above): every field the 2026-07-16 table had
 parked in its "Bulk modal (only home)" column was reclassified. Config/
 metadata fields moved to the inspector keeps (the table below reflects the
-new state): title `bgImage`/`bgAlt`; content + image-text `actions`;
+new state): content + image-text `actions`;
 split-partner `logos`/`logo{n}Alt`/`bgImage`/`bgAlt`; video
 `source`/`bunnyLibraryId` (PR #191); embed `embedUrl` (PR #191); countdown
 `zeroText`; poll/likert `onCloseTarget`; feedback `placeholder`;
@@ -272,7 +272,7 @@ homed. Not listed per row.
 
 | Type | Wysiwyg | Bulk modal (only home) | Inspector keeps | Notes |
 |---|---|---|---|---|
-| title | title, subheading, byline, attribution | - | logoCorner, bgImage, bgAlt | bgImage = title-specific hero bg → inspector (design setting, re-audit 2026-07-21) |
+| title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
 | chapter-title | title, subheading | - | layout | |
 | content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |

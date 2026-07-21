@@ -1,5 +1,6 @@
 import { cryptoUuid } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
+import { resolveTitleSlideBackground } from './title-slide-background.js';
 import { SLIDE_TYPES } from './registry.js';
 
 // --------
@@ -153,8 +154,14 @@ function normalizeDeckSlide(raw, theme = null) {
 
   // Type-specific normalization for back-compat and better defaults.
   if (type === 'title-slide') {
-    const bgImage = typeof content.bgImage === 'string' ? content.bgImage.trim() : '';
-    if (!bgImage) content.bgImage = pickBackgroundPreset(theme);
+    // Seed a theme background on the canonical key only when the slide has no
+    // background at all (canonical or legacy). An imported deck that still
+    // carries a legacy bgImage is left as-is — it renders via the fallback and
+    // migrates on edit — so we never stack a preset on top of it.
+    if (resolveTitleSlideBackground(content).source === 'none') {
+      const preset = pickBackgroundPreset(theme);
+      if (preset) content.slideBgImage = preset;
+    }
   }
   if (type === 'poll-slide') {
     // pollId is required at runtime for interaction state. Deck imports (including AI output)
