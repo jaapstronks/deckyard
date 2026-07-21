@@ -11,10 +11,13 @@
  *
  * Absent key / absent property = theme default. The values are a small fixed
  * vocabulary (no free input): alignment is left/center/right, colour is a
- * theme TOKEN (default/muted/accent/inverse), and size is a 3-step relative
- * scale (sm/md/lg, md = default) so decks stay portable across themes. Styles
- * live OUTSIDE the markdown, so the step-1 HTML↔markdown round-trip gate is
- * untouched.
+ * theme TOKEN (default/muted/accent), and size is a 3-step relative scale
+ * (sm/md/lg, md = default) so decks stay portable across themes. `default`
+ * follows the slide's automatic (background-aware) text colour; `muted` dims
+ * that same colour; `accent` is the brand accent. (An `inverse` = background
+ * colour token was dropped: on text that sits directly on the slide
+ * background it is invisible by construction.) Styles live OUTSIDE the
+ * markdown, so the step-1 HTML↔markdown round-trip gate is untouched.
  *
  * Rendering is a single string post-pass (`injectTextStyles`) run inside the
  * shared `renderSlideHtml`, mirroring `injectSlideBackground` — one code path,
@@ -34,7 +37,7 @@
 /** Alignment vocabulary; `left` is the default (no override stored/emitted). */
 export const TEXT_ALIGN_VALUES = ['left', 'center', 'right'];
 /** Colour vocabulary (theme tokens); `default` means no override. */
-export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', 'inverse'];
+export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent'];
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 

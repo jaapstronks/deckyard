@@ -539,7 +539,6 @@
   "editor.textStyle.color.default": "Standaard",
   "editor.textStyle.color.muted": "Gedempt",
   "editor.textStyle.color.accent": "Accent",
-  "editor.textStyle.color.inverse": "Omgekeerd",
   "editor.textStyle.size": "Tekstgrootte",
   "editor.textStyle.size.sm": "S",
   "editor.textStyle.size.md": "M",

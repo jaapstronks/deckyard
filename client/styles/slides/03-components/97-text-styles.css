@@ -17,17 +17,23 @@
 }
 
 /* Colour overrides use theme TOKENS (not raw hex) so a deck stays legible
-   when the theme changes. `inverse` = the background colour, for a field that
-   sits on an accent/dark band. currentColor fallbacks keep old/again-themed
-   decks from losing their text if a token is ever absent. */
+   when the theme changes.
+
+   `muted` is derived from currentColor — the field's inherited (default) text
+   colour — NOT a fixed light-theme grey. That keeps it band-aware: on a light
+   slide currentColor is dark → a mid-grey; on a dark band (quote/chapter, whose
+   text is white via --quote-text-color and which bypass the --color-text
+   system) currentColor is white → a dimmed white. A fixed --t-color-text-muted
+   would render dark-grey-on-dark-purple (~1.5:1, unreadable) there. The 72%
+   mix mirrors the house --slide-bg-text-muted convention.
+
+   (A former `inverse` = --t-color-background token was dropped: on text that
+   sits directly on the slide background it is invisible by construction.) */
 [data-inline-field].tf-color-muted {
-  color: var(--t-color-text-muted, currentColor);
+  color: color-mix(in srgb, currentColor 72%, transparent);
 }
 [data-inline-field].tf-color-accent {
   color: var(--t-color-accent, currentColor);
-}
-[data-inline-field].tf-color-inverse {
-  color: var(--t-color-background, #fff);
 }
 
 /* Size scale. tf-size-* only SET the custom property here; the actual

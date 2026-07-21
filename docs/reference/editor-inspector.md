@@ -186,8 +186,21 @@ a click-to-default leaves stored JSON unchanged. The shared `renderSlideHtml`
 runs a string post-pass (`injectTextStyles`, mirroring `injectSlideBackground`)
 that adds `tf-*` classes to the matching field element — **one code path**, so
 the editor canvas, present mode and exports all reflect it. Styles live outside
-the markdown, so the WYSIWYG round-trip gate is untouched. Colour uses theme
-tokens (`--t-color-text-muted/-accent/-background`) so decks stay portable.
+the markdown, so the WYSIWYG round-trip gate is untouched.
+
+**Colour tokens (`tf-color-muted/-accent`).** Three values: `default` (no
+override — follows the slide's automatic, background-aware text colour),
+`muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
+inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
+light slide, a dimmed white on a dark band (quote/chapter, whose text is white
+via `--quote-text-color` and which bypass the `--color-text` system). A fixed
+light-theme muted grey rendered ~1.5:1 (unreadable) there. `accent` is the
+brand accent (`--t-color-accent`); on a same-hue coloured band it can be
+low-contrast — a deliberate-choice caveat, not a bug. A former `inverse` =
+background-colour token was **dropped** (rollout QA): on text sitting directly
+on the slide background it is invisible by construction; old `inverse` values
+prune to no override. Alignment (`tf-align-*`) is generic and needs no per-type
+work — no core type sets a competing `text-align` on its primary fields.
 
 **Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would *replace* the
 px font-sizes several types set (content body 28/25/22px per density) with a
