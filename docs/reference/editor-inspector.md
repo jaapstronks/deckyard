@@ -169,6 +169,29 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
 The `data-inspector-section="image"` markers (image-slide, image-text) remain as
 a harmless addressing seam; the element tab now surfaces the controls directly.
 
+### "This text" tab (block-level text styling)
+
+A click on a text field selects `{kind:'text', fieldKey}` (a card's text still
+selects the card; chart-data/csv selects nothing), which shows a type-agnostic
+**"This text"** element tab: **alignment** and a **theme colour token**
+(`text-element-card.js`). It writes a generic, additive override map keyed by
+the field's `data-inline-field` value:
+
+```json
+content.textStyles = { "body": { "align": "center", "color": "accent" } }
+```
+
+`normalizeTextStyles` (`shared/slide-types/text-styles.js`) prunes defaults, so
+a click-to-default leaves stored JSON unchanged. The shared `renderSlideHtml`
+runs a string post-pass (`injectTextStyles`, mirroring `injectSlideBackground`)
+that adds `tf-*` classes to the matching field element — **one code path**, so
+the editor canvas, present mode and exports all reflect it. Styles live outside
+the markdown, so the WYSIWYG round-trip gate is untouched. Colour uses theme
+tokens (`--t-color-text-muted/-accent/-background`) so decks stay portable.
+Text **size** (S/M/L) is a planned follow-up (`text-block-controls.md` PR 2):
+an `em` multiplier would break the px font-sizes several types set, so it needs
+a `--tf-size-scale` hook plumbed per type.
+
 ## Per-type coverage audit (executed 2026-07-16, re-audited 2026-07-21)
 
 **Re-audit 2026-07-21** (scripted schema-vs-surfaces walk + hand review,
