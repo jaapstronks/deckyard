@@ -185,4 +185,14 @@ describe('injectTextStyles — role-gated alignment', () => {
     const out = injectTextStyles(html, { textStyles: { 'items.0.text': { align: 'center' } } });
     assert.match(out, /tf-align-center/);
   });
+
+  it('drops an align value the field role does not allow (quote: no right)', () => {
+    const quoteFields = [{ key: 'quote', type: 'string', role: 'quote' }];
+    const html = '<blockquote data-inline-field="quote">q</blockquote>';
+    const right = injectTextStyles(html, { textStyles: { quote: { align: 'right' } } }, quoteFields);
+    assert.doesNotMatch(right, /tf-align-right/);
+    // centre is allowed for a quote and still emits
+    const centre = injectTextStyles(html, { textStyles: { quote: { align: 'center' } } }, quoteFields);
+    assert.match(centre, /tf-align-center/);
+  });
 });

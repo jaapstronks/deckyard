@@ -100,12 +100,15 @@ export default {
         text: '',
       },
       itemFields: [
+        // Each item sits in a row aligned to the timeline rail/dot marker;
+        // block alignment would detach the text from the marker. See text-roles.js.
         {
           key: 'date',
           label: 'Date / label',
           type: 'string',
           required: true,
           maxLength: 30,
+          role: 'list-item',
         },
         {
           key: 'title',
@@ -113,6 +116,7 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -121,6 +125,7 @@ export default {
           required: false,
           maxLength: 200,
           multiline: true,
+          role: 'list-item',
         },
       ],
     },

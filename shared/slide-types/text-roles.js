@@ -25,43 +25,59 @@ export const TEXT_ROLES = ['heading', 'prose', 'list-item', 'quote', 'caption', 
 /** Default role for an untagged field: safe, all affordances allowed. */
 export const DEFAULT_TEXT_ROLE = 'prose';
 
+const ALL_ALIGNS = ['left', 'center', 'right'];
+
 /**
  * role -> which style affordances the field offers.
- *   align: 'block' — block alignment is offered and rendered.
- *   align: 'start' — alignment forced to logical start; no control, no class
- *                    (marker-anchored text: bullets/numbers/steps).
- *   align: 'type'  — the slide type owns alignment itself (e.g. quote centres
- *                    the whole block); the generic control defers to it.
- * `color`/`size` are booleans (all roles allow them today; kept explicit so a
- * future per-role difference is one table edit, not a new flag).
+ *   `align`: the allowed alignment VALUES (subset of left/center/right). `[]`
+ *            means no alignment at all (marker-anchored text: the control is
+ *            hidden and no `tf-align-*` class is emitted). Expressing align as a
+ *            value set lets one table both hide alignment for list items AND
+ *            drop `right` for a quote — no per-type hardcode.
+ *   `color`/`size`: booleans (all roles allow them today; kept explicit so a
+ *            future per-role difference is one table edit, not a new flag).
+ *
+ * A quote still permits left/center here AND the quote type additionally reads
+ * its own align to centre the whole block — the two compose, so quote keeps the
+ * generic classes (unlike list-item, which gets none).
  */
 export const ROLE_AFFORDANCES = {
-  heading: { align: 'block', color: true, size: true },
-  prose: { align: 'block', color: true, size: true },
-  'list-item': { align: 'start', color: true, size: true },
-  quote: { align: 'type', color: true, size: true },
-  caption: { align: 'block', color: true, size: true },
-  label: { align: 'block', color: true, size: true },
+  heading: { align: ALL_ALIGNS, color: true, size: true },
+  prose: { align: ALL_ALIGNS, color: true, size: true },
+  'list-item': { align: [], color: true, size: true },
+  quote: { align: ['left', 'center'], color: true, size: true },
+  caption: { align: ALL_ALIGNS, color: true, size: true },
+  label: { align: ALL_ALIGNS, color: true, size: true },
 };
 
 /**
  * The affordances for a role, falling back to the safe default for unknown or
  * absent roles.
  * @param {string} [role]
- * @returns {{align: string, color: boolean, size: boolean}}
+ * @returns {{align: string[], color: boolean, size: boolean}}
  */
 export function roleAffordances(role) {
   return ROLE_AFFORDANCES[role] || ROLE_AFFORDANCES[DEFAULT_TEXT_ROLE];
 }
 
 /**
- * Whether a role permits block alignment (i.e. the alignment control is shown
- * and the `tf-align-*` class is emitted). `start`-aligned roles do not.
+ * The alignment values a role permits (a subset of left/center/right; `[]` =
+ * no alignment).
+ * @param {string} [role]
+ * @returns {string[]}
+ */
+export function allowedAlignValues(role) {
+  return roleAffordances(role).align;
+}
+
+/**
+ * Whether a role permits any block alignment (i.e. the alignment control is
+ * shown at all). Roles with an empty align set do not.
  * @param {string} [role]
  * @returns {boolean}
  */
 export function roleAllowsAlign(role) {
-  return roleAffordances(role).align !== 'start';
+  return allowedAlignValues(role).length > 0;
 }
 
 /**
@@ -90,13 +106,24 @@ export function resolveFieldRole(fields, key) {
 }
 
 /**
- * Convenience: whether a field key permits block alignment, given its slide
- * type's `fields`. Used by both the editor (hide the control) and the renderer
- * (drop the align class).
+ * Convenience: whether a field key permits any block alignment, given its slide
+ * type's `fields`. Used by the editor (whether to show the control at all).
  * @param {Array<Object>} fields
  * @param {string} key
  * @returns {boolean}
  */
 export function fieldAllowsAlign(fields, key) {
   return roleAllowsAlign(resolveFieldRole(fields, key));
+}
+
+/**
+ * The alignment values a field key permits, given its slide type's `fields`.
+ * Used by the editor (which options to offer) and the renderer (which stored
+ * align value may emit a `tf-align-*` class).
+ * @param {Array<Object>} fields
+ * @param {string} key
+ * @returns {string[]}
+ */
+export function fieldAllowedAlignValues(fields, key) {
+  return allowedAlignValues(resolveFieldRole(fields, key));
 }

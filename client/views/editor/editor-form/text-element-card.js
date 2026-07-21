@@ -17,12 +17,14 @@
 
 import { t, getUiLocale } from '../../../lib/ui-i18n.js';
 import {
-  TEXT_ALIGN_VALUES,
   TEXT_COLOR_SWATCH_SLOTS,
   TEXT_SIZE_VALUES,
   normalizeTextStyles,
 } from '../../../../shared/slide-types/text-styles.js';
-import { fieldAllowsAlign } from '../../../../shared/slide-types/text-roles.js';
+import {
+  resolveFieldRole,
+  allowedAlignValues,
+} from '../../../../shared/slide-types/text-roles.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 const ALIGN_DEFAULT = 'left';
@@ -186,18 +188,18 @@ export function renderTextElementCard({
     rerenderPreview?.();
   };
 
-  // Alignment is only offered where the field's role allows block alignment.
-  // Marker-anchored text (list/step items) forces logical start and shows no
-  // control — aligning it would detach the text from its bullet/number marker.
-  // See shared/slide-types/text-roles.js.
+  // Which alignment values this field offers is decided by its semantic role
+  // (see shared/slide-types/text-roles.js): marker-anchored text (list/step
+  // items) offers none and shows no control; a quote offers left/centre only.
+  // No per-type hardcode — the role table is the single source.
   const slideFields = getSlideType(slide?.type)?.fields || null;
-  const allowAlign = fieldAllowsAlign(slideFields, fieldKey);
-  // Some slide types don't offer right-align: the quote slide's block layout
-  // only supports left (hero) and centre. A value already stored as 'right'
-  // stays selectable so it's never a stuck, invisible override.
-  const alignValues = TEXT_ALIGN_VALUES.filter(
-    (v) => v !== 'right' || slide?.type !== 'quote-slide' || current.align === 'right'
-  );
+  const role = resolveFieldRole(slideFields, fieldKey);
+  let alignValues = allowedAlignValues(role);
+  // A value already stored outside the allowed set stays selectable so it is
+  // never a stuck, invisible override the user can't clear.
+  if (current.align && current.align !== ALIGN_DEFAULT && !alignValues.includes(current.align)) {
+    alignValues = [...alignValues, current.align];
+  }
   const alignField = {
     key: 'textAlign',
     label: t('editor.textStyle.align', 'Alignment'),
@@ -206,7 +208,7 @@ export function renderTextElementCard({
       label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
     })),
   };
-  const alignEl = allowAlign
+  const alignEl = alignValues.length
     ? fieldEnum(alignField, current.align || ALIGN_DEFAULT, (v) => {
         setTextStyle(slide, fieldKey, 'align', v, ALIGN_DEFAULT);
         commit();
