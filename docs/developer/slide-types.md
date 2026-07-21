@@ -243,6 +243,14 @@ In `custom/themes/acme-corp.json`:
 | `csv` | Tabular text stored as a CSV/TSV string. Editor renders a chart-type-aware grid with a "Raw CSV" toggle (`client/views/editor/fields/csv-grid.js`); serialises to exactly the string the parser eats. Treated as a per-language, collaborative text field everywhere `markdown` is (validation, collab text-keys, i18n/translate filters). Used by the chart `data` field. | `maxLength`, `required` |
 | `number` | Numeric input | `min`, `max`, `step` |
 | `enum` | Dropdown selection | `options` (array of strings) |
+| `boolean` | Toggle. Cleared fields use the `''` convention (like enums). | `required` |
+| `color` | Colour value (theme token or raw string), rendered via the colour picker | `helpText`, `required` |
+
+> The full set of valid `field.type` values is declared once in
+> `shared/slide-types/field-types.js` (`FIELD_TYPES`). Validation, the editor
+> field-renderer and this table all read from that vocabulary;
+> `tests/field-types.test.js` fails the build if a definition uses an unknown
+> type or this table drifts from the registry.
 
 The `code` field supports `capability: 'customHtml'`: when set, the field is
 read-only for users who lack the `canEditCustomHtml` capability (the server
@@ -254,6 +262,12 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 |------|-------------|------------------|
 | `image` | Image picker | `presetSource` (`'backgrounds'` or `'partnerlogos'`) |
 | `images` | Multiple images (gallery) | `maxCount` |
+
+### Structured Fields
+
+| Type | Description | Extra Properties |
+|------|-------------|------------------|
+| `items` | Repeating list of structured objects, each shaped by `itemFields` | `minItems`, `maxItems`, `itemFields`, `itemDefaults` |
 
 ### Preset Sources
 

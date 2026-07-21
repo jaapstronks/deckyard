@@ -9,19 +9,8 @@ import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { applyLocksToContent } from '../theme-locks.js';
 import { SLIDE_TYPES, THEMES } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
-import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 import { injectTextStyles } from './text-styles.js';
-
-function enumOptionValues(field) {
-  const opts = Array.isArray(field?.options) ? field.options : [];
-  return opts
-    .map((o) => {
-      if (typeof o === 'string') return o;
-      if (o && typeof o === 'object' && o.value != null) return String(o.value);
-      return null; // Mark invalid entries as null
-    })
-    .filter((v) => v !== null); // Filter out null but keep empty strings
-}
+import { validateFieldValue } from './field-types.js';
 
 export function newPresentation({
   title = 'Untitled presentation',
@@ -362,165 +351,14 @@ export function validateSlide(slide) {
   const def = SLIDE_TYPES[slide.type];
   if (!def) return errors;
 
+  // Per-field validation is delegated to the single declared field-type
+  // vocabulary (shared/slide-types/field-types.js), which owns the required +
+  // value checks for every type. This replaces the hand-synced type switch that
+  // had drifted from the editor and docs (datamodel-purity move 1a). Unknown
+  // field types are guarded by tests/field-types.test.js, not here.
   for (const field of def.fields) {
     const val = slide.content[field.key];
-    if (field.required) {
-      if (field.type === 'image') {
-        if (!isNonEmptyString(val))
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (field.type === 'images') {
-        if (
-          !Array.isArray(val) ||
-          val.filter((v) => isNonEmptyString(v)).length ===
-            0
-        )
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (field.type === 'items') {
-        if (!Array.isArray(val) || val.length === 0)
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (!isNonEmptyString(val)) {
-        errors.push(
-          `Slide.content.${field.key} is required`
-        );
-      }
-    }
-    if (
-      field.type === 'string' ||
-      field.type === 'markdown' ||
-      field.type === 'csv' ||
-      field.type === 'code'
-    ) {
-      // Optional text fields may be missing/null in older decks or external integrations.
-      // Only enforce string type when the value is present.
-      if (val != null && typeof val !== 'string')
-        errors.push(
-          `Slide.content.${field.key} must be a string`
-        );
-      if (
-        field.maxLength &&
-        typeof val === 'string' &&
-        val.length > field.maxLength
-      ) {
-        errors.push(
-          `Slide.content.${field.key} exceeds max length (${field.maxLength})`
-        );
-      }
-    }
-    if (field.type === 'images') {
-      // Skip validation if value is missing (back-compat for old presentations without this field)
-      if (val == null) continue;
-      if (!Array.isArray(val))
-        errors.push(
-          `Slide.content.${field.key} must be an array`
-        );
-      else {
-        const bad = val.filter(
-          (v) => typeof v !== 'string' || !v.trim()
-        );
-        if (bad.length)
-          errors.push(
-            `Slide.content.${field.key} must be an array of non-empty strings`
-          );
-        if (field.maxItems && val.length > field.maxItems)
-          errors.push(
-            `Slide.content.${field.key} must have at most ${field.maxItems} items`
-          );
-      }
-    }
-    if (field.type === 'items') {
-      // Skip validation if value is missing (back-compat for old presentations without this field)
-      if (val == null) continue;
-      if (!Array.isArray(val))
-        errors.push(
-          `Slide.content.${field.key} must be an array`
-        );
-      else {
-        const minItems = Math.max(
-          0,
-          Number(field.minItems || 0) || 0
-        );
-        const maxItems = Number(field.maxItems || 0) || 0;
-        if (minItems && val.length < minItems)
-          errors.push(
-            `Slide.content.${field.key} must have at least ${minItems} items`
-          );
-        if (maxItems && val.length > maxItems)
-          errors.push(
-            `Slide.content.${field.key} must have at most ${maxItems} items`
-          );
-        const itemFields = Array.isArray(field.itemFields)
-          ? field.itemFields
-          : [];
-        for (let i = 0; i < val.length; i += 1) {
-          const it = val[i];
-          if (!it || typeof it !== 'object') {
-            errors.push(
-              `Slide.content.${field.key}[${i}] must be an object`
-            );
-            continue;
-          }
-          for (const f of itemFields) {
-            if (!f || typeof f.key !== 'string') continue;
-            const iv = it[f.key];
-            if (f.required && !isNonEmptyString(iv))
-              errors.push(
-                `Slide.content.${field.key}[${i}].${f.key} is required`
-              );
-            if (f.type === 'string') {
-              if (iv != null && typeof iv !== 'string')
-                errors.push(
-                  `Slide.content.${field.key}[${i}].${f.key} must be a string`
-                );
-              if (
-                f.maxLength &&
-                typeof iv === 'string' &&
-                iv.length > f.maxLength
-              )
-                errors.push(
-                  `Slide.content.${field.key}[${i}].${f.key} exceeds max length (${f.maxLength})`
-                );
-            }
-          }
-        }
-      }
-    }
-    if (field.type === 'boolean') {
-      // Cleared boolean fields use the repo's '' convention (like enums); only
-      // a present non-empty value must be an actual boolean.
-      if (val != null && val !== '' && typeof val !== 'boolean')
-        errors.push(
-          `Slide.content.${field.key} must be a boolean`
-        );
-    }
-    if (field.type === 'enum') {
-      const allowed = enumOptionValues(field);
-      // The background field also accepts theme-defined variant ids
-      // (theme.slideBackgrounds — see shared/theme-slide-backgrounds.js).
-      // Validation has no theme context, so any safe slug passes; unknown ids
-      // render as an inert class and fall back to the default background.
-      const isThemeBgVariant =
-        field.key === 'background' &&
-        typeof val === 'string' &&
-        SLIDE_BG_ID_RE.test(val);
-      // Cleared enum fields use the repo's '' convention (see boolean above):
-      // empty = unset / follow the type default. The editor folds and the
-      // silent-default controls write '' (image-slide fit/layout, image-text
-      // imageFit, content-columns col{n}ImageFit), so round-tripping such
-      // content through the API must stay valid. Required enums still reject
-      // '' via the required check above.
-      if (val != null && val !== '' && !allowed.includes(val) && !isThemeBgVariant)
-        errors.push(
-          `Slide.content.${
-            field.key
-          } must be one of: ${allowed.join(', ')}`
-        );
-    }
+    for (const e of validateFieldValue(val, field)) errors.push(e);
   }
   return errors;
 }
