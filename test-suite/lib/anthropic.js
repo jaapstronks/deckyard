@@ -2,7 +2,7 @@
  * Anthropic SDK wrapper for the suite's own model calls (judge, topic
  * extraction). Deck generation deliberately does NOT go through here -- it
  * runs on the app's own LLM layer so the suite exercises production code
- * paths. See decision D1 in PLAN.md.
+ * paths, while the suite's own calls use the official SDK.
  */
 
 import Anthropic from '@anthropic-ai/sdk';

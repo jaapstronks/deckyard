@@ -68,7 +68,7 @@ export const PRICING = {
 /**
  * Prompt files that govern generation quality. The suite hashes these into a
  * prompt version so a report can be traced back to the prompts that produced
- * it. Keep in sync with the prompt map in PLAN.md.
+ * it. This list is the single source of truth for which files count.
  */
 export const PROMPT_SOURCE_FILES = [
   'server/utils/ai/generate-outline.js',

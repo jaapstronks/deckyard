@@ -5,7 +5,8 @@ shortcoming it addresses. Every entry names the run that motivated it and the
 run that measured the result, so a score movement can always be traced back to
 a specific edit.
 
-Prompt locations are listed in `PLAN.md`. Score history is in `history.json`.
+The prompt-bearing files are listed in `lib/config.js` (`PROMPT_SOURCE_FILES`).
+Score history is in `history.json`.
 
 ---
 
