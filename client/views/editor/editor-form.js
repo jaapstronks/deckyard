@@ -1040,11 +1040,19 @@ export function createRerenderEditor({
     const hasA11yValue =
       Boolean(String(slide?.content?.a11yTitle || '').trim()) ||
       Boolean(String(slide?.content?.a11ySummary || '').trim());
-    // Heading proxy: the visible h1 is the slide's `title` for every core type
-    // that has one; types without a title (payoff, follow-invite, freeform,
-    // quote, …) announce as bare "Slide N of M" until an a11yTitle is set —
-    // exactly where the override earns its keep, so those get the nudge.
-    const hasHeading = Boolean(String(slide?.content?.title || '').trim());
+    // Heading proxy: export announces a slide by the first non-empty h1/h2/h3
+    // it finds in the rendered slide (server/export/html.js readHeadingFromSlideEl),
+    // so the proxy must mirror every field that renders AS such a heading — not
+    // just `title`. Most core types use `title`, but poll/likert/likert-slider
+    // render their `<h2 class="heading">` from `question`, and comparison uses
+    // `leftTitle`/`rightTitle`. Types that render NO heading (payoff,
+    // follow-invite, freeform, quote, image without a title) announce as bare
+    // "Slide N of M" until an a11yTitle is set — exactly where the override
+    // earns its keep, so only those get the nudge.
+    const HEADING_FIELDS = ['title', 'question', 'leftTitle', 'rightTitle'];
+    const hasHeading = HEADING_FIELDS.some((f) =>
+      Boolean(String(slide?.content?.[f] || '').trim())
+    );
     const a11yState = hasA11yValue ? 'custom' : hasHeading ? 'auto' : 'no-heading';
     const a11yDetails = h('details', { class: 'editor-advanced editor-a11y-section' });
     if (hasA11yValue) a11yDetails.open = true;

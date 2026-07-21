@@ -153,11 +153,15 @@ the primary mechanism: export and present announce a slide by its own heading
 and only fall back to `a11yTitle` when set (`server/export/html.js`
 `slideA11yLabel`). So an empty section is not "undescribed", and the summary
 reflects the honest state instead of nagging — `auto (from the heading)` when
-the slide has a title (neutral), `custom description ✓` when an override is set
-(force-opens), and `no heading — add a title ⚠` only for the slides that
-actually announce as bare "Slide N of M" (types with no `title`: payoff,
-follow-invite, freeform, quote, image without a title). The heading proxy is
-`content.title` (the visible `<h1>` for every core type that has one).
+the slide renders a heading (neutral), `custom description ✓` when an override
+is set (force-opens), and `no heading — add a title ⚠` only for the slides that
+actually announce as bare "Slide N of M" (types that render no heading: payoff,
+follow-invite, freeform, quote, image without a title). The heading proxy
+mirrors what export reads (`readHeadingFromSlideEl` = the first non-empty
+`h1/h2/h3`): the fields `title`, `question` (poll/likert/likert-slider) and
+`leftTitle`/`rightTitle` (comparison). A `content.title`-only proxy would
+falsely nudge poll/likert, which render their heading from `question` and have
+no `title` field at all.
 
 ### Selection-aware tabs (`[This element | Slide]`)
 
