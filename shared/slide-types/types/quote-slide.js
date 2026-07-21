@@ -6,6 +6,7 @@ import {
   styleAttrFromVars,
   imagePlaceholderHtml,
 } from '../helpers.js';
+import { normalizeTextStyles } from '../text-styles.js';
 
 // Portraits on the primary (legacy) quote: two slots so a shared quote (a duo)
 // can show both people. Extra quotes carry a single optional portrait each.
@@ -106,16 +107,31 @@ function primaryPortraitParts(content, editMode = false) {
 
 /** Portrait parts for an extra quote (single optional portrait, no inline idx). */
 function extraPortraitParts(item) {
-  const src =
-    typeof item?.authorImage === 'string' ? item.authorImage.trim() : '';
-  if (!src) return [];
-  const alt = pickAltText({
-    explicit: item?.authorImageAlt,
-    src,
-    fallbacks: [item?.authorName],
-    hardFallback: 'Portrait',
-  });
-  return [portraitHtml(src, alt, null)];
+  // Two optional slots, matching the primary quote's duo support: authorImage
+  // (legacy single slot) + authorImage2. Extras are edited via the side form,
+  // so no inline photo index.
+  const parts = [];
+  const slots = [
+    { src: item?.authorImage, alt: item?.authorImageAlt },
+    { src: item?.authorImage2, alt: item?.authorImage2Alt },
+  ];
+  for (const { src, alt } of slots) {
+    const s = typeof src === 'string' ? src.trim() : '';
+    if (!s) continue;
+    parts.push(
+      portraitHtml(
+        s,
+        pickAltText({
+          explicit: alt,
+          src: s,
+          fallbacks: [item?.authorName],
+          hardFallback: 'Portrait',
+        }),
+        null
+      )
+    );
+  }
+  return parts;
 }
 
 /**
@@ -213,8 +229,9 @@ export default {
     },
     // Optional extra quotes (2 and 3). When present, the slide switches to a
     // stacked, alternating-alignment layout. Each carries its own attribution
-    // and a single optional portrait. Kept separate from the primary quote so
-    // existing single-quote decks (incl. duos with two portraits) are untouched.
+    // and up to two optional portraits (like the primary quote, e.g. a duo).
+    // Kept separate from the primary quote so existing single-quote decks
+    // (incl. duos with two portraits) are untouched.
     {
       key: 'quotes',
       label: 'Extra quotes (optional, max 2)',
@@ -233,6 +250,8 @@ export default {
         authorTitle: 'Role / title',
         authorImage: '',
         authorImageAlt: '',
+        authorImage2: '',
+        authorImage2Alt: '',
       },
       itemFields: [
         {
@@ -258,13 +277,26 @@ export default {
         },
         {
           key: 'authorImage',
-          label: 'Portrait photo (optional)',
+          label: 'Portrait photo 1 (optional)',
           type: 'image',
           required: false,
         },
         {
           key: 'authorImageAlt',
-          label: 'Portrait alt text (optional)',
+          label: 'Portrait 1 alt text (optional)',
+          type: 'string',
+          required: false,
+          maxLength: 180,
+        },
+        {
+          key: 'authorImage2',
+          label: 'Portrait photo 2 (optional)',
+          type: 'image',
+          required: false,
+        },
+        {
+          key: 'authorImage2Alt',
+          label: 'Portrait 2 alt text (optional)',
           type: 'string',
           required: false,
           maxLength: 180,
@@ -319,6 +351,11 @@ export default {
         ...(vars || {}),
         '--quote-scale': quoteFontScale(1, [content?.quote]),
       };
+      // When the quote text is centre-aligned (the "This text" tab), centre the
+      // WHOLE block - quote, byline and portraits - in the slide, not just the
+      // text within a left-hung column.
+      const quoteAlign = normalizeTextStyles(content?.textStyles)?.quote?.align;
+      const alignClass = quoteAlign === 'center' ? ' is-align-center' : '';
       const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
       const inner = quoteBlockInnerHtml({
         quote: content?.quote,
@@ -331,7 +368,7 @@ export default {
         morph: true,
       });
       return `
-        <div class="slide slide-quote"${styleAttrFromVars(styleVars)}>
+        <div class="slide slide-quote${alignClass}"${styleAttrFromVars(styleVars)}>
           <div class="slide-inner">${inner}
           </div>
         </div>

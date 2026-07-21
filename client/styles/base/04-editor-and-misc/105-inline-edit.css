@@ -20,6 +20,22 @@
   cursor: text;
 }
 
+/* An emptied field the renderer still emits (a cleared quote, author name, …)
+   would collapse to zero size and become impossible to click back into. Give
+   it a caret-height hit area plus a faint dashed hint so it stays discoverable
+   and editable. Only bites while editing the deck, and only when truly empty. */
+.thumb.is-inline-edit [data-inline-field]:empty {
+  min-height: 0.9em;
+  min-width: 4ch;
+  border-radius: 3px;
+  outline: 1.5px dashed hsl(var(--app-accent-primary) / 0.5);
+  outline-offset: 2px;
+}
+/* While actively typing into it, the overlay's active ring takes over. */
+.thumb.is-inline-edit [data-inline-field].ie-editing:empty {
+  outline: none;
+}
+
 /* Icon targets open a picker modal, not a caret. */
 .thumb.is-inline-edit [data-inline-icon] {
   cursor: pointer;
