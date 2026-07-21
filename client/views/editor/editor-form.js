@@ -1310,6 +1310,7 @@ export function createRerenderEditor({
           container: elementForm,
           slide,
           fieldKey: selectedElement.fieldKey,
+          theme,
           fieldRenderers: { fieldEnum },
           markDirty,
           rerenderPreview,

@@ -49,6 +49,17 @@ describe('normalizeTextStyles', () => {
     assert.deepEqual(normalizeTextStyles('x'), {});
   });
 
+  it('keeps theme brand swatch colours (brand-1/2/3)', () => {
+    assert.deepEqual(normalizeTextStyles({ body: { color: 'brand-1' } }), {
+      body: { color: 'brand-1' },
+    });
+    assert.deepEqual(normalizeTextStyles({ title: { color: 'brand-3' } }), {
+      title: { color: 'brand-3' },
+    });
+    // A slot outside the fixed set is still unknown and pruned.
+    assert.deepEqual(normalizeTextStyles({ body: { color: 'brand-4' } }), {});
+  });
+
   it('keeps one property when the others are default', () => {
     assert.deepEqual(normalizeTextStyles({ body: { align: 'right', color: 'default' } }), {
       body: { align: 'right' },
@@ -77,6 +88,10 @@ describe('textStyleClasses', () => {
       textStyleClasses({ align: 'center', color: 'accent', size: 'sm' }),
       'tf-align-center tf-color-accent tf-size-sm'
     );
+  });
+  it('maps a theme brand swatch to tf-color-brand-*', () => {
+    assert.equal(textStyleClasses({ color: 'brand-1' }), 'tf-color-brand-1');
+    assert.equal(textStyleClasses({ color: 'brand-2' }), 'tf-color-brand-2');
   });
   it('is empty for defaults', () => {
     assert.equal(textStyleClasses({ align: 'left', color: 'default', size: 'md' }), '');

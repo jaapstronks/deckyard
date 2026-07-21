@@ -11,13 +11,16 @@
  *
  * Absent key / absent property = theme default. The values are a small fixed
  * vocabulary (no free input): alignment is left/center/right, colour is a
- * theme TOKEN (default/muted/accent), and size is a 3-step relative scale
- * (sm/md/lg, md = default) so decks stay portable across themes. `default`
- * follows the slide's automatic (background-aware) text colour; `muted` dims
- * that same colour; `accent` is the brand accent. (An `inverse` = background
- * colour token was dropped: on text that sits directly on the slide
- * background it is invisible by construction.) Styles live OUTSIDE the
- * markdown, so the step-1 HTML↔markdown round-trip gate is untouched.
+ * theme TOKEN (default/muted/accent + optional theme swatches brand-1/2/3),
+ * and size is a 3-step relative scale (sm/md/lg, md = default) so decks stay
+ * portable across themes. `default` follows the slide's automatic
+ * (background-aware) text colour; `muted` dims that same colour; `accent` is
+ * the brand accent; `brand-1/2/3` are extra theme-curated on-brand text
+ * colours a theme opts into via `theme.textSwatches` (resolving to
+ * `--t-color-<slot>`). (An `inverse` = background colour token was dropped: on
+ * text that sits directly on the slide background it is invisible by
+ * construction.) Styles live OUTSIDE the markdown, so the step-1 HTML↔markdown
+ * round-trip gate is untouched.
  *
  * Rendering is a single string post-pass (`injectTextStyles`) run inside the
  * shared `renderSlideHtml`, mirroring `injectSlideBackground` — one code path,
@@ -36,8 +39,22 @@
 
 /** Alignment vocabulary; `left` is the default (no override stored/emitted). */
 export const TEXT_ALIGN_VALUES = ['left', 'center', 'right'];
-/** Colour vocabulary (theme tokens); `default` means no override. */
-export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent'];
+/**
+ * Extra, theme-provided text-colour swatch slots (title-bg text-palette
+ * feature). Fixed slots — like the `brand-1`/`brand-2` background convention —
+ * so the CSS stays static and decks stay portable: each resolves to
+ * `var(--t-color-<slot>)`, which a theme opts into by declaring that token AND
+ * listing the slot in `theme.textSwatches`. A theme that declares none leaves
+ * the control at the three base tokens below. They are deliberately NOT the
+ * `--t-slide-bg-*` surface tints (e.g. `lime` is often white) — those fail as
+ * text; a theme curates legible on-brand colours here instead.
+ */
+export const TEXT_COLOR_SWATCH_SLOTS = ['brand-1', 'brand-2', 'brand-3'];
+/**
+ * Colour vocabulary (theme tokens); `default` means no override. The three
+ * base tokens are always available; the brand slots are theme-declared.
+ */
+export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SWATCH_SLOTS];
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
