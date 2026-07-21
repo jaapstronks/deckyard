@@ -1055,7 +1055,8 @@ export function createSlideTypePicker({
       { type: 'gallery-slide' },
       { type: 'video-slide' },
       { type: 'embed-slide' },
-      { type: 'split-partner-title-slide' },
+      // split-partner-title-slide archived (deprecated): filtered out by
+      // allowed() anyway, dropped here to keep the curated list honest.
       { type: 'team-cards-slide' },
       { type: 'logo-wall-slide' },
     ];

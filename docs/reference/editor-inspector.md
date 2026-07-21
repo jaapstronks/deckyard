@@ -278,7 +278,7 @@ homed. Not listed per row.
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
-| split-partner-title | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | logos manager + alts + bg → inspector (re-audit 2026-07-21) |
+| split-partner-title _(archived)_ | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | archived 2026-07-21 (`deprecated: true`): hidden from picker + AI, but existing decks still render and their inspector keeps these |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | - | source, autoplay, bunnyLibraryId | source is a URL/ID → inspector (PR #191) |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |

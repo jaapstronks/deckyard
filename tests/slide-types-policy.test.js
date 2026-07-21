@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isInsertableSlideType } from '../client/views/editor/slide-types-policy.js';
+import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 test('a normal type is insertable', () => {
   assert.equal(
@@ -16,6 +17,22 @@ test('deprecated types are never insertable (hidden from picker + AI)', () => {
       def: { label: 'Card stack', deprecated: true },
     }),
     false
+  );
+});
+
+test('split-partner-title-slide is archived: deprecated + not insertable, still registered', () => {
+  const def = SLIDE_TYPES['split-partner-title-slide'];
+  assert.ok(def, 'type stays registered so stored/forked decks keep rendering');
+  assert.equal(def.deprecated, true, 'marked deprecated (archive convention)');
+  assert.equal(
+    isInsertableSlideType({ type: 'split-partner-title-slide', def }),
+    false,
+    'hidden from every insertion path (picker + AI)'
+  );
+  // Rendering never goes through the insertability gate, so an existing deck
+  // still renders unchanged.
+  assert.doesNotThrow(() =>
+    def.renderHtml({ title: 'T', logos: [], bgImage: '/x.jpg' })
   );
 });
 

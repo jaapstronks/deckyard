@@ -2,6 +2,14 @@ import { esc, pickAltText } from '../helpers.js';
 
 export default {
   label: 'Partner split',
+  // Archived 2026-07-21: unused (0 active decks) and a generic
+  // placeholder-y layout. Hidden from every insertion path (picker + AI) via
+  // this flag — isInsertableSlideType returns false for deprecated types — but
+  // the type stays REGISTERED so any stored/forked deck keeps rendering
+  // unchanged (rendering never goes through the insertability gate). The
+  // "two partner logos side by side" use case returns later as flexible
+  // components on a freeform slide.
+  deprecated: true,
   fields: [
     {
       key: 'logos',
