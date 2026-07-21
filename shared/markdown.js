@@ -410,6 +410,14 @@ export function markdownToSafeHtml(markdown) {
       para.push(lines[i]);
       i += 1;
     }
+    // A block-starter line no handler consumed (e.g. `# ` / `### ` — only
+    // `## ` is a heading in this dialect) would leave `para` empty WITHOUT
+    // advancing `i`, spinning the outer loop forever. Consume it as a plain
+    // paragraph line, which is the documented behaviour for those headings.
+    if (!para.length && i < lines.length) {
+      para.push(lines[i]);
+      i += 1;
+    }
     const paraText = para.join(' ').replace(/\s+/g, ' ').trim();
     if (paraText) {
       blocks.push(`<p dir="auto">${inlineFormat(paraText, { inlineCodes, inlineMaths })}</p>`);
