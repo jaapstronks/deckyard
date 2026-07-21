@@ -657,6 +657,40 @@
   border-radius: 10px 10px 0 0;
 }
 
+/* Accessibility section status chip: makes the "is this slide described for
+   screen readers?" state legible without opening the drawer. a11yTitle is an
+   override, so `auto` (announced by the slide's own heading) is the neutral
+   normal state; `custom` confirms an override; `no-heading` is the one case
+   that actually warrants a nudge. */
+.editor-a11y-status {
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.editor-a11y-status.is-auto {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-text-secondary) / 0.1);
+}
+.editor-a11y-status.is-custom {
+  color: hsl(var(--app-success));
+  background: hsl(var(--app-success) / 0.14);
+}
+.editor-a11y-status.is-custom::before {
+  content: '✓ ';
+}
+/* Warning yellow is too light as text; use a darker amber for the label and
+   the soft warning tint for the chip. */
+.editor-a11y-status.is-no-heading {
+  color: hsl(35 88% 36%);
+  background: hsl(var(--app-warning) / 0.16);
+}
+.editor-a11y-status.is-no-heading::before {
+  content: '⚠ ';
+}
+
 .editor-form-header {
   align-items: center;
   flex-wrap: wrap;

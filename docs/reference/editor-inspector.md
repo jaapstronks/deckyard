@@ -136,6 +136,29 @@ together**.
   the pane leads with the at-a-glance settings (layout/variant enums) and
   ends with Background (sticky-open) and Accessibility.
 
+### Collapsible vs flat — the rule
+
+A section is **flat** (always visible) by default: the at-a-glance per-type
+settings (enum/variant controls) and the selection element tabs are the common
+path and stay in view. A section is **collapsible** only when it is (a) bulky
+(the widget blocks above), (b) read-only / rarely opened (AI type reasoning),
+or (c) an **override that is usually left at its default** (Background,
+Accessibility). The consistency rule for case (c): a collapsible holding a
+**non-default value force-opens** and its summary carries a **filled
+indicator**, so an active setting is never hidden and its state is legible
+without opening the drawer.
+
+**Accessibility status chip.** `a11yTitle`/`a11ySummary` are *overrides*, not
+the primary mechanism: export and present announce a slide by its own heading
+and only fall back to `a11yTitle` when set (`server/export/html.js`
+`slideA11yLabel`). So an empty section is not "undescribed", and the summary
+reflects the honest state instead of nagging — `auto (from the heading)` when
+the slide has a title (neutral), `custom description ✓` when an override is set
+(force-opens), and `no heading — add a title ⚠` only for the slides that
+actually announce as bare "Slide N of M" (types with no `title`: payoff,
+follow-invite, freeform, quote, image without a title). The heading proxy is
+`content.title` (the visible `<h1>` for every core type that has one).
+
 ### Selection-aware tabs (`[This element | Slide]`)
 
 Selecting a canvas element grows the pane a **tab bar**; with nothing selected
