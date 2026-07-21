@@ -41,22 +41,34 @@ import { renderImageElementCard } from './image-element-card.js';
  *
  * Keys handled by the shared Background/Accessibility sections are not listed.
  */
+// Coverage-audit rule (editing-surfaces §"Status: per-type coverage audit",
+// re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + bulk modal;
+// SETTINGS/CONFIG/METADATA may never be bulk-only — a field the user cannot
+// point at on the canvas (URLs, config texts, alt/bg images) must render in
+// the inspector. The 2026-07-21 additions below restore exactly the fields
+// the 2026-07-16 audit had parked in its "Bulk modal (only home)" column.
 const INSPECTOR_KEEPS = {
-  'title-slide': ['logoCorner'],
+  // bgImage/bgAlt: the title-specific hero background is a design setting
+  // with no canvas surface — was bulk-only (audit 2026-07-21).
+  'title-slide': ['logoCorner', 'bgImage', 'bgAlt'],
   'chapter-title-slide': ['layout'],
-  'content-slide': ['layout', 'density'],
+  // actions: CTA buttons (label/url/style) have no canvas surface — config.
+  'content-slide': ['layout', 'density', 'actions'],
   'table-slide': ['headerRow', 'tableStyle', 'animateByCell'],
   'list-slide': ['variant', 'layout', 'density'],
   'lijstje-slide': ['variant', 'layout', 'density'],
   'kpi-metrics-slide': ['accent', 'countUp'],
-  'split-partner-title-slide': [],
+  // Partner logos manager + per-logo alts + the split-specific bg image:
+  // none had a canvas surface — were bulk-only (audit 2026-07-21).
+  'split-partner-title-slide': ['logos', 'logo1Alt', 'logo2Alt', 'logo3Alt',
+    'logo4Alt', 'logo5Alt', 'bgImage', 'bgAlt'],
   // `layout` (structural variant) is intentionally NOT kept: the toolbar
   // "Layout" chip is its canonical control in the inspector. textColumns /
   // imageSide stay as precise, distinctly-named sub-settings.
   // `imageFit` is intentionally absent since datamodel step 2b: fit is a
   // per-image ImageRef property (images manager / "This image"), no longer a
   // writable slide-level setting.
-  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground'],
+  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground', 'actions'],
   // `source` and `bunnyLibraryId` were misclassified as content at the
   // phase-3 audit: a video URL/ID is a discrete input you cannot edit on the
   // canvas (the descriptor only inline-edits the title), so leaving them out
@@ -79,14 +91,23 @@ const INSPECTOR_KEEPS = {
   // `embedUrl`: same misclassification as video-slide's `source` — the embed
   // URL had no surface besides the bulk modal.
   'embed-slide': ['embedUrl', 'aspectRatio', 'sandbox'],
-  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart', 'flashOnZero', 'soundOnZero'],
-  'poll-slide': ['onClose'],
-  'likert-slide': ['onClose'],
+  // zeroText: shown only when the timer hits zero — config, no canvas surface.
+  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart',
+    'flashOnZero', 'soundOnZero', 'zeroText'],
+  // onCloseTarget: companion of the kept onClose enum — was bulk-only.
+  'poll-slide': ['onClose', 'onCloseTarget'],
+  'likert-slide': ['onClose', 'onCloseTarget'],
   'likert-slider-slide': [],
-  'feedback-slide': [],
-  'lead-capture-slide': [],
+  // placeholder: input placeholder — config, not canvas-editable text.
+  'feedback-slide': ['placeholder'],
+  // Thank-you state + privacy line are invisible on the canvas pre-submit —
+  // config texts, were bulk-only (audit 2026-07-21).
+  'lead-capture-slide': ['thankYouTitle', 'thankYouMessage', 'privacyText', 'privacyUrl'],
   'follow-invite-slide': [],
-  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode'],
+  // Axis/series labels render on the chart but are not inline-editable —
+  // chart config, were bulk-only (audit 2026-07-21).
+  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode',
+    'xLabel', 'yLabel', 'series1Label', 'series2Label'],
   'text-blocks-slide': [],
   'content-columns-slide': ['columnCount'],
   'comparison-slide': [],
@@ -99,7 +120,9 @@ const INSPECTOR_KEEPS = {
   'gallery-slide': ['layout'],
   'freeform-slide': ['snapToGrid'],
   'custom-html-slide': [],
-  'end-slide': [],
+  // Contact/social URLs and labels have no canvas surface (the canvas
+  // inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).
+  'end-slide': ['contactUrl', 'social1Label', 'social1Url', 'social2Label', 'social2Url'],
 };
 
 /**
@@ -185,8 +208,8 @@ export function renderInspectorExtrasByType(ctx) {
 
   switch (slide.type) {
     case 'chart-slide':
-      // chartType + data editor + per-type display toggles, exactly like the
-      // form's config half (axis/series labels stay bulk-modal-only).
+      // chartType + data editor + per-type display toggles + axis/series
+      // labels, exactly like the form's config half (one shared code path).
       renderChartConfigControls({
         h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
         markDirty, rerenderEditor, scheduleUiRefresh,

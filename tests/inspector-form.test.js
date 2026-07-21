@@ -148,6 +148,30 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
   assert.ok(!labels.some((l) => l === 'title'), 'no title field');
 });
 
+test('no config field is bulk-modal-only (coverage audit 2026-07-21)', () => {
+  // Settings/config/metadata may never rely on the bulk modal as their only
+  // surface (content text may). One distinctive pin per restored field group.
+  const pins = [
+    ['title-slide', 'background image alt text'], // bgAlt (bgImage shares the bg-section label)
+    ['content-slide', 'action buttons'],
+    ['split-partner-title-slide', 'partnerlogo'],
+    ['countdown-slide', 'text at zero'],
+    ['poll-slide', 'target slide id'],
+    ['likert-slide', 'target slide id'],
+    ['feedback-slide', 'placeholder'],
+    ['lead-capture-slide', 'thank you title'],
+    ['chart-slide', 'x label'],
+    ['end-slide', 'website'],
+  ];
+  for (const [type, label] of pins) {
+    const labels = fieldLabels(renderForm({ type }));
+    assert.ok(
+      labels.some((l) => l.includes(label)),
+      `${type}: "${label}" renders in the inspector`
+    );
+  }
+});
+
 test('video/embed source fields render in the inspector (no orphaned fields)', () => {
   // `source`/`embedUrl` cannot be edited on the canvas (only the title is
   // inline-editable), so per the parity invariant the inspector must carry
