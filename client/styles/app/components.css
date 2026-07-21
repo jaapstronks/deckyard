@@ -255,6 +255,10 @@ table.csv-grid {
   width: 100%;
   min-width: 96px;
   padding: 7px 9px;
+  /* Without border-box the 9px side padding is added to width:100%, so the
+     input (and its focus outline) overflows the cell to the right, overlapping
+     the next column. */
+  box-sizing: border-box;
   border: none;
   background: transparent;
   color: hsl(var(--app-text-default, 0 0% 12%));
@@ -347,6 +351,13 @@ table.csv-grid {
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-4);
+  /* Override the base .modal-content (max-height:70vh + overflow-y:auto, which
+     also computes overflow-x to auto): the modal itself caps height and each
+     body column scrolls internally, so the content wrapper must not become its
+     own (partly horizontal) scroll container. */
+  max-height: none;
+  overflow: hidden;
+  padding-right: 0;
 }
 
 /* Grid on the left, preview on the right; each half min-0 so neither forces
@@ -361,7 +372,12 @@ table.csv-grid {
 .chart-data-grid {
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  /* Vertical scroll only. The table's own wrapper (.csv-grid-scroll) owns
+     horizontal scroll for genuinely wide tables; letting this column scroll
+     horizontally too produced a spurious few-px scrollbar (a classic vertical
+     scrollbar squeezing the 100%-width table by a hair). */
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .chart-data-preview {
   display: flex;
