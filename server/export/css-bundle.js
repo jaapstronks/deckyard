@@ -15,6 +15,7 @@ import {
   toDataUrlIfLocal,
   imageFieldKeysForType,
 } from '../utils/html-utils.js';
+import { mapLimit, exportEmbedConcurrency } from '../utils/map-limit.js';
 
 /**
  * Load the full CSS bundle needed for export/render HTML documents.
@@ -70,27 +71,30 @@ export function buildExportStyleContent(bundle) {
  * @param {Object} [options]
  * @param {boolean} [options.includeClient=true] - Include client directory in path resolution
  * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
+ * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
  * @returns {Promise<Array>} Cloned slides with embedded images
  */
 export async function embedSlideImages(
   repoRoot,
   rawSlides,
-  { includeClient = true, transform = null, embedRemote = false } = {},
+  { includeClient = true, transform = null, embedRemote = false, cache = null } = {},
 ) {
-  const slides = [];
-  for (const slide of rawSlides || []) {
-    const cloned = structuredClone(slide);
-    const imgKeys = imageFieldKeysForType(cloned?.type);
-    for (const k of imgKeys) {
+  // Clone synchronously (preserves order), then collect every image field as a
+  // {src, set} cell and resolve them concurrently. One slow remote image no
+  // longer blocks the rest; the shared cache dedupes repeats within the run.
+  const slides = (rawSlides || []).map((slide) => structuredClone(slide));
+  const cells = [];
+  for (const cloned of slides) {
+    for (const k of imageFieldKeysForType(cloned?.type)) {
       if (cloned?.content?.[k]) {
-        cloned.content[k] = await toDataUrlIfLocal(
-          repoRoot,
-          cloned.content[k],
-          { includeClient, transform, embedRemote },
-        );
+        cells.push({ src: cloned.content[k], set: (v) => { cloned.content[k] = v; } });
       }
     }
-    slides.push(cloned);
   }
+  await mapLimit(cells, exportEmbedConcurrency(), async (cell) => {
+    cell.set(
+      await toDataUrlIfLocal(repoRoot, cell.src, { includeClient, transform, embedRemote, cache }),
+    );
+  });
   return slides;
 }

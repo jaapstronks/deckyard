@@ -8,6 +8,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
+import { mapLimit, exportEmbedConcurrency } from './map-limit.js';
 
 // Re-export from shared helpers
 export { escapeHtml } from '../../shared/slide-types/helpers.js';
@@ -64,14 +65,39 @@ export function mimeFromExt(ext) {
  *   are fetched through the SSRF guard and inlined as data URLs; a blocked or
  *   failed fetch returns '' (stripped) so the URL never reaches headless Chrome.
  *   Only enable on server-side export/render paths. See security-hardening 2.
+ * @param {Map<string, Promise<string>>} [options.cache] Optional per-export-run
+ *   cache keyed by source URL/path. When supplied, the same source is fetched +
+ *   recompressed at most once across every embed pass in the run (the in-flight
+ *   promise is memoised, so concurrent callers dedupe too). Scope one Map to a
+ *   single export run with a single transform config; do not share across runs.
  * @returns {Promise<string>} Data URL or original string
  */
-export async function toDataUrlIfLocal(
+export function toDataUrlIfLocal(repoRoot, urlOrPath, options = {}) {
+  const s = String(urlOrPath || '');
+  const cache = options.cache || null;
+  if (cache) {
+    const existing = cache.get(s);
+    if (existing) return existing;
+  }
+  const promise = computeDataUrlIfLocal(repoRoot, s, options);
+  if (cache) cache.set(s, promise);
+  return promise;
+}
+
+/**
+ * Async worker behind {@link toDataUrlIfLocal}. Kept separate so the public
+ * function can memoise the returned promise synchronously (dedupe in-flight
+ * fetches) before the first await.
+ * @param {string} repoRoot
+ * @param {string} s - Already-stringified URL or path
+ * @param {Object} options - Same shape as toDataUrlIfLocal options (minus cache)
+ * @returns {Promise<string>}
+ */
+async function computeDataUrlIfLocal(
   repoRoot,
-  urlOrPath,
+  s,
   { includeClient = false, transform = null, embedRemote = false } = {},
 ) {
-  const s = String(urlOrPath || '');
   const isUpload = s.startsWith('/uploads/');
   const isAsset = s.startsWith('/assets/');
   const isClient = s.startsWith('/client/');
@@ -129,12 +155,13 @@ export async function toDataUrlIfLocal(
  * @param {Object} options - Options
  * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
  * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
+ * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
  * @returns {Promise<string>} HTML with embedded images
  */
 export async function embedImgSrcDataUrls(
   repoRoot,
   html,
-  { includeClient = false, transform = null, embedRemote = false } = {},
+  { includeClient = false, transform = null, embedRemote = false, cache = null } = {},
 ) {
   const s = String(html || '');
   const localPattern = includeClient
@@ -152,13 +179,17 @@ export async function embedImgSrcDataUrls(
   }
   if (!uniq.size) return s;
 
+  // Resolve every unique src concurrently (bounded), then apply all string
+  // replacements once. Building the src->data map first avoids re-scanning
+  // mutated output and partial-match races during parallel fetches.
+  const srcs = [...uniq.keys()];
+  const datas = await mapLimit(srcs, exportEmbedConcurrency(), (src) =>
+    toDataUrlIfLocal(repoRoot, src, { includeClient, transform, embedRemote, cache }),
+  );
   let out = s;
-  for (const src of uniq.keys()) {
-    const data = await toDataUrlIfLocal(repoRoot, src, {
-      includeClient,
-      transform,
-      embedRemote,
-    });
+  for (let i = 0; i < srcs.length; i++) {
+    const src = srcs[i];
+    const data = datas[i];
     if (data !== src) {
       out = out.split(`src="${src}"`).join(`src="${data}"`);
     }
@@ -205,13 +236,18 @@ function itemsImageFieldKeysForType(type) {
  * inside items arrays (gallery images[], image-text images[], ...).
  * @param {string} repoRoot - Repository root path
  * @param {Object} slide - Slide object (will be mutated)
+ * @param {Object} [options]
+ * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
  * @returns {Promise<Object>} The slide with embedded images
  */
-export async function embedSlideImages(repoRoot, slide) {
+export async function embedSlideImages(repoRoot, slide, { cache = null } = {}) {
+  // Collect every embed target as a {get, set} cell, then resolve them
+  // concurrently. Order does not matter — each cell writes its own field.
+  const cells = [];
   const imgKeys = imageFieldKeysForType(slide?.type);
   for (const k of imgKeys) {
     if (slide?.content?.[k]) {
-      slide.content[k] = await toDataUrlIfLocal(repoRoot, slide.content[k], { includeClient: true });
+      cells.push({ src: slide.content[k], set: (v) => { slide.content[k] = v; } });
     }
   }
   for (const { listKey, itemKeys } of itemsImageFieldKeysForType(slide?.type)) {
@@ -220,11 +256,14 @@ export async function embedSlideImages(repoRoot, slide) {
     for (const item of arr) {
       for (const k of itemKeys) {
         if (item && typeof item === 'object' && item[k]) {
-          item[k] = await toDataUrlIfLocal(repoRoot, item[k], { includeClient: true });
+          cells.push({ src: item[k], set: (v) => { item[k] = v; } });
         }
       }
     }
   }
+  await mapLimit(cells, exportEmbedConcurrency(), async (cell) => {
+    cell.set(await toDataUrlIfLocal(repoRoot, cell.src, { includeClient: true, cache }));
+  });
   return slide;
 }
 

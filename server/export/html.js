@@ -55,8 +55,13 @@ export async function buildStandaloneHtml(
     .join('\n    ');
 
   // Embed uploads + /client assets (Lucide icon SVGs), so the downloaded
-  // standalone HTML works without a server.
-  const slides = await embedSlideImages(repoRoot, pres.slides, { includeClient: true });
+  // standalone HTML works without a server. Shared cache dedupes the same
+  // source across this pass and the rendered-HTML pass below.
+  const embedCache = new Map();
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    includeClient: true,
+    cache: embedCache,
+  });
 
   // Auto-advance / loop config (used by published /p/ pages and downloaded standalone HTML).
   // URL params (?loop / ?autoplay / ?interval) can override these at runtime.
@@ -95,7 +100,10 @@ export async function buildStandaloneHtml(
       }
     )
     .join('\n');
-  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, { includeClient: true });
+  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    includeClient: true,
+    cache: embedCache,
+  });
   const title = escapeHtml(pres.title || 'Presentation');
   const extraHead = String(headHtml || '');
   const extraTopbar = String(topbarRightHtml || '');

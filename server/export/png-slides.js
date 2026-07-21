@@ -22,8 +22,10 @@ export async function buildSlidesPngExportHtml(
   const titleRaw = pres.title || 'Presentation';
   const title = escapeHtml(titleRaw);
 
-  // Embed uploads referenced as field values
-  const slides = await embedSlideImages(repoRoot, pres.slides);
+  // Embed uploads referenced as field values (shared cache dedupes the same
+  // source across this pass and the rendered-HTML pass below).
+  const embedCache = new Map();
+  const slides = await embedSlideImages(repoRoot, pres.slides, { cache: embedCache });
 
   let slidesHtml = slides
     .map((s, idx) => {
@@ -42,7 +44,10 @@ export async function buildSlidesPngExportHtml(
     .join('\n');
 
   // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
-  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, { includeClient: true });
+  slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
+    includeClient: true,
+    cache: embedCache,
+  });
 
   return `<!doctype html>
 <html lang="${escapeHtml(docLang)}">

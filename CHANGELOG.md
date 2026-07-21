@@ -344,6 +344,15 @@ entries are grouped per release rather than exhaustively listed.
 
 ### Changed
 
+- **PDF/PNG/HTML export embeds images in parallel.** Server-rendered exports
+  inlined remote and local images one at a time, so a large deck (dozens of
+  remote images) spent almost all its wall-clock waiting on sequential fetch +
+  recompress and could tip past the export timeout. Embedding now runs at a
+  bounded concurrency (default 8, `EXPORT_EMBED_CONCURRENCY`) with a per-run
+  cache so each source is fetched and recompressed at most once across passes.
+  All guardrails are unchanged (SSRF fetch guard, sharp downsample/recompress,
+  strip-on-failure); behaviour is identical except faster.
+
 - **The background picker names a theme's two built-in backgrounds.** They are
   stored as `lime` and `mist`, which are storage keys rather than colours —
   `deckyard` paints lime white, `sandbox-dark` paints it near-black — so the
