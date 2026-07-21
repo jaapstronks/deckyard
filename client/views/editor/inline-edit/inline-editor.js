@@ -1870,8 +1870,6 @@ export function createInlineEditor({
     const def = currentDef();
     if (!def) return;
     const path = fieldEl.getAttribute('data-inline-field');
-    // Editing a card's text selects that card; any other text clears selection.
-    onSelectElement?.(elementForCardPath(path));
     const meta = fieldMetaForPath(def, path);
     const kind =
       meta?.type === 'csv'
@@ -1879,6 +1877,15 @@ export function createInlineEditor({
         : meta?.type === 'markdown' || fieldEl.dataset.inlineKind === 'markdown'
         ? 'markdown'
         : 'text';
+    // Selection for the inspector element tab: a card's text selects the card
+    // (icon/link controls); a stylable text field (plain or markdown) selects
+    // itself for block-level alignment/colour ("This text"); csv (chart data)
+    // selects nothing.
+    const cardSel = elementForCardPath(path);
+    if (cardSel) onSelectElement?.(cardSel);
+    else if (kind === 'text' || kind === 'markdown')
+      onSelectElement?.({ kind: 'text', fieldKey: path });
+    else onSelectElement?.(null);
     if (kind === 'csv') openCsvModal(fieldEl, path, meta);
     else if (kind === 'markdown') openMarkdownEdit(fieldEl, path, meta);
     else beginTextEdit(fieldEl, path, meta);

@@ -25,6 +25,7 @@ import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
 } from './editor-form/inspector-form.js';
+import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
 import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme.js';
@@ -108,6 +109,12 @@ function storeBgSectionOpen(open) {
 function elementAppliesToSlide(slide, sel) {
   if (!slide || !sel) return false;
   const c = slide.content || {};
+  // Any text field the user selected on this slide is stylable (block-level
+  // alignment/colour, editing-surfaces text step 3). The selection is cleared
+  // on slide change, so a non-empty fieldKey is enough — no schema lookup.
+  if (sel.kind === 'text') {
+    return typeof sel.fieldKey === 'string' && sel.fieldKey.length > 0;
+  }
   if (sel.kind === 'image') {
     const inList = (key) =>
       Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
@@ -143,6 +150,7 @@ function elementAppliesToSlide(slide, sel) {
 function elementTabLabel(sel) {
   if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
   if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
+  if (sel?.kind === 'text') return t('editor.inspector.tab.text', 'This text');
   return t('editor.inspector.tab.element', 'This element');
 }
 
@@ -1286,6 +1294,20 @@ export function createRerenderEditor({
       // (chart config, focus pickers, per-card icon/link, per-column image
       // settings); the loop below renders the remaining keeps.
       renderInspectorExtrasByType(formTypeCtx);
+      // Type-agnostic: a selected text field gets a "This text" element tab
+      // with block-level alignment/colour (editing-surfaces text step 3).
+      if (elementActive && selectedElement?.kind === 'text') {
+        renderTextElementCard({
+          h,
+          container: elementForm,
+          slide,
+          fieldKey: selectedElement.fieldKey,
+          fieldRenderers: { fieldEnum },
+          markDirty,
+          rerenderPreview,
+          scheduleUiRefresh,
+        });
+      }
     }
 
     // Add any remaining fields not handled above. In inspector mode add()
