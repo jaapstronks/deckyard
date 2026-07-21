@@ -20,7 +20,7 @@
  * flattens it onto the (unchanged) flat `slide.content` storage model.
  */
 import { t } from '../../../lib/ui-i18n.js';
-import { createQuickModal } from '../../../lib/modal.js';
+import { createQuickModal } from '../../../lib/dom/modal.js';
 
 /**
  * @typedef {Object} PickedImage  Normalized, provider-agnostic pick.

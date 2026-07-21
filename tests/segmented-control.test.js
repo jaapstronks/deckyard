@@ -22,7 +22,7 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
-const { createSegmented } = await import('../client/lib/segmented.js');
+const { createSegmented } = await import('../client/lib/dom/segmented.js');
 
 const SEGMENTS = [
   { value: 'a', label: 'A' },

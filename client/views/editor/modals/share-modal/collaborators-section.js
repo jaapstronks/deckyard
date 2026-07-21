@@ -4,9 +4,9 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { createUserAutocomplete } from '../../../../lib/user-autocomplete.js';
+import { createUserAutocomplete } from '../../../../lib/user/user-autocomplete.js';
 import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.js';
-import { confirmModal, promptModal } from '../../../../lib/modal.js';
+import { confirmModal, promptModal } from '../../../../lib/dom/modal.js';
 
 /**
  * Permission descriptions for tooltips

@@ -28,7 +28,7 @@ import { Y } from '../../../vendor/collab.js';
 import { createDeckYdocCodec } from '../../../../shared/collab/deck-ydoc.js';
 import { createLiveDocBinder } from '../../../lib/collab/live-doc-binder.js';
 import { applyRemoteTextareaValue } from '../../../lib/collab/textarea-merge.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

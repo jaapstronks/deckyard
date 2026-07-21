@@ -5,16 +5,16 @@
 
 import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { closeIcon, makeDropdownCaret } from '../../lib/icons.js';
-import { createDropdown } from '../../lib/dropdown.js';
-import { createSegmented } from '../../lib/segmented.js';
-import { formatRelativeTime } from '../../lib/format-time.js';
-import { isCommentOwner, isCommentAuthor } from '../../lib/comment-authz.js';
+import { closeIcon, makeDropdownCaret } from '../../lib/dom/icons.js';
+import { createDropdown } from '../../lib/dom/dropdown.js';
+import { createSegmented } from '../../lib/dom/segmented.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
+import { isCommentOwner, isCommentAuthor } from '../../lib/comments/comment-authz.js';
 import { storage } from '../../lib/storage.js';
-import { confirmModal } from '../../lib/modal.js';
-import { attachMentionAutocomplete } from '../../lib/mention-autocomplete.js';
-import { createRichCommentInput } from '../../lib/comment-rich-input.js';
-import { createCommentLinkButton } from '../../lib/comment-toolbar.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { attachMentionAutocomplete } from '../../lib/comments/mention-autocomplete.js';
+import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
+import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';

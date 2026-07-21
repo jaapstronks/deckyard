@@ -1,7 +1,7 @@
 import { h } from '../lib/dom.js';
 import qrcode from '../vendor/qrcode-generator.js';
 import { t } from '../lib/ui-i18n.js';
-import { copyToClipboardWithPromptFallback } from '../lib/clipboard.js';
+import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
 
 function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
   const qr = qrcode(0, 'M');

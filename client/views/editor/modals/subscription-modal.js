@@ -4,7 +4,7 @@
  * chatty this deck may be, or fall back to your global default.
  */
 
-import { createModal } from '../../../lib/modal.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 const LEVELS = [

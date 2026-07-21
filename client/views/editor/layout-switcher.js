@@ -18,7 +18,7 @@ import {
   applyLayoutVariant,
 } from '../../../shared/slide-types.js';
 import { canConvertSlideTo, convertSlideWithConfirm, slideTypeLabel } from './convert-slide-action.js';
-import { renderSlideSchematic } from '../../lib/slide-schematic.js';
+import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
 
 /**
  * The definition's mirror declaration (`layoutMirror`): which enum field

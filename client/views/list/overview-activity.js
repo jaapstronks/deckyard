@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatRelativeTime as _formatRelativeTime } from '../../lib/format-time.js';
+import { formatRelativeTime as _formatRelativeTime } from '../../lib/format/format-time.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /** Wrap shared formatter to pass `t` automatically. */

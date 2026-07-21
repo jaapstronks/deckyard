@@ -1,5 +1,5 @@
-import { debugLog } from '../../lib/debug.js';
-import { promptModal } from '../../lib/modal.js';
+import { debugLog } from '../../lib/util/debug.js';
+import { promptModal } from '../../lib/dom/modal.js';
 
 export function createFollowQaController({
   h,

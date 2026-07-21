@@ -1,6 +1,6 @@
-import { fmtDate } from '../../../lib/format.js';
-import { createModal } from '../../../lib/modal.js';
-import { copyToClipboard, showCopyFallbackModal } from '../../../lib/clipboard.js';
+import { fmtDate } from '../../../lib/format/format.js';
+import { createModal } from '../../../lib/dom/modal.js';
+import { copyToClipboard, showCopyFallbackModal } from '../../../lib/util/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 function safeString(v) {

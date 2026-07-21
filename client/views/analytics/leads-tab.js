@@ -4,8 +4,8 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { confirmModal } from '../../lib/modal.js';
-import { fmtRelativeTime } from '../../lib/user-format.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { fmtRelativeTime } from '../../lib/user/user-format.js';
 import { api } from '../../lib/api.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 

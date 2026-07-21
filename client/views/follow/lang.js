@@ -1,4 +1,4 @@
-import { getLangShortLabel, getLangDisplayName } from '../../lib/lang-selector.js';
+import { getLangShortLabel, getLangDisplayName } from '../../lib/format/lang-selector.js';
 
 /**
  * Render language selection UI for follow-along view.

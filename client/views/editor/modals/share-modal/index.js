@@ -13,7 +13,7 @@
 
 import { t } from '../../../../lib/ui-i18n.js';
 import { createFocusTrap } from '../../../../lib/dom.js';
-import { createSegmented } from '../../../../lib/segmented.js';
+import { createSegmented } from '../../../../lib/dom/segmented.js';
 import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createWorkspaceVisibilitySection } from './workspace-visibility-section.js';

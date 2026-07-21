@@ -16,10 +16,10 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { openModal } from '../../lib/modal.js';
-import { toast } from '../../lib/toast.js';
-import { normalizeLang, hasLangVersion, otherLang } from '../../lib/i18n.js';
-import { createSegmented } from '../../lib/segmented.js';
+import { openModal } from '../../lib/dom/modal.js';
+import { toast } from '../../lib/dom/toast.js';
+import { normalizeLang, hasLangVersion, otherLang } from '../../lib/format/i18n.js';
+import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;

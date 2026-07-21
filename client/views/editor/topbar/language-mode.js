@@ -9,8 +9,8 @@
  * fills empty translatable fields).
  */
 
-import { getSupportedLangs, isSupportedLang } from '../../../lib/i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { getSupportedLangs, isSupportedLang } from '../../../lib/format/i18n.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { translatableKeysForType } from '../translatable.js';

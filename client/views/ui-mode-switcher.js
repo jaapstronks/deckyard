@@ -2,7 +2,7 @@ import {
   getUiModePreference,
   setUiModePreference,
   subscribeUiMode,
-} from '../lib/ui-mode.js';
+} from '../lib/theme/ui-mode.js';
 import { iconUrl } from '../../shared/icon-names.js';
 import { t } from '../lib/ui-i18n.js';
 

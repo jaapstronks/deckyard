@@ -1,6 +1,6 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { chevronDownIcon } from '../../../lib/icons.js';
+import { chevronDownIcon } from '../../../lib/dom/icons.js';
 
 /**
  * Bulk "Collapse all / Expand all" toggle for multi-card slide editors.

@@ -8,8 +8,8 @@
 
 import { t } from '../ui-i18n.js';
 import { h } from '../dom.js';
-import { createModal } from '../modal.js';
-import { toast } from '../toast.js';
+import { createModal } from '../dom/modal.js';
+import { toast } from '../dom/toast.js';
 
 const SCOPES = ['personal', 'team'];
 

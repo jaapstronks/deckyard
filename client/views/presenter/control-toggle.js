@@ -1,4 +1,4 @@
-import { toast } from '../../lib/toast.js';
+import { toast } from '../../lib/dom/toast.js';
 import { t } from '../../lib/ui-i18n.js';
 
 export function createPresenterControlToggle({

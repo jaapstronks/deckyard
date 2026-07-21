@@ -1,10 +1,10 @@
 import { t } from '../../lib/ui-i18n.js';
 import { isInsertableSlideType } from './slide-types-policy.js';
-import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-render.js';
+import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from './slide-type-sample-content.js';
 import { storage } from '../../lib/storage.js';
 import { wireGridKeyboardNav } from './slide-type-picker-keyboard.js';
-import { renderSlideSchematic } from '../../lib/slide-schematic.js';
+import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
 import { schematicFor } from './slide-type-schematics.js';
 
 // The slide canvas is rendered at this width, then scaled down to fit each

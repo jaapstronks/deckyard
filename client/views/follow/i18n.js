@@ -12,7 +12,7 @@
 // inline (matching the app-wide t(key, englishFallback) convention) so the
 // chrome degrades gracefully if a file fails to load.
 
-import { normalizeLang } from '../../lib/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 
 /** @type {Map<string, Record<string, string>>} */
 const dictCache = new Map();

@@ -9,11 +9,11 @@
  * caller decides that).
  */
 
-import { newId } from '../../../lib/id.js';
+import { newId } from '../../../lib/util/id.js';
 import { h } from '../../../lib/dom.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { getChildIds } from './nested-helpers.js';
 
 /**

@@ -34,15 +34,15 @@ import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { uploadFile } from '../image-library/upload.js';
 import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
 import { markdownToSafeHtml } from '../../../../shared/markdown.js';
 import {
   serializeMarkdownDom,
   canInlineEditMarkdown,
-} from '../../../lib/markdown-serialize.js';
-import { promptModal } from '../../../lib/modal.js';
+} from '../../../lib/slide-authoring/markdown-serialize.js';
+import { promptModal } from '../../../lib/dom/modal.js';
 import { createSelectionToolbar } from './selection-toolbar.js';
 import { slideLinkUrl } from './selection-toolbar-logic.js';
 

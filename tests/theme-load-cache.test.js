@@ -39,7 +39,7 @@ let served = dbTheme();
 globalThis.fetch = async () => ({ ok: true, json: async () => structuredClone(served) });
 
 const { loadThemeById, invalidateTheme, clearThemeCache } = await import(
-  '../client/lib/theme.js'
+  '../client/lib/theme/theme.js'
 );
 
 test('a database theme is accepted even though its id is the slug', async () => {

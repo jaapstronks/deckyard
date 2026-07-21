@@ -10,11 +10,11 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { confirmModal } from '../modal.js';
-import { renderSlideElement } from '../slide-render.js';
-import { loadThemeById } from '../theme.js';
+import { confirmModal } from '../dom/modal.js';
+import { renderSlideElement } from '../slide-runtime/slide-render.js';
+import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { moreIcon } from '../icons.js';
+import { moreIcon } from '../dom/icons.js';
 import { installDismissOnOutside } from '../dom.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import {

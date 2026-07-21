@@ -21,7 +21,7 @@
  * autosave/If-Match flow keeps it fresh there.
  */
 
-import { getFeatures } from '../../lib/features.js';
+import { getFeatures } from '../../lib/state/features.js';
 
 /**
  * Resolve the If-Match header value for a guarded presentation route,

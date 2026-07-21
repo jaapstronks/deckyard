@@ -3,7 +3,7 @@ import { h } from '../../../lib/dom.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
 import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 
 /**
  * Create the slide library view (lazy-loaded)

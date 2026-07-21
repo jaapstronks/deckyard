@@ -5,7 +5,7 @@
  * using `data-morph-role` attributes. Unmatched elements crossfade.
  */
 
-import { prefersReducedMotion } from '../../lib/motion.js';
+import { prefersReducedMotion } from '../../lib/dom/motion.js';
 
 export const MORPH_DURATION = 560;
 

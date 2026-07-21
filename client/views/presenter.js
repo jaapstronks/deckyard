@@ -1,20 +1,20 @@
 import { api } from '../lib/api.js';
-import { logout } from '../lib/auth.js';
+import { logout } from '../lib/user/auth.js';
 import { h } from '../lib/dom.js';
 import {
   activateVideoEmbeds,
   cleanupSlideRuntimes,
   pauseVideoEmbeds,
   renderSlideElement,
-} from '../lib/slide-render.js';
+} from '../lib/slide-runtime/slide-render.js';
 import { createPresenterAnimator } from './presenter/animations.js';
 import { STEP_DEPS } from './presenter/step.js';
 import { startPresenterSession } from './presenter/session.js';
-import { normalizeLang } from '../lib/i18n.js';
+import { normalizeLang } from '../lib/format/i18n.js';
 import { t } from '../lib/ui-i18n.js';
-import { setDocumentTitle } from '../lib/branding.js';
-import { copyToClipboardWithPromptFallback } from '../lib/clipboard.js';
-import { loadThemeById } from '../lib/theme.js';
+import { setDocumentTitle } from '../lib/theme/branding.js';
+import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
+import { loadThemeById } from '../lib/theme/theme.js';
 import { attachStageScale } from './presenter/stage-scale.js';
 import { createEdgeHint } from './presenter/edge-hint.js';
 import { createSessionStatePoster } from './presenter/session-state.js';
@@ -23,7 +23,7 @@ import {
   normalizeNotesStrings,
 } from './presenter/deck-controller.js';
 import { attachPresenterKeys } from './presenter/keys.js';
-import { attachSwipeNavigation } from '../lib/swipe-nav.js';
+import { attachSwipeNavigation } from '../lib/dom/swipe-nav.js';
 import { ensureOtherLanguageFollowAlong } from './presenter/translate-fill.js';
 import {
   applyLikertInteractionStateToStage,
@@ -36,15 +36,15 @@ import { createPresenterControlToggle } from './presenter/control-toggle.js';
 import { createPresenterStageScaffold } from './presenter/stage-scaffold.js';
 import { createPresenterConsole } from './presenter/console.js';
 import { openPresenterShortcuts } from './presenter/shortcuts-overlay.js';
-import { confirmModal } from '../lib/modal.js';
+import { confirmModal } from '../lib/dom/modal.js';
 import { createPresenterFullscreenController } from './presenter/fullscreen.js';
 import { createStartCurtain } from './presenter/start-curtain.js';
 import { createChromeAutoHide } from './presenter/chrome-autohide.js';
 import { createPresenterHighlighter } from './presenter/highlighter.js';
-import { fetchMySettings } from '../lib/settings.js';
-import { createVideoLayer } from '../lib/video-layer.js';
+import { fetchMySettings } from '../lib/net/settings.js';
+import { createVideoLayer } from '../lib/slide-runtime/video-layer.js';
 import { createAutoAdvance } from './presenter/auto-advance.js';
-import { createPresentChannel } from '../lib/present-channel.js';
+import { createPresentChannel } from '../lib/net/present-channel.js';
 import { readDeckLangFromUrl } from './presenter/present-lang.js';
 import { getSlideEffectiveDuration, calculateDeckTime, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
 

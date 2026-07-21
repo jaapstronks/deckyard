@@ -1,6 +1,6 @@
 import { lockDocumentScroll } from './editor-utils.js';
 import { t } from '../../lib/ui-i18n.js';
-import { confirmModal } from '../../lib/modal.js';
+import { confirmModal } from '../../lib/dom/modal.js';
 import { cleanStr, uniq, addTr, addNamedTr, buildDocTag } from './imagekit-picker/transform-utils.js';
 
 export function openImageKitPicker({

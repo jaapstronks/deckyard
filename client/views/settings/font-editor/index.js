@@ -6,8 +6,8 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/toast.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { createUploadPanel } from './upload-panel.js';
 import { createAdobePanel } from './adobe-panel.js';
 import { createMonotypePanel } from './monotype-panel.js';

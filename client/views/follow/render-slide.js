@@ -1,4 +1,4 @@
-import { activateVideoEmbeds, mountSlideInto } from '../../lib/slide-render.js';
+import { activateVideoEmbeds, mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
 

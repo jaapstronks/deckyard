@@ -15,7 +15,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { createSegmented } from '../../lib/segmented.js';
+import { createSegmented } from '../../lib/dom/segmented.js';
 
 /**
  * @param {Object} options

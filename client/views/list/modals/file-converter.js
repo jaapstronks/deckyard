@@ -1,11 +1,11 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { showLoadingModal } from '../../../lib/loading-modal.js';
-import { createMessageRotator } from '../../../lib/status-message-rotator.js';
-import { processSSEStream } from '../../../lib/sse.js';
-import { populateThemes } from '../../../lib/theme-select.js';
-import { readFileAsDataUrl } from '../../../lib/file.js';
-import { createLlmSelector } from '../../../lib/llm-vendor.js';
-import { createQuickModal as createModal, createModalStatus } from '../../../lib/modal.js';
+import { showLoadingModal } from '../../../lib/dom/loading-modal.js';
+import { createMessageRotator } from '../../../lib/dom/status-message-rotator.js';
+import { processSSEStream } from '../../../lib/net/sse.js';
+import { populateThemes } from '../../../lib/theme/theme-select.js';
+import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { createLlmSelector } from '../../../lib/net/llm-vendor.js';
+import { createQuickModal as createModal, createModalStatus } from '../../../lib/dom/modal.js';
 import { DEFAULT_THEME_ID, DEFAULT_THEME_NAME } from '../../../../shared/constants/themes.js';
 
 export function openFileConverter({

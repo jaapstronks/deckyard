@@ -1,12 +1,12 @@
-import { fmtDate } from '../../../lib/format.js';
-import { displayNameFromEmail } from '../../../lib/user-format.js';
+import { fmtDate } from '../../../lib/format/format.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import {
   createModal,
   createPromiseModal,
   createTextInput,
   createModalActions,
   confirmModal,
-} from '../../../lib/modal.js';
+} from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
 import { ifMatchRevision } from '../if-match-revision.js';

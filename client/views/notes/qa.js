@@ -1,4 +1,4 @@
-import { debugLog } from '../../lib/debug.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
 
 export function createNotesQaController({

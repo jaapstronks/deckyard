@@ -6,7 +6,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createFieldListEditor } from './field-editor.js';
 import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';

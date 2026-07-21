@@ -5,7 +5,7 @@
  * Suggestions are created as comments that appear in the comments panel.
  */
 
-import { createPromiseModal } from '../../../lib/modal.js';
+import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 

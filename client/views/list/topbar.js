@@ -4,11 +4,11 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { getAppName } from '../../lib/branding.js';
+import { getAppName } from '../../lib/theme/branding.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
-import { createNotificationBell } from '../../lib/notification-bell.js';
-import { createUserMenu } from '../../lib/user-menu.js';
+import { createNotificationBell } from '../../lib/user/notification-bell.js';
+import { createUserMenu } from '../../lib/user/user-menu.js';
 
 /**
  * Create the topbar for the presentation list view

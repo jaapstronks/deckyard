@@ -7,23 +7,23 @@
  * - topbar/more-menu.js - More menu dropdown
  */
 
-import { createDropdown } from '../../lib/dropdown.js';
+import { createDropdown } from '../../lib/dom/dropdown.js';
 import { openSettingsModal as openSettingsModalImpl } from './modals/settings-modal.js';
 import { openVersionsModal as openVersionsModalImpl } from './modals/versions-modal.js';
-import { getUiModePreference, setUiModePreference } from '../../lib/ui-mode.js';
-import { logout } from '../../lib/auth.js';
+import { getUiModePreference, setUiModePreference } from '../../lib/theme/ui-mode.js';
+import { logout } from '../../lib/user/auth.js';
 import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
 import { openSubscriptionModal } from './modals/subscription-modal.js';
 import { createLanguageMode } from './topbar/language-mode.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { createLockRequestUI } from './topbar/lock-request.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createAvatar, updateAvatar } from '../../lib/avatar.js';
-import { getUserProfileAsync } from '../../lib/user-profiles.js';
-import { displayNameFromEmail } from '../../lib/user-format.js';
-import { createUserMenu } from '../../lib/user-menu.js';
-import { createNotificationBell } from '../../lib/notification-bell.js';
-import { chevronDownIcon } from '../../lib/icons.js';
+import { createAvatar, updateAvatar } from '../../lib/user/avatar.js';
+import { getUserProfileAsync } from '../../lib/user/user-profiles.js';
+import { displayNameFromEmail } from '../../lib/user/user-format.js';
+import { createUserMenu } from '../../lib/user/user-menu.js';
+import { createNotificationBell } from '../../lib/user/notification-bell.js';
+import { chevronDownIcon } from '../../lib/dom/icons.js';
 
 export function createEditorTopbar({
   h,

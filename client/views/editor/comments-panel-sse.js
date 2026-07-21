@@ -3,7 +3,7 @@
  * Extracted from comments-panel.js for better modularity.
  */
 
-import { createSSEConnection } from '../../lib/sse-connection.js';
+import { createSSEConnection } from '../../lib/net/sse-connection.js';
 
 /**
  * Creates SSE handling functions for comment updates.

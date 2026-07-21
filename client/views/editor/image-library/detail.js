@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { readFileAsDataUrl, getAllTags, installTagsAutocomplete, createFieldWrap } from './utils.js';
 
 /**

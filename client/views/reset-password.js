@@ -1,6 +1,6 @@
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
-import { createBusyManager } from '../lib/busy.js';
+import { createBusyManager } from '../lib/dom/busy.js';
 
 export async function renderResetPassword(root, { nav } = {}) {
   const shell = h('div', { class: 'auth-shell' });

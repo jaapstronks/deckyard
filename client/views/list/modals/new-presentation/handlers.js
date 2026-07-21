@@ -5,11 +5,11 @@
  */
 
 import { t, getUiLocale } from '../../../../lib/ui-i18n.js';
-import { generatePresentationStreaming } from '../../../../lib/ai-stream.js';
-import { showLoadingModal } from '../../../../lib/loading-modal.js';
-import { createMessageRotator } from '../../../../lib/status-message-rotator.js';
-import { processSSEStream } from '../../../../lib/sse.js';
-import { readFileAsDataUrl } from '../../../../lib/file.js';
+import { generatePresentationStreaming } from '../../../../lib/net/ai-stream.js';
+import { showLoadingModal } from '../../../../lib/dom/loading-modal.js';
+import { createMessageRotator } from '../../../../lib/dom/status-message-rotator.js';
+import { processSSEStream } from '../../../../lib/net/sse.js';
+import { readFileAsDataUrl } from '../../../../lib/util/file.js';
 
 /**
  * Handle empty presentation creation

@@ -5,7 +5,7 @@
  * works for every AI entry point that inserts slides.
  */
 import { t } from '../../lib/ui-i18n.js';
-import { toast } from '../../lib/toast.js';
+import { toast } from '../../lib/dom/toast.js';
 
 // Matches the ai-new-flash animation duration in 17-deck-grid.css, plus a
 // little slack so the class is removed only after the fade completes.

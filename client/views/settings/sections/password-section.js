@@ -3,7 +3,7 @@
  * Allows users to change their account password.
  */
 
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

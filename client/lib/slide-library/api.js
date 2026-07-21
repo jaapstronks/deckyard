@@ -3,7 +3,7 @@
  * Handles API calls for the slide library picker
  */
 
-import { toast } from '../toast.js';
+import { toast } from '../dom/toast.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 
 /**

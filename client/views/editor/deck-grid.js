@@ -12,7 +12,7 @@ import { t } from '../../lib/ui-i18n.js';
 import {
   renderSlideElement,
   cleanupSlideRuntimes,
-} from '../../lib/slide-render.js';
+} from '../../lib/slide-runtime/slide-render.js';
 
 const SLIDE_CANVAS_WIDTH = 1600;
 const SLIDE_CANVAS_HEIGHT = 900;
