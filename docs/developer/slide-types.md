@@ -13,6 +13,44 @@ Slide types are the canonical source of truth for:
 
 Custom slide types are loaded automatically at startup and merged with core types. The `custom/slide-types/` directory is **gitignored**, so your custom slides won't be overwritten when you update from upstream.
 
+### Type identity, namespaces & overriding core
+
+Every slide type has a canonical identity of the form `namespace/name[@version]`
+(see `shared/slide-types/type-id.js`):
+
+- **Core** types live in the `core` namespace (`core/title-slide`).
+- **Custom** types default to the `custom` namespace (`custom/acme-hero`). A fork
+  can declare its own namespace/version on the definition:
+
+  ```javascript
+  export default {
+    label: 'Acme Hero',
+    namespace: 'acme',   // optional; must be kebab-case. Defaults to "custom".
+    version: '2',        // optional; free-form label recorded in the identity.
+    // ...fields, render, etc.
+  };
+  ```
+
+- The registry **key** and a slide's stored `type` stay the bare name
+  (`acme-hero`), so existing decks and lookups keep working; the namespace is an
+  added identity layer, not a change to storage.
+
+**Overriding a core type is no longer silent.** If a custom type's filename
+matches a core type name, it is **refused** (the core type is kept) and a
+warning is logged, unless the definition opts in explicitly:
+
+```javascript
+export default {
+  label: 'My title slide',
+  override: true,        // intentionally replace core/title-slide
+  // ...
+};
+```
+
+The portable deck export records which definitions a deck was written against in
+a top-level `slideTypes` map (`{ "title-slide": "core/title-slide" }`),
+recomputed on every export so it never drifts.
+
 ---
 
 ## Quick Start: Adding a Custom Slide Type

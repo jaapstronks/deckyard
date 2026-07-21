@@ -39,6 +39,17 @@ import gallerySlide from './types/gallery-slide.js';
 import customHtmlSlide from './types/custom-html-slide.js';
 import { addUiI18nKeysToSlideType } from '../ui-i18n-keys.js';
 import { DEFAULT_THEME_ID } from '../constants/themes.js';
+import {
+  CORE_NAMESPACE,
+  formatTypeId,
+  tryParseTypeId,
+} from './type-id.js';
+
+// A fork namespace segment must be kebab-safe; anything else falls back to
+// the generic `custom` namespace so a malformed declaration can't produce an
+// invalid type id.
+const NAMESPACE_SEGMENT_RE = /^[a-z0-9][a-z0-9-]*$/;
+const DEFAULT_CUSTOM_NAMESPACE = 'custom';
 
 // Detect if we're running in Node.js (has process.versions.node)
 const isNode = typeof process !== 'undefined' && process.versions?.node;
@@ -231,11 +242,54 @@ if (isNode) {
   customTypes = await loadCustomSlideTypes();
 }
 
-// Merge core and custom types (custom types take precedence)
-const RAW_SLIDE_TYPES = {
-  ...CORE_SLIDE_TYPES,
-  ...customTypes,
-};
+/**
+ * Merge core and custom slide types with collision detection.
+ *
+ * A custom type may NOT silently shadow a core type: doing so by accident is
+ * exactly how a fork ends up quietly replacing core behaviour. To replace a
+ * core type on purpose, the custom definition must opt in with `override: true`
+ * (optionally `overrides: 'core/<name>'` for documentation). Without the flag
+ * the core type is kept and a prominent warning is logged, so the shadow is
+ * never silent.
+ *
+ * @param {Record<string, object>} core
+ * @param {Record<string, object>} custom
+ * @returns {Record<string, object>}
+ */
+export function mergeSlideTypes(core, custom) {
+  const merged = { ...core };
+  for (const [name, def] of Object.entries(custom)) {
+    const shadowsCore = Object.prototype.hasOwnProperty.call(core, name);
+    if (shadowsCore && !def?.override) {
+      console.warn(
+        `[registry] Custom slide type "${name}" would shadow the core type ` +
+          `"${name}" but does not declare "override: true" — keeping core. ` +
+          `Rename the custom type, or set override:true to replace core on purpose.`
+      );
+      continue; // core wins; the shadow is refused, not applied silently
+    }
+    if (shadowsCore) {
+      console.log(
+        `[registry] Custom slide type "${name}" intentionally overrides core (override:true).`
+      );
+    }
+    merged[name] = def;
+  }
+  return merged;
+}
+
+// Merge core and custom types. Custom types are additive; a core-name collision
+// is only honoured with an explicit override flag (see mergeSlideTypes).
+const RAW_SLIDE_TYPES = mergeSlideTypes(CORE_SLIDE_TYPES, customTypes);
+
+// Names of custom types that were REFUSED because they collided with core
+// without an override flag. Kept so CUSTOM_SLIDE_TYPE_NAMES stays accurate
+// (a refused type did not enter the registry).
+const APPLIED_CUSTOM_NAMES = Object.keys(customTypes).filter(
+  (name) =>
+    !Object.prototype.hasOwnProperty.call(CORE_SLIDE_TYPES, name) ||
+    customTypes[name]?.override
+);
 
 export const SLIDE_TYPES = Object.fromEntries(
   Object.entries(RAW_SLIDE_TYPES).map(([type, def]) => [
@@ -244,10 +298,113 @@ export const SLIDE_TYPES = Object.fromEntries(
   ])
 );
 
-// Names of types that came from custom/slide-types/ (fork-specific). Tooling
-// that produces tracked artifacts (e.g. i18n extraction) skips these so a
-// locally-installed fork customization can't leak into upstream files.
-export const CUSTOM_SLIDE_TYPE_NAMES = Object.keys(customTypes);
+// Names of types that came from custom/slide-types/ AND actually entered the
+// registry (a core-colliding type refused for lack of an override flag did
+// not). Tooling that produces tracked artifacts (e.g. i18n extraction) skips
+// these so a locally-installed fork customization can't leak into upstream files.
+export const CUSTOM_SLIDE_TYPE_NAMES = APPLIED_CUSTOM_NAMES;
+
+// ---------------------------------------------------------------------------
+// Slide-type identity (namespace/name[@version]) — see ./type-id.js.
+//
+// The registry key stays the bare local name so every existing
+// `SLIDE_TYPES[slide.type]` lookup and stored `slide.type` keep working. The
+// namespace/version is an ADDED identity layer exposed alongside the map, not
+// baked into the def objects (so generated schema/docs/API output are
+// unaffected).
+// ---------------------------------------------------------------------------
+
+/**
+ * Structured identity for a registered type name.
+ * Core types resolve to the `core` namespace; applied custom types take their
+ * declared `namespace`/`version` (falling back to the `custom` namespace).
+ * @param {string} name
+ * @returns {import('./type-id.js').TypeId}
+ */
+function slideTypeIdentityFor(name) {
+  const custom = customTypes[name];
+  const isAppliedCustom = APPLIED_CUSTOM_NAMES.includes(name);
+  if (custom && isAppliedCustom) {
+    const declared = typeof custom.namespace === 'string' ? custom.namespace : '';
+    const namespace = NAMESPACE_SEGMENT_RE.test(declared)
+      ? declared
+      : DEFAULT_CUSTOM_NAMESPACE;
+    return {
+      namespace,
+      name,
+      version: custom.version != null ? String(custom.version) : null,
+    };
+  }
+  const coreDef = CORE_SLIDE_TYPES[name];
+  return {
+    namespace: CORE_NAMESPACE,
+    name,
+    version: coreDef?.version != null ? String(coreDef.version) : null,
+  };
+}
+
+/**
+ * Canonical `namespace/name[@version]` id per registered type name.
+ * @type {Record<string, string>}
+ */
+export const SLIDE_TYPE_IDS = Object.fromEntries(
+  Object.keys(SLIDE_TYPES).map((name) => [
+    name,
+    formatTypeId(slideTypeIdentityFor(name)),
+  ])
+);
+
+/**
+ * The canonical id for a registered type name, or undefined if unknown.
+ * @param {string} name
+ * @returns {string|undefined}
+ */
+export function getSlideTypeId(name) {
+  return SLIDE_TYPE_IDS[name];
+}
+
+/**
+ * Resolve a slide-type reference to its definition. Accepts the bare local key
+ * (`"title-slide"`), or a qualified id (`"core/title-slide"`, `"title-slide@2"`,
+ * `"acme/hero"`). Namespace/version are advisory at resolution time — the
+ * registry key is the local name and collision detection at load guarantees one
+ * definition per name — so a qualified ref resolves by its `name` segment.
+ *
+ * @param {string} ref
+ * @param {Record<string, object>} [slideTypes] - registry to resolve against
+ *   (defaults to SLIDE_TYPES; pass a custom map through the same seam).
+ * @returns {object|undefined}
+ */
+export function getSlideType(ref, slideTypes = SLIDE_TYPES) {
+  if (typeof ref !== 'string' || !ref) return undefined;
+  if (Object.prototype.hasOwnProperty.call(slideTypes, ref)) {
+    return slideTypes[ref];
+  }
+  const id = tryParseTypeId(ref);
+  if (!id) return undefined;
+  return slideTypes[id.name];
+}
+
+/**
+ * Build the deck-level manifest of slide-type identities a set of slides uses:
+ * `{ [bareTypeName]: "namespace/name[@version]" }`. Recomputed from the current
+ * registry so it never drifts. Stamped onto the portable deck export so a deck
+ * records which type definitions it was written against.
+ *
+ * @param {Array<{type?: string}>} slides
+ * @returns {Record<string, string>}
+ */
+export function collectSlideTypeManifest(slides) {
+  const manifest = {};
+  for (const slide of Array.isArray(slides) ? slides : []) {
+    const name = slide?.type;
+    if (typeof name !== 'string' || !name || manifest[name]) continue;
+    manifest[name] =
+      SLIDE_TYPE_IDS[name] ||
+      formatTypeId({ namespace: CORE_NAMESPACE, name, version: null });
+  }
+  return manifest;
+}
 
 // Core themes included with the OSS version.
 // Additional themes can be added via custom/themes/ directory.
