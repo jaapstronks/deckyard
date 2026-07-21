@@ -48,9 +48,10 @@ import { renderImageElementCard } from './image-element-card.js';
 // the inspector. The 2026-07-21 additions below restore exactly the fields
 // the 2026-07-16 audit had parked in its "Bulk modal (only home)" column.
 const INSPECTOR_KEEPS = {
-  // bgImage/bgAlt: the title-specific hero background is a design setting
-  // with no canvas surface — was bulk-only (audit 2026-07-21).
-  'title-slide': ['logoCorner', 'bgImage', 'bgAlt'],
+  // The title background is now the shared slideBgImage (rendered by the
+  // Background section); the type's own bgImage/bgAlt were removed
+  // (title-bg-unification). logoCorner is the only title-specific keep.
+  'title-slide': ['logoCorner'],
   'chapter-title-slide': ['layout'],
   // actions: CTA buttons (label/url/style) have no canvas surface — config.
   'content-slide': ['layout', 'density', 'actions'],

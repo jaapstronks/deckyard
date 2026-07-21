@@ -1,4 +1,5 @@
 import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
+import { resolveTitleSlideBackground } from '../title-slide-background.js';
 
 export default {
   label: 'Title slide',
@@ -31,20 +32,11 @@ export default {
       required: false,
       maxLength: 160,
     },
-    {
-      key: 'bgImage',
-      label: 'Background image',
-      type: 'image',
-      required: false,
-      presetSource: 'backgrounds',
-    },
-    {
-      key: 'bgAlt',
-      label: 'Background image alt text',
-      type: 'string',
-      required: false,
-      maxLength: 180,
-    },
+    // Background image is the generic, type-agnostic `slideBgImage` field
+    // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
+    // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
+    // render fallback for un-migrated decks, folded into `slideBgImage` on edit
+    // (see title-slide-background.js).
     BACKGROUND_FIELD,
     {
       key: 'logoCorner',
@@ -58,8 +50,6 @@ export default {
     nl: {
       title: 'Nieuwe titel',
       subheading: '',
-      bgImage: '',
-      bgAlt: '',
       byline: '',
       attribution: '',
       background: 'lime',
@@ -68,8 +58,6 @@ export default {
     'en-GB': {
       title: 'New title',
       subheading: '',
-      bgImage: '',
-      bgAlt: '',
       byline: '',
       attribution: '',
       background: 'lime',
@@ -80,24 +68,27 @@ export default {
   defaults: {
     title: 'New title',
     subheading: '',
-    bgImage: '',
-    bgAlt: '',
     byline: '',
     attribution: '',
     background: 'lime',
     logoCorner: 'right',
   },
   renderHtml: (content, slide, ctx) => {
-    const bgImage =
-      typeof content?.bgImage === 'string' ? content.bgImage.trim() : '';
     const bg = bgClass(content?.background || 'lime');
-    const bgAlt =
-      typeof content?.bgAlt === 'string' ? content.bgAlt.trim() : '';
-    const bgImgHtml = bgImage
+    // Read authority: canonical `slideBgImage` (drawn by the shared
+    // .slide-bg-layer, injectSlideBackground) wins → legacy `bgImage`/`bgAlt`
+    // → none. The bespoke `<img class="slide-bg">` + `.has-bg` treatment is
+    // drawn ONLY for un-migrated decks (source === 'legacy'); when canonical,
+    // the shared layer already paints it and readability comes from
+    // slideBgText/overlay — so we must draw nothing to avoid a double image.
+    const resolvedBg = resolveTitleSlideBackground(content);
+    const legacyBg = resolvedBg.source === 'legacy' ? resolvedBg.image : '';
+    const bgAlt = resolvedBg.source === 'legacy' ? resolvedBg.alt : '';
+    const bgImgHtml = legacyBg
       ? bgAlt
-        ? `<img class="slide-bg" src="${esc(bgImage)}" alt="${esc(bgAlt)}" />`
+        ? `<img class="slide-bg" src="${esc(legacyBg)}" alt="${esc(bgAlt)}" />`
         : `<img class="slide-bg" src="${esc(
-            bgImage
+            legacyBg
           )}" alt="" aria-hidden="true" />`
       : '';
     const subtitle =
@@ -133,7 +124,7 @@ export default {
         : 'right';
     return `
         <div class="slide slide-title-universal ${bg}${
-          bgImage ? ' has-bg' : ''
+          legacyBg ? ' has-bg' : ''
         } ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}">
           <div class="slide-inner">
             ${bgImgHtml}

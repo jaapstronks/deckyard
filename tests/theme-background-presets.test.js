@@ -49,7 +49,10 @@ test('pickBackgroundPreset returns empty without a theme or presets', () => {
 
 test('newSlide without a theme creates a title slide with no background', () => {
   const slide = newSlide({ type: 'title-slide' });
-  assert.equal(slide.content.bgImage, '');
+  // Canonical key is slideBgImage; the core title type has no
+  // autoBackgroundPreset, so a new slide simply carries no background.
+  assert.ok(!slide.content.slideBgImage);
+  assert.ok(!slide.content.bgImage);
 });
 
 test('newSlide still works for every type without a theme', () => {
@@ -66,18 +69,20 @@ test('imported title slides take a background from the theme, or none', () => {
   };
 
   const withTheme = deckToPresentationParts(deck, { theme: themeWithPresets });
-  assert.ok(PRESETS.includes(withTheme.slides[0].content.bgImage));
+  assert.ok(PRESETS.includes(withTheme.slides[0].content.slideBgImage));
 
   // The behaviour change: a theme with no presets leaves the slide flat rather
   // than reaching for a demo photo.
   const withoutTheme = deckToPresentationParts(deck, { theme: themeWithout });
-  assert.equal(withoutTheme.slides[0].content.bgImage, '');
+  assert.ok(!withoutTheme.slides[0].content.slideBgImage);
 
   const noThemeAtAll = deckToPresentationParts(deck);
-  assert.equal(noThemeAtAll.slides[0].content.bgImage, '');
+  assert.ok(!noThemeAtAll.slides[0].content.slideBgImage);
 });
 
-test('an imported title slide keeps a background it already declares', () => {
+test('an imported title slide keeps a legacy background it already declares', () => {
+  // A deck carrying the legacy bgImage is left un-migrated (it renders via the
+  // fallback and migrates on edit); no preset is stacked on top of it.
   const parts = deckToPresentationParts(
     {
       slides: [
@@ -87,6 +92,7 @@ test('an imported title slide keeps a background it already declares', () => {
     { theme: themeWithPresets }
   );
   assert.equal(parts.slides[0].content.bgImage, '/mine.jpg');
+  assert.ok(!parts.slides[0].content.slideBgImage);
 });
 
 test('chapter-title → title conversion takes its background from the theme', () => {
@@ -101,10 +107,10 @@ test('chapter-title → title conversion takes its background from the theme', (
   });
   assert.equal(converted.type, 'title-slide');
   assert.equal(converted.content.title, 'Chapter one');
-  assert.ok(PRESETS.includes(converted.content.bgImage));
+  assert.ok(PRESETS.includes(converted.content.slideBgImage));
 
   const flat = convertSlideToType(slide, 'title-slide');
-  assert.equal(flat.content.bgImage, '');
+  assert.ok(!flat.content.slideBgImage);
 });
 
 test('the title-slide import path never reaches for a demo photo', () => {

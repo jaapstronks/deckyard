@@ -145,10 +145,6 @@ export function renderSlideFormByType(ctx) {
         fieldByKey,
         renderField,
         fieldGrid,
-        fieldTitleBgImage,
-        markDirty,
-        rerenderEditor,
-        scheduleUiRefresh,
       });
       return true;
 

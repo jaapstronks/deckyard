@@ -9,10 +9,6 @@ export function renderTitleSlideForm({
   fieldByKey,
   renderField,
   fieldGrid,
-  fieldTitleBgImage,
-  markDirty,
-  rerenderEditor,
-  scheduleUiRefresh,
 }) {
   add('title');
   add('subheading');
@@ -20,6 +16,9 @@ export function renderTitleSlideForm({
   add('attribution');
 
   // Background + logo corner are compact controls; keep them half-width.
+  // The background *image* lives in the shared "Background" section
+  // (slideBgImage); the title type no longer has its own bgImage picker (it
+  // was a duplicate full-slide background — see title-slide-background.js).
   const bgField = fieldByKey.get('background');
   const logoCornerField = fieldByKey.get('logoCorner');
   if (bgField || logoCornerField) {
@@ -30,21 +29,6 @@ export function renderTitleSlideForm({
     const row = fieldGrid([bgEl, logoEl], 2);
     if (row) form.append(row);
   }
-
-  // Custom ordered UI for background image selection (optional).
-  const bgImageField = fieldByKey.get('bgImage');
-  if (bgImageField) {
-    used.add('bgImage');
-    form.append(
-      fieldTitleBgImage(slide, bgImageField, (url) => {
-        slide.content[bgImageField.key] = url;
-        markDirty?.();
-        rerenderEditor();
-        scheduleUiRefresh?.();
-      })
-    );
-  }
-  add('bgAlt');
 }
 
 // Note: Custom slide types (from custom/slide-types/) that have image fields

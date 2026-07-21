@@ -245,7 +245,8 @@ function buildTitleSlide(parsed, overrides = {}) {
     title: h1?.text || parsed.headings[0]?.text || 'Untitled',
     subheading: h2?.text || '',
     byline: byline,
-    bgImage: typeof bgImage === 'string' ? bgImage : '',
+    // Canonical per-slide background key (title-bg-unification).
+    slideBgImage: typeof bgImage === 'string' ? bgImage : '',
     ...overrides,
   };
 
@@ -528,10 +529,11 @@ function applyDirectiveMappings(frontmatter) {
   if (!frontmatter) return {};
   const overrides = {};
 
-  // background: → bgImage (Slidev/Marp)
+  // background: → slideBgImage (Slidev/Marp). The canonical, type-agnostic
+  // per-slide background key (title-bg-unification).
   const bg = frontmatter.background || frontmatter.image;
   if (typeof bg === 'string' && bg.trim()) {
-    overrides.bgImage = bg.trim();
+    overrides.slideBgImage = bg.trim();
   }
 
   // backgroundColor: / color: → metadata fields
