@@ -184,10 +184,16 @@ export function renderTextElementCard({
     rerenderPreview?.();
   };
 
+  // Some slide types don't offer right-align: the quote slide's block layout
+  // only supports left (hero) and centre. A value already stored as 'right'
+  // stays selectable so it's never a stuck, invisible override.
+  const alignValues = TEXT_ALIGN_VALUES.filter(
+    (v) => v !== 'right' || slide?.type !== 'quote-slide' || current.align === 'right'
+  );
   const alignField = {
     key: 'textAlign',
     label: t('editor.textStyle.align', 'Alignment'),
-    options: TEXT_ALIGN_VALUES.map((v) => ({
+    options: alignValues.map((v) => ({
       value: v,
       label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
     })),

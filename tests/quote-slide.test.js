@@ -120,4 +120,38 @@ describe('quote slide render', () => {
     });
     assert.ok(!/is-multi/.test(html));
   });
+
+  it('centre-aligned quote text centres the whole block (is-align-center)', () => {
+    const html = render({
+      quote: SHORT,
+      authorName: 'A',
+      authorTitle: 'B',
+      textStyles: { quote: { align: 'center' } },
+    });
+    assert.match(html, /slide-quote is-align-center/);
+  });
+
+  it('left/default alignment does not add the centre class', () => {
+    const html = render({ quote: SHORT, authorName: 'A', authorTitle: 'B' });
+    assert.ok(!/is-align-center/.test(html));
+  });
+
+  it('an extra quote renders up to two portraits (like the primary)', () => {
+    const html = render({
+      quote: SHORT,
+      authorName: 'A',
+      authorTitle: 'B',
+      quotes: [
+        {
+          quote: SHORT,
+          authorName: 'C',
+          authorTitle: 'D',
+          authorImage: 'https://ex/1.jpg',
+          authorImage2: 'https://ex/2.jpg',
+        },
+      ],
+    });
+    const imgs = html.match(/https:\/\/ex\/\d\.jpg/g) || [];
+    assert.deepEqual(imgs, ['https://ex/1.jpg', 'https://ex/2.jpg']);
+  });
 });

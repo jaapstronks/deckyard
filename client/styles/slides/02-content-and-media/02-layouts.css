@@ -161,7 +161,8 @@
   letter-spacing: -0.02em;
   text-transform: var(--heading-transform, none);
   font-weight: var(--heading-weight, 400);
-  max-width: 32ch;
+  /* Wider column so a hero quote fills ~2/3 of the slide, not just over half. */
+  max-width: 46ch;
   margin-top: 8px;
 }
 /* The inline field is the inner <p>; it inherits the .quote-text size (single
@@ -213,6 +214,39 @@
 .slide-quote .quote-portrait.is-empty {
   border: 1px dashed rgba(0, 0, 0, 0.28);
   background: rgba(0, 0, 0, 0.04);
+}
+
+/* ---- Centre-aligned single quote ----
+   Choosing "center" on the quote's "This text" tab centres the whole block in
+   the slide (both axes), not just the text inside a left-hung column. The
+   renderer adds .is-align-center from content.textStyles.quote.align. */
+.slide-quote.is-align-center .slide-inner {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+.slide-quote.is-align-center .quote-text {
+  margin-left: auto;
+  margin-right: auto;
+}
+.slide-quote.is-align-center .quote-author {
+  align-items: center;
+}
+/* Name/role/portraits centre too: the byline row (portrait + text) centres as
+   a group; without portraits the name/role text is centred by text-align. */
+.slide-quote.is-align-center .quote-author.has-portraits {
+  justify-content: center;
+}
+
+/* Edit-mode reflow guard: while a quote field is being typed into, its font
+   scale is frozen at the last render (the scale only recomputes on commit), so
+   a growing quote would otherwise shove the bottom-anchored byline off the
+   slide. Centre the block during the active edit so it grows symmetrically and
+   the byline stays put; on commit it re-renders back to the hero layout. */
+.thumb.is-inline-edit
+  .slide-quote:has([data-inline-field].ie-editing)
+  .slide-inner {
+  justify-content: center;
 }
 
 /* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
