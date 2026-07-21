@@ -36,6 +36,21 @@
   color: var(--t-color-accent, currentColor);
 }
 
+/* Theme text-palette swatches (title-bg text-palette feature). Fixed slots so
+   the CSS stays static; a theme opts a slot in by declaring --t-color-brand-N
+   and listing it in theme.textSwatches. The currentColor fallback makes an
+   undeclared token a no-op, so a deck carrying brand-N stays legible (falls
+   back to the default text colour) on a theme that never defined it. */
+[data-inline-field].tf-color-brand-1 {
+  color: var(--t-color-brand-1, currentColor);
+}
+[data-inline-field].tf-color-brand-2 {
+  color: var(--t-color-brand-2, currentColor);
+}
+[data-inline-field].tf-color-brand-3 {
+  color: var(--t-color-brand-3, currentColor);
+}
+
 /* Size scale. tf-size-* only SET the custom property here; the actual
    scaling lives per type, where each primary text element expresses its
    font-size as calc(<base> * var(--tf-size-scale, 1)). `md` is the default

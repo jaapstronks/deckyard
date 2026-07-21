@@ -393,6 +393,21 @@
   background: var(--sb-swatch);
   box-shadow: 0 0 0 1px hsl(var(--app-border-default));
 }
+
+/* "This text" colour control: labelled swatch chips that wrap onto a second
+   row when the theme adds on-brand swatches (title-bg text-palette feature). */
+.sb-segmented.tf-color-swatches {
+  flex-wrap: wrap;
+}
+.sb-segmented.tf-color-swatches .sb-segmented-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.sb-swatch-label {
+  font-size: 12px;
+}
 .sb-swatch.sb-swatch-transparent {
   background:
     linear-gradient(

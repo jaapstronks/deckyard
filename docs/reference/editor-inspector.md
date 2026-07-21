@@ -188,7 +188,7 @@ that adds `tf-*` classes to the matching field element — **one code path**, so
 the editor canvas, present mode and exports all reflect it. Styles live outside
 the markdown, so the WYSIWYG round-trip gate is untouched.
 
-**Colour tokens (`tf-color-muted/-accent`).** Three values: `default` (no
+**Colour tokens (`tf-color-muted/-accent`).** Base values: `default` (no
 override — follows the slide's automatic, background-aware text colour),
 `muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
 inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
@@ -201,6 +201,21 @@ background-colour token was **dropped** (rollout QA): on text sitting directly
 on the slide background it is invisible by construction; old `inverse` values
 prune to no override. Alignment (`tf-align-*`) is generic and needs no per-type
 work — no core type sets a competing `text-align` on its primary fields.
+
+**Theme text swatches (`tf-color-brand-1/-2/-3`).** The colour control is a
+swatch row: the three base tokens above plus any on-brand text colours the
+active theme declares via **`theme.textSwatches`** — a list of fixed slots
+(`brand-1`/`brand-2`/`brand-3`) each backed by a `--t-color-<slot>` token, with
+an optional label (string or `{ nl, en }`, like `backgroundLabels`). Rationale
+for a curated theme palette rather than exposing the background swatches
+directly: the `--t-slide-bg-*` swatches are *surface fills* (e.g. `lime` is
+often white), so they fail as text colours — a theme picks legible on-brand
+colours here instead. Normalization (`normalizeTheme`) keeps only slots the
+theme actually coloured, so the control never shows a swatch that would resolve
+to a no-op `currentColor`; a theme that declares none leaves the three base
+tokens. Stored values stay portable tokens: a deck carrying `brand-1` on a
+theme that never defined it falls back to the default text colour (the
+`currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
 
 **Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would *replace* the
 px font-sizes several types set (content body 28/25/22px per density) with a

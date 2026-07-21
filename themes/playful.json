@@ -26,6 +26,10 @@
     "#f59e0b",
     "#fb7185"
   ],
+  "textSwatches": [
+    { "id": "brand-1", "label": { "en": "Pink", "nl": "Roze" } },
+    { "id": "brand-2", "label": { "en": "Rust", "nl": "Roest" } }
+  ],
   "gradient": {
     "enabled": false
   },
@@ -47,6 +51,8 @@
     "--t-color-text": "#431407",
     "--t-color-text-muted": "rgba(67, 20, 7, 0.6)",
     "--t-color-accent": "#ea580c",
+    "--t-color-brand-1": "#db2777",
+    "--t-color-brand-2": "#c2410c",
     "--t-quote-author-color": "#db2777",
     "--t-radius": "22px",
     "--t-radius-sm": "14px",
