@@ -133,7 +133,7 @@ export async function buildSlidesPdfHtml(
               baseUrl,
               docLang,
             })
-          : renderSlideHtml(s, { theme, slideTypes });
+          : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
       return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
     })
     .join('\n');

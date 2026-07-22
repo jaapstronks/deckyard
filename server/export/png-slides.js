@@ -32,7 +32,7 @@ export async function buildSlidesPngExportHtml(
       const slideHtml =
         s?.type === 'video-slide'
           ? renderVideoSlidePngHtml(s)
-          : renderSlideHtml(s, { theme, slideTypes });
+          : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
       return `<div class="png-item" data-idx="${idx}">
         <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
         <div class="png-actions">

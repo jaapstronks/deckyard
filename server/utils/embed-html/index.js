@@ -63,7 +63,7 @@ export function buildEmbedHtml(
       const ariaHidden = isFirst ? 'false' : 'true';
       let innerHtml = '';
       try {
-        innerHtml = renderSlideHtml(s, { theme, slideTypes });
+        innerHtml = renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
       } catch (e) {
         const msg = escapeHtml(String(e?.message || e));
         innerHtml = `
