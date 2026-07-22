@@ -96,6 +96,12 @@ Documented in `docs/reference/editor-inspector.md`,
   reusable building-block layer (eyebrow, highlight, badge, CTA) that core and
   custom types both compose. Split out of the theme track when the Theme Studio
   shipped.
+- **Editorial slide types** — `docs/plans/editorial-slide-types.md` — fill the
+  one gap in the block vocabulary: a themed **callout family** (key-insight /
+  warning / definition / note / tip, one `callout-slide` with variants) plus
+  **comparison sub-variants** (versus / before-after / pros-cons / tradeoff) and,
+  later, within-slide **aside insets**. Each ships with matching AI-catalog/MCP
+  logic so agents reach for the right block.
 
 ## Later — cloud / multi-tenant track
 
