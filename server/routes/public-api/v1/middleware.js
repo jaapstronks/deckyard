@@ -206,11 +206,11 @@ export function parsePaginationParams(url, options = {}) {
 
 /**
  * Check per-minute rate limit for the API key.
- * Uses in-memory token bucket algorithm.
+ * Uses a Redis-backed (or in-memory fallback) token bucket.
  * @param {Object} ctx - Request context with apiKey
- * @returns {boolean} - True if allowed, false if rate limited
+ * @returns {Promise<boolean>} - True if allowed, false if rate limited
  */
-export function checkRequestRateLimit(ctx) {
+export async function checkRequestRateLimit(ctx) {
   const { res, apiKey } = ctx;
 
   if (!apiKey) return true; // Should not happen after auth
@@ -220,7 +220,7 @@ export function checkRequestRateLimit(ctx) {
   const key = `api:${apiKey.id}`;
 
   // Token bucket: capacity = requests per minute, refill = capacity / 60
-  const allowed = allowRequest(key, {
+  const allowed = await allowRequest(key, {
     capacity: limits.requestsPerMinute,
     refillPerSec: limits.requestsPerMinute / 60,
   });

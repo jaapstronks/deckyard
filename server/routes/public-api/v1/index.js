@@ -221,7 +221,7 @@ export async function handlePublicApiV1(ctx) {
   }
 
   // Check per-minute rate limit
-  if (!checkRequestRateLimit(ctx)) {
+  if (!(await checkRequestRateLimit(ctx))) {
     return true; // Response already sent
   }
 

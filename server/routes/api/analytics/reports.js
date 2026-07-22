@@ -100,7 +100,7 @@ export async function handleCreateReport(ctx, presentationId, rateLimitKey) {
   const path = url.pathname;
 
   // Stricter rate limit for report creation (expensive operation)
-  if (!allowRequest(`analytics:report:create:${rateLimitKey}`, AUTH_RATE_LIMITS.expensive)) {
+  if (!(await allowRequest(`analytics:report:create:${rateLimitKey}`, AUTH_RATE_LIMITS.expensive))) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser?.email,
