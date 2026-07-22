@@ -36,6 +36,27 @@ test('split-partner-title-slide is archived: deprecated + not insertable, still 
   );
 });
 
+test('freeform-slide is archived: deprecated + not insertable, still renders stored decks', () => {
+  const def = SLIDE_TYPES['freeform-slide'];
+  assert.ok(def, 'type stays registered so decks that already use it keep rendering');
+  assert.equal(def.deprecated, true, 'marked deprecated (archive convention, PR #197)');
+  assert.equal(
+    isInsertableSlideType({ type: 'freeform-slide', def }),
+    false,
+    'hidden from every insertion path (picker + AI)'
+  );
+  // A stored freeform slide (absolutely-positioned elements) still renders via
+  // the kept render-only path — no authoring surface required.
+  const html = def.renderHtml({
+    elements: [
+      { id: 'e1', type: 'heading', x: 10, y: 10, width: 80, height: 15, zIndex: 1, content: 'Kept', fontSize: 'xl' },
+    ],
+    background: 'lime',
+  });
+  assert.match(html, /class="slide/);
+  assert.match(html, /Kept/);
+});
+
 test('org-disabled types are not insertable', () => {
   assert.equal(
     isInsertableSlideType({

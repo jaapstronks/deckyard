@@ -28,9 +28,6 @@ const LEGACY_WHEN_TO_USE = {
   'embed-slide': [
     'Use for embedding external content (iframes).',
   ],
-  'freeform-slide': [
-    'Use for completely custom HTML slides.',
-  ],
   'lead-capture-slide': [
     'Use for collecting email addresses or signup forms.',
   ],
@@ -304,7 +301,8 @@ export function buildSlideTypesPrompt({
   const EXCLUDED_TYPES = new Set([
     'follow-invite-slide',        // app-managed
     'card-stack-slide',           // deprecated — use icon-card-grid-slide
-    'split-partner-title-slide',  // archived (deprecated) — returns via freeform
+    'split-partner-title-slide',  // archived (deprecated)
+    'freeform-slide',             // archived (deprecated) — no longer authorable
     'lijstje-slide',              // alias for list-slide (avoid duplicate entry)
   ]);
 
