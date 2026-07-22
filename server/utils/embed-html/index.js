@@ -16,6 +16,7 @@ import {
   sandboxWatermarkHtml,
 } from '../sandbox-watermark.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
+import { resolveDocLangFromPresentation, getDocDir } from '../doc-lang.js';
 
 export function buildEmbedHtml(
   repoRoot,
@@ -43,6 +44,10 @@ export function buildEmbedHtml(
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const title = pres?.title || 'Presentation';
   const docLang = detectLang(pres);
+  // Direction is resolved from the deck's real language (pres.lang / i18n),
+  // which — unlike detectLang's nl/en heuristic — can surface RTL locales
+  // (ar/he/fa/ur). Parity with export/reader/print, which all set dir via getDocDir.
+  const docDir = getDocDir(resolveDocLangFromPresentation(pres));
   const totalSlides = slides.length || 0;
 
   const wmOn = sandboxWatermarkEnabled(watermark);
@@ -118,6 +123,7 @@ export function buildEmbedHtml(
   return renderEmbedHtmlDocument({
     title,
     docLang,
+    docDir,
     totalSlides,
     publishId,
     ui,
