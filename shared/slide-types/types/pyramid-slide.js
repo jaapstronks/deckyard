@@ -68,6 +68,8 @@ export default {
       key: 'levels',
       label: 'Levels',
       type: 'items',
+      // Pyramid levels are an ordered hierarchy (base to apex). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,

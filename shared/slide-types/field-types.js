@@ -1,4 +1,4 @@
-import { isNonEmptyString } from './helpers.js';
+import { isNonEmptyString, safeHref } from './helpers.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 
 /**
@@ -85,6 +85,26 @@ function validateBoolean(val, field) {
   // present non-empty value must be an actual boolean.
   if (val != null && val !== '' && typeof val !== 'boolean') {
     errors.push(`${path} must be a boolean`);
+  }
+  return errors;
+}
+
+function validateUrl(val, field) {
+  const errors = [];
+  const path = pathOf(field);
+  if (field.required && !isNonEmptyString(val)) errors.push(`${path} is required`);
+  if (val != null && typeof val !== 'string') {
+    errors.push(`${path} must be a string`);
+    return errors;
+  }
+  if (field.maxLength && typeof val === 'string' && val.length > field.maxLength) {
+    errors.push(`${path} exceeds max length (${field.maxLength})`);
+  }
+  // A present value must be a link we would actually render: http(s)/mailto or
+  // a root-/protocol-relative path. Rejects javascript:/data: so a stored value
+  // can never become a live XSS sink when the projection emits <a href>.
+  if (typeof val === 'string' && val.trim() !== '' && !safeHref(val)) {
+    errors.push(`${path} must be an http(s), mailto, or root-relative URL`);
   }
   return errors;
 }
@@ -274,6 +294,14 @@ export const FIELD_TYPES = {
     docExtra: "`presetSource` (`'backgrounds'` or `'partnerlogos'`), `required`",
     valueKind: 'string',
     validate: validateImage,
+  },
+  url: {
+    label: 'Link',
+    description:
+      'A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (javascript:/data: rejected); projects as an `<a href>`. Not a translatable field, so link targets are never sent to translation.',
+    docExtra: '`maxLength`, `required`, `placeholder`, `helpText`',
+    valueKind: 'string',
+    validate: validateUrl,
   },
   images: {
     label: 'Images',

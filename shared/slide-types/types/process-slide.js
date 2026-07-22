@@ -82,6 +82,8 @@ export default {
       key: 'items',
       label: 'Steps',
       type: 'items',
+      // Ordered steps — the sequence is the meaning. Projects to an <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 7,

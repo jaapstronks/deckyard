@@ -74,6 +74,8 @@ export default {
       key: 'items',
       label: 'Stages',
       type: 'items',
+      // Funnel stages are an ordered progression (top to bottom). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,

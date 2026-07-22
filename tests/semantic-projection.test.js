@@ -180,3 +180,80 @@ describe('background/logo global fields are excluded', () => {
     assert.ok(html.includes('x'), html);
   });
 });
+
+describe('count-/order-aware collection projection', () => {
+  it('projects an ordered items field to <ol>, an unordered one to <ul>', () => {
+    const ordered = {
+      fields: [{ key: 'items', type: 'items', ordered: true, itemFields: [{ key: 'title', type: 'string' }] }],
+    };
+    const unordered = {
+      fields: [{ key: 'items', type: 'items', itemFields: [{ key: 'title', type: 'string' }] }],
+    };
+    const val = { content: { items: [{ title: 'A' }, { title: 'B' }] } };
+    const oh = body(val, ordered);
+    assert.ok(/<ol class="reader-items">/.test(oh), oh);
+    assert.ok(!/<ul/.test(oh), oh);
+    const uh = body(val, unordered);
+    assert.ok(/<ul class="reader-items">/.test(uh), uh);
+    assert.ok(!/<ol/.test(uh), uh);
+  });
+
+  it('projects a flat repeating group bounded by its count, grouped per slot', () => {
+    const def = {
+      repeatingGroups: [
+        { countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Body'], ordered: false },
+      ],
+      fields: [
+        { key: 'cardCount', type: 'enum' },
+        { key: 'card1Title', type: 'string' }, { key: 'card1Body', type: 'markdown' },
+        { key: 'card2Title', type: 'string' }, { key: 'card2Body', type: 'markdown' },
+        { key: 'card3Title', type: 'string' }, { key: 'card3Body', type: 'markdown' },
+      ],
+    };
+    const html = body({ content: {
+      cardCount: '2',
+      card1Title: 'One', card1Body: 'first',
+      card2Title: 'Two', card2Body: 'second',
+      card3Title: 'LEAK', card3Body: 'should not appear',
+    } }, def);
+    // stale slot 3 (beyond cardCount=2) must not leak
+    assert.ok(!/LEAK/.test(html), html);
+    // title + body stay grouped in one <li>, title becomes the block heading
+    assert.ok(/<li class="reader-item"><h3>One<\/h3>/.test(html), html);
+    assert.ok(/first/.test(html) && /second/.test(html), html);
+    // the raw count enum and numbered slot fields never render as loose nodes
+    assert.ok(!/card1Title|cardCount/.test(html), html);
+  });
+
+  it('falls back to all declared slots when the count field is missing', () => {
+    const def = {
+      repeatingGroups: [{ countKey: 'cardCount', prefix: 'card', slotFields: ['Title'] }],
+      fields: [
+        { key: 'cardCount', type: 'enum' },
+        { key: 'card1Title', type: 'string' },
+        { key: 'card2Title', type: 'string' },
+      ],
+    };
+    const html = body({ content: { card1Title: 'A', card2Title: 'B' } }, def);
+    assert.ok(/A/.test(html) && /B/.test(html), html);
+  });
+});
+
+describe('url field projection', () => {
+  it('renders a safe url as an <a href>', () => {
+    const def = { fields: [{ key: 'link', type: 'url' }] };
+    const html = body({ content: { link: 'https://example.com/x' } }, def);
+    assert.ok(/<a href="https:\/\/example\.com\/x">https:\/\/example\.com\/x<\/a>/.test(html), html);
+  });
+  it('drops an unsafe scheme instead of emitting a link', () => {
+    const def = { fields: [{ key: 'link', type: 'url' }] };
+    const html = body({ content: { link: 'javascript:alert(1)' } }, def);
+    assert.ok(!/<a /.test(html), html);
+    assert.ok(!/alert/.test(html), html);
+  });
+  it('allows a root-relative link', () => {
+    const def = { fields: [{ key: 'link', type: 'url' }] };
+    const html = body({ content: { link: '/p/deck/1' } }, def);
+    assert.ok(/<a href="\/p\/deck\/1">/.test(html), html);
+  });
+});
