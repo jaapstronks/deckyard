@@ -129,7 +129,7 @@
 }
 
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
-.slide-matrix .cell-body h3.md-subheading {
+.slide-matrix .cell-body .md-subheading {
   font-family: var(--font-heading);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
@@ -140,7 +140,7 @@
   color: var(--color-text);
 }
 
-.slide-matrix .cell-body h3.md-subheading:first-child {
+.slide-matrix .cell-body .md-subheading:first-child {
   margin-top: 0;
 }
 

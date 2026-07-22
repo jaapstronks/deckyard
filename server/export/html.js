@@ -1,4 +1,4 @@
-import { renderSlideHtml } from '../utils/render-slide.js';
+import { renderSlideHtml, computeHeadingShifts } from '../utils/render-slide.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation, getDocDir } from '../utils/doc-lang.js';
 import {
@@ -90,9 +90,12 @@ export async function buildStandaloneHtml(
     slideDurations,
   });
 
+  // Per-slide heading depth for the document outline: the deck title below is
+  // the single <h1>; chapter sections push their slides one level deeper.
+  const headingShifts = computeHeadingShifts(slides);
   let slidesHtml = slides
     .map(
-      (s) => {
+      (s, i) => {
         const c =
           s?.content && typeof s.content === 'object' ? s.content : {};
         const a11yTitle = typeof c?.a11yTitle === 'string' ? c.a11yTitle.trim() : '';
@@ -106,7 +109,7 @@ export async function buildStandaloneHtml(
           : '';
         return `<section class="deck-slide" data-slide-id="${escapeHtml(
           s.id
-        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true })}</section>`;
+        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i] })}</section>`;
       }
     )
     .join('\n');
@@ -230,7 +233,7 @@ ${css.wmCss}
     <a class="skip-link" href="#deck">Skip to slides</a>
     <div class="presenter-shell">
       <header class="presenter-topbar">
-        <div class="presenter-title">${title}</div>
+        <h1 class="presenter-title">${title}</h1>
         <div class="row" style="gap: 10px; align-items:center;">
           ${extraTopbar}
           <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>

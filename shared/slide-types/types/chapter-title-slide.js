@@ -69,7 +69,7 @@ export default {
     return `
         <div class="slide slide-chapter-title is-layout-${layout}"${styleAttrFromVars(vars)}>
           <div class="slide-inner">
-            <h1 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h1>
+            <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
             ${subtitle}
           </div>
         </div>
