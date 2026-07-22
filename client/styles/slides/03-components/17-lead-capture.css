@@ -8,6 +8,16 @@
   --interaction-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
+/* Print/PDF: drop the raw interaction shadows the same way the slide-shadow
+   tokens are flattened in 00-tokens.css, so cards don't keep grey elevation
+   boxes in print. Same selector as the definition above → wins in print. */
+@media print {
+  .slide-lead-capture {
+    --interaction-shadow: none;
+    --interaction-shadow-sm: none;
+  }
+}
+
 @supports (color: color-mix(in srgb, white 50%, black)) {
   .slide-lead-capture {
     --interaction-surface: color-mix(in srgb, white 94%, var(--color-background));
