@@ -256,6 +256,11 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active),
   accent-color: hsl(var(--app-accent-primary));
 }
 .presenter-title {
+  /* Promoted to the document-level heading in the standalone/published export;
+     reset the UA heading margin/weight so it stays visually identical to the
+     topbar label it has always been. No-op for the live presenter's div. */
+  margin: 0;
+  font-weight: inherit;
   font-family: var(--font-heading);
   font-size: 18px;
   color: hsl(var(--app-text-primary));

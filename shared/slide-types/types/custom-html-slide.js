@@ -131,7 +131,7 @@ function scopeCss(css, scope) {
 }
 
 const DEFAULT_HTML = `<div class="ch-center">
-  <h1 class="ch-title">Custom HTML</h1>
+  <h2 class="ch-title">Custom HTML</h2>
   <p class="ch-sub">Write your own HTML and CSS for full pixel control.</p>
 </div>`;
 

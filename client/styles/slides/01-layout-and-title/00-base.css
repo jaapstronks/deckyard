@@ -18,9 +18,12 @@
 }
 
 /* Reset global heading styles inside slides (theme base CSS may set centered/white headings). */
+/* h4 included: in-section slides (under a chapter) shift a slide's headings one
+   level deeper, so a title can reach h3 and a markdown subheading h4. */
 .slide h1,
 .slide h2,
-.slide h3 {
+.slide h3,
+.slide h4 {
   margin: 0;
   color: inherit;
   text-align: start;

@@ -254,6 +254,65 @@ export function stripEditorOnlyAttrs(html) {
     .replace(/\s+data-inline-item="[^"]*"/g, '');
 }
 
+/**
+ * Shift every heading element (`<h1>`..`<h6>`) in a slide's rendered HTML down
+ * by `shift` levels, clamped to the h2..h6 range. Used to place a slide's
+ * headings at the right depth in the document outline of a VISUAL output
+ * artifact (export / embed): the deck title is the single document `<h1>`, so
+ * no slide heading may be an `<h1>`, and slides under a chapter-title section
+ * drop one further level. Only the tag name is rewritten; classes, `data-*` and
+ * every other attribute survive, so all CSS/morph/step hooks keep matching.
+ *
+ * Floors at h2 even when `shift` is 0, so a stray `<h1>` from any slide type
+ * (custom fork types included) can never produce a second document `<h1>`.
+ *
+ * @param {string} html
+ * @param {number} [shift=0] - non-negative levels to descend (0 = floor only)
+ * @returns {string}
+ */
+export function shiftHeadingLevels(html, shift = 0) {
+  if (typeof html !== 'string' || !html) return html;
+  const n = Number.isFinite(shift) ? Math.max(0, Math.trunc(shift)) : 0;
+  return html.replace(/<(\/?)(h)([1-6])\b/gi, (_m, slash, h, digit) => {
+    const level = Math.min(6, Math.max(2, Number(digit) + n));
+    return `<${slash}${h}${level}`;
+  });
+}
+
+/**
+ * Per-slide heading shift for a deck's VISUAL output outline.
+ *
+ * The deck title is the document `<h1>`. A chapter-title slide is a section
+ * heading at `<h2>` and opens a running section: every slide after it (until
+ * the next chapter) sits one level deeper, so its title renders `<h3>`. Slides
+ * before any chapter sit directly under the deck `<h1>` at `<h2>`.
+ *
+ * Returns a shift (0 or 1) per slide, to be passed as `ctx.headingShift` into
+ * {@link renderSlideHtml}. Chapter-title slides themselves are never shifted
+ * (they ARE the section heading); they only raise the shift for what follows.
+ *
+ * @param {Array<{type?:string}>} slides
+ * @param {object} [opts]
+ * @param {(type?:string)=>boolean} [opts.isSectionOpener] - override the
+ *   section-opener test (defaults to the chapter-title slide type)
+ * @returns {number[]}
+ */
+export function computeHeadingShifts(slides, { isSectionOpener } = {}) {
+  const opener =
+    typeof isSectionOpener === 'function'
+      ? isSectionOpener
+      : (type) => type === 'chapter-title-slide';
+  let inSection = false;
+  const list = Array.isArray(slides) ? slides : [];
+  return list.map((s) => {
+    if (opener(s?.type)) {
+      inSection = true;
+      return 0;
+    }
+    return inSection ? 1 : 0;
+  });
+}
+
 export function renderSlideHtml(slide, ctx = {}) {
   // Allow callers to provide their own slide types (e.g., client using server-fetched types).
   // This is essential for custom slide types that aren't bundled in the client build.
@@ -288,6 +347,13 @@ export function renderSlideHtml(slide, ctx = {}) {
   // injectTextStyles (which reads data-inline-field). data-morph-role is NOT
   // stripped: the presenter morph engine uses it.
   if (ctx?.stripEditorAttrs) out = stripEditorOnlyAttrs(out);
+  // Visual output artifacts (export/embed) place each slide's headings at the
+  // right document-outline depth: the deck title is the single <h1>, so slide
+  // headings are floored to <h2>, and slides inside a chapter section drop one
+  // further level. Runs last so it covers the type's title AND its markdown
+  // subheadings alike — driven by ctx, not per-type hardcoding. Callers that
+  // don't set headingShift (editor/presenter) keep the slide's authored levels.
+  if (ctx?.headingShift != null) out = shiftHeadingLevels(out, ctx.headingShift);
   return out;
 }
 
