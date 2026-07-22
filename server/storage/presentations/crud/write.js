@@ -184,9 +184,11 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
     created: existing.created,
     modified: now,
     ownerEmail: existing.ownerEmail || null,
-    // Themes are chosen at creation/import time and are not user-switchable.
-    // Keep the existing theme locked to avoid environment-wide or accidental theme switching.
-    theme: existing.theme,
+    // Themes are chosen at creation/import time and are hard-locked on the
+    // shared write path to avoid environment-wide or accidental theme switching.
+    // Only an explicit, permission-checked switch (the /change-theme route)
+    // opts in via allowThemeChange, mirroring the allowScopeChange escape hatch.
+    theme: opts?.allowThemeChange && body?.theme ? body.theme : existing.theme,
   };
   // Preserve sandbox metadata if present (and compute it for sandbox-created docs that predate the field).
   if (existing?.sandbox && typeof existing.sandbox === 'object')

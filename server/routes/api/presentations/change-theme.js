@@ -16,7 +16,7 @@ import {
   parseJsonBody,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
-import { loadTheme } from '../../../utils/themes.js';
+import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 
@@ -240,15 +240,20 @@ export async function handleChangeTheme(
     return slide;
   });
 
-  // Update the presentation with new theme and converted slides
+  // Update the presentation with new theme and converted slides.
+  // `theme` is the canonical column; `themeId` is only a read-side projection,
+  // so the real switch must go through `theme` gated by allowThemeChange (the
+  // shared write path hard-locks the theme otherwise).
   const updateData = {
     ...pres,
+    theme: resolveThemeId(newThemeId),
     themeId: newThemeId,
     slides: updatedSlides,
   };
 
   const result = await updatePresentation(repoRoot, id, updateData, {
     actorEmail: authedUser?.email,
+    allowThemeChange: true,
   });
 
   if (!result || result.error) {

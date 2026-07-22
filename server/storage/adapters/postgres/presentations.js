@@ -248,6 +248,13 @@ export function withPresentations(Base) {
         updateData.scope = data.scope;
       }
 
+      // Theme is hard-locked on the shared write path; only an explicit,
+      // permission-checked switch (the /change-theme route) opts in via
+      // allowThemeChange, mirroring the allowScopeChange escape hatch above.
+      if (opts?.allowThemeChange && data.theme) {
+        updateData.theme = data.theme;
+      }
+
       // Only the /scope route passes allowViewOnlyChange; regular editor saves
       // must not touch the stored flag (their body may omit it entirely).
       if (opts?.allowViewOnlyChange && typeof data.isViewOnly === 'boolean') {
