@@ -19,7 +19,7 @@ const strings = {
   loading: submit?.dataset?.loading || 'Loading...',
   codeNotFound: errorEl?.dataset?.codeNotFound || 'Code not found or expired.',
   networkError: errorEl?.dataset?.networkError || 'Network error. Please try again.',
-  enterCode: errorEl?.dataset?.enterCode || 'Enter a 4-letter code.',
+  enterCode: errorEl?.dataset?.enterCode || 'Enter the session code.',
   continueText: submit?.dataset?.continue || 'Continue',
 };
 
@@ -31,7 +31,7 @@ function sanitizeCode(raw) {
   return String(raw || '')
     .replace(/[^a-zA-Z]/g, '')
     .toUpperCase()
-    .slice(0, 4);
+    .slice(0, 6);
 }
 
 input?.addEventListener('input', () => {
@@ -45,7 +45,7 @@ form?.addEventListener('submit', async (e) => {
   setError('');
 
   const code = sanitizeCode(input?.value || '');
-  if (code.length !== 4) {
+  if (code.length < 4 || code.length > 6) {
     setError(strings.enterCode);
     input?.focus?.();
     return;
