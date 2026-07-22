@@ -34,7 +34,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const widthPercent = 100 - (idx / Math.max(total - 1, 1)) * 40;
 
   return `
-    <div class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="stage-bar">
         <div class="stage-content">
           ${labelHtml}
@@ -42,7 +42,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
         </div>
       </div>
       ${textHtml}
-    </div>
+    </li>
   `;
 }
 
@@ -210,9 +210,9 @@ export default {
       <div class="slide slide-funnel ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="funnel-container" data-count="${count}" role="list" aria-label="Funnel stages">
+          <ol class="funnel-container" data-count="${count}" aria-label="Funnel stages">
             ${stagesHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

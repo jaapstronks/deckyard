@@ -201,31 +201,37 @@ export default {
         ? `<div class="item-text" data-inline-field="items.${idx}.text" dir="auto">${esc(x)}</div>`
         : '';
       return `
-        <div class="lijst-item" role="listitem" data-inline-item="items" data-inline-item-index="${idx}">
+        <li class="lijst-item" data-inline-item="items" data-inline-item-index="${idx}">
           ${marker}
           <div class="lijst-item-body">
             <div class="item-title" data-inline-field="items.${idx}.title" dir="auto">${esc(t)}</div>
             ${textHtml}
           </div>
-        </div>
+        </li>
       `;
     };
 
-    // Two-column: fill left column first, then right column
+    // Native list semantics: numbered variant → <ol>, bullets → <ul>.
+    const listTag = variant === 'is-numbers' ? 'ol' : 'ul';
+    // Two-column: fill left column first, then right column. Each column is its
+    // own native list so <li>s always sit directly inside a <ul>/<ol>.
     const isTwoCol = layout === 'is-two-col';
-    let listContent;
+    let listHtml;
     if (isTwoCol && items.length > 1) {
       const midpoint = Math.ceil(items.length / 2);
       const leftItems = items.slice(0, midpoint);
       const rightItems = items.slice(midpoint);
       const leftHtml = leftItems.map((it, i) => renderItem(it, i)).join('');
       const rightHtml = rightItems.map((it, i) => renderItem(it, midpoint + i)).join('');
-      listContent = `
-        <div class="lijst-col">${leftHtml}</div>
-        <div class="lijst-col">${rightHtml}</div>
+      listHtml = `
+        <div class="lijst">
+          <${listTag} class="lijst-col">${leftHtml}</${listTag}>
+          <${listTag} class="lijst-col">${rightHtml}</${listTag}>
+        </div>
       `;
     } else {
-      listContent = items.map((it, idx) => renderItem(it, idx)).join('');
+      const itemsHtml = items.map((it, idx) => renderItem(it, idx)).join('');
+      listHtml = `<${listTag} class="lijst">${itemsHtml}</${listTag}>`;
     }
 
     return `
@@ -233,9 +239,7 @@ export default {
         <div class="slide-inner">
           <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
           ${subheading}
-          <div class="lijst" role="list">
-            ${listContent}
-          </div>
+          ${listHtml}
         </div>
       </div>
     `;
