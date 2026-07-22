@@ -5,6 +5,7 @@
 
 import { json } from '../../utils/http.js';
 import { norm } from '../../utils/normalize.js';
+import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations.js';
 import { validateShareLink } from '../../storage/share-links/crud.js';
@@ -488,7 +489,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
 
     // Log if session update failed (non-critical, slide view was already recorded)
     if (!sessionUpdate.ok) {
-      console.warn(`[analytics-track] Failed to update session ${sessionToken}: ${sessionUpdate.reason}`);
+      console.warn(`[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`);
     }
 
     return sendSuccessResponse(res, {

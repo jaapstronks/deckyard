@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { dataDir } from '../config/storage-paths.js';
-import { sandboxEnabled } from '../config/sandbox.js';
 
 const CODES_FILE = 'follow-codes.json';
 
@@ -48,9 +47,6 @@ function isCodeExpired(entry, maxAgeMs = 24 * 60 * 60 * 1000) {
 }
 
 export async function createFollowCode(repoRoot, followUrl) {
-  const filePath = codesFilePath(repoRoot);
-  console.log(`[Follow Codes] Creating code, writing to: ${filePath}`);
-
   const codes = await readCodes(repoRoot);
 
   // Clean up expired codes first
@@ -83,19 +79,14 @@ export async function createFollowCode(repoRoot, followUrl) {
 }
 
 export async function resolveFollowCode(repoRoot, code) {
-  const filePath = codesFilePath(repoRoot);
-  console.log(`[Follow Codes] Reading codes from: ${filePath} (sandbox: ${sandboxEnabled()})`);
-
   const codes = await readCodes(repoRoot);
   const upperCode = code.toUpperCase();
   const entry = codes[upperCode];
 
-  console.log(`[Follow Codes] Looking up code: ${upperCode}, found: ${!!entry}, total codes in file: ${Object.keys(codes).length}`);
-
   if (!entry) return null;
   if (isCodeExpired(entry)) {
-    // Clean up expired code
-    console.log(`[Follow Codes] Code ${upperCode} is expired (created: ${entry.created}, age: ${Date.now() - entry.created}ms)`);
+    // Clean up expired code. Don't log the code itself: a live follow code
+    // resolves to a presenter's follow URL, so it's a secret (audit L2).
     delete codes[upperCode];
     await writeCodes(repoRoot, codes);
     return null;

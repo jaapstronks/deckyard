@@ -14,6 +14,7 @@ import { handleStatic } from './routes/static.js';
 import { getFeatureFlags } from './config/feature-flags.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { applySecurityHeaders } from './utils/security-headers.js';
+import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
 import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
@@ -120,14 +121,7 @@ const server = http.createServer(async (req, res) => {
     });
   } catch (err) {
     const status = Number(err?.statusCode || 500);
-    const payload = JSON.stringify(
-      {
-        error: status >= 500 ? 'Server error' : 'Request error',
-        details: String(err?.message || err),
-      },
-      null,
-      2
-    );
+    const payload = JSON.stringify(buildTopLevelErrorBody(status, err), null, 2);
 
     // Important for streaming endpoints (SSE): headers may already be sent.
     if (!res.headersSent && !res.writableEnded) {

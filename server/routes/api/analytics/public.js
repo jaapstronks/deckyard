@@ -13,6 +13,7 @@ import {
   isValidSessionToken,
 } from '../../../analytics/helpers.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/reports.js';
+import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
 
 /**
  * Handle public analytics report access (no auth required).
@@ -63,8 +64,11 @@ export async function handleAnalyticsReportPublic({ req, res, url }) {
       return sendErrorResponse(res, 404, 'Report not available - presentation no longer exists'), true;
     }
 
-    // Check if presentation has been set to private/restricted
-    if (presentation.settings?.visibility === 'private') {
+    // Check if the presentation has been set to private. Decks use `scope`
+    // (private/workspace); the old `settings.visibility` field never exists, so
+    // this branch used to be dead — a report share-link stayed live after the
+    // deck went private.
+    if (normalizePresentationScope(presentation.scope) === 'private') {
       return sendErrorResponse(res, 403, 'Report not available - presentation is private'), true;
     }
 

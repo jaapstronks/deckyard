@@ -12,13 +12,8 @@ import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { compileTemplate } from './slide-template-compiler.js';
 import { esc } from '../../shared/slide-types/helpers.js';
 import { sanitizeSlideHtmlSync } from '../../shared/sanitize.js';
+import { filterCssText } from '../../shared/css-filter.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
-
-function sanitizeCss(css) {
-  if (!css) return '';
-  // Prevent breaking out of style tag
-  return css.replace(/<\/style/gi, '<\\/style');
-}
 
 /**
  * Convert a custom slide type record into a runtime slide type definition.
@@ -42,7 +37,7 @@ export function toRuntimeSlideType(ct) {
     def.renderHtml = (content, slide, ctx) => {
       // Inject custom CSS as a scoped <style> block
       const cssBlock = ct.css
-        ? `<style>${sanitizeCss(ct.css)}</style>`
+        ? `<style>${filterCssText(ct.css)}</style>`
         : '';
       // Sanitize the compiled template output before it reaches innerHTML and
       // the headless-export renderer. Template authoring is canManage-gated, but
