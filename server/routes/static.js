@@ -352,9 +352,39 @@ export async function handleStatic({
     // The plain <meta name="description"> is emitted by buildStandaloneHtml
     // (via the `description` option below) so exports carry it too; only the
     // OG/Twitter description variants live here.
+
+    // Semantic reader view of this deck (open web, no-JS a11y surface).
+    const readerPath = `${canonicalPath}/reader`;
+    const readerLabel = modeLang === 'nl' ? 'Leesweergave' : 'Reading view';
+
+    // Structured data: a published deck is a schema.org PresentationDigitalDocument.
+    const ldDescription =
+      rawDesc ||
+      `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'PresentationDigitalDocument',
+      name: projected.title || 'Presentation',
+      description: ldDescription,
+      url: canonicalUrl,
+      thumbnailUrl: ogImageAbs,
+      inLanguage: modeLang,
+    };
+    if (typeof pres?.ownerName === 'string' && pres.ownerName.trim()) {
+      jsonLd.author = { '@type': 'Person', name: pres.ownerName.trim() };
+    }
+    if (typeof pres?.createdAt === 'string' && pres.createdAt.trim()) {
+      jsonLd.datePublished = pres.createdAt.trim();
+    }
+    // Escape `<` so a value can never break out of the <script> block.
+    const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(
+      jsonLd
+    ).replace(/</g, '\\u003c')}</script>`;
+
     const headHtml = `
     <meta name="robots" content="${sandboxNoindex ? 'noindex,nofollow' : 'index,follow'}" />
     <link rel="canonical" href="${canonicalUrl}" />
+    <link rel="alternate" href="${escapeHtml(readerPath)}" title="${escapeHtml(readerLabel)}" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -371,6 +401,8 @@ export async function handleStatic({
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${ogImageAbs}" />
+
+    ${jsonLdScript}
     `.trim();
     const publishedSettings = await readAppSettings(repoRoot);
     const analytics = analyticsHeadHtml({
@@ -393,6 +425,13 @@ export async function handleStatic({
         })()
       : '';
 
+    // Visible link to the semantic reader view (discoverable a11y/no-JS surface).
+    const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(
+      readerPath
+    )}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(
+      readerLabel
+    )}</a>`;
+
     const theme = await loadTheme(repoRoot, pres?.theme);
 
     // Add analytics tracking script for published pages
@@ -407,7 +446,7 @@ export async function handleStatic({
 
     const html = await buildStandaloneHtml(repoRoot, projected, {
       headHtml: `${headHtml}\n${analytics}\n${trackingScript}`.trim(),
-      topbarRightHtml: switchHtml,
+      topbarRightHtml: `${switchHtml}${readerLinkHtml}`,
       theme,
       slideTypes,
       context: 'published', // Use published visibility filter
