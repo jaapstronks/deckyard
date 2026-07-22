@@ -50,8 +50,9 @@ export async function handlePresentationScope(
     nextIsViewOnly = false;
   }
 
-  const expectedRevision = authedUser?.isAdmin ? null : parseIfMatchRevision(req);
-  if (!authedUser?.isAdmin && expectedRevision == null)
+  // If-Match required for everyone, admins included (escape hatch removed).
+  const expectedRevision = parseIfMatchRevision(req);
+  if (expectedRevision == null)
     return serveJson(res, 428, { error: 'Missing If-Match revision' });
 
   const nextPres = { ...existing, scope: nextScope, isViewOnly: nextIsViewOnly };
