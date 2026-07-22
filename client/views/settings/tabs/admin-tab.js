@@ -3,6 +3,7 @@
  * General admin settings: supported languages, themes, AI identity, email sender, session, etc.
  */
 
+import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -398,29 +399,26 @@ export function createAdminTab({ user }) {
 
       // Fetch stock media status to show if API keys are configured
       try {
-        const resp = await fetch('/api/stock-media/status');
-        if (resp.ok) {
-          const status = await resp.json();
-          const notConfigured = t('settings.admin.stockMedia.notConfiguredParen', '(Not configured)');
-          const configured = t('settings.admin.stockMedia.configuredParen', '(API key configured)');
+        const status = await api('/api/stock-media/status');
+        const notConfigured = t('settings.admin.stockMedia.notConfiguredParen', '(Not configured)');
+        const configured = t('settings.admin.stockMedia.configuredParen', '(API key configured)');
 
-          if (status?.unsplash?.configured) {
-            unsplashStatusSpan.textContent = ` ${configured}`;
-            unsplashStatusSpan.classList.remove('is-warning');
-          } else {
-            unsplashStatusSpan.textContent = ` ${notConfigured}`;
-            unsplashStatusSpan.classList.add('is-warning');
-            unsplashEnabledCheck.disabled = true;
-          }
+        if (status?.unsplash?.configured) {
+          unsplashStatusSpan.textContent = ` ${configured}`;
+          unsplashStatusSpan.classList.remove('is-warning');
+        } else {
+          unsplashStatusSpan.textContent = ` ${notConfigured}`;
+          unsplashStatusSpan.classList.add('is-warning');
+          unsplashEnabledCheck.disabled = true;
+        }
 
-          if (status?.giphy?.configured) {
-            giphyStatusSpan.textContent = ` ${configured}`;
-            giphyStatusSpan.classList.remove('is-warning');
-          } else {
-            giphyStatusSpan.textContent = ` ${notConfigured}`;
-            giphyStatusSpan.classList.add('is-warning');
-            giphyEnabledCheck.disabled = true;
-          }
+        if (status?.giphy?.configured) {
+          giphyStatusSpan.textContent = ` ${configured}`;
+          giphyStatusSpan.classList.remove('is-warning');
+        } else {
+          giphyStatusSpan.textContent = ` ${notConfigured}`;
+          giphyStatusSpan.classList.add('is-warning');
+          giphyEnabledCheck.disabled = true;
         }
       } catch {
         // Ignore status fetch errors

@@ -466,7 +466,7 @@ export function openImageLibraryPicker({
     try {
       const [libraryResp, statusResp] = await Promise.all([
         api('/api/image-library'),
-        fetch('/api/stock-media/status').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        api('/api/stock-media/status').catch(() => null),
       ]);
 
       items = Array.isArray(libraryResp?.items) ? libraryResp.items : [];

@@ -1,3 +1,4 @@
+import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
@@ -213,15 +214,7 @@ export async function renderLogin(root, { nav } = {}) {
     status.className = 'auth-status';
     busyManager.setBusy(true);
     try {
-      const res = await fetch('/api/auth/dev-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok)
-        throw new Error(
-          (await res.text()) || `Dev login failed (${res.status})`
-        );
+      await api('/api/auth/dev-login', { method: 'POST', body: {} });
       // Confirm session / user and proceed.
       await me();
       // Set fresh login flag so list view starts on 'home'
@@ -269,12 +262,8 @@ export async function renderLogin(root, { nav } = {}) {
 
   // Show dev bypass button only if server has it enabled.
   try {
-    const resp = await fetch('/api/auth/dev-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ probe: true }),
-    });
-    if (resp.ok) btnDev.hidden = false;
+    await api('/api/auth/dev-login', { method: 'POST', body: { probe: true } });
+    btnDev.hidden = false;
   } catch {
     // ignore
   }

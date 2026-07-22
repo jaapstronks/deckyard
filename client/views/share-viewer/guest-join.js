@@ -2,6 +2,7 @@
  * Guest join/verification prompt for share viewer.
  */
 
+import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
@@ -112,17 +113,10 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
     errorEl.style.display = 'none';
 
     try {
-      const resp = await fetch(`/api/share/${encodeURIComponent(token)}/guest/request`, {
+      await api(`/api/share/${encodeURIComponent(token)}/guest/request`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name }),
+        body: { email, name },
       });
-
-      const data = await resp.json();
-
-      if (!resp.ok) {
-        throw new Error(getGuestErrorMessage(data.error));
-      }
 
       // Show success message
       form.style.display = 'none';
@@ -146,7 +140,7 @@ export function renderGuestJoinPrompt(h, shell, token, permission, onSuccess, pr
         }
       }, 8000);
     } catch (err) {
-      errorEl.textContent = err.message;
+      errorEl.textContent = getGuestErrorMessage(err.message);
       errorEl.style.display = 'block';
       submitBtn.disabled = false;
       submitBtn.textContent = t('share.guest.submit', 'Send Verification Email');

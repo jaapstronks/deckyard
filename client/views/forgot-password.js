@@ -1,3 +1,4 @@
+import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
@@ -70,38 +71,29 @@ export async function renderForgotPassword(root, { nav } = {}) {
     busyManager.setBusy(true);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
+      await api('/api/auth/forgot-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: e }),
+        body: { email: e },
       });
 
-      const data = await res.json();
+      submitted = true;
+      status.textContent = '';
+      status.className = 'auth-status';
 
-      if (res.ok) {
-        submitted = true;
-        status.textContent = '';
-        status.className = 'auth-status';
-
-        // Show success message
-        form.innerHTML = '';
-        const successMsg = h('div', {
-          class: 'auth-status is-success',
-          text: t(
-            'forgotPassword.success',
-            'If an account exists with this email, a reset link has been sent. Check your inbox.'
-          ),
-        });
-        successMsg.style.textAlign = 'left';
-        successMsg.style.marginBottom = 'var(--ps-space-4)';
-        form.append(successMsg, backLink);
-      } else {
-        status.textContent = data?.error || t('forgotPassword.error', 'Something went wrong. Please try again.');
-        status.className = 'auth-status is-error';
-        busyManager.setBusy(false);
-      }
+      // Show success message
+      form.innerHTML = '';
+      const successMsg = h('div', {
+        class: 'auth-status is-success',
+        text: t(
+          'forgotPassword.success',
+          'If an account exists with this email, a reset link has been sent. Check your inbox.'
+        ),
+      });
+      successMsg.style.textAlign = 'left';
+      successMsg.style.marginBottom = 'var(--ps-space-4)';
+      form.append(successMsg, backLink);
     } catch (err) {
-      status.textContent = t('forgotPassword.error', 'Something went wrong. Please try again.');
+      status.textContent = err.message || t('forgotPassword.error', 'Something went wrong. Please try again.');
       status.className = 'auth-status is-error';
       busyManager.setBusy(false);
     }
