@@ -22,12 +22,8 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
-import {
-  openImageLibraryPicker,
-  readFileAsDataUrl,
-} from './image-library-picker.js';
-import { openImageKitPicker } from './imagekit-picker.js';
-import { createImagePickerSeam } from './media/picker-provider.js';
+import { readFileAsDataUrl } from './image-library-picker.js';
+import { createImagePickers } from './image-pickers.js';
 import { createFieldRenderers } from './fields.js';
 import { setupSlideList } from './slide-list.js';
 import { createRerenderEditor } from './editor-form.js';
@@ -48,8 +44,7 @@ import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
 import { setDocumentTitle } from '../../lib/theme/branding.js';
-import { openTranslateSlideModal as openTranslateSlideModalImpl } from './modals/translate-slide-modal.js';
-import { openTranslateFieldModal as openTranslateFieldModalImpl } from './modals/translate-field-modal.js';
+import { createTranslateOpeners } from './translate-openers.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
@@ -1181,36 +1176,17 @@ export async function createEditorController({
   // IMAGE PICKERS
   // ============================================================
 
-  const openImageLibrary = (opts) =>
-    openImageLibraryPicker({
-      ...opts,
-      user,
-      api,
-      h,
-      root,
-      openOverlayClosers,
-      features,
-    });
-
-  const openImageKit = (opts) =>
-    openImageKitPicker({
-      ...opts,
-      api,
-      h,
-      root,
-      openOverlayClosers,
-    });
-
-  // Single pluggable seam over the raw pickers above. Every image call site —
-  // side-form fields AND the inline WYSIWYG popover — goes through this, so a
-  // new entry point can no longer silently forget a provider (the bug that let
-  // the inline popover ignore ImageKit). See media/picker-provider.js.
-  const openImagePicker = createImagePickerSeam({
+  // Single pluggable seam over the raw library + ImageKit pickers. Every image
+  // call site — side-form fields AND the inline WYSIWYG popover — goes through
+  // this, so a new entry point can no longer silently forget a provider. See
+  // image-pickers.js / media/picker-provider.js.
+  const { openImagePicker } = createImagePickers({
     h,
     root,
+    user,
+    api,
     features,
-    openImageLibrary,
-    openImageKit,
+    openOverlayClosers,
   });
 
   // ============================================================
@@ -1239,47 +1215,26 @@ export async function createEditorController({
   // TRANSLATE MODALS
   // ============================================================
 
-  const openTranslateSlideModal = ({ slideId } = {}) =>
-    openTranslateSlideModalImpl({
-      slideId,
-      h,
-      api,
-      id,
-      pres,
-      SLIDE_TYPES,
-      toast,
-      root,
-      lockDocumentScroll,
-      openOverlayClosers,
-      normalizeLang,
-      otherLang,
-      translatableKeysForType: translatableKeysForSlideType,
-      markDirty,
-      rerenderEditor,
-      rerenderPreview,
-      requestSave,
-    });
-
-  const openTranslateFieldModal = ({ slideId, key } = {}) =>
-    openTranslateFieldModalImpl({
-      slideId,
-      key,
-      h,
-      api,
-      id,
-      pres,
-      SLIDE_TYPES,
-      toast,
-      root,
-      lockDocumentScroll,
-      openOverlayClosers,
-      normalizeLang,
-      otherLang,
-      markDirty,
-      rerenderEditor,
-      rerenderPreview,
-      requestSave,
-    });
+  const { openTranslateSlideModal, openTranslateFieldModal } = createTranslateOpeners({
+    h,
+    api,
+    id,
+    pres,
+    SLIDE_TYPES,
+    toast,
+    root,
+    lockDocumentScroll,
+    openOverlayClosers,
+    normalizeLang,
+    otherLang,
+    translatableKeysForType: translatableKeysForSlideType,
+    markDirty,
+    // Late-bound: the real renderers are assigned further down, so pass
+    // indirections that read the current binding at open time.
+    rerenderEditor: () => rerenderEditor(),
+    rerenderPreview: () => rerenderPreview(),
+    requestSave,
+  });
 
   // ============================================================
   // EDITOR FORM
