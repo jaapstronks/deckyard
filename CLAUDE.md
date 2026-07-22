@@ -14,7 +14,9 @@ Three planning horizons, three files:
   first, not the whole plans folder.
 - **`docs/plans/STRATEGY.md`** — *internal longer-term*: directional tracks with
   rationale and "done when", not yet public. Elaborated briefings live in
-  `docs/plans/<slug>.md`. (Private; in the `deckyard-planning` sibling.)
+  `docs/plans/briefs/<slug>.md` (the three anchors — `TODO.md`, `STRATEGY.md`,
+  `README.md` — sit at the `docs/plans/` root, the per-item briefings one level
+  down in `briefs/`). (Private; in the `deckyard-planning` sibling.)
 - **`ROADMAP.md`** — *public commitment*: the coarse, public-facing overview,
   one line per project. This is the only one of the three that ships in the OSS
   repo.
@@ -30,8 +32,9 @@ Three planning horizons, three files:
 ## Docs discipline (maintain this in every session)
 
 - **New docs go in the right folder, never loose in `docs/`**:
-  plan for future work → `docs/plans/<slug>.md` + a line in `TODO.md` and
-  `ROADMAP.md`; how something works → `docs/reference/`; contributor how-to →
+  plan for future work → `docs/plans/briefs/<slug>.md` + a line in
+  `docs/plans/TODO.md` and `ROADMAP.md`; how something works → `docs/reference/`;
+  contributor how-to →
   `docs/developer/`; deploy/server notes → `docs/ops/`. Exception:
   `docs/openapi.yaml` stays put (served at `/api/v1/openapi.yaml`).
 - **Starting a plan**: move its entry to *In progress* in `docs/plans/TODO.md`.

@@ -18,7 +18,7 @@ one of three surfaces:
    have nothing to occlude) and accept a desktop file-drop. Everything
    *settable* on an image (replace, alt, fit, focus grid, per-item metadata)
    lives in the inspector's "This image" tab, not on the image - see the
-   editing-surface principle in `docs/plans/editing-surfaces.md`. Descriptor
+   editing-surface principle in `docs/plans/briefs/editing-surfaces.md`. Descriptor
    registry: `client/views/editor/inline-edit/descriptors.js` (custom types
    declare an `inline` descriptor on the type definition, see
    `docs/developer/slide-types.md`).

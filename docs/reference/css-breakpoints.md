@@ -69,4 +69,4 @@ green from day one. Two things follow:
   any stylesheet, the test fails until its entry is removed. Migrations shrink
   it monotonically; when it is empty, the ladder is fully enforced.
 
-Migration progress is tracked in `docs/plans/breakpoint-scale.md`.
+Migration progress is tracked in `docs/plans/briefs/breakpoint-scale.md`.
