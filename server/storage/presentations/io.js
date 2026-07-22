@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { presDir, presPath } from './paths.js';
-import { readJsonIfExists } from '../io.js';
+import { presPath } from './paths.js';
+import { readJsonIfExists, writeJsonAtomic } from '../io.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 
 // Re-exported for callers that import it from this presentations-scoped module.
@@ -17,11 +15,9 @@ export async function readPresentation(repoRoot, id) {
 }
 
 export async function writePresentation(repoRoot, pres) {
-  const dir = presDir(repoRoot);
-  await fs.mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, `${pres.id}.${crypto.randomUUID()}.tmp`);
-  await fs.writeFile(tmp, JSON.stringify(pres, null, 2), 'utf8');
-  await fs.rename(tmp, presPath(repoRoot, pres.id));
+  // Same atomic tmp-write-rename as every other snapshot; the shared helper
+  // creates the presentations dir (dirname of the target) on demand.
+  await writeJsonAtomic(presPath(repoRoot, pres.id), pres);
 }
 
 export async function deletePresentationFile(repoRoot, id) {
