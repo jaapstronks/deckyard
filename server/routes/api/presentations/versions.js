@@ -1,12 +1,12 @@
-import { getPresentation } from '../../../storage/presentations.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import {
+  getPresentation,
   createPresentationVersion,
   getPresentationVersion,
   listPresentationVersions,
   prunePresentationVersions,
-} from '../../../storage/presentations/versions.js';
+} from '../../../storage/presentations.js';
+import { getCollaboratorPermission } from '../../../storage/collaborators.js';
+import { createRouteContext } from '../../../utils/context.js';
 import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';
 import {
   json,
