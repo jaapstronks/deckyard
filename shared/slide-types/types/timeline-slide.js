@@ -48,7 +48,7 @@ function itemHtml(item, idx, total) {
     : '';
 
   return `
-    <div class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" role="listitem" data-index="${idx + 1}" data-tone="${esc(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
+    <li class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" data-index="${idx + 1}" data-tone="${esc(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="timeline-marker" aria-hidden="true"></div>
       <div class="timeline-connector" aria-hidden="true"></div>
       ${dateHtml}
@@ -56,7 +56,7 @@ function itemHtml(item, idx, total) {
         ${titleHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -200,10 +200,10 @@ export default {
       <div class="slide slide-timeline ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="timeline-container" data-count="${count}" role="list" aria-label="${esc(copy.timelineLabel)}">
-            <div class="timeline-track" aria-hidden="true"></div>
+          <ol class="timeline-container" data-count="${count}" aria-label="${esc(copy.timelineLabel)}">
+            <li class="timeline-track" aria-hidden="true"></li>
             ${itemsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

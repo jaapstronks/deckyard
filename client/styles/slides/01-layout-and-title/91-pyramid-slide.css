@@ -24,6 +24,8 @@
 
 /* Container for pyramid levels */
 .slide-pyramid .pyramid-container {
+  list-style: none;
+  margin: 0;
   flex: 1;
   min-height: 0;
   display: flex;

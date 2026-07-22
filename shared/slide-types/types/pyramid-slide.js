@@ -29,14 +29,14 @@ function levelHtml(level, idx, total) {
   const widthPercent = 30 + (idx / Math.max(total - 1, 1)) * 60;
 
   return `
-    <div class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" role="listitem" data-inline-item="levels" data-inline-item-index="${idx}"
+    <li class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" data-inline-item="levels" data-inline-item-index="${idx}">
       <div class="level-bar">
         <div class="level-content">
           ${labelHtml}
           ${textHtml}
         </div>
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -159,9 +159,9 @@ export default {
       <div class="slide slide-pyramid ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="pyramid-container" data-count="${count}" role="list" aria-label="Pyramid levels">
+          <ol class="pyramid-container" data-count="${count}" aria-label="Pyramid levels">
             ${levelsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

@@ -29,17 +29,17 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
 
   // Arrow between steps (not after the last one)
   const arrowHtml = !isLast
-    ? `<div class="process-arrow" aria-hidden="true"></div>`
+    ? `<li class="process-arrow" aria-hidden="true"></li>`
     : '';
 
   return `
-    <div class="process-step" data-step="${stepNum}" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="process-step" data-step="${stepNum}" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="step-number" aria-hidden="true">${stepNum}</div>
       <div class="step-content">
         ${titleHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
     ${arrowHtml}
   `;
 }
@@ -222,9 +222,9 @@ export default {
       <div class="slide slide-process ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} role="list" aria-label="Process steps">
+          <ol class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} aria-label="Process steps">
             ${stepsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

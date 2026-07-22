@@ -56,6 +56,10 @@
 
 /* Timeline container */
 .slide-timeline .timeline-container {
+  /* Native <ol>: neutralise UA list styling. The decorative .timeline-track is
+     an aria-hidden <li>, so AT announces only the real timeline items. */
+  list-style: none;
+  margin: 0;
   flex: 1;
   min-height: 0;
   display: flex;
