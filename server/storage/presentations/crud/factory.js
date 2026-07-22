@@ -9,6 +9,7 @@ import { attachSandboxMeta } from '../sandbox.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import { resolveThemeId, loadTheme } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
+import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
 
 /**
  * Prepare a new presentation object with all defaults, title slide, and i18n setup.
@@ -130,6 +131,14 @@ export async function prepareNewPresentation(repoRoot, body) {
     if (typeof body?.settings?.stepParagraphs === 'boolean') {
       pres.settings = pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
       pres.settings.stepParagraphs = body.settings.stepParagraphs;
+    }
+    // Reveal style for builds (default | typewriter). Lets an AI-authored deck
+    // set typewriter-per-bullet at creation, matching Deckyard's "for humans and
+    // AI agents" stance. Unknown values are ignored by normalizeRevealStyle.
+    const revealStyle = normalizeRevealStyle(body?.settings?.revealStyle);
+    if (revealStyle) {
+      pres.settings = pres.settings && typeof pres.settings === 'object' ? pres.settings : {};
+      pres.settings.revealStyle = revealStyle;
     }
     const presetRaw =
       typeof body?.settings?.transitions?.preset === 'string'

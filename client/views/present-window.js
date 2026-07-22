@@ -2,6 +2,7 @@ import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
 import { loadThemeById } from '../lib/theme/theme.js';
+import { resolveRevealStyle } from '../../shared/reveal-style.js';
 import {
   cleanupSlideRuntimes,
   pauseVideoEmbeds,
@@ -59,6 +60,9 @@ export async function renderPresentWindow(root, id) {
   // Follower state seeded from the deck; the master's first `state` message is
   // authoritative.
   let stepParagraphs = !!pres?.settings?.stepParagraphs;
+  // Reveal style (theme default → deck override); keeps the projector's builds
+  // in sync with the presenter window.
+  const revealStyle = resolveRevealStyle({ settings: pres?.settings, theme });
   // Session join codes, mirrored from the master so follow-invite/poll/feedback
   // slides render the same alternative codes on the beamer.
   let followCodes = null;
@@ -87,6 +91,7 @@ export async function renderPresentWindow(root, id) {
     setStepParagraphs: (v) => {
       stepParagraphs = !!v;
     },
+    getRevealStyle: () => revealStyle,
   });
   deckCtl.setStepModeEnabled(stepParagraphs);
   deckCtl.setPresentation(pres);
