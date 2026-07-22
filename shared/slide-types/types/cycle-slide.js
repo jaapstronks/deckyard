@@ -31,7 +31,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const angle = angleOffset + (idx / total) * 360;
 
   return `
-    <div class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="stage-node">
         <div class="stage-number">${stageNum}</div>
       </div>
@@ -39,7 +39,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
         ${labelHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -224,14 +224,14 @@ export default {
       <div class="slide slide-cycle ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="cycle-container" data-count="${count}" role="list" aria-label="Cycle stages">
+          <div class="cycle-container" data-count="${count}">
             <div class="cycle-ring">
               ${arrowsHtml}
               ${centerHtml}
             </div>
-            <div class="cycle-stages">
+            <ol class="cycle-stages" aria-label="Cycle stages">
               ${stagesHtml}
-            </div>
+            </ol>
           </div>
           ${bottomSubheadingHtml}
         </div>
