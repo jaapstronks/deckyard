@@ -3,6 +3,7 @@ import {
   ensureQuestionsSession,
 } from '../../../storage/questions.js';
 import { sseWrite } from '../../../utils/sse.js';
+import { guardSseConnection } from '../../../utils/sse-limiter.js';
 import { ensureQaDeviceCookie, writeSseHeaders } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
@@ -11,6 +12,9 @@ export async function handleFollowQuestionsEvents(
   presentationId
 ) {
   if (req.method !== 'GET') return false;
+
+  // Cap unauthenticated, long-lived streams before opening one (DoS guard).
+  if (!guardSseConnection(req, res)) return true;
 
   const dev = ensureQaDeviceCookie(req);
   writeSseHeaders(res, dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {});

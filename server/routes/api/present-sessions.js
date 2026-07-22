@@ -38,6 +38,7 @@ import {
   likertSliderOptionCountFromSlide,
 } from '../../utils/interaction-helpers.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { guardSseConnection } from '../../utils/sse-limiter.js';
 
 /**
  * Require the caller to be allowed to write (present/control) the presentation
@@ -381,6 +382,8 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     const sessionId = sessEventsMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
+    // Cap unauthenticated, long-lived streams before opening one (DoS guard).
+    if (!guardSseConnection(req, res)) return true;
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-store',
