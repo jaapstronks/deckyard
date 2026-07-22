@@ -123,42 +123,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     ],
   },
 
-  'content-columns-slide': {
-    title: 'Our Services',
-    subheading: 'What we offer',
-    columnCount: '2',
-    // Column 1
-    col1Title: 'Strategy',
-    col1Text: '',
-    col1Image: 'https://picsum.photos/seed/col1/400/300',
-    col1Alt: 'Strategy illustration',
-    col1BlockCount: '2',
-    col1Block1Title: 'Planning',
-    col1Block1Body: 'Define goals and roadmap',
-    col1Block2Title: 'Analysis',
-    col1Block2Body: 'Market research insights',
-    // Column 2
-    col2Title: 'Design',
-    col2Text: '',
-    col2Image: 'https://picsum.photos/seed/col2/400/300',
-    col2Alt: 'Design illustration',
-    col2BlockCount: '2',
-    col2Block1Title: 'Creative',
-    col2Block1Body: 'Visual identity and UX',
-    col2Block2Title: 'Prototyping',
-    col2Block2Body: 'Rapid iteration cycles',
-    // Column 3
-    col3Title: 'Development',
-    col3Text: '',
-    col3Image: 'https://picsum.photos/seed/col3/400/300',
-    col3Alt: 'Development illustration',
-    col3BlockCount: '2',
-    col3Block1Title: 'Engineering',
-    col3Block1Body: 'Robust implementation',
-    col3Block2Title: 'Testing',
-    col3Block2Body: 'Quality assurance',
-  },
-
   'team-cards-slide': {
     title: 'Meet the Team',
     subheading: '',
