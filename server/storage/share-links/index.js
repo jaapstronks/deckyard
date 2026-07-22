@@ -107,6 +107,7 @@ export async function cleanupExpiredShareLinks(ctx) {
 export {
   createShareLink,
   getShareLinkByToken,
+  getShareLinkById,
   validateShareLink,
   verifyShareLinkAccess,
   listShareLinks,

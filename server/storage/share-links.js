@@ -21,6 +21,7 @@ export {
   // CRUD operations
   createShareLink,
   getShareLinkByToken,
+  getShareLinkById,
   validateShareLink,
   verifyShareLinkAccess,
   listShareLinks,

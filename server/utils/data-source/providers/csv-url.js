@@ -10,22 +10,7 @@
 
 import { createDataSourceProvider } from '../provider-base.js';
 import { apiFetch } from '../../api-fetch.js';
-
-function isPrivateUrl(urlString) {
-  const hostname = new URL(urlString).hostname.toLowerCase();
-  if (['localhost', '127.0.0.1', '::1', '0.0.0.0', '[::1]'].includes(hostname)) return true;
-  // IPv4 private ranges
-  const parts = hostname.split('.');
-  if (parts.length === 4 && parts.every(p => /^\d+$/.test(p))) {
-    const [a, b] = parts.map(Number);
-    if (a === 10) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 0) return true;
-  }
-  return false;
-}
+import { assertPublicHttpUrl } from '../../ssrf-guard.js';
 
 const BLOCKED_HEADERS = new Set(['host', 'authorization', 'cookie', 'set-cookie', 'proxy-authorization']);
 
@@ -96,25 +81,25 @@ function parseCellRef(ref) {
 
 /**
  * Fetch CSV from URL.
+ *
+ * The URL is user-controlled and the fetched body is returned to the caller, so
+ * this is a read-SSRF sink. We validate with the shared SSRF guard (scheme +
+ * DNS-resolved address classification, covering encoded IPv4, IPv6, IPv4-mapped
+ * and private-resolving names) and fetch with `redirect: 'error'` so a public
+ * URL can't 30x-bounce into private space.
  */
-async function fetchCsvData(config) {
+export async function fetchCsvData(config) {
   const { url, headers: customHeaders } = config;
   if (!url) throw new Error('url is required for csv-url provider');
 
-  // Validate URL
-  let parsed;
+  // SSRF guard: reject non-http(s) schemes and any host that resolves to a
+  // loopback/private/link-local address (incl. cloud metadata 169.254.169.254).
   try {
-    parsed = new URL(url);
-  } catch {
-    throw new Error('Invalid CSV URL');
-  }
-
-  // Only allow http(s)
-  if (!parsed.protocol.startsWith('http')) {
-    throw new Error('CSV URL must use HTTP or HTTPS');
-  }
-
-  if (isPrivateUrl(url)) {
+    await assertPublicHttpUrl(url);
+  } catch (err) {
+    if (err?.code === 'SSRF_INVALID_URL') throw new Error('Invalid CSV URL');
+    if (err?.code === 'SSRF_BAD_SCHEME')
+      throw new Error('CSV URL must use HTTP or HTTPS');
     throw new Error('URL must not point to internal/private addresses');
   }
 
@@ -127,7 +112,10 @@ async function fetchCsvData(config) {
     }
   }
 
-  const resp = await apiFetch(url, 'CSV', { headers: fetchHeaders });
+  const resp = await apiFetch(url, 'CSV', {
+    headers: fetchHeaders,
+    redirect: 'error',
+  });
   const text = await resp.text();
 
   return parseCsv(text);
