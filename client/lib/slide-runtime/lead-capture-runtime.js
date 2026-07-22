@@ -167,7 +167,7 @@ function initLeadCaptureSlide(slideEl, { interactive }) {
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(
-          data.error || t('leadCapture.error.submitFailed', 'Submission failed')
+          data.message || t('leadCapture.error.submitFailed', 'Submission failed')
         );
       }
 

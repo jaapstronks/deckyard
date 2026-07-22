@@ -21,12 +21,18 @@ export async function api(path, opts = {}) {
         obj = null;
       }
       if (obj && typeof obj === 'object') {
-        const msg = (obj.error || obj.details) ?? null;
-        const err = new Error(
-          (typeof msg === 'string' && msg.trim()) ||
-            `Request failed (${res.status})`
-        );
+        // Canonical envelope: { ok:false, error:'<machine_code>', message:'<human>' }.
+        // `error` is a stable code to branch on (err.code); `message` is display
+        // text. Fall back to `error`/`details` for any legacy prose-in-error body.
+        const code = typeof obj.error === 'string' ? obj.error : null;
+        const human =
+          (typeof obj.message === 'string' && obj.message.trim() && obj.message) ||
+          (typeof obj.details === 'string' && obj.details.trim() && obj.details) ||
+          (typeof obj.error === 'string' && obj.error.trim() && obj.error) ||
+          null;
+        const err = new Error(human || `Request failed (${res.status})`);
         err.statusCode = res.status;
+        err.code = code;
         err.details = obj.details || null;
         throw err;
       }

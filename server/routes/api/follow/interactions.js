@@ -1,6 +1,7 @@
 import {
   badRequest,
   json,
+  jsonError,
   methodNotAllowed,
   notFound,
   serveJson,
@@ -337,7 +338,7 @@ export async function handleFollowInteractionVote(
           });
     if (!result.ok) {
       const status = result.reason === 'closed' ? 409 : 400;
-      serveJson(res, status, { error: result.reason }, extraHeaders);
+      jsonError(res, status, result.reason, undefined, { headers: extraHeaders });
       return true;
     }
 
@@ -395,7 +396,7 @@ export async function handleFollowInteractionFeedback(
     });
     if (!result.ok) {
       const status = result.reason === 'closed' ? 409 : 400;
-      serveJson(res, status, { error: result.reason }, extraHeaders);
+      jsonError(res, status, result.reason, undefined, { headers: extraHeaders });
       return true;
     }
     serveJson(

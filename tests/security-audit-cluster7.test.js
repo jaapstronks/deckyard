@@ -35,30 +35,34 @@ const readSrc = (rel) =>
 
 test('L4: an unexpected 500 error never leaks its message', () => {
   const body = buildTopLevelErrorBody(500, new Error('ECONNREFUSED /var/run/pg.sock: SELECT * FROM users'));
-  assert.equal(body.error, 'Server error');
-  assert.equal(body.details, undefined, 'no details on a 500');
+  assert.equal(body.error, 'server_error');
+  assert.equal(body.message, 'Server error', 'generic message only');
+  assert.doesNotMatch(JSON.stringify(body), /ECONNREFUSED|pg\.sock|SELECT/, 'raw message must not leak');
 });
 
 test('L4: a bare error (no statusCode) is treated as 500 with no details', () => {
   const body = buildTopLevelErrorBody(500, new Error('/etc/secret path in message'));
-  assert.equal(body.error, 'Server error');
+  assert.equal(body.error, 'server_error');
+  assert.equal(body.message, 'Server error');
   assert.ok(!('details' in body));
+  assert.doesNotMatch(JSON.stringify(body), /etc\/secret/, 'raw path must not leak');
 });
 
 test('L4: an intentional sub-500 error surfaces its (safe) message', () => {
   const err = new Error('Request body too large (limit 26214400 bytes)');
   err.statusCode = 413;
   const body = buildTopLevelErrorBody(413, err);
-  assert.equal(body.error, 'Request error');
-  assert.equal(body.details, 'Request body too large (limit 26214400 bytes)');
+  assert.equal(body.error, 'request_error');
+  assert.equal(body.message, 'Request body too large (limit 26214400 bytes)');
 });
 
 test('L4: a sub-500 status without an explicit statusCode gets no details', () => {
   // status came from elsewhere but the error itself carries no statusCode →
   // don't trust its message.
   const body = buildTopLevelErrorBody(400, new Error('raw internal detail'));
-  assert.equal(body.error, 'Request error');
-  assert.equal(body.details, undefined);
+  assert.equal(body.error, 'request_error');
+  assert.equal(body.message, 'Request error', 'generic, does not echo the raw message');
+  assert.doesNotMatch(JSON.stringify(body), /raw internal detail/, 'raw message must not leak');
 });
 
 // ============================================================================
