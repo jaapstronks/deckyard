@@ -3,7 +3,6 @@ import {
   clearSessionCookie,
   devAuthBypassEnabled,
   devBypassUser,
-  getUserFromRequest,
   getUserFromRequestAsync,
   setSessionCookie,
   verifyLoginAsync,

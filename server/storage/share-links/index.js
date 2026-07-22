@@ -8,6 +8,12 @@
 import crypto from 'node:crypto';
 import { nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
+import { hashPassword, verifyPassword } from '../../utils/password-hash.js';
+
+// Share-link password protection uses the shared versioned scrypt util (one
+// implementation for all stored passwords). Re-exported so ./crud.js keeps
+// importing hashPassword/verifyPassword from this module.
+export { hashPassword, verifyPassword };
 
 // ============================================================
 // TOKEN GENERATION
@@ -29,46 +35,6 @@ export function generateShareToken() {
  */
 export function generateGuestToken() {
   return crypto.randomBytes(32).toString('base64url');
-}
-
-// ============================================================
-// PASSWORD HASHING
-// ============================================================
-
-/**
- * Hash a password for share link protection.
- * Uses scrypt with a random salt.
- * @param {string} password - The plaintext password
- * @returns {Promise<string>} - The hashed password in format salt:hash
- */
-export async function hashPassword(password) {
-  return new Promise((resolve, reject) => {
-    const salt = crypto.randomBytes(16).toString('hex');
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      resolve(`${salt}:${derivedKey.toString('hex')}`);
-    });
-  });
-}
-
-/**
- * Verify a password against a hash.
- * @param {string} password - The plaintext password
- * @param {string} hash - The stored hash in format salt:hash
- * @returns {Promise<boolean>} - True if password matches
- */
-export async function verifyPassword(password, hash) {
-  return new Promise((resolve, reject) => {
-    const [salt, key] = hash.split(':');
-    if (!salt || !key) {
-      resolve(false);
-      return;
-    }
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      resolve(crypto.timingSafeEqual(Buffer.from(key, 'hex'), derivedKey));
-    });
-  });
 }
 
 // ============================================================

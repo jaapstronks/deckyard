@@ -92,42 +92,78 @@ export function authEnabled() {
   return enabled && hasSecret;
 }
 
+// Minimum AUTH_SECRET length enforced at boot. Session tokens are
+// HMAC-SHA256-signed with this secret; below this floor it is brute-forceable
+// and forgeable. 32 chars of randomness is the value recommended in
+// .env.example.
+export const MIN_AUTH_SECRET_LENGTH = 32;
+
+const truthyEnv = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
+
 /**
- * Guard against auth failing OPEN. authEnabled() returns false when AUTH_SECRET
- * is missing, which makes getUserFromRequest[/Async] fall back to a hardcoded
- * anonymous ADMIN user. That silent open-admin is only acceptable when the
- * operator explicitly opted out of auth (AUTH_ENABLED=false) or is running a
- * sandbox/demo instance. In every other case a missing secret is a
- * misconfiguration that must stop startup rather than expose an open admin.
+ * Guard against auth misconfiguration at startup. Two fatal cases:
+ *
+ * 1. **Fail-open**: authEnabled() returns false when AUTH_SECRET is missing,
+ *    which makes getUserFromRequest[/Async] fall back to a hardcoded anonymous
+ *    ADMIN user. That silent open-admin is only acceptable when the operator
+ *    explicitly opted out (AUTH_ENABLED=false) or is in a sandbox/demo instance.
+ * 2. **Weak secret**: a secret shorter than MIN_AUTH_SECRET_LENGTH makes the
+ *    session-signing HMAC brute-forceable, so tokens can be forged. Boot is
+ *    refused below the floor unless the operator sets AUTH_ALLOW_WEAK_SECRET
+ *    (an explicit, documented escape hatch) or is in sandbox/demo mode.
+ *
+ * Both are behaviour that must stop startup rather than expose an insecure
+ * instance.
  *
  * @returns {string|null} an error message when misconfigured, else null.
  * @see docs/plans/security-hardening.md item 3b
+ * @see security-audit-2026-07 L3 (weak-secret boot floor)
  */
 export function authConfigError() {
-  const hasSecret = !!String(process.env.AUTH_SECRET || '').trim();
-  if (hasSecret) return null;
+  const secret = String(process.env.AUTH_SECRET || '').trim();
 
   const explicitlyDisabled =
     String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
   if (explicitlyDisabled) return null;
 
-  const truthy = (v) => /^(1|true|yes|on)$/i.test(String(v || '').trim());
-  if (truthy(process.env.SANDBOX_MODE) || truthy(process.env.DEMO_MODE)) {
-    return null;
+  const isSandboxOrDemo =
+    truthyEnv(process.env.SANDBOX_MODE) || truthyEnv(process.env.DEMO_MODE);
+
+  if (!secret) {
+    if (isSandboxOrDemo) return null;
+    return (
+      'AUTH_SECRET is missing while authentication is not explicitly disabled. ' +
+      'Deckyard refuses to start with anonymous admin access. Set AUTH_SECRET to ' +
+      'enable auth, or set AUTH_ENABLED=false to run intentionally without auth.'
+    );
   }
 
-  return (
-    'AUTH_SECRET is missing while authentication is not explicitly disabled. ' +
-    'Deckyard refuses to start with anonymous admin access. Set AUTH_SECRET to ' +
-    'enable auth, or set AUTH_ENABLED=false to run intentionally without auth.'
-  );
+  if (
+    secret.length < MIN_AUTH_SECRET_LENGTH &&
+    !isSandboxOrDemo &&
+    !truthyEnv(process.env.AUTH_ALLOW_WEAK_SECRET)
+  ) {
+    return (
+      `AUTH_SECRET is only ${secret.length} characters; Deckyard refuses to ` +
+      `start with a secret shorter than ${MIN_AUTH_SECRET_LENGTH} characters ` +
+      'because session tokens are HMAC-signed with it and a short secret is ' +
+      `brute-forceable. Use at least ${MIN_AUTH_SECRET_LENGTH} random characters, ` +
+      'or set AUTH_ALLOW_WEAK_SECRET=true to override (not recommended).'
+    );
+  }
+
+  return null;
 }
 
 /**
  * Non-fatal auth configuration warnings surfaced at startup. Unlike
- * authConfigError() (which blocks boot on a fail-open misconfiguration),
- * these flag settings that work but are weak enough to warrant tightening.
- * Returns [] when there is nothing to warn about.
+ * authConfigError() (which blocks boot on a fail-open misconfiguration or a
+ * sub-floor secret), these flag settings that work but are weak enough to
+ * warrant tightening. Returns [] when there is nothing to warn about.
+ *
+ * The short-secret warning still fires here for the cases that reach boot with
+ * a sub-floor secret: an explicit AUTH_ALLOW_WEAK_SECRET override, or
+ * sandbox/demo mode.
  *
  * @returns {string[]}
  */
@@ -136,12 +172,13 @@ export function authConfigWarnings() {
   const secret = String(process.env.AUTH_SECRET || '').trim();
   const explicitlyDisabled =
     String(process.env.AUTH_ENABLED || '').trim().toLowerCase() === 'false';
-  // A short secret weakens the HMAC that signs session tokens. 32 chars of
-  // randomness is the floor we recommend in .env.example.
-  if (secret && !explicitlyDisabled && secret.length < 32) {
+  // A short secret weakens the HMAC that signs session tokens. This only
+  // reaches boot when the hard floor was overridden or in sandbox/demo.
+  if (secret && !explicitlyDisabled && secret.length < MIN_AUTH_SECRET_LENGTH) {
     warnings.push(
-      `AUTH_SECRET is only ${secret.length} characters; use at least 32 ` +
-        'random characters so session tokens cannot be brute-forced.'
+      `AUTH_SECRET is only ${secret.length} characters; use at least ` +
+        `${MIN_AUTH_SECRET_LENGTH} random characters so session tokens cannot ` +
+        'be brute-forced.'
     );
   }
   return warnings;
@@ -228,6 +265,25 @@ function parseSessionToken(req) {
   return payload;
 }
 
+/**
+ * Synchronous best-effort user resolution from a signed session cookie.
+ *
+ * SECURITY: this validates the token signature and expiry but does NOT confirm
+ * the user still exists or that the session version matches the current
+ * password (it returns `_needsDbValidation: true` for db users instead of
+ * doing the async DB check). A validly-signed, unexpired token therefore
+ * resolves here even for a deleted/disabled user until the 14-day expiry.
+ *
+ * For that reason it MUST NOT be used to make an authorization decision — use
+ * the async {@link getUserFromRequestAsync} for anything gated on identity.
+ * As of the 2026-07 security audit (L3) this function has no callers that take
+ * an authz decision; it is retained as a public helper for display-only /
+ * best-effort contexts. If you add a caller, use the async path unless you can
+ * prove the value is never used for authorization.
+ *
+ * @param {Object} req - HTTP request
+ * @returns {Object|null}
+ */
 export function getUserFromRequest(req) {
   if (!authEnabled())
     return {

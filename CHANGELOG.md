@@ -620,6 +620,20 @@ See `SECURITY.md` for the deployment-facing summary and env vars.
   start unless `AUTH_SECRET` is set or auth is explicitly disabled with
   `AUTH_ENABLED=false` (sandbox/demo modes still boot without auth). Existing
   fail-open deployments must set one of the two after upgrading.
+- **`AUTH_SECRET` must be at least 32 characters (BREAKING).** Session tokens
+  are HMAC-signed with the secret, so a trivially short one is forgeable. The
+  server previously only warned; it now refuses to start below the 32-char
+  floor. An install stuck on a short secret can boot with
+  `AUTH_ALLOW_WEAK_SECRET=true` as a temporary escape hatch (a loud warning is
+  still logged), but the fix is to rotate to a strong secret
+  (`openssl rand -base64 48`). Sandbox/demo and `AUTH_ENABLED=false` are exempt.
+- **Password hashing bumped to OWASP-2024 scrypt cost.** New password hashes
+  (database logins and share-link passwords) now use scrypt at `N=2^17` in a
+  versioned format, up from the Node default `N=2^14`. Existing hashes keep
+  verifying unchanged and are re-hashed at the higher cost the next time that
+  password is changed; no migration or forced reset is required. Passwords are
+  also now length-capped (1024 chars) so scrypt cost can't be weaponised into a
+  DoS.
 - **Non-root container.** The Docker image runs the app and headless Chromium
   as a non-root user; Chromium's own sandbox is now opt-in via
   `PUPPETEER_SANDBOX` (off by default, since Docker's seccomp profile blocks the

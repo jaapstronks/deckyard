@@ -4,11 +4,20 @@
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
+import {
+  hashPassword,
+  verifyPassword,
+  MAX_PASSWORD_LENGTH,
+} from '../utils/password-hash.js';
 import { withDbGuard } from './utils/db-guard.js';
+
+// Re-export the shared password-hash primitives so existing importers of this
+// module keep working (users.js, auth.js). The implementation lives in
+// utils/password-hash.js (versioned scrypt, one copy for all callers).
+export { hashPassword, verifyPassword };
 
 // ============================================================
 // CONSTANTS
@@ -20,50 +29,12 @@ const RATE_LIMIT_PER_IP = 10; // per hour
 const MIN_PASSWORD_LENGTH = 8;
 
 // ============================================================
-// PASSWORD HASHING
+// PASSWORD VALIDATION
 // ============================================================
 
 /**
- * Hash a password using scrypt with a random salt.
- * @param {string} password - The plaintext password
- * @returns {Promise<string>} - The hashed password in format salt:hash
- */
-export async function hashPassword(password) {
-  return new Promise((resolve, reject) => {
-    const salt = crypto.randomBytes(16).toString('hex');
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      resolve(`${salt}:${derivedKey.toString('hex')}`);
-    });
-  });
-}
-
-/**
- * Verify a password against a stored hash using timing-safe comparison.
- * @param {string} password - The plaintext password
- * @param {string} hash - The stored hash in format salt:hash
- * @returns {Promise<boolean>} - True if password matches
- */
-export async function verifyPassword(password, hash) {
-  return new Promise((resolve, reject) => {
-    const [salt, key] = String(hash || '').split(':');
-    if (!salt || !key) {
-      resolve(false);
-      return;
-    }
-    crypto.scrypt(password, salt, 64, (err, derivedKey) => {
-      if (err) reject(err);
-      try {
-        resolve(crypto.timingSafeEqual(Buffer.from(key, 'hex'), derivedKey));
-      } catch {
-        resolve(false);
-      }
-    });
-  });
-}
-
-/**
- * Validate password meets minimum requirements.
+ * Validate password meets length requirements. The lower bound is a usability
+ * floor; the upper bound bounds scrypt cost (DoS guard, see password-hash.js).
  * @param {string} password - The password to validate
  * @returns {{ok: boolean, reason?: string}} - Validation result
  */
@@ -71,6 +42,9 @@ export function validatePassword(password) {
   const pw = String(password || '');
   if (pw.length < MIN_PASSWORD_LENGTH) {
     return { ok: false, reason: 'too_short' };
+  }
+  if (pw.length > MAX_PASSWORD_LENGTH) {
+    return { ok: false, reason: 'too_long' };
   }
   return { ok: true };
 }
