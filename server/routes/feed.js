@@ -9,6 +9,8 @@ import { getOrgSettings } from '../utils/org-settings.js';
 import { listPublishedForFeed } from '../storage/published.js';
 import { buildFeed } from '../utils/rss-feed.js';
 import { isRssFeedEnabled } from '../config/features.js';
+import { createLogger } from '../utils/logger.js';
+const log = createLogger('feed');
 
 const CONTENT_TYPES = {
   rss: 'application/rss+xml; charset=utf-8',
@@ -95,7 +97,7 @@ export async function handleFeed({ repoRoot, req, res, url }) {
   try {
     content = buildFeed({ org, presentations, baseUrl, format });
   } catch (err) {
-    console.error('[feed] buildFeed error:', err);
+    log.error('[feed] buildFeed error:', err);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.end('Feed generation error');
     return true;

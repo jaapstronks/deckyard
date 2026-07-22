@@ -2,6 +2,8 @@ import { createPresentation, updatePresentation } from '../../../storage/present
 import { json, serveJson, serverError } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('import-json');
 
 export async function handlePresentationsImportJson({
   repoRoot,
@@ -10,14 +12,14 @@ export async function handlePresentationsImportJson({
   authedUser,
 } = {}) {
   try {
-    console.log('[import-json] Starting import...');
+    log.info('[import-json] Starting import...');
     const body = await json(req);
 
     const deck = body?.deck || body;
     const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
-    console.log('[import-json] Language:', lang);
-    console.log('[import-json] Deck title:', deck?.title);
-    console.log('[import-json] Deck slides count:', Array.isArray(deck?.slides) ? deck.slides.length : 'not an array');
+    log.info('[import-json] Language:', lang);
+    log.info('[import-json] Deck title:', deck?.title);
+    log.info('[import-json] Deck slides count:', Array.isArray(deck?.slides) ? deck.slides.length : 'not an array');
 
     // Load the deck's theme first so imported title slides can take a
     // background image from its presets.
@@ -29,7 +31,7 @@ export async function handlePresentationsImportJson({
     }
 
     const parts = deckToPresentationParts(deck, { theme: themeConfig });
-    console.log('[import-json] Parsed parts - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
+    log.info('[import-json] Parsed parts - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
     const created = await createPresentation(repoRoot, {
       title: parts.title,
@@ -37,7 +39,7 @@ export async function handlePresentationsImportJson({
       lang,
       ownerEmail: authedUser?.email || null,
     });
-    console.log('[import-json] Created presentation:', created.id);
+    log.info('[import-json] Created presentation:', created.id);
 
     // Build the update payload with proper i18n structure.
     // We need to update i18n.versions[lang] with the imported slides,
@@ -67,7 +69,7 @@ export async function handlePresentationsImportJson({
         actorEmail: authedUser?.email || null,
       }
     );
-    console.log('[import-json] Updated presentation successfully');
+    log.info('[import-json] Updated presentation successfully');
 
     serveJson(res, 201, updated);
     return true;
@@ -75,8 +77,8 @@ export async function handlePresentationsImportJson({
     // Log the detail server-side, but never return err.message/err.stack to the
     // client: in sandbox/demo mode every anonymous visitor is auto-provisioned
     // an authed user, so this response is effectively public (security-audit H7).
-    console.error('[import-json] Error:', err.message);
-    console.error('[import-json] Stack:', err.stack);
+    log.error('[import-json] Error:', err.message);
+    log.error('[import-json] Stack:', err.stack);
     serverError(res);
     return true;
   }

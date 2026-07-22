@@ -26,6 +26,8 @@ import {
 } from '../../storage/user-organizations.js';
 import { getOrganizationById } from '../../storage/user-organizations.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('admin-users');
 
 // ============================================================
 // RATE LIMITING
@@ -129,7 +131,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       serveJson(res, 200, { users: enrichedUsers });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to list users:', err);
+      log.error('[admin-users] Failed to list users:', err);
       serveJson(res, 500, { error: 'Failed to load users' });
       return true;
     }
@@ -191,7 +193,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
           locale,
           repoRoot,
         }).catch((err) => {
-          console.error('[admin-users] Failed to send invitation email:', err);
+          log.error('[admin-users] Failed to send invitation email:', err);
         });
       }
 
@@ -202,7 +204,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to create user:', err);
+      log.error('[admin-users] Failed to create user:', err);
       serveJson(res, 500, { error: 'Failed to create user' });
       return true;
     }
@@ -224,7 +226,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       serveJson(res, 200, { user: targetUser });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to get user:', err);
+      log.error('[admin-users] Failed to get user:', err);
       serveJson(res, 500, { error: 'Failed to load user' });
       return true;
     }
@@ -293,7 +295,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       serveJson(res, 200, { ok: true, user: resultUser });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to update user:', err);
+      log.error('[admin-users] Failed to update user:', err);
       serveJson(res, 500, { error: 'Failed to update user' });
       return true;
     }
@@ -334,7 +336,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       serveJson(res, 200, { ok: true });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to delete user:', err);
+      log.error('[admin-users] Failed to delete user:', err);
       serveJson(res, 500, { error: 'Failed to delete user' });
       return true;
     }
@@ -376,14 +378,14 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
           locale,
           repoRoot,
         }).catch((err) => {
-          console.error('[admin-users] Failed to send activation reminder email:', err);
+          log.error('[admin-users] Failed to send activation reminder email:', err);
         });
       }
 
       serveJson(res, 200, { ok: true, invitationSent: true });
       return true;
     } catch (err) {
-      console.error('[admin-users] Failed to resend invitation:', err);
+      log.error('[admin-users] Failed to resend invitation:', err);
       serveJson(res, 500, { error: 'Failed to resend invitation' });
       return true;
     }

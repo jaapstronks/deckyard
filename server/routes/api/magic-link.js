@@ -21,6 +21,8 @@ import {
   getOrCreateMagicLinkUser,
 } from '../../storage/magic-link.js';
 import { logAuthEvent, getDatabaseUser } from '../../storage/password-reset.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('magic-link');
 
 /**
  * Build the magic link URL from the token and request.
@@ -136,7 +138,7 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
           repoRoot,
         }).catch((err) => {
           // eslint-disable-next-line no-console
-          console.error('[magic-link] Failed to send email:', err);
+          log.error('[magic-link] Failed to send email:', err);
         });
       }
     }

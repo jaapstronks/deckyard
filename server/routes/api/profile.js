@@ -13,6 +13,8 @@ import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden 
 import { readUserSettings, writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('profile');
 
 // Profile image constraints
 const MAX_PROFILE_IMAGE_SIZE = 400; // Max width/height in pixels
@@ -93,7 +95,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
 
       serveJson(res, 200, { imageUrl: result.publicUrl });
     } catch (err) {
-      console.error('[profile] Image upload failed:', err);
+      log.error('[profile] Image upload failed:', err);
       const status = err.statusCode || 500;
       serveJson(res, status, { error: err.message || 'Image processing failed' });
     }
@@ -110,7 +112,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
 
       serveJson(res, 200, { ok: true });
     } catch (err) {
-      console.error('[profile] Image removal failed:', err);
+      log.error('[profile] Image removal failed:', err);
       serveJson(res, 500, { error: err.message || 'Failed to remove profile image' });
     }
     return true;
@@ -194,7 +196,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
 
         serveJson(res, 200, { imageUrl: result.publicUrl });
       } catch (err) {
-        console.error('[profile] Admin image upload failed:', err);
+        log.error('[profile] Admin image upload failed:', err);
         serveJson(res, err.statusCode || 500, { error: err.message || 'Image processing failed' });
       }
       return true;
@@ -208,7 +210,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
         });
         serveJson(res, 200, { ok: true });
       } catch (err) {
-        console.error('[profile] Admin image removal failed:', err);
+        log.error('[profile] Admin image removal failed:', err);
         serveJson(res, 500, { error: err.message || 'Failed to remove profile image' });
       }
       return true;

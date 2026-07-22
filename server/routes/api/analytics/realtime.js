@@ -5,6 +5,8 @@
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { ANALYTICS_CONFIG } from '../../../analytics/helpers.js';
 import { getActiveViewerCount } from '../../../storage/analytics/view-sessions.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('realtime');
 
 // Active SSE connections for real-time viewer count
 const activeConnections = new Map();
@@ -41,7 +43,7 @@ export async function handleRealtime(ctx, presentationId) {
       res.write(`event: viewerCount\ndata: ${JSON.stringify({ count })}\n\n`);
     } catch (err) {
       // Log error but don't crash the connection
-      console.error('[analytics] SSE update error:', err.message);
+      log.error('[analytics] SSE update error:', err.message);
     }
   }, ANALYTICS_CONFIG.SSE_UPDATE_INTERVAL_MS);
 
@@ -58,7 +60,7 @@ export async function handleRealtime(ctx, presentationId) {
 
   // Maximum connection timeout (using configurable timeout) - prevent zombie connections
   const timeoutId = setTimeout(() => {
-    console.log(`[analytics] SSE connection timeout: ${connectionId}`);
+    log.info(`[analytics] SSE connection timeout: ${connectionId}`);
     cleanup();
     try {
       res.end();

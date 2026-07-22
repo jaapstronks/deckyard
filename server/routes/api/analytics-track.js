@@ -36,6 +36,8 @@ import {
   endAllSlideViewsForSession,
 } from '../../storage/analytics/slide-views.js';
 import { getFollowStateForPresentation } from '../../storage/present-sessions/follow-state.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('analytics-track');
 
 /**
  * Validate presentation access for analytics tracking.
@@ -489,7 +491,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
 
     // Log if session update failed (non-critical, slide view was already recorded)
     if (!sessionUpdate.ok) {
-      console.warn(`[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`);
+      log.warn(`[analytics-track] Failed to update session ${redactSecret(sessionToken)}: ${sessionUpdate.reason}`);
     }
 
     return sendSuccessResponse(res, {

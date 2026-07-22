@@ -26,6 +26,8 @@ import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-
 import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createRouteContext } from '../../../utils/context.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('public');
 
 /**
  * Handle public share link endpoints.
@@ -186,7 +188,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     }).then((emailResult) => {
       if (!emailResult.ok) {
         // eslint-disable-next-line no-console
-        console.warn(
+        log.warn(
           `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
         );
       }

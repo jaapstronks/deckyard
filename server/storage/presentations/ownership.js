@@ -5,6 +5,8 @@
 import { getPresentation, updatePresentation } from '../presentations.js';
 import { addCollaborator, removeCollaborator } from '../collaborators.js';
 import { normalizeEmail } from '../../utils/normalize.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('ownership');
 
 /**
  * Transfer ownership of a presentation to another user.
@@ -52,7 +54,7 @@ export async function transferPresentationOwnership(
       reason: 'ownership_transfer',
     });
   } catch (err) {
-    console.error('[ownership] Failed to update presentation:', err);
+    log.error('[ownership] Failed to update presentation:', err);
     return { ok: false, reason: 'update_failed' };
   }
 
@@ -78,7 +80,7 @@ export async function transferPresentationOwnership(
       );
       collaboratorAdded = result.ok;
     } catch (err) {
-      console.error('[ownership] Failed to add previous owner as collaborator:', err);
+      log.error('[ownership] Failed to add previous owner as collaborator:', err);
       // Non-fatal - ownership transfer still succeeded
     }
   }

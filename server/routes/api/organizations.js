@@ -17,6 +17,8 @@ import {
   hasWorkspaceRole,
 } from '../../storage/user-organizations.js';
 import { getUserByEmail } from '../../storage/users.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('organizations');
 
 // ============================================================
 // HELPERS
@@ -93,7 +95,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { organizations });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to list organizations:', err);
+      log.error('[organizations] Failed to list organizations:', err);
       serveJson(res, 500, { error: 'Failed to load organizations' });
       return true;
     }
@@ -154,7 +156,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to create organization:', err);
+      log.error('[organizations] Failed to create organization:', err);
       serveJson(res, 500, { error: 'Failed to create organization' });
       return true;
     }
@@ -188,7 +190,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to get organization:', err);
+      log.error('[organizations] Failed to get organization:', err);
       serveJson(res, 500, { error: 'Failed to load organization' });
       return true;
     }
@@ -274,7 +276,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { ok: true, organization: result.organization });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to update organization:', err);
+      log.error('[organizations] Failed to update organization:', err);
       serveJson(res, 500, { error: 'Failed to update organization' });
       return true;
     }
@@ -312,7 +314,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { ok: true });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to delete organization:', err);
+      log.error('[organizations] Failed to delete organization:', err);
       serveJson(res, 500, { error: 'Failed to delete organization' });
       return true;
     }
@@ -352,7 +354,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       });
       return true;
     } catch (err) {
-      console.error('[organizations] Failed to switch organization:', err);
+      log.error('[organizations] Failed to switch organization:', err);
       serveJson(res, 500, { error: 'Failed to switch organization' });
       return true;
     }

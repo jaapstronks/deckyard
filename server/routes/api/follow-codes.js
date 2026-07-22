@@ -8,6 +8,8 @@ import {
   unauthorized,
 } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('follow-codes');
 
 // ============================================================
 // RATE LIMITING
@@ -56,7 +58,7 @@ function checkRateLimit(limitMap, ip, maxRequests) {
 
 export async function handleFollowCodes({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname.startsWith('/api/follow-codes')) {
-    console.log(`[Follow Codes] Handler called: ${req.method} ${url.pathname}`);
+    log.info(`[Follow Codes] Handler called: ${req.method} ${url.pathname}`);
   }
 
   const clientIp = getClientIp(req) || 'unknown';
@@ -121,22 +123,22 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
     }
 
     const code = resolveMatch[1].toUpperCase();
-    console.log(`[Follow Codes] Resolving code: ${code}`);
+    log.info(`[Follow Codes] Resolving code: ${code}`);
 
     try {
       const followUrl = await resolveFollowCode(repoRoot, code);
 
       if (!followUrl) {
-        console.log(`[Follow Codes] Code not found: ${code}`);
+        log.info(`[Follow Codes] Code not found: ${code}`);
         badRequest(res, 'Code not found or expired');
         return true;
       }
 
-      console.log(`[Follow Codes] Resolved ${code} -> ${followUrl}`);
+      log.info(`[Follow Codes] Resolved ${code} -> ${followUrl}`);
       serveJson(res, 200, { followUrl });
       return true;
     } catch (error) {
-      console.error(`[Follow Codes] Error resolving ${code}:`, error);
+      log.error(`[Follow Codes] Error resolving ${code}:`, error);
       badRequest(res, `Failed to resolve code: ${error.message}`);
       return true;
     }

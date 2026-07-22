@@ -11,6 +11,8 @@ import {
   updatePresentation,
 } from '../../../storage/presentations.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('import');
 
 /**
  * Handle POST /api/notion/import
@@ -272,7 +274,7 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
       detectedLang: effectiveLang,
     });
   } catch (e) {
-    console.error('[Notion Import Stream] Error:', e);
+    log.error('[Notion Import Stream] Error:', e);
     const msg = String(e?.message || e || 'Unknown error');
     sendEvent('error', { error: msg });
   }

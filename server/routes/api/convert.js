@@ -15,6 +15,8 @@ import {
   getConvertParams,
 } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('convert');
 import {
   convertFile,
   SUPPORTED_EXTENSIONS,
@@ -460,7 +462,7 @@ export async function handleConvert({
         detectedLang: effectiveLang, // Include detected language for client navigation
       });
     } catch (e) {
-      console.error('[Convert Stream] Error:', e);
+      log.error('[Convert Stream] Error:', e);
       sendEvent('error', {
         error: e.message || 'Conversion failed',
       });

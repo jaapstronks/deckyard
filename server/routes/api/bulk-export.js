@@ -17,6 +17,8 @@ import {
   getLastCompletedExport,
 } from '../../jobs/queue/workers/bulk-export-worker.js';
 import { buildBulkExport } from '../../export/bulk-export.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('bulk-export');
 
 /**
  * Handle bulk export requests.
@@ -100,7 +102,7 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
         sync: true,
       });
     } catch (err) {
-      console.error('[bulk-export] Sync export failed:', err.message);
+      log.error('[bulk-export] Sync export failed:', err.message);
       serveJson(res, 500, { error: 'Export failed: ' + err.message });
       return true;
     } finally {

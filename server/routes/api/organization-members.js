@@ -25,6 +25,8 @@ import { getUserByEmail, createUser } from '../../storage/users.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';
 import { getEmailDefaultLocale } from '../../storage/email-templates.js';
 import { generateSecureToken, hashToken } from '../../utils/secure-tokens.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('organization-members');
 
 // ============================================================
 // HELPERS
@@ -99,7 +101,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       });
       return true;
     } catch (err) {
-      console.error('[organization-members] Failed to list members:', err);
+      log.error('[organization-members] Failed to list members:', err);
       serveJson(res, 500, { error: 'Failed to load members' });
       return true;
     }
@@ -188,7 +190,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
           locale,
           repoRoot,
         }).catch((err) => {
-          console.error('[organization-members] Failed to send invitation email:', err);
+          log.error('[organization-members] Failed to send invitation email:', err);
         });
       }
 
@@ -203,7 +205,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       });
       return true;
     } catch (err) {
-      console.error('[organization-members] Failed to invite member:', err);
+      log.error('[organization-members] Failed to invite member:', err);
       serveJson(res, 500, { error: 'Failed to invite member' });
       return true;
     }
@@ -295,7 +297,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       serveJson(res, 200, { ok: true, membership: result.membership });
       return true;
     } catch (err) {
-      console.error('[organization-members] Failed to update member role:', err);
+      log.error('[organization-members] Failed to update member role:', err);
       serveJson(res, 500, { error: 'Failed to update member role' });
       return true;
     }
@@ -357,7 +359,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       serveJson(res, 200, { ok: true });
       return true;
     } catch (err) {
-      console.error('[organization-members] Failed to remove member:', err);
+      log.error('[organization-members] Failed to remove member:', err);
       serveJson(res, 500, { error: 'Failed to remove member' });
       return true;
     }
