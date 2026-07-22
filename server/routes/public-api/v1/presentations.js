@@ -41,7 +41,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
   // Only expose the owner's raw email to the owner themselves; redact it for
   // decks reached via workspace/collaborator access so one user's address never
   // leaks to another. The full identity/user-id decoupling is tracked in
-  // docs/plans/identity-decoupling.md.
+  // docs/plans/briefs/identity-decoupling.md.
   const ownerEmail =
     requesterEmail &&
     owner &&

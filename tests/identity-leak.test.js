@@ -7,7 +7,7 @@ import { sanitizePresentation } from '../server/routes/public-api/v1/presentatio
 /**
  * Datamodel-purity move 3 (narrow leak fix): the owner's raw email must not
  * leak into public-facing surfaces. Full email -> user-id decoupling is a
- * separate epic (docs/plans/identity-decoupling.md).
+ * separate epic (docs/plans/briefs/identity-decoupling.md).
  */
 
 const ORG = { title: 'Test org', description: 'Decks', logoUrl: '' };

@@ -37,7 +37,7 @@ const LADDER = {
  *
  * This list may only ever shrink. New CSS must use the ladder; if a layout
  * needs a width that is not a rung, change the layout, not this list.
- * See docs/plans/breakpoint-scale.md for the migration order.
+ * See docs/plans/briefs/breakpoint-scale.md for the migration order.
  */
 const ALLOWLIST = [
   // Step 3 — the topbar's progressive-collapse rungs. The topbar (shared chrome

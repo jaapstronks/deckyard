@@ -188,7 +188,7 @@ export async function listPublishedForFeed(repoRoot, opts = {}) {
         description: typeof pres.description === 'string' ? pres.description : '',
         // Public feed: expose only a display handle (email local-part), never
         // the raw address, so the RSS <author> can't be harvested. Full
-        // identity decoupling: docs/plans/identity-decoupling.md.
+        // identity decoupling: docs/plans/briefs/identity-decoupling.md.
         ownerName: pres.ownerEmail ? String(pres.ownerEmail).split('@')[0] : '',
         published: {
           id: entry.publishId,

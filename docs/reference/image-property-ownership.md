@@ -2,7 +2,7 @@
 
 Where each image-related property lives in the data model, per slide type, and
 where it *should* live. This is the reference the editing-surface work
-(`docs/plans/editing-surfaces.md`) leans on: the "This image / Slide" tab split
+(`docs/plans/briefs/editing-surfaces.md`) leans on: the "This image / Slide" tab split
 is only well-defined once the data model answers "does this property belong to
 the element or the slide?" the same way for every type.
 
@@ -324,6 +324,6 @@ semantics. What deliberately remains outside this track: the `team-cards`
 `imageFocusX/Y` naming divergence, quote's portrait S+I split, and image-text
 not yet *rendering* `bleed` (it travels on the ImageRef).
 
-The editing-surface UI work (`docs/plans/editing-surfaces.md`) sits on top of
+The editing-surface UI work (`docs/plans/briefs/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split
 is mechanical.
