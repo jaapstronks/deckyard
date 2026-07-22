@@ -14,6 +14,7 @@ import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
 import { serveJson, notFound, badRequest } from '../../utils/http.js';
+import { normalizeEmail } from '../../utils/normalize.js';
 
 /**
  * Parse job ID to extract queue name.
@@ -44,10 +45,37 @@ function parseJobId(jobId) {
 }
 
 /**
+ * Look up the stored result for a job across the queue-specific result stores.
+ * @param {string} queueName - Queue name from parseJobId
+ * @param {string} id - Job id (without queue prefix)
+ * @returns {Object|null} Stored result, or null if absent/expired
+ */
+function getStoredResultForQueue(queueName, id) {
+  if (queueName === QUEUE_NAMES.EXPORT) return getStoredResult(id);
+  if (queueName === QUEUE_NAMES.TRANSLATE) return getStoredTranslationResult(id);
+  if (queueName === QUEUE_NAMES.HEAVY) return getStoredBulkResult(id);
+  return null;
+}
+
+/**
+ * Fail-closed ownership check for a stored job result. Job IDs are enumerable
+ * ints, so a result is only accessible to the user whose email is stamped on
+ * it. Returns false when either side is missing (security-audit H3).
+ * @param {Object|null} result - Stored result (may carry ownerEmail)
+ * @param {Object} [authedUser] - Authenticated user
+ * @returns {boolean} True only when the caller owns the result
+ */
+export function ownsStoredResult(result, authedUser) {
+  const owner = normalizeEmail(result?.ownerEmail);
+  const caller = normalizeEmail(authedUser?.email);
+  return !!owner && !!caller && owner === caller;
+}
+
+/**
  * Handle job status request.
  * GET /api/jobs/:id
  */
-async function handleGetJobStatus({ res, url }) {
+async function handleGetJobStatus({ res, url, authedUser }) {
   const match = url.pathname.match(/^\/api\/jobs\/([^/]+)$/);
   if (!match) return false;
 
@@ -80,8 +108,15 @@ async function handleGetJobStatus({ res, url }) {
     completedAt: status.finishedOn,
   };
 
-  // Add result info if completed
+  // Add result info if completed. The return value + download URL expose the
+  // export's existence and metadata, so gate them behind ownership; a
+  // non-owner (or a caller for whom no owner-stamped result survives) gets the
+  // job treated as not found to avoid an enumeration oracle (security-audit H3).
   if (status.state === 'completed' && status.returnvalue) {
+    const stored = getStoredResultForQueue(queueName, id);
+    if (!ownsStoredResult(stored, authedUser)) {
+      return notFound(res, 'Job not found');
+    }
     response.result = status.returnvalue;
     if (status.returnvalue.ready) {
       response.downloadUrl = `/api/jobs/${fullJobId}/download`;
@@ -121,9 +156,12 @@ async function handleJobDownload({ res, url, authedUser }) {
     return notFound(res, 'Job result not found or expired');
   }
 
-  // Verify ownership for bulk exports (HEAVY queue stores sensitive user data)
-  if (result.ownerEmail && authedUser?.email !== result.ownerEmail) {
-    return serveJson(res, 403, { error: 'You do not have access to this export' });
+  // Fail-closed ownership: job IDs are enumerable, so only the user who
+  // requested the export may download it. A missing owner stamp denies access
+  // (older cached results re-export cleanly). Same 404 as the not-found case so
+  // the response can't confirm another user's job exists (security-audit H3).
+  if (!ownsStoredResult(result, authedUser)) {
+    return notFound(res, 'Job result not found or expired');
   }
 
   // For translation jobs, just return the result as JSON
