@@ -1,4 +1,4 @@
-import { esc, getSubheadingText, getCardTitle } from '../helpers.js';
+import { esc, renderSubheadingHtml, getCardTitle } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 function hexToRgb(hex) {
@@ -203,10 +203,7 @@ export default {
         ? ctx.theme
         : null;
     const count = Math.max(1, Math.min(6, Number(content?.cardCount || 4) || 4));
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
 
     const palette = themeCardStackPalette(theme);
     const lightText = String(theme?.textColorLight || '#ffffff');

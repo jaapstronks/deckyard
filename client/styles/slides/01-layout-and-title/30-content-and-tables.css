@@ -294,10 +294,10 @@
 
 /* Inline code - red text with gray background */
 .md-code-inline {
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-family: var(--font-mono);
   font-size: 0.88em;
   background: rgba(0, 0, 0, 0.06);
-  color: #c41a16;
+  color: var(--slide-color-danger);
   padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -305,11 +305,11 @@
 
 /* Code blocks - dark Catppuccin Mocha style */
 .md-code-block {
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-family: var(--font-mono);
   font-size: 16px;
   line-height: 1.5;
-  background: #1e1e2e;
-  color: #cdd6f4;
+  background: var(--slide-code-bg);
+  color: var(--slide-code-text);
   padding: 20px 24px;
   border-radius: var(--slide-radius-sm, 10px);
   overflow-x: auto;
@@ -332,11 +332,11 @@
 .md-code-block .token.prolog,
 .md-code-block .token.doctype,
 .md-code-block .token.cdata {
-  color: #6c7086;
+  color: var(--slide-code-comment);
 }
 
 .md-code-block .token.punctuation {
-  color: #bac2de;
+  color: var(--slide-code-punctuation);
 }
 
 .md-code-block .token.property,
@@ -346,7 +346,7 @@
 .md-code-block .token.constant,
 .md-code-block .token.symbol,
 .md-code-block .token.deleted {
-  color: #fab387;
+  color: var(--slide-code-number);
 }
 
 .md-code-block .token.selector,
@@ -355,7 +355,7 @@
 .md-code-block .token.char,
 .md-code-block .token.builtin,
 .md-code-block .token.inserted {
-  color: #a6e3a1;
+  color: var(--slide-code-string);
 }
 
 .md-code-block .token.operator,
@@ -363,24 +363,24 @@
 .md-code-block .token.url,
 .md-code-block .language-css .token.string,
 .md-code-block .style .token.string {
-  color: #89dceb;
+  color: var(--slide-code-operator);
 }
 
 .md-code-block .token.atrule,
 .md-code-block .token.attr-value,
 .md-code-block .token.keyword {
-  color: #cba6f7;
+  color: var(--slide-code-keyword);
 }
 
 .md-code-block .token.function,
 .md-code-block .token.class-name {
-  color: #89b4fa;
+  color: var(--slide-code-function);
 }
 
 .md-code-block .token.regex,
 .md-code-block .token.important,
 .md-code-block .token.variable {
-  color: #f9e2af;
+  color: var(--slide-code-variable);
 }
 
 /* Math blocks - centered display */
@@ -399,8 +399,8 @@
 /* KaTeX error styling - show raw LaTeX on error */
 .md-math-block .katex-error,
 .md-math-inline .katex-error {
-  color: #c41a16;
-  font-family: 'JetBrains Mono', monospace;
+  color: var(--slide-color-danger);
+  font-family: var(--font-mono);
   font-size: 0.9em;
 }
 

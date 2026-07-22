@@ -1,6 +1,6 @@
 import {
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   cardLinkOverlayHtml,
@@ -260,10 +260,7 @@ export default {
     // cap at 4 (2 rows) to keep everything on the slide.
     if (hasBottom && layout === 'cards') count = Math.min(count, 4);
 
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
 
     const resolved = resolveCards(content, count);

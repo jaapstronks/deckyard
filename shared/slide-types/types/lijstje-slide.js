@@ -1,4 +1,4 @@
-import { bgClass, esc, getSubheadingText, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, esc, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
 
 export default {
   label: 'List',
@@ -171,10 +171,7 @@ export default {
         : rawDensity === 'compact'
           ? ' is-compact'
           : '';
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const items = Array.isArray(content?.items)
       ? content.items
       : [];

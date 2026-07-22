@@ -271,7 +271,12 @@ export function renderLogoWallForm({
 
     // Custom alt field that writes to the logo object
     const altWrap = h('div', { class: 'stack' });
-    altWrap.append(h('div', { class: 'field-label', text: 'Alt text (optional)' }));
+    altWrap.append(
+      h('div', {
+        class: 'field-label',
+        text: t('editor.logoWall.altText', 'Alt text (optional)'),
+      })
+    );
     const altInput = h('input', {
       type: 'text',
       class: 'form-input',

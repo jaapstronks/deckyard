@@ -3,7 +3,7 @@ import {
   imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
   pickAltText,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -230,10 +230,7 @@ export default {
     const title = content?.title
       ? `<h2 class="img-title" data-inline-field="title" dir="auto">${esc(content.title)}</h2>`
       : '';
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content);
     const heading =
       title || subheading ? `<div class="img-heading">${title}${subheading}</div>` : '';
     const hasBottom = hasBottomSubheading(content);
