@@ -112,7 +112,8 @@ test('H7: JSON import 500 is generic (no stack, no raw message)', async () => {
   });
   assert.equal(res.statusCode, 500);
   const body = JSON.parse(res.bodyText());
-  assert.equal(body.error, 'Internal server error');
+  assert.equal(body.error, 'internal_error');
+  assert.equal(body.message, 'Internal server error', 'generic message, no leak');
   assert.ok(!('stack' in body), 'stack must not be in the response');
   assert.doesNotMatch(res.bodyText(), /Invalid JSON body/, 'raw error message must not leak');
 });
@@ -127,7 +128,8 @@ test('H7: markdown import 500 is generic (no stack, no raw message)', async () =
   });
   assert.equal(res.statusCode, 500);
   const body = JSON.parse(res.bodyText());
-  assert.equal(body.error, 'Internal server error');
+  assert.equal(body.error, 'internal_error');
+  assert.equal(body.message, 'Internal server error', 'generic message, no leak');
   assert.ok(!('stack' in body), 'stack must not be in the response');
 });
 

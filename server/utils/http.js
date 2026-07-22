@@ -144,32 +144,61 @@ export function serveJson(res, status, obj, extraHeaders = {}) {
   res.end(JSON.stringify(obj, null, 2));
 }
 
+/**
+ * Emit the canonical error envelope for internal (`/api/*`) routes:
+ * `{ ok: false, error: '<machine_code>', message?: '<human>', details?: ... }`.
+ *
+ * `error` is always a stable snake_case machine code clients branch on; the
+ * optional `message` carries human-readable text for display. This unifies the
+ * two envelopes that used to coexist (prose-in-`error` from the helpers below
+ * vs `{ ok:false, error:'code' }` from routes). The public `/api/v1/*` surface
+ * keeps its own openapi-documented shape and does not use this.
+ *
+ * @param {import('node:http').ServerResponse} res
+ * @param {number} status - HTTP status code.
+ * @param {string} code - Machine-readable snake_case error code.
+ * @param {string} [message] - Human-readable message (optional).
+ * @param {Object} [opts]
+ * @param {*} [opts.details] - Structured extra detail (echoed as `details`).
+ * @param {Object} [opts.headers] - Extra response headers (e.g. Retry-After).
+ * @returns {true}
+ */
+export function jsonError(res, status, code, message, { details, headers } = {}) {
+  const body = { ok: false, error: code };
+  if (message != null && message !== '') body.message = message;
+  if (details != null) body.details = details;
+  serveJson(res, status, body, headers || {});
+  return true;
+}
+
 export function badRequest(res, message) {
-  serveJson(res, 400, { error: message || 'Bad request' });
+  return jsonError(res, 400, 'bad_request', message || 'Bad request');
 }
 
 export function unauthorized(res, message = 'Unauthorized') {
-  serveJson(res, 401, { error: 'Unauthorized', details: message });
+  return jsonError(res, 401, 'unauthorized', message);
 }
 
 export function notFound(res, message = 'Not found') {
-  serveJson(res, 404, { error: message });
+  return jsonError(res, 404, 'not_found', message);
 }
 
 export function forbidden(res, message = 'Forbidden') {
-  serveJson(res, 403, { error: message });
+  return jsonError(res, 403, 'forbidden', message);
 }
 
 export function rateLimited(res, retryAfter = 5, message = 'Rate limit exceeded') {
-  serveJson(res, 429, { error: message }, { 'Retry-After': String(retryAfter) });
+  return jsonError(res, 429, 'rate_limited', message, {
+    headers: { 'Retry-After': String(retryAfter) },
+  });
 }
 
 export function serverError(res, message = 'Internal server error') {
-  serveJson(res, 500, { error: message });
+  return jsonError(res, 500, 'internal_error', message);
 }
 
 export function payloadTooLarge(res, message = 'Request body too large') {
-  serveJson(res, 413, { error: message });
+  return jsonError(res, 413, 'payload_too_large', message);
 }
 
 export function noContent(res) {
@@ -219,12 +248,9 @@ export function getErrorStatus(reason, defaultStatus = 400) {
 }
 
 export function methodNotAllowed(res, allowed) {
-  res.writeHead(405, {
-    'Content-Type': 'application/json; charset=utf-8',
-    Allow: allowed.join(', '),
-    'Cache-Control': 'no-store',
+  return jsonError(res, 405, 'method_not_allowed', 'Method not allowed', {
+    headers: { Allow: allowed.join(', ') },
   });
-  res.end(JSON.stringify({ error: 'Method not allowed' }));
 }
 
 /**
@@ -304,7 +330,7 @@ export function withErrorHandler(moduleName, handler) {
         return true;
       }
 
-      // Use AppError status codes and responses
+      // Use AppError status codes and responses (already the canonical envelope)
       if (isAppError(err)) {
         serveJson(res, err.statusCode, err.toJSON());
         return true;
@@ -312,13 +338,12 @@ export function withErrorHandler(moduleName, handler) {
 
       // Handle errors with statusCode property (from other sources)
       const statusCode = getStatusCode(err);
-      const response = errorToResponse(err);
 
       // Don't leak internal error details on 500 errors
       if (statusCode >= 500) {
-        serveJson(res, statusCode, { error: 'Internal server error' });
+        jsonError(res, statusCode, 'internal_error', 'Internal server error');
       } else {
-        serveJson(res, statusCode, response);
+        serveJson(res, statusCode, errorToResponse(err));
       }
 
       return true;

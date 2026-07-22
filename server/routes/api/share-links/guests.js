@@ -19,7 +19,7 @@ import {
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createRouteContext } from '../../../utils/context.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody } from '../../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('guests');
@@ -72,7 +72,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
         share_link_not_found: 404,
       };
       const status = statusMap[result.reason] || 400;
-      serveJson(res, status, { error: result.reason });
+      jsonError(res, status, result.reason);
       return true;
     }
 

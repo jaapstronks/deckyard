@@ -56,7 +56,7 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
 
       onSuccess(data);
     } catch (err) {
-      errorEl.textContent = err.message === 'invalid_password'
+      errorEl.textContent = err.code === 'invalid_password'
         ? t('share.invalidPassword', 'Invalid password')
         : err.message;
       errorEl.style.display = 'block';

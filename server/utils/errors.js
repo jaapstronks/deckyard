@@ -3,6 +3,30 @@
  */
 
 /**
+ * Default machine-code per HTTP status, for the canonical error envelope
+ * (`{ ok:false, error:'<code>', message:'<human>' }`). Subclasses may override
+ * by passing an explicit `code`.
+ */
+const STATUS_CODE_NAME = {
+  400: 'bad_request',
+  401: 'unauthorized',
+  403: 'forbidden',
+  404: 'not_found',
+  409: 'conflict',
+  413: 'payload_too_large',
+  422: 'unprocessable',
+  423: 'locked',
+  429: 'rate_limited',
+  500: 'internal_error',
+  503: 'service_unavailable',
+};
+
+/** @param {number} status @returns {string} */
+export function codeForStatus(status) {
+  return STATUS_CODE_NAME[status] || (status >= 500 ? 'internal_error' : 'error');
+}
+
+/**
  * Base application error with HTTP status code support.
  */
 export class AppError extends Error {
@@ -10,18 +34,22 @@ export class AppError extends Error {
    * @param {string} message - Error message
    * @param {number} [statusCode=500] - HTTP status code
    * @param {object} [details] - Additional error details
+   * @param {string} [code] - Machine-readable snake_case code (defaults from status)
    */
-  constructor(message, statusCode = 500, details = null) {
+  constructor(message, statusCode = 500, details = null, code = null) {
     super(message);
     this.name = this.constructor.name;
     this.statusCode = statusCode;
     this.details = details;
+    this.code = code || codeForStatus(statusCode);
     Error.captureStackTrace?.(this, this.constructor);
   }
 
   toJSON() {
     return {
-      error: this.message,
+      ok: false,
+      error: this.code,
+      message: this.message,
       ...(this.details ? { details: this.details } : {}),
     };
   }
@@ -138,11 +166,17 @@ export function getStatusCode(err) {
 }
 
 /**
- * Convert any error to a JSON-serializable response object.
+ * Convert any error to the canonical error envelope
+ * (`{ ok:false, error:'<code>', message:'<human>' }`).
  * @param {Error} err
- * @returns {{ error: string, details?: any }}
+ * @returns {{ ok: false, error: string, message: string, details?: any }}
  */
 export function errorToResponse(err) {
   if (err instanceof AppError) return err.toJSON();
-  return { error: err?.message || 'Unknown error' };
+  const status = typeof err?.statusCode === 'number' ? err.statusCode : 500;
+  return {
+    ok: false,
+    error: codeForStatus(status),
+    message: err?.message || 'Unknown error',
+  };
 }
