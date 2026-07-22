@@ -1,7 +1,7 @@
 import {
   esc,
   pickAltText,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   objectPositionStyleAttrFromFocus,
@@ -222,10 +222,7 @@ export default {
     const title = typeof content?.title === 'string' && content.title.trim()
       ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
       : '';
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const hasHeader = !!(title || subheading);
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);

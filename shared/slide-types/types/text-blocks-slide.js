@@ -1,6 +1,6 @@
 import {
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
 } from '../helpers.js';
@@ -341,10 +341,7 @@ export default {
 
   renderHtml: (content) => {
     const title = esc(content?.title || '');
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
 

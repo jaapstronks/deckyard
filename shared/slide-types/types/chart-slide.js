@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -170,7 +170,6 @@ export default {
     const palette = themeChartPalette(theme);
 
     const title = esc(content?.title);
-    const subheading = getSubheadingText(content);
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
 
@@ -311,7 +310,7 @@ export default {
             <div class="chart-title-row">
               <h2 class="chart-title" data-inline-field="title" dir="auto">${title}</h2>
             </div>
-            ${subheading ? `<div class="subheading" data-inline-field="subheading" dir="auto">${esc(subheading)}</div>` : ''}
+            ${renderSubheadingHtml(content)}
           </div>
           ${legendHtml}
           <div class="chart-area" data-inline-field="data" role="group" aria-label="${esc(a11yTitle)}">

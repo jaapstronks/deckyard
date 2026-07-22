@@ -3,6 +3,7 @@ import {
   pickAltText,
   clampInt,
   getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   bgClass,
@@ -489,7 +490,7 @@ export default {
         ? `
           <div class="header">
             ${title ? `<h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(title)}</h2>` : ''}
-            ${subheading ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheading)}</p>` : ''}
+            ${renderSubheadingHtml(content, 'subheading', 'subtitle')}
           </div>
         `
         : '';

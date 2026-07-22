@@ -432,11 +432,15 @@ export function getSubheadingText(content) {
  * Render subheading HTML.
  * @param {object} content - Slide content object
  * @param {string} className - CSS class name (default: 'subheading')
+ * @param {string|null} morphRole - optional `data-morph-role` value (e.g.
+ *   'subtitle') so morph transitions can target the subheading. Omit for none.
  * @returns {string} HTML string or empty string
  */
-export function renderSubheadingHtml(content, className = 'subheading') {
+export function renderSubheadingHtml(content, className = 'subheading', morphRole = null) {
   const text = getSubheadingText(content);
-  return text ? `<p class="${className}" data-inline-field="subheading" dir="auto">${esc(text)}</p>` : '';
+  if (!text) return '';
+  const morphAttr = morphRole ? ` data-morph-role="${morphRole}"` : '';
+  return `<p class="${className}"${morphAttr} data-inline-field="subheading" dir="auto">${esc(text)}</p>`;
 }
 
 /**
