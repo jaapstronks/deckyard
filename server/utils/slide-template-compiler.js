@@ -19,6 +19,19 @@
 import { esc } from '../../shared/slide-types/helpers.js';
 
 /**
+ * Whether a markdown link URL uses a safe, navigable protocol. Anything else
+ * (notably `javascript:`) is rendered as plain text instead of a link. The
+ * compiled output is also DOMPurified downstream, but this keeps the helper
+ * safe on its own, mirroring the http(s)-only rule in shared/markdown.js
+ * (security-audit M1).
+ * @param {string} url - Raw link URL from the markdown source
+ * @returns {boolean}
+ */
+function isSafeLinkUrl(url) {
+  return /^(https?:\/\/|mailto:)/i.test(String(url || '').trim());
+}
+
+/**
  * Minimal markdown-to-HTML converter for template use.
  * Handles paragraphs, bold, italic, links, and lists.
  */
@@ -37,10 +50,12 @@ function simpleMarkdownToHtml(md) {
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   // Italic
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  // Restore links with proper escaping
+  // Restore links with proper escaping. Drop unsafe-protocol links to plain
+  // text so a `[x](javascript:…)` payload can't become a live href.
   html = html.replace(/\x00LINK(\d+)\x00/g, (_, idx) => {
     const link = links[Number(idx)];
-    return `<a href="${esc(link.url)}">${esc(link.label)}</a>`;
+    const label = esc(link.label);
+    return isSafeLinkUrl(link.url) ? `<a href="${esc(link.url)}">${label}</a>` : label;
   });
   // Line breaks → paragraphs
   html = html
