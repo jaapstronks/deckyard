@@ -454,14 +454,7 @@ export async function renderShareViewer(root, token) {
  */
 async function checkGuestSession(token) {
   try {
-    const resp = await fetch(`/api/share/${encodeURIComponent(token)}/guest/me`, {
-      credentials: 'include',
-    });
-    if (resp.ok) {
-      guestSession = await resp.json();
-    } else {
-      guestSession = null;
-    }
+    guestSession = await api(`/api/share/${encodeURIComponent(token)}/guest/me`);
   } catch {
     guestSession = null;
   }

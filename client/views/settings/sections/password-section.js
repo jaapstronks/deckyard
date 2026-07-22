@@ -3,6 +3,7 @@
  * Allows users to change their account password.
  */
 
+import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 
@@ -92,35 +93,26 @@ export function createPasswordSection({ h }) {
     statusEl.textContent = t('settings.changePassword.changing', 'Changing...');
 
     try {
-      const res = await fetch('/api/auth/change-password', {
+      await api('/api/auth/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: {
           currentPassword: currentPw,
           newPassword: newPw,
-        }),
+        },
       });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(t('settings.changePassword.success', 'Password changed successfully.'), {
-          id: 'password-change',
-          durationMs: 3000,
-        });
-        // Clear fields
-        currentPasswordInput.value = '';
-        newPasswordInput.value = '';
-        confirmPasswordInput.value = '';
-        statusEl.textContent = '';
-      } else {
-        const errorMsg = data?.error?.includes('incorrect')
-          ? t('settings.changePassword.incorrectCurrent', 'Current password is incorrect.')
-          : t('settings.changePassword.error', 'Failed to change password.');
-        statusEl.textContent = errorMsg;
-      }
+      toast.success(t('settings.changePassword.success', 'Password changed successfully.'), {
+        id: 'password-change',
+        durationMs: 3000,
+      });
+      // Clear fields
+      currentPasswordInput.value = '';
+      newPasswordInput.value = '';
+      confirmPasswordInput.value = '';
+      statusEl.textContent = '';
     } catch (e) {
-      statusEl.textContent = t('settings.changePassword.error', 'Failed to change password.');
+      statusEl.textContent = e.message?.includes('incorrect')
+        ? t('settings.changePassword.incorrectCurrent', 'Current password is incorrect.')
+        : t('settings.changePassword.error', 'Failed to change password.');
     } finally {
       busy = false;
       btnChangePassword.disabled = false;
