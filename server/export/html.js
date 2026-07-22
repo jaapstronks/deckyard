@@ -13,12 +13,22 @@ import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../
 export async function buildStandaloneHtml(
   repoRoot,
   pres,
-  { headHtml = '', topbarRightHtml = '', theme = null, watermark = null, context = 'export', presentationId = '', slideTypes = null } = {}
+  { headHtml = '', topbarRightHtml = '', theme = null, watermark = null, context = 'export', presentationId = '', slideTypes = null, description = null } = {}
 ) {
   // Apply the appropriate visibility filter based on context
   pres = context === 'published' ? filterForPublished(pres) : filterForExport(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   const docDir = getDocDir(docLang);
+  // Meta description: use the caller-supplied string (the published route
+  // passes one with its own fallback), else the deck's own description. The
+  // reader view already emits this; the visual export/published head didn't.
+  const metaDescription = (
+    typeof description === 'string' && description.trim()
+      ? description
+      : typeof pres?.description === 'string'
+        ? pres.description
+        : ''
+  ).trim();
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
   // Inline any root-relative local font files (e.g. the shared Bricolage
@@ -114,6 +124,7 @@ export async function buildStandaloneHtml(
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
+    ${metaDescription ? `<meta name="description" content="${escapeHtml(metaDescription)}" />` : ''}
     ${extraHead}
     ${externalFontCssLinks}
     ${externalFontScripts}

@@ -344,15 +344,15 @@ export async function handleStatic({
     const title = escapeHtml(projected.title || 'Presentation');
     const rawDesc =
       typeof pres?.description === 'string' ? pres.description.trim() : '';
-    const description = escapeHtml(
+    const descriptionRaw =
       rawDesc ||
-        `Bekijk de presentatie “${
-          projected.title || 'Presentation'
-        }”.`
-    );
+      `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
+    const description = escapeHtml(descriptionRaw);
     const sandboxNoindex = sandboxEnabled();
+    // The plain <meta name="description"> is emitted by buildStandaloneHtml
+    // (via the `description` option below) so exports carry it too; only the
+    // OG/Twitter description variants live here.
     const headHtml = `
-    <meta name="description" content="${description}" />
     <meta name="robots" content="${sandboxNoindex ? 'noindex,nofollow' : 'index,follow'}" />
     <link rel="canonical" href="${canonicalUrl}" />
 
@@ -412,6 +412,7 @@ export async function handleStatic({
       slideTypes,
       context: 'published', // Use published visibility filter
       presentationId: entry.presentationId,
+      description: descriptionRaw,
     });
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
