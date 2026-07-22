@@ -8,8 +8,8 @@ export default {
   // this flag — isInsertableSlideType returns false for deprecated types — but
   // the type stays REGISTERED so any stored/forked deck keeps rendering
   // unchanged (rendering never goes through the insertability gate). The
-  // "two partner logos side by side" use case returns later as flexible
-  // components on a freeform slide.
+  // "two partner logos side by side" use case may return later as reusable
+  // editorial components.
   deprecated: true,
   fields: [
     {

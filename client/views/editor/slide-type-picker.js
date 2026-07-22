@@ -56,7 +56,6 @@ const SLIDE_TYPE_ALIASES = {
   'content-columns-slide': 'columns kolommen',
   'text-blocks-slide': 'blocks process blokken stappen',
   'icon-card-grid-slide': 'cards features icons kaarten iconen',
-  'freeform-slide': 'canvas custom layout vrij',
   'table-slide': 'grid spreadsheet rows columns tabel',
   'chart-slide': 'graph bar line pie data viz grafiek diagram',
   'kpi-metrics-slide': 'numbers stats metrics figures cijfers kengetallen',
@@ -126,7 +125,6 @@ const SLIDE_TYPE_DESC = {
   'content-columns-slide': 'Text in side-by-side columns',
   'text-blocks-slide': 'Several labelled text blocks',
   'icon-card-grid-slide': 'Cards with an icon and label',
-  'freeform-slide': 'Freely placed elements on a canvas',
   'table-slide': 'A data table',
   'chart-slide': 'A bar, line or pie chart',
   'kpi-metrics-slide': 'Big numbers with deltas',
@@ -1066,7 +1064,8 @@ export function createSlideTypePicker({
     const layoutDefs = [
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
-      { type: 'freeform-slide' },
+      // freeform-slide archived (deprecated): filtered out by allowed() anyway,
+      // dropped here to keep the curated list honest.
       { type: 'process-slide' },
       { type: 'timeline-slide' },
     ];

@@ -188,46 +188,6 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
     cta: 'Get in touch',
   },
 
-  'freeform-slide': {
-    elements: [
-      {
-        id: 'sample-h1',
-        type: 'heading',
-        x: 10,
-        y: 15,
-        width: 80,
-        height: 15,
-        zIndex: 1,
-        content: 'Freeform Layout',
-        fontSize: 'xl',
-      },
-      {
-        id: 'sample-t1',
-        type: 'text',
-        x: 10,
-        y: 35,
-        width: 35,
-        height: 45,
-        zIndex: 0,
-        content: 'Position elements freely anywhere on the canvas.',
-        fontSize: 'md',
-      },
-      {
-        id: 'sample-t2',
-        type: 'text',
-        x: 55,
-        y: 35,
-        width: 35,
-        height: 45,
-        zIndex: 0,
-        content: 'Perfect for creative layouts that don\'t fit templates.',
-        fontSize: 'md',
-      },
-    ],
-    background: 'lime',
-    snapToGrid: 'on',
-  },
-
   'split-partner-title-slide': {
     title: 'Partnership',
     subheading: 'Working together',

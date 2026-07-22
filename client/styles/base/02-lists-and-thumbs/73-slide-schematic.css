@@ -623,24 +623,3 @@
   display: flex;
   justify-content: center;
 }
-
-.layout-tile-schematic.is-freeform {
-  position: relative;
-}
-.sd-float {
-  position: absolute;
-  background: var(--sd-fill);
-  border-radius: 2px;
-}
-.sd-float-a {
-  right: 12%;
-  top: 16%;
-  width: 30%;
-  height: 20%;
-}
-.sd-float-b {
-  right: 20%;
-  bottom: 16%;
-  width: 22%;
-  height: 16%;
-}

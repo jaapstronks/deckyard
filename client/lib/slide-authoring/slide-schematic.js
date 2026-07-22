@@ -45,7 +45,6 @@
 //   { kind: 'video' }            image with a play button
 //   { kind: 'embed' }            browser-window chrome
 //   { kind: 'partners' }         centred title + two partner logos
-//   { kind: 'freeform' }         scattered elements on a canvas
 // Legacy image/text layout grammar (unchanged, used by the layout switcher):
 //   { split: <pct> } | { corner: <pct> } | { duo: <pct> } |
 //   { row: 'top'|'bottom' } | { cols: <n> } | { textCols: <n> } | {}
@@ -331,14 +330,6 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     case 'countdown':
       box.classList.add('is-countdown');
       box.append(centerBlock([line('is-timer')]));
-      break;
-    case 'freeform':
-      box.classList.add('is-freeform');
-      box.append(
-        image('is-corner', 'width:34%;height:40%'),
-        h('div', { class: 'sd-float sd-float-a' }),
-        h('div', { class: 'sd-float sd-float-b' })
-      );
       break;
 
     // --- legacy image/text layout grammar (layout switcher) -----------------

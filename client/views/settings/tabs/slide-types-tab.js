@@ -58,7 +58,7 @@ const CATEGORIES = [
     label: 'Layouts',
     types: [
       'content-columns-slide', 'text-blocks-slide', 'card-stack-slide',
-      'icon-card-grid-slide', 'freeform-slide',
+      'icon-card-grid-slide',
     ],
   },
   {

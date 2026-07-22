@@ -12,7 +12,6 @@ import { renderKpiMetricsSlideForm } from './slide-forms/kpi-metrics.js';
 import { renderTextBlocksForm } from './slide-forms/text-blocks.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 import { renderGallerySlideForm } from './slide-forms/gallery-slide.js';
-import { renderFreeformSlideForm } from './slide-forms/freeform-slide.js';
 import {
   removeCardAtIndex,
   removeIconGridCardAtIndex,
@@ -299,26 +298,6 @@ export function renderSlideFormByType(ctx) {
         renderField,
         fieldGrid,
         fieldText,
-        fieldImage,
-        markDirty,
-        rerenderEditor,
-        scheduleUiRefresh,
-      });
-      return true;
-
-    case 'freeform-slide':
-      renderFreeformSlideForm({
-        h,
-        form,
-        slide,
-        add,
-        used,
-        fieldByKey,
-        renderField,
-        fieldGrid,
-        fieldText,
-        fieldTextarea,
-        fieldEnum,
         fieldImage,
         markDirty,
         rerenderEditor,
