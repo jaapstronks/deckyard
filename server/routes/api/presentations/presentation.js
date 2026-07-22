@@ -117,8 +117,12 @@ export async function handlePresentationItem(
     const existing = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
     if (!existing) return true;
 
-    const expectedRevision = authedUser?.isAdmin ? null : parseIfMatchRevision(req);
-    if (!authedUser?.isAdmin && expectedRevision == null)
+    // If-Match is required for everyone, admins included. Admins used to bypass
+    // the check (expectedRevision=null → blind overwrite with no merge, wiping
+    // even slides they never loaded); that escape hatch was removed so every
+    // writer goes through the same optimistic-lock + slide-level merge path.
+    const expectedRevision = parseIfMatchRevision(req);
+    if (expectedRevision == null)
       return serveJson(res, 428, { error: 'Missing If-Match revision' });
 
     // Gate: only capability-holders may create or change raw HTML/CSS on a
