@@ -31,6 +31,37 @@ function filledItemCount(items) {
   return last + 1;
 }
 
+/** Max cards a grid holds (both layouts). Mirrors the schema's maxItems. */
+const MAX_CARDS = 6;
+
+/**
+ * Materialize `items[]` from the legacy numbered card fields so the inline
+ * editor's card affordances (add / remove / reorder) have a stable, mutable
+ * array to write to. Mirrors `ensureMembers` (team-cards) / `ensureLogos`
+ * (logo-wall): the read side (`resolveCards`) folds the two sources into one
+ * view; this mutating helper commits that view to `items[]`. Idempotent, and
+ * never called from `renderHtml` (which stays pure) — the inline editor runs it
+ * via the descriptor's `ensure` knob. The legacy numbered fields are read, not
+ * deleted, so they survive as a mirror (renderHtml already prefers items[]).
+ * @param {Object} content
+ * @returns {Object} the same content object
+ */
+export function ensureIconCards(content) {
+  if (!content || typeof content !== 'object') return content;
+  if (Array.isArray(content.items) && content.items.length > 0) {
+    if (content.items.length > MAX_CARDS) content.items.length = MAX_CARDS;
+    return content;
+  }
+  // Fold the legacy numbered fields (bounded by cardCount) into items[], then
+  // trim trailing blanks so we don't seed invisible empty slots. When there is
+  // genuinely nothing, leave an empty array — the "+ Add card" affordance
+  // provides the first card.
+  const count = Math.max(1, Math.min(MAX_CARDS, Number(content.cardCount || MAX_CARDS) || MAX_CARDS));
+  const resolved = resolveCards(content, count);
+  content.items = resolved.slice(0, filledItemCount(resolved));
+  return content;
+}
+
 /**
  * Resolve cards from content — supports both legacy numbered fields
  * (card1Icon, card1Title, card1Body) and the new items[] array.

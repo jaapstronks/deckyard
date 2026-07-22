@@ -28,6 +28,9 @@ export function createInlineOverlay({ h, thumb }) {
    * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start' | 'below-end'
    */
   let placements = [];
+  // The collection item whose scoped chips are currently revealed (per-item
+  // reveal, see the pointer/focus controller below). Reset on every rebuild.
+  let activeOwner = null;
 
   function ensureAttached() {
     // thumb is the positioning context (comment-markers also relies on this).
@@ -37,6 +40,7 @@ export function createInlineOverlay({ h, thumb }) {
 
   function clear() {
     placements = [];
+    activeOwner = null;
     layer.replaceChildren();
   }
 
@@ -71,8 +75,19 @@ export function createInlineOverlay({ h, thumb }) {
    */
   function place(el, target, placeMode = 'below-start', gap = 6) {
     el.classList.add('ie-ol-item');
+    // Item-scoped chips (a card's ×/grip, a per-item ghost) reveal only for the
+    // hovered/focused collection item, not the whole slide - a dense grid
+    // (text-blocks 3x3 = ~40 chips) would otherwise show everything at once. A
+    // chip whose target lives inside a collection item ([data-inline-item-index])
+    // is tagged and remembered against that item; slide-level chips (header
+    // ghosts, the container "+ Add") stay on the whole-slide hover reveal.
+    const owner = target?.closest?.('[data-inline-item-index]') || null;
+    if (owner) {
+      el.classList.add('ie-item-scoped');
+      el.__ieOwner = owner;
+    }
     layer.appendChild(el);
-    placements.push({ el, target, place: placeMode, gap });
+    placements.push({ el, target, place: placeMode, gap, owner });
     return el;
   }
 
@@ -281,6 +296,37 @@ export function createInlineOverlay({ h, thumb }) {
   ensureAttached();
   const ro = new ResizeObserver(() => reposition());
   ro.observe(thumb);
+
+  // --- Per-item affordance reveal -------------------------------------------
+  // Item-scoped chips stay hidden until their owning collection item is hovered
+  // or focused, so a dense grid doesn't reveal dozens of chips at once. The
+  // overlay layer is pointer-events:none (only chips are interactive), so a
+  // pointerover on the thumb reports the real slide element under the cursor, or
+  // the chip itself when hovering one.
+  function setActiveOwner(owner) {
+    if (owner === activeOwner) return;
+    activeOwner = owner;
+    for (const p of placements) {
+      if (p.owner) p.el.classList.toggle('is-item-active', p.owner === owner);
+    }
+  }
+  function ownerFromEventTarget(node) {
+    if (!node?.closest) return null;
+    const chip = node.closest('.ie-item-scoped');
+    if (chip?.__ieOwner) return chip.__ieOwner;
+    return node.closest('[data-inline-item-index]') || null;
+  }
+  thumb.addEventListener('pointerover', (e) => setActiveOwner(ownerFromEventTarget(e.target)));
+  thumb.addEventListener('pointerleave', (e) => {
+    // Chips can overhang the thumb's edge; moving onto one must not clear the
+    // reveal (relatedTarget is then a node inside the overlay layer).
+    if (e.relatedTarget && layer.contains(e.relatedTarget)) return;
+    setActiveOwner(null);
+  });
+  thumb.addEventListener('focusin', (e) => {
+    const owner = ownerFromEventTarget(e.target);
+    if (owner) setActiveOwner(owner);
+  });
 
   function destroy() {
     ro.disconnect();
