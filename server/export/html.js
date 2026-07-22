@@ -218,26 +218,26 @@ ${css.wmCss}
   <body class="export-body">
     <a class="skip-link" href="#deck">Skip to slides</a>
     <div class="presenter-shell">
-      <div class="presenter-topbar">
+      <header class="presenter-topbar">
         <div class="presenter-title">${title}</div>
         <div class="row" style="gap: 10px; align-items:center;">
           ${extraTopbar}
           <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>
         </div>
-      </div>
-      <div id="deck" class="deck" aria-live="polite">
+      </header>
+      <main id="deck" class="deck" aria-live="polite">
         <div id="stageWrap" class="ps-standalone-stage-wrap">
           <div id="stage" class="ps-standalone-stage ps-theme">
             ${css.wmHtml}
             ${slidesHtml}
           </div>
         </div>
-      </div>
-      <div class="presenter-progress">
+      </main>
+      <footer class="presenter-progress">
         <div id="srStatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
         <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
         <div class="ps-standalone-progress-row">
-          <div class="ps-standalone-nav" aria-label="Slide navigation">
+          <nav class="ps-standalone-nav" aria-label="Slide navigation">
             <button id="btnPrev" class="btn btn-secondary is-compact" type="button" aria-label="Previous slide">Previous</button>
             <button id="btnNext" class="btn btn-secondary is-compact" type="button" aria-label="Next slide">Next</button>
             <button id="btnLoop" class="btn btn-secondary is-compact" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
@@ -245,11 +245,11 @@ ${css.wmCss}
               <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
               <span>s</span>
             </label>
-          </div>
+          </nav>
           <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
         </div>
         <div class="presenter-progress-bar"><div id="progressFill" class="presenter-progress-fill"></div></div>
-      </div>
+      </footer>
     </div>
     <script>
       (function() {

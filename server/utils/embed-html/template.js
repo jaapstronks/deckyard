@@ -158,14 +158,14 @@ export function renderEmbedHtmlDocument({
         </div>
       </div>
       <div class="ps-embed-deck-wrap">
-        <div id="deck" class="deck" aria-live="polite">
+        <main id="deck" class="deck" aria-live="polite">
           <div id="stageWrap" class="ps-embed-stage-wrap">
             <div id="stage" class="ps-embed-stage ps-theme">
               ${wmHtml}
               ${slidesHtml || ''}
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
 
