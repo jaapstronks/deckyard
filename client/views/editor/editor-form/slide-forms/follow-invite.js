@@ -40,7 +40,10 @@ export function renderFollowInviteForm({
   });
   toggleRow.append(
     cb,
-    h('div', { class: 'help', text: 'Gebruik deze slide tijdens presenteren' })
+    h('div', {
+      class: 'help',
+      text: t('editor.followInvite.useWhilePresenting', 'Use this slide while presenting'),
+    })
   );
   form.append(toggleRow);
 
