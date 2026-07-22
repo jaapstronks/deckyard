@@ -52,7 +52,7 @@ export async function buildSlidePreviewHtml(slides, { theme = null, title = '', 
 
   // Render each slide at 1600×900
   const slideHtmls = embeddedSlides.map((slide, i) => {
-    const html = renderSlideHtml(slide, { theme });
+    const html = renderSlideHtml(slide, { theme, stripEditorAttrs: true });
     const num = startIndex + i + 1;
     return `
       <div class="preview-item">
@@ -178,7 +178,7 @@ export async function buildSingleSlidePreviewHtml(slide, { theme = null } = {}) 
   // Embed local images
   const [embeddedSlide] = await embedSlideImages(repoRoot, [slide]);
 
-  const html = renderSlideHtml(embeddedSlide, { theme });
+  const html = renderSlideHtml(embeddedSlide, { theme, stripEditorAttrs: true });
 
   return `<!DOCTYPE html>
 <html lang="en">

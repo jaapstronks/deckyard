@@ -96,7 +96,7 @@ export async function buildStandaloneHtml(
           : '';
         return `<section class="deck-slide" data-slide-id="${escapeHtml(
           s.id
-        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes })}</section>`;
+        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true })}</section>`;
       }
     )
     .join('\n');

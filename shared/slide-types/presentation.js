@@ -232,6 +232,28 @@ function injectSlideLogo(html, content, ctx) {
   return injected ? out : html;
 }
 
+/**
+ * Remove editor-only inline-edit hook attributes from rendered slide HTML.
+ * These (`data-inline-field`, `data-inline-item`, `data-inline-item-index`) are
+ * consumed only by the editor's inline-edit machinery; in a non-editable
+ * artifact (export/embed/published) they are dead weight. `data-morph-role` is
+ * deliberately kept — the presenter morph engine relies on it.
+ *
+ * The `.tf-*` text-formatting classes that `injectTextStyles` merges onto the
+ * same element stay; their CSS is re-anchored off the attribute (see
+ * `03-components/97-text-styles.css`), so text alignment/colour/size still
+ * apply once `data-inline-field` is gone.
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripEditorOnlyAttrs(html) {
+  if (typeof html !== 'string' || !html) return html;
+  return html
+    .replace(/\s+data-inline-field="[^"]*"/g, '')
+    .replace(/\s+data-inline-item-index="[^"]*"/g, '')
+    .replace(/\s+data-inline-item="[^"]*"/g, '');
+}
+
 export function renderSlideHtml(slide, ctx = {}) {
   // Allow callers to provide their own slide types (e.g., client using server-fetched types).
   // This is essential for custom slide types that aren't bundled in the client build.
@@ -261,6 +283,11 @@ export function renderSlideHtml(slide, ctx = {}) {
   out = injectTextStyles(out, content, def?.fields);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);
+  // Non-editable output artifacts (export/embed/published/render) opt in to
+  // dropping editor-only inline-edit hooks — pure noise there. Must run AFTER
+  // injectTextStyles (which reads data-inline-field). data-morph-role is NOT
+  // stripped: the presenter morph engine uses it.
+  if (ctx?.stripEditorAttrs) out = stripEditorOnlyAttrs(out);
   return out;
 }
 
