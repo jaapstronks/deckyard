@@ -82,7 +82,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleFollowPublic({ repoRoot, req, res, url })) return;
   // Note: Follow code resolution (GET) is handled here as public
   // Follow code creation (POST) requires auth and is handled below
-  if (url.pathname.match(/^\/api\/follow-codes\/[A-Z]{4}$/i) && req.method === 'GET') {
+  if (url.pathname.match(/^\/api\/follow-codes\/[A-Z]{4,6}$/i) && req.method === 'GET') {
     if (await handleFollowCodes({ repoRoot, req, res, url, authedUser: null })) return;
   }
   if (await handleSharePublic({ repoRoot, req, res, url })) return;

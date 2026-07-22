@@ -109,8 +109,10 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
     }
   }
 
-  // GET /api/follow-codes/:code - Resolve a 4-letter code to a follow URL
-  const resolveMatch = url.pathname.match(/^\/api\/follow-codes\/([A-Z]{4})$/i);
+  // GET /api/follow-codes/:code - Resolve a short letter code to a follow URL.
+  // Length range stays tolerant ({4,6}) so codes minted before a length change
+  // still resolve during rollout; the exact length is set in follow-codes.js.
+  const resolveMatch = url.pathname.match(/^\/api\/follow-codes\/([A-Z]{4,6})$/i);
   if (resolveMatch && req.method === 'GET') {
     // Rate limit resolution to prevent brute-force enumeration
     if (checkRateLimit(resolveRateLimits, clientIp, RATE_LIMIT_RESOLVE_PER_IP)) {

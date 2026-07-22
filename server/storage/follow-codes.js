@@ -1,9 +1,18 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { dataDir } from '../config/storage-paths.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 
 const CODES_FILE = 'follow-codes.json';
+
+// Follow codes are guessable live-session handles: a valid one resolves to a
+// presenter's live follow URL. Use a CSPRNG (not Math.random, which is
+// predictable) over a large-enough keyspace. 21 unambiguous letters ^ 5 chars
+// ≈ 4.08M combinations, so the 60/hr/IP resolve throttle keeps guessing
+// infeasible. See security audit M3.
+const CODE_LENGTH = 5;
+const CODE_ALPHABET = 'ABCDEFGHJKLMNPRTUVWXY';
 
 function codesFilePath(repoRoot) {
   return path.join(dataDir(repoRoot), CODES_FILE);
@@ -24,13 +33,11 @@ async function writeCodes(repoRoot, codes) {
   await fs.writeFile(filePath, JSON.stringify(codes, null, 2), 'utf8');
 }
 
-function generateCode() {
-  // Use only letters that are visually distinct from numbers and each other
-  // Avoid: O (looks like 0), I (looks like 1), Q (looks like O), S (looks like 5), Z (looks like 2)
-  const chars = 'ABCDEFGHJKLMNPRTUVWXY';
+export function generateCode() {
+  // Alphabet excludes glyphs that are easy to misread: O/0, I/1, Q/O, S/5, Z/2.
   let code = '';
-  for (let i = 0; i < 4; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < CODE_LENGTH; i++) {
+    code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
   }
   return code;
 }
