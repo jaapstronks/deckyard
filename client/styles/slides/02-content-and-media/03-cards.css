@@ -292,20 +292,18 @@
   row-gap: var(--slide-space-5);
 }
 
-/* Staggered ("brick") layout for 5 cards. The right column drops by half a row
-   so its cards sit vertically centred between the left column's cards — the
-   top-right card nestles halfway between the top two left cards. Only the
-   default "cards" layout (tiles is a single row). align-content:center + a
-   fixed row-gap make the row pitch deterministic so the half-row offset lands
-   exactly on the midpoint. */
+/* 5 cards: fill the left column top-to-bottom (1, 2, 3), then the right column
+   (4, 5) — column-major, so the reading order runs straight down the left and
+   continues at the top-right. Replaces an older "brick" stagger (the right
+   column dropped half a row) whose fill order read as jumbled: card 2 landed
+   top-right, not below card 1. grid-auto-flow: column walks the 3 explicit rows
+   of the first column before moving to the second. The invisible 6th card
+   (renderHtml always emits 6, hiding the spare) takes the empty bottom-right
+   cell. Only the default "cards" layout; tiles is a single row. */
 .slide-icon-card-grid[data-layout='cards'] .icon-card-grid[data-card-count='5'] {
+  grid-auto-flow: column;
   align-content: center;
   row-gap: var(--slide-space-5);
-}
-.slide-icon-card-grid[data-layout='cards']
-  .icon-card-grid[data-card-count='5']
-  .icon-card:nth-child(even) {
-  transform: translateY(calc((var(--icg-row-h) + var(--slide-space-5)) / 2));
 }
 
 /* Bottom subheading: caption-style line under the cards, light on the dark

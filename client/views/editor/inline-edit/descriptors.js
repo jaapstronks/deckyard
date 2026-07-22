@@ -148,6 +148,7 @@
 import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
 import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
+import { ensureIconCards } from '../../../../shared/slide-types/types/icon-card-grid-slide.js';
 import {
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
@@ -561,11 +562,20 @@ export const INLINE_DESCRIPTORS = {
   // only works in array mode (skipWhenEmpty guards the legacy decks). ----
   'icon-card-grid-slide': {
     ghosts: HEADER_GHOSTS,
+    // Dual-model (items[] or legacy cardCount + numbered card{n}*): canonicalize
+    // to items[] on mount so add/remove/reorder work from the canvas like
+    // team-cards / logo-wall. Without this, legacy decks stayed in numbered mode
+    // (renderer emitted no data-inline-item-index) and cards were only editable
+    // via the bulk modal.
+    ensure: ensureIconCards,
     cards: {
       field: 'items',
-      skipWhenEmpty: true,
       container: '.icon-card-grid',
       itemSelector: '.icon-card:not(.is-empty)',
+      addLabelKey: 'editor.inline.addCard',
+      addLabel: 'Add card',
+      removeLabelKey: 'editor.inline.removeCard',
+      removeLabel: 'Remove card',
     },
     // Clicking a card's icon opens the icon-picker modal in-slide. The write
     // lands on whichever path the renderer emitted (items.N.icon or the

@@ -13,6 +13,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
+import { ensureIconCards } from '../shared/slide-types/types/icon-card-grid-slide.js';
 
 function render(content, ctx = {}) {
   return renderSlideHtml({ type: 'icon-card-grid-slide', content }, ctx);
@@ -105,5 +106,54 @@ describe('icon-card-grid card count', () => {
       })),
     }, { mode: 'present' });
     assert.equal(countCards(html, FILLED), 4);
+  });
+});
+
+// ensureIconCards is the inline editor's `ensure` knob: it materializes items[]
+// from a legacy numbered deck so the canvas add/remove/reorder affordances have
+// a stable array to write to (mirrors ensureMembers / ensureLogos).
+describe('ensureIconCards migration', () => {
+  it('folds legacy numbered fields into items[], bounded by cardCount', () => {
+    const content = {
+      cardCount: '3',
+      card1Icon: 'a', card1Title: 'One', card1Body: 'first', card1Link: '#2',
+      card2Icon: 'b', card2Title: 'Two', card2Body: 'second',
+      card3Icon: 'c', card3Title: 'Three', card3Body: 'third',
+      // beyond cardCount: must not leak into items[]
+      card4Title: 'LEAK',
+    };
+    ensureIconCards(content);
+    assert.equal(content.items.length, 3);
+    assert.deepEqual(content.items[0], { icon: 'a', title: 'One', body: 'first', link: '#2' });
+    assert.equal(content.items[2].title, 'Three');
+    assert.ok(!content.items.some((c) => c.title === 'LEAK'), 'stale slot leaked');
+  });
+
+  it('trims trailing blank slots so no invisible orphan items are seeded', () => {
+    const content = {
+      cardCount: '6',
+      card1Title: 'Only one', card1Body: 'x',
+    };
+    ensureIconCards(content);
+    assert.equal(content.items.length, 1);
+  });
+
+  it('leaves an empty array when there is genuinely nothing to fold', () => {
+    const content = { cardCount: '6' };
+    ensureIconCards(content);
+    assert.deepEqual(content.items, []);
+  });
+
+  it('is idempotent and never overwrites an existing items[] deck', () => {
+    const content = { items: [{ icon: 'x', title: 'Keep', body: 'me', link: '' }], card1Title: 'IGNORED' };
+    ensureIconCards(content);
+    assert.equal(content.items.length, 1);
+    assert.equal(content.items[0].title, 'Keep');
+  });
+
+  it('caps an oversized items[] at the max of 6', () => {
+    const content = { items: Array.from({ length: 9 }, (_, i) => ({ title: `C${i}`, body: 'x' })) };
+    ensureIconCards(content);
+    assert.equal(content.items.length, 6);
   });
 });

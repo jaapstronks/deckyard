@@ -225,13 +225,26 @@
   line-height: 1;
 }
 
-/* Reveal ghost/add chips on slide hover; always when focused for a11y. */
-.thumb.is-inline-edit:hover .ie-overlay .ie-ghost,
-.thumb.is-inline-edit:hover .ie-overlay .ie-card-add,
-.thumb.is-inline-edit:hover .ie-overlay .ie-media-hint,
+/* Reveal slide-level ghost/add chips on slide hover; always when focused for
+   a11y. Item-scoped chips (:not below) are handled by the per-item reveal rule
+   further down - they stay hidden until their own item is active. */
+.thumb.is-inline-edit:hover .ie-overlay .ie-ghost:not(.ie-item-scoped),
+.thumb.is-inline-edit:hover .ie-overlay .ie-card-add:not(.ie-item-scoped),
+.thumb.is-inline-edit:hover .ie-overlay .ie-media-hint:not(.ie-item-scoped),
 .ie-overlay .ie-ghost:focus-visible,
 .ie-overlay .ie-card-add:focus-visible,
 .ie-overlay .ie-media-hint:focus-visible {
+  opacity: 1;
+}
+
+/* Per-item reveal: an item-scoped chip (a card's ×/grip, a per-item ghost)
+   shows only when its collection item is the active hovered/focused one - the
+   overlay controller toggles .is-item-active - plus when the chip itself is
+   hovered or focused. This keeps a dense collection (text-blocks 3x3) from
+   showing ~40 chips at once; you see one item's controls at a time. */
+.ie-overlay .ie-ol-item.ie-item-scoped.is-item-active,
+.ie-overlay .ie-ol-item.ie-item-scoped:hover,
+.ie-overlay .ie-ol-item.ie-item-scoped:focus-visible {
   opacity: 1;
 }
 
@@ -284,8 +297,8 @@
   transition: opacity 0.12s ease, background-color 0.12s ease, transform 0.08s ease;
 }
 
-.thumb.is-inline-edit:hover .ie-overlay .ie-clear,
-.thumb.is-inline-edit:hover .ie-overlay .ie-card-remove,
+.thumb.is-inline-edit:hover .ie-overlay .ie-clear:not(.ie-item-scoped),
+.thumb.is-inline-edit:hover .ie-overlay .ie-card-remove:not(.ie-item-scoped),
 .ie-overlay .ie-clear:focus-visible,
 .ie-overlay .ie-card-remove:focus-visible {
   opacity: 1;
@@ -317,7 +330,7 @@
   transition: opacity 0.12s ease, background-color 0.12s ease;
 }
 
-.thumb.is-inline-edit:hover .ie-overlay .ie-card-grip,
+.thumb.is-inline-edit:hover .ie-overlay .ie-card-grip:not(.ie-item-scoped),
 .ie-overlay .ie-card-grip:focus-visible {
   opacity: 1;
 }
