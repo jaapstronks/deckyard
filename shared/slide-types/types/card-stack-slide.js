@@ -41,6 +41,14 @@ function themeCardStackPalette(theme) {
 export default {
   deprecated: true, // Hidden from editor + AI. Kept for rendering existing slides. Migrate to icon-card-grid-slide.
   label: 'Card stack',
+  // Reader/reflow projection: treat the flat card1Title / card1Label / card1Body
+  // … slots as one bounded, per-slot-grouped collection, so existing decks
+  // project cleanly (title + body stay one unit; slots beyond cardCount don't
+  // leak). See semantic-projection.js#projectRepeatingGroup. Card order is
+  // incidental → unordered list.
+  repeatingGroups: [
+    { countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Label', 'Body'], ordered: false },
+  ],
   fields: [
     {
       key: 'title',

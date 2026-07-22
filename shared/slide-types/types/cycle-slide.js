@@ -93,6 +93,8 @@ export default {
       key: 'items',
       label: 'Stages',
       type: 'items',
+      // Cycle stages run in sequence (Plan → Do → Check → Act). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,

@@ -300,6 +300,7 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 |------|-------------|------------------|
 | `image` | Image picker | `presetSource` (`'backgrounds'` or `'partnerlogos'`) |
 | `images` | Multiple images (gallery) | `maxCount` |
+| `url` | A hyperlink target (http(s), mailto, or root-/protocol-relative). Validated + allowlisted (`javascript:`/`data:` rejected via `safeHref`); projects as an `<a href>` in the reader/reflow view. Not translatable, so link targets are never sent to translation. | `maxLength`, `required`, `placeholder`, `helpText` |
 
 ### Structured Fields
 

@@ -15,7 +15,7 @@
  */
 
 import { markdownToSafeHtml } from '../markdown.js';
-import { escapeHtml, pickAltText, normalizeUrl } from './helpers.js';
+import { escapeHtml, pickAltText, normalizeUrl, safeHref } from './helpers.js';
 
 // Content keys that are presentation config, not readable content: the global
 // per-slide background/logo/a11y-override fields. The a11y fields are surfaced
@@ -152,6 +152,22 @@ function renderCsvTable(csv) {
 }
 
 /**
+ * Wrap projected item blocks in a list. A collection whose order carries
+ * meaning (a sequence: timeline, process, steps) declares `ordered: true` on
+ * its field and projects to an `<ol>`; a set whose order is incidental (cards,
+ * columns) stays a `<ul>`. This is the count-/order-aware half of the
+ * projection: the list element reflects what the type declares, never a guess.
+ * @param {string[]} blocks - already-rendered `<li>` strings
+ * @param {boolean} [ordered=false]
+ * @returns {string}
+ */
+function renderItemList(blocks, ordered = false) {
+  if (!blocks.length) return '';
+  const tag = ordered ? 'ol' : 'ul';
+  return `<${tag} class="reader-items">${blocks.join('')}</${tag}>`;
+}
+
+/**
  * Render one repeating-item (`items` field) as a small block: its first
  * non-empty string becomes an <h3>, the rest of its fields project by type.
  */
@@ -160,7 +176,7 @@ function renderItemBlock(item, itemFields) {
   const parts = [];
   let headingKey = null;
   const firstString = itemFields.find(
-    (f) => (f?.type === 'string') && str(item[f.key])
+    (f) => f?.type === 'string' && !f.hidden && str(item[f.key])
   );
   if (firstString) {
     headingKey = firstString.key;
@@ -224,11 +240,79 @@ function renderFieldValue(field, content, headingText) {
       const blocks = value
         .map((item) => renderItemBlock(item, field.itemFields))
         .filter(Boolean);
-      return blocks.length ? `<ul class="reader-items">${blocks.join('')}</ul>` : '';
+      return renderItemList(blocks, field.ordered === true);
+    }
+    case 'url': {
+      const href = safeHref(value);
+      if (!href) return '';
+      return `<p><a href="${escapeHtml(href)}">${escapeHtml(href)}</a></p>`;
     }
     default:
       return '';
   }
+}
+
+/**
+ * Does `key` name a slot field of `group` — i.e. `${prefix}${n}${suffix}` for
+ * some slot number and one of the group's slot suffixes?
+ * @param {{prefix:string, slotFields:string[]}} group
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isRepeatingGroupSlotKey(group, key) {
+  if (typeof key !== 'string' || !key.startsWith(group.prefix)) return false;
+  const m = key.slice(group.prefix.length).match(/^(\d+)(.+)$/);
+  return !!m && group.slotFields.includes(m[2]);
+}
+
+/**
+ * Project a "flat repeating group" — a legacy family of numbered sibling fields
+ * (`card1Title`, `card1Body`, `card2Title`, …) bounded by a declared count
+ * field (`cardCount`) — the same way a real `items[]` field projects: one
+ * grouped block per slot (a title `<h3>` + the slot's other fields), wrapped in
+ * an ordered/unordered list.
+ *
+ * Bounded by the count, so stale content in slots beyond the count never leaks
+ * into the reader (the canvas hides those slots; the projection must too), and
+ * grouped per slot, so a card's title and body stay one unit instead of
+ * floating apart as loose paragraphs. This is the migration bridge: once a type
+ * moves its slots into a real `items[]` field, the group declaration is dropped
+ * and the `items` branch already covers it.
+ *
+ * @param {{countKey:string, prefix:string, slotFields:string[], ordered?:boolean}} group
+ * @param {object} content
+ * @param {Array<{key:string,type?:string}>} fields - the type's declared fields
+ * @returns {string}
+ */
+function projectRepeatingGroup(group, content, fields) {
+  const { countKey, prefix, slotFields, ordered = false } = group;
+  const fieldByKey = new Map(fields.map((f) => [f.key, f]));
+  // Reuse the declared field TYPES of slot 1 so the projection stays
+  // vocabulary-driven (title=string→<h3>, body=markdown→rich text, …).
+  const itemFields = slotFields.map((suffix) => {
+    const decl = fieldByKey.get(`${prefix}1${suffix}`);
+    // Carry the declared `hidden` flag so a deprecated/hidden slot field (e.g.
+    // card-stack's card{n}Label) is skipped by renderItemBlock rather than
+    // surfacing in the reader.
+    return { key: suffix, type: decl?.type || 'string', hidden: decl?.hidden };
+  });
+  // Upper bound: how many slots the schema actually declares.
+  let maxSlots = 0;
+  while (slotFields.some((s) => fieldByKey.has(`${prefix}${maxSlots + 1}${s}`))) {
+    maxSlots += 1;
+  }
+  const declared = Number.parseInt(str(content[countKey]), 10);
+  const count = Number.isFinite(declared)
+    ? Math.max(0, Math.min(declared, maxSlots))
+    : maxSlots;
+  const blocks = [];
+  for (let n = 1; n <= count; n += 1) {
+    const item = {};
+    for (const suffix of slotFields) item[suffix] = content[`${prefix}${n}${suffix}`];
+    const block = renderItemBlock(item, itemFields);
+    if (block) blocks.push(block);
+  }
+  return renderItemList(blocks, ordered === true);
 }
 
 /**
@@ -261,8 +345,34 @@ export function renderSlideBodySemanticHtml(slide, def, { headingKey = null, hea
     }
   }
 
+  // Flat repeating groups (card-stack etc.): project the whole group at its
+  // count-field position and consume the count + every numbered slot field, so
+  // they don't also render as a loose enum / duplicate paragraphs.
+  const groups = Array.isArray(def?.repeatingGroups) ? def.repeatingGroups : [];
+  const groupHtmlByAnchor = new Map();
+  for (const group of groups) {
+    if (
+      !group ||
+      typeof group.countKey !== 'string' ||
+      typeof group.prefix !== 'string' ||
+      !Array.isArray(group.slotFields)
+    ) {
+      continue;
+    }
+    consumed.add(group.countKey);
+    for (const field of fields) {
+      if (field && isRepeatingGroupSlotKey(group, field.key)) consumed.add(field.key);
+    }
+    groupHtmlByAnchor.set(group.countKey, projectRepeatingGroup(group, content, fields));
+  }
+
   for (const field of fields) {
-    if (!field || field.key === headingKey || consumed.has(field.key)) continue;
+    if (!field || field.key === headingKey) continue;
+    if (groupHtmlByAnchor.has(field.key)) {
+      parts.push(groupHtmlByAnchor.get(field.key));
+      continue;
+    }
+    if (consumed.has(field.key)) continue;
     parts.push(renderFieldValue(field, content, headingText));
   }
   return parts.filter(Boolean).join('\n');

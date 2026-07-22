@@ -88,6 +88,9 @@ export default {
       key: 'items',
       label: 'Timeline items',
       type: 'items',
+      // A timeline is a chronological sequence — order is the meaning. Projects
+      // to an <ol> in the reader/reflow view (semantic-projection.js).
+      ordered: true,
       required: true,
       minItems: 2,
       maxItems: 10,
