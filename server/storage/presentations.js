@@ -12,6 +12,8 @@ import { normalizeI18n } from './presentations/i18n.js';
 import { recordSlideLevelMerge } from '../services/activity-events.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
 import { invalidatePresentationCache } from './presentation-cache.js';
+import { createLogger } from '../utils/logger.js';
+const log = createLogger('presentations');
 
 /**
  * Get the context for storage operations.
@@ -144,7 +146,7 @@ export async function updatePresentation(repoRoot, id, body, opts) {
       } catch (err) {
         // The JSON save already succeeded; the live doc just didn't get it
         // (same gap as before step 4, for this one write). Say so loudly.
-        console.error(
+        log.error(
           `[collab] applying server write to active doc of ${id} failed; ` +
             'open editors will overwrite this save on their next store:',
           err?.message || err

@@ -4,6 +4,8 @@
  */
 
 import { getStorageMode, getDualWriteMode } from '../../config/database.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('adapters');
 
 /** @type {import('./interface.js').StorageAdapter | null} */
 let adapter = null;
@@ -21,7 +23,7 @@ export async function initializeStorage(repoRoot) {
   const mode = getStorageMode();
   const dualWriteMode = getDualWriteMode();
 
-  console.log(`[Storage] Mode: ${mode}, Dual-write: ${dualWriteMode}`);
+  log.info(`[Storage] Mode: ${mode}, Dual-write: ${dualWriteMode}`);
 
   if (dualWriteMode !== 'off') {
     // Dual-write mode: use both adapters
@@ -38,17 +40,17 @@ export async function initializeStorage(repoRoot) {
     adapter = new DualWriteAdapter(fileAdapter, postgresAdapter, {
       mode: dualWriteMode,
     });
-    console.log(`[Storage] Initialized dual-write adapter (mode: ${dualWriteMode})`);
+    log.info(`[Storage] Initialized dual-write adapter (mode: ${dualWriteMode})`);
   } else if (mode === 'postgres') {
     const { PostgresAdapter } = await import('./postgres-adapter.js');
     adapter = new PostgresAdapter();
     await adapter.initialize();
-    console.log('[Storage] Initialized PostgreSQL adapter');
+    log.info('[Storage] Initialized PostgreSQL adapter');
   } else {
     const { FileAdapter } = await import('./file-adapter.js');
     adapter = new FileAdapter(repoRoot);
     await adapter.initialize();
-    console.log('[Storage] Initialized file adapter');
+    log.info('[Storage] Initialized file adapter');
   }
 
   return adapter;

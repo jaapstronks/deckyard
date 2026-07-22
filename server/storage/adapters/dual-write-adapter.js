@@ -8,6 +8,8 @@
  */
 
 import { StorageAdapter } from './interface.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('dual-write-adapter');
 
 export class DualWriteAdapter extends StorageAdapter {
   /**
@@ -49,7 +51,7 @@ export class DualWriteAdapter extends StorageAdapter {
         // Compare results
         const match = JSON.stringify(result) === JSON.stringify(primary);
         if (!match) {
-          console.warn(`[DualWrite] Mismatch in ${method}:`, {
+          log.warn(`[DualWrite] Mismatch in ${method}:`, {
             primary: JSON.stringify(primary).slice(0, 200),
             secondary: JSON.stringify(result).slice(0, 200),
           });
@@ -58,7 +60,7 @@ export class DualWriteAdapter extends StorageAdapter {
 
       return result;
     } catch (err) {
-      console.error(`[DualWrite] Secondary ${method} failed:`, err.message);
+      log.error(`[DualWrite] Secondary ${method} failed:`, err.message);
       // Don't throw - secondary failures are non-fatal
       return null;
     }

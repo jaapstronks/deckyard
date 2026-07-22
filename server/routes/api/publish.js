@@ -13,6 +13,8 @@ import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('publish');
 
 export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
   // Publish (public share link)
@@ -73,7 +75,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       }
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn('[publish] Preview generation failed:', err.message);
+      log.warn('[publish] Preview generation failed:', err.message);
       // Fall back to existing behavior
       ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
     }
@@ -272,7 +274,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       serveJson(res, 200, { ok: true, ogImageUrl });
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error('[publish] Preview regeneration failed:', err);
+      log.error('[publish] Preview regeneration failed:', err);
       serveJson(res, 500, { error: 'Preview generation failed' });
     }
     return true;

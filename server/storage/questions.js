@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { normalizeLang, otherLang } from '../utils/i18n.js';
 import { sseComment, sseWrite } from '../utils/sse.js';
+import { writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 
 const TTL_MS = 24 * 60 * 60 * 1000; // ~1 day
@@ -84,14 +85,7 @@ function serializeSession(s) {
 async function writeSessionToDisk(s) {
   const repoRoot = s?.repoRoot;
   if (!repoRoot || !s?.sessionId) return;
-  const dir = sessionsDir(repoRoot);
-  await fs.mkdir(dir, { recursive: true });
-  const tmp = path.join(
-    dir,
-    `${s.sessionId}.${crypto.randomUUID()}.tmp`
-  );
-  await fs.writeFile(tmp, JSON.stringify(serializeSession(s), null, 2), 'utf8');
-  await fs.rename(tmp, sessionFile(repoRoot, s.sessionId));
+  await writeJsonAtomic(sessionFile(repoRoot, s.sessionId), serializeSession(s));
 }
 
 function schedulePersist(s) {

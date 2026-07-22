@@ -16,6 +16,8 @@ import {
   permanentlyDeletePresentation as filePermanentlyDeletePresentation,
 } from '../presentations/crud.js';
 import { writePresentation } from '../presentations/io.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('file-adapter');
 
 import {
   listPresentations as fileListPresentations,
@@ -106,7 +108,7 @@ export class FileAdapter extends StorageAdapter {
 
   async initialize() {
     // File adapter doesn't need initialization
-    console.log(`[FileAdapter] Using data directory relative to: ${this.repoRoot}`);
+    log.info(`[FileAdapter] Using data directory relative to: ${this.repoRoot}`);
   }
 
   async close() {

@@ -35,6 +35,8 @@ import {
 import { getGuestFromRequest, withPresentationCommentAuth } from '../../../utils/route-middleware.js';
 import { notifyCommentCreated, notifyMentionsAdded } from '../../../services/comment-notifications.js';
 import { getCtx, MAX_COMMENT_LENGTH, broadcastCommentCounts } from './comments-shared.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('comments-write');
 
 /**
  * Check if a user (authenticated or guest) can edit a comment.
@@ -233,7 +235,7 @@ export async function handlePresentationCommentUpdate(
     });
   })().catch((e) => {
     // eslint-disable-next-line no-console
-    console.warn('[comments] mention-on-edit notify failed:', e?.message || e);
+    log.warn('[comments] mention-on-edit notify failed:', e?.message || e);
   });
 
   // Broadcast to all connected clients (non-blocking)

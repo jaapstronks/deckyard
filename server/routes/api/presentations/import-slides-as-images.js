@@ -10,6 +10,8 @@ import {
 } from '../../../utils/http.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('import-slides-as-images');
 
 /**
  * Upload an image buffer using the best available method:
@@ -176,7 +178,7 @@ export async function handlePresentationImportSlidesAsImages(
           tags: ['pdf-import', `source:${baseFilename}`],
         });
       } catch (uploadErr) {
-        console.error(`[import-slides] Failed to upload page ${pageNum}:`, uploadErr?.message);
+        log.error(`[import-slides] Failed to upload page ${pageNum}:`, uploadErr?.message);
         // Continue with empty URL - user can add image later
       }
 
@@ -243,7 +245,7 @@ export async function handlePresentationImportSlidesAsImages(
 
     return true;
   } catch (err) {
-    console.error('[import-slides] Error:', err?.message, err?.stack);
+    log.error('[import-slides] Error:', err?.message, err?.stack);
     sendError(err?.message || 'Failed to import PDF');
     return true;
   }

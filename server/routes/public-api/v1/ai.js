@@ -16,6 +16,8 @@ import { getLlmStatus } from '../../../utils/llm/config.js';
 import { deckToPresentationParts, presentationToDeck } from '../../../../shared/slide-types.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../../../utils/org-slide-types.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('ai');
 import {
   requireScope,
   parseJsonBody,
@@ -145,7 +147,7 @@ async function handleWizard(ctx) {
     return true;
 
   } catch (e) {
-    console.error('[Public API AI Wizard] Error:', e);
+    log.error('[Public API AI Wizard] Error:', e);
     const statusCode = e?.statusCode || 500;
     await apiError(ctx, statusCode, e?.message || 'Deck generation failed');
     return true;
@@ -228,7 +230,7 @@ async function handleAppendSlides(ctx) {
     return true;
 
   } catch (e) {
-    console.error('[Public API AI Append] Error:', e);
+    log.error('[Public API AI Append] Error:', e);
     const statusCode = e?.statusCode || 500;
     await apiError(ctx, statusCode, e?.message || 'Slide generation failed');
     return true;

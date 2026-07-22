@@ -33,6 +33,8 @@ import { handleFeed } from './feed.js';
 import { getOrganizationById } from '../storage/user-organizations.js';
 import { getOrgSettings } from '../utils/org-settings.js';
 import { isRssFeedEnabled } from '../config/features.js';
+import { createLogger } from '../utils/logger.js';
+const log = createLogger('static');
 
 export async function handleStatic({
   repoRoot,
@@ -193,7 +195,7 @@ export async function handleStatic({
       const stack = escapeHtml(stackRaw);
       try {
         // eslint-disable-next-line no-console
-        console.error(
+        log.error(
           `[embed] render failed publishId=${publishId} slug=${slug} url=${url.pathname}${url.search}\n${stackRaw || msgRaw}`
         );
       } catch {

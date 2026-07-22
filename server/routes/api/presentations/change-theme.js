@@ -19,6 +19,8 @@ import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes, convertSlideToType } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('change-theme');
 
 /**
  * Get theme slide type configuration (server-side version).
@@ -233,7 +235,7 @@ export async function handleChangeTheme(
           lang: pres.lang || null,
         });
       } catch (err) {
-        console.warn(`[change-theme] Failed to convert slide ${slide.id}:`, err.message);
+        log.warn(`[change-theme] Failed to convert slide ${slide.id}:`, err.message);
         return slide; // Keep original if conversion fails
       }
     }

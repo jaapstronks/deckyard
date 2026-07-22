@@ -10,6 +10,8 @@ import { json, serveJson, serverError } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('import-markdown');
 
 export async function handlePresentationsImportMarkdown({
   repoRoot,
@@ -18,7 +20,7 @@ export async function handlePresentationsImportMarkdown({
   authedUser,
 } = {}) {
   try {
-    console.log('[import-markdown] Starting import...');
+    log.info('[import-markdown] Starting import...');
     const body = await json(req);
 
     const markdown = body?.markdown;
@@ -30,14 +32,14 @@ export async function handlePresentationsImportMarkdown({
     const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
     const theme = typeof body?.theme === 'string' ? body.theme.trim() : undefined;
 
-    console.log('[import-markdown] Language:', lang);
-    console.log('[import-markdown] Markdown length:', markdown.length);
+    log.info('[import-markdown] Language:', lang);
+    log.info('[import-markdown] Markdown length:', markdown.length);
 
     // Convert markdown to deck format
     const { deck, report } = await convertMarkdownText(markdown, { lang, theme });
 
     if (!deck) {
-      console.error('[import-markdown] Conversion failed:', report.errors);
+      log.error('[import-markdown] Conversion failed:', report.errors);
       serveJson(res, 422, {
         error: 'Markdown conversion failed',
         report,
@@ -45,7 +47,7 @@ export async function handlePresentationsImportMarkdown({
       return true;
     }
 
-    console.log('[import-markdown] Converted:', report.slidesConverted, 'slides');
+    log.info('[import-markdown] Converted:', report.slidesConverted, 'slides');
 
     // Load the deck's theme first so imported title slides can take a
     // background image from its presets.
@@ -58,7 +60,7 @@ export async function handlePresentationsImportMarkdown({
 
     // Normalize through deckToPresentationParts (same as JSON import)
     const parts = deckToPresentationParts(deck, { theme: themeConfig });
-    console.log('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
+    log.info('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
     // Create presentation
     const created = await createPresentation(repoRoot, {
@@ -67,7 +69,7 @@ export async function handlePresentationsImportMarkdown({
       lang,
       ownerEmail: authedUser?.email || null,
     });
-    console.log('[import-markdown] Created presentation:', created.id);
+    log.info('[import-markdown] Created presentation:', created.id);
 
     // Build i18n structure (same as JSON import)
     const i18n = {
@@ -95,7 +97,7 @@ export async function handlePresentationsImportMarkdown({
         actorEmail: authedUser?.email || null,
       }
     );
-    console.log('[import-markdown] Updated presentation successfully');
+    log.info('[import-markdown] Updated presentation successfully');
 
     serveJson(res, 201, {
       ...updated,
@@ -105,8 +107,8 @@ export async function handlePresentationsImportMarkdown({
   } catch (err) {
     // Log server-side only; never leak err.message/err.stack to the client
     // (public in sandbox/demo mode — security-audit H7).
-    console.error('[import-markdown] Error:', err.message);
-    console.error('[import-markdown] Stack:', err.stack);
+    log.error('[import-markdown] Error:', err.message);
+    log.error('[import-markdown] Stack:', err.stack);
     serverError(res);
     return true;
   }

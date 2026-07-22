@@ -33,6 +33,8 @@ import { getDisplayNameForUser } from '../../utils/user-name.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../config/sandbox.js';
 import { loadTheme, resolveThemeId } from '../../utils/themes.js';
 import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../../utils/org-slide-types.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('ai');
 
 /**
  * Load disabled and custom slide type context for the authenticated user's org.
@@ -212,7 +214,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
         _generationMeta: deck._generationMeta,
       });
     } catch (e) {
-      console.error('[AI Wizard V2] Error:', e);
+      log.error('[AI Wizard V2] Error:', e);
       const statusCode = e?.statusCode || 500;
       serveJson(res, statusCode, {
         error: e?.message || 'Deck generation failed',
@@ -240,7 +242,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
       });
       serveJson(res, 200, outline);
     } catch (e) {
-      console.error('[AI Outline] Error:', e);
+      log.error('[AI Outline] Error:', e);
       const statusCode = e?.statusCode || 500;
       serveJson(res, statusCode, {
         error: e?.message || 'Outline generation failed',
@@ -277,7 +279,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
       // ignore theme loading errors, use default
     }
 
-    console.log(`[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`);
+    log.info(`[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`);
 
     // Set up SSE headers
     res.writeHead(200, {
@@ -443,7 +445,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
       });
 
     } catch (e) {
-      console.error('[AI Wizard V2 Stream] Error:', e);
+      log.error('[AI Wizard V2 Stream] Error:', e);
 
       // Log the error too
       if (logger) {
@@ -589,7 +591,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
 
       serveJson(res, 200, { slides, rationale, range: { start, end } });
     } catch (e) {
-      console.error('[AI Refine Section] Error:', e);
+      log.error('[AI Refine Section] Error:', e);
       const statusCode = e?.statusCode || 500;
       serveJson(res, statusCode, { error: e?.message || 'Section refine failed' });
     }
@@ -656,7 +658,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
         });
       }
     } catch (e) {
-      console.error('[AI Compress Deck] Error:', e);
+      log.error('[AI Compress Deck] Error:', e);
       const statusCode = e?.statusCode || 500;
       serveJson(res, statusCode, { error: e?.message || 'Compression analysis failed' });
     }
@@ -704,7 +706,7 @@ export async function handleAi({ repoRoot, req, res, url, authedUser }) {
         targetSlideIndex,
       });
     } catch (e) {
-      console.error('[AI Iterate] Error:', e);
+      log.error('[AI Iterate] Error:', e);
       const statusCode = e?.statusCode || 500;
       serveJson(res, statusCode, { error: e?.message || 'Iteration failed' });
     }

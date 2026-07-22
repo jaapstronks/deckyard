@@ -24,6 +24,8 @@ import { saveUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('import-deck');
 
 export async function handlePresentationsImportDeck({
   repoRoot,
@@ -124,7 +126,7 @@ export async function handlePresentationsImportDeck({
     });
     return true;
   } catch (err) {
-    console.error('[import-deck] Error:', err.message);
+    log.error('[import-deck] Error:', err.message);
     serveJson(res, 500, { error: 'Failed to import .deck bundle' });
     return true;
   }

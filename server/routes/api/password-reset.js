@@ -13,6 +13,8 @@ import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
 import { normalizeEmail } from '../../utils/normalize.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('password-reset');
 import {
   createResetToken,
   validateResetToken,
@@ -123,7 +125,7 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
           repoRoot,
         }).catch((err) => {
           // eslint-disable-next-line no-console
-          console.error('[password-reset] Failed to send email:', err);
+          log.error('[password-reset] Failed to send email:', err);
         });
       }
     }

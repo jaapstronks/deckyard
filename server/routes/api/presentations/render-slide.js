@@ -16,6 +16,8 @@ import { loadTheme } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('render-slide');
 import {
   methodNotAllowed,
   notFound,
@@ -74,7 +76,7 @@ export async function handleRenderSlide(
     });
     serveJson(res, 200, { html });
   } catch (err) {
-    console.error('[render-slide] Error rendering slide:', err);
+    log.error('[render-slide] Error rendering slide:', err);
     serveJson(res, 500, { error: 'Failed to render slide' });
   }
 

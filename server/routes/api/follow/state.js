@@ -4,6 +4,8 @@ import {
 } from '../../../storage/present-sessions.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { computeAudienceCapabilitiesFromState } from './helpers.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('state');
 
 export async function handleFollowState({ repoRoot, req, res }, presentationId) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -19,7 +21,7 @@ export async function handleFollowState({ repoRoot, req, res }, presentationId) 
     });
     return true;
   } catch (err) {
-    console.error('[follow/state] Failed to get follow state:', err);
+    log.error('[follow/state] Failed to get follow state:', err);
     serveJson(res, 500, { error: 'Failed to load follow state' });
     return true;
   }
