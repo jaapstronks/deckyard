@@ -11,6 +11,7 @@
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { compileTemplate } from './slide-template-compiler.js';
 import { esc } from '../../shared/slide-types/helpers.js';
+import { sanitizeSlideHtmlSync } from '../../shared/sanitize.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
 
 function sanitizeCss(css) {
@@ -43,7 +44,17 @@ export function toRuntimeSlideType(ct) {
       const cssBlock = ct.css
         ? `<style>${sanitizeCss(ct.css)}</style>`
         : '';
-      return cssBlock + render(content || {});
+      // Sanitize the compiled template output before it reaches innerHTML and
+      // the headless-export renderer. Template authoring is canManage-gated, but
+      // the *content* the template interpolates ({{raw}} / {{markdown}}) is
+      // authored by lower-privilege editors / AI / imports and gets no HTML
+      // validation on write — so an innocent-looking {{raw description}} would
+      // otherwise be stored XSS reaching present mode, follow-along, the public
+      // /p/ viewer and the server-side Puppeteer export. Mirrors the custom-html
+      // slide (security-audit H5; also closes the {{markdown}} javascript: sink,
+      // M1). CSS is prepended separately because sanitizeSlideHtmlSync strips
+      // <style>.
+      return cssBlock + sanitizeSlideHtmlSync(render(content || {}));
     };
   } else if (ct.baseType && SLIDE_TYPES[ct.baseType]) {
     // Fall back to the base type's renderer
