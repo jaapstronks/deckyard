@@ -201,7 +201,7 @@
 .slide-lead-capture .lead-capture-error {
   text-align: center;
   font-size: 18px;
-  color: #c53030;
+  color: var(--slide-color-danger);
   min-height: 1.5em;
 }
 

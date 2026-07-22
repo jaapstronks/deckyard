@@ -140,7 +140,7 @@
   color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text));
 }
 .slide-kpi-metrics .kpi-delta.is-negative {
-  color: color-mix(in srgb, #b00020 80%, var(--color-text));
+  color: color-mix(in srgb, var(--slide-color-danger) 80%, var(--color-text));
 }
 
 /* Accent: highlight first metric tile */
@@ -151,9 +151,9 @@
     0 18px 48px rgba(0, 0, 0, 0.12);
 }
 .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
-  border-color: color-mix(in srgb, #b00020 55%, rgba(0, 0, 0, 0.16));
+  border-color: color-mix(in srgb, var(--slide-color-danger) 55%, rgba(0, 0, 0, 0.16));
   box-shadow:
-    0 0 0 6px color-mix(in srgb, #b00020 16%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--slide-color-danger) 16%, transparent),
     0 18px 48px rgba(0, 0, 0, 0.12);
 }
 
@@ -164,7 +164,7 @@
     box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent);
   }
   .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
-    box-shadow: 0 0 0 6px color-mix(in srgb, #b00020 16%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--slide-color-danger) 16%, transparent);
   }
 }
 

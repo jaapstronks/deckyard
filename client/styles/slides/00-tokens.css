@@ -146,6 +146,27 @@
   --slide-surface-white: rgba(255, 255, 255, 0.8);
   --slide-surface-white-solid: rgba(255, 255, 255, 0.95);
 
+  /* Status colors — a single danger red used by form errors, KPI risk
+     accents, code-error styling and inline code. A theme can retint it. */
+  --slide-color-danger: #c53030;
+
+  /* =========================================================================
+     CODE / SYNTAX HIGHLIGHTING
+     =========================================================================
+     Code-block palette. Defaults are Catppuccin Mocha (a dark editor theme
+     that reads well on any slide background); a theme can override any token
+     to match its own code styling. Token roles map to Prism token groups. */
+  --slide-code-bg: #1e1e2e;
+  --slide-code-text: #cdd6f4;        /* default foreground */
+  --slide-code-comment: #6c7086;     /* comment, prolog, doctype, cdata */
+  --slide-code-punctuation: #bac2de; /* punctuation */
+  --slide-code-number: #fab387;      /* property, tag, boolean, number, constant, symbol */
+  --slide-code-string: #a6e3a1;      /* selector, attr-name, string, char, builtin, inserted */
+  --slide-code-operator: #89dceb;    /* operator, entity, url */
+  --slide-code-keyword: #cba6f7;     /* atrule, attr-value, keyword */
+  --slide-code-function: #89b4fa;    /* function, class-name */
+  --slide-code-variable: #f9e2af;    /* regex, important, variable */
+
   /* =========================================================================
      COMPONENT-SPECIFIC TOKENS
      =========================================================================
