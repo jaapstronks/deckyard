@@ -53,7 +53,6 @@ const SLIDE_TYPE_ALIASES = {
   'split-partner-title-slide': 'partners logos two co-branding',
   'team-cards-slide': 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
   'logo-wall-slide': 'sponsors clients brands partners logos logowand klanten',
-  'content-columns-slide': 'columns kolommen',
   'text-blocks-slide': 'blocks process blokken stappen',
   'icon-card-grid-slide': 'cards features icons kaarten iconen',
   'table-slide': 'grid spreadsheet rows columns tabel',
@@ -94,9 +93,9 @@ const SLIDE_TYPE_PRESETS = {
   // CSS text-flow variant that only splits once the body is long enough, so it
   // reads as "one column" in an empty new slide and confused people who picked
   // it expecting two separate fields. That layout stays reachable in the editor
-  // via the layout switcher (content-slide's layoutVariants); the "I explicitly
-  // want two columns" use case is served by content-columns-slide, which sits
-  // right next to the text slide in the Basic group.
+  // via the layout switcher (content-slide's layoutVariants), which is where the
+  // "I explicitly want two columns" use case lives now that content-columns-slide
+  // is archived.
   'lijstje-slide': [
     { id: 'bullets', labelKey: 'editor.slideTypePreset.lijstje.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
     { id: 'numbers', labelKey: 'editor.slideTypePreset.lijstje.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
@@ -122,7 +121,6 @@ const SLIDE_TYPE_DESC = {
   'split-partner-title-slide': 'A title with two partner logos',
   'team-cards-slide': 'Image blocks in a grid',
   'logo-wall-slide': 'A wall of logos',
-  'content-columns-slide': 'Text in side-by-side columns',
   'text-blocks-slide': 'Several labelled text blocks',
   'icon-card-grid-slide': 'Cards with an icon and label',
   'table-slide': 'A data table',
@@ -1029,10 +1027,8 @@ export function createSlideTypePicker({
       { type: 'title-slide' },
       { type: 'chapter-title-slide' },
       { type: 'content-slide' },
-      // Sits directly after the text slide: this is the "two separate columns"
-      // tile (defaults to 2 columns) that replaces the old, confusing
-      // content-slide two-column preset. See SLIDE_TYPE_PRESETS note above.
-      { type: 'content-columns-slide' },
+      // content-columns-slide archived (deprecated): filtered out by allowed()
+      // anyway, dropped here to keep the curated list honest.
       { type: 'quote-slide' },
       { type: 'lijstje-slide' },
       // The styled "List" slide is a close cousin of the bulleted/numbered

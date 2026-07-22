@@ -57,6 +57,24 @@ test('freeform-slide is archived: deprecated + not insertable, still renders sto
   assert.match(html, /Kept/);
 });
 
+test('content-columns-slide is archived: deprecated + not insertable, still renders', () => {
+  const def = SLIDE_TYPES['content-columns-slide'];
+  assert.ok(def, 'type stays registered so existing decks keep rendering');
+  assert.equal(def.deprecated, true, 'marked deprecated (archive convention)');
+  assert.equal(
+    isInsertableSlideType({ type: 'content-columns-slide', def }),
+    false,
+    'hidden from every insertion path (picker + AI)'
+  );
+  // A stored content-columns slide still renders via the kept render-only path.
+  const html = def.renderHtml(
+    { title: 'Cols', columnCount: '2', col1Title: 'A', col2Title: 'B' },
+    { type: 'content-columns-slide' },
+    {}
+  );
+  assert.match(html, /class="slide/);
+});
+
 test('org-disabled types are not insertable', () => {
   assert.equal(
     isInsertableSlideType({

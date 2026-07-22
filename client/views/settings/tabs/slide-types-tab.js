@@ -57,7 +57,7 @@ const CATEGORIES = [
     key: 'layouts',
     label: 'Layouts',
     types: [
-      'content-columns-slide', 'text-blocks-slide', 'card-stack-slide',
+      'text-blocks-slide', 'card-stack-slide',
       'icon-card-grid-slide',
     ],
   },

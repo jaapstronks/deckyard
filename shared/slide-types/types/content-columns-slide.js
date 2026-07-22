@@ -134,6 +134,19 @@ function generateColumnDefaults(colNum, lang) {
 }
 
 export default {
+  // Archived: retired as an authoring surface (decided 2026-07-22). It was the
+  // only type with the rich nested column structure (heading + image + several
+  // sub-items per column), which is the heaviest reader/reflow projection case,
+  // and it barely earned its keep — a near-copy of a one-off custom slide. Kept
+  // registered + render-only so existing decks render unchanged; `deprecated`
+  // removes it from the picker (isInsertableSlideType) and it is listed in the
+  // AI generator's EXCLUDED_TYPES, so no new content-columns slides are authored.
+  // Existing instances are surfaced by scripts/scan-slide-type.js and converted
+  // (to text-blocks / icon-cards) or PNG-replaced before this lands, rather than
+  // silently deprecated. Mirrors the freeform (#252) / split-partner (#197)
+  // archival precedent. Want this layout back later → a custom slide or a future
+  // explicit rich-nested type; not carried as core now.
+  deprecated: true,
   label: 'Content columns',
   fields: [
     // Header
