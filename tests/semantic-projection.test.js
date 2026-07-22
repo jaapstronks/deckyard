@@ -225,6 +225,21 @@ describe('count-/order-aware collection projection', () => {
     assert.ok(!/card1Title|cardCount/.test(html), html);
   });
 
+  it('does not surface a hidden slot field (deprecated card label)', () => {
+    const def = {
+      repeatingGroups: [{ countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Label', 'Body'] }],
+      fields: [
+        { key: 'cardCount', type: 'enum' },
+        { key: 'card1Title', type: 'string' },
+        { key: 'card1Label', type: 'string', hidden: true },
+        { key: 'card1Body', type: 'markdown' },
+      ],
+    };
+    const html = body({ content: { cardCount: '1', card1Title: 'T', card1Label: 'HIDDENLABEL', card1Body: 'b' } }, def);
+    assert.ok(!/HIDDENLABEL/.test(html), html);
+    assert.ok(/<h3>T<\/h3>/.test(html), html);
+  });
+
   it('falls back to all declared slots when the count field is missing', () => {
     const def = {
       repeatingGroups: [{ countKey: 'cardCount', prefix: 'card', slotFields: ['Title'] }],

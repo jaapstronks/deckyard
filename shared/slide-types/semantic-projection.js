@@ -176,7 +176,7 @@ function renderItemBlock(item, itemFields) {
   const parts = [];
   let headingKey = null;
   const firstString = itemFields.find(
-    (f) => (f?.type === 'string') && str(item[f.key])
+    (f) => f?.type === 'string' && !f.hidden && str(item[f.key])
   );
   if (firstString) {
     headingKey = firstString.key;
@@ -291,7 +291,10 @@ function projectRepeatingGroup(group, content, fields) {
   // vocabulary-driven (title=string→<h3>, body=markdown→rich text, …).
   const itemFields = slotFields.map((suffix) => {
     const decl = fieldByKey.get(`${prefix}1${suffix}`);
-    return { key: suffix, type: decl?.type || 'string' };
+    // Carry the declared `hidden` flag so a deprecated/hidden slot field (e.g.
+    // card-stack's card{n}Label) is skipped by renderItemBlock rather than
+    // surfacing in the reader.
+    return { key: suffix, type: decl?.type || 'string', hidden: decl?.hidden };
   });
   // Upper bound: how many slots the schema actually declares.
   let maxSlots = 0;
