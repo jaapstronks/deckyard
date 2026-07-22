@@ -236,12 +236,12 @@
 
 .slide-action-primary:hover {
   filter: brightness(1.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--slide-shadow-md);
 }
 
 .slide-action-primary:active {
   filter: brightness(0.9);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--slide-shadow-sm);
 }
 
 /* Secondary style - accent color background */
@@ -253,12 +253,12 @@
 
 .slide-action-secondary:hover {
   filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--slide-shadow-md);
 }
 
 .slide-action-secondary:active {
   filter: brightness(0.95);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--slide-shadow-sm);
 }
 
 /* Outline style - transparent with visible border.
@@ -273,14 +273,14 @@
 .slide-action-outline:hover {
   background: var(--color-text, #0b0b0b);
   color: var(--slide-bg, var(--color-background, #fff));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--slide-shadow-md);
 }
 
 .slide-action-outline:active {
   background: var(--color-text, #0b0b0b);
   color: var(--slide-bg, var(--color-background, #fff));
   filter: brightness(1.1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--slide-shadow-sm);
 }
 
 /* Image-text slide specific positioning */

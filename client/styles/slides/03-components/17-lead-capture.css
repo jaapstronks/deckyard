@@ -174,7 +174,7 @@
 
 .slide-lead-capture .lead-capture-submit:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--slide-shadow-lg);
 }
 
 .slide-lead-capture .lead-capture-submit:active {
