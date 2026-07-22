@@ -92,6 +92,8 @@ export async function createFollowCopy(lang) {
     translatingWithProgress,
     connecting: tr('follow.connecting', 'Connecting…'),
     qaTitle: tr('follow.qaTitle', 'Q&A'),
+    qaCollapse: tr('follow.qaCollapse', 'Hide questions'),
+    qaExpand: tr('follow.qaExpand', 'Show questions'),
     qaName: tr('follow.qaName', 'Your name (optional)'),
     qaNameUnset: tr('follow.qaNameUnset', 'Set name'),
     qaNameSet: tr('follow.qaNameSet', 'Name:'),

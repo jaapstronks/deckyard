@@ -266,6 +266,20 @@
   backdrop-filter: blur(10px);
   padding: 12px 14px;
 }
+/* Folded away: hide the list + ask box, keep the header (with the toggle). The
+   two classes out-specify the portrait `flex: 1` below, so a collapsed strip
+   shrinks to its header and the stage (flex: 1) grows to fill — the point of the
+   feature on a landscape phone. */
+.follow-qa.is-collapsed {
+  flex: 0 0 auto;
+}
+.follow-qa.is-collapsed .follow-qa-list,
+.follow-qa.is-collapsed .follow-qa-form {
+  display: none;
+}
+.follow-qa-collapse-btn {
+  flex: 0 0 auto;
+}
 .follow-qa-title {
   font-weight: 700;
 }
