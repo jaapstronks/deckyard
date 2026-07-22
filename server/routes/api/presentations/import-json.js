@@ -1,5 +1,5 @@
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
-import { json, serveJson } from '../../../utils/http.js';
+import { json, serveJson, serverError } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 
@@ -12,7 +12,6 @@ export async function handlePresentationsImportJson({
   try {
     console.log('[import-json] Starting import...');
     const body = await json(req);
-    console.log('[import-json] Received body:', JSON.stringify(body).slice(0, 500));
 
     const deck = body?.deck || body;
     const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'nl';
@@ -73,9 +72,12 @@ export async function handlePresentationsImportJson({
     serveJson(res, 201, updated);
     return true;
   } catch (err) {
+    // Log the detail server-side, but never return err.message/err.stack to the
+    // client: in sandbox/demo mode every anonymous visitor is auto-provisioned
+    // an authed user, so this response is effectively public (security-audit H7).
     console.error('[import-json] Error:', err.message);
     console.error('[import-json] Stack:', err.stack);
-    serveJson(res, 500, { error: err.message, stack: err.stack });
+    serverError(res);
     return true;
   }
 }
