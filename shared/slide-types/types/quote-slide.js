@@ -184,6 +184,10 @@ export default {
       type: 'string',
       required: true,
       maxLength: 400,
+      // The quote block only supports left (hero) and centre, not right; the
+      // type also reads this align to centre the whole composition. See
+      // text-roles.js — replaces the former slide.type !== 'quote-slide' hardcode.
+      role: 'quote',
     },
     {
       key: 'authorName',

@@ -96,6 +96,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // Sits in a row next to the step-number badge; block alignment would
+          // detach it from the marker. See text-roles.js.
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -103,6 +106,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 200,
+          role: 'list-item',
         },
       ],
     },
@@ -126,6 +130,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // Sits in a row next to the step-number badge; block alignment would
+          // detach it from the marker. See text-roles.js.
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -133,6 +140,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 200,
+          role: 'list-item',
         },
       ],
     },

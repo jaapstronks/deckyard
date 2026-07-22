@@ -58,7 +58,7 @@ export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SW
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
-import { fieldAllowsAlign } from './text-roles.js';
+import { fieldAllowedAlignValues } from './text-roles.js';
 
 const DEFAULT_ALIGN = 'left';
 const DEFAULT_COLOR = 'default';
@@ -94,15 +94,20 @@ export function normalizeTextStyles(raw) {
 /**
  * The CSS classes for one field's style, or '' when it is all defaults.
  * @param {{align?: string, color?: string, size?: string}} style
- * @param {{allowAlign?: boolean}} [opts] - when `allowAlign` is false the
- *   alignment class is dropped (colour/size still apply); used for fields whose
- *   role forbids block alignment (marker-anchored text). See text-roles.js.
+ * @param {{allowedAligns?: string[]}} [opts] - the alignment values the field's
+ *   role permits; a stored `align` outside this set emits no class (colour/size
+ *   still apply). Defaults to all values (back-compat for callers without the
+ *   schema). See text-roles.js.
  * @returns {string}
  */
-export function textStyleClasses(style, { allowAlign = true } = {}) {
+export function textStyleClasses(style, { allowedAligns = TEXT_ALIGN_VALUES } = {}) {
   if (!style || typeof style !== 'object') return '';
   const classes = [];
-  if (allowAlign && TEXT_ALIGN_VALUES.includes(style.align) && style.align !== DEFAULT_ALIGN) {
+  if (
+    TEXT_ALIGN_VALUES.includes(style.align) &&
+    style.align !== DEFAULT_ALIGN &&
+    allowedAligns.includes(style.align)
+  ) {
     classes.push(`tf-align-${style.align}`);
   }
   if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
@@ -137,8 +142,8 @@ export function injectTextStyles(html, content, fields = null) {
   if (!keys.length || typeof html !== 'string') return html;
   let out = html;
   for (const key of keys) {
-    const allowAlign = fields ? fieldAllowsAlign(fields, key) : true;
-    const cls = textStyleClasses(styles[key], { allowAlign });
+    const allowedAligns = fields ? fieldAllowedAlignValues(fields, key) : TEXT_ALIGN_VALUES;
+    const cls = textStyleClasses(styles[key], { allowedAligns });
     if (!cls) continue;
     // The `"` after the key anchors the match, so `card1` never matches
     // `card1Body`; `data-morph-role="body"` never matches field `body`.
