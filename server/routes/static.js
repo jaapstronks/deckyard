@@ -182,6 +182,11 @@ export async function handleStatic({
     } catch (e) {
       // Important: keep embed iframe-friendly even if something goes wrong.
       // If we let this throw, `server/server.js` will return JSON, which is a terrible UX in Notion/iframes.
+      // Info-disclosure guard: this is the unauthenticated /embed surface, so
+      // never leak the error message or stack (absolute paths, module layout)
+      // to visitors in production — dev keeps them for debugging
+      // (security-audit H6).
+      const isDev = process.env.NODE_ENV !== 'production';
       const msgRaw = String(e?.message || e);
       const msg = escapeHtml(msgRaw);
       const stackRaw = typeof e?.stack === 'string' ? e.stack : '';
@@ -219,9 +224,9 @@ export async function handleStatic({
       <div class="card">
         <p class="title">Deze presentatie kan nu niet worden geladen</p>
         <p class="help">Publicatie-ID: <code>${escapeHtml(publishId)}</code></p>
-        <p class="help">Foutmelding: <code>${msg}</code></p>
+        ${isDev ? `<p class="help">Foutmelding: <code>${msg}</code></p>` : ''}
         ${
-          stackRaw
+          isDev && stackRaw
             ? `<details style="margin-top:10px;">
             <summary style="cursor:pointer; opacity:0.9;">Technische details</summary>
             <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; opacity:0.9; margin:10px 0 0;">${stack}</pre>

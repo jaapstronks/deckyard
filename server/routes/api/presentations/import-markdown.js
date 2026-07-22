@@ -6,7 +6,7 @@
  */
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
-import { json, serveJson } from '../../../utils/http.js';
+import { json, serveJson, serverError } from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -103,9 +103,11 @@ export async function handlePresentationsImportMarkdown({
     });
     return true;
   } catch (err) {
+    // Log server-side only; never leak err.message/err.stack to the client
+    // (public in sandbox/demo mode — security-audit H7).
     console.error('[import-markdown] Error:', err.message);
     console.error('[import-markdown] Stack:', err.stack);
-    serveJson(res, 500, { error: err.message, stack: err.stack });
+    serverError(res);
     return true;
   }
 }
