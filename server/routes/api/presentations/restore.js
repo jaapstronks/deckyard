@@ -1,10 +1,11 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import {
+  getPresentation,
+  updatePresentation,
   createPresentationVersion,
   getPresentationVersion,
-} from '../../../storage/presentations/versions.js';
+} from '../../../storage/presentations.js';
+import { getCollaboratorPermission } from '../../../storage/collaborators.js';
+import { createRouteContext } from '../../../utils/context.js';
 import {
   methodNotAllowed,
   notFound,
