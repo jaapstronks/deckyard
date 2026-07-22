@@ -53,6 +53,46 @@ export function mimeFromExt(ext) {
 }
 
 /**
+ * Map an allowed local-image prefix to its on-disk root directory.
+ * Each entry is [urlPrefix, ...pathSegmentsUnderRepoRoot].
+ * @type {Array<[string, ...string[]]>}
+ */
+const LOCAL_IMAGE_ROOTS = [
+  ['/uploads/', 'server', 'uploads'],
+  ['/assets/', 'assets'],
+  ['/custom/assets/', 'custom', 'assets'],
+  ['/custom/themes/', 'custom', 'themes'],
+  ['/client/', 'client'],
+];
+
+/**
+ * Resolve a user-controlled local image path to an absolute path, contained to
+ * the root directory implied by its prefix. Returns null when the prefix is
+ * unknown or the resolved path escapes that root (path traversal). This is the
+ * security boundary for {@link computeDataUrlIfLocal}: `s` comes from slide
+ * content, so `..`/absolute segments must never reach `fs.readFile`.
+ * @param {string} repoRoot - Repository root path
+ * @param {string} s - Already-stringified URL or path (e.g. `/assets/x.png`)
+ * @param {boolean} isUpload - Whether `s` matched the `/uploads/` prefix
+ * @returns {string|null} Contained absolute path, or null if out of bounds
+ */
+function resolveContainedPath(repoRoot, s, isUpload) {
+  // Prefer the /uploads/ root when the caller already classified it as one;
+  // otherwise pick the first matching prefix (assets/custom/client).
+  const entry = isUpload
+    ? LOCAL_IMAGE_ROOTS[0]
+    : LOCAL_IMAGE_ROOTS.find(([prefix]) => s.startsWith(prefix));
+  if (!entry) return null;
+
+  const [prefix, ...segments] = entry;
+  const rootAbs = path.resolve(repoRoot, ...segments);
+  const rel = s.slice(prefix.length).replace(/^\/+/, '');
+  const abs = path.resolve(rootAbs, rel);
+  if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) return null;
+  return abs;
+}
+
+/**
  * Convert a local path to a data URL if it's an upload or asset
  * @param {string} repoRoot - Repository root path
  * @param {string} urlOrPath - URL or path to convert
@@ -127,9 +167,13 @@ async function computeDataUrlIfLocal(
     return s;
   }
 
-  const abs = isUpload
-    ? path.join(repoRoot, 'server', 'uploads', s.replace('/uploads/', ''))
-    : path.join(repoRoot, s.replace(/^\//, ''));
+  // Resolve the request against the intended root for its prefix, then reject
+  // anything that escapes that root via `..`/absolute segments. Without this a
+  // user-controlled image field (e.g. `/assets/../../.env`) would read
+  // arbitrary server files and inline their bytes into the export. Same
+  // resolve-then-`startsWith(root)` containment as static.js / embed-fonts.js.
+  const abs = resolveContainedPath(repoRoot, s, isUpload);
+  if (!abs) return s;
 
   try {
     let buf = await fs.readFile(abs);

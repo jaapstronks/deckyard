@@ -9,6 +9,18 @@ import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
 
+/**
+ * Normalized owner email for the acting user, used to scope key
+ * list/read/revoke queries to the caller. Returns '' when absent, which the
+ * `owner_email = ''` filter turns into an empty result set (fail closed) —
+ * never a cross-user match. Keep the org filter alongside this.
+ * @param {Object} ctx - Route context ({ actorEmail })
+ * @returns {string} Normalized owner email, or '' if unavailable
+ */
+export function getOwnerEmail(ctx) {
+  return normalizeEmail(ctx?.actorEmail) || '';
+}
+
 // ============================================================
 // CONSTANTS
 // ============================================================
@@ -205,12 +217,13 @@ export async function revokeApiKey(keyId, revokerEmail, ctx) {
     const orgId = getOrgId(ctx);
     const now = nowIso();
 
-    // Only allow revoking keys in the same organization
+    // Only allow revoking the caller's own keys within their organization.
     const row = await db
       .updateTable('api_keys')
       .set({ revoked_at: now })
       .where('id', '=', keyId)
       .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(ctx))
       .where('revoked_at', 'is', null)
       .returningAll()
       .executeTakeFirst();
@@ -249,6 +262,7 @@ export async function listApiKeys(options = {}, ctx) {
         'created_at',
       ])
       .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(ctx))
       .orderBy('created_at', 'desc');
 
     if (!includeRevoked) {
@@ -305,6 +319,7 @@ export async function getApiKeyByPrefix(prefix, ctx) {
       .selectAll()
       .where('key_prefix', '=', prefix)
       .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(ctx))
       .executeTakeFirst();
 
     if (!row) {
@@ -356,6 +371,7 @@ export async function getApiKeyById(keyId, ctx) {
       .selectAll()
       .where('id', '=', keyId)
       .where('organization_id', '=', orgId)
+      .where('owner_email', '=', getOwnerEmail(ctx))
       .executeTakeFirst();
 
     if (!row) {
