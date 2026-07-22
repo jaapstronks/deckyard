@@ -98,7 +98,36 @@ export async function renderFollow(root, presentationId) {
     class: 'btn btn-secondary follow-qa-name-btn',
     text: '',
   });
-  qaActionsTop.append(qaNameBtn, qaHint);
+  // Collapsible Q&A: on a landscape phone the question strip eats the vertical
+  // space the slide wants, so let the audience fold it away. State is remembered
+  // per device so a folded strip stays folded across slide changes and reloads.
+  const QA_COLLAPSE_KEY = 'deckyard:follow:qaCollapsed';
+  const qaCollapseBtn = h('button', {
+    class: 'btn btn-secondary follow-qa-collapse-btn',
+    type: 'button',
+    'aria-controls': 'follow-qa-collapsible',
+  });
+  let qaCollapsed = false;
+  try {
+    qaCollapsed = localStorage.getItem(QA_COLLAPSE_KEY) === '1';
+  } catch {
+    // localStorage may be unavailable (private mode); default to expanded.
+  }
+  const applyQaCollapsed = () => {
+    qaWrap.classList.toggle('is-collapsed', qaCollapsed);
+    qaCollapseBtn.setAttribute('aria-expanded', String(!qaCollapsed));
+    qaCollapseBtn.textContent = qaCollapsed ? copy.qaExpand : copy.qaCollapse;
+  };
+  qaCollapseBtn.addEventListener('click', () => {
+    qaCollapsed = !qaCollapsed;
+    try {
+      localStorage.setItem(QA_COLLAPSE_KEY, qaCollapsed ? '1' : '0');
+    } catch {
+      // ignore persistence failures; the in-memory toggle still works.
+    }
+    applyQaCollapsed();
+  });
+  qaActionsTop.append(qaNameBtn, qaHint, qaCollapseBtn);
   qaHeader.append(qaTitle, qaActionsTop);
 
   const qaInput = h('textarea', {
@@ -126,9 +155,10 @@ export async function renderFollow(root, presentationId) {
     qaInput,
     qaAskBtn,
   ]);
-  const qaList = h('div', { class: 'follow-qa-list' });
+  const qaList = h('div', { class: 'follow-qa-list', id: 'follow-qa-collapsible' });
   // Put questions ABOVE the input (so your own question shows above the box after posting).
   qaWrap.append(qaHeader, qaList, qaForm);
+  applyQaCollapsed();
 
   shell.append(topbar, stageWrap, qaWrap);
   root.append(shell);

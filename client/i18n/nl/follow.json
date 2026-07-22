@@ -26,6 +26,8 @@
   "follow.qaPlaceholder": "Stel je vraag…",
   "follow.qaPromoted": "Wordt behandeld (toegevoegd aan de presentatie)",
   "follow.qaTitle": "Q&A",
+  "follow.qaCollapse": "Verberg vragen",
+  "follow.qaExpand": "Toon vragen",
   "follow.qaTranslatedFromEn": "vertaald uit Engels",
   "follow.qaTranslatedFromNl": "vertaald uit Nederlands",
   "follow.qaUpvote": "Stem omhoog",

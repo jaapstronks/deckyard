@@ -26,6 +26,8 @@
   "follow.qaPlaceholder": "Ask a question…",
   "follow.qaPromoted": "Will be addressed (added to the deck)",
   "follow.qaTitle": "Q&A",
+  "follow.qaCollapse": "Hide questions",
+  "follow.qaExpand": "Show questions",
   "follow.qaTranslatedFromEn": "translated from English",
   "follow.qaTranslatedFromNl": "translated from Dutch",
   "follow.qaUpvote": "Upvote",
