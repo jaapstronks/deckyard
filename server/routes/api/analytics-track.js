@@ -175,7 +175,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     const clientIp = getClientIp(req);
 
     // Rate limit by IP address
-    if (!allowRequest(`track:start:${clientIp}`, TRACKING_RATE_LIMITS.sessionStart)) {
+    if (!(await allowRequest(`track:start:${clientIp}`, TRACKING_RATE_LIMITS.sessionStart))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,
@@ -297,7 +297,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     const clientIp = getClientIp(req);
 
     // Rate limit by IP address
-    if (!allowRequest(`track:heartbeat:${clientIp}`, TRACKING_RATE_LIMITS.heartbeat)) {
+    if (!(await allowRequest(`track:heartbeat:${clientIp}`, TRACKING_RATE_LIMITS.heartbeat))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,
@@ -330,7 +330,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     }
 
     // Per-session rate limiting
-    if (!allowRequest(`track:session:heartbeat:${sessionToken}`, TRACKING_RATE_LIMITS.sessionHeartbeat)) {
+    if (!(await allowRequest(`track:session:heartbeat:${sessionToken}`, TRACKING_RATE_LIMITS.sessionHeartbeat))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,
@@ -357,7 +357,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     const clientIp = getClientIp(req);
 
     // Rate limit by IP address
-    if (!allowRequest(`track:end:${clientIp}`, TRACKING_RATE_LIMITS.sessionEnd)) {
+    if (!(await allowRequest(`track:end:${clientIp}`, TRACKING_RATE_LIMITS.sessionEnd))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,
@@ -413,7 +413,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     const clientIp = getClientIp(req);
 
     // Rate limit by IP address
-    if (!allowRequest(`track:slide:${clientIp}`, TRACKING_RATE_LIMITS.slideView)) {
+    if (!(await allowRequest(`track:slide:${clientIp}`, TRACKING_RATE_LIMITS.slideView))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,
@@ -448,7 +448,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     }
 
     // Per-session rate limiting
-    if (!allowRequest(`track:session:slide:${sessionToken}`, TRACKING_RATE_LIMITS.sessionSlideView)) {
+    if (!(await allowRequest(`track:session:slide:${sessionToken}`, TRACKING_RATE_LIMITS.sessionSlideView))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,

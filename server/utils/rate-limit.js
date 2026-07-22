@@ -154,32 +154,33 @@ export function resetRateLimitBuckets() {
  * Uses adapter pattern: tries Redis first for distributed rate limiting,
  * falls back to in-memory for single-instance deployments.
  *
+ * Always returns a Promise. Callers must `await` the result: treating it as a
+ * bare boolean (`if (!allowRequest(...))`) silently passes every request,
+ * because a pending Promise is truthy. Use `allowRequestSync` when a
+ * synchronous, Redis-free check is genuinely required.
+ *
  * @param {string} key - Rate limit key (e.g., "ip:action")
  * @param {Object} options - Rate limit options
  * @param {number} options.capacity - Maximum tokens/requests
  * @param {number} options.refillPerSec - Token refill rate per second
- * @returns {Promise<boolean>|boolean} True if request is allowed
+ * @returns {Promise<boolean>} True if request is allowed
  */
-export function allowRequest(key, { capacity, refillPerSec }) {
-  // Check if Redis might be available
+export async function allowRequest(key, { capacity, refillPerSec }) {
+  // Try Redis first for distributed rate limiting when it might be available.
   if (mightRedisBeAvailable()) {
-    // Return a promise that tries Redis first
-    return (async () => {
-      try {
-        const result = await allowRequestRedis(key, { capacity, refillPerSec });
-        if (result !== null) {
-          return result;
-        }
-        // Redis unavailable, fall back to memory
-        console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
-      } catch (err) {
-        console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+    try {
+      const result = await allowRequestRedis(key, { capacity, refillPerSec });
+      if (result !== null) {
+        return result;
       }
-      return allowRequestInMemory(key, { capacity, refillPerSec });
-    })();
+      // Redis unavailable, fall back to memory
+      console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
+    } catch (err) {
+      console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+    }
   }
 
-  // Redis not configured, use synchronous in-memory
+  // Redis not configured or unavailable, use in-memory.
   return allowRequestInMemory(key, { capacity, refillPerSec });
 }
 

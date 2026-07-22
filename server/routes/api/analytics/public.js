@@ -28,7 +28,7 @@ export async function handleAnalyticsReportPublic({ req, res, url }) {
     const clientIp = getClientIp(req);
 
     // Rate limit to prevent token enumeration attacks
-    if (!allowRequest(`report:public:${clientIp}`, AUTH_RATE_LIMITS.publicReport)) {
+    if (!(await allowRequest(`report:public:${clientIp}`, AUTH_RATE_LIMITS.publicReport))) {
       logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
         ip: clientIp,
         endpoint: path,

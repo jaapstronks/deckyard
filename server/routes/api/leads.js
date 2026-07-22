@@ -31,10 +31,13 @@ import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
 import { maybeSendLeadNotification } from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
 
-// Rate limits for public lead submission
+// Rate limits for public lead submission.
+// Token bucket: capacity = burst, refillPerSec = sustained rate. The limiter
+// reads { capacity, refillPerSec }; the older { limit, windowMs } shape read as
+// undefined/undefined and clamped every bucket to capacity 1 / 1 rps.
 const LEAD_RATE_LIMITS = {
-  perIp: { limit: 10, windowMs: 60000 }, // 10 per minute per IP
-  global: { limit: 100, windowMs: 60000 }, // 100 per minute globally
+  perIp: { capacity: 10, refillPerSec: 0.167 }, // 10 burst, ~10 per minute per IP
+  global: { capacity: 100, refillPerSec: 1.667 }, // 100 burst, ~100 per minute globally
 };
 
 // GDPR verification tokens (in-memory, short-lived)
@@ -53,11 +56,11 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
   if (req.method === 'POST' && url.pathname === '/api/leads') {
     // Rate limit by IP
     const ip = getClientIp(req);
-    if (!allowRequest(`leads:ip:${ip}`, LEAD_RATE_LIMITS.perIp)) {
+    if (!(await allowRequest(`leads:ip:${ip}`, LEAD_RATE_LIMITS.perIp))) {
       serveJson(res, 429, { ok: false, error: 'rate_limited' });
       return true;
     }
-    if (!allowRequest('leads:global', LEAD_RATE_LIMITS.global)) {
+    if (!(await allowRequest('leads:global', LEAD_RATE_LIMITS.global))) {
       serveJson(res, 429, { ok: false, error: 'rate_limited' });
       return true;
     }
