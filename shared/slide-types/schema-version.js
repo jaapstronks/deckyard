@@ -15,8 +15,10 @@
  * persisted on the next write (reads never write).
  */
 
+import { resolveRows } from './types/text-blocks-slide.js';
+
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
@@ -39,6 +41,27 @@ export const SCHEMA_MIGRATIONS = [
   // without rewriting content. When a later change retires a lazy resolver, it
   // lands as a v1 -> v2 step that folds the shape once, here.
   (pres) => pres,
+
+  // v1 -> v2: fold text-blocks legacy numbered fields (row{n}Count,
+  // row{n}Block{m}Title/Body, arrow{n}, row{n}Enabled …) into the canonical
+  // `rows[]` model, so the semantic projection and everything else read one
+  // shape. Non-destructive: it only *adds* `content.rows` when it is missing or
+  // empty (via the type's own resolver), and leaves the legacy keys in place —
+  // they are now `hidden` in the type def (ignored by the projection) and get
+  // removed in a later deprecation-window cleanup. Idempotent: a slide that
+  // already has a populated `rows[]` is untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || slide.type !== 'text-blocks-slide') continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      if (Array.isArray(content.rows) && content.rows.length > 0) continue;
+      const rows = resolveRows(content);
+      if (Array.isArray(rows) && rows.length > 0) content.rows = rows;
+    }
+    return pres;
+  },
 ];
 
 /**

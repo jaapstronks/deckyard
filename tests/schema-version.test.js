@@ -79,6 +79,50 @@ test('migration is idempotent', () => {
   assert.deepEqual(twice, once);
 });
 
+test('v1->v2 folds legacy text-blocks fields into rows[] non-destructively', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 1,
+    title: 'TB',
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'text-blocks-slide',
+        content: {
+          title: 'Flow',
+          row1Count: '2',
+          row1Block1Title: 'A',
+          row1Block1Body: 'aa',
+          row1Block2Title: 'B',
+          row1Block2Body: 'bb',
+        },
+      },
+    ],
+  };
+  const migrated = migratePresentation(deck);
+  const c = migrated.slides[0].content;
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  // rows[] is now populated from the legacy numbered fields …
+  assert.ok(Array.isArray(c.rows) && c.rows.length === 1, JSON.stringify(c.rows));
+  assert.equal(c.rows[0].blocks.length, 2);
+  assert.equal(c.rows[0].blocks[0].title, 'A');
+  assert.equal(c.rows[0].blocks[1].body, 'bb');
+  // … and the legacy keys are left in place (non-destructive fold).
+  assert.equal(c.row1Block1Title, 'A');
+});
+
+test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () => {
+  const rows = [{ title: 'R', arrow: 'none', blocks: [{ title: 'X', body: 'x' }] }];
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 1,
+    title: 'TB',
+    slides: [{ id: randomUUID(), type: 'text-blocks-slide', content: { title: 'T', rows } }],
+  };
+  const migrated = migratePresentation(deck);
+  assert.deepEqual(migrated.slides[0].content.rows, rows);
+});
+
 test('a deck from a newer build is never downgraded', () => {
   const future = { id: randomUUID(), schemaVersion: 99, title: 'Future' };
   const out = migratePresentation(future);

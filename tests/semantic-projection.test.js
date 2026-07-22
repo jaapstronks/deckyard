@@ -272,3 +272,47 @@ describe('url field projection', () => {
     assert.ok(/<a href="\/p\/deck\/1">/.test(html), html);
   });
 });
+
+describe('relation-aware collection projection (text-blocks arrows)', () => {
+  const relDef = () => ({
+    fields: [
+      {
+        key: 'rows',
+        type: 'items',
+        relationField: 'arrow',
+        relationLabels: { down: 'leads to', up: 'follows from' },
+        itemFields: [
+          { key: 'title', type: 'string' },
+          { key: 'arrow', type: 'enum' },
+          {
+            key: 'blocks',
+            type: 'items',
+            itemFields: [{ key: 'title', type: 'string' }, { key: 'body', type: 'markdown' }],
+          },
+        ],
+      },
+    ],
+  });
+
+  it('renders an ordered <ol> with a relation marker when rows carry an arrow', () => {
+    const html = body({ content: { rows: [
+      { title: 'Phase 1', arrow: 'down', blocks: [{ title: 'A', body: 'a' }] },
+      { title: 'Phase 2', arrow: 'none', blocks: [{ title: 'B', body: 'b' }] },
+    ] } }, relDef());
+    assert.ok(/^<ol class="reader-items">/.test(html), html);
+    assert.ok(/class="reader-relation" data-relation="down">leads to</.test(html), html);
+    // nested blocks stay an unordered sub-list
+    assert.ok(/<ul class="reader-items"><li class="reader-item"><h3>A<\/h3>/.test(html), html);
+    // the row heading is a heading, the arrow enum never renders as content
+    assert.ok(/<h3>Phase 1<\/h3>/.test(html), html);
+    assert.ok(!/none/.test(html), html);
+  });
+
+  it('stays an unordered <ul> with no marker when no row has an arrow', () => {
+    const html = body({ content: { rows: [
+      { title: 'Only', arrow: 'none', blocks: [{ title: 'A', body: 'a' }] },
+    ] } }, relDef());
+    assert.ok(/^<ul class="reader-items">/.test(html), html);
+    assert.ok(!/reader-relation/.test(html), html);
+  });
+});

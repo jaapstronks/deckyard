@@ -237,10 +237,36 @@ function renderFieldValue(field, content, headingText) {
     }
     case 'items': {
       if (!Array.isArray(value) || !value.length) return '';
+      // A `relationField` names a per-item key holding a typed relation to the
+      // NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any item
+      // carries a relation, the collection is a causal/ordered sequence → the
+      // list becomes an <ol> and each relating item gets a small relation
+      // marker. `relationLabels` maps a stored value to its reader label; a
+      // value without a label is treated as "no relation" (e.g. arrow "none").
+      const relField = typeof field.relationField === 'string' ? field.relationField : null;
+      const relLabels =
+        field.relationLabels && typeof field.relationLabels === 'object'
+          ? field.relationLabels
+          : {};
+      const relationOf = (item) => {
+        if (!relField) return '';
+        const v = str(item?.[relField]);
+        return v && Object.prototype.hasOwnProperty.call(relLabels, v) ? v : '';
+      };
+      const hasRelations = !!relField && value.some((it) => relationOf(it));
       const blocks = value
-        .map((item) => renderItemBlock(item, field.itemFields))
+        .map((item) => {
+          const li = renderItemBlock(item, field.itemFields);
+          if (!li) return '';
+          const rel = relationOf(item);
+          if (!rel) return li;
+          const marker = `<p class="reader-relation" data-relation="${escapeHtml(
+            rel
+          )}">${escapeHtml(relLabels[rel])}</p>`;
+          return li.replace(/<\/li>\s*$/, `${marker}</li>`);
+        })
         .filter(Boolean);
-      return renderItemList(blocks, field.ordered === true);
+      return renderItemList(blocks, field.ordered === true || hasRelations);
     }
     case 'url': {
       const href = safeHref(value);
