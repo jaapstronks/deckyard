@@ -1,6 +1,7 @@
 import { readAppSettings, readUserSettings } from '../storage/settings.js';
 import { getRequestOrigin, toAbsoluteUrl } from './request-url.js';
 import { nowIso } from './normalize.js';
+import { assertPublicHttpUrl } from './ssrf-guard.js';
 
 function pickDisplayName({ authedUser, userSettings }) {
   const profileName =
@@ -14,9 +15,17 @@ function pickDisplayName({ authedUser, userSettings }) {
   return String(authName || '').trim();
 }
 
-async function postJson(url, payload, { timeoutMs = 4500, headers = {} } = {}) {
+export async function postJson(url, payload, { timeoutMs = 4500, headers = {} } = {}) {
   const u = String(url || '').trim();
   if (!u) return { ok: false, status: 0, error: 'Missing URL' };
+
+  // SSRF guard: webhook URLs are admin-configured, but a stale/compromised
+  // setting must not let the server POST to loopback/private/metadata hosts.
+  try {
+    await assertPublicHttpUrl(u);
+  } catch {
+    return { ok: false, status: 0, error: 'Blocked non-public webhook URL' };
+  }
 
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
@@ -30,6 +39,7 @@ async function postJson(url, payload, { timeoutMs = 4500, headers = {} } = {}) {
       },
       body: JSON.stringify(payload || {}),
       signal: ac.signal,
+      redirect: 'error', // don't follow a 30x into private space
     });
     return { ok: resp.ok, status: resp.status };
   } catch (e) {

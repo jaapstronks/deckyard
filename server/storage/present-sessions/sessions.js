@@ -27,10 +27,9 @@ async function refreshFollowCodes(repoRoot, session) {
     session.followCodes = followCodes;
     session.followCodesCreatedAt = Date.now();
 
-    console.log(`[Follow Codes] Refreshed expired codes for presentation ${presId}:`, {
-      nl: followCodes.nl,
-      en: followCodes.en,
-    });
+    // Don't log the code values: a live follow code resolves to a presenter's
+    // follow URL, so it's a secret (audit L2).
+    console.log(`[Follow Codes] Refreshed expired codes for presentation ${presId}`);
   } catch (error) {
     console.error('Failed to refresh follow codes:', error);
   }
@@ -104,10 +103,8 @@ export async function createPresentSession(repoRoot, { presentationId }) {
     followCodes.nl = await createFollowCode(repoRoot, nlFollowUrl);
     followCodes.en = await createFollowCode(repoRoot, enFollowUrl);
 
-    console.log(`[Follow Codes] Generated for presentation ${presId}:`, {
-      nl: followCodes.nl,
-      en: followCodes.en,
-    });
+    // Don't log the code values (secret; see audit L2).
+    console.log(`[Follow Codes] Generated for presentation ${presId}`);
   } catch (error) {
     // If code generation fails, continue without codes
     console.error('Failed to generate follow codes:', error);
