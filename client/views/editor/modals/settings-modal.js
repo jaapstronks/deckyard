@@ -9,6 +9,11 @@ import {
   MOBILE_POSITIONS,
 } from '../../../../shared/video-stream-providers.js';
 import { calculateDeckTime, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timing.js';
+import {
+  REVEAL_STYLES,
+  DEFAULT_REVEAL_STYLE,
+  normalizeRevealStyle,
+} from '../../../../shared/reveal-style.js';
 
 export function openSettingsModal({
   h,
@@ -33,6 +38,8 @@ export function openSettingsModal({
       : {};
   pres.settings.stepParagraphs =
     !!pres.settings.stepParagraphs;
+  pres.settings.revealStyle =
+    normalizeRevealStyle(pres.settings.revealStyle) || DEFAULT_REVEAL_STYLE;
   pres.settings.transitions =
     pres.settings.transitions &&
     typeof pres.settings.transitions === 'object'
@@ -166,6 +173,38 @@ export function openSettingsModal({
     markDirty?.();
     requestSave?.();
   });
+
+  // Reveal style for builds: how each body fragment (bullet/paragraph) appears.
+  const revealStyleWrap = h('div', { class: 'stack editor-callout' });
+  const revealStyleLabel = h('div', {
+    class: 'field-label',
+    text: t('editor.deckSettings.revealStyle.title', 'Reveal style'),
+  });
+  const revealStyleHelp = h('div', {
+    class: 'help',
+    text: t(
+      'editor.deckSettings.revealStyle.help',
+      'How each bullet appears when builds are on. Typewriter types text in character-by-character. Presenter only; falls back to instant with reduced motion.'
+    ),
+  });
+  const REVEAL_STYLE_LABELS = {
+    default: t('editor.deckSettings.revealStyle.default', 'Instant'),
+    typewriter: t('editor.deckSettings.revealStyle.typewriter', 'Typewriter'),
+  };
+  const revealStyleSel = h('select', { class: 'form-input' });
+  for (const style of REVEAL_STYLES) {
+    revealStyleSel.append(
+      h('option', { value: style, text: REVEAL_STYLE_LABELS[style] || style })
+    );
+  }
+  revealStyleSel.value = pres.settings.revealStyle;
+  revealStyleSel.addEventListener('change', () => {
+    pres.settings.revealStyle =
+      normalizeRevealStyle(revealStyleSel.value) || DEFAULT_REVEAL_STYLE;
+    markDirty?.();
+    requestSave?.();
+  });
+  revealStyleWrap.append(revealStyleLabel, revealStyleSel, revealStyleHelp);
 
   // Theme setting
   const themeWrap = h('div', { class: 'stack editor-callout' });
@@ -944,6 +983,7 @@ export function openSettingsModal({
   const settingsGrid = h('div', { class: 'settings-modal-grid' }, [
     qaRow,
     buildsRow,
+    revealStyleWrap,
     themeWrap,
     transWrap,
     langWrap,
