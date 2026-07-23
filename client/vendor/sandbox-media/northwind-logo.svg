@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="Northwind logo">
+  <rect width="400" height="300" fill="#faf7f0"/>
+  <g transform="translate(150 150)" fill="none" stroke="#c2410c" stroke-width="7" stroke-linecap="round">
+    <path d="M-34 24 L-34 -24 L20 24 L20 -24"/>
+  </g>
+  <text x="210" y="162" font-family="'Trebuchet MS', Arial, sans-serif" font-size="34" font-weight="700" fill="#7c2d12" text-anchor="middle">Northwind</text>
+</svg>

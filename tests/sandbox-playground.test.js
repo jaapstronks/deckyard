@@ -24,6 +24,7 @@ import { saveUploadedFile } from '../server/storage/uploads.js';
 import { getFeatureFlags } from '../server/config/feature-flags.js';
 import { listThemeIds, listCoreThemeIds } from '../server/utils/themes.js';
 import { listSandboxExamples } from '../server/sandbox/examples.js';
+import { listSandboxMedia } from '../server/sandbox/media.js';
 
 function withEnv(env, fn) {
   const saved = {};
@@ -137,6 +138,21 @@ test('sandbox example decks load and are well-formed', async () => {
       assert.ok(manifest[s.type], `example ${ex.id} manifest declares "${s.type}"`);
     }
   }
+});
+
+test('sandbox sample media is well-formed and has pickable logos', () => {
+  const media = listSandboxMedia();
+  assert.ok(media.length >= 4, 'ships a handful of sample images');
+  for (const m of media) {
+    assert.ok(m.id && m.url, `media ${m.id} has an id and url`);
+    assert.match(m.url, /^\/client\/vendor\/sandbox-media\/.+\.svg$/, 'served from the committed asset dir');
+    assert.ok(Array.isArray(m.tags), 'has tags');
+  }
+  // At least one logo so the Logos filter (tag includes "logo") isn't empty.
+  assert.ok(
+    media.some((m) => m.tags.some((t) => String(t).toLowerCase().includes('logo'))),
+    'includes at least one logo'
+  );
 });
 
 test('sandbox theme list excludes filesystem custom (branded) themes', async () => {

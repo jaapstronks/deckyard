@@ -368,6 +368,8 @@
   "mediaLibrary.section.logos": "Logos",
   "mediaLibrary.section.recent": "Recent",
   "mediaLibrary.section.yourMedia": "Your Media",
+  "mediaLibrary.section.yourSource": "Your image source",
+  "mediaLibrary.sandboxSourceTooltip": "In your own Deckyard you connect image sources here — Unsplash, Giphy, or your own digital asset manager.",
   "mediaLibrary.tags": "Tags",
   "slideLibrary.action.addToCollection": "Add to collection",
   "slideLibrary.action.copy": "Copy",

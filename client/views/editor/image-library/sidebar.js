@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
+import { getFeatures } from '../../../lib/state/features.js';
 
 /**
  * Navigation sections for the media library sidebar
@@ -189,6 +190,31 @@ export function createMediaLibrarySidebar({
       if (hasGiphy) {
         externalNav.append(createNavItem(SECTIONS.GIPHY, SECTION_CONFIG[SECTIONS.GIPHY]));
       }
+    }
+
+    // Sandbox: a greyed-out "Your image source" entry that hints at the sources
+    // you can wire up in a real Deckyard — Unsplash, Giphy, or your own digital
+    // asset manager. Non-interactive; the tooltip carries the explanation.
+    if (getFeatures()?.sandboxMode) {
+      const sourceNav = h('nav', { class: 'media-lib-nav-group' });
+      const sourceDivider = h('div', { class: 'media-lib-nav-divider' });
+      const tooltip = t(
+        'mediaLibrary.sandboxSourceTooltip',
+        'In your own Deckyard you connect image sources here — Unsplash, Giphy, or your own digital asset manager.'
+      );
+      const infoItem = h('div', {
+        class: 'media-lib-nav-item is-sandbox-source',
+        title: tooltip,
+        'aria-disabled': 'true',
+      }, [
+        h('img', { class: 'media-lib-nav-icon', src: iconUrl('plug'), alt: '', 'aria-hidden': 'true' }),
+        h('span', {
+          class: 'media-lib-nav-label',
+          text: t('mediaLibrary.section.yourSource', 'Your image source'),
+        }),
+      ]);
+      sourceNav.append(infoItem);
+      sidebar.append(sourceDivider, sourceNav);
     }
 
     // Popular tags section

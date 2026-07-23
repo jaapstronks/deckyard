@@ -18,6 +18,7 @@ import {
 } from '../../utils/http.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
+import { listSandboxMedia } from '../../sandbox/media.js';
 
 export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }) {
   const flags = getFeatureFlags();
@@ -27,6 +28,9 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (flags.disableImageLibrary) return notFound(res);
     if (req.method === 'GET') {
       const items = await listImageLibrary(repoRoot);
+      // Sandbox: uploads are off, so seed a curated set of sample images and
+      // logos a guest can actually place on a slide.
+      if (flags.sandboxMode) items.unshift(...listSandboxMedia());
       // Get user's favorites if logged in
       let favoriteIds = [];
       if (authedUser?.email) {

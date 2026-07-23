@@ -368,6 +368,8 @@
   "mediaLibrary.section.logos": "Logo's",
   "mediaLibrary.section.recent": "Recent",
   "mediaLibrary.section.yourMedia": "Jouw media",
+  "mediaLibrary.section.yourSource": "Jouw beeldbron",
+  "mediaLibrary.sandboxSourceTooltip": "In je eigen Deckyard koppel je hier beeldbronnen — Unsplash, Giphy, of je eigen digital asset manager.",
   "mediaLibrary.tags": "Labels",
   "slideLibrary.action.addToCollection": "Aan collectie toevoegen",
   "slideLibrary.action.copy": "Kopiëren",

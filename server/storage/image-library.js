@@ -76,6 +76,9 @@ export async function getImageFavorites(userEmail) {
   if (!isStorageInitialized()) return [];
   const storage = getStorage();
   const ctx = getStorageContext();
+  // Favorites are optional per backend (the file backend has no per-user
+  // favorites store); treat an absent implementation as "no favorites".
+  if (typeof storage.getImageFavorites !== 'function') return [];
   return storage.getImageFavorites(userEmail, ctx);
 }
 
@@ -89,5 +92,6 @@ export async function toggleImageFavorite(imageId, userEmail) {
   if (!isStorageInitialized()) return false;
   const storage = getStorage();
   const ctx = getStorageContext();
+  if (typeof storage.toggleImageFavorite !== 'function') return false;
   return storage.toggleImageFavorite(imageId, userEmail, ctx);
 }
