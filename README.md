@@ -58,6 +58,15 @@ writes a local `.env`, installs dependencies, and starts the app — nothing
 leaves your machine. See the [self-hosting guide](docs/ops/self-hosting.md) for
 the VPS/HTTPS path.
 
+### Or let your AI agent install it
+
+Deckyard is MCP-native, so a shell-capable coding agent (Claude Code, Cursor, …)
+can clone it, configure it with your keys, start it, and wire itself in over MCP
+in one go. Paste the prompt from
+[`docs/ops/agent-install.md`](docs/ops/agent-install.md) to your agent — it
+follows that same doc as a stable procedure. The non-interactive setup takes
+flags for exactly this: `npm run setup -- --yes --ai=claude --ai-key=… --auth=off`.
+
 ## MCP Server — AI Agent Integration
 
 Deckyard speaks [MCP](https://modelcontextprotocol.io/) natively. Any MCP-compatible client can create, modify, and manage presentations through natural language.

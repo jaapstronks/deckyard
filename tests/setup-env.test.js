@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { upsertEnv, generateSecret } from '../scripts/setup.js';
+import { upsertEnv, generateSecret, parseFlags, flagUpdates } from '../scripts/setup.js';
 
 test('upsertEnv uncomments and sets a commented template line in place', () => {
   const example = ['# PORT=4177', '# DEFAULT_THEME=deckyard'].join('\n');
@@ -44,4 +44,36 @@ test('generateSecret clears the 32-char boot floor and varies per call', () => {
   const b = generateSecret();
   assert.ok(a.length >= 32, `expected >= 32 chars, got ${a.length}`);
   assert.notEqual(a, b);
+});
+
+test('parseFlags handles --flag=value, --flag value, and bare flags', () => {
+  const flags = parseFlags(['--ai=claude', '--ai-key', 'sk-ant-x', '--yes', '--auth', 'on']);
+  assert.deepEqual(flags, { ai: 'claude', 'ai-key': 'sk-ant-x', yes: 'true', auth: 'on' });
+});
+
+test('parseFlags does not swallow a following flag as a value', () => {
+  assert.deepEqual(parseFlags(['--yes', '--ai=openai']), { yes: 'true', ai: 'openai' });
+});
+
+test('flagUpdates with no flags = safe local default (auth off, no AI)', () => {
+  assert.deepEqual(flagUpdates({}), { PORT: '4177', AUTH_ENABLED: 'false' });
+});
+
+test('flagUpdates maps provider + key to the right env var', () => {
+  const u = flagUpdates({ ai: 'claude', 'ai-key': 'sk-ant-x' });
+  assert.equal(u.CLAUDE_API, 'sk-ant-x');
+  assert.equal(u.AUTH_ENABLED, 'false');
+});
+
+test('flagUpdates --auth on generates a secret and omits AUTH_ENABLED', () => {
+  const u = flagUpdates({ auth: 'on', 'admin-email': 'a@b.com' });
+  assert.ok(u.AUTH_SECRET.length >= 32);
+  assert.equal(u.AUTH_ADMIN_EMAIL, 'a@b.com');
+  assert.equal(u.AUTH_ENABLED, undefined);
+});
+
+test('flagUpdates ignores a provider key without a value, and default theme', () => {
+  const u = flagUpdates({ ai: 'openai', theme: 'deckyard' });
+  assert.equal(u.OPENAI_API, undefined); // no --ai-key given
+  assert.equal(u.DEFAULT_THEME, undefined); // default theme not written
 });

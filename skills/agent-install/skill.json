@@ -1,0 +1,14 @@
+{
+  "name": "deckyard-install",
+  "version": "1.0.0",
+  "description": "Install a self-hosted Deckyard instance and connect to it over MCP, from a shell-capable coding agent.",
+  "author": "Deckyard",
+  "license": "MIT",
+  "homepage": "https://deckyard.eu",
+  "repository": "https://github.com/jaapstronks/deckyard",
+  "keywords": ["install", "self-host", "setup", "mcp", "deckyard"],
+  "requires": {
+    "git": true,
+    "docker-or-node22": true
+  }
+}
