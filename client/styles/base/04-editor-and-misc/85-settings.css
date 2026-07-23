@@ -921,3 +921,21 @@
   white-space: pre;
   overflow-x: auto;
 }
+
+/* Sandbox: settings surfaces that don't apply to a throwaway guest are shown
+   greyed out (not hidden) with an explanatory note, so the capability stays
+   visible. The note keeps full contrast; everything else in the card dims and
+   stops taking input. */
+.is-sandbox-disabled > *:not(.sandbox-settings-note) {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.sandbox-settings-note {
+  margin: 0 0 var(--ps-space-3);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  color: hsl(var(--app-text-secondary));
+}

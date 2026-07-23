@@ -25,6 +25,7 @@ import {
 } from '../../../lib/net/settings.js';
 import { getLangShortLabel, getLangDisplayName } from '../../../lib/format/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
+import { disableForSandbox } from '../sandbox-disable.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 
 /**
@@ -358,6 +359,18 @@ export function createPreferencesTab({ user, nav }) {
   ]);
 
   container.append(title, cards, actions);
+
+  // The weekly analytics digest emails a summary, which a sandbox guest (no
+  // account, no email, throwaway decks) can't receive — grey it out with a
+  // note, matching the notifications section. (Notifications itself is greyed
+  // inside its own component.)
+  disableForSandbox({
+    content: digestCard,
+    message: t(
+      'sandbox.settings.digest',
+      'The weekly digest is off in the sandbox — there’s no account to email. In your own Deckyard, get a weekly summary of how your decks are performing.'
+    ),
+  });
 
   let busy = false;
   let loaded = false;
