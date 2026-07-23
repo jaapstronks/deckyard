@@ -1,8 +1,10 @@
 # Deckyard
 
-The presentation engine for humans and AI agents.
+The open-source, end-to-end presentation platform.
 
-Deckyard is a self-hosted, open-source presentation system with a full [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) interface. Create presentations from your browser, let AI agents build them programmatically, or both — it's the same engine underneath.
+Not just a slide builder: Deckyard lets you **create, present, publish, and collaborate** on presentations in one web-based tool that runs on infrastructure you control. Every deck stays yours, from first draft to live audience.
+
+**AI on your terms.** People reach for AI to draft decks; Deckyard puts you in control of it. Bring your own API key, tune the prompts, or drive it from your own tools over [Model Context Protocol](https://modelcontextprotocol.io/) (MCP). No forced LLM, no lock-in.
 
 Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lock-in.
 
@@ -10,11 +12,11 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Why Deckyard
 
-**For AI agents:** 27 MCP tools, 6 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup — it describes what it wants, and Deckyard handles the rest.
+**For presenters:** 39 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 
-**For presenters:** 39 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
+**For AI agents:** 27 MCP tools, 6 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup; it describes what it wants, and Deckyard handles the rest.
 
 ### What makes it different
 
