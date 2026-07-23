@@ -1,4 +1,5 @@
 import { getLlmStatus } from '../utils/llm/config.js';
+import { getImageKitConfigFromEnv } from '../media/imagekit.js';
 import { sandboxEnabled } from './sandbox.js';
 import {
   isMultiWorkspaceEnabled,
@@ -22,6 +23,10 @@ export function getFeatureFlags() {
     demoMode || sandboxMode || truthy(process.env.DISABLE_UPLOADS) || imagekitOnly;
   const disableImageLibrary =
     imagekitOnly || truthy(process.env.DISABLE_IMAGE_LIBRARY);
+  // Whether the ImageKit DAM is actually usable (all IMAGEKIT_* keys present).
+  // The image-source chooser gates its ImageKit option on this so an
+  // unconfigured install never shows a button that only leads to an error.
+  const imagekitConfigured = getImageKitConfigFromEnv().configured;
   const enableNotion = !demoMode && truthy(process.env.NOTION_FEATURE);
   const llm = getLlmStatus();
 
@@ -35,6 +40,7 @@ export function getFeatureFlags() {
     demoMode,
     sandboxMode,
     imagekitOnly,
+    imagekitConfigured,
     disableAi,
     disableUploads,
     disableImageLibrary,

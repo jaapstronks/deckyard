@@ -1,0 +1,118 @@
+{
+  "format": "slidecreator.deck",
+  "version": 1,
+  "title": "Meet Deckyard",
+  "lang": "en-GB",
+  "theme": "editorial",
+  "slideTypes": {
+    "title-slide": "core/title-slide",
+    "content-slide": "core/content-slide",
+    "list-slide": "core/list-slide",
+    "chart-slide": "core/chart-slide",
+    "comparison-slide": "core/comparison-slide",
+    "chapter-title-slide": "core/chapter-title-slide",
+    "quote-slide": "core/quote-slide",
+    "end-slide": "core/end-slide"
+  },
+  "slides": [
+    {
+      "type": "title-slide",
+      "content": {
+        "title": "Meet Deckyard",
+        "subheading": "A presentation engine for humans and AI agents",
+        "byline": "Decks as data, not as files",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "What it is",
+        "layout": "one-column",
+        "body": "Deckyard is a **self-hosted presentation engine**. A deck is a plain, versioned data document — an envelope, a list of slide types, and an array of slides.\n\nBecause the deck is data, a person can edit it in the browser and an agent can generate it through an API, and both produce exactly the same result.",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "list-slide",
+      "content": {
+        "title": "What you get",
+        "subheading": "The pieces that make it work",
+        "variant": "bullets",
+        "layout": "two-column",
+        "items": [
+          { "title": "Decks as data", "text": "A portable JSON format you can diff and version" },
+          { "title": "A typed slide system", "text": "Each slide type declares its own fields" },
+          { "title": "Inline editing", "text": "Click any text on the canvas to change it" },
+          { "title": "Themes", "text": "Swap the whole look without touching content" },
+          { "title": "No framework, no bundler", "text": "Vanilla JS modules on client and server" },
+          { "title": "Agent-friendly", "text": "The format is the API surface" }
+        ],
+        "background": "mist"
+      }
+    },
+    {
+      "type": "chart-slide",
+      "content": {
+        "title": "One format, many surfaces",
+        "subheading": "Where a single deck can be rendered",
+        "chartType": "bar",
+        "data": "Surface,Supported\nLive present,1\nSelf-serve editor,1\nStatic export,1\nAgent API,1\nEmbed / follow,1",
+        "showValues": "no",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "comparison-slide",
+      "content": {
+        "title": "Deckyard vs a slide file",
+        "leftTitle": "A binary slide file",
+        "leftBody": "- Opaque; hard to diff or review\n- One app can open it well\n- Automation means brittle scripting\n- Styling is baked into every slide",
+        "rightTitle": "A Deckyard deck",
+        "rightBody": "- **Plain data** you can read and version\n- Any renderer can consume it\n- Agents generate it directly\n- Theme is separate from content",
+        "verdict": "Data wins",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "chapter-title-slide",
+      "content": {
+        "title": "Why decks-as-data",
+        "subheading": "The idea the whole engine is built around",
+        "layout": "center"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "The format is the product. Once the deck is just data, everything else — editing, exporting, generating — is a view over it.",
+        "authorName": "Deckyard",
+        "authorTitle": "Design principle"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "I had an agent draft the whole deck, then cleaned it up by clicking on the slides. Same document the whole way through.",
+        "authorName": "An early user",
+        "authorTitle": "Self-hosted trial"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "Try it here",
+        "layout": "one-column",
+        "body": "You're looking at a live editor. Click any headline or paragraph to change it, reorder the slides, swap the theme from the toolbar.\n\nNothing you do here is saved to anyone else — this is your sandbox.",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "end-slide",
+      "content": {
+        "title": "Make something",
+        "body": "Start from this deck, or clear it and build your own."
+      }
+    }
+  ]
+}

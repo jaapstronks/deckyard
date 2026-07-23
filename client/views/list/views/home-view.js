@@ -1,6 +1,8 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { getFeatures } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
-import { createNoPresentationsEmptyState } from '../empty-state.js';
+import { createEmptyState, createNoPresentationsEmptyState } from '../empty-state.js';
+import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
@@ -55,19 +57,40 @@ export function createHomeView({
     api,
   });
 
-  // First run: a brand-new user with nothing yet. Foreground the theme picker
-  // and one clear create CTA instead of a wall of empty Recent/Popular/Activity
-  // sections, which read as "broken" rather than "new".
+  const isSandbox = !!getFeatures()?.sandboxMode;
+
+  // First run: a brand-new user with nothing yet. Foreground one clear create
+  // CTA instead of a wall of empty Recent/Popular/Activity sections, which read
+  // as "broken" rather than "new".
   const isFirstRun = allByDate.length === 0;
   if (isFirstRun && typeof onCreate === 'function') {
-    homeView.append(
-      themePicker.el,
-      createNoPresentationsEmptyState({
-        h,
-        title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
-        onCreate,
-      })
-    );
+    if (isSandbox) {
+      // Sandbox has no theme quick-picker (the create modal already asks for a
+      // theme) — a guest just wants to make a deck. Lead with one create button
+      // and a shelf of ready-made examples they can open and edit.
+      homeView.append(
+        createEmptyState({
+          h,
+          title: t('sandbox.home.title', 'Welcome to the Deckyard sandbox'),
+          message: t(
+            'sandbox.home.message',
+            'Start a new presentation, or open one of the examples below to explore the editor.'
+          ),
+          primaryLabel: t('sandbox.home.create', 'New presentation'),
+          onPrimary: onCreate,
+        }),
+        createSandboxExamplesSection({ h, api, nav, detachThumbs })
+      );
+    } else {
+      homeView.append(
+        themePicker.el,
+        createNoPresentationsEmptyState({
+          h,
+          title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
+          onCreate,
+        })
+      );
+    }
     if (onboardingChecklist) homeView.append(onboardingChecklist);
 
     // Activity/popular loaders are no-ops here (their sections aren't mounted),

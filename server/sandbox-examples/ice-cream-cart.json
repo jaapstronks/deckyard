@@ -1,0 +1,131 @@
+{
+  "format": "slidecreator.deck",
+  "version": 1,
+  "title": "Our Ice Cream Cart — Business Plan",
+  "lang": "en-GB",
+  "theme": "playful",
+  "slideTypes": {
+    "title-slide": "core/title-slide",
+    "content-slide": "core/content-slide",
+    "chart-slide": "core/chart-slide",
+    "kpi-metrics-slide": "core/kpi-metrics-slide",
+    "list-slide": "core/list-slide",
+    "timeline-slide": "core/timeline-slide",
+    "quote-slide": "core/quote-slide",
+    "end-slide": "core/end-slide"
+  },
+  "slides": [
+    {
+      "type": "title-slide",
+      "content": {
+        "title": "Our Ice Cream Cart",
+        "subheading": "A tiny business plan for a very cold product",
+        "byline": "Scoops & Co. · Summer season pitch",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "The opportunity",
+        "layout": "one-column",
+        "body": "Our town has a **two-kilometre waterfront**, 40,000 summer visitors a week, and exactly zero mobile ice cream vendors.\n\nA single well-placed cart can serve the promenade, the Saturday market, and the evening concert crowd — three rushes a day, one cart, low overhead.",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "chart-slide",
+      "content": {
+        "title": "Projected monthly sales",
+        "subheading": "Scoops sold per month across the season",
+        "chartType": "line",
+        "data": "Month,Weekday,Weekend\nMay,900,1600\nJun,1400,2600\nJul,2100,3800\nAug,2300,4100\nSep,1200,2200",
+        "series1Label": "Weekday",
+        "series2Label": "Weekend",
+        "yLabel": "scoops",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "kpi-metrics-slide",
+      "content": {
+        "title": "Unit economics",
+        "subheading": "Per scoop, at our target volume",
+        "background": "mist",
+        "accent": "highlight-best",
+        "metrics": [
+          { "value": "3.50", "unit": "€", "label": "Price per scoop", "note": "premium local positioning" },
+          { "value": "0.95", "unit": "€", "label": "Cost per scoop", "note": "ingredients + cone" },
+          { "value": "73", "unit": "%", "label": "Gross margin", "note": "+8pp vs café average" },
+          { "value": "11", "unit": "wk", "label": "Payback period", "note": "cart paid off mid-July" }
+        ]
+      }
+    },
+    {
+      "type": "list-slide",
+      "content": {
+        "title": "The opening menu",
+        "subheading": "Six flavours, rotating weekly specials",
+        "variant": "bullets",
+        "layout": "two-column",
+        "items": [
+          { "title": "Sea Salt Caramel", "text": "Our signature — always on the cart" },
+          { "title": "Stracciatella", "text": "Fresh cream, shards of dark chocolate" },
+          { "title": "Wild Strawberry", "text": "Local fruit, minimal sugar" },
+          { "title": "Pistachio", "text": "Sicilian nuts, no colouring" },
+          { "title": "Espresso Chip", "text": "For the evening concert crowd" },
+          { "title": "Lemon Sorbet", "text": "Dairy-free, the heatwave hero" }
+        ],
+        "background": "lime"
+      }
+    },
+    {
+      "type": "timeline-slide",
+      "content": {
+        "title": "Rollout plan",
+        "subheading": "From permit to profit in one season",
+        "items": [
+          { "date": "Apr", "title": "Permit & cart", "text": "Secure the vendor licence and refurbish the cart." },
+          { "date": "May", "title": "Soft launch", "text": "Weekends only on the promenade to tune the menu." },
+          { "date": "Jul", "title": "Full season", "text": "Seven days a week across all three pitches." },
+          { "date": "Sep", "title": "Review", "text": "Close the books, decide on a second cart." }
+        ],
+        "background": "mist"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "The sea salt caramel is genuinely the best thing on this beach, and I have tried everything on this beach.",
+        "authorName": "Dani Roos",
+        "authorTitle": "Regular, three visits this week"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "My kids now navigate the whole promenade by finding your cart. It's a landmark at this point.",
+        "authorName": "Familie Bakker",
+        "authorTitle": "Saturday market visitors"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "The ask",
+        "layout": "one-column",
+        "body": "We're raising **€12,000** to cover the cart, the first season's stock, and the vendor permit.\n\nAt our projected volumes that capital is returned before the August peak — and by September we're deciding whether cart number two joins the waterfront.",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "end-slide",
+      "content": {
+        "title": "Let's scoop",
+        "body": "Come find us on the promenade.",
+        "contactName": "Scoops & Co.",
+        "contactEmail": "hello@scoops.example"
+      }
+    }
+  ]
+}

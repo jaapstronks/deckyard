@@ -1,0 +1,133 @@
+{
+  "format": "slidecreator.deck",
+  "version": 1,
+  "title": "ACME Corp — Q4 Business Review",
+  "lang": "en-GB",
+  "theme": "corporate",
+  "slideTypes": {
+    "title-slide": "core/title-slide",
+    "content-slide": "core/content-slide",
+    "kpi-metrics-slide": "core/kpi-metrics-slide",
+    "chart-slide": "core/chart-slide",
+    "quote-slide": "core/quote-slide",
+    "comparison-slide": "core/comparison-slide",
+    "timeline-slide": "core/timeline-slide",
+    "table-slide": "core/table-slide",
+    "end-slide": "core/end-slide"
+  },
+  "slides": [
+    {
+      "type": "title-slide",
+      "content": {
+        "title": "ACME Corp — Q4 Business Review",
+        "subheading": "Fiscal year 2025 · Board & leadership session",
+        "byline": "Prepared by the Office of the CFO",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "content-slide",
+      "content": {
+        "title": "Agenda",
+        "layout": "one-column",
+        "body": "1. **Headline results** — where we landed vs plan\n2. **Revenue trajectory** — the four-quarter picture\n3. **Segment performance** — what drove the number\n4. **Outlook** — the road to FY26\n\nWe'll keep to 30 minutes and hold questions for the end.",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "kpi-metrics-slide",
+      "content": {
+        "title": "Headline results",
+        "subheading": "Full-year, against the board-approved plan",
+        "background": "mist",
+        "accent": "highlight-best",
+        "metrics": [
+          { "value": "48.6", "unit": "M€", "label": "Annual revenue", "note": "+18% vs FY24" },
+          { "value": "31", "unit": "%", "label": "Gross margin", "note": "+2pp" },
+          { "value": "62", "unit": "", "label": "NPS", "note": "+7 vs last review" },
+          { "value": "94", "unit": "%", "label": "Net revenue retention", "note": "-1pp vs plan" }
+        ]
+      }
+    },
+    {
+      "type": "chart-slide",
+      "content": {
+        "title": "Revenue by quarter",
+        "subheading": "FY25, in millions of euro",
+        "chartType": "bar",
+        "data": "Quarter,Revenue\nQ1,9.8\nQ2,11.4\nQ3,12.9\nQ4,14.5",
+        "yLabel": "M€",
+        "showValues": "yes",
+        "background": "lime"
+      }
+    },
+    {
+      "type": "comparison-slide",
+      "content": {
+        "title": "Plan vs actual",
+        "leftTitle": "What we planned",
+        "leftBody": "- 44M€ revenue target\n- 29% gross margin\n- Two new enterprise segments\n- Flat headcount",
+        "rightTitle": "What we delivered",
+        "rightBody": "- **48.6M€** revenue (+11% over target)\n- **31%** gross margin\n- Three segments live\n- +14 net hires in sales",
+        "verdict": "Ahead of plan",
+        "background": "mist"
+      }
+    },
+    {
+      "type": "table-slide",
+      "content": {
+        "title": "Segment performance",
+        "caption": "Revenue contribution and year-over-year growth by segment.",
+        "headerRow": "on",
+        "colCount": "3",
+        "tableStyle": "panel",
+        "rows": [
+          { "c1": "Segment", "c2": "Revenue (M€)", "c3": "YoY growth" },
+          { "c1": "Enterprise", "c2": "22.1", "c3": "+24%" },
+          { "c1": "Mid-market", "c2": "17.4", "c3": "+15%" },
+          { "c1": "SMB", "c2": "9.1", "c3": "+6%" }
+        ],
+        "background": "lime"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "ACME has become the platform we build our own roadmap around. The Q4 rollout was the smoothest vendor onboarding we've run.",
+        "authorName": "Priya Nandakumar",
+        "authorTitle": "VP Operations, Northwind Logistics"
+      }
+    },
+    {
+      "type": "timeline-slide",
+      "content": {
+        "title": "The road to FY26",
+        "subheading": "Committed milestones for the year ahead",
+        "items": [
+          { "date": "Q1", "title": "EU data residency", "text": "Frankfurt region goes live for enterprise accounts." },
+          { "date": "Q2", "title": "Self-serve tier", "text": "Open the SMB funnel with a no-touch onboarding path." },
+          { "date": "Q3", "title": "Partner marketplace", "text": "First ten integration partners shipped." },
+          { "date": "Q4", "title": "50M€ run-rate", "text": "Cross the milestone we set out to reach." }
+        ],
+        "background": "mist"
+      }
+    },
+    {
+      "type": "quote-slide",
+      "content": {
+        "quote": "We set an ambitious plan and the team cleared it. FY26 is about turning momentum into durability.",
+        "authorName": "Marcus Vela",
+        "authorTitle": "Chief Executive Officer, ACME Corp"
+      }
+    },
+    {
+      "type": "end-slide",
+      "content": {
+        "title": "Thank you",
+        "body": "Questions and discussion.",
+        "contactName": "Office of the CFO",
+        "contactEmail": "ir@acme.example"
+      }
+    }
+  ]
+}

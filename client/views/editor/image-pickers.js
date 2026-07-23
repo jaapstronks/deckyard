@@ -30,14 +30,19 @@ export function createImagePickers({ h, root, user, api, features, openOverlayCl
       features,
     });
 
-  const openImageKit = (opts) =>
-    openImageKitPicker({
-      ...opts,
-      api,
-      h,
-      root,
-      openOverlayClosers,
-    });
+  // Only offer ImageKit as a source when the server reports it's actually
+  // configured — otherwise the chooser shows an "ImageKit" button that leads
+  // straight to a "not configured" error. Undefined keeps ImageKit off.
+  const openImageKit = features?.imagekitConfigured
+    ? (opts) =>
+        openImageKitPicker({
+          ...opts,
+          api,
+          h,
+          root,
+          openOverlayClosers,
+        })
+    : undefined;
 
   const openImagePicker = createImagePickerSeam({
     h,
