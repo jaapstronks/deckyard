@@ -26,10 +26,10 @@
 /* Rail dismissed: the grid drops to two columns, so the bar spans only the
    canvas column (openers stay pinned at its right - above where the rail was).
    Scoped to the desktop layout on purpose: this selector is more specific than
-   the area assignments in the ≤1100 block, so unscoped it would survive into
+   the area assignments in the ≤1024 block, so unscoped it would survive into
    the narrow layouts and force a phantom second column out of a single-column
    template. */
-@media (min-width: 1101px) {
+@media (min-width: 1025px) {
   .is-editor.is-inspector-collapsed .layout > .slide-bar { grid-column: 2 / 3; }
 }
 
@@ -350,7 +350,7 @@
 }
 
 /* Editor desktop behavior: lock document scroll; panels scroll instead. */
-@media (min-width: 821px) {
+@media (min-width: 769px) {
   .is-editor,
   .is-editor body {
     height: 100%;
@@ -364,19 +364,19 @@
   }
 }
 
-/* Note: the desktop grid (>1100px) is fully expressed by the base rules above.
+/* Note: the desktop grid (>1024px) is fully expressed by the base rules above.
    The canvas always gets the flexible space; the inspector width is the
    resizable --inspector-width. */
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Compact (≤1100px): 2 columns - slides | canvas, inspector BELOW the canvas.
+   Compact (≤1024px): 2 columns - slides | canvas, inspector BELOW the canvas.
    Three columns get too cramped here (the canvas dips under a usable width
    once slides + a 320px inspector are paid for); the settings-only inspector
    is short enough to live as a bottom row instead. One converged model from
    here down: narrower widths only change how the slides column presents
-   (rail at 821-1024, drawer ≤820).
+   (rail at 769-1024, drawer ≤768).
    ───────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   /* Every desktop column-variant collapses into the same area model. */
   .is-editor .layout {
     grid-template-columns: var(--slides-panel-width, var(--ps-slides-expanded-width))
@@ -434,9 +434,9 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Tablet Landscape (821-1024px): Auto-collapse slides to rail
+   Tablet Landscape (769-1024px): Auto-collapse slides to rail
    ───────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1024px) and (min-width: 821px) {
+@media (max-width: 1024px) and (min-width: 769px) {
   .is-editor:not(.is-slides-expanded-override) .layout {
     grid-template-columns: var(--ps-slides-collapsed-width) minmax(0, 1fr);
   }
@@ -486,14 +486,14 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Tablet Portrait & Mobile (≤820px): slides drawer + the same stacked
-   canvas/inspector model as ≤1100, minus the slides column. The old model
+   Tablet Portrait & Mobile (≤768px): slides drawer + the same stacked
+   canvas/inspector model as ≤1024, minus the slides column. The old model
    (form as main column, canvas squeezed into a 92px rail, bottom sheet on
    phones) predates the settings-only inspector; the canvas is the primary
    editing surface at every width now.
    ───────────────────────────────────────────────────────────────────────────── */
-@media (max-width: 820px) {
-  /* Mirror the ≤1100 combo selectors so this later block wins the tie. */
+@media (max-width: 768px) {
+  /* Mirror the ≤1024 combo selectors so this later block wins the tie. */
   .is-editor .layout,
   .is-editor.is-slides-collapsed .layout {
     grid-template-columns: minmax(0, 1fr);
@@ -508,7 +508,7 @@
   .is-editor.is-inspector-collapsed .layout,
   .is-editor.is-slides-collapsed.is-inspector-collapsed .layout {
     /* Repeat the columns: the desktop dismissed-rail rule (slides + canvas)
-       outranks the plain ≤820 rule above, and the slides column is a fixed
+       outranks the plain ≤768 rule above, and the slides column is a fixed
        drawer here - without this the canvas would sit in a 200px column. */
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
@@ -586,7 +586,7 @@
 }
 
 /* Hide the slides drawer toggle on desktop */
-@media (min-width: 821px) {
+@media (min-width: 769px) {
   .slides-drawer-toggle {
     display: none !important;
   }

@@ -447,7 +447,7 @@
 }
 
 /* 4. Narrow: the topbar row runs out of room before anything else does. */
-@media (max-width: 820px) {
+@media (max-width: 768px) {
   /* The title shares a cramped row with both switches; give it what's left
      rather than a fixed slice of the viewport. */
   .follow-title {

@@ -48,11 +48,6 @@ const ALLOWLIST = [
   'max-width: 520px',
   'max-width: 700px',
   'max-width: 900px',
-  // Step 4 — the load-bearing editor ladder (820/1024/1100 and counterparts).
-  'max-width: 820px',
-  'max-width: 1100px',
-  'min-width: 821px',
-  'min-width: 1101px',
 ];
 
 /** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */
