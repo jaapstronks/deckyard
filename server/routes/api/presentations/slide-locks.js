@@ -28,6 +28,25 @@ import { createRouteContext } from '../../../utils/context.js';
 const getCtx = createRouteContext;
 
 /**
+ * HTTP status for a slide-lock acquire/refresh/release result.
+ *
+ * Only a genuine contention (`held` — someone else owns the lock) is a real
+ * 409 Conflict. Every other non-ok outcome is *not* a conflict: the lock
+ * backend being unavailable (file storage has no lock DB), or an
+ * invalid/expired/missing request. Mapping those to 409 made a single-operator
+ * file-storage editor log a misleading "409 Conflict" on every slide open, with
+ * no one to conflict with. Those return 200 with the reason in the body so the
+ * client proceeds quietly (locking is simply a no-op on that backend).
+ *
+ * @param {{ok?: boolean, reason?: string}} result
+ * @returns {number}
+ */
+export function lockHttpStatus(result) {
+  if (result?.ok) return 200;
+  return result?.reason === 'held' ? 409 : 200;
+}
+
+/**
  * GET /api/presentations/:id/slide-locks
  * List all active slide locks for a presentation.
  */
@@ -124,7 +143,7 @@ export async function handleSlideLockAcquire(
     });
   }
 
-  serveJson(res, result.ok ? 200 : 409, result);
+  serveJson(res, lockHttpStatus(result), result);
   return true;
 }
 
@@ -155,7 +174,7 @@ export async function handleSlideLockRefresh(
     ctx
   );
 
-  serveJson(res, result.ok ? 200 : 409, result);
+  serveJson(res, lockHttpStatus(result), result);
   return true;
 }
 
@@ -196,7 +215,7 @@ export async function handleSlideLockRelease(
     });
   }
 
-  serveJson(res, result.ok ? 200 : 409, result);
+  serveJson(res, lockHttpStatus(result), result);
   return true;
 }
 
@@ -234,6 +253,9 @@ export async function handleSlideLocksReleaseAll(
     });
   }
 
-  serveJson(res, result.ok ? 200 : 500, result);
+  // "Nothing to release because there is no lock backend" is a no-op, not a
+  // server error — otherwise editor teardown logs a 500 on file storage.
+  const status = result.ok || result.reason === 'unavailable' ? 200 : 500;
+  serveJson(res, status, result);
   return true;
 }

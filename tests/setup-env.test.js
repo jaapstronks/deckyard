@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { upsertEnv, generateSecret, parseFlags, flagUpdates } from '../scripts/setup.js';
+import {
+  upsertEnv,
+  generateSecret,
+  parseFlags,
+  flagUpdates,
+  hasEnvValue,
+  strayAiKeyWarnings,
+} from '../scripts/setup.js';
 
 test('upsertEnv uncomments and sets a commented template line in place', () => {
   const example = ['# PORT=4177', '# DEFAULT_THEME=deckyard'].join('\n');
@@ -95,4 +102,36 @@ test('flagUpdates ignores a provider key without a value, and default theme', ()
   const u = flagUpdates({ ai: 'openai', theme: 'deckyard' });
   assert.equal(u.OPENAI_API, undefined); // no --ai-key given
   assert.equal(u.DEFAULT_THEME, undefined); // default theme not written
+});
+
+test('strayAiKeyWarnings flags OPENAI_API_KEY when OPENAI_API is absent', () => {
+  const warnings = strayAiKeyWarnings('OPENAI_API_KEY=sk-live\nPORT=4177');
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /OPENAI_API_KEY/);
+  assert.match(warnings[0], /OPENAI_API\b/);
+});
+
+test('strayAiKeyWarnings stays silent when the canonical name is present', () => {
+  // User set both the stray and the canonical name — the app reads the
+  // canonical one, so nothing is silently ignored.
+  const warnings = strayAiKeyWarnings('OPENAI_API_KEY=sk-a\nOPENAI_API=sk-b');
+  assert.deepEqual(warnings, []);
+});
+
+test('strayAiKeyWarnings flags ANTHROPIC_API_KEY -> CLAUDE_API', () => {
+  const warnings = strayAiKeyWarnings('ANTHROPIC_API_KEY=sk-ant-xyz');
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /CLAUDE_API/);
+});
+
+test('strayAiKeyWarnings ignores commented and empty values', () => {
+  assert.deepEqual(strayAiKeyWarnings('# OPENAI_API_KEY=sk-live'), []);
+  assert.deepEqual(strayAiKeyWarnings('OPENAI_API_KEY='), []);
+});
+
+test('hasEnvValue only matches a non-empty uncommented assignment', () => {
+  assert.equal(hasEnvValue('FOO=bar', 'FOO'), true);
+  assert.equal(hasEnvValue('# FOO=bar', 'FOO'), false);
+  assert.equal(hasEnvValue('FOO=', 'FOO'), false);
+  assert.equal(hasEnvValue('FOOBAR=x', 'FOO'), false);
 });

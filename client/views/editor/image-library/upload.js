@@ -1,5 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { getFeatures } from '../../../lib/state/features.js';
 import { readFileAsDataUrl, getAllTags, installTagsAutocomplete, createFieldWrap } from './utils.js';
 
 // Cache media status to avoid repeated API calls
@@ -105,7 +106,9 @@ export function createImageLibraryUpload({
       h('div', { class: 'field-label', text: t('imageLibrary.addNew', 'Add new') }),
       h('div', {
         class: 'help',
-        text: t('imageLibrary.readOnly', 'Uploads are disabled. The library is read-only.'),
+        text: getFeatures()?.sandboxMode
+          ? t('imageLibrary.readOnlySandbox', 'Uploads are off in the sandbox. Use Unsplash or Giphy to add images.')
+          : t('imageLibrary.readOnly', 'Uploads are disabled. The library is read-only.'),
       })
     );
     return { element: addWrap };

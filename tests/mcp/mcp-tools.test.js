@@ -363,3 +363,89 @@ describe('MCP Tools custom seam', () => {
     assert.ok(fn === null || typeof fn === 'function');
   });
 });
+
+// ============================================================================
+// presentationId ↔ id alias (self-install-ux round 3)
+// ============================================================================
+
+describe('MCP presentationId / id alias', () => {
+  // Every deck-scoped tool now advertises `id` as an alias, so agents that
+  // guess `id` (a common default) are no longer silently ignored — and the
+  // shared "pass `id` or `presentationId`" error message tells the truth.
+  it('all presentationId tools also expose an id alias', () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    for (const [name, tool] of server.tools) {
+      const props = tool.inputSchema.properties || {};
+      if (props.presentationId) {
+        assert.ok('id' in props, `${name} should expose an id alias`);
+      }
+    }
+  });
+
+  it('delete_presentation exposes an id alias', () => {
+    const server = new McpServer();
+    registerTools(server, {});
+    const tool = server.tools.get('delete_presentation');
+    assert.ok('id' in tool.inputSchema.properties, 'delete_presentation must accept id');
+  });
+
+  it('handler coalesces id into presentationId when only id is passed', () => {
+    // Register a throwaway tool through the same seam and confirm the wrapper
+    // fills presentationId from id before the handler runs.
+    const server = new McpServer();
+    let seen = null;
+    server.tool(
+      'probe',
+      'probe',
+      { type: 'object', properties: { presentationId: { type: 'string' } } },
+      (params) => {
+        seen = params;
+        return params;
+      }
+    );
+    server.tools.get('probe').handler({ id: 'deck-xyz', confirm: true });
+    assert.strictEqual(seen.presentationId, 'deck-xyz');
+    assert.strictEqual(seen.confirm, true);
+  });
+
+  it('does not override an explicit presentationId with id', () => {
+    const server = new McpServer();
+    let seen = null;
+    server.tool(
+      'probe2',
+      'probe2',
+      { type: 'object', properties: { presentationId: { type: 'string' } } },
+      (params) => {
+        seen = params;
+        return params;
+      }
+    );
+    server.tools.get('probe2').handler({ presentationId: 'real', id: 'ignored' });
+    assert.strictEqual(seen.presentationId, 'real');
+  });
+
+  it('leaves tools that declare their own id untouched (no double-wrap)', () => {
+    const server = new McpServer();
+    let seen = null;
+    server.tool(
+      'probe3',
+      'probe3',
+      {
+        type: 'object',
+        properties: {
+          presentationId: { type: 'string' },
+          id: { type: 'string', description: 'own id' },
+        },
+      },
+      (params) => {
+        seen = params;
+        return params;
+      }
+    );
+    // Own-id tools coalesce themselves; the wrapper must not touch params.
+    server.tools.get('probe3').handler({ id: 'own' });
+    assert.strictEqual(seen.presentationId, undefined);
+    assert.strictEqual(seen.id, 'own');
+  });
+});

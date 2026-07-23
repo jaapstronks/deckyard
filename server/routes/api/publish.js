@@ -8,6 +8,7 @@ import { getPresentation, updatePresentation } from '../../storage/presentations
 import { readUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
 import { serveJson, json } from '../../utils/http.js';
+import { sandboxEnabled } from '../../config/sandbox.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
@@ -23,6 +24,15 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
   );
   if (publishMatch && req.method === 'POST') {
     const id = publishMatch[1];
+
+    // Sandbox stance: no public published URLs. A guest owns their own private
+    // deck and could otherwise publish arbitrary content onto the public
+    // domain. Mirrors canChangePresentationScope() returning false in sandbox.
+    if (sandboxEnabled()) {
+      serveJson(res, 403, { error: 'Publishing is disabled in sandbox mode' });
+      return true;
+    }
+
     const pres = await withPresentationAuth({ repoRoot, id, authedUser, res, permission: 'write' });
     if (!pres) return true;
 

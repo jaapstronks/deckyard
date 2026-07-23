@@ -46,6 +46,36 @@
   margin-bottom: 0;
 }
 
+/* Skeleton shimmer while a card's thumbnail is deferred (off-screen) or its
+   slide is still rendering. The .thumb keeps its 16/9 box, so the shimmer fills
+   it without layout shift. Cleared once the slide DOM is appended. */
+.list-item.presentation-card .thumb.is-loading {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--app-bg-base)) 0%,
+    hsl(var(--app-border-default)) 50%,
+    hsl(var(--app-bg-base)) 100%
+  );
+  background-size: 200% 100%;
+  animation: list-thumb-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes list-thumb-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list-item.presentation-card .thumb.is-loading {
+    animation: none;
+    background: hsl(var(--app-bg-base));
+  }
+}
+
 .list-item.presentation-card .btn {
   justify-content: center;
 }

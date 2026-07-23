@@ -10,3 +10,15 @@ services:
   app:
     ports:
       - "4177:4177"
+
+  # Neutralise the production reverse proxy for local runs. Caddy binds host
+  # ports 80/443; on a machine already using port 80 (another proxy, a system
+  # web server) the base topology makes a *local* `up` error out with "Bind for
+  # 0.0.0.0:80 failed: port is already allocated" even though the app came up
+  # fine. Assigning caddy an unactivated Compose profile means it is simply not
+  # started under this override, so a local `up` yields just the app on 4177.
+  # The base file leaves caddy profile-less, so a bare production `up` still
+  # starts it.
+  caddy:
+    profiles:
+      - production-only
