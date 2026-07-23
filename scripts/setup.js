@@ -74,6 +74,47 @@ const AI_PROVIDERS = {
   ollama: { key: null, label: 'Ollama / OpenAI-compatible (local, no key)' },
 };
 
+// The natural-guess env names for AI keys and the names Deckyard actually
+// reads. A user hand-adding `OPENAI_API_KEY` (the industry-standard name) to
+// `.env` is silently ignored, because the app reads `OPENAI_API`. Detect that
+// and warn at setup instead of leaving the AI features mysteriously off.
+const AI_KEY_ALIASES = [
+  { stray: 'OPENAI_API_KEY', canonical: 'OPENAI_API', label: 'OpenAI' },
+  { stray: 'ANTHROPIC_API_KEY', canonical: 'CLAUDE_API', label: 'Claude (Anthropic)' },
+];
+
+/**
+ * Whether an env `KEY=value` line is present with a non-empty, non-commented
+ * value in the given .env content.
+ * @param {string} content
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function hasEnvValue(content, key) {
+  const re = new RegExp(`^\\s*${key}\\s*=\\s*(.+)$`, 'm');
+  const m = String(content || '').match(re);
+  return !!(m && m[1].trim());
+}
+
+/**
+ * Build warnings for stray AI-key names: a natural-guess variable is set but the
+ * canonical one Deckyard reads is not, so the key would be silently ignored.
+ * @param {string} content - .env content to inspect
+ * @returns {string[]} human-readable warning lines
+ */
+export function strayAiKeyWarnings(content) {
+  const warnings = [];
+  for (const { stray, canonical, label } of AI_KEY_ALIASES) {
+    if (hasEnvValue(content, stray) && !hasEnvValue(content, canonical)) {
+      warnings.push(
+        `⚠ Found ${stray} in .env, but Deckyard reads ${canonical} for ${label}. ` +
+          `Rename it to ${canonical}= or the key is ignored.`
+      );
+    }
+  }
+  return warnings;
+}
+
 async function exists(p) {
   try {
     await access(p, constants.F_OK);
@@ -248,6 +289,7 @@ async function main() {
   await writeFile(ENV_PATH, content, 'utf8');
 
   console.log(`\n✓ Wrote ${ENV_PATH}`);
+  for (const warning of strayAiKeyWarnings(content)) console.log(`  ${warning}`);
   if (nonInteractive) {
     console.log('  (non-interactive defaults: auth disabled, no AI provider)');
     console.log('  Run `npm run setup` interactively to add an API key or enable auth.');

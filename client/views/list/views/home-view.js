@@ -52,6 +52,7 @@ export function createHomeView({
     nav,
     allByDate,
     onCreate,
+    api,
   });
 
   // First run: a brand-new user with nothing yet. Foreground the theme picker
@@ -204,9 +205,11 @@ export function createHomeView({
       homePopularLoading.remove();
 
       if (!presentations || presentations.length === 0) {
-        homePopularSection.append(
-          h('div', { class: 'help', text: t('list.home.popularEmpty', 'No popular presentations yet.') })
-        );
+        // "Popular" only means something once there's a signal to rank. On a
+        // fresh or single-operator install it's permanently empty, and a
+        // standing "No popular presentations yet" reads as broken. Drop the
+        // whole section rather than showing empty-state noise.
+        homePopularSection.remove();
       } else {
         for (const p of presentations.slice(0, 4)) {
           homePopularList.append(renderCard(p, {
@@ -235,9 +238,13 @@ export function createHomeView({
       homeActivityLoading.remove();
 
       if (bundles.length === 0) {
-        homeActivitySection.append(
-          h('div', { class: 'help', text: t('list.home.activityNoneOthers', 'Nothing new from others.') })
-        );
+        // "From others" only has meaning when other people touch shared decks.
+        // On an auth-off single-operator install there is never anything here,
+        // so a standing "Nothing new from others" is pure noise. Drop the
+        // section and collapse the rail so the main column goes full-width.
+        homeActivitySection.remove();
+        homeRail.remove();
+        homeColumns.classList.add('is-single-column');
       } else {
         for (const bundle of bundles) {
           homeActivityList.append(renderActivityPreviewItem(h, nav, bundle, detachThumbs));

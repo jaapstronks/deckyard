@@ -382,6 +382,12 @@
   align-items: start;
 }
 
+/* When the "From others" rail is empty (e.g. auth-off single-operator), the
+   rail is removed and Home collapses to a single full-width column. */
+.home-columns.is-single-column {
+  grid-template-columns: 1fr;
+}
+
 .home-main {
   min-width: 0;
 }
