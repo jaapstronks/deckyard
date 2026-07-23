@@ -1,6 +1,8 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { getFeatures } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
-import { createNoPresentationsEmptyState } from '../empty-state.js';
+import { createEmptyState, createNoPresentationsEmptyState } from '../empty-state.js';
+import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
@@ -55,19 +57,40 @@ export function createHomeView({
     api,
   });
 
-  // First run: a brand-new user with nothing yet. Foreground the theme picker
-  // and one clear create CTA instead of a wall of empty Recent/Popular/Activity
-  // sections, which read as "broken" rather than "new".
+  const isSandbox = !!getFeatures()?.sandboxMode;
+
+  // First run: a brand-new user with nothing yet. Foreground one clear create
+  // CTA instead of a wall of empty Recent/Popular/Activity sections, which read
+  // as "broken" rather than "new".
   const isFirstRun = allByDate.length === 0;
   if (isFirstRun && typeof onCreate === 'function') {
-    homeView.append(
-      themePicker.el,
-      createNoPresentationsEmptyState({
-        h,
-        title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
-        onCreate,
-      })
-    );
+    if (isSandbox) {
+      // Sandbox has no theme quick-picker (the create modal already asks for a
+      // theme) — a guest just wants to make a deck. Lead with one create button
+      // and a shelf of ready-made examples they can open and edit.
+      homeView.append(
+        createEmptyState({
+          h,
+          title: t('sandbox.home.title', 'Welcome to the Deckyard sandbox'),
+          message: t(
+            'sandbox.home.message',
+            'Start a new presentation, or open one of the examples below to explore the editor.'
+          ),
+          primaryLabel: t('sandbox.home.create', 'New presentation'),
+          onPrimary: onCreate,
+        }),
+        createSandboxExamplesSection({ h, api, nav, detachThumbs })
+      );
+    } else {
+      homeView.append(
+        themePicker.el,
+        createNoPresentationsEmptyState({
+          h,
+          title: t('list.home.firstRunTitle', 'Welcome — let’s make your first deck'),
+          onCreate,
+        })
+      );
+    }
     if (onboardingChecklist) homeView.append(onboardingChecklist);
 
     // Activity/popular loaders are no-ops here (their sections aren't mounted),
@@ -179,9 +202,22 @@ export function createHomeView({
     'aria-label': t('list.home.activityFromOthers', 'From others'),
   });
 
-  homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
-  homeRail.append(homeActivitySection);
-  homeColumns.append(homeMain, homeRail);
+  if (isSandbox) {
+    // Sandbox: keep the examples shelf reachable after the first deck (a guest
+    // wants to try the other examples too), and drop Popular / Building blocks
+    // / the activity rail — a throwaway guest has no library, no popularity
+    // signal, and no collaborators, so those sections are permanently empty.
+    homeMain.append(
+      createSandboxExamplesSection({ h, api, nav, detachThumbs }),
+      homeRecentSection
+    );
+    homeColumns.append(homeMain);
+    homeColumns.classList.add('is-single-column');
+  } else {
+    homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
+    homeRail.append(homeActivitySection);
+    homeColumns.append(homeMain, homeRail);
+  }
   homeView.append(homeHeader, homeColumns);
 
   // Single aggregation fetch shared by all three section loaders, so Home
@@ -326,11 +362,14 @@ export function createHomeView({
     }
   }
 
+  // In sandbox those three sections aren't mounted, so their loaders would just
+  // fetch and append into detached nodes — skip them entirely.
+  const noop = async () => {};
   return {
     el: homeView,
-    loadActivityPreview,
-    loadPopularPresentations,
-    loadBuildingBlocks,
+    loadActivityPreview: isSandbox ? noop : loadActivityPreview,
+    loadPopularPresentations: isSandbox ? noop : loadPopularPresentations,
+    loadBuildingBlocks: isSandbox ? noop : loadBuildingBlocks,
   };
 }
 

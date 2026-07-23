@@ -1,4 +1,5 @@
 import { badRequest, json, methodNotAllowed, serveJson } from '../../../utils/http.js';
+import { getString } from '../../../utils/request-validators.js';
 import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
 import { getPresentation } from '../../../storage/presentations.js';
 import {
@@ -62,9 +63,9 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const body = await json(req);
     const dev = ensureQaDeviceCookie(req);
     const authorId = dev.id;
-    const authorName = typeof body?.authorName === 'string' ? body.authorName : '';
+    const authorName = getString(body, 'authorName');
     const originalLang = normalizeLang(body?.lang) || null;
-    const text = typeof body?.text === 'string' ? body.text : '';
+    const text = getString(body, 'text');
     const result = await createQuestion(repoRoot, state.sessionId, {
       authorId,
       authorName,

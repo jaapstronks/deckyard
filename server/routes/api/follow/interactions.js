@@ -8,6 +8,7 @@ import {
   serverError,
 } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
+import { getString } from '../../../utils/request-validators.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -387,7 +388,7 @@ export async function handleFollowInteractionFeedback(
       return badRequest(res, 'current slide is not a feedback slide');
 
     const body = await json(req);
-    const text = typeof body?.text === 'string' ? body.text : '';
+    const text = getString(body, 'text');
     const result = await submitFeedback(repoRoot, state.sessionId, {
       presentationId,
       slideId: requested,

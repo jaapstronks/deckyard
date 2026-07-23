@@ -223,6 +223,26 @@ export async function listThemeIds(repoRoot) {
   return result;
 }
 
+/**
+ * List only the core, built-in theme ids (the flat `themes/<id>.json` set),
+ * excluding filesystem custom themes under `custom/themes/`. These are the
+ * neutral, non-branded themes safe to surface on a public sandbox.
+ * @param {string} repoRoot
+ * @returns {Promise<string[]>}
+ */
+export async function listCoreThemeIds(repoRoot) {
+  const coreDir = path.join(repoRoot, 'themes');
+  try {
+    const files = await fs.readdir(coreDir);
+    return files
+      .filter((f) => String(f).toLowerCase().endsWith('.json'))
+      .map((f) => f.replace(/\.json$/i, ''))
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 
 export function themeVarsCssText(theme, { selector = '.ps-theme' } = {}) {
   const vars =

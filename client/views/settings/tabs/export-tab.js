@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
+import { disableForSandbox } from '../sandbox-disable.js';
 
 /**
  * Create the data export tab component.
@@ -167,6 +168,16 @@ export function createExportTab({ user }) {
 
   const cards = h('div', { class: 'settings-tab-cards' }, [optionsCard]);
   container.append(title, description, cards);
+
+  // A throwaway sandbox deck isn't worth backing up, so grey the export out
+  // (shown, not hidden) with a note pointing at what it does in a real install.
+  disableForSandbox({
+    content: optionsCard,
+    message: t(
+      'sandbox.settings.export',
+      'Data export is off in the sandbox — your work here is temporary. In your own Deckyard you can download a full backup of your presentations and library.'
+    ),
+  });
 
   // ── State ──────────────────────────────────────────────────
   let pollInterval = null;

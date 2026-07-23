@@ -48,6 +48,9 @@ export function openCreationView({
 } = {}) {
   const features = getFeatures() || {};
   const aiDisabled = !!features.disableAi;
+  // Sandbox guests have no slide library of their own, so "From the library"
+  // has nothing to compose from — hide the method entirely there.
+  const libraryDisabled = !!features.sandboxMode;
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
@@ -123,10 +126,13 @@ export function openCreationView({
   };
 
   const blankItem = makeRailItem('blank', t('list.creationView.method.blank', 'Blank'));
-  const libraryItem = makeRailItem('library', t('list.creationView.method.library', 'From the library'), {
-    desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
-  });
-  rail.append(blankItem, libraryItem);
+  rail.append(blankItem);
+  if (!libraryDisabled) {
+    const libraryItem = makeRailItem('library', t('list.creationView.method.library', 'From the library'), {
+      desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
+    });
+    rail.append(libraryItem);
+  }
   if (!aiDisabled) {
     rail.append(
       makeRailItem('content', t('list.creationView.method.content', 'From content'), {
@@ -646,6 +652,20 @@ export function openCreationView({
   });
   setupWrap.append(langSelect.wrap, themeDisclosure, themeHint);
 
+  // Sandbox shows only the neutral built-in themes and has no theme builder, so
+  // surface what a real Deckyard adds: your own branded theme with custom fonts.
+  if (features.sandboxMode) {
+    setupWrap.append(
+      h('div', {
+        class: 'help creation-theme-prod-hint',
+        text: t(
+          'list.creationView.themeSandboxHint',
+          'In your own Deckyard you can build a branded theme with custom colours, fonts, and logo.'
+        ),
+      })
+    );
+  }
+
   // The hint only makes sense in the optional (library) mode while collapsed.
   const syncThemeHint = () => {
     themeHint.classList.toggle('is-hidden', !(method === 'library' && !themeDisclosure.open));
@@ -978,7 +998,7 @@ export function openCreationView({
   // External preselection wins over the default blank focus: open straight into
   // the library compose flow with the building block seeded.
   const hasPreselectItems = Array.isArray(preselect?.items) && preselect.items.some(Boolean);
-  if (preselect?.collection || hasPreselectItems) {
+  if (!libraryDisabled && (preselect?.collection || hasPreselectItems)) {
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).

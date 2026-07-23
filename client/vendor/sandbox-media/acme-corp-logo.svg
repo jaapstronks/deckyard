@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img" aria-label="ACME Corp logo">
+  <rect width="400" height="300" fill="#0f1c2e"/>
+  <g transform="translate(200 138)">
+    <circle cx="0" cy="0" r="34" fill="none" stroke="#5aa0ff" stroke-width="6"/>
+    <circle cx="0" cy="0" r="10" fill="#5aa0ff"/>
+  </g>
+  <text x="200" y="216" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="4">ACME CORP</text>
+</svg>

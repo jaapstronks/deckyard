@@ -9,6 +9,7 @@ import {
   setSessionCookie,
 } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized } from '../../utils/http.js';
+import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
 import { sendPasswordResetEmail } from '../../integrations/brevo.js';
@@ -180,8 +181,8 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
     }
 
     const body = await json(req);
-    const token = String(body?.token || '').trim();
-    const password = String(body?.password || '');
+    const token = getTrimmedString(body, 'token') || '';
+    const password = getString(body, 'password');
 
     if (!token) {
       return badRequest(res, t('api.error.tokenRequired', 'Token is required'));
@@ -266,8 +267,8 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
     }
 
     const body = await json(req);
-    const currentPassword = String(body?.currentPassword || '');
-    const newPassword = String(body?.newPassword || '');
+    const currentPassword = getString(body, 'currentPassword');
+    const newPassword = getString(body, 'newPassword');
 
     // Validate new password
     const pwValidation = validatePassword(newPassword);

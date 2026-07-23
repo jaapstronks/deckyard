@@ -1,4 +1,22 @@
 /* ============================================
+   Image source chooser (library vs ImageKit)
+   Shown only when >1 provider is enabled. Buttons otherwise stretch edge to
+   edge, which reads as a heavy list; cap the width and centre so the two
+   sources read as a tidy pair of choices.
+   ============================================ */
+
+.image-source-list {
+  gap: var(--ps-space-2);
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.image-source-list .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ============================================
    New Presentation Modal - Section Cards
    ============================================ */
 
@@ -534,6 +552,12 @@
 
 .creation-theme-hint.is-hidden {
   display: none;
+}
+
+/* Sandbox-only production hint under the theme picker. */
+.creation-theme-prod-hint {
+  margin: var(--ps-space-2) 0 0;
+  font-style: italic;
 }
 
 .creation-view-footer {

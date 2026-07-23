@@ -10,6 +10,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../../utils/http.js';
+import { getOptionalString } from '../../../utils/request-validators.js';
 import {
   normalizeLang,
   otherLang,
@@ -25,7 +26,7 @@ export async function handlePresentationTranslateFields(
   if (flags.disableAi) return notFound(res);
 
   const body = await json(req);
-  const vendor = typeof body?.vendor === 'string' ? body.vendor : null;
+  const vendor = getOptionalString(body, 'vendor');
   const pres = await getPresentation(repoRoot, id);
   if (!pres) return notFound(res);
 

@@ -6,6 +6,7 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
+import { disableForSandbox } from '../sandbox-disable.js';
 
 const LEVEL_OPTIONS = [
   { value: 'watching', label: () => t('subscription.level.watching', 'Watching') },
@@ -101,6 +102,16 @@ export function createUserNotificationsSection({ h }) {
   ]);
 
   card.append(hint, emailCheckbox, slackCheckbox, levelField, emailTypesField);
+
+  // A sandbox guest is anonymous with no email, so comment notifications can't
+  // reach them. Show the options greyed out with a note rather than hiding them.
+  disableForSandbox({
+    content: card,
+    message: t(
+      'sandbox.settings.notifications',
+      'Notifications are off in the sandbox — a guest has no account to notify. In your own Deckyard, get email or Slack/Teams alerts when someone comments.'
+    ),
+  });
 
   return {
     element: card,

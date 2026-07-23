@@ -19,6 +19,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
 import {
@@ -125,7 +126,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
 
     const ctx = createRouteContext(authedUser);
     const familyName = String(body.familyName).trim();
-    const category = String(body.category || 'sans-serif').trim();
+    const category = getTrimmedString(body, 'category') || 'sans-serif';
 
     // Create the font family
     const result = await createFontFamily(
@@ -182,8 +183,8 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
     if (!body?.dataUrl) return badRequest(res, 'Missing dataUrl.');
 
     const weight = Number(body.weight) || 400;
-    const style = String(body.style || 'normal').trim();
-    const format = String(body.format || 'woff2').trim();
+    const style = getTrimmedString(body, 'style') || 'normal';
+    const format = getTrimmedString(body, 'format') || 'woff2';
 
     // Decode base64 data URL
     const dataUrlMatch = String(body.dataUrl).match(/^data:[^;]+;base64,(.+)$/);

@@ -1,6 +1,7 @@
 import { getPresentation } from '../../../storage/presentations.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { methodNotAllowed, notFound, serveJson, unauthorized, json } from '../../../utils/http.js';
+import { getOptionalString } from '../../../utils/request-validators.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
@@ -71,7 +72,7 @@ export async function handlePresentationDescriptionGenerate(
   if (flags.disableAi) return notFound(res);
 
   const body = await json(req);
-  const vendor = typeof body?.vendor === 'string' ? body.vendor : null;
+  const vendor = getOptionalString(body, 'vendor');
 
   const pres = await getPresentation(repoRoot, id);
   if (!pres) return notFound(res);
