@@ -37,6 +37,47 @@ export const ErrorCodes = {
 };
 
 /**
+ * Make every deck-scoped tool accept `id` as an alias for `presentationId`.
+ *
+ * Historically some tools took `id`, others `presentationId`, so agents guessed
+ * wrong — and the shared "A presentation id is required (pass `id` or
+ * `presentationId`)" error then lied for the tools that only read
+ * `presentationId`. This normalises the seam in one place: any tool whose schema
+ * has a `presentationId` property (and no distinct `id` property of its own)
+ * gains a documented `id` alias, and its handler receives `presentationId`
+ * filled in from `id` when only `id` was passed. Tools that already declare
+ * their own `id` (get_presentation, validate_presentation, get_presentation_url)
+ * are left untouched — they coalesce the two names themselves.
+ *
+ * @param {Object} inputSchema - JSON Schema for the tool's parameters
+ * @param {Function} handler - async (params, context) => result
+ * @returns {{inputSchema: Object, handler: Function}}
+ */
+function withPresentationIdAlias(inputSchema, handler) {
+  const props = inputSchema && inputSchema.properties;
+  if (!props || !props.presentationId || props.id) {
+    return { inputSchema, handler };
+  }
+
+  const aliasedSchema = {
+    ...inputSchema,
+    properties: {
+      ...props,
+      id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
+    },
+  };
+
+  const aliasedHandler = (params, context) => {
+    if (params && params.presentationId == null && params.id != null) {
+      return handler({ ...params, presentationId: params.id }, context);
+    }
+    return handler(params, context);
+  };
+
+  return { inputSchema: aliasedSchema, handler: aliasedHandler };
+}
+
+/**
  * MCP Server class
  * Handles tool registration, message parsing, and routing.
  */
@@ -57,7 +98,11 @@ export class McpServer {
    * @param {Function} handler - async (params) => result
    */
   tool(name, description, inputSchema, handler) {
-    this.tools.set(name, { name, description, inputSchema, handler });
+    const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
+      inputSchema,
+      handler
+    );
+    this.tools.set(name, { name, description, inputSchema: schema, handler: wrapped });
   }
 
   /**

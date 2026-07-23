@@ -43,6 +43,8 @@ function writeState(state) {
  * @param {Function} opts.nav - Navigation function
  * @param {Array} opts.allByDate - All presentations (used to derive "has a deck")
  * @param {Function} opts.onCreate - Open the new-presentation modal
+ * @param {Function} [opts.api] - API client, used to auto-detect a connected
+ *   AI agent (an API key that has actually been used).
  * @returns {HTMLElement|null}
  */
 export function createOnboardingChecklist({
@@ -50,6 +52,7 @@ export function createOnboardingChecklist({
   nav,
   allByDate,
   onCreate,
+  api,
 }) {
   const hasDeck = Array.isArray(allByDate) && allByDate.length > 0;
 
@@ -163,6 +166,23 @@ export function createOnboardingChecklist({
 
   for (const step of steps) refreshStep(step.key);
   refreshProgress();
+
+  // Auto-complete the "Connect an AI agent" step: MCP and the REST API both
+  // require an API key, and validating one stamps `lastUsedAt`. So a key that
+  // has ever been used is proof an agent actually connected — tick the step
+  // without the user having to click it. Best-effort: any failure just leaves
+  // the manual click-to-complete path intact.
+  if (!state.mcp && typeof api === 'function') {
+    (async () => {
+      try {
+        const resp = await api('/api/api-keys');
+        const keys = Array.isArray(resp?.keys) ? resp.keys : [];
+        if (keys.some((k) => k?.lastUsedAt)) markStepDone('mcp');
+      } catch {
+        // No API-keys endpoint (or not reachable): keep the manual path.
+      }
+    })();
+  }
 
   return card;
 }
