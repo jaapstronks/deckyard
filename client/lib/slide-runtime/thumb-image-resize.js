@@ -16,7 +16,10 @@
 /** @returns {boolean} whether `url` is an ImageKit-hosted asset we can transform. */
 function isImageKitUrl(url) {
   try {
-    return new URL(url, window.location.href).hostname.includes('imagekit.io');
+    // Match the exact host or a subdomain of it, not any host that merely
+    // *contains* the string — `imagekit.io.evil.com` must not qualify.
+    const host = new URL(url, window.location.href).hostname;
+    return host === 'imagekit.io' || host.endsWith('.imagekit.io');
   } catch {
     return false;
   }

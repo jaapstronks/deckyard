@@ -42,6 +42,9 @@ test('imagekitThumbUrl leaves non-ImageKit / data / already-transformed URLs alo
     'https://example.com/pic.jpg',
     'data:image/png;base64,AAAA',
     'https://ik.imagekit.io/acme/pic.jpg?tr=w-1600', // author transform respected
+    // A host that only *contains* imagekit.io must not qualify (spoofing).
+    'https://imagekit.io.evil.com/acme/pic.jpg',
+    'https://notimagekit.io/acme/pic.jpg',
     '',
   ]) {
     assert.equal(imagekitThumbUrl(u, 800), u, `unchanged: ${u}`);
