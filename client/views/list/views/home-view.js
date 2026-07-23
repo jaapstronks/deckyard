@@ -202,9 +202,22 @@ export function createHomeView({
     'aria-label': t('list.home.activityFromOthers', 'From others'),
   });
 
-  homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
-  homeRail.append(homeActivitySection);
-  homeColumns.append(homeMain, homeRail);
+  if (isSandbox) {
+    // Sandbox: keep the examples shelf reachable after the first deck (a guest
+    // wants to try the other examples too), and drop Popular / Building blocks
+    // / the activity rail — a throwaway guest has no library, no popularity
+    // signal, and no collaborators, so those sections are permanently empty.
+    homeMain.append(
+      createSandboxExamplesSection({ h, api, nav, detachThumbs }),
+      homeRecentSection
+    );
+    homeColumns.append(homeMain);
+    homeColumns.classList.add('is-single-column');
+  } else {
+    homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
+    homeRail.append(homeActivitySection);
+    homeColumns.append(homeMain, homeRail);
+  }
   homeView.append(homeHeader, homeColumns);
 
   // Single aggregation fetch shared by all three section loaders, so Home
@@ -349,11 +362,14 @@ export function createHomeView({
     }
   }
 
+  // In sandbox those three sections aren't mounted, so their loaders would just
+  // fetch and append into detached nodes — skip them entirely.
+  const noop = async () => {};
   return {
     el: homeView,
-    loadActivityPreview,
-    loadPopularPresentations,
-    loadBuildingBlocks,
+    loadActivityPreview: isSandbox ? noop : loadActivityPreview,
+    loadPopularPresentations: isSandbox ? noop : loadPopularPresentations,
+    loadBuildingBlocks: isSandbox ? noop : loadBuildingBlocks,
   };
 }
 
