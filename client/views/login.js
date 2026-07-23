@@ -4,6 +4,24 @@ import { login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 
+/**
+ * Human-readable message for an SSO error code returned via ?error=sso_...
+ * on the login page (set by the OIDC callback route on failure).
+ * @param {string} code
+ * @returns {string}
+ */
+function ssoErrorMessage(code) {
+  const map = {
+    sso_disabled: t('login.ssoErrDisabled', 'Single sign-on is not enabled.'),
+    sso_unavailable: t('login.ssoErrUnavailable', 'Single sign-on is temporarily unavailable. Try again.'),
+    sso_state: t('login.ssoErrState', 'Your sign-in session expired. Please try again.'),
+    sso_email_unverified: t('login.ssoErrUnverified', 'Your email is not verified with your identity provider.'),
+    sso_domain_not_allowed: t('login.ssoErrDomain', 'Your account is not permitted to sign in here.'),
+    sso_not_provisioned: t('login.ssoErrNotProvisioned', 'No account exists for you yet. Ask an administrator to invite you.'),
+  };
+  return map[code] || t('login.ssoErrGeneric', 'Single sign-on failed. Please try again.');
+}
+
 export async function renderLogin(root, { nav } = {}) {
   const url = new URL(location.href);
   const returnToRaw =
@@ -27,6 +45,8 @@ export async function renderLogin(root, { nav } = {}) {
   }
   prefillEmail = prefillEmail.trim();
 
+  const errorCode = url.searchParams.get('error') || '';
+
   const shell = h('div', { class: 'auth-shell' });
   const card = h('div', { class: 'auth-card' });
 
@@ -44,6 +64,41 @@ export async function renderLogin(root, { nav } = {}) {
     ),
   });
   header.append(title, subtitle);
+
+  // ============================================================
+  // Error banner (e.g. an SSO callback failure redirected here)
+  // ============================================================
+  const errorBanner = h('div', { class: 'auth-status is-error', hidden: true });
+  if (errorCode) {
+    errorBanner.textContent = ssoErrorMessage(errorCode);
+    errorBanner.hidden = false;
+  }
+
+  // ============================================================
+  // SSO Section (shown only when the server reports SSO enabled)
+  // ============================================================
+  const ssoSection = h('div', { class: 'auth-sso-section', hidden: true });
+  const ssoBtn = h('button', {
+    class: 'auth-btn',
+    text: t('login.ssoSubmit', 'Sign in with SSO'),
+  });
+  ssoBtn.onclick = () => {
+    // Full-page navigation: this hits a server route that 302-redirects to the
+    // identity provider, so it cannot go through the SPA router.
+    location.assign(`/api/auth/oidc/login?returnTo=${encodeURIComponent(returnTo)}`);
+  };
+  ssoSection.append(ssoBtn);
+
+  // Divider between SSO and the password/magic forms (only when both show).
+  const ssoDivider = h('div', { class: 'auth-divider', hidden: true });
+  ssoDivider.append(
+    h('span', { class: 'auth-divider-line' }),
+    h('span', {
+      class: 'auth-divider-text',
+      text: t('login.dividerOrEmail', 'or sign in with email'),
+    }),
+    h('span', { class: 'auth-divider-line' })
+  );
 
   // ============================================================
   // Magic Link Section (Easy Mode)
@@ -245,9 +300,29 @@ export async function renderLogin(root, { nav } = {}) {
 
   form.append(email, password, btnRow, btnDev, status);
 
-  card.append(header, magicSection, divider, form);
+  card.append(header, errorBanner, ssoSection, ssoDivider, magicSection, divider, form);
   shell.append(card);
   root.append(shell);
+
+  // Ask the server whether SSO is enabled / enforced and adjust the form.
+  try {
+    const cfg = await api('/api/auth/config');
+    const sso = cfg?.sso;
+    if (sso?.enabled) {
+      ssoSection.hidden = false;
+      if (sso.enforce) {
+        // Enforced: SSO is the only way in — hide password + magic-link.
+        magicSection.hidden = true;
+        divider.hidden = true;
+        form.hidden = true;
+        subtitle.textContent = t('login.ssoOnlyHelp', 'Sign in with your organization account.');
+      } else {
+        ssoDivider.hidden = false;
+      }
+    }
+  } catch {
+    // If the config probe fails, fall back to showing the standard forms.
+  }
 
   // If already logged in (or auth disabled), immediately continue.
   try {

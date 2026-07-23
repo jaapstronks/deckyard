@@ -19,10 +19,19 @@ import { allowLoginAttempt } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
+import { getSsoPublicConfig } from '../../config/sso.js';
 
 export async function handleAuth({ repoRoot, req, res, url }) {
   // Build context for database operations
   const ctx = { repoRoot, req };
+
+  // Public, non-secret auth config for the login page (unauthenticated).
+  // Tells the client whether to show an SSO button and whether to hide the
+  // password / magic-link forms (SSO_ENFORCE).
+  if (url.pathname === '/api/auth/config' && req.method === 'GET') {
+    serveJson(res, 200, { sso: getSsoPublicConfig() });
+    return true;
+  }
 
   if (url.pathname === '/api/auth/dev-login' && req.method === 'POST') {
     if (!devAuthBypassEnabled())

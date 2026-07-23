@@ -13,6 +13,7 @@ import { handlePublicApiV1 } from '../public-api/v1/index.js';
 import { handleAuth } from './auth.js';
 import { handlePasswordReset } from './password-reset.js';
 import { handleMagicLink } from './magic-link.js';
+import { handleSso } from './sso.js';
 import { handleAdminUsers } from './admin-users.js';
 import { handleAdminAiLogs } from './admin-ai-logs.js';
 import { handleEmailTemplates } from './email-templates.js';
@@ -77,6 +78,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
 
   // Magic link routes (public, no auth required)
   if (await handleMagicLink({ repoRoot, req, res, url })) return;
+
+  // OIDC single sign-on routes (public: login redirect + IdP callback)
+  if (await handleSso({ repoRoot, req, res, url })) return;
 
   // Public endpoints (must be accessible without auth; used by audience devices).
   if (await handleFollowPublic({ repoRoot, req, res, url })) return;

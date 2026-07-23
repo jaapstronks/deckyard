@@ -47,6 +47,7 @@
     "kysely": "^0.28.17",
     "lucide-static": "^0.469.0",
     "mammoth": "^1.11.0",
+    "openid-client": "^6.8.4",
     "pdf-parse": "^2.4.5",
     "pg": "^8.13.1",
     "pptxgenjs": "^3.12.0",
