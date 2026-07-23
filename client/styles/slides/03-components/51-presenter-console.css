@@ -186,7 +186,7 @@ html.is-fullscreen .presenter-shell.is-console .deck-stage,
 }
 
 /* Narrower rail on smaller windows so the slide keeps a usable size. */
-@media (max-width: 1100px) {
+@media (max-width: 1024px) {
   .presenter-shell.is-console {
     --presenter-console-width: 300px;
   }

@@ -382,7 +382,7 @@
   display: none;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .ps-view-toggle-text {
     display: none;
   }
@@ -670,7 +670,7 @@
 /* Tiles are fluid (auto-fill minmax + JS scale), so columns adapt on their own.
    Only nudge the minimum tile size down on small screens for a touch more
    density. */
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .ps-type-grid-thumbs {
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
   }

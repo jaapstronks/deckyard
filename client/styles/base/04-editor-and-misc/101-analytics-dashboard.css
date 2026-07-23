@@ -260,7 +260,7 @@
   gap: var(--ps-space-4, 16px);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .dashboard-bottom-row {
     grid-template-columns: 1fr;
   }
