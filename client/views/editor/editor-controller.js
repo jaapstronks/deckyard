@@ -48,8 +48,7 @@ import { createTranslateOpeners } from './translate-openers.js';
 import { openConflictModal as openConflictModalImpl } from './modals/conflict-modal.js';
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
-import { openDeckOverviewModal } from './modals/deck-overview-modal.js';
-import { openAiDeckReviewModal } from './modals/ai-deck-review-modal.js';
+import { createDeckReviewOpeners } from './deck-review-openers.js';
 import { normalizeLang, otherLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
@@ -527,41 +526,11 @@ export async function createEditorController({
   // DECK OVERVIEW (LIGHT TABLE)
   // ============================================================
 
-  // Jump used by the overview grid, the AI deck review, and (already) the
-  // comments panel. slideListEl is referenced lazily (defined further down,
-  // before any click can happen).
-  const jumpToSlide = (slideId) => {
-    if (!slideId || !pres.slides?.some((s) => s?.id === slideId)) return;
-    setSelectedSlideIdWithLock(slideId);
-    rerenderSlideList();
-    rerenderEditor();
-    rerenderPreview();
-    requestAnimationFrame(() => {
-      try {
-        const active = slideListEl?.querySelector?.('.list-item.is-active');
-        active?.scrollIntoView?.({ block: 'nearest' });
-      } catch { /* ignore */ }
-    });
-  };
-
-  // Shared by the topbar button and the "Review" affordance on the AI-added
-  // toast.
-  const openDeckOverview = () => {
-    openDeckOverviewModal({
-      h,
-      root,
-      pres,
-      theme,
-      SLIDE_TYPES,
-      openOverlayClosers,
-      onJumpToSlide: jumpToSlide,
-    });
-  };
-
-  // Whole-deck AI review (per-slide rationale + section refine). Opened
-  // automatically after AI generation (?aiReview=1).
-  const openAiDeckReview = ({ postGeneration = false } = {}) => {
-    openAiDeckReviewModal({
+  // Deck-overview + AI-review openers and the slide-jump they share. The
+  // renderers and slide-list element are bound later, so they're passed as
+  // indirections read at call time.
+  const { jumpToSlide, openDeckOverview, openAiDeckReview } =
+    createDeckReviewOpeners({
       h,
       root,
       api,
@@ -570,11 +539,13 @@ export async function createEditorController({
       SLIDE_TYPES,
       openOverlayClosers,
       editorState,
-      onJumpToSlide: jumpToSlide,
-      postGeneration,
       nav,
+      setSelectedSlideId: setSelectedSlideIdWithLock,
+      rerenderSlideList: () => rerenderSlideList(),
+      rerenderEditor: () => rerenderEditor(),
+      rerenderPreview: () => rerenderPreview(),
+      getSlideListEl: () => slideListEl,
     });
-  };
 
   // ============================================================
   // TOPBAR
