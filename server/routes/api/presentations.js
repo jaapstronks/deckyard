@@ -52,6 +52,7 @@ import { handlePresentationAnalyze } from './presentations/analyze.js';
 import { handlePresentationTags } from './tags.js';
 import { handleOwnershipTransfer } from './presentations/ownership.js';
 import { handleRenderSlide } from './presentations/render-slide.js';
+import { handlePresentationThumbnail } from './presentations/thumbnail.js';
 import {
   handleSlideLocksList,
   handleSlideLockStatus,
@@ -257,6 +258,11 @@ const ROUTES = [
   // RENDER SLIDE (server-side rendering for custom slide types)
   // ============================================================
   { pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/, handler: handleRenderSlideRoute },
+
+  // ============================================================
+  // DECK OVERVIEW THUMBNAIL (server-rasterized PNG→WebP of slide 1)
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/thumbnail$/, handler: handlePresentationThumbnail },
 
   // ============================================================
   // COMMENTS
