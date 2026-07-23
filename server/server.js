@@ -8,6 +8,7 @@ import {
 } from './config/paths.js';
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
+import { ssoConfigError } from './config/sso.js';
 import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
@@ -161,6 +162,17 @@ if (process.env.NODE_ENV === 'production') {
   const authErr = authConfigError();
   if (authErr) {
     console.error(`\n⚠️  SECURITY: ${authErr}\n`);
+    process.exit(1);
+  }
+}
+
+// Security check: refuse to start with a half-configured SSO. An operator who
+// set SSO_ENABLED=true expects SSO to work; silently disabling it (or failing
+// only at first login) is worse than failing loudly at boot.
+{
+  const ssoErr = ssoConfigError();
+  if (ssoErr) {
+    console.error(`\n⚠️  SSO: ${ssoErr}\n`);
     process.exit(1);
   }
 }
