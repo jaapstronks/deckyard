@@ -5,6 +5,7 @@
 
 import { getUserFromRequestAsync, updateSessionOrganization } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized, forbidden, notFound } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext, isReservedSubdomain } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import {
@@ -107,8 +108,8 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
   if (url.pathname === '/api/organizations' && req.method === 'POST') {
     try {
       const body = await json(req);
-      const name = String(body?.name || '').trim();
-      const slug = String(body?.slug || '').toLowerCase().trim();
+      const name = getTrimmedString(body, 'name') || '';
+      const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
       const subdomain = body?.subdomain ? String(body.subdomain).toLowerCase().trim() : null;
       const billingEmail = body?.billingEmail ? String(body.billingEmail).trim() : null;
       const displayName = body?.displayName ? String(body.displayName).trim() : null;
@@ -217,7 +218,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       const updates = {};
 
       if ('name' in body) {
-        const name = String(body.name || '').trim();
+        const name = getTrimmedString(body, 'name') || '';
         if (name.length < 2) {
           return badRequest(res, 'Organization name must be at least 2 characters');
         }

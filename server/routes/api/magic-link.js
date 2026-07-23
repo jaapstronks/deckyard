@@ -8,6 +8,7 @@ import {
   setSessionCookie,
 } from '../../auth/auth.js';
 import { json, serveJson, badRequest } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
 import { sendMagicLinkEmail } from '../../integrations/brevo.js';
@@ -161,7 +162,7 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
     }
 
     const body = await json(req);
-    const token = String(body?.token || '').trim();
+    const token = getTrimmedString(body, 'token') || '';
 
     if (!token) {
       return badRequest(res, t('api.error.tokenRequired', 'Token is required'));

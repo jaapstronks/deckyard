@@ -5,6 +5,7 @@
  */
 
 import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   getPlainTextFromPage,
   getPlainTextPreviewFromPage,
@@ -33,8 +34,7 @@ export async function handleNotionSubjects({ req, res, url }) {
   }
 
   const body = await json(req);
-  const keyword =
-    typeof body?.keyword === 'string' ? body.keyword.trim() : '';
+  const keyword = getTrimmedString(body, 'keyword') || '';
   const hasKeyword = keyword.length >= 2;
 
   const all = hasKeyword
@@ -104,9 +104,8 @@ export async function handleNotionCompose({ req, res, url }) {
   }
 
   const body = await json(req);
-  const pageId = typeof body?.pageId === 'string' ? body.pageId.trim() : '';
-  const keywordRaw =
-    typeof body?.keyword === 'string' ? body.keyword.trim() : '';
+  const pageId = getTrimmedString(body, 'pageId') || '';
+  const keywordRaw = getTrimmedString(body, 'keyword') || '';
   const keyword = keywordRaw ? keywordRaw.toLowerCase() : '';
   const hasKeyword = keyword.length >= 2;
 

@@ -11,6 +11,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
@@ -70,13 +71,13 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
       return badRequest(res, 'Invalid request body'), true;
     }
 
-    const presentationId = String(body.presentationId || '').trim();
-    const slideId = String(body.slideId || '').trim();
-    const name = String(body.name || '').trim();
-    const email = String(body.email || '').toLowerCase().trim();
+    const presentationId = getTrimmedString(body, 'presentationId') || '';
+    const slideId = getTrimmedString(body, 'slideId') || '';
+    const name = getTrimmedString(body, 'name') || '';
+    const email = (getTrimmedString(body, 'email') || '').toLowerCase();
     const consentGiven = body.consentGiven === true;
-    const consentText = String(body.consentText || '').trim();
-    const privacyUrl = String(body.privacyUrl || '').trim();
+    const consentText = getTrimmedString(body, 'consentText') || '';
+    const privacyUrl = getTrimmedString(body, 'privacyUrl') || '';
 
     if (!presentationId || !slideId) {
       return badRequest(res, 'Missing presentationId or slideId'), true;
@@ -347,7 +348,7 @@ async function handleRequestMyData(ctx) {
   const { req, res } = ctx;
 
   const body = await json(req);
-  const email = String(body?.email || '').toLowerCase().trim();
+  const email = (getTrimmedString(body, 'email') || '').toLowerCase();
 
   if (!email || !email.includes('@')) {
     return badRequest(res, 'Valid email required'), true;

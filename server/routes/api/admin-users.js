@@ -5,6 +5,7 @@
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized, notFound } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext, getClientIp } from '../../utils/context.js';
 import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
 import {
@@ -150,7 +151,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
     try {
       const body = await json(req);
       const email = normalizeEmail(body?.email);
-      const name = String(body?.name || '').trim() || null;
+      const name = getTrimmedString(body, 'name');
       const role = body?.role === 'admin' ? 'admin' : 'user';
       const sendInvitation = body?.sendInvitation !== false; // Default to true
 
@@ -241,7 +242,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       const body = await json(req);
 
       const updates = {};
-      if ('name' in body) updates.name = String(body.name || '').trim() || null;
+      if ('name' in body) updates.name = getTrimmedString(body, 'name');
       if ('role' in body) updates.role = body.role;
 
       const hasDesignerUpdate = 'isDesigner' in body;
