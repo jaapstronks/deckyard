@@ -525,8 +525,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-@media (max-width: 900px) {
-  /* Hide theme toggle */
+@media (max-width: 1024px) {
+  /* Hide theme toggle (stays reachable in the ⋯ menu, see below) */
   .topbar .sb-segmented.is-toggle:not(.is-compact) {
     display: none;
   }
@@ -535,14 +535,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-@media (max-width: 700px) {
-  .topbar-pres-title {
-    max-width: 140px;
-    flex: 0 1 140px;
-    min-width: 80px;
-  }
-}
-
+/* No discrete 700px title cap: the ≤1024 rule's `min(200px, 20vw)` already
+   yields ~140px around 700px and scales down smoothly to the ≤640 cap below. */
 @media (max-width: 640px) {
   .topbar-pres-title {
     max-width: 100px;
@@ -572,7 +566,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   /* Show theme toggle and notes QR in menu when hidden from topbar */
   .topbar-overflow-item {
     display: flex;
@@ -745,14 +739,14 @@ summary.ghost-icon-btn::-webkit-details-marker {
 }
 
 /* Responsive search */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .topbar-search-wrapper {
     flex: 0 1 200px;
     max-width: 200px;
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 640px) {
   .topbar-search-wrapper {
     flex: 0 1 160px;
     max-width: 160px;
@@ -760,7 +754,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .topbar-search-wrapper {
     flex: 1 1 auto;
     max-width: none;

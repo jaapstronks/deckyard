@@ -35,20 +35,13 @@ const LADDER = {
 /**
  * Width conditions that predate the ladder and have not been migrated yet.
  *
- * This list may only ever shrink. New CSS must use the ladder; if a layout
- * needs a width that is not a rung, change the layout, not this list.
- * See docs/plans/briefs/breakpoint-scale.md for the migration order.
+ * The migration is complete: every width `@media` in client/styles/** is on
+ * the ladder, so this list is empty and the guard now enforces the ladder with
+ * no exceptions. It may only ever shrink — never add an entry to work around a
+ * layout that wants an off-ladder width; change the layout instead.
+ * See docs/plans/briefs/breakpoint-scale.md for the migration history.
  */
-const ALLOWLIST = [
-  // Step 3 — the topbar's progressive-collapse rungs. The topbar (shared chrome
-  // on every view) needs finer granularity than the 5-rung ladder: 520/700/900
-  // are intermediate collapse points between 640/768/1024, so remapping them to
-  // the nearest rung drops a graceful step and must be re-tuned in the browser,
-  // not mechanically. Migrated together in the topbar pass.
-  'max-width: 520px',
-  'max-width: 700px',
-  'max-width: 900px',
-];
+const ALLOWLIST = [];
 
 /** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */
 async function cssFiles(dir) {
