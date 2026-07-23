@@ -156,7 +156,9 @@ export function createFieldImage(ctx) {
         h('div', {
           class: 'help',
           text: uploadsDisabled
-            ? t('editor.image.help.uploadsDisabled', 'Choose from the library (recommended). Uploads are disabled.')
+            ? flags.sandboxMode
+              ? t('editor.image.help.uploadsSandbox', 'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.')
+              : t('editor.image.help.uploadsDisabled', 'Choose from the library (recommended). Uploads are disabled.')
             : t('editor.image.help.withUploads', 'Choose from the library (recommended) or upload a new image.'),
         }),
         uploadsDisabled

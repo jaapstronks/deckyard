@@ -56,6 +56,7 @@
   "imageLibrary.photographerEmpty": "Photographer: —",
   "imageLibrary.photographerField": "Photographer name (optional)",
   "imageLibrary.readOnly": "Uploads are disabled. The library is read-only.",
+  "imageLibrary.readOnlySandbox": "Uploads are off in the sandbox. Use Unsplash or Giphy to add images.",
   "imageLibrary.replace": "Replace file…",
   "imageLibrary.replace.done": "Replaced. Existing slides keep working (URL unchanged).",
   "imageLibrary.replace.notLocal": "Replace file is only available for images stored as local uploads (/uploads/…).",
