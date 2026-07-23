@@ -65,6 +65,244 @@ import {
   handleChangeTheme,
 } from './presentations/change-theme.js';
 
+/**
+ * A dispatch context, forwarded verbatim to every route handler.
+ *
+ * @typedef {object} PresentationsContext
+ * @property {string} repoRoot
+ * @property {import('http').IncomingMessage} req
+ * @property {import('http').ServerResponse} res
+ * @property {URL} url
+ * @property {object|null} authedUser
+ */
+
+/**
+ * A single declarative route.
+ *
+ * @typedef {object} PresentationRoute
+ * @property {string} [method] - HTTP method to require; omit to match any method.
+ * @property {string|RegExp} pattern - Exact pathname (string) or a pattern whose
+ *   capture groups become positional handler args.
+ * @property {(ctx: PresentationsContext, ...params: string[]) => unknown} handler
+ */
+
+// ── Adapters for the few handlers whose call shape differs from
+//    `handler(ctx, ...captureGroups)` ────────────────────────────────────────
+
+/**
+ * Bare `/api/presentations/:id`. Skips ids that belong to sibling modules so
+ * this generic route never swallows their (possibly method-mismatched) requests.
+ * @param {PresentationsContext} ctx
+ * @param {string} id
+ */
+function handlePresentationItemRoute(ctx, id) {
+  // Skip special routes handled by other modules
+  const specialRoutes = ['shared-with-me', 'search', 'trash', 'import', 'popular'];
+  if (specialRoutes.includes(id)) {
+    return false;
+  }
+  return handlePresentationItem(ctx, id);
+}
+
+/**
+ * Tags handler takes a bespoke context shape (`presentationId`, no `repoRoot`).
+ * @param {PresentationsContext} ctx
+ * @param {string} id
+ */
+function handlePresentationTagsRoute({ req, res, url }, id) {
+  return handlePresentationTags({ req, res, url, presentationId: id });
+}
+
+/**
+ * Render-slide is deliberately called without `url` in its context.
+ * @param {PresentationsContext} ctx
+ * @param {string} id
+ */
+function handleRenderSlideRoute({ repoRoot, req, res, authedUser }, id) {
+  return handleRenderSlide({ repoRoot, req, res, authedUser }, id);
+}
+
+/**
+ * Legacy `/api/presentations/import` placeholder kept for early "bad import"
+ * debugging — points callers at the real endpoint.
+ * @param {PresentationsContext} ctx
+ */
+function handleLegacyImportBadRequest({ res }) {
+  return badRequest(res, 'Use /api/presentations/import/json');
+}
+
+/**
+ * Declarative route table for `/api/presentations/*`.
+ *
+ * IMPORTANT — this is a first-match dispatcher. The order below is significant
+ * and mirrors the original `if`-chain exactly: specific paths (`/search`,
+ * `/popular`, `/trash`, `/import/*`, the `/versions/…`, `/lock/…`,
+ * `/slides/…/lock`, and `/comments/…` sub-routes) MUST stay ahead of the
+ * generic `/api/presentations/:id`. Do not alphabetize or regroup.
+ *
+ * Paths that carry a `method` behave like the original nested method branches:
+ * a request whose method doesn't match falls through to the next route rather
+ * than being rejected here.
+ *
+ * @type {PresentationRoute[]}
+ */
+const ROUTES = [
+  { method: 'GET', pattern: '/api/presentations', handler: handlePresentationsList },
+
+  // Search endpoint (before :id routes to avoid conflicts)
+  { method: 'GET', pattern: '/api/presentations/search', handler: handlePresentationsSearch },
+
+  // Popular presentations endpoint (before :id routes to avoid conflicts)
+  { method: 'GET', pattern: '/api/presentations/popular', handler: handlePopularPresentations },
+
+  // Trash routes (before :id routes to avoid conflicts)
+  { pattern: '/api/presentations/trash', handler: handlePresentationsTrashList },
+  { pattern: /^\/api\/presentations\/([^/]+)\/restore$/, handler: handlePresentationRestore },
+  { pattern: /^\/api\/presentations\/([^/]+)\/permanent$/, handler: handlePresentationPermanentDelete },
+
+  // Translate a set of arbitrary fields (key -> string). Used for slide-level preview/apply in editor.
+  { pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/, handler: handlePresentationTranslateFields },
+  // Translate only missing (empty) fields into the other language (safe for manual edits).
+  { pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/, handler: handlePresentationTranslateMissing },
+  // Translate a presentation into the other supported language and store as an i18n version.
+  { pattern: /^\/api\/presentations\/([^/]+)\/translate$/, handler: handlePresentationTranslate },
+
+  { pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/, handler: handlePresentationDescriptionGenerate },
+
+  { method: 'POST', pattern: '/api/presentations', handler: handlePresentationsCreate },
+
+  // Import (portable JSON deck format)
+  { method: 'POST', pattern: '/api/presentations/import/json', handler: handlePresentationsImportJson },
+  // Import (self-contained .deck bundle — re-hydrates embedded assets)
+  { method: 'POST', pattern: '/api/presentations/import/deck', handler: handlePresentationsImportDeck },
+  // Import (markdown deck format — deterministic, no AI)
+  { method: 'POST', pattern: '/api/presentations/import/markdown', handler: handlePresentationsImportMarkdown },
+
+  { pattern: /^\/api\/presentations\/([^/]+)\/scope$/, handler: handlePresentationScope },
+  { pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/, handler: handlePresentationDuplicate },
+
+  // Lightweight revision probe (staleness check for waking editor tabs)
+  { pattern: /^\/api\/presentations\/([^/]+)\/revision$/, handler: handlePresentationRevision },
+
+  { pattern: /^\/api\/presentations\/([^/]+)$/, handler: handlePresentationItemRoute },
+
+  // Version history (snapshots)
+  { pattern: /^\/api\/presentations\/([^/]+)\/versions$/, handler: handlePresentationVersions },
+  // Session-end snapshot (called when editing session ends)
+  { pattern: /^\/api\/presentations\/([^/]+)\/session-end$/, handler: handlePresentationSessionEnd },
+  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/, handler: handlePresentationRestoreVersion },
+  // Version export as JSON
+  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/, handler: handlePresentationVersionExport },
+  // AI-powered version comparison
+  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/, handler: handlePresentationVersionCompareAi },
+  // Single version retrieval (for preview/comparison)
+  { pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/, handler: handlePresentationVersionItem },
+
+  // Presence / soft locks (advisory)
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock$/, handler: handlePresentationLockStatus },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/acquire$/, handler: handlePresentationLockAcquire },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/refresh$/, handler: handlePresentationLockRefresh },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/release$/, handler: handlePresentationLockRelease },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/force-release$/, handler: handlePresentationLockForceRelease },
+
+  // Lock request endpoints
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/request$/, handler: handlePresentationLockRequest },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests$/, handler: handlePresentationLockRequestsList },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/accept$/, handler: handlePresentationLockRequestAccept },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/reject$/, handler: handlePresentationLockRequestReject },
+  { pattern: /^\/api\/presentations\/([^/]+)\/lock\/my-request$/, handler: handlePresentationLockMyRequest },
+
+  // ============================================================
+  // SLIDE-LEVEL LOCKS (concurrent editing)
+  // ============================================================
+
+  // List all slide locks for a presentation
+  { pattern: /^\/api\/presentations\/([^/]+)\/slide-locks$/, handler: handleSlideLocksList },
+  // Release all slide locks for current user
+  { pattern: /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/, handler: handleSlideLocksReleaseAll },
+  // Refresh a specific slide lock
+  { pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/, handler: handleSlideLockRefresh },
+  // Acquire, release, or read a specific slide lock (method-dispatched)
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockStatus },
+  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockAcquire },
+  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/, handler: handleSlideLockRelease },
+
+  // ============================================================
+  // IMPORT SLIDES AS IMAGES (PDF → image-slide)
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/, handler: handlePresentationImportSlidesAsImages },
+
+  // ============================================================
+  // AI ANALYSIS
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/analyze$/, handler: handlePresentationAnalyze },
+
+  // ============================================================
+  // THEME CHANGE
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/, handler: handleAnalyzeThemeChange },
+  { pattern: /^\/api\/presentations\/([^/]+)\/change-theme$/, handler: handleChangeTheme },
+
+  // ============================================================
+  // TAGS
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/tags$/, handler: handlePresentationTagsRoute },
+
+  // ============================================================
+  // OWNERSHIP TRANSFER
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/transfer-ownership$/, handler: handleOwnershipTransfer },
+
+  // ============================================================
+  // RENDER SLIDE (server-side rendering for custom slide types)
+  // ============================================================
+  { pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/, handler: handleRenderSlideRoute },
+
+  // ============================================================
+  // COMMENTS
+  // ============================================================
+
+  // Comment counts per slide (before more specific routes)
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/counts$/, handler: handlePresentationCommentCounts },
+  // Per-deck notification subscription (personal, GET current / PUT set)
+  { pattern: /^\/api\/presentations\/([^/]+)\/subscription$/, handler: handlePresentationSubscription },
+  // Mark comment threads as read for the current user (batch)
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/, handler: handlePresentationCommentsMarkRead },
+  // SSE endpoint for real-time comment updates
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/events$/, handler: handlePresentationCommentEvents },
+  // Resolve comment
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/, handler: handlePresentationCommentResolve },
+  // Reopen comment
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/, handler: handlePresentationCommentReopen },
+  // Dismiss AI suggestion
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/, handler: handlePresentationCommentDismiss },
+  // Apply AI suggestion (create proposed slide)
+  { pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/, handler: handlePresentationCommentApply },
+  // Single comment operations (GET/PUT/DELETE, method-dispatched)
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentGet },
+  { method: 'PUT', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentUpdate },
+  { method: 'DELETE', pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/, handler: handlePresentationCommentDelete },
+  // List/Create comments (method-dispatched)
+  { method: 'GET', pattern: /^\/api\/presentations\/([^/]+)\/comments$/, handler: handlePresentationCommentsList },
+  { method: 'POST', pattern: /^\/api\/presentations\/([^/]+)\/comments$/, handler: handlePresentationCommentsCreate },
+
+  // This module purposely does NOT handle export/publish routes.
+  // Those live in `export.js` and `publish.js`.
+
+  // Note: keep a tiny placeholder route for early "bad import" debugging.
+  { method: 'POST', pattern: '/api/presentations/import', handler: handleLegacyImportBadRequest },
+];
+
+/**
+ * Dispatch a `/api/presentations/*` request through the first matching route.
+ *
+ * Signature and return contract are unchanged from the original hand-written
+ * `if`-chain: returns the matched handler's result (truthy = handled), or
+ * `false` when no route matches (letting the caller fall through).
+ *
+ * @param {PresentationsContext} ctx
+ * @returns {Promise<unknown>|unknown}
+ */
 export async function handlePresentations({
   repoRoot,
   req,
@@ -72,630 +310,19 @@ export async function handlePresentations({
   url,
   authedUser,
 }) {
-  if (url.pathname === '/api/presentations' && req.method === 'GET') {
-    return handlePresentationsList({ repoRoot, req, res, url, authedUser });
-  }
+  const ctx = { repoRoot, req, res, url, authedUser };
 
-  // Search endpoint (before :id routes to avoid conflicts)
-  if (url.pathname === '/api/presentations/search' && req.method === 'GET') {
-    return handlePresentationsSearch({ repoRoot, req, res, url, authedUser });
-  }
+  for (const route of ROUTES) {
+    if (route.method && req.method !== route.method) continue;
 
-  // Popular presentations endpoint (before :id routes to avoid conflicts)
-  if (url.pathname === '/api/presentations/popular' && req.method === 'GET') {
-    return handlePopularPresentations({ repoRoot, req, res, url, authedUser });
-  }
-
-  // Trash routes (before :id routes to avoid conflicts)
-  if (url.pathname === '/api/presentations/trash') {
-    return handlePresentationsTrashList({ repoRoot, req, res, url, authedUser });
-  }
-
-  const trashRestoreMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)\/restore$/);
-  if (trashRestoreMatch) {
-    return handlePresentationRestore(
-      { repoRoot, req, res, url, authedUser },
-      trashRestoreMatch[1]
-    );
-  }
-
-  const permanentDeleteMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)\/permanent$/);
-  if (permanentDeleteMatch) {
-    return handlePresentationPermanentDelete(
-      { repoRoot, req, res, url, authedUser },
-      permanentDeleteMatch[1]
-    );
-  }
-
-  // Translate a set of arbitrary fields (key -> string). Used for slide-level preview/apply in editor.
-  const translateFieldsMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/translate\/fields$/
-  );
-  if (translateFieldsMatch) {
-    return handlePresentationTranslateFields(
-      { repoRoot, req, res, url, authedUser },
-      translateFieldsMatch[1]
-    );
-  }
-
-  // Translate only missing (empty) fields into the other language (safe for manual edits).
-  const translateMissingMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/translate\/missing$/
-  );
-  if (translateMissingMatch) {
-    return handlePresentationTranslateMissing(
-      { repoRoot, req, res, url, authedUser },
-      translateMissingMatch[1]
-    );
-  }
-
-  // Translate a presentation into the other supported language and store as an i18n version.
-  const translateMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/translate$/
-  );
-  if (translateMatch) {
-    return handlePresentationTranslate(
-      { repoRoot, req, res, url, authedUser },
-      translateMatch[1]
-    );
-  }
-
-  const describeMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/description\/generate$/
-  );
-  if (describeMatch) {
-    return handlePresentationDescriptionGenerate(
-      { repoRoot, req, res, url, authedUser },
-      describeMatch[1]
-    );
-  }
-
-  if (url.pathname === '/api/presentations' && req.method === 'POST') {
-    return handlePresentationsCreate({ repoRoot, req, res, url, authedUser });
-  }
-
-  // Import (portable JSON deck format)
-  if (url.pathname === '/api/presentations/import/json' && req.method === 'POST') {
-    return handlePresentationsImportJson({ repoRoot, req, res, url, authedUser });
-  }
-
-  // Import (self-contained .deck bundle — re-hydrates embedded assets)
-  if (url.pathname === '/api/presentations/import/deck' && req.method === 'POST') {
-    return handlePresentationsImportDeck({ repoRoot, req, res, url, authedUser });
-  }
-
-  // Import (markdown deck format — deterministic, no AI)
-  if (url.pathname === '/api/presentations/import/markdown' && req.method === 'POST') {
-    return handlePresentationsImportMarkdown({ repoRoot, req, res, url, authedUser });
-  }
-
-  const scopeMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/scope$/
-  );
-  if (scopeMatch) {
-    return handlePresentationScope(
-      { repoRoot, req, res, url, authedUser },
-      scopeMatch[1]
-    );
-  }
-
-  const dupMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/duplicate$/
-  );
-  if (dupMatch) {
-    return handlePresentationDuplicate(
-      { repoRoot, req, res, url, authedUser },
-      dupMatch[1]
-    );
-  }
-
-  // Lightweight revision probe (staleness check for waking editor tabs)
-  const revisionMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/revision$/
-  );
-  if (revisionMatch) {
-    return handlePresentationRevision(
-      { repoRoot, req, res, url, authedUser },
-      revisionMatch[1]
-    );
-  }
-
-  const presMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)$/);
-  if (presMatch) {
-    // Skip special routes handled by other modules
-    const specialRoutes = ['shared-with-me', 'search', 'trash', 'import', 'popular'];
-    if (specialRoutes.includes(presMatch[1])) {
-      return false;
+    if (typeof route.pattern === 'string') {
+      if (url.pathname !== route.pattern) continue;
+      return route.handler(ctx);
     }
-    return handlePresentationItem(
-      { repoRoot, req, res, url, authedUser },
-      presMatch[1]
-    );
-  }
 
-  // Version history (snapshots)
-  const versionsMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/versions$/
-  );
-  if (versionsMatch) {
-    return handlePresentationVersions(
-      { repoRoot, req, res, url, authedUser },
-      versionsMatch[1]
-    );
-  }
-
-  // Session-end snapshot (called when editing session ends)
-  const sessionEndMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/session-end$/
-  );
-  if (sessionEndMatch) {
-    return handlePresentationSessionEnd(
-      { repoRoot, req, res, url, authedUser },
-      sessionEndMatch[1]
-    );
-  }
-
-  const restoreMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/
-  );
-  if (restoreMatch) {
-    return handlePresentationRestoreVersion(
-      { repoRoot, req, res, url, authedUser },
-      restoreMatch[1],
-      restoreMatch[2]
-    );
-  }
-
-  // Version export as JSON
-  const versionExportMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/
-  );
-  if (versionExportMatch) {
-    return handlePresentationVersionExport(
-      { repoRoot, req, res, url, authedUser },
-      versionExportMatch[1],
-      versionExportMatch[2]
-    );
-  }
-
-  // AI-powered version comparison
-  const versionCompareAiMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/
-  );
-  if (versionCompareAiMatch) {
-    return handlePresentationVersionCompareAi(
-      { repoRoot, req, res, url, authedUser },
-      versionCompareAiMatch[1],
-      versionCompareAiMatch[2]
-    );
-  }
-
-  // Single version retrieval (for preview/comparison)
-  const versionItemMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/
-  );
-  if (versionItemMatch) {
-    return handlePresentationVersionItem(
-      { repoRoot, req, res, url, authedUser },
-      versionItemMatch[1],
-      versionItemMatch[2]
-    );
-  }
-
-  // Presence / soft locks (advisory)
-  const lockStatusMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock$/
-  );
-  if (lockStatusMatch) {
-    return handlePresentationLockStatus(
-      { repoRoot, req, res, url, authedUser },
-      lockStatusMatch[1]
-    );
-  }
-
-  const lockAcquireMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/acquire$/
-  );
-  if (lockAcquireMatch) {
-    return handlePresentationLockAcquire(
-      { repoRoot, req, res, url, authedUser },
-      lockAcquireMatch[1]
-    );
-  }
-
-  const lockRefreshMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/refresh$/
-  );
-  if (lockRefreshMatch) {
-    return handlePresentationLockRefresh(
-      { repoRoot, req, res, url, authedUser },
-      lockRefreshMatch[1]
-    );
-  }
-
-  const lockReleaseMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/release$/
-  );
-  if (lockReleaseMatch) {
-    return handlePresentationLockRelease(
-      { repoRoot, req, res, url, authedUser },
-      lockReleaseMatch[1]
-    );
-  }
-
-  const lockForceReleaseMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/force-release$/
-  );
-  if (lockForceReleaseMatch) {
-    return handlePresentationLockForceRelease(
-      { repoRoot, req, res, url, authedUser },
-      lockForceReleaseMatch[1]
-    );
-  }
-
-  // Lock request endpoints
-  const lockRequestMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/request$/
-  );
-  if (lockRequestMatch) {
-    return handlePresentationLockRequest(
-      { repoRoot, req, res, url, authedUser },
-      lockRequestMatch[1]
-    );
-  }
-
-  const lockRequestsListMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/requests$/
-  );
-  if (lockRequestsListMatch) {
-    return handlePresentationLockRequestsList(
-      { repoRoot, req, res, url, authedUser },
-      lockRequestsListMatch[1]
-    );
-  }
-
-  const lockRequestAcceptMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/accept$/
-  );
-  if (lockRequestAcceptMatch) {
-    return handlePresentationLockRequestAccept(
-      { repoRoot, req, res, url, authedUser },
-      lockRequestAcceptMatch[1],
-      lockRequestAcceptMatch[2]
-    );
-  }
-
-  const lockRequestRejectMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/requests\/([^/]+)\/reject$/
-  );
-  if (lockRequestRejectMatch) {
-    return handlePresentationLockRequestReject(
-      { repoRoot, req, res, url, authedUser },
-      lockRequestRejectMatch[1],
-      lockRequestRejectMatch[2]
-    );
-  }
-
-  const lockMyRequestMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/lock\/my-request$/
-  );
-  if (lockMyRequestMatch) {
-    return handlePresentationLockMyRequest(
-      { repoRoot, req, res, url, authedUser },
-      lockMyRequestMatch[1]
-    );
-  }
-
-  // ============================================================
-  // SLIDE-LEVEL LOCKS (concurrent editing)
-  // ============================================================
-
-  // List all slide locks for a presentation
-  const slideLocksListMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/slide-locks$/
-  );
-  if (slideLocksListMatch) {
-    return handleSlideLocksList(
-      { repoRoot, req, res, url, authedUser },
-      slideLocksListMatch[1]
-    );
-  }
-
-  // Release all slide locks for current user
-  const slideLocksReleaseAllMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/
-  );
-  if (slideLocksReleaseAllMatch) {
-    return handleSlideLocksReleaseAll(
-      { repoRoot, req, res, url, authedUser },
-      slideLocksReleaseAllMatch[1]
-    );
-  }
-
-  // Refresh a specific slide lock
-  const slideLockRefreshMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/
-  );
-  if (slideLockRefreshMatch) {
-    return handleSlideLockRefresh(
-      { repoRoot, req, res, url, authedUser },
-      slideLockRefreshMatch[1],
-      slideLockRefreshMatch[2]
-    );
-  }
-
-  // Acquire or release a specific slide lock
-  const slideLockMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/
-  );
-  if (slideLockMatch) {
-    if (req.method === 'GET') {
-      return handleSlideLockStatus(
-        { repoRoot, req, res, url, authedUser },
-        slideLockMatch[1],
-        slideLockMatch[2]
-      );
-    }
-    if (req.method === 'POST') {
-      return handleSlideLockAcquire(
-        { repoRoot, req, res, url, authedUser },
-        slideLockMatch[1],
-        slideLockMatch[2]
-      );
-    }
-    if (req.method === 'DELETE') {
-      return handleSlideLockRelease(
-        { repoRoot, req, res, url, authedUser },
-        slideLockMatch[1],
-        slideLockMatch[2]
-      );
-    }
-  }
-
-  // ============================================================
-  // IMPORT SLIDES AS IMAGES (PDF → image-slide)
-  // ============================================================
-
-  const importSlidesMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/
-  );
-  if (importSlidesMatch) {
-    return handlePresentationImportSlidesAsImages(
-      { repoRoot, req, res, url, authedUser },
-      importSlidesMatch[1]
-    );
-  }
-
-  // ============================================================
-  // AI ANALYSIS
-  // ============================================================
-
-  const analyzeMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/analyze$/
-  );
-  if (analyzeMatch) {
-    return handlePresentationAnalyze(
-      { repoRoot, req, res, url, authedUser },
-      analyzeMatch[1]
-    );
-  }
-
-  // ============================================================
-  // THEME CHANGE
-  // ============================================================
-
-  const analyzeThemeChangeMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/
-  );
-  if (analyzeThemeChangeMatch) {
-    return handleAnalyzeThemeChange(
-      { repoRoot, req, res, url, authedUser },
-      analyzeThemeChangeMatch[1]
-    );
-  }
-
-  const changeThemeMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/change-theme$/
-  );
-  if (changeThemeMatch) {
-    return handleChangeTheme(
-      { repoRoot, req, res, url, authedUser },
-      changeThemeMatch[1]
-    );
-  }
-
-  // ============================================================
-  // TAGS
-  // ============================================================
-
-  const tagsMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/tags$/
-  );
-  if (tagsMatch) {
-    return handlePresentationTags(
-      { req, res, url, presentationId: tagsMatch[1] }
-    );
-  }
-
-  // ============================================================
-  // OWNERSHIP TRANSFER
-  // ============================================================
-
-  const ownershipMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/transfer-ownership$/
-  );
-  if (ownershipMatch) {
-    return handleOwnershipTransfer(
-      { repoRoot, req, res, url, authedUser },
-      ownershipMatch[1]
-    );
-  }
-
-  // ============================================================
-  // RENDER SLIDE (server-side rendering for custom slide types)
-  // ============================================================
-
-  const renderSlideMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/render-slide$/
-  );
-  if (renderSlideMatch) {
-    return handleRenderSlide(
-      { repoRoot, req, res, authedUser },
-      renderSlideMatch[1]
-    );
-  }
-
-  // ============================================================
-  // COMMENTS
-  // ============================================================
-
-  // Comment counts per slide (before more specific routes)
-  const commentCountsMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/counts$/
-  );
-  if (commentCountsMatch) {
-    return handlePresentationCommentCounts(
-      { repoRoot, req, res, url, authedUser },
-      commentCountsMatch[1]
-    );
-  }
-
-  // Per-deck notification subscription (personal, GET current / PUT set)
-  const subscriptionMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/subscription$/
-  );
-  if (subscriptionMatch) {
-    return handlePresentationSubscription(
-      { repoRoot, req, res, url, authedUser },
-      subscriptionMatch[1]
-    );
-  }
-
-  // Mark comment threads as read for the current user (batch)
-  const commentMarkReadMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/
-  );
-  if (commentMarkReadMatch) {
-    return handlePresentationCommentsMarkRead(
-      { repoRoot, req, res, url, authedUser },
-      commentMarkReadMatch[1]
-    );
-  }
-
-  // SSE endpoint for real-time comment updates
-  const commentEventsMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/events$/
-  );
-  if (commentEventsMatch) {
-    return handlePresentationCommentEvents(
-      { repoRoot, req, res, url, authedUser },
-      commentEventsMatch[1]
-    );
-  }
-
-  // Resolve comment
-  const commentResolveMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/
-  );
-  if (commentResolveMatch) {
-    return handlePresentationCommentResolve(
-      { repoRoot, req, res, url, authedUser },
-      commentResolveMatch[1],
-      commentResolveMatch[2]
-    );
-  }
-
-  // Reopen comment
-  const commentReopenMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/
-  );
-  if (commentReopenMatch) {
-    return handlePresentationCommentReopen(
-      { repoRoot, req, res, url, authedUser },
-      commentReopenMatch[1],
-      commentReopenMatch[2]
-    );
-  }
-
-  // Dismiss AI suggestion
-  const commentDismissMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/
-  );
-  if (commentDismissMatch) {
-    return handlePresentationCommentDismiss(
-      { repoRoot, req, res, url, authedUser },
-      commentDismissMatch[1],
-      commentDismissMatch[2]
-    );
-  }
-
-  // Apply AI suggestion (create proposed slide)
-  const commentApplyMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/
-  );
-  if (commentApplyMatch) {
-    return handlePresentationCommentApply(
-      { repoRoot, req, res, url, authedUser },
-      commentApplyMatch[1],
-      commentApplyMatch[2]
-    );
-  }
-
-  // Single comment operations (GET/PUT/DELETE)
-  const commentItemMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/
-  );
-  if (commentItemMatch) {
-    const presId = commentItemMatch[1];
-    const commentId = commentItemMatch[2];
-    if (req.method === 'GET') {
-      return handlePresentationCommentGet(
-        { repoRoot, req, res, url, authedUser },
-        presId,
-        commentId
-      );
-    }
-    if (req.method === 'PUT') {
-      return handlePresentationCommentUpdate(
-        { repoRoot, req, res, url, authedUser },
-        presId,
-        commentId
-      );
-    }
-    if (req.method === 'DELETE') {
-      return handlePresentationCommentDelete(
-        { repoRoot, req, res, url, authedUser },
-        presId,
-        commentId
-      );
-    }
-  }
-
-  // List/Create comments
-  const commentsListMatch = url.pathname.match(
-    /^\/api\/presentations\/([^/]+)\/comments$/
-  );
-  if (commentsListMatch) {
-    if (req.method === 'GET') {
-      return handlePresentationCommentsList(
-        { repoRoot, req, res, url, authedUser },
-        commentsListMatch[1]
-      );
-    }
-    if (req.method === 'POST') {
-      return handlePresentationCommentsCreate(
-        { repoRoot, req, res, url, authedUser },
-        commentsListMatch[1]
-      );
-    }
-  }
-
-  // This module purposely does NOT handle export/publish routes.
-  // Those live in `export.js` and `publish.js`.
-
-  // Note: keep a tiny placeholder route for early "bad import" debugging.
-  if (url.pathname === '/api/presentations/import' && req.method === 'POST') {
-    return badRequest(res, 'Use /api/presentations/import/json');
+    const match = route.pattern.exec(url.pathname);
+    if (!match) continue;
+    return route.handler(ctx, ...match.slice(1));
   }
 
   return false;
