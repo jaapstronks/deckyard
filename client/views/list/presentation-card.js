@@ -131,18 +131,25 @@ export function createCardRenderer({
     };
 
     // Cheap fallback while no raster exists (generation pending, disabled, or
-    // failed): the deck title on a neutral surface. Deliberately not a live
-    // slide render — speed is the whole point of Fase B.
+    // failed): the deck title on the theme's own background color (or a neutral
+    // surface when unknown). Deliberately not a live slide render — speed is
+    // the whole point of Fase B.
     const showPlaceholder = () => {
       thumb.classList.remove('is-loading');
       thumb.classList.add('is-placeholder');
       thumb.innerHTML = '';
-      thumb.append(
-        h('div', {
-          class: 'thumb-placeholder-title',
-          text: p.title || t('list.untitled', 'Untitled'),
-        })
-      );
+      const titleEl = h('div', {
+        class: 'thumb-placeholder-title',
+        text: p.title || t('list.untitled', 'Untitled'),
+      });
+      if (p.thumbBg) {
+        // Tint the card in the deck's theme color and pick a legible text color.
+        thumb.style.background = p.thumbBg;
+        titleEl.style.color = readableTextColor(p.thumbBg);
+      } else {
+        thumb.style.background = '';
+      }
+      thumb.append(titleEl);
     };
 
     const showThumbImage = () => {
@@ -175,11 +182,11 @@ export function createCardRenderer({
       img.src = thumbUrl;
     };
 
-    // p.firstSlide tells us cheaply whether the deck has any slide, so empty
+    // p.hasSlides tells us cheaply whether the deck has any slide, so empty
     // decks skip the network round-trip entirely. Render lazily, once the card
     // is near the viewport.
     thumbLoader.observe(thumb, () => {
-      if (!p.firstSlide) {
+      if (!p.hasSlides) {
         showEmpty();
         return;
       }
@@ -504,6 +511,25 @@ export function createCardRenderer({
 }
 
 /**
+ * Pick a legible text color (near-black or white) for a hex background, using
+ * the WCAG relative-luminance threshold. Falls back to white on a bad input.
+ * @param {string} hex - `#rgb` or `#rrggbb`
+ * @returns {string}
+ */
+function readableTextColor(hex) {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return '#ffffff';
+  let h6 = m[1];
+  if (h6.length === 3) h6 = h6[0] + h6[0] + h6[1] + h6[1] + h6[2] + h6[2];
+  const r = parseInt(h6.slice(0, 2), 16) / 255;
+  const g = parseInt(h6.slice(2, 4), 16) / 255;
+  const b = parseInt(h6.slice(4, 6), 16) / 255;
+  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return lum > 0.4 ? '#111827' : '#ffffff';
+}
+
+/**
  * Get the visibility indicator element for a presentation.
  * Shows different icons based on the presentation's visibility:
  * - Published (globe icon)
@@ -572,9 +598,7 @@ export function toListItem(pres) {
     revision: Number(p.revision) || 1,
     i18n: p.i18n || null,
     tags: Array.isArray(p.tags) ? p.tags : [],
-    firstSlide:
-      first && typeof first.id === 'string' && typeof first.type === 'string'
-        ? { id: first.id, type: first.type, content: first.content || {} }
-        : null,
+    hasSlides:
+      !!first && typeof first.id === 'string' && typeof first.type === 'string',
   };
 }

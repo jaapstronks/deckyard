@@ -2,6 +2,7 @@ import { listPresentations } from '../../../storage/presentations.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { serveJson } from '../../../utils/http.js';
 import { normalizePresentationScope, isUnrestricted } from '../../../utils/presentation-authz.js';
+import { resolveThemeThumbBg } from '../../../utils/themes.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getOrgId } from '../../../utils/context.js';
@@ -47,12 +48,22 @@ export async function handlePresentationsList({ repoRoot, res, authedUser } = {}
   const publishedSet = await getPublishedPresentationIds(presentationIds, ctx);
   const collaboratorCounts = await getCollaboratorCounts(presentationIds, ctx);
 
-  // Attach tags, isPublished, and collaboratorCount to each presentation
+  // Resolve each distinct theme's background color once, for the thumbnail
+  // placeholder shown until the rasterized PNG loads (theme loads are memoized).
+  const thumbBgByTheme = new Map();
+  await Promise.all(
+    [...new Set(filtered.map((p) => p.theme).filter(Boolean))].map(async (themeId) => {
+      thumbBgByTheme.set(themeId, await resolveThemeThumbBg(repoRoot, themeId));
+    })
+  );
+
+  // Attach tags, isPublished, collaboratorCount, and thumbBg to each presentation
   const withMetadata = filtered.map((p) => ({
     ...p,
     tags: tagsMap.get(p.id) || [],
     isPublished: publishedSet.has(p.id),
     collaboratorCount: collaboratorCounts.get(p.id) || 0,
+    thumbBg: thumbBgByTheme.get(p.theme) || null,
   }));
 
   serveJson(res, 200, withMetadata);

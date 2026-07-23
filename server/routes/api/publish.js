@@ -13,6 +13,7 @@ import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
+import { warmDeckThumbnail } from './presentations/thumbnail.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('publish');
@@ -108,9 +109,13 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
         modified: entry.modified,
       },
     };
-    await updatePresentation(repoRoot, id, nextPres, {
+    const updated = await updatePresentation(repoRoot, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
+
+    // Warm the deck-grid thumbnail for the post-publish revision so the next
+    // list view shows the raster immediately (fire-and-forget, non-blocking).
+    warmDeckThumbnail(repoRoot, updated || nextPres, authedUser);
 
     await maybeFireWebhook(repoRoot, req, {
       event: 'presentation.published',

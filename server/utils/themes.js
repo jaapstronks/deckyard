@@ -159,6 +159,30 @@ export function clearCustomThemeCache(themeId) {
   }
 }
 
+/** Hex colors we're willing to inline as a placeholder background. */
+const HEX_COLOR_RE = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+/**
+ * Resolve a theme's base slide background color, for the deck-grid thumbnail
+ * placeholder (shown until the rasterized PNG loads). Returns the theme's
+ * `--t-color-background` cssVar when it's a plain hex, else null (the card then
+ * falls back to a neutral surface). Cheap: `loadTheme` is memoized.
+ *
+ * @param {string} repoRoot
+ * @param {string} rawThemeId
+ * @param {Object|null} [ctx]
+ * @returns {Promise<string|null>}
+ */
+export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
+  try {
+    const theme = await loadTheme(repoRoot, rawThemeId, ctx);
+    const bg = theme?.cssVars?.['--t-color-background'];
+    return typeof bg === 'string' && HEX_COLOR_RE.test(bg.trim()) ? bg.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function listThemeIds(repoRoot) {
   const coreDir = path.join(repoRoot, 'themes');
   const customDir = path.join(repoRoot, 'custom', 'themes');

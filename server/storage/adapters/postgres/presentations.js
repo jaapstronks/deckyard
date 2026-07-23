@@ -76,13 +76,7 @@ export function withPresentations(Base) {
                 otherLang: dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
               }
             : null,
-          firstSlide: firstSlide
-            ? {
-                id: firstSlide.id,
-                type: firstSlide.type,
-                content: firstSlide.content || {},
-              }
-            : null,
+          hasSlides: !!firstSlide,
         };
       });
     }
@@ -359,13 +353,7 @@ export function withPresentations(Base) {
                 otherLang: dominant === 'nl' ? 'en-GB' : dominant === 'en-GB' ? 'nl' : null,
               }
             : null,
-          firstSlide: firstSlide
-            ? {
-                id: firstSlide.id,
-                type: firstSlide.type,
-                content: firstSlide.content || {},
-              }
-            : null,
+          hasSlides: !!firstSlide,
         };
       });
     }
