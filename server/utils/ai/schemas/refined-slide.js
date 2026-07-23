@@ -56,6 +56,8 @@ const metricSchema = z.object({
 const titleSlideSchema = z.object({
   title: requiredTitleSchema,
   subheading: subheadingSchema,
+  // One generic meta line (speaker · date · organisation).
+  meta: subheadingSchema,
   background: backgroundSchema,
 });
 

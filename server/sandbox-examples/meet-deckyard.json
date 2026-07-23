@@ -20,7 +20,7 @@
       "content": {
         "title": "Meet Deckyard",
         "subheading": "A presentation engine for humans and AI agents",
-        "byline": "Decks as data, not as files",
+        "meta": "Decks as data, not as files",
         "background": "mist"
       }
     },

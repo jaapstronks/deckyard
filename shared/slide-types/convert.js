@@ -438,12 +438,16 @@ export function convertSlideToType(
     }
   }
 
-  // title <-> chapter-title
+  // title <-> chapter-title. Both share `title` + `subheading`, so those carry
+  // across losslessly; the title slide's `meta` has no chapter equivalent and
+  // drops (a filled meta warns via getConversionLossyKeys).
   if (fromType === 'title-slide' && targetType === 'chapter-title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
+    if (nonEmptyString(from?.subheading)) to.subheading = from.subheading;
   }
   if (fromType === 'chapter-title-slide' && targetType === 'title-slide') {
     to.title = nonEmptyString(from?.title) ? from.title : to.title;
+    if (nonEmptyString(from?.subheading)) to.subheading = from.subheading;
     // Give the target a background from the theme's own presets when it has
     // none. Canonical key is slideBgImage. No theme (or no presets) leaves it
     // flat.
