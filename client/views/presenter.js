@@ -30,6 +30,7 @@ import {
   applyPollInteractionStateToStage,
 } from './presenter/interactions.js';
 import { createPresenterToolsMenu } from './presenter/tools-menu.js';
+import { createPresenterFollowCodesPill } from './presenter/follow-codes-pill.js';
 import { createPresenterLangSeg } from './presenter/lang-seg.js';
 import { createPresenterInteractionControls } from './presenter/interaction-controls.js';
 import { createPresenterControlToggle } from './presenter/control-toggle.js';
@@ -122,37 +123,9 @@ export async function renderPresenter(
     await copyToClipboardWithPromptFallback(text, label);
   };
 
-  // Developer convenience: show /go + 4-letter code in the top bar (outside the slide).
-  const followCodesPill = h('div', {
-    class: 'presenter-followcodes',
-    hidden: true,
-    title: t('presenter.followCodes.title', 'Follow-along: /go + code'),
-  });
-  const followCodesText = h('div', {
-    class: 'presenter-followcodes-text',
-    text: '',
-  });
-  const followCodesCopyBtn = h('button', {
-    class: 'btn btn-secondary',
-    text: t('presenter.followCodes.copy', 'Copy /go + code'),
-    disabled: true,
-    onclick: async () => {
-      if (!sessionFollowCodes) return;
-      const code =
-        (modeLang === 'nl'
-          ? sessionFollowCodes?.nl
-          : sessionFollowCodes?.en) ||
-        sessionFollowCodes?.nl ||
-        sessionFollowCodes?.en;
-      if (!code) return;
-      const payload = `/go ${code}`;
-      await copyToClipboardWithPromptFallback(payload, 'Copy:');
-    },
-  });
-  followCodesPill.append(
-    followCodesText,
-    followCodesCopyBtn
-  );
+  // Developer convenience: show /go + 4-letter code in the top bar (outside the
+  // slide). The tools menu re-parents the pill and relabels its copy button.
+  const followCodes = createPresenterFollowCodesPill({ modeLang });
 
   const translatePill = h('div', {
     class: 'pill',
@@ -166,8 +139,8 @@ export async function renderPresenter(
     getSessionId: () => sessionId,
     getSessionPresentationId: () => sessionPresId,
     copyText,
-    followCodesPill,
-    followCodesCopyBtn,
+    followCodesPill: followCodes.el,
+    followCodesCopyBtn: followCodes.copyBtn,
   });
   const toolsWrap = toolsMenu.el;
   const interactionCtl = createPresenterInteractionControls({
@@ -870,21 +843,7 @@ export async function renderPresenter(
     closeSessionEvents = sess?.close || null;
 
     if (sessionFollowCodes) {
-      try {
-        const code =
-          (modeLang === 'nl'
-            ? sessionFollowCodes?.nl
-            : sessionFollowCodes?.en) ||
-          sessionFollowCodes?.nl ||
-          sessionFollowCodes?.en;
-        followCodesText.textContent = code
-          ? `/go ${code}`
-          : '/go';
-        followCodesPill.hidden = !code;
-        followCodesCopyBtn.disabled = !code;
-      } catch {
-        // ignore
-      }
+      followCodes.setCodes(sessionFollowCodes);
       // Mirror the join codes to an already-open projector window so the beamer
       // shows the same follow-invite/poll/feedback codes.
       presentChannel.postCodes(sessionFollowCodes);
