@@ -4,6 +4,8 @@ import { sessions } from './state.js';
 import { isExpired, loadSessionsFromDisk, schedulePersist } from './disk.js';
 import { newSessionId, nowState } from './ids.js';
 import { closeSession } from './close.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('sessions');
 
 // Follow codes expire after 24 hours (must match follow-codes.js)
 const FOLLOW_CODE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -27,12 +29,11 @@ async function refreshFollowCodes(repoRoot, session) {
     session.followCodes = followCodes;
     session.followCodesCreatedAt = Date.now();
 
-    console.log(`[Follow Codes] Refreshed expired codes for presentation ${presId}:`, {
-      nl: followCodes.nl,
-      en: followCodes.en,
-    });
+    // Don't log the code values: a live follow code resolves to a presenter's
+    // follow URL, so it's a secret (audit L2).
+    log.info(`[Follow Codes] Refreshed expired codes for presentation ${presId}`);
   } catch (error) {
-    console.error('Failed to refresh follow codes:', error);
+    log.error('Failed to refresh follow codes:', error);
   }
 
   return followCodes;
@@ -79,7 +80,7 @@ export async function createPresentSession(repoRoot, { presentationId }) {
     // Check if follow codes need refresh
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
-      console.log(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
+      log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
       followCodes = await refreshFollowCodes(repoRoot, s);
     }
 
@@ -104,13 +105,11 @@ export async function createPresentSession(repoRoot, { presentationId }) {
     followCodes.nl = await createFollowCode(repoRoot, nlFollowUrl);
     followCodes.en = await createFollowCode(repoRoot, enFollowUrl);
 
-    console.log(`[Follow Codes] Generated for presentation ${presId}:`, {
-      nl: followCodes.nl,
-      en: followCodes.en,
-    });
+    // Don't log the code values (secret; see audit L2).
+    log.info(`[Follow Codes] Generated for presentation ${presId}`);
   } catch (error) {
     // If code generation fails, continue without codes
-    console.error('Failed to generate follow codes:', error);
+    log.error('Failed to generate follow codes:', error);
   }
 
   const s = {

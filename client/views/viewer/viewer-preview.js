@@ -3,8 +3,8 @@
  * Large slide display with navigation arrows.
  */
 
-import { attachThumbScale } from '../../lib/thumb-scale.js';
-import { cleanupSlideRuntimes, mountSlideInto } from '../../lib/slide-render.js';
+import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
+import { cleanupSlideRuntimes, mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { t } from '../../lib/ui-i18n.js';
 
 export function createViewerPreview({

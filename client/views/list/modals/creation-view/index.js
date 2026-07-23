@@ -13,11 +13,11 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../../lib/modal.js';
+import { confirmModal } from '../../../../lib/dom/modal.js';
 import { createFocusTrap } from '../../../../lib/dom.js';
-import { getFeatures } from '../../../../lib/features.js';
-import { createVisualThemePicker } from '../../../../lib/theme-select.js';
-import { createLangSelector } from '../../../../lib/lang-selector.js';
+import { getFeatures } from '../../../../lib/state/features.js';
+import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
+import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
 import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';

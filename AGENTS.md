@@ -51,6 +51,16 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Slide-specific “static” copy should be centralized in a small per-slide `COPY` map keyed by language if needed (see `follow-invite-slide`).
   - Don’t sprinkle ad-hoc strings across unrelated modules.
 
+- **API error envelope (internal `/api/*`)**
+  - One shape: `{ ok:false, error:'<machine_code>', message?:'<human>', details?:… }`.
+    `error` is a stable snake_case code (branch on it); `message` is display text.
+  - Produce it through the `server/utils/http.js` helpers (`badRequest`, `notFound`,
+    `rateLimited`, …) or `jsonError(res, status, code, message?)` — don't hand-roll
+    `serveJson(res, status, { error })`. Client-side, read `err.code` / `err.message`
+    from `api()`. See **`docs/reference/api-error-format.md`**; covered by
+    `tests/api-error-envelope.test.js`. The public `/api/v1/*` surface keeps its
+    own openapi-documented schema.
+
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`esc()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`).
   - Don’t introduce raw/unsafe HTML insertion.

@@ -5,6 +5,7 @@ import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { getPresentation } from '../storage/presentations.js';
 import { getPublishedById } from '../storage/published.js';
 import { buildStandaloneHtml } from '../export/html.js';
+import { buildReaderHtml } from '../export/reader.js';
 import { loadTheme } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../config/database.js';
@@ -32,6 +33,8 @@ import { handleFeed } from './feed.js';
 import { getOrganizationById } from '../storage/user-organizations.js';
 import { getOrgSettings } from '../utils/org-settings.js';
 import { isRssFeedEnabled } from '../config/features.js';
+import { createLogger } from '../utils/logger.js';
+const log = createLogger('static');
 
 export async function handleStatic({
   repoRoot,
@@ -181,13 +184,18 @@ export async function handleStatic({
     } catch (e) {
       // Important: keep embed iframe-friendly even if something goes wrong.
       // If we let this throw, `server/server.js` will return JSON, which is a terrible UX in Notion/iframes.
+      // Info-disclosure guard: this is the unauthenticated /embed surface, so
+      // never leak the error message or stack (absolute paths, module layout)
+      // to visitors in production — dev keeps them for debugging
+      // (security-audit H6).
+      const isDev = process.env.NODE_ENV !== 'production';
       const msgRaw = String(e?.message || e);
       const msg = escapeHtml(msgRaw);
       const stackRaw = typeof e?.stack === 'string' ? e.stack : '';
       const stack = escapeHtml(stackRaw);
       try {
         // eslint-disable-next-line no-console
-        console.error(
+        log.error(
           `[embed] render failed publishId=${publishId} slug=${slug} url=${url.pathname}${url.search}\n${stackRaw || msgRaw}`
         );
       } catch {
@@ -218,9 +226,9 @@ export async function handleStatic({
       <div class="card">
         <p class="title">Deze presentatie kan nu niet worden geladen</p>
         <p class="help">Publicatie-ID: <code>${escapeHtml(publishId)}</code></p>
-        <p class="help">Foutmelding: <code>${msg}</code></p>
+        ${isDev ? `<p class="help">Foutmelding: <code>${msg}</code></p>` : ''}
         ${
-          stackRaw
+          isDev && stackRaw
             ? `<details style="margin-top:10px;">
             <summary style="cursor:pointer; opacity:0.9;">Technische details</summary>
             <pre style="white-space:pre-wrap; word-break:break-word; font-size:12px; opacity:0.9; margin:10px 0 0;">${stack}</pre>
@@ -233,6 +241,54 @@ export async function handleStatic({
 </html>`);
       return;
     }
+  }
+
+  // Semantic reflowable "reader" view of a published deck (open web, no auth).
+  // A JS-optional, accessible document projection of the same model; the canvas
+  // page lives at /p/:id-:slug. Served at /p/:id-:slug/reader.
+  const pubReaderMatch = url.pathname.match(
+    /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/
+  );
+  if (pubReaderMatch && req.method === 'GET') {
+    const publishId = pubReaderMatch[1];
+    const reqSlug = String(pubReaderMatch[2] || '').trim();
+    const entry = await getPublishedById(repoRoot, publishId);
+    if (!entry?.presentationId) return notFound(res);
+
+    const pres = await getPresentation(repoRoot, entry.presentationId);
+    if (!pres) return notFound(res);
+
+    const slug = String(entry.slug || '').trim() || 'presentation';
+    const canonicalCanvasPath = `/p/${publishId}-${slug}`;
+    if (!reqSlug || reqSlug !== slug) {
+      res.writeHead(302, {
+        Location: `${canonicalCanvasPath}/reader`,
+        'Cache-Control': 'no-store',
+      });
+      res.end();
+      return;
+    }
+
+    const modeLang = resolveLangModeFromPresOrUrl(pres, url);
+    const projected = projectPresentationForLang(pres, modeLang);
+    const orgId = pres?.organizationId || getDefaultOrganizationId();
+    const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
+    const readerHeadHtml = `<meta name="robots" content="${
+      sandboxEnabled() ? 'noindex,nofollow' : 'index,follow'
+    }" />`;
+
+    const html = buildReaderHtml(repoRoot, projected, {
+      context: 'published',
+      slideTypes,
+      canonicalUrl: `${canonicalCanvasPath}?lang=${encodeURIComponent(modeLang)}`,
+      headHtml: readerHeadHtml,
+    });
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end(html);
+    return;
   }
 
   // Published public pages (open web, no auth)
@@ -290,17 +346,47 @@ export async function handleStatic({
     const title = escapeHtml(projected.title || 'Presentation');
     const rawDesc =
       typeof pres?.description === 'string' ? pres.description.trim() : '';
-    const description = escapeHtml(
+    const descriptionRaw =
       rawDesc ||
-        `Bekijk de presentatie “${
-          projected.title || 'Presentation'
-        }”.`
-    );
+      `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
+    const description = escapeHtml(descriptionRaw);
     const sandboxNoindex = sandboxEnabled();
+    // The plain <meta name="description"> is emitted by buildStandaloneHtml
+    // (via the `description` option below) so exports carry it too; only the
+    // OG/Twitter description variants live here.
+
+    // Semantic reader view of this deck (open web, no-JS a11y surface).
+    const readerPath = `${canonicalPath}/reader`;
+    const readerLabel = modeLang === 'nl' ? 'Leesweergave' : 'Reading view';
+
+    // Structured data: a published deck is a schema.org PresentationDigitalDocument.
+    const ldDescription =
+      rawDesc ||
+      `Bekijk de presentatie “${projected.title || 'Presentation'}”.`;
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'PresentationDigitalDocument',
+      name: projected.title || 'Presentation',
+      description: ldDescription,
+      url: canonicalUrl,
+      thumbnailUrl: ogImageAbs,
+      inLanguage: modeLang,
+    };
+    if (typeof pres?.ownerName === 'string' && pres.ownerName.trim()) {
+      jsonLd.author = { '@type': 'Person', name: pres.ownerName.trim() };
+    }
+    if (typeof pres?.createdAt === 'string' && pres.createdAt.trim()) {
+      jsonLd.datePublished = pres.createdAt.trim();
+    }
+    // Escape `<` so a value can never break out of the <script> block.
+    const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(
+      jsonLd
+    ).replace(/</g, '\\u003c')}</script>`;
+
     const headHtml = `
-    <meta name="description" content="${description}" />
     <meta name="robots" content="${sandboxNoindex ? 'noindex,nofollow' : 'index,follow'}" />
     <link rel="canonical" href="${canonicalUrl}" />
+    <link rel="alternate" href="${escapeHtml(readerPath)}" title="${escapeHtml(readerLabel)}" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
@@ -317,6 +403,8 @@ export async function handleStatic({
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${ogImageAbs}" />
+
+    ${jsonLdScript}
     `.trim();
     const publishedSettings = await readAppSettings(repoRoot);
     const analytics = analyticsHeadHtml({
@@ -339,6 +427,13 @@ export async function handleStatic({
         })()
       : '';
 
+    // Visible link to the semantic reader view (discoverable a11y/no-JS surface).
+    const readerLinkHtml = `<a class="presenter-help ps-reader-link" href="${escapeHtml(
+      readerPath
+    )}" rel="alternate" style="text-decoration: underline; white-space: nowrap;">${escapeHtml(
+      readerLabel
+    )}</a>`;
+
     const theme = await loadTheme(repoRoot, pres?.theme);
 
     // Add analytics tracking script for published pages
@@ -353,11 +448,12 @@ export async function handleStatic({
 
     const html = await buildStandaloneHtml(repoRoot, projected, {
       headHtml: `${headHtml}\n${analytics}\n${trackingScript}`.trim(),
-      topbarRightHtml: switchHtml,
+      topbarRightHtml: `${switchHtml}${readerLinkHtml}`,
       theme,
       slideTypes,
       context: 'published', // Use published visibility filter
       presentationId: entry.presentationId,
+      description: descriptionRaw,
     });
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',

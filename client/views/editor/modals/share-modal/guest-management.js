@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../../lib/modal.js';
+import { confirmModal } from '../../../../lib/dom/modal.js';
 
 /**
  * Create a guest management section for a share link.

@@ -1,7 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
-import { renderCommentBodyNodes } from '../../../lib/comment-body.js';
+import { renderCommentBodyNodes } from '../../../lib/comments/comment-body.js';
 
 export function createPreviewLightbox({
   h,

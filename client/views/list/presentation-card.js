@@ -1,14 +1,14 @@
 import { h } from '../../lib/dom.js';
-import { attachThumbScale } from '../../lib/thumb-scale.js';
-import { renderSlideElement } from '../../lib/slide-render.js';
-import { loadThemeById } from '../../lib/theme.js';
-import { toast } from '../../lib/toast.js';
-import { confirmModal } from '../../lib/modal.js';
-import { displayNameFromEmail } from '../../lib/user-format.js';
-import { formatRelativeTime } from '../../lib/format-time.js';
+import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
+import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
+import { toast } from '../../lib/dom/toast.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { displayNameFromEmail } from '../../lib/user/user-format.js';
+import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createAvatar } from '../../lib/avatar.js';
-import { getUserProfile } from '../../lib/user-profiles.js';
+import { createAvatar } from '../../lib/user/avatar.js';
+import { getUserProfile } from '../../lib/user/user-profiles.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**

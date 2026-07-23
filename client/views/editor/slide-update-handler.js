@@ -3,7 +3,7 @@
  * Listens for SSE `presentation:updated` events and merges remote changes
  * into the local editor state without disrupting editing or triggering autosave.
  */
-import { toast } from '../../lib/toast.js';
+import { toast } from '../../lib/dom/toast.js';
 
 /**
  * @param {Object} deps

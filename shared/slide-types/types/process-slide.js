@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -29,17 +29,17 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
 
   // Arrow between steps (not after the last one)
   const arrowHtml = !isLast
-    ? `<div class="process-arrow" aria-hidden="true"></div>`
+    ? `<li class="process-arrow" aria-hidden="true"></li>`
     : '';
 
   return `
-    <div class="process-step" data-step="${stepNum}" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="process-step" data-step="${stepNum}" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="step-number" aria-hidden="true">${stepNum}</div>
       <div class="step-content">
         ${titleHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
     ${arrowHtml}
   `;
 }
@@ -82,6 +82,8 @@ export default {
       key: 'items',
       label: 'Steps',
       type: 'items',
+      // Ordered steps — the sequence is the meaning. Projects to an <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 7,
@@ -96,6 +98,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // Sits in a row next to the step-number badge; block alignment would
+          // detach it from the marker. See text-roles.js.
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -103,6 +108,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 200,
+          role: 'list-item',
         },
       ],
     },
@@ -126,6 +132,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // Sits in a row next to the step-number badge; block alignment would
+          // detach it from the marker. See text-roles.js.
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -133,6 +142,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 200,
+          role: 'list-item',
         },
       ],
     },
@@ -185,10 +195,7 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
         : '';
-    const subheadingText = getSubheadingText(content);
-    const subheadingHtml = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
@@ -214,9 +221,9 @@ export default {
       <div class="slide slide-process ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} role="list" aria-label="Process steps">
+          <ol class="process-container" data-direction="${direction}" data-count="${count}"${layoutAttr} aria-label="Process steps">
             ${stepsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

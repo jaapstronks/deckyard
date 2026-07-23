@@ -195,13 +195,15 @@ async function processExportJob(job) {
 
   await job.updateProgress(90);
 
-  // Store result for download
+  // Store result for download. `ownerEmail` gates the download/status routes
+  // against enumeration of other users' exports (security-audit H3).
   const result = {
     buffer: buffer.toString('base64'),
     contentType,
     extension,
     filename: ctx.filteredPres.title || 'presentation',
     lang: ctx.lang,
+    ownerEmail: job.data.ownerEmail || null,
   };
 
   storeResult(job.id, result);

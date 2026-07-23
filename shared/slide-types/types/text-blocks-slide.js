@@ -1,6 +1,6 @@
 import {
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
 } from '../helpers.js';
@@ -13,7 +13,7 @@ import { markdownToSafeHtml } from '../../markdown.js';
  *
  * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
  */
-function resolveRows(content) {
+export function resolveRows(content) {
   // New format: rows[] array
   if (Array.isArray(content?.rows) && content.rows.length > 0) {
     return content.rows.map((row, idx) => ({
@@ -90,12 +90,16 @@ function resolveRows(content) {
 function generateBlockFields(rowNum) {
   const fields = [];
   for (let i = 1; i <= 6; i++) {
+    // hidden: legacy mirror of rows[].blocks[]. Kept so the editor's dual-write
+    // (syncRowsToNumbered) and old decks keep loading, but hidden from the
+    // semantic projection so it never double-projects beside the rows[] items.
     fields.push({
       key: `row${rowNum}Block${i}Title`,
       label: `Row ${rowNum} Block ${i} title`,
       type: 'string',
       required: false,
       maxLength: 80,
+      hidden: true,
     });
     fields.push({
       key: `row${rowNum}Block${i}Body`,
@@ -103,6 +107,7 @@ function generateBlockFields(rowNum) {
       type: 'markdown',
       required: false,
       maxLength: 500,
+      hidden: true,
     });
   }
   return fields;
@@ -159,6 +164,13 @@ export default {
       required: false,
       minItems: 1,
       maxItems: 3,
+      // The per-row `arrow` is a typed relation to the NEXT row, not content:
+      // "down" ≈ leads-to, "up" ≈ follows-from. In the reader/reflow projection
+      // this turns the rows into an ordered causal sequence (<ol>) with a small
+      // relation marker between rows; "none" carries no relation. See
+      // semantic-projection.js (the `relationField` mechanism).
+      relationField: 'arrow',
+      relationLabels: { down: 'leads to', up: 'follows from' },
       // Starter blocks so a freshly-added row renders visible, clickable cards
       // (an empty blocks[] would render a zero-height row with nothing to edit).
       itemDefaults: {
@@ -244,6 +256,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 120,
+      hidden: true, // legacy mirror of rows[1].title — hidden from projection
     },
     {
       key: 'row2Count',
@@ -294,6 +307,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 120,
+      hidden: true, // legacy mirror of rows[2].title — hidden from projection
     },
     {
       key: 'row3Count',
@@ -341,10 +355,7 @@ export default {
 
   renderHtml: (content) => {
     const title = esc(content?.title || '');
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheading = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
 

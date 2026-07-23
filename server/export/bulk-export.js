@@ -5,8 +5,12 @@
  */
 
 import JSZip from 'jszip';
-import { listPresentations, getPresentation } from '../storage/presentations.js';
-import { listPresentationVersions, getPresentationVersion } from '../storage/presentations/versions.js';
+import {
+  listPresentations,
+  getPresentation,
+  listPresentationVersions,
+  getPresentationVersion,
+} from '../storage/presentations.js';
 import { listImageLibrary } from '../storage/image-library.js';
 import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library.js';
 import { listThemes } from '../storage/themes.js';

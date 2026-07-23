@@ -31,10 +31,8 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'team-cards-slide': { kind: 'cards', cells: 6, cols: 3, rows: 2 },
   'logo-wall-slide': { kind: 'logos', cells: 8 },
   // layouts
-  'content-columns-slide': { textCols: 2 },
   'text-blocks-slide': { kind: 'blocks', cells: 4 },
   'icon-card-grid-slide': { kind: 'iconCards', cells: 6, cols: 3, rows: 2 },
-  'freeform-slide': { kind: 'freeform' },
   // data
   'table-slide': { kind: 'table' },
   'chart-slide': { kind: 'chart' },

@@ -1,7 +1,7 @@
-import { debugLog } from '../../../lib/debug.js';
+import { debugLog } from '../../../lib/util/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
-import { normalizeLang, otherLang } from '../../../lib/i18n.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 

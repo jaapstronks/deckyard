@@ -19,8 +19,10 @@ import {
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createRouteContext } from '../../../utils/context.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody } from '../../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('guests');
 
 /**
  * Helper to fetch collaborator permission for ACL checks.
@@ -70,7 +72,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
         share_link_not_found: 404,
       };
       const status = statusMap[result.reason] || 400;
-      serveJson(res, status, { error: result.reason });
+      jsonError(res, status, result.reason);
       return true;
     }
 
@@ -97,7 +99,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
               markInvitationSent(result.guest.id, ctx);
             } else {
               // eslint-disable-next-line no-console
-              console.warn(
+              log.warn(
                 `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim()
               );
             }

@@ -5,16 +5,16 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import {
   fetchAppSettings,
   updateAppSettings,
   invalidateSettingsCache,
-} from '../../../lib/settings.js';
+} from '../../../lib/net/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
-import { invalidateTheme } from '../../../lib/theme.js';
+import { invalidateTheme } from '../../../lib/theme/theme.js';
 
 /**
  * Create the themes tab component.

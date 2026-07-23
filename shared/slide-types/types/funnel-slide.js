@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -34,7 +34,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const widthPercent = 100 - (idx / Math.max(total - 1, 1)) * 40;
 
   return `
-    <div class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="stage-bar">
         <div class="stage-content">
           ${labelHtml}
@@ -42,7 +42,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
         </div>
       </div>
       ${textHtml}
-    </div>
+    </li>
   `;
 }
 
@@ -74,6 +74,8 @@ export default {
       key: 'items',
       label: 'Stages',
       type: 'items',
+      // Funnel stages are an ordered progression (top to bottom). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,
@@ -190,8 +192,7 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
         : '';
-    const subText = getSubheadingText(content);
-    const subheadingHtml = subText ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subText)}</p>` : '';
+    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
@@ -210,9 +211,9 @@ export default {
       <div class="slide slide-funnel ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="funnel-container" data-count="${count}" role="list" aria-label="Funnel stages">
+          <ol class="funnel-container" data-count="${count}" aria-label="Funnel stages">
             ${stagesHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

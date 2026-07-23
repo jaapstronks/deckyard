@@ -1,10 +1,10 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { attachThumbScale } from '../../lib/thumb-scale.js';
+import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
   mountSlideInto,
-} from '../../lib/slide-render.js';
+} from '../../lib/slide-runtime/slide-render.js';
 import { markdownToSafeHtml } from '../../../shared/markdown.js';
 import {
   createPresenterConsoleTimer,

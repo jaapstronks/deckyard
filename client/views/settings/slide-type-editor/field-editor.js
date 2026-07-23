@@ -5,7 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 
 // Labels are resolved through t() at render time (the dictionary is not loaded at import time).
 const FIELD_TYPES = [

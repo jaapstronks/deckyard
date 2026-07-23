@@ -14,6 +14,8 @@ import {
 import { getDefaultOrganizationId } from '../../config/database.js';
 import { getOrganizationById, updateOrganization } from '../../storage/user-organizations.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('settings');
 
 export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
   // Global (app-wide) settings:
@@ -121,7 +123,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
         await updateOrganization(orgId, { settings: merged });
         serveJson(res, 200, { settings: merged });
       } catch (err) {
-        console.error('[settings] Failed to update organization settings:', err);
+        log.error('[settings] Failed to update organization settings:', err);
         serveJson(res, 500, { error: 'Failed to update settings' });
       }
       return true;

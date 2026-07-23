@@ -4,7 +4,7 @@
  * straight to one. "By whom" is intentionally not shown: the merge response
  * carries changed slide ids only, not per-slide authorship.
  */
-import { createModal } from '../../../lib/modal.js';
+import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

@@ -11,8 +11,8 @@
  * section revisions apply to the live deck and are undoable via editor undo.
  */
 import { t } from '../../../lib/ui-i18n.js';
-import { openModal, confirmModal } from '../../../lib/modal.js';
-import { toast } from '../../../lib/toast.js';
+import { openModal, confirmModal } from '../../../lib/dom/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
 

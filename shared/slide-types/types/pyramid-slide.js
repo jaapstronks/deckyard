@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -29,14 +29,14 @@ function levelHtml(level, idx, total) {
   const widthPercent = 30 + (idx / Math.max(total - 1, 1)) * 60;
 
   return `
-    <div class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" role="listitem" data-inline-item="levels" data-inline-item-index="${idx}"
+    <li class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" data-inline-item="levels" data-inline-item-index="${idx}">
       <div class="level-bar">
         <div class="level-content">
           ${labelHtml}
           ${textHtml}
         </div>
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -68,6 +68,8 @@ export default {
       key: 'levels',
       label: 'Levels',
       type: 'items',
+      // Pyramid levels are an ordered hierarchy (base to apex). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,
@@ -141,8 +143,7 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
         : '';
-    const subText = getSubheadingText(content);
-    const subheadingHtml = subText ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subText)}</p>` : '';
+    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
@@ -159,9 +160,9 @@ export default {
       <div class="slide slide-pyramid ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="pyramid-container" data-count="${count}" role="list" aria-label="Pyramid levels">
+          <ol class="pyramid-container" data-count="${count}" aria-label="Pyramid levels">
             ${levelsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -31,7 +31,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
   const angle = angleOffset + (idx / total) * 360;
 
   return `
-    <div class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" role="listitem" data-inline-item="${colKey}" data-inline-item-index="${idx}">
+    <li class="cycle-stage" data-stage="${stageNum}" style="--stage-angle: ${angle}deg; --stage-index: ${idx};" data-inline-item="${colKey}" data-inline-item-index="${idx}">
       <div class="stage-node">
         <div class="stage-number">${stageNum}</div>
       </div>
@@ -39,7 +39,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
         ${labelHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -93,6 +93,8 @@ export default {
       key: 'items',
       label: 'Stages',
       type: 'items',
+      // Cycle stages run in sequence (Plan → Do → Check → Act). Projects to <ol>.
+      ordered: true,
       required: true,
       minItems: 3,
       maxItems: 6,
@@ -196,8 +198,7 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
         : '';
-    const subText = getSubheadingText(content);
-    const subheadingHtml = subText ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subText)}</p>` : '';
+    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
@@ -224,14 +225,14 @@ export default {
       <div class="slide slide-cycle ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="cycle-container" data-count="${count}" role="list" aria-label="Cycle stages">
+          <div class="cycle-container" data-count="${count}">
             <div class="cycle-ring">
               ${arrowsHtml}
               ${centerHtml}
             </div>
-            <div class="cycle-stages">
+            <ol class="cycle-stages" aria-label="Cycle stages">
               ${stagesHtml}
-            </div>
+            </ol>
           </div>
           ${bottomSubheadingHtml}
         </div>

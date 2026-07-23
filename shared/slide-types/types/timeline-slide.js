@@ -1,7 +1,7 @@
 import {
   bgClass,
   esc,
-  getSubheadingText,
+  renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
   BACKGROUND_FIELD,
@@ -48,7 +48,7 @@ function itemHtml(item, idx, total) {
     : '';
 
   return `
-    <div class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" role="listitem" data-index="${idx + 1}" data-tone="${esc(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
+    <li class="timeline-item ${isTop ? 'is-top' : 'is-bottom'}" data-index="${idx + 1}" data-tone="${esc(tone)}" data-inline-item="items" data-inline-item-index="${idx}">
       <div class="timeline-marker" aria-hidden="true"></div>
       <div class="timeline-connector" aria-hidden="true"></div>
       ${dateHtml}
@@ -56,7 +56,7 @@ function itemHtml(item, idx, total) {
         ${titleHtml}
         ${textHtml}
       </div>
-    </div>
+    </li>
   `;
 }
 
@@ -88,6 +88,9 @@ export default {
       key: 'items',
       label: 'Timeline items',
       type: 'items',
+      // A timeline is a chronological sequence — order is the meaning. Projects
+      // to an <ol> in the reader/reflow view (semantic-projection.js).
+      ordered: true,
       required: true,
       minItems: 2,
       maxItems: 10,
@@ -100,12 +103,15 @@ export default {
         text: '',
       },
       itemFields: [
+        // Each item sits in a row aligned to the timeline rail/dot marker;
+        // block alignment would detach the text from the marker. See text-roles.js.
         {
           key: 'date',
           label: 'Date / label',
           type: 'string',
           required: true,
           maxLength: 30,
+          role: 'list-item',
         },
         {
           key: 'title',
@@ -113,6 +119,7 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          role: 'list-item',
         },
         {
           key: 'text',
@@ -121,6 +128,7 @@ export default {
           required: false,
           maxLength: 200,
           multiline: true,
+          role: 'list-item',
         },
       ],
     },
@@ -175,10 +183,7 @@ export default {
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`
         : '';
-    const subheadingText = getSubheadingText(content);
-    const subheadingHtml = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheadingHtml = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const bottomSubheadingHtml = renderBottomSubheadingHtml(content);
     const hasBottom = hasBottomSubheading(content);
     const hasHeader = !!(title || subheadingHtml);
@@ -195,10 +200,10 @@ export default {
       <div class="slide slide-timeline ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="timeline-container" data-count="${count}" role="list" aria-label="${esc(copy.timelineLabel)}">
-            <div class="timeline-track" aria-hidden="true"></div>
+          <ol class="timeline-container" data-count="${count}" aria-label="${esc(copy.timelineLabel)}">
+            <li class="timeline-track" aria-hidden="true"></li>
             ${itemsHtml}
-          </div>
+          </ol>
           ${bottomSubheadingHtml}
         </div>
       </div>

@@ -46,25 +46,45 @@ function isValidIp(ip) {
   return false;
 }
 
+/**
+ * Number of trusted reverse proxies that append to `X-Forwarded-For` between
+ * the client and this app. Configured via `TRUSTED_PROXY_COUNT` (default 1, the
+ * single-proxy case). Bounded to ≥1 so we never fall back to the spoofable
+ * leftmost entry.
+ * @returns {number}
+ */
+function trustedProxyCount() {
+  const n = Number(process.env.TRUSTED_PROXY_COUNT);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
+}
+
 export function getClientIp(req) {
   const trustProxy = truthy(process.env.TRUST_PROXY);
   const socketIp = String(req.socket?.remoteAddress || '').trim();
 
   if (trustProxy) {
-    // Check X-Forwarded-For header first (most common)
+    // X-Forwarded-For is "client, proxy1, proxy2, …" — each proxy APPENDS the
+    // address it received the connection from. The leftmost entry is supplied
+    // by the client and is therefore attacker-controlled: trusting it lets an
+    // attacker forge any IP (evading IP-keyed limits) or poison a victim's
+    // bucket. The trustworthy entry is the one our OUTERMOST trusted proxy
+    // added, which sits `trustedProxyCount` positions from the right.
     const xf = String(req.headers?.['x-forwarded-for'] || '').trim();
     if (xf) {
-      // Take the first (leftmost) IP which is the original client
-      const firstIp = xf.split(',')[0].trim();
-      // Only use if it's a valid IP format, otherwise fall back to socket IP
-      if (isValidIp(firstIp)) {
-        return firstIp;
+      const ips = xf.split(',').map((s) => s.trim()).filter(Boolean);
+      const idx = ips.length - trustedProxyCount();
+      if (idx >= 0 && isValidIp(ips[idx])) {
+        return ips[idx];
       }
-      // Log invalid X-Forwarded-For attempts (potential attack)
-      console.warn(`[rate-limit] Invalid X-Forwarded-For IP: ${firstIp}`);
+      // Chain shorter than the configured hop count, or a malformed hop:
+      // don't guess — fall through to X-Real-IP / socket rather than trust a
+      // client-supplied leftmost value.
+      console.warn(
+        `[rate-limit] Untrusted/short X-Forwarded-For (len ${ips.length}, hops ${trustedProxyCount()})`
+      );
     }
 
-    // Check X-Real-IP header (nginx)
+    // Check X-Real-IP header (nginx sets this to the real client IP).
     const xri = String(req.headers?.['x-real-ip'] || '').trim();
     if (xri && isValidIp(xri)) {
       return xri;
@@ -154,32 +174,33 @@ export function resetRateLimitBuckets() {
  * Uses adapter pattern: tries Redis first for distributed rate limiting,
  * falls back to in-memory for single-instance deployments.
  *
+ * Always returns a Promise. Callers must `await` the result: treating it as a
+ * bare boolean (`if (!allowRequest(...))`) silently passes every request,
+ * because a pending Promise is truthy. Use `allowRequestSync` when a
+ * synchronous, Redis-free check is genuinely required.
+ *
  * @param {string} key - Rate limit key (e.g., "ip:action")
  * @param {Object} options - Rate limit options
  * @param {number} options.capacity - Maximum tokens/requests
  * @param {number} options.refillPerSec - Token refill rate per second
- * @returns {Promise<boolean>|boolean} True if request is allowed
+ * @returns {Promise<boolean>} True if request is allowed
  */
-export function allowRequest(key, { capacity, refillPerSec }) {
-  // Check if Redis might be available
+export async function allowRequest(key, { capacity, refillPerSec }) {
+  // Try Redis first for distributed rate limiting when it might be available.
   if (mightRedisBeAvailable()) {
-    // Return a promise that tries Redis first
-    return (async () => {
-      try {
-        const result = await allowRequestRedis(key, { capacity, refillPerSec });
-        if (result !== null) {
-          return result;
-        }
-        // Redis unavailable, fall back to memory
-        console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
-      } catch (err) {
-        console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+    try {
+      const result = await allowRequestRedis(key, { capacity, refillPerSec });
+      if (result !== null) {
+        return result;
       }
-      return allowRequestInMemory(key, { capacity, refillPerSec });
-    })();
+      // Redis unavailable, fall back to memory
+      console.warn('[rate-limit] Redis unavailable, using in-memory fallback');
+    } catch (err) {
+      console.warn('[rate-limit] Redis error, falling back to memory:', err.message);
+    }
   }
 
-  // Redis not configured, use synchronous in-memory
+  // Redis not configured or unavailable, use in-memory.
   return allowRequestInMemory(key, { capacity, refillPerSec });
 }
 

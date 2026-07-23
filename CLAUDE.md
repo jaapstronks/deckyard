@@ -7,12 +7,19 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
 
 ## Where to start
 
-- **`docs/plans/TODO.md`** — the operational worklist (in progress / queue /
-  done). When asked to "pick up the next thing" or plan work, read this file
+Three planning horizons, three files:
+
+- **`docs/plans/TODO.md`** — *now*: the operational worklist (in progress / queue
+  / done). When asked to "pick up the next thing" or plan work, read this file
   first, not the whole plans folder.
-- **`ROADMAP.md`** — the coarse public overview. One line per project, linked
-  to an elaborated briefing in `docs/plans/<slug>.md` (problem, scope with
-  file references, "done when").
+- **`docs/plans/STRATEGY.md`** — *internal longer-term*: directional tracks with
+  rationale and "done when", not yet public. Elaborated briefings live in
+  `docs/plans/briefs/<slug>.md` (the three anchors — `TODO.md`, `STRATEGY.md`,
+  `README.md` — sit at the `docs/plans/` root, the per-item briefings one level
+  down in `briefs/`). (Private; in the `deckyard-planning` sibling.)
+- **`ROADMAP.md`** — *public commitment*: the coarse, public-facing overview,
+  one line per project. This is the only one of the three that ships in the OSS
+  repo.
 
 > **Where the plans actually live.** `docs/plans/` is a **symlink** to the
 > private `deckyard-planning` sibling repo (kept out of this OSS repo on
@@ -25,8 +32,9 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
 ## Docs discipline (maintain this in every session)
 
 - **New docs go in the right folder, never loose in `docs/`**:
-  plan for future work → `docs/plans/<slug>.md` + a line in `TODO.md` and
-  `ROADMAP.md`; how something works → `docs/reference/`; contributor how-to →
+  plan for future work → `docs/plans/briefs/<slug>.md` + a line in
+  `docs/plans/TODO.md` and `ROADMAP.md`; how something works → `docs/reference/`;
+  contributor how-to →
   `docs/developer/`; deploy/server notes → `docs/ops/`. Exception:
   `docs/openapi.yaml` stays put (served at `/api/v1/openapi.yaml`).
 - **Starting a plan**: move its entry to *In progress* in `docs/plans/TODO.md`.
@@ -75,6 +83,12 @@ cleanup) live in **`AGENTS.md`** — read it before structural work.
   that must survive a track no-go, like collab step 0 / PR #6).
 - **Releases**: tag `vX.Y.Z` + GitHub Release; update `CHANGELOG.md`
   (`[Unreleased]` → release section). Forks sync on tags, not `main`.
+- **After merging a delegated PR** (a "review en merge" hand-off you completed):
+  run the **`merge-housekeeping`** skill as the tail of the flow, before you
+  stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
+  and runs a shallow TODO/roadmap consistency scan that logs drift and nudges
+  Jaap when a deeper reorganization audit is warranted. It is part of the merge,
+  not a proposed "next step". Skip it for PRs you only opened (Jaap merges those).
 
 ## Verifying work
 

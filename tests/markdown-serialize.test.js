@@ -35,7 +35,7 @@ const {
   serializeMarkdownDom,
   markdownNeedsModal,
   canInlineEditMarkdown,
-} = await import('../client/lib/markdown-serialize.js');
+} = await import('../client/lib/slide-authoring/markdown-serialize.js');
 
 /** Parse an HTML string into a detached container. */
 function domOf(html) {
@@ -61,6 +61,8 @@ describe('canonical round trips (serialize(render(md)) === md)', () => {
     ['list then paragraph', '- item a\n- item b\n\nOutro line'],
     ['formatting inside list items', '- has **bold**\n- has [link](https://x.dev/p)'],
     ['single-# line as paragraph', '# not a heading'],
+    ['blockquote', '> Quoted line'],
+    ['multi-paragraph blockquote', '> First para\n>\n> Second para'],
   ];
   for (const [name, md] of cases) {
     it(name, () => {
@@ -94,6 +96,11 @@ describe('render-equivalence for non-canonical input', () => {
     ['repeated 1. markers renumber', '1. first\n1. second'],
     ['extra internal spaces collapse', 'spaced    out   text'],
     ['multi-line paragraph joins', 'line one\nline two'],
+    ['underscore italic canonicalizes to *', '_italic_ text'],
+    ['underscore bold canonicalizes to **', '__bold__ text'],
+    ['star bullets canonicalize to dash', '* a\n* b'],
+    ['plus bullets canonicalize to dash', '+ a\n+ b'],
+    ['stray backslash escape survives render', 'a \\* b'],
   ];
   for (const [name, md] of cases) {
     it(name, () => {
@@ -138,6 +145,10 @@ describe('markdownNeedsModal', () => {
     ['lists + heading', '## H\n\n- a\n- b'],
     ['currency is not math', 'costs $50 and $60 total'],
     ['pipes without separator', 'a | b | c'],
+    ['blockquote', '> a quote'],
+    ['underscore emphasis', '_i_ and __b__'],
+    ['star bullets', '* a\n* b'],
+    ['stray escaped marker', 'a \\* b'],
   ];
   for (const [name, md] of modal) {
     it(`modal: ${name}`, () => assert.equal(markdownNeedsModal(md), true));
@@ -161,10 +172,20 @@ describe('canInlineEditMarkdown (the in-place gate)', () => {
     assert.equal(canInlineEditMarkdown('| A | B |\n| --- | --- |\n| 1 | 2 |', markdownToSafeHtml), false);
     assert.equal(canInlineEditMarkdown('a $x+y$ b', markdownToSafeHtml), false);
   });
+  it('accepts blockquotes and underscore/star constructs', () => {
+    assert.equal(canInlineEditMarkdown('> a quote', markdownToSafeHtml), true);
+    assert.equal(canInlineEditMarkdown('_i_ and __b__', markdownToSafeHtml), true);
+    assert.equal(canInlineEditMarkdown('* one\n* two', markdownToSafeHtml), true);
+    assert.equal(canInlineEditMarkdown('a \\* b', markdownToSafeHtml), true);
+  });
   it('rejects when the round trip does not reproduce the render', () => {
     // Nested emphasis: the dialect's non-nested regexes mangle it
     // (render gives "*<em>a </em>b<em> c</em>*"), so serialization cannot
     // reproduce the render — the gate must send this to the modal.
     assert.equal(canInlineEditMarkdown('**a *b* c**', markdownToSafeHtml), false);
+    // Fully-escaped would-be emphasis: render gives literal "*x*", but the
+    // serializer can't re-emit the escapes, so serialize→render re-italicizes.
+    // The gate must keep this on the modal.
+    assert.equal(canInlineEditMarkdown('\\*x\\*', markdownToSafeHtml), false);
   });
 });

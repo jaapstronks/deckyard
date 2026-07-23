@@ -2,18 +2,36 @@
    Emitted by shared/slide-types/text-styles.js as tf-* classes on the
    element carrying data-inline-field: alignment, colour and SIZE.
 
-   Scoped under [data-inline-field] so these only ever touch real editable
-   fields, and kept low-specificity (one class) — a type's own alignment for
-   a field can still win via a more specific selector where intended. */
+   Anchored on the tf-* class itself (doubled to keep the original two-selector
+   specificity) rather than [data-inline-field]: injectTextStyles only ever
+   puts tf-* on a data-inline-field element, so this matches exactly the same
+   elements — but keeps working in non-editable output where the editor-only
+   data-inline-field attribute has been stripped (see stripEditorOnlyAttrs).
+   A type's own alignment for a field can still win via a more specific
+   selector where intended. */
 
-[data-inline-field].tf-align-left {
+.tf-align-left.tf-align-left {
   text-align: left;
 }
-[data-inline-field].tf-align-center {
+.tf-align-center.tf-align-center {
   text-align: center;
 }
-[data-inline-field].tf-align-right {
+.tf-align-right.tf-align-right {
   text-align: right;
+}
+
+/* Structural invariant (text-role affordance model): a block may be aligned,
+   but marker-anchored descendants can't be — a bullet/number ::marker sits at
+   the content-box start and doesn't move, so centering/right-aligning the
+   block would detach each list line from its marker. Reset lists inside an
+   aligned prose field to the logical start; surrounding prose still aligns.
+   This handles the content-dependent case (a markdown body that happens to
+   contain a list) without the editor having to sniff content. List/step SLIDE
+   types instead carry role:'list-item', so their item text never gets an
+   align class in the first place. See shared/slide-types/text-roles.js. */
+.tf-align-center.tf-align-center :is(ul, ol),
+.tf-align-right.tf-align-right :is(ul, ol) {
+  text-align: start;
 }
 
 /* Colour overrides use theme TOKENS (not raw hex) so a deck stays legible
@@ -29,10 +47,10 @@
 
    (A former `inverse` = --t-color-background token was dropped: on text that
    sits directly on the slide background it is invisible by construction.) */
-[data-inline-field].tf-color-muted {
+.tf-color-muted.tf-color-muted {
   color: color-mix(in srgb, currentColor 72%, transparent);
 }
-[data-inline-field].tf-color-accent {
+.tf-color-accent.tf-color-accent {
   color: var(--t-color-accent, currentColor);
 }
 
@@ -41,13 +59,13 @@
    and listing it in theme.textSwatches. The currentColor fallback makes an
    undeclared token a no-op, so a deck carrying brand-N stays legible (falls
    back to the default text colour) on a theme that never defined it. */
-[data-inline-field].tf-color-brand-1 {
+.tf-color-brand-1.tf-color-brand-1 {
   color: var(--t-color-brand-1, currentColor);
 }
-[data-inline-field].tf-color-brand-2 {
+.tf-color-brand-2.tf-color-brand-2 {
   color: var(--t-color-brand-2, currentColor);
 }
-[data-inline-field].tf-color-brand-3 {
+.tf-color-brand-3.tf-color-brand-3 {
   color: var(--t-color-brand-3, currentColor);
 }
 
@@ -59,9 +77,9 @@
    as the base being scaled, instead of a plain em multiplier replacing them
    with a fraction of the parent size. Which types scale is documented in
    docs/reference/editor-inspector.md. */
-[data-inline-field].tf-size-sm {
+.tf-size-sm.tf-size-sm {
   --tf-size-scale: 0.85;
 }
-[data-inline-field].tf-size-lg {
+.tf-size-lg.tf-size-lg {
   --tf-size-scale: 1.2;
 }

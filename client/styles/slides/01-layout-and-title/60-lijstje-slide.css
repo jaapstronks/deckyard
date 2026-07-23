@@ -26,6 +26,11 @@
   max-width: 70ch;
 }
 .slide-lijstje .lijst {
+  /* .lijst / .lijst-col render as native <ul>/<ol> (one-col: .lijst is the
+     list; two-col: each .lijst-col is). Neutralise UA list styling. */
+  list-style: none;
+  margin: 0;
+  padding: 0;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -152,6 +157,9 @@
   row-gap: 0;
 }
 .slide-lijstje.is-two-col .lijst-col {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   min-width: 0; /* Prevent grid blowout from content */

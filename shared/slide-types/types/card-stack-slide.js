@@ -1,4 +1,4 @@
-import { esc, getSubheadingText, getCardTitle } from '../helpers.js';
+import { esc, renderSubheadingHtml, getCardTitle } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 function hexToRgb(hex) {
@@ -41,6 +41,14 @@ function themeCardStackPalette(theme) {
 export default {
   deprecated: true, // Hidden from editor + AI. Kept for rendering existing slides. Migrate to icon-card-grid-slide.
   label: 'Card stack',
+  // Reader/reflow projection: treat the flat card1Title / card1Label / card1Body
+  // … slots as one bounded, per-slot-grouped collection, so existing decks
+  // project cleanly (title + body stay one unit; slots beyond cardCount don't
+  // leak). See semantic-projection.js#projectRepeatingGroup. Card order is
+  // incidental → unordered list.
+  repeatingGroups: [
+    { countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Label', 'Body'], ordered: false },
+  ],
   fields: [
     {
       key: 'title',
@@ -203,10 +211,7 @@ export default {
         ? ctx.theme
         : null;
     const count = Math.max(1, Math.min(6, Number(content?.cardCount || 4) || 4));
-    const subheadingText = getSubheadingText(content);
-    const subheading = subheadingText
-      ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(subheadingText)}</p>`
-      : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
 
     const palette = themeCardStackPalette(theme);
     const lightText = String(theme?.textColorLight || '#ffffff');

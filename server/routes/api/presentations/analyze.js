@@ -22,6 +22,8 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { getAiIdentity } from '../../../storage/settings.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('analyze');
 
 const getCtx = createRouteContext;
 
@@ -138,7 +140,7 @@ export async function handlePresentationAnalyze(
       metadata: result.metadata,
     });
   } catch (error) {
-    console.error('[analyze] Error:', error);
+    log.error('[analyze] Error:', error);
     sendSSE(res, 'error', {
       message: error?.message || 'Analysis failed',
     });

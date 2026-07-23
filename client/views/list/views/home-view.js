@@ -2,11 +2,11 @@ import { t } from '../../../lib/ui-i18n.js';
 import { buildSectionHeader } from './section-header.js';
 import { createNoPresentationsEmptyState } from '../empty-state.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
-import { displayNameFromEmail } from '../../../lib/user-format.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
-import { renderSlideElement } from '../../../lib/slide-render.js';
-import { attachThumbScale } from '../../../lib/thumb-scale.js';
-import { loadThemeById } from '../../../lib/theme.js';
+import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
+import { loadThemeById } from '../../../lib/theme/theme.js';
 
 /**
  * Create the home view with recent presentations and activity preview

@@ -1739,6 +1739,12 @@ components:
           type: string
         ownerEmail:
           type: string
+          nullable: true
+          description: >-
+            The deck owner's email, returned only when the requesting API key
+            belongs to the owner. For decks reached via workspace or
+            collaborator access it is null, so one user's address is never
+            disclosed to another.
         scope:
           type: string
           enum: [private, workspace]
@@ -1785,7 +1791,16 @@ components:
           description: Slide type (e.g., title-slide, bullet-slide)
         content:
           type: object
-          description: Slide content (varies by type)
+          description: >-
+            Per-type structured slide content. The concrete shape depends on
+            `type` and is described by a generated, versioned JSON Schema:
+            fetch the full deck schema at `/api/v1/schema/deck.json` (its
+            `$defs` hold one content schema per slide type, selected by a
+            `type` discriminator), or a single type's content schema at
+            `/api/v1/schema/slide-types/{type}.json`. Both are generated from
+            the slide-type field registry, so they always match the running
+            build.
+          additionalProperties: true
         notes:
           type: string
           description: Speaker notes

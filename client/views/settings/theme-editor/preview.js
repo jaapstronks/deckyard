@@ -15,9 +15,9 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { renderSlideElement } from '../../../lib/slide-render.js';
-import { attachThumbScaleContain } from '../../../lib/thumb-scale.js';
-import { injectThemeFontFaces } from '../../../lib/theme.js';
+import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
+import { attachThumbScaleContain } from '../../../lib/slide-runtime/thumb-scale.js';
+import { injectThemeFontFaces } from '../../../lib/theme/theme.js';
 
 // Enough to show typography, the accent and the dark surface without turning
 // the panel into a deck.

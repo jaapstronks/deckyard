@@ -1,7 +1,7 @@
 import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
-import { zoomInIcon } from '../../lib/icons.js';
+import { zoomInIcon } from '../../lib/dom/icons.js';
 
 export function createPreviewPanel({
   h,

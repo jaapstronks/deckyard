@@ -5,8 +5,8 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import {
   fetchEmailTemplates,
   updateEmailTemplate,
@@ -14,7 +14,7 @@ import {
   updateEmailDefaultLocale,
   previewEmailTemplate,
   sendTestEmail,
-} from '../../../lib/settings.js';
+} from '../../../lib/net/settings.js';
 
 /**
  * Create actions for the email templates panel.

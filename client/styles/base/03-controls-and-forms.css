@@ -1110,58 +1110,6 @@
   outline-offset: 2px;
 }
 
-/* Freeform slide editor styles */
-.freeform-elements-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
-.freeform-add-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--ps-space-2);
-}
-
-.freeform-empty-state {
-  padding: var(--ps-space-6);
-  text-align: center;
-  background: hsl(var(--app-bg-sunken));
-  border: 1px dashed hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg);
-  color: hsl(var(--app-text-secondary));
-}
-
-.freeform-empty-state p {
-  margin: 0;
-}
-
-/* Freeform editor overlay (for canvas editing) */
-.freeform-editor-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.freeform-element-overlay {
-  position: absolute;
-  pointer-events: auto;
-  cursor: move;
-  box-sizing: border-box;
-  border: 2px solid transparent;
-  transition: border-color var(--ps-transition-fast);
-}
-
-.freeform-element-overlay:hover {
-  border-color: hsl(var(--app-accent-primary) / 0.5);
-}
-
-.freeform-element-overlay.is-selected {
-  border-color: hsl(var(--app-accent-primary));
-}
-
 /* Card-link field: text input + in-deck slide picker side by side. */
 .card-link-row {
   align-items: stretch;

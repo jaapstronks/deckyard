@@ -156,6 +156,8 @@ async function processTranslateJob(job) {
     to: toLang,
     presentationId,
     success: true,
+    // Gates the download route against enumeration (security-audit H3).
+    ownerEmail: actorEmail || null,
   };
 
   storeResult(job.id, result);

@@ -118,6 +118,15 @@ function renderElement(el, idx) {
 
 export default {
   label: 'Freeform',
+  // Archived: the freeform canvas (absolutely-positioned elements) was retired
+  // as an authoring surface — too easy to make ugly/inaccessible slides, and it
+  // never gained a semantic projection (it degrades to nothing in the reader /
+  // reflow view). Kept registered, render-only, so decks that already contain a
+  // freeform slide keep rendering exactly as before. `deprecated: true` removes
+  // it from the type picker (isInsertableSlideType / allowed() return false) and
+  // it is listed in the AI generator's EXCLUDED_TYPES, so no new freeform slides
+  // can be authored. Mirrors the split-partner-title archival (PR #197).
+  deprecated: true,
   fields: [
     {
       key: 'elements',

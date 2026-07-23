@@ -1,10 +1,14 @@
 import { attachSessionSseClient } from '../../../storage/present-sessions.js';
 import { sseWrite } from '../../../utils/sse.js';
+import { guardSseConnection } from '../../../utils/sse-limiter.js';
 import { writeSseHeaders } from './helpers.js';
 import { subscribeFollowStatus } from './status-ticker.js';
 
 export async function handleFollowEvents({ repoRoot, req, res }, presentationId) {
   if (req.method !== 'GET') return false;
+
+  // Cap unauthenticated, long-lived streams before opening one (DoS guard).
+  if (!guardSseConnection(req, res)) return true;
 
   writeSseHeaders(res);
 

@@ -7,6 +7,12 @@ import { createCsvGridEditor } from '../../fields/csv-grid.js';
  * labels. Shared between the full content form below and the phase-3 inspector
  * (which renders ONLY this config; the title/subheading text stays in the
  * bulk modal, but axis/series labels render here in both surfaces).
+ *
+ * The chart-data grid lives on its own surface (the bottom-panel "Data" tab,
+ * editing-surfaces §4.3) rather than in the narrow inspector rail. When
+ * `onEditData` is supplied (the inspector path) this renders an "Edit data…"
+ * button that opens that surface; without it (the bulk "All text" modal, which
+ * has no bottom panel) the grid renders inline as the bulk convenience.
  */
 export function renderChartConfigControls({
   h,
@@ -20,26 +26,52 @@ export function renderChartConfigControls({
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
+  onEditData,
 } = {}) {
   add('chartType');
 
-  // Data editor: a spreadsheet-style grid with a raw-CSV toggle, shared with the
-  // inline-edit modal (client/views/editor/fields/csv-grid.js) so both paths use
-  // one implementation. Serialises to the CSV string the chart parser eats.
+  // Data editor. The `data` field belongs on its own wide surface, so the
+  // inspector offers an entry point ("Edit data…") into the bottom-panel Data
+  // tab and the bulk modal keeps the inline grid (shared implementation:
+  // client/views/editor/fields/csv-grid.js). Serialises to the CSV string the
+  // chart parser eats either way.
   used.add('data');
   const ct = String(slide.content?.chartType || 'bar');
-  const dataEditor = createCsvGridEditor({
-    h,
-    chartType: ct,
-    value: slide.content?.data || '',
-    label: t('editor.chart.dataLabel', 'Data (CSV/TSV)'),
-    onChange: (csv) => {
-      slide.content.data = csv;
-      markDirty?.();
-      scheduleUiRefresh?.();
-    },
-  });
-  form.append(dataEditor.el);
+  if (typeof onEditData === 'function') {
+    const dataRow = h('div', { class: 'field chart-data-entry' }, [
+      h('label', {
+        class: 'field-label',
+        text: t('editor.chart.dataLabel', 'Data (CSV/TSV)'),
+      }),
+      h('button', {
+        class: 'btn btn-secondary chart-data-edit-btn',
+        type: 'button',
+        text: t('editor.chart.editData', 'Edit data…'),
+        onclick: () => onEditData(),
+      }),
+      h('p', {
+        class: 'help',
+        text: t(
+          'editor.chart.editDataHelp',
+          'Opens the data editor with a live chart preview.'
+        ),
+      }),
+    ]);
+    form.append(dataRow);
+  } else {
+    const dataEditor = createCsvGridEditor({
+      h,
+      chartType: ct,
+      value: slide.content?.data || '',
+      label: t('editor.chart.dataLabel', 'Data (CSV/TSV)'),
+      onChange: (csv) => {
+        slide.content.data = csv;
+        markDirty?.();
+        scheduleUiRefresh?.();
+      },
+    });
+    form.append(dataEditor.el);
+  }
 
   const showValuesField = fieldByKey.get('showValues');
   const showLegendField = fieldByKey.get('showLegend');

@@ -42,7 +42,7 @@
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 12px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--slide-shadow-lg);
 }
 
 .slide-follow-invite .sfi-card-kicker {
@@ -93,12 +93,11 @@
 }
 
 .slide-follow-invite .sfi-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    'Liberation Mono', 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 78px;
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: #3b4ddb;
+  color: var(--color-accent);
   line-height: 1;
 }
 

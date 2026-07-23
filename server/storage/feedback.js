@@ -1,7 +1,7 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { notifyPresentSessionInteractionState } from './present-sessions.js';
+import { writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 
@@ -37,14 +37,6 @@ function safeString(v) {
   return typeof v === 'string' ? v : '';
 }
 
-function newTmpName(sessionId) {
-  const id =
-    typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : crypto.randomBytes(16).toString('hex');
-  return `${sessionId}.${id}.tmp`;
-}
-
 function serializeSession(s) {
   const slides = {};
   for (const [slideId, st] of s.slides.entries()) {
@@ -75,11 +67,7 @@ function serializeSession(s) {
 async function writeSessionToDisk(s) {
   const repoRoot = s?.repoRoot;
   if (!repoRoot || !s?.sessionId) return;
-  const dir = feedbackDir(repoRoot);
-  await fs.mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, newTmpName(s.sessionId));
-  await fs.writeFile(tmp, JSON.stringify(serializeSession(s), null, 2), 'utf8');
-  await fs.rename(tmp, sessionFile(repoRoot, s.sessionId));
+  await writeJsonAtomic(sessionFile(repoRoot, s.sessionId), serializeSession(s));
 }
 
 function schedulePersist(s) {

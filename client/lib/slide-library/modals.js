@@ -4,11 +4,11 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { toast } from '../toast.js';
-import { renderSlideElement } from '../slide-render.js';
+import { toast } from '../dom/toast.js';
+import { renderSlideElement } from '../slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { copyIcon } from '../icons.js';
-import { createModal } from '../modal.js';
+import { copyIcon } from '../dom/icons.js';
+import { createModal } from '../dom/modal.js';
 import { createTagEditor } from '../../views/list/tag-editor.js';
 import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';

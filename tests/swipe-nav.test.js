@@ -16,7 +16,7 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 
-const { attachSwipeNavigation } = await import('../client/lib/swipe-nav.js');
+const { attachSwipeNavigation } = await import('../client/lib/dom/swipe-nav.js');
 
 /** Dispatch one touch event with the given touch-list shape. */
 function fire(el, type, { touches, changedTouches, target } = {}) {

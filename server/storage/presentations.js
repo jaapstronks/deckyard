@@ -9,13 +9,11 @@ import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
 import { normalizeI18n } from './presentations/i18n.js';
-import {
-  createPresentationVersion,
-  prunePresentationVersions,
-} from './presentations/versions.js';
 import { recordSlideLevelMerge } from '../services/activity-events.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
 import { invalidatePresentationCache } from './presentation-cache.js';
+import { createLogger } from '../utils/logger.js';
+const log = createLogger('presentations');
 
 /**
  * Get the context for storage operations.
@@ -148,7 +146,7 @@ export async function updatePresentation(repoRoot, id, body, opts) {
       } catch (err) {
         // The JSON save already succeeded; the live doc just didn't get it
         // (same gap as before step 4, for this one write). Say so loudly.
-        console.error(
+        log.error(
           `[collab] applying server write to active doc of ${id} failed; ` +
             'open editors will overwrite this save on their next store:',
           err?.message || err
@@ -324,4 +322,97 @@ export async function getFirstSlidesForIds(repoRoot, ids) {
   // File-based storage: batch read JSON files
   const mod = await import('./presentations/crud.js');
   return await mod.getFirstSlidesForIds(repoRoot, ids);
+}
+
+// ============================================================
+// PRESENTATION VERSIONS (version history)
+// ============================================================
+//
+// Version snapshots route through the storage adapter, exactly like every
+// other persisted entity. In file mode the adapter delegates to the file
+// module (server/data/presentation-versions/*.json), so behavior is
+// identical to importing that module directly. In Postgres mode they land
+// in the `presentation_versions` table, so version history rides along with
+// the regular DB backups instead of living on a disk that a redeploy wipes.
+//
+// The (repoRoot, presentationId, ...) signature is kept so existing call
+// sites only swap their import path, never their arguments. When storage is
+// not initialized (some scripts/tests) we fall back to the file module, same
+// as the presentation CRUD helpers above.
+
+/**
+ * List version snapshots for a presentation (newest first).
+ * @param {string} repoRoot
+ * @param {string} presentationId
+ * @returns {Promise<Array>}
+ */
+export async function listPresentationVersions(repoRoot, presentationId) {
+  if (isStorageInitialized()) {
+    const storage = getStorage();
+    const ctx = getStorageContext();
+    return await storage.listPresentationVersions(presentationId, ctx);
+  }
+  const mod = await import('./presentations/versions.js');
+  return await mod.listPresentationVersions(repoRoot, presentationId);
+}
+
+/**
+ * Get a single version snapshot (full presentation data included).
+ * @param {string} repoRoot
+ * @param {string} presentationId
+ * @param {string} versionId
+ * @returns {Promise<Object|null>}
+ */
+export async function getPresentationVersion(repoRoot, presentationId, versionId) {
+  if (isStorageInitialized()) {
+    const storage = getStorage();
+    const ctx = getStorageContext();
+    return await storage.getPresentationVersion(presentationId, versionId, ctx);
+  }
+  const mod = await import('./presentations/versions.js');
+  return await mod.getPresentationVersion(repoRoot, presentationId, versionId);
+}
+
+/**
+ * Create a version snapshot of a presentation.
+ * @param {string} repoRoot
+ * @param {string} presentationId
+ * @param {Object} pres - Full presentation object to snapshot
+ * @param {Object} [opts]
+ * @param {string|null} [opts.actorEmail]
+ * @param {string} [opts.reason]
+ * @param {string} [opts.label]
+ * @returns {Promise<Object|null>}
+ */
+export async function createPresentationVersion(repoRoot, presentationId, pres, opts = {}) {
+  if (isStorageInitialized()) {
+    const storage = getStorage();
+    const ctx = getStorageContext({ actorEmail: opts?.actorEmail });
+    return await storage.createPresentationVersion(presentationId, pres, ctx, {
+      reason: opts?.reason,
+      label: opts?.label,
+    });
+  }
+  const mod = await import('./presentations/versions.js');
+  return await mod.createPresentationVersion(repoRoot, presentationId, pres, opts);
+}
+
+/**
+ * Prune old version snapshots per the retention policy.
+ * @param {string} repoRoot
+ * @param {string} presentationId
+ * @param {Object} [opts]
+ * @param {number} [opts.keep]
+ * @returns {Promise<*>}
+ */
+export async function prunePresentationVersions(repoRoot, presentationId, opts = {}) {
+  if (isStorageInitialized()) {
+    const storage = getStorage();
+    const ctx = getStorageContext();
+    return await storage.prunePresentationVersions(presentationId, ctx, {
+      keep: opts?.keep,
+    });
+  }
+  const mod = await import('./presentations/versions.js');
+  return await mod.prunePresentationVersions(repoRoot, presentationId, opts);
 }

@@ -1,7 +1,7 @@
 /**
  * Shared "This image" inspector card for a single selected image element.
  *
- * The editing-surface principle (docs/plans/editing-surfaces.md): the inspector
+ * The editing-surface principle (docs/plans/briefs/editing-surfaces.md): the inspector
  * is the single home for everything settable on an element. A click on a canvas
  * image selects it and opens this card in the "This image" tab; the canvas keeps
  * only direct manipulation (the draggable focal point) and the empty-slot add.

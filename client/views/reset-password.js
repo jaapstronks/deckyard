@@ -1,6 +1,7 @@
+import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
-import { createBusyManager } from '../lib/busy.js';
+import { createBusyManager } from '../lib/dom/busy.js';
 
 export async function renderResetPassword(root, { nav } = {}) {
   const shell = h('div', { class: 'auth-shell' });
@@ -120,43 +121,34 @@ export async function renderResetPassword(root, { nav } = {}) {
       busyManager.setBusy(true);
 
       try {
-        const res = await fetch('/api/auth/reset-password', {
+        await api('/api/auth/reset-password', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, password: pw }),
+          body: { token, password: pw },
         });
 
-        const result = await res.json();
+        // Success - show message and link to login
+        form.innerHTML = '';
+        const successMsg = h('div', {
+          class: 'auth-status is-success',
+          text: t('resetPassword.success', 'Password has been reset successfully. You can now log in.'),
+        });
+        successMsg.style.textAlign = 'left';
+        successMsg.style.marginBottom = 'var(--ps-space-4)';
 
-        if (res.ok) {
-          // Success - show message and link to login
-          form.innerHTML = '';
-          const successMsg = h('div', {
-            class: 'auth-status is-success',
-            text: t('resetPassword.success', 'Password has been reset successfully. You can now log in.'),
-          });
-          successMsg.style.textAlign = 'left';
-          successMsg.style.marginBottom = 'var(--ps-space-4)';
+        const loginLink = h('a', {
+          href: '/login',
+          class: 'auth-btn',
+          style: 'text-decoration: none;',
+          text: t('resetPassword.goToLogin', 'Go to login'),
+        });
+        loginLink.onclick = (e) => {
+          e.preventDefault();
+          nav?.('/login');
+        };
 
-          const loginLink = h('a', {
-            href: '/login',
-            class: 'auth-btn',
-            style: 'text-decoration: none;',
-            text: t('resetPassword.goToLogin', 'Go to login'),
-          });
-          loginLink.onclick = (e) => {
-            e.preventDefault();
-            nav?.('/login');
-          };
-
-          form.append(successMsg, loginLink);
-        } else {
-          status.textContent = result?.error || t('resetPassword.error', 'Something went wrong. Please try again.');
-          status.className = 'auth-status is-error';
-          busyManager.setBusy(false);
-        }
+        form.append(successMsg, loginLink);
       } catch (err) {
-        status.textContent = t('resetPassword.error', 'Something went wrong. Please try again.');
+        status.textContent = err.message || t('resetPassword.error', 'Something went wrong. Please try again.');
         status.className = 'auth-status is-error';
         busyManager.setBusy(false);
       }

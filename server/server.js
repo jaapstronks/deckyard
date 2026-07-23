@@ -13,6 +13,8 @@ import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
 import { getFeatureFlags } from './config/feature-flags.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
+import { applySecurityHeaders } from './utils/security-headers.js';
+import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
 import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
@@ -44,6 +46,11 @@ async function ensureDirs() {
 const server = http.createServer(async (req, res) => {
   try {
     const url = getUrl(req);
+
+    // Baseline security headers on every response. Set via setHeader() so they
+    // merge into each handler's writeHead() without any route changes
+    // (security-audit H8). /embed/* stays frameable for Notion/iframe embeds.
+    applySecurityHeaders(req, res, url.pathname);
 
     // Health check endpoint for uptime monitoring (no auth, minimal dependencies)
     if (url.pathname === '/health') {
@@ -114,14 +121,7 @@ const server = http.createServer(async (req, res) => {
     });
   } catch (err) {
     const status = Number(err?.statusCode || 500);
-    const payload = JSON.stringify(
-      {
-        error: status >= 500 ? 'Server error' : 'Request error',
-        details: String(err?.message || err),
-      },
-      null,
-      2
-    );
+    const payload = JSON.stringify(buildTopLevelErrorBody(status, err), null, 2);
 
     // Important for streaming endpoints (SSE): headers may already be sent.
     if (!res.headersSent && !res.writableEnded) {

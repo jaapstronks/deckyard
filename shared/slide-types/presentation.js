@@ -7,21 +7,11 @@ import {
 } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { applyLocksToContent } from '../theme-locks.js';
-import { SLIDE_TYPES, THEMES } from './registry.js';
+import { SLIDE_TYPES, THEMES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
-import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 import { injectTextStyles } from './text-styles.js';
-
-function enumOptionValues(field) {
-  const opts = Array.isArray(field?.options) ? field.options : [];
-  return opts
-    .map((o) => {
-      if (typeof o === 'string') return o;
-      if (o && typeof o === 'object' && o.value != null) return String(o.value);
-      return null; // Mark invalid entries as null
-    })
-    .filter((v) => v !== null); // Filter out null but keep empty strings
-}
+import { validateFieldValue } from './field-types.js';
+import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 
 export function newPresentation({
   title = 'Untitled presentation',
@@ -39,6 +29,9 @@ export function newPresentation({
     : 'title-slide';
   return {
     id: cryptoUuid(),
+    // Durable schema version of this deck's envelope. Reads migrate older decks
+    // up to CURRENT_SCHEMA_VERSION; see shared/slide-types/schema-version.js.
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     title,
     // Used for public sharing (meta description) and integrations (webhooks).
     // Keep it short; UI/AI tooling can help generate this later.
@@ -239,6 +232,87 @@ function injectSlideLogo(html, content, ctx) {
   return injected ? out : html;
 }
 
+/**
+ * Remove editor-only inline-edit hook attributes from rendered slide HTML.
+ * These (`data-inline-field`, `data-inline-item`, `data-inline-item-index`) are
+ * consumed only by the editor's inline-edit machinery; in a non-editable
+ * artifact (export/embed/published) they are dead weight. `data-morph-role` is
+ * deliberately kept — the presenter morph engine relies on it.
+ *
+ * The `.tf-*` text-formatting classes that `injectTextStyles` merges onto the
+ * same element stay; their CSS is re-anchored off the attribute (see
+ * `03-components/97-text-styles.css`), so text alignment/colour/size still
+ * apply once `data-inline-field` is gone.
+ * @param {string} html
+ * @returns {string}
+ */
+export function stripEditorOnlyAttrs(html) {
+  if (typeof html !== 'string' || !html) return html;
+  return html
+    .replace(/\s+data-inline-field="[^"]*"/g, '')
+    .replace(/\s+data-inline-item-index="[^"]*"/g, '')
+    .replace(/\s+data-inline-item="[^"]*"/g, '');
+}
+
+/**
+ * Shift every heading element (`<h1>`..`<h6>`) in a slide's rendered HTML down
+ * by `shift` levels, clamped to the h2..h6 range. Used to place a slide's
+ * headings at the right depth in the document outline of a VISUAL output
+ * artifact (export / embed): the deck title is the single document `<h1>`, so
+ * no slide heading may be an `<h1>`, and slides under a chapter-title section
+ * drop one further level. Only the tag name is rewritten; classes, `data-*` and
+ * every other attribute survive, so all CSS/morph/step hooks keep matching.
+ *
+ * Floors at h2 even when `shift` is 0, so a stray `<h1>` from any slide type
+ * (custom fork types included) can never produce a second document `<h1>`.
+ *
+ * @param {string} html
+ * @param {number} [shift=0] - non-negative levels to descend (0 = floor only)
+ * @returns {string}
+ */
+export function shiftHeadingLevels(html, shift = 0) {
+  if (typeof html !== 'string' || !html) return html;
+  const n = Number.isFinite(shift) ? Math.max(0, Math.trunc(shift)) : 0;
+  return html.replace(/<(\/?)(h)([1-6])\b/gi, (_m, slash, h, digit) => {
+    const level = Math.min(6, Math.max(2, Number(digit) + n));
+    return `<${slash}${h}${level}`;
+  });
+}
+
+/**
+ * Per-slide heading shift for a deck's VISUAL output outline.
+ *
+ * The deck title is the document `<h1>`. A chapter-title slide is a section
+ * heading at `<h2>` and opens a running section: every slide after it (until
+ * the next chapter) sits one level deeper, so its title renders `<h3>`. Slides
+ * before any chapter sit directly under the deck `<h1>` at `<h2>`.
+ *
+ * Returns a shift (0 or 1) per slide, to be passed as `ctx.headingShift` into
+ * {@link renderSlideHtml}. Chapter-title slides themselves are never shifted
+ * (they ARE the section heading); they only raise the shift for what follows.
+ *
+ * @param {Array<{type?:string}>} slides
+ * @param {object} [opts]
+ * @param {(type?:string)=>boolean} [opts.isSectionOpener] - override the
+ *   section-opener test (defaults to the chapter-title slide type)
+ * @returns {number[]}
+ */
+export function computeHeadingShifts(slides, { isSectionOpener } = {}) {
+  const opener =
+    typeof isSectionOpener === 'function'
+      ? isSectionOpener
+      : (type) => type === 'chapter-title-slide';
+  let inSection = false;
+  const list = Array.isArray(slides) ? slides : [];
+  return list.map((s) => {
+    if (opener(s?.type)) {
+      inSection = true;
+      return 0;
+    }
+    return inSection ? 1 : 0;
+  });
+}
+
 export function renderSlideHtml(slide, ctx = {}) {
   // Allow callers to provide their own slide types (e.g., client using server-fetched types).
   // This is essential for custom slide types that aren't bundled in the client build.
@@ -265,9 +339,21 @@ export function renderSlideHtml(slide, ctx = {}) {
   // Per-field block-level text styling (alignment/colour): adds tf-* classes
   // to the matching data-inline-field element. Runs on the type's own output
   // (its field elements), before the slide-wrapper injections below.
-  out = injectTextStyles(out, content);
+  out = injectTextStyles(out, content, def?.fields);
   out = injectSlideBackground(out, content);
   out = injectSlideLogo(out, content, ctx);
+  // Non-editable output artifacts (export/embed/published/render) opt in to
+  // dropping editor-only inline-edit hooks — pure noise there. Must run AFTER
+  // injectTextStyles (which reads data-inline-field). data-morph-role is NOT
+  // stripped: the presenter morph engine uses it.
+  if (ctx?.stripEditorAttrs) out = stripEditorOnlyAttrs(out);
+  // Visual output artifacts (export/embed) place each slide's headings at the
+  // right document-outline depth: the deck title is the single <h1>, so slide
+  // headings are floored to <h2>, and slides inside a chapter section drop one
+  // further level. Runs last so it covers the type's title AND its markdown
+  // subheadings alike — driven by ctx, not per-type hardcoding. Callers that
+  // don't set headingShift (editor/presenter) keep the slide's authored levels.
+  if (ctx?.headingShift != null) out = shiftHeadingLevels(out, ctx.headingShift);
   return out;
 }
 
@@ -299,6 +385,17 @@ export function validatePresentation(pres, opts = {}) {
     errors.push('Presentation.created must be ISO-8601');
   if (!isIsoString(pres.modified))
     errors.push('Presentation.modified must be ISO-8601');
+  // schemaVersion is optional (legacy decks predate it and migrate up on read).
+  // When present it must be a non-negative integer this build understands.
+  if (pres.schemaVersion != null) {
+    const sv = Number(pres.schemaVersion);
+    if (!Number.isInteger(sv) || sv < 0)
+      errors.push('Presentation.schemaVersion must be a non-negative integer');
+    else if (sv > CURRENT_SCHEMA_VERSION)
+      errors.push(
+        `Presentation.schemaVersion ${sv} is newer than this build supports (max ${CURRENT_SCHEMA_VERSION})`
+      );
+  }
   if (
     pres.lang != null &&
     pres.lang !== 'nl' &&
@@ -330,7 +427,7 @@ export function validateSlide(slide) {
     errors.push('Slide.id must be a UUID');
   if (
     !isNonEmptyString(slide.type) ||
-    !SLIDE_TYPES[slide.type]
+    !getSlideType(slide.type)
   )
     errors.push(
       `Slide.type must be a known slide type (got: ${JSON.stringify(
@@ -359,168 +456,17 @@ export function validateSlide(slide) {
   // visibility validation
   const visibilityErrors = validateVisibility(slide.visibility);
   for (const e of visibilityErrors) errors.push(e);
-  const def = SLIDE_TYPES[slide.type];
+  const def = getSlideType(slide.type);
   if (!def) return errors;
 
+  // Per-field validation is delegated to the single declared field-type
+  // vocabulary (shared/slide-types/field-types.js), which owns the required +
+  // value checks for every type. This replaces the hand-synced type switch that
+  // had drifted from the editor and docs (datamodel-purity move 1a). Unknown
+  // field types are guarded by tests/field-types.test.js, not here.
   for (const field of def.fields) {
     const val = slide.content[field.key];
-    if (field.required) {
-      if (field.type === 'image') {
-        if (!isNonEmptyString(val))
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (field.type === 'images') {
-        if (
-          !Array.isArray(val) ||
-          val.filter((v) => isNonEmptyString(v)).length ===
-            0
-        )
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (field.type === 'items') {
-        if (!Array.isArray(val) || val.length === 0)
-          errors.push(
-            `Slide.content.${field.key} is required`
-          );
-      } else if (!isNonEmptyString(val)) {
-        errors.push(
-          `Slide.content.${field.key} is required`
-        );
-      }
-    }
-    if (
-      field.type === 'string' ||
-      field.type === 'markdown' ||
-      field.type === 'csv' ||
-      field.type === 'code'
-    ) {
-      // Optional text fields may be missing/null in older decks or external integrations.
-      // Only enforce string type when the value is present.
-      if (val != null && typeof val !== 'string')
-        errors.push(
-          `Slide.content.${field.key} must be a string`
-        );
-      if (
-        field.maxLength &&
-        typeof val === 'string' &&
-        val.length > field.maxLength
-      ) {
-        errors.push(
-          `Slide.content.${field.key} exceeds max length (${field.maxLength})`
-        );
-      }
-    }
-    if (field.type === 'images') {
-      // Skip validation if value is missing (back-compat for old presentations without this field)
-      if (val == null) continue;
-      if (!Array.isArray(val))
-        errors.push(
-          `Slide.content.${field.key} must be an array`
-        );
-      else {
-        const bad = val.filter(
-          (v) => typeof v !== 'string' || !v.trim()
-        );
-        if (bad.length)
-          errors.push(
-            `Slide.content.${field.key} must be an array of non-empty strings`
-          );
-        if (field.maxItems && val.length > field.maxItems)
-          errors.push(
-            `Slide.content.${field.key} must have at most ${field.maxItems} items`
-          );
-      }
-    }
-    if (field.type === 'items') {
-      // Skip validation if value is missing (back-compat for old presentations without this field)
-      if (val == null) continue;
-      if (!Array.isArray(val))
-        errors.push(
-          `Slide.content.${field.key} must be an array`
-        );
-      else {
-        const minItems = Math.max(
-          0,
-          Number(field.minItems || 0) || 0
-        );
-        const maxItems = Number(field.maxItems || 0) || 0;
-        if (minItems && val.length < minItems)
-          errors.push(
-            `Slide.content.${field.key} must have at least ${minItems} items`
-          );
-        if (maxItems && val.length > maxItems)
-          errors.push(
-            `Slide.content.${field.key} must have at most ${maxItems} items`
-          );
-        const itemFields = Array.isArray(field.itemFields)
-          ? field.itemFields
-          : [];
-        for (let i = 0; i < val.length; i += 1) {
-          const it = val[i];
-          if (!it || typeof it !== 'object') {
-            errors.push(
-              `Slide.content.${field.key}[${i}] must be an object`
-            );
-            continue;
-          }
-          for (const f of itemFields) {
-            if (!f || typeof f.key !== 'string') continue;
-            const iv = it[f.key];
-            if (f.required && !isNonEmptyString(iv))
-              errors.push(
-                `Slide.content.${field.key}[${i}].${f.key} is required`
-              );
-            if (f.type === 'string') {
-              if (iv != null && typeof iv !== 'string')
-                errors.push(
-                  `Slide.content.${field.key}[${i}].${f.key} must be a string`
-                );
-              if (
-                f.maxLength &&
-                typeof iv === 'string' &&
-                iv.length > f.maxLength
-              )
-                errors.push(
-                  `Slide.content.${field.key}[${i}].${f.key} exceeds max length (${f.maxLength})`
-                );
-            }
-          }
-        }
-      }
-    }
-    if (field.type === 'boolean') {
-      // Cleared boolean fields use the repo's '' convention (like enums); only
-      // a present non-empty value must be an actual boolean.
-      if (val != null && val !== '' && typeof val !== 'boolean')
-        errors.push(
-          `Slide.content.${field.key} must be a boolean`
-        );
-    }
-    if (field.type === 'enum') {
-      const allowed = enumOptionValues(field);
-      // The background field also accepts theme-defined variant ids
-      // (theme.slideBackgrounds — see shared/theme-slide-backgrounds.js).
-      // Validation has no theme context, so any safe slug passes; unknown ids
-      // render as an inert class and fall back to the default background.
-      const isThemeBgVariant =
-        field.key === 'background' &&
-        typeof val === 'string' &&
-        SLIDE_BG_ID_RE.test(val);
-      // Cleared enum fields use the repo's '' convention (see boolean above):
-      // empty = unset / follow the type default. The editor folds and the
-      // silent-default controls write '' (image-slide fit/layout, image-text
-      // imageFit, content-columns col{n}ImageFit), so round-tripping such
-      // content through the API must stay valid. Required enums still reject
-      // '' via the required check above.
-      if (val != null && val !== '' && !allowed.includes(val) && !isThemeBgVariant)
-        errors.push(
-          `Slide.content.${
-            field.key
-          } must be one of: ${allowed.join(', ')}`
-        );
-    }
+    for (const e of validateFieldValue(val, field)) errors.push(e);
   }
   return errors;
 }

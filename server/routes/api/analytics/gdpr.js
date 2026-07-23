@@ -28,7 +28,7 @@ export async function handleExportMyData(ctx) {
   }
 
   // Stricter rate limit for GDPR export (expensive operation)
-  if (!allowRequest(`analytics:gdpr:export:${authedUser.email}`, AUTH_RATE_LIMITS.expensive)) {
+  if (!(await allowRequest(`analytics:gdpr:export:${authedUser.email}`, AUTH_RATE_LIMITS.expensive))) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser.email,
@@ -61,7 +61,7 @@ export async function handleDeleteMyData(ctx) {
   }
 
   // Stricter rate limit for GDPR delete (expensive/destructive operation)
-  if (!allowRequest(`analytics:gdpr:delete:${authedUser.email}`, AUTH_RATE_LIMITS.expensive)) {
+  if (!(await allowRequest(`analytics:gdpr:delete:${authedUser.email}`, AUTH_RATE_LIMITS.expensive))) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser.email,

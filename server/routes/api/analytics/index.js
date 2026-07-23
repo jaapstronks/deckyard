@@ -33,7 +33,7 @@ export async function handleAnalytics(ctx) {
 
   // Apply user-based rate limiting for authenticated endpoints
   const rateLimitKey = authedUser?.email || authedUser?.id || getClientIp(req);
-  if (!allowRequest(`analytics:auth:${rateLimitKey}`, AUTH_RATE_LIMITS.standard)) {
+  if (!(await allowRequest(`analytics:auth:${rateLimitKey}`, AUTH_RATE_LIMITS.standard))) {
     logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
       endpoint: path,
       user: authedUser?.email,

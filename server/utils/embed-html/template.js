@@ -4,6 +4,7 @@ import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 export function renderEmbedHtmlDocument({
   title = 'Presentation',
   docLang = 'en',
+  docDir = 'ltr',
   totalSlides = 0,
   publishId = '',
   ui = 'default',
@@ -18,6 +19,7 @@ export function renderEmbedHtmlDocument({
 } = {}) {
   const safeTitle = escapeHtml(title || 'Presentation');
   const lang = docLang === 'nl' ? 'nl' : 'en';
+  const dir = docDir === 'rtl' ? 'rtl' : 'ltr';
   const mode = ui === 'min' ? 'min' : 'default';
   const safeTotalSlides = Math.max(
     0,
@@ -45,7 +47,7 @@ export function renderEmbedHtmlDocument({
   const wmCss = String(watermarkCss || '');
   const wmHtml = String(watermarkHtml || '');
   return `<!doctype html>
-<html lang="${escapeHtml(lang)}" data-theme="${safeThemeId}">
+<html lang="${escapeHtml(lang)}" dir="${escapeHtml(dir)}" data-theme="${safeThemeId}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -158,14 +160,14 @@ export function renderEmbedHtmlDocument({
         </div>
       </div>
       <div class="ps-embed-deck-wrap">
-        <div id="deck" class="deck" aria-live="polite">
+        <main id="deck" class="deck" aria-live="polite">
           <div id="stageWrap" class="ps-embed-stage-wrap">
             <div id="stage" class="ps-embed-stage ps-theme">
               ${wmHtml}
               ${slidesHtml || ''}
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
 

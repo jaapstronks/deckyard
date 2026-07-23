@@ -21,7 +21,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createColorPicker } from './color-picker.js';
 import {
   SLIDE_BG_ID_RE,

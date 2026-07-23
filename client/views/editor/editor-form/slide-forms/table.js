@@ -1,8 +1,8 @@
 import { parseMarkdownTable } from '../../../../../shared/markdown.js';
 import { MAX_COLS, MAX_ROWS } from '../../../../../shared/slide-types/types/table-slide.js';
 import { t } from '../../../../lib/ui-i18n.js';
-import { toast } from '../../../../lib/toast.js';
-import { createModal, createTextArea } from '../../../../lib/modal.js';
+import { toast } from '../../../../lib/dom/toast.js';
+import { createModal, createTextArea } from '../../../../lib/dom/modal.js';
 
 function clampInt(n, min, max) {
   const x = Number(n);

@@ -1,4 +1,4 @@
-import { createPromiseModal, createBusyManager } from '../../../lib/modal.js';
+import { createPromiseModal, createBusyManager } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 function countSentences(text) {

@@ -2,6 +2,7 @@
  * API Key actions - fetch helpers for API key management.
  */
 
+import { api } from '../../../lib/api.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**
@@ -13,15 +14,10 @@ import { t } from '../../../lib/ui-i18n.js';
 export async function fetchApiKeys({ includeRevoked = false } = {}) {
   try {
     const url = includeRevoked ? '/api/api-keys?includeRevoked=true' : '/api/api-keys';
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (res.ok) {
-      return { keys: data.keys || [] };
-    }
-    return { error: data.error || t('settings.apiKeys.fetchError', 'Failed to fetch API keys') };
+    const data = await api(url);
+    return { keys: data.keys || [] };
   } catch (e) {
-    return { error: t('settings.apiKeys.fetchError', 'Failed to fetch API keys') };
+    return { error: e.message || t('settings.apiKeys.fetchError', 'Failed to fetch API keys') };
   }
 }
 
@@ -34,20 +30,13 @@ export async function fetchApiKeys({ includeRevoked = false } = {}) {
  */
 export async function createApiKey({ name, scopes }) {
   try {
-    const res = await fetch('/api/api-keys', {
+    const data = await api('/api/api-keys', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, scopes }),
+      body: { name, scopes },
     });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      return { key: data };
-    }
-    return { error: data.error || t('settings.apiKeys.createError', 'Failed to create API key') };
+    return { key: data };
   } catch (e) {
-    return { error: t('settings.apiKeys.createError', 'Failed to create API key') };
+    return { error: e.message || t('settings.apiKeys.createError', 'Failed to create API key') };
   }
 }
 
@@ -58,17 +47,10 @@ export async function createApiKey({ name, scopes }) {
  */
 export async function revokeApiKey(id) {
   try {
-    const res = await fetch(`/api/api-keys/${id}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      return { success: true };
-    }
-    const data = await res.json();
-    return { error: data.error || t('settings.apiKeys.revokeError', 'Failed to revoke API key') };
+    await api(`/api/api-keys/${id}`, { method: 'DELETE' });
+    return { success: true };
   } catch (e) {
-    return { error: t('settings.apiKeys.revokeError', 'Failed to revoke API key') };
+    return { error: e.message || t('settings.apiKeys.revokeError', 'Failed to revoke API key') };
   }
 }
 
@@ -80,14 +62,9 @@ export async function revokeApiKey(id) {
  */
 export async function fetchKeyUsage(id, days = 30) {
   try {
-    const res = await fetch(`/api/api-keys/${id}/usage?days=${days}`);
-    const data = await res.json();
-
-    if (res.ok) {
-      return { usage: data };
-    }
-    return { error: data.error || t('settings.apiKeys.usageError', 'Failed to fetch usage stats') };
+    const data = await api(`/api/api-keys/${id}/usage?days=${days}`);
+    return { usage: data };
   } catch (e) {
-    return { error: t('settings.apiKeys.usageError', 'Failed to fetch usage stats') };
+    return { error: e.message || t('settings.apiKeys.usageError', 'Failed to fetch usage stats') };
   }
 }

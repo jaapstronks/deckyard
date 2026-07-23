@@ -1,6 +1,6 @@
 import { h } from '../lib/dom.js';
 import { t } from '../lib/ui-i18n.js';
-import { me } from '../lib/auth.js';
+import { me } from '../lib/user/auth.js';
 
 export async function renderMagicLogin(root, { nav } = {}) {
   const url = new URL(location.href);

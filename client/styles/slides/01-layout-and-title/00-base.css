@@ -18,9 +18,12 @@
 }
 
 /* Reset global heading styles inside slides (theme base CSS may set centered/white headings). */
+/* h4 included: in-section slides (under a chapter) shift a slide's headings one
+   level deeper, so a title can reach h3 and a markdown subheading h4. */
 .slide h1,
 .slide h2,
-.slide h3 {
+.slide h3,
+.slide h4 {
   margin: 0;
   color: inherit;
   text-align: start;
@@ -174,6 +177,14 @@
   --slide-bg-text-muted: color-mix(in srgb, var(--slide-bg-text) 78%, transparent);
   --color-text: var(--slide-bg-text);
   --color-text-muted: var(--slide-bg-text-muted);
+  /* The brand accent is tuned for light backgrounds, so links keeping the raw
+     accent go near-invisible on a dark surface. Lighten whatever the accent is
+     toward white (accent-agnostic, works for every theme). Themes can
+     hard-override with --t-color-link-on-dark. */
+  --color-link: var(
+    --t-color-link-on-dark,
+    color-mix(in srgb, var(--color-accent) 42%, #ffffff)
+  );
   color: var(--slide-bg-text);
 }
 .slide.has-slide-bg-dark-text {
@@ -209,6 +220,9 @@
   ) {
   --color-text: rgba(11, 11, 11, 0.92);
   --color-text-muted: rgba(11, 11, 11, 0.7);
+  /* These cards are light surfaces sitting on the dark background, so the
+     lightened on-dark link would be low-contrast here — restore the accent. */
+  --color-link: var(--color-accent);
   color: rgba(11, 11, 11, 0.92);
 }
 

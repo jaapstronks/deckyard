@@ -1,20 +1,20 @@
 import { api } from '../lib/api.js';
-import { logout } from '../lib/auth.js';
+import { logout } from '../lib/user/auth.js';
 import { h } from '../lib/dom.js';
 import {
   activateVideoEmbeds,
   cleanupSlideRuntimes,
   pauseVideoEmbeds,
   renderSlideElement,
-} from '../lib/slide-render.js';
+} from '../lib/slide-runtime/slide-render.js';
 import { createPresenterAnimator } from './presenter/animations.js';
 import { STEP_DEPS } from './presenter/step.js';
 import { startPresenterSession } from './presenter/session.js';
-import { normalizeLang } from '../lib/i18n.js';
+import { normalizeLang } from '../lib/format/i18n.js';
 import { t } from '../lib/ui-i18n.js';
-import { setDocumentTitle } from '../lib/branding.js';
-import { copyToClipboardWithPromptFallback } from '../lib/clipboard.js';
-import { loadThemeById } from '../lib/theme.js';
+import { setDocumentTitle } from '../lib/theme/branding.js';
+import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
+import { loadThemeById } from '../lib/theme/theme.js';
 import { attachStageScale } from './presenter/stage-scale.js';
 import { createEdgeHint } from './presenter/edge-hint.js';
 import { createSessionStatePoster } from './presenter/session-state.js';
@@ -23,30 +23,32 @@ import {
   normalizeNotesStrings,
 } from './presenter/deck-controller.js';
 import { attachPresenterKeys } from './presenter/keys.js';
-import { attachSwipeNavigation } from '../lib/swipe-nav.js';
+import { attachSwipeNavigation } from '../lib/dom/swipe-nav.js';
 import { ensureOtherLanguageFollowAlong } from './presenter/translate-fill.js';
 import {
   applyLikertInteractionStateToStage,
   applyPollInteractionStateToStage,
 } from './presenter/interactions.js';
 import { createPresenterToolsMenu } from './presenter/tools-menu.js';
+import { createPresenterFollowCodesPill } from './presenter/follow-codes-pill.js';
 import { createPresenterLangSeg } from './presenter/lang-seg.js';
 import { createPresenterInteractionControls } from './presenter/interaction-controls.js';
 import { createPresenterControlToggle } from './presenter/control-toggle.js';
 import { createPresenterStageScaffold } from './presenter/stage-scaffold.js';
 import { createPresenterConsole } from './presenter/console.js';
 import { openPresenterShortcuts } from './presenter/shortcuts-overlay.js';
-import { confirmModal } from '../lib/modal.js';
+import { confirmModal } from '../lib/dom/modal.js';
 import { createPresenterFullscreenController } from './presenter/fullscreen.js';
 import { createStartCurtain } from './presenter/start-curtain.js';
 import { createChromeAutoHide } from './presenter/chrome-autohide.js';
 import { createPresenterHighlighter } from './presenter/highlighter.js';
-import { fetchMySettings } from '../lib/settings.js';
-import { createVideoLayer } from '../lib/video-layer.js';
+import { fetchMySettings } from '../lib/net/settings.js';
+import { createVideoLayer } from '../lib/slide-runtime/video-layer.js';
 import { createAutoAdvance } from './presenter/auto-advance.js';
-import { createPresentChannel } from '../lib/present-channel.js';
+import { createPresentChannel } from '../lib/net/present-channel.js';
 import { readDeckLangFromUrl } from './presenter/present-lang.js';
 import { getSlideEffectiveDuration, calculateDeckTime, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
+import { resolveRevealStyle } from '../../shared/reveal-style.js';
 
 export async function renderPresenter(
   root,
@@ -121,37 +123,9 @@ export async function renderPresenter(
     await copyToClipboardWithPromptFallback(text, label);
   };
 
-  // Developer convenience: show /go + 4-letter code in the top bar (outside the slide).
-  const followCodesPill = h('div', {
-    class: 'presenter-followcodes',
-    hidden: true,
-    title: t('presenter.followCodes.title', 'Follow-along: /go + code'),
-  });
-  const followCodesText = h('div', {
-    class: 'presenter-followcodes-text',
-    text: '',
-  });
-  const followCodesCopyBtn = h('button', {
-    class: 'btn btn-secondary',
-    text: t('presenter.followCodes.copy', 'Copy /go + code'),
-    disabled: true,
-    onclick: async () => {
-      if (!sessionFollowCodes) return;
-      const code =
-        (modeLang === 'nl'
-          ? sessionFollowCodes?.nl
-          : sessionFollowCodes?.en) ||
-        sessionFollowCodes?.nl ||
-        sessionFollowCodes?.en;
-      if (!code) return;
-      const payload = `/go ${code}`;
-      await copyToClipboardWithPromptFallback(payload, 'Copy:');
-    },
-  });
-  followCodesPill.append(
-    followCodesText,
-    followCodesCopyBtn
-  );
+  // Developer convenience: show /go + 4-letter code in the top bar (outside the
+  // slide). The tools menu re-parents the pill and relabels its copy button.
+  const followCodes = createPresenterFollowCodesPill({ modeLang });
 
   const translatePill = h('div', {
     class: 'pill',
@@ -165,8 +139,8 @@ export async function renderPresenter(
     getSessionId: () => sessionId,
     getSessionPresentationId: () => sessionPresId,
     copyText,
-    followCodesPill,
-    followCodesCopyBtn,
+    followCodesPill: followCodes.el,
+    followCodesCopyBtn: followCodes.copyBtn,
   });
   const toolsWrap = toolsMenu.el;
   const interactionCtl = createPresenterInteractionControls({
@@ -208,6 +182,9 @@ export async function renderPresenter(
   // Deck-level presenter stepping ("Stappen"). Controlled from the editor settings modal
   // and persisted with the presentation (single source of truth).
   let stepParagraphs = !!pres?.settings?.stepParagraphs;
+  // Reveal style for step-by-step builds (theme default → deck override). Phase
+  // 1 is a single global style; typewriter-per-bullet is the notable one.
+  const revealStyle = resolveRevealStyle({ settings: pres?.settings, theme });
   let deckCtl = null;
 
   // Auto-advance config (read early so the button can be created before actions.append)
@@ -570,6 +547,7 @@ export async function renderPresenter(
     setStepParagraphs: (v) => {
       stepParagraphs = !!v;
     },
+    getRevealStyle: () => revealStyle,
   });
   // Ensure initial step mode is applied to the current slide.
   deckCtl?.setStepModeEnabled?.(stepParagraphs);
@@ -865,21 +843,7 @@ export async function renderPresenter(
     closeSessionEvents = sess?.close || null;
 
     if (sessionFollowCodes) {
-      try {
-        const code =
-          (modeLang === 'nl'
-            ? sessionFollowCodes?.nl
-            : sessionFollowCodes?.en) ||
-          sessionFollowCodes?.nl ||
-          sessionFollowCodes?.en;
-        followCodesText.textContent = code
-          ? `/go ${code}`
-          : '/go';
-        followCodesPill.hidden = !code;
-        followCodesCopyBtn.disabled = !code;
-      } catch {
-        // ignore
-      }
+      followCodes.setCodes(sessionFollowCodes);
       // Mirror the join codes to an already-open projector window so the beamer
       // shows the same follow-invite/poll/feedback codes.
       presentChannel.postCodes(sessionFollowCodes);

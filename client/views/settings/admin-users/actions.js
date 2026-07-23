@@ -2,10 +2,11 @@
  * Admin user actions - API calls and confirmations.
  */
 
+import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 
 /**
  * Fetch users from the API.
@@ -15,9 +16,8 @@ import { confirmModal } from '../../../lib/modal.js';
  */
 export async function fetchUsers(onSuccess, onError) {
   try {
-    const res = await fetch('/api/admin/users');
-    const data = await res.json();
-    if (res.ok && data.users) {
+    const data = await api('/api/admin/users');
+    if (data.users) {
       onSuccess(data.users);
     } else {
       onError();
@@ -44,16 +44,9 @@ export async function confirmDelete(targetUser, onSuccess) {
   if (!confirmed) return;
 
   try {
-    const res = await fetch(`/api/admin/users/${targetUser.id}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      toast.success(t('admin.users.deleteSuccess', 'User deleted successfully.'));
-      onSuccess();
-    } else {
-      toast.error(t('admin.users.deleteError', 'Failed to delete user.'));
-    }
+    await api(`/api/admin/users/${targetUser.id}`, { method: 'DELETE' });
+    toast.success(t('admin.users.deleteSuccess', 'User deleted successfully.'));
+    onSuccess();
   } catch (e) {
     toast.error(t('admin.users.deleteError', 'Failed to delete user.'));
   }
@@ -71,18 +64,10 @@ export async function resendInvitation(targetUser, btn) {
   btn.textContent = t('admin.users.invitationSending', 'Sending…');
 
   try {
-    const res = await fetch(`/api/admin/users/${targetUser.id}/resend-invitation`, {
-      method: 'POST',
-    });
-
-    if (res.ok) {
-      toast.success(t('admin.users.invitationSent', 'Invitation sent.'));
-    } else {
-      const data = await res.json();
-      toast.error(data.error || t('admin.users.invitationError', 'Failed to send invitation.'));
-    }
+    await api(`/api/admin/users/${targetUser.id}/resend-invitation`, { method: 'POST' });
+    toast.success(t('admin.users.invitationSent', 'Invitation sent.'));
   } catch (e) {
-    toast.error(t('admin.users.invitationError', 'Failed to send invitation.'));
+    toast.error(e.message || t('admin.users.invitationError', 'Failed to send invitation.'));
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;

@@ -6,8 +6,8 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 
 /**
  * Generate human-readable schema documentation from slide type definition.

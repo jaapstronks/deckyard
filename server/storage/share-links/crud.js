@@ -124,6 +124,36 @@ export async function getShareLinkByToken(token, ctx) {
 }
 
 /**
+ * Get a share link by its ID (org-scoped), without expiry/revocation filtering.
+ *
+ * Used to bind a linkId to the presentation the caller is authorized for before
+ * a revoke/update/access-log operation, so a user who can write one deck can't
+ * act on a link belonging to a different (private) deck via a forged linkId.
+ * Returns revoked links too, so the containment check still holds on the
+ * revoke/access-log paths.
+ * @param {string} linkId - The share link ID
+ * @param {Object} ctx - Context object
+ * @returns {Promise<Object|null>} - The formatted share link, or null
+ */
+export async function getShareLinkById(linkId, ctx) {
+  const id = norm(linkId);
+  if (!id) return null;
+
+  return withDbGuard(null, async (db) => {
+    const orgId = getOrgId(ctx);
+
+    const row = await db
+      .selectFrom('presentation_share_links')
+      .selectAll()
+      .where('id', '=', id)
+      .where('organization_id', '=', orgId)
+      .executeTakeFirst();
+
+    return row ? formatShareLink(row) : null;
+  });
+}
+
+/**
  * Get and validate a share link by ID.
  * Checks: exists, not revoked, not expired.
  * For use in guest management where we have the share link ID.

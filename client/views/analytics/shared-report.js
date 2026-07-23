@@ -2,9 +2,10 @@
  * Public shared report view.
  */
 
+import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration, formatDate, getSourceLabel } from '../../lib/analytics-format.js';
+import { formatDuration, formatDate, getSourceLabel } from '../../lib/format/analytics-format.js';
 
 /**
  * Render shared report view.
@@ -29,17 +30,18 @@ export async function renderSharedReport(root, token) {
   // Fetch report
   let report = null;
   try {
-    const response = await fetch(`/api/analytics/reports/${encodeURIComponent(token)}`);
-    if (!response.ok) {
-      throw new Error(response.status === 404 ? 'Report not found or expired' : 'Failed to load report');
-    }
-    report = await response.json();
+    report = await api(`/api/analytics/reports/${encodeURIComponent(token)}`);
   } catch (err) {
+    const message = err.statusCode === 404
+      ? 'Report not found or expired'
+      : err.statusCode
+        ? 'Failed to load report'
+        : err.message || 'This report may have expired or been removed.';
     shell.innerHTML = '';
     shell.append(
       h('div', { class: 'shared-report-error' }, [
         h('h1', { text: t('analytics.reportError', 'Report Not Available') }),
-        h('p', { text: err.message || 'This report may have expired or been removed.' }),
+        h('p', { text: message }),
       ])
     );
     return cleanup;

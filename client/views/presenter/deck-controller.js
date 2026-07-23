@@ -48,6 +48,7 @@ export function createPresenterDeckController({
   getFollowCodes,
   getStepParagraphs,
   setStepParagraphs,
+  getRevealStyle,
 } = {}) {
   let pres = null;
   let presentSlides = [];
@@ -447,6 +448,12 @@ export function createPresenterDeckController({
         if (stepIdx < frags.length) {
           stepIdx += 1;
           step.applyFragmentsVisibility(section, stepIdx);
+          // Typewriter-reveal the bullet we just showed, when the deck's reveal
+          // style asks for it (theme/deck default). Instant otherwise; the
+          // animator no-ops under reduced motion and for rich fragments.
+          if (getRevealStyle?.() === 'typewriter') {
+            animator.typewrite?.(frags[stepIdx - 1]);
+          }
           if (stepIdx >= frags.length) pulseStepComplete(section);
           afterChange();
           return;

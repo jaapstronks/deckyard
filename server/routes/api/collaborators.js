@@ -28,6 +28,8 @@ import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
 import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../storage/activity-events.js';
 import { normalizeEmail } from '../../utils/normalize.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('collaborators');
 
 /**
  * Handle collaborator management endpoints.
@@ -56,7 +58,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
 
       serveJson(res, 200, { presentations: presentationsWithSlides });
     } catch (err) {
-      console.error('[collaborators] Failed to list shared presentations:', err);
+      log.error('[collaborators] Failed to list shared presentations:', err);
       return serveJson(res, 500, { error: 'Failed to load shared presentations' });
     }
     return true;
@@ -116,7 +118,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
     try {
       users = await listUsers(ctx);
     } catch (err) {
-      console.error('[collaborators] Failed to list users:', err);
+      log.error('[collaborators] Failed to list users:', err);
       return serveJson(res, 500, { error: 'Failed to load users' });
     }
     const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
@@ -152,7 +154,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
           ctx
         );
       } catch (err) {
-        console.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
+        log.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
         results.push({
           email: userEmail,
           ok: false,
@@ -204,7 +206,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
         }
       } catch (err) {
         // Log but don't fail the invite if notification fails
-        console.error(`[collaborators] Failed to create notification for ${userEmail}:`, err);
+        log.error(`[collaborators] Failed to create notification for ${userEmail}:`, err);
       }
 
       // Create activity event for the activity feed (non-blocking)
@@ -227,7 +229,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
         );
       } catch (err) {
         // Log but don't fail the invite if activity event fails
-        console.error(`[collaborators] Failed to create activity event for ${userEmail}:`, err);
+        log.error(`[collaborators] Failed to create activity event for ${userEmail}:`, err);
       }
 
       // Send invitation email (non-blocking)
@@ -243,7 +245,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
         }).then((emailResult) => {
           if (!emailResult.ok) {
             // eslint-disable-next-line no-console
-            console.warn(
+            log.warn(
               `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
             );
           }
@@ -312,7 +314,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
 
       serveJson(res, 200, { collaborators: enrichedCollaborators });
     } catch (err) {
-      console.error('[collaborators] Failed to list collaborators:', err);
+      log.error('[collaborators] Failed to list collaborators:', err);
       return serveJson(res, 500, { error: 'Failed to load collaborators' });
     }
     return true;
@@ -352,7 +354,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
 
       serveJson(res, 200, { ok: true });
     } catch (err) {
-      console.error('[collaborators] Failed to remove collaborator:', err);
+      log.error('[collaborators] Failed to remove collaborator:', err);
       return serveJson(res, 500, { error: 'Failed to remove collaborator' });
     }
     return true;
@@ -391,7 +393,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
 
       serveJson(res, 200, { collaborator: result.collaborator });
     } catch (err) {
-      console.error('[collaborators] Failed to update collaborator permission:', err);
+      log.error('[collaborators] Failed to update collaborator permission:', err);
       return serveJson(res, 500, { error: 'Failed to update permission' });
     }
     return true;

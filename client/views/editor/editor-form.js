@@ -2,14 +2,14 @@ import { createRenderField } from './editor-form/render-field.js';
 import { renderSlideFormByType } from './editor-form/slide-form-router.js';
 import { buildDeckSlideOptions } from './fields/card-link-field.js';
 import { renderFocusGridField } from './editor-form/focus-picker.js';
-import { newId } from '../../lib/id.js';
-import { debugLog } from '../../lib/debug.js';
+import { newId } from '../../lib/util/id.js';
+import { debugLog } from '../../lib/util/debug.js';
 import { installDismissOnOutside } from '../../lib/dom.js';
-import { createDropdown } from '../../lib/dropdown.js';
-import { confirmModal } from '../../lib/modal.js';
+import { createDropdown } from '../../lib/dom/dropdown.js';
+import { confirmModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { slidePrimaryLabel } from './editor-utils.js';
-import { toast as defaultToast } from '../../lib/toast.js';
+import { toast as defaultToast } from '../../lib/dom/toast.js';
 import { getConvertibleSlideTypes } from '../../../shared/slide-types.js';
 import { convertSlideWithConfirm } from './convert-slide-action.js';
 import { openJsonDebugModal } from './modals/json-debug-modal.js';
@@ -18,7 +18,7 @@ import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { moreIcon, closeIcon } from '../../lib/icons.js';
+import { moreIcon, closeIcon } from '../../lib/dom/icons.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import { createLayoutSwitcherChip } from './layout-switcher.js';
 import {
@@ -29,8 +29,8 @@ import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
 import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
 import { isLocked } from '../../../shared/theme-locks.js';
-import { loadThemeById } from '../../lib/theme.js';
-import { detectBgTextContrast } from '../../lib/bg-contrast.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
+import { detectBgTextContrast } from '../../lib/slide-authoring/bg-contrast.js';
 
 /**
  * Sample the current slide's background image and store which theme text colour
@@ -356,7 +356,7 @@ function buildHeaderActions({
 
             try {
               const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-              const { readPreferredLlmVendor } = await import('../../lib/llm-vendor.js');
+              const { readPreferredLlmVendor } = await import('../../lib/net/llm-vendor.js');
               const vendor = readPreferredLlmVendor() || null;
 
               const resp = await api('/api/ai/convert-slide', {
@@ -587,6 +587,9 @@ export function createRerenderEditor({
   // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
+  // Opens the bottom-panel Data tab for a chart slide (editing-surfaces §4.3).
+  // Inspector-only: the bulk modal has no bottom panel and keeps its inline grid.
+  onEditChartData,
 } = {}) {
   const {
     fieldText,
@@ -929,7 +932,7 @@ export function createRerenderEditor({
         setIterateBusy(true);
 
         try {
-          const { readPreferredLlmVendor } = await import('../../lib/llm-vendor.js');
+          const { readPreferredLlmVendor } = await import('../../lib/net/llm-vendor.js');
           const vendor = readPreferredLlmVendor() || null;
           const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
 
@@ -1322,6 +1325,7 @@ export function createRerenderEditor({
       rerenderSlideList,
       rerenderPreview,
       scheduleUiRefresh,
+      onEditChartData,
     };
 
     if (contentOnly) {

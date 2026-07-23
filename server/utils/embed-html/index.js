@@ -1,4 +1,4 @@
-import { renderSlideHtml } from '../render-slide.js';
+import { renderSlideHtml, computeHeadingShifts } from '../render-slide.js';
 import {
   detectLang,
   escapeHtml,
@@ -16,6 +16,7 @@ import {
   sandboxWatermarkHtml,
 } from '../sandbox-watermark.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
+import { resolveDocLangFromPresentation, getDocDir } from '../doc-lang.js';
 
 export function buildEmbedHtml(
   repoRoot,
@@ -43,12 +44,20 @@ export function buildEmbedHtml(
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const title = pres?.title || 'Presentation';
   const docLang = detectLang(pres);
+  // Direction is resolved from the deck's real language (pres.lang / i18n),
+  // which — unlike detectLang's nl/en heuristic — can surface RTL locales
+  // (ar/he/fa/ur). Parity with export/reader/print, which all set dir via getDocDir.
+  const docDir = getDocDir(resolveDocLangFromPresentation(pres));
   const totalSlides = slides.length || 0;
 
   const wmOn = sandboxWatermarkEnabled(watermark);
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';
 
+  // The embed is a fragment (no document <h1> of its own — the host page owns
+  // that), so slide titles stay at <h2>, dropping to <h3> inside a chapter
+  // section. Same running-state model as the standalone export.
+  const headingShifts = computeHeadingShifts(slides);
   const slidesHtml = slides
     .map((s, i) => {
       const label = escapeHtml(slideA11yLabel(s, i, totalSlides));
@@ -58,7 +67,7 @@ export function buildEmbedHtml(
       const ariaHidden = isFirst ? 'false' : 'true';
       let innerHtml = '';
       try {
-        innerHtml = renderSlideHtml(s, { theme, slideTypes });
+        innerHtml = renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i] });
       } catch (e) {
         const msg = escapeHtml(String(e?.message || e));
         innerHtml = `
@@ -118,6 +127,7 @@ export function buildEmbedHtml(
   return renderEmbedHtmlDocument({
     title,
     docLang,
+    docDir,
     totalSlides,
     publishId,
     ui,

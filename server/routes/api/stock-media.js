@@ -15,6 +15,8 @@ import {
 import { readAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library.js';
 import { saveUploadedFile } from '../../storage/uploads.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('stock-media');
 import {
   isUnsplashConfigured,
   searchUnsplash,
@@ -91,7 +93,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       const results = await searchUnsplash({ query, page, perPage });
       serveJson(res, 200, results);
     } catch (e) {
-      console.error('Unsplash search error:', e);
+      log.error('Unsplash search error:', e);
       serveJson(res, 500, { error: e.message });
     }
     return true;
@@ -151,7 +153,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
         },
       });
     } catch (e) {
-      console.error('Unsplash download error:', e);
+      log.error('Unsplash download error:', e);
       serveJson(res, 500, { error: e.message });
     }
     return true;
@@ -180,7 +182,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       const results = await searchGiphy({ query, offset, limit });
       serveJson(res, 200, results);
     } catch (e) {
-      console.error('Giphy search error:', e);
+      log.error('Giphy search error:', e);
       serveJson(res, 500, { error: e.message });
     }
     return true;
@@ -202,7 +204,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       const results = await getTrendingGiphy({ offset, limit });
       serveJson(res, 200, results);
     } catch (e) {
-      console.error('Giphy trending error:', e);
+      log.error('Giphy trending error:', e);
       serveJson(res, 500, { error: e.message });
     }
     return true;
@@ -249,7 +251,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
         libraryItem,
       });
     } catch (e) {
-      console.error('Giphy download error:', e);
+      log.error('Giphy download error:', e);
       serveJson(res, 500, { error: e.message });
     }
     return true;

@@ -24,7 +24,7 @@
   margin: 0 0 14px;
 }
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
-.slide-image-text .copy .body h3.md-subheading {
+.slide-image-text .copy .body .md-subheading {
   font-family: var(--font-heading);
   font-size: 28px;
   line-height: 1.25;
@@ -34,11 +34,11 @@
   margin: 24px 0 12px;
   color: var(--color-text);
 }
-.slide-image-text.is-compact .copy .body h3.md-subheading {
+.slide-image-text.is-compact .copy .body .md-subheading {
   font-size: 22px;
   margin: 18px 0 10px;
 }
-.slide-image-text .copy .body h3.md-subheading:first-child {
+.slide-image-text .copy .body .md-subheading:first-child {
   margin-top: 0;
 }
 .slide-image-text .copy .body ul,
@@ -53,11 +53,11 @@
   color: var(--color-accent);
 }
 .slide-image-text .copy .body a {
-  color: var(--color-accent);
+  color: var(--color-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-accent);
+  text-decoration-color: var(--color-link);
   transition: text-decoration-color 0.15s ease;
 }
 .slide-image-text .copy .body a:hover {

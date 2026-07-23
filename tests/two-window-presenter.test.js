@@ -14,7 +14,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { JSDOM } from 'jsdom';
 
-import { createPresentChannel } from '../client/lib/present-channel.js';
+import { createPresentChannel } from '../client/lib/net/present-channel.js';
 
 // --- Mock BroadcastChannel --------------------------------------------------
 // Instances sharing a name form a bus; postMessage delivers to the *others*.

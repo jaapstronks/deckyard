@@ -2,7 +2,7 @@
  * Multiple images field renderer (for logos, etc.)
  */
 import { t } from '../../../../lib/ui-i18n.js';
-import { toast } from '../../../../lib/toast.js';
+import { toast } from '../../../../lib/dom/toast.js';
 import { createIndexedAltSetter } from './alt-utils.js';
 import { applyAltFromPick } from '../../media/apply-pick.js';
 

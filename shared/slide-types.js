@@ -16,6 +16,8 @@ export {
   newPresentation,
   newSlide,
   renderSlideHtml,
+  computeHeadingShifts,
+  shiftHeadingLevels,
   validatePresentation,
   validateSlide,
 } from './slide-types/presentation.js';

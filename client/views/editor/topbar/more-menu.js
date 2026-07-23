@@ -1,7 +1,7 @@
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { moreIcon } from '../../../lib/icons.js';
-import { createDropdown } from '../../../lib/dropdown.js';
+import { moreIcon } from '../../../lib/dom/icons.js';
+import { createDropdown } from '../../../lib/dom/dropdown.js';
 
 export function createEditorTopbarMoreMenu({
   h,

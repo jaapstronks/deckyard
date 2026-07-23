@@ -14,7 +14,7 @@ import {
 } from '../../../../shared/icon-names.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { openModal } from '../../../lib/modal.js';
+import { openModal } from '../../../lib/dom/modal.js';
 
 const RECENT_KEY = 'deckyard:recent-icons';
 const RECENT_MAX = 18;

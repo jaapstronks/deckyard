@@ -3,7 +3,7 @@
  * Uses the shared SSE connection utility for robust reconnection handling.
  */
 
-import { createSSEConnection } from '../../lib/sse-connection.js';
+import { createSSEConnection } from '../../lib/net/sse-connection.js';
 
 /**
  * Create an SSE connection for the follow view.

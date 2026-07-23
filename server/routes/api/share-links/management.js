@@ -16,12 +16,43 @@ import {
   revokeAllShareLinks,
   updateShareLink,
   getShareLinkAccessLog,
+  getShareLinkById,
 } from '../../../storage/share-links.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { serveJson, notFound, badRequest, requireJsonBody, parseJsonBody } from '../../../utils/http.js';
 import { validatePermission, parsePaginationParams } from '../../../utils/request-validators.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
+
+/**
+ * Whether a loaded share link belongs to the given presentation. Fail-closed:
+ * a null/unknown link or a mismatching presentationId returns false.
+ * @param {Object|null} link - Formatted share link (has `presentationId`)
+ * @param {string} presentationId - The presentation the caller is authorized for
+ * @returns {boolean}
+ */
+export function shareLinkBelongsToPresentation(link, presentationId) {
+  return !!link && !!presentationId && link.presentationId === presentationId;
+}
+
+/**
+ * Load a share link and assert it belongs to the presentation the caller is
+ * already authorized to write. Prevents a linkId-based IDOR: withPresentationAuth
+ * only proves write on `presentationId`, not that `linkId` belongs to that deck,
+ * so a forged linkId from another (private) deck could otherwise be
+ * revoked/relabeled or have its viewer-PII access log read.
+ *
+ * @returns {Promise<Object|null>} the share link if it belongs to the
+ *   presentation, or null after sending a 404 (mismatch or unknown link).
+ */
+async function loadLinkForPresentation({ linkId, presentationId, res, ctx }) {
+  const link = await getShareLinkById(linkId, ctx);
+  if (!shareLinkBelongsToPresentation(link, presentationId)) {
+    notFound(res);
+    return null;
+  }
+  return link;
+}
 
 /**
  * Handle share link management endpoints (CRUD).
@@ -126,6 +157,10 @@ export async function handleShareLinkManagement({ repoRoot, req, res, url, authe
     const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
     if (!pres) return true;
 
+    // Bind linkId to the authorized presentation (prevents cross-deck IDOR).
+    const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+    if (!link) return true;
+
     // Parse optional message from request body
     const { body } = await parseJsonBody(req);
     const message = body?.message || null;
@@ -146,6 +181,10 @@ export async function handleShareLinkManagement({ repoRoot, req, res, url, authe
     const linkId = linkMatch[2];
     const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
     if (!pres) return true;
+
+    // Bind linkId to the authorized presentation (prevents cross-deck IDOR).
+    const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+    if (!link) return true;
 
     const jsonResult = await requireJsonBody(req, res);
     if (!jsonResult.ok) return true;
@@ -179,6 +218,11 @@ export async function handleShareLinkManagement({ repoRoot, req, res, url, authe
     const linkId = accessLogMatch[2];
     const pres = await withPresentationAuth({ repoRoot, id: presentationId, authedUser, res, permission: 'write' });
     if (!pres) return true;
+
+    // Bind linkId to the authorized presentation before reading viewer PII
+    // (IP/UA access log) — prevents cross-deck IDOR.
+    const link = await loadLinkForPresentation({ linkId, presentationId, res, ctx });
+    if (!link) return true;
 
     const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 100 });
     const log = await getShareLinkAccessLog(linkId, { limit, offset }, ctx);

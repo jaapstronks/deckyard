@@ -21,11 +21,13 @@ import { getUserByEmail } from '../../../storage/users.js';
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
-import { json, serveJson, badRequest, getErrorStatus } from '../../../utils/http.js';
+import { json, serveJson, badRequest, getErrorStatus, jsonError } from '../../../utils/http.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
 import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createRouteContext } from '../../../utils/context.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('public');
 
 /**
  * Handle public share link endpoints.
@@ -46,6 +48,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
       if (result.reason === 'revoked' && result.presentationId) {
         const pres = await getPresentation(repoRoot, result.presentationId);
         const responseData = {
+          ok: false,
           error: result.reason,
           message: result.revocationMessage || null,
           presentationTitle: pres?.title || null,
@@ -71,7 +74,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
         return true;
       }
 
-      serveJson(res, status, { error: result.reason });
+      jsonError(res, status, result.reason);
       return true;
     }
 
@@ -99,7 +102,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const result = await verifyShareLinkAccess(token, body?.password, ctx);
 
     if (!result.ok) {
-      serveJson(res, getErrorStatus(result.reason), { error: result.reason });
+      jsonError(res, getErrorStatus(result.reason), result.reason);
       return true;
     }
 
@@ -124,13 +127,13 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     // Validate share link first
     const validation = await validateShareLink(token, ctx);
     if (!validation.ok) {
-      serveJson(res, getErrorStatus(validation.reason), { error: validation.reason });
+      jsonError(res, getErrorStatus(validation.reason), validation.reason);
       return true;
     }
 
     // Check permission allows commenting
     if (!['comment', 'edit'].includes(validation.shareLink.permission)) {
-      serveJson(res, 403, { error: 'permission_denied' });
+      jsonError(res, 403, 'permission_denied');
       return true;
     }
 
@@ -157,7 +160,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     );
 
     if (!result.ok) {
-      serveJson(res, getErrorStatus(result.reason), { error: result.reason });
+      jsonError(res, getErrorStatus(result.reason), result.reason);
       return true;
     }
 
@@ -186,7 +189,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     }).then((emailResult) => {
       if (!emailResult.ok) {
         // eslint-disable-next-line no-console
-        console.warn(
+        log.warn(
           `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
         );
       }

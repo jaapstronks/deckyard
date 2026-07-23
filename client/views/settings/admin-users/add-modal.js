@@ -2,9 +2,10 @@
  * Add user modal.
  */
 
+import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 
 /**
  * Show modal to add a new user.
@@ -79,30 +80,17 @@ export function showAddModal(onSuccess) {
     status.textContent = t('admin.users.addModal.adding', 'Adding...');
 
     try {
-      const res = await fetch('/api/admin/users', {
+      await api('/api/admin/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, role, sendInvitation }),
+        body: { email, name, role, sendInvitation },
       });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.success(t('admin.users.addModal.success', 'User added successfully.'));
-        overlay.remove();
-        onSuccess();
-      } else {
-        status.textContent = data.error?.includes('exists')
-          ? t('admin.users.addModal.alreadyExists', 'A user with this email already exists.')
-          : t('admin.users.addModal.error', 'Failed to add user.');
-        busy = false;
-        btnSubmit.disabled = false;
-        emailInput.disabled = false;
-        nameInput.disabled = false;
-        roleSelect.disabled = false;
-      }
+      toast.success(t('admin.users.addModal.success', 'User added successfully.'));
+      overlay.remove();
+      onSuccess();
     } catch (e) {
-      status.textContent = t('admin.users.addModal.error', 'Failed to add user.');
+      status.textContent = e.message?.includes('exists')
+        ? t('admin.users.addModal.alreadyExists', 'A user with this email already exists.')
+        : t('admin.users.addModal.error', 'Failed to add user.');
       busy = false;
       btnSubmit.disabled = false;
       emailInput.disabled = false;

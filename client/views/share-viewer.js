@@ -5,22 +5,22 @@
 
 import { h, $ } from '../lib/dom.js';
 import { api } from '../lib/api.js';
-import { loadThemeById } from '../lib/theme.js';
-import { attachThumbScale } from '../lib/thumb-scale.js';
-import { cleanupSlideRuntimes, renderSlideElement } from '../lib/slide-render.js';
+import { loadThemeById } from '../lib/theme/theme.js';
+import { attachThumbScale } from '../lib/slide-runtime/thumb-scale.js';
+import { cleanupSlideRuntimes, renderSlideElement } from '../lib/slide-runtime/slide-render.js';
 import { createUiModeSwitcher } from './ui-mode-switcher.js';
 import { t } from '../lib/ui-i18n.js';
 import { createCommentsApi } from './editor/comments-api.js';
-import { createAnalyticsTracker, isAnalyticsEnabled } from '../lib/analytics-tracker.js';
+import { createAnalyticsTracker, isAnalyticsEnabled } from '../lib/format/analytics-tracker.js';
 
 // Extracted components
 import { renderPasswordPrompt } from './share-viewer/password-form.js';
 import { renderError, getPermissionLabel } from './share-viewer/error-display.js';
 import { renderGuestJoinPrompt } from './share-viewer/guest-join.js';
 import { createShareViewerCommentsSection } from './share-viewer/viewer-comments.js';
-import { createVideoLayer } from '../lib/video-layer.js';
+import { createVideoLayer } from '../lib/slide-runtime/video-layer.js';
 import { createAutoAdvance } from './presenter/auto-advance.js';
-import { attachSwipeNavigation } from '../lib/swipe-nav.js';
+import { attachSwipeNavigation } from '../lib/dom/swipe-nav.js';
 import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
 
 // Guest session state
@@ -454,14 +454,7 @@ export async function renderShareViewer(root, token) {
  */
 async function checkGuestSession(token) {
   try {
-    const resp = await fetch(`/api/share/${encodeURIComponent(token)}/guest/me`, {
-      credentials: 'include',
-    });
-    if (resp.ok) {
-      guestSession = await resp.json();
-    } else {
-      guestSession = null;
-    }
+    guestSession = await api(`/api/share/${encodeURIComponent(token)}/guest/me`);
   } catch {
     guestSession = null;
   }

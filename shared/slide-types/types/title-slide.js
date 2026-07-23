@@ -133,7 +133,7 @@ export default {
               <img class="tsu-logo-img" src="${esc(logoSrc)}" alt="${esc(logoAlt)}" />
             </div>
             <div class="tsu-content">
-              <h1 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h1>
+              <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
               <div class="tsu-meta">
                 ${subtitle}
                 ${byline}

@@ -141,6 +141,29 @@ export function normalizeUrl(s) {
   return t;
 }
 
+/**
+ * Allowlist a URL for use as a link `href` in projected / exported output.
+ * Returns the URL when it is safe to render as a link, else `''`.
+ *
+ * Allows http(s) and mailto absolute URLs plus root-/protocol-relative paths
+ * (`/path`, `//host`); rejects `javascript:`, `data:`, `vbscript:` and
+ * control-character smuggling (`java\nscript:`). This is an allowlist, not a
+ * blocklist, and is belt-and-braces with escapeHtml — which only escapes the
+ * attribute quotes, not a dangerous scheme. Mirrors the scheme policy of
+ * `shared/comment-mentions.js#safeLinkUrl`, extended to allow relative links
+ * (a slide's link field may point at an internal path).
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function safeHref(value) {
+  const raw = String(value == null ? '' : value).trim();
+  if (!raw) return '';
+  if (/[\x00-\x20]/.test(raw)) return '';
+  if (raw.startsWith('/')) return raw; // /path (root-relative) or //host (protocol-relative)
+  return /^(?:https?:\/\/|mailto:)/i.test(raw) ? raw : '';
+}
+
 function looksLikeUuid(s) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     String(s || '').trim()
@@ -432,11 +455,15 @@ export function getSubheadingText(content) {
  * Render subheading HTML.
  * @param {object} content - Slide content object
  * @param {string} className - CSS class name (default: 'subheading')
+ * @param {string|null} morphRole - optional `data-morph-role` value (e.g.
+ *   'subtitle') so morph transitions can target the subheading. Omit for none.
  * @returns {string} HTML string or empty string
  */
-export function renderSubheadingHtml(content, className = 'subheading') {
+export function renderSubheadingHtml(content, className = 'subheading', morphRole = null) {
   const text = getSubheadingText(content);
-  return text ? `<p class="${className}" data-inline-field="subheading" dir="auto">${esc(text)}</p>` : '';
+  if (!text) return '';
+  const morphAttr = morphRole ? ` data-morph-role="${morphRole}"` : '';
+  return `<p class="${className}"${morphAttr} data-inline-field="subheading" dir="auto">${esc(text)}</p>`;
 }
 
 /**

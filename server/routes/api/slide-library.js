@@ -28,6 +28,8 @@ import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
+import { createLogger } from '../../utils/logger.js';
+const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
   const s = typeof v === 'string' ? v.trim() : '';
@@ -147,7 +149,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
         }
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.warn('[slide-library] Preview generation failed:', err.message);
+        log.warn('[slide-library] Preview generation failed:', err.message);
       }
 
       // Fire webhook for team library addition (reuses workspace share webhook URL)

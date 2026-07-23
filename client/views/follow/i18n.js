@@ -12,7 +12,7 @@
 // inline (matching the app-wide t(key, englishFallback) convention) so the
 // chrome degrades gracefully if a file fails to load.
 
-import { normalizeLang } from '../../lib/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 
 /** @type {Map<string, Record<string, string>>} */
 const dictCache = new Map();
@@ -92,6 +92,8 @@ export async function createFollowCopy(lang) {
     translatingWithProgress,
     connecting: tr('follow.connecting', 'Connecting…'),
     qaTitle: tr('follow.qaTitle', 'Q&A'),
+    qaCollapse: tr('follow.qaCollapse', 'Hide questions'),
+    qaExpand: tr('follow.qaExpand', 'Show questions'),
     qaName: tr('follow.qaName', 'Your name (optional)'),
     qaNameUnset: tr('follow.qaNameUnset', 'Set name'),
     qaNameSet: tr('follow.qaNameSet', 'Name:'),

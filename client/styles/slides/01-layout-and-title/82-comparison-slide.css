@@ -86,7 +86,7 @@
 }
 
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
-.slide-comparison .body h3.md-subheading {
+.slide-comparison .body .md-subheading {
   font-family: var(--font-heading);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
@@ -97,7 +97,7 @@
   color: var(--color-text);
 }
 
-.slide-comparison .body h3.md-subheading:first-child {
+.slide-comparison .body .md-subheading:first-child {
   margin-top: 0;
 }
 
@@ -116,11 +116,11 @@
 }
 
 .slide-comparison .body a {
-  color: var(--color-accent);
+  color: var(--color-link);
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
-  text-decoration-color: var(--color-accent);
+  text-decoration-color: var(--color-link);
   transition: text-decoration-color 0.15s ease;
 }
 

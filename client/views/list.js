@@ -15,13 +15,13 @@ import {
   readLangMode,
   getSupportedLangs,
   writeLangMode,
-} from '../lib/i18n.js';
+} from '../lib/format/i18n.js';
 import { openCreationView } from './list/modals/creation-view/index.js';
 import { createCardRenderer, toListItem } from './list/presentation-card.js';
 import { createSidebar, createBottomTabs } from './list/sidebar.js';
 import { createThemePickerRow } from './list/theme-picker-row.js';
 import { createActivityFeed } from './list/overview-activity.js';
-import { getFeatures } from '../lib/features.js';
+import { getFeatures } from '../lib/state/features.js';
 import {
   createHomeView,
   createPresentationsView,

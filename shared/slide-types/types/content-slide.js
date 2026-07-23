@@ -1,4 +1,4 @@
-import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
+import { bgClass, esc, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 
@@ -182,10 +182,7 @@ export default {
     // 'compact' forces the small size up front. 'auto' starts comfortable
     // and the runtime adds is-compact if the body overflows.
     const densityClass = density === 'compact' ? ' is-compact' : '';
-    const subheading =
-      typeof content?.subheading === 'string' && content.subheading.trim()
-        ? `<p class="subheading" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(content.subheading.trim())}</p>`
-        : '';
+    const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const actionsHtml = renderActionsHtml(content?.actions);
     return `
         <div class="slide slide-content ${layout}${densityClass} ${bg}" data-density="${density}">

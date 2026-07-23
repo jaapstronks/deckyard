@@ -2,6 +2,7 @@
  * Password prompt component for password-protected share links.
  */
 
+import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /**
@@ -48,20 +49,14 @@ export function renderPasswordPrompt(h, shell, token, shareData, onSuccess) {
     errorEl.style.display = 'none';
 
     try {
-      const resp = await fetch(`/api/share/${encodeURIComponent(token)}/verify`, {
+      const data = await api(`/api/share/${encodeURIComponent(token)}/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: { password },
       });
-      const data = await resp.json();
-
-      if (!resp.ok) {
-        throw new Error(data.error || t('share.passwordInvalid', 'Invalid password'));
-      }
 
       onSuccess(data);
     } catch (err) {
-      errorEl.textContent = err.message === 'invalid_password'
+      errorEl.textContent = err.code === 'invalid_password'
         ? t('share.invalidPassword', 'Invalid password')
         : err.message;
       errorEl.style.display = 'block';

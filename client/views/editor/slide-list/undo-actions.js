@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 
 /**
  * Shared undo/redo actions for the editor. One implementation drives both the

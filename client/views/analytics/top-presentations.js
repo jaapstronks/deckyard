@@ -4,7 +4,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
-import { formatDuration as formatDurationBase } from '../../lib/analytics-format.js';
+import { formatDuration as formatDurationBase } from '../../lib/format/analytics-format.js';
 
 /**
  * Format duration in seconds to human readable.

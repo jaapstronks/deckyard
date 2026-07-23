@@ -9,8 +9,8 @@
 
 import { t } from '../ui-i18n.js';
 import { h } from '../dom.js';
-import { confirmModal } from '../modal.js';
-import { toast } from '../toast.js';
+import { confirmModal } from '../dom/modal.js';
+import { toast } from '../dom/toast.js';
 import { createCollectionsApi } from './api.js';
 import {
   openCollectionEditModal,

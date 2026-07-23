@@ -23,6 +23,8 @@ import { normalizeEmail } from '../../../utils/normalize.js';
 import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../../storage/activity-events.js';
 import { createNotification } from '../../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../../services/notification-events.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('ownership');
 
 export async function handleOwnershipTransfer(
   { repoRoot, req, res, authedUser } = {},
@@ -61,7 +63,7 @@ export async function handleOwnershipTransfer(
   try {
     users = await listUsers(ctx);
   } catch (err) {
-    console.error('[ownership] Failed to list users:', err);
+    log.error('[ownership] Failed to list users:', err);
     return serveJson(res, 500, { error: 'Failed to verify user' });
   }
 
@@ -109,7 +111,7 @@ export async function handleOwnershipTransfer(
         ctx
       );
     } catch (err) {
-      console.error('[ownership] Failed to create activity event:', err);
+      log.error('[ownership] Failed to create activity event:', err);
     }
 
     // Notify new owner (non-blocking)
@@ -137,7 +139,7 @@ export async function handleOwnershipTransfer(
         broadcastToUser(newOwnerEmail, NotificationEventTypes.NEW, notifResult.notification);
       }
     } catch (err) {
-      console.error('[ownership] Failed to create notification:', err);
+      log.error('[ownership] Failed to create notification:', err);
     }
 
     serveJson(res, 200, {
@@ -148,7 +150,7 @@ export async function handleOwnershipTransfer(
       previousOwnerKeptAsCollaborator: keepAsCollaborator && result.collaboratorAdded,
     });
   } catch (err) {
-    console.error('[ownership] Failed to transfer ownership:', err);
+    log.error('[ownership] Failed to transfer ownership:', err);
     return serveJson(res, 500, { error: 'Failed to transfer ownership' });
   }
 

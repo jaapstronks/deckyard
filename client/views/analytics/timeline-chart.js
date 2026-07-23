@@ -3,7 +3,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { formatDate } from '../../lib/analytics-format.js';
+import { formatDate } from '../../lib/format/analytics-format.js';
 
 /**
  * Format date for chart display (short format: M/D).
@@ -59,25 +59,26 @@ export function createTimelineChart({ h, data }) {
     // Get data bounds
     const maxViews = Math.max(...chartData.map((d) => d.views), 1);
 
-    // Create SVG with accessibility attributes
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`);
-    svg.setAttribute('class', 'analytics-chart-svg');
-    svg.setAttribute('role', 'img');
-    svg.setAttribute('aria-label', t('analytics.chartAriaLabel', 'Bar chart showing views over time'));
-
-    // Add description for screen readers
-    const desc = document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+    // Create SVG with accessibility attributes (h() routes SVG tag names
+    // through createElementNS; the `text` key sets textContent).
     const totalViews = chartData.reduce((sum, d) => sum + d.views, 0);
-    desc.textContent = t('analytics.chartDescription', 'Chart showing {{count}} data points with {{total}} total views', {
-      count: chartData.length,
-      total: totalViews,
-    });
-    svg.appendChild(desc);
+    const svg = h('svg', {
+      viewBox: `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`,
+      class: 'analytics-chart-svg',
+      role: 'img',
+      'aria-label': t('analytics.chartAriaLabel', 'Bar chart showing views over time'),
+    }, [
+      // Description for screen readers
+      h('desc', {
+        text: t('analytics.chartDescription', 'Chart showing {{count}} data points with {{total}} total views', {
+          count: chartData.length,
+          total: totalViews,
+        }),
+      }),
+    ]);
 
     // Create group for chart content
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('transform', `translate(${PADDING.left}, ${PADDING.top})`);
+    const g = h('g', { transform: `translate(${PADDING.left}, ${PADDING.top})` });
 
     // Draw Y-axis gridlines
     const yTicks = 5;
@@ -86,21 +87,21 @@ export function createTimelineChart({ h, data }) {
       const value = Math.round((i / yTicks) * maxViews);
 
       // Gridline
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', '0');
-      line.setAttribute('y1', String(y));
-      line.setAttribute('x2', String(innerWidth));
-      line.setAttribute('y2', String(y));
-      line.setAttribute('class', 'analytics-chart-grid');
-      g.appendChild(line);
+      g.append(h('line', {
+        x1: '0',
+        y1: String(y),
+        x2: String(innerWidth),
+        y2: String(y),
+        class: 'analytics-chart-grid',
+      }));
 
       // Y-axis label
-      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      text.setAttribute('x', '-8');
-      text.setAttribute('y', String(y + 4));
-      text.setAttribute('class', 'analytics-chart-label analytics-chart-label-y');
-      text.textContent = String(value);
-      g.appendChild(text);
+      g.append(h('text', {
+        x: '-8',
+        y: String(y + 4),
+        class: 'analytics-chart-label analytics-chart-label-y',
+        text: String(value),
+      }));
     }
 
     // Calculate bar width
@@ -114,41 +115,39 @@ export function createTimelineChart({ h, data }) {
       const y = innerHeight - barHeight;
 
       // Bar with accessibility
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', String(x));
-      rect.setAttribute('y', String(y));
-      rect.setAttribute('width', String(barWidth));
-      rect.setAttribute('height', String(barHeight));
-      rect.setAttribute('class', 'analytics-chart-bar');
-      rect.setAttribute('data-views', String(d.views));
-      rect.setAttribute('data-date', d.date);
-      rect.setAttribute('role', 'graphics-symbol');
-      rect.setAttribute('aria-label', t('analytics.barAriaLabel', '{{date}}: {{views}} views', {
-        date: formatDateShort(d.date),
-        views: d.views,
-      }));
-
-      // Tooltip on hover
-      rect.addEventListener('mouseenter', (e) => {
-        showTooltip(e, d);
+      const rect = h('rect', {
+        x: String(x),
+        y: String(y),
+        width: String(barWidth),
+        height: String(barHeight),
+        class: 'analytics-chart-bar',
+        'data-views': String(d.views),
+        'data-date': d.date,
+        role: 'graphics-symbol',
+        'aria-label': t('analytics.barAriaLabel', '{{date}}: {{views}} views', {
+          date: formatDateShort(d.date),
+          views: d.views,
+        }),
+        // Tooltip on hover
+        onmouseenter: (e) => showTooltip(e, d),
+        onmouseleave: hideTooltip,
       });
-      rect.addEventListener('mouseleave', hideTooltip);
 
-      g.appendChild(rect);
+      g.append(rect);
 
       // X-axis label (show every nth label to avoid overlap)
       const showLabel = chartData.length <= 15 || i % Math.ceil(chartData.length / 10) === 0;
       if (showLabel) {
-        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        text.setAttribute('x', String(x + barWidth / 2));
-        text.setAttribute('y', String(innerHeight + 20));
-        text.setAttribute('class', 'analytics-chart-label analytics-chart-label-x');
-        text.textContent = formatDateShort(d.date);
-        g.appendChild(text);
+        g.append(h('text', {
+          x: String(x + barWidth / 2),
+          y: String(innerHeight + 20),
+          class: 'analytics-chart-label analytics-chart-label-x',
+          text: formatDateShort(d.date),
+        }));
       }
     });
 
-    svg.appendChild(g);
+    svg.append(g);
     chartContainer.append(svg);
 
     // Add tooltip element

@@ -2,6 +2,7 @@ import { renderSlideHtml } from '../utils/render-slide.js';
 import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
+import { debugLog } from '../utils/debug-log.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { getVideoThumbnailUrl } from '../utils/video-slide-html.js';
@@ -106,12 +107,19 @@ export async function buildSlidesPdfHtml(
   // doesn't drag its original pixels into the PDF (null = compression disabled).
   const imageTransform = pdfImageEmbedTransform();
 
+  // One embed cache for the whole export run: an image referenced both as a
+  // field value (pass 1 below) and in the rendered <img src> (pass 2) is
+  // fetched + recompressed only once. Also dedupes in-flight fetches.
+  const embedCache = new Map();
+  const embedStartedAt = Date.now();
+
   // Embed uploads referenced as field values. embedRemote inlines remote
   // http(s) images through the SSRF guard (or strips them) so no user-supplied
   // URL reaches headless Chrome at setContent time. See security-hardening 2.
   const slides = await embedSlideImages(repoRoot, pres.slides, {
     transform: imageTransform,
     embedRemote: true,
+    cache: embedCache,
   });
 
   let pagesHtml = slides
@@ -124,7 +132,7 @@ export async function buildSlidesPdfHtml(
               baseUrl,
               docLang,
             })
-          : renderSlideHtml(s, { theme, slideTypes });
+          : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
       return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
     })
     .join('\n');
@@ -132,7 +140,11 @@ export async function buildSlidesPdfHtml(
     includeClient: true,
     transform: imageTransform,
     embedRemote: true,
+    cache: embedCache,
   });
+  debugLog(
+    `[pdf-export] embedded ${embedCache.size} unique image(s) in ${Date.now() - embedStartedAt}ms`,
+  );
 
   // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
   return `<!doctype html>

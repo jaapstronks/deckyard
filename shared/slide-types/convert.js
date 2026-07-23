@@ -154,6 +154,10 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   if (type === 'content-slide') {
     return ['image-text-slide'];
   }
+  // content-columns-slide is archived (deprecated) but, like card-stack, stays a
+  // convert *target* (converting into it is a deliberate per-slide action, not
+  // the picker/AI insertion path that `deprecated` gates). New authoring goes
+  // through the picker, where it no longer appears.
   if (type === 'image-text-slide') return ['content-slide', 'content-columns-slide'];
   if (type === 'image-slide') return ['image-text-slide'];
   if (type === 'lijstje-slide') return ['content-slide', 'content-columns-slide'];

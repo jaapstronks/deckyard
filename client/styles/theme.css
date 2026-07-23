@@ -23,6 +23,10 @@
     rgba(11, 11, 11, 0.65)
   );
   --color-accent: var(--t-color-accent, #385c5c);
+  /* Link colour for slide-body hyperlinks. Defaults to the accent so light
+     backgrounds are unchanged; dark-surface blocks in 00-base.css lighten it
+     toward white for contrast. Themes can override via --t-color-link. */
+  --color-link: var(--t-color-link, var(--color-accent));
 
   /* Quote slide */
   --quote-author-color: var(

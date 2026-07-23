@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadsDir } from '../config/storage-paths.js';
+import { assertPublicHttpUrl } from './ssrf-guard.js';
 
 function stripFontFaceBlocks(cssText) {
   return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
@@ -29,27 +30,38 @@ async function readLocalUploadAsDataUrl(repoRoot, urlPath, format = 'woff2') {
  * Fetch a remote URL and return its content as a base64 data URL.
  * Used for embedding uploaded (media-provider-hosted) fonts into exports.
  */
-async function fetchFontAsDataUrl(url, format = 'woff2') {
+export async function fetchFontAsDataUrl(url, format = 'woff2') {
   const mime = format === 'woff' ? 'font/woff' : 'font/woff2';
 
-  // Validate URL protocol and block internal addresses
+  // SSRF guard: reject non-http(s) schemes and any host resolving to a
+  // loopback/private/link-local address (incl. cloud metadata), covering the IP
+  // encodings / IPv6 / rebinding the old string blocklist missed.
   try {
-    const parsed = new URL(url);
-    if (!parsed.protocol.startsWith('http')) throw new Error('Font URL must use HTTP(S)');
-    const hostname = parsed.hostname.toLowerCase();
-    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
-      throw new Error('Font URL must not point to internal addresses');
-    }
+    await assertPublicHttpUrl(url);
   } catch (e) {
-    if (e.message.includes('Font URL')) throw e;
+    if (e?.code === 'SSRF_BAD_SCHEME') throw new Error('Font URL must use HTTP(S)');
+    if (e?.code === 'SSRF_BLOCKED_ADDRESS')
+      throw new Error('Font URL must not point to internal addresses');
     throw new Error('Invalid font URL');
   }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const resp = await fetch(url, { signal: controller.signal });
+    // redirect:'error' so a public URL can't 30x-bounce into private space.
+    const resp = await fetch(url, { signal: controller.signal, redirect: 'error' });
     if (!resp.ok) return null;
+    // Don't embed an internal service's document/data response as a "font".
+    // Best-effort blocklist (fonts arrive as font/*, octet-stream, or with no
+    // content-type on some CDNs, so we reject the obvious non-font types rather
+    // than allowlist and risk dropping legitimate fonts).
+    const contentType = String(resp.headers.get('content-type') || '')
+      .split(';')[0]
+      .trim()
+      .toLowerCase();
+    if (/^(text\/|application\/(json|xml|xhtml|javascript|ld\+json))/.test(contentType)) {
+      return null;
+    }
     const buf = Buffer.from(await resp.arrayBuffer());
     if (buf.byteLength > 10 * 1024 * 1024) {
       throw new Error('Font file exceeds 10MB size limit');

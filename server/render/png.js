@@ -31,7 +31,7 @@ async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = n
   let slideHtml =
     cloned?.type === 'video-slide'
       ? renderVideoSlidePngHtml(cloned)
-      : renderSlideHtml(cloned, { theme, slideTypes });
+      : renderSlideHtml(cloned, { theme, slideTypes, stripEditorAttrs: true });
   slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
     includeClient: true,
     embedRemote: true,

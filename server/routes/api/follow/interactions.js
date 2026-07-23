@@ -1,6 +1,7 @@
 import {
   badRequest,
   json,
+  jsonError,
   methodNotAllowed,
   notFound,
   serveJson,
@@ -9,6 +10,8 @@ import {
 import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('interactions');
 import {
   computeAudienceCapabilitiesFromState,
   ensureInteractionDeviceCookie,
@@ -178,7 +181,7 @@ export async function handleFollowInteractionsCurrent(
     );
     return true;
   } catch (err) {
-    console.error('[follow/interactions] Failed to get current interaction:', err);
+    log.error('[follow/interactions] Failed to get current interaction:', err);
     return serverError(res, 'Failed to load interaction');
   }
 }
@@ -259,7 +262,7 @@ export async function handleFollowInteractionState(
     );
     return true;
   } catch (err) {
-    console.error('[follow/interactions] Failed to get interaction state:', err);
+    log.error('[follow/interactions] Failed to get interaction state:', err);
     return serverError(res, 'Failed to load interaction state');
   }
 }
@@ -335,7 +338,7 @@ export async function handleFollowInteractionVote(
           });
     if (!result.ok) {
       const status = result.reason === 'closed' ? 409 : 400;
-      serveJson(res, status, { error: result.reason }, extraHeaders);
+      jsonError(res, status, result.reason, undefined, { headers: extraHeaders });
       return true;
     }
 
@@ -351,7 +354,7 @@ export async function handleFollowInteractionVote(
     );
     return true;
   } catch (err) {
-    console.error('[follow/interactions] Failed to submit vote:', err);
+    log.error('[follow/interactions] Failed to submit vote:', err);
     return serverError(res, 'Failed to submit vote');
   }
 }
@@ -393,7 +396,7 @@ export async function handleFollowInteractionFeedback(
     });
     if (!result.ok) {
       const status = result.reason === 'closed' ? 409 : 400;
-      serveJson(res, status, { error: result.reason }, extraHeaders);
+      jsonError(res, status, result.reason, undefined, { headers: extraHeaders });
       return true;
     }
     serveJson(
@@ -408,7 +411,7 @@ export async function handleFollowInteractionFeedback(
     );
     return true;
   } catch (err) {
-    console.error('[follow/interactions] Failed to submit feedback:', err);
+    log.error('[follow/interactions] Failed to submit feedback:', err);
     return serverError(res, 'Failed to submit feedback');
   }
 }

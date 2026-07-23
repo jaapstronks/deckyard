@@ -4,10 +4,10 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/toast.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { createAvatar, updateAvatar } from '../../../lib/avatar.js';
-import { invalidateProfile, getUserProfileAsync } from '../../../lib/user-profiles.js';
+import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
+import { invalidateProfile, getUserProfileAsync } from '../../../lib/user/user-profiles.js';
 
 /**
  * Create profile image section with upload/remove buttons.
@@ -223,24 +223,13 @@ export async function showEditModal(targetUser, onSuccess) {
     status.textContent = t('admin.users.editModal.saving', 'Saving...');
 
     try {
-      const res = await fetch(`/api/admin/users/${targetUser.id}`, {
+      await api(`/api/admin/users/${targetUser.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, role, isDesigner }),
+        body: { name, role, isDesigner },
       });
-
-      if (res.ok) {
-        toast.success(t('admin.users.editModal.success', 'User updated successfully.'));
-        overlay.remove();
-        onSuccess();
-      } else {
-        status.textContent = t('admin.users.editModal.error', 'Failed to update user.');
-        busy = false;
-        btnSubmit.disabled = false;
-        nameInput.disabled = false;
-        roleSelect.disabled = false;
-        designerCheckbox.disabled = false;
-      }
+      toast.success(t('admin.users.editModal.success', 'User updated successfully.'));
+      overlay.remove();
+      onSuccess();
     } catch (e) {
       status.textContent = t('admin.users.editModal.error', 'Failed to update user.');
       busy = false;

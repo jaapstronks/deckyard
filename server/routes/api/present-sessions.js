@@ -7,7 +7,6 @@ import {
   setPresentSessionControlEnabled,
   updatePresentSessionState,
 } from '../../storage/present-sessions.js';
-import { getPresentation } from '../../storage/presentations.js';
 import {
   ensurePollInteractionForSlide,
   resetPollInteraction,
@@ -38,6 +37,29 @@ import {
   likertOptionCountFromSlide,
   likertSliderOptionCountFromSlide,
 } from '../../utils/interaction-helpers.js';
+import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { guardSseConnection } from '../../utils/sse-limiter.js';
+
+/**
+ * Require the caller to be allowed to write (present/control) the presentation
+ * backing this session. Present-session control, state pushes, interaction
+ * open/close and feedback export are presenter-only actions; without this a
+ * logged-in non-owner could resolve a public follow-code to a presentationId,
+ * obtain the live sessionId, and drive someone else's deck or exfiltrate
+ * audience PII. Audience reads (state GET, SSE) stay capability-based.
+ *
+ * @returns {Promise<Object|null>} the presentation if authorized, or null after
+ *   the helper has already sent a 404/401 response.
+ */
+async function requirePresentationControl({ repoRoot, presentationId, authedUser, res }) {
+  return withPresentationAuth({
+    repoRoot,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+}
 
 function csvEscapeCell(v) {
   const s = String(v ?? '');
@@ -46,13 +68,22 @@ function csvEscapeCell(v) {
   return s;
 }
 
-export async function handlePresentSessions({ repoRoot, req, res, url }) {
+export async function handlePresentSessions({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname === '/api/present-sessions' && req.method === 'POST') {
     const body = await json(req);
     const presentationId =
       typeof body?.presentationId === 'string' ? body.presentationId : '';
     if (!presentationId.trim())
       return badRequest(res, 'Expected { presentationId: string }');
+    // Only someone who can write the deck may create/resume its live session.
+    // Otherwise the returned sessionId hands live control to a non-owner.
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: presentationId.trim(),
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const created = await createPresentSession(repoRoot, {
       presentationId: presentationId.trim(),
     });
@@ -83,6 +114,14 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
       return true;
     }
     if (req.method === 'POST') {
+      // Pushing live state is a presenter action → require deck-write.
+      const pres = await requirePresentationControl({
+        repoRoot,
+        presentationId: s.presentationId,
+        authedUser,
+        res,
+      });
+      if (!pres) return true;
       const body = await json(req);
       const presentationId =
         typeof body?.presentationId === 'string' ? body.presentationId : '';
@@ -118,7 +157,8 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
       // presenter can show live results immediately (even before the first vote).
       try {
         if (isInteractiveSlideType(slideType) && slideId) {
-          const pres = await getPresentation(repoRoot, presentationId);
+          // Reuse the authorized presentation loaded above (presentationId is
+          // validated to equal s.presentationId), avoiding a second read.
           const slide = pres ? findSlideById(pres, slideId) : null;
           if (slideType === 'feedback-slide') {
             await ensureFeedbackForSlide(repoRoot, sessionId, {
@@ -163,8 +203,14 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const action = sessInteractionMatch[3];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
-    const pres = await getPresentation(repoRoot, s.presentationId);
-    if (!pres) return badRequest(res, 'presentation not found');
+    // Opening/closing/resetting an interaction is a presenter action.
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const slide = findSlideById(pres, slideId);
     if (!slide) return badRequest(res, 'slide not found');
     const slideType = String(slide?.type || '');
@@ -276,8 +322,14 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const fmt = feedbackExportMatch[3];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
-    const pres = await getPresentation(repoRoot, s.presentationId);
-    if (!pres) return badRequest(res, 'presentation not found');
+    // Feedback entries are audience PII (free text + deviceId) → deck-write only.
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const slide = findSlideById(pres, slideId);
     if (!slide) return badRequest(res, 'slide not found');
     if (String(slide?.type || '') !== 'feedback-slide')
@@ -330,6 +382,8 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const sessionId = sessEventsMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
+    // Cap unauthenticated, long-lived streams before opening one (DoS guard).
+    if (!guardSseConnection(req, res)) return true;
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-store',
@@ -348,6 +402,13 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const sessionId = sessEnableMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const next = setPresentSessionControlEnabled(repoRoot, sessionId, true);
     serveJson(res, 200, next);
     return true;
@@ -360,6 +421,13 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const sessionId = sessDisableMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const next = setPresentSessionControlEnabled(repoRoot, sessionId, false);
     serveJson(res, 200, next);
     return true;
@@ -372,6 +440,13 @@ export async function handlePresentSessions({ repoRoot, req, res, url }) {
     const sessionId = sessControlMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
+    const pres = await requirePresentationControl({
+      repoRoot,
+      presentationId: s.presentationId,
+      authedUser,
+      res,
+    });
+    if (!pres) return true;
     const body = await json(req);
     const result = await sendPresentSessionControlCommand(repoRoot, sessionId, body);
     if (!result.ok) {

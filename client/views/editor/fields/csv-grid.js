@@ -17,7 +17,7 @@
 
 import { h as defaultH } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { createSegmented } from '../../../lib/segmented.js';
+import { createSegmented } from '../../../lib/dom/segmented.js';
 import {
   detectHeaderRow,
   parseCsvToGrid,

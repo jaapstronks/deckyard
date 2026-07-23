@@ -176,7 +176,7 @@ function collapsibleGroup(h, title, { open = false } = {}) {
 export function renderInspectorExtrasByType(ctx) {
   const { h, form, elementForm, selectedElement, slide, def, add, used, fieldByKey,
     renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
-    rerenderPreview, scheduleUiRefresh } = ctx;
+    rerenderPreview, scheduleUiRefresh, onEditChartData } = ctx;
   const { fieldGrid } = fieldRenderers || {};
 
   // The shared "This image" card for a selected image element (all image types
@@ -209,11 +209,13 @@ export function renderInspectorExtrasByType(ctx) {
 
   switch (slide.type) {
     case 'chart-slide':
-      // chartType + data editor + per-type display toggles + axis/series
-      // labels, exactly like the form's config half (one shared code path).
+      // chartType + per-type display toggles + axis/series labels, exactly like
+      // the form's config half (one shared code path). The data grid itself
+      // lives on the bottom-panel Data tab; onEditData opens it (§4.3).
       renderChartConfigControls({
         h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
         markDirty, rerenderEditor, scheduleUiRefresh,
+        onEditData: onEditChartData,
       });
       return;
 

@@ -19,6 +19,13 @@ import { handleSlides } from './slides.js';
 import { handleTranslation } from './translate.js';
 import { handleComments } from './comments.js';
 
+// Generated deck JSON Schema (single source: the slide-type field registry).
+import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import {
+  deckJsonSchema,
+  slideTypeContentSchema,
+} from '../../../../shared/slide-types/json-schema.js';
+
 // ============================================================
 // API INFO ENDPOINT
 // ============================================================
@@ -143,6 +150,42 @@ async function handleDocs(ctx) {
   return true;
 }
 
+/**
+ * Serve the generated JSON Schema for the deck format. Public (like the
+ * OpenAPI spec): a published format contract should be fetchable without an
+ * API key. Generated live from the slide-type registry, so it always matches
+ * this install's actual types (including any custom ones) and can never drift
+ * from the code.
+ *   GET /api/v1/schema/deck.json                     - full deck schema
+ *   GET /api/v1/schema/slide-types/:name.json        - one type's content schema
+ */
+async function handleSchema(ctx) {
+  const { req, res, url } = ctx;
+
+  if (!url.pathname.startsWith('/api/v1/schema/')) return false;
+  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+
+  const headers = { 'Cache-Control': 'public, max-age=3600' };
+
+  if (url.pathname === '/api/v1/schema/deck.json') {
+    serveJson(res, 200, deckJsonSchema(SLIDE_TYPES), headers);
+    return true;
+  }
+
+  const typeMatch = url.pathname.match(
+    /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/
+  );
+  if (typeMatch) {
+    const name = typeMatch[1];
+    const def = SLIDE_TYPES[name];
+    if (!def) return notFound(res, `Slide type '${name}' not found`);
+    serveJson(res, 200, slideTypeContentSchema(name, def, { withMeta: true }), headers);
+    return true;
+  }
+
+  return notFound(res, 'Unknown schema');
+}
+
 // ============================================================
 // MAIN ROUTER
 // ============================================================
@@ -169,6 +212,7 @@ export async function handlePublicApiV1(ctx) {
   // Documentation endpoints don't require auth
   if (await handleDocs(ctx)) return true;
   if (await handleOpenApiSpec(ctx)) return true;
+  if (await handleSchema(ctx)) return true;
 
   // Authenticate API key
   const authResult = await authenticateApiKey(ctx);
@@ -177,7 +221,7 @@ export async function handlePublicApiV1(ctx) {
   }
 
   // Check per-minute rate limit
-  if (!checkRequestRateLimit(ctx)) {
+  if (!(await checkRequestRateLimit(ctx))) {
     return true; // Response already sent
   }
 

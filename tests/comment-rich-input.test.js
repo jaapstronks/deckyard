@@ -26,7 +26,7 @@ const {
   serializeRichInput,
   deserializeRichInput,
   createMentionChip,
-} = await import('../client/lib/comment-rich-input.js');
+} = await import('../client/lib/comments/comment-rich-input.js');
 const { parseMentions } = await import('../shared/comment-mentions.js');
 
 /** Build a composer element holding `body`, the way setValue does. */

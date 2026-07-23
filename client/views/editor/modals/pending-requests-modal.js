@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
-import { openModal } from '../../../lib/modal.js';
+import { openModal } from '../../../lib/dom/modal.js';
 
 /**
  * Show a modal with pending access requests.

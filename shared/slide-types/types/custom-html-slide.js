@@ -22,24 +22,10 @@
 
 import { esc, bgClass, BACKGROUND_FIELD } from '../helpers.js';
 import { sanitizeSlideHtmlSync } from '../../sanitize.js';
+import { filterCssText } from '../../css-filter.js';
 
 const HTML_MAX = 20000;
 const CSS_MAX = 10000;
-
-/**
- * Remove obviously dangerous / chrome-affecting constructs from author CSS.
- * (The CSS lives in a <style> block, so the threat surface is breakout + JS-in-CSS
- * + external loads, not arbitrary tags.)
- * @param {string} css
- * @returns {string}
- */
-function filterCssText(css) {
-  return String(css || '')
-    .replace(/<\/style/gi, '<\\/style') // can't break out of the <style> block
-    .replace(/@import[^;]*;?/gi, '') // no external stylesheet loads
-    .replace(/expression\s*\(/gi, 'expression​(') // legacy IE JS-in-CSS
-    .replace(/javascript:/gi, 'javascript​:'); // defang url(javascript:...)
-}
 
 /**
  * Split a CSS string into top-level { selector, body } blocks, where body keeps
@@ -131,7 +117,7 @@ function scopeCss(css, scope) {
 }
 
 const DEFAULT_HTML = `<div class="ch-center">
-  <h1 class="ch-title">Custom HTML</h1>
+  <h2 class="ch-title">Custom HTML</h2>
   <p class="ch-sub">Write your own HTML and CSS for full pixel control.</p>
 </div>`;
 

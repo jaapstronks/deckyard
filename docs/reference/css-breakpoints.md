@@ -60,13 +60,13 @@ deviation**. `tests/css-breakpoints.test.js` parses every `@media` under
 
 ## The allowlist
 
-The test carries an explicit allowlist of not-yet-migrated values, so it was
-green from day one. Two things follow:
+The test carries an allowlist of not-yet-migrated values. **It is now empty**:
+every width `@media` in `client/styles/**` is on the ladder, so the guard
+enforces it with no exceptions. The mechanism is kept because it still matters:
 
-- **Adding to the allowlist is not allowed** in new work. It exists to let the
-  migration land in reviewable pieces, not to grant exceptions.
-- **The allowlist is checked for staleness.** Once a value no longer appears in
-  any stylesheet, the test fails until its entry is removed. Migrations shrink
-  it monotonically; when it is empty, the ladder is fully enforced.
-
-Migration progress is tracked in `docs/plans/breakpoint-scale.md`.
+- **Adding to the allowlist is not allowed.** It existed to let the original
+  migration land in reviewable pieces, not to grant exceptions. If a layout
+  wants an off-ladder width, change the layout, not the list.
+- **The allowlist is checked for staleness.** Any entry that no longer appears
+  in a stylesheet fails the test until it is removed, so the list can only ever
+  shrink.

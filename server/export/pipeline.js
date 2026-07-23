@@ -273,6 +273,9 @@ export function createAsyncExportRoute(config) {
         stripLiveOnly,
         scale,
         repoRoot,
+        // Stamp the requester so the download/status routes can enforce
+        // ownership (job IDs are enumerable ints — see security-audit H3).
+        ownerEmail: authedUser?.email || null,
       });
 
       if (queued) {

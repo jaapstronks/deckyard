@@ -1,6 +1,6 @@
-import { hasLangVersion, normalizeLang, otherLang } from '../../../lib/i18n.js';
+import { hasLangVersion, normalizeLang, otherLang } from '../../../lib/format/i18n.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import { openDescriptionModal } from '../modals/description-modal.js';
 
 /**

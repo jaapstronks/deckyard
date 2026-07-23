@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { mountLikertHill } from '../../lib/likert.js';
+import { mountLikertHill } from '../../lib/slide-runtime/likert.js';
 
 function clamp0(n) {
   return Math.max(0, Number(n || 0) || 0);

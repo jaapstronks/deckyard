@@ -1,12 +1,12 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
-import { attachThumbScaleContain } from '../lib/thumb-scale.js';
+import { attachThumbScaleContain } from '../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
-} from '../lib/slide-render.js';
-import { normalizeLang } from '../lib/i18n.js';
-import { createAnalyticsTracker, isAnalyticsEnabled } from '../lib/analytics-tracker.js';
-import { me } from '../lib/auth.js';
+} from '../lib/slide-runtime/slide-render.js';
+import { normalizeLang } from '../lib/format/i18n.js';
+import { createAnalyticsTracker, isAnalyticsEnabled } from '../lib/format/analytics-tracker.js';
+import { me } from '../lib/user/auth.js';
 import {
   addMyQuestionId,
   getMyQuestionIds,
@@ -16,14 +16,14 @@ import {
   markUpvoted,
   removeMyQuestionId,
   setQaName,
-} from '../lib/questions.js';
+} from '../lib/slide-runtime/questions.js';
 import {
   applyCardsVisibility,
   applyChartVisibility,
   applyFragmentsVisibility,
   getStepMode,
 } from './presenter/step.js';
-import { loadThemeById } from '../lib/theme.js';
+import { loadThemeById } from '../lib/theme/theme.js';
 import { createFollowQaController } from './follow/qa.js';
 import { createFollowSse } from './follow/sse.js';
 import { renderFollowLangButtons } from './follow/lang.js';
@@ -33,7 +33,7 @@ import { createUiModeSwitcher } from './ui-mode-switcher.js';
 import { createTranslatingPoll } from './follow/translating-poll.js';
 import { applyCapabilitiesToStage, showFollowMessage } from './follow/stage-ui.js';
 import { renderFollowSlide } from './follow/render-slide.js';
-import { createVideoLayer } from '../lib/video-layer.js';
+import { createVideoLayer } from '../lib/slide-runtime/video-layer.js';
 
 export async function renderFollow(root, presentationId) {
   // Make presentation ID globally available for lead capture forms
@@ -98,7 +98,36 @@ export async function renderFollow(root, presentationId) {
     class: 'btn btn-secondary follow-qa-name-btn',
     text: '',
   });
-  qaActionsTop.append(qaNameBtn, qaHint);
+  // Collapsible Q&A: on a landscape phone the question strip eats the vertical
+  // space the slide wants, so let the audience fold it away. State is remembered
+  // per device so a folded strip stays folded across slide changes and reloads.
+  const QA_COLLAPSE_KEY = 'deckyard:follow:qaCollapsed';
+  const qaCollapseBtn = h('button', {
+    class: 'btn btn-secondary follow-qa-collapse-btn',
+    type: 'button',
+    'aria-controls': 'follow-qa-collapsible',
+  });
+  let qaCollapsed = false;
+  try {
+    qaCollapsed = localStorage.getItem(QA_COLLAPSE_KEY) === '1';
+  } catch {
+    // localStorage may be unavailable (private mode); default to expanded.
+  }
+  const applyQaCollapsed = () => {
+    qaWrap.classList.toggle('is-collapsed', qaCollapsed);
+    qaCollapseBtn.setAttribute('aria-expanded', String(!qaCollapsed));
+    qaCollapseBtn.textContent = qaCollapsed ? copy.qaExpand : copy.qaCollapse;
+  };
+  qaCollapseBtn.addEventListener('click', () => {
+    qaCollapsed = !qaCollapsed;
+    try {
+      localStorage.setItem(QA_COLLAPSE_KEY, qaCollapsed ? '1' : '0');
+    } catch {
+      // ignore persistence failures; the in-memory toggle still works.
+    }
+    applyQaCollapsed();
+  });
+  qaActionsTop.append(qaNameBtn, qaHint, qaCollapseBtn);
   qaHeader.append(qaTitle, qaActionsTop);
 
   const qaInput = h('textarea', {
@@ -126,9 +155,10 @@ export async function renderFollow(root, presentationId) {
     qaInput,
     qaAskBtn,
   ]);
-  const qaList = h('div', { class: 'follow-qa-list' });
+  const qaList = h('div', { class: 'follow-qa-list', id: 'follow-qa-collapsible' });
   // Put questions ABOVE the input (so your own question shows above the box after posting).
   qaWrap.append(qaHeader, qaList, qaForm);
+  applyQaCollapsed();
 
   shell.append(topbar, stageWrap, qaWrap);
   root.append(shell);

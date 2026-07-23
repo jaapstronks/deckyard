@@ -1,6 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/modal.js';
-import { toast } from '../../../lib/toast.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
 
 export function openPublishModal({
   h,

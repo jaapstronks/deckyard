@@ -1,10 +1,10 @@
 import { t } from '../../lib/ui-i18n.js';
 import { isInsertableSlideType } from './slide-types-policy.js';
-import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-render.js';
+import { renderSlideElement, cleanupSlideRuntimes } from '../../lib/slide-runtime/slide-render.js';
 import { getSampleContent } from './slide-type-sample-content.js';
 import { storage } from '../../lib/storage.js';
 import { wireGridKeyboardNav } from './slide-type-picker-keyboard.js';
-import { renderSlideSchematic } from '../../lib/slide-schematic.js';
+import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
 import { schematicFor } from './slide-type-schematics.js';
 
 // The slide canvas is rendered at this width, then scaled down to fit each
@@ -53,10 +53,8 @@ const SLIDE_TYPE_ALIASES = {
   'split-partner-title-slide': 'partners logos two co-branding',
   'team-cards-slide': 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
   'logo-wall-slide': 'sponsors clients brands partners logos logowand klanten',
-  'content-columns-slide': 'columns kolommen',
   'text-blocks-slide': 'blocks process blokken stappen',
   'icon-card-grid-slide': 'cards features icons kaarten iconen',
-  'freeform-slide': 'canvas custom layout vrij',
   'table-slide': 'grid spreadsheet rows columns tabel',
   'chart-slide': 'graph bar line pie data viz grafiek diagram',
   'kpi-metrics-slide': 'numbers stats metrics figures cijfers kengetallen',
@@ -95,9 +93,9 @@ const SLIDE_TYPE_PRESETS = {
   // CSS text-flow variant that only splits once the body is long enough, so it
   // reads as "one column" in an empty new slide and confused people who picked
   // it expecting two separate fields. That layout stays reachable in the editor
-  // via the layout switcher (content-slide's layoutVariants); the "I explicitly
-  // want two columns" use case is served by content-columns-slide, which sits
-  // right next to the text slide in the Basic group.
+  // via the layout switcher (content-slide's layoutVariants), which is where the
+  // "I explicitly want two columns" use case lives now that content-columns-slide
+  // is archived.
   'lijstje-slide': [
     { id: 'bullets', labelKey: 'editor.slideTypePreset.lijstje.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
     { id: 'numbers', labelKey: 'editor.slideTypePreset.lijstje.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
@@ -123,10 +121,8 @@ const SLIDE_TYPE_DESC = {
   'split-partner-title-slide': 'A title with two partner logos',
   'team-cards-slide': 'Image blocks in a grid',
   'logo-wall-slide': 'A wall of logos',
-  'content-columns-slide': 'Text in side-by-side columns',
   'text-blocks-slide': 'Several labelled text blocks',
   'icon-card-grid-slide': 'Cards with an icon and label',
-  'freeform-slide': 'Freely placed elements on a canvas',
   'table-slide': 'A data table',
   'chart-slide': 'A bar, line or pie chart',
   'kpi-metrics-slide': 'Big numbers with deltas',
@@ -1031,10 +1027,8 @@ export function createSlideTypePicker({
       { type: 'title-slide' },
       { type: 'chapter-title-slide' },
       { type: 'content-slide' },
-      // Sits directly after the text slide: this is the "two separate columns"
-      // tile (defaults to 2 columns) that replaces the old, confusing
-      // content-slide two-column preset. See SLIDE_TYPE_PRESETS note above.
-      { type: 'content-columns-slide' },
+      // content-columns-slide archived (deprecated): filtered out by allowed()
+      // anyway, dropped here to keep the curated list honest.
       { type: 'quote-slide' },
       { type: 'lijstje-slide' },
       // The styled "List" slide is a close cousin of the bulleted/numbered
@@ -1066,7 +1060,8 @@ export function createSlideTypePicker({
     const layoutDefs = [
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
-      { type: 'freeform-slide' },
+      // freeform-slide archived (deprecated): filtered out by allowed() anyway,
+      // dropped here to keep the curated list honest.
       { type: 'process-slide' },
       { type: 'timeline-slide' },
     ];

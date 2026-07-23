@@ -1,7 +1,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { renderFocusGridField } from '../focus-picker.js';
-import { dragHandleIcon, chevronDownIcon } from '../../../../lib/icons.js';
-import { createCollapsedState } from '../../../../lib/collapsed-state.js';
+import { dragHandleIcon, chevronDownIcon } from '../../../../lib/dom/icons.js';
+import { createCollapsedState } from '../../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
 
 // Collapsed state manager for team card blocks
@@ -389,7 +389,12 @@ export function renderTeamCardsForm({
         ? (() => {
             // Create a custom alt field that writes to the member object
             const altWrap = h('div', { class: 'stack' });
-            altWrap.append(h('div', { class: 'field-label', text: 'Alt text (optional)' }));
+            altWrap.append(
+              h('div', {
+                class: 'field-label',
+                text: t('editor.teamCards.altText', 'Alt text (optional)'),
+              })
+            );
             const altInput = h('input', {
               type: 'text',
               class: 'form-input',

@@ -25,6 +25,8 @@ import { withTags } from './tags.js';
 import { withSlideLibraryTags } from './slide-library-tags.js';
 import { withCollections } from './collections.js';
 import { withSlideLibraryUsage } from './slide-library-usage.js';
+import { createLogger } from '../../../utils/logger.js';
+const log = createLogger('postgres');
 
 /**
  * Base adapter with connection management.
@@ -32,7 +34,7 @@ import { withSlideLibraryUsage } from './slide-library-usage.js';
 class BasePostgresAdapter extends StorageAdapter {
   async initialize() {
     await initializeDatabase();
-    console.log('[PostgresAdapter] Connected to PostgreSQL');
+    log.info('[PostgresAdapter] Connected to PostgreSQL');
   }
 
   async close() {
