@@ -22,6 +22,7 @@ import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
 import { json, serveJson, badRequest, getErrorStatus, jsonError } from '../../../utils/http.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
 import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
@@ -145,7 +146,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     }
 
     const email = normalizeEmail(body?.email);
-    const name = String(body?.name || '').trim();
+    const name = getTrimmedString(body, 'name') || '';
 
     if (!email || !email.includes('@')) {
       return badRequest(res, 'Valid email is required');

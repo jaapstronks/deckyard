@@ -8,6 +8,7 @@ import {
   verifyLoginAsync,
 } from '../../auth/auth.js';
 import { json, serveJson, unauthorized } from '../../utils/http.js';
+import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { readUserSettings } from '../../storage/settings.js';
@@ -45,9 +46,8 @@ export async function handleAuth({ repoRoot, req, res, url }) {
 
   if (url.pathname === '/api/auth/login' && req.method === 'POST') {
     const body = await json(req);
-    const email = typeof body?.email === 'string' ? body.email : '';
-    const password =
-      typeof body?.password === 'string' ? body.password : '';
+    const email = getString(body, 'email');
+    const password = getString(body, 'password');
 
     // Brute-force throttle (per-IP + per-email) before the expensive password
     // verification, so login can't be hammered. See security-hardening 3c.
