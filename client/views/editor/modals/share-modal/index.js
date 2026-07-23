@@ -14,6 +14,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { createFocusTrap } from '../../../../lib/dom.js';
 import { createSegmented } from '../../../../lib/dom/segmented.js';
+import { getFeatures } from '../../../../lib/state/features.js';
 import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createWorkspaceVisibilitySection } from './workspace-visibility-section.js';
@@ -136,7 +137,7 @@ export function openShareModal({
     editorState,
     syncShareUi: () => {
       syncShareUi?.();
-      publish.refresh();
+      publish?.refresh();
     },
     isAdmin,
     modalRoot: root,
@@ -176,31 +177,36 @@ export function openShareModal({
   ]);
 
   // --- Publish tab ---
-  const publish = createPublishSection({
-    h,
-    api,
-    pres,
-    id,
-    modalRoot: root,
-    copyToClipboard,
-    toast,
-    doPublish,
-    buildPublishModalData,
-    openPublishModal,
-    handleNotionPublish,
-    notionAvailable,
-    syncShareUi,
-    openExport,
-    requestClose: close,
-  });
-  const publishPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [
-    publish.element,
-  ]);
+  // Sandbox stance: no public published URLs, so the Publish tab is omitted
+  // entirely (no dead button). Mirrors the server-side 403 on /publish.
+  const publishAvailable = !getFeatures()?.sandboxMode;
+  const publish = publishAvailable
+    ? createPublishSection({
+        h,
+        api,
+        pres,
+        id,
+        modalRoot: root,
+        copyToClipboard,
+        toast,
+        doPublish,
+        buildPublishModalData,
+        openPublishModal,
+        handleNotionPublish,
+        notionAvailable,
+        syncShareUi,
+        openExport,
+        requestClose: close,
+      })
+    : null;
+  const publishPanel = publish
+    ? h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [publish.element])
+    : null;
 
   const panels = {
     workspace: workspacePanel,
     link: linkPanel,
-    publish: publishPanel,
+    ...(publishPanel ? { publish: publishPanel } : {}),
   };
 
   const showTab = (tab) => {
@@ -218,7 +224,9 @@ export function openShareModal({
     segments: [
       { value: 'workspace', label: t('share.tab.workspace', 'Workspace') },
       { value: 'link', label: t('share.tab.link', 'Link') },
-      { value: 'publish', label: t('share.tab.publish', 'Publish') },
+      ...(publishPanel
+        ? [{ value: 'publish', label: t('share.tab.publish', 'Publish') }]
+        : []),
     ],
     onSelect: (val) => showTab(val),
   });
@@ -226,7 +234,7 @@ export function openShareModal({
   const body = h('div', { class: 'share-modal-body' }, [
     workspacePanel,
     linkPanel,
-    publishPanel,
+    ...(publishPanel ? [publishPanel] : []),
   ]);
 
   modal.append(header, tabs.el, body);
@@ -250,7 +258,7 @@ export function openShareModal({
     close,
     refresh: () => {
       visibility.refresh();
-      publish.refresh();
+      publish?.refresh();
     },
   };
 }

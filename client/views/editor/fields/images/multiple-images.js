@@ -167,7 +167,9 @@ export function createFieldImages(ctx) {
       h('div', {
         class: 'help',
         text: uploadsDisabled
-          ? t('editor.images.uploadsDisabled', 'Uploads are disabled; use the library.')
+          ? flags.sandboxMode
+            ? t('editor.images.uploadsSandbox', 'Uploads are off in the sandbox; use the library, Unsplash or Giphy.')
+            : t('editor.images.uploadsDisabled', 'Uploads are disabled; use the library.')
           : t('editor.images.uploadCustom', 'Upload custom logo'),
       })
     );

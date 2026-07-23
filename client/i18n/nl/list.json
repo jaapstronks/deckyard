@@ -56,6 +56,7 @@
   "imageLibrary.photographerEmpty": "Fotograaf: —",
   "imageLibrary.photographerField": "Naam van de fotograaf (optioneel)",
   "imageLibrary.readOnly": "Uploads zijn uitgeschakeld. De beeldbank is alleen-lezen.",
+  "imageLibrary.readOnlySandbox": "Uploaden staat uit in de sandbox. Gebruik Unsplash of Giphy om afbeeldingen toe te voegen.",
   "imageLibrary.replace": "Bestand vervangen…",
   "imageLibrary.replace.done": "Vervangen. Bestaande slides blijven werken (URL is niet gewijzigd).",
   "imageLibrary.replace.notLocal": "Bestand vervangen kan alleen bij afbeeldingen die lokaal zijn geüpload (/uploads/…).",

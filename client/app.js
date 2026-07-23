@@ -14,6 +14,7 @@ import {
 } from './lib/state/router.js';
 import { meWithMeta } from './lib/user/auth.js';
 import { setFeatures } from './lib/state/features.js';
+import { syncSandboxBanner } from './views/shared/sandbox-banner.js';
 import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list.js';
 import { renderEditor } from './views/editor.js';
@@ -51,6 +52,7 @@ async function getMeCached() {
     return cachedMe;
   const { user, features } = await meWithMeta();
   setFeatures(features);
+  syncSandboxBanner();
   cachedMe = user;
   cachedMeAt = now;
   return user;
@@ -304,6 +306,7 @@ async function bootstrap() {
     rerenderQueued = true;
     queueMicrotask(() => {
       rerenderQueued = false;
+      syncSandboxBanner();
       render();
     });
   });

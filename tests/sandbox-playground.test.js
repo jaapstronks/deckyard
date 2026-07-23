@@ -1,0 +1,111 @@
+/**
+ * Sandbox public-playground guards.
+ *
+ * Two properties the sandbox deployment depends on:
+ *  1. Publishing is refused at the route level in sandbox mode. A guest owns
+ *     their own private deck and could otherwise push arbitrary content onto a
+ *     public /p/ URL on the real domain.
+ *  2. Stock media (Unsplash/Giphy) still works: the download path writes into
+ *     the sandbox uploads dir (which is also what serves /uploads/), so a guest
+ *     can put a stock image on a slide even though direct uploads are off.
+ *
+ * Env is read at call time, so we toggle it per case and restore after.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
+import { handlePublish } from '../server/routes/api/publish.js';
+import { uploadsDir } from '../server/config/storage-paths.js';
+import { saveUploadedFile } from '../server/storage/uploads.js';
+
+function withEnv(env, fn) {
+  const saved = {};
+  for (const k of Object.keys(env)) {
+    saved[k] = process.env[k];
+    if (env[k] === undefined) delete process.env[k];
+    else process.env[k] = env[k];
+  }
+  return Promise.resolve()
+    .then(fn)
+    .finally(() => {
+      for (const k of Object.keys(env)) {
+        if (saved[k] === undefined) delete process.env[k];
+        else process.env[k] = saved[k];
+      }
+    });
+}
+
+function mockRes() {
+  return {
+    status: null,
+    headers: null,
+    body: null,
+    writeHead(status, headers) {
+      this.status = status;
+      this.headers = headers;
+    },
+    end(body) {
+      this.body = body;
+    },
+  };
+}
+
+// A 1x1 transparent PNG (valid enough to persist; optimizer falls back to the
+// original buffer if it can't process it).
+const PNG_1x1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64'
+);
+
+test('publish route is refused (403) in sandbox mode', async () => {
+  await withEnv({ SANDBOX_MODE: '1' }, async () => {
+    const res = mockRes();
+    const url = new URL('http://localhost/api/presentations/deck123/publish');
+    const handled = await handlePublish({
+      repoRoot: process.cwd(),
+      req: { method: 'POST' },
+      res,
+      url,
+      authedUser: { email: 'guest-abc@sandbox.local' },
+    });
+
+    assert.equal(handled, true, 'handler should claim the publish route');
+    assert.equal(res.status, 403, 'publishing must be blocked in sandbox');
+    const body = JSON.parse(res.body);
+    assert.match(body.error, /sandbox/i);
+  });
+});
+
+test('stock-media download persists into the sandbox uploads dir', async () => {
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-sandbox-uploads-'));
+  try {
+    await withEnv(
+      { SANDBOX_MODE: '1', SANDBOX_UPLOADS_DIR: tmp, UPLOADS_DIR: undefined },
+      async () => {
+        // Sandbox routing: writes and /uploads/ serving both resolve here.
+        assert.equal(uploadsDir(process.cwd()), tmp);
+
+        // This is the exact call the Unsplash/Giphy download endpoints make.
+        const localUrl = await saveUploadedFile(
+          process.cwd(),
+          PNG_1x1,
+          'unsplash-test-regular.png',
+          'image/png'
+        );
+
+        assert.match(localUrl, /^\/uploads\//, 'must return a servable /uploads/ URL');
+
+        const filename = localUrl.slice('/uploads/'.length);
+        const abs = path.join(tmp, filename);
+        const stat = await fs.stat(abs);
+        assert.ok(stat.isFile(), 'downloaded stock image must land in the sandbox dir');
+      }
+    );
+  } finally {
+    await fs.rm(tmp, { recursive: true, force: true });
+  }
+});

@@ -137,3 +137,20 @@ watermarked exports, uploads disabled) for public demo instances. Use
 `docker-compose.sandbox.yml`; it sets `SANDBOX_MODE=1` and the related
 `SANDBOX_*` variables (TTL, watermark, theme) documented in
 `server/config/sandbox.js`.
+
+What sandbox mode does, and what it deliberately leaves on:
+
+- **Publishing is off.** The `/publish` route returns 403 and the editor hides
+  the Publish tab, so anonymous guests can't push arbitrary content onto a
+  public `/p/` URL on your domain.
+- **Direct uploads are off.** Guests can't upload their own files; the editor
+  shows a sandbox-specific notice pointing them at the stock sources instead.
+- **Unsplash and Giphy stay on** as the stock image sources. Set
+  `UNSPLASH_ACCESS_KEY` and `GIPHY_API_KEY` and enable each provider in Settings
+  → Stock media. Downloaded stock images land in `SANDBOX_UPLOADS_DIR` (which is
+  also what serves `/uploads/`), so a guest can still put an image on a slide.
+- **A persistent sandbox banner** tells guests their work is wiped after the TTL.
+
+Storage lives in `SANDBOX_DATA_DIR` / `SANDBOX_UPLOADS_DIR` (separate from your
+main data), so the cleanup sweep only ever touches throwaway guest content. See
+`.env.example` for the full `SANDBOX_*` list.

@@ -107,7 +107,9 @@ export function createFieldTitleBgImage(ctx) {
       h('div', {
         class: 'help',
         text: uploadsDisabled
-          ? t('editor.image.bgHelp.uploadsDisabled', 'Choose an existing image from the library. Uploads are disabled.')
+          ? flags.sandboxMode
+            ? t('editor.image.bgHelp.uploadsSandbox', 'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.')
+            : t('editor.image.bgHelp.uploadsDisabled', 'Choose an existing image from the library. Uploads are disabled.')
           : t('editor.image.bgHelp.withUploads', 'Choose an existing image from the library, or upload a new one.'),
       })
     );
