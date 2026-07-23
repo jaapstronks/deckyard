@@ -181,3 +181,10 @@ test('validation is idempotent — a validated config revalidates unchanged', ()
 
   assert.deepEqual(validateThemeConfig(once), once);
 });
+
+test('validateThemeConfig whitelists titleLayout and drops unknown values', () => {
+  assert.equal(validateThemeConfig({ titleLayout: 'center' }).titleLayout, 'center');
+  assert.equal(validateThemeConfig({ titleLayout: 'top' }).titleLayout, 'top');
+  // Unknown token is dropped entirely (normalize supplies the default later).
+  assert.ok(!('titleLayout' in validateThemeConfig({ titleLayout: 'diagonal' })));
+})

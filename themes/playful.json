@@ -2,6 +2,7 @@
   "id": "playful",
   "label": "Sunset",
   "defaultTitleSlide": "title-slide",
+  "titleLayout": "center",
   "assets": {
     "logo": "/assets/images/logo-placeholder.svg",
     "logoAlt": "Your logo",

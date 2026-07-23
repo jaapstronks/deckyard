@@ -62,6 +62,46 @@
   );
 }
 
+/* Scrim follows the layout so it darkens the edge the text sits against. The
+   base rules above are weighted to the bottom (the default `bottom` layout);
+   `top` flips them, `center` softens both ends since the text spans
+   centre → bottom. */
+.slide-title-universal.tsu-layout-top .tsu-overlay {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-text) 12%, transparent) 0%,
+    color-mix(in srgb, var(--color-text) 6%, transparent) 25%,
+    transparent 50%
+  );
+}
+.slide-title-universal.tsu-layout-top.has-bg .tsu-overlay {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.35) 30%,
+    rgba(0, 0, 0, 0.15) 55%,
+    transparent 80%
+  );
+}
+.slide-title-universal.tsu-layout-center .tsu-overlay {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--color-text) 10%, transparent) 0%,
+    transparent 38%,
+    transparent 62%,
+    color-mix(in srgb, var(--color-text) 8%, transparent) 100%
+  );
+}
+.slide-title-universal.tsu-layout-center.has-bg .tsu-overlay {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.14) 34%,
+    rgba(0, 0, 0, 0.14) 66%,
+    rgba(0, 0, 0, 0.34) 100%
+  );
+}
+
 .slide-title-universal .tsu-logo {
   position: absolute;
   top: 52px;
@@ -83,10 +123,52 @@
 .slide-title-universal .tsu-content {
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
   width: min(1040px, calc(100% - var(--tsu-pad-left) - var(--tsu-pad-right)));
   margin-left: var(--tsu-pad-left);
   margin-right: var(--tsu-pad-right);
+  /* A flex column so the theme layouts can position the primary block
+     (title + subtitle) and the meta line independently — see the layout
+     engine below. Vertical padding is set per layout. */
+  display: flex;
+  flex-direction: column;
+}
+
+/* =============================================================================
+   THEME-DRIVEN LAYOUT ENGINE
+   ============================================================================
+   The theme's `titleLayout` token (bottom | center | top) maps to a
+   `.tsu-layout-*` class on the root; the renderer always emits one (default
+   bottom). Each layout positions the content block and the scrim so the
+   gradient darkens the edge the text sits against.
+   ============================================================================ */
+
+/* bottom (default): content hugs the bottom, meta below the primary block. */
+.slide-title-universal.tsu-layout-bottom .slide-inner {
+  justify-content: flex-end;
+}
+.slide-title-universal.tsu-layout-bottom .tsu-content {
   padding-bottom: var(--tsu-pad-bottom);
+}
+
+/* top: content hugs the top. */
+.slide-title-universal.tsu-layout-top .slide-inner {
+  justify-content: flex-start;
+}
+.slide-title-universal.tsu-layout-top .tsu-content {
+  padding-top: var(--tsu-pad-bottom);
+}
+
+/* center: content fills the height; the primary block is vertically centred
+   and the meta line is pinned to the bottom edge. */
+.slide-title-universal.tsu-layout-center .tsu-content {
+  height: 100%;
+  padding-top: var(--tsu-pad-bottom);
+  padding-bottom: var(--tsu-pad-bottom);
+}
+.slide-title-universal.tsu-layout-center .tsu-primary {
+  margin-top: auto;
+  margin-bottom: auto;
 }
 
 .slide-title-universal .title {
@@ -128,9 +210,10 @@
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
-/* Meta sitting right under the title (no subtitle) needs less of a gap. */
-.slide-title-universal .title + .tsu-meta {
-  margin-top: var(--slide-space-5);
+/* In the center layout the meta line is pinned to the bottom edge by the
+   primary block's auto margins, so it needs no gap of its own. */
+.slide-title-universal.tsu-layout-center .tsu-meta {
+  margin-top: 0;
 }
 
 /* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
