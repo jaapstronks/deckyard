@@ -132,7 +132,8 @@ EXACT CONTENT SCHEMA:
 \`\`\`json
 {
   "title": "Presentation Title",
-  "subheading": "Speaker Name or Date",
+  "subheading": "A short subtitle or tagline",
+  "meta": "Speaker Name · Date · Organisation",
   "background": "lime"
 }
 \`\`\`

@@ -101,24 +101,36 @@
   text-wrap: balance;
 }
 
-.slide-title-universal .tsu-meta {
-  margin-top: var(--slide-space-5);
-  max-width: 70ch;
-}
-.slide-title-universal .subtitle,
-.slide-title-universal .byline,
-.slide-title-universal .attribution {
-  margin: 0;
+/* Subtitle: secondary prose. Reading measure lives here (a px cap, not `ch`
+   against an inherited font-size — the old `.tsu-meta { max-width: 70ch }`
+   computed against 14px and rendered the subtitle in under half the title
+   width). */
+.slide-title-universal .tsu-subtitle {
+  margin: var(--slide-space-5) 0 0;
+  max-width: 720px;
+  font-family: var(--font-body);
   font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
   color: var(--color-text-muted);
+  text-wrap: pretty;
 }
-.slide-title-universal .subtitle + .byline,
-.slide-title-universal .subtitle + .attribution,
-.slide-title-universal .byline + .attribution,
-.slide-title-universal .byline + .byline,
-.slide-title-universal .attribution + .attribution {
-  margin-top: var(--slide-space-3);
+
+/* Meta: author · date · organisation, in the theme's label typography
+   (caption font, uppercase, letterspaced, muted, small) — a distinct role
+   from the prose subtitle. */
+.slide-title-universal .tsu-meta {
+  margin: var(--slide-space-6) 0 0;
+  max-width: 720px;
+  font-family: var(--font-caption, var(--font-body));
+  font-size: var(--slide-text-sm);
+  line-height: var(--slide-leading-normal);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+/* Meta sitting right under the title (no subtitle) needs less of a gap. */
+.slide-title-universal .title + .tsu-meta {
+  margin-top: var(--slide-space-5);
 }
 
 /* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
@@ -131,9 +143,8 @@
 .slide-title-universal.has-bg .title {
   color: var(--slide-text-light);
 }
-.slide-title-universal.has-bg .subtitle,
-.slide-title-universal.has-bg .byline,
-.slide-title-universal.has-bg .attribution {
+.slide-title-universal.has-bg .tsu-subtitle,
+.slide-title-universal.has-bg .tsu-meta {
   color: var(--slide-text-light-muted);
 }
 

@@ -132,12 +132,12 @@ function mapSingleSlide(parsed, slideIndex, totalSlides) {
 function isHeadingOnly(parsed) {
   const body = parsed.body;
   const lines = body.split('\n').filter((l) => l.trim());
-  // All non-empty lines are headings or very short (byline-like)
+  // All non-empty lines are headings or very short (meta-like)
   const nonHeadingLines = lines.filter((l) => {
     const trimmed = l.trim();
     return !HEADING_RE.test(trimmed) && trimmed.length > 0;
   });
-  // Allow up to 1 non-heading line (subtitle/byline)
+  // Allow up to 1 non-heading line (subtitle/meta)
   return parsed.headings.length > 0 && nonHeadingLines.length <= 1;
 }
 
@@ -237,14 +237,14 @@ function buildTitleSlide(parsed, overrides = {}) {
   const nonHeadingLines = parsed.body
     .split('\n')
     .filter((l) => l.trim() && !HEADING_RE.test(l.trim()));
-  const byline = nonHeadingLines[0]?.trim() || '';
+  const meta = nonHeadingLines[0]?.trim() || '';
 
   const bgImage = parsed.frontmatter?.background || '';
 
   const content = {
     title: h1?.text || parsed.headings[0]?.text || 'Untitled',
     subheading: h2?.text || '',
-    byline: byline,
+    meta,
     // Canonical per-slide background key (title-bg-unification).
     slideBgImage: typeof bgImage === 'string' ? bgImage : '',
     ...overrides,
