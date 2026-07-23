@@ -40,6 +40,7 @@ export {
   canCommentOnPresentation,
   getEffectivePermission,
   isPresentationAuthor,
+  isUnrestricted,
 } from './presentation-authz/presentations.js';
 
 // Comment permissions

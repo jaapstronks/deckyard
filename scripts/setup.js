@@ -133,7 +133,8 @@ export function parseFlags(argv) {
  * @returns {Record<string,string>}
  */
 export function flagUpdates(flags = {}) {
-  const updates = { PORT: flags.port || '4177' };
+  const port = flags.port || '4177';
+  const updates = { PORT: port };
 
   const ai = String(flags.ai || 'none').toLowerCase();
   const provider = AI_PROVIDERS[ai];
@@ -146,13 +147,22 @@ export function flagUpdates(flags = {}) {
   }
 
   const auth = String(flags.auth || 'off').toLowerCase();
-  if (auth === 'on' || auth === 'true') {
+  const authOn = auth === 'on' || auth === 'true';
+  if (authOn) {
     updates.AUTH_SECRET = generateSecret();
     if (flags['admin-email']) updates.AUTH_ADMIN_EMAIL = flags['admin-email'];
     // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.
   } else {
     updates.AUTH_ENABLED = 'false';
   }
+
+  // APP_URL powers absolute links (MCP edit/present URLs, exports, share links).
+  // An explicit --app-url always wins; otherwise the local (auth-off) profile
+  // defaults to localhost so `get_presentation_url` works out of the box. For an
+  // auth-on (production) install we leave it unset so the operator sets APP_URL
+  // or DOMAIN to the real public origin.
+  if (flags['app-url']) updates.APP_URL = flags['app-url'];
+  else if (!authOn) updates.APP_URL = `http://localhost:${port}`;
 
   if (flags.theme && flags.theme !== 'deckyard') updates.DEFAULT_THEME = flags.theme;
 
@@ -204,8 +214,16 @@ async function runWizard() {
       updates.AUTH_ADMIN_EMAIL = await ask('Admin email (gets the admin role)', '');
       // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.
       console.log('  Generated a strong AUTH_SECRET for you.');
+      const publicUrl = await ask(
+        'Public URL (APP_URL, e.g. https://slides.example.com; blank to set later)',
+        '',
+      );
+      if (publicUrl) updates.APP_URL = publicUrl.replace(/\/+$/, '');
     } else {
       updates.AUTH_ENABLED = 'false';
+      // Local single-user profile: default APP_URL so MCP edit/present links and
+      // exports resolve without extra configuration.
+      updates.APP_URL = `http://localhost:${updates.PORT || '4177'}`;
     }
 
     // --- theme ---

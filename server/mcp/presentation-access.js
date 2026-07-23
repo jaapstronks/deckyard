@@ -36,6 +36,9 @@ export async function loadPresentationChecked(
   ownerEmail,
   { access = 'read' } = {}
 ) {
+  if (!presentationId) {
+    throw new Error('A presentation id is required (pass `id` or `presentationId`).');
+  }
   const pres = await getPresentation(repoRoot, presentationId);
   if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
 

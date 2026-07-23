@@ -16,6 +16,7 @@ import { getFeatureFlags } from './config/feature-flags.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
+import { createLogger } from './utils/logger.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
 import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
@@ -30,6 +31,8 @@ import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
 import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
+
+const log = createLogger('server');
 
 function getUrl(req) {
   const host = req.headers.host || 'localhost';
@@ -122,6 +125,17 @@ const server = http.createServer(async (req, res) => {
     });
   } catch (err) {
     const status = Number(err?.statusCode || 500);
+    // Unexpected 500s are server bugs — the client only ever sees a generic
+    // "server_error" envelope, so without this the failure is invisible during
+    // a self-install. Log method + path + stack so it's diagnosable.
+    if (status >= 500) {
+      const method = req?.method || '?';
+      let pathname = req?.url || '?';
+      try {
+        pathname = getUrl(req).pathname;
+      } catch {}
+      log.error(`${method} ${pathname} → 500`, err?.stack || err);
+    }
     const payload = JSON.stringify(buildTopLevelErrorBody(status, err), null, 2);
 
     // Important for streaming endpoints (SSE): headers may already be sent.

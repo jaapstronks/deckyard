@@ -78,6 +78,16 @@ import {
   cleanupExpiredCodes as fileCleanupExpiredCodes,
 } from '../follow-codes.js';
 
+import {
+  listTags as fileListTags,
+  getTagsForPresentation as fileGetTagsForPresentation,
+  getTagsForPresentations as fileGetTagsForPresentations,
+  setTagsForPresentation as fileSetTagsForPresentation,
+  createTag as fileCreateTag,
+  deleteTag as fileDeleteTag,
+  searchTags as fileSearchTags,
+} from '../tags-file.js';
+
 /**
  * Normalize a stored collection into the adapter's API shape (adds slideCount).
  * @param {object} item
@@ -540,5 +550,37 @@ export class FileAdapter extends StorageAdapter {
 
   async cleanupExpiredFollowCodes(ctx) {
     return fileCleanupExpiredCodes(this.repoRoot);
+  }
+
+  // ============================================================
+  // TAGS
+  // ============================================================
+
+  async listTags(ctx) {
+    return fileListTags(this.repoRoot);
+  }
+
+  async getTagsForPresentation(presentationId, ctx) {
+    return fileGetTagsForPresentation(this.repoRoot, presentationId);
+  }
+
+  async getTagsForPresentations(presentationIds, ctx) {
+    return fileGetTagsForPresentations(this.repoRoot, presentationIds);
+  }
+
+  async setTagsForPresentation(presentationId, tagNames, ctx) {
+    return fileSetTagsForPresentation(this.repoRoot, presentationId, tagNames);
+  }
+
+  async createTag(name, ctx) {
+    return fileCreateTag(this.repoRoot, name);
+  }
+
+  async deleteTag(tagId, ctx) {
+    return fileDeleteTag(this.repoRoot, tagId);
+  }
+
+  async searchTags(prefix, ctx, limit = 10) {
+    return fileSearchTags(this.repoRoot, prefix, limit);
   }
 }

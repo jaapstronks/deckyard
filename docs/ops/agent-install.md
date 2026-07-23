@@ -23,7 +23,8 @@ Do this:
 2. Configure it non-interactively with: npm run setup -- --yes
    Ask me first whether I want to add an AI provider key or enable auth, and if
    so pass the matching flags (see the doc). If I don't care, use the defaults.
-3. Start it (npm run start, or docker compose up -d --build if I have Docker).
+3. Start it (npm run start; or, if I have Docker, the local compose path in the
+   doc that publishes localhost:4177).
 4. Add the MCP server to your own config so you can create presentations, then
    confirm the connection by listing the available Deckyard tools.
 
@@ -80,13 +81,45 @@ The wizard upserts only the keys it is given on top of `.env.example`, so
 `.env.example` stays the full reference and nothing set by hand is lost. Never
 echo or commit the key — it only ever lands in the local, gitignored `.env`.
 
+**If you hand-edit `.env` instead of using the flags**, use the exact variable
+names the app reads (see `.env.example`), not the provider's own naming:
+
+| Provider | `.env` variable |
+|---|---|
+| Anthropic (Claude) | `CLAUDE_API` |
+| OpenAI | `OPENAI_API` (not `OPENAI_API_KEY`) |
+| Mistral | `MISTRAL_API` |
+| DeepSeek | `DEEPSEEK_API` |
+
+`.env` values are read literally, so a secret-manager reference like
+`op://vault/item/key` won't resolve unless you launch the process through that
+manager (e.g. `op run -- npm run start`). Paste the resolved key, or use the
+`--ai-key` flag.
+
+For a local (auth-off) install the setup script also writes
+`APP_URL=http://localhost:<port>`, so the MCP `get_presentation_url` and
+`export_presentation` tools return working links out of the box.
+
 ### 4. Start
 
 ```bash
 npm install && npm run start        # Node path → http://localhost:4177
-# or, if the user has Docker:
-docker compose up -d --build        # → http://localhost:4177
 ```
+
+If the user prefers Docker, the **local** path publishes the app port directly
+(the bare `docker compose up` topology puts the app behind a Caddy reverse proxy
+that needs a `DOMAIN`, which a local install does not have):
+
+```bash
+# Local: reachable at http://localhost:4177
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+
+# Production (behind Caddy on 80/443, needs DOMAIN + LETSENCRYPT_EMAIL in .env):
+docker compose up -d --build
+```
+
+> **Node is the simplest local path.** For a single-user local try, prefer
+> `npm run start`; reach for Docker only if the user explicitly wants it.
 
 ### 5. Wire yourself in over MCP
 
@@ -106,6 +139,11 @@ edit decks. For a Claude Desktop-style config:
 }
 ```
 
+`DECKYARD_MCP_OWNER_EMAIL` stamps the owner on decks the agent creates. With
+**auth enabled** set it to your account email so the decks are yours in the
+browser. With **auth off** (the local default) it is optional — the single local
+operator can open every deck regardless of owner, so you can drop it or leave it.
+
 For a remote instance, create an API key and use the SSE transport instead:
 
 ```bash
@@ -116,6 +154,11 @@ node scripts/create-api-key.js --email you@example.com --name "Agent" --scopes r
 Confirm the connection by listing the Deckyard tools (you should see
 `create_presentation`, `iterate_presentation`, and ~25 more). Full tool
 reference: [`docs/reference/mcp-server.md`](../reference/mcp-server.md).
+
+To verify end-to-end **without an AI key**, call `get_slide_types` (returns the
+slide catalogue with example content) and then `create_presentation_from_slides`
+(builds a deck from hand-authored slides, no AI). `create_presentation` and
+`iterate_presentation` need an AI provider, so skip those on a keyless install.
 
 ### 6. Report back
 

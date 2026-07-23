@@ -27,6 +27,7 @@ export async function listTags() {
     return [];
   }
   const storage = getStorage();
+  if (typeof storage.listTags !== 'function') return [];
   const ctx = getStorageContext();
   return await storage.listTags(ctx);
 }
@@ -41,6 +42,7 @@ export async function getTagsForPresentation(presentationId) {
     return [];
   }
   const storage = getStorage();
+  if (typeof storage.getTagsForPresentation !== 'function') return [];
   const ctx = getStorageContext();
   return await storage.getTagsForPresentation(presentationId, ctx);
 }
@@ -55,6 +57,7 @@ export async function getTagsForPresentations(presentationIds) {
     return new Map();
   }
   const storage = getStorage();
+  if (typeof storage.getTagsForPresentations !== 'function') return new Map();
   const ctx = getStorageContext();
   return await storage.getTagsForPresentations(presentationIds, ctx);
 }
@@ -70,6 +73,7 @@ export async function setTagsForPresentation(presentationId, tagNames) {
     return [];
   }
   const storage = getStorage();
+  if (typeof storage.setTagsForPresentation !== 'function') return [];
   const ctx = getStorageContext();
   return await storage.setTagsForPresentation(presentationId, tagNames, ctx);
 }
@@ -86,6 +90,11 @@ export async function createTag(name) {
     throw err;
   }
   const storage = getStorage();
+  if (typeof storage.createTag !== 'function') {
+    const err = new Error('Tags are not supported by the active storage backend');
+    err.statusCode = 501;
+    throw err;
+  }
   const ctx = getStorageContext();
   return await storage.createTag(name, ctx);
 }
@@ -100,6 +109,7 @@ export async function deleteTag(tagId) {
     return false;
   }
   const storage = getStorage();
+  if (typeof storage.deleteTag !== 'function') return false;
   const ctx = getStorageContext();
   return await storage.deleteTag(tagId, ctx);
 }
@@ -115,6 +125,7 @@ export async function searchTags(prefix, limit = 10) {
     return [];
   }
   const storage = getStorage();
+  if (typeof storage.searchTags !== 'function') return [];
   const ctx = getStorageContext();
   return await storage.searchTags(prefix, ctx, limit);
 }
