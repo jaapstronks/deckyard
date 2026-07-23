@@ -89,9 +89,74 @@ async function baseContent() {
   return '# Deckyard .env\n';
 }
 
-/** Non-interactive safe defaults: local, single-user, auth off, no AI. */
-function defaultUpdates() {
-  return { PORT: '4177', AUTH_ENABLED: 'false' };
+/**
+ * Parse `--flag value` / `--flag=value` pairs into a plain object. A flag with
+ * no value (end of args, or followed by another flag) becomes `'true'`. Used
+ * for the non-interactive/agent path so a coding agent can pass a user's
+ * choices without driving the prompts.
+ *
+ * @param {string[]} argv - args after the script name
+ * @returns {Record<string,string>}
+ */
+export function parseFlags(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a.startsWith('--')) continue;
+    const eq = a.indexOf('=');
+    if (eq !== -1) {
+      out[a.slice(2, eq)] = a.slice(eq + 1);
+    } else {
+      const key = a.slice(2);
+      const next = argv[i + 1];
+      if (next !== undefined && !next.startsWith('--')) {
+        out[key] = next;
+        i++;
+      } else {
+        out[key] = 'true';
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Build the .env updates for the non-interactive path from parsed flags. With
+ * no relevant flags this is the safe local default (auth off, no AI provider) —
+ * identical to what a bare `--yes` produces.
+ *
+ * Recognised: `--ai <provider>` + `--ai-key <key>` (openai|claude|mistral|
+ * deepseek|ollama), `--ollama-endpoint`/`--ollama-model`, `--auth on|off`,
+ * `--admin-email`, `--port`, `--theme`.
+ *
+ * @param {Record<string,string>} flags
+ * @returns {Record<string,string>}
+ */
+export function flagUpdates(flags = {}) {
+  const updates = { PORT: flags.port || '4177' };
+
+  const ai = String(flags.ai || 'none').toLowerCase();
+  const provider = AI_PROVIDERS[ai];
+  if (provider?.key && flags['ai-key']) {
+    updates[provider.key] = flags['ai-key'];
+  } else if (ai === 'ollama') {
+    updates.OPENAI_COMPAT_ENDPOINT =
+      flags['ollama-endpoint'] || 'http://localhost:11434/v1/chat/completions';
+    if (flags['ollama-model']) updates.OPENAI_COMPAT_MODEL = flags['ollama-model'];
+  }
+
+  const auth = String(flags.auth || 'off').toLowerCase();
+  if (auth === 'on' || auth === 'true') {
+    updates.AUTH_SECRET = generateSecret();
+    if (flags['admin-email']) updates.AUTH_ADMIN_EMAIL = flags['admin-email'];
+    // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.
+  } else {
+    updates.AUTH_ENABLED = 'false';
+  }
+
+  if (flags.theme && flags.theme !== 'deckyard') updates.DEFAULT_THEME = flags.theme;
+
+  return updates;
 }
 
 async function runWizard() {
@@ -158,7 +223,9 @@ async function main() {
     process.argv.includes('-y') ||
     !process.stdin.isTTY;
 
-  const updates = nonInteractive ? defaultUpdates() : await runWizard();
+  const updates = nonInteractive
+    ? flagUpdates(parseFlags(process.argv.slice(2)))
+    : await runWizard();
   const content = upsertEnv(await baseContent(), updates);
   await writeFile(ENV_PATH, content, 'utf8');
 
