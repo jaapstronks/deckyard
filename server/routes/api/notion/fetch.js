@@ -4,6 +4,7 @@
  */
 
 import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   extractPageId,
   fetchNotionPage,
@@ -31,7 +32,7 @@ export async function handleNotionFetch({ req, res, url }) {
   }
 
   const body = await json(req);
-  const urlOrId = typeof body?.url === 'string' ? body.url.trim() : '';
+  const urlOrId = getTrimmedString(body, 'url') || '';
   if (!urlOrId) {
     return badRequest(res, 'Expected { url } with a Notion page URL or ID');
   }
@@ -73,9 +74,9 @@ export async function handleNotionPublish({ req, res, url }) {
   }
 
   const body = await json(req);
-  const pageId = typeof body?.pageId === 'string' ? body.pageId.trim() : '';
-  const embedUrl = typeof body?.embedUrl === 'string' ? body.embedUrl.trim() : '';
-  const title = typeof body?.title === 'string' ? body.title.trim() : '';
+  const pageId = getTrimmedString(body, 'pageId') || '';
+  const embedUrl = getTrimmedString(body, 'embedUrl') || '';
+  const title = getTrimmedString(body, 'title') || '';
   const lang = body?.lang === 'en-GB' ? 'en-GB' : 'nl';
 
   if (!pageId) {

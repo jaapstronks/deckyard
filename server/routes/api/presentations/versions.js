@@ -16,6 +16,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../../utils/http.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   canReadPresentation,
   canWritePresentation,
@@ -51,7 +52,7 @@ export async function handlePresentationVersions(
   if (req.method === 'POST') {
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
     const body = await json(req);
-    const label = typeof body?.label === 'string' ? body.label.trim() : '';
+    const label = getTrimmedString(body, 'label') || '';
     const snap = await createPresentationVersion(repoRoot, id, pres, {
       actorEmail: authedUser?.email || null,
       reason: 'manual',

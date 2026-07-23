@@ -14,7 +14,12 @@
  */
 
 import { serveJson, badRequest, notFound, parseJsonBody, forbidden } from '../../utils/http.js';
-import { listThemeIds, loadTheme, clearCustomThemeCache } from '../../utils/themes.js';
+import {
+  listThemeIds,
+  listCoreThemeIds,
+  loadTheme,
+  clearCustomThemeCache,
+} from '../../utils/themes.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
@@ -49,11 +54,20 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
   if (pathname === '/api/themes' && req.method === 'GET') {
     const ctx = createRouteContext(authedUser);
 
-    // Load system themes from filesystem
-    const systemThemeIds = await listThemeIds(repoRoot);
-    const filteredSystemIds = sandboxEnabled()
-      ? systemThemeIds.filter((id) => String(id).startsWith('sandbox-'))
-      : systemThemeIds;
+    // Load system themes from filesystem. Sandbox is a public, neutral
+    // playground, so it lists only the built-in core themes (never filesystem
+    // custom/branded ones under custom/themes) — and, when present, narrows to
+    // a curated `sandbox-*` subset an operator can drop in. Falls back to the
+    // full core set when no `sandbox-*` themes exist, so the picker is never
+    // empty and guests can always choose a theme.
+    const systemThemeIds = sandboxEnabled()
+      ? await listCoreThemeIds(repoRoot)
+      : await listThemeIds(repoRoot);
+    let filteredSystemIds = systemThemeIds;
+    if (sandboxEnabled()) {
+      const curated = systemThemeIds.filter((id) => String(id).startsWith('sandbox-'));
+      filteredSystemIds = curated.length ? curated : systemThemeIds;
+    }
 
     const systemThemes = [];
     for (const id of filteredSystemIds) {
@@ -69,8 +83,10 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
       }
     }
 
-    // Load custom themes from database
-    const customThemes = await listThemes(ctx);
+    // Load custom themes from database. Sandbox is a public, neutral
+    // playground, so it deliberately hides workspace custom themes (which may
+    // carry a customer's branding) and shows only the built-in system themes.
+    const customThemes = sandboxEnabled() ? [] : await listThemes(ctx);
     const customThemeList = customThemes.map((t) => ({
       id: t.id,
       slug: t.slug,

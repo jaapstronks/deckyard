@@ -5,6 +5,7 @@
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized, notFound } from '../../utils/http.js';
+import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
   readEmailTemplates,
@@ -90,7 +91,7 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
   // ============================================================
   if (url.pathname === '/api/admin/email-templates/settings' && req.method === 'PUT') {
     const body = await json(req);
-    const locale = String(body?.defaultLocale || '').trim();
+    const locale = getTrimmedString(body, 'defaultLocale') || '';
 
     if (!SUPPORTED_LOCALES.includes(locale)) {
       return badRequest(res, `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}`);
@@ -179,7 +180,7 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
     }
 
     const body = await json(req);
-    const locale = String(body?.locale || 'en').trim();
+    const locale = getTrimmedString(body, 'locale') || 'en';
     const customFields = body?.fields || null;
 
     if (!SUPPORTED_LOCALES.includes(locale)) {
@@ -216,7 +217,7 @@ export async function handleEmailTemplates({ repoRoot, req, res, url }) {
     }
 
     const body = await json(req);
-    const locale = String(body?.locale || 'en').trim();
+    const locale = getTrimmedString(body, 'locale') || 'en';
     const customFields = body?.fields || null;
 
     if (!SUPPORTED_LOCALES.includes(locale)) {

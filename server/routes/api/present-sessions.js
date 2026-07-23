@@ -38,6 +38,7 @@ import {
   likertSliderOptionCountFromSlide,
 } from '../../utils/interaction-helpers.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { getString } from '../../utils/request-validators.js';
 import { guardSseConnection } from '../../utils/sse-limiter.js';
 
 /**
@@ -71,8 +72,7 @@ function csvEscapeCell(v) {
 export async function handlePresentSessions({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname === '/api/present-sessions' && req.method === 'POST') {
     const body = await json(req);
-    const presentationId =
-      typeof body?.presentationId === 'string' ? body.presentationId : '';
+    const presentationId = getString(body, 'presentationId');
     if (!presentationId.trim())
       return badRequest(res, 'Expected { presentationId: string }');
     // Only someone who can write the deck may create/resume its live session.
@@ -123,13 +123,11 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       });
       if (!pres) return true;
       const body = await json(req);
-      const presentationId =
-        typeof body?.presentationId === 'string' ? body.presentationId : '';
+      const presentationId = getString(body, 'presentationId');
       if (!presentationId.trim() || presentationId.trim() !== s.presentationId)
         return badRequest(res, 'presentationId mismatch');
-      const slideId = typeof body?.slideId === 'string' ? body.slideId : '';
-      const slideType =
-        typeof body?.slideType === 'string' ? body.slideType : '';
+      const slideId = getString(body, 'slideId');
+      const slideType = getString(body, 'slideType');
       const slideIndex = Number(body?.slideIndex ?? NaN);
       if (!Number.isFinite(slideIndex))
         return badRequest(res, 'slideIndex must be a number');

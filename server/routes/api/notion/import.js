@@ -4,6 +4,11 @@
  */
 
 import { badRequest, json, serveJson } from '../../../utils/http.js';
+import {
+  getTrimmedString,
+  getOptionalString,
+  getLangOrAuto,
+} from '../../../utils/request-validators.js';
 import { extractPageId, notionEnabled } from '../../../utils/notion.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
 import {
@@ -33,10 +38,10 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
   }
 
   const body = await json(req);
-  const urlOrId = typeof body?.url === 'string' ? body.url.trim() : '';
-  const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'auto';
-  const theme = typeof body?.theme === 'string' && body.theme.trim() ? body.theme.trim() : 'default';
-  const vendor = typeof body?.vendor === 'string' ? body.vendor : null;
+  const urlOrId = getTrimmedString(body, 'url') || '';
+  const lang = getLangOrAuto(body);
+  const theme = getTrimmedString(body, 'theme') || 'default';
+  const vendor = getOptionalString(body, 'vendor');
 
   if (!urlOrId) {
     return badRequest(res, 'Expected { url } with a Notion page URL or ID');
@@ -129,10 +134,10 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
   }
 
   const body = await json(req);
-  const urlOrId = typeof body?.url === 'string' ? body.url.trim() : '';
-  const lang = body?.lang === 'nl' || body?.lang === 'en-GB' ? body.lang : 'auto';
-  const theme = typeof body?.theme === 'string' && body.theme.trim() ? body.theme.trim() : 'default';
-  const vendor = typeof body?.vendor === 'string' ? body.vendor : null;
+  const urlOrId = getTrimmedString(body, 'url') || '';
+  const lang = getLangOrAuto(body);
+  const theme = getTrimmedString(body, 'theme') || 'default';
+  const vendor = getOptionalString(body, 'vendor');
 
   if (!urlOrId) {
     return badRequest(res, 'Expected { url } with a Notion page URL or ID');

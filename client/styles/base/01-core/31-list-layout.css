@@ -204,6 +204,14 @@
   padding: var(--ps-space-3) 0 var(--ps-space-4);
 }
 
+/* Breathing room under the fixed topbar: Home's first section (the theme
+   quick-picker, or whatever renders first) otherwise sits flush against the
+   bar. Padding on the view — not a margin on the theme row — so the gap holds
+   even when the theme picker is absent (e.g. no themes configured). */
+.sidebar-view[data-view='home'] {
+  padding-top: var(--ps-space-6);
+}
+
 /* Home preview rows: `auto-fill` keeps every card the same size regardless of
    how many a section has (Popular may have 1-2, Recent 4). Cards reflow evenly
    4/3/2/1 and an under-full row just leaves trailing space — far cleaner than

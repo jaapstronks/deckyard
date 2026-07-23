@@ -14,7 +14,10 @@ export function getFeatureFlags() {
   const demoMode = truthy(process.env.DEMO_MODE);
   const sandboxMode = sandboxEnabled();
   const imagekitOnly = truthy(process.env.IMAGEKIT_ONLY);
-  const disableAi = demoMode || truthy(process.env.DISABLE_AI);
+  // AI is off in sandbox: a public, anonymous playground plus per-prompt LLM
+  // cost is an open-ended bill the moment the URL is found, and AI generation
+  // isn't the reason to reach for Deckyard anyway. Matches demo mode.
+  const disableAi = demoMode || sandboxMode || truthy(process.env.DISABLE_AI);
   const disableUploads =
     demoMode || sandboxMode || truthy(process.env.DISABLE_UPLOADS) || imagekitOnly;
   const disableImageLibrary =

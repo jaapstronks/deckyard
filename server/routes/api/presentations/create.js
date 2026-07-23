@@ -1,5 +1,6 @@
 import { createPresentation } from '../../../storage/presentations.js';
 import { json, serveJson } from '../../../utils/http.js';
+import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
 import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage.js';
 import { createRouteContext } from '../../../utils/context.js';
@@ -18,7 +19,7 @@ function usageRefsFromBody(body) {
     const id = String(raw || '').trim();
     if (id) refs.push({ type: 'slide', id });
   }
-  const collectionId = String(body?.sourceCollectionId || '').trim();
+  const collectionId = getTrimmedString(body, 'sourceCollectionId') || '';
   if (collectionId) refs.push({ type: 'collection', id: collectionId });
   return refs;
 }
