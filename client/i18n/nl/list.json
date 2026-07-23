@@ -154,6 +154,7 @@
   "list.creationView.nameLabel": "Geef het een naam",
   "list.creationView.themeOptional": "Thema (optioneel)",
   "list.creationView.themeOptionalHint": "Houdt het workspace-thema aan, tenzij je een ander kiest.",
+  "list.creationView.themeSandboxHint": "In je eigen Deckyard bouw je een gebrand thema met eigen kleuren, fonts en logo.",
   "list.creationView.title": "Nieuwe presentatie",
   "list.delete": "Naar prullenbak",
   "list.deleteConfirm": "\"{title}\" naar de prullenbak verplaatsen?",

@@ -652,6 +652,20 @@ export function openCreationView({
   });
   setupWrap.append(langSelect.wrap, themeDisclosure, themeHint);
 
+  // Sandbox shows only the neutral built-in themes and has no theme builder, so
+  // surface what a real Deckyard adds: your own branded theme with custom fonts.
+  if (features.sandboxMode) {
+    setupWrap.append(
+      h('div', {
+        class: 'help creation-theme-prod-hint',
+        text: t(
+          'list.creationView.themeSandboxHint',
+          'In your own Deckyard you can build a branded theme with custom colours, fonts, and logo.'
+        ),
+      })
+    );
+  }
+
   // The hint only makes sense in the optional (library) mode while collapsed.
   const syncThemeHint = () => {
     themeHint.classList.toggle('is-hidden', !(method === 'library' && !themeDisclosure.open));

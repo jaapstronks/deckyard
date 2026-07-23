@@ -125,3 +125,80 @@
   font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-tertiary));
 }
+
+/* ============================================================
+   Sandbox library explainer (stand-in for the empty slide library)
+   ============================================================ */
+
+.sandbox-library-lead {
+  max-width: 640px;
+  margin-bottom: var(--ps-space-6);
+}
+
+.sandbox-library-lead-icon {
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+  margin-bottom: var(--ps-space-2);
+}
+
+.sandbox-library-title {
+  font-size: var(--ps-text-xl);
+  font-weight: 600;
+  color: hsl(var(--app-text-primary));
+  margin: 0 0 var(--ps-space-2);
+}
+
+.sandbox-library-body {
+  font-size: var(--ps-text-base);
+  color: hsl(var(--app-text-secondary));
+  line-height: 1.55;
+  margin: 0 0 var(--ps-space-3);
+}
+
+.sandbox-library-note {
+  margin: 0;
+}
+
+.sandbox-library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--ps-space-4);
+  max-width: 900px;
+}
+
+.sandbox-library-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3);
+  border: 1px dashed hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-lg);
+  background: hsl(var(--app-bg-sunken) / 0.5);
+}
+
+.sandbox-library-card-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-sunken));
+}
+
+.sandbox-library-card-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.45;
+}
+
+.sandbox-library-card-name {
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+}
+
+.sandbox-library-card-meta {
+  font-size: var(--ps-text-xs);
+  color: hsl(var(--app-text-tertiary));
+}

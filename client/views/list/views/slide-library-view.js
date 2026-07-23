@@ -4,6 +4,8 @@ import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
 import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
 import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { getFeatures } from '../../../lib/state/features.js';
+import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
 
 /**
  * Create the slide library view (lazy-loaded)
@@ -83,6 +85,15 @@ export function createSlideLibraryView({ api, nav }) {
 
   async function load() {
     if (loaded) return;
+
+    // Sandbox: no team, no reusable slides — show an explainer/mockup of what
+    // the library is for in a real Deckyard instead of an empty grid.
+    if (getFeatures()?.sandboxMode) {
+      loaded = true;
+      view.innerHTML = '';
+      view.append(createSandboxLibraryExplainer({ h }));
+      return;
+    }
 
     try {
       loaded = true;
