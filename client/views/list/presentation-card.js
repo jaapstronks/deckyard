@@ -1,4 +1,5 @@
 import { h } from '../../lib/dom.js';
+import { createInViewLoader } from '../../lib/dom/in-view.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
@@ -23,9 +24,14 @@ export function createCardRenderer({
   onDeckClaimed,
   onTrashRefresh,
   detachThumbs,
-  aborters,
   selectionState = null,
 }) {
+  // Defer thumbnail rendering until each card scrolls into view, so opening the
+  // list doesn't synchronously render a live slide (theme load + full slide DOM)
+  // for every off-screen deck. One shared observer for the whole list.
+  const thumbLoader = createInViewLoader({ rootMargin: '400px 0px' });
+  detachThumbs.push(() => thumbLoader.disconnect());
+
   const authorEmailForPresentation = (p) =>
     String(p?.updatedBy || p?.createdBy || p?.ownerEmail || '').trim();
 
@@ -105,12 +111,15 @@ export function createCardRenderer({
     // Store reference to update function for external updates
     item._updateSelection = updateSelectionState;
 
-    const thumb = h('div', { class: 'thumb' });
+    // Skeleton shimmer until the thumbnail renders (or the card scrolls into
+    // view). Removed in showThumbSlide once the slide DOM is ready.
+    const thumb = h('div', { class: 'thumb is-loading' });
     detachThumbs.push(attachThumbScale(thumb, { virtualWidth: 1600 }));
 
     const showThumbSlide = async (slide, themeId) => {
-      thumb.innerHTML = '';
       if (!slide) {
+        thumb.classList.remove('is-loading');
+        thumb.innerHTML = '';
         thumb.append(
           h('div', {
             class: 'help thumb-overlay is-muted',
@@ -120,36 +129,22 @@ export function createCardRenderer({
         return;
       }
       try {
+        // Load the theme while the skeleton is still showing, then swap in one go.
         const theme = await loadThemeById(themeId);
-        thumb.append(renderSlideElement(slide, { mode: 'thumb', theme, presentationId: p.id }));
+        const el = renderSlideElement(slide, { mode: 'thumb', theme, presentationId: p.id });
+        thumb.classList.remove('is-loading');
+        thumb.innerHTML = '';
+        thumb.append(el);
       } catch {
         // ignore thumbnail rendering errors; keep the list usable
+        thumb.classList.remove('is-loading');
       }
     };
 
-    // Prefer server-provided firstSlide for speed, but fall back to fetching
-    // the presentation so thumbnails always work (and reflect edits).
-    if (p.firstSlide) {
-      showThumbSlide(p.firstSlide, p.theme);
-    } else {
-      showThumbSlide(null, p.theme);
-      thumb.append(
-        h('div', {
-          class: 'help thumb-overlay is-bottom',
-          text: t('list.thumb.loading', 'Loading preview…'),
-        })
-      );
-      const ac = new AbortController();
-      aborters.push(ac);
-      api(`/api/presentations/${p.id}`, { signal: ac.signal })
-        .then((full) => {
-          const first = full?.slides?.[0] || null;
-          showThumbSlide(first, full?.theme);
-        })
-        .catch(() => {
-          // ignore
-        });
-    }
+    // The list route already ships firstSlide for every deck (empty decks get
+    // null → "No slides yet"), so no per-card fetch is needed. Render lazily,
+    // once the card is near the viewport.
+    thumbLoader.observe(thumb, () => showThumbSlide(p.firstSlide || null, p.theme));
 
     const authorEmail = authorEmailForPresentation(p);
     const profile = authorEmail ? getUserProfile(authorEmail) : null;

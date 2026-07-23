@@ -54,7 +54,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
   const shell = h('div', { class: 'app-shell has-sidebar', role: 'application' });
   const detachThumbs = [];
-  const aborters = [];
   const detachers = [];
   const openOverlayClosers = new Set();
 
@@ -239,7 +238,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     onDeckClaimed: (claimed) => onDeckClaimed?.(claimed),
     onTrashRefresh: () => trashViewObj.refresh(),
     detachThumbs,
-    aborters,
     selectionState,
   });
 
@@ -475,9 +473,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     }
     for (const d of detachers) {
       try { if (typeof d === 'function') d(); } catch { /* ignore */ }
-    }
-    for (const a of aborters) {
-      try { a?.abort?.(); } catch { /* ignore */ }
     }
   };
 }
