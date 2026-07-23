@@ -343,6 +343,7 @@
   "list.theme.unnamed": "Unnamed theme",
   "list.thumb.empty": "No slides yet",
   "list.thumb.loading": "Loading preview…",
+  "list.untitled": "Untitled",
   "list.time.daysAgo": "{count}d ago",
   "list.time.hoursAgo": "{count}h ago",
   "list.time.justNow": "just now",
