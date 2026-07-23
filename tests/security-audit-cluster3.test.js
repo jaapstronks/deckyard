@@ -139,7 +139,7 @@ test('H7: markdown import 500 is generic (no stack, no raw message)', async () =
 
 test('H6: embed render-failure message + stack are gated behind isDev', () => {
   const src = readFileSync(
-    fileURLToPath(new URL('../server/routes/static.js', import.meta.url)),
+    fileURLToPath(new URL('../server/routes/static/embed.js', import.meta.url)),
     'utf8',
   );
   // The error message line must only render in dev.
