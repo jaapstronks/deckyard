@@ -8,6 +8,8 @@ Not just a slide builder: Deckyard lets you **create, present, publish, and coll
 
 Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lock-in.
 
+**Live at [deckyard.eu](https://deckyard.eu)** — product site, documentation, and a sandbox to try it in the browser. Or self-host it yourself; everything below is the same engine.
+
 ![The Deckyard editor: slide list, live slide preview, and an inspector for theming — with a Present button, speaker notes, and comments.](assets/images/deckyard-editor.png)
 
 ## Why Deckyard
@@ -280,8 +282,8 @@ deckyard/
 
 ## Documentation
 
+- [deckyard.eu](https://deckyard.eu) — product site and published documentation (features, usage, guides)
 - [MCP Server reference](docs/reference/mcp-server.md) — All 27 tools, 6 prompts, transport options
-- [Product docs](https://github.com/jaapstronks/deckyard-website) — Features and usage (website repo)
 - [Developer docs](docs/developer/README.md) — Architecture and extending
 - [Theme reference](docs/developer/themes.md) — Theming system
 - [Self-hosting guide](docs/ops/self-hosting.md) — VPS bootstrap, updates, backups
