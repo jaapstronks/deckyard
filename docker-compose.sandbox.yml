@@ -10,7 +10,10 @@ services:
       # Sandbox mode
       SANDBOX_MODE: "1"
       SANDBOX_TTL_HOURS: "${SANDBOX_TTL_HOURS:-24}"
-      SANDBOX_DEFAULT_THEME: "${SANDBOX_DEFAULT_THEME:-sandbox-minimal}"
+      # Must be a real theme id. Sandbox shows only the neutral built-in
+      # themes (corporate, deckyard, editorial, midnight, playful); an operator
+      # can narrow that to a curated set by adding sandbox-*.json themes.
+      SANDBOX_DEFAULT_THEME: "${SANDBOX_DEFAULT_THEME:-deckyard}"
       SANDBOX_WATERMARK: "${SANDBOX_WATERMARK:-Sandbox export • Created by an anonymous user}"
       # Ensure sandbox writes into the mounted volumes (not /app/server/data-sandbox).
       SANDBOX_DATA_DIR: "/app/server/data"
@@ -20,7 +23,9 @@ services:
       SECURE_COOKIES: "1"
       DISABLE_UPLOADS: "1"
 
-      # AI (sandbox only supports Mistral)
+      # AI is off in sandbox (SANDBOX_MODE forces disableAi): a public,
+      # anonymous playground plus per-prompt LLM cost is an open-ended bill.
+      # These are kept for reference but have no effect while sandbox is on.
       MISTRAL_API: "${MISTRAL_API:-}"
       MISTRAL_MODEL: "${MISTRAL_MODEL:-mistral-small-latest}"
 

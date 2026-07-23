@@ -21,6 +21,8 @@ import path from 'node:path';
 import { handlePublish } from '../server/routes/api/publish.js';
 import { uploadsDir } from '../server/config/storage-paths.js';
 import { saveUploadedFile } from '../server/storage/uploads.js';
+import { getFeatureFlags } from '../server/config/feature-flags.js';
+import { listThemeIds, listCoreThemeIds } from '../server/utils/themes.js';
 
 function withEnv(env, fn) {
   const saved = {};
@@ -107,5 +109,31 @@ test('stock-media download persists into the sandbox uploads dir', async () => {
     );
   } finally {
     await fs.rm(tmp, { recursive: true, force: true });
+  }
+});
+
+test('AI is disabled in sandbox mode', async () => {
+  await withEnv({ SANDBOX_MODE: '1', DEMO_MODE: undefined, DISABLE_AI: undefined }, () => {
+    assert.equal(getFeatureFlags().disableAi, true, 'sandbox must turn AI off');
+  });
+  await withEnv({ SANDBOX_MODE: undefined, DEMO_MODE: undefined, DISABLE_AI: undefined }, () => {
+    assert.equal(getFeatureFlags().disableAi, false, 'AI stays on outside sandbox/demo');
+  });
+});
+
+test('sandbox theme list excludes filesystem custom (branded) themes', async () => {
+  const repoRoot = process.cwd();
+  const [core, all] = await Promise.all([
+    listCoreThemeIds(repoRoot),
+    listThemeIds(repoRoot),
+  ]);
+  // Core themes are the neutral built-ins surfaced on the public sandbox.
+  assert.ok(core.includes('deckyard'), 'core set must include the built-in themes');
+  assert.ok(core.length > 0, 'core theme set must not be empty');
+  // Any theme present in the full list but absent from the core set is a
+  // filesystem custom (potentially branded) theme, which sandbox must not show.
+  const customOnly = all.filter((id) => !core.includes(id));
+  for (const id of customOnly) {
+    assert.ok(!core.includes(id), `sandbox core list must omit custom theme "${id}"`);
   }
 });
