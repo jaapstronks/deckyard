@@ -1,0 +1,12 @@
+# Local override: publish the app port directly on the host so
+# http://localhost:4177 works without the Caddy reverse proxy (which needs a
+# DOMAIN and is meant for production). Use alongside the base compose file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+#
+# Bare `docker compose up -d --build` still uses the production topology
+# (app behind Caddy on 80/443).
+services:
+  app:
+    ports:
+      - "4177:4177"

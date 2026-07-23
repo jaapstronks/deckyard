@@ -147,11 +147,12 @@ describe('MCP Tool Schemas', () => {
     assert.ok('ownerEmail' in tool.inputSchema.properties);
   });
 
-  it('get_presentation requires id', async () => {
+  it('get_presentation accepts id and presentationId (alias)', async () => {
     const server = new McpServer();
     registerTools(server, {});
     const tool = server.tools.get('get_presentation');
-    assert.ok(tool.inputSchema.required.includes('id'));
+    assert.ok('id' in tool.inputSchema.properties);
+    assert.ok('presentationId' in tool.inputSchema.properties);
   });
 
   it('add_comment requires presentationId and body', async () => {

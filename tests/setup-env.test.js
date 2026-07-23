@@ -56,7 +56,26 @@ test('parseFlags does not swallow a following flag as a value', () => {
 });
 
 test('flagUpdates with no flags = safe local default (auth off, no AI)', () => {
-  assert.deepEqual(flagUpdates({}), { PORT: '4177', AUTH_ENABLED: 'false' });
+  assert.deepEqual(flagUpdates({}), {
+    PORT: '4177',
+    AUTH_ENABLED: 'false',
+    APP_URL: 'http://localhost:4177',
+  });
+});
+
+test('flagUpdates defaults APP_URL to localhost with the chosen port (auth off)', () => {
+  assert.equal(flagUpdates({ port: '5000' }).APP_URL, 'http://localhost:5000');
+});
+
+test('flagUpdates omits the localhost APP_URL default when auth is on', () => {
+  assert.equal(flagUpdates({ auth: 'on' }).APP_URL, undefined);
+});
+
+test('flagUpdates honors an explicit --app-url over the localhost default', () => {
+  assert.equal(
+    flagUpdates({ 'app-url': 'https://slides.example.com' }).APP_URL,
+    'https://slides.example.com',
+  );
 });
 
 test('flagUpdates maps provider + key to the right env var', () => {

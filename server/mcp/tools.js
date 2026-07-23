@@ -305,11 +305,11 @@ export function registerTools(
       type: 'object',
       properties: {
         id: { type: 'string', description: 'Presentation ID' },
+        presentationId: { type: 'string', description: 'Presentation ID (alias for id)' },
       },
-      required: ['id'],
     },
-    async ({ id }, context) => {
-      const pres = await getCheckedPresentation(id, context);
+    async ({ id, presentationId }, context) => {
+      const pres = await getCheckedPresentation(id || presentationId, context);
 
       return {
         id: pres.id,
@@ -792,11 +792,11 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
+        id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
       },
-      required: ['presentationId'],
     },
-    async ({ presentationId }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context);
+    async ({ presentationId, id }, context) => {
+      const pres = await getCheckedPresentation(presentationId || id, context);
 
       const validated = validateAndFixRefinedSlides(
         pres.slides.map(s => ({ type: s.type, content: s.content, reasoning: '' }))
@@ -1150,11 +1150,12 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
+        id: { type: 'string', description: 'Presentation ID (alias for presentationId)' },
       },
-      required: ['presentationId'],
     },
-    async ({ presentationId }, context) => {
+    async ({ presentationId, id }, context) => {
       // Verify it exists and is accessible
+      presentationId = presentationId || id;
       const pres = await getCheckedPresentation(presentationId, context);
 
       const base = getAppBaseUrl();
@@ -1169,8 +1170,8 @@ export function registerTools(
       return {
         id: presentationId,
         title: pres.title,
-        editUrl: `${base}/edit/${presentationId}`,
-        presentUrl: `${base}/present/${presentationId}`,
+        editUrl: presentationUrl(presentationId, 'edit'),
+        presentUrl: presentationUrl(presentationId, 'present'),
       };
     }
   );

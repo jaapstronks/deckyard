@@ -14,9 +14,23 @@ export function normalizePresentationScope(scope) {
 }
 
 /**
+ * A user flagged `unrestricted` is the single trusted operator of an
+ * auth-disabled install (AUTH_ENABLED=false). There is no one to protect decks
+ * from, so every ownership-scoped check grants access. The flag is only set by
+ * the auth-off anonymous admin (server/auth/auth.js); real (auth-enabled) users
+ * never carry it, so this cannot widen access in a multi-user deployment.
+ * @param {Object} [user]
+ * @returns {boolean}
+ */
+export function isUnrestricted(user) {
+  return !!user && user.unrestricted === true;
+}
+
+/**
  * Check if a user can read a presentation.
  */
 export function canReadPresentation({ user, pres, collaboratorPermission } = {}) {
+  if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const scope = normalizePresentationScope(pres?.scope);
   const userEmail = normalizeEmail(user?.email);
@@ -40,6 +54,7 @@ export function canReadPresentation({ user, pres, collaboratorPermission } = {})
  * Check if a user can write/edit a presentation.
  */
 export function canWritePresentation({ user, pres, collaboratorPermission } = {}) {
+  if (isUnrestricted(user)) return true;
   // Sandbox stance: workspace decks are curated seed decks and must be read-only for guests.
   const scope = normalizePresentationScope(pres?.scope);
   if (sandboxEnabled() && scope === 'workspace') return false;
@@ -67,6 +82,7 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
  * Check if a user can delete a presentation.
  */
 export function canDeletePresentation({ user, pres } = {}) {
+  if (isUnrestricted(user)) return true;
   // Only the owner/creator can delete.
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -120,6 +136,7 @@ export function canClaimOwnership({ user, pres } = {}) {
  * Check if a user can force release a lock on a presentation.
  */
 export function canForceLockRelease({ user, pres } = {}) {
+  if (isUnrestricted(user)) return true;
   // Owner/creator of the presentation can force release locks.
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -133,6 +150,7 @@ export function canForceLockRelease({ user, pres } = {}) {
  * Only the owner/creator can transfer ownership.
  */
 export function canTransferOwnership({ user, pres } = {}) {
+  if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -147,6 +165,7 @@ export function canTransferOwnership({ user, pres } = {}) {
  * Authors can lock/unlock slides to prevent editing by collaborators.
  */
 export function isPresentationAuthor({ user, pres } = {}) {
+  if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -160,6 +179,7 @@ export function isPresentationAuthor({ user, pres } = {}) {
  * Allowed for: owner, creator, or collaborator with 'admin' permission.
  */
 export function canManageCollaborators({ user, pres, collaboratorPermission } = {}) {
+  if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -177,6 +197,7 @@ export function canManageCollaborators({ user, pres, collaboratorPermission } = 
  * Check if a user can comment on a presentation.
  */
 export function canCommentOnPresentation({ user, pres, collaboratorPermission } = {}) {
+  if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
@@ -202,6 +223,7 @@ export function canCommentOnPresentation({ user, pres, collaboratorPermission } 
  * @returns {'edit' | 'comment' | 'view'}
  */
 export function getEffectivePermission({ user, pres, collaboratorPermission } = {}) {
+  if (isUnrestricted(user)) return 'edit';
   if (!pres || typeof pres !== 'object') return 'view';
 
   const userEmail = normalizeEmail(user?.email);

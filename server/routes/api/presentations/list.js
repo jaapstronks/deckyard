@@ -1,7 +1,7 @@
 import { listPresentations } from '../../../storage/presentations.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { serveJson } from '../../../utils/http.js';
-import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
+import { normalizePresentationScope, isUnrestricted } from '../../../utils/presentation-authz.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getOrgId } from '../../../utils/context.js';
@@ -12,6 +12,8 @@ import { getOrgId } from '../../../utils/context.js';
 // route would refuse those anyway, leaving a dead card).
 export function belongsInCollection({ user, pres } = {}) {
   if (!pres || typeof pres !== 'object') return false;
+  // Auth-off single operator sees every deck (matches canReadPresentation).
+  if (isUnrestricted(user)) return true;
   const scope = normalizePresentationScope(pres?.scope);
   if (scope === 'workspace') return true;
 

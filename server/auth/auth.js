@@ -290,6 +290,10 @@ export function getUserFromRequest(req) {
       email: 'anonymous',
       role: 'admin',
       isAdmin: true,
+      // Auth is off: this is the single trusted local operator, so authorization
+      // checks grant full access regardless of per-deck ownership. See
+      // isUnrestricted() in presentation-authz/presentations.js.
+      unrestricted: true,
       organizationId: getDefaultOrganizationId(),
     };
   if (devAuthBypassEnabled()) {
@@ -339,6 +343,10 @@ export async function getUserFromRequestAsync(req, ctx) {
       email: 'anonymous',
       role: 'admin',
       isAdmin: true,
+      // Auth is off: this is the single trusted local operator, so authorization
+      // checks grant full access regardless of per-deck ownership. See
+      // isUnrestricted() in presentation-authz/presentations.js.
+      unrestricted: true,
       organizationId: getDefaultOrganizationId(),
     };
   if (devAuthBypassEnabled()) {

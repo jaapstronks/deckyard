@@ -567,4 +567,79 @@ export class StorageAdapter {
   async cleanupExpiredFollowCodes(ctx) {
     throw new Error('Not implemented');
   }
+
+  // ============================================================
+  // TAGS
+  // ============================================================
+
+  /**
+   * List all tags with usage counts.
+   * @param {StorageContext} ctx
+   * @returns {Promise<Array<{id: string, name: string, count: number}>>}
+   */
+  async listTags(ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Get tags for a single presentation.
+   * @param {string} presentationId
+   * @param {StorageContext} ctx
+   * @returns {Promise<Array<{id: string, name: string}>>}
+   */
+  async getTagsForPresentation(presentationId, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Get tags for many presentations at once (list views).
+   * @param {string[]} presentationIds
+   * @param {StorageContext} ctx
+   * @returns {Promise<Map<string, Array<{id: string, name: string}>>>}
+   */
+  async getTagsForPresentations(presentationIds, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Replace the tags for a presentation (creating tags as needed).
+   * @param {string} presentationId
+   * @param {string[]} tagNames
+   * @param {StorageContext} ctx
+   * @returns {Promise<Array<{id: string, name: string}>>}
+   */
+  async setTagsForPresentation(presentationId, tagNames, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Create a tag if it doesn't exist.
+   * @param {string} name
+   * @param {StorageContext} ctx
+   * @returns {Promise<{id: string, name: string}>}
+   */
+  async createTag(name, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Delete a tag and all its associations.
+   * @param {string} tagId
+   * @param {StorageContext} ctx
+   * @returns {Promise<boolean>}
+   */
+  async deleteTag(tagId, ctx) {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Search tags by name prefix (autocomplete).
+   * @param {string} prefix
+   * @param {StorageContext} ctx
+   * @param {number} [limit=10]
+   * @returns {Promise<Array<{id: string, name: string, count: number}>>}
+   */
+  async searchTags(prefix, ctx, limit) {
+    throw new Error('Not implemented');
+  }
 }
