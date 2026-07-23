@@ -4,6 +4,8 @@
  */
 
 import { truthy } from './utils.js';
+import { getStorageMode } from './database.js';
+import { sandboxEnabled } from './sandbox.js';
 
 /**
  * Multi-workspace mode configuration.
@@ -30,6 +32,42 @@ export function requireMultiWorkspace() {
     error.statusCode = 403;
     throw error;
   }
+}
+
+/**
+ * Boot-time fail-closed guard against a leaking shared instance.
+ *
+ * Multi-workspace mode serves more than one organization from a single
+ * instance, so deck isolation must be enforced by the storage layer. The
+ * Postgres backend scopes every presentation query by organization_id
+ * (server/storage/adapters/postgres/presentations.js), so cross-org reads
+ * return nothing. The file backend has no org dimension at all — decks live
+ * flat in one directory and listPresentations() never consults the org — so
+ * two tenants on one file backend would see each other's workspace decks.
+ *
+ * This returns a human-readable error string when MULTI_WORKSPACE_ENABLED is
+ * on but the storage backend cannot enforce org isolation, else null. It reads
+ * process.env at call time (not the module-load MULTI_WORKSPACE_ENABLED
+ * constant) so boot order and tests both see the live config.
+ *
+ * Sandbox mode is deliberately exempt: it is a single-org, anonymous,
+ * throwaway instance (see docs/reference/tenant-isolation.md), so there is no
+ * second tenant to leak to even if the flag is combined with sandbox.
+ *
+ * @returns {string|null}
+ */
+export function multiWorkspaceStorageError() {
+  if (!truthy(process.env.MULTI_WORKSPACE_ENABLED)) return null;
+  if (sandboxEnabled()) return null;
+  if (getStorageMode() === 'postgres') return null;
+  return (
+    'MULTI_WORKSPACE_ENABLED=true requires the Postgres storage backend ' +
+    '(STORAGE_MODE=postgres). The file backend has no per-organization ' +
+    'isolation, so multiple tenants sharing it would see each other\'s ' +
+    'workspace decks. Either set STORAGE_MODE=postgres, or run one dedicated ' +
+    'instance per customer with MULTI_WORKSPACE_ENABLED unset ' +
+    '(see docs/reference/tenant-isolation.md).'
+  );
 }
 
 /**

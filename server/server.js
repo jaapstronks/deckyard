@@ -9,6 +9,7 @@ import {
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { ssoConfigError } from './config/sso.js';
+import { multiWorkspaceStorageError } from './config/features.js';
 import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
@@ -187,6 +188,20 @@ if (process.env.NODE_ENV === 'production') {
   const ssoErr = ssoConfigError();
   if (ssoErr) {
     console.error(`\n⚠️  SSO: ${ssoErr}\n`);
+    process.exit(1);
+  }
+}
+
+// Security check: refuse to fail OPEN on a leaking shared instance. Multi-
+// workspace mode serves several organizations from one instance, so deck
+// isolation must be enforced by the storage layer. The file backend has no
+// org dimension, so booting it with MULTI_WORKSPACE_ENABLED=true would let
+// tenants see each other's workspace decks. Fail loudly at boot rather than
+// leak silently at runtime. See docs/reference/tenant-isolation.md.
+{
+  const mwErr = multiWorkspaceStorageError();
+  if (mwErr) {
+    console.error(`\n⚠️  SECURITY: ${mwErr}\n`);
     process.exit(1);
   }
 }
