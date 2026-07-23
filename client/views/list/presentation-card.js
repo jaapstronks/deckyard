@@ -1,5 +1,6 @@
 import { h } from '../../lib/dom.js';
 import { createInViewLoader } from '../../lib/dom/in-view.js';
+import { downscaleThumbImages } from '../../lib/slide-runtime/thumb-image-resize.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
@@ -132,6 +133,8 @@ export function createCardRenderer({
         // Load the theme while the skeleton is still showing, then swap in one go.
         const theme = await loadThemeById(themeId);
         const el = renderSlideElement(slide, { mode: 'thumb', theme, presentationId: p.id });
+        // Fetch card-sized image variants instead of full-res slide art.
+        downscaleThumbImages(el, { width: 800 });
         thumb.classList.remove('is-loading');
         thumb.innerHTML = '';
         thumb.append(el);
