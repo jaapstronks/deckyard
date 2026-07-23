@@ -6,7 +6,7 @@ Deckyard is a self-hosted, open-source presentation system with a full [Model Co
 
 Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lock-in.
 
-![Deckyard slide overview](assets/images/slides-previewimage.png)
+![The Deckyard editor: slide list, live slide preview, and an inspector for theming — with a Present button, speaker notes, and comments.](assets/images/deckyard-editor.png)
 
 ## Why Deckyard
 

@@ -18,7 +18,7 @@ From your own machine:
 bash scripts/vps-bootstrap.sh \
   --host <your-server-ip> \
   --user root \
-  --repo git@github.com:yourorg/deckyard.git \
+  --repo https://github.com/jaapstronks/deckyard.git \
   --domain slides.example.com \
   --email admin@example.com
 ```
