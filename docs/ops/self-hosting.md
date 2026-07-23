@@ -4,6 +4,37 @@ The fastest path from a bare Ubuntu VPS to a running, HTTPS-enabled Deckyard
 instance. Everything here uses the `docker-compose.yml` + `Caddyfile` shipped
 in the repo root.
 
+## Fastest start (local, one command)
+
+To just try Deckyard on your own machine, run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jaapstronks/deckyard/main/scripts/install.sh | bash
+```
+
+The installer picks the fastest path it can find (Docker if you have it,
+otherwise a plain Node.js 22+ checkout), writes a local `.env` (auth disabled
+for a single-user try), starts the app, and opens `http://localhost:4177`. It is
+safe to re-run: an existing install is updated in place and an existing `.env`
+is left alone.
+
+> **Piping to a shell?** The script is [`scripts/install.sh`](../../scripts/install.sh)
+> in this repo. Read it first if you'd rather not pipe — it clones the repo,
+> writes a local `.env`, installs dependencies, and starts the app; it sends
+> none of your data anywhere. `git clone` + `bash scripts/install.sh` does the
+> same thing from a checkout you can inspect. (A short `deckyard.eu/install.sh`
+> alias for the marketing site is served from this same script.)
+
+To configure interactively (AI provider + key, auth, port, theme) at any time:
+
+```bash
+npm run setup          # a few questions; writes .env
+npm run setup -- --yes # non-interactive safe defaults (auth off, no AI)
+```
+
+The wizard upserts only the keys it asks about on top of your existing `.env`,
+so `.env.example` stays the full reference and nothing you set by hand is lost.
+
 ## What you need
 
 - A VPS (any provider) running Ubuntu 22.04+ with ports **80** and **443** open

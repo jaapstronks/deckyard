@@ -35,13 +35,28 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Quick Start
 
+One command — picks Docker or Node 22+ automatically, writes a local `.env`,
+starts the app, and opens your browser:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jaapstronks/deckyard/main/scripts/install.sh | bash
+```
+
+Prefer to do it by hand (or read before you pipe)? The manual path:
+
 ```bash
 git clone https://github.com/jaapstronks/deckyard.git
 cd deckyard
 npm install
+npm run setup   # optional: AI key, auth, port (Enter accepts defaults)
 npm run start
 # Open http://localhost:4177
 ```
+
+The installer is [`scripts/install.sh`](scripts/install.sh); it clones the repo,
+writes a local `.env`, installs dependencies, and starts the app — nothing
+leaves your machine. See the [self-hosting guide](docs/ops/self-hosting.md) for
+the VPS/HTTPS path.
 
 ## MCP Server — AI Agent Integration
 

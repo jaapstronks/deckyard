@@ -1,0 +1,190 @@
+#!/usr/bin/env node
+// Interactive .env onboarding for Deckyard.
+//
+//   npm run setup            # ask a few questions, write .env
+//   npm run setup -- --yes   # non-interactive: safe local defaults, no prompts
+//
+// The wizard never regenerates .env from a hardcoded schema — it upserts the
+// handful of keys it asks about on top of your existing .env (or a fresh copy
+// of .env.example), so keys it doesn't know about are preserved and .env.example
+// stays the single source of truth for the full option list.
+
+import { readFile, writeFile, access } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
+import { constants, randomBytes } from 'node:crypto';
+import { createInterface } from 'node:readline/promises';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ENV_PATH = join(ROOT, '.env');
+const EXAMPLE_PATH = join(ROOT, '.env.example');
+
+/**
+ * Upsert `KEY=value` pairs into an existing dotenv text, in place.
+ *
+ * For each key: if a line `KEY=…` or a commented `# KEY=…` exists, that line is
+ * replaced (uncommented) with `KEY=value`; otherwise the pair is appended under
+ * a generated footer. Only the given keys are touched — every other line,
+ * including comments and unrelated values, is preserved verbatim. This keeps
+ * `.env.example` as the canonical schema and avoids drift when new options are
+ * added there.
+ *
+ * @param {string} content - existing .env (or .env.example) text
+ * @param {Record<string,string>} updates - keys to set
+ * @returns {string} the updated text
+ */
+export function upsertEnv(content, updates) {
+  const lines = content.split('\n');
+  const remaining = new Map(Object.entries(updates));
+
+  const out = lines.map((line) => {
+    for (const [key, value] of remaining) {
+      // Match `KEY=`, optionally commented (`# KEY=`), anchored so KEY is exact
+      // (OPENAI_API never matches OPENAI_COMPAT_API).
+      const re = new RegExp(`^#?\\s*${key}=`);
+      if (re.test(line)) {
+        remaining.delete(key);
+        return `${key}=${value}`;
+      }
+    }
+    return line;
+  });
+
+  if (remaining.size > 0) {
+    if (out.length > 0 && out[out.length - 1] !== '') out.push('');
+    out.push('# Added by scripts/setup.js');
+    for (const [key, value] of remaining) out.push(`${key}=${value}`);
+  }
+
+  return out.join('\n');
+}
+
+/** A cryptographically strong AUTH_SECRET (>= 32 chars, base64). */
+export function generateSecret() {
+  return randomBytes(48).toString('base64');
+}
+
+const AI_PROVIDERS = {
+  none: null,
+  openai: { key: 'OPENAI_API', label: 'OpenAI' },
+  claude: { key: 'CLAUDE_API', label: 'Claude (Anthropic)' },
+  mistral: { key: 'MISTRAL_API', label: 'Mistral' },
+  deepseek: { key: 'DEEPSEEK_API', label: 'DeepSeek' },
+  ollama: { key: null, label: 'Ollama / OpenAI-compatible (local, no key)' },
+};
+
+async function exists(p) {
+  try {
+    await access(p, constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function baseContent() {
+  if (await exists(ENV_PATH)) return readFile(ENV_PATH, 'utf8');
+  if (await exists(EXAMPLE_PATH)) return readFile(EXAMPLE_PATH, 'utf8');
+  return '# Deckyard .env\n';
+}
+
+/** Non-interactive safe defaults: local, single-user, auth off, no AI. */
+function defaultUpdates() {
+  return { PORT: '4177', AUTH_ENABLED: 'false' };
+}
+
+async function runWizard() {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  const ask = async (q, def) => {
+    const a = (await rl.question(def ? `${q} [${def}]: ` : `${q}: `)).trim();
+    return a || def || '';
+  };
+  const askYesNo = async (q, def = false) => {
+    const a = (await rl.question(`${q} [${def ? 'Y/n' : 'y/N'}]: `)).trim().toLowerCase();
+    if (!a) return def;
+    return a === 'y' || a === 'yes';
+  };
+
+  const updates = {};
+  try {
+    console.log('\nDeckyard setup — Enter accepts the default in brackets.\n');
+
+    updates.PORT = await ask('Port', '4177');
+
+    // --- AI provider ---
+    console.log('\nAI wizard (optional). Pick a provider, or none:');
+    const keys = Object.keys(AI_PROVIDERS);
+    keys.forEach((k, i) => console.log(`  ${i + 1}) ${AI_PROVIDERS[k]?.label || 'None'}`));
+    const pick = await ask('Provider number', '1');
+    const chosen = keys[(parseInt(pick, 10) || 1) - 1] || 'none';
+    const provider = AI_PROVIDERS[chosen];
+    if (provider?.key) {
+      const apiKey = await ask(`${provider.label} API key (blank to skip)`, '');
+      if (apiKey) updates[provider.key] = apiKey;
+    } else if (chosen === 'ollama') {
+      updates.OPENAI_COMPAT_ENDPOINT = await ask(
+        'OpenAI-compatible endpoint',
+        'http://localhost:11434/v1/chat/completions',
+      );
+      updates.OPENAI_COMPAT_MODEL = await ask('Model', 'qwen2.5:72b');
+    }
+
+    // --- auth ---
+    console.log('\nAuthentication. Leave off for a local single-user try; turn');
+    console.log('on for anything reachable from the internet.');
+    const authOn = await askYesNo('Enable authentication?', false);
+    if (authOn) {
+      updates.AUTH_SECRET = generateSecret();
+      updates.AUTH_ADMIN_EMAIL = await ask('Admin email (gets the admin role)', '');
+      // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.
+      console.log('  Generated a strong AUTH_SECRET for you.');
+    } else {
+      updates.AUTH_ENABLED = 'false';
+    }
+
+    // --- theme ---
+    const theme = await ask('\nDefault theme id', 'deckyard');
+    if (theme && theme !== 'deckyard') updates.DEFAULT_THEME = theme;
+  } finally {
+    rl.close();
+  }
+  return updates;
+}
+
+async function main() {
+  const nonInteractive =
+    process.argv.includes('--yes') ||
+    process.argv.includes('-y') ||
+    !process.stdin.isTTY;
+
+  const updates = nonInteractive ? defaultUpdates() : await runWizard();
+  const content = upsertEnv(await baseContent(), updates);
+  await writeFile(ENV_PATH, content, 'utf8');
+
+  console.log(`\n✓ Wrote ${ENV_PATH}`);
+  if (nonInteractive) {
+    console.log('  (non-interactive defaults: auth disabled, no AI provider)');
+    console.log('  Run `npm run setup` interactively to add an API key or enable auth.');
+  }
+  console.log('  Start Deckyard with: npm run start');
+}
+
+// Only run the wizard when executed directly (not when imported by tests).
+// pathToFileURL + realpathSync make this robust to spaces in the path and to
+// symlinked temp dirs, which a naive `file://${argv[1]}` comparison mangles.
+function invokedDirectly() {
+  if (!process.argv[1]) return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
