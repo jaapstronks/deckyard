@@ -287,6 +287,7 @@
   "list.onboarding.createTitle": "Create your first deck",
   "list.onboarding.dismiss": "Dismiss checklist",
   "list.onboarding.mcpHint": "Drive Deckyard from Claude and other agents via API or MCP.",
+  "list.onboarding.mcpSandboxHint": "Off in the sandbox. In your own Deckyard, drive decks from Claude and other agents via API or MCP.",
   "list.onboarding.mcpTitle": "Connect an AI agent",
   "list.onboarding.progress": "{done} of {total} done",
   "list.onboarding.title": "Get started",

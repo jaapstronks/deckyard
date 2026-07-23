@@ -287,6 +287,7 @@
   "list.onboarding.createTitle": "Maak je eerste deck",
   "list.onboarding.dismiss": "Checklist sluiten",
   "list.onboarding.mcpHint": "Bestuur Deckyard vanuit Claude en andere agents via API of MCP.",
+  "list.onboarding.mcpSandboxHint": "Uit in de sandbox. In je eigen Deckyard bestuur je decks vanuit Claude en andere agents via API of MCP.",
   "list.onboarding.mcpTitle": "Koppel een AI-agent",
   "list.onboarding.progress": "{done} van {total} klaar",
   "list.onboarding.title": "Aan de slag",

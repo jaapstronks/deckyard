@@ -797,6 +797,23 @@
   text-decoration: line-through;
 }
 
+/* Info row (e.g. the sandbox "agent-native is a production feature" note):
+   greyed out, no hover, a lock glyph instead of a completable checkbox. */
+.onboarding-checklist-step.is-info {
+  opacity: 0.72;
+}
+
+.onboarding-checklist-step.is-info .onboarding-checklist-step-btn {
+  cursor: default;
+}
+
+.onboarding-checklist-status.is-locked {
+  border: none;
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+}
+
 .onboarding-checklist-step-hint {
   font-size: var(--ps-text-sm);
 }
