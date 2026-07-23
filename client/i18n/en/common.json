@@ -257,6 +257,7 @@
   "notifications.title": "Notifications",
   "notifications.unread": "unread",
   "qr.alt": "QR code",
+  "sandbox.banner.text": "Temporary Deckyard sandbox - your work is deleted after 24 hours.",
   "shortcuts.or": "or",
   "shortcuts.title": "Keyboard shortcuts",
   "stockMedia.attribution": "Photos from {source}",
