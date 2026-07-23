@@ -13,8 +13,8 @@ const SAMPLE_IMAGE_4 = 'https://picsum.photos/seed/slide-picker-4/800/600';
 export const SLIDE_TYPE_SAMPLE_CONTENT = {
   'title-slide': {
     title: 'Presentation Title',
-    subheading: 'Your subheading or tagline here',
-    byline: 'Presented by Your Name',
+    subheading: 'Your subtitle or tagline here',
+    meta: 'Your Name · June 2026',
     background: 'lime',
     logoCorner: 'right',
   },

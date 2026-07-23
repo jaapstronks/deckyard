@@ -16,13 +16,15 @@ export const STRUCTURAL_SLIDES = {
     resolveInPhase1: true,
     description: `
       The opening slide of a presentation. Always the first slide.
-      Contains the presentation title and subheading (usually speaker name or date).
+      Contains the presentation title, an optional subtitle (subheading, a
+      short tagline), and an optional meta line (speaker · date · organisation).
     `,
     bestFor: ['Opening/first slide of any deck'],
     notFor: ['Anything other than the deck opening'],
     schema: {
       title: { type: 'string', required: true, maxLength: 120 },
       subheading: { type: 'string', required: false, maxLength: 200 },
+      meta: { type: 'string', required: false, maxLength: 160 },
       background: { type: 'enum', options: ['lime', 'transparent'] },
     },
   },

@@ -13,21 +13,17 @@ export default {
     },
     {
       key: 'subheading',
-      label: 'Subheading',
+      label: 'Subtitle',
       type: 'string',
       required: false,
       maxLength: 160,
     },
     {
-      key: 'byline',
-      label: 'Byline',
-      type: 'string',
-      required: false,
-      maxLength: 160,
-    },
-    {
-      key: 'attribution',
-      label: 'Attribution',
+      // One generic meta line (author · date · organisation). Rendered in the
+      // theme's label typography (caption font, uppercase, letterspaced,
+      // muted) so it reads as a distinct role from the prose subtitle.
+      key: 'meta',
+      label: 'Meta',
       type: 'string',
       required: false,
       maxLength: 160,
@@ -50,16 +46,14 @@ export default {
     nl: {
       title: 'Nieuwe titel',
       subheading: '',
-      byline: '',
-      attribution: '',
+      meta: '',
       background: 'lime',
       logoCorner: 'right',
     },
     'en-GB': {
       title: 'New title',
       subheading: '',
-      byline: '',
-      attribution: '',
+      meta: '',
       background: 'lime',
       logoCorner: 'right',
     },
@@ -68,8 +62,7 @@ export default {
   defaults: {
     title: 'New title',
     subheading: '',
-    byline: '',
-    attribution: '',
+    meta: '',
     background: 'lime',
     logoCorner: 'right',
   },
@@ -93,15 +86,11 @@ export default {
       : '';
     const subtitle =
       typeof content?.subheading === 'string' && content.subheading.trim()
-        ? `<p class="subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(content.subheading)}</p>`
+        ? `<p class="tsu-subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${esc(content.subheading)}</p>`
         : '';
-    const byline =
-      typeof content?.byline === 'string' && content.byline.trim()
-        ? `<p class="byline" data-morph-role="byline" data-inline-field="byline" dir="auto">${esc(content.byline)}</p>`
-        : '';
-    const attribution =
-      typeof content?.attribution === 'string' && content.attribution.trim()
-        ? `<p class="attribution" data-morph-role="attribution" data-inline-field="attribution" dir="auto">${esc(content.attribution)}</p>`
+    const meta =
+      typeof content?.meta === 'string' && content.meta.trim()
+        ? `<p class="tsu-meta" data-morph-role="meta" data-inline-field="meta" dir="auto">${esc(content.meta)}</p>`
         : '';
     const theme =
       ctx?.theme && typeof ctx.theme === 'object'
@@ -134,11 +123,8 @@ export default {
             </div>
             <div class="tsu-content">
               <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
-              <div class="tsu-meta">
-                ${subtitle}
-                ${byline}
-                ${attribution}
-              </div>
+              ${subtitle}
+              ${meta}
             </div>
           </div>
         </div>

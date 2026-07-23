@@ -201,9 +201,9 @@
 /* Common slide-level captions/subtitles use hard-coded colours and sit directly
    on the background, so the token override above doesn't reach them. */
 .slide.has-slide-bg-light-text
-  :is(.subheading, .bottom-subheading, .subtitle, .byline, .attribution),
+  :is(.subheading, .bottom-subheading, .subtitle, .tsu-subtitle, .tsu-meta),
 .slide.has-slide-bg-dark-text
-  :is(.subheading, .bottom-subheading, .subtitle, .byline, .attribution) {
+  :is(.subheading, .bottom-subheading, .subtitle, .tsu-subtitle, .tsu-meta) {
   color: var(--slide-bg-text-muted);
 }
 /* Several slide types render text on their own opaque light surfaces (cards,

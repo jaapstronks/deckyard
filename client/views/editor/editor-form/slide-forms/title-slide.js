@@ -12,8 +12,7 @@ export function renderTitleSlideForm({
 }) {
   add('title');
   add('subheading');
-  add('byline');
-  add('attribution');
+  add('meta');
 
   // Background + logo corner are compact controls; keep them half-width.
   // The background *image* lives in the shared "Background" section

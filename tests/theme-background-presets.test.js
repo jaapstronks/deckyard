@@ -113,6 +113,38 @@ test('chapter-title → title conversion takes its background from the theme', (
   assert.ok(!flat.content.slideBgImage);
 });
 
+test('title-slide field model is title + subheading + meta (no byline/attribution)', () => {
+  const { SLIDE_TYPES } = SlideTypes;
+  const keys = (SLIDE_TYPES['title-slide'].fields || []).map((f) => f.key);
+  assert.ok(keys.includes('title'));
+  assert.ok(keys.includes('subheading'));
+  assert.ok(keys.includes('meta'));
+  assert.ok(!keys.includes('byline'), 'byline removed');
+  assert.ok(!keys.includes('attribution'), 'attribution removed');
+});
+
+test('title ↔ chapter conversion carries title + subheading both ways', () => {
+  const title = {
+    id: 't',
+    type: 'title-slide',
+    content: { title: 'Cover', subheading: 'A tagline', meta: 'Jaap · 2026' },
+  };
+  const toChapter = convertSlideToType(title, 'chapter-title-slide');
+  assert.equal(toChapter.type, 'chapter-title-slide');
+  assert.equal(toChapter.content.title, 'Cover');
+  assert.equal(toChapter.content.subheading, 'A tagline');
+  // chapter has no meta field, so it drops (and would warn as lossy)
+  assert.ok(!('meta' in toChapter.content) || !toChapter.content.meta);
+
+  const back = convertSlideToType(
+    { id: 'c', type: 'chapter-title-slide', content: { title: 'Section', subheading: 'Sub' } },
+    'title-slide'
+  );
+  assert.equal(back.type, 'title-slide');
+  assert.equal(back.content.title, 'Section');
+  assert.equal(back.content.subheading, 'Sub');
+});
+
 test('the title-slide import path never reaches for a demo photo', () => {
   // The point of the slice: with no theme context, nothing hands the slide a
   // background image that the theme did not ask for.

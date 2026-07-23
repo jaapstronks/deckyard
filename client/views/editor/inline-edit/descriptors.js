@@ -199,11 +199,10 @@ const HEADER_TEXT = ['title', 'subheading', 'bottomSubheading'];
 export const INLINE_DESCRIPTORS = {
   'title-slide': {
     ghosts: [
-      { field: 'subheading', anchor: '.tsu-meta', pos: 'prepend' },
-      { field: 'byline', anchor: '.tsu-meta', pos: 'append' },
-      { field: 'attribution', anchor: '.tsu-meta', pos: 'append' },
+      { field: 'subheading', anchors: [{ sel: '.title', pos: 'after', chip: 'below-start' }] },
+      { field: 'meta', anchors: [{ sel: '.tsu-content', pos: 'append', chip: 'bottom-start' }] },
     ],
-    formText: ['title', 'subheading', 'byline', 'attribution'],
+    formText: ['title', 'subheading', 'meta'],
   },
   'content-slide': {
     ghosts: [{ field: 'subheading', anchor: '.heading', pos: 'after', chip: 'below-end' }],
