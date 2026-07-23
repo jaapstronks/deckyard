@@ -20,7 +20,7 @@
  * @property {string} scope
  * @property {number} revision
  * @property {Object|null} i18n
- * @property {Object|null} firstSlide
+ * @property {boolean} hasSlides
  *
  * @typedef {Object} Presentation
  * @property {string} id

@@ -174,9 +174,6 @@ async function formatPresentations(rows, ctx) {
     // Extract first slide from slides JSONB array
     const slides = Array.isArray(row.slides) ? row.slides : [];
     const first = slides[0] || null;
-    const firstSlide = first
-      ? { id: first.id, type: first.type, content: first.content || {} }
-      : null;
 
     return {
       id: row.id,
@@ -188,7 +185,7 @@ async function formatPresentations(rows, ctx) {
       updatedBy: row.updated_by,
       created: row.created_at,
       modified: row.modified_at,
-      firstSlide,
+      hasSlides: !!first,
       tags: tagsMap.get(row.id) || [],
       activityCount: Number(row.activity_count) || 0,
       lastActivity: row.last_activity || row.modified_at,

@@ -6,8 +6,8 @@
  *   IntersectionObserver it degrades to running callbacks immediately.
  * - renderCard shows a skeleton (.thumb.is-loading), registers the thumb with
  *   the loader, and does NOT fetch /api/presentations/:id per card (the list
- *   route already ships firstSlide). The slide only renders once the card
- *   scrolls into view.
+ *   route ships a hasSlides flag). The thumbnail image loads only once the card
+ *   scrolls into view; empty decks show "No slides yet" instead.
  *
  * Run with: node --test tests/list-lazy-thumbnails.test.js
  */
@@ -156,7 +156,7 @@ test('renderCard shows a skeleton, defers rendering, and does not fetch per card
       title: 'Deck one',
       theme: 'default',
       modified: new Date().toISOString(),
-      firstSlide: { id: 's1', type: 'title-slide', content: { title: 'Hi' } },
+      hasSlides: true,
     });
 
     const thumb = card.querySelector('.thumb');
@@ -168,6 +168,11 @@ test('renderCard shows a skeleton, defers rendering, and does not fetch per card
       null,
       'no live slide rendered before the card scrolls into view'
     );
+    assert.equal(
+      thumb.querySelector('.thumb-img'),
+      null,
+      'no thumbnail image requested before the card scrolls into view'
+    );
     assert.equal(apiCalls, 0, 'no per-card /api/presentations fetch');
 
     // The shared loader disconnect is collected for cleanup.
@@ -175,6 +180,35 @@ test('renderCard shows a skeleton, defers rendering, and does not fetch per card
       detachThumbs.some((fn) => typeof fn === 'function'),
       'a cleanup function is registered'
     );
+  } finally {
+    io.restore();
+  }
+});
+
+test('renderCard shows "No slides yet" for an empty deck once in view', () => {
+  const io = installIOStub();
+  try {
+    const detachThumbs = [];
+    const { renderCard } = createCardRenderer({
+      api: async () => ({}),
+      nav: () => {},
+      detachThumbs,
+    });
+
+    const card = renderCard({
+      id: 'deck-empty',
+      title: 'Empty deck',
+      theme: 'default',
+      modified: new Date().toISOString(),
+      hasSlides: false,
+    });
+
+    const thumb = card.querySelector('.thumb');
+    io.instances[0].fire([thumb]);
+
+    assert.equal(thumb.classList.contains('is-loading'), false, 'skeleton cleared');
+    assert.ok(thumb.querySelector('.thumb-overlay'), 'renders the empty-state overlay');
+    assert.equal(thumb.querySelector('.thumb-img'), null, 'no image requested for an empty deck');
   } finally {
     io.restore();
   }

@@ -47,13 +47,15 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
     try {
       const presentations = await listPresentationsSharedWithUser(authedUser.email, ctx);
 
-      // Batch-fetch first slides for all presentations (avoids N+1 queries)
+      // Batch-fetch first slides for all presentations (avoids N+1 queries).
+      // The grid only needs the presence signal — the thumbnail is a
+      // server-rasterized PNG — so this collapses to a boolean.
       const ids = presentations.map((p) => p.id);
       const firstSlidesMap = await getFirstSlidesForIds(repoRoot, ids);
 
       const presentationsWithSlides = presentations.map((p) => ({
         ...p,
-        firstSlide: firstSlidesMap.get(p.id) || null,
+        hasSlides: !!firstSlidesMap.get(p.id),
       }));
 
       serveJson(res, 200, { presentations: presentationsWithSlides });

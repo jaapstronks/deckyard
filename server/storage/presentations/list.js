@@ -104,15 +104,10 @@ export async function listPresentations(repoRoot) {
               })(),
             }
           : null,
-      // Used by the overview page to render a thumbnail preview without extra requests.
-      firstSlide:
-        first && typeof first === 'object'
-          ? {
-              id: first.id,
-              type: first.type,
-              content: first.content || {},
-            }
-          : null,
+      // The overview grid only needs to know whether a deck has any slide (to
+      // choose "No slides yet" vs a thumbnail) — the thumbnail itself is a
+      // server-rasterized PNG, so the full slide content no longer ships here.
+      hasSlides: !!(first && typeof first === 'object'),
     });
   }
   out.sort((a, b) => String(b.modified).localeCompare(String(a.modified)));
@@ -192,14 +187,7 @@ export async function listTrashedPresentations(repoRoot) {
               })(),
             }
           : null,
-      firstSlide:
-        first && typeof first === 'object'
-          ? {
-              id: first.id,
-              type: first.type,
-              content: first.content || {},
-            }
-          : null,
+      hasSlides: !!(first && typeof first === 'object'),
     });
   }
   // Sort by trashed date (most recently trashed first)

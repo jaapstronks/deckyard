@@ -23,6 +23,31 @@ import {
 } from '../../../render/deck-thumbnail.js';
 import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js';
 
+/**
+ * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
+ * Called after a publish so the deck shows its raster on the next list load
+ * instead of the 404→retry placeholder flash. Best-effort: any failure just
+ * leaves the on-demand route to regenerate later. Uses slide 1 and the deck's
+ * current revision, matching what {@link handlePresentationThumbnail} serves.
+ *
+ * @param {string} repoRoot
+ * @param {object} pres - Full presentation (post-save, so the revision matches).
+ * @param {object|null} authedUser
+ * @returns {Promise<void>}
+ */
+export async function warmDeckThumbnail(repoRoot, pres, authedUser) {
+  try {
+    const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
+    if (!slide || typeof slide !== 'object') return;
+    const ctx = createRouteContext(authedUser);
+    const theme = await loadTheme(repoRoot, pres?.theme);
+    const slideTypes = await buildMergedSlideTypes(ctx);
+    await requestThumbnailGeneration(repoRoot, pres, slide, theme, slideTypes);
+  } catch {
+    // best-effort: the on-demand route regenerates on next request
+  }
+}
+
 export async function handlePresentationThumbnail(
   { repoRoot, req, res, authedUser } = {},
   presentationId
