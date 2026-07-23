@@ -1,5 +1,4 @@
 import { renderSlideHtml } from '../utils/render-slide.js';
-import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
@@ -8,7 +7,7 @@ import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/pris
 import { getAppBaseUrl } from '../config/utils.js';
 import { getVideoThumbnailUrl } from '../utils/video-slide-html.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
-import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
 
 /**
@@ -156,12 +155,7 @@ export async function buildSlidesPdfHtml(
     <title>${title} (PDF Slides)</title>
     ${buildPrismKatexCdnTags()}
     <style>
-${css.fontCss}
-${stripFontFacesFromCss(css.appCss)}
-${css.themeVarsCss}
-${css.themeCss}
-${stripFontFacesFromCss(css.slidesCss)}
-${css.wmCss}
+${buildExportStyleContent(css)}
 
       /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
       .ps-theme { --t-gradient-enabled: 0; }

@@ -1,5 +1,4 @@
 import { renderSlideHtml } from '../utils/render-slide.js';
-import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import {
@@ -10,7 +9,7 @@ import {
 } from '../utils/html-utils.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
-import { loadExportCssBundle } from '../export/css-bundle.js';
+import { loadExportCssBundle, buildExportStyleContent } from '../export/css-bundle.js';
 
 async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null } = {}) {
   const css = await loadExportCssBundle(repoRoot, theme, null);
@@ -46,12 +45,7 @@ async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = n
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     ${buildPrismKatexCdnTags()}
     <style>
-${css.fontCss}
-${stripFontFacesFromCss(css.appCss)}
-${css.themeVarsCss}
-${css.themeCss}
-${stripFontFacesFromCss(css.slidesCss)}
-${css.wmCss}
+${buildExportStyleContent(css)}
       /* Rendered PNGs are static; keep gradients deterministic and avoid animation timing. */
       .ps-theme { --t-gradient-enabled: 0; }
       html, body { margin: 0; padding: 0; }

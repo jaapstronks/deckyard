@@ -1,5 +1,4 @@
 import { renderSlideHtml } from '../utils/render-slide.js';
-import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import {
@@ -8,7 +7,7 @@ import {
 } from '../utils/html-utils.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
-import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
+import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
 
 export async function buildSlidesPngExportHtml(
   repoRoot,
@@ -57,12 +56,7 @@ export async function buildSlidesPngExportHtml(
     <title>${title} (PNG Export)</title>
     ${buildPrismKatexCdnTags()}
     <style id="pngExportCss">
-${css.fontCss}
-${stripFontFacesFromCss(css.appCss)}
-${css.themeVarsCss}
-${css.themeCss}
-${stripFontFacesFromCss(css.slidesCss)}
-${css.wmCss}
+${buildExportStyleContent(css)}
       /* PNG export is static; disable animated gradients so the result is deterministic. */
       .ps-theme { --t-gradient-enabled: 0; }
     </style>
