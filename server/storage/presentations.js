@@ -12,6 +12,7 @@ import { normalizeI18n } from './presentations/i18n.js';
 import { recordSlideLevelMerge } from '../services/activity-events.js';
 import { validatePresentationSize } from '../utils/presentation-limits.js';
 import { invalidatePresentationCache } from './presentation-cache.js';
+import { migratePresentation } from '../../shared/slide-types/schema-version.js';
 import { createLogger } from '../utils/logger.js';
 const log = createLogger('presentations');
 
@@ -41,13 +42,19 @@ export async function listPresentations(repoRoot) {
 }
 
 export async function getPresentation(repoRoot, id) {
+  // The single durable read funnel: every stored deck is migrated up to the
+  // current schema version in memory here, so callers (editor, exports, the
+  // semantic projection) never see a legacy shape — regardless of the storage
+  // backend. Reads don't write; the upgraded deck is persisted on the next
+  // write. migratePresentation is idempotent, so the file fallback (which also
+  // migrates in readPresentation) is unaffected.
   if (isStorageInitialized()) {
     const storage = getStorage();
     const ctx = getStorageContext();
-    return await storage.getPresentation(id, ctx);
+    return migratePresentation(await storage.getPresentation(id, ctx));
   }
   const mod = await import('./presentations/crud.js');
-  return await mod.getPresentation(repoRoot, id);
+  return migratePresentation(await mod.getPresentation(repoRoot, id));
 }
 
 export async function createPresentation(repoRoot, body) {

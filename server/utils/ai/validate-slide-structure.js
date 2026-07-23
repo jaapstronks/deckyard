@@ -44,12 +44,19 @@ export function validateSlideContentStructure(type, content, originalIndex) {
       break;
 
     case 'card-stack-slide':
-      if (!content.cardCount) {
+      // Canonical items[] shape (post-migration) or the legacy numbered fields.
+      if (Array.isArray(content.items) && content.items.length > 0) {
+        content.items.forEach((item, i) => {
+          if (!item?.title) issues.push(`items[${i}] missing title`);
+          if (!item?.body) issues.push(`items[${i}] missing body`);
+        });
+      } else if (!content.cardCount) {
         issues.push('Missing cardCount');
       } else {
         const count = parseInt(content.cardCount, 10);
         for (let i = 1; i <= count; i++) {
-          if (!content[`card${i}Label`]) issues.push(`Missing card${i}Label`);
+          if (!content[`card${i}Title`] && !content[`card${i}Label`])
+            issues.push(`Missing card${i}Title`);
           if (!content[`card${i}Body`]) issues.push(`Missing card${i}Body`);
         }
       }

@@ -78,7 +78,10 @@ const INSPECTOR_KEEPS = {
   'video-slide': ['source', 'autoplay', 'bunnyLibraryId'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],
-  'card-stack-slide': ['cardCount'],
+  // Card count is items[]-driven and managed by the side form's add/remove
+  // (like icon-card-grid), so the raw cardCount enum is no longer an inspector
+  // control.
+  'card-stack-slide': [],
   'icon-card-grid-slide': ['layout'],
   'payoff-slide': [],
   'quote-slide': [],

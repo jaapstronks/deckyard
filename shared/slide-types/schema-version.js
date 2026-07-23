@@ -16,9 +16,10 @@
  */
 
 import { resolveRows } from './types/text-blocks-slide.js';
+import { resolveCardStackItems } from './types/card-stack-slide.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
@@ -59,6 +60,27 @@ export const SCHEMA_MIGRATIONS = [
       if (Array.isArray(content.rows) && content.rows.length > 0) continue;
       const rows = resolveRows(content);
       if (Array.isArray(rows) && rows.length > 0) content.rows = rows;
+    }
+    return pres;
+  },
+
+  // v2 -> v3: fold card-stack legacy numbered fields (cardCount, card{n}Title /
+  // card{n}Label / card{n}Body) into the canonical `items[]` model, so the
+  // semantic projection reads it as a real collection instead of via the flat
+  // `repeatingGroups` bridge (now removed from the type def). Non-destructive:
+  // it only *adds* `content.items` when it is missing or empty, and leaves the
+  // legacy keys in place — they are now `hidden` in the type def (ignored by the
+  // projection) and get removed in a later deprecation-window cleanup.
+  // Idempotent: a slide that already has a populated `items[]` is untouched.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || slide.type !== 'card-stack-slide') continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      if (Array.isArray(content.items) && content.items.length > 0) continue;
+      const items = resolveCardStackItems(content);
+      if (Array.isArray(items) && items.length > 0) content.items = items;
     }
     return pres;
   },

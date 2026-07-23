@@ -2,6 +2,7 @@ import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { markdownToSafeHtml } from '../utils/markdown.js';
 import { iconUrl } from '../../shared/icon-names.js';
+import { resolveCardStack } from '../../shared/slide-types/types/card-stack-slide.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
@@ -64,14 +65,11 @@ function renderCardStackSlide(slide, lang) {
   const t = getPrintTranslations(lang);
   const c =
     slide && typeof slide === 'object' ? slide.content : {};
-  const count = Math.max(
-    1,
-    Math.min(4, Number(c?.cardCount || 4) || 4)
-  );
+  // Read the canonical view (items[] when present, else legacy numbered fields).
   const cards = [];
-  for (let i = 1; i <= count; i += 1) {
-    const label = String(c?.[`card${i}Label`] || '').trim();
-    const body = String(c?.[`card${i}Body`] || '').trim();
+  for (const card of resolveCardStack(c).cards) {
+    const label = String(card?.title || '').trim();
+    const body = String(card?.body || '').trim();
     if (!label && !body) continue;
     cards.push(`<section class="print-card">
       ${label ? `<h3>${escapeHtml(label)}</h3>` : ''}

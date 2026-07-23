@@ -1,22 +1,33 @@
 export function removeCardAtIndex(slide, idx1) {
-  const clampCount = () =>
-    Math.max(
-      1,
-      Math.min(4, Number(slide?.content?.cardCount || 4) || 4)
-    );
-  const count = clampCount();
+  // Support both the canonical items[] array and legacy numbered fields.
+  const items = slide.content?.items;
+
+  if (Array.isArray(items) && items.length > 0) {
+    if (items.length <= 1) return false;
+    const idx = Math.max(0, Math.min(items.length - 1, Number(idx1) - 1));
+    items.splice(idx, 1);
+
+    // Keep the numbered mirror in sync for backward compatibility.
+    slide.content.cardCount = String(items.length);
+    for (let i = 0; i < 6; i += 1) {
+      const item = items[i] || {};
+      slide.content[`card${i + 1}Title`] = item.title || '';
+      slide.content[`card${i + 1}Body`] = item.body || '';
+    }
+    return true;
+  }
+
+  // Legacy numbered fields fallback.
+  const count = Math.max(1, Math.min(6, Number(slide?.content?.cardCount || 4) || 4));
   const idx = Math.max(1, Math.min(count, Number(idx1) || 1));
   if (count <= 1) return false;
 
   // Shift cards up from idx..count-1
   for (let i = idx; i < count; i += 1) {
-    const nextLabel = slide.content?.[`card${i + 1}Label`] || '';
-    const nextBody = slide.content?.[`card${i + 1}Body`] || '';
-    slide.content[`card${i}Label`] = nextLabel;
-    slide.content[`card${i}Body`] = nextBody;
+    slide.content[`card${i}Title`] = slide.content?.[`card${i + 1}Title`] || '';
+    slide.content[`card${i}Body`] = slide.content?.[`card${i + 1}Body`] || '';
   }
-  // Clear last
-  slide.content[`card${count}Label`] = '';
+  slide.content[`card${count}Title`] = '';
   slide.content[`card${count}Body`] = '';
   slide.content.cardCount = String(count - 1);
   return true;

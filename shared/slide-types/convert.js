@@ -7,6 +7,7 @@ import {
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-images.js';
 import { resolveImageSlideImage } from './image-slide-image.js';
+import { resolveCardStack } from './types/card-stack-slide.js';
 import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './content-columns-images.js';
 
 function deepClone(v) {
@@ -406,35 +407,55 @@ export function convertSlideToType(
     }
   }
 
-  // card-stack <-> icon-card-grid
-  // Both now use cardNTitle for consistency
+  // card-stack <-> icon-card-grid. Both are items[]-canonical, so read the
+  // source's resolved card view and write items[] on the target (writing only
+  // the numbered mirror would be masked by the target's items[] defaults).
   if (fromType === 'card-stack-slide' && targetType === 'icon-card-grid-slide') {
     if (typeof from.subtitle === 'string' && typeof to.subtitle === 'string')
       to.subtitle = from.subtitle;
-    const count = Math.max(1, Math.min(4, Number(from?.cardCount || 4) || 4));
-    to.cardCount = String(count);
-    for (let i = 1; i <= count; i += 1) {
-      // DEPRECATED: cardNLabel fallback - Remove after April 2026
-      const title = String(from?.[`card${i}Title`] || from?.[`card${i}Label`] || '').trim();
-      const body = String(from?.[`card${i}Body`] || '').trim();
-      to[`card${i}Title`] = title ? title.slice(0, 80) : '';
-      to[`card${i}Body`] = body;
-      // No icon in card-stack; leave empty.
-      to[`card${i}Icon`] = '';
+    const srcCards = resolveCardStack(from).cards.slice(0, 6);
+    const items = srcCards.map((c) => ({
+      icon: '', // No icon in card-stack; leave empty.
+      title: String(c?.title || '').trim().slice(0, 80),
+      body: String(c?.body || '').trim(),
+      link: '',
+    }));
+    to.items = items;
+    to.cardCount = String(Math.max(1, items.length));
+    for (let i = 1; i <= 6; i += 1) {
+      const item = items[i - 1] || {};
+      to[`card${i}Icon`] = item.icon || '';
+      to[`card${i}Title`] = item.title || '';
+      to[`card${i}Body`] = item.body || '';
     }
   }
   if (fromType === 'icon-card-grid-slide' && targetType === 'card-stack-slide') {
     if (typeof from.subtitle === 'string' && typeof to.subtitle === 'string')
       to.subtitle = from.subtitle;
-    const countRaw = Number(from?.cardCount || 4) || 4;
-    const count = Math.max(1, Math.min(4, countRaw));
-    to.cardCount = String(count);
+    // Read icon-card-grid's canonical source (items[] when present, else its
+    // numbered mirror), then write card-stack's items[].
+    const useItems = Array.isArray(from?.items) && from.items.length > 0;
+    const count = Math.max(
+      1,
+      Math.min(6, useItems ? from.items.length : Number(from?.cardCount || 4) || 4)
+    );
+    const items = [];
     for (let i = 1; i <= count; i += 1) {
-      const title = String(from?.[`card${i}Title`] || '').trim();
-      const body = String(from?.[`card${i}Body`] || '').trim();
-      // Now uses cardNTitle instead of cardNLabel
-      to[`card${i}Title`] = title ? title.slice(0, 40) : '';
-      to[`card${i}Body`] = body;
+      const src = useItems ? from.items[i - 1] || {} : {};
+      const title = String(
+        (useItems ? src.title : from?.[`card${i}Title`]) || ''
+      ).trim();
+      const body = String(
+        (useItems ? src.body : from?.[`card${i}Body`]) || ''
+      ).trim();
+      items.push({ title: title.slice(0, 40), body });
+    }
+    to.items = items;
+    to.cardCount = String(items.length);
+    for (let i = 1; i <= 6; i += 1) {
+      const item = items[i - 1] || {};
+      to[`card${i}Title`] = item.title || '';
+      to[`card${i}Body`] = item.body || '';
     }
   }
 
