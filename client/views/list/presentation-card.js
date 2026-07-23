@@ -1,9 +1,5 @@
 import { h } from '../../lib/dom.js';
 import { createInViewLoader } from '../../lib/dom/in-view.js';
-import { downscaleThumbImages } from '../../lib/slide-runtime/thumb-image-resize.js';
-import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
-import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
 import { toast } from '../../lib/dom/toast.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { displayNameFromEmail } from '../../lib/user/user-format.js';
@@ -112,42 +108,83 @@ export function createCardRenderer({
     // Store reference to update function for external updates
     item._updateSelection = updateSelectionState;
 
-    // Skeleton shimmer until the thumbnail renders (or the card scrolls into
-    // view). Removed in showThumbSlide once the slide DOM is ready.
+    // Skeleton shimmer until the PNG thumbnail loads (or the card scrolls into
+    // view). Fase B: the list no longer renders a live slide DOM per card — it
+    // lazy-loads a server-rasterized PNG→WebP of slide 1 and falls back to a
+    // cheap title placeholder when none exists yet (never blank).
     const thumb = h('div', { class: 'thumb is-loading' });
-    detachThumbs.push(attachThumbScale(thumb, { virtualWidth: 1600 }));
 
-    const showThumbSlide = async (slide, themeId) => {
-      if (!slide) {
-        thumb.classList.remove('is-loading');
-        thumb.innerHTML = '';
-        thumb.append(
-          h('div', {
-            class: 'help thumb-overlay is-muted',
-            text: t('list.thumb.empty', 'No slides yet'),
-          })
-        );
-        return;
-      }
-      try {
-        // Load the theme while the skeleton is still showing, then swap in one go.
-        const theme = await loadThemeById(themeId);
-        const el = renderSlideElement(slide, { mode: 'thumb', theme, presentationId: p.id });
-        // Fetch card-sized image variants instead of full-res slide art.
-        downscaleThumbImages(el, { width: 800 });
-        thumb.classList.remove('is-loading');
-        thumb.innerHTML = '';
-        thumb.append(el);
-      } catch {
-        // ignore thumbnail rendering errors; keep the list usable
-        thumb.classList.remove('is-loading');
-      }
+    let retryTimer = null;
+    detachThumbs.push(() => {
+      if (retryTimer) clearTimeout(retryTimer);
+    });
+
+    const showEmpty = () => {
+      thumb.classList.remove('is-loading');
+      thumb.innerHTML = '';
+      thumb.append(
+        h('div', {
+          class: 'help thumb-overlay is-muted',
+          text: t('list.thumb.empty', 'No slides yet'),
+        })
+      );
     };
 
-    // The list route already ships firstSlide for every deck (empty decks get
-    // null → "No slides yet"), so no per-card fetch is needed. Render lazily,
-    // once the card is near the viewport.
-    thumbLoader.observe(thumb, () => showThumbSlide(p.firstSlide || null, p.theme));
+    // Cheap fallback while no raster exists (generation pending, disabled, or
+    // failed): the deck title on a neutral surface. Deliberately not a live
+    // slide render — speed is the whole point of Fase B.
+    const showPlaceholder = () => {
+      thumb.classList.remove('is-loading');
+      thumb.classList.add('is-placeholder');
+      thumb.innerHTML = '';
+      thumb.append(
+        h('div', {
+          class: 'thumb-placeholder-title',
+          text: p.title || t('list.untitled', 'Untitled'),
+        })
+      );
+    };
+
+    const showThumbImage = () => {
+      // `?v=<revision>` busts the cache on every deck edit.
+      const thumbUrl = `/api/presentations/${p.id}/thumbnail?v=${p.revision || 1}`;
+      const img = h('img', {
+        class: 'thumb-img',
+        alt: '',
+        loading: 'lazy',
+        decoding: 'async',
+      });
+      let retried = false;
+      img.onload = () => {
+        thumb.classList.remove('is-loading', 'is-placeholder');
+        thumb.innerHTML = '';
+        thumb.append(img);
+      };
+      img.onerror = () => {
+        // A 404 means generation is likely still in flight — retry once, then
+        // settle on the placeholder.
+        if (!retried) {
+          retried = true;
+          retryTimer = setTimeout(() => {
+            img.src = `${thumbUrl}&r=${Date.now()}`;
+          }, 2500);
+          return;
+        }
+        showPlaceholder();
+      };
+      img.src = thumbUrl;
+    };
+
+    // p.firstSlide tells us cheaply whether the deck has any slide, so empty
+    // decks skip the network round-trip entirely. Render lazily, once the card
+    // is near the viewport.
+    thumbLoader.observe(thumb, () => {
+      if (!p.firstSlide) {
+        showEmpty();
+        return;
+      }
+      showThumbImage();
+    });
 
     const authorEmail = authorEmailForPresentation(p);
     const profile = authorEmail ? getUserProfile(authorEmail) : null;
