@@ -54,6 +54,12 @@ Please include:
 - Before/after screenshots for UI changes (where applicable)
 - Notes on cleanup/lifecycle if you added event listeners/timers/SSE/etc.
 
+## Licensing of contributions
+
+By submitting a contribution you agree that it is licensed under the same
+[MIT license](LICENSE) as the project (inbound = outbound). See
+[`GOVERNANCE.md`](GOVERNANCE.md).
+
 ## Branching & releases
 
 - **`main` is stable.** Every commit on it should be releasable; forks are
