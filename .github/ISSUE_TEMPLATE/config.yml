@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & ideas
+    url: https://github.com/jaapstronks/deckyard/discussions
+    about: Ask questions or float ideas in Discussions instead of opening an issue.
+  - name: Report a security vulnerability
+    url: https://github.com/jaapstronks/deckyard/security/advisories/new
+    about: Please report security issues privately, never as a public issue.

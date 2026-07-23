@@ -1,0 +1,27 @@
+name: Feature request
+description: Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What are you trying to do that's hard or impossible today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like to see happen?
+    validations:
+      required: false
+  - type: textarea
+    id: fit
+    attributes:
+      label: Fit with Deckyard's scope
+      description: >
+        Deckyard stays dependency-light, framework-free and build-step-free.
+        How does this fit that shape? (See GOVERNANCE.md.)
+    validations:
+      required: false
