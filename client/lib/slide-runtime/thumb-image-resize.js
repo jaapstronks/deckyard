@@ -4,10 +4,13 @@
  *
  * A thumbnail renders the slide into a 1600×900 box (then CSS-scales it down to
  * card width), so its background images and <img>s would otherwise be fetched at
- * full slide resolution. For ImageKit-hosted URLs we can ask for a narrower
- * variant via the `?tr=w-<n>` transform; everything else (local uploads, data
- * URIs, unknown hosts, already-transformed URLs) is left untouched — appending a
- * width there would either do nothing or fight an existing transform.
+ * full slide resolution. Two hosts get a narrower variant:
+ *   - ImageKit-hosted URLs via the CDN's `?tr=w-<n>` transform;
+ *   - local uploads (`/uploads/…`) via the server's `?w=<n>` resize endpoint
+ *     (see `server/routes/static/upload-variant.js`).
+ * Everything else (data URIs, unknown hosts, already-transformed URLs) is left
+ * untouched — appending a width there would either do nothing or fight an
+ * existing transform.
  *
  * This is a deck-list optimization only; the full editor/presenter/export paths
  * keep rendering images at their native resolution.
@@ -41,6 +44,54 @@ export function imagekitThumbUrl(url, width) {
   return `${u}${sep}tr=w-${width}`;
 }
 
+/** Widths the server variant endpoint will materialize; keep in sync with it. */
+const LOCAL_VARIANT_WIDTHS = new Set([400, 800, 1600]);
+
+/** @returns {boolean} whether `url` is a same-origin `/uploads/…` asset. */
+function isLocalUploadUrl(url) {
+  try {
+    const resolved = new URL(url, window.location.href);
+    return (
+      resolved.origin === window.location.origin &&
+      resolved.pathname.startsWith('/uploads/')
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Request a width-capped server variant of a local upload. Returns `url`
+ * unchanged for non-local URLs, unsupported widths, or URLs that already carry
+ * a `w=` param.
+ * @param {string} url
+ * @param {number} width - target width in px
+ * @returns {string}
+ */
+export function localUploadThumbUrl(url, width) {
+  const u = String(url || '').trim();
+  if (!u || u.startsWith('data:')) return u;
+  if (!LOCAL_VARIANT_WIDTHS.has(width)) return u;
+  if (!isLocalUploadUrl(u)) return u;
+  if (/[?&]w=/.test(u)) return u; // respect an existing width request
+  const sep = u.includes('?') ? '&' : '?';
+  return `${u}${sep}w=${width}`;
+}
+
+/**
+ * Pick the right width-capped variant for `url`: ImageKit CDN transform for
+ * ImageKit assets, server resize endpoint for local uploads, unchanged
+ * otherwise.
+ * @param {string} url
+ * @param {number} width
+ * @returns {string}
+ */
+export function thumbVariantUrl(url, width) {
+  const viaImageKit = imagekitThumbUrl(url, width);
+  if (viaImageKit !== url) return viaImageKit;
+  return localUploadThumbUrl(url, width);
+}
+
 /**
  * Rewrite the images inside a rendered thumbnail subtree in place: downscale
  * ImageKit background-images and <img>s to `width`, mark <img>s lazy, and drop
@@ -56,7 +107,7 @@ export function downscaleThumbImages(root, { width = 800 } = {}) {
     const bg = el.style.backgroundImage;
     const m = /url\(\s*['"]?([^'")]+)['"]?\s*\)/.exec(bg || '');
     if (!m) continue;
-    const next = imagekitThumbUrl(m[1], width);
+    const next = thumbVariantUrl(m[1], width);
     if (next !== m[1]) el.style.backgroundImage = `url('${next}')`;
   }
 
@@ -66,7 +117,7 @@ export function downscaleThumbImages(root, { width = 800 } = {}) {
     if (img.hasAttribute('srcset')) img.removeAttribute('srcset');
     const src = img.getAttribute('src');
     if (!src) continue;
-    const next = imagekitThumbUrl(src, width);
+    const next = thumbVariantUrl(src, width);
     if (next !== src) img.setAttribute('src', next);
   }
 }
