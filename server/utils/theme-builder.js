@@ -14,6 +14,7 @@ import {
   RADIUS_SCALES,
   SHADOW_SCALES,
 } from '../../shared/theme-config-schema.js';
+import { pickTextColorForBg } from '../../shared/color-utils.js';
 
 // ============================================================
 // COLOR UTILITIES
@@ -156,32 +157,6 @@ export function deriveColorPalette(primary) {
     hslToHex(h, Math.min(100, s * 0.7), Math.min(90, l * 1.3)),
     hslToHex(h, Math.min(100, s * 0.5), Math.min(95, l * 1.4)),
   ];
-}
-
-/**
- * Calculate relative luminance for WCAG contrast.
- * @param {Object} rgb - RGB object
- * @returns {number} - Luminance (0-1)
- */
-function relLuminance({ r, g, b }) {
-  const toLin = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
-}
-
-/**
- * Pick appropriate text color (light or dark) for a background.
- * @param {string} bgHex - Background hex color
- * @param {Object} options - Light and dark text colors
- * @returns {string} - Appropriate text color
- */
-export function pickTextColorForBg(bgHex, { light = '#ffffff', dark = '#1f2937' } = {}) {
-  const c = hexToRgb(bgHex);
-  if (!c) return dark;
-  const lum = relLuminance(c);
-  return lum < 0.5 ? light : dark;
 }
 
 /**

@@ -19,6 +19,12 @@ import {
 } from './theme-slide-backgrounds.js';
 import { TEXT_COLOR_SWATCH_SLOTS } from './slide-types/text-styles.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from './theme-config-schema.js';
+import { hexToRgb, pickTextColorForBg } from './color-utils.js';
+
+// Re-exported so long-standing importers keep their entry point: the theme
+// editor's variants section imports pickTextColorForBg here, and the tests
+// import hexToRgb here.
+export { hexToRgb, pickTextColorForBg };
 
 /**
  * Normalize a theme's `textSwatches`: the extra on-brand text colours the
@@ -46,53 +52,6 @@ function normalizeTextSwatches(raw, vars) {
     out.push(label != null ? { id, label } : { id });
   }
   return out;
-}
-
-/**
- * Parse a 3- or 6-digit hex colour.
- * @param {*} hex
- * @returns {{r: number, g: number, b: number}|null} null when unparseable
- */
-export function hexToRgb(hex) {
-  const s = String(hex || '').trim();
-  const m6 = s.match(/^#?([0-9a-f]{6})$/i);
-  if (m6) {
-    const n = parseInt(m6[1], 16);
-    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-  }
-  const m3 = s.match(/^#?([0-9a-f]{3})$/i);
-  if (m3) {
-    return {
-      r: parseInt(m3[1][0] + m3[1][0], 16),
-      g: parseInt(m3[1][1] + m3[1][1], 16),
-      b: parseInt(m3[1][2] + m3[1][2], 16),
-    };
-  }
-  return null;
-}
-
-/** WCAG relative luminance. */
-function relLuminance({ r, g, b }) {
-  const toLin = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
-}
-
-/**
- * Pick the readable text colour for a background.
- * @param {string} bgHex
- * @param {{light?: string, dark?: string}} [poles]
- * @returns {string} the light or dark pole (dark when bgHex is unparseable)
- */
-export function pickTextColorForBg(
-  bgHex,
-  { light = '#ffffff', dark = '#212121' } = {}
-) {
-  const rgb = hexToRgb(bgHex);
-  if (!rgb) return dark;
-  return relLuminance(rgb) < 0.5 ? light : dark;
 }
 
 function rgba(hex, a) {

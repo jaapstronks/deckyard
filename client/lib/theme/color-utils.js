@@ -1,38 +1,21 @@
 /**
  * Color manipulation utilities for the theme editor.
+ *
+ * The WCAG primitives (hex parsing, luminance, contrast ratio, readable-text
+ * selection) live in `shared/color-utils.js` so client and server share one
+ * definition. They are re-exported here so browser modules keep a single
+ * colour-helper import point; the editor-only helpers below (HSL conversion,
+ * palette derivation, lighten / darken) stay client-side.
  */
 
-/**
- * Convert hex color to RGB object.
- * @param {string} hex - Hex color string
- * @returns {Object|null} - RGB object or null
- */
-export function hexToRgb(hex) {
-  const s = String(hex || '').trim();
+import {
+  hexToRgb,
+  getRelativeLuminance,
+  getContrastRatio,
+  pickTextColorForBg,
+} from '../../../shared/color-utils.js';
 
-  // Try 6-digit hex
-  const m6 = s.match(/^#?([0-9a-fA-F]{6})$/);
-  if (m6) {
-    const n = parseInt(m6[1], 16);
-    return {
-      r: (n >> 16) & 255,
-      g: (n >> 8) & 255,
-      b: n & 255,
-    };
-  }
-
-  // Try 3-digit hex
-  const m3 = s.match(/^#?([0-9a-fA-F]{3})$/);
-  if (m3) {
-    return {
-      r: parseInt(m3[1][0] + m3[1][0], 16),
-      g: parseInt(m3[1][1] + m3[1][1], 16),
-      b: parseInt(m3[1][2] + m3[1][2], 16),
-    };
-  }
-
-  return null;
-}
+export { hexToRgb, getRelativeLuminance, getContrastRatio };
 
 /**
  * Convert RGB to hex color.
@@ -136,52 +119,14 @@ export function hslToHex(h, s, l) {
 }
 
 /**
- * Calculate relative luminance for WCAG contrast.
- * @param {Object} rgb - RGB object { r, g, b }
- * @returns {number} - Luminance (0-1)
- */
-export function getRelativeLuminance({ r, g, b }) {
-  const toLin = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * toLin(r) + 0.7152 * toLin(g) + 0.0722 * toLin(b);
-}
-
-/**
- * Calculate contrast ratio between two colors.
- * @param {string} color1 - First hex color
- * @param {string} color2 - Second hex color
- * @returns {number} - Contrast ratio (1-21)
- */
-export function getContrastRatio(color1, color2) {
-  const rgb1 = hexToRgb(color1);
-  const rgb2 = hexToRgb(color2);
-
-  if (!rgb1 || !rgb2) return 1;
-
-  const l1 = getRelativeLuminance(rgb1);
-  const l2 = getRelativeLuminance(rgb2);
-
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-/**
  * Pick appropriate text color (light or dark) for a background.
- * Uses WCAG luminance formula.
+ * Thin alias over the shared `pickTextColorForBg` primitive.
  * @param {string} backgroundColor - Background hex color
  * @param {Object} options - Light and dark text colors
  * @returns {string} - Appropriate text color
  */
-export function getContrastColor(backgroundColor, { light = '#ffffff', dark = '#1f2937' } = {}) {
-  const rgb = hexToRgb(backgroundColor);
-  if (!rgb) return dark;
-
-  const luminance = getRelativeLuminance(rgb);
-  return luminance > 0.5 ? dark : light;
+export function getContrastColor(backgroundColor, poles) {
+  return pickTextColorForBg(backgroundColor, poles || {});
 }
 
 /**
