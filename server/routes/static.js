@@ -1,7 +1,6 @@
 import { notFound } from '../utils/http.js';
 import { handleFeed } from './feed.js';
 import { handleGo, handleStaticFiles } from './static/static-files.js';
-import { handleUploadVariant } from './static/upload-variant.js';
 import { handleEmbed } from './static/embed.js';
 import { handlePublishedReader, handlePublishedPage } from './static/published.js';
 import { handleSandboxOg } from './static/sandbox-og.js';
@@ -31,7 +30,6 @@ export async function handleStatic(ctx) {
   if (await handlePublishedReader(ctx)) return;
   if (await handlePublishedPage(ctx)) return;
   if (await handleSandboxOg(ctx)) return;
-  if (await handleUploadVariant(ctx)) return;
   if (handleStaticFiles(ctx)) return;
   if (await handleShareLink(ctx)) return;
   if (await handleAppRoutes(ctx)) return;
