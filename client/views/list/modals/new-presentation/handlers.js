@@ -338,14 +338,11 @@ export async function handleImportJson({
   setStatus(t('list.newPresentation.importing', 'Importing...'));
 
   try {
-    console.log('[handleImportJson] Reading file:', selectedFile.name);
     const text = await selectedFile.text();
-    console.log('[handleImportJson] File content length:', text.length);
 
     let deck;
     try {
       deck = JSON.parse(text);
-      console.log('[handleImportJson] Parsed JSON - title:', deck?.title, 'slides:', deck?.slides?.length, 'lang:', deck?.lang);
     } catch (parseErr) {
       console.error('[handleImportJson] JSON parse error:', parseErr.message);
       setStatus(`JSON parse error: ${parseErr.message}`);
@@ -358,12 +355,10 @@ export async function handleImportJson({
       ? deck.lang
       : (langMode === 'en-GB' ? 'en-GB' : 'nl');
 
-    console.log('[handleImportJson] Sending to API with lang:', lang);
     const created = await api('/api/presentations/import/json', {
       method: 'POST',
       body: JSON.stringify({ deck, lang }),
     });
-    console.log('[handleImportJson] Created presentation:', created?.id, 'lang:', created?.lang);
 
     // Use the language from the response (which reflects the actual presentation language)
     const navLang = created?.lang || lang;
