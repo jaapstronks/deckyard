@@ -3,7 +3,7 @@
  * Handles importing Notion pages as presentations (standard and streaming).
  */
 
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, json, serveJson, jsonError } from '../../../utils/http.js';
 import {
   getTrimmedString,
   getOptionalString,
@@ -111,7 +111,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
     if (msg.includes('unauthorized') || code === 401 || code === 403) {
       return badRequest(res, 'Access denied. Make sure the page is shared with your Notion integration.');
     }
-    serveJson(res, code >= 400 && code < 600 ? code : 500, { error: msg });
+    jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
   }
   return true;
 }
