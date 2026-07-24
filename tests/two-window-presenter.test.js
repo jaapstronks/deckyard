@@ -10,7 +10,7 @@
  * Run with: node --test tests/two-window-presenter.test.js
  */
 
-import { describe, it, before, after, beforeEach } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import { JSDOM } from 'jsdom';
 

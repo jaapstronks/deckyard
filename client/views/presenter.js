@@ -1,5 +1,4 @@
 import { api } from '../lib/api.js';
-import { logout } from '../lib/user/auth.js';
 import { h } from '../lib/dom.js';
 import {
   activateVideoEmbeds,

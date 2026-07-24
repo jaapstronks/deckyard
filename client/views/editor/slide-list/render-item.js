@@ -17,8 +17,6 @@ import {
   createChevronSvg,
 } from './nested-helpers.js';
 import { normalizeQuery, renderHighlightedText } from './search.js';
-import { attachDragHandlers } from './drag-handlers.js';
-import { attachClickHandler } from './click-handlers.js';
 
 /**
  * Create a slide item element

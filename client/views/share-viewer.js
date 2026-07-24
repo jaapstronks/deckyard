@@ -3,7 +3,7 @@
  * Handles token validation, password prompts, permission-based access, and guest verification.
  */
 
-import { h, $ } from '../lib/dom.js';
+import { h } from '../lib/dom.js';
 import { api } from '../lib/api.js';
 import { loadThemeById } from '../lib/theme/theme.js';
 import { attachThumbScale } from '../lib/slide-runtime/thumb-scale.js';

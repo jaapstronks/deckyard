@@ -1,3 +1,4 @@
+/* global document, window */ // page.evaluate() callbacks below run in the browser context.
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 
 /**

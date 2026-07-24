@@ -1,3 +1,4 @@
+/* global document */ // page.evaluate() callbacks below run in the browser context.
 import { buildSlidesPdfHtml } from '../export/pdf-slides.js';
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 

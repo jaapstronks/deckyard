@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
-import { FIELD_TYPE_NAMES } from '../shared/slide-types/field-types.js';
 import {
   fieldToJsonSchema,
   slideTypeContentSchema,

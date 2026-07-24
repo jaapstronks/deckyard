@@ -4,7 +4,7 @@
 
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { normalizeEmail } from '../normalize.js';
-import { PERMISSIONS, canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
+import { canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
 
 /**
  * Normalize presentation scope to either 'workspace' or 'private'.

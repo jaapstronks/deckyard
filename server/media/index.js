@@ -5,7 +5,7 @@
  * Uses Scaleway when configured, falls back to local /uploads for OSS.
  */
 
-import { getEffectiveMediaProvider, isScalewayConfigured } from './config.js';
+import { getEffectiveMediaProvider } from './config.js';
 import { LocalProvider } from './local.js';
 
 let _provider = null;

@@ -38,7 +38,6 @@ import {
   getPresentation,
   updatePresentation,
 } from '../server/storage/presentations.js';
-import { getYDocState } from '../server/storage/presentations/ydoc-state.js';
 
 function makeLog() {
   const lines = { warn: [], error: [] };

@@ -24,7 +24,7 @@ import {
   startHeartbeat,
 } from '../../services/notification-events.js';
 import { createRouteContext } from '../../utils/context.js';
-import { serveJson, unauthorized, badRequest, requireJsonBody } from '../../utils/http.js';
+import { serveJson, badRequest, requireJsonBody } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 
 /**
