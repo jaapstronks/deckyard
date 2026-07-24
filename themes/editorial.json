@@ -2,6 +2,7 @@
   "id": "editorial",
   "label": "Editorial",
   "defaultTitleSlide": "title-slide",
+  "titleLayout": "top",
   "assets": {
     "logo": "/assets/images/logo-placeholder.svg",
     "logoAlt": "Your logo",

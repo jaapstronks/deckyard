@@ -123,6 +123,22 @@ test('title-slide field model is title + subheading + meta (no byline/attributio
   assert.ok(!keys.includes('attribution'), 'attribution removed');
 });
 
+test('title-slide render maps the theme titleLayout token to a tsu-layout class', () => {
+  const { SLIDE_TYPES } = SlideTypes;
+  const render = (titleLayout) =>
+    SLIDE_TYPES['title-slide'].renderHtml(
+      { title: 'Hi' },
+      { id: 's1' },
+      { theme: titleLayout === undefined ? {} : { titleLayout } }
+    );
+  assert.match(render('center'), /tsu-layout-center/);
+  assert.match(render('top'), /tsu-layout-top/);
+  assert.match(render('bottom'), /tsu-layout-bottom/);
+  // Absent or unknown token → the bottom default.
+  assert.match(render(undefined), /tsu-layout-bottom/);
+  assert.match(render('diagonal'), /tsu-layout-bottom/);
+});
+
 test('title ↔ chapter conversion carries title + subheading both ways', () => {
   const title = {
     id: 't',

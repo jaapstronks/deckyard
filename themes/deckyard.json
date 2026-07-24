@@ -2,6 +2,7 @@
   "id": "deckyard",
   "label": "Deckyard",
   "defaultTitleSlide": "title-slide",
+  "titleLayout": "bottom",
   "assets": {
     "logo": "/assets/images/deckyard-mark.svg",
     "logoAlt": "Deckyard",

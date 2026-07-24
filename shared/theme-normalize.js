@@ -18,6 +18,7 @@ import {
   slideBackgroundCssVars,
 } from './theme-slide-backgrounds.js';
 import { TEXT_COLOR_SWATCH_SLOTS } from './slide-types/text-styles.js';
+import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from './theme-config-schema.js';
 
 /**
  * Normalize a theme's `textSwatches`: the extra on-brand text colours the
@@ -169,6 +170,12 @@ export function normalizeTheme(theme) {
 
   // Title slide type used for new presentations on this theme.
   out.defaultTitleSlide = cleanStr(out.defaultTitleSlide) || 'title-slide';
+
+  // Theme-driven title-slide layout (bottom | center | top). Validated here so
+  // every consumer of a normalized theme can trust `ctx.theme.titleLayout`.
+  out.titleLayout = TITLE_LAYOUTS.includes(cleanStr(out.titleLayout))
+    ? cleanStr(out.titleLayout)
+    : DEFAULT_TITLE_LAYOUT;
 
   const enabled = !!out?.gradient?.enabled;
   // Numeric "0/1" so it can be dropped straight into a CSS opacity.

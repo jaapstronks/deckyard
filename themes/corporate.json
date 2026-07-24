@@ -2,6 +2,7 @@
   "id": "corporate",
   "label": "Boardroom",
   "defaultTitleSlide": "title-slide",
+  "titleLayout": "bottom",
   "assets": {
     "logo": "/assets/images/logo-placeholder.svg",
     "logoAlt": "Your logo",

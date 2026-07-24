@@ -287,3 +287,16 @@ test('normalizeTheme defaults textSwatches to an empty array', () => {
   const out2 = normalizeTheme({ id: 't', label: 'T', cssVars: {}, textSwatches: 'nope' });
   assert.deepEqual(out2.textSwatches, []);
 });
+
+test('normalizeTheme defaults titleLayout to bottom and validates the token', () => {
+  const base = normalizeTheme({ id: 't', label: 'T', cssVars: {} });
+  assert.equal(base.titleLayout, 'bottom');
+
+  for (const v of ['bottom', 'center', 'top']) {
+    const out = normalizeTheme({ id: 't', label: 'T', cssVars: {}, titleLayout: v });
+    assert.equal(out.titleLayout, v);
+  }
+
+  const bad = normalizeTheme({ id: 't', label: 'T', cssVars: {}, titleLayout: 'diagonal' });
+  assert.equal(bad.titleLayout, 'bottom', 'unknown token falls back to default');
+})
