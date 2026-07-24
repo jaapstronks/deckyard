@@ -109,32 +109,6 @@ export const CARD_SLIDE_EXAMPLES = {
     ],
   }],
 
-  'content-columns-slide': [
-    {
-      _variation: '3 columns with titles and text',
-      title: 'Our Three Pillars',
-      columnCount: '3',
-      col1Title: 'Innovation',
-      col1Text: 'We constantly explore new technologies and methodologies to stay ahead.',
-      col2Title: 'Quality',
-      col2Text: 'Every deliverable meets our rigorous standards for excellence.',
-      col3Title: 'Partnership',
-      col3Text: 'We work alongside clients as true partners in their success.',
-      background: 'lime',
-    },
-    {
-      _variation: '4 columns overview',
-      title: 'Quarterly Highlights',
-      columnCount: '4',
-      col1Title: 'Q1',
-      col1Text: 'Foundation laid, team assembled',
-      col2Title: 'Q2',
-      col2Text: 'Core features developed',
-      col3Title: 'Q3',
-      col3Text: 'Beta testing completed',
-      col4Title: 'Q4',
-      col4Text: 'Launch and scale',
-      background: 'mist',
-    },
-  ],
+  // content-columns-slide examples removed with the deprecated catalog entry
+  // (see server/utils/ai/slide-catalog/basic-content-slides.js).
 };
