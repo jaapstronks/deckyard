@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.2.1](https://github.com/jaapstronks/deckyard/compare/v1.2.0...v1.2.1) (2026-07-24)
+
+
+### Fixed
+
+* **client:** stop listeners, timers and streams outliving their view ([#343](https://github.com/jaapstronks/deckyard/issues/343)) ([76ea389](https://github.com/jaapstronks/deckyard/commit/76ea389618abf9dea1dd3b888c4646bf1aa450c5))
+
 ## [1.2.0](https://github.com/jaapstronks/deckyard/compare/v1.1.0...v1.2.0) (2026-07-24)
 
 
