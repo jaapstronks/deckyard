@@ -1502,8 +1502,8 @@
 }
 
 .subscription-level-option.is-selected {
-  border-color: var(--color-primary-600, #4f46e5);
-  background: color-mix(in srgb, var(--color-primary-600, #4f46e5) 6%, transparent);
+  border-color: hsl(var(--app-accent-primary));
+  background: color-mix(in srgb, hsl(var(--app-accent-primary)) 6%, transparent);
 }
 
 .subscription-level-label {

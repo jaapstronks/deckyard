@@ -22,8 +22,8 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  background: var(--color-primary-100, #e0e7ff);
-  color: var(--color-primary-700, #4338ca);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
   border-radius: 1rem;
   font-size: 0.8125rem;
   line-height: 1.2;
@@ -56,21 +56,12 @@
 
 .user-autocomplete-chip-remove:hover {
   opacity: 1;
-  background: var(--color-primary-200, #c7d2fe);
+  background: hsl(var(--app-accent-soft-hover));
 }
 
-/* Dark mode. These two rules used to live in 99-notification-bell.css behind a
-   `prefers-color-scheme` query, which never matched the app's own UI-mode
-   toggle — so the chips stayed light in dark mode and went dark whenever the OS
-   was dark, even with the app in light mode. */
-:root[data-ui-mode='dark'] .user-autocomplete-chip {
-  background: var(--color-primary-900, #312e81);
-  color: var(--color-primary-200, #c7d2fe);
-}
-
-:root[data-ui-mode='dark'] .user-autocomplete-chip-remove:hover {
-  background: var(--color-primary-800, #3730a3);
-}
+/* No manual dark-mode rules needed: the `--app-accent-*` tokens flip themselves
+   on `:root[data-ui-mode='dark']`, so the chip and its hover state track the
+   UI-mode toggle automatically. */
 
 .user-autocomplete-input-wrapper {
   position: relative;
@@ -101,7 +92,7 @@
   width: 100%;
   height: 100%;
   border: 2px solid var(--color-gray-300, #d1d5db);
-  border-top-color: var(--color-primary-500, #6366f1);
+  border-top-color: hsl(var(--app-accent-primary));
   border-radius: 50%;
   animation: ua-spin 0.6s linear infinite;
 }
