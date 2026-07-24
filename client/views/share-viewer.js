@@ -4,7 +4,7 @@
  */
 
 import { h } from '../lib/dom.js';
-import { api, errorText } from '../lib/api.js';
+import { api } from '../lib/api.js';
 import { loadThemeById } from '../lib/theme/theme.js';
 import { attachThumbScale } from '../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes, renderSlideElement } from '../lib/slide-runtime/slide-render.js';
@@ -66,7 +66,10 @@ export async function renderShareViewer(root, token) {
         message: data.message || null,
         presentationTitle: data.presentationTitle || null,
       };
-      renderError(h, shell, errorText(data), errorData);
+      // renderError branches on this arg as a machine code (map lookup +
+      // the `=== 'revoked'` blockquote gate), so pass the code, not the
+      // human message. The custom revocation text rides along in errorData.
+      renderError(h, shell, data.error, errorData);
       return cleanup;
     }
 
@@ -87,7 +90,7 @@ export async function renderShareViewer(root, token) {
     const verifyData = await verifyResp.json();
 
     if (!verifyResp.ok) {
-      renderError(h, shell, errorText(verifyData));
+      renderError(h, shell, verifyData.error);
       return cleanup;
     }
 
