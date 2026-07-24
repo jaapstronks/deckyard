@@ -1,6 +1,6 @@
 {
   "name": "deckyard",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Self-hosted presentation engine for humans and AI agents (MCP-native)",
   "license": "MIT",
   "repository": {
