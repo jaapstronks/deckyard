@@ -174,11 +174,13 @@ test('export→import→export is content-stable (round-trip fixpoint)', async (
 test('rejects a non-bundle body with 400', async () => {
   const { res, body } = await importBundle(Buffer.from('not a zip'));
   assert.equal(res.statusCode, 400);
-  assert.match(body.error, /Invalid \.deck bundle/);
+  assert.equal(body.error, 'bad_request');
+  assert.match(body.message, /Invalid \.deck bundle/);
 });
 
 test('rejects an empty body with 400', async () => {
   const { res, body } = await importBundle(Buffer.alloc(0));
   assert.equal(res.statusCode, 400);
-  assert.match(body.error, /Empty request body/);
+  assert.equal(body.error, 'bad_request');
+  assert.match(body.message, /Empty request body/);
 });

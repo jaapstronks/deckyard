@@ -6,6 +6,7 @@
 import {
   methodNotAllowed,
   serveJson,
+  notFound,
 } from '../../../utils/http.js';
 import {
   listComments,
@@ -69,7 +70,7 @@ export async function handlePresentationCommentGet(
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   serveJson(res, 200, { ok: true, comment });

@@ -6,7 +6,8 @@ import {
   json,
   methodNotAllowed,
   notFound,
-  serveJson,
+  forbidden,
+  badRequest,
 } from '../../../utils/http.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
@@ -86,18 +87,18 @@ export async function handlePresentationImportSlidesAsImages(
   const pres = await getPresentation(repoRoot, id);
   if (!pres) return notFound(res);
   if (!canWritePresentation({ user: authedUser, pres })) {
-    return serveJson(res, 403, { error: 'Not authorized' });
+    return forbidden(res, 'Not authorized');
   }
 
   const body = await json(req);
   const { dataUrl, filename, insertAfterSlideId } = body || {};
 
   if (!dataUrl || typeof dataUrl !== 'string') {
-    return serveJson(res, 400, { error: 'dataUrl is required' });
+    return badRequest(res, 'dataUrl is required');
   }
 
   if (!dataUrl.startsWith('data:application/pdf')) {
-    return serveJson(res, 400, { error: 'Only PDF files are supported' });
+    return badRequest(res, 'Only PDF files are supported');
   }
 
   // Set up SSE

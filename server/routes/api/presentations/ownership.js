@@ -18,6 +18,8 @@ import {
   unauthorized,
   badRequest,
   requireJsonBody,
+  jsonError,
+  serverError,
 } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../../storage/activity-events.js';
@@ -64,7 +66,7 @@ export async function handleOwnershipTransfer(
     users = await listUsers(ctx);
   } catch (err) {
     log.error('[ownership] Failed to list users:', err);
-    return serveJson(res, 500, { error: 'Failed to verify user' });
+    return serverError(res, 'Failed to verify user');
   }
 
   const newOwnerUser = users.find((u) => normalizeEmail(u.email) === newOwnerEmail);
@@ -89,7 +91,7 @@ export async function handleOwnershipTransfer(
     );
 
     if (!result.ok) {
-      return serveJson(res, 400, { error: result.reason });
+      return jsonError(res, 400, result.reason, 'Ownership transfer failed');
     }
 
     // Create activity event (non-blocking)
@@ -151,7 +153,7 @@ export async function handleOwnershipTransfer(
     });
   } catch (err) {
     log.error('[ownership] Failed to transfer ownership:', err);
-    return serveJson(res, 500, { error: 'Failed to transfer ownership' });
+    return serverError(res, 'Failed to transfer ownership');
   }
 
   return true;
