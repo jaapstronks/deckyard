@@ -216,7 +216,11 @@ export function createCardRenderer({
       text: '\u22EF', // horizontal ellipsis
       onclick: (e) => {
         e.stopPropagation();
+        const willOpen = !menu.classList.contains('is-open');
         menu.classList.toggle('is-open');
+        // Only listen for outside clicks while the menu is actually open.
+        if (willOpen) document.addEventListener('click', closeMenu);
+        else document.removeEventListener('click', closeMenu);
       },
     });
 
@@ -385,13 +389,16 @@ export function createCardRenderer({
 
     moreBtn.append(menu);
 
-    // Close menu when clicking outside
+    // Close the menu on an outside click. The listener is attached only while
+    // the menu is open (see moreBtn's onclick) and removes itself on close, so
+    // a long deck list never accumulates one permanent document listener per
+    // card render.
     const closeMenu = (e) => {
       if (!moreBtn.contains(e.target)) {
         menu.classList.remove('is-open');
+        document.removeEventListener('click', closeMenu);
       }
     };
-    document.addEventListener('click', closeMenu);
 
     // Title row with title and more button
     const titleRow = h('div', { class: 'presentation-card-title-row' }, [
