@@ -1,5 +1,6 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
+import { withBackoff } from '../../lib/net/reconnect.js';
 
 export function createNotesQaController({
   api,
@@ -11,7 +12,6 @@ export function createNotesQaController({
   user,
   flashHint,
 } = {}) {
-  let qaEs = null;
   let questions = [];
   const expanded = new Set();
   let qaEnabled = true;
@@ -194,13 +194,16 @@ export function createNotesQaController({
     }
   };
 
-  const connect = () => {
-    if (qaEs) return;
+  // Reopening on error is owned by withBackoff so the pending retry dies with
+  // destroy(); a bare setTimeout here outlived the view and resurrected the
+  // stream into a detached controller.
+  const qaStream = withBackoff(({ onOpen, onError, onDone }) => {
     const presId = getPresentationId?.() || '';
-    qaEs = new EventSource(
+    const es = new EventSource(
       `/api/follow/${encodeURIComponent(presId)}/questions/events`
     );
-    qaEs.addEventListener('questions', (ev) => {
+    es.addEventListener('questions', (ev) => {
+      onOpen();
       try {
         const data = JSON.parse(ev.data || '{}');
         questions = Array.isArray(data?.questions) ? data.questions : [];
@@ -209,7 +212,8 @@ export function createNotesQaController({
         debugLog('[notes][qa] bad questions event', { data: ev?.data, e });
       }
     });
-    qaEs.addEventListener('status', (ev) => {
+    es.addEventListener('status', (ev) => {
+      onOpen();
       try {
         const data = JSON.parse(ev.data || '{}');
         if (data?.capabilities) {
@@ -225,22 +229,20 @@ export function createNotesQaController({
         debugLog('[notes][qa] bad status event', { data: ev?.data, e });
       }
     });
-    qaEs.addEventListener('close', () => {
+    // Server-side end of stream: close for good, don't reopen.
+    es.addEventListener('close', () => onDone());
+    es.addEventListener('error', () => onError());
+    return () => {
       try {
-        qaEs?.close?.();
-      } catch {}
-      qaEs = null;
-    });
-    qaEs.addEventListener('error', () => {
-      // SSE connection dropped - close and retry after delay
-      try {
-        qaEs?.close?.();
-      } catch {}
-      qaEs = null;
-      setTimeout(() => {
-        if (!qaEs) connect();
-      }, 1200);
-    });
+        es.close();
+      } catch {
+        // ignore
+      }
+    };
+  });
+
+  const connect = () => {
+    qaStream.start();
 
     // Start polling fallback (for robustness if SSE misses events)
     if (!qaRefreshTid) {
@@ -252,12 +254,7 @@ export function createNotesQaController({
   };
 
   const destroy = () => {
-    if (qaEs) {
-      try {
-        qaEs.close();
-      } catch {}
-      qaEs = null;
-    }
+    qaStream.stop();
     if (qaRefreshTid) {
       try {
         clearInterval(qaRefreshTid);

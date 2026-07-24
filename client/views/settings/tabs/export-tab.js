@@ -432,14 +432,12 @@ export function createExportTab({ user }) {
     }
   };
 
-  // Cleanup when tab is destroyed
-  const cleanup = () => {
+  // The job poll (2s) and the notification stream both outlive the DOM, so the
+  // settings view runs this when it unmounts.
+  const destroy = () => {
     stopPolling();
     disconnectSSE();
   };
 
-  // Store cleanup for external access
-  container._cleanup = cleanup;
-
-  return { el: container, load };
+  return { el: container, load, destroy };
 }

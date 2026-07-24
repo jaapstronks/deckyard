@@ -1,4 +1,4 @@
-import { withBackoff } from './backoff.js';
+import { withBackoff } from '../../lib/net/reconnect.js';
 
 export function createNotesSessionSse({
   sessionId,

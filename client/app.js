@@ -99,6 +99,32 @@ async function render() {
   const r = route();
   const root = $('#app');
 
+  /**
+   * Await a view's mount and take ownership of its cleanup.
+   *
+   * Views mount asynchronously (auth, settings, dynamic imports), so a second
+   * render — a locale change, a fast back/forward — can start while the first
+   * is still in flight. Assigning the late view's cleanup then clobbered the
+   * live view's, leaking every window listener and timer the stale view had
+   * attached with no way left to reach them. If this render has been
+   * superseded, tear the stale view down here instead.
+   *
+   * @param {Promise<Function|void>} mounting - The view's render promise
+   */
+  const mount = async (mounting) => {
+    const detach = (await mounting) || null;
+    if (myGen !== renderGen) {
+      try {
+        detach?.();
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Stale view cleanup failed', e);
+      }
+      return;
+    }
+    cleanup = detach;
+  };
+
   // Route-level page layout toggles (CSS-driven).
   // Keep these here so they always get reset correctly, even if a view throws.
   document.documentElement.classList.toggle('is-editor', r.name === 'edit');
@@ -133,41 +159,38 @@ async function render() {
 
   try {
     if (r.name === 'login') {
-      cleanup = (await renderLogin(root, { nav })) || null;
+      await mount(renderLogin(root, { nav }));
       return;
     }
 
     if (r.name === 'forgotPassword') {
-      cleanup = (await renderForgotPassword(root, { nav })) || null;
+      await mount(renderForgotPassword(root, { nav }));
       return;
     }
 
     if (r.name === 'resetPassword') {
-      cleanup = (await renderResetPassword(root, { nav })) || null;
+      await mount(renderResetPassword(root, { nav }));
       return;
     }
 
     if (r.name === 'magicLogin') {
-      cleanup = (await renderMagicLogin(root, { nav })) || null;
+      await mount(renderMagicLogin(root, { nav }));
       return;
     }
 
     // Public routes (no auth)
     if (r.name === 'follow') {
-      cleanup =
-        (await renderFollow(root, r.presentationId, { nav })) || null;
+      await mount(renderFollow(root, r.presentationId, { nav }));
       return;
     }
 
     if (r.name === 'share') {
-      cleanup =
-        (await renderShareViewer(root, r.token, { nav })) || null;
+      await mount(renderShareViewer(root, r.token, { nav }));
       return;
     }
 
     if (r.name === 'report') {
-      cleanup =
-        (await renderSharedReport(root, r.token)) || null;
+      await mount(renderSharedReport(root, r.token));
       return;
     }
 
@@ -210,81 +233,53 @@ async function render() {
     if (myGen !== renderGen) return;
 
     if (r.name === 'list') {
-      cleanup =
-        (await renderList(root, { nav, user })) || null;
+      await mount(renderList(root, { nav, user }));
       return;
     }
     if (r.name === 'slideLibrary') {
-      cleanup =
-        (await renderList(root, {
+      await mount(
+        renderList(root, {
           nav,
           user,
           openSlideLibrary: { scope: r.scope, slideId: r.slideId },
-        })) || null;
+        })
+      );
       return;
     }
     if (r.name === 'settings') {
-      cleanup =
-        (await renderSettings(root, { nav, user })) || null;
+      await mount(renderSettings(root, { nav, user }));
       return;
     }
     if (r.name === 'insights') {
-      cleanup =
-        (await renderDashboard(root, { nav, user })) || null;
+      await mount(renderDashboard(root, { nav, user }));
       return;
     }
     if (r.name === 'edit') {
-      cleanup =
-        (await renderEditor(root, r.id, { nav, user })) ||
-        null;
+      await mount(renderEditor(root, r.id, { nav, user }));
       return;
     }
     if (r.name === 'present') {
-      cleanup =
-        (await renderPresenter(root, r.id, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderPresenter(root, r.id, { nav, user }));
       return;
     }
     if (r.name === 'presentWindow') {
-      cleanup =
-        (await renderPresentWindow(root, r.id, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderPresentWindow(root, r.id, { nav, user }));
       return;
     }
     if (r.name === 'notes') {
-      cleanup =
-        (await renderNotes(root, r.sessionId, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderNotes(root, r.sessionId, { nav, user }));
       return;
     }
     if (r.name === 'notesJoin') {
-      cleanup =
-        (await renderNotesJoin(root, r.sessionId, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderNotesJoin(root, r.sessionId, { nav, user }));
       return;
     }
     if (r.name === 'moderate') {
-      cleanup =
-        (await renderModerate(root, r.presentationId, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderModerate(root, r.presentationId, { nav, user }));
       return;
     }
     if (r.name === 'analytics') {
-      cleanup =
-        (await renderAnalytics(root, r.presentationId, {
-          nav,
-          user,
-        })) || null;
+      await mount(renderAnalytics(root, r.presentationId, { nav, user }));
       return;
     }
   } catch (err) {
@@ -308,6 +303,8 @@ async function bootstrap() {
   setRenderer(render);
   startRouter();
   // Re-render current route when UI locale changes (no full page reload needed).
+  // Deliberately document-long: bootstrap() runs once per page load, so this
+  // listener is a singleton with no teardown by design.
   let rerenderQueued = false;
   window.addEventListener('ui-locale-changed', () => {
     if (rerenderQueued) return;

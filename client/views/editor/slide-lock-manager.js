@@ -294,6 +294,12 @@ export function createSlideLockManager({
     // Fetch initial lock state
     await fetchLocks();
 
+    // destroy() can land while that fetch is in flight (the user navigated away
+    // from the editor). Everything below outlives this function, so bail before
+    // wiring anything — otherwise the refresh interval and both window
+    // listeners stay attached for the lifetime of the tab.
+    if (stopped) return () => {};
+
     // Set up periodic refresh
     refreshTimer = setInterval(refreshCurrentLock, REFRESH_INTERVAL_MS);
 

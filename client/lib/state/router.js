@@ -5,6 +5,9 @@ export function setRenderer(fn) {
 }
 
 export function startRouter() {
+  // Deliberately document-long: the router is a boot-time singleton that lives
+  // for the whole page, so this listener has no teardown by design. Called
+  // exactly once from bootstrap() — do not call it per view.
   window.addEventListener('popstate', () => renderFn());
 }
 
