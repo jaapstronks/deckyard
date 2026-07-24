@@ -143,7 +143,7 @@ export function openJsonDebugModal({
   rerenderSlideList,
 }) {
   if (!slide) {
-    toast.error('No slide selected');
+    toast.error(t('admin.jsonDebug.noSlideSelected', 'No slide selected'));
     return;
   }
 
@@ -231,7 +231,7 @@ export function openJsonDebugModal({
       await navigator.clipboard.writeText(jsonTextarea.value);
       toast.success(t('admin.jsonDebug.copied', 'JSON copied to clipboard'));
     } catch (e) {
-      toast.error('Failed to copy');
+      toast.error(t('admin.jsonDebug.copyFailed', 'Failed to copy'));
     }
   };
 
@@ -346,7 +346,7 @@ export function openJsonDebugModal({
       await navigator.clipboard.writeText(schemaDoc);
       toast.success(t('admin.jsonDebug.schemaCopied', 'Schema copied to clipboard'));
     } catch (e) {
-      toast.error('Failed to copy');
+      toast.error(t('admin.jsonDebug.copyFailed', 'Failed to copy'));
     }
   };
 
