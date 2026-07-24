@@ -111,7 +111,16 @@ export default [
       'no-unused-vars': [
         'error',
         {
-          argsIgnorePattern: '^_',
+          // Don't flag unused function arguments. In this codebase they are
+          // dominated by interface-conformance params (every storage-adapter
+          // method carries `ctx` so implementations stay swappable; slide-type
+          // `renderHtml(content, slide, ctx)` and route handlers share a fixed
+          // shape) — structurally required, semantically unused, not dead code.
+          // Deleting them breaks the contracts; `_`-prefixing 200+ sites is pure
+          // churn that also splits param names across sibling implementations.
+          // Unused *variables* and *imports* are still errors — that's where the
+          // real dead-code signal lives (see the burndown in docs/developer/linting.md).
+          args: 'none',
           varsIgnorePattern: '^_',
           // Catch-block bindings are often intentionally unused (log-and-move-on).
           caughtErrors: 'none',
