@@ -38,7 +38,7 @@ globalThis.ResizeObserver =
 const { h } = await import('../client/lib/dom.js');
 const { createFieldRenderers } = await import('../client/views/editor/fields.js');
 const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
-const { SLIDE_TYPES } = await import('../shared/slide-types/index.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
 function renderForm({ theme = null } = {}) {
   const editorMount = document.createElement('div');
