@@ -1,8 +1,10 @@
 {
   "admin.jsonDebug.copied": "JSON copied to clipboard",
   "admin.jsonDebug.copy": "Copy JSON",
+  "admin.jsonDebug.copyFailed": "Failed to copy",
   "admin.jsonDebug.copySchema": "Copy Schema",
   "admin.jsonDebug.error.missingFields": "Slide must have id and type",
+  "admin.jsonDebug.noSlideSelected": "No slide selected",
   "admin.jsonDebug.format": "Format",
   "admin.jsonDebug.menuItem": "View JSON (Debug)",
   "admin.jsonDebug.menuItemTitle": "View and edit raw slide JSON data",

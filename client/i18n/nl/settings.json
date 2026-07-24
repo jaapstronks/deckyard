@@ -1,9 +1,11 @@
 {
   "admin.jsonDebug.copied": "JSON gekopieerd naar klembord",
   "admin.jsonDebug.copy": "JSON kopiëren",
+  "admin.jsonDebug.copyFailed": "Kopiëren mislukt",
   "admin.jsonDebug.copySchema": "Schema kopiëren",
   "admin.jsonDebug.error.missingFields": "Slide moet id en type hebben",
   "admin.jsonDebug.format": "Formatteren",
+  "admin.jsonDebug.noSlideSelected": "Geen slide geselecteerd",
   "admin.jsonDebug.menuItem": "JSON bekijken (debug)",
   "admin.jsonDebug.menuItemTitle": "Ruwe JSON-data van de slide bekijken en bewerken",
   "admin.jsonDebug.reset": "Resetten",

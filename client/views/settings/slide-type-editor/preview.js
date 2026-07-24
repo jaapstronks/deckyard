@@ -5,6 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { esc as escapeHtml } from '../../../../shared/slide-types/helpers.js';
 
 /**
  * Create a slide type preview component.
@@ -148,10 +149,6 @@ function getSampleValue(field) {
     case 'items': return [];
     default: return '';
   }
-}
-
-function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function escapeRegExp(str) {
