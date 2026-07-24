@@ -6,7 +6,6 @@ import { resolveCardStack } from '../../shared/slide-types/types/card-stack-slid
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
-import { sandboxWatermarkEnabled } from '../utils/sandbox-watermark.js';
 import { escapeHtml, isProbablyUrl } from '../utils/html-utils.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/prism-katex.js';
 import { loadExportCssBundle } from './css-bundle.js';

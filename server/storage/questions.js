@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { normalizeLang, otherLang } from '../utils/i18n.js';
+import { normalizeLang } from '../utils/i18n.js';
 import { sseComment, sseWrite } from '../utils/sse.js';
 import { writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';

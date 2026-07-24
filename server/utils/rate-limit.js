@@ -1,4 +1,4 @@
-import { mightRedisBeAvailable, isRedisAvailable } from './redis-client.js';
+import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedis } from './rate-limit-redis.js';
 
 function truthy(v) {

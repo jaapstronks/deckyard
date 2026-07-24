@@ -7,7 +7,7 @@ import { validateApiKey, TIER_LIMITS, hasScope } from '../../../storage/api-keys
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { normalizePresentationScope, canActorAccessPresentation } from '../../../utils/presentation-authz.js';
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
-import { allowRequest, getClientIp } from '../../../utils/rate-limit.js';
+import { allowRequest } from '../../../utils/rate-limit.js';
 import { serveJson, forbidden, rateLimited as sendRateLimited, json } from '../../../utils/http.js';
 import { getPresentation } from '../../../storage/presentations.js';
 

@@ -7,7 +7,6 @@ import { getOrgId } from '../utils/context.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
-import { hashPassword } from './password-reset.js';
 
 // ============================================================
 // USER CRUD

@@ -12,7 +12,7 @@ import {
   duplicatePresentation,
 } from '../../../storage/presentations.js';
 import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags.js';
-import { methodNotAllowed, badRequest } from '../../../utils/http.js';
+import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { requireScope, canAccessPresentation, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 

@@ -3,7 +3,6 @@
  * Includes GDPR compliance features: consent tracking, retention, anonymization.
  */
 
-import { sql } from 'kysely';
 import { norm, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 

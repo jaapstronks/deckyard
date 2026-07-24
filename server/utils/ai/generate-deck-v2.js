@@ -8,7 +8,7 @@
  * This replaces the single-prompt approach in openai/deck.js
  */
 
-import { generateOutline, separateSlidesForProcessing, groupSlidesForPhase2 } from './generate-outline.js';
+import { generateOutline, separateSlidesForProcessing } from './generate-outline.js';
 import { refineAllSlideGroups } from './refine-slides.js';
 import { reviseOutline } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';

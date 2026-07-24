@@ -10,7 +10,7 @@
 
 import sharp from 'sharp';
 import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden } from '../../utils/http.js';
-import { readUserSettings, writeUserSettings } from '../../storage/settings.js';
+import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { createLogger } from '../../utils/logger.js';

@@ -3,7 +3,6 @@
  * Displays pin markers at comment positions and handles click-to-add mode.
  */
 
-import { t } from '../../lib/ui-i18n.js';
 
 /**
  * Creates comment markers component for a slide preview.

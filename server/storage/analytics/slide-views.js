@@ -5,7 +5,7 @@
 import { sql } from 'kysely';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
-import { ANALYTICS_CONFIG, isValidSlideIndex, applyDateFilters } from '../../analytics/helpers.js';
+import { isValidSlideIndex, applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================
 // SLIDE VIEW CRUD

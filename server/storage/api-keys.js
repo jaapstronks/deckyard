@@ -3,7 +3,6 @@
  * Handles key generation, validation, revocation, and listing.
  */
 
-import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';

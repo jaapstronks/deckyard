@@ -4,7 +4,6 @@
  */
 
 import { sql } from 'kysely';
-import { nowIso, isoBefore } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { TIER_LIMITS } from './api-keys.js';
 

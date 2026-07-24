@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { VISIBILITY_PRESETS, getVisibilityPreset, applyVisibilityPreset } from '../../../shared/slide-visibility.js';
+import { getVisibilityPreset, applyVisibilityPreset } from '../../../shared/slide-visibility.js';
 
 /**
  * Create a visibility preset option element.

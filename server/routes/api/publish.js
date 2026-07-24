@@ -4,7 +4,7 @@ import {
   updatePublishedSlug,
   upsertPublishedEntry,
 } from '../../storage/published.js';
-import { getPresentation, updatePresentation } from '../../storage/presentations.js';
+import { updatePresentation } from '../../storage/presentations.js';
 import { readUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
 import { serveJson, json } from '../../utils/http.js';
