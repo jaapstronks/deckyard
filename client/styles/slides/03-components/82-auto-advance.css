@@ -13,7 +13,7 @@
 .auto-advance-bar-fill {
   height: 100%;
   width: 0%;
-  background: var(--ps-accent, #3b82f6);
+  background: hsl(var(--app-accent-primary));
   transition: none; /* driven by JS via requestAnimationFrame */
   will-change: width;
 }
@@ -24,7 +24,7 @@
 
 /* Overtime state (pacing mode: timer exceeded 100%) */
 .auto-advance-bar.is-overtime .auto-advance-bar-fill {
-  background: var(--ps-danger, #ef4444);
+  background: hsl(var(--app-danger));
   animation: overtime-pulse 2s ease-in-out infinite;
 }
 
@@ -45,7 +45,7 @@
 /* Per-slide duration input in the editor form */
 .editor-slide-duration {
   padding: var(--ps-space-2, 8px) 0;
-  border-bottom: 1px solid var(--ps-border, #e5e7eb);
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .editor-slide-duration .form-input-sm {
@@ -55,7 +55,7 @@
 /* Total deck time in presenter progress bar */
 .presenter-progress-time {
   font-size: 0.75rem;
-  color: var(--ps-text-muted, #94a3b8);
+  color: hsl(var(--app-text-tertiary));
   white-space: nowrap;
   margin-left: auto;
   padding-left: var(--ps-space-2, 8px);
