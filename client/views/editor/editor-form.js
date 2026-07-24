@@ -611,8 +611,20 @@ export function createRerenderEditor({
   // enforces the same gate on write; this drives the read-only UI state.
   const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
 
-  // Track detachers for cleanup between re-renders
+  // Track detachers for cleanup between re-renders. The header's actions
+  // dropdown installs document-level pointerdown/keydown handlers, so the
+  // *last* render's pair needs detaching on unmount too, not just the
+  // previous one on each rerender — hence the `detach` on the returned API.
   let headerActionsDetach = null;
+  const detachHeaderActions = () => {
+    if (!headerActionsDetach) return;
+    try {
+      headerActionsDetach();
+    } catch {
+      /* ignore */
+    }
+    headerActionsDetach = null;
+  };
 
   // Which inspector tab is active while an element is selected. A newly
   // selected element resets to its own tab; clicking "Slide" persists across
@@ -620,12 +632,9 @@ export function createRerenderEditor({
   let activeElementTab = true;
   let lastElementKey = null;
 
-  return function rerenderEditor() {
+  function rerenderEditor() {
     // Clean up previous dropdown listeners
-    if (headerActionsDetach) {
-      try { headerActionsDetach(); } catch { /* ignore */ }
-      headerActionsDetach = null;
-    }
+    detachHeaderActions();
 
     editorMount.innerHTML = '';
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
@@ -1399,5 +1408,7 @@ export function createRerenderEditor({
     } else {
       editorMount.append(form);
     }
-  };
+  }
+
+  return { rerender: rerenderEditor, detach: detachHeaderActions };
 }

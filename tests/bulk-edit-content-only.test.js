@@ -72,7 +72,7 @@ function renderForm({ contentOnly }) {
     fieldRenderers: createFieldRenderers(deps),
     openOverlayClosers: new Set(),
     contentOnly,
-  });
+  }).rerender;
   rerender();
   return editorMount;
 }
