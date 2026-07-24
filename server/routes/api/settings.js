@@ -1,10 +1,4 @@
-import {
-  badRequest,
-  json,
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, json, methodNotAllowed, serveJson, unauthorized, serverError } from '../../utils/http.js';
 import {
   readAppSettings,
   readUserSettings,
@@ -124,7 +118,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
         serveJson(res, 200, { settings: merged });
       } catch (err) {
         log.error('[settings] Failed to update organization settings:', err);
-        serveJson(res, 500, { error: 'Failed to update settings' });
+        serverError(res, 'Failed to update settings');
       }
       return true;
     }

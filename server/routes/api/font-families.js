@@ -12,13 +12,7 @@
  * POST   /api/font-families/import-adobe-family     - Import Adobe family (designer only)
  */
 
-import {
-  badRequest,
-  json,
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, json, methodNotAllowed, serveJson, unauthorized, notFound } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { clearCustomThemeCache } from '../../utils/themes.js';
@@ -175,7 +169,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
     // Verify family exists
     const family = await getFontFamily(familyId, ctx);
     if (!family) {
-      serveJson(res, 404, { error: 'Font family not found.' });
+      notFound(res, 'Font family not found.');
       return true;
     }
 
@@ -259,7 +253,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
 
     if (!result.ok) {
       if (result.reason === 'not_found') {
-        serveJson(res, 404, { error: 'Variant not found.' });
+        notFound(res, 'Variant not found.');
         return true;
       }
       return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to remove variant.');
@@ -291,7 +285,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
       if (!authedUser) return unauthorized(res);
       const family = await getFontFamily(familyId, ctx);
       if (!family) {
-        serveJson(res, 404, { error: 'Font family not found.' });
+        notFound(res, 'Font family not found.');
         return true;
       }
       serveJson(res, 200, family);
@@ -306,7 +300,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
       const result = await updateFontFamily(familyId, body, ctx);
       if (!result.ok) {
         if (result.reason === 'not_found') {
-          serveJson(res, 404, { error: 'Font family not found.' });
+          notFound(res, 'Font family not found.');
           return true;
         }
         return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to update font family.');
@@ -322,7 +316,7 @@ export async function handleFontFamilies({ req, res, url, authedUser }) {
       const result = await deleteFontFamily(familyId, ctx);
       if (!result.ok) {
         if (result.reason === 'not_found') {
-          serveJson(res, 404, { error: 'Font family not found.' });
+          notFound(res, 'Font family not found.');
           return true;
         }
         return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to delete font family.');
