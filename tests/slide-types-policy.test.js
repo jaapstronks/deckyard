@@ -75,6 +75,28 @@ test('content-columns-slide is archived: deprecated + not insertable, still rend
   assert.match(html, /class="slide/);
 });
 
+test('lead-capture-slide is parked: deprecated + not insertable, still renders', () => {
+  // Parked (not superseded) pending the cookie-consent banner that would grant
+  // the marketing consent its form is gated on. Uses the same deprecated
+  // contract as the archived types: hidden from picker + AI, stored decks render.
+  const def = SLIDE_TYPES['lead-capture-slide'];
+  assert.ok(def, 'type stays registered so stored/forked decks keep rendering');
+  assert.equal(def.deprecated, true, 'marked deprecated (parked pending cookie-consent)');
+  assert.equal(
+    isInsertableSlideType({ type: 'lead-capture-slide', def }),
+    false,
+    'hidden from every insertion path (picker + AI)'
+  );
+  // A stored lead-capture slide still renders via the kept render path.
+  const html = def.renderHtml(
+    { title: 'Stay in touch', thankYouTitle: 'Thanks', privacyText: 'I agree' },
+    { id: 's1', type: 'lead-capture-slide' },
+    {}
+  );
+  assert.match(html, /class="slide/);
+  assert.match(html, /lead-capture-form/);
+});
+
 test('org-disabled types are not insertable', () => {
   assert.equal(
     isInsertableSlideType({

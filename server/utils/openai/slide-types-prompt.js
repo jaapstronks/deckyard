@@ -304,6 +304,7 @@ export function buildSlideTypesPrompt({
     'split-partner-title-slide',  // archived (deprecated)
     'freeform-slide',             // archived (deprecated) — no longer authorable
     'content-columns-slide',      // archived (deprecated) — no longer authorable
+    'lead-capture-slide',         // parked (deprecated) — pending cookie-consent wiring
     'lijstje-slide',              // alias for list-slide (avoid duplicate entry)
   ]);
 

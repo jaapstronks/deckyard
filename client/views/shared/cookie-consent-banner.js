@@ -1,6 +1,13 @@
 /**
  * Cookie consent banner component.
  * Shows a banner for users to accept/manage cookie preferences.
+ *
+ * PARKED — intentionally orphaned, do NOT delete as dead code (decision
+ * 2026-07-24). This banner (and client/styles/base/cookie-consent.css) was built
+ * for 1.0.0 but never wired into any route/shell/embed template. It is the missing
+ * half of the lead-capture feature: lead-capture forms are gated on the marketing
+ * consent this banner would grant, so the two ship together. Lead-capture is
+ * parked (deprecated) until then. Revive checklist: docs/plans/briefs/cookie-consent-decision.md.
  */
 
 import { h } from '../../lib/dom.js';

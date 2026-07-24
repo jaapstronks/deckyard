@@ -1,5 +1,11 @@
 /**
  * Cookie consent banner and settings modal styles.
+ *
+ * PARKED — not @imported by any bundle, intentionally (decision 2026-07-24). Do
+ * NOT delete as dead CSS: this is the styling half of the parked cookie-consent
+ * banner (client/views/shared/cookie-consent-banner.js), which ships together
+ * with lead-capture when consent is wired. Revive + token-migration checklist:
+ * docs/plans/briefs/cookie-consent-decision.md.
  */
 
 /* ============================================================
