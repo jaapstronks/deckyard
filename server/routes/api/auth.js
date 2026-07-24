@@ -7,7 +7,7 @@ import {
   setSessionCookie,
   verifyLoginAsync,
 } from '../../auth/auth.js';
-import { json, serveJson, unauthorized } from '../../utils/http.js';
+import { json, rateLimited, serveJson, unauthorized } from '../../utils/http.js';
 import { getString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
@@ -64,12 +64,14 @@ export async function handleAuth({ repoRoot, req, res, url }) {
         ipAddress: ip,
         userAgent: req.headers?.['user-agent'] || '',
       });
-      serveJson(res, 429, {
-        error: t(
+      rateLimited(
+        res,
+        10,
+        t(
           'api.error.tooManyLoginAttempts',
           'Too many login attempts. Please try again later.'
-        ),
-      });
+        )
+      );
       return true;
     }
 

@@ -386,7 +386,7 @@ export function createExportTab({ user }) {
     } catch (err) {
       setExporting(false);
       const msg = String(err?.message || err);
-      if (msg.includes('429') || msg.includes('already in progress')) {
+      if (err?.code === 'export_in_progress') {
         toast.error(
           t('settings.export.alreadyRunning', 'An export is already in progress.'),
           { id: 'bulk-export' }

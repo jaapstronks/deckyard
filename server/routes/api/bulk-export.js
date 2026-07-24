@@ -6,7 +6,7 @@
  * Returns a job ID for status polling via the existing /api/jobs/:id infrastructure.
  */
 
-import { requireJsonBody, serveJson, unauthorized, serverError } from '../../utils/http.js';
+import { jsonError, requireJsonBody, serveJson, unauthorized, serverError } from '../../utils/http.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
   hasActiveBulkExport,
@@ -41,9 +41,12 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
 
   // Rate limit: one active export per user
   if (hasActiveBulkExport(userEmail)) {
-    serveJson(res, 429, {
-      error: 'A bulk export is already in progress. Please wait for it to complete.',
-    });
+    jsonError(
+      res,
+      429,
+      'export_in_progress',
+      'A bulk export is already in progress. Please wait for it to complete.'
+    );
     return true;
   }
 

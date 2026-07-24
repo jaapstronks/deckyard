@@ -10,6 +10,7 @@ import {
 import { getImageLibraryUsage } from '../../storage/image-library-usage.js';
 import { replaceUploadFromDataUrl } from '../../storage/uploads.js';
 import {
+  badRequest,
   json,
   methodNotAllowed,
   notFound,
@@ -138,18 +139,16 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     const item = await getImageLibraryItem(repoRoot, imageId);
     if (!item) return notFound(res);
     if (!String(item.url || '').startsWith('/uploads/')) {
-      return serveJson(res, 400, {
-        error:
-          'This image is not stored as a local upload (/uploads/...), so it cannot be replaced in-place.',
-      });
+      return badRequest(
+        res,
+        'This image is not stored as a local upload (/uploads/...), so it cannot be replaced in-place.'
+      );
     }
 
     const body = await json(req);
     const { dataUrl } = body || {};
     if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
-      return serveJson(res, 400, {
-        error: 'Expected { dataUrl: "data:<mime>;base64,..." }',
-      });
+      return badRequest(res, 'Expected { dataUrl: "data:<mime>;base64,..." }');
     }
 
     await replaceUploadFromDataUrl(repoRoot, item.url, dataUrl);
