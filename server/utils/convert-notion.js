@@ -144,7 +144,6 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
  * @returns {Promise<Array<{originalUrl: string, uploadedUrl: string, caption: string}>>}
  */
 async function processNotionImages(images, options = {}) {
-  const { onStatusMessage } = options;
   const results = [];
 
   // Check if ImageKit is configured

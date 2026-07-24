@@ -84,7 +84,6 @@ function initOne(slideEl, { interactive }) {
     60 * 60,
     300
   );
-  const flash = slideEl.dataset.countdownFlash === '1';
   const sound = slideEl.dataset.countdownSound === '1';
   const autoStart = slideEl.dataset.countdownAutostart === '1';
 
@@ -106,9 +105,6 @@ function initOne(slideEl, { interactive }) {
     if (btnStart) btnStart.hidden = running;
     if (btnPause) btnPause.hidden = !running;
   };
-
-  const currentRemaining = () =>
-    running ? (endAt - Date.now()) / 1000 : remaining;
 
   const onZero = () => {
     if (reachedZero) return;

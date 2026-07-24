@@ -505,7 +505,6 @@ export async function handleNotion({
   setBusy(true);
   hideBackdrop?.();
 
-  const uiLang = getUiLocale() === 'nl' ? 'nl' : 'en';
   const loadingModal = showLoadingModal({
     h,
     root,

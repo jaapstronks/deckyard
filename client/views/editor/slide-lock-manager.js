@@ -30,7 +30,6 @@ function debugLog(...args) {
 export function createSlideLockManager({
   api,
   presentationId,
-  getSelectedSlideId,
   onLocksChanged,
   onLockFailed,
 } = {}) {
@@ -50,7 +49,6 @@ export function createSlideLockManager({
   let currentLockedSlideId = null;
   let currentSlideIsLocked = false; // true if current slide is locked by another user
   let refreshTimer = null;
-  let eventSource = null;
   let stopped = false;
 
   /**

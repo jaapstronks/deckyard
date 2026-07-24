@@ -92,7 +92,7 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
  * - viewOnly: if 'true', only return view-only presentations
  */
 async function handleList(ctx) {
-  const { repoRoot, res, apiKey, url } = ctx;
+  const { repoRoot, apiKey, url } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
@@ -186,7 +186,7 @@ async function handleUpdate(ctx, id) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres: existing } = await getPresentationWithAccess(ctx, id, { access: 'write' });
+  const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
   if (!ok) return true;
 
   const { ok: bodyOk, body } = await parseJsonBody(ctx, ctx.req);
@@ -269,7 +269,7 @@ async function handleDuplicate(ctx, id) {
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const { ok, pres: existing } = await getPresentationWithAccess(ctx, id);
+  const { ok } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
 
   const duplicated = await duplicatePresentation(repoRoot, id, {

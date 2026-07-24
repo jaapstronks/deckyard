@@ -44,7 +44,7 @@ export function renderSlideFormByType(ctx) {
     scheduleUiRefresh,
   } = ctx;
 
-  const { fieldGrid, fieldText, fieldTextarea, fieldEnum, fieldIconPicker, fieldImage, fieldTitleBgImage } =
+  const { fieldGrid, fieldText, fieldTextarea, fieldEnum, fieldIconPicker, fieldImage } =
     fieldRenderers;
 
   switch (slide.type) {

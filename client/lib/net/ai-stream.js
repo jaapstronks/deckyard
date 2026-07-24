@@ -26,7 +26,6 @@ import { t } from '../ui-i18n.js';
  * @returns {Promise<Object>} The created presentation
  */
 export async function generatePresentationStreaming({
-  api,
   raw,
   lang,
   theme,

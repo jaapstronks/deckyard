@@ -248,7 +248,7 @@ async function handleCreateComment(ctx, presentationId) {
  * resolved→open. Only the presentation owner/creator may change status.
  */
 async function handleCommentStatus(ctx, commentId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { req, apiKey } = ctx;
 
   if (!requireScope(ctx, 'comments:write')) return true;
 

@@ -52,7 +52,7 @@ import { resolveRevealStyle } from '../../shared/reveal-style.js';
 export async function renderPresenter(
   root,
   id,
-  { nav, user } = {}
+  { nav } = {}
 ) {
   // Make presentation ID globally available for lead capture forms
   window.__PRESENTATION_ID__ = id;
@@ -75,7 +75,6 @@ export async function renderPresenter(
   let sessionPresId = null;
   let sessionFollowCodes = null;
   let controlEnabled = false;
-  let eventsEs = null;
   const lastInteractionBySlideId = new Map();
   let postSessionState = () => {};
   // Presenter console (opt-in notes/next/timer rail); wired after the deck exists.

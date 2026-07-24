@@ -21,15 +21,6 @@ const MIME_TO_EXT = {
   'font/woff': 'woff',
 };
 
-const EXT_TO_MIME = {
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  svg: 'image/svg+xml',
-};
-
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export class LocalProvider extends MediaProvider {

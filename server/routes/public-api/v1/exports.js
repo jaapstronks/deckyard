@@ -105,7 +105,6 @@ async function handleJsonExport(ctx, id) {
   // Check export limit
   if (!(await checkExportLimit(ctx))) return true;
 
-  const { repoRoot } = ctx;
   const exportCtx = await prepareExportContext(ctx, id);
   if (!exportCtx.ok) {
     await apiError(ctx, exportCtx.status, exportCtx.error);

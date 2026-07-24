@@ -157,7 +157,6 @@ export function createPresenterHighlighter({
     if (!mode) return;
 
     const scale = getScale();
-    const offset = getStageOffset();
 
     // Draw strokes (fading or persistent based on mode)
     const now = Date.now();

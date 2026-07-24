@@ -529,7 +529,7 @@ export async function createEditorController({
   // Deck-overview + AI-review openers and the slide-jump they share. The
   // renderers and slide-list element are bound later, so they're passed as
   // indirections read at call time.
-  const { jumpToSlide, openDeckOverview, openAiDeckReview } =
+  const { openDeckOverview, openAiDeckReview } =
     createDeckReviewOpeners({
       h,
       root,

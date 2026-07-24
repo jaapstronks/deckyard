@@ -89,7 +89,7 @@ export function setupSlideList({
     });
   };
 
-  const moveSlide = ({ fromId, toId, pos, makeChild = false, makeTopLevel = false }) => {
+  const moveSlide = ({ fromId, toId, pos, makeChild = false }) => {
     if (!fromId || !toId || fromId === toId) return;
     const fromIdx = pres.slides.findIndex((x) => x.id === fromId);
     const toIdxRaw = pres.slides.findIndex((x) => x.id === toId);
@@ -445,7 +445,7 @@ export function setupSlideList({
       }
 
       // Render the slide item
-      const { item, originalIdx, isChild } = createSlideItem({
+      const { item, originalIdx } = createSlideItem({
         h,
         slide: s,
         match,

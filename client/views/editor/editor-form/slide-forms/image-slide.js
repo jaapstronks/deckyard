@@ -53,7 +53,6 @@ export function appendImageFocusPicker({
  * the type default, so it is never stamped into the data).
  */
 export function appendImageSlideFitControls({
-  h,
   form,
   slide,
   used,
@@ -183,13 +182,10 @@ export function appendImageZoomSettings({
 export function appendImageTextLayoutOptions({
   h,
   form,
-  slide,
   used,
   fieldByKey,
   renderField,
   fieldGrid,
-  markDirty,
-  scheduleUiRefresh,
   // Inspector passes true: the toolbar "Layout" chip is the canonical control
   // for the structural variant there, so the duplicate enum is dropped. The
   // bulk "Edit all text" modal has no chip, so it keeps the enum (parity).

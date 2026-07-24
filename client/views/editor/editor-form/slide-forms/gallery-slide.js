@@ -30,7 +30,6 @@ export function renderGallerySlideForm({
   h,
   form,
   slide,
-  add,
   used,
   fieldByKey,
   renderField,

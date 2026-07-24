@@ -50,29 +50,6 @@ export async function pdfToImages({
     // Puppeteer's built-in PDF viewer will render it
     await page.goto(pdfDataUrl, { waitUntil: 'networkidle0', timeout: 60000 });
 
-    // Get the total number of pages from the PDF viewer
-    // The Chrome PDF viewer exposes page count in the toolbar
-    const pageCount = await page.evaluate(() => {
-      // Try to get page count from the PDF viewer
-      const toolbar = document.querySelector('#toolbar');
-      if (toolbar) {
-        const pageCountEl = toolbar.querySelector('#numPages');
-        if (pageCountEl) {
-          // Format is typically "/ 5" or similar
-          const text = pageCountEl.textContent || '';
-          const match = text.match(/\/?\s*(\d+)/);
-          if (match) return parseInt(match[1], 10);
-        }
-      }
-      // Fallback: try to find it in the document
-      const viewerContainer = document.querySelector('#viewerContainer');
-      if (viewerContainer) {
-        const pages = viewerContainer.querySelectorAll('.page');
-        if (pages.length > 0) return pages.length;
-      }
-      return 1;
-    });
-
     await page.close();
 
     // Now render each page using pdf.js approach

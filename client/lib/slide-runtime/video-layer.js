@@ -48,11 +48,9 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
   let embedUrl = '';
   let hlsInstance = null;
   let playerEl = null;    // <iframe> or <video>
-  let unmuted = false;
 
   // --- Unmute handler ---
   unmuteBtn.addEventListener('click', () => {
-    unmuted = true;
     unmuteBtn.hidden = true;
     if (playerEl?.tagName === 'VIDEO') {
       playerEl.muted = false;
@@ -134,7 +132,6 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
       }
     }
 
-    unmuted = false;
     unmuteBtn.hidden = false;
   }
 
