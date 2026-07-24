@@ -221,24 +221,68 @@ export async function embedImgSrcDataUrls(
       uniq.set(m[1], true);
     }
   }
-  if (!uniq.size) return s;
-
   // Resolve every unique src concurrently (bounded), then apply all string
   // replacements once. Building the src->data map first avoids re-scanning
   // mutated output and partial-match races during parallel fetches.
-  const srcs = [...uniq.keys()];
-  const datas = await mapLimit(srcs, exportEmbedConcurrency(), (src) =>
-    toDataUrlIfLocal(repoRoot, src, { includeClient, transform, embedRemote, cache }),
-  );
   let out = s;
-  for (let i = 0; i < srcs.length; i++) {
-    const src = srcs[i];
-    const data = datas[i];
-    if (data !== src) {
-      out = out.split(`src="${src}"`).join(`src="${data}"`);
+  if (uniq.size) {
+    const srcs = [...uniq.keys()];
+    const datas = await mapLimit(srcs, exportEmbedConcurrency(), (src) =>
+      toDataUrlIfLocal(repoRoot, src, { includeClient, transform, embedRemote, cache }),
+    );
+    for (let i = 0; i < srcs.length; i++) {
+      const src = srcs[i];
+      const data = datas[i];
+      if (data !== src) {
+        out = out.split(`src="${src}"`).join(`src="${data}"`);
+      }
     }
   }
+
+  // Safety net for CSS backgrounds: a custom-HTML slide can carry
+  // `background-image:url('http://…')` in its style, which the field-level
+  // embed pass and the <img src> net above both miss. Left intact it reaches
+  // headless Chrome at setContent → server-side fetch (SSRF). Inline remote
+  // url() through the same guard, or blank it so nothing is fetched. Only runs
+  // on the export/render path (embedRemote). See security-hardening 2.
+  if (embedRemote) {
+    out = await embedRemoteCssUrls(repoRoot, out, { transform, cache });
+  }
   return out;
+}
+
+/** Match a CSS `url(...)` whose target is a remote http(s) URL, capturing the
+ *  optional matching quote and the URL. */
+const REMOTE_CSS_URL_RE = /url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi;
+
+/**
+ * Inline (or blank) remote `url(...)` targets in a CSS/HTML string through the
+ * SSRF guard, so a user-supplied background URL never reaches headless Chrome.
+ * A blocked/failed fetch becomes `url('')` (Chrome fetches nothing).
+ * @param {string} repoRoot
+ * @param {string} html
+ * @param {Object} [opts]
+ * @param {Function} [opts.transform] - Optional image-bytes transform.
+ * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
+ * @returns {Promise<string>}
+ */
+async function embedRemoteCssUrls(repoRoot, html, { transform = null, cache = null } = {}) {
+  const s = String(html || '');
+  const uniq = new Set();
+  for (const m of s.matchAll(REMOTE_CSS_URL_RE)) uniq.add(m[2]);
+  if (!uniq.size) return s;
+
+  const urls = [...uniq];
+  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
+    // embedRemote inlines through the guard or returns '' (stripped).
+    toDataUrlIfLocal(repoRoot, url, { embedRemote: true, transform, cache }),
+  );
+  const map = new Map(urls.map((u, i) => [u, datas[i]]));
+
+  return s.replace(REMOTE_CSS_URL_RE, (_m, _q, url) => {
+    const data = map.get(url);
+    return data ? `url('${data}')` : "url('')";
+  });
 }
 
 /**
