@@ -5,8 +5,12 @@
     "The audit fails on any hardcoded string NOT listed here, so this file is a",
     "burndown list, not a mute button: shrink it, do not grow it.",
     "Key format: \"<repo-relative file> :: <the literal>\" (line numbers deliberately",
-    "excluded so the list survives unrelated edits)."
+    "excluded so the list survives unrelated edits).",
+    "`orphans` works the same way for keys present in en/ but referenced nowhere.",
+    "It is empty because the backlog was pruned to zero; an entry belongs there",
+    "only for a key that must survive without a visible call site, with the reason."
   ],
+  "orphans": {},
   "hardcoded": {
     "client/lib/theme/theme-select.js :: Aa": "Typographic specimen — the letterforms are the content, not a word to translate.",
     "client/lib/theme/theme-select.js :: ClickNL": "Brand name.",
