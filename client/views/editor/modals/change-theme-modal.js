@@ -39,7 +39,7 @@ export function openChangeThemeModal({
   onNavigateToSlide,
   onThemeChanged,
 } = {}) {
-  const { problematicSlides, newTheme, newThemeLabel } = analysis;
+  const { problematicSlides, newTheme } = analysis;
   const slideCount = problematicSlides.length;
 
   const modal = createPromiseModal(h, {

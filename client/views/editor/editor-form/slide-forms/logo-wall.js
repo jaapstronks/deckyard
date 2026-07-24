@@ -33,7 +33,6 @@ export function renderLogoWallForm({
   slide,
   add,
   used,
-  renderField,
   fieldGrid,
   fieldText,
   fieldImage,

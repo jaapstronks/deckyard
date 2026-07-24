@@ -114,7 +114,7 @@ export function renderImageElementCard({
   const resolved = resolveImageElement(slide, def, idx);
   if (!resolved) return false;
   const { member, imageField, altField, extraFields, focus, fit } = resolved;
-  const { fieldImage, fieldText, fieldEnum, fieldGrid } = fieldRenderers;
+  const { fieldImage, fieldText, fieldEnum } = fieldRenderers;
 
   const hasImage = !!String(member[imageField] || '').trim();
 

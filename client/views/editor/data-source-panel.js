@@ -44,7 +44,6 @@ export function buildDataSourceIndicator({
     // Connected state
     const isFrozen = ds.refresh?.mode === 'frozen';
     const providerLabel = PROVIDER_LABELS[ds.provider] || ds.provider;
-    const modeLabel = MODE_LABELS[ds.refresh?.mode] || ds.refresh?.mode;
 
     bar.classList.add(isFrozen ? 'data-source-bar--frozen' : 'data-source-bar--live');
 

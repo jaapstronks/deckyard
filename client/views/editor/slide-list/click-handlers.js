@@ -17,7 +17,6 @@ export function attachClickHandler({
     pres,
     slideListEl,
     getSearchQuery,
-    getSelectedSlideId,
     setSelectedSlideId,
     getSelectedSlideIds,
     setSelectedSlideIds,

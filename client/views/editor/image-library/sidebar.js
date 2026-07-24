@@ -112,7 +112,6 @@ export function createMediaLibrarySidebar({
   h,
   user,
   items,
-  favorites,
   getActiveSection,
   setActiveSection,
   getActiveTag,

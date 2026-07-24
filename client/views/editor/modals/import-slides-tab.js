@@ -17,7 +17,6 @@ import { formatFileSize } from '../../../lib/format/format.js';
  */
 export function createImportSlidesTab({
   h,
-  api,
   presentationId,
   afterSlideId,
   onComplete,

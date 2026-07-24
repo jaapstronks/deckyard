@@ -24,7 +24,6 @@ export function renderChartConfigControls({
   renderField,
   fieldGrid,
   markDirty,
-  rerenderEditor,
   scheduleUiRefresh,
   onEditData,
 } = {}) {

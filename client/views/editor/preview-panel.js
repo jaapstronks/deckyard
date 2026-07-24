@@ -15,10 +15,8 @@ export function createPreviewPanel({
   renderSlideElement,
   openOverlayClosers,
   getSelectedSlideId,
-  nav,
   // Slide comments support
   commentsApi,
-  user,
   // Positioned-marker click: opens the comments pane on this comment (the
   // under-slide thread list folded into the inspector rail, fase 4).
   onOpenComments,

@@ -25,7 +25,6 @@ export function setupShareDropdown({
   id,
   requestSave,
   isDirty,
-  onError,
   root,
   openOverlayClosers,
   editorState,
