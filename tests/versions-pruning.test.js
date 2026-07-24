@@ -217,7 +217,6 @@ describe('selectBestSnapshot', () => {
 
 describe('prunePresentationVersions', () => {
   let tempDir;
-  const testPresentationId = 'test-pres-123';
 
   // Helper to create a version file directly
   // Note: dataDir(repoRoot) resolves to repoRoot/server/data by default

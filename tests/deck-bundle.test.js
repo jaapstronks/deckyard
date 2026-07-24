@@ -57,7 +57,7 @@ describe('buildDeckBundle', () => {
   it('produces a readable bundle with a mimetype sentinel', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     assert.ok(Buffer.isBuffer(buf) && buf.length > 0);
-    const { mimetype, manifest, deck, assets } = await readDeckBundle(buf);
+    const { mimetype, manifest, assets } = await readDeckBundle(buf);
     assert.equal(mimetype, DECK_MIMETYPE);
     assert.equal(manifest.format, 'slidecreator.deck');
     assert.equal(manifest.bundleVersion, 1);
