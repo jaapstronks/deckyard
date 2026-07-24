@@ -130,6 +130,66 @@ export function createInlineOverlay({ h, thumb }) {
       p.el.style.display = '';
       applyPlacement(p, rectIn(p.target), pack);
     }
+    // Second pass: keep interactive chips from overlapping each other even when
+    // they anchor to *different* elements. The per-anchor packing above only
+    // reconciles chips that share one target; two ghosts on separate anchors
+    // (e.g. the title-slide "+ Subtitle" under `.title` and "+ Meta" inside
+    // `.tsu-content`) can still land on top of each other. Here the overlay sees
+    // every chip at once - the one place that knows the full set - so it can
+    // nudge later chips downward until nothing collides.
+    resolveOverlaps();
+  }
+
+  /**
+   * Global de-collision for interactive chips. Runs after every chip is placed,
+   * measures their real rects, and pushes any chip that overlaps an already-
+   * settled one straight down until it clears. Because it operates on the whole
+   * placement set (not per-anchor), it structurally prevents cross-anchor chip
+   * overlaps rather than fixing them case by case.
+   */
+  function resolveOverlaps() {
+    const MARGIN = 4; // breathing room between chips (screen px)
+    // Field outlines (`cover`) sit on their field by design and the image focus
+    // handle lives inside the image - neither participates. Item-scoped chips
+    // count only when their owner is the revealed one, since just one item's
+    // chips are visible at a time (opacity-hidden chips still occupy a rect).
+    const boxes = placements
+      .filter(
+        (p) =>
+          p.place !== 'cover' &&
+          p.place !== 'focus-point' &&
+          p.el.style.display !== 'none' &&
+          (!p.owner || p.owner === activeOwner),
+      )
+      .map((p) => ({ p, r: rectIn(p.el) }))
+      .sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left);
+
+    const settled = [];
+    for (const box of boxes) {
+      const { left, width, height } = box.r;
+      let top = box.r.top;
+      // Push down past every settled chip this one still horizontally overlaps.
+      // Bounded by the chip count - each iteration clears at least one chip.
+      for (let guard = 0; guard < settled.length; guard++) {
+        const hit = settled.find(
+          (q) =>
+            left < q.left + q.width + MARGIN &&
+            left + width + MARGIN > q.left &&
+            top < q.top + q.height + MARGIN &&
+            top + height + MARGIN > q.top,
+        );
+        if (!hit) break;
+        top = hit.top + hit.height + MARGIN;
+      }
+      const delta = top - box.r.top;
+      if (delta > 0.5) {
+        // style.top is what applyPlacement just wrote; a transform (if any) is a
+        // constant offset, so shifting style.top shifts the rect by the same px.
+        const cur = parseFloat(box.p.el.style.top) || 0;
+        box.p.el.style.top = `${cur + delta}px`;
+      }
+      settled.push({ left, top, width, height });
+    }
   }
 
   function applyPlacement(p, r, pack) {
