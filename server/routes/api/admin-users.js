@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, notFound } from '../../utils/http.js';
+import { json, serveJson, badRequest, unauthorized, notFound, serverError, rateLimited } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext, getClientIp } from '../../utils/context.js';
 import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
@@ -133,7 +133,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to list users:', err);
-      serveJson(res, 500, { error: 'Failed to load users' });
+      serverError(res, 'Failed to load users');
       return true;
     }
   }
@@ -144,7 +144,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
   if (url.pathname === '/api/admin/users' && req.method === 'POST') {
     // Rate limit user creation to prevent abuse
     if (checkAdminRateLimit(user.email, RATE_LIMIT_CREATE_PER_ADMIN)) {
-      serveJson(res, 429, { error: 'Too many user creation requests. Please try again later.' });
+      rateLimited(res, 3600, 'Too many user creation requests. Please try again later.');
       return true;
     }
 
@@ -206,7 +206,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to create user:', err);
-      serveJson(res, 500, { error: 'Failed to create user' });
+      serverError(res, 'Failed to create user');
       return true;
     }
   }
@@ -228,7 +228,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to get user:', err);
-      serveJson(res, 500, { error: 'Failed to load user' });
+      serverError(res, 'Failed to load user');
       return true;
     }
   }
@@ -297,7 +297,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to update user:', err);
-      serveJson(res, 500, { error: 'Failed to update user' });
+      serverError(res, 'Failed to update user');
       return true;
     }
   }
@@ -338,7 +338,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to delete user:', err);
-      serveJson(res, 500, { error: 'Failed to delete user' });
+      serverError(res, 'Failed to delete user');
       return true;
     }
   }
@@ -387,7 +387,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to resend invitation:', err);
-      serveJson(res, 500, { error: 'Failed to resend invitation' });
+      serverError(res, 'Failed to resend invitation');
       return true;
     }
   }

@@ -80,7 +80,8 @@ test('publish route is refused (403) in sandbox mode', async () => {
     assert.equal(handled, true, 'handler should claim the publish route');
     assert.equal(res.status, 403, 'publishing must be blocked in sandbox');
     const body = JSON.parse(res.body);
-    assert.match(body.error, /sandbox/i);
+    assert.equal(body.error, 'forbidden');
+    assert.match(body.message, /sandbox/i);
   });
 });
 
