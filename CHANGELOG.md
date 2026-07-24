@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.2.0](https://github.com/jaapstronks/deckyard/compare/v1.1.0...v1.2.0) (2026-07-24)
+
+
+### Added
+
+* **i18n:** audit hardcoded copy and gate it in CI ([#335](https://github.com/jaapstronks/deckyard/issues/335)) ([c1ea16d](https://github.com/jaapstronks/deckyard/commit/c1ea16dbb17e15c5086c4f4542c674cce3df883a))
+
+
+### Fixed
+
+* **editor:** route json-debug invalid-JSON toast through t() ([#332](https://github.com/jaapstronks/deckyard/issues/332)) ([459ce4b](https://github.com/jaapstronks/deckyard/commit/459ce4b26849710f9a0ee01c0282d4b6df5c2c18))
+
+
+### Security
+
+* **sandbox:** launch-hardening PR 1 — proxy trust, per-guest quota, CSS-bg SSRF net ([#334](https://github.com/jaapstronks/deckyard/issues/334)) ([e4b12aa](https://github.com/jaapstronks/deckyard/commit/e4b12aaf15ce5c5e0d8aa4cab48a2fcf8b15ac62))
+
 ## [1.1.0](https://github.com/jaapstronks/deckyard/compare/v1.0.0...v1.1.0) (2026-07-24)
 
 
