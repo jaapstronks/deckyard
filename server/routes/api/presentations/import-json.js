@@ -1,5 +1,6 @@
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
 import { json, serveJson, serverError } from '../../../utils/http.js';
+import { isAppError } from '../../../utils/errors.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
@@ -74,6 +75,12 @@ export async function handlePresentationsImportJson({
     serveJson(res, 201, updated);
     return true;
   } catch (err) {
+    // Typed application errors (e.g. sandbox quota, validation) carry their own
+    // 4xx status + safe message — surface it instead of masking as a 500.
+    if (isAppError(err)) {
+      serveJson(res, err.statusCode, err.toJSON());
+      return true;
+    }
     // Log the detail server-side, but never return err.message/err.stack to the
     // client: in sandbox/demo mode every anonymous visitor is auto-provisioned
     // an authed user, so this response is effectively public (security-audit H7).

@@ -54,3 +54,23 @@ test('embedImgSrcDataUrls without embedRemote leaves remote <img> untouched', as
   const out = await embedImgSrcDataUrls('/repo', html, { includeClient: true });
   assert.equal(out, html);
 });
+
+test('embedImgSrcDataUrls safety net blanks a remote CSS background-image url()', async () => {
+  // A custom-HTML slide's inline style can carry a background-image url() that
+  // the <img src> net and the image-field pass both miss. A metadata-IP url()
+  // must not survive into the export HTML Chrome renders (SSRF via CSS).
+  const html =
+    '<div class="slide-bg-layer" style="background-image:url(\'http://169.254.169.254/x.png\')"></div>';
+  const out = await embedImgSrcDataUrls('/repo', html, {
+    includeClient: true,
+    embedRemote: true,
+  });
+  assert.ok(!out.includes('169.254.169.254'), 'metadata background url must be stripped');
+  assert.ok(out.includes("url('')"), 'blocked url() is blanked, not fetched');
+});
+
+test('embedImgSrcDataUrls without embedRemote leaves a remote background url() untouched', async () => {
+  const html = "<div style=\"background-image:url('https://cdn.example.com/bg.png')\"></div>";
+  const out = await embedImgSrcDataUrls('/repo', html, { includeClient: true });
+  assert.equal(out, html);
+});

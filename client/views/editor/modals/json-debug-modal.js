@@ -275,7 +275,7 @@ export function openJsonDebugModal({
       try {
         editedJson = JSON.parse(jsonTextarea.value);
       } catch (e) {
-        toast.error(`Invalid JSON: ${e.message}`);
+        toast.error(t('admin.jsonDebug.error.invalidJson', 'Invalid JSON: {message}', { message: e.message }));
         return;
       }
     }
