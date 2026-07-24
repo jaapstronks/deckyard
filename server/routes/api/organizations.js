@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync, updateSessionOrganization } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, forbidden, notFound } from '../../utils/http.js';
+import { json, serveJson, badRequest, unauthorized, forbidden, notFound, serverError } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext, isReservedSubdomain } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
@@ -97,7 +97,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to list organizations:', err);
-      serveJson(res, 500, { error: 'Failed to load organizations' });
+      serverError(res, 'Failed to load organizations');
       return true;
     }
   }
@@ -158,7 +158,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to create organization:', err);
-      serveJson(res, 500, { error: 'Failed to create organization' });
+      serverError(res, 'Failed to create organization');
       return true;
     }
   }
@@ -192,7 +192,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to get organization:', err);
-      serveJson(res, 500, { error: 'Failed to load organization' });
+      serverError(res, 'Failed to load organization');
       return true;
     }
   }
@@ -278,7 +278,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to update organization:', err);
-      serveJson(res, 500, { error: 'Failed to update organization' });
+      serverError(res, 'Failed to update organization');
       return true;
     }
   }
@@ -316,7 +316,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to delete organization:', err);
-      serveJson(res, 500, { error: 'Failed to delete organization' });
+      serverError(res, 'Failed to delete organization');
       return true;
     }
   }
@@ -356,7 +356,7 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       return true;
     } catch (err) {
       log.error('[organizations] Failed to switch organization:', err);
-      serveJson(res, 500, { error: 'Failed to switch organization' });
+      serverError(res, 'Failed to switch organization');
       return true;
     }
   }
