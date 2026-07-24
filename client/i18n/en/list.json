@@ -129,8 +129,6 @@
   "list.bulk.restore.done": "{count} presentation(s) restored.",
   "list.bulk.restore.failed": "Failed to restore {count} presentation(s).",
   "list.bulk.selected": "{count} selected",
-  "list.claim": "Claim as mine",
-  "list.claim.done": "Claimed as yours.",
   "list.count": "{count} presentations",
   "list.creationView.library.collectionCount": "{count} slides",
   "list.creationView.library.collectionEmpty": "This collection has no available slides.",

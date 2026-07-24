@@ -124,15 +124,6 @@ export function canChangePresentationScope({ user, pres, nextScope } = {}) {
 }
 
 /**
- * Check if a user can claim ownership of a presentation.
- * @deprecated All presentations now have owners. This function always returns false.
- */
-export function canClaimOwnership() {
-  // Legacy feature removed - all presentations now have owners
-  return false;
-}
-
-/**
  * Check if a user can force release a lock on a presentation.
  */
 export function canForceLockRelease({ user, pres } = {}) {

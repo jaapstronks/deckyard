@@ -16,9 +16,6 @@ export { deletePresentation, restorePresentation, permanentlyDeletePresentation 
 // Duplicate
 export { duplicatePresentation } from './duplicate.js';
 
-// Ownership
-export { claimPresentationOwnership } from './ownership.js';
-
 // Factory
 export { prepareNewPresentation } from './factory.js';
 

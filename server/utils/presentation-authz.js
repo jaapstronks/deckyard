@@ -33,7 +33,6 @@ export {
   canWritePresentation,
   canDeletePresentation,
   canChangePresentationScope,
-  canClaimOwnership,
   canForceLockRelease,
   canTransferOwnership,
   canManageCollaborators,
