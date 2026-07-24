@@ -229,13 +229,11 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
   // ============================================================
 
   let onDeckDuplicated = null;
-  let onDeckClaimed = null;
 
   const { renderCard } = createCardRenderer({
     api,
     nav,
     onDeckDuplicated: (created) => onDeckDuplicated?.(created),
-    onDeckClaimed: (claimed) => onDeckClaimed?.(claimed),
     onTrashRefresh: () => trashViewObj.refresh(),
     detachThumbs,
     selectionState,
@@ -424,12 +422,6 @@ export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
     priv.unshift(created);
     presentationsViewObj.addPresentation(created);
     setView('presentations');
-  };
-
-  onDeckClaimed = (claimedFull) => {
-    if (claimedFull?.id) {
-      nav?.('/app');
-    }
   };
 
   // ============================================================

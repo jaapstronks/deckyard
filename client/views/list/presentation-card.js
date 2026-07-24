@@ -19,7 +19,6 @@ export function createCardRenderer({
   api,
   nav,
   onDeckDuplicated,
-  onDeckClaimed,
   onTrashRefresh,
   detachThumbs,
   selectionState = null,
@@ -333,33 +332,6 @@ export function createCardRenderer({
         },
       });
 
-      // Check if this is a legacy presentation (no owner, no creator) that can be claimed
-      const isLegacy = !p.ownerEmail && !p.createdBy;
-      const menuClaim = isLegacy
-        ? h('button', {
-            class: 'presentation-card-menu-item',
-            type: 'button',
-            text: t('list.claim', 'Claim as mine'),
-            onclick: async (e) => {
-              e.stopPropagation();
-              menu.classList.remove('is-open');
-              try {
-                const claimed = await api(`/api/presentations/${p.id}`, {
-                  method: 'PATCH',
-                  body: { action: 'claim', scope: 'private' },
-                });
-                toast.success(t('list.claim.done', 'Claimed as yours.'), {
-                  id: 'list-claim',
-                  durationMs: 1800,
-                });
-                onDeckClaimed?.(claimed);
-              } catch (err) {
-                toast.error(String(err?.message || err), { id: 'list-claim' });
-              }
-            },
-          })
-        : null;
-
       const menuDelete = h('button', {
         class: 'presentation-card-menu-item is-danger',
         type: 'button',
@@ -383,7 +355,6 @@ export function createCardRenderer({
         },
       });
       menu.append(menuPresent, menuDuplicate);
-      if (menuClaim) menu.append(menuClaim);
       menu.append(menuDelete);
     }
 

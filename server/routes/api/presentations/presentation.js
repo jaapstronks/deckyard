@@ -1,8 +1,6 @@
 import {
   deletePresentation,
-  getPresentation,
   updatePresentation,
-  claimPresentationOwnership,
 } from '../../../storage/presentations.js';
 import { getTagsForPresentation } from '../../../storage/tags.js';
 import {
@@ -11,7 +9,7 @@ import {
   notFound,
   serveJson,
 } from '../../../utils/http.js';
-import { canClaimOwnership, getEffectivePermission } from '../../../utils/presentation-authz.js';
+import { getEffectivePermission } from '../../../utils/presentation-authz.js';
 import {
   withPresentationAuth,
   canEditCustomHtml,
@@ -291,33 +289,5 @@ export async function handlePresentationItem(
     return true;
   }
 
-  // PATCH - Claim ownership of a legacy presentation
-  if (req.method === 'PATCH') {
-    const body = await json(req);
-    const existing = await getPresentation(repoRoot, id);
-    if (!existing) return notFound(res);
-
-    // Only allow claiming ownership action
-    if (body?.action !== 'claim') {
-      return serveJson(res, 400, { error: 'Invalid action. Use { "action": "claim" }' });
-    }
-
-    if (!canClaimOwnership({ user: authedUser, pres: existing })) {
-      return serveJson(res, 403, {
-        error: 'Cannot claim ownership. Presentation already has an owner.',
-      });
-    }
-
-    const claimed = await claimPresentationOwnership(repoRoot, id, {
-      ownerEmail: authedUser?.email,
-      scope: body?.scope || 'private', // Default to private when claiming
-    });
-
-    if (!claimed) return notFound(res);
-
-    serveJson(res, 200, claimed);
-    return true;
-  }
-
-  return methodNotAllowed(res, ['GET', 'PUT', 'PATCH', 'DELETE']);
+  return methodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
 }

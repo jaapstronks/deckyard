@@ -129,8 +129,6 @@
   "list.bulk.restore.done": "{count} presentatie(s) hersteld.",
   "list.bulk.restore.failed": "Herstellen van {count} presentatie(s) mislukt.",
   "list.bulk.selected": "{count} geselecteerd",
-  "list.claim": "Claimen als de mijne",
-  "list.claim.done": "Geclaimd als de jouwe.",
   "list.count": "{count} presentaties",
   "list.creationView.library.collectionCount": "{count} slides",
   "list.creationView.library.collectionEmpty": "Deze collectie heeft geen beschikbare slides.",

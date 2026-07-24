@@ -277,20 +277,6 @@ export async function duplicatePresentation(repoRoot, id, opts) {
   return await mod.duplicatePresentation(repoRoot, id, opts);
 }
 
-export async function claimPresentationOwnership(repoRoot, id, opts) {
-  try {
-    if (isStorageInitialized()) {
-      const storage = getStorage();
-      const ctx = getStorageContext({ actorEmail: opts?.ownerEmail });
-      return await storage.claimPresentationOwnership(id, ctx, opts);
-    }
-    const mod = await import('./presentations/crud.js');
-    return await mod.claimPresentationOwnership(repoRoot, id, opts);
-  } finally {
-    invalidatePresentationCache(id);
-  }
-}
-
 /**
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
