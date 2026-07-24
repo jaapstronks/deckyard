@@ -62,8 +62,13 @@ const COPY_PROPS = [
 // match to a real object-literal position, so the word "description" *inside* a
 // string (`console.error('Failed to save description:', err)`) is not mistaken
 // for a prop. Values may not span lines, for the same reason.
+//
+// COPY_PROPS is a fixed list of identifiers ([a-z-] only), so it is interpolated
+// verbatim: `-` is not a metacharacter outside a character class, and escaping it
+// here reads as sanitizing an untrusted value (it isn't) — which is also what
+// CodeQL's js/incomplete-sanitization flagged.
 const PROP_RE = new RegExp(
-  `[{,]\\s*['"]?(${COPY_PROPS.map((p) => p.replace(/-/g, '\\-')).join('|')})['"]?\\s*:\\s*(['"])((?:[^'"\\\\\\n]|\\\\.)*)\\2`,
+  `[{,]\\s*['"]?(${COPY_PROPS.join('|')})['"]?\\s*:\\s*(['"])((?:[^'"\\\\\\n]|\\\\.)*)\\2`,
   'g'
 );
 const TOAST_RE = /\btoast(?:\.\w+)?\(\s*(['"])((?:[^'"\\\n]|\\.)*)\1/g;
