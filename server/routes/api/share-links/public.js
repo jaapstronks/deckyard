@@ -26,6 +26,7 @@ import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-
 import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createLogger } from '../../../utils/logger.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 const log = createLogger('public');
 
 /**
@@ -58,15 +59,18 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
 
         // Notify author of access attempt (non-blocking)
         if (pres?.ownerEmail) {
-          void notifyAuthorOfAccessAttempt({
-            presentationId: result.presentationId,
-            presentationTitle: pres.title || 'Untitled',
-            authorEmail: pres.ownerEmail,
-            accessType: ACCESS_TYPES.SHARE_LINK,
-            accessReferenceId: result.shareLinkId,
-            accessorIp: ipAddress,
-            ctx,
-          });
+          fireAndForget(
+            notifyAuthorOfAccessAttempt({
+              presentationId: result.presentationId,
+              presentationTitle: pres.title || 'Untitled',
+              authorEmail: pres.ownerEmail,
+              accessType: ACCESS_TYPES.SHARE_LINK,
+              accessReferenceId: result.shareLinkId,
+              accessorIp: ipAddress,
+              ctx,
+            }),
+            'notify author of share-link access attempt'
+          );
         }
 
         serveJson(res, status, responseData);
@@ -178,21 +182,24 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const presentationTitle = pres?.title || 'Presentation';
 
     // Send verification email
-    void sendGuestVerificationEmail({
-      recipientEmail: email,
-      recipientName: name || null,
-      presentationTitle,
-      verificationUrl,
-      expiresAt: result.expiresAt,
-      repoRoot,
-    }).then((emailResult) => {
-      if (!emailResult.ok) {
-        // eslint-disable-next-line no-console
-        log.warn(
-          `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
-        );
-      }
-    });
+    fireAndForget(
+      sendGuestVerificationEmail({
+        recipientEmail: email,
+        recipientName: name || null,
+        presentationTitle,
+        verificationUrl,
+        expiresAt: result.expiresAt,
+        repoRoot,
+      }).then((emailResult) => {
+        if (!emailResult.ok) {
+          // eslint-disable-next-line no-console
+          log.warn(
+            `[brevo] guest verification email failed to=${email} error=${emailResult.error || ''}`.trim()
+          );
+        }
+      }),
+      `guest verification email to=${email}`
+    );
 
     serveJson(res, 200, { ok: true, message: 'Verification email sent' });
     return true;
