@@ -9,6 +9,8 @@ import {
   json,
   methodNotAllowed,
   serveJson,
+  badRequest,
+  serverError,
 } from '../../utils/http.js';
 import { readAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library.js';
@@ -76,7 +78,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
 
     const status = await getStockMediaStatus(repoRoot);
     if (!status.unsplash.configured || !status.unsplash.enabled) {
-      return serveJson(res, 400, { error: 'Unsplash is not available' });
+      return badRequest(res, 'Unsplash is not available');
     }
 
     const query = url.searchParams.get('q') || '';
@@ -84,7 +86,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
     const perPage = parseInt(url.searchParams.get('per_page') || '20', 10);
 
     if (!query.trim()) {
-      return serveJson(res, 400, { error: 'Search query required' });
+      return badRequest(res, 'Search query required');
     }
 
     try {
@@ -92,7 +94,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       serveJson(res, 200, results);
     } catch (e) {
       log.error('Unsplash search error:', e);
-      serveJson(res, 500, { error: e.message });
+      serverError(res, 'Unsplash search failed');
     }
     return true;
   }
@@ -103,14 +105,14 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
 
     const status = await getStockMediaStatus(repoRoot);
     if (!status.unsplash.configured || !status.unsplash.enabled) {
-      return serveJson(res, 400, { error: 'Unsplash is not available' });
+      return badRequest(res, 'Unsplash is not available');
     }
 
     const body = await json(req);
     const { photoId, size = 'regular' } = body || {};
 
     if (!photoId) {
-      return serveJson(res, 400, { error: 'Photo ID required' });
+      return badRequest(res, 'Photo ID required');
     }
 
     try {
@@ -152,7 +154,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       });
     } catch (e) {
       log.error('Unsplash download error:', e);
-      serveJson(res, 500, { error: e.message });
+      serverError(res, 'Unsplash download failed');
     }
     return true;
   }
@@ -165,7 +167,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
 
     const status = await getStockMediaStatus(repoRoot);
     if (!status.giphy.configured || !status.giphy.enabled) {
-      return serveJson(res, 400, { error: 'Giphy is not available' });
+      return badRequest(res, 'Giphy is not available');
     }
 
     const query = url.searchParams.get('q') || '';
@@ -173,7 +175,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
     const limit = parseInt(url.searchParams.get('limit') || '20', 10);
 
     if (!query.trim()) {
-      return serveJson(res, 400, { error: 'Search query required' });
+      return badRequest(res, 'Search query required');
     }
 
     try {
@@ -181,7 +183,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       serveJson(res, 200, results);
     } catch (e) {
       log.error('Giphy search error:', e);
-      serveJson(res, 500, { error: e.message });
+      serverError(res, 'Giphy search failed');
     }
     return true;
   }
@@ -192,7 +194,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
 
     const status = await getStockMediaStatus(repoRoot);
     if (!status.giphy.configured || !status.giphy.enabled) {
-      return serveJson(res, 400, { error: 'Giphy is not available' });
+      return badRequest(res, 'Giphy is not available');
     }
 
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
@@ -203,7 +205,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       serveJson(res, 200, results);
     } catch (e) {
       log.error('Giphy trending error:', e);
-      serveJson(res, 500, { error: e.message });
+      serverError(res, 'Giphy trending failed');
     }
     return true;
   }
@@ -214,14 +216,14 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
 
     const status = await getStockMediaStatus(repoRoot);
     if (!status.giphy.configured || !status.giphy.enabled) {
-      return serveJson(res, 400, { error: 'Giphy is not available' });
+      return badRequest(res, 'Giphy is not available');
     }
 
     const body = await json(req);
     const { gifId } = body || {};
 
     if (!gifId) {
-      return serveJson(res, 400, { error: 'GIF ID required' });
+      return badRequest(res, 'GIF ID required');
     }
 
     try {
@@ -250,7 +252,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       });
     } catch (e) {
       log.error('Giphy download error:', e);
-      serveJson(res, 500, { error: e.message });
+      serverError(res, 'Giphy download failed');
     }
     return true;
   }
