@@ -173,6 +173,22 @@ export function createAnalyticsTracker({
       organizationId,
     }, { critical: true });
 
+    // destroy() can land while the (retrying, therefore slow) session-start
+    // request is in flight — the viewer navigated away before tracking was
+    // live. destroy() already ran its teardown, so wiring the heartbeat and
+    // the three global listeners here would strand them for the whole tab.
+    // Close the session we just opened instead of abandoning it server-side.
+    if (isDestroyed) {
+      if (result?.sessionToken) {
+        sendBeacon('/api/track/session/end', {
+          sessionToken: result.sessionToken,
+          exitSlideId: currentSlideId,
+          exitSlideIndex: currentSlideIndex,
+        });
+      }
+      return false;
+    }
+
     if (result?.sessionToken) {
       sessionToken = result.sessionToken;
       isStarted = true;

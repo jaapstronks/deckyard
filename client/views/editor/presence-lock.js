@@ -255,6 +255,10 @@ export function attachPresentationPresenceLock({
 
   const start = async () => {
     await acquire();
+    // detach() can land while acquire() is in flight; it clears `timer` before
+    // this line ever runs, so starting the poll now would leave an interval
+    // nothing can reach.
+    if (stopped) return;
     // Poll every 15 seconds to catch lock requests quickly
     timer = setInterval(() => {
       tick().catch(() => {});

@@ -1,5 +1,6 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { promptModal } from '../../lib/dom/modal.js';
+import { withBackoff } from '../../lib/net/reconnect.js';
 
 export function createFollowQaController({
   h,
@@ -26,7 +27,6 @@ export function createFollowQaController({
     setQaName,
   } = questionsApi || {};
 
-  let qaEs = null;
   let qaBusy = false;
   let qaRefreshTid = null;
   let questions = [];
@@ -190,14 +190,16 @@ export function createFollowQaController({
     }
   };
 
-  const connectQa = () => {
-    if (qaEs) return;
-    // If Q&A is currently disabled, don't connect (setCapabilities will reconnect when enabled).
-    if (capabilities && capabilities.canUseQa === false) return;
-    qaEs = new EventSource(
+  // Some browsers/mobile contexts silently drop SSE when backgrounded, so the
+  // stream reopens on error — through withBackoff, which owns the pending
+  // retry and cancels it on stop(). A bare setTimeout here would survive
+  // destroy() and resurrect the stream after the view is gone.
+  const qaStream = withBackoff(({ onOpen, onError, onDone }) => {
+    const es = new EventSource(
       `/api/follow/${encodeURIComponent(presentationId)}/questions/events`
     );
-    qaEs.addEventListener('questions', (ev) => {
+    es.addEventListener('questions', (ev) => {
+      onOpen();
       try {
         const data = JSON.parse(ev.data || '{}');
         questions = Array.isArray(data?.questions) ? data.questions : [];
@@ -206,7 +208,8 @@ export function createFollowQaController({
         debugLog('[follow][qa] bad questions event', { data: ev?.data, e });
       }
     });
-    qaEs.addEventListener('status', (ev) => {
+    es.addEventListener('status', (ev) => {
+      onOpen();
       try {
         const data = JSON.parse(ev.data || '{}');
         if (data?.capabilities && onCapabilities)
@@ -219,23 +222,22 @@ export function createFollowQaController({
         debugLog('[follow][qa] bad status event', { data: ev?.data, e });
       }
     });
-    qaEs.addEventListener('close', () => {
+    // Server-side end of stream: close for good, don't reopen.
+    es.addEventListener('close', () => onDone());
+    es.addEventListener('error', () => onError());
+    return () => {
       try {
-        qaEs?.close?.();
-      } catch {}
-      qaEs = null;
-    });
-    qaEs.addEventListener('error', () => {
-      // Some browsers/mobile contexts can silently drop SSE when backgrounded.
-      // Close + retry to ensure we eventually reflect removals/promotions.
-      try {
-        qaEs?.close?.();
-      } catch {}
-      qaEs = null;
-      setTimeout(() => {
-        if (!qaEs) connectQa();
-      }, 1200);
-    });
+        es.close();
+      } catch {
+        // ignore
+      }
+    };
+  });
+
+  const connectQa = () => {
+    // If Q&A is currently disabled, don't connect (setCapabilities will reconnect when enabled).
+    if (capabilities && capabilities.canUseQa === false) return;
+    qaStream.start();
   };
 
   const setCapabilities = (next) => {
@@ -247,12 +249,7 @@ export function createFollowQaController({
 
     // When disabled, stop background activity (SSE + polling) to avoid wasted connections.
     if (!canUseQa) {
-      if (qaEs) {
-        try {
-          qaEs.close();
-        } catch {}
-        qaEs = null;
-      }
+      qaStream.stop();
       if (qaRefreshTid) {
         try {
           clearInterval(qaRefreshTid);
@@ -265,7 +262,7 @@ export function createFollowQaController({
     }
 
     // Enabled: ensure SSE + polling are running.
-    if (!qaEs) connectQa();
+    connectQa();
     if (!qaRefreshTid) {
       qaRefreshTid = setInterval(() => {
         refreshQuestionsIfLive().catch(() => {});
@@ -344,12 +341,7 @@ export function createFollowQaController({
   };
 
   const destroy = () => {
-    if (qaEs) {
-      try {
-        qaEs.close();
-      } catch {}
-      qaEs = null;
-    }
+    qaStream.stop();
     if (qaRefreshTid) {
       try {
         clearInterval(qaRefreshTid);
