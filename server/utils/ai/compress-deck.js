@@ -244,7 +244,7 @@ export function applyCompression(presentation, recommendations) {
 
   // Track which slides are part of merges (except the first one which becomes the merged slide)
   for (const merge of merges) {
-    const [keepIdx, ...removeIdxs] = merge.slideIndexes;
+    const [, ...removeIdxs] = merge.slideIndexes;
     for (const idx of removeIdxs) {
       toRemove.add(idx);
     }

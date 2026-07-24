@@ -104,10 +104,6 @@ function parseHtmlToSections(html) {
   let currentSection = { heading: '', content: '' };
 
   // Simple HTML parsing - extract headings and content
-  // Split by heading tags
-  const headingPattern = /<h([1-6])[^>]*>(.*?)<\/h\1>/gi;
-  const parts = html.split(headingPattern);
-
   // Process parts: alternating between content and heading matches
   let lastIndex = 0;
   let match;
@@ -190,7 +186,6 @@ function groupParagraphsIntoSections(paragraphs) {
   const sections = [];
   let currentSection = [];
   let currentLength = 0;
-  const targetLength = 500; // Target characters per section
   const maxLength = 1000; // Max characters before forcing a split
 
   for (const paragraph of paragraphs) {

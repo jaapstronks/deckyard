@@ -144,7 +144,7 @@ async function processTranslateJob(job) {
   };
 
   // Save
-  const updated = await updatePresentation(repoRoot, presentationId, pres, {
+  await updatePresentation(repoRoot, presentationId, pres, {
     actorEmail,
     skipLimitCheck: true, // Skip limit check for translations
   });

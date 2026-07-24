@@ -12,14 +12,12 @@ import { assertPublicHttpUrl } from './ssrf-guard.js';
 // Overlay dimensions
 const PILL_HEIGHT = 40;
 const PILL_PADDING_H = 14;
-const PILL_PADDING_V = 8;
 const AVATAR_SIZE = 28;
 const GAP = 10;
 const CORNER_RADIUS = 20;
 const MARGIN = 24;
 
 // Colors
-const PILL_BG = { r: 0, g: 0, b: 0, alpha: 0.6 };
 const TEXT_COLOR = 'white';
 
 /**
