@@ -9,6 +9,7 @@ import {
 import {
   badRequest,
   json,
+  jsonError,
   serveJson,
 } from '../../utils/http.js';
 import {
@@ -103,12 +104,13 @@ export async function handleConvert({
 
     if (!deck || report.errors.length > 0) {
       // Conversion failed
-      serveJson(res, 422, {
-        success: false,
-        report,
-        error:
-          report.errors.join('; ') || 'Conversion failed',
-      });
+      jsonError(
+        res,
+        422,
+        'conversion_failed',
+        report.errors.join('; ') || 'Conversion failed',
+        { details: { report } }
+      );
       return true;
     }
 
@@ -156,12 +158,8 @@ export async function handleConvert({
         report,
         detectedLang: effectiveLang, // Include detected language for client navigation
       });
-    } catch (e) {
-      serveJson(res, 500, {
-        success: false,
-        report,
-        error: `Failed to create presentation: ${e.message}`,
-      });
+    } catch {
+      jsonError(res, 500, 'presentation_create_failed', 'Failed to create presentation');
     }
 
     return true;

@@ -10,6 +10,7 @@ import { createRouteContext } from '../../../utils/context.js';
 import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';
 import {
   json,
+  jsonError,
   methodNotAllowed,
   noContent,
   notFound,
@@ -198,9 +199,8 @@ export async function handlePresentationVersionCompareAi(
 
   // Check if AI is available
   if (!isAiCompareAvailable()) {
-    return serveJson(res, 503, {
-      error: 'AI comparison not available',
-      reason: 'No LLM vendor configured',
+    return jsonError(res, 503, 'ai_unavailable', 'AI comparison not available', {
+      details: { reason: 'No LLM vendor configured' },
     });
   }
 
@@ -243,11 +243,8 @@ export async function handlePresentationVersionCompareAi(
       insights: result.insights,
       metadata: result.metadata,
     });
-  } catch (e) {
-    serveJson(res, 500, {
-      error: 'AI comparison failed',
-      message: e?.message || String(e),
-    });
+  } catch {
+    jsonError(res, 500, 'ai_compare_failed', 'AI comparison failed');
   }
 
   return true;

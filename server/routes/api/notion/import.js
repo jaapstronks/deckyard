@@ -30,8 +30,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;
@@ -61,11 +60,13 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
     });
 
     if (!deck || report.errors.length > 0) {
-      serveJson(res, 422, {
-        success: false,
-        report,
-        error: report.errors.join('; ') || 'Conversion failed',
-      });
+      jsonError(
+        res,
+        422,
+        'conversion_failed',
+        report.errors.join('; ') || 'Conversion failed',
+        { details: { report } }
+      );
       return true;
     }
 
@@ -126,8 +127,7 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;

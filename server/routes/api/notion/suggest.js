@@ -4,7 +4,7 @@
  * Feature-gated endpoint.
  */
 
-import { badRequest, serveJson } from '../../../utils/http.js';
+import { badRequest, jsonError, serveJson } from '../../../utils/http.js';
 import {
   getPlainTextFromPage,
   notionEnabled,
@@ -22,8 +22,7 @@ export async function handleNotionSuggest({ req, res, url }) {
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;

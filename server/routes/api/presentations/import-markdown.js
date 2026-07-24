@@ -8,6 +8,7 @@
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
 import {
   json,
+  jsonError,
   serveJson,
   serverError,
   badRequest,
@@ -45,9 +46,8 @@ export async function handlePresentationsImportMarkdown({
 
     if (!deck) {
       log.error('[import-markdown] Conversion failed:', report.errors);
-      serveJson(res, 422, {
-        error: 'Markdown conversion failed',
-        report,
+      jsonError(res, 422, 'conversion_failed', 'Markdown conversion failed', {
+        details: { report },
       });
       return true;
     }

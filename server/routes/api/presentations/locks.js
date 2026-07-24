@@ -1,4 +1,5 @@
 import {
+  forbidden,
   json,
   methodNotAllowed,
   notFound,
@@ -154,10 +155,7 @@ export async function handlePresentationLockRequestsList(
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
   if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
-    return serveJson(res, 403, {
-      ok: false,
-      error: 'Only the current lock holder can view requests',
-    });
+    return forbidden(res, 'Only the current lock holder can view requests');
   }
 
   const requests = await listPendingLockRequests(id, ctx);
@@ -179,10 +177,7 @@ export async function handlePresentationLockRequestAccept(
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
   if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
-    return serveJson(res, 403, {
-      ok: false,
-      error: 'Only the current lock holder can accept requests',
-    });
+    return forbidden(res, 'Only the current lock holder can accept requests');
   }
 
   // Verify request belongs to this presentation
@@ -213,10 +208,7 @@ export async function handlePresentationLockRequestReject(
   // Verify user is the current lock holder
   const lock = await getPresentationLock(id, ctx);
   if (!lock || lock.holderEmail !== authedUser?.email?.toLowerCase()) {
-    return serveJson(res, 403, {
-      ok: false,
-      error: 'Only the current lock holder can reject requests',
-    });
+    return forbidden(res, 'Only the current lock holder can reject requests');
   }
 
   // Verify request belongs to this presentation

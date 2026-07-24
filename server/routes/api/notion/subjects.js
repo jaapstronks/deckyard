@@ -4,7 +4,7 @@
  * These endpoints are feature-gated.
  */
 
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, json, jsonError, serveJson } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   getPlainTextFromPage,
@@ -26,8 +26,7 @@ export async function handleNotionSubjects({ req, res, url }) {
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;
@@ -96,8 +95,7 @@ export async function handleNotionCompose({ req, res, url }) {
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;

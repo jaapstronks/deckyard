@@ -129,7 +129,7 @@ export function openVersionCompareModal({
       }
     } catch (e) {
       const msg = e?.message || String(e);
-      if (msg.includes('503') || msg.includes('not available')) {
+      if (e?.code === 'ai_unavailable') {
         // AI not configured - hide the section entirely
         aiSection.style.display = 'none';
       } else {

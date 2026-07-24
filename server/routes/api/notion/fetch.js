@@ -24,8 +24,7 @@ export async function handleNotionFetch({ req, res, url }) {
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;
@@ -66,8 +65,7 @@ export async function handleNotionPublish({ req, res, url }) {
   }
 
   if (!notionEnabled()) {
-    serveJson(res, 501, {
-      error: 'Notion not configured',
+    jsonError(res, 501, 'notion_not_configured', 'Notion not configured', {
       details: 'Set NOTION_SECRET on the server to enable this feature.',
     });
     return true;
