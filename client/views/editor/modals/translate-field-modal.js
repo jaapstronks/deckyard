@@ -1,3 +1,6 @@
+import { t } from '../../../lib/ui-i18n.js';
+import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
+
 export async function openTranslateFieldModal({
   slideId,
   key,
@@ -17,7 +20,6 @@ export async function openTranslateFieldModal({
   rerenderPreview,
   requestSave,
 } = {}) {
-  const { t } = await import('../../../lib/ui-i18n.js');
   const sid = String(slideId || '').trim();
   const k = String(key || '').trim();
   if (!sid || !k) return;
@@ -68,7 +70,6 @@ export async function openTranslateFieldModal({
 
   let translated = '';
   try {
-    const { readPreferredLlmVendor } = await import('../../../lib/net/llm-vendor.js');
     const vendor = readPreferredLlmVendor?.() || null;
     const resp = await api?.(
       `/api/presentations/${id}/translate/fields`,

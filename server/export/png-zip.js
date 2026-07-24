@@ -1,14 +1,10 @@
+import JSZip from 'jszip';
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
   return Math.max(1, Math.min(3, s));
-}
-
-async function loadJsZip() {
-  const mod = await import('jszip');
-  return mod?.default || mod;
 }
 
 /**
@@ -34,7 +30,6 @@ export async function buildSlidesPngZipBuffer(
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
   const s = safeScale(scale);
 
-  const JSZip = await loadJsZip();
   const zip = new JSZip();
 
   for (let i = 0; i < slides.length; i += 1) {

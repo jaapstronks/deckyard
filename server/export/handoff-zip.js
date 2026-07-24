@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import { buildStandaloneHtml } from './html.js';
 import { buildPptxBuffer } from './pptx.js';
 import { buildNotesDocxBuffer, buildNotesMarkdown } from './notes.js';
@@ -8,11 +9,6 @@ import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 function safeScale(n) {
   const s = Number(n) || 2;
   return Math.max(1, Math.min(3, s));
-}
-
-async function loadJsZip() {
-  const mod = await import('jszip');
-  return mod?.default || mod;
 }
 
 function buildReadmeMd({
@@ -65,7 +61,6 @@ export async function buildHandoffZipBuffer(
     pngDir: 'png',
   };
 
-  const JSZip = await loadJsZip();
   const zip = new JSZip();
 
   // Build core artifacts
