@@ -1,15 +1,5 @@
 {
-  "client/lib/slide-library/picker.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "client/views/analytics/dashboard-chart.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "client/views/editor/data-source-modal.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -34,14 +24,9 @@
       "count": 1
     }
   },
-  "client/views/follow.js": {
-    "no-unused-vars": {
-      "count": 5
-    }
-  },
   "client/views/list/modals/new-presentation/handlers.js": {
     "no-unused-vars": {
-      "count": 3
+      "count": 2
     }
   },
   "client/views/presenter.js": {
@@ -109,11 +94,6 @@
       "count": 1
     }
   },
-  "client/views/shared/cookie-consent-banner.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "client/views/viewer/viewer-preview.js": {
     "no-unused-vars": {
       "count": 4
@@ -121,11 +101,6 @@
   },
   "scripts/i18n-keys.js": {
     "no-useless-escape": {
-      "count": 1
-    }
-  },
-  "server/db/migrations/021_terminology_standardization.js": {
-    "no-unused-vars": {
       "count": 1
     }
   },
@@ -164,26 +139,6 @@
       "count": 6
     }
   },
-  "server/render/pdf-to-images.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/email-templates.js": {
-    "no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/routes/api/export.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/leads.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/routes/api/media.js": {
     "no-unused-vars": {
       "count": 1
@@ -195,21 +150,6 @@
     }
   },
   "server/routes/api/presentations/popular.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/presentations/slide-locks.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/questions.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/stock-media.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -264,19 +204,9 @@
       "count": 1
     }
   },
-  "server/storage/present-sessions/control.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/storage/presentation-locks-db.js": {
     "no-unused-vars": {
       "count": 3
-    }
-  },
-  "server/storage/presentations/list.js": {
-    "no-unused-vars": {
-      "count": 2
     }
   },
   "server/storage/share-links/access-log.js": {
@@ -350,9 +280,6 @@
     }
   },
   "shared/markdown.js": {
-    "no-unused-vars": {
-      "count": 2
-    },
     "no-useless-escape": {
       "count": 2
     }
@@ -369,7 +296,7 @@
   },
   "shared/slide-types/types/cycle-slide.js": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "shared/slide-types/types/embed-slide.js": {
@@ -384,7 +311,7 @@
   },
   "shared/slide-types/types/funnel-slide.js": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "shared/slide-types/types/lead-capture-slide.js": {
@@ -394,7 +321,7 @@
   },
   "shared/slide-types/types/process-slide.js": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "shared/slide-types/types/pyramid-slide.js": {
@@ -413,11 +340,6 @@
     }
   },
   "tests/list-lazy-thumbnails.test.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "tests/versions-pruning.test.js": {
     "no-unused-vars": {
       "count": 1
     }
