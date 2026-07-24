@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { uploadsDir as uploadsBaseDir } from '../config/storage-paths.js';
 
 function uploadsDir(repoRoot) {
@@ -209,15 +210,6 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
 }
 
 async function optimizeRasterUpload(buf, mime) {
-  // Optional dependency: keep runtime working if it's not installed.
-  let sharp = null;
-  try {
-    const mod = await import('sharp');
-    sharp = mod?.default || mod;
-  } catch {
-    return buf;
-  }
-
   try {
     let img = sharp(buf);
     const meta = await img.metadata();
