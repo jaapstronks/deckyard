@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { dataDir } from '../config/storage-paths.js';
 import { renderSlideToPngBuffer } from './png.js';
 import { createLogger } from '../utils/logger.js';
@@ -33,19 +34,6 @@ const THUMB_WIDTH = 800;
 const MAX_CONCURRENT = 3;
 
 const cacheDir = (repoRoot) => path.join(dataDir(repoRoot), 'deck-thumbs');
-
-let sharpMod;
-/** Lazily import sharp; cache the result (or `null` when it's not installed). */
-async function loadSharp() {
-  if (sharpMod !== undefined) return sharpMod;
-  try {
-    const mod = await import('sharp');
-    sharpMod = mod?.default || mod;
-  } catch {
-    sharpMod = null;
-  }
-  return sharpMod;
-}
 
 /** Keep the id prefix filesystem-safe; the sha suffix carries uniqueness. */
 function sanitizeId(id) {
@@ -122,13 +110,6 @@ function releaseSlot() {
  * @returns {Promise<boolean>}
  */
 async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
-  const sharp = await loadSharp();
-  if (!sharp) {
-    // Without sharp we can't produce the deterministic WebP the route serves;
-    // treat thumbnails as unavailable rather than serving mismatched bytes.
-    return false;
-  }
-
   let pngBuffer;
   try {
     pngBuffer = await renderSlideToPngBuffer(repoRoot, slide, { scale: 1, theme, slideTypes });

@@ -6,6 +6,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 import { MediaProvider } from './interface.js';
 import { uploadsDir } from '../config/storage-paths.js';
 
@@ -178,15 +179,6 @@ export class LocalProvider extends MediaProvider {
   }
 
   async _optimizeImage(buffer, mime) {
-    // Optional dependency: skip if sharp isn't installed
-    let sharp = null;
-    try {
-      const mod = await import('sharp');
-      sharp = mod?.default || mod;
-    } catch {
-      return buffer;
-    }
-
     try {
       let img = sharp(buffer);
       const meta = await img.metadata();
