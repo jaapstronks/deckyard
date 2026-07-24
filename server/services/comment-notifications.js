@@ -10,6 +10,7 @@ import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
 import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
 import { parseMentions, stripMentionMarkup } from '../../shared/comment-mentions.js';
 import {
   createNotification,
@@ -485,24 +486,32 @@ async function sendCommentEmails({
     if (prefs?.emailByType?.[notificationType] === false) continue;
 
     const isOwner = recipientEmail === ownerEmail;
-    void sendCommentNotification({
-      recipientEmail,
-      comment: { ...comment, body: stripMentionMarkup(comment?.body) },
-      presentation,
-      commenter: { email: commenterEmail, name: actor?.name },
-      isReply: reason === 'reply',
-      isOwner,
-      isMention: reason === 'mention',
-      editUrl,
-      repoRoot,
-    }).then((result) => {
-      if (!result.ok) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim()
-        );
-      }
-    });
+    // Fire-and-forget: the response is already on its way, so a failed email
+    // must only ever produce a log line. The .then() below handles the
+    // expected { ok: false } path; fireAndForget backstops an actual rejection
+    // (e.g. Brevo throwing) so it can't become a process-killing unhandled
+    // rejection.
+    fireAndForget(
+      sendCommentNotification({
+        recipientEmail,
+        comment: { ...comment, body: stripMentionMarkup(comment?.body) },
+        presentation,
+        commenter: { email: commenterEmail, name: actor?.name },
+        isReply: reason === 'reply',
+        isOwner,
+        isMention: reason === 'mention',
+        editUrl,
+        repoRoot,
+      }).then((result) => {
+        if (!result.ok) {
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[brevo] email failed to=${recipientEmail} error=${result.error || ''}`.trim()
+          );
+        }
+      }),
+      `comment notification email to=${recipientEmail}`
+    );
   }
 }
 
