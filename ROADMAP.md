@@ -39,16 +39,16 @@ and the editing-surfaces track. How each works is documented under
 
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab merge
   guard: order-preserving merges, client refresh on focus/online so a tab never
-  grows stale, a merge audit log with pre-merge snapshots, and a decision on the
-  admin If-Match bypass.
+  grows stale, and a merge audit log with pre-merge snapshots.
 - **AI generation: content-based live status** — a parallel fast-model prompt
   gives content-specific progress lines within seconds, instead of a generic
   "processing" message.
 - **AI: recreate a slide from an image/PDF** — attach a screenshot/PDF in the AI
   add + refine flows; recognize the slide type + content and rebuild it as a
   native, editable slide.
-- **Interactive behaviors** — click/hover interactions on content blocks.
-- **Export pipeline DRY cleanup** — remaining phases.
+- **Interactive behaviors** — the remaining interactions on content blocks:
+  gallery links, click-to-reveal, hover states, follow-sync and analytics. Card
+  links, the shared link overlay, and the in-deck slide picker have shipped.
 - **Forker slide-type toolkit** — a scaffolder and validator for the file-JS
   custom-slide-type seam, plus a reusable building-block layer (eyebrow,
   highlight, badge, CTA) that core and custom types both compose.
@@ -60,5 +60,6 @@ and the editing-surfaces track. How each works is documented under
 ## Later — cloud / multi-tenant track
 
 - **Custom domains**
-- **SSO** — Google OAuth + SAML
+- **SSO, part 2** — SAML, plus per-organization identity providers for hosted
+  instances. Self-hosted single-IdP SSO over OIDC has shipped.
 - **Multi-tenancy** — white-label hosting; depends on the two above
