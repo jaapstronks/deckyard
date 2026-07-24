@@ -66,6 +66,9 @@ export async function renderShareViewer(root, token) {
         message: data.message || null,
         presentationTitle: data.presentationTitle || null,
       };
+      // renderError branches on this arg as a machine code (map lookup +
+      // the `=== 'revoked'` blockquote gate), so pass the code, not the
+      // human message. The custom revocation text rides along in errorData.
       renderError(h, shell, data.error, errorData);
       return cleanup;
     }

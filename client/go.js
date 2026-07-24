@@ -62,7 +62,9 @@ form?.addEventListener('submit', async (e) => {
       window.location.href = data.followUrl;
       return;
     }
-    setError((data && data.error) || strings.codeNotFound);
+    // Tolerate both the canonical error envelope (message + machine code) and
+    // legacy prose-in-error bodies: prefer the human message, fall back to error.
+    setError((data && (data.message || data.error)) || strings.codeNotFound);
   } catch {
     setError(strings.networkError);
   } finally {
