@@ -14,6 +14,9 @@
   },
   "scripts": {
     "test": "node --test 'tests/**/*.test.js'",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:deadcode": "eslint . --config eslint.deadcode.config.js",
     "audit": "node scripts/audit-codebase.js",
     "db:migrate": "node server/db/migrate.js up",
     "db:migrate:down": "node server/db/migrate.js down",
@@ -59,6 +62,10 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.112.3"
+    "@anthropic-ai/sdk": "^0.112.3",
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "globals": "^17.7.0"
   }
 }

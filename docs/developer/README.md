@@ -7,6 +7,7 @@ This section is for developers working on the codebase.
 - **Dev setup**: `docs/developer/dev-setup.md`
 - **Architecture overview**: `docs/developer/architecture.md`
 - **Contributing guide**: `docs/developer/contributing.md`
+- **Linting**: `docs/developer/linting.md` - the CI gate, the suppressions burndown, and the dead-code discovery pass
 
 ### API Development
 

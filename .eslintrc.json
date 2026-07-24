@@ -1,0 +1,14 @@
+{
+  "ignorePatterns": [
+    "node_modules/",
+    "server/data/",
+    "server/uploads/",
+    "client/vendor/",
+    "assets/",
+    "themes/",
+    "custom/",
+    "docs/",
+    "skills/",
+    ".claude/"
+  ]
+}

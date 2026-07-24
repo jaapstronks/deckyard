@@ -1,3 +1,4 @@
+/* global document */ // page.evaluate() callbacks below run in the browser context.
 import { renderSlideHtml } from '../utils/render-slide.js';
 import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
