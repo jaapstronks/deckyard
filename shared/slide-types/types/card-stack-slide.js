@@ -38,17 +38,120 @@ function themeCardStackPalette(theme) {
   return ['#5b21b6', '#7c3aed', '#a78bfa', '#c4b5fd'];
 }
 
+/** Max cards a stack holds. Mirrors the schema's maxItems + the cardCount enum. */
+const MAX_CARDS = 6;
+
+/** True when an items[] entry carries nothing worth rendering. */
+function isBlankItem(item) {
+  if (!item || typeof item !== 'object') return true;
+  return !['title', 'body'].some((k) => String(item[k] || '').trim());
+}
+
+/**
+ * Length of items[] up to and including its last non-blank entry. Mirrors
+ * icon-card-grid: imported / API-authored decks sometimes pad items[] with
+ * trailing blanks; trimming (rather than filtering) keeps the surviving indices
+ * aligned with the `items.N.field` inline-edit paths.
+ */
+function filledItemCount(items) {
+  let last = -1;
+  for (let i = 0; i < items.length; i += 1) {
+    if (!isBlankItem(items[i])) last = i;
+  }
+  return last + 1;
+}
+
+/**
+ * Resolve cards from content — supports both the canonical items[] array and
+ * the legacy numbered fields (card1Title / card1Label / card1Body). items[]
+ * takes precedence when present. Card titles fold the deprecated cardNLabel
+ * mirror via getCardTitle.
+ * @param {object} content
+ * @param {number} count
+ * @returns {Array<{title:string, body:string}>}
+ */
+function resolveCards(content, count) {
+  const cards = [];
+
+  // Canonical format: items[] array.
+  if (Array.isArray(content?.items) && content.items.length > 0) {
+    for (let i = 0; i < count; i += 1) {
+      const item = content.items[i] || {};
+      cards.push({
+        title: String(item.title || '').trim(),
+        body: String(item.body || '').trim(),
+      });
+    }
+    return cards;
+  }
+
+  // Legacy format: card1Title / card1Label / card1Body.
+  for (let i = 1; i <= count; i += 1) {
+    cards.push({
+      title: getCardTitle(content, i),
+      body: String(content?.[`card${i}Body`] || '').trim(),
+    });
+  }
+  return cards;
+}
+
+/**
+ * Resolve the rendered card view once, shared by renderHtml and the print
+ * export so both read the same source. items[] is the source of truth when
+ * present: cardCount is a stale legacy mirror there (inline add/remove only
+ * mutates the array), so counting it would keep rendering an empty slot after a
+ * card removal.
+ * @param {object} content
+ * @returns {{ useItems: boolean, count: number, cards: Array<{title:string, body:string}> }}
+ */
+export function resolveCardStack(content) {
+  const useItems = Array.isArray(content?.items) && content.items.length > 0;
+  const count = useItems
+    ? Math.max(1, Math.min(MAX_CARDS, filledItemCount(content.items)))
+    : Math.max(1, Math.min(MAX_CARDS, Number(content?.cardCount || 4) || 4));
+  return { useItems, count, cards: resolveCards(content, count) };
+}
+
+/**
+ * Canonical items[] for a card-stack slide, bounded by cardCount and trimmed of
+ * trailing blanks. Used by the schema-version migration (v2 -> v3) to fold
+ * legacy numbered decks into the array shape once, so the semantic projection
+ * and everything else read one shape. Returns [] when there is nothing to fold.
+ * @param {object} content
+ * @returns {Array<{title:string, body:string}>}
+ */
+export function resolveCardStackItems(content) {
+  if (!content || typeof content !== 'object') return [];
+  const count = Math.max(1, Math.min(MAX_CARDS, Number(content.cardCount || 4) || 4));
+  const resolved = resolveCards(content, count);
+  return resolved.slice(0, filledItemCount(resolved));
+}
+
+/**
+ * Materialize items[] from the legacy numbered fields so the inline editor's
+ * card affordances (add / remove / reorder) have a stable, mutable array to
+ * write to. Mirrors ensureIconCards (icon-card-grid): the read side
+ * (resolveCards) folds the two sources into one view; this mutating helper
+ * commits that view to items[]. Idempotent, and never called from renderHtml
+ * (which stays pure) — the inline editor runs it via the descriptor's `ensure`
+ * knob. The legacy numbered fields are read, not deleted, so they survive as a
+ * mirror (renderHtml already prefers items[]).
+ * @param {object} content
+ * @returns {object} the same content object
+ */
+export function ensureCardStack(content) {
+  if (!content || typeof content !== 'object') return content;
+  if (Array.isArray(content.items) && content.items.length > 0) {
+    if (content.items.length > MAX_CARDS) content.items.length = MAX_CARDS;
+    return content;
+  }
+  content.items = resolveCardStackItems(content);
+  return content;
+}
+
 export default {
   deprecated: true, // Hidden from editor + AI. Kept for rendering existing slides. Migrate to icon-card-grid-slide.
   label: 'Card stack',
-  // Reader/reflow projection: treat the flat card1Title / card1Label / card1Body
-  // … slots as one bounded, per-slot-grouped collection, so existing decks
-  // project cleanly (title + body stay one unit; slots beyond cardCount don't
-  // leak). See semantic-projection.js#projectRepeatingGroup. Card order is
-  // incidental → unordered list.
-  repeatingGroups: [
-    { countKey: 'cardCount', prefix: 'card', slotFields: ['Title', 'Label', 'Body'], ordered: false },
-  ],
   fields: [
     {
       key: 'title',
@@ -71,127 +174,68 @@ export default {
       required: false,
       options: ['1', '2', '3', '4', '5', '6'],
     },
+
+    // Canonical items[] format. Card order is incidental → unordered list in the
+    // reader projection (ordered: false). This replaces the former
+    // `repeatingGroups` projection bridge: a real items[] field projects
+    // natively (one grouped block per card), so the bridge declaration is gone.
     {
-      key: 'card1Title',
-      label: 'Card 1 title',
-      type: 'string',
+      key: 'items',
+      label: 'Cards',
+      type: 'items',
       required: false,
-      maxLength: 40,
+      minItems: 1,
+      maxItems: 6,
+      ordered: false,
+      itemDefaults: { title: 'Card', body: '- First point\n- Second point' },
+      itemFields: [
+        { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 40 },
+        { key: 'body', label: 'Body', type: 'markdown', required: false, maxLength: 900 },
+      ],
     },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'card1Label',
-      label: 'Card 1 label',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-      hidden: true,
-    },
-    {
-      key: 'card1Body',
-      label: 'Card 1 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
-    {
-      key: 'card2Title',
-      label: 'Card 2 title',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-    },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'card2Label',
-      label: 'Card 2 label',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-      hidden: true,
-    },
-    {
-      key: 'card2Body',
-      label: 'Card 2 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
-    {
-      key: 'card3Title',
-      label: 'Card 3 title',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-    },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'card3Label',
-      label: 'Card 3 label',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-      hidden: true,
-    },
-    {
-      key: 'card3Body',
-      label: 'Card 3 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
-    {
-      key: 'card4Title',
-      label: 'Card 4 title',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-    },
-    // DEPRECATED: Remove after April 2026
-    {
-      key: 'card4Label',
-      label: 'Card 4 label',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-      hidden: true,
-    },
-    {
-      key: 'card4Body',
-      label: 'Card 4 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
-    {
-      key: 'card5Title',
-      label: 'Card 5 title',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-    },
-    {
-      key: 'card5Body',
-      label: 'Card 5 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
-    {
-      key: 'card6Title',
-      label: 'Card 6 title',
-      type: 'string',
-      required: false,
-      maxLength: 40,
-    },
-    {
-      key: 'card6Body',
-      label: 'Card 6 body (Markdown)',
-      type: 'markdown',
-      required: false,
-      maxLength: 900,
-    },
+
+    // LEGACY: numbered card fields (card1Title / card1Label / card1Body, etc.).
+    // Hidden so they never double-project beside items[] in the semantic
+    // projection; the editor still reads/writes them as a mirror and old decks
+    // keep loading. Removed in a later deprecation-window cleanup.
+    ...Array.from({ length: MAX_CARDS }, (_, idx) => {
+      const i = idx + 1;
+      return [
+        {
+          key: `card${i}Title`,
+          label: `Card ${i} title`,
+          type: 'string',
+          required: false,
+          maxLength: 40,
+          hidden: true,
+        },
+        // DEPRECATED: Remove after April 2026
+        {
+          key: `card${i}Label`,
+          label: `Card ${i} label`,
+          type: 'string',
+          required: false,
+          maxLength: 40,
+          hidden: true,
+        },
+        {
+          key: `card${i}Body`,
+          label: `Card ${i} body (Markdown)`,
+          type: 'markdown',
+          required: false,
+          maxLength: 900,
+          hidden: true,
+        },
+      ];
+    }).flat(),
   ],
+  // Numbered defaults (NOT items[]): a deck import / validation merges the
+  // type defaults onto provided content, so seeding items[] here would inject
+  // default cards over an imported numbered deck and mask its content. The
+  // canonical items[] is produced by the schema-version fold (legacy decks) or
+  // by the editor's ensureCardStack on mount — the same contract as
+  // icon-card-grid. New card-stack slides only arise via conversion, which
+  // writes items[] explicitly.
   defaults: {
     title: "What we're building",
     subheading: 'Four key focus areas',
@@ -210,7 +254,9 @@ export default {
       ctx?.theme && typeof ctx.theme === 'object'
         ? ctx.theme
         : null;
-    const count = Math.max(1, Math.min(6, Number(content?.cardCount || 4) || 4));
+
+    const { useItems, count, cards: resolved } = resolveCardStack(content);
+
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
 
     const palette = themeCardStackPalette(theme);
@@ -219,18 +265,24 @@ export default {
 
     const cards = [];
     for (let i = 1; i <= count; i += 1) {
-      const title = getCardTitle(content, i);
-      const bodyRaw = String(content?.[`card${i}Body`] || '').trim();
+      const card = resolved[i - 1] || {};
+      const title = card.title || '';
+      const bodyRaw = card.body || '';
+      const titlePath = useItems ? `items.${i - 1}.title` : `card${i}Title`;
+      const bodyPath = useItems ? `items.${i - 1}.body` : `card${i}Body`;
+      const itemAttrs = useItems
+        ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
+        : '';
       const bg = palette[(i - 1) % palette.length] || '#7c3aed';
       const fg = pickTextColorForBg(bg, { light: lightText, dark: darkText });
       cards.push(`
           <div class="card-stack-row" data-morph-role="card-${i - 1}" role="group" aria-label="${esc(
             title || `Card ${i}`
-          )}">
-            <div class="card-stack-label" data-inline-field="card${i}Title" dir="auto" style="--cs-label-bg:${esc(bg)}; --cs-label-fg:${esc(fg)}">
+          )}"${itemAttrs}>
+            <div class="card-stack-label" data-inline-field="${titlePath}" dir="auto" style="--cs-label-bg:${esc(bg)}; --cs-label-fg:${esc(fg)}">
               ${esc(title || `Card ${i}`)}
             </div>
-            <div class="card-stack-body" data-inline-field="card${i}Body">
+            <div class="card-stack-body" data-inline-field="${bodyPath}">
               ${markdownToSafeHtml(bodyRaw)}
             </div>
           </div>

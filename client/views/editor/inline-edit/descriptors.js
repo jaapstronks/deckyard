@@ -149,6 +149,7 @@ import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-gr
 import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
 import { ensureIconCards } from '../../../../shared/slide-types/types/icon-card-grid-slide.js';
+import { ensureCardStack } from '../../../../shared/slide-types/types/card-stack-slide.js';
 import {
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
@@ -595,7 +596,12 @@ export const INLINE_DESCRIPTORS = {
   },
   'card-stack-slide': {
     ghosts: HEADER_GHOSTS,
-    // Card count is an enum driving the numbered fields; stays in the form.
+    // Dual-model (items[] or legacy cardCount + numbered card{n}*): canonicalize
+    // to items[] on mount so the renderer emits items.N.* inline paths and
+    // on-canvas title/body edits land on the array the form and projection read.
+    ensure: ensureCardStack,
+    // Card add/remove/reorder stays in the side form (deprecated type, no canvas
+    // card chrome); the header text edits inline.
     formText: ['title', 'subheading'],
   },
   'team-cards-slide': {

@@ -124,8 +124,10 @@ const iconCardGridSlideSchema = z.object({
 const cardStackSlideSchema = z.object({
   title: requiredTitleSchema,
   subheading: subheadingSchema,
-  cardCount: z.enum(['1', '2', '3', '4']),
-  // Dynamic card fields validated separately
+  // Optional: items[] is the canonical card source (post-migration); cardCount
+  // is a legacy mirror. Widened to 1-6 to match the schema/enum.
+  cardCount: z.enum(['1', '2', '3', '4', '5', '6']).optional(),
+  // Dynamic card fields (items[] or numbered) validated separately.
 }).passthrough();
 
 // Text Blocks Slide
