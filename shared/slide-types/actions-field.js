@@ -49,9 +49,9 @@ function normalizeActionUrl(raw) {
 
 function getActionStyleClass(style) {
   const s = String(style || 'primary').trim();
-  if (s === 'secondary') return 'slide-action-secondary';
-  if (s === 'outline') return 'slide-action-outline';
-  return 'slide-action-primary';
+  if (s === 'secondary') return 'slide-action--secondary';
+  if (s === 'outline') return 'slide-action--outline';
+  return 'slide-action--primary';
 }
 
 /**
