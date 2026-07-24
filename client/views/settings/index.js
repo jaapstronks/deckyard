@@ -105,62 +105,42 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // Create tabs
   const tabs = {};
   const tabLoaders = {};
+  const tabDestroyers = [];
 
-  // Account tab (always visible)
-  const accountTab = createAccountTab({ user });
-  tabs.account = accountTab.el;
-  tabLoaders.account = accountTab.load;
+  /**
+   * Register a tab. Going through one seam means a tab that owns a timer or a
+   * stream (the export tab polls a job every 2s and holds a notification
+   * EventSource) can hand back a `destroy` and be sure it runs on unmount —
+   * these used to run for the lifetime of the browser tab.
+   * @param {string} key - Tab key (matches the URL hash)
+   * @param {{el: HTMLElement, load?: Function, destroy?: Function}} tab
+   */
+  const addTab = (key, tab) => {
+    tabs[key] = tab.el;
+    if (tab.load) tabLoaders[key] = tab.load;
+    if (tab.destroy) tabDestroyers.push(tab.destroy);
+  };
 
-  // Preferences tab (always visible)
-  const preferencesTab = createPreferencesTab({ user, nav });
-  tabs.preferences = preferencesTab.el;
-  tabLoaders.preferences = preferencesTab.load;
-
-  // Export tab (always visible)
-  const exportTab = createExportTab({ user });
-  tabs.export = exportTab.el;
-  tabLoaders.export = exportTab.load;
+  // Always visible
+  addTab('account', createAccountTab({ user }));
+  addTab('preferences', createPreferencesTab({ user, nav }));
+  addTab('export', createExportTab({ user }));
 
   // Designer tabs
   if (isDesigner) {
-    const fontsTab = createFontsTab({ user });
-    tabs.fonts = fontsTab.el;
-    tabLoaders.fonts = fontsTab.load;
-
-    const themesTab = createThemesTab({ user });
-    tabs.themes = themesTab.el;
-    tabLoaders.themes = themesTab.load;
-
-    const slideTypesTab = createSlideTypesTab({ user });
-    tabs['slide-types'] = slideTypesTab.el;
-    tabLoaders['slide-types'] = slideTypesTab.load;
+    addTab('fonts', createFontsTab({ user }));
+    addTab('themes', createThemesTab({ user }));
+    addTab('slide-types', createSlideTypesTab({ user }));
   }
 
   // Admin tabs
   if (isAdmin) {
-    const adminTab = createAdminTab({ user });
-    tabs.admin = adminTab.el;
-    tabLoaders.admin = adminTab.load;
-
-    const usersTab = createUsersTab({ user });
-    tabs.users = usersTab.el;
-    tabLoaders.users = usersTab.load;
-
-    const apiKeysTab = createApiKeysTab({ user });
-    tabs['api-keys'] = apiKeysTab.el;
-    tabLoaders['api-keys'] = apiKeysTab.load;
-
-    const emailTab = createEmailTab({ user });
-    tabs.email = emailTab.el;
-    tabLoaders.email = emailTab.load;
-
-    const integrationsTab = createIntegrationsTab({ user });
-    tabs.integrations = integrationsTab.el;
-    tabLoaders.integrations = integrationsTab.load;
-
-    const analyticsTab = createAnalyticsTab({ user });
-    tabs.analytics = analyticsTab.el;
-    tabLoaders.analytics = analyticsTab.load;
+    addTab('admin', createAdminTab({ user }));
+    addTab('users', createUsersTab({ user }));
+    addTab('api-keys', createApiKeysTab({ user }));
+    addTab('email', createEmailTab({ user }));
+    addTab('integrations', createIntegrationsTab({ user }));
+    addTab('analytics', createAnalyticsTab({ user }));
   }
 
   // Current active tab
@@ -230,5 +210,12 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // Cleanup
   return () => {
     window.removeEventListener('hashchange', handleHashChange);
+    for (const destroy of tabDestroyers) {
+      try {
+        destroy();
+      } catch {
+        // a failing tab teardown must not block the rest
+      }
+    }
   };
 }

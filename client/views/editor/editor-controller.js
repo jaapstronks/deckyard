@@ -1276,10 +1276,12 @@ export async function createEditorController({
           rerenderPreview();
           refreshModalPreview();
         },
-      }),
+        // contentOnly skips the header actions dropdown, so this instance owns
+        // no document listeners and needs no detach.
+      }).rerender,
   });
 
-  rerenderEditor = createRerenderEditor({
+  const editorForm = createRerenderEditor({
     ...editorFormDeps,
     onOpenBulkEdit: () => bulkEditModal.open(),
     getSelectedElement: () => selectedElement,
@@ -1288,6 +1290,10 @@ export async function createEditorController({
     // gets this; the bulk modal keeps its inline grid.
     onEditChartData: () => openChartData(),
   });
+  rerenderEditor = editorForm.rerender;
+  // The inspector header's actions dropdown holds document-level listeners;
+  // rerender swaps them, unmount has to drop the last pair.
+  cleanup.register('editorForm', editorForm.detach);
 
   // Set (or clear) the selection-aware inspector's current element and rebuild
   // the inspector. Kept non-intrusive: it does not open a dismissed rail (the

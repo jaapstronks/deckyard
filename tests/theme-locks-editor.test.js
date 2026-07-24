@@ -74,7 +74,7 @@ function renderForm({ theme = null } = {}) {
     fieldRenderers: createFieldRenderers(deps),
     openOverlayClosers: new Set(),
     theme,
-  })();
+  }).rerender();
   return editorMount;
 }
 

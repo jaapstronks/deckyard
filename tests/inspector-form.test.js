@@ -82,7 +82,7 @@ function renderForm({
     openOverlayClosers: new Set(),
     contentOnly,
     getSelectedElement: () => selectedElement,
-  });
+  }).rerender;
   rerender();
   return editorMount;
 }

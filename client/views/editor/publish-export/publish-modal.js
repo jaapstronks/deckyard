@@ -36,10 +36,14 @@ export function openPublishModal({
 
   const unlockScroll = lockDocumentScroll();
   let closed = false;
+  const onDocKeyDown = (e) => {
+    if (e.key === 'Escape') close();
+  };
   const close = () => {
     if (closed) return;
     closed = true;
     unlockScroll();
+    document.removeEventListener('keydown', onDocKeyDown);
     openOverlayClosers?.delete?.(close);
     backdrop.remove();
   };
@@ -437,13 +441,11 @@ export function openPublishModal({
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) close();
   });
-  document.addEventListener(
-    'keydown',
-    (e) => {
-      if (e.key === 'Escape') close();
-    },
-    { once: true }
-  );
+  // Bound for the modal's lifetime and removed in close(). It used to be a
+  // `{ once: true }` listener, which any keystroke consumed — so Escape stopped
+  // closing the modal as soon as the user typed in the slug field, and the
+  // handler lingered on document until some unrelated key press disarmed it.
+  document.addEventListener('keydown', onDocKeyDown);
   root.append(backdrop);
 
   // Convenience: copy the public URL on open, but never block the UI if it fails.
