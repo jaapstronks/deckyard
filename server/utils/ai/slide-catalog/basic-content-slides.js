@@ -4,7 +4,7 @@
  * Simple text and list-based slides:
  * - content-slide: Default text/bullet slide
  * - list-slide: Fancy list with title+description items
- * - content-columns-slide: Flexible multi-column layout
+ * (content-columns-slide is deprecated — see the note where its entry used to be.)
  */
 
 export const BASIC_CONTENT_SLIDES = {
@@ -99,33 +99,10 @@ export const BASIC_CONTENT_SLIDES = {
     },
   },
 
-  'content-columns-slide': {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
-      Flexible multi-column layout with 1-7 columns.
-      Each column can have: title, text, image, and/or text blocks.
-      Use when other specialized types don't fit.
-
-      STRUCTURE:
-      - columnCount: How many columns ("1" to "7")
-      - For each column: col{N}Title, col{N}Text (N = 1 to columnCount)
-    `,
-    bestFor: [
-      'Side-by-side content that doesn\'t fit comparison-slide',
-      '3+ parallel categories with different content types',
-      'Custom layouts not covered by other slides',
-    ],
-    notFor: [
-      'Simple A vs B (use comparison-slide)',
-      '2x2 grids (use matrix-slide)',
-      '4-6 items with icons (use icon-card-grid)',
-    ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      columnCount: { type: 'enum', options: ['1', '2', '3', '4', '5', '6', '7'], required: true },
-      // Dynamic fields: col{N}Title, col{N}Text for N = 1 to columnCount
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
-  },
+  // content-columns-slide: DEPRECATED — removed from AI generation.
+  // Existing slides still render via shared/slide-types/types/content-columns-slide.js
+  // (and the image-text→content-columns convert seam still works). The type is
+  // `deprecated: true` / not insertable, so the AI must not author new ones.
+  // Use list-slide or content-slide for plain enumerations, comparison-slide for
+  // A vs B, matrix-slide for grids, or icon-card-grid-slide for iconned items.
 };

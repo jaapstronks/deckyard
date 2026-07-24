@@ -43,7 +43,6 @@ export const VISUAL_CONTENT_SLIDES = {
       'Content without a meaningful image to pair',
       'Heavy text content (use content-slide or split into multiple)',
       'Long bodies on the "wide" or "corner" layouts (little text room)',
-      'Per-image text blocks (use content-columns-slide)',
       'Many images without text (use gallery-slide)',
     ],
     schema: {
