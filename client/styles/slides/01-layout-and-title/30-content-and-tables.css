@@ -228,35 +228,35 @@
 }
 
 /* Primary style - inverted "chip": theme text colour as fill (see .text-block.is-black) */
-.slide-action-primary {
+.slide-action--primary {
   background: var(--t-color-text, #0b0b0b);
   color: var(--t-color-background, #fff);
   border: 2px solid var(--t-color-text, #0b0b0b);
 }
 
-.slide-action-primary:hover {
+.slide-action--primary:hover {
   filter: brightness(1.15);
   box-shadow: var(--slide-shadow-md);
 }
 
-.slide-action-primary:active {
+.slide-action--primary:active {
   filter: brightness(0.9);
   box-shadow: var(--slide-shadow-sm);
 }
 
 /* Secondary style - accent color background */
-.slide-action-secondary {
+.slide-action--secondary {
   background: var(--color-accent, #7c3aed);
   color: var(--t-color-accent-contrast, #fff);
   border: 2px solid var(--color-accent, #7c3aed);
 }
 
-.slide-action-secondary:hover {
+.slide-action--secondary:hover {
   filter: brightness(1.1);
   box-shadow: var(--slide-shadow-md);
 }
 
-.slide-action-secondary:active {
+.slide-action--secondary:active {
   filter: brightness(0.95);
   box-shadow: var(--slide-shadow-sm);
 }
@@ -264,19 +264,19 @@
 /* Outline style - transparent with visible border.
    Uses --color-text so the resting state stays readable on dark slide
    backgrounds (identical to #0b0b0b on the default light slides). */
-.slide-action-outline {
+.slide-action--outline {
   background: transparent;
   color: var(--color-text, #0b0b0b);
   border: 2px solid var(--color-text, #0b0b0b);
 }
 
-.slide-action-outline:hover {
+.slide-action--outline:hover {
   background: var(--color-text, #0b0b0b);
   color: var(--slide-bg, var(--color-background, #fff));
   box-shadow: var(--slide-shadow-md);
 }
 
-.slide-action-outline:active {
+.slide-action--outline:active {
   background: var(--color-text, #0b0b0b);
   color: var(--slide-bg, var(--color-background, #fff));
   filter: brightness(1.1);

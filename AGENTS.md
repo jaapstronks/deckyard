@@ -138,6 +138,9 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - `renderHtml()` must return a single root `.slide` element with a `.slide-inner` child.
   - Use `esc()` for string fields; use `markdownToSafeHtml()` for markdown fields.
   - Prefer semantic class naming: `slide-<name>` and predictable child classes.
+    Modifiers use the BEM double-dash: `.slide-card--accent`, `.slide-action--primary`
+    (not flat `.slide-action-primary`). The block/element stays single-dash
+    (`.slide-action`), variants get `--`.
   - Keep `renderHtml()` **pure**: no DOM reads/writes, no network, no timers.
 
 ### 2) Register the type
