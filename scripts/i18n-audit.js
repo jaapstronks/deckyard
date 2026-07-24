@@ -14,12 +14,14 @@
  *
  * Both are graded against `scripts/i18n-audit-allowlist.json`, a burndown file
  * in the same spirit as `eslint-suppressions.json`: known-accepted entries are
- * listed there with a reason, and the gate fails on anything *new*.
+ * listed there with a reason, and the gate fails on anything *new*. The orphan
+ * side of that list is empty — the 268-key backlog was pruned to zero — so any
+ * new orphan is a real leftover, not a number to grow.
  *
  * Usage:
  *   node scripts/i18n-audit.js              # human report, non-zero exit on new findings
  *   node scripts/i18n-audit.js --json       # machine-readable
- *   node scripts/i18n-audit.js --orphans    # orphan detail (not gated)
+ *   node scripts/i18n-audit.js --orphans    # list every orphan, not just the count
  */
 
 import fs from 'node:fs/promises';
@@ -195,7 +197,7 @@ export async function findOrphanKeys(locale) {
     .sort();
 }
 
-/** @returns {Promise<{hardcoded: Record<string, string>, note?: string}>} */
+/** @returns {Promise<{hardcoded: Record<string, string>, orphans?: Record<string, string>}>} */
 async function readAllowlist() {
   try {
     return JSON.parse(await fs.readFile(ALLOWLIST_PATH, 'utf8'));
@@ -216,13 +218,16 @@ async function main() {
 
   const allow = await readAllowlist();
   const allowed = allow.hardcoded || {};
+  const allowedOrphans = allow.orphans || {};
   const hits = await findHardcodedCopy(clientDir);
   const unexpected = hits.filter((h) => !(hardcodedId(h) in allowed));
   const orphans = await findOrphanKeys('en');
+  const newOrphans = orphans.filter((k) => !(k in allowedOrphans));
+  const failed = unexpected.length || newOrphans.length;
 
   if (asJson) {
-    console.log(JSON.stringify({ hardcoded: hits, unexpected, orphans }, null, 2));
-    return unexpected.length ? 1 : 0;
+    console.log(JSON.stringify({ hardcoded: hits, unexpected, orphans, newOrphans }, null, 2));
+    return failed ? 1 : 0;
   }
 
   console.log(`i18n audit — ${hits.length} hardcoded literal(s), ${Object.keys(allowed).length} allowlisted`);
@@ -240,10 +245,19 @@ async function main() {
   }
 
   console.log(`\nOrphan keys in en/: ${orphans.length}`);
-  if (showOrphans) for (const k of orphans) console.log(`  ${k}`);
-  else if (orphans.length) console.log('  (run with --orphans to list them; not gated)');
+  if (newOrphans.length) {
+    console.log(`\n✗ ${newOrphans.length} orphan key(s) — present in en/, referenced nowhere:\n`);
+    for (const k of newOrphans) console.log(`  ${k}`);
+    console.log(
+      '\nDelete each from all 12 locales under client/i18n/ — or, if the key must\n' +
+        `survive without a visible call site, add it to ${path.relative(repoRoot, ALLOWLIST_PATH)}\n` +
+        'under "orphans" with a reason.'
+    );
+  } else if (showOrphans) {
+    for (const k of orphans) console.log(`  ${k}`);
+  }
 
-  return unexpected.length ? 1 : 0;
+  return failed ? 1 : 0;
 }
 
 // pathToFileURL, not a template literal: the repo path may contain spaces,
