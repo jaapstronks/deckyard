@@ -7,7 +7,7 @@ import {
 import { updatePresentation } from '../../storage/presentations.js';
 import { readUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
-import { serveJson, json } from '../../utils/http.js';
+import { serveJson, json, forbidden, serverError, badRequest, payloadTooLarge } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
@@ -30,7 +30,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
     // deck and could otherwise publish arbitrary content onto the public
     // domain. Mirrors canChangePresentationScope() returning false in sandbox.
     if (sandboxEnabled()) {
-      serveJson(res, 403, { error: 'Publishing is disabled in sandbox mode' });
+      forbidden(res, 'Publishing is disabled in sandbox mode');
       return true;
     }
 
@@ -168,7 +168,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
 
     const publishId = String(pres?.published?.id || '').trim();
     if (!publishId) {
-      serveJson(res, 400, { error: 'Not published' });
+      badRequest(res, 'Not published');
       return true;
     }
 
@@ -177,7 +177,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       body = (await json(req)) || {};
     } catch (err) {
       if (err?.statusCode === 413) {
-        serveJson(res, 413, { error: 'Request body too large' });
+        payloadTooLarge(res);
         return true;
       }
       body = {};
@@ -217,12 +217,12 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
 
     const publishId = String(pres?.published?.id || '').trim();
     if (!publishId) {
-      serveJson(res, 400, { error: 'Not published' });
+      badRequest(res, 'Not published');
       return true;
     }
 
     if (!isMediaProviderInitialized()) {
-      serveJson(res, 500, { error: 'Media provider not available' });
+      serverError(res, 'Media provider not available');
       return true;
     }
 
@@ -232,7 +232,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       : null;
 
     if (!firstSlide) {
-      serveJson(res, 400, { error: 'No slides to preview' });
+      badRequest(res, 'No slides to preview');
       return true;
     }
 
@@ -290,7 +290,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
     } catch (err) {
       // eslint-disable-next-line no-console
       log.error('[publish] Preview regeneration failed:', err);
-      serveJson(res, 500, { error: 'Preview generation failed' });
+      serverError(res, 'Preview generation failed');
     }
     return true;
   }
