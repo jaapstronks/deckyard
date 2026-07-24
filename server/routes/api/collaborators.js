@@ -22,7 +22,7 @@ import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz.js';
 import { createRouteContext } from '../../utils/context.js';
-import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, parseJsonBody } from '../../utils/http.js';
+import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, parseJsonBody, jsonError, serverError } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { createNotification } from '../../storage/notifications.js';
 import { broadcastToUser, NotificationEventTypes } from '../../services/notification-events.js';
@@ -62,7 +62,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { presentations: presentationsWithSlides });
     } catch (err) {
       log.error('[collaborators] Failed to list shared presentations:', err);
-      return serveJson(res, 500, { error: 'Failed to load shared presentations' });
+      return serverError(res, 'Failed to load shared presentations');
     }
     return true;
   }
@@ -122,7 +122,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       users = await listUsers(ctx);
     } catch (err) {
       log.error('[collaborators] Failed to list users:', err);
-      return serveJson(res, 500, { error: 'Failed to load users' });
+      return serverError(res, 'Failed to load users');
     }
     const userMap = new Map(users.map((u) => [u.email?.toLowerCase(), u]));
 
@@ -265,7 +265,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       const singleResult = results[0];
       if (!singleResult.ok) {
         if (singleResult.reason === 'already_exists') {
-          return serveJson(res, 409, { error: 'already_exists' });
+          return jsonError(res, 409, 'already_exists');
         }
         if (singleResult.reason === 'user_not_found') {
           return badRequest(res, 'User not found in organization');
@@ -321,7 +321,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { collaborators: enrichedCollaborators });
     } catch (err) {
       log.error('[collaborators] Failed to list collaborators:', err);
-      return serveJson(res, 500, { error: 'Failed to load collaborators' });
+      return serverError(res, 'Failed to load collaborators');
     }
     return true;
   }
@@ -361,7 +361,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { ok: true });
     } catch (err) {
       log.error('[collaborators] Failed to remove collaborator:', err);
-      return serveJson(res, 500, { error: 'Failed to remove collaborator' });
+      return serverError(res, 'Failed to remove collaborator');
     }
     return true;
   }
@@ -400,7 +400,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       serveJson(res, 200, { collaborator: result.collaborator });
     } catch (err) {
       log.error('[collaborators] Failed to update collaborator permission:', err);
-      return serveJson(res, 500, { error: 'Failed to update permission' });
+      return serverError(res, 'Failed to update permission');
     }
     return true;
   }
