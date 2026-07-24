@@ -20,13 +20,6 @@ import {
   isSsoEnabled,
   getOidcConfig,
 } from '../../config/sso.js';
-import {
-  buildLoginRequest,
-  completeLogin,
-  mapClaimsToIdentity,
-  OidcError,
-  logDiscoveryFailure,
-} from '../../auth/providers/oidc.js';
 import { getOrCreateSsoUser } from '../../storage/sso.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp, createRouteContext } from '../../utils/context.js';
@@ -35,6 +28,20 @@ import { parseCookies } from '../../utils/cookies.js';
 import { createLogger } from '../../utils/logger.js';
 
 const log = createLogger('sso');
+
+/**
+ * Lazy-load the OIDC protocol module. Keeping it out of this file's static
+ * import graph means installs with SSO disabled never pull `openid-client`
+ * (+ jose, oauth4webapi) into memory at boot — matching how collab/redis/S3
+ * gate their optional deps. Node caches the module after the first load, and
+ * the two OIDC routes aren't hot paths, so the dynamic import is free. Loaded
+ * only *after* the `isSsoEnabled()` gate, so even a request to the OIDC path on
+ * a non-SSO install stays cheap.
+ * @see server/config/sso.js (deliberately split so "is SSO on?" needs no dep)
+ */
+function loadOidc() {
+  return import('../../auth/providers/oidc.js');
+}
 
 /** Short-lived cookie binding the OAuth `state`/`nonce`/PKCE to this browser. */
 const STATE_COOKIE = 'sb_oidc';
@@ -123,6 +130,7 @@ export async function handleSso({ repoRoot, req, res, url }) {
       return redirect(res, '/login?error=sso_disabled'), true;
     }
     const oidc = getOidcConfig();
+    const { buildLoginRequest, logDiscoveryFailure } = await loadOidc();
     try {
       const { url: authUrl, state, nonce, codeVerifier } = await buildLoginRequest(oidc);
       const returnTo = safeReturnTo(url.searchParams.get('returnTo'));
@@ -148,6 +156,9 @@ export async function handleSso({ repoRoot, req, res, url }) {
     if (!isSsoEnabled()) {
       return redirect(res, '/login?error=sso_disabled'), true;
     }
+
+    const { completeLogin, mapClaimsToIdentity, OidcError, logDiscoveryFailure } =
+      await loadOidc();
 
     const ipAddress = getClientIp(req);
     const userAgent = req.headers?.['user-agent'] || '';
