@@ -20,6 +20,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import JSZip from 'jszip';
+
 import { uploadsDir } from '../config/storage-paths.js';
 import { mimeFromExt } from '../utils/html-utils.js';
 import { presentationToDeck } from '../../shared/slide-types/deck.js';
@@ -31,11 +33,6 @@ import {
 
 export const DECK_MIMETYPE = 'application/vnd.slidecreator.deck';
 export const DECK_BUNDLE_VERSION = 1;
-
-async function loadJsZip() {
-  const mod = await import('jszip');
-  return mod?.default || mod;
-}
 
 /** SRI-shaped integrity id (`sha256-<base64>`) from a hex digest. */
 function sriFromSha256Hex(hex) {
@@ -122,7 +119,6 @@ export async function buildDeckBundle(repoRoot, pres) {
     ...(missing.length ? { missingAssets: missing } : {}),
   };
 
-  const JSZip = await loadJsZip();
   const zip = new JSZip();
   // First entry, uncompressed, so the archive is identifiable by magic number.
   zip.file('mimetype', DECK_MIMETYPE, { compression: 'STORE' });
@@ -148,7 +144,6 @@ export async function buildDeckBundle(repoRoot, pres) {
  * @returns {Promise<{ mimetype: string, manifest: object, deck: object, assets: Map<string, Buffer> }>}
  */
 export async function readDeckBundle(buffer) {
-  const JSZip = await loadJsZip();
   const zip = await JSZip.loadAsync(buffer);
 
   const mtEntry = zip.file('mimetype');
