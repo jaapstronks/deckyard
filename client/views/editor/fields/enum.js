@@ -77,9 +77,9 @@ export function createEnumFields({ h, fieldSelect } = {}) {
     }
     if (key === 'autoplay') {
       if (optionValue === 'on')
-        return h('span', { class: 'sb-toggle-text', text: 'On' });
+        return h('span', { class: 'sb-toggle-text', text: t('common.on', 'On') });
       if (optionValue === 'off')
-        return h('span', { class: 'sb-toggle-text', text: 'Off' });
+        return h('span', { class: 'sb-toggle-text', text: t('common.off', 'Off') });
       return h('span', { class: 'sb-toggle-text', text: String(optionValue) });
     }
     if (key === 'lang') {

@@ -4,6 +4,7 @@
  */
 
 import { toast } from '../dom/toast.js';
+import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 
 /**
@@ -110,7 +111,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
           themeId: cleanStr(item?.themeId || themeIdNorm),
         }),
       });
-      toast.success('Added to team library.');
+      toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
       await fetchScope('team');
     } catch (e) {
       toast.error(String(e?.message || e));

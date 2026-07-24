@@ -685,6 +685,7 @@
   "settings.themes.invalidLogo": "Ongeldige URL",
   "settings.themes.logo": "Logo",
   "settings.themes.logo.uploadFailed": "Uploaden mislukt",
+  "settings.themes.logoAlt": "Logo",
   "settings.themes.logoFormats": "SVG, PNG of JPG",
   "settings.themes.logoHint": "Hoofdlogo dat op de payoff-slide wordt gebruikt. SVG-formaat aanbevolen.",
   "settings.themes.logoSmall": "Logo voor titeldia (optioneel)",

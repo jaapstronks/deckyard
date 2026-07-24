@@ -22,6 +22,7 @@
     "db:migrate:down": "node server/db/migrate.js down",
     "db:migrate:status": "node server/db/migrate.js status",
     "db:migrate:data": "node scripts/migrate-data-to-postgres.js",
+    "i18n:audit": "node scripts/i18n-audit.js",
     "i18n:extract": "node scripts/i18n-extract.js",
     "i18n:merge": "node scripts/i18n-merge.js",
     "i18n:sync": "node scripts/i18n-sync.js",
