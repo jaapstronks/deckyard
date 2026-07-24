@@ -11,6 +11,7 @@ import {
   notFound,
   serveJson,
   unauthorized,
+  jsonError,
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { parseIfMatchRevision } from './helpers.js';
@@ -37,7 +38,7 @@ export async function handlePresentationRestoreVersion(
   // If-Match required for everyone, admins included (escape hatch removed).
   const expectedRevision = parseIfMatchRevision(req);
   if (expectedRevision == null)
-    return serveJson(res, 428, { error: 'Missing If-Match revision' });
+    return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
   const v = await getPresentationVersion(repoRoot, id, versionId);
   const snapPres = v?.presentation;

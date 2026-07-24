@@ -18,7 +18,12 @@
  */
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
-import { readRequestBody, serveJson } from '../../../utils/http.js';
+import {
+  readRequestBody,
+  serveJson,
+  badRequest,
+  serverError,
+} from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { saveUploadedFile } from '../../../storage/uploads.js';
@@ -37,7 +42,7 @@ export async function handlePresentationsImportDeck({
   try {
     const raw = await readRequestBody(req);
     if (!raw || raw.length === 0) {
-      serveJson(res, 400, { error: 'Empty request body (expected a .deck bundle)' });
+      badRequest(res, 'Empty request body (expected a .deck bundle)');
       return true;
     }
 
@@ -46,7 +51,7 @@ export async function handlePresentationsImportDeck({
       bundle = await readDeckBundle(raw);
     } catch (err) {
       // Not a bundle / failed sentinel or integrity check → client error.
-      serveJson(res, 400, { error: `Invalid .deck bundle: ${err.message}` });
+      badRequest(res, `Invalid .deck bundle: ${err.message}`);
       return true;
     }
 
@@ -134,7 +139,7 @@ export async function handlePresentationsImportDeck({
       return true;
     }
     log.error('[import-deck] Error:', err.message);
-    serveJson(res, 500, { error: 'Failed to import .deck bundle' });
+    serverError(res, 'Failed to import .deck bundle');
     return true;
   }
 }

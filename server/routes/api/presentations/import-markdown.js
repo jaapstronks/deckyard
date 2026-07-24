@@ -6,7 +6,12 @@
  */
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
-import { json, serveJson, serverError } from '../../../utils/http.js';
+import {
+  json,
+  serveJson,
+  serverError,
+  badRequest,
+} from '../../../utils/http.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -25,7 +30,7 @@ export async function handlePresentationsImportMarkdown({
 
     const markdown = body?.markdown;
     if (!markdown || typeof markdown !== 'string') {
-      serveJson(res, 400, { error: 'Missing required field: markdown (string)' });
+      badRequest(res, 'Missing required field: markdown (string)');
       return true;
     }
 
