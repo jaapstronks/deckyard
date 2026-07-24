@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 
 function escapeXml(s) {
@@ -65,11 +66,6 @@ export function buildNotesMarkdown(pres, { includeEmpty = true } = {}) {
   return out.join('\n');
 }
 
-async function loadJsZip() {
-  const mod = await import('jszip');
-  return mod?.default || mod;
-}
-
 function docxXmlFromPlainText(text) {
   const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
   const paras = lines
@@ -108,7 +104,6 @@ function docxXmlFromPlainText(text) {
 }
 
 export async function buildNotesDocxBuffer(markdownText) {
-  const JSZip = await loadJsZip();
   const zip = new JSZip();
 
   zip.file(

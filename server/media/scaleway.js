@@ -16,14 +16,13 @@ async function ensureS3() {
   if (s3Client) return;
 
   try {
-    const [clientMod, commandsMod, presignerMod] = await Promise.all([
-      import('@aws-sdk/client-s3'),
+    const [clientMod, presignerMod] = await Promise.all([
       import('@aws-sdk/client-s3'),
       import('@aws-sdk/s3-request-presigner'),
     ]);
 
     s3Client = clientMod;
-    s3Commands = commandsMod;
+    s3Commands = clientMod;
     s3Presigner = presignerMod;
   } catch (err) {
     throw new Error(

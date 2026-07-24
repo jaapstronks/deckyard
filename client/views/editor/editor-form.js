@@ -18,6 +18,7 @@ import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { readPreferredLlmVendor } from '../../lib/net/llm-vendor.js';
 import { moreIcon, closeIcon } from '../../lib/dom/icons.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import { createLayoutSwitcherChip } from './layout-switcher.js';
@@ -356,7 +357,6 @@ function buildHeaderActions({
 
             try {
               const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-              const { readPreferredLlmVendor } = await import('../../lib/net/llm-vendor.js');
               const vendor = readPreferredLlmVendor() || null;
 
               const resp = await api('/api/ai/convert-slide', {
@@ -932,7 +932,6 @@ export function createRerenderEditor({
         setIterateBusy(true);
 
         try {
-          const { readPreferredLlmVendor } = await import('../../lib/net/llm-vendor.js');
           const vendor = readPreferredLlmVendor() || null;
           const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
 

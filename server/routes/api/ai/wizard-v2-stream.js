@@ -6,6 +6,7 @@ import {
   getTrimmedString,
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { generateSessionId, createSessionLogger } from '../../../utils/ai/index.js';
 import {
   generateOutline,
@@ -156,7 +157,6 @@ export async function handleAiWizardV2Stream({ repoRoot, req, res, authedUser })
     const budgetValidation = validateSlideCount(validatedSlides, budgetTarget);
 
     // Assemble deck with automatic title slide using theme-appropriate type
-    const { cryptoUuid } = await import('../../../../shared/slide-types/helpers.js');
     const deck = {
       format: 'slidecreator.deck',
       version: 1,
