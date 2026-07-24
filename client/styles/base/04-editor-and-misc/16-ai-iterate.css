@@ -6,9 +6,9 @@
 .ai-iterate-panel {
   margin: 0.75rem 0;
   padding: 0.5rem;
-  background: var(--color-surface-subtle, #f8f9fa);
+  background: hsl(var(--app-bg-sunken));
   border-radius: 6px;
-  border: 1px solid var(--color-border-subtle, #e5e7eb);
+  border: 1px solid hsl(var(--app-border-subtle));
 }
 
 .ai-iterate-form {
@@ -23,7 +23,7 @@
 }
 
 .ai-iterate-input::placeholder {
-  color: var(--color-text-muted, #9ca3af);
+  color: hsl(var(--app-text-tertiary));
   font-style: italic;
 }
 
@@ -68,21 +68,21 @@
 .ai-iterate-preview {
   margin-top: 0.75rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--color-border-subtle, #e5e7eb);
+  border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
 .ai-iterate-summary {
   margin: 0 0 0.5rem;
   font-weight: 500;
   font-size: 0.85rem;
-  color: var(--color-text, #374151);
+  color: hsl(var(--app-text-primary));
 }
 
 .ai-iterate-mods {
   margin: 0 0 0.75rem;
   padding-left: 1.25rem;
   font-size: 0.8rem;
-  color: var(--color-text-muted, #6b7280);
+  color: hsl(var(--app-text-secondary));
 }
 
 .ai-iterate-mod {

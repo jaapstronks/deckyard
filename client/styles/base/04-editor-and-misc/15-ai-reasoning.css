@@ -6,10 +6,10 @@
 .ai-reasoning-panel {
   margin: 0.5rem 0;
   padding: 0.5rem;
-  background: var(--color-surface-subtle, #f8f9fa);
+  background: hsl(var(--app-bg-sunken));
   border-radius: 6px;
   font-size: 0.8rem;
-  color: var(--color-text-muted, #6b7280);
+  color: hsl(var(--app-text-secondary));
 }
 
 .ai-reasoning-toggle {
@@ -26,11 +26,11 @@
 .ai-reasoning-alternative {
   margin-top: 0.4rem;
   padding-top: 0.4rem;
-  border-top: 1px solid var(--color-border-subtle, #e5e7eb);
+  border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
 .ai-reasoning-alternative code {
-  background: var(--color-surface, #f3f4f6);
+  background: hsl(var(--app-bg-sunken));
   padding: 0.1em 0.3em;
   border-radius: 3px;
   font-size: 0.85em;
@@ -40,10 +40,10 @@
 .ai-warnings {
   margin: 0.5rem 0;
   padding: 0.5rem;
-  background: var(--color-warning-subtle, #fef3c7);
+  background: hsl(var(--app-warning-soft));
   border-radius: 6px;
   font-size: 0.8rem;
-  color: var(--color-warning-text, #92400e);
+  color: hsl(var(--app-warning-text));
 }
 
 .ai-warning-item {
