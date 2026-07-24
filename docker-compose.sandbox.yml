@@ -23,6 +23,29 @@ services:
       SECURE_COOKIES: "1"
       DISABLE_UPLOADS: "1"
 
+      # Rate-limiter proxy trust. Caddy terminates TLS and forwards
+      # X-Forwarded-For, so without this the limiter keys every request on the
+      # Caddy container IP — all guests share one create/export/update bucket and
+      # a single abuser trips 429 for everyone. One trusted hop (Caddy) → key on
+      # the real client IP. See server/utils/rate-limit.js.
+      TRUST_PROXY: "1"
+      TRUSTED_PROXY_COUNT: "1"
+
+      # Lower body cap for an anonymous playground: bounds per-request (and thus
+      # per-deck) bytes well below the 25 MB default, so imports/saves can't be
+      # used to fill the shared volume. 8 MB still covers a modest demo deck.
+      MAX_REQUEST_BODY_BYTES: "${MAX_REQUEST_BODY_BYTES:-8388608}"
+
+      # Per-guest disk quota (anonymous abuse guard). A guest that hits the cap
+      # gets a 4xx instead of filling sandbox_data. See
+      # server/storage/presentations/sandbox-quota.js.
+      SANDBOX_MAX_DECKS_PER_GUEST: "${SANDBOX_MAX_DECKS_PER_GUEST:-25}"
+      SANDBOX_MAX_BYTES_PER_GUEST: "${SANDBOX_MAX_BYTES_PER_GUEST:-52428800}"
+      # Global soft ceiling: the cleanup loop logs a warning when the whole
+      # presentations dir exceeds this (observability, non-destructive). Empty
+      # disables the check.
+      SANDBOX_MAX_TOTAL_BYTES: "${SANDBOX_MAX_TOTAL_BYTES:-}"
+
       # AI is off in sandbox (SANDBOX_MODE forces disableAi): a public,
       # anonymous playground plus per-prompt LLM cost is an open-ended bill.
       # These are kept for reference but have no effect while sandbox is on.

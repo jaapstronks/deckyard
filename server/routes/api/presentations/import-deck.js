@@ -19,6 +19,7 @@
 
 import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
 import { readRequestBody, serveJson } from '../../../utils/http.js';
+import { isAppError } from '../../../utils/errors.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
 import { saveUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
@@ -126,6 +127,12 @@ export async function handlePresentationsImportDeck({
     });
     return true;
   } catch (err) {
+    // Typed application errors (e.g. sandbox quota) carry their own 4xx status
+    // + safe message — surface it instead of masking as a 500.
+    if (isAppError(err)) {
+      serveJson(res, err.statusCode, err.toJSON());
+      return true;
+    }
     log.error('[import-deck] Error:', err.message);
     serveJson(res, 500, { error: 'Failed to import .deck bundle' });
     return true;
