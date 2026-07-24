@@ -15,81 +15,11 @@ import {
   parseImportedSlideType,
   deriveUniqueSlug,
 } from '../slide-type-editor/io.js';
-import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
-import { getSampleContent } from '../../editor/slide-type-sample-content.js';
-import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
-
-/**
- * Category heading labels, resolved lazily (the i18n dictionary is not loaded
- * at import time). Keyed by the category `key` in CATEGORIES below.
- */
-const CATEGORY_LABELS = {
-  basic: () => t('settings.slideTypes.group.basic', 'Basic'),
-  media: () => t('settings.slideTypes.group.media', 'Media'),
-  layouts: () => t('settings.slideTypes.group.layouts', 'Layouts'),
-  data: () => t('settings.slideTypes.group.data', 'Data'),
-  process: () => t('settings.slideTypes.group.process', 'Process'),
-  interaction: () => t('settings.slideTypes.group.interaction', 'Interaction'),
-  other: () => t('settings.slideTypes.group.other', 'Other'),
-};
-
-/**
- * Slide type category definitions.
- * Matches the picker categories for familiarity.
- */
-const CATEGORIES = [
-  {
-    key: 'basic',
-    label: 'Basic',
-    types: ['title-slide', 'chapter-title-slide', 'content-slide', 'quote-slide', 'lijstje-slide'],
-  },
-  {
-    key: 'media',
-    label: 'Media',
-    types: [
-      'image-text-slide', 'image-slide', 'gallery-slide', 'video-slide',
-      'embed-slide', 'split-partner-title-slide', 'team-cards-slide', 'logo-wall-slide',
-    ],
-  },
-  {
-    key: 'layouts',
-    label: 'Layouts',
-    types: [
-      'text-blocks-slide', 'card-stack-slide',
-      'icon-card-grid-slide',
-    ],
-  },
-  {
-    key: 'data',
-    label: 'Data',
-    types: [
-      'table-slide', 'chart-slide', 'kpi-metrics-slide', 'comparison-slide',
-      'matrix-slide', 'funnel-slide', 'pyramid-slide', 'cycle-slide',
-    ],
-  },
-  {
-    key: 'process',
-    label: 'Process',
-    types: ['process-slide', 'timeline-slide'],
-  },
-  {
-    key: 'interaction',
-    label: 'Interaction',
-    types: [
-      'poll-slide', 'likert-slide', 'likert-slider-slide',
-      'feedback-slide', 'follow-invite-slide',
-    ],
-  },
-  {
-    key: 'other',
-    label: 'Other',
-    types: [
-      'payoff-slide', 'lead-capture-slide',
-    ],
-  },
-];
+import { CATEGORIES, CATEGORY_LABELS } from './slide-types-tab/categories.js';
+import { createCurationThumbnail } from './slide-types-tab/curation-thumbnails.js';
+import { openTypePreview as openTypePreviewModal } from './slide-types-tab/type-preview-modal.js';
 
 /**
  * Create the slide types curation tab.
@@ -762,45 +692,10 @@ export function createSlideTypesTab({ user } = {}) {
     }
   };
 
-  // ============================================================
-  // Curation Thumbnails
-  // ============================================================
-
-  function createCurationThumbnail(type, className) {
-    if (type === 'video-slide') {
-      return createVideoMockup(className);
-    }
-
-    const sampleContent = getSampleContent(type, BUNDLED_SLIDE_TYPES, currentTheme);
-    const slide = {
-      id: `curation-${type}`,
-      type,
-      content: sampleContent,
-      notes: '',
-    };
-
-    const thumbWrap = h('div', { class: `${className} thumb` });
-    try {
-      const el = renderSlideElement(slide, { mode: 'thumb', theme: currentTheme });
-      thumbWrap.append(el);
-    } catch {
-      thumbWrap.classList.add('is-error');
-      thumbWrap.append(h('div', { class: 'slide-type-curation-thumb-error', text: '?' }));
-    }
-    return thumbWrap;
-  }
-
-  function createVideoMockup(className) {
-    const thumbWrap = h('div', { class: `${className} thumb is-video-mock` });
-    const inner = h('div', { class: 'slide-type-curation-video-mock' });
-    const frame = h('div', { class: 'slide-type-curation-video-frame' });
-    const playBtn = h('div', { class: 'slide-type-curation-video-play' });
-    playBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-    frame.append(playBtn);
-    inner.append(frame);
-    thumbWrap.append(inner);
-    return thumbWrap;
-  }
+  // Thumbnails render against the tab's currently-loaded theme; the builders
+  // themselves live in ./slide-types-tab/curation-thumbnails.js.
+  const renderThumbnail = (type, className) =>
+    createCurationThumbnail(type, className, currentTheme);
 
   // ============================================================
   // Curation Cards
@@ -817,7 +712,7 @@ export function createSlideTypesTab({ user } = {}) {
     });
 
     // Thumbnail — click opens lightbox
-    const thumb = createCurationThumbnail(type, 'slide-type-curation-thumb');
+    const thumb = renderThumbnail(type, 'slide-type-curation-thumb');
     thumb.addEventListener('click', () => openTypePreview(type, allTypesList));
     card.append(thumb);
 
@@ -851,135 +746,14 @@ export function createSlideTypesTab({ user } = {}) {
   // ============================================================
 
   function openTypePreview(type, allTypesList) {
-    let currentIdx = allTypesList.findIndex(entry => entry.type === type);
-    if (currentIdx < 0) currentIdx = 0;
-
-    // Backdrop
-    const backdrop = h('div', { class: 'slide-type-preview-backdrop' });
-
-    // Modal
-    const modal = h('div', { class: 'slide-type-preview-modal' });
-
-    // Header
-    const header = h('div', { class: 'slide-type-preview-header' });
-    const titleWrap = h('div', { class: 'slide-type-preview-title-wrap' });
-    const nameEl = h('span', { class: 'slide-type-preview-name' });
-    const keyEl = h('span', { class: 'slide-type-preview-key' });
-    titleWrap.append(nameEl, keyEl);
-
-    const navWrap = h('div', { class: 'slide-type-preview-nav' });
-    const prevBtn = h('button', {
-      class: 'btn btn-secondary btn-sm btn-icon',
-      type: 'button',
-      'aria-label': t('common.previous', 'Previous'),
-      onclick: () => navigate(-1),
+    openTypePreviewModal(type, allTypesList, {
+      slideTypeMeta,
+      disabledTypes,
+      curationSection,
+      theme: currentTheme,
+      saveCuration,
+      duplicateCoreType,
     });
-    prevBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`;
-
-    const counterEl = h('span', { class: 'slide-type-preview-counter' });
-
-    const nextBtn = h('button', {
-      class: 'btn btn-secondary btn-sm btn-icon',
-      type: 'button',
-      'aria-label': t('common.next', 'Next'),
-      onclick: () => navigate(1),
-    });
-    nextBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
-
-    navWrap.append(prevBtn, counterEl, nextBtn);
-
-    const closeBtn = h('button', {
-      class: 'btn btn-secondary btn-sm btn-icon',
-      type: 'button',
-      'aria-label': t('common.close', 'Close'),
-      onclick: close,
-    });
-    closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
-
-    header.append(titleWrap, navWrap, closeBtn);
-
-    // Stage
-    const stage = h('div', { class: 'slide-type-preview-stage' });
-
-    // Footer
-    const footer = h('div', { class: 'slide-type-preview-footer' });
-    const toggleLabel = h('label', { class: 'slide-type-preview-toggle' });
-    const toggleCheckbox = h('input', { type: 'checkbox' });
-    const toggleText = h('span', { text: t('settings.slideTypes.enabledInPicker', 'Enabled in picker') });
-    toggleLabel.append(toggleCheckbox, toggleText);
-
-    toggleCheckbox.addEventListener('change', () => {
-      const entry = allTypesList[currentIdx];
-      if (toggleCheckbox.checked) {
-        disabledTypes.delete(entry.type);
-      } else {
-        disabledTypes.add(entry.type);
-      }
-      // Sync grid card
-      const gridCard = curationSection.querySelector(`[data-type="${entry.type}"]`);
-      if (gridCard) {
-        gridCard.classList.toggle('is-disabled', !toggleCheckbox.checked);
-        const gridToggle = gridCard.querySelector('input[type="checkbox"]');
-        if (gridToggle) gridToggle.checked = toggleCheckbox.checked;
-      }
-      saveCuration();
-    });
-
-    const dupBtn = h('button', {
-      class: 'btn btn-secondary btn-sm',
-      type: 'button',
-      text: t('settings.slideTypes.duplicateAsCustom', 'Duplicate as custom type'),
-      onclick: () => {
-        const entry = allTypesList[currentIdx];
-        const meta = slideTypeMeta[entry.type];
-        close();
-        duplicateCoreType(entry.type, meta);
-      },
-    });
-
-    footer.append(toggleLabel, dupBtn);
-
-    // Assemble
-    modal.append(header, stage, footer);
-    backdrop.append(modal);
-
-    function renderCurrent() {
-      const entry = allTypesList[currentIdx];
-      const meta = slideTypeMeta[entry.type];
-
-      nameEl.textContent = meta?.label || entry.type;
-      keyEl.textContent = entry.type;
-      counterEl.textContent = `${currentIdx + 1} / ${allTypesList.length}`;
-
-      stage.innerHTML = '';
-      stage.append(createCurationThumbnail(entry.type, 'slide-type-preview-thumb'));
-
-      toggleCheckbox.checked = !disabledTypes.has(entry.type);
-    }
-
-    function navigate(delta) {
-      currentIdx = (currentIdx + delta + allTypesList.length) % allTypesList.length;
-      renderCurrent();
-    }
-
-    function onKeyDown(e) {
-      if (e.key === 'Escape') { close(); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { navigate(-1); e.preventDefault(); }
-      if (e.key === 'ArrowRight') { navigate(1); e.preventDefault(); }
-    }
-
-    function close() {
-      document.removeEventListener('keydown', onKeyDown);
-      backdrop.remove();
-    }
-
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) close();
-    });
-
-    document.addEventListener('keydown', onKeyDown);
-    document.body.append(backdrop);
-    renderCurrent();
   }
 
   return { el, load };
