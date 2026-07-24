@@ -49,6 +49,72 @@ export function writeUiLocale(locale) {
   storage.set(LS_UI_LOCALE, l);
 }
 
+// Query-string keys that carry a UI-locale hint, in precedence order. Lets an
+// external origin (e.g. deckyard.eu) deep-link into the app or the sandbox in a
+// chosen language: `sandbox.deckyard.eu/?lang=en`.
+const UI_LOCALE_PARAM_KEYS = ['lang', 'locale'];
+
+/**
+ * Read a normalized UI-locale hint from a URL query string. Returns the first
+ * well-formed value among the recognized keys, or null when absent/malformed.
+ * `search` defaults to the current `window.location.search`; pass it explicitly
+ * (e.g. in tests) to parse an arbitrary query string.
+ * @param {string} [search]
+ * @returns {string|null}
+ */
+export function readUiLocaleParam(search) {
+  let qs = search;
+  if (qs == null) {
+    try {
+      qs = window.location.search;
+    } catch {
+      qs = '';
+    }
+  }
+  let params;
+  try {
+    params = new URLSearchParams(qs || '');
+  } catch {
+    return null;
+  }
+  for (const key of UI_LOCALE_PARAM_KEYS) {
+    const norm = normalizeUiLocale(params.get(key));
+    if (norm) return norm;
+  }
+  return null;
+}
+
+/**
+ * Resolve which locale to apply at first paint. A `?lang=`/`?locale=` URL param
+ * wins over the stored preference *only* when it names a locale the manifest
+ * knows (same bar as the settings picker), so a bogus tag can't blank the
+ * dictionary. A valid param is persisted so it survives a reload within the
+ * session. Otherwise the stored/default locale is used. Precedence:
+ * URL param (known) > localStorage > default.
+ *
+ * For a logged-in user this is only the initial value: `app.js` still overrides
+ * it with `mySettings.uiLocale` once settings load. The param therefore matters
+ * chiefly for the anonymous sandbox session, which has no saved preference.
+ * @param {string} [search]
+ * @returns {Promise<string>}
+ */
+export async function resolveInitialUiLocale(search) {
+  const param = readUiLocaleParam(search);
+  if (param) {
+    const manifest = await fetchUiLocaleManifest();
+    const locales = Array.isArray(manifest?.locales) ? manifest.locales : [];
+    const match = locales.find(
+      (l) => String(l?.id || '').trim().toLowerCase() === param.toLowerCase()
+    );
+    if (match) {
+      const id = String(match.id).trim();
+      writeUiLocale(id);
+      return id;
+    }
+  }
+  return readUiLocale();
+}
+
 function interpolate(str, vars) {
   if (!vars || typeof vars !== 'object') return str;
   return String(str).replace(/\{([a-zA-Z0-9_]+)\}/g, (m, name) => {
