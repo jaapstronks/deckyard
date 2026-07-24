@@ -17,7 +17,7 @@ import { getPresentation } from '../../storage/presentations.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { canWritePresentation, canReadPresentation } from '../../utils/presentation-authz.js';
-import { readAppSettings, readUserSettings } from '../../storage/settings.js';
+import { readAppSettings } from '../../storage/settings.js';
 import {
   createLead,
   getLeadById,

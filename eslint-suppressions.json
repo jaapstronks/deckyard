@@ -4,11 +4,6 @@
       "count": 1
     }
   },
-  "client/lib/format/i18n.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "client/lib/format/lang-selector.js": {
     "no-unused-vars": {
       "count": 1
@@ -55,11 +50,6 @@
     }
   },
   "client/views/analytics/date-picker.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "client/views/editor/comment-markers.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -144,11 +134,6 @@
       "count": 1
     }
   },
-  "client/views/editor/image-library/utils.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "client/views/editor/modals/analyze-modal.js": {
     "no-unused-vars": {
       "count": 3
@@ -189,11 +174,6 @@
       "count": 1
     }
   },
-  "client/views/editor/slide-list/render-item.js": {
-    "no-unused-vars": {
-      "count": 2
-    }
-  },
   "client/views/editor/slide-lock-manager.js": {
     "no-unused-vars": {
       "count": 2
@@ -201,7 +181,7 @@
   },
   "client/views/editor/slide-visibility-menu.js": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "client/views/editor/slides-panel.js": {
@@ -241,12 +221,7 @@
   },
   "client/views/presenter.js": {
     "no-unused-vars": {
-      "count": 4
-    }
-  },
-  "client/views/presenter/deck-controller.js": {
-    "no-unused-vars": {
-      "count": 1
+      "count": 3
     }
   },
   "client/views/presenter/highlighter.js": {
@@ -309,11 +284,6 @@
       "count": 1
     }
   },
-  "client/views/share-viewer.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "client/views/share-viewer/viewer-comments.js": {
     "no-unused-vars": {
       "count": 1
@@ -341,11 +311,6 @@
   },
   "server/export/html.js": {
     "no-useless-escape": {
-      "count": 1
-    }
-  },
-  "server/export/print.js": {
-    "no-unused-vars": {
       "count": 1
     }
   },
@@ -379,11 +344,6 @@
       "count": 1
     }
   },
-  "server/media/index.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/media/interface.js": {
     "no-unused-vars": {
       "count": 6
@@ -406,7 +366,7 @@
   },
   "server/routes/api/email-templates.js": {
     "no-unused-vars": {
-      "count": 3
+      "count": 2
     }
   },
   "server/routes/api/export.js": {
@@ -416,22 +376,12 @@
   },
   "server/routes/api/leads.js": {
     "no-unused-vars": {
-      "count": 6
+      "count": 5
     }
   },
   "server/routes/api/media.js": {
     "no-unused-vars": {
       "count": 1
-    }
-  },
-  "server/routes/api/notifications.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/organization-members.js": {
-    "no-unused-vars": {
-      "count": 3
     }
   },
   "server/routes/api/presentations/list.js": {
@@ -441,7 +391,7 @@
   },
   "server/routes/api/presentations/popular.js": {
     "no-unused-vars": {
-      "count": 2
+      "count": 1
     }
   },
   "server/routes/api/presentations/search.js": {
@@ -454,37 +404,17 @@
       "count": 1
     }
   },
-  "server/routes/api/profile.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/routes/api/publish.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/routes/api/questions.js": {
     "no-unused-vars": {
       "count": 1
     }
   },
-  "server/routes/api/share-links/public.js": {
-    "no-unused-vars": {
-      "count": 2
-    }
-  },
   "server/routes/api/stock-media.js": {
-    "no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/routes/api/uploads.js": {
     "no-unused-vars": {
       "count": 1
     }
   },
-  "server/routes/api/users.js": {
+  "server/routes/api/uploads.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -504,19 +434,9 @@
       "count": 1
     }
   },
-  "server/routes/public-api/v1/middleware.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/routes/public-api/v1/presentations.js": {
     "no-unused-vars": {
-      "count": 4
-    }
-  },
-  "server/routes/public-api/v1/publishing.js": {
-    "no-unused-vars": {
-      "count": 1
+      "count": 3
     }
   },
   "server/routes/static/app-shell.js": {
@@ -549,11 +469,6 @@
       "count": 2
     }
   },
-  "server/storage/adapters/postgres/image-favorites.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/storage/adapters/postgres/published.js": {
     "no-unused-vars": {
       "count": 1
@@ -564,27 +479,7 @@
       "count": 1
     }
   },
-  "server/storage/analytics/slide-views.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/storage/analytics/view-sessions.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/storage/api-keys.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/storage/api-usage.js": {
-    "no-unused-vars": {
-      "count": 2
-    }
-  },
-  "server/storage/leads.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -599,19 +494,9 @@
       "count": 3
     }
   },
-  "server/storage/presentations/i18n.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/storage/presentations/list.js": {
     "no-unused-vars": {
       "count": 3
-    }
-  },
-  "server/storage/questions.js": {
-    "no-unused-vars": {
-      "count": 1
     }
   },
   "server/storage/share-links/access-log.js": {
@@ -634,32 +519,12 @@
       "count": 1
     }
   },
-  "server/storage/users.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "server/utils/ai/compare-versions.js": {
     "no-unused-vars": {
       "count": 2
     }
   },
   "server/utils/ai/compress-deck.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/utils/ai/generate-deck-v2.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/utils/ai/iterate-deck.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
-  "server/utils/ai/refine-slides.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -726,12 +591,7 @@
   },
   "server/utils/presentation-authz/presentations.js": {
     "no-unused-vars": {
-      "count": 3
-    }
-  },
-  "server/utils/rate-limit.js": {
-    "no-unused-vars": {
-      "count": 1
+      "count": 2
     }
   },
   "server/utils/slug.js": {
@@ -799,15 +659,10 @@
   },
   "tests/collab-review-fixes.test.js": {
     "no-unused-vars": {
-      "count": 2
-    }
-  },
-  "tests/deck-bundle.test.js": {
-    "no-unused-vars": {
       "count": 1
     }
   },
-  "tests/json-schema.test.js": {
+  "tests/deck-bundle.test.js": {
     "no-unused-vars": {
       "count": 1
     }
@@ -817,14 +672,9 @@
       "count": 1
     }
   },
-  "tests/two-window-presenter.test.js": {
-    "no-unused-vars": {
-      "count": 1
-    }
-  },
   "tests/versions-pruning.test.js": {
     "no-unused-vars": {
-      "count": 3
+      "count": 2
     }
   }
 }

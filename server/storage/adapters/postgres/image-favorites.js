@@ -2,7 +2,7 @@
  * PostgreSQL image favorites storage module.
  */
 
-import { getDb, getOrgId, now } from './helpers.js';
+import { getDb, getOrgId } from './helpers.js';
 
 /**
  * Image favorites mixin - adds favorite methods to adapter.

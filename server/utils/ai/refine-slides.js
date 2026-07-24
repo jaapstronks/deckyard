@@ -12,7 +12,7 @@
  */
 
 import { getLlmConfig } from '../llm/config.js';
-import { requestChatCompletionContent, LlmError } from '../llm/index.js';
+import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
 import { validateSlideContentStructure } from './validate-slide-structure.js';

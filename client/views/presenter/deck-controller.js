@@ -1,5 +1,5 @@
 import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
-import { morphTransition, MORPH_DURATION } from './morph-engine.js';
+import { morphTransition } from './morph-engine.js';
 
 export function filterPresentSlides(presentation) {
   return (presentation?.slides || []).filter((s) => {

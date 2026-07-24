@@ -15,7 +15,7 @@ import { methodNotAllowed } from '../../../utils/http.js';
 import { loadTheme } from '../../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../../media/index.js';
-import { requireScope, getPresentationWithAccess, apiSuccess, apiError } from './middleware.js';
+import { requireScope, getPresentationWithAccess, apiSuccess } from './middleware.js';
 
 // ============================================================
 // ROUTE HANDLERS

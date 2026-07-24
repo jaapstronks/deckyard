@@ -4,7 +4,7 @@
  */
 
 import { getOrgId } from '../../../utils/context.js';
-import { serveJson, unauthorized, methodNotAllowed } from '../../../utils/http.js';
+import { serveJson, unauthorized } from '../../../utils/http.js';
 import { withDbGuard } from '../../../storage/utils/db-guard.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';

@@ -1,5 +1,5 @@
 import { storage } from '../storage.js';
-import { KNOWN_LANGS, normalizeLang as sharedNormalizeLang } from '../../../shared/i18n-utils.js';
+import { normalizeLang as sharedNormalizeLang } from '../../../shared/i18n-utils.js';
 
 let supportedLangs = ['nl', 'en-GB'];
 let supportedSet = new Set(supportedLangs);

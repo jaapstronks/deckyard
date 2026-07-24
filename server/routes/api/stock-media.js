@@ -5,7 +5,6 @@
  * Downloaded media is saved to the image library for local hosting.
  */
 
-import { randomUUID } from 'node:crypto';
 import {
   json,
   methodNotAllowed,

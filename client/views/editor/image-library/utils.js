@@ -1,4 +1,3 @@
-import { t } from '../../../lib/ui-i18n.js';
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;

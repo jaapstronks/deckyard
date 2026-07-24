@@ -9,7 +9,7 @@
 import { searchUsers } from '../../storage/users.js';
 import { readUserSettings } from '../../storage/settings.js';
 import { createRouteContext } from '../../utils/context.js';
-import { serveJson, badRequest, methodNotAllowed, unauthorized } from '../../utils/http.js';
+import { serveJson, methodNotAllowed, unauthorized } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 
 /**

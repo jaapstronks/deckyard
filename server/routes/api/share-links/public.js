@@ -17,7 +17,6 @@ import {
   verifyGuestEmail,
   getGuestBySessionToken,
 } from '../../../storage/share-links.js';
-import { getUserByEmail } from '../../../storage/users.js';
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
@@ -26,7 +25,6 @@ import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
 import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('public');
 
