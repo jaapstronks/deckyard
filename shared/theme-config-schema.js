@@ -18,6 +18,15 @@ import { LOCKABLE_PROPERTIES } from './theme-locks.js';
 
 export const THEME_CONFIG_VERSION = 1;
 
+/**
+ * Theme-driven title-slide layout tokens. The renderer maps the theme's
+ * `titleLayout` to a `.tsu-layout-<value>` class on the title-slide root;
+ * `bottom` is the default when a theme sets none. Single source of truth,
+ * reused by the normalizer and the title-slide renderer.
+ */
+export const TITLE_LAYOUTS = ['bottom', 'center', 'top'];
+export const DEFAULT_TITLE_LAYOUT = 'bottom';
+
 /** Corner rounding presets → the `--t-radius*` triple. */
 export const RADIUS_SCALES = {
   none: { '--t-radius': '0px', '--t-radius-sm': '0px', '--t-radius-lg': '0px' },
@@ -201,6 +210,12 @@ export function validateThemeConfig(raw) {
 
   const defaultTitleSlide = str(raw.defaultTitleSlide, 80);
   if (defaultTitleSlide) out.defaultTitleSlide = defaultTitleSlide;
+
+  // Theme-driven title-slide layout token (bottom | center | top). The renderer
+  // maps it to a `.tsu-layout-*` class; unknown/absent falls back to the
+  // normalize default. Whitelisted here so custom/DB themes keep it.
+  const titleLayout = str(raw.titleLayout, 20);
+  if (TITLE_LAYOUTS.includes(titleLayout)) out.titleLayout = titleLayout;
 
   const locks = sanitizeLocks(raw.locks);
   if (locks) out.locks = locks;

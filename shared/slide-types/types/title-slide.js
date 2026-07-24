@@ -1,5 +1,6 @@
 import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
 import { resolveTitleSlideBackground } from '../title-slide-background.js';
+import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
 
 export default {
   label: 'Title slide',
@@ -111,10 +112,17 @@ export default {
       content?.logoCorner === 'left' || content?.logoCorner === 'right'
         ? content.logoCorner
         : 'right';
+    // Layout is theme-driven, not per-field: the theme's `titleLayout` token
+    // (bottom | center | top) maps to a `.tsu-layout-*` class. Unknown/absent
+    // → the default. The scrim direction follows this class in CSS, so it sits
+    // on the text side automatically.
+    const titleLayout = TITLE_LAYOUTS.includes(theme?.titleLayout)
+      ? theme.titleLayout
+      : DEFAULT_TITLE_LAYOUT;
     return `
         <div class="slide slide-title-universal ${bg}${
           legacyBg ? ' has-bg' : ''
-        } ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}">
+        } tsu-layout-${titleLayout} ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}">
           <div class="slide-inner">
             ${bgImgHtml}
             <div class="tsu-overlay" aria-hidden="true"></div>
@@ -122,8 +130,10 @@ export default {
               <img class="tsu-logo-img" src="${esc(logoSrc)}" alt="${esc(logoAlt)}" />
             </div>
             <div class="tsu-content">
-              <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
-              ${subtitle}
+              <div class="tsu-primary">
+                <h2 class="title" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
+                ${subtitle}
+              </div>
               ${meta}
             </div>
           </div>
