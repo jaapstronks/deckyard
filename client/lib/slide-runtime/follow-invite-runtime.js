@@ -34,7 +34,7 @@ async function getOrCreateFollowCode(followUrl) {
 
 export function initFollowInviteSlides(
   rootEl,
-  { enableResize = true, interactive = true } = {}
+  { enableResize = true } = {}
 ) {
   if (!rootEl?.querySelectorAll) return () => {};
   const cleanups = [];

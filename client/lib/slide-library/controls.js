@@ -109,7 +109,6 @@ export function createSlideLibraryControls({
 
   const renderTypeFilters = (mount, scope, { rerenderList } = {}) => {
     const items = state.getCache(scope);
-    const activeView = state.getView();
     const activeTypeFilter = state.getTypeFilter();
     const activeTagFilter = state.getTagFilter();
 

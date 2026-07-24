@@ -196,7 +196,6 @@ export function createSlideLibraryPicker({
     const insertDisabled = type === 'follow-invite-slide';
     const isSelected = state.isSelected(it.id);
     const activeView = state.getView();
-    const activeLang = state.getLang();
 
     const card = h('div', {
       class: `ps-lib-card ${fav && activeView !== 'trash' ? 'is-favorite' : ''} ${isSelected ? 'is-selected' : ''}`,

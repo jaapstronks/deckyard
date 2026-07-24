@@ -60,7 +60,6 @@ async function getMeCached() {
 
 function renderFatal(root, err) {
   const msgRaw = String(err?.message || err);
-  const msg = escapeHtml(msgRaw);
   const stackRaw =
     typeof err?.stack === 'string' && err.stack.trim()
       ? err.stack

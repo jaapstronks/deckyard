@@ -274,8 +274,6 @@ export async function renderFollow(root, presentationId) {
     });
   };
 
-  const renderQuestions = () => qa?.renderQuestions?.();
-
   const refreshPresentationIfLive = async () => {
     const base = `/api/follow/${encodeURIComponent(
       presentationId

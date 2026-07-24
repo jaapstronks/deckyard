@@ -161,7 +161,7 @@ export function createLangSelector({
       if (useDropdown && selectEl) {
         selectEl.disabled = disabled;
       } else {
-        for (const [code, btn] of Object.entries(buttons)) {
+        for (const [, btn] of Object.entries(buttons)) {
           btn.disabled = disabled;
         }
       }
