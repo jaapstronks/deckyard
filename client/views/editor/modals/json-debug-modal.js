@@ -152,7 +152,6 @@ export function openJsonDebugModal({
   const modal = h('div', { class: 'modal json-debug-modal' });
 
   // Track current tab and edit state
-  let currentTab = 'json';
   let hasUnsavedChanges = false;
   let editedJson = null;
 
@@ -357,7 +356,6 @@ export function openJsonDebugModal({
 
   // Tab switching
   const switchTab = (tab) => {
-    currentTab = tab;
     tabJson.classList.toggle('is-active', tab === 'json');
     tabSchema.classList.toggle('is-active', tab === 'schema');
     jsonPanel.style.display = tab === 'json' ? '' : 'none';

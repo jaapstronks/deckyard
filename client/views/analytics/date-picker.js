@@ -71,9 +71,6 @@ export function createDatePicker({ h, initialRange, onChange }) {
 
   const el = h('div', { class: 'analytics-date-picker' });
 
-  // Track focused preset index for keyboard navigation
-  let focusedPresetIndex = -1;
-
   // Button showing current selection
   const button = h('button', {
     class: 'btn btn-secondary analytics-date-picker-btn',
@@ -169,7 +166,6 @@ export function createDatePicker({ h, initialRange, onChange }) {
     dropdown.style.display = 'none';
     document.removeEventListener('click', handleOutsideClick);
     document.removeEventListener('keydown', handleEscapeKey);
-    focusedPresetIndex = -1;
     button.focus();
   }
 
@@ -221,7 +217,6 @@ export function createDatePicker({ h, initialRange, onChange }) {
   function focusPreset(index) {
     const buttons = presetList.querySelectorAll('.analytics-date-picker-preset');
     if (buttons[index]) {
-      focusedPresetIndex = index;
       buttons.forEach((btn, i) => {
         btn.tabIndex = i === index ? 0 : -1;
       });

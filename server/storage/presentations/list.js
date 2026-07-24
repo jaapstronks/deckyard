@@ -68,7 +68,6 @@ export async function listPresentations(repoRoot) {
         ? pres.i18n.versions[dominant].slides
         : pres.slides;
     const first = dSlides?.[0];
-    const themeId = resolveThemeId(pres?.theme);
     out.push({
       id: pres.id,
       title: dTitle,
@@ -150,7 +149,6 @@ export async function listTrashedPresentations(repoRoot) {
         ? pres.i18n.versions[dominant].slides
         : pres.slides;
     const first = dSlides?.[0];
-    const themeId = resolveThemeId(pres?.theme);
     out.push({
       id: pres.id,
       title: dTitle,

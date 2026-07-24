@@ -45,7 +45,6 @@ export function openDataSourceConfigModal({
   h,
   root,
   slide,
-  pres,
   api,
   markDirty,
   editorState,

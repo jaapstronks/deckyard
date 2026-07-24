@@ -53,7 +53,7 @@ export function createEditorCleanupRegistry() {
      * Run all registered cleanup functions
      */
     runAll() {
-      for (const [key, fn] of cleanupFns) {
+      for (const [, fn] of cleanupFns) {
         try {
           fn();
         } catch {

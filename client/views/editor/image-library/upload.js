@@ -369,18 +369,6 @@ export function createImageLibraryUpload({
     actionsSection.hidden = false;
   };
 
-  // Reset to initial state
-  const resetState = () => {
-    newUrl = '';
-    previewImg.src = '';
-    inputUrl.value = '';
-    dropzone.hidden = false;
-    urlToggle.hidden = false;
-    previewWrap.hidden = true;
-    changeImageRow.hidden = true;
-    metadataSection.hidden = true;
-    actionsSection.hidden = true;
-  };
 
   // Handle file upload
   const handleFile = async (file) => {

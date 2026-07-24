@@ -146,7 +146,7 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
  * @returns {Promise<boolean>} True if handled
  */
 export async function handleLeads(ctx) {
-  const { repoRoot, req, res, url, authedUser } = ctx;
+  const { req, url, authedUser } = ctx;
   const path = url.pathname;
 
   if (!authedUser) {
@@ -216,7 +216,7 @@ export async function handleLeads(ctx) {
 // ============================================================
 
 async function handleGetLeads(ctx, presentationId) {
-  const { repoRoot, req, res, url, authedUser } = ctx;
+  const { repoRoot, res, url, authedUser } = ctx;
 
   const pres = await getPresentation(repoRoot, presentationId);
   if (!pres) {
@@ -280,7 +280,7 @@ async function handleGetLeadCount(ctx, presentationId) {
 }
 
 async function handleExportLeads(ctx, presentationId) {
-  const { repoRoot, req, res, url, authedUser } = ctx;
+  const { repoRoot, res, url, authedUser } = ctx;
 
   const pres = await getPresentation(repoRoot, presentationId);
   if (!pres) {

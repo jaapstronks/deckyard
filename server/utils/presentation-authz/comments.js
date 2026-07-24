@@ -8,7 +8,7 @@ import { normalizeEmail } from '../normalize.js';
  * Check if a user can resolve/reopen a comment.
  * Only admin or owner/creator of the presentation can resolve comments.
  */
-export function canResolveComment({ user, pres, comment } = {}) {
+export function canResolveComment({ user, pres } = {}) {
   if (user?.isAdmin) return true;
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;

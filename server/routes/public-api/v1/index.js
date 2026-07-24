@@ -197,7 +197,7 @@ async function handleSchema(ctx) {
  * @returns {Promise<boolean>} - True if handled
  */
 export async function handlePublicApiV1(ctx) {
-  const { req, res, url } = ctx;
+  const { res, url } = ctx;
 
   // Only handle /api/v1/ routes
   if (!url.pathname.startsWith('/api/v1')) {

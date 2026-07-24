@@ -186,11 +186,8 @@ function isCodeBlockOnly(parsed) {
   // Slide has code blocks and minimal other text
   if (parsed.codeBlocks.length === 0) return false;
   // Strip code blocks from body and check what remains
-  let bodyWithoutCode = parsed.body;
-  for (const block of parsed.codeBlocks) {
-    // Remove the fenced code block pattern from body
-    bodyWithoutCode = bodyWithoutCode.replace(/```[\s\S]*?```/g, '');
-  }
+  // Remove the fenced code block pattern from body
+  let bodyWithoutCode = parsed.body.replace(/```[\s\S]*?```/g, '');
   bodyWithoutCode = bodyWithoutCode.trim();
   const lines = bodyWithoutCode.split('\n').filter((l) => l.trim());
   const nonHeadingLines = lines.filter((l) => !HEADING_RE.test(l.trim()));

@@ -8,7 +8,6 @@ export function createNotesQaController({
   qaBody,
   getPresentationId,
   getPresenterSlideIndex,
-  getUiLang,
   user,
   flashHint,
 } = {}) {

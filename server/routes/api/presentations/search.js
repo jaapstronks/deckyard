@@ -134,7 +134,7 @@ function extractSlideText(slide) {
 /**
  * Search presentations with full-text matching
  */
-export async function handlePresentationsSearch({ repoRoot, req, res, url, authedUser } = {}) {
+export async function handlePresentationsSearch({ repoRoot, res, url, authedUser } = {}) {
   const query = url.searchParams.get('q')?.trim();
   const deep = url.searchParams.get('deep') === 'true'; // Search slide content too
 

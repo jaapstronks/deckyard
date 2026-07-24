@@ -18,7 +18,7 @@ import { createUiModeSwitcher } from './ui-mode-switcher.js';
 export async function renderNotes(
   root,
   sessionId,
-  { nav, user } = {}
+  { user } = {}
 ) {
   // Lock page to avoid sideways scroll on mobile.
   document.documentElement.classList.add('is-notes');

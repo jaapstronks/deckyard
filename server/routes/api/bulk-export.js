@@ -59,7 +59,7 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
   };
 
   // Add job to queue
-  const { jobId, queued, data } = await addJob(QUEUE_NAMES.HEAVY, 'bulk-export', {
+  const { jobId, queued } = await addJob(QUEUE_NAMES.HEAVY, 'bulk-export', {
     repoRoot,
     userEmail,
     organizationId: authedUser?.organizationId || undefined,

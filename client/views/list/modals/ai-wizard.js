@@ -22,7 +22,6 @@ export function openAiWizard({
     return s || 'none';
   };
   let notionEnabled = false;
-  let notionKeyword = '';
 
   const ta = h('textarea', {
     class: 'form-input form-textarea-lg',
@@ -353,7 +352,6 @@ export function openAiWizard({
 
   const loadSubjects = async ({ keyword = '' } = {}) => {
     const kw = String(keyword || '').trim();
-    notionKeyword = kw;
     const resp = await api('/api/notion/subjects', {
       method: 'POST',
       body: JSON.stringify(kw ? { keyword: kw } : {}),
@@ -410,7 +408,6 @@ export function openAiWizard({
       setBusy(true);
       try {
         suggestKeywordInput.value = '';
-        notionKeyword = '';
         const subjects = await loadSubjects({ keyword: '' });
         if (!subjects.length) {
           status.setText(t('list.aiWizard.notion.noneTopics', 'No topics found.'));
@@ -465,9 +462,6 @@ export function openAiWizard({
   modal.show();
   ta.focus();
 
-  suggestKeywordInput.addEventListener('input', () => {
-    notionKeyword = String(suggestKeywordInput.value || '').trim();
-  });
   btnKeywordSearch.addEventListener('click', async () => {
     if (modal.isBusy() || !notionEnabled) return;
     const kw = String(suggestKeywordInput.value || '').trim();

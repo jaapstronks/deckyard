@@ -139,8 +139,6 @@ export function filterItems(items, q, { labelForType, typeFilter } = {}) {
   return matches.map((m) => m.item);
 }
 
-const SUPPORTED_LANGS = ['nl', 'en-GB'];
-
 /**
  * Get content for a specific language from a slide library item.
  * Falls back to the default content if the language version doesn't exist.

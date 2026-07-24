@@ -94,7 +94,6 @@ export async function handleQuestions({ repoRoot, req, res, url, authedUser }) {
 
     const dominant =
       normalizeLang(pres?.i18n?.dominant) || 'nl';
-    const other = otherLang(dominant);
     const texts = q?.texts && typeof q.texts === 'object' ? q.texts : {};
     const originalText =
       typeof q?.originalText === 'string' && q.originalText.trim()

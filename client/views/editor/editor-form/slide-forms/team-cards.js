@@ -30,7 +30,6 @@ export function renderTeamCardsForm({
   h,
   form,
   slide,
-  add,
   used,
   fieldByKey,
   renderField,

@@ -25,9 +25,6 @@ const ENABLED = process.env.AI_VALIDATION_LOGGING !== 'false';
 // How long to keep log files (in days)
 const LOG_RETENTION_DAYS = 30;
 
-// Maximum entries per log file before rotation
-const MAX_ENTRIES_PER_FILE = 10000;
-
 // In-memory buffer for current day's entries
 let currentBuffer = [];
 let currentDate = null;

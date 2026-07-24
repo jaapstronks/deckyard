@@ -51,8 +51,6 @@ export async function renderForgotPassword(root, { nav } = {}) {
     elements: [email, btn],
   });
 
-  let submitted = false;
-
   const submit = async () => {
     if (busyManager.isBusy()) return;
 
@@ -76,7 +74,6 @@ export async function renderForgotPassword(root, { nav } = {}) {
         body: { email: e },
       });
 
-      submitted = true;
       status.textContent = '';
       status.className = 'auth-status';
 

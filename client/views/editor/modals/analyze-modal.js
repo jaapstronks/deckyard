@@ -12,9 +12,6 @@ import { stripMentionMarkup } from '../../../../shared/comment-mentions.js';
 export function openAnalyzeModal({
   h,
   root,
-  api,
-  toast,
-  pres,
   id,
   openOverlayClosers,
   onComplete,

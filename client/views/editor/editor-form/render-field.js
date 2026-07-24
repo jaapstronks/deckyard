@@ -84,13 +84,11 @@ export function createRenderField({
   const {
     fieldText,
     fieldNumber,
-    fieldTextarea,
     fieldMarkdown,
     fieldCode,
     fieldEnum,
     fieldGrid,
     fieldBackground,
-    fieldIconPicker,
     fieldImage,
     fieldTitleBgImage,
     fieldImages,
