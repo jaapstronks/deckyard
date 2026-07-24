@@ -432,7 +432,7 @@ function renderSchemaAsHtml(markdown) {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     // List items
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/^  - (.+)$/gm, '<li class="nested">$1</li>')
+    .replace(/^ {2}- (.+)$/gm, '<li class="nested">$1</li>')
     // Wrap consecutive list items
     .replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul>$&</ul>')
     // Line breaks for remaining text

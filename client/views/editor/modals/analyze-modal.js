@@ -196,7 +196,7 @@ export function openAnalyzeModal({
         }
         break;
 
-      case 'suggestion':
+      case 'suggestion': {
         progressFill.style.width = `${70 + (30 * data.index / data.total)}%`;
         statusText.textContent = t('editor.analyzeModal.creatingN', 'Creating suggestion {n} of {total}...', {
           n: String(data.index),
@@ -216,6 +216,7 @@ export function openAnalyzeModal({
         suggestionEl.append(categoryBadge, bodyText);
         suggestionsList.append(suggestionEl);
         break;
+      }
 
       case 'complete':
         isRunning = false;

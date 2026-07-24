@@ -221,7 +221,7 @@ function decodeEntities(text) {
 function cleanText(text) {
   return String(text || '')
     .replace(/\r\n?/g, '\n')
-    .replace(/[ \t ]+/g, ' ')
+    .replace(/[ \t\u00a0]+/g, ' ')
     .replace(/ *\n */g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
