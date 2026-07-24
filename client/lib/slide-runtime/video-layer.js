@@ -16,6 +16,7 @@ import {
 } from '../../../shared/video-stream-providers.js';
 import { ensureHlsJs } from './ensure-hls.js';
 import { t } from '../ui-i18n.js';
+import { h } from '../dom.js';
 
 /**
  * @param {Object} opts
@@ -25,24 +26,20 @@ import { t } from '../ui-i18n.js';
  */
 export function createVideoLayer({ containerEl, getCurrentSlide }) {
   // --- DOM scaffold ---
-  const el = document.createElement('div');
-  el.className = 'video-layer';
-  el.dataset.visible = 'false';
+  const unmuteBtn = h('button', {
+    class: 'video-layer-unmute',
+    type: 'button',
+    text: t('video.unmute', 'Unmute'),
+    'aria-label': t('video.unmuteAria', 'Unmute video stream'),
+  });
 
-  const playerWrap = document.createElement('div');
-  playerWrap.className = 'video-layer-player';
+  const playerWrap = h('div', { class: 'video-layer-player' });
+  const controlsWrap = h('div', { class: 'video-layer-controls' }, [unmuteBtn]);
 
-  const controlsWrap = document.createElement('div');
-  controlsWrap.className = 'video-layer-controls';
-
-  const unmuteBtn = document.createElement('button');
-  unmuteBtn.className = 'video-layer-unmute';
-  unmuteBtn.textContent = t('video.unmute', 'Unmute');
-  unmuteBtn.type = 'button';
-  unmuteBtn.setAttribute('aria-label', t('video.unmuteAria', 'Unmute video stream'));
-  controlsWrap.append(unmuteBtn);
-
-  el.append(playerWrap, controlsWrap);
+  const el = h('div', { class: 'video-layer', 'data-visible': 'false' }, [
+    playerWrap,
+    controlsWrap,
+  ]);
   containerEl.append(el);
 
   // --- State ---
@@ -85,17 +82,21 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
     if (!embedUrl) return;
 
     if (isIframeProvider(provider)) {
-      const iframe = document.createElement('iframe');
-      iframe.src = embedUrl;
-      iframe.title = t('video.iframeTitle', 'Live video stream');
-      iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
-      iframe.allowFullscreen = true;
-      iframe.setAttribute('frameborder', '0');
+      const iframe = h('iframe', {
+        src: embedUrl,
+        title: t('video.iframeTitle', 'Live video stream'),
+        allow: 'autoplay; encrypted-media; picture-in-picture',
+        allowfullscreen: true,
+        frameborder: '0',
+      });
       playerWrap.append(iframe);
       playerEl = iframe;
     } else {
-      // Native <video> for HLS / Mux / DASH
-      const video = document.createElement('video');
+      // Native <video> for HLS / Mux / DASH.
+      // muted/autoplay stay IDL-property assignments (not attributes): the
+      // `muted` content attribute does not reliably mute for autoplay in
+      // Chrome, only the property does.
+      const video = h('video');
       video.autoplay = true;
       video.muted = true;
       video.playsInline = true;
@@ -149,10 +150,7 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
 
   function showError(msg) {
     el.querySelector('.video-layer-error')?.remove();
-    const errEl = document.createElement('div');
-    errEl.className = 'video-layer-error';
-    errEl.textContent = msg;
-    el.append(errEl);
+    el.append(h('div', { class: 'video-layer-error', text: msg }));
   }
 
   // --- Position ---
