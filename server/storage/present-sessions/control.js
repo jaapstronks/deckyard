@@ -2,7 +2,6 @@ import { broadcast, getSessionSync, touchSessionSync, updatePresentSessionState 
 import { getPresentation } from '../presentations.js';
 import {
   isInteractiveSlideType,
-  findSlideById,
   getOptionCountForSlide,
 } from '../../utils/interaction-helpers.js';
 import {

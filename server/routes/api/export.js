@@ -19,7 +19,6 @@ import {
   parseScaleParam,
   sendExportResponse,
   handleExportError,
-  getLangSuffix,
 } from '../../export/pipeline.js';
 
 // Define export routes using the pipeline factory

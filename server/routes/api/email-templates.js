@@ -8,7 +8,6 @@ import { json, serveJson, badRequest, unauthorized } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
-  readEmailTemplates,
   writeEmailTemplate,
   deleteEmailTemplate,
   updateDefaultLocale,
@@ -19,7 +18,6 @@ import {
   getAllTemplates,
   generatePreview,
   resolveTemplate,
-  interpolatePlaceholders,
 } from '../../integrations/email-template-resolver.js';
 import { sendEmail } from '../../integrations/brevo.js';
 import { EMAIL_STYLES, emailWrapper, emailButton, troubleClickingFooter } from '../../integrations/email-templates.js';

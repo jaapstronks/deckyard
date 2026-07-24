@@ -6,7 +6,6 @@
 import {
   badRequest,
   json,
-  methodNotAllowed,
   notFound,
   serveJson,
   unauthorized,

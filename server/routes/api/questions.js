@@ -20,7 +20,7 @@ import {
 } from '../../storage/presentations.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
-import { normalizeLang, otherLang } from '../../utils/translation-status.js';
+import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions.js';
 import { canWritePresentation } from '../../utils/presentation-authz.js';
 

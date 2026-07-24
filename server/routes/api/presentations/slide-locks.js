@@ -5,7 +5,6 @@
  */
 
 import {
-  json,
   methodNotAllowed,
   serveJson,
 } from '../../../utils/http.js';
