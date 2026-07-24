@@ -79,6 +79,29 @@ deleting anything. The import-cycle hits, by contrast, are precise.
 > `eslint.config.js` by default, so `.eslintrc.json` does not affect
 > `npm run lint`.
 
+## Cadence — what runs when
+
+- **`npm run lint` (gate): every push/PR, automatically.** CI runs it before the
+  tests; you don't run it by hand except to check your own change.
+- **`npm run lint:deadcode` (advisory): periodically, by hand.** It can't be
+  automated because it over-reports (see above), so it needs a human to run and
+  triage every few weeks — and specifically at these moments:
+  - when starting a cleanup/refactor session (it's the discovery tool for it),
+  - after a large feature or a big deletion lands (that's when exports get
+    orphaned and cycles appear),
+  - as part of the periodic reorganization audit (the deep-reconcile pass).
+
+  Each run, also prune the burndown so it stays honest:
+
+  ```sh
+  npm run lint:deadcode          # triage the candidates + cycles
+  npx eslint . --prune-suppressions   # drop suppressions that are now fixed
+  ```
+
+  The suppressions file should only ever shrink. If a run shows it could be
+  pruned, prune it — a stale suppression hides real dead code behind an
+  "already known" marker.
+
 ## Adding or tightening rules
 
 - Prefer turning a rule on as `error` only if the current tree is clean or
