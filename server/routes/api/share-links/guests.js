@@ -22,6 +22,7 @@ import { createRouteContext } from '../../../utils/context.js';
 import { serveJson, notFound, unauthorized, badRequest, requireJsonBody, jsonError } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
+import { fireAndForget } from '../../../utils/fire-and-forget.js';
 const log = createLogger('guests');
 
 /**
@@ -87,23 +88,26 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
           ? `${baseShareUrl}${baseShareUrl.includes('?') ? '&' : '?'}email=${encodeURIComponent(result.guest.email)}`
           : null;
         if (shareUrl) {
-          void sendGuestInvitationEmail({
-            recipientEmail: result.guest.email,
-            recipientName: result.guest.name || null,
-            presentationTitle: pres.title || 'Presentation',
-            shareUrl,
-            inviterName: authedUser?.name || authedUser?.email,
-            repoRoot,
-          }).then((emailResult) => {
-            if (emailResult.ok) {
-              markInvitationSent(result.guest.id, ctx);
-            } else {
-              // eslint-disable-next-line no-console
-              log.warn(
-                `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim()
-              );
-            }
-          });
+          fireAndForget(
+            sendGuestInvitationEmail({
+              recipientEmail: result.guest.email,
+              recipientName: result.guest.name || null,
+              presentationTitle: pres.title || 'Presentation',
+              shareUrl,
+              inviterName: authedUser?.name || authedUser?.email,
+              repoRoot,
+            }).then((emailResult) => {
+              if (emailResult.ok) {
+                markInvitationSent(result.guest.id, ctx);
+              } else {
+                // eslint-disable-next-line no-console
+                log.warn(
+                  `[brevo] guest invitation email failed to=${result.guest.email} error=${emailResult.error || ''}`.trim()
+                );
+              }
+            }),
+            `guest invitation email to=${result.guest.email}`
+          );
         }
       }
     }
