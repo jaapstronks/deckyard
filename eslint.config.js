@@ -76,6 +76,21 @@ export default [
     },
   },
 
+  // Docs screenshot runner: Node scripts that also carry browser-context
+  // callbacks (page.evaluate / waitForFunction run inside Chromium), so both
+  // global sets are legitimately in play.
+  {
+    files: ['capture/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+  },
+
   // Tests run under node:test but exercise client code through jsdom, which
   // injects browser globals at runtime — so they need both global sets.
   {
