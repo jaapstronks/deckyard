@@ -36,7 +36,12 @@ import { renderDashboard } from './views/analytics/dashboard.js';
 import { initUiMode } from './lib/theme/ui-mode.js';
 import { fetchAppSettings, fetchMySettings } from './lib/net/settings.js';
 import { setSupportedLangs, writeLangMode } from './lib/format/i18n.js';
-import { getUiLocale, readUiLocale, setUiLocale, t } from './lib/ui-i18n.js';
+import {
+  getUiLocale,
+  resolveInitialUiLocale,
+  setUiLocale,
+  t,
+} from './lib/ui-i18n.js';
 import { escapeHtml } from '../shared/slide-types/helpers.js';
 import { showEditorLoadingSkeleton } from './views/editor/loading-skeleton.js';
 
@@ -292,7 +297,11 @@ async function render() {
 async function bootstrap() {
   initUiMode();
   try {
-    await setUiLocale(readUiLocale(), { persist: false });
+    // A `?lang=`/`?locale=` URL param (validated against the manifest) wins over
+    // the stored preference and is persisted inside resolveInitialUiLocale, so
+    // an external origin can deep-link into a language — chiefly the anonymous
+    // sandbox session. setUiLocale stays persist:false: resolve already wrote.
+    await setUiLocale(await resolveInitialUiLocale(), { persist: false });
   } catch {
     // ignore
   }
