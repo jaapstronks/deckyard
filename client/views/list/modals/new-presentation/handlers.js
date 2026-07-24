@@ -4,7 +4,7 @@
  * Action handlers for different creation modes (empty, paste-text, convert-file, notion, import-json).
  */
 
-import { t, getUiLocale } from '../../../../lib/ui-i18n.js';
+import { t } from '../../../../lib/ui-i18n.js';
 import { generatePresentationStreaming } from '../../../../lib/net/ai-stream.js';
 import { showLoadingModal } from '../../../../lib/dom/loading-modal.js';
 import { createMessageRotator } from '../../../../lib/dom/status-message-rotator.js';

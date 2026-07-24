@@ -8,7 +8,6 @@
 import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
-  DATA_SOURCE_PROVIDERS,
   BINDABLE_SLIDE_TYPES,
   PROVIDER_LABELS,
   validateDataSource,

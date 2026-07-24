@@ -4,12 +4,10 @@ import { presDir } from './paths.js';
 import { readJsonIfExists } from './io.js';
 import {
   computeMissingCount,
-  normalizeLang,
   otherLang,
   pickVersion,
 } from './i18n.js';
 import { normalizePresentationScope } from '../../utils/presentation-authz.js';
-import { resolveThemeId } from '../../utils/themes.js';
 import {
   cleanupExpiredSandboxPresentation,
   isSandboxExpiredPresentation,

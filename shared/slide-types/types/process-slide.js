@@ -10,10 +10,6 @@ import {
   getCollectionKey,
 } from '../helpers.js';
 
-function safeItemsArr(items) {
-  return Array.isArray(items) ? items : [];
-}
-
 function stepHtml(step, idx, total, direction, colKey = 'items') {
   const title = typeof step?.title === 'string' ? step.title.trim() : '';
   const text = typeof step?.text === 'string' ? step.text.trim() : '';

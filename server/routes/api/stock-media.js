@@ -9,7 +9,6 @@ import {
   json,
   methodNotAllowed,
   serveJson,
-  unauthorized,
 } from '../../utils/http.js';
 import { readAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library.js';

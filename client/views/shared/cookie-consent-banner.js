@@ -10,7 +10,6 @@ import {
   setConsentState,
   acceptAllCookies,
   acceptNecessaryOnly,
-  hasConsentChoice,
   shouldShowConsentBanner,
 } from '../../lib/util/cookie-consent.js';
 

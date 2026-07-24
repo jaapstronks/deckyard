@@ -10,19 +10,12 @@ import { me } from '../lib/user/auth.js';
 import {
   addMyQuestionId,
   getMyQuestionIds,
-  getOrCreateQaUserId,
   getQaName,
   hasUpvoted,
   markUpvoted,
   removeMyQuestionId,
   setQaName,
 } from '../lib/slide-runtime/questions.js';
-import {
-  applyCardsVisibility,
-  applyChartVisibility,
-  applyFragmentsVisibility,
-  getStepMode,
-} from './presenter/step.js';
 import { loadThemeById } from '../lib/theme/theme.js';
 import { createFollowQaController } from './follow/qa.js';
 import { createFollowSse } from './follow/sse.js';

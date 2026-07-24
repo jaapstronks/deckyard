@@ -16,50 +16,6 @@
 
 import { sql } from 'kysely';
 
-/**
- * Helper to build CASE expression for card-stack-slide cardNLabel -> cardNTitle
- */
-function buildCardStackMigration() {
-  // Build jsonb_set chain for each card label -> title
-  // We need to conditionally add cardNTitle for each N if cardNLabel exists and cardNTitle doesn't
-  return `
-    CASE
-      WHEN slide->>'type' = 'card-stack-slide'
-      THEN (
-        SELECT result FROM (
-          SELECT
-            CASE WHEN slide->'content' ? 'card4Label' AND NOT (slide->'content' ? 'card4Title')
-              THEN jsonb_set(slide, '{content,card4Title}', slide->'content'->'card4Label')
-              ELSE slide
-            END as s1
-        ) t1,
-        LATERAL (
-          SELECT
-            CASE WHEN t1.s1->'content' ? 'card3Label' AND NOT (t1.s1->'content' ? 'card3Title')
-              THEN jsonb_set(t1.s1, '{content,card3Title}', t1.s1->'content'->'card3Label')
-              ELSE t1.s1
-            END as s2
-        ) t2,
-        LATERAL (
-          SELECT
-            CASE WHEN t2.s2->'content' ? 'card2Label' AND NOT (t2.s2->'content' ? 'card2Title')
-              THEN jsonb_set(t2.s2, '{content,card2Title}', t2.s2->'content'->'card2Label')
-              ELSE t2.s2
-            END as s3
-        ) t3,
-        LATERAL (
-          SELECT
-            CASE WHEN t3.s3->'content' ? 'card1Label' AND NOT (t3.s3->'content' ? 'card1Title')
-              THEN jsonb_set(t3.s3, '{content,card1Title}', t3.s3->'content'->'card1Label')
-              ELSE t3.s3
-            END as result
-        ) t4
-      )
-      ELSE slide
-    END
-  `;
-}
-
 export const up = async (db) => {
   // =============================================
   // Part 1: Update presentations.slides
