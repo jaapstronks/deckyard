@@ -8,6 +8,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { createAvatar } from '../../lib/user/avatar.js';
 import { getUserProfile } from '../../lib/user/user-profiles.js';
 import { iconUrl } from '../../../shared/icon-names.js';
+import { hexToRgb, getRelativeLuminance } from '../../../shared/color-utils.js';
 
 /**
  * Creates a presentation card renderer with shared context
@@ -517,16 +518,11 @@ export function createCardRenderer({
  * @returns {string}
  */
 function readableTextColor(hex) {
-  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex || '').trim());
-  if (!m) return '#ffffff';
-  let h6 = m[1];
-  if (h6.length === 3) h6 = h6[0] + h6[0] + h6[1] + h6[1] + h6[2] + h6[2];
-  const r = parseInt(h6.slice(0, 2), 16) / 255;
-  const g = parseInt(h6.slice(2, 4), 16) / 255;
-  const b = parseInt(h6.slice(4, 6), 16) / 255;
-  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  const lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-  return lum > 0.4 ? '#111827' : '#ffffff';
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '#ffffff';
+  // 0.4 threshold + near-black label are tuned for the list card's coloured
+  // thumb backgrounds; kept distinct from the theme-wide 0.5 midpoint.
+  return getRelativeLuminance(rgb) > 0.4 ? '#111827' : '#ffffff';
 }
 
 /**

@@ -1,32 +1,6 @@
 import { esc, renderSubheadingHtml, getCardTitle } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
-
-function hexToRgb(hex) {
-  const s = String(hex || '').trim();
-  const m = s.match(/^#?([0-9a-f]{6})$/i);
-  if (!m) return null;
-  const n = parseInt(m[1], 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
-
-function relLuminance({ r, g, b }) {
-  const toLin = (v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  const R = toLin(r);
-  const G = toLin(g);
-  const B = toLin(b);
-  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
-}
-
-function pickTextColorForBg(bgHex, { light = '#ffffff', dark = '#212121' } = {}) {
-  const rgb = hexToRgb(bgHex);
-  if (!rgb) return dark;
-  // Midpoint-ish threshold: works well for saturated blues and dark greys.
-  const lum = relLuminance(rgb);
-  return lum < 0.5 ? light : dark;
-}
+import { pickTextColorForBg } from '../../color-utils.js';
 
 function themeCardStackPalette(theme) {
   const slideColors = theme?.slides?.['card-stack-slide']?.colors;
