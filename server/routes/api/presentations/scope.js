@@ -6,6 +6,7 @@ import {
   notFound,
   serveJson,
   unauthorized,
+  jsonError,
 } from '../../../utils/http.js';
 import { canChangePresentationScope, isPresentationAuthor } from '../../../utils/presentation-authz.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
@@ -53,7 +54,7 @@ export async function handlePresentationScope(
   // If-Match required for everyone, admins included (escape hatch removed).
   const expectedRevision = parseIfMatchRevision(req);
   if (expectedRevision == null)
-    return serveJson(res, 428, { error: 'Missing If-Match revision' });
+    return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
   const nextPres = { ...existing, scope: nextScope, isViewOnly: nextIsViewOnly };
   try {

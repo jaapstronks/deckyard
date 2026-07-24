@@ -1,12 +1,5 @@
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
-import {
-  badRequest,
-  methodNotAllowed,
-  parseJsonBody,
-  payloadTooLarge,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, methodNotAllowed, parseJsonBody, payloadTooLarge, serveJson, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('follow-codes');
@@ -73,7 +66,7 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
 
     // Rate limit by IP
     if (checkRateLimit(createRateLimits, clientIp, RATE_LIMIT_CREATE_PER_IP)) {
-      serveJson(res, 429, { error: 'Too many requests. Please try again later.' });
+      rateLimited(res, 3600, 'Too many requests. Please try again later.');
       return true;
     }
 
@@ -118,7 +111,7 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
   if (resolveMatch && req.method === 'GET') {
     // Rate limit resolution to prevent brute-force enumeration
     if (checkRateLimit(resolveRateLimits, clientIp, RATE_LIMIT_RESOLVE_PER_IP)) {
-      serveJson(res, 429, { error: 'Too many requests. Please try again later.' });
+      rateLimited(res, 3600, 'Too many requests. Please try again later.');
       return true;
     }
 

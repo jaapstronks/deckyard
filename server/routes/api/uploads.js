@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson, unauthorized } from '../../utils/http.js';
+import { badRequest, json, jsonError, serveJson, serverError, unauthorized } from '../../utils/http.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 
@@ -40,7 +40,8 @@ export async function handleUploads({ repoRoot, req, res, url, authedUser }) {
       });
     } catch (err) {
       const status = err.statusCode || 500;
-      serveJson(res, status, { error: err.message });
+      if (status >= 500) serverError(res, 'Upload failed');
+      else jsonError(res, status, 'upload_failed', err.message);
     }
     return true;
   }

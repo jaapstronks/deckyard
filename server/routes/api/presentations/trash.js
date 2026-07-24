@@ -12,6 +12,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
+  forbidden,
+  badRequest,
 } from '../../../utils/http.js';
 import { canDeletePresentation } from '../../../utils/presentation-authz.js';
 
@@ -59,7 +61,7 @@ export async function handlePresentationRestore({ repoRoot, req, res, authedUser
 
   // Check if presentation is actually trashed
   if (!existing.trashedAt) {
-    return serveJson(res, 400, { error: 'Presentation is not in trash' });
+    return badRequest(res, 'Presentation is not in trash');
   }
 
   // Check authorization: owner, creator, trashedBy, or admin
@@ -71,7 +73,7 @@ export async function handlePresentationRestore({ repoRoot, req, res, authedUser
     existing.trashedBy?.toLowerCase() === email;
 
   if (!canRestore) {
-    return serveJson(res, 403, { error: 'You do not have permission to restore this presentation' });
+    return forbidden(res, 'You do not have permission to restore this presentation');
   }
 
   const restored = await restorePresentation(repoRoot, id);
@@ -100,7 +102,7 @@ export async function handlePresentationPermanentDelete({ repoRoot, req, res, au
   // Check authorization using existing canDeletePresentation helper
   // This checks: owner, creator, or admin
   if (!canDeletePresentation({ user: authedUser, pres: existing })) {
-    return serveJson(res, 403, { error: 'You do not have permission to permanently delete this presentation' });
+    return forbidden(res, 'You do not have permission to permanently delete this presentation');
   }
 
   const deleted = await permanentlyDeletePresentation(repoRoot, id);

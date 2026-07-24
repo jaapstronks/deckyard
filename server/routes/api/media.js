@@ -1,5 +1,5 @@
 import { getFeatureFlags } from '../../config/feature-flags.js';
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized } from '../../utils/http.js';
+import { badRequest, json, jsonError, methodNotAllowed, serveJson, serverError, unauthorized } from '../../utils/http.js';
 import {
   getImageKitConfigFromEnv,
   listImageKitFiles,
@@ -53,7 +53,8 @@ export async function handleMedia({ repoRoot, req, res, url, authedUser }) {
       serveJson(res, 200, result);
     } catch (err) {
       const status = err.statusCode || 500;
-      serveJson(res, status, { error: err.message });
+      if (status >= 500) serverError(res, 'Presigned upload failed');
+      else jsonError(res, status, 'presign_failed', err.message);
     }
     return true;
   }

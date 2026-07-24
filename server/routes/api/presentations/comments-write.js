@@ -10,6 +10,7 @@ import {
   serveJson,
   unauthorized,
   badRequest,
+  notFound,
 } from '../../../utils/http.js';
 import {
   canReadPresentation,
@@ -189,13 +190,13 @@ export async function handlePresentationCommentUpdate(
   if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
 
   const pres = await getPresentation(repoRoot, id);
-  if (!pres) return serveJson(res, 404, { ok: false, error: 'Presentation not found' });
+  if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   const canEdit = await checkCommentEditAccess({ req, authedUser, pres, comment });
@@ -261,13 +262,13 @@ export async function handlePresentationCommentDelete(
   if (req.method !== 'DELETE') return methodNotAllowed(res, ['DELETE']);
 
   const pres = await getPresentation(repoRoot, id);
-  if (!pres) return serveJson(res, 404, { ok: false, error: 'Presentation not found' });
+  if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   const canDelete = await checkCommentDeleteAccess({ req, authedUser, pres, comment });

@@ -3,6 +3,8 @@
  * Text analysis and keyword extraction helpers.
  */
 
+import { badRequest, jsonError } from '../../../utils/http.js';
+
 /**
  * Normalize a name string for comparison.
  * @param {string} s - Input string
@@ -83,11 +85,9 @@ export function looksLikeUsableDoc(text) {
  * Handle common Notion API errors with user-friendly messages.
  * @param {Error} error - Error from Notion API
  * @param {Object} res - HTTP response object
- * @param {Function} badRequest - Bad request helper
- * @param {Function} serveJson - JSON response helper
  * @returns {boolean} True if error was handled
  */
-export function handleNotionError(error, res, badRequest, serveJson) {
+export function handleNotionError(error, res) {
   const msg = String(error?.message || error || 'Unknown error');
   const code = error?.statusCode || 500;
 
@@ -101,6 +101,6 @@ export function handleNotionError(error, res, badRequest, serveJson) {
     return true;
   }
 
-  serveJson(res, code >= 400 && code < 600 ? code : 500, { error: msg });
+  jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
   return true;
 }

@@ -6,7 +6,7 @@
  * Returns a job ID for status polling via the existing /api/jobs/:id infrastructure.
  */
 
-import { requireJsonBody, serveJson } from '../../utils/http.js';
+import { requireJsonBody, serveJson, unauthorized, serverError } from '../../utils/http.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
   hasActiveBulkExport,
@@ -35,7 +35,7 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
 
   const userEmail = authedUser?.email;
   if (!userEmail) {
-    serveJson(res, 401, { error: 'Authentication required' });
+    unauthorized(res, 'Authentication required');
     return true;
   }
 
@@ -103,7 +103,7 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
       });
     } catch (err) {
       log.error('[bulk-export] Sync export failed:', err.message);
-      serveJson(res, 500, { error: 'Export failed: ' + err.message });
+      serverError(res, 'Export failed');
       return true;
     } finally {
       clearActiveBulkExport(userEmail);
@@ -130,7 +130,7 @@ export async function handleBulkExport({ req, res, url, repoRoot, authedUser }) 
 function handleBulkExportStatus({ res, authedUser }) {
   const userEmail = authedUser?.email;
   if (!userEmail) {
-    serveJson(res, 401, { error: 'Authentication required' });
+    unauthorized(res, 'Authentication required');
     return true;
   }
 

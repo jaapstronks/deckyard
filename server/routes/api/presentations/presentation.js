@@ -8,6 +8,8 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
+  forbidden,
+  jsonError,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz.js';
 import {
@@ -121,7 +123,7 @@ export async function handlePresentationItem(
     // writer goes through the same optimistic-lock + slide-level merge path.
     const expectedRevision = parseIfMatchRevision(req);
     if (expectedRevision == null)
-      return serveJson(res, 428, { error: 'Missing If-Match revision' });
+      return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
     // Gate: only capability-holders may create or change raw HTML/CSS on a
     // custom-html-slide. Non-capable users may still keep/reorder such slides.
@@ -131,7 +133,7 @@ export async function handlePresentationItem(
         body.slides,
         canEditCustomHtml(authedUser)
       );
-      if (violation) return serveJson(res, 403, { error: violation });
+      if (violation) return forbidden(res, violation);
     }
 
     // Extract modified slide IDs for slide-level merge (concurrent editing)

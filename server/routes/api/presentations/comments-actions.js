@@ -10,6 +10,7 @@ import {
   unauthorized,
   badRequest,
   requireJsonBody,
+  notFound,
 } from '../../../utils/http.js';
 import { canResolveComment } from '../../../utils/presentation-authz.js';
 import {
@@ -48,7 +49,7 @@ export async function handlePresentationCommentResolve(
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   // Only owner/admin can resolve
@@ -98,7 +99,7 @@ export async function handlePresentationCommentReopen(
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   // Only owner/admin can reopen
@@ -150,7 +151,7 @@ export async function handlePresentationCommentDismiss(
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   // Only owner/admin can dismiss (same as resolve)
@@ -195,7 +196,7 @@ export async function handlePresentationCommentApply(
   const comment = await getComment(commentId, ctx);
 
   if (!comment || comment.presentationId !== id) {
-    return serveJson(res, 404, { ok: false, error: 'Comment not found' });
+    return notFound(res, 'Comment not found');
   }
 
   // Only owner/admin can apply suggestions
@@ -210,7 +211,7 @@ export async function handlePresentationCommentApply(
 
   // Get the full presentation to modify
   const fullPres = await getFullPresentation(repoRoot, id);
-  if (!fullPres) return serveJson(res, 404, { ok: false, error: 'Presentation not found' });
+  if (!fullPres) return notFound(res, 'Presentation not found');
 
   // Find the slide referenced by the comment
   const slides = fullPres.slides || [];

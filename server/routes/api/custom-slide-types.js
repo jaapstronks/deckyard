@@ -10,13 +10,7 @@
  * PUT    /api/custom-slide-types/reorder - Set display order (designer only)
  */
 
-import {
-  badRequest,
-  json,
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, json, methodNotAllowed, serveJson, unauthorized, notFound } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
 import {
   listCustomSlideTypes,
@@ -157,7 +151,7 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
     if (req.method === 'GET') {
       const type = await getCustomSlideType(typeId, ctx);
       if (!type) {
-        serveJson(res, 404, { error: 'Slide type not found.' });
+        notFound(res, 'Slide type not found.');
         return true;
       }
       serveJson(res, 200, type);
@@ -172,7 +166,7 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
       const result = await updateCustomSlideType(typeId, body, ctx);
       if (!result.ok) {
         if (result.reason === 'not_found') {
-          serveJson(res, 404, { error: 'Slide type not found.' });
+          notFound(res, 'Slide type not found.');
           return true;
         }
         return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to update slide type.');
@@ -186,7 +180,7 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
       const result = await deleteCustomSlideType(typeId, ctx);
       if (!result.ok) {
         if (result.reason === 'not_found') {
-          serveJson(res, 404, { error: 'Slide type not found.' });
+          notFound(res, 'Slide type not found.');
           return true;
         }
         return badRequest(res, ERROR_MESSAGES[result.reason] || 'Failed to delete slide type.');

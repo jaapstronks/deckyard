@@ -4,7 +4,7 @@
  */
 
 import { getUserFromRequestAsync } from '../../auth/auth.js';
-import { json, serveJson, badRequest, unauthorized, forbidden, notFound } from '../../utils/http.js';
+import { json, serveJson, badRequest, unauthorized, forbidden, notFound, serverError } from '../../utils/http.js';
 import { createRouteContext } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
@@ -101,7 +101,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       return true;
     } catch (err) {
       log.error('[organization-members] Failed to list members:', err);
-      serveJson(res, 500, { error: 'Failed to load members' });
+      serverError(res, 'Failed to load members');
       return true;
     }
   }
@@ -205,7 +205,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       return true;
     } catch (err) {
       log.error('[organization-members] Failed to invite member:', err);
-      serveJson(res, 500, { error: 'Failed to invite member' });
+      serverError(res, 'Failed to invite member');
       return true;
     }
   }
@@ -297,7 +297,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       return true;
     } catch (err) {
       log.error('[organization-members] Failed to update member role:', err);
-      serveJson(res, 500, { error: 'Failed to update member role' });
+      serverError(res, 'Failed to update member role');
       return true;
     }
   }
@@ -359,7 +359,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
       return true;
     } catch (err) {
       log.error('[organization-members] Failed to remove member:', err);
-      serveJson(res, 500, { error: 'Failed to remove member' });
+      serverError(res, 'Failed to remove member');
       return true;
     }
   }

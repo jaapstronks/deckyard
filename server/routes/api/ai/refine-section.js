@@ -1,4 +1,4 @@
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, json, serveJson, withErrorHandler } from '../../../utils/http.js';
 import {
   getOptionalObject,
   getOptionalString,
@@ -8,14 +8,14 @@ import {
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
-import { log, loadSlideTypeContext } from './shared.js';
+import { loadSlideTypeContext } from './shared.js';
 
 /**
  * POST /api/ai/refine-section — revise a contiguous range of slides from user
  * feedback (whole-deck review grid's multi-select "Adjust section" action).
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiRefineSection({ req, res, authedUser }) {
+export const handleAiRefineSection = withErrorHandler('ai-refine-section', async ({ req, res, authedUser }) => {
   const body = await json(req);
   const presentation = getOptionalObject(body, 'presentation');
   if (!presentation || !Array.isArray(presentation.slides)) {
@@ -47,35 +47,29 @@ export async function handleAiRefineSection({ req, res, authedUser }) {
   const lang = getLang(body);
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
 
-  try {
-    const {
-      slides: revisedRaw,
-      rationale,
-      review,
-    } = await refineSectionWithAi(presentation, {
-      start,
-      end,
-      feedback,
-      targetLang: lang,
-      vendor,
-      disabledSlideTypes: slideTypeCtx.disabled,
-      customSlideTypes: slideTypeCtx.custom,
-    });
+  const {
+    slides: revisedRaw,
+    rationale,
+    review,
+  } = await refineSectionWithAi(presentation, {
+    start,
+    end,
+    feedback,
+    targetLang: lang,
+    vendor,
+    disabledSlideTypes: slideTypeCtx.disabled,
+    customSlideTypes: slideTypeCtx.custom,
+  });
 
-    // Normalize so ids exist and content matches schemas, then re-attach the
-    // per-slide "why" (normalization strips unknown keys).
-    const parts = deckToPresentationParts(revisedRaw);
-    let slides = Array.isArray(parts?.slides) ? parts.slides : [];
-    slides = validateAndFixRefinedSlides(slides);
-    slides.forEach((s, i) => {
-      if (review?.[i]?.why) s._aiReasoning = review[i].why;
-    });
+  // Normalize so ids exist and content matches schemas, then re-attach the
+  // per-slide "why" (normalization strips unknown keys).
+  const parts = deckToPresentationParts(revisedRaw);
+  let slides = Array.isArray(parts?.slides) ? parts.slides : [];
+  slides = validateAndFixRefinedSlides(slides);
+  slides.forEach((s, i) => {
+    if (review?.[i]?.why) s._aiReasoning = review[i].why;
+  });
 
-    serveJson(res, 200, { slides, rationale, range: { start, end } });
-  } catch (e) {
-    log.error('[AI Refine Section] Error:', e);
-    const statusCode = e?.statusCode || 500;
-    serveJson(res, statusCode, { error: e?.message || 'Section refine failed' });
-  }
+  serveJson(res, 200, { slides, rationale, range: { start, end } });
   return true;
-}
+});

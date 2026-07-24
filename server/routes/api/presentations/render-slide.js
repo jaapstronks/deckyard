@@ -25,6 +25,7 @@ import {
   unauthorized,
   badRequest,
   requireJsonBody,
+  serverError,
 } from '../../../utils/http.js';
 
 export async function handleRenderSlide(
@@ -77,7 +78,7 @@ export async function handleRenderSlide(
     serveJson(res, 200, { html });
   } catch (err) {
     log.error('[render-slide] Error rendering slide:', err);
-    serveJson(res, 500, { error: 'Failed to render slide' });
+    serverError(res, 'Failed to render slide');
   }
 
   return true;

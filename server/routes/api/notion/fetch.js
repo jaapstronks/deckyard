@@ -3,7 +3,7 @@
  * Handles fetching Notion pages and publishing embeds back to Notion.
  */
 
-import { badRequest, json, serveJson } from '../../../utils/http.js';
+import { badRequest, json, serveJson, jsonError } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import {
   extractPageId,
@@ -50,7 +50,7 @@ export async function handleNotionFetch({ req, res, url }) {
       pageId: result.pageId,
     });
   } catch (e) {
-    handleNotionError(e, res, badRequest, serveJson);
+    handleNotionError(e, res);
   }
   return true;
 }
@@ -113,7 +113,7 @@ export async function handleNotionPublish({ req, res, url }) {
     if (msg.includes('unauthorized') || code === 401 || code === 403) {
       return badRequest(res, 'Access denied. Make sure the page is shared with your Notion integration and has edit permissions.');
     }
-    serveJson(res, code >= 400 && code < 600 ? code : 500, { error: msg });
+    jsonError(res, code >= 400 && code < 600 ? code : 500, 'notion_error', msg);
   }
   return true;
 }

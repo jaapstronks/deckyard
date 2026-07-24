@@ -7,13 +7,7 @@
  *   GET    /api/data-sources/providers     - List available providers
  */
 
-import {
-  badRequest,
-  json,
-  methodNotAllowed,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError } from '../../utils/http.js';
 import { isLiveDataEnabled } from '../../config/features.js';
 import { validateDataSource, DATA_SOURCE_PROVIDERS, BINDABLE_SLIDE_TYPES } from '../../../shared/data-source.js';
 import { refreshSlideData, fetchProviderData } from '../../utils/data-source/index.js';
@@ -24,7 +18,7 @@ export async function handleDataSources({ req, res, url, authedUser }) {
   if (!authedUser) return unauthorized(res);
 
   if (!isLiveDataEnabled()) {
-    serveJson(res, 403, { error: 'Live data sources are not enabled' });
+    forbidden(res, 'Live data sources are not enabled');
     return true;
   }
 
@@ -56,7 +50,7 @@ export async function handleDataSources({ req, res, url, authedUser }) {
       return true;
     } catch (err) {
       const status = err.statusCode || 502;
-      serveJson(res, status, { error: err.message });
+      jsonError(res, status, 'data_source_error', err.message);
       return true;
     }
   }
@@ -96,7 +90,7 @@ export async function handleDataSources({ req, res, url, authedUser }) {
       return true;
     } catch (err) {
       const status = err.statusCode || 500;
-      serveJson(res, status, { error: err.message });
+      jsonError(res, status, 'data_source_error', err.message);
       return true;
     }
   }
