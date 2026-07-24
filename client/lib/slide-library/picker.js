@@ -21,7 +21,6 @@ import {
   sortByPinnedThenName,
   sortByTrashedThenName,
   filterItems,
-  getContentForLang,
   hasContentForLang,
 } from './search.js';
 

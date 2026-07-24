@@ -10,10 +10,6 @@ import {
   getCollectionKey,
 } from '../helpers.js';
 
-function safeStagesArr(stages) {
-  return Array.isArray(stages) ? stages : [];
-}
-
 function stageHtml(stage, idx, total, colKey = 'items') {
   const label = typeof stage?.label === 'string' ? stage.label.trim() : '';
   const text = typeof stage?.text === 'string' ? stage.text.trim() : '';

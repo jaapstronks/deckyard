@@ -127,32 +127,11 @@ function restorePlaceholders(html, placeholder, items, renderFn) {
 }
 
 /**
- * Restore code blocks from placeholders to HTML.
- */
-function restoreCodeBlocks(html, blocks) {
-  return restorePlaceholders(html, CODE_BLOCK_PLACEHOLDER, blocks, (block) => {
-    const langClass = block.lang ? ` language-${escapeHtml(block.lang)}` : '';
-    const langAttr = block.lang ? ` data-lang="${escapeHtml(block.lang)}"` : '';
-    const escapedCode = escapeHtml(block.code);
-    return `<pre class="md-code-block"${langAttr} dir="ltr"><code class="${langClass.trim()}">${escapedCode}</code></pre>`;
-  });
-}
-
-/**
  * Restore inline code from placeholders to HTML.
  */
 function restoreInlineCode(html, codes) {
   return restorePlaceholders(html, INLINE_CODE_PLACEHOLDER, codes, (code) => {
     return `<code class="md-code-inline">${escapeHtml(code)}</code>`;
-  });
-}
-
-/**
- * Restore math blocks from placeholders to HTML.
- */
-function restoreMathBlocks(html, blocks) {
-  return restorePlaceholders(html, MATH_BLOCK_PLACEHOLDER, blocks, (math) => {
-    return `<div class="md-math-block" data-math="${escapeHtml(math)}">${escapeHtml(math)}</div>`;
   });
 }
 
