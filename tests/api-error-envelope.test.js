@@ -187,3 +187,28 @@ test('api() falls back to error text for a legacy prose body', async () => {
     globalThis.fetch = orig;
   }
 });
+
+// ---------------------------------------------------------------------------
+// errorText() — the shared display-text extractor direct-fetch callers use so
+// they show the human message, never the machine code, once a route adopts the
+// canonical envelope.
+// ---------------------------------------------------------------------------
+
+test('errorText prefers message over the machine code', async () => {
+  const { errorText } = await import('../client/lib/api.js');
+  // Canonical envelope: message is the human text, error is a code to hide.
+  assert.equal(errorText({ ok: false, error: 'internal_error', message: 'Failed to load users' }), 'Failed to load users');
+});
+
+test('errorText falls back to a legacy prose-in-error body', async () => {
+  const { errorText } = await import('../client/lib/api.js');
+  assert.equal(errorText({ error: 'Invalid input' }), 'Invalid input');
+});
+
+test('errorText order is message > details > error, then fallback', async () => {
+  const { errorText } = await import('../client/lib/api.js');
+  assert.equal(errorText({ details: 'd', error: 'e' }), 'd'); // details beats error
+  assert.equal(errorText({}, 'nothing usable'), 'nothing usable');
+  assert.equal(errorText(null, 'x'), 'x');
+  assert.equal(errorText({ error: '   ' }, 'blank ignored'), 'blank ignored'); // whitespace-only skipped
+});

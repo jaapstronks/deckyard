@@ -1,4 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
+import { errorText } from '../../../lib/api.js';
 import { readFileAsDataUrl } from '../../../lib/util/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 
@@ -175,7 +176,7 @@ export function createImportSlidesTab({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
+        throw new Error(errorText(errorData, `HTTP ${response.status}`));
       }
 
       // Handle SSE response

@@ -4,7 +4,7 @@
  */
 
 import { h } from '../lib/dom.js';
-import { api } from '../lib/api.js';
+import { api, errorText } from '../lib/api.js';
 import { loadThemeById } from '../lib/theme/theme.js';
 import { attachThumbScale } from '../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes, renderSlideElement } from '../lib/slide-runtime/slide-render.js';
@@ -66,7 +66,7 @@ export async function renderShareViewer(root, token) {
         message: data.message || null,
         presentationTitle: data.presentationTitle || null,
       };
-      renderError(h, shell, data.error, errorData);
+      renderError(h, shell, errorText(data), errorData);
       return cleanup;
     }
 
@@ -87,7 +87,7 @@ export async function renderShareViewer(root, token) {
     const verifyData = await verifyResp.json();
 
     if (!verifyResp.ok) {
-      renderError(h, shell, verifyData.error);
+      renderError(h, shell, errorText(verifyData));
       return cleanup;
     }
 
