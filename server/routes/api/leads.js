@@ -3,13 +3,7 @@
  * Handles lead submission (public) and lead management (authenticated).
  */
 
-import {
-  badRequest,
-  json,
-  notFound,
-  serveJson,
-  unauthorized,
-} from '../../utils/http.js';
+import { badRequest, json, notFound, serveJson, unauthorized, jsonError } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations.js';
@@ -57,11 +51,11 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
     // Rate limit by IP
     const ip = getClientIp(req);
     if (!(await allowRequest(`leads:ip:${ip}`, LEAD_RATE_LIMITS.perIp))) {
-      serveJson(res, 429, { ok: false, error: 'rate_limited' });
+      jsonError(res, 429, 'rate_limited');
       return true;
     }
     if (!(await allowRequest('leads:global', LEAD_RATE_LIMITS.global))) {
-      serveJson(res, 429, { ok: false, error: 'rate_limited' });
+      jsonError(res, 429, 'rate_limited');
       return true;
     }
 

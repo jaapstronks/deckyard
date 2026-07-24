@@ -13,7 +13,7 @@ import { getJobStatus, getQueueStats, QUEUE_NAMES } from '../../jobs/queue/conne
 import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
-import { serveJson, notFound, badRequest } from '../../utils/http.js';
+import { serveJson, notFound, badRequest, forbidden } from '../../utils/http.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 
 /**
@@ -218,7 +218,7 @@ async function handleQueueStats({ res, url, authedUser }) {
 
   // Require admin
   if (!authedUser?.isAdmin) {
-    return serveJson(res, 403, { error: 'Admin access required' });
+    return forbidden(res, 'Admin access required');
   }
 
   const queueName = match[1];

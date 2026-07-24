@@ -9,7 +9,7 @@
  */
 
 import sharp from 'sharp';
-import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden } from '../../utils/http.js';
+import { badRequest, json, methodNotAllowed, serveJson, unauthorized, forbidden, jsonError, serverError } from '../../utils/http.js';
 import { writeUserSettings } from '../../storage/settings.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../media/index.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
@@ -97,7 +97,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
     } catch (err) {
       log.error('[profile] Image upload failed:', err);
       const status = err.statusCode || 500;
-      serveJson(res, status, { error: err.message || 'Image processing failed' });
+      jsonError(res, status, 'image_processing_failed', err.message || 'Image processing failed');
     }
     return true;
   }
@@ -113,7 +113,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
       serveJson(res, 200, { ok: true });
     } catch (err) {
       log.error('[profile] Image removal failed:', err);
-      serveJson(res, 500, { error: err.message || 'Failed to remove profile image' });
+      serverError(res, 'Failed to remove profile image');
     }
     return true;
   }
@@ -197,7 +197,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
         serveJson(res, 200, { imageUrl: result.publicUrl });
       } catch (err) {
         log.error('[profile] Admin image upload failed:', err);
-        serveJson(res, err.statusCode || 500, { error: err.message || 'Image processing failed' });
+        jsonError(res, err.statusCode || 500, 'image_processing_failed', err.message || 'Image processing failed');
       }
       return true;
     }
@@ -211,7 +211,7 @@ export async function handleProfile({ repoRoot, req, res, url, authedUser }) {
         serveJson(res, 200, { ok: true });
       } catch (err) {
         log.error('[profile] Admin image removal failed:', err);
-        serveJson(res, 500, { error: err.message || 'Failed to remove profile image' });
+        serverError(res, 'Failed to remove profile image');
       }
       return true;
     }

@@ -208,7 +208,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
       await markInvitationSent(guestId, ctx);
       serveJson(res, 200, { ok: true, message: 'Invitation resent' });
     } else {
-      serveJson(res, 500, { error: 'email_failed' });
+      jsonError(res, 500, 'email_failed');
     }
     return true;
   }
