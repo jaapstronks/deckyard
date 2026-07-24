@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SLIDE_TYPES } from '../shared/slide-types/index.js';
+import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { imageFieldKeysForType } from '../server/utils/html-utils.js';
 
 /**
