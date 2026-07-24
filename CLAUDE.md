@@ -81,8 +81,17 @@ Three planning horizons, three files:
   the "wants to merge into" line before finishing up. Exception only when
   the plan explicitly says a step goes to `main` (e.g. a standalone fix
   that must survive a track no-go, like collab step 0 / PR #6).
-- **Releases**: tag `vX.Y.Z` + GitHub Release; update `CHANGELOG.md`
-  (`[Unreleased]` → release section). Forks sync on tags, not `main`.
+- **Commit / PR titles** use [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, `security:`, `feat!:` for breaking, …) — release-please reads
+  the **squash-merge PR title** to compute the next version and changelog. Full
+  prefix→bump table in `docs/reference/versioning.md`.
+- **Releases are automated** via `release-please`: it keeps one open Release PR
+  (`chore(main): release X.Y.Z`) up to date on every push to `main`. Cutting a
+  release = **merging that Release PR** (bumps `package.json`, finalizes
+  `CHANGELOG.md`, tags `vX.Y.Z`, publishes a GitHub Release). You never bump the
+  number by hand. Merges to `main` are internal CI; a release is the deliberate
+  outward signal — the two are decoupled. Forks sync on tags, not `main`.
+  Details + one-time PAT setup: `docs/reference/versioning.md`.
 - **After merging a delegated PR** (a "review en merge" hand-off you completed):
   run the **`merge-housekeeping`** skill as the tail of the flow, before you
   stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
