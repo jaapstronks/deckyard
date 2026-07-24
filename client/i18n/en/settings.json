@@ -686,6 +686,7 @@
   "settings.themes.invalidLogo": "Invalid URL",
   "settings.themes.logo": "Logo",
   "settings.themes.logo.uploadFailed": "Upload failed",
+  "settings.themes.logoAlt": "Logo",
   "settings.themes.logoFormats": "SVG, PNG, or JPG",
   "settings.themes.logoHint": "Upload your logo image. SVG format recommended for best quality.",
   "settings.themes.logoSmall": "Title Slide Logo (optional)",

@@ -388,6 +388,7 @@
   "slideLibrary.action.unfavorite": "Unfavorite",
   "slideLibrary.action.use": "Use",
   "slideLibrary.action.use.title": "Copy or start a new presentation",
+  "slideLibrary.addedToTeam": "Added to team library.",
   "slideLibrary.collections.addTo.alreadyIn": "Already in",
   "slideLibrary.collections.addTo.createNew": "New collection with this slide…",
   "slideLibrary.collections.addTo.done": "Added to \"{name}\".",

@@ -25,6 +25,39 @@ const IGNORE_DIRS = new Set(['vendor', 'styles', 'i18n']);
  */
 export const DYNAMIC_KEY_PREFIXES = ['slideType.'];
 
+/**
+ * Every runtime-built key family, as anchored patterns. Used by the *orphan*
+ * side of `scripts/i18n-audit.js`: a key only ever reached through a template
+ * literal has no static call site, so without this list it reads as unused.
+ *
+ * Deliberately separate from DYNAMIC_KEY_PREFIXES, which gates the far stricter
+ * "must exist in nl/ and en/" coverage check — loosening that list would let a
+ * genuinely missing key through (e.g. a plain `editor.textBlocks.row` prefix
+ * also swallows the static keys `…rows` and `…rowTitle`).
+ *
+ * Keep in sync with the template-literal `t()` call sites; find them with:
+ *   rg -n 't\(\s*`' client/ --glob '!client/vendor/**'
+ */
+export const DYNAMIC_KEY_PATTERNS = [
+  /^slideType\./, // deck-grid.js, ai-review-annotations.js, slide-library/controls.js
+  /^editor\.slideTypeDesc\./, // slide-type-picker.js
+  /^editor\.layoutVariant\./, // layout-switcher.js (+ labelKey in shared/slide-types/)
+  /^editor\.textStyle\.(color|align|size)\./, // editor-form/text-element-card.js
+  /^editor\.textBlocks\.row\d+$/, // editor-form/slide-forms/text-blocks.js
+  /^editor\.inline\.field\./, // inline-edit/inline-editor.js
+  /^fonts\.weightName\./, // settings/font-editor/upload-panel.js
+  /^settings\.themes\.config\.(radius|shadow|transform)\./, // theme-editor/config-sections.js
+  /^follow\./, // resolved by the scoped loader in client/views/follow/i18n.js
+];
+
+/**
+ * @param {string} key
+ * @returns {boolean} true when the key is only ever built at runtime
+ */
+export function isRuntimeBuiltKey(key) {
+  return DYNAMIC_KEY_PATTERNS.some((re) => re.test(key));
+}
+
 // t( '<key>' [, '<fallback>'] ) — single or double quoted, allowing escapes.
 // The fallback alternates on the delimiter rather than using one character
 // class, so a fallback may contain the *other* quote: t('k', "Logo's") and
@@ -71,6 +104,43 @@ export async function extractUsedKeys(clientDir) {
     }
   }
   return used;
+}
+
+// Any dotted string literal, e.g. the 'editor.foo.bar' in `{ labelKey: 'editor.foo.bar' }`.
+const DOTTED_LITERAL = /(['"`])([A-Za-z][\w-]*(?:\.[\w-]+)+)\1/g;
+
+/**
+ * Collect every dotted string literal appearing anywhere in the given source
+ * trees — a superset of the t() call sites.
+ *
+ * A dozen call sites pass the key *indirectly* (`text: t(tab.labelKey, …)`,
+ * `labelKey: 'editor.layoutVariant.text'`), and slide-type definitions under
+ * `shared/` carry i18n keys the client resolves later. Those keys are real but
+ * invisible to `extractUsedKeys`, so the orphan check needs this wider net or
+ * it reports live keys as dead.
+ *
+ * Deliberately over-matches (a filename like `foo.bar.js` also lands here);
+ * that only ever *suppresses* an orphan report, which is the safe direction.
+ *
+ * @param {string[]} dirs - absolute paths to scan
+ * @returns {Promise<Set<string>>}
+ */
+export async function collectKeyLiteralRefs(dirs) {
+  const refs = new Set();
+  for (const dir of dirs) {
+    let ok = true;
+    try {
+      await fs.access(dir);
+    } catch {
+      ok = false;
+    }
+    if (!ok) continue;
+    for await (const file of walkJs(dir)) {
+      const src = await fs.readFile(file, 'utf8');
+      for (const m of src.matchAll(DOTTED_LITERAL)) refs.add(m[2]);
+    }
+  }
+  return refs;
 }
 
 /**

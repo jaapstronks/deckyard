@@ -124,7 +124,7 @@ export function createLogoUploader({ value, onChange }) {
 
       const img = h('img', {
         src: currentUrl,
-        alt: 'Logo',
+        alt: t('settings.themes.logoAlt', 'Logo'),
         onerror: () => {
           preview.innerHTML = '';
           preview.classList.add('is-empty');

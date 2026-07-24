@@ -13,29 +13,36 @@ import {
   validateDataSource,
 } from '../../../shared/data-source.js';
 
+// `hintKey`/`labelKey` carry the i18n key and the sibling string the English
+// fallback: this table is built at import time, before the dictionary loads, so
+// the strings are resolved through t() at render time (same pattern as
+// SLIDE_TYPE_PRESETS in slide-type-picker.js).
 const PROVIDER_OPTIONS = [
   {
     value: 'notion-database',
     label: PROVIDER_LABELS['notion-database'],
+    hintKey: 'dataSource.provider.notionDatabase.hint',
     hint: 'Query a Notion database and map properties to slide fields',
     configFields: [
-      { key: 'databaseId', label: 'Database ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
+      { key: 'databaseId', labelKey: 'dataSource.field.databaseId', label: 'Database ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
     ],
   },
   {
     value: 'notion-block',
     label: PROVIDER_LABELS['notion-block'],
+    hintKey: 'dataSource.provider.notionBlock.hint',
     hint: 'Fetch content from a specific Notion page or block',
     configFields: [
-      { key: 'pageId', label: 'Page ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
+      { key: 'pageId', labelKey: 'dataSource.field.pageId', label: 'Page ID or URL', type: 'text', placeholder: 'abc123... or https://notion.so/...' },
     ],
   },
   {
     value: 'csv-url',
     label: PROVIDER_LABELS['csv-url'],
+    hintKey: 'dataSource.provider.csvUrl.hint',
     hint: 'Fetch CSV data from a URL (Google Sheets: File → Share → Publish to web → CSV)',
     configFields: [
-      { key: 'url', label: 'CSV URL', type: 'text', placeholder: 'https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv' },
+      { key: 'url', labelKey: 'dataSource.field.csvUrl', label: 'CSV URL', type: 'text', placeholder: 'https://docs.google.com/spreadsheets/d/.../gviz/tq?tqx=out:csv' },
     ],
   },
 ];
@@ -109,12 +116,12 @@ export function openDataSourceConfigModal({
     const providerOpt = PROVIDER_OPTIONS.find((p) => p.value === selectedProvider);
     if (!providerOpt) return;
 
-    const hint = h('div', { class: 'help', text: providerOpt.hint });
+    const hint = h('div', { class: 'help', text: t(providerOpt.hintKey, providerOpt.hint) });
     configSection.append(hint);
 
     for (const field of providerOpt.configFields) {
       const wrap = h('div', { class: 'form-group' });
-      const label = h('label', { class: 'form-label', text: field.label });
+      const label = h('label', { class: 'form-label', text: t(field.labelKey, field.label) });
       const input = h('input', {
         type: field.type || 'text',
         class: 'form-input',

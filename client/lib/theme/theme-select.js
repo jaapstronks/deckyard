@@ -341,7 +341,10 @@ export function createVisualThemePicker({
       lineHeight: '1.2',
     });
 
-    const body = h('div', { class: 'theme-card-body', text: 'Body text' });
+    const body = h('div', {
+      class: 'theme-card-body',
+      text: t('common.themeCard.bodySpecimen', 'Body text'),
+    });
     Object.assign(body.style, {
       fontFamily: bodyFont,
       color: textColor,

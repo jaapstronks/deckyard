@@ -388,6 +388,7 @@
   "slideLibrary.action.unfavorite": "Niet meer favoriet",
   "slideLibrary.action.use": "Gebruik",
   "slideLibrary.action.use.title": "Kopieer of start een nieuwe presentatie",
+  "slideLibrary.addedToTeam": "Toegevoegd aan de teambibliotheek.",
   "slideLibrary.collections.addTo.alreadyIn": "Zit er al in",
   "slideLibrary.collections.addTo.createNew": "Nieuwe collectie met deze slide…",
   "slideLibrary.collections.addTo.done": "Toegevoegd aan \"{name}\".",

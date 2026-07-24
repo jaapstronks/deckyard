@@ -15,7 +15,11 @@
  *
  * mountSlideInto() wipes `thumb.innerHTML` on every rerender, so the layer is
  * re-attached (ensureAttached) and rebuilt on each refresh, like the markers.
- *
+ */
+
+import { t } from '../../../lib/ui-i18n.js';
+
+/**
  * @param {Object} opts
  * @param {Function} opts.h - DOM helper
  * @param {HTMLElement} opts.thumb - the unscaled preview container
@@ -103,7 +107,7 @@ export function createInlineOverlay({ h, thumb }) {
     const pt = h('div', {
       class: 'ie-ol-item ie-focus-point',
       role: 'slider',
-      'aria-label': 'Image focus point',
+      'aria-label': t('editor.inline.focusPoint', 'Image focus point'),
       // Keyboard-operable (arrow keys nudge, Home centers) so focus is not a
       // pointer-only control - the caller wires the keydown handler.
       tabindex: '0',
