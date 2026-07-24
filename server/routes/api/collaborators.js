@@ -29,6 +29,7 @@ import { broadcastToUser, NotificationEventTypes } from '../../services/notifica
 import { createActivityEvent, EVENT_TYPES, ENTITY_TYPES } from '../../storage/activity-events.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
+import { fireAndForget } from '../../utils/fire-and-forget.js';
 const log = createLogger('collaborators');
 
 /**
@@ -236,22 +237,25 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
 
       // Send invitation email (non-blocking)
       if (body?.sendInvitation !== false) {
-        void sendCollaboratorInviteEmail({
-          recipientEmail: userEmail,
-          recipientName: targetUser.name || null,
-          presentationTitle,
-          inviterName,
-          permission,
-          editUrl,
-          repoRoot,
-        }).then((emailResult) => {
-          if (!emailResult.ok) {
-            // eslint-disable-next-line no-console
-            log.warn(
-              `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
-            );
-          }
-        });
+        fireAndForget(
+          sendCollaboratorInviteEmail({
+            recipientEmail: userEmail,
+            recipientName: targetUser.name || null,
+            presentationTitle,
+            inviterName,
+            permission,
+            editUrl,
+            repoRoot,
+          }).then((emailResult) => {
+            if (!emailResult.ok) {
+              // eslint-disable-next-line no-console
+              log.warn(
+                `[brevo] collaborator invite email failed to=${userEmail} error=${emailResult.error || ''}`.trim()
+              );
+            }
+          }),
+          `collaborator invite email to=${userEmail}`
+        );
       }
     }
 
