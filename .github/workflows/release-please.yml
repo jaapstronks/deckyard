@@ -1,0 +1,35 @@
+name: release-please
+
+# Keeps a single open "Release PR" up to date on every push to main: it carries
+# the next version (computed from Conventional-Commit types since the last tag)
+# and a generated CHANGELOG. Merging that PR is what cuts a release — it bumps
+# package.json, updates CHANGELOG.md, tags vX.Y.Z and publishes a GitHub Release.
+# Merges to main are continuous integration; a release is the deliberate outward
+# signal. See docs/reference/versioning.md.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Never run two release-please passes at once for main.
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          # A PAT (fine-grained: contents RW + pull-requests RW) lets the release
+          # PR trigger CI so the required `test` check can pass; without it the
+          # PR is still opened but must be admin-merged. Falls back to the
+          # built-in token. See docs/reference/versioning.md → "One-time setup".
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
