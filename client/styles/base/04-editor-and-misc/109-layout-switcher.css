@@ -13,7 +13,7 @@
 }
 
 .layout-switcher-popover {
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 10px;

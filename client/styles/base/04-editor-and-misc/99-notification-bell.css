@@ -64,7 +64,7 @@
   position: absolute;
   top: calc(100% + var(--ps-space-2));
   right: 0;
-  z-index: 200;
+  z-index: var(--z-drawer);
   width: 340px;
   max-height: 420px;
   display: none;

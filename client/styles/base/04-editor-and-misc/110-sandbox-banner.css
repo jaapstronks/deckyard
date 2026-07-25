@@ -6,7 +6,7 @@
   position: fixed;
   left: calc(12px + env(safe-area-inset-left, 0px));
   bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  z-index: 1150;
+  z-index: var(--z-banner);
   display: inline-flex;
   align-items: center;
   gap: 8px;

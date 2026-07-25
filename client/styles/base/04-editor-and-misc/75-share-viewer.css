@@ -427,7 +427,7 @@ img.share-link-badge {
 .share-viewer-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: hsl(0 0% 0% / 0.5);
   display: flex;
   align-items: center;
