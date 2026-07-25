@@ -127,6 +127,10 @@ export function mapVersionRowFull(row) {
 export function mapPresentationRow(row) {
   return {
     id: row.id,
+    // The owning organization travels with the presentation so the
+    // authorization layer can check it without a second query; see
+    // isSameOrganization() in utils/presentation-authz/presentations.js.
+    organizationId: row.organization_id,
     title: row.title,
     description: row.description,
     created: row.created_at,

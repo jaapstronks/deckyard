@@ -144,10 +144,12 @@ organizations. Both are in place; what is still missing is listed under
   `created_by` resolution) keep their organization filter.
 - **The request-to-organization binding — done.** `createRouteContext()`
   (`server/utils/context.js`) puts the session's resolved organization on the
-  context, and every storage query scopes on it via `getOrgId(ctx)`. So a
-  request acts in the workspace the person switched to: their own decks are
-  visible, another organization's are not, and new decks are created where they
-  are working.
+  context, and every storage query that is given that context scopes on it via
+  `getOrgId(ctx)`. So a request acts in the workspace the person switched to:
+  their own decks are visible, another organization's are not, and new decks
+  are created where they are working. The exception is the presentations
+  facade, which builds its own context and is listed under *What is not done
+  yet*.
 
   What may reach a query is only ever a membership-verified organization. The
   value comes from `getUserFromRequestAsync`, i.e. from
@@ -167,19 +169,50 @@ organizations. Both are in place; what is still missing is listed under
   `tests/request-organization-binding-multi-org.test.js` (two organizations on
   one instance, walking session cookie → context → Postgres adapter).
 
-Neither affects shapes 1-3, and neither is a prerequisite for them: a dedicated
-instance stays safe because its tenant boundary is the deploy itself. External
-email leaks were closed separately (PR #214).
+- **The organization-aware authorization layer — done.**
+  `server/utils/presentation-authz/presentations.js` used to return `true` for
+  `scope: 'workspace'` unconditionally, so as far as authorization was
+  concerned every authenticated person was a member of every workspace. The
+  four workspace grants (read, write, comment, effective permission) now pass
+  through `isSameOrganization(user, pres)`: the session's membership-verified
+  organization compared against the organization on the presentation, which
+  `mapPresentationRow` carries off the row being read anyway.
+
+  This is defense in depth, not a leak that was open: it narrows only the grant
+  that rested on "we are in the same workspace". Grants that rest on a relation
+  to the deck itself — ownership, authorship, a collaborator row — fall through
+  untouched, and the unrestricted operator of an auth-disabled install is
+  unaffected. In multi-workspace mode an organization that cannot be read on
+  either side is refused rather than waved through.
+
+  Single-organization installations are unaffected in behaviour and in cost:
+  there is one organization, so `isSameOrganization()` answers `true` from the
+  feature flag without reading anything, and the organization arrives on a row
+  the query already fetched. Pinned by `tests/authz-organization-scope.test.js`
+  (single-organization, including query-log assertions) and
+  `tests/authz-organization-scope-multi-org.test.js` (two organizations; six of
+  its assertions fail without the check).
+
+  Machine-client surfaces (public API, MCP) know their actor by email only and
+  take the organization from the presentation, so they keep the behaviour they
+  had — see the open item on API keys below.
+
+None of these affects shapes 1-3, and none is a prerequisite for them: a
+dedicated instance stays safe because its tenant boundary is the deploy itself.
+External email leaks were closed separately (PR #214).
 
 ### What is not done yet
 
-- **The authorization layer is not organization-aware.**
-  `server/utils/presentation-authz/presentations.js` returns `true`
-  unconditionally for `scope: 'workspace'`; it never mentions organizations.
-  With the binding in place a foreign deck never comes back from a query, so
-  this is not an open leak — but the authorization layer should not depend on
-  the layer beneath it remembering to scope. Defense in depth is still to be
-  added.
+- **The presentations facade still reads the default organization.**
+  `getPresentation(repoRoot, id)` in `server/storage/presentations.js` builds
+  its own context (`getStorageContext()`, which hardcodes
+  `getDefaultOrganizationId()`) instead of taking the request's. Every route
+  that loads a deck before authorizing it goes through this function, so in
+  multi-workspace mode those reads land in the default organization rather than
+  the one the session is acting in. The binding above is correct for every
+  storage call that is *given* a context; this facade is the path that never
+  asks for one. Closing it means threading a context through the facade's
+  callers, which is a piece of work in its own right.
 - **The public API resolves keys against the default organization.**
   `server/routes/public-api/v1/resources.js` builds its context from the API
   key's owner email only, so an `api_keys` row belonging to another

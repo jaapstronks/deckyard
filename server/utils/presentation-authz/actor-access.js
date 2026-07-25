@@ -28,9 +28,31 @@ import {
  */
 export function checkActorAccess({ pres, actorEmail, access = 'read', collaboratorPermission = null } = {}) {
   if (!pres || typeof pres !== 'object') return false;
-  const user = { email: actorEmail };
+  const user = actorUser(actorEmail, pres);
   const check = access === 'write' ? canWritePresentation : canReadPresentation;
   return check({ user, pres, collaboratorPermission });
+}
+
+/**
+ * Build the user shape the canonical checks expect from an actor we only know
+ * by email.
+ *
+ * The organization is taken from the presentation, which makes the workspace
+ * grant behave for machine clients exactly as it did before the authorization
+ * layer became organization-aware. That is deliberate and it is not the same
+ * statement as "this actor belongs to that organization": these surfaces
+ * resolve their context from the API key's owner email only, so an `api_keys`
+ * row belonging to another organization still reads the default one. Closing
+ * that is its own piece of work, tracked as an open item in
+ * docs/reference/tenant-isolation.md; until then this path must not silently
+ * become the place where multi-workspace access is decided.
+ *
+ * @param {string} actorEmail
+ * @param {Object} pres
+ * @returns {{email: string, organizationId: string|undefined}}
+ */
+function actorUser(actorEmail, pres) {
+  return { email: actorEmail, organizationId: pres?.organizationId };
 }
 
 /**
@@ -63,7 +85,7 @@ export async function canActorAccessPresentation(pres, actorEmail, access = 'rea
  */
 export function checkActorCommentAccess({ pres, actorEmail, collaboratorPermission = null } = {}) {
   if (!pres || typeof pres !== 'object') return false;
-  return canCommentOnPresentation({ user: { email: actorEmail }, pres, collaboratorPermission });
+  return canCommentOnPresentation({ user: actorUser(actorEmail, pres), pres, collaboratorPermission });
 }
 
 /**

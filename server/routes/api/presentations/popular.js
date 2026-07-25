@@ -135,10 +135,16 @@ export async function getPopularPresentations(ctx) {
  */
 async function filterReadableRows(rows, ctx) {
   const user = ctx?.user || null;
+  // Every row here came out of a query scoped on getOrgId(ctx), so the deck's
+  // organization is the one the request is acting in. Naming it explicitly
+  // keeps this hand-built presentation shape readable by the authorization
+  // layer, which refuses a workspace deck whose organization it cannot see.
+  const organizationId = getOrgId(ctx);
   const readable = [];
   for (const row of rows) {
     const pres = {
       id: row.id,
+      organizationId,
       scope: row.scope,
       ownerEmail: row.owner_email,
       createdBy: row.created_by,
