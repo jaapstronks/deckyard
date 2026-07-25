@@ -1,0 +1,407 @@
+/**
+ * Presentation List View
+ * Main view for displaying and managing presentations
+ *
+ * This is the public seam for the list view; it orchestrates the concern
+ * modules that sit beside it in this folder:
+ * - Topbar (search, settings, logout)
+ * - Sidebar navigation
+ * - View management (home, recent, workspace, etc.)
+ * - Bulk actions (multi-select)
+ * - Data loading (data.js) and persisted view routing (view-routing.js)
+ */
+
+import { api } from '../../lib/api.js';
+import { h } from '../../lib/dom.js';
+import {
+  readLangMode,
+  getSupportedLangs,
+  writeLangMode,
+} from '../../lib/format/i18n.js';
+import { openCreationView } from './modals/creation-view/index.js';
+import { createCardRenderer, toListItem } from './presentation-card.js';
+import { createSidebar, createBottomTabs } from './sidebar.js';
+import { createThemePickerRow } from './theme-picker-row.js';
+import { createActivityFeed } from './overview-activity.js';
+import { getFeatures } from '../../lib/state/features.js';
+import {
+  createHomeView,
+  createPresentationsView,
+  createTrashView,
+  createSearchView,
+  createSlideLibraryView,
+} from './views/index.js';
+import {
+  createSelectionState,
+  createBulkActionBar,
+} from './bulk-action-bar.js';
+import { storage } from '../../lib/storage.js';
+import { createTopbar } from './topbar.js';
+import { loadPresentationList } from './data.js';
+import { LOCAL_STORAGE_KEY_VIEW, resolveInitialView } from './view-routing.js';
+
+export async function renderList(root, { nav, user, openSlideLibrary } = {}) {
+  const features = getFeatures() || {};
+  const shell = h('div', { class: 'app-shell has-sidebar', role: 'application' });
+  const detachThumbs = [];
+  const detachers = [];
+  const openOverlayClosers = new Set();
+
+  // ============================================================
+  // CLEANUP HELPERS
+  // ============================================================
+
+  const closeAllOverlays = () => {
+    for (const close of Array.from(openOverlayClosers)) {
+      try { close(); } catch { /* ignore */ }
+    }
+    openOverlayClosers.clear();
+  };
+
+  // ============================================================
+  // STATE
+  // ============================================================
+
+  let currentView = resolveInitialView();
+
+  let unreadCount = 0;
+
+  // ============================================================
+  // MODAL WRAPPERS
+  // ============================================================
+
+  const openNewPresentationModalWrapper = ({ preselectedTheme, preselect } = {}) =>
+    openCreationView({
+      h,
+      api,
+      root,
+      nav,
+      readLangMode,
+      getSupportedLangs,
+      writeLangMode,
+      preselectedTheme,
+      preselect,
+    });
+
+  // ============================================================
+  // TOPBAR
+  // ============================================================
+
+  let searchInput = null;
+
+  const { el: topbar, searchInput: topbarSearchInput } = createTopbar({
+    h,
+    features,
+    api,
+    nav,
+    user,
+    detachers,
+    onSearch: (query) => handleSearch(query),
+  });
+  searchInput = topbarSearchInput;
+  shell.append(topbar);
+
+  // ============================================================
+  // SIDEBAR & BOTTOM TABS
+  // ============================================================
+
+  const sidebar = createSidebar({
+    h,
+    activeView: currentView,
+    unreadCount,
+    onViewChange: setView,
+    onAction: (key, href) => {
+      // Handle action items (e.g., navigate to external routes)
+      if (href) {
+        nav(href);
+      }
+    },
+    onNewClick: () => openNewPresentationModalWrapper(),
+  });
+  shell.append(sidebar.el);
+
+  const bottomTabs = createBottomTabs({
+    h,
+    activeView: currentView,
+    unreadCount,
+    onViewChange: setView,
+  });
+  shell.append(bottomTabs.el);
+
+  // ============================================================
+  // CONTENT AREA
+  // ============================================================
+
+  const content = h('main', { id: 'main-content', class: 'presentation-grid-content', role: 'main' });
+  const frame = h('div', { class: 'presentation-grid-frame' });
+  content.append(frame);
+  shell.append(content);
+  root.append(shell);
+
+  // ============================================================
+  // LOAD PRESENTATIONS
+  // ============================================================
+
+  const { workspace, priv, sharedPresentations, allByDate } = await loadPresentationList(api);
+
+  // ============================================================
+  // SELECTION STATE
+  // ============================================================
+
+  const selectionState = createSelectionState();
+
+  const clearSelectionOnViewChange = () => {
+    selectionState.clear();
+  };
+
+  selectionState.subscribe(() => {
+    const cards = frame.querySelectorAll('.presentation-card');
+    for (const card of cards) {
+      card._updateSelection?.();
+    }
+  });
+
+  // ============================================================
+  // CARD RENDERER
+  // ============================================================
+
+  let onDeckDuplicated = null;
+
+  const { renderCard } = createCardRenderer({
+    api,
+    nav,
+    onDeckDuplicated: (created) => onDeckDuplicated?.(created),
+    onTrashRefresh: () => trashViewObj.refresh(),
+    detachThumbs,
+    selectionState,
+  });
+
+  // ============================================================
+  // THEME PICKER & ACTIVITY FEED
+  // ============================================================
+
+  const themePicker = createThemePickerRow({
+    h,
+    api,
+    onThemeSelect: (theme) => openNewPresentationModalWrapper({ preselectedTheme: theme }),
+    onShowAll: () => openNewPresentationModalWrapper(),
+  });
+  detachers.push(() => themePicker.detach?.());
+
+  const activityFeed = createActivityFeed({
+    h,
+    api,
+    onNavigate: (path) => nav?.(path),
+    onUnreadCountChange: (count) => {
+      unreadCount = count;
+      sidebar.updateBadge(count);
+      bottomTabs.updateBadge(count);
+    },
+  });
+  activityFeed.fetchUnreadCount();
+
+  // ============================================================
+  // BUILD VIEWS
+  // ============================================================
+
+  const homeViewObj = createHomeView({
+    h,
+    api,
+    nav,
+    renderCard,
+    setView,
+    allByDate,
+    themePicker,
+    unreadCount,
+    user,
+    onCreate: () => openNewPresentationModalWrapper(),
+    onComposeFrom: (preselect) => openNewPresentationModalWrapper({ preselect }),
+    detachThumbs,
+  });
+
+  // Unified "Presentations" view — replaces the Recent / Workspace /
+  // My presentations / Shared with me tabs with one scope-chip + tag surface.
+  const presentationsViewObj = createPresentationsView({
+    h,
+    api,
+    renderCard,
+    allByDate,
+    onCreate: () => openNewPresentationModalWrapper(),
+  });
+
+  const trashViewObj = createTrashView({
+    h,
+    api,
+    renderCard,
+  });
+
+  const slideLibraryViewObj = createSlideLibraryView({
+    api,
+    nav,
+  });
+
+  // Search view
+  let previousView = currentView;
+  const searchViewObj = createSearchView({
+    h,
+    renderCard,
+    allPresentations: [...workspace, ...priv, ...sharedPresentations],
+    onClearSearch: () => {
+      searchInput.value = '';
+      setView(previousView);
+    },
+  });
+
+  // Load initial data
+  themePicker.load();
+  homeViewObj.loadActivityPreview();
+  homeViewObj.loadPopularPresentations();
+  homeViewObj.loadBuildingBlocks();
+
+  // ============================================================
+  // ADD VIEWS TO FRAME
+  // ============================================================
+
+  frame.append(
+    homeViewObj.el,
+    presentationsViewObj.el,
+    trashViewObj.el,
+    slideLibraryViewObj.el,
+    activityFeed.el,
+    searchViewObj.el
+  );
+
+  // ============================================================
+  // BULK ACTION BAR
+  // ============================================================
+
+  const bulkActionBar = createBulkActionBar({
+    selectionState,
+    api,
+    isTrashView: () => currentView === 'trash',
+    onBulkDelete: () => nav?.('/app'),
+    onBulkRestore: () => trashViewObj.refresh(),
+  });
+  shell.append(bulkActionBar.el);
+  detachers.push(() => bulkActionBar.detach?.());
+
+  // ============================================================
+  // VIEW SWITCHING
+  // ============================================================
+
+  function setView(viewKey) {
+    // Remember previous view for search clear
+    if (currentView !== 'search') {
+      previousView = currentView;
+    }
+
+    currentView = viewKey;
+
+    // Persist non-search views
+    if (viewKey !== 'search') {
+      storage.set(LOCAL_STORAGE_KEY_VIEW, viewKey);
+    }
+
+    clearSelectionOnViewChange();
+    bulkActionBar.update?.();
+
+    sidebar.setActiveView(viewKey);
+    bottomTabs.setActiveView(viewKey);
+
+    // Toggle view visibility - first remove is-active from all, then add to target
+    const views = frame.querySelectorAll('.sidebar-view');
+    for (const view of views) {
+      view.classList.remove('is-active');
+    }
+    for (const view of views) {
+      if (view.dataset.view === viewKey) {
+        view.classList.add('is-active');
+      }
+    }
+
+    // Load data for specific views
+    if (viewKey === 'activity') activityFeed.load();
+    if (viewKey === 'trash') trashViewObj.load();
+    if (viewKey === 'slideLibrary') slideLibraryViewObj.load();
+
+    // Load tag filters for views that have them
+    if (viewKey === 'presentations') presentationsViewObj.tagFilter?.load();
+  }
+
+  // ============================================================
+  // SEARCH
+  // ============================================================
+
+  let searchDebounce = null;
+
+  function handleSearch(query) {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      if (query.trim()) {
+        searchViewObj.search(query);
+        if (currentView !== 'search') {
+          setView('search');
+        }
+      } else if (currentView === 'search') {
+        setView(previousView);
+      }
+    }, 150);
+  }
+
+  // ============================================================
+  // DECK HANDLERS
+  // ============================================================
+
+  onDeckDuplicated = (createdFull) => {
+    const created = toListItem(createdFull);
+    if (!created?.id) return;
+
+    priv.unshift(created);
+    presentationsViewObj.addPresentation(created);
+    setView('presentations');
+  };
+
+  // ============================================================
+  // KEYBOARD SHORTCUTS
+  // ============================================================
+
+  function handleKeyDown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      searchInput?.focus();
+      searchInput?.select();
+    }
+  }
+
+  document.addEventListener('keydown', handleKeyDown);
+  detachers.push(() => document.removeEventListener('keydown', handleKeyDown));
+
+  // Tag filter detachers
+  detachers.push(() => presentationsViewObj.tagFilter?.detach?.());
+
+  // ============================================================
+  // INITIAL SETUP
+  // ============================================================
+
+  // Handle permalink navigation to slide library
+  if (openSlideLibrary?.scope && openSlideLibrary?.slideId) {
+    setView('slideLibrary');
+    slideLibraryViewObj.openSlide(openSlideLibrary.scope, openSlideLibrary.slideId);
+  } else {
+    setView(currentView);
+  }
+
+  // ============================================================
+  // CLEANUP
+  // ============================================================
+
+  return () => {
+    closeAllOverlays();
+    for (const d of detachThumbs) {
+      try { if (typeof d === 'function') d(); } catch { /* ignore */ }
+    }
+    for (const d of detachers) {
+      try { if (typeof d === 'function') d(); } catch { /* ignore */ }
+    }
+  };
+}
