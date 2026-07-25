@@ -1,0 +1,6 @@
+# Generated tooling artifact — do not hand-edit. shared.json holds the
+# language-agnostic strings and is consumed only by the i18n build scripts
+# (i18n-validate.js / i18n-merge.js / i18n-sync.js); the runtime never reads it.
+# See docs/developer/i18n.md ("shared.json"). Marked generated so GitHub collapses
+# it in diffs and excludes it from language stats.
+client/i18n/shared.json linguist-generated=true
