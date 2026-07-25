@@ -164,7 +164,7 @@
 .slide-type-preview-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 9000;
+  z-index: var(--z-lightbox);
   background: hsl(0 0% 0% / 0.6);
   backdrop-filter: blur(4px);
   display: flex;

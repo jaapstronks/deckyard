@@ -17,7 +17,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 9999;
+  z-index: var(--z-consent);
   background: var(--color-surface, #fff);
   border-top: 1px solid var(--color-border, #e5e5e5);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
@@ -87,7 +87,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10000;
+  z-index: var(--z-consent);
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
