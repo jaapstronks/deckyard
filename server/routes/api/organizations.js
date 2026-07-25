@@ -17,7 +17,7 @@ import {
   getMembership,
   hasWorkspaceRole,
 } from '../../storage/user-organizations.js';
-import { getUserByEmail } from '../../storage/users.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('organizations');
 
@@ -79,8 +79,11 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
     return unauthorized(res, 'Authentication required');
   }
 
-  // Get user's database record for ID
-  const dbUser = await getUserByEmail(user.email, ctx);
+  // Get user's database record for ID. Resolved across organizations: this is
+  // the lookup that decides which workspaces the person may switch to, so
+  // scoping it to the current one would make switching impossible for anyone
+  // whose home organization is not the one they are currently in.
+  const dbUser = await getUserByEmailGlobal(user.email);
   if (!dbUser) {
     return unauthorized(res, 'User not found');
   }

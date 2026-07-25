@@ -5,6 +5,7 @@
 
 import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
+import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
@@ -205,13 +206,10 @@ export async function getOrCreateMagicLinkUser(email, ctx) {
     const orgId = getOrgId(ctx);
     const now = nowIso();
 
-    // Check if user exists
-    let user = await db
-      .selectFrom('users')
-      .selectAll()
-      .where('email', '=', normalized)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
+    // Resolved across organizations: a magic link proves an email address, and
+    // that email identifies exactly one person instance-wide. Scoping this
+    // would try to insert a duplicate row for a globally unique email.
+    let user = await getUserByEmailGlobal(normalized);
 
     if (!user) {
       // Create new user with magic_link auth source

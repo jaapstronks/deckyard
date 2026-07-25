@@ -21,7 +21,8 @@ import {
   hasWorkspaceRole,
   WORKSPACE_ROLES,
 } from '../../storage/user-organizations.js';
-import { getUserByEmail, createUser } from '../../storage/users.js';
+import { createUser } from '../../storage/users.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';
 import { getEmailDefaultLocale } from '../../storage/email-templates.js';
 import { createLogger } from '../../utils/logger.js';
@@ -67,8 +68,9 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
     return unauthorized(res, 'Authentication required');
   }
 
-  // Get user's database record for ID
-  const dbUser = await getUserByEmail(user.email, ctx);
+  // Get user's database record for ID. Identity is organization-independent;
+  // the membership check on the next lines is what scopes this request.
+  const dbUser = await getUserByEmailGlobal(user.email);
   if (!dbUser) {
     return unauthorized(res, 'User not found');
   }
@@ -140,8 +142,10 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
         return badRequest(res, 'This user is already a member of the organization');
       }
 
-      // Check if user exists in the system
-      let targetUser = await getUserByEmail(email, ctx);
+      // Check if the person already exists anywhere on the instance. Inviting
+      // someone who is already a member of another organization must reuse
+      // their row, not attempt a second one for a globally unique email.
+      let targetUser = await getUserByEmailGlobal(email);
       let invitationToken = null;
 
       if (!targetUser) {
