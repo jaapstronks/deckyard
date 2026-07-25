@@ -6,6 +6,7 @@ import {
   resolveActiveOrganization,
 } from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
+import { sessionVersion } from '../utils/session-version.js';
 import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 
@@ -371,18 +372,9 @@ export async function getUserFromRequestAsync(req, ctx) {
   const dbUser = await getUserByEmailGlobal(email);
   if (!dbUser) return null;
 
-  // Calculate expected session version
-  // Use password_changed_at if set, otherwise fall back to updated_at
-  // This must match the version calculation in magic-link.js and password login
-  const versionSource = dbUser.password_changed_at || dbUser.updated_at;
-  const expectedV = versionSource
-    ? base64url(
-        crypto
-          .createHash('sha256')
-          .update(String(versionSource))
-          .digest()
-      ).slice(0, 12)
-    : 'db';
+  // Recompute the version claim the cookie must carry. Shared with every
+  // minter, so a mismatch means the row changed after the cookie was signed.
+  const expectedV = sessionVersion(dbUser);
 
   if (String(payload?.v || '') === expectedV) {
     // Which workspace this session may act in. Single-workspace mode answers
@@ -529,18 +521,9 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
         dbUser.role === 'admin' || email === adminEmail
           ? 'admin'
           : 'user';
-      // Generate a version key for session invalidation
-      // Use password_changed_at if set, otherwise fall back to updated_at
-      // This must match the version calculation in getUserFromRequestAsync
-      const versionSource = dbUser.password_changed_at || dbUser.updated_at;
-      const v = versionSource
-        ? base64url(
-            crypto
-              .createHash('sha256')
-              .update(String(versionSource))
-              .digest()
-          ).slice(0, 12)
-        : 'db';
+      // Version key for session invalidation, derived exactly as
+      // getUserFromRequestAsync will recompute it on the next request.
+      const v = sessionVersion(dbUser);
       return {
         email,
         role,

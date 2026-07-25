@@ -17,7 +17,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import crypto from 'node:crypto';
+import { sessionVersion } from '../server/utils/session-version.js';
 
 // Auth config must be in place before the modules under test are imported:
 // authEnabled() and the multi-workspace flag are read at module scope.
@@ -59,14 +59,6 @@ function requestWithSession(user, options = {}) {
   auth.setSessionCookie(req, res, user, options);
   const cookie = String(res.headers['Set-Cookie']).split(';')[0];
   return { headers: { cookie } };
-}
-
-/** Session version the server derives from a user row. */
-function sessionVersion(row) {
-  const source = row.password_changed_at || row.updated_at;
-  return source
-    ? crypto.createHash('sha256').update(String(source)).digest('base64url').slice(0, 12)
-    : 'db';
 }
 
 let passwordHash;
@@ -422,10 +414,32 @@ test('getUserById only resolves within the context organization', async () => {
   assert.equal(await usersStore.getUserById('user-bob', ctx), null);
 });
 
-// Guard the helper used above so a broken sessionVersion() cannot mask a
-// genuine regression in the version-derivation logic.
-test('sessionVersion helper matches the server derivation', async () => {
+// Pin the wire format with a literal instead of recomputing it: asserting
+// against sessionVersion() would only prove the helper equals itself, so a
+// changed digest, encoding or length would sail through. Every already-issued
+// cookie carries the format below, so changing it logs the whole world out.
+test('sessionVersion derivation matches its pinned wire format', () => {
+  assert.equal(sessionVersion({ password_changed_at: '2026-01-01T00:00:00.000Z' }), 'd-vHzFOcJBfd');
+  assert.equal(sessionVersion({ updated_at: '2026-01-01T00:00:00.000Z' }), 'd-vHzFOcJBfd');
+  assert.equal(
+    sessionVersion({ password_changed_at: '2026-06-01T00:00:00.000Z' }),
+    'LFoii_whDVCl',
+  );
+  // password_changed_at wins over updated_at.
+  assert.equal(
+    sessionVersion({
+      password_changed_at: '2026-06-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z',
+    }),
+    'LFoii_whDVCl',
+  );
+  // A row with neither timestamp gets the sentinel, not a hash of undefined.
+  assert.equal(sessionVersion({}), 'db');
+});
+
+// The version the login path stamps must be the one the validator recomputes.
+test('login stamps the shared session version', async () => {
   seedSingleOrg();
   const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
-  assert.equal(login.v, sessionVersion({ password_changed_at: '2026-01-01T00:00:00.000Z' }));
+  assert.equal(login.v, 'd-vHzFOcJBfd');
 });

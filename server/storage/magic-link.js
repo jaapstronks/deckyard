@@ -3,10 +3,10 @@
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
+import { sessionVersion } from '../utils/session-version.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -227,13 +227,8 @@ export async function getOrCreateMagicLinkUser(email, ctx) {
       user = inserted;
     }
 
-    // Generate a session version based on updated_at
-    const versionSource = user.password_changed_at || user.updated_at || now;
-    const v = crypto
-      .createHash('sha256')
-      .update(String(versionSource))
-      .digest('base64url')
-      .slice(0, 12);
+    // Session version, derived exactly as the request validator recomputes it.
+    const v = sessionVersion(user);
 
     return {
       ok: true,
