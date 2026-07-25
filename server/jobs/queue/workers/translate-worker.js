@@ -10,6 +10,7 @@ import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
+import { jobScope } from '../../../storage/scope.js';
 
 // Store completed job results
 const jobResults = new Map();
@@ -60,7 +61,6 @@ async function processTranslateJob(job) {
     to,
     overwrite = false,
     fillMissing = true,
-    repoRoot,
     actorEmail,
   } = job.data;
 
@@ -69,7 +69,7 @@ async function processTranslateJob(job) {
   await job.updateProgress(10);
 
   // Load presentation
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(jobScope(job.data, 'translate job'), presentationId);
   if (!pres) {
     throw new Error('Presentation not found');
   }
@@ -144,7 +144,7 @@ async function processTranslateJob(job) {
   };
 
   // Save
-  await updatePresentation(repoRoot, presentationId, pres, {
+  await updatePresentation(jobScope(job.data, 'translate job'), presentationId, pres, {
     actorEmail,
     skipLimitCheck: true, // Skip limit check for translations
   });

@@ -111,7 +111,7 @@ async function handleGet(ctx, itemId) {
  * POST /api/v1/presentations/:id/slides/from-library - Add a slide from library.
  */
 async function handleAddFromLibrary(ctx, presentationId) {
-  const { repoRoot, apiKey } = ctx;
+  const { repoRoot, storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -168,7 +168,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {

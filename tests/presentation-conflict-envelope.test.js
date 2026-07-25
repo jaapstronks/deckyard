@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 let repoRoot;
 let createPresentation;
@@ -92,7 +93,7 @@ function fakeRes() {
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
-  return createPresentation(repoRoot, {
+  return createPresentation(testScope(repoRoot), {
     title: 'Conflict deck',
     ownerEmail: OWNER,
     slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
@@ -125,6 +126,7 @@ test('PUT /:id conflict emits the canonical envelope', async () => {
   await handlePresentationItem(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({
         method: 'PUT',
         headers: { 'if-match': STALE_REVISION },
@@ -145,6 +147,7 @@ test('PATCH /:id/scope conflict emits the canonical envelope', async () => {
   await handlePresentationScope(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({
         method: 'PATCH',
         headers: { 'if-match': STALE_REVISION },
@@ -160,13 +163,14 @@ test('PATCH /:id/scope conflict emits the canonical envelope', async () => {
 
 test('POST /:id/versions/:v/restore conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
-  const version = await createPresentationVersion(repoRoot, pres.id, pres, {
+  const version = await createPresentationVersion(testScope(repoRoot), pres.id, pres, {
     actorEmail: OWNER,
   });
   const res = fakeRes();
   await handlePresentationRestoreVersion(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({
         method: 'POST',
         headers: { 'if-match': STALE_REVISION },

@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 let tmpUploads;
 let repoRoot;
@@ -79,6 +80,7 @@ async function importBundle(buf) {
   const res = fakeRes();
   await handlePresentationsImportDeck({
     repoRoot,
+    storageScope: testScope(repoRoot),
     req: fakeReq(buf),
     res,
     authedUser: { email: 'importer@example.com' },

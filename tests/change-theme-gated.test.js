@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 import {
   createPresentation,
@@ -30,7 +31,7 @@ describe('updatePresentation — gated theme switch (file mode)', () => {
 
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'change-theme-gated-'));
-    const created = await createPresentation(tempRoot, {
+    const created = await createPresentation(testScope(tempRoot), {
       title: 'Theme lock',
       ownerEmail: OWNER,
       lang: 'nl',
@@ -45,35 +46,35 @@ describe('updatePresentation — gated theme switch (file mode)', () => {
   });
 
   it('keeps the theme locked on a normal save (no allowThemeChange)', async () => {
-    const doc = structuredClone(await getPresentation(tempRoot, deckId));
+    const doc = structuredClone(await getPresentation(testScope(tempRoot), deckId));
     doc.theme = 'midnight'; // a would-be switch coming in on the body
-    const updated = await updatePresentation(tempRoot, deckId, doc, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, doc, {
       actorEmail: OWNER,
     });
     assert.equal(updated.theme, 'deckyard', 'default write path must ignore a theme change');
 
-    const stored = await getPresentation(tempRoot, deckId);
+    const stored = await getPresentation(testScope(tempRoot), deckId);
     assert.equal(stored.theme, 'deckyard', 'nothing was persisted');
   });
 
   it('switches the theme when allowThemeChange is set (the /change-theme route)', async () => {
-    const doc = structuredClone(await getPresentation(tempRoot, deckId));
+    const doc = structuredClone(await getPresentation(testScope(tempRoot), deckId));
     doc.theme = 'midnight';
-    const updated = await updatePresentation(tempRoot, deckId, doc, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, doc, {
       actorEmail: OWNER,
       allowThemeChange: true,
     });
     assert.equal(updated.theme, 'midnight', 'gated write path must apply the new theme');
 
-    const stored = await getPresentation(tempRoot, deckId);
+    const stored = await getPresentation(testScope(tempRoot), deckId);
     assert.equal(stored.theme, 'midnight', 'the switch was persisted');
   });
 
   it('leaves the theme untouched when the flag is set but no theme is provided', async () => {
     // The deck is now on 'midnight' from the previous test.
-    const doc = structuredClone(await getPresentation(tempRoot, deckId));
+    const doc = structuredClone(await getPresentation(testScope(tempRoot), deckId));
     delete doc.theme;
-    const updated = await updatePresentation(tempRoot, deckId, doc, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, doc, {
       actorEmail: OWNER,
       allowThemeChange: true,
     });

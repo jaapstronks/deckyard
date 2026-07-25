@@ -66,7 +66,7 @@ async function handleVendors(ctx) {
  * POST /api/v1/ai/wizard - Generate a new presentation from text.
  */
 async function handleWizard(ctx) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'ai')) return true;
 
@@ -105,7 +105,7 @@ async function handleWizard(ctx) {
     // Create the presentation
     const effectiveTheme = theme || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title,
       theme: effectiveTheme,
       ownerEmail: apiKey.ownerEmail,
@@ -126,7 +126,7 @@ async function handleWizard(ctx) {
     };
 
     // Update with generated content
-    const updated = await updatePresentation(repoRoot, created.id, {
+    const updated = await updatePresentation(storageScope, created.id, {
       ...created,
       title: parts.title,
       slides: parts.slides,

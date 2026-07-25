@@ -18,6 +18,7 @@ import {
 import { analyticsHeadHtml } from '../../analytics/head.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
 import { readAppSettings } from '../../storage/settings.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * Semantic reflowable "reader" view of a published deck (open web, no auth).
@@ -40,7 +41,10 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
     return true;
   }
 
-  const pres = await getPresentation(repoRoot, entry.presentationId);
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
+    entry.presentationId
+  );
   if (!pres) {
     notFound(res);
     return true;
@@ -97,7 +101,10 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
     return true;
   }
 
-  const pres = await getPresentation(repoRoot, entry.presentationId);
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
+    entry.presentationId
+  );
   if (!pres) {
     notFound(res);
     return true;

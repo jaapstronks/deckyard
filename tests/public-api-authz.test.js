@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { getPresentationWithAccess } from '../server/routes/public-api/v1/middleware.js';
+import { testScope } from './helpers/storage-scope.js';
 import {
   createPresentation,
   updatePresentation,
@@ -38,6 +39,7 @@ function makeCtx(repoRoot, ownerEmail) {
   };
   return {
     repoRoot,
+    storageScope: testScope(repoRoot),
     res,
     apiKey: { id: 'test-key', tier: 'free', ownerEmail },
   };
@@ -51,18 +53,18 @@ describe('getPresentationWithAccess (file-mode storage)', () => {
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'public-api-authz-test-'));
 
-    const privateDeck = await createPresentation(tempRoot, {
+    const privateDeck = await createPresentation(testScope(tempRoot), {
       title: 'Private deck',
       ownerEmail: OWNER,
     });
     privateId = privateDeck.id;
 
-    const viewOnlyDeck = await createPresentation(tempRoot, {
+    const viewOnlyDeck = await createPresentation(testScope(tempRoot), {
       title: 'View-only workspace deck',
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
-    await updatePresentation(tempRoot, viewOnlyId, {
+    await updatePresentation(testScope(tempRoot), viewOnlyId, {
       ...viewOnlyDeck,
       scope: 'workspace',
       isViewOnly: true,

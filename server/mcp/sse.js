@@ -44,6 +44,8 @@ function createSession(apiKey) {
   const session = {
     id: randomUUID(),
     ownerEmail: apiKey.ownerEmail,
+    // A machine client acts in the organization its key belongs to.
+    organizationId: apiKey.organizationId ?? null,
     keyId: apiKey.id,
     scopes: apiKey.scopes,
     tier: apiKey.tier || 'free',

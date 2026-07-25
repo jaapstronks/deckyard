@@ -52,10 +52,16 @@ export function getOrgId(ctx) {
  * `authedUser.organizationId` *is* the default organization and this resolves
  * to exactly the value it did before, at the same query cost.
  *
+ * The context doubles as a storage scope (see server/storage/scope.js), so it
+ * also carries the repository root when the caller has one. That is what lets
+ * the presentations facade take a single "where and on whose behalf" object
+ * instead of a bare `repoRoot` string plus an organization it invents itself.
+ *
  * @param {Object} authedUser - The authenticated user object
  * @param {Object} [options] - Additional options
  * @param {string} [options.organizationId] - Override organization ID
- * @returns {Object} - Context object with organizationId and actorEmail
+ * @param {string|null} [options.repoRoot] - Repository root, for the file-backed fallback
+ * @returns {Object} - Context object with organizationId, actorEmail and repoRoot
  */
 export function createRouteContext(authedUser, options = {}) {
   // Allow explicit override of organizationId (for multi-workspace)
@@ -69,6 +75,7 @@ export function createRouteContext(authedUser, options = {}) {
   return {
     organizationId,
     actorEmail: authedUser?.email,
+    repoRoot: options.repoRoot ?? null,
   };
 }
 

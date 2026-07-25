@@ -22,7 +22,7 @@ import {
 /**
  * Load a presentation by id and enforce the owner's access to it.
  *
- * @param {string} repoRoot - Repository root path
+ * @param {Object} scope - Storage scope (see server/storage/scope.js)
  * @param {string} presentationId - Presentation ID
  * @param {string|null} ownerEmail - Acting owner email (null = trusted local session)
  * @param {Object} [options]
@@ -31,7 +31,7 @@ import {
  * @throws {Error} If the deck is missing, not readable, or lacks the required access
  */
 export async function loadPresentationChecked(
-  repoRoot,
+  scope,
   presentationId,
   ownerEmail,
   { access = 'read' } = {}
@@ -39,7 +39,7 @@ export async function loadPresentationChecked(
   if (!presentationId) {
     throw new Error('A presentation id is required (pass `id` or `presentationId`).');
   }
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(scope, presentationId);
   if (!pres) throw new Error(`Presentation not found: ${presentationId}`);
 
   if (!ownerEmail) return pres; // trusted local session, no owner configured

@@ -2,6 +2,7 @@ import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations.js';
 import { getShareLinkByToken } from '../../storage/share-links.js';
 import { getAppName } from '../../config/branding.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   readIndexHtml,
   injectSeoDebugAnalytics,
@@ -26,7 +27,10 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
   try {
     const shareLink = await getShareLinkByToken(token);
     if (shareLink?.presentationId) {
-      const pres = await getPresentation(repoRoot, shareLink.presentationId);
+      const pres = await getPresentation(
+        crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+        shareLink.presentationId
+      );
       if (pres) {
         const proto =
           (req.headers['x-forwarded-proto'] &&

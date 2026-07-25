@@ -134,7 +134,7 @@ function extractSlideText(slide) {
 /**
  * Search presentations with full-text matching
  */
-export async function handlePresentationsSearch({ repoRoot, res, url, authedUser } = {}) {
+export async function handlePresentationsSearch({ repoRoot, storageScope, res, url, authedUser } = {}) {
   const query = url.searchParams.get('q')?.trim();
   const deep = url.searchParams.get('deep') === 'true'; // Search slide content too
 
@@ -147,7 +147,7 @@ export async function handlePresentationsSearch({ repoRoot, res, url, authedUser
     return badRequest(res, 'Search query must be at least 2 characters');
   }
 
-  const list = await listPresentations(repoRoot);
+  const list = await listPresentations(storageScope);
 
   // Filter to user's collection
   const accessiblePresentations = authedUser
@@ -181,7 +181,7 @@ export async function handlePresentationsSearch({ repoRoot, res, url, authedUser
     // Deep search: search in slide content
     if (deep && !matches) {
       try {
-        const fullPres = await getPresentation(repoRoot, pres.id);
+        const fullPres = await getPresentation(storageScope, pres.id);
         if (fullPres?.slides) {
           for (let i = 0; i < fullPres.slides.length; i++) {
             const slide = fullPres.slides[i];

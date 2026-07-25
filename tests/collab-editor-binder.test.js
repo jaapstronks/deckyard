@@ -15,6 +15,7 @@ import http from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 process.env.COLLAB_ENABLED = 'true';
 process.env.COLLAB_LIVE_EDITS = 'true';
@@ -46,7 +47,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('editor binder: two clients over a live mount', async (t) => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-binder-'));
-  const stored = await createPresentation(repoRoot, {
+  const stored = await createPresentation(testScope(repoRoot), {
     title: 'Binder deck',
     ownerEmail: 'anonymous',
     lang: 'nl',
@@ -66,7 +67,7 @@ test('editor binder: two clients over a live mount', async (t) => {
       url,
     });
     const doc = session._provider.document;
-    const pres = structuredClone(await getPresentation(repoRoot, stored.id));
+    const pres = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     const remoteEvents = [];
     const binder = createLiveDocBinder({
       Y,
@@ -312,7 +313,7 @@ test('editor binder: two clients over a live mount', async (t) => {
 
   await t.test('the debounced store persists the converged deck JSON', async () => {
     const p = await waitFor(async () => {
-      const cur = await getPresentation(repoRoot, stored.id);
+      const cur = await getPresentation(testScope(repoRoot), stored.id);
       return cur?.title === 'Onze binder-deck' && cur?.i18n?.versions?.['en-GB'] ? cur : null;
     });
     assert.ok(p.slides.some((s) => s.id === lijstjeId));

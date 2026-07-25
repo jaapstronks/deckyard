@@ -24,6 +24,7 @@ import { projectPresentationToLang } from '../../../storage/presentations/i18n.j
 import { stripLiveOnlySlides } from '../../../export/pipeline.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../../../config/database.js';
+import { jobScope } from '../../../storage/scope.js';
 
 // Store completed job results temporarily for download
 const jobResults = new Map();
@@ -73,7 +74,7 @@ async function prepareExportContext(job) {
   const { presentationId, lang, stripLiveOnly = true, repoRoot } = job.data;
 
   // Load presentation
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(jobScope(job.data, 'export job'), presentationId);
   if (!pres) {
     throw new Error('Presentation not found');
   }

@@ -7,6 +7,7 @@ import {
   otherLang,
   pickVersion,
 } from '../../../utils/translation-status.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
 import {
   computeAudienceCapabilitiesFromState,
   followMetaFromPresentation,
@@ -28,7 +29,10 @@ export async function handleFollowPresentation(
     });
     return true;
   }
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'follow-along audience: the live follow code is the authorization'),
+    presentationId
+  );
   if (!pres) return notFound(res);
   const meta = followMetaFromPresentation(pres, { includeTranslationStatus: true });
 

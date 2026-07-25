@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 let repoRoot;
 let createPresentation;
@@ -87,7 +88,7 @@ function fakeRes() {
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
-  return createPresentation(repoRoot, {
+  return createPresentation(testScope(repoRoot), {
     title: 'Lockable deck',
     ownerEmail: OWNER,
     slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
@@ -103,6 +104,7 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
   await handlePresentationItem(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
       res,
       url: `/api/presentations/${pres.id}`,
@@ -112,7 +114,7 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
   );
   assert.equal(res.statusCode, 428, 'admin must supply If-Match, no blind overwrite');
   // The deck is untouched — the write never happened.
-  const after = await getPresentation(repoRoot, pres.id);
+  const after = await getPresentation(testScope(repoRoot), pres.id);
   assert.equal(after.title, 'Lockable deck', 'title unchanged');
 });
 
@@ -122,6 +124,7 @@ test('PUT without If-Match is 428 for a non-admin owner too', async () => {
   await handlePresentationItem(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
       res,
       url: `/api/presentations/${pres.id}`,
@@ -138,6 +141,7 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
   await handlePresentationItem(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({
         method: 'PUT',
         headers: { 'if-match': String(pres.revision) },
@@ -150,7 +154,7 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
     pres.id
   );
   assert.equal(res.statusCode, 200, 'the merge path is intact, not blanket-blocked');
-  const after = await getPresentation(repoRoot, pres.id);
+  const after = await getPresentation(testScope(repoRoot), pres.id);
   assert.equal(after.title, 'Properly merged');
 });
 
@@ -160,6 +164,7 @@ test('POST /scope without If-Match is 428 for an admin', async () => {
   await handlePresentationScope(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({ method: 'PATCH', headers: {}, body: { scope: 'workspace' } }),
       res,
       authedUser: admin,
@@ -171,13 +176,14 @@ test('POST /scope without If-Match is 428 for an admin', async () => {
 
 test('POST /restore without If-Match is 428 for an admin', async () => {
   const pres = await seedDeck();
-  const version = await createPresentationVersion(repoRoot, pres.id, pres, {
+  const version = await createPresentationVersion(testScope(repoRoot), pres.id, pres, {
     actorEmail: OWNER,
   });
   const res = fakeRes();
   await handlePresentationRestoreVersion(
     {
       repoRoot,
+      storageScope: testScope(repoRoot),
       req: fakeReq({ method: 'POST', headers: {}, body: {} }),
       res,
       authedUser: admin,

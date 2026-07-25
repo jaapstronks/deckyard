@@ -1,10 +1,19 @@
 /**
  * Presentations storage facade.
  * Uses storage adapter when initialized, falls back to file-based storage.
+ *
+ * Every function here takes a **storage scope** as its first argument rather
+ * than a bare `repoRoot` string: which organization the operation acts in, on
+ * whose behalf, and (for the file-backed fallback) where the repository lives.
+ * The facade used to answer the organization question itself, with a hardcoded
+ * `getDefaultOrganizationId()`, which is why a session working in organization
+ * B would still read decks out of organization A. It no longer has a default to
+ * fall back to — see server/storage/scope.js for the contract and for the one
+ * legitimate way to say "this operation is not organization-scoped".
  */
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import { resolveScope, repoRootOf } from './scope.js';
 import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
@@ -17,47 +26,79 @@ import { createLogger } from '../utils/logger.js';
 const log = createLogger('presentations');
 
 /**
- * Get the context for storage operations.
- * In single-tenant mode, uses default organization.
- * TODO: In multi-tenant mode, extract from request/auth.
- * @param {Object} opts - Options with optional actorEmail
- * @returns {Object} Context with organizationId
+ * Reduce a caller's scope to the context the storage adapters take.
+ *
+ * `actorEmail` may be sharpened per call (a create attributes to `ownerEmail`,
+ * a write to `opts.actorEmail`) but the organization never is: it comes from
+ * the scope or the call throws.
+ *
+ * @param {import('./scope.js').StorageScope} scope - The caller's scope.
+ * @param {string} operation - Facade function name, for the error message.
+ * @param {Object} [opts] - Options carrying a sharper actor.
+ * @returns {Object} Context for the storage adapter.
  */
-function getStorageContext(opts = {}) {
+function toStorageContext(scope, operation, opts = {}) {
+  const resolved = resolveScope(scope, operation, {
+    // Only the single-deck read may skip the organization filter, and only for
+    // a deck a public token already addressed. Everything else — listings and
+    // every write — must state its organization.
+    allowCrossOrganization: operation === 'getPresentation',
+  });
   return {
-    organizationId: getDefaultOrganizationId(),
-    actorEmail: opts.actorEmail || opts.ownerEmail || null,
+    ...resolved,
+    actorEmail: opts.actorEmail || opts.ownerEmail || resolved.actorEmail,
   };
 }
 
-export async function listPresentations(repoRoot) {
+/**
+ * List the presentations of the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Array>}
+ */
+export async function listPresentations(scope) {
+  const ctx = toStorageContext(scope, 'listPresentations');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return await storage.listPresentations(ctx);
   }
   // Fall back to file-based storage
   const mod = await import('./presentations/list.js');
-  return await mod.listPresentations(repoRoot);
+  return await mod.listPresentations(repoRootOf(scope));
 }
 
-export async function getPresentation(repoRoot, id) {
+/**
+ * Fetch one presentation by id, within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @returns {Promise<Object|null>}
+ */
+export async function getPresentation(scope, id) {
   // The single durable read funnel: every stored deck is migrated up to the
   // current schema version in memory here, so callers (editor, exports, the
   // semantic projection) never see a legacy shape — regardless of the storage
   // backend. Reads don't write; the upgraded deck is persisted on the next
   // write. migratePresentation is idempotent, so the file fallback (which also
   // migrates in readPresentation) is unaffected.
+  const ctx = toStorageContext(scope, 'getPresentation');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return migratePresentation(await storage.getPresentation(id, ctx));
   }
   const mod = await import('./presentations/crud.js');
-  return migratePresentation(await mod.getPresentation(repoRoot, id));
+  return migratePresentation(await mod.getPresentation(repoRootOf(scope), id));
 }
 
-export async function createPresentation(repoRoot, body) {
+/**
+ * Create a presentation in the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {Object} body
+ * @returns {Promise<Object>}
+ */
+export async function createPresentation(scope, body) {
+  // Validate the scope before doing any work: a caller that gave none must fail
+  // here, not after preparing a deck it has nowhere to put.
+  const ctx = toStorageContext(scope, 'createPresentation', { actorEmail: body?.ownerEmail });
+  const repoRoot = repoRootOf(scope);
   if (isStorageInitialized()) {
     // Prepare the full presentation object (with slides, i18n, etc.) before storing
     const mod = await import('./presentations/crud.js');
@@ -74,7 +115,6 @@ export async function createPresentation(repoRoot, body) {
     }
 
     const storage = getStorage();
-    const ctx = getStorageContext({ actorEmail: body?.ownerEmail });
     const result = await storage.createPresentation(preparedPresentation, ctx);
 
     // Attach warnings to the result if any
@@ -87,14 +127,26 @@ export async function createPresentation(repoRoot, body) {
   return await mod.createPresentation(repoRoot, body);
 }
 
-export async function updatePresentation(repoRoot, id, body, opts) {
+/**
+ * Update a presentation within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object} body
+ * @param {Object} [opts]
+ * @returns {Promise<Object>}
+ */
+export async function updatePresentation(scope, id, body, opts) {
+  // Validate up front: the pre-save reads below would otherwise be the first
+  // thing to notice a caller that stated no organization.
+  toStorageContext(scope, 'updatePresentation', { actorEmail: opts?.actorEmail });
+  const repoRoot = repoRootOf(scope);
   // Server-as-collaborator seam: capture the pre-save state first. It is
   // the base the caller's write was computed against, and live-apply's
   // three-way diff needs it to leave concurrent client edits alone.
   const collabEligible = opts?.reason !== 'collab' && isCollabLiveEditsEnabled();
   let collabBase = null;
   if (collabEligible) {
-    collabBase = await getPresentation(repoRoot, id).catch(() => null);
+    collabBase = await getPresentation(scope, id).catch(() => null);
   }
 
   // Merge-capable save (editor autosave with If-Match + modified-slide ids)
@@ -105,13 +157,13 @@ export async function updatePresentation(repoRoot, id, body, opts) {
   const expectedRevision = Number(opts?.expectedRevision);
   if (Number.isFinite(expectedRevision) && Array.isArray(opts?.modifiedSlideIds)) {
     try {
-      const current = collabBase || (await getPresentation(repoRoot, id));
+      const current = collabBase || (await getPresentation(scope, id));
       if (current && Number(current.revision) - expectedRevision > 1) {
-        await createPresentationVersion(repoRoot, id, current, {
+        await createPresentationVersion(scope, id, current, {
           actorEmail: opts?.actorEmail || null,
           reason: 'pre_merge',
         });
-        await prunePresentationVersions(repoRoot, id);
+        await prunePresentationVersions(scope, id);
       }
     } catch {
       // snapshots are best-effort
@@ -120,7 +172,7 @@ export async function updatePresentation(repoRoot, id, body, opts) {
 
   let result;
   try {
-    result = await updatePresentationUncached(repoRoot, id, body, opts);
+    result = await updatePresentationUncached(scope, id, body, opts);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -175,10 +227,12 @@ export async function updatePresentation(repoRoot, id, body, opts) {
   return result;
 }
 
-async function updatePresentationUncached(repoRoot, id, body, opts) {
+async function updatePresentationUncached(scope, id, body, opts) {
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext({ actorEmail: opts?.actorEmail });
+    const ctx = toStorageContext(scope, 'updatePresentation', {
+      actorEmail: opts?.actorEmail,
+    });
 
     // Normalize slides and i18n before storing (mirrors crud.js behavior).
     // This ensures pres.slides and i18n.versions[lang].slides stay in sync.
@@ -209,90 +263,118 @@ async function updatePresentationUncached(repoRoot, id, body, opts) {
     return await storage.updatePresentation(id, normalized, ctx, opts);
   }
   const mod = await import('./presentations/crud.js');
-  return await mod.updatePresentation(repoRoot, id, body, opts);
+  return await mod.updatePresentation(repoRootOf(scope), id, body, opts);
 }
 
-export async function deletePresentation(repoRoot, id, opts) {
+/**
+ * Move a presentation to the trash.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object} [opts]
+ */
+export async function deletePresentation(scope, id, opts) {
+  const ctx = toStorageContext(scope, 'deletePresentation', { actorEmail: opts?.actorEmail });
   try {
     if (isStorageInitialized()) {
       const storage = getStorage();
-      const ctx = getStorageContext({ actorEmail: opts?.actorEmail });
       return await storage.deletePresentation(id, ctx);
     }
     const mod = await import('./presentations/crud.js');
-    return await mod.deletePresentation(repoRoot, id, opts);
+    return await mod.deletePresentation(repoRootOf(scope), id, opts);
   } finally {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
     // Unconditional for the same reason as in updatePresentation.
-    deleteYDocState(repoRoot, id).catch(() => {});
+    deleteYDocState(repoRootOf(scope), id).catch(() => {});
   }
 }
 
-export async function listTrashedPresentations(repoRoot) {
+/**
+ * List trashed presentations of the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ */
+export async function listTrashedPresentations(scope) {
+  const ctx = toStorageContext(scope, 'listTrashedPresentations');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return await storage.listTrashedPresentations(ctx);
   }
   const mod = await import('./presentations/list.js');
-  return await mod.listTrashedPresentations(repoRoot);
+  return await mod.listTrashedPresentations(repoRootOf(scope));
 }
 
-export async function restorePresentation(repoRoot, id) {
+/**
+ * Restore a presentation out of the trash.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ */
+export async function restorePresentation(scope, id) {
   try {
+    const ctx = toStorageContext(scope, 'restorePresentation');
     if (isStorageInitialized()) {
       const storage = getStorage();
-      const ctx = getStorageContext();
       return await storage.restorePresentation(id, ctx);
     }
     const mod = await import('./presentations/crud.js');
-    return await mod.restorePresentation(repoRoot, id);
+    return await mod.restorePresentation(repoRootOf(scope), id);
   } finally {
     invalidatePresentationCache(id);
   }
 }
 
-export async function permanentlyDeletePresentation(repoRoot, id) {
+/**
+ * Permanently delete a trashed presentation.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ */
+export async function permanentlyDeletePresentation(scope, id) {
   try {
+    const ctx = toStorageContext(scope, 'permanentlyDeletePresentation');
     if (isStorageInitialized()) {
       const storage = getStorage();
-      const ctx = getStorageContext();
       return await storage.permanentlyDeletePresentation(id, ctx);
     }
     const mod = await import('./presentations/crud.js');
-    return await mod.permanentlyDeletePresentation(repoRoot, id);
+    return await mod.permanentlyDeletePresentation(repoRootOf(scope), id);
   } finally {
     invalidatePresentationCache(id);
   }
 }
 
-export async function duplicatePresentation(repoRoot, id, opts) {
+/**
+ * Duplicate a presentation within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object} [opts]
+ */
+export async function duplicatePresentation(scope, id, opts) {
+  const ctx = toStorageContext(scope, 'duplicatePresentation', {
+    actorEmail: opts?.actorEmail,
+  });
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext({ actorEmail: opts?.actorEmail });
     return await storage.duplicatePresentation(id, ctx, opts);
   }
   const mod = await import('./presentations/crud.js');
-  return await mod.duplicatePresentation(repoRoot, id, opts);
+  return await mod.duplicatePresentation(repoRootOf(scope), id, opts);
 }
 
 /**
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
  * This avoids N+1 queries when loading shared presentations.
- * @param {string} repoRoot - Repository root path
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string[]} ids - Array of presentation IDs
  * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
  */
-export async function getFirstSlidesForIds(repoRoot, ids) {
+export async function getFirstSlidesForIds(scope, ids) {
   if (!Array.isArray(ids) || ids.length === 0) {
     return new Map();
   }
 
+  const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     // If storage adapter supports batch first slides, use it
     if (typeof storage.getFirstSlidesForIds === 'function') {
       return await storage.getFirstSlidesForIds(ids, ctx);
@@ -314,7 +396,7 @@ export async function getFirstSlidesForIds(repoRoot, ids) {
 
   // File-based storage: batch read JSON files
   const mod = await import('./presentations/crud.js');
-  return await mod.getFirstSlidesForIds(repoRoot, ids);
+  return await mod.getFirstSlidesForIds(repoRootOf(scope), ids);
 }
 
 // ============================================================
@@ -328,47 +410,47 @@ export async function getFirstSlidesForIds(repoRoot, ids) {
 // in the `presentation_versions` table, so version history rides along with
 // the regular DB backups instead of living on a disk that a redeploy wipes.
 //
-// The (repoRoot, presentationId, ...) signature is kept so existing call
-// sites only swap their import path, never their arguments. When storage is
-// not initialized (some scripts/tests) we fall back to the file module, same
-// as the presentation CRUD helpers above.
+// The (scope, presentationId, ...) signature matches the CRUD helpers above:
+// snapshots live in the same organization as the deck they snapshot, so they
+// take the same scope. When storage is not initialized (some scripts/tests) we
+// fall back to the file module.
 
 /**
  * List version snapshots for a presentation (newest first).
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId
  * @returns {Promise<Array>}
  */
-export async function listPresentationVersions(repoRoot, presentationId) {
+export async function listPresentationVersions(scope, presentationId) {
+  const ctx = toStorageContext(scope, 'listPresentationVersions');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return await storage.listPresentationVersions(presentationId, ctx);
   }
   const mod = await import('./presentations/versions.js');
-  return await mod.listPresentationVersions(repoRoot, presentationId);
+  return await mod.listPresentationVersions(repoRootOf(scope), presentationId);
 }
 
 /**
  * Get a single version snapshot (full presentation data included).
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {string} versionId
  * @returns {Promise<Object|null>}
  */
-export async function getPresentationVersion(repoRoot, presentationId, versionId) {
+export async function getPresentationVersion(scope, presentationId, versionId) {
+  const ctx = toStorageContext(scope, 'getPresentationVersion');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return await storage.getPresentationVersion(presentationId, versionId, ctx);
   }
   const mod = await import('./presentations/versions.js');
-  return await mod.getPresentationVersion(repoRoot, presentationId, versionId);
+  return await mod.getPresentationVersion(repoRootOf(scope), presentationId, versionId);
 }
 
 /**
  * Create a version snapshot of a presentation.
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} pres - Full presentation object to snapshot
  * @param {Object} [opts]
@@ -377,35 +459,37 @@ export async function getPresentationVersion(repoRoot, presentationId, versionId
  * @param {string} [opts.label]
  * @returns {Promise<Object|null>}
  */
-export async function createPresentationVersion(repoRoot, presentationId, pres, opts = {}) {
+export async function createPresentationVersion(scope, presentationId, pres, opts = {}) {
+  const ctx = toStorageContext(scope, 'createPresentationVersion', {
+    actorEmail: opts?.actorEmail,
+  });
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext({ actorEmail: opts?.actorEmail });
     return await storage.createPresentationVersion(presentationId, pres, ctx, {
       reason: opts?.reason,
       label: opts?.label,
     });
   }
   const mod = await import('./presentations/versions.js');
-  return await mod.createPresentationVersion(repoRoot, presentationId, pres, opts);
+  return await mod.createPresentationVersion(repoRootOf(scope), presentationId, pres, opts);
 }
 
 /**
  * Prune old version snapshots per the retention policy.
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} [opts]
  * @param {number} [opts.keep]
  * @returns {Promise<*>}
  */
-export async function prunePresentationVersions(repoRoot, presentationId, opts = {}) {
+export async function prunePresentationVersions(scope, presentationId, opts = {}) {
+  const ctx = toStorageContext(scope, 'prunePresentationVersions');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return await storage.prunePresentationVersions(presentationId, ctx, {
       keep: opts?.keep,
     });
   }
   const mod = await import('./presentations/versions.js');
-  return await mod.prunePresentationVersions(repoRoot, presentationId, opts);
+  return await mod.prunePresentationVersions(repoRootOf(scope), presentationId, opts);
 }

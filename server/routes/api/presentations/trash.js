@@ -20,12 +20,12 @@ import { canDeletePresentation } from '../../../utils/presentation-authz.js';
 /**
  * GET /api/presentations/trash - List trashed presentations
  */
-export async function handlePresentationsTrashList({ repoRoot, req, res, authedUser }) {
+export async function handlePresentationsTrashList({ repoRoot, storageScope, req, res, authedUser }) {
   if (req.method !== 'GET') {
     return methodNotAllowed(res, ['GET']);
   }
 
-  const items = await listTrashedPresentations(repoRoot);
+  const items = await listTrashedPresentations(storageScope);
 
   // Filter to only show items the user can see (owner, creator, or admin)
   const filtered = items.filter((p) => {
@@ -48,13 +48,13 @@ export async function handlePresentationsTrashList({ repoRoot, req, res, authedU
 /**
  * POST /api/presentations/:id/restore - Restore a presentation from trash
  */
-export async function handlePresentationRestore({ repoRoot, req, res, authedUser }, id) {
+export async function handlePresentationRestore({ repoRoot, storageScope, req, res, authedUser }, id) {
   if (req.method !== 'POST') {
     return methodNotAllowed(res, ['POST']);
   }
 
   // First check if the presentation exists and is in trash
-  const existing = await getPresentation(repoRoot, id);
+  const existing = await getPresentation(storageScope, id);
   if (!existing) {
     return notFound(res);
   }
@@ -76,7 +76,7 @@ export async function handlePresentationRestore({ repoRoot, req, res, authedUser
     return forbidden(res, 'You do not have permission to restore this presentation');
   }
 
-  const restored = await restorePresentation(repoRoot, id);
+  const restored = await restorePresentation(storageScope, id);
   if (!restored) {
     return notFound(res);
   }
@@ -88,13 +88,13 @@ export async function handlePresentationRestore({ repoRoot, req, res, authedUser
 /**
  * DELETE /api/presentations/:id/permanent - Permanently delete a presentation
  */
-export async function handlePresentationPermanentDelete({ repoRoot, req, res, authedUser }, id) {
+export async function handlePresentationPermanentDelete({ repoRoot, storageScope, req, res, authedUser }, id) {
   if (req.method !== 'DELETE') {
     return methodNotAllowed(res, ['DELETE']);
   }
 
   // First check if the presentation exists
-  const existing = await getPresentation(repoRoot, id);
+  const existing = await getPresentation(storageScope, id);
   if (!existing) {
     return notFound(res);
   }
@@ -105,7 +105,7 @@ export async function handlePresentationPermanentDelete({ repoRoot, req, res, au
     return forbidden(res, 'You do not have permission to permanently delete this presentation');
   }
 
-  const deleted = await permanentlyDeletePresentation(repoRoot, id);
+  const deleted = await permanentlyDeletePresentation(storageScope, id);
   if (!deleted) {
     return notFound(res);
   }

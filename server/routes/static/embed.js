@@ -16,6 +16,7 @@ import {
 import { analyticsHeadHtml } from '../../analytics/head.js';
 import { readAppSettings } from '../../storage/settings.js';
 import { log } from './log.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * Published embed player (iframe-friendly, public, no auth). Kept iframe-safe:
@@ -35,7 +36,10 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     return true;
   }
 
-  const pres = await getPresentation(repoRoot, entry.presentationId);
+  const pres = await getPresentation(
+    crossOrganizationScope(repoRoot, 'embedded deck: the publish id is the authorization'),
+    entry.presentationId
+  );
   if (!pres) {
     notFound(res);
     return true;

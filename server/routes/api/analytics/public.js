@@ -14,6 +14,7 @@ import {
 } from '../../../analytics/helpers.js';
 import { getAnalyticsReportByToken } from '../../../storage/analytics/reports.js';
 import { normalizePresentationScope } from '../../../utils/presentation-authz.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
 
 /**
  * Handle public analytics report access (no auth required).
@@ -59,7 +60,10 @@ export async function handleAnalyticsReportPublic({ req, res, url }) {
     // Verify the associated presentation still exists and is accessible
     // This prevents sharing reports for deleted/private presentations
     const { getPresentation } = await import('../../../storage/presentations.js');
-    const presentation = await getPresentation(null, report.presentationId);
+    const presentation = await getPresentation(
+      crossOrganizationScope(null, 'public analytics report: the report token is the authorization'),
+      report.presentationId
+    );
     if (!presentation) {
       return sendErrorResponse(res, 404, 'Report not available - presentation no longer exists'), true;
     }

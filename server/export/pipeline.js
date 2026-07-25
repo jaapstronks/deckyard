@@ -9,6 +9,7 @@ import { getCollaboratorPermission } from '../storage/collaborators.js';
 import { addJob, isQueueAvailable, QUEUE_NAMES } from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { createRouteContext } from '../utils/context.js';
 
 /**
  * Get the language suffix for filenames based on export language
@@ -44,11 +45,15 @@ export async function prepareExportContext({
   url,
   authedUser,
   presentationId,
+  storageScope,
   stripLiveOnly = true,
 }) {
   const exportLang = normalizeLang(url?.searchParams?.get('lang'));
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(
+    storageScope || createRouteContext(authedUser, { repoRoot }),
+    presentationId
+  );
   if (!pres) {
     notFound(res);
     return null;
@@ -252,7 +257,10 @@ export function createAsyncExportRoute(config) {
     // If queue is available and not forcing sync, queue the job
     if (!forceSync && isQueueAvailable()) {
       // Quick auth check
-      const pres = await getPresentation(repoRoot, presentationId);
+      const pres = await getPresentation(
+        createRouteContext(authedUser, { repoRoot }),
+        presentationId
+      );
       if (!pres) {
         return notFound(res);
       }
@@ -274,8 +282,10 @@ export function createAsyncExportRoute(config) {
         scale,
         repoRoot,
         // Stamp the requester so the download/status routes can enforce
-        // ownership (job IDs are enumerable ints — see security-audit H3).
+        // ownership (job IDs are enumerable ints — see security-audit H3), and the
+        // organization so the worker acts in the workspace the export came from.
         ownerEmail: authedUser?.email || null,
+        organizationId: authedUser?.organizationId || undefined,
       });
 
       if (queued) {
