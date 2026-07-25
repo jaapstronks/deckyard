@@ -9,7 +9,7 @@ updated 2026-07-25.
 
 Deckyard's hosting story has four shapes:
 
-1. **Sandbox / playground** (`SANDBOX_MODE`, e.g. `try.deckyard.eu`) —
+1. **Sandbox / playground** (`SANDBOX_MODE`, e.g. `sandbox.deckyard.eu`) —
    anonymous, throwaway, one shared instance. Isolation model below.
 2. **Self-hosted** — one operator runs one instance for their own use.
 3. **Dedicated customer instance** — a manually provisioned, per-customer
@@ -91,7 +91,7 @@ multi-workspace unset. Guard behavior is pinned by
 Sandbox mode is exempt from the guard: it is single-org by construction (see
 below), so there is no second tenant even if the flag is combined with it.
 
-## Sandbox isolation (`try.deckyard.eu`)
+## Sandbox isolation (`sandbox.deckyard.eu`)
 
 Sandbox mode is safe to expose publicly. Its isolation rests on four things:
 

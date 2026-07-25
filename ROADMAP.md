@@ -18,25 +18,32 @@ validation/iteration, and an MCP server with 27 tools + SSE transport.
   `docs/reference/`.
 - This is a direction, not a contract — priorities shift as the project learns.
 
-## Now — UX improvement track (from the 2026-07-10 UX research)
+## Now — organizations on one instance
 
-Each is a self-contained project, in recommended working order.
+- **Organizations** — several organizations can share one instance, with
+  identity resolved independently of any single organization and every
+  presentation query, authorization branch and route context scoped to the
+  organization the session actually works in. The backend has landed; the
+  management UI (organization switcher, member management, invitations) is what
+  remains. How isolation works is documented in
+  [`docs/reference/tenant-isolation.md`](docs/reference/tenant-isolation.md).
 
-1. **Live-session robustness** — survive presenter refresh, companion
-   auto-recovery, persistent join QR, unified follow codes, linked Q&A
-   moderation, poll-open affordance.
-2. **Share unification** — a unified 3-tab Share dialog (live audience / link /
-   workspace). PR 1 shipped (guarded presenter-control link, inline share link,
-   reconciled permission model); the 3-tab dialog is what remains.
-
-_Shipped in this track: i18n & copy cleanup, onboarding & discoverability, the
+_The UX improvement track that stood here (from the 2026-07-10 UX research) has
+shipped its bulk: i18n & copy cleanup, onboarding & discoverability, the
 editor-UI overhaul (wysiwyg-first editing, the Inspector rail, responsive
 convergence, editor-chrome redesign), the create-flow track, the Theme Studio,
-and the editing-surfaces track. How each works is documented under
-`docs/reference/` and `docs/developer/`._
+and the editing-surfaces track. Its two remaining projects moved to **Next**
+below — they are planned, not in progress. How each shipped piece works is
+documented under `docs/reference/` and `docs/developer/`._
 
 ## Next — planned features
 
+- **Live-session robustness** — survive presenter refresh, companion
+  auto-recovery, persistent join QR, unified follow codes, linked Q&A
+  moderation, poll-open affordance.
+- **Share unification** — a unified 3-tab Share dialog (live audience / link /
+  workspace). PR 1 shipped (guarded presenter-control link, inline share link,
+  reconciled permission model); the 3-tab dialog is what remains.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab merge
   guard: order-preserving merges, client refresh on focus/online so a tab never
   grows stale, and a merge audit log with pre-merge snapshots.
@@ -57,9 +64,25 @@ and the editing-surfaces track. How each works is documented under
   pros-cons / tradeoff), each shipping with matching AI-catalog / MCP logic so
   agents reach for the right block.
 
-## Later — cloud / multi-tenant track
+## Later — directional
 
-- **Custom domains**
-- **SSO, part 2** — SAML, plus per-organization identity providers for hosted
-  instances. Self-hosted single-IdP SSO over OIDC has shipped.
-- **Multi-tenancy** — white-label hosting; depends on the two above
+- **SSO, part 2** — SAML, alongside the single-IdP OIDC that has shipped.
+
+### Dropped: the cloud / multi-tenant track
+
+This section used to promise custom domains, white-label hosting and a
+shared multi-tenant cloud. That is no longer where Deckyard is going, and
+leaving it here would misrepresent the project:
+
+- **Resolving an organization from the hostname is a rejected model**, not
+  deferred work. A hostname identifies an *instance*; an organization is a
+  dimension *within* one. A customer who wants their own domain gets their own
+  deployment — DNS, a reverse proxy and `BASE_URL`, none of which the
+  application needs to know about. The half-built subdomain and custom-domain
+  resolution has been removed; the reasoning is recorded in
+  [`docs/reference/tenant-isolation.md`](docs/reference/tenant-isolation.md)
+  under *Why not the hostname*.
+- **There will be no shared multi-tenant SaaS** — no subscriptions, no payment
+  integration, no self-serve signup, no commercial plan limits in this
+  codebase. Deckyard stays something you run yourself, and the isolation shapes
+  it supports are documented rather than sold.
