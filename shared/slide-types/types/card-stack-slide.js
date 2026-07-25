@@ -1,7 +1,45 @@
 import { esc, renderSubheadingHtml, getCardTitle } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
-import { pickTextColorForBg } from '../../color-utils.js';
+import { hexToRgb, pickTextColorForBg } from '../../color-utils.js';
 
+/** Tint fractions (accent → white) for the synthesized fallback ramp. */
+const RAMP_STOPS = [0, 0.28, 0.52, 0.72];
+
+function rgbToHex({ r, g, b }) {
+  const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+  return `#${h(r)}${h(g)}${h(b)}`;
+}
+
+/**
+ * Monochrome dark→light ramp built from a single accent hex by mixing toward
+ * white. Returns null when the accent can't be parsed. Emits concrete hex (not
+ * `var()`) so renderHtml can still read each band's luminance to pick readable
+ * per-card text — the reason this slide can't just hand CSS a token reference.
+ * @param {string} accentHex
+ * @returns {string[]|null}
+ */
+function accentRamp(accentHex) {
+  const base = hexToRgb(accentHex);
+  if (!base) return null;
+  const white = { r: 255, g: 255, b: 255 };
+  return RAMP_STOPS.map((t) =>
+    rgbToHex({
+      r: base.r + (white.r - base.r) * t,
+      g: base.g + (white.g - base.g) * t,
+      b: base.b + (white.b - base.b) * t,
+    })
+  );
+}
+
+/**
+ * Resolve the per-card background palette. Explicit theme sources win in order —
+ * a `slides.card-stack-slide.colors` override, then `brandColors`. Absent both,
+ * derive a ramp from the theme's resolved `--t-color-accent` token so the stack
+ * follows the theme instead of a baked-in palette; the final neutral slate ramp
+ * is theme-agnostic (the former hardcoded purple belonged to one theme only).
+ * @param {object|null} theme
+ * @returns {string[]}
+ */
 function themeCardStackPalette(theme) {
   const slideColors = theme?.slides?.['card-stack-slide']?.colors;
   if (Array.isArray(slideColors) && slideColors.filter(Boolean).length)
@@ -9,7 +47,11 @@ function themeCardStackPalette(theme) {
   const brand = theme?.brandColors;
   if (Array.isArray(brand) && brand.filter(Boolean).length)
     return brand.map((c) => String(c).trim()).filter(Boolean);
-  return ['#5b21b6', '#7c3aed', '#a78bfa', '#c4b5fd'];
+  const vars =
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
+  const ramp = accentRamp(String(vars['--t-color-accent'] || '').trim());
+  if (ramp) return ramp;
+  return ['#334155', '#475569', '#64748b', '#94a3b8'];
 }
 
 /** Max cards a stack holds. Mirrors the schema's maxItems + the cardCount enum. */
