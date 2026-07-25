@@ -3,23 +3,23 @@
  * Shows custom slide types management and core type curation toggles.
  */
 
-import { h } from '../../../lib/dom.js';
-import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/dom/toast.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
-import { readFileAsText } from '../../../lib/util/file.js';
-import { createSlideTypeEditor } from '../slide-type-editor/index.js';
+import { h } from '../../../../lib/dom.js';
+import { t } from '../../../../lib/ui-i18n.js';
+import { api } from '../../../../lib/api.js';
+import { toast } from '../../../../lib/dom/toast.js';
+import { confirmModal } from '../../../../lib/dom/modal.js';
+import { readFileAsText } from '../../../../lib/util/file.js';
+import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import {
   serializeSlideType,
   parseImportedSlideType,
   deriveUniqueSlug,
-} from '../slide-type-editor/io.js';
-import { loadThemeById } from '../../../lib/theme/theme.js';
-import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
-import { CATEGORIES, CATEGORY_LABELS } from './slide-types-tab/categories.js';
-import { createCurationThumbnail } from './slide-types-tab/curation-thumbnails.js';
-import { openTypePreview as openTypePreviewModal } from './slide-types-tab/type-preview-modal.js';
+} from '../../slide-type-editor/io.js';
+import { loadThemeById } from '../../../../lib/theme/theme.js';
+import { computeDrop, resolveMove } from '../../../editor/inline-edit/reorder-geometry.js';
+import { CATEGORIES, CATEGORY_LABELS } from './categories.js';
+import { createCurationThumbnail } from './curation-thumbnails.js';
+import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
 
 /**
  * Create the slide types curation tab.
