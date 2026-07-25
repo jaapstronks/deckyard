@@ -2,7 +2,8 @@
 
 How Deckyard keeps one customer's decks away from another's, and which
 deployment shapes are supported. Verified against HEAD on 2026-07-23; hosting
-shapes and roadmap updated 2026-07-25.
+shapes and roadmap updated 2026-07-25; the request-to-organization binding
+updated 2026-07-25.
 
 ## The supported model: the tenant boundary is the infrastructure
 
@@ -66,9 +67,10 @@ storage layer that enforces org isolation:
 
 - **Postgres backend** *does* enforce it. Every presentation query is scoped by
   `organization_id` (`server/storage/adapters/postgres/presentations.js`), and
-  in multi-workspace mode the org is resolved per request from the
-  subdomain / custom domain (`server/utils/context.js`). A cross-org read
-  returns nothing.
+  in multi-workspace mode the org is resolved per request from the session,
+  verified against membership (`server/utils/context.js`, see below). A
+  cross-org read returns nothing. (The subdomain / custom-domain hooks in the
+  same file are unused leftovers, not the resolution path.)
 - **File backend** (the OSS default, `STORAGE_MODE` unset) does **not**. Decks
   live flat in one directory (`server/storage/presentations/paths.js`) and
   `listPresentations()` never consults the org
@@ -121,8 +123,9 @@ read-only curated seed set.
 said the identity and org-filtering work belonged to a future SaaS track. That is
 no longer true: the work is active, and it is not for a SaaS.)*
 
-Two pieces are being built so one managed instance can serve several
-organizations:
+Two pieces had to be built before one managed instance could serve several
+organizations. Both are in place; what is still missing is listed under
+*What is not done yet* below.
 
 - **Organisation-independent identity — done.** Authentication resolves a person
   by their globally unique `users.email`, with no organization filter, through
@@ -139,11 +142,52 @@ organizations:
   Lookups that ask "who is this?" are organization-independent; lookups that ask
   "who is in this organization?" (`server/storage/users.js`, the member lists,
   `created_by` resolution) keep their organization filter.
-- **The request-to-organization binding.** The session already carries the active
-  organization and the switch endpoint already verifies membership, but
-  `createRouteContext` discards it, so every request currently runs against the
-  default organization.
+- **The request-to-organization binding — done.** `createRouteContext()`
+  (`server/utils/context.js`) puts the session's resolved organization on the
+  context, and every storage query scopes on it via `getOrgId(ctx)`. So a
+  request acts in the workspace the person switched to: their own decks are
+  visible, another organization's are not, and new decks are created where they
+  are working.
+
+  What may reach a query is only ever a membership-verified organization. The
+  value comes from `getUserFromRequestAsync`, i.e. from
+  `resolveActiveOrganization()`, not from the raw `orgId` claim in the cookie.
+  The synchronous `getUserFromRequest` skips that verification by design and
+  flags itself `_needsDbValidation`; such a user's organization is ignored when
+  the context is built. Precedence is: explicit `options.organizationId` (used
+  by the few callers that name an organization themselves) → the session's
+  resolved organization → the default organization (for contexts built before
+  or without authentication, such as password reset, magic link and SSO).
+
+  Single-organization installations are unaffected in behaviour and in cost:
+  there `resolveActiveOrganization()` answers from configuration without
+  touching the database, so the session's organization *is* the default one.
+  Pinned by `tests/request-organization-binding.test.js` (single-organization,
+  including query-log assertions that no extra lookup is issued) and
+  `tests/request-organization-binding-multi-org.test.js` (two organizations on
+  one instance, walking session cookie → context → Postgres adapter).
 
 Neither affects shapes 1-3, and neither is a prerequisite for them: a dedicated
 instance stays safe because its tenant boundary is the deploy itself. External
 email leaks were closed separately (PR #214).
+
+### What is not done yet
+
+- **The authorization layer is not organization-aware.**
+  `server/utils/presentation-authz/presentations.js` returns `true`
+  unconditionally for `scope: 'workspace'`; it never mentions organizations.
+  With the binding in place a foreign deck never comes back from a query, so
+  this is not an open leak — but the authorization layer should not depend on
+  the layer beneath it remembering to scope. Defense in depth is still to be
+  added.
+- **The public API resolves keys against the default organization.**
+  `server/routes/public-api/v1/resources.js` builds its context from the API
+  key's owner email only, so an `api_keys` row belonging to another
+  organization still reads the default one. This is a separate context source
+  from the session path fixed here.
+- **There is no organization UI.** The switch endpoint exists, but no
+  organization switcher, no member management screen and no per-organization
+  invite flow.
+
+Until those are closed, shape 4 stays *in development*: usable to build
+against, not something to point two unrelated customers at.
