@@ -91,12 +91,16 @@ export function fieldGroupId(fields, key) {
  * The alignment values a group offers, defaulting to the full vocabulary.
  * Junk and unknown values are dropped rather than trusted, so a fork cannot
  * declare an option the CSS has no rule for.
- * @param {Object} def
- * @param {string} groupId
+ *
+ * Takes the GROUP object, not (def, id): a slide type's renderHtml only gets
+ * `(content, slide, ctx)`, so it holds its own group constant and would have
+ * to fabricate a fake definition to call a def-shaped API. Callers that start
+ * from a definition go through `getFieldGroup(def, id)` first.
+ *
+ * @param {Object} group - one entry of a type's `fieldGroups`
  * @returns {string[]}
  */
-export function groupAlignValues(def, groupId) {
-  const group = getFieldGroup(def, groupId);
+export function groupAlignValues(group) {
   if (!group) return [];
   const declared = Array.isArray(group.align) ? group.align : null;
   if (!declared) return [...GROUP_ALIGN_VALUES];
@@ -105,43 +109,44 @@ export function groupAlignValues(def, groupId) {
 }
 
 /**
+ * The value a group falls back to: its declared default when that is on offer,
+ * else the first offered value.
+ * @param {Object} group
+ * @returns {string}
+ */
+function groupDefaultAlign(group) {
+  const values = groupAlignValues(group);
+  if (!values.length) return DEFAULT_GROUP_ALIGN;
+  return values.includes(group?.defaultAlign) ? group.defaultAlign : values[0];
+}
+
+/**
  * A group's effective alignment for a slide's content: the stored value when
  * it is one the group offers, else the group's default. Total — never throws,
  * always returns a value from the offered set.
- * @param {Object} def
+ * @param {Object} group
  * @param {Object} content - slide content
- * @param {string} groupId
  * @returns {string}
  */
-export function resolveGroupAlign(def, content, groupId) {
-  const group = getFieldGroup(def, groupId);
+export function resolveGroupAlign(group, content) {
   if (!group) return DEFAULT_GROUP_ALIGN;
-  const values = groupAlignValues(def, groupId);
-  const fallback = values.includes(group.defaultAlign)
-    ? group.defaultAlign
-    : values[0] || DEFAULT_GROUP_ALIGN;
+  const values = groupAlignValues(group);
   const key = typeof group.alignKey === 'string' ? group.alignKey : '';
   const stored = key ? content?.[key] : null;
-  return values.includes(stored) ? stored : fallback;
+  return values.includes(stored) ? stored : groupDefaultAlign(group);
 }
 
 /**
  * The root class a group's alignment contributes, or '' for the default value
  * (so an untouched slide's markup is byte-identical to before this model).
- * @param {Object} def
+ * @param {Object} group
  * @param {Object} content
- * @param {string} groupId
  * @returns {string}
  */
-export function groupAlignClass(def, content, groupId) {
-  const group = getFieldGroup(def, groupId);
+export function groupAlignClass(group, content) {
   if (!group) return '';
-  const values = groupAlignValues(def, groupId);
-  const fallback = values.includes(group.defaultAlign)
-    ? group.defaultAlign
-    : values[0] || DEFAULT_GROUP_ALIGN;
-  const value = resolveGroupAlign(def, content, groupId);
-  if (value === fallback) return '';
+  const value = resolveGroupAlign(group, content);
+  if (value === groupDefaultAlign(group)) return '';
   const prefix =
     typeof group.alignClass === 'string' && group.alignClass.trim()
       ? group.alignClass.trim()

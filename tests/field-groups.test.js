@@ -84,57 +84,51 @@ describe('field-groups: declaration readers', () => {
 
 describe('field-groups: alignment resolution', () => {
   it('offers the declared values, falling back to the full vocabulary', () => {
-    assert.deepEqual(groupAlignValues(DEF, 'title-block'), ['left', 'center']);
-    const open = { fieldGroups: [{ id: 'g' }] };
-    assert.deepEqual(groupAlignValues(open, 'g'), TEXT_ALIGN_VALUES);
-    assert.deepEqual(groupAlignValues(DEF, 'absent'), []);
+    assert.deepEqual(groupAlignValues(getFieldGroup(DEF, 'title-block')), ['left', 'center']);
+    assert.deepEqual(groupAlignValues({ id: 'g' }), TEXT_ALIGN_VALUES);
+    assert.deepEqual(groupAlignValues(getFieldGroup(DEF, 'absent')), []);
   });
 
   it('drops values the vocabulary does not know', () => {
-    const junk = { fieldGroups: [{ id: 'g', align: ['left', 'diagonal'] }] };
-    assert.deepEqual(groupAlignValues(junk, 'g'), ['left']);
+    assert.deepEqual(groupAlignValues({ id: 'g', align: ['left', 'diagonal'] }), ['left']);
   });
 
   it('an all-junk align list falls back rather than offering nothing', () => {
-    const junk = { fieldGroups: [{ id: 'g', align: ['diagonal'] }] };
-    assert.deepEqual(groupAlignValues(junk, 'g'), TEXT_ALIGN_VALUES);
+    assert.deepEqual(groupAlignValues({ id: 'g', align: ['diagonal'] }), TEXT_ALIGN_VALUES);
   });
 
   it('resolveGroupAlign reads the content key and validates it', () => {
-    assert.equal(resolveGroupAlign(DEF, { blockAlign: 'center' }, 'title-block'), 'center');
-    assert.equal(resolveGroupAlign(DEF, { blockAlign: 'right' }, 'title-block'), 'left');
-    assert.equal(resolveGroupAlign(DEF, {}, 'title-block'), 'left');
-    assert.equal(resolveGroupAlign(DEF, null, 'title-block'), 'left');
-    assert.equal(resolveGroupAlign(DEF, { blockAlign: 'center' }, 'absent'), 'left');
+    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), { blockAlign: 'center' }), 'center');
+    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), { blockAlign: 'right' }), 'left');
+    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), {}), 'left');
+    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'title-block'), null), 'left');
+    assert.equal(resolveGroupAlign(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }), 'left');
   });
 
   it('a defaultAlign outside the offered set falls back to the first offered', () => {
-    const odd = { fieldGroups: [{ id: 'g', alignKey: 'k', align: ['center'], defaultAlign: 'left' }] };
-    assert.equal(resolveGroupAlign(odd, {}, 'g'), 'center');
+    const odd = { id: 'g', alignKey: 'k', align: ['center'], defaultAlign: 'left' };
+    assert.equal(resolveGroupAlign(odd, {}), 'center');
   });
 });
 
 describe('field-groups: root class', () => {
   it('emits nothing for the default value, so untouched markup is unchanged', () => {
-    assert.equal(groupAlignClass(DEF, {}, 'title-block'), '');
-    assert.equal(groupAlignClass(DEF, { blockAlign: 'left' }, 'title-block'), '');
+    assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), {}), '');
+    assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), { blockAlign: 'left' }), '');
   });
 
   it('emits <alignClass>-<value> for a non-default value', () => {
-    assert.equal(groupAlignClass(DEF, { blockAlign: 'center' }, 'title-block'), 'is-align-center');
+    assert.equal(groupAlignClass(getFieldGroup(DEF, 'title-block'), { blockAlign: 'center' }), 'is-align-center');
   });
 
   it('honours a custom class prefix and falls back to is-align', () => {
-    const custom = {
-      fieldGroups: [{ id: 'g', alignKey: 'k', alignClass: 'is-caption-align' }],
-    };
-    assert.equal(groupAlignClass(custom, { k: 'center' }, 'g'), 'is-caption-align-center');
-    const bare = { fieldGroups: [{ id: 'g', alignKey: 'k' }] };
-    assert.equal(groupAlignClass(bare, { k: 'center' }, 'g'), 'is-align-center');
+    const custom = { id: 'g', alignKey: 'k', alignClass: 'is-caption-align' };
+    assert.equal(groupAlignClass(custom, { k: 'center' }), 'is-caption-align-center');
+    assert.equal(groupAlignClass({ id: 'g', alignKey: 'k' }, { k: 'center' }), 'is-align-center');
   });
 
   it('an unknown group contributes no class', () => {
-    assert.equal(groupAlignClass(DEF, { blockAlign: 'center' }, 'absent'), '');
+    assert.equal(groupAlignClass(getFieldGroup(DEF, 'absent'), { blockAlign: 'center' }), '');
   });
 });
 
@@ -208,7 +202,7 @@ describe('every real slide type declares coherent groups', () => {
           'string',
           `${where}: needs an alignKey naming the content field that stores the value`
         );
-        const values = groupAlignValues(def, group.id);
+        const values = groupAlignValues(group);
         assert.ok(values.length >= 2, `${where}: a group offering fewer than two values is not a choice`);
         for (const v of values) {
           assert.ok(TEXT_ALIGN_VALUES.includes(v), `${where}: '${v}' is not a valid align value`);
@@ -227,7 +221,7 @@ describe('every real slide type declares coherent groups', () => {
         const options = (field.options || []).map((o) => (typeof o === 'string' ? o : o?.value));
         assert.deepEqual(
           options,
-          groupAlignValues(def, group.id),
+          groupAlignValues(group),
           `${where}: enum options and group align values must match`
         );
       }

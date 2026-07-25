@@ -21,10 +21,7 @@ import {
   TEXT_SIZE_VALUES,
   normalizeTextStyles,
 } from '../../../../shared/slide-types/text-styles.js';
-import {
-  resolveFieldRole,
-  allowedAlignValues,
-} from '../../../../shared/slide-types/text-roles.js';
+import { fieldAlignAffordance } from '../../../../shared/slide-types/text-roles.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 const ALIGN_DEFAULT = 'left';
@@ -137,6 +134,47 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
 }
 
 /**
+ * The "Alignment" block for a field whose alignment belongs to its field group:
+ * the real control, disabled, plus one line naming where the setting lives.
+ *
+ * Drawn from the same `fieldEnum` renderer as the live control so it looks
+ * like the thing it stands in for, then disabled wholesale — a greyed control
+ * with an explanation beats a silently absent one (a missing control reads as
+ * a missing feature).
+ *
+ * @param {Object} opts
+ * @param {Function} opts.h
+ * @param {{fieldEnum: Function}} opts.fieldRenderers
+ * @returns {HTMLElement}
+ */
+function renderGroupAlignHint({ h, fieldRenderers }) {
+  const field = {
+    key: 'textAlignGroup',
+    label: t('editor.textStyle.align', 'Alignment'),
+    options: ['left', 'center'].map((v) => ({
+      value: v,
+      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
+    })),
+  };
+  const el = fieldRenderers.fieldEnum(field, '', () => {});
+  el.classList.add('is-disabled');
+  for (const btn of el.querySelectorAll('button, input, select')) {
+    btn.disabled = true;
+    btn.setAttribute('tabindex', '-1');
+  }
+  el.append(
+    h('div', {
+      class: 'help',
+      text: t(
+        'editor.textStyle.align.groupOwned',
+        'This text moves with the whole block. Set its alignment under Layout in the toolbar.'
+      ),
+    })
+  );
+  return el;
+}
+
+/**
  * Write one style property for a field, pruning defaults so the stored map
  * never carries no-op overrides. Mutates `slide.content.textStyles`.
  */
@@ -188,16 +226,24 @@ export function renderTextElementCard({
     rerenderPreview?.();
   };
 
-  // Which alignment values this field offers is decided by its semantic role
-  // (see shared/slide-types/text-roles.js): marker-anchored text (list/step
-  // items) offers none and shows no control; a quote offers left/centre only.
-  // No per-type hardcode — the role table is the single source.
+  // Who owns this field's alignment is decided by one resolver over two axes
+  // (see shared/slide-types/text-roles.js): its semantic ROLE (marker-anchored
+  // list/step items can never align; a quote offers left/centre only) and its
+  // GROUP membership (a field inside a declared visual block hands alignment
+  // to that block's layout variant). No per-type hardcode.
   const slideFields = getSlideType(slide?.type)?.fields || null;
-  const role = resolveFieldRole(slideFields, fieldKey);
-  let alignValues = allowedAlignValues(role);
+  const { values: roleValues, owner: alignOwner } = fieldAlignAffordance(slideFields, fieldKey);
+  let alignValues = roleValues;
   // A value already stored outside the allowed set stays selectable so it is
-  // never a stuck, invisible override the user can't clear.
-  if (current.align && current.align !== ALIGN_DEFAULT && !alignValues.includes(current.align)) {
+  // never a stuck, invisible override the user can't clear. Group members are
+  // the exception: their control is inert by design, and re-offering a stale
+  // value there would hand back the very per-field choice the group replaced.
+  if (
+    alignOwner === 'field' &&
+    current.align &&
+    current.align !== ALIGN_DEFAULT &&
+    !alignValues.includes(current.align)
+  ) {
     alignValues = [...alignValues, current.align];
   }
   const alignField = {
@@ -214,6 +260,16 @@ export function renderTextElementCard({
         commit();
       })
     : null;
+
+  // Owner 'group': show the control disabled with a pointer to the Layout
+  // chip rather than hiding it. A silently missing control reads as a missing
+  // feature and sends people hunting; naming where the setting moved to is the
+  // cheaper answer. (Owner 'role' IS hidden — there the answer is "never", and
+  // a permanently dead control would be the confusing one.)
+  const groupHintEl =
+    alignOwner === 'group'
+      ? renderGroupAlignHint({ h, fieldRenderers })
+      : null;
 
   const colorEl = renderColorControl({ h, slide, fieldKey, theme, current, commit });
 
@@ -237,6 +293,7 @@ export function renderTextElementCard({
         text: t('editor.textStyle.hint', 'Styling for this text block.'),
       }),
       alignEl,
+      groupHintEl,
       colorEl,
       sizeEl,
     ].filter(Boolean)

@@ -125,8 +125,13 @@
   z-index: 2;
   box-sizing: border-box;
   width: min(1040px, calc(100% - var(--tsu-pad-left) - var(--tsu-pad-right)));
-  margin-left: var(--tsu-pad-left);
-  margin-right: var(--tsu-pad-right);
+  /* Box invariant: a width cap must never move a box off its container's
+     alignment axis. The cap here is a measure (a title should not run the full
+     1600px), but with a plain `margin-left` it also ANCHORED the block to the
+     left — so `text-align: center` on the title centred it inside a block that
+     was itself 184px left of the slide centre. `margin-inline` carries both
+     jobs, and the centred variant below overrides it to `auto`. */
+  margin-inline: var(--tsu-pad-left) var(--tsu-pad-right);
   /* A flex column so the theme layouts can position the primary block
      (title + subtitle) and the meta line independently — see the layout
      engine below. Vertical padding is set per layout. */
@@ -204,7 +209,10 @@
   margin: var(--slide-space-6) 0 0;
   max-width: 720px;
   font-family: var(--font-caption, var(--font-body));
-  font-size: var(--slide-text-sm);
+  /* One step up from `sm` (16px): uppercase + 0.06em tracking makes this line
+     read smaller than its nominal size, and at presentation distance 16px was
+     too fine. Theme-agnostic rule, so every theme gets the correction. */
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -214,6 +222,40 @@
    primary block's auto margins, so it needs no gap of its own. */
 .slide-title-universal.tsu-layout-center .tsu-meta {
   margin-top: 0;
+}
+
+/* =============================================================================
+   TITLE-BLOCK ALIGNMENT (author-driven, horizontal axis)
+   ============================================================================
+   The `title-block` field group — title, subtitle and meta — moves as one.
+   `titleBlockAlign` maps to `.is-align-center` on the root (default `left`
+   emits nothing, so untouched decks are unchanged).
+
+   Every box in the block has to move, not just the text inside it: the content
+   block carries a 1040px measure and the subtitle/meta a 720px one, so
+   centring only the text would leave three different optical centres — which
+   is exactly the bug this replaces. Each capped box therefore gets
+   `margin-inline: auto`, which lands all three on the slide's centre line.
+
+   The members are also addressed DIRECTLY rather than left to inherit
+   `text-align` from the container: `00-base.css` resets `.slide h1..h4` to
+   `text-align: start` to defeat global site typography, and that reset beats
+   any inherited value. So the block's own heading needs a rule that outranks
+   it (three classes vs one class + one element).
+   ============================================================================ */
+
+.slide-title-universal.is-align-center .tsu-content {
+  margin-inline: auto;
+  text-align: center;
+}
+.slide-title-universal.is-align-center .title,
+.slide-title-universal.is-align-center .tsu-subtitle,
+.slide-title-universal.is-align-center .tsu-meta {
+  text-align: center;
+}
+.slide-title-universal.is-align-center .tsu-subtitle,
+.slide-title-universal.is-align-center .tsu-meta {
+  margin-inline: auto;
 }
 
 /* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
