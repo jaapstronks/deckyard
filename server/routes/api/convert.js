@@ -17,6 +17,7 @@ import {
 } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import { createLogger } from '../../utils/logger.js';
+import { sseErrorPayload } from '../../utils/sse.js';
 const log = createLogger('convert');
 import {
   convertFile,
@@ -376,11 +377,10 @@ export async function handleConvert({
       }
 
       if (!deck || report.errors.length > 0) {
-        sendEvent('error', {
-          error:
-            report.errors.join('; ') || 'Conversion failed',
-          report,
-        });
+        sendEvent(
+          'error',
+          sseErrorPayload(report.errors.join('; ') || 'Conversion failed', { report })
+        );
         res.end();
         return true;
       }
@@ -461,9 +461,7 @@ export async function handleConvert({
       });
     } catch (e) {
       log.error('[Convert Stream] Error:', e);
-      sendEvent('error', {
-        error: e.message || 'Conversion failed',
-      });
+      sendEvent('error', sseErrorPayload(e.message || 'Conversion failed'));
     }
 
     res.end();

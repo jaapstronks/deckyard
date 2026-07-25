@@ -60,6 +60,29 @@ try {
 }
 ```
 
+## SSE error events
+
+Streaming routes (`text/event-stream`) do **not** use this envelope. An error on
+an already-open stream is a named event, so its payload is:
+
+```json
+{ "message": "<human text>" }
+```
+
+- **No `ok`** — the `event: error` line is the discriminator. Repeating it in the
+  payload duplicates the routing the client already dispatches on
+  (`client/lib/net/sse.js`).
+- **No `error` key** — on the HTTP side `error` means "machine code", and no SSE
+  consumer branches on a cause today. Putting prose there is the exact habit the
+  envelope work removed. `message` is also already what `status` events use for
+  human text, so the two event kinds now read the same.
+- **Endpoint-specific extras** ride alongside (`report` on the convert and Notion
+  import streams).
+
+If a client ever does need to branch on the cause, add
+`error: '<snake_case_code>'` next to `message`, with the same meaning it has
+here. That upgrade is additive; it never renames a field a client reads.
+
 ## Scope
 
 - The public **`/api/v1/*`** surface keeps its own openapi-documented error schema
