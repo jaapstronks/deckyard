@@ -12,6 +12,7 @@ import {
   jsonError,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz.js';
+import { errorToResponse } from '../../../utils/errors.js';
 import {
   withPresentationAuth,
   canEditCustomHtml,
@@ -186,11 +187,13 @@ export async function handlePresentationItem(
         clientReordered,
       });
     } catch (e) {
+      // Optimistic-lock failures (ConflictError/LockedError from
+      // updatePresentation) carry a statusCode; emit them through the canonical
+      // error envelope ({ ok:false, error:'<code>', message, details }) instead
+      // of a hand-rolled body. Unexpected errors propagate to the top-level
+      // handler.
       if (e?.statusCode)
-        return serveJson(res, e.statusCode, {
-          error: e.message,
-          details: e.details || null,
-        });
+        return serveJson(res, e.statusCode, errorToResponse(e));
       throw e;
     }
     if (!updated) return notFound(res);
