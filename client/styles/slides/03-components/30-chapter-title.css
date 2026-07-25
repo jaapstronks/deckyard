@@ -107,3 +107,19 @@
 }
 
 
+
+/* Title-block alignment (author-driven, horizontal axis). The `title-block`
+   field group moves title + subtitle as one; `is-align-center` comes from the
+   type's `titleBlockAlign`. Both boxes carry a measure cap (34ch / 48ch), so
+   they need `margin-inline: auto` to share the slide's centre line — centring
+   only the text would leave them on the two different centres this replaces.
+   The heading is addressed directly because `00-base.css` resets
+   `.slide h1..h4` to `text-align: start`, which beats any inherited value. */
+.slide-chapter-title.is-align-center .slide-inner {
+  align-items: center;
+}
+.slide-chapter-title.is-align-center .title,
+.slide-chapter-title.is-align-center .subtitle {
+  margin-inline: auto;
+  text-align: center;
+}

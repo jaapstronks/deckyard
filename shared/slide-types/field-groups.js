@@ -49,11 +49,76 @@ import { resolveFieldDef } from './field-lookup.js';
 /** Alignment vocabulary a group may offer (mirrors TEXT_ALIGN_VALUES). */
 const GROUP_ALIGN_VALUES = ['left', 'center', 'right'];
 
+/**
+ * Default offer for a text block: left or centred. Right is deliberately out —
+ * a right-aligned title block is not a layout we want to hand people, and it is
+ * the one value that produced a broken slide in the deck history (a centred
+ * title next to a right-aligned subtitle). Same call ROLE_AFFORDANCES.quote
+ * already makes.
+ */
+const DEFAULT_BLOCK_ALIGN = ['left', 'center'];
+
 /** Fallback when a group declares no `defaultAlign`. */
 const DEFAULT_GROUP_ALIGN = 'left';
 
 /** Fallback root-class prefix when a group declares no `alignClass`. */
 const DEFAULT_ALIGN_CLASS = 'is-align';
+
+/**
+ * Declare an alignment group, its content field and its layout tiles in one
+ * go — the three always travel together, and a type that hand-rolled them
+ * could silently let the enum options drift from the group's offered values
+ * (which `tests/field-groups.test.js` asserts against).
+ *
+ * Returns the three pieces a type spreads into its definition:
+ *
+ *   const G = alignGroup('title-block', 'titleBlockAlign');
+ *   export default {
+ *     fieldGroups: [G.group],
+ *     fields: [ { key: 'title', group: G.group.id, ... }, G.field ],
+ *     layoutVariants: G.variants,
+ *   };
+ *
+ * @param {string} id - group id, referenced by each member field's `group`
+ * @param {string} alignKey - content field that stores the block's alignment
+ * @param {Object} [opts]
+ * @param {string} [opts.label] - admin label for the enum field
+ * @param {string[]} [opts.align] - offered values (default left/centre)
+ * @param {string} [opts.alignClass] - root-class prefix (default `is-align`)
+ * @param {string} [opts.schematicKind] - archetype the layout tiles draw
+ * @returns {{group: Object, field: Object, variants: Array<Object>}}
+ */
+export function alignGroup(id, alignKey, opts = {}) {
+  const align = Array.isArray(opts.align) && opts.align.length ? opts.align : [...DEFAULT_BLOCK_ALIGN];
+  const group = {
+    id,
+    alignKey,
+    align,
+    defaultAlign: align[0],
+    alignClass: opts.alignClass || DEFAULT_ALIGN_CLASS,
+  };
+  const field = {
+    key: alignKey,
+    label: opts.label || 'Block alignment',
+    type: 'enum',
+    required: false,
+    options: [...align],
+  };
+  // One tile per offered value. Deliberately NOT an inspector keep (see
+  // inspector-form.js): the toolbar "Layout" chip is the block's only control,
+  // the convention the structural `layout` enums already follow.
+  const TILE = {
+    left: { id: 'block-left', labelKey: 'editor.layoutVariant.blockLeft', label: 'Left' },
+    center: { id: 'block-center', labelKey: 'editor.layoutVariant.blockCenter', label: 'Centred' },
+    right: { id: 'block-right', labelKey: 'editor.layoutVariant.blockRight', label: 'Right' },
+  };
+  const variants = align.map((value) => ({
+    ...TILE[value],
+    set: { [alignKey]: value },
+    schematic: { kind: opts.schematicKind || 'title', align: value },
+  }));
+  return { group, field, variants };
+}
 
 /**
  * The groups a slide type declares, or [] when it declares none.

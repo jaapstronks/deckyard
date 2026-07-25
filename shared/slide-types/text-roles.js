@@ -22,8 +22,7 @@
  * resolver below (`fieldAlignAffordance`), so the editor and the renderer can
  * never disagree about who owns a field's alignment.
  *
- * See docs/plans/text-role-affordances.md for the role rollout and
- * docs/plans/briefs/alignment-vs-layout-variants.md for the group model.
+ * See docs/reference/text-alignment.md for both axes and how they compose.
  */
 
 import { resolveFieldDef } from './field-lookup.js';
@@ -47,9 +46,11 @@ const ALL_ALIGNS = ['left', 'center', 'right'];
  *   `color`/`size`: booleans (all roles allow them today; kept explicit so a
  *            future per-role difference is one table edit, not a new flag).
  *
- * A quote still permits left/center here AND the quote type additionally reads
- * its own align to centre the whole block — the two compose, so quote keeps the
- * generic classes (unlike list-item, which gets none).
+ * The `quote` entry keeps its left/centre set as a ROLE statement (right is
+ * wrong for a pull quote wherever one appears). On `quote-slide` itself the
+ * field is a `quote-block` group member, so the group decides its alignment
+ * and no per-field class is emitted — the former "quote reads its own align to
+ * centre the whole block" hardcode is gone (field-groups.js).
  */
 export const ROLE_AFFORDANCES = {
   heading: { align: ALL_ALIGNS, color: true, size: true },

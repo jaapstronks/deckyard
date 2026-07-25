@@ -1,7 +1,7 @@
 import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
 import { resolveTitleSlideBackground } from '../title-slide-background.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
-import { groupAlignClass } from '../field-groups.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
  * Title, subtitle and meta are ONE visual block: they share a container and
@@ -20,17 +20,13 @@ import { groupAlignClass } from '../field-groups.js';
  * Two axes, two owners: the theme sets the posture of a title slide, the
  * author composes this one.
  */
-const TITLE_BLOCK_GROUP = {
-  id: 'title-block',
-  alignKey: 'titleBlockAlign',
-  align: ['left', 'center'],
-  defaultAlign: 'left',
-  alignClass: 'is-align',
-};
+const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
+  label: 'Title block alignment',
+});
 
 export default {
   label: 'Title slide',
-  fieldGroups: [TITLE_BLOCK_GROUP],
+  fieldGroups: [TITLE_BLOCK.group],
   fields: [
     {
       key: 'title',
@@ -59,16 +55,7 @@ export default {
       maxLength: 160,
       group: 'title-block',
     },
-    {
-      // The title block's horizontal placement. Deliberately NOT an inspector
-      // keep (see inspector-form.js): the toolbar "Layout" chip is its only
-      // control, the same convention the structural `layout` enums follow.
-      key: 'titleBlockAlign',
-      label: 'Title block alignment',
-      type: 'enum',
-      required: false,
-      options: ['left', 'center'],
-    },
+    TITLE_BLOCK.field,
     // Background image is the generic, type-agnostic `slideBgImage` field
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
     // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
@@ -87,22 +74,7 @@ export default {
   // placement of the title block. Declared on the definition (JSON-safe) so a
   // fork overriding this type by name controls its own set. Shape documented
   // in types/image-text-slide.js.
-  layoutVariants: [
-    {
-      id: 'block-left',
-      labelKey: 'editor.layoutVariant.blockLeft',
-      label: 'Left',
-      set: { titleBlockAlign: 'left' },
-      schematic: { kind: 'title', align: 'left' },
-    },
-    {
-      id: 'block-center',
-      labelKey: 'editor.layoutVariant.blockCenter',
-      label: 'Centred',
-      set: { titleBlockAlign: 'center' },
-      schematic: { kind: 'title', align: 'center' },
-    },
-  ],
+  layoutVariants: TITLE_BLOCK.variants,
   defaultsByLang: {
     nl: {
       title: 'Nieuwe titel',
@@ -187,7 +159,7 @@ export default {
     // Horizontal placement of the title block (author-owned, one class for the
     // whole group). Empty for the default, so untouched decks render exactly
     // the markup they did before the group model.
-    const alignClass = groupAlignClass(TITLE_BLOCK_GROUP, content);
+    const alignClass = groupAlignClass(TITLE_BLOCK.group, content);
     return `
         <div class="slide slide-title-universal ${bg}${
           legacyBg ? ' has-bg' : ''

@@ -136,3 +136,13 @@
 
 
 
+
+/* Box invariant for the caption: its 80% measure cap also anchored the box to
+   the start, so "Center" centred the text 147px left of the slide centre at a
+   1600px render. The cap stays; the margin follows the chosen alignment. */
+.slide-table .table-caption.tf-align-center {
+  margin-inline: auto;
+}
+.slide-table .table-caption.tf-align-right {
+  margin-inline: auto 0;
+}

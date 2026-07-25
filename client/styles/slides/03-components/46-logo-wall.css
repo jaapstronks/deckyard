@@ -190,3 +190,13 @@
 }
 
 
+
+/* Header-block alignment (author-driven, horizontal axis). `is-align-center`
+   comes from the type's `headerAlign`; the subheading carries a 75ch measure
+   cap that also anchored it to the start, so it needs `margin-inline: auto` to
+   share the title's centre line. The logo grid is a separate unit. */
+.slide-logo-wall.is-align-center .header .title,
+.slide-logo-wall.is-align-center .header .subtitle {
+  margin-inline: auto;
+  text-align: center;
+}
