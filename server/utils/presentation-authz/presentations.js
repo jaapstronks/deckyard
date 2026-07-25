@@ -3,6 +3,7 @@
  */
 
 import { sandboxEnabled } from '../../config/sandbox.js';
+import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../normalize.js';
 import { canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
 
@@ -27,6 +28,42 @@ export function isUnrestricted(user) {
 }
 
 /**
+ * Whether a person is acting in the organization that owns a presentation.
+ *
+ * This gates the `scope: 'workspace'` grant, which is the one grant that rests
+ * on "we are in the same workspace" rather than on an explicit relation to the
+ * deck (ownership, authorship, a collaborator row). Everything else is already
+ * per-person and needs no organization check.
+ *
+ * The storage layer scopes every presentation query on `organization_id`
+ * (`getOrgId(ctx)` in the Postgres adapter), so a foreign deck does not reach
+ * these functions in the first place. This is defense in depth: the
+ * authorization layer should not depend on the layer beneath it remembering to
+ * scope. See docs/reference/tenant-isolation.md.
+ *
+ * Both values come along on objects the call sites already pass:
+ * `user.organizationId` is the session's membership-verified organization
+ * (#356), `pres.organizationId` comes off the presentation row.
+ *
+ * In a single-organization installation there is exactly one organization, so
+ * there is nothing to compare and the answer is unconditionally yes — behaviour
+ * and cost stay identical to before this check existed. In multi-workspace mode
+ * an unknown organization on either side is refused rather than waved through:
+ * a presentation shape that lost its organization must fail closed.
+ *
+ * @param {Object} [user] - Authenticated user, carrying `organizationId`
+ * @param {Object} [pres] - Presentation, carrying `organizationId`
+ * @returns {boolean}
+ */
+export function isSameOrganization(user, pres) {
+  if (!isMultiWorkspaceEnabled()) return true;
+  const userOrg = user?.organizationId;
+  const presOrg = pres?.organizationId;
+  if (!userOrg || !presOrg) return false;
+  return userOrg === presOrg;
+}
+
+/**
  * Check if a user can read a presentation.
  */
 export function canReadPresentation({ user, pres, collaboratorPermission } = {}) {
@@ -35,7 +72,7 @@ export function canReadPresentation({ user, pres, collaboratorPermission } = {})
   const scope = normalizePresentationScope(pres?.scope);
   const userEmail = normalizeEmail(user?.email);
   if (!userEmail) return false;
-  if (scope === 'workspace') return true;
+  if (scope === 'workspace' && isSameOrganization(user, pres)) return true;
 
   const owner = normalizeEmail(pres?.ownerEmail);
   const createdBy = normalizeEmail(pres?.createdBy);
@@ -69,8 +106,8 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
   // View-only presentations are read-only for non-owners
   if (pres?.isViewOnly) return false;
 
-  // Workspace presentations: any workspace user can write
-  if (scope === 'workspace') return true;
+  // Workspace presentations: any user of that same workspace can write
+  if (scope === 'workspace' && isSameOrganization(user, pres)) return true;
 
   // Collaborator with edit or admin permission can write
   if (canWrite(collaboratorPermission)) return true;
@@ -198,9 +235,9 @@ export function canCommentOnPresentation({ user, pres, collaboratorPermission } 
   const createdBy = normalizeEmail(pres?.createdBy);
   if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
 
-  // Workspace presentations: any workspace user can comment
+  // Workspace presentations: any user of that same workspace can comment
   const scope = normalizePresentationScope(pres?.scope);
-  if (scope === 'workspace') return true;
+  if (scope === 'workspace' && isSameOrganization(user, pres)) return true;
 
   // Collaborator with comment or edit permission can comment
   if (canComment(collaboratorPermission)) return true;
@@ -228,10 +265,10 @@ export function getEffectivePermission({ user, pres, collaboratorPermission } = 
 
   // Workspace presentations handling
   const scope = normalizePresentationScope(pres?.scope);
-  if (scope === 'workspace') {
+  if (scope === 'workspace' && isSameOrganization(user, pres)) {
     // View-only presentations allow commenting but not editing
     if (pres?.isViewOnly) return 'comment';
-    // Regular workspace presentations give edit to all workspace users
+    // Regular workspace presentations give edit to all users of that workspace
     return 'edit';
   }
 
