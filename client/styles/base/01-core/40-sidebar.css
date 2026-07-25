@@ -20,7 +20,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: var(--z-header);
 }
 
 .app-shell.has-sidebar > .app-sidebar {
@@ -29,7 +29,7 @@
   left: 0;
   bottom: 0;
   width: var(--ps-sidebar-width);
-  z-index: 90;
+  z-index: var(--z-nav);
 }
 
 .app-shell.has-sidebar > .presentation-grid-content {
@@ -215,7 +215,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 100;
+  z-index: var(--z-header);
   background: hsl(var(--app-bg-elevated));
   border-top: 1px solid hsl(var(--app-border-default));
   padding: var(--ps-space-2) var(--ps-space-3);

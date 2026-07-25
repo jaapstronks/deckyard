@@ -79,7 +79,7 @@
 /* Inspector submenus: JS positions them with position:fixed to escape
    overflow clipping from .panel-scroll. High z-index ensures visibility. */
 .is-editor .inspector-panel .dropdown-submenu > .dropdown-menu.dropdown-submenu-menu {
-  z-index: 1000;
+  z-index: var(--z-overlay);
 }
 .is-editor .panel:last-child {
   border-right: none;
@@ -524,7 +524,7 @@
     left: 0;
     bottom: 0;
     width: var(--ps-slides-drawer-width, min(320px, 85vw));
-    z-index: 200;
+    z-index: var(--z-drawer);
     transform: translateX(-100%);
     transition: transform 0.25s ease-out;
     box-shadow: var(--app-shadow-xl);
@@ -542,7 +542,7 @@
     inset: 0;
     top: var(--ps-topbar-height);
     background: hsl(0 0% 0% / 0.4);
-    z-index: 199;
+    z-index: var(--z-drawer-backdrop);
   }
 
   .is-editor.is-slides-drawer-open .slides-drawer-backdrop {
@@ -555,7 +555,7 @@
     position: fixed;
     bottom: var(--ps-space-4);
     left: var(--ps-space-4);
-    z-index: 100;
+    z-index: var(--z-header);
     width: 48px;
     height: 48px;
     border-radius: var(--ps-radius-full, 9999px);

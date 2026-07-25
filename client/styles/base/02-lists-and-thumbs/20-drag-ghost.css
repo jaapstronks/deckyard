@@ -3,7 +3,7 @@
   position: fixed;
   top: -1000px;
   left: -1000px;
-  z-index: 999999;
+  z-index: var(--z-drag);
   pointer-events: none;
   user-select: none;
   width: 260px;
