@@ -35,6 +35,25 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Prefer small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`.
   - Avoid adding dependencies unless there is a strong reason (this project works great without them).
 
+- **Module layout: one folder = one seam**
+  - When a unit is decomposed into concern modules, it lives as a **folder `X/`
+    whose `index.js` is the sole public seam** (a barrel re-exporting the public
+    API); the concern modules sit inside as plain siblings. Consumers import
+    `X/index.js`, never the concern files.
+  - **Don't** put an eponymous wrapper file *beside* the folder (`X.js` next to
+    `X/`, or a `foo-panel.js` re-export next to `foo-panel/`) — the folder's
+    `index.js` already is the seam, so the wrapper is redundant indirection.
+    Likewise don't suffix the folder with its role (`email-templates/`, not
+    `email-templates-panel/`).
+  - A module that is *not* decomposed stays a single file — it is itself a
+    concern module of its parent folder (e.g. each `settings/tabs/*-tab.js` is a
+    concern of `tabs/`, whose `index.js` is the barrel). A tab that grows its own
+    sub-concerns becomes `tabs/<name>-tab/` with an `index.js` seam, exactly like
+    `settings/` decomposes into `tabs/`.
+  - Canonical example: `client/views/settings/` — every panel is a folder with an
+    `index.js` barrel (`api-keys/`, `admin-users/`, `theme-editor/`, …), no
+    wrappers, no role suffixes.
+
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
   - **Client runtime behavior**: attach behavior to rendered markup in `client/lib/*` or view controllers (and ensure cleanup).
