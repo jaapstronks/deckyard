@@ -185,11 +185,14 @@ export function openJsonDebugModal({
 
   // JSON tab content
   const jsonPanel = h('div', { class: 'json-debug-panel' });
-  const jsonInfo = h('div', { class: 'json-debug-info help' });
-  jsonInfo.innerHTML = `
-    <strong>${t('admin.jsonDebug.slideType', 'Slide type')}:</strong> ${slide.type}<br>
-    <strong>${t('admin.jsonDebug.slideId', 'Slide ID')}:</strong> <code>${slide.id}</code>
-  `;
+  const jsonInfo = h('div', { class: 'json-debug-info help' }, [
+    h('strong', { text: `${t('admin.jsonDebug.slideType', 'Slide type')}:` }),
+    ` ${String(slide.type ?? '')}`,
+    h('br'),
+    h('strong', { text: `${t('admin.jsonDebug.slideId', 'Slide ID')}:` }),
+    ' ',
+    h('code', { text: String(slide.id ?? '') }),
+  ]);
 
   const jsonTextarea = h('textarea', {
     class: 'json-debug-textarea form-input',
