@@ -15,9 +15,18 @@
  * source both the editor (which controls to show) and the renderer (which
  * `tf-*` classes to emit) read.
  *
- * See docs/plans/text-role-affordances.md for the rollout (PR 1 tags list-item
- * fields; PR 2 rolls the vocabulary out and retires the quote hardcode).
+ * ALIGNMENT has a SECOND axis next to the role: GROUP membership
+ * (field-groups.js). A field that belongs to a declared visual block hands its
+ * alignment to that block's layout variant, because "where does this box sit"
+ * is a group decision, not a field one. Both axes are read through the one
+ * resolver below (`fieldAlignAffordance`), so the editor and the renderer can
+ * never disagree about who owns a field's alignment.
+ *
+ * See docs/reference/text-alignment.md for both axes and how they compose.
  */
+
+import { resolveFieldDef } from './field-lookup.js';
+import { fieldGroupId } from './field-groups.js';
 
 /** The controlled vocabulary of text roles. */
 export const TEXT_ROLES = ['heading', 'prose', 'list-item', 'quote', 'caption', 'label'];
@@ -37,9 +46,11 @@ const ALL_ALIGNS = ['left', 'center', 'right'];
  *   `color`/`size`: booleans (all roles allow them today; kept explicit so a
  *            future per-role difference is one table edit, not a new flag).
  *
- * A quote still permits left/center here AND the quote type additionally reads
- * its own align to centre the whole block — the two compose, so quote keeps the
- * generic classes (unlike list-item, which gets none).
+ * The `quote` entry keeps its left/centre set as a ROLE statement (right is
+ * wrong for a pull quote wherever one appears). On `quote-slide` itself the
+ * field is a `quote-block` group member, so the group decides its alignment
+ * and no per-field class is emitted — the former "quote reads its own align to
+ * centre the whole block" hardcode is gone (field-groups.js).
  */
 export const ROLE_AFFORDANCES = {
   heading: { align: ALL_ALIGNS, color: true, size: true },
@@ -90,19 +101,36 @@ export function roleAllowsAlign(role) {
  * @returns {string} a role from TEXT_ROLES
  */
 export function resolveFieldRole(fields, key) {
-  if (!Array.isArray(fields) || !key) return DEFAULT_TEXT_ROLE;
-  let defs = fields;
-  let field = null;
-  for (const part of String(key).split('.')) {
-    if (/^\d+$/.test(part)) {
-      // index into an `items` field -> descend into its itemFields
-      defs = field && Array.isArray(field.itemFields) ? field.itemFields : [];
-      continue;
-    }
-    field = Array.isArray(defs) ? defs.find((f) => f && f.key === part) : null;
-    if (!field) return DEFAULT_TEXT_ROLE;
-  }
+  const field = resolveFieldDef(fields, key);
   return (field && TEXT_ROLES.includes(field.role) && field.role) || DEFAULT_TEXT_ROLE;
+}
+
+/**
+ * Who decides a field's block alignment, and which values are on offer.
+ *
+ * The single read path for both affordance axes — the editor calls it to know
+ * which control to draw, the renderer to know whether a stored `align` may
+ * still emit a `tf-align-*` class. Returning the OWNER and not just the value
+ * set is what lets the editor tell "this can't be aligned" apart from "this is
+ * aligned somewhere else"; with only an empty array those two collapse into
+ * one silent absence.
+ *
+ *   owner 'field'  the field decides       -> draw the control, `values` live
+ *   owner 'role'   nothing can align this  -> no control (marker-anchored text)
+ *   owner 'group'  the block decides       -> control disabled, point at Layout
+ *
+ * `values` is always empty for the two non-field owners: neither the role nor
+ * the group case may emit a per-field alignment class.
+ *
+ * @param {Array<Object>} fields - a slide type's `fields` array
+ * @param {string} key - the field key from `data-inline-field`
+ * @returns {{values: string[], owner: 'field'|'role'|'group', groupId: string|null}}
+ */
+export function fieldAlignAffordance(fields, key) {
+  const groupId = fieldGroupId(fields, key);
+  if (groupId) return { values: [], owner: 'group', groupId };
+  const values = allowedAlignValues(resolveFieldRole(fields, key));
+  return { values, owner: values.length ? 'field' : 'role', groupId: null };
 }
 
 /**
@@ -113,17 +141,19 @@ export function resolveFieldRole(fields, key) {
  * @returns {boolean}
  */
 export function fieldAllowsAlign(fields, key) {
-  return roleAllowsAlign(resolveFieldRole(fields, key));
+  return fieldAlignAffordance(fields, key).values.length > 0;
 }
 
 /**
  * The alignment values a field key permits, given its slide type's `fields`.
  * Used by the editor (which options to offer) and the renderer (which stored
- * align value may emit a `tf-align-*` class).
+ * align value may emit a `tf-align-*` class). A group member returns `[]`, so
+ * an `align` stored before the field joined a group goes inert on render
+ * without any migration — the same gate that already drops a list item's align.
  * @param {Array<Object>} fields
  * @param {string} key
  * @returns {string[]}
  */
 export function fieldAllowedAlignValues(fields, key) {
-  return allowedAlignValues(resolveFieldRole(fields, key));
+  return fieldAlignAffordance(fields, key).values;
 }

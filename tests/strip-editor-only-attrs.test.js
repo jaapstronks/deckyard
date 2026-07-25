@@ -12,6 +12,7 @@ import {
  * tf-* text-formatting classes (re-anchored CSS keeps them working).
  */
 
+/** A collection type, so the data-inline-item hooks are present to strip. */
 const slide = {
   id: 's',
   type: 'lijstje-slide',
@@ -19,7 +20,22 @@ const slide = {
     title: 'T',
     variant: 'bullets',
     items: [{ title: 'a' }, { title: 'b' }],
-    textStyles: { title: { align: 'center', color: 'accent' } },
+    textStyles: { title: { color: 'accent' } },
+  },
+};
+
+/**
+ * Alignment needs a field that still owns it: `lijstje-slide.title` joined the
+ * header-block field group, so its alignment comes from the group and no
+ * tf-align-* class is emitted for it. `content-slide.body` is standalone.
+ */
+const alignedSlide = {
+  id: 's2',
+  type: 'content-slide',
+  content: {
+    title: 'T',
+    body: 'Body text',
+    textStyles: { body: { align: 'center', color: 'accent' } },
   },
 };
 
@@ -37,7 +53,14 @@ test('output render strips inline-edit hooks but keeps morph + tf-* classes', ()
   // morph role survives
   assert.match(html, /data-morph-role="title"/);
   // user text formatting survives (CSS is re-anchored off the attribute)
-  assert.match(html, /class="heading tf-align-center tf-color-accent"/);
+  assert.match(html, /class="heading tf-color-accent"/);
+});
+
+test('output render keeps a standalone field tf-align-* class', () => {
+  const html = renderSlideHtml(alignedSlide, { stripEditorAttrs: true });
+  assert.doesNotMatch(html, /data-inline-field/);
+  assert.match(html, /tf-align-center/);
+  assert.match(html, /tf-color-accent/);
 });
 
 test('stripEditorOnlyAttrs leaves data-morph-role and other attrs intact', () => {

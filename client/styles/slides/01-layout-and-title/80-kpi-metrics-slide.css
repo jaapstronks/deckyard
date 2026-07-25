@@ -192,3 +192,12 @@
 }
 
 
+
+/* Header-block alignment (author-driven, horizontal axis). `is-align-center`
+   comes from the type's `headerAlign` and moves the heading + subheading as
+   one. The metric grid keeps its own alignment. */
+.slide-kpi-metrics.is-align-center .heading,
+.slide-kpi-metrics.is-align-center .subheading {
+  margin-inline: auto;
+  text-align: center;
+}

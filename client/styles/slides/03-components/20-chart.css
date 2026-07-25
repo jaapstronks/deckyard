@@ -278,3 +278,17 @@
 
 
 
+
+/* Header-block alignment (author-driven, horizontal axis). `is-align-center`
+   comes from the type's `headerAlign`. The title sits in a flex row and shrinks
+   to its text, so the ROW has to centre it — a `text-align` on the title alone
+   is inert there. The 70ch cap on the subheading gets the matching
+   `margin-inline: auto`. The plot area is not part of the block. */
+.slide-chart.is-align-center .chart-title-row {
+  justify-content: center;
+}
+.slide-chart.is-align-center .chart-title,
+.slide-chart.is-align-center .chart-header .subheading {
+  margin-inline: auto;
+  text-align: center;
+}
