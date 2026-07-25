@@ -222,8 +222,8 @@ function addKey(strings, key, def, ref) {
 function extractSlideTypeUiStrings(strings) {
   const customNames = new Set(CUSTOM_SLIDE_TYPE_NAMES || []);
   for (const [type, def] of Object.entries(SLIDE_TYPES || {})) {
-    // Skip fork-specific custom types: template.pot.json is a tracked
-    // artifact and must only contain upstream strings.
+    // Skip fork-specific custom types: template.pot.json must only contain
+    // upstream strings (it is a local, gitignored extraction artifact).
     if (customNames.has(type)) continue;
     const typeRef = `shared/slide-types:${type}`;
     const labelKey = def?.labelKey || `slideType.${type}.label`;
