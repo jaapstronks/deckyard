@@ -3,18 +3,19 @@
  * verified SSO identity and returns the object `setSessionCookie` needs.
  *
  * Mirrors {@link getOrCreateMagicLinkUser}: upsert by email (globally unique),
- * set `auth_source`, and derive a session-version key from the same source the
- * async validator recomputes (`password_changed_at || updated_at`), so the
- * minted cookie validates on the next request.
+ * set `auth_source`, and stamp the session-version key from the shared
+ * {@link sessionVersion} helper the async validator also uses, so the minted
+ * cookie validates on the next request.
  *
+ * @see server/utils/session-version.js
  * @see server/storage/magic-link.js
  * @see server/auth/auth.js (getUserFromRequestAsync, setSessionCookie)
  */
 
-import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
+import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 /**
@@ -23,22 +24,6 @@ import { withDbGuard } from './utils/db-guard.js';
  */
 function getAdminEmail() {
   return String(process.env.AUTH_ADMIN_EMAIL || '').trim().toLowerCase();
-}
-
-/**
- * Session-version key matching the calculation in auth.js: sha256 of
- * `password_changed_at || updated_at`, base64url, first 12 chars.
- * @param {object} user - DB row with password_changed_at / updated_at.
- * @param {string} fallbackNow - ISO string to use when both are absent.
- * @returns {string}
- */
-function sessionVersion(user, fallbackNow) {
-  const versionSource = user.password_changed_at || user.updated_at || fallbackNow;
-  return crypto
-    .createHash('sha256')
-    .update(String(versionSource))
-    .digest('base64url')
-    .slice(0, 12);
 }
 
 /**
@@ -126,7 +111,7 @@ export async function getOrCreateSsoUser(identity, opts, ctx) {
         name: user.name || '',
         role,
         isAdmin: role === 'admin',
-        v: sessionVersion(user, now),
+        v: sessionVersion(user),
       },
     };
   });
