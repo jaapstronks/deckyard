@@ -225,6 +225,7 @@ If the slide is an audience interaction:
 - **Do**: add small modules where the codebase already expects them (`shared/slide-types/types`, `client/views/*`, `client/lib/*`, `server/routes/*`, `server/storage/*`).
 - **Do**: reuse shared helpers instead of duplicating validation/escaping/URL logic.
 - **Do**: keep i18n in mind—translatable fields are detected by field `type === 'string' | 'markdown'`.
+- **Do**: test storage/identity/auth behaviour without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()` from `server/db/client.js`) — it enforces UNIQUE constraints and logs every table touched so you can assert what was *not* queried. See **`docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL**.
 - **Don’t**: paste large blocks of CSS into JS templates; keep styling in CSS files.
 - **Don’t**: hardcode user-facing copy in multiple places; centralize it.
 - **Don’t**: special-case new behavior in many files; create one reusable abstraction/module and call it.
