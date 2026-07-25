@@ -69,8 +69,9 @@ storage layer that enforces org isolation:
   `organization_id` (`server/storage/adapters/postgres/presentations.js`), and
   in multi-workspace mode the org is resolved per request from the session,
   verified against membership (`server/utils/context.js`, see below). A
-  cross-org read returns nothing. (The subdomain / custom-domain hooks in the
-  same file are unused leftovers, not the resolution path.)
+  cross-org read returns nothing. The session is the *only* resolution path:
+  the hostname says nothing about which organization a request acts in (see
+  "Why not the hostname" below).
 - **File backend** (the OSS default, `STORAGE_MODE` unset) does **not**. Decks
   live flat in one directory (`server/storage/presentations/paths.js`) and
   `listPresentations()` never consults the org
@@ -196,6 +197,27 @@ organizations. Both are in place; what is still missing is listed under
   Machine-client surfaces (public API, MCP) know their actor by email only and
   take the organization from the presentation, so they keep the behaviour they
   had — see the open item on API keys below.
+
+#### Why not the hostname
+
+Resolving the organization from the request hostname was half-built and is now
+**removed rather than finished** (subdomain extraction, the lookups by subdomain
+and custom domain, a second context builder, and the `subdomain` /
+`custom_domain` columns on `organizations`).
+
+The reason is a modelling one. A hostname identifies an **instance**; an
+organization is a dimension **within** an instance. Shapes 1-3 give a customer
+their own hostname by giving them their own deploy — DNS, a reverse proxy and
+`BASE_URL`, none of which the application needs to know about. Shape 4 puts
+several organizations behind one hostname, where a host header cannot
+distinguish them at all. So the hostname is either redundant or insufficient,
+and using it as a claim about ownership would conflate two things that are free
+to differ.
+
+Sessions carry the answer instead, re-verified against membership on every
+request. `organizations.slug` remains the stable human-readable identifier.
+Pinned by `tests/organization-host-independence.test.js`, which also fails if a
+write path for the removed columns comes back.
 
 None of these affects shapes 1-3, and none is a prerequisite for them: a
 dedicated instance stays safe because its tenant boundary is the deploy itself.
