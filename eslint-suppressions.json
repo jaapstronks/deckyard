@@ -1,5 +1,5 @@
 {
-  "client/views/presenter.js": {
+  "client/views/presenter/index.js": {
     "no-unused-vars": {
       "count": 1
     }
