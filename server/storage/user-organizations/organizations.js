@@ -12,7 +12,7 @@ import { withDbGuard } from '../utils/db-guard.js';
 
 /** Column list shared by all organization-by-X queries. */
 const ORG_COLUMNS = [
-  'id', 'name', 'slug', 'subdomain', 'custom_domain', 'billing_email',
+  'id', 'name', 'slug',
   'logo_url', 'display_name', 'description', 'settings', 'created_at', 'updated_at',
 ];
 
@@ -34,57 +34,18 @@ export async function getOrganizationById(organizationId) {
 }
 
 /**
- * Get an organization by subdomain.
- * @param {string} subdomain - Organization subdomain
- * @returns {Promise<Object|null>}
- */
-export async function getOrganizationBySubdomain(subdomain) {
-  if (!subdomain) return null;
-
-  return withDbGuard(null, async (db) => {
-    const row = await db
-      .selectFrom('organizations')
-      .select(ORG_COLUMNS)
-      .where('subdomain', '=', subdomain.toLowerCase())
-      .executeTakeFirst();
-
-    return row ? formatOrganization(row) : null;
-  });
-}
-
-/**
- * Get an organization by custom domain.
- * @param {string} customDomain - Custom domain
- * @returns {Promise<Object|null>}
- */
-export async function getOrganizationByCustomDomain(customDomain) {
-  if (!customDomain) return null;
-
-  return withDbGuard(null, async (db) => {
-    const row = await db
-      .selectFrom('organizations')
-      .select(ORG_COLUMNS)
-      .where('custom_domain', '=', customDomain.toLowerCase())
-      .executeTakeFirst();
-
-    return row ? formatOrganization(row) : null;
-  });
-}
-
-/**
  * Create a new organization.
  * @param {Object} data - Organization data
  * @param {string} data.name - Organization name
  * @param {string} data.slug - Unique slug
- * @param {string} [data.subdomain] - Subdomain
- * @param {string} [data.billingEmail] - Billing email
+ * @param {string} [data.displayName] - Display name, may differ from `name`
+ * @param {string} [data.description] - Workspace description
  * @param {string} data.ownerId - User ID of the owner
  * @returns {Promise<Object>}
  */
 export async function createOrganization(data) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const slug = String(data.slug || '').toLowerCase().trim();
-    const subdomain = data.subdomain ? String(data.subdomain).toLowerCase().trim() : null;
 
     if (!slug || slug.length < 2) {
       return { ok: false, reason: 'invalid_slug' };
@@ -101,27 +62,12 @@ export async function createOrganization(data) {
       return { ok: false, reason: 'slug_taken' };
     }
 
-    // Check if subdomain already exists
-    if (subdomain) {
-      const existingSubdomain = await db
-        .selectFrom('organizations')
-        .select('id')
-        .where('subdomain', '=', subdomain)
-        .executeTakeFirst();
-
-      if (existingSubdomain) {
-        return { ok: false, reason: 'subdomain_taken' };
-      }
-    }
-
     const now = nowIso();
     const org = await db
       .insertInto('organizations')
       .values({
         name: data.name,
         slug,
-        subdomain,
-        billing_email: data.billingEmail || null,
         display_name: data.displayName || null,
         description: data.description || null,
         created_at: now,
@@ -165,25 +111,8 @@ export async function updateOrganization(organizationId, updates) {
     if ('name' in updates) updateData.name = updates.name;
     if ('displayName' in updates) updateData.display_name = updates.displayName;
     if ('description' in updates) updateData.description = updates.description;
-    if ('billingEmail' in updates) updateData.billing_email = updates.billingEmail;
     if ('logoUrl' in updates) updateData.logo_url = updates.logoUrl;
     if ('settings' in updates) updateData.settings = JSON.stringify(updates.settings);
-
-    // Handle subdomain change with uniqueness check
-    if ('subdomain' in updates && updates.subdomain) {
-      const newSubdomain = String(updates.subdomain).toLowerCase().trim();
-      const existing = await db
-        .selectFrom('organizations')
-        .select('id')
-        .where('subdomain', '=', newSubdomain)
-        .where('id', '!=', organizationId)
-        .executeTakeFirst();
-
-      if (existing) {
-        return { ok: false, reason: 'subdomain_taken' };
-      }
-      updateData.subdomain = newSubdomain;
-    }
 
     const row = await db
       .updateTable('organizations')
@@ -239,9 +168,6 @@ function formatOrganization(row) {
     id: row.id,
     name: row.name,
     slug: row.slug,
-    subdomain: row.subdomain,
-    customDomain: row.custom_domain,
-    billingEmail: row.billing_email,
     logoUrl: row.logo_url,
     displayName: row.display_name,
     description: row.description,

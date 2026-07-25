@@ -6,7 +6,7 @@
 import { getUserFromRequestAsync, updateSessionOrganization } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized, forbidden, notFound, serverError } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
-import { createRouteContext, isReservedSubdomain } from '../../utils/context.js';
+import { createRouteContext } from '../../utils/context.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import {
   listUserOrganizations,
@@ -35,28 +35,6 @@ function isValidSlug(slug) {
   if (!slug || typeof slug !== 'string') return false;
   // 2-63 chars, lowercase alphanumeric, hyphens allowed but not at start/end
   return /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]{1,2}$/.test(slug);
-}
-
-/**
- * Validate subdomain format.
- * Same rules as slug, plus cannot be a reserved subdomain.
- * @param {string} subdomain
- * @returns {{ valid: boolean, reason?: string }}
- */
-function validateSubdomain(subdomain) {
-  if (!subdomain) return { valid: true }; // Subdomain is optional
-
-  const normalized = String(subdomain).toLowerCase().trim();
-
-  if (!isValidSlug(normalized)) {
-    return { valid: false, reason: 'invalid_format' };
-  }
-
-  if (isReservedSubdomain(normalized)) {
-    return { valid: false, reason: 'reserved' };
-  }
-
-  return { valid: true };
 }
 
 export async function handleOrganizations({ repoRoot, req, res, url, authedUser }) {
@@ -113,8 +91,6 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       const body = await json(req);
       const name = getTrimmedString(body, 'name') || '';
       const slug = (getTrimmedString(body, 'slug') || '').toLowerCase();
-      const subdomain = body?.subdomain ? String(body.subdomain).toLowerCase().trim() : null;
-      const billingEmail = body?.billingEmail ? String(body.billingEmail).trim() : null;
       const displayName = body?.displayName ? String(body.displayName).trim() : null;
       const description = body?.description ? String(body.description).trim() : null;
 
@@ -126,19 +102,9 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
         return badRequest(res, 'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens');
       }
 
-      const subdomainValidation = validateSubdomain(subdomain);
-      if (!subdomainValidation.valid) {
-        if (subdomainValidation.reason === 'reserved') {
-          return badRequest(res, 'This subdomain is reserved');
-        }
-        return badRequest(res, 'Invalid subdomain format');
-      }
-
       const result = await createOrganization({
         name,
         slug,
-        subdomain,
-        billingEmail,
         displayName,
         description,
         ownerId: userId,
@@ -147,9 +113,6 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       if (!result.ok) {
         if (result.reason === 'slug_taken') {
           return badRequest(res, 'An organization with this slug already exists');
-        }
-        if (result.reason === 'subdomain_taken') {
-          return badRequest(res, 'This subdomain is already in use');
         }
         return badRequest(res, 'Failed to create organization');
       }
@@ -236,29 +199,8 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
         updates.description = body.description ? String(body.description).trim() : null;
       }
 
-      if ('billingEmail' in body) {
-        updates.billingEmail = body.billingEmail ? String(body.billingEmail).trim() : null;
-      }
-
       if ('logoUrl' in body) {
         updates.logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
-      }
-
-      // Only owners can change subdomain
-      if ('subdomain' in body) {
-        if (membership.role !== 'owner') {
-          return forbidden(res, 'Only the owner can change the subdomain');
-        }
-
-        const subdomain = body.subdomain ? String(body.subdomain).toLowerCase().trim() : null;
-        const subdomainValidation = validateSubdomain(subdomain);
-        if (!subdomainValidation.valid) {
-          if (subdomainValidation.reason === 'reserved') {
-            return badRequest(res, 'This subdomain is reserved');
-          }
-          return badRequest(res, 'Invalid subdomain format');
-        }
-        updates.subdomain = subdomain;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -270,9 +212,6 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       if (!result.ok) {
         if (result.reason === 'not_found') {
           return notFound(res);
-        }
-        if (result.reason === 'subdomain_taken') {
-          return badRequest(res, 'This subdomain is already in use');
         }
         return badRequest(res, 'Failed to update organization');
       }
