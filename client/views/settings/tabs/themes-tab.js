@@ -334,6 +334,17 @@ export function createThemesTab({ user }) {
 
     const menu = h('div', { class: 'theme-context-menu dropdown-menu is-open' });
 
+    // Single teardown: removes the node AND the outside-click listener. Every
+    // item calls this, so clicking one doesn't leave the pointerdown handler
+    // bound to document (the leak #343 left out of scope).
+    const closeMenu = () => {
+      menu.remove();
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+    const onPointerDown = (ev) => {
+      if (!menu.contains(ev.target)) closeMenu();
+    };
+
     // Set as default
     if (!theme.isDefault) {
       const setDefaultItem = h('button', {
@@ -341,7 +352,7 @@ export function createThemesTab({ user }) {
         type: 'button',
         text: t('settings.themes.setAsDefault', 'Set as default'),
         onclick: async () => {
-          menu.remove();
+          closeMenu();
           await setDefaultTheme(theme.id);
         },
       });
@@ -352,7 +363,7 @@ export function createThemesTab({ user }) {
         type: 'button',
         text: t('settings.themes.clearDefault', 'Clear default'),
         onclick: async () => {
-          menu.remove();
+          closeMenu();
           await clearDefaultTheme();
         },
       });
@@ -365,7 +376,7 @@ export function createThemesTab({ user }) {
       type: 'button',
       text: t('settings.themes.duplicate', 'Duplicate'),
       onclick: async () => {
-        menu.remove();
+        closeMenu();
         await duplicateTheme(theme);
       },
     });
@@ -377,7 +388,7 @@ export function createThemesTab({ user }) {
       type: 'button',
       text: t('common.delete', 'Delete'),
       onclick: async () => {
-        menu.remove();
+        closeMenu();
         await confirmDeleteTheme(theme);
       },
     });
@@ -392,15 +403,9 @@ export function createThemesTab({ user }) {
 
     document.body.append(menu);
 
-    // Close on outside click
-    const closeMenu = (ev) => {
-      if (!menu.contains(ev.target)) {
-        menu.remove();
-        document.removeEventListener('pointerdown', closeMenu, true);
-      }
-    };
+    // Close on outside click (teardown defined above, next to the menu node).
     setTimeout(() => {
-      document.addEventListener('pointerdown', closeMenu, true);
+      document.addEventListener('pointerdown', onPointerDown, true);
     }, 0);
   }
 

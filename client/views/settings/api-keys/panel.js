@@ -3,9 +3,13 @@
  * Main panel for managing API keys with list, create, and revoke functionality.
  */
 
-import { h } from '../../lib/dom.js';
-import { t } from '../../lib/ui-i18n.js';
-import { fetchApiKeys, renderKeyList, showCreateModal, showRevokeModal, showUsagePanel } from './api-keys/index.js';
+import { h } from '../../../lib/dom.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { fetchApiKeys } from './actions.js';
+import { renderKeyList } from './key-list.js';
+import { showCreateModal } from './create-modal.js';
+import { showRevokeModal } from './revoke-modal.js';
+import { showUsagePanel } from './usage-panel.js';
 
 /**
  * Render the API keys management panel.

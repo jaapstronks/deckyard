@@ -1,11 +1,11 @@
 /**
  * Users Tab Component
- * Wraps the existing admin-users-panel
+ * Wraps the admin-users panel (client/views/settings/admin-users/).
  */
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { renderAdminUsersPanel } from '../admin-users-panel.js';
+import { renderAdminUsersPanel } from '../admin-users/index.js';
 
 /**
  * Create the users tab component.

@@ -109,7 +109,7 @@
     "client/views/settings/tabs/analytics-tab.js :: Umami": "Product names of the supported analytics providers (Umami, Plausible, Matomo, Google Analytics 4).",
     "client/views/settings/tabs/preferences-tab.js :: English": "Language names are shown in their own language, by design.",
     "client/views/settings/tabs/preferences-tab.js :: Nederlands": "Language names are shown in their own language, by design.",
-    "client/views/settings/tabs/slide-types-tab.js :: Other": "English fallback for CATEGORY_LABELS.other, resolved through t() at render time.",
+    "client/views/settings/tabs/slide-types-tab/index.js :: Other": "English fallback for CATEGORY_LABELS.other, resolved through t() at render time.",
     "client/views/settings/tabs/slide-types-tab/categories.js :: Basic": "English fallback for CATEGORY_LABELS, which resolves the heading through t() lazily at render time (the dictionary is not loaded at import time).",
     "client/views/settings/tabs/slide-types-tab/categories.js :: Data": "English fallback for CATEGORY_LABELS, which resolves the heading through t() lazily at render time (the dictionary is not loaded at import time).",
     "client/views/settings/tabs/slide-types-tab/categories.js :: Interaction": "English fallback for CATEGORY_LABELS, which resolves the heading through t() lazily at render time (the dictionary is not loaded at import time).",

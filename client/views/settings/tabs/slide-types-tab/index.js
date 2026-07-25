@@ -3,23 +3,23 @@
  * Shows custom slide types management and core type curation toggles.
  */
 
-import { h } from '../../../lib/dom.js';
-import { t } from '../../../lib/ui-i18n.js';
-import { api } from '../../../lib/api.js';
-import { toast } from '../../../lib/dom/toast.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
-import { readFileAsText } from '../../../lib/util/file.js';
-import { createSlideTypeEditor } from '../slide-type-editor/index.js';
+import { h } from '../../../../lib/dom.js';
+import { t } from '../../../../lib/ui-i18n.js';
+import { api } from '../../../../lib/api.js';
+import { toast } from '../../../../lib/dom/toast.js';
+import { confirmModal } from '../../../../lib/dom/modal.js';
+import { readFileAsText } from '../../../../lib/util/file.js';
+import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import {
   serializeSlideType,
   parseImportedSlideType,
   deriveUniqueSlug,
-} from '../slide-type-editor/io.js';
-import { loadThemeById } from '../../../lib/theme/theme.js';
-import { computeDrop, resolveMove } from '../../editor/inline-edit/reorder-geometry.js';
-import { CATEGORIES, CATEGORY_LABELS } from './slide-types-tab/categories.js';
-import { createCurationThumbnail } from './slide-types-tab/curation-thumbnails.js';
-import { openTypePreview as openTypePreviewModal } from './slide-types-tab/type-preview-modal.js';
+} from '../../slide-type-editor/io.js';
+import { loadThemeById } from '../../../../lib/theme/theme.js';
+import { computeDrop, resolveMove } from '../../../editor/inline-edit/reorder-geometry.js';
+import { CATEGORIES, CATEGORY_LABELS } from './categories.js';
+import { createCurationThumbnail } from './curation-thumbnails.js';
+import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
 
 /**
  * Create the slide types curation tab.
@@ -323,6 +323,17 @@ export function createSlideTypesTab({ user } = {}) {
 
     const menu = h('div', { class: 'custom-type-context-menu dropdown-menu is-open' });
 
+    // Single teardown: removes the node AND the outside-click listener. Every
+    // item calls this, so clicking one doesn't leave the pointerdown handler
+    // bound to document (the leak #343 left out of scope).
+    const closeMenu = () => {
+      menu.remove();
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+    const onPointerDown = (ev) => {
+      if (!menu.contains(ev.target)) closeMenu();
+    };
+
     // Publish / Unpublish
     menu.append(h('button', {
       class: 'dropdown-item',
@@ -331,7 +342,7 @@ export function createSlideTypesTab({ user } = {}) {
         ? t('settings.slideTypes.unpublish', 'Unpublish')
         : t('settings.slideTypes.publish', 'Publish'),
       onclick: async () => {
-        menu.remove();
+        closeMenu();
         await togglePublish(ct);
       },
     }));
@@ -345,7 +356,7 @@ export function createSlideTypesTab({ user } = {}) {
         type: 'button',
         text: t('settings.slideTypes.moveEarlier', 'Move earlier'),
         onclick: async () => {
-          menu.remove();
+          closeMenu();
           await moveCustomType(index, index - 1);
         },
       }));
@@ -356,7 +367,7 @@ export function createSlideTypesTab({ user } = {}) {
         type: 'button',
         text: t('settings.slideTypes.moveLater', 'Move later'),
         onclick: async () => {
-          menu.remove();
+          closeMenu();
           await moveCustomType(index, index + 1);
         },
       }));
@@ -368,7 +379,7 @@ export function createSlideTypesTab({ user } = {}) {
       type: 'button',
       text: t('settings.slideTypes.duplicate', 'Duplicate'),
       onclick: async () => {
-        menu.remove();
+        closeMenu();
         await duplicateCustomType(ct);
       },
     }));
@@ -379,7 +390,7 @@ export function createSlideTypesTab({ user } = {}) {
       type: 'button',
       text: t('settings.slideTypes.export', 'Export as JSON'),
       onclick: () => {
-        menu.remove();
+        closeMenu();
         exportCustomType(ct);
       },
     }));
@@ -390,7 +401,7 @@ export function createSlideTypesTab({ user } = {}) {
       type: 'button',
       text: t('common.delete', 'Delete'),
       onclick: async () => {
-        menu.remove();
+        closeMenu();
         await confirmDeleteCustomType(ct);
       },
     }));
@@ -404,14 +415,9 @@ export function createSlideTypesTab({ user } = {}) {
 
     document.body.append(menu);
 
-    const closeMenu = (ev) => {
-      if (!menu.contains(ev.target)) {
-        menu.remove();
-        document.removeEventListener('pointerdown', closeMenu, true);
-      }
-    };
+    // Close on outside click (teardown defined above, next to the menu node).
     setTimeout(() => {
-      document.addEventListener('pointerdown', closeMenu, true);
+      document.addEventListener('pointerdown', onPointerDown, true);
     }, 0);
   }
 

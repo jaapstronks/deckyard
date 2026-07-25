@@ -6,7 +6,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { createEmailTemplatesPanel } from '../email-templates-panel.js';
+import { createEmailTemplatesPanel } from '../email-templates/index.js';
 import { createAdminNotificationsSection } from '../sections/index.js';
 import {
   fetchAppSettings,
