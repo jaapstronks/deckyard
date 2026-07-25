@@ -37,6 +37,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const auth = await import('../server/auth/auth.js');
 const passwordReset = await import('../server/storage/password-reset.js');
+const identity = await import('../server/storage/identity.js');
 const magicLinkStore = await import('../server/storage/magic-link.js');
 const ssoStore = await import('../server/storage/sso.js');
 const usersStore = await import('../server/storage/users.js');
@@ -225,33 +226,48 @@ test('single-workspace session resolution issues no membership lookup', async ()
 // Identity lookups used by the auth-adjacent routes
 // ---------------------------------------------------------------------------
 
-test('getDatabaseUser finds the user by email', async () => {
+test('getUserByEmailGlobal finds the user by email', async () => {
   seedSingleOrg();
-  const row = await passwordReset.getDatabaseUser('alice@example.com', ctx);
+  const row = await identity.getUserByEmailGlobal('alice@example.com');
   assert.ok(row);
   assert.equal(row.id, 'user-alice');
 });
 
+test('getUserByEmailGlobal returns null for an unknown email', async () => {
+  seedSingleOrg();
+  assert.equal(await identity.getUserByEmailGlobal('nobody@example.com'), null);
+  assert.equal(await identity.getUserByEmailGlobal(''), null);
+});
+
+test('resolveActiveOrganization is configuration-only in single-workspace mode', async () => {
+  const db = seedSingleOrg();
+  db.__queryLog.length = 0;
+
+  assert.equal(await identity.resolveActiveOrganization('user-alice', OTHER_ORG), DEFAULT_ORG);
+  assert.equal(await identity.resolveActiveOrganization(null, undefined), DEFAULT_ORG);
+  assert.deepEqual(db.__queryLog, [], 'no database access when multi-workspace is off');
+});
+
 test('hasDatabaseCredentials reflects password presence', async () => {
   seedSingleOrg();
-  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com', ctx), true);
+  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com'), true);
 
   seedSingleOrg({ password_hash: null, auth_source: 'magic_link' });
-  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com', ctx), false);
+  assert.equal(await passwordReset.hasDatabaseCredentials('alice@example.com'), false);
 });
 
 test('verifyUserPassword checks the stored hash', async () => {
   seedSingleOrg();
   assert.equal(
-    await passwordReset.verifyUserPassword('alice@example.com', 'correct horse battery', ctx),
+    await passwordReset.verifyUserPassword('alice@example.com', 'correct horse battery'),
     true
   );
-  assert.equal(await passwordReset.verifyUserPassword('alice@example.com', 'nope', ctx), false);
+  assert.equal(await passwordReset.verifyUserPassword('alice@example.com', 'nope'), false);
 });
 
 test('getPasswordChangedAt returns the stored timestamp', async () => {
   seedSingleOrg();
-  const at = await passwordReset.getPasswordChangedAt('alice@example.com', ctx);
+  const at = await passwordReset.getPasswordChangedAt('alice@example.com');
   assert.equal(at.toISOString(), '2026-01-01T00:00:00.000Z');
 });
 

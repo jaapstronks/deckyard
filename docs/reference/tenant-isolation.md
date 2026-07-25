@@ -124,11 +124,21 @@ no longer true: the work is active, and it is not for a SaaS.)*
 Two pieces are being built so one managed instance can serve several
 organizations:
 
-- **Organisation-independent identity.** Ownership and ACLs currently key on
-  email strings, and `users.organization_id` stamps each user onto a single
-  organization while `user_organizations` allows membership of several. Until
-  that is resolved, switching organizations logs a user out — which is why
-  `MULTI_WORKSPACE_ENABLED` has never been wired end to end.
+- **Organisation-independent identity — done.** Authentication resolves a person
+  by their globally unique `users.email`, with no organization filter, through
+  `getUserByEmailGlobal()` in `server/storage/identity.js`. Which workspace a
+  session may act in is a separate question, answered by
+  `resolveActiveOrganization()`: configuration only in single-organization mode
+  (no database access), and membership-verified against `user_organizations` in
+  multi-workspace mode. A session whose organization membership was revoked
+  falls back to the person's oldest remaining membership; someone with no
+  membership at all is refused. `users.organization_id` survives as the *home*
+  organization — where a person lands without a session workspace, and where
+  newly created rows go — not as the authority on where they may work.
+
+  Lookups that ask "who is this?" are organization-independent; lookups that ask
+  "who is in this organization?" (`server/storage/users.js`, the member lists,
+  `created_by` resolution) keep their organization filter.
 - **The request-to-organization binding.** The session already carries the active
   organization and the switch endpoint already verifies membership, but
   `createRouteContext` discards it, so every request currently runs against the

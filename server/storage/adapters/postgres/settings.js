@@ -3,6 +3,7 @@
  */
 
 import { getDb, getOrgId, jsonb, now, sql } from './helpers.js';
+import { getUserByEmailGlobal } from '../../identity.js';
 
 /**
  * Settings mixin - adds app and user settings methods to adapter.
@@ -69,17 +70,12 @@ export function withSettings(Base) {
       return this.getAppSettings(ctx);
     }
 
+    // Personal settings belong to the person, not to a workspace: they live on
+    // the (globally unique) users row, so both sides resolve by email alone.
+    // Scoping them by organization made a member working outside their home
+    // organization read empty settings and write a duplicate users row.
     async getUserSettings(email, ctx) {
-      const db = getDb();
-      const orgId = getOrgId(ctx);
-
-      const row = await db
-        .selectFrom('users')
-        .select('settings')
-        .where('email', '=', email.toLowerCase())
-        .where('organization_id', '=', orgId)
-        .executeTakeFirst();
-
+      const row = await getUserByEmailGlobal(email);
       return row?.settings || {};
     }
 
@@ -87,12 +83,7 @@ export function withSettings(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
-      const existing = await db
-        .selectFrom('users')
-        .select('id')
-        .where('email', '=', email.toLowerCase())
-        .where('organization_id', '=', orgId)
-        .executeTakeFirst();
+      const existing = await getUserByEmailGlobal(email);
 
       if (existing) {
         await db
@@ -101,8 +92,7 @@ export function withSettings(Base) {
             settings: jsonb(data),
             updated_at: now(),
           })
-          .where('email', '=', email.toLowerCase())
-          .where('organization_id', '=', orgId)
+          .where('id', '=', existing.id)
           .execute();
       } else {
         await db

@@ -160,12 +160,13 @@ export async function createUser(userData, ctx) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
 
-    // Check if user already exists
+    // Existence is checked instance-wide, not per organization: users.email is
+    // globally unique, so an organization-scoped check would report "free" for
+    // an email that the insert then rejects.
     const existing = await db
       .selectFrom('users')
       .select('id')
       .where('email', '=', email)
-      .where('organization_id', '=', orgId)
       .executeTakeFirst();
 
     if (existing) {

@@ -1,9 +1,10 @@
 import crypto from 'node:crypto';
 import { parseCookies } from '../utils/cookies.js';
+import { verifyPassword as verifyDbPassword } from '../storage/password-reset.js';
 import {
-  getDatabaseUser,
-  verifyPassword as verifyDbPassword,
-} from '../storage/password-reset.js';
+  getUserByEmailGlobal,
+  resolveActiveOrganization,
+} from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
@@ -334,10 +335,13 @@ export function getUserFromRequest(req) {
  * Get user from request with async database validation.
  * Supports all auth sources: database (with/without password), magic_link, etc.
  * @param {Object} req - HTTP request
- * @param {Object} ctx - Context object for database access
+ * @param {Object} [_ctx] - Unused. Identity resolution is organization-
+ *   independent; the parameter is kept because all 22 call sites pass it and
+ *   removing it would be a churn-only change.
  * @returns {Promise<Object|null>} - User object or null
  */
-export async function getUserFromRequestAsync(req, ctx) {
+// eslint-disable-next-line no-unused-vars
+export async function getUserFromRequestAsync(req, _ctx) {
   if (!authEnabled())
     return {
       email: 'anonymous',
@@ -362,8 +366,10 @@ export async function getUserFromRequestAsync(req, ctx) {
 
   const email = String(payload?.email || '').toLowerCase();
 
-  // Check database users - support all auth sources
-  const dbUser = await getDatabaseUser(email, ctx);
+  // Check database users - support all auth sources. Identity is resolved
+  // across organizations: which workspace the session is in is a separate
+  // question, answered by resolveActiveOrganization() below.
+  const dbUser = await getUserByEmailGlobal(email);
   if (!dbUser) return null;
 
   // Calculate expected session version
@@ -380,6 +386,12 @@ export async function getUserFromRequestAsync(req, ctx) {
     : 'db';
 
   if (String(payload?.v || '') === expectedV) {
+    // Which workspace this session may act in. Single-workspace mode answers
+    // this from configuration without touching the database; multi-workspace
+    // mode re-verifies membership, because the token outlives a revocation.
+    const organizationId = await resolveActiveOrganization(dbUser.id, payload?.orgId);
+    if (!organizationId) return null;
+
     const adminEmail = getAdminEmail();
     const role =
       dbUser.role === 'admin' || email === adminEmail
@@ -391,8 +403,7 @@ export async function getUserFromRequestAsync(req, ctx) {
       name: dbUser.name || '',
       isAdmin: role === 'admin',
       authSource: dbUser.auth_source || 'database',
-      // Include organization context from session (multi-workspace mode)
-      organizationId: payload?.orgId || getDefaultOrganizationId(),
+      organizationId,
     };
   }
 
@@ -490,10 +501,11 @@ export function clearSessionCookie(req, res) {
  * Verify login credentials.
  * @param {string} emailRaw - Email address
  * @param {string} passwordRaw - Password
- * @param {Object} ctx - Context object for database access
+ * @param {Object} [_ctx] - Unused; see getUserFromRequestAsync.
  * @returns {Promise<Object|null>} - User object or null if invalid
  */
-export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
+// eslint-disable-next-line no-unused-vars
+export async function verifyLoginAsync(emailRaw, passwordRaw, _ctx) {
   if (!authEnabled())
     return {
       email: 'anonymous',
@@ -508,8 +520,9 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
     .toLowerCase();
   const password = String(passwordRaw || '');
 
-  // Check database user
-  const dbUser = await getDatabaseUser(email, ctx);
+  // Check database user. Logging in is an identity question, so the lookup is
+  // not scoped to an organization; the workspace is picked afterwards.
+  const dbUser = await getUserByEmailGlobal(email);
   if (dbUser?.password_hash && dbUser?.auth_source === 'database') {
     const valid = await verifyDbPassword(password, dbUser.password_hash);
     if (valid) {
