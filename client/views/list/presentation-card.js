@@ -10,6 +10,13 @@ import { getUserProfile } from '../../lib/user/user-profiles.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 import { hexToRgb, getRelativeLuminance } from '../../../shared/color-utils.js';
 
+// Safety-net window: if a card's thumbnail hasn't reached any terminal state
+// within this long, force one. Comfortably longer than the single onerror
+// retry (2500ms + two image loads) so it never preempts a legitimately slow
+// generation, but short enough that a genuinely stuck shimmer doesn't outstay
+// its welcome.
+const THUMB_SETTLE_TIMEOUT_MS = 8000;
+
 /**
  * Creates a presentation card renderer with shared context
  * @param {Object} ctx - Context with dependencies and callbacks
@@ -27,7 +34,18 @@ export function createCardRenderer({
   // list doesn't synchronously render a live slide (theme load + full slide DOM)
   // for every off-screen deck. One shared observer for the whole list.
   const thumbLoader = createInViewLoader({ rootMargin: '400px 0px' });
-  detachThumbs.push(() => thumbLoader.disconnect());
+
+  // One shared, bounded registry of the cards' still-pending thumbnail timers
+  // (onerror retry + the safety net). Cards add a timer on arm and drop it when
+  // it fires or the card settles, so this set never grows across re-renders —
+  // unlike the old approach of pushing a fresh cleanup closure into
+  // `detachThumbs` per card, which leaked one entry on every render.
+  const pendingThumbTimers = new Set();
+  detachThumbs.push(() => {
+    for (const id of pendingThumbTimers) clearTimeout(id);
+    pendingThumbTimers.clear();
+    thumbLoader.disconnect();
+  });
 
   const authorEmailForPresentation = (p) =>
     String(p?.updatedBy || p?.createdBy || p?.ownerEmail || '').trim();
@@ -114,12 +132,39 @@ export function createCardRenderer({
     // cheap title placeholder when none exists yet (never blank).
     const thumb = h('div', { class: 'thumb is-loading' });
 
-    let retryTimer = null;
-    detachThumbs.push(() => {
-      if (retryTimer) clearTimeout(retryTimer);
-    });
+    // "The shimmer always lands somewhere" is a guarantee, not a lucky property
+    // of the happy path. Every terminal state (image, placeholder, "no slides")
+    // routes through `settle()`, which flips this flag and cancels the card's
+    // pending timers; a safety-net timer armed below forces a terminal state if
+    // nothing else does.
+    let settled = false;
+    const cardTimers = new Set();
+    // Arm a timeout tracked in both the card's own set and the renderer-wide
+    // one, self-removing when it fires, so neither set outlives the timer. The
+    // unref keeps a leftover fallback timer from holding a Node process open in
+    // tests (no-op in the browser, where setTimeout returns a number).
+    const arm = (fn, ms) => {
+      const id = setTimeout(() => {
+        cardTimers.delete(id);
+        pendingThumbTimers.delete(id);
+        fn();
+      }, ms);
+      if (typeof id?.unref === 'function') id.unref();
+      cardTimers.add(id);
+      pendingThumbTimers.add(id);
+      return id;
+    };
+    const settle = () => {
+      settled = true;
+      for (const id of cardTimers) {
+        clearTimeout(id);
+        pendingThumbTimers.delete(id);
+      }
+      cardTimers.clear();
+    };
 
     const showEmpty = () => {
+      settle();
       thumb.classList.remove('is-loading');
       thumb.innerHTML = '';
       thumb.append(
@@ -135,6 +180,7 @@ export function createCardRenderer({
     // surface when unknown). Deliberately not a live slide render — speed is
     // the whole point of Fase B.
     const showPlaceholder = () => {
+      settle();
       thumb.classList.remove('is-loading');
       thumb.classList.add('is-placeholder');
       thumb.innerHTML = '';
@@ -163,6 +209,7 @@ export function createCardRenderer({
       });
       let retried = false;
       img.onload = () => {
+        settle();
         thumb.classList.remove('is-loading', 'is-placeholder');
         thumb.innerHTML = '';
         thumb.append(img);
@@ -172,7 +219,7 @@ export function createCardRenderer({
         // settle on the placeholder.
         if (!retried) {
           retried = true;
-          retryTimer = setTimeout(() => {
+          arm(() => {
             img.src = `${thumbUrl}&r=${Date.now()}`;
           }, 2500);
           return;
@@ -192,6 +239,19 @@ export function createCardRenderer({
       }
       showThumbImage();
     });
+
+    // Safety net: the skeleton must never spin forever. If none of the terminal
+    // paths ran within the grace window — the IntersectionObserver callback
+    // never fired for this card, a thumbnail response resolved neither `load`
+    // nor `error` (a 204, or a 200 whose body won't decode as an image), or
+    // generation simply never completed — force a real end state. A card that
+    // only scrolls into view later still upgrades: showThumbImage's onload
+    // swaps the real raster in over the placeholder.
+    arm(() => {
+      if (settled) return;
+      if (p.hasSlides) showPlaceholder();
+      else showEmpty();
+    }, THUMB_SETTLE_TIMEOUT_MS);
 
     const authorEmail = authorEmailForPresentation(p);
     const profile = authorEmail ? getUserProfile(authorEmail) : null;
