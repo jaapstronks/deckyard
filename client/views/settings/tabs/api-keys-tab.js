@@ -5,8 +5,7 @@
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { renderApiKeysPanel } from '../api-keys-panel.js';
-import { renderMcpConnectCard } from '../api-keys/index.js';
+import { renderApiKeysPanel, renderMcpConnectCard } from '../api-keys/index.js';
 
 /**
  * Create the API keys tab component.
