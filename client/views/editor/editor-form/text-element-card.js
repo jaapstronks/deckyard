@@ -22,6 +22,11 @@ import {
   normalizeTextStyles,
 } from '../../../../shared/slide-types/text-styles.js';
 import { fieldAlignAffordance } from '../../../../shared/slide-types/text-roles.js';
+import {
+  getFieldGroup,
+  groupAlignValues,
+  resolveGroupAlign,
+} from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
 const ALIGN_DEFAULT = 'left';
@@ -142,21 +147,30 @@ function renderColorControl({ h, slide, fieldKey, theme, current, commit }) {
  * with an explanation beats a silently absent one (a missing control reads as
  * a missing feature).
  *
+ * Values and current selection come from the GROUP itself, not from a local
+ * list: the group is the thing that owns them, and a second copy here would be
+ * exactly the per-type hardcode this model removes. Showing the live value also
+ * keeps the disabled control honest — a centred block reads as centred rather
+ * than as unset.
+ *
  * @param {Object} opts
  * @param {Function} opts.h
  * @param {{fieldEnum: Function}} opts.fieldRenderers
+ * @param {Object|null} opts.group - the field group that owns the alignment
+ * @param {Object} opts.slide
  * @returns {HTMLElement}
  */
-function renderGroupAlignHint({ h, fieldRenderers }) {
+function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
+  const values = groupAlignValues(group);
   const field = {
     key: 'textAlignGroup',
     label: t('editor.textStyle.align', 'Alignment'),
-    options: ['left', 'center'].map((v) => ({
+    options: values.map((v) => ({
       value: v,
       label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
     })),
   };
-  const el = fieldRenderers.fieldEnum(field, '', () => {});
+  const el = fieldRenderers.fieldEnum(field, resolveGroupAlign(group, slide?.content), () => {});
   el.classList.add('is-disabled');
   for (const btn of el.querySelectorAll('button, input, select')) {
     btn.disabled = true;
@@ -232,7 +246,11 @@ export function renderTextElementCard({
   // GROUP membership (a field inside a declared visual block hands alignment
   // to that block's layout variant). No per-type hardcode.
   const slideFields = getSlideType(slide?.type)?.fields || null;
-  const { values: roleValues, owner: alignOwner } = fieldAlignAffordance(slideFields, fieldKey);
+  const {
+    values: roleValues,
+    owner: alignOwner,
+    groupId,
+  } = fieldAlignAffordance(slideFields, fieldKey);
   let alignValues = roleValues;
   // A value already stored outside the allowed set stays selectable so it is
   // never a stuck, invisible override the user can't clear. Group members are
@@ -268,7 +286,12 @@ export function renderTextElementCard({
   // a permanently dead control would be the confusing one.)
   const groupHintEl =
     alignOwner === 'group'
-      ? renderGroupAlignHint({ h, fieldRenderers })
+      ? renderGroupAlignHint({
+          h,
+          fieldRenderers,
+          group: getFieldGroup(getSlideType(slide?.type), groupId),
+          slide,
+        })
       : null;
 
   const colorEl = renderColorControl({ h, slide, fieldKey, theme, current, commit });
