@@ -64,7 +64,7 @@
   --z-modal: 1100;     /* dialogs stacked above their own backdrop */
   --z-banner: 1150;    /* system-wide banner (e.g. sandbox notice) */
   --z-toast: 1200;     /* transient toasts, above modals */
-  --z-loading: 2000;   /* blocking loading veil */
+  --z-loading: 2000;   /* blocking full-screen veil: loading modal, compare lightbox */
   --z-drag: 999999;    /* drag ghost — the ceiling, above everything */
 
   --ps-topbar-height: 56px;
