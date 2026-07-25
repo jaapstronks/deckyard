@@ -1,29 +1,43 @@
 # Tenant isolation
 
 How Deckyard keeps one customer's decks away from another's, and which
-deployment shapes are supported today. Verified against HEAD on 2026-07-23.
+deployment shapes are supported. Verified against HEAD on 2026-07-23; hosting
+shapes and roadmap updated 2026-07-25.
 
 ## The supported model: the tenant boundary is the infrastructure
 
-Deckyard's near-term hosting story has three shapes, in order:
+Deckyard's hosting story has four shapes:
 
 1. **Sandbox / playground** (`SANDBOX_MODE`, e.g. `try.deckyard.eu`) —
    anonymous, throwaway, one shared instance. Isolation model below.
 2. **Self-hosted** — one operator runs one instance for their own use.
 3. **Dedicated customer instance** — a manually provisioned, per-customer
    deploy with its **own process and its own database**. Requested via the
-   contact form or as an upgrade path from sandbox/self-host.
+   contact form or as an upgrade path from sandbox/self-host. Available as
+   managed hosting: you run it, or we run it for you.
+4. **Multiple organizations on one instance** (`MULTI_WORKSPACE_ENABLED`) —
+   **in development**, see below. Isolation is enforced in code (every query is
+   scoped by `organization_id`) rather than by infrastructure, which is why it
+   is gated on the Postgres backend and refuses to boot on the file backend.
 
-In all three, an instance runs in the default **single-organization** mode
-(`MULTI_WORKSPACE_ENABLED` unset). The isolation guarantee for paying
-customers is therefore **infrastructural**: each customer gets a separate
-deploy and a separate database. It is **not** a code-level partition of one
-shared backend.
+Shapes 1-3 run in the default **single-organization** mode
+(`MULTI_WORKSPACE_ENABLED` unset). Their isolation guarantee is
+**infrastructural**: each customer gets a separate deploy and a separate
+database, not a code-level partition of one shared backend. That remains the
+strongest isolation Deckyard offers, and it is the default recommendation.
 
-A fully automated, self-serve, shared multi-tenant SaaS
-(`deckyard-cloud`) remains parked future work. It is **not** a prerequisite
-for shipping the three shapes above, and no agent should treat the large
-org-filtering + identity-decoupling rework as a blocker for them.
+### There is no shared multi-tenant SaaS, and none is planned
+
+A fully automated, self-serve, **shared multi-tenant SaaS with billing** is
+**not** on the roadmap — this is a decision (2026-07-25), not a deferral. There
+are no subscriptions, no payment integration and no self-serve signup in this
+codebase, and none are planned; that layer lives outside Deckyard. Do not
+reintroduce it, and do not treat its absence as an unfinished gap.
+
+Shape 4 is easy to confuse with that, so to be explicit: **multi-organization
+support is a structuring feature, not a commercial one.** It exists so one
+managed instance can serve several distinct organizations that each need their
+own themes, members and decks. It carries no notion of plans, seats or payment.
 
 ### Why single-org is safe today
 
@@ -101,11 +115,25 @@ No persistent cross-session leak was found: private decks are isolated by an
 unguessable per-guest identity, and the only shared decks are the
 read-only curated seed set.
 
-## Out of scope (parked, not a blocker here)
+## In development: shape 4 (multiple organizations on one instance)
 
-The full **identity-decoupling epic** (moving ownership/ACLs from email to
-`users.id`) and **org-filtering on a *shared* backend** belong to the future
-shared-multi-tenant SaaS track, not to the sandbox + dedicated-instance route
-this document covers. External email leaks were already closed separately
-(PR #214). See `deckyard-planning/briefs/identity-decoupling.md` and
-`deckyard-planning/briefs/dreamkit-multitenancy-briefing.md`.
+*(This section replaced an "out of scope, parked" note on 2026-07-25. That note
+said the identity and org-filtering work belonged to a future SaaS track. That is
+no longer true: the work is active, and it is not for a SaaS.)*
+
+Two pieces are being built so one managed instance can serve several
+organizations:
+
+- **Organisation-independent identity.** Ownership and ACLs currently key on
+  email strings, and `users.organization_id` stamps each user onto a single
+  organization while `user_organizations` allows membership of several. Until
+  that is resolved, switching organizations logs a user out — which is why
+  `MULTI_WORKSPACE_ENABLED` has never been wired end to end.
+- **The request-to-organization binding.** The session already carries the active
+  organization and the switch endpoint already verifies membership, but
+  `createRouteContext` discards it, so every request currently runs against the
+  default organization.
+
+Neither affects shapes 1-3, and neither is a prerequisite for them: a dedicated
+instance stays safe because its tenant boundary is the deploy itself. External
+email leaks were closed separately (PR #214).
