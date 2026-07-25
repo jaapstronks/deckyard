@@ -82,7 +82,8 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`esc()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`).
-  - Don’t introduce raw/unsafe HTML insertion.
+  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom.js`) rather than an `innerHTML` template.
+  - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
 - **Lifecycle & cleanup (critical in this codebase)**
   - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-render.js`) supports cleanup via `__sbCleanup`.
