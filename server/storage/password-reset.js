@@ -5,6 +5,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
+import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, isoAfter, isoBefore, normalizeEmail } from '../utils/normalize.js';
 import { generateSecureToken, hashToken, isValidEmail } from '../utils/secure-tokens.js';
 import {
@@ -230,37 +231,12 @@ export async function consumeResetToken(rawToken) {
 // ============================================================
 
 /**
- * Get a database user by email (with password hash).
- * @param {string} email - The user's email
- * @param {Object} ctx - Context object
- * @returns {Promise<Object|null>} - User record or null
- */
-export async function getDatabaseUser(email, ctx) {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return null;
-
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('users')
-      .selectAll()
-      .where('email', '=', normalized)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-
-    return row || null;
-  });
-}
-
-/**
  * Check if a user exists in the database with a password hash.
  * @param {string} email - The user's email
- * @param {Object} ctx - Context object
  * @returns {Promise<boolean>} - True if user has database credentials
  */
-export async function hasDatabaseCredentials(email, ctx) {
-  const user = await getDatabaseUser(email, ctx);
+export async function hasDatabaseCredentials(email) {
+  const user = await getUserByEmailGlobal(email);
   return !!(user?.password_hash && user?.auth_source === 'database');
 }
 
@@ -283,18 +259,15 @@ export async function setUserPassword(email, password, ctx) {
     return { ok: false, reason: validation.reason };
   }
 
+  // A reset token carries only an email, never an organization, so the person
+  // behind it is resolved globally. Scoping this lookup would make the reset
+  // insert a second row for an email that is globally unique, which fails.
+  const existingUser = await getUserByEmailGlobal(normalized);
+
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
     const passwordHash = await hashPassword(password);
     const now = nowIso();
-
-    // Check if user exists
-    const existingUser = await db
-      .selectFrom('users')
-      .select('id')
-      .where('email', '=', normalized)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
 
     if (existingUser) {
       // Update existing user
@@ -309,7 +282,8 @@ export async function setUserPassword(email, password, ctx) {
         .where('id', '=', existingUser.id)
         .execute();
     } else {
-      // Create new user
+      // Nobody with this email exists yet: the new row lands in the context
+      // organization, which becomes their home organization.
       await db
         .insertInto('users')
         .values({
@@ -332,11 +306,10 @@ export async function setUserPassword(email, password, ctx) {
  * Verify a user's current password.
  * @param {string} email - The user's email
  * @param {string} password - The password to verify
- * @param {Object} ctx - Context object
  * @returns {Promise<boolean>} - True if password is correct
  */
-export async function verifyUserPassword(email, password, ctx) {
-  const user = await getDatabaseUser(email, ctx);
+export async function verifyUserPassword(email, password) {
+  const user = await getUserByEmailGlobal(email);
   if (!user?.password_hash) return false;
 
   return verifyPassword(password, user.password_hash);
@@ -346,11 +319,10 @@ export async function verifyUserPassword(email, password, ctx) {
  * Get the timestamp when a user's password was last changed.
  * Used for session invalidation checks.
  * @param {string} email - The user's email
- * @param {Object} ctx - Context object
  * @returns {Promise<Date|null>} - Password changed timestamp or null
  */
-export async function getPasswordChangedAt(email, ctx) {
-  const user = await getDatabaseUser(email, ctx);
+export async function getPasswordChangedAt(email) {
+  const user = await getUserByEmailGlobal(email);
   if (!user?.password_changed_at) return null;
   return new Date(user.password_changed_at);
 }

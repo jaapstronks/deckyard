@@ -21,7 +21,8 @@ import {
   isRateLimitedByIp,
   getOrCreateMagicLinkUser,
 } from '../../storage/magic-link.js';
-import { logAuthEvent, getDatabaseUser } from '../../storage/password-reset.js';
+import { logAuthEvent } from '../../storage/password-reset.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('magic-link');
 
@@ -40,11 +41,10 @@ function buildMagicLinkUrl(req, token) {
 /**
  * Get user info for magic link email.
  * @param {string} email - Email to check
- * @param {Object} ctx - Context object
  * @returns {Promise<{exists: boolean, hasPassword: boolean}>}
  */
-async function getUserInfo(email, ctx) {
-  const dbUser = await getDatabaseUser(normalizeEmail(email), ctx);
+async function getUserInfo(email) {
+  const dbUser = await getUserByEmailGlobal(normalizeEmail(email));
   return {
     exists: !!dbUser,
     hasPassword: !!dbUser?.password_hash,
@@ -109,7 +109,7 @@ export async function handleMagicLink({ repoRoot, req, res, url }) {
     }
 
     // Check if user exists and has a password
-    const userInfo = await getUserInfo(email, ctx);
+    const userInfo = await getUserInfo(email);
 
     // Log the request attempt
     await logAuthEvent({
