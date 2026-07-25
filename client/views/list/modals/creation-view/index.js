@@ -12,7 +12,11 @@
  * existing handlers in ../new-presentation/handlers.js unchanged.
  */
 
-import { t } from '../../../../lib/ui-i18n.js';
+import { t, getUiLocale } from '../../../../lib/ui-i18n.js';
+import {
+  readStoredLangMode,
+  resolveInitialDeckLang,
+} from '../../../../lib/format/i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { createFocusTrap } from '../../../../lib/dom.js';
 import { getFeatures } from '../../../../lib/state/features.js';
@@ -623,8 +627,17 @@ export function openCreationView({
   // Language sits first so it stays visible without scrolling past the tall
   // theme grid — and it only renders at all when the deck supports >1 language.
   const setupWrap = h('div', { class: 'creation-setup' });
+  // A new deck starts in the language the app is being read in, unless the
+  // user already saved a deck-language preference — then that wins. Reading
+  // the stored value and the UI locale straight from their modules (rather
+  // than through the injected readLangMode/writeLangMode pair) keeps the
+  // "no preference stored" case distinguishable, which readLangMode() hides.
   const langSelect = createLangSelector({
     h, readLangMode, writeLangMode, getSupportedLangs,
+    initialLang: resolveInitialDeckLang({
+      storedLang: readStoredLangMode(),
+      uiLocale: getUiLocale(),
+    }),
     className: '',
   });
   const themeSelect = createVisualThemePicker({
