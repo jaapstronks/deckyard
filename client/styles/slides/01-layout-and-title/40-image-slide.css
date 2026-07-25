@@ -168,3 +168,17 @@
 .slide-image:not(.is-bleed).has-bottom-subheading .bottom-subheading {
   padding-top: 12px;
 }
+
+/* Box invariant for the caption. It is a `width: fit-content` chip pinned with
+   `left: 18px`, so its own `text-align` had nothing to act on — choosing
+   "Center" on a standalone caption changed the computed text-align and moved
+   nothing. Alignment on a pinned box has to drive the PIN, not the text. */
+.slide-image .caption.tf-align-center {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+.slide-image .caption.tf-align-right {
+  left: auto;
+  right: 18px;
+}

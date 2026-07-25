@@ -6,6 +6,19 @@ import {
   hasBottomSubheading,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title and subheading are one header block. The title shrinks to its text
+ * inside a flex row (measured 225px wide, 624px left of the slide centre) while
+ * the subheading spans the slide, so a per-field `text-align` on the title was
+ * inert and the two never shared a centre. The plot area is not part of the
+ * group.
+ */
+const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
+  label: 'Header alignment',
+  schematicKind: 'chart',
+});
 import { getSlideCopy } from '../slide-copy.js';
 
 import { parseChartData } from '../chart/parse.js';
@@ -21,14 +34,18 @@ import {
 } from '../chart/render-pie.js';
 
 export default {
+  fieldGroups: [HEADER_BLOCK.group],
+  layoutVariants: HEADER_BLOCK.variants,
   label: 'Chart',
   fields: [
+    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
       type: 'string',
       required: true,
       maxLength: 120,
+      group: 'header-block',
     },
     {
       key: 'subheading',
@@ -36,6 +53,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 220,
+      group: 'header-block',
     },
     {
       key: 'bottomSubheading',
@@ -111,6 +129,7 @@ export default {
   ],
   defaultsByLang: {
     nl: {
+      headerAlign: 'left',
       title: 'Nieuwe chart',
       subheading: '',
       bottomSubheading: '',
@@ -126,6 +145,7 @@ export default {
       background: 'lime',
     },
     'en-GB': {
+      headerAlign: 'left',
       title: 'New chart',
       subheading: '',
       bottomSubheading: '',
@@ -143,6 +163,7 @@ export default {
   },
   // Back-compat fallback
   defaults: {
+    headerAlign: 'left',
     title: 'New chart',
     subtitle: '',
     chartType: 'bar',
@@ -301,8 +322,9 @@ export default {
     const a11yTitle = title || 'Chart';
 
     // Note: we keep SVG inline for export safety.
+    const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-      <div class="slide slide-chart ${bg}${hasBottom ? ' has-bottom-subheading' : ''}" data-chart-type="${esc(
+      <div class="slide slide-chart ${bg}${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}" data-chart-type="${esc(
         chartType
       )}">
         <div class="slide-inner">

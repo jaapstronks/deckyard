@@ -8,6 +8,18 @@ import {
   hasBottomSubheading,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title and subheading are one header block. They already share a centre, but
+ * they are a block all the same: grouping them is what stops a future
+ * per-field alignment from pulling them apart, and gives the type one honest
+ * control instead of two that must be kept in sync by hand.
+ */
+const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
+  label: 'Header alignment',
+  schematicKind: 'kpi',
+});
 
 /**
  * Detect positive/negative tone from note text.
@@ -33,14 +45,18 @@ function parseNoteTone(noteRaw) {
 }
 
 export default {
+  fieldGroups: [HEADER_BLOCK.group],
+  layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',
   fields: [
+    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
       type: 'string',
       required: false,
       maxLength: 120,
+      group: 'header-block',
     },
     {
       key: 'subheading',
@@ -48,6 +64,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 200,
+      group: 'header-block',
     },
     {
       key: 'bottomSubheading',
@@ -120,6 +137,7 @@ export default {
   ],
   defaultsByLang: {
     nl: {
+      headerAlign: 'left',
       title: 'Kerncijfers',
       subheading: '',
       bottomSubheading: '',
@@ -154,6 +172,7 @@ export default {
       ],
     },
     'en-GB': {
+      headerAlign: 'left',
       title: 'Key metrics',
       subheading: '',
       bottomSubheading: '',
@@ -190,6 +209,7 @@ export default {
   },
   // Back-compat fallback
   defaults: {
+    headerAlign: 'left',
     title: 'Key metrics',
     subheading: '',
     bottomSubheading: '',
@@ -288,8 +308,9 @@ export default {
         `);
     }
 
+    const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-        <div class="slide slide-kpi-metrics ${bg} ${accentClass}${hasBottom ? ' has-bottom-subheading' : ''}" data-metric-count="${count}" data-count-up="${countUpOn ? '1' : '0'}">
+        <div class="slide slide-kpi-metrics ${bg} ${accentClass}${hasBottom ? ' has-bottom-subheading' : ''}${alignClass ? ` ${alignClass}` : ''}" data-metric-count="${count}" data-count-up="${countUpOn ? '1' : '0'}">
           <div class="slide-inner">
             ${title}
             ${subheading}

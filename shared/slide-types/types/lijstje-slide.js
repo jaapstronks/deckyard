@@ -1,14 +1,32 @@
 import { bgClass, esc, renderSubheadingHtml, BACKGROUND_FIELD } from '../helpers.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title and subheading are one header block. The title box spans the slide
+ * (1472px) while the subheading carries a 65% measure cap that also anchored it
+ * to the start, so the two sat on centres 191px apart at a 1600px render:
+ * setting both to `center` centred them on different axes. The list items are a
+ * separate, internally consistent unit (they already carry role:'list-item' and
+ * offer no alignment at all), so they stay out of this group.
+ */
+const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
+  label: 'Header alignment',
+  schematicKind: 'bullets',
+});
 
 export default {
+  fieldGroups: [HEADER_BLOCK.group],
+  layoutVariants: HEADER_BLOCK.variants,
   label: 'List',
   fields: [
+    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
       type: 'string',
       required: true,
       maxLength: 120,
+      group: 'header-block',
     },
     {
       key: 'subheading',
@@ -16,6 +34,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 160,
+      group: 'header-block',
     },
     {
       key: 'variant',
@@ -87,6 +106,7 @@ export default {
     nl: {
       title: 'Lijstje',
       subheading: '',
+      headerAlign: 'left',
       variant: 'bullets',
       layout: 'auto',
       density: 'auto',
@@ -106,6 +126,7 @@ export default {
     'en-GB': {
       title: 'List',
       subheading: '',
+      headerAlign: 'left',
       variant: 'bullets',
       layout: 'auto',
       density: 'auto',
@@ -127,6 +148,7 @@ export default {
   defaults: {
     title: 'List',
     subheading: '',
+    headerAlign: 'left',
     variant: 'bullets',
     layout: 'auto',
     density: 'auto',
@@ -231,8 +253,11 @@ export default {
       listHtml = `<${listTag} class="lijst">${itemsHtml}</${listTag}>`;
     }
 
+    const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-      <div class="slide slide-lijstje ${variant} ${layout}${densityClass} ${bg}">
+      <div class="slide slide-lijstje ${variant} ${layout}${densityClass} ${bg}${
+        alignClass ? ` ${alignClass}` : ''
+      }">
         <div class="slide-inner">
           <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
           ${subheading}
