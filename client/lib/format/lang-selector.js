@@ -54,6 +54,7 @@ export function getLangDisplayName(code) {
  * @param {Function} options.readLangMode - Function to read current language mode
  * @param {Function} options.writeLangMode - Function to write language mode
  * @param {Function} [options.getSupportedLangs] - Function returning array of supported languages
+ * @param {string} [options.initialLang] - Starting value, overriding readLangMode()
  * @param {Function} [options.onChange] - Called when language changes
  * @param {string} [options.className] - Additional CSS class for wrapper
  * @returns {Object} { wrap, syncUi, getLang, setLang, setDisabled }
@@ -63,6 +64,7 @@ export function createLangSelector({
   readLangMode,
   writeLangMode,
   getSupportedLangs,
+  initialLang,
   onChange,
   className = 'modal-lang-fixed',
 } = {}) {
@@ -71,7 +73,11 @@ export function createLangSelector({
     : ['nl', 'en-GB'];
   const supported = new Set(supportedList);
 
-  let langMode = readLangMode();
+  // `initialLang` is a *derived* default (see resolveInitialDeckLang), so it is
+  // never written back: persisting it would turn a guess into a stored
+  // preference and freeze the derivation for good. Only an explicit click or
+  // dropdown change below persists.
+  let langMode = supported.has(initialLang) ? initialLang : readLangMode();
   if (!supported.has(langMode)) {
     langMode = supportedList[0] || 'nl';
     writeLangMode(langMode);
