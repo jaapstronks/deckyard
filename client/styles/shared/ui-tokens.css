@@ -50,8 +50,7 @@
      Local sibling ordering *inside* a single component's own stacking context
      (a slide's background/content/overlay layers, cards, thumbnails) stays as
      plain small integers — those are not app layers and deliberately do not use
-     this scale. The very-top cluster (cookie-consent, top-of-stack utilities,
-     slide-type curation) is not mapped here yet; it needs its own ordering pass. */
+     this scale. */
   --z-behind: -1;      /* decorative layers sent behind their own content */
   --z-base: 0;         /* default in-flow stacking */
   --z-raised: 10;      /* lifted just above siblings (resize handles, sticky cells) */
@@ -65,6 +64,9 @@
   --z-banner: 1150;    /* system-wide banner (e.g. sandbox notice) */
   --z-toast: 1200;     /* transient toasts, above modals */
   --z-loading: 2000;   /* blocking full-screen veil: loading modal, compare lightbox */
+  --z-lightbox: 3000;  /* full-screen preview lightbox (slide-type peek), above the loading veil */
+  --z-consent: 4000;   /* cookie-consent legal gate: banner, its full-screen scrim, and settings panel */
+  --z-skip-link: 5000; /* WCAG skip-link — the keyboard escape hatch, above every overlay */
   --z-drag: 999999;    /* drag ghost — the ceiling, above everything */
 
   --ps-topbar-height: 56px;
