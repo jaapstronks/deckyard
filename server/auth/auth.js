@@ -335,13 +335,12 @@ export function getUserFromRequest(req) {
  * Get user from request with async database validation.
  * Supports all auth sources: database (with/without password), magic_link, etc.
  * @param {Object} req - HTTP request
- * @param {Object} [_ctx] - Unused. Identity resolution is organization-
+ * @param {Object} [ctx] - Unused. Identity resolution is organization-
  *   independent; the parameter is kept because all 22 call sites pass it and
  *   removing it would be a churn-only change.
  * @returns {Promise<Object|null>} - User object or null
  */
-// eslint-disable-next-line no-unused-vars
-export async function getUserFromRequestAsync(req, _ctx) {
+export async function getUserFromRequestAsync(req, ctx) {
   if (!authEnabled())
     return {
       email: 'anonymous',
@@ -501,11 +500,10 @@ export function clearSessionCookie(req, res) {
  * Verify login credentials.
  * @param {string} emailRaw - Email address
  * @param {string} passwordRaw - Password
- * @param {Object} [_ctx] - Unused; see getUserFromRequestAsync.
+ * @param {Object} [ctx] - Unused; see getUserFromRequestAsync.
  * @returns {Promise<Object|null>} - User object or null if invalid
  */
-// eslint-disable-next-line no-unused-vars
-export async function verifyLoginAsync(emailRaw, passwordRaw, _ctx) {
+export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
   if (!authEnabled())
     return {
       email: 'anonymous',
