@@ -115,6 +115,25 @@ export function isDatabaseAvailable() {
 }
 
 /**
+ * Install a stand-in database instance for tests.
+ *
+ * The storage layer reaches the database exclusively through getDb() behind
+ * isDatabaseAvailable() (see storage/utils/db-guard.js), so injecting an
+ * in-memory double here makes every storage module exercisable without a live
+ * PostgreSQL server. Tests use tests/helpers/fake-db.js as the double.
+ *
+ * Test-only: production code must never call this. A real connection is only
+ * ever created by initializeDatabase().
+ *
+ * @param {Object|null} testDb - Kysely-shaped double, or null to uninstall
+ * @returns {void}
+ */
+export function __setTestDb(testDb) {
+  db = testDb;
+  pool = null;
+}
+
+/**
  * Close the database connection pool.
  * @returns {Promise<void>}
  */

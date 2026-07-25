@@ -2,7 +2,7 @@
  * Storage layer for SSO (OIDC) users. JIT-provisions or updates a user from a
  * verified SSO identity and returns the object `setSessionCookie` needs.
  *
- * Mirrors {@link getOrCreateMagicLinkUser}: upsert by (email, organization_id),
+ * Mirrors {@link getOrCreateMagicLinkUser}: upsert by email (globally unique),
  * set `auth_source`, and derive a session-version key from the same source the
  * async validator recomputes (`password_changed_at || updated_at`), so the
  * minted cookie validates on the next request.
@@ -13,6 +13,7 @@
 
 import crypto from 'node:crypto';
 import { getOrgId } from '../utils/context.js';
+import { getUserByEmailGlobal } from './identity.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
@@ -72,12 +73,9 @@ export async function getOrCreateSsoUser(identity, opts, ctx) {
     const orgId = getOrgId(ctx);
     const now = nowIso();
 
-    let user = await db
-      .selectFrom('users')
-      .selectAll()
-      .where('email', '=', email)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
+    // Resolved across organizations: the IdP asserts an email, and that email
+    // identifies exactly one person instance-wide (users.email is unique).
+    let user = await getUserByEmailGlobal(email);
 
     let provisioned = false;
 

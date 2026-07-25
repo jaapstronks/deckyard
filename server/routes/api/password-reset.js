@@ -26,9 +26,9 @@ import {
   isRateLimitedByEmail,
   isRateLimitedByIp,
   logAuthEvent,
-  getDatabaseUser,
   hasDatabaseCredentials,
 } from '../../storage/password-reset.js';
+import { getUserByEmailGlobal } from '../../storage/identity.js';
 
 /**
  * Build the reset URL from the token and request.
@@ -45,11 +45,10 @@ function buildResetUrl(req, token) {
 /**
  * Check if email exists in database.
  * @param {string} email - Email to check
- * @param {Object} ctx - Context object
  * @returns {Promise<boolean>} - True if user exists
  */
-async function userExists(email, ctx) {
-  const dbUser = await getDatabaseUser(normalizeEmail(email), ctx);
+async function userExists(email) {
+  const dbUser = await getUserByEmailGlobal(normalizeEmail(email));
   return !!dbUser;
 }
 
@@ -100,7 +99,7 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
     }
 
     // Check if user exists (ENV or database)
-    const exists = await userExists(email, ctx);
+    const exists = await userExists(email);
 
     // Log the request attempt
     await logAuthEvent({
@@ -283,12 +282,12 @@ export async function handlePasswordReset({ repoRoot, req, res, url }) {
     const email = user.email;
 
     // Verify current password
-    const hasDbCreds = await hasDatabaseCredentials(email, ctx);
+    const hasDbCreds = await hasDatabaseCredentials(email);
     if (!hasDbCreds) {
       return badRequest(res, t('api.error.noDbCredentials', 'Cannot change password - no database credentials found'));
     }
 
-    const isCurrentValid = await verifyUserPassword(email, currentPassword, ctx);
+    const isCurrentValid = await verifyUserPassword(email, currentPassword);
     if (!isCurrentValid) {
       await logAuthEvent({
         type: 'password_change_failed',
