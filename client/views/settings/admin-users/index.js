@@ -1,8 +1,8 @@
 /**
- * Admin users module.
+ * Admin users module — public seam.
+ *
+ * The panel composition lives in panel.js; user-list.js / add-modal.js /
+ * edit-modal.js / actions.js are internal concern modules it composes.
  */
 
-export { renderUsersList } from './user-list.js';
-export { showAddModal } from './add-modal.js';
-export { showEditModal } from './edit-modal.js';
-export { fetchUsers, confirmDelete, resendInvitation } from './actions.js';
+export { renderAdminUsersPanel } from './panel.js';

@@ -3,9 +3,12 @@
  * Displays a list of users with options to add, edit, and delete.
  */
 
-import { h } from '../../lib/dom.js';
-import { t } from '../../lib/ui-i18n.js';
-import { renderUsersList, showAddModal, showEditModal, fetchUsers } from './admin-users/index.js';
+import { h } from '../../../lib/dom.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { renderUsersList } from './user-list.js';
+import { showAddModal } from './add-modal.js';
+import { showEditModal } from './edit-modal.js';
+import { fetchUsers } from './actions.js';
 
 /**
  * Render the admin users panel.
