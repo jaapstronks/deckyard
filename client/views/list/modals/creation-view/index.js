@@ -23,14 +23,12 @@ import { getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createLibraryCompose } from './library-compose.js';
+import { createContentCompose } from './content-compose.js';
 import {
   handleEmpty,
-  handlePasteText,
-  handleConvertFile,
   handleImportJson,
   handleImportMarkdown,
   handlePasteMarkdown,
-  handleNotion,
 } from '../new-presentation/handlers.js';
 
 export function openCreationView({
@@ -56,10 +54,8 @@ export function openCreationView({
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
-  let contentSubtab = 'paste'; // paste | upload | notion
   let importSubtab = 'json'; // json | import-md | paste-md
   let busy = false;
-  let selectedConvertFile = null;
   let selectedImportFile = null;
   let selectedImportMdFile = null;
   // null lets the visual picker adopt the workspace default theme.
@@ -71,9 +67,7 @@ export function openCreationView({
   const getEffectiveMode = () => {
     if (method === 'blank') return 'empty';
     if (method === 'library') return 'library';
-    if (method === 'content') {
-      return { paste: 'paste-text', upload: 'convert-file', notion: 'notion' }[contentSubtab];
-    }
+    if (method === 'content') return content.getMode();
     if (method === 'import') {
       return { json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab];
     }
@@ -180,88 +174,17 @@ export function openCreationView({
   });
   const libraryPanel = library.panel;
 
-  // --- Content (AI) panel ---
-  const contentPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
-  const contentSubtabs = h('div', { class: 'sb-segmented' });
-  const btnSubPaste = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.newPresentation.subtab.pasteText', 'Paste text'),
+  // --- Content (AI) panel (paste / upload / Notion) ---
+  // Another self-contained concern: the active sub-tab, the selected upload
+  // file, and the Notion reveal all live in the module. syncUI drives its panel,
+  // getEffectiveMode/isDirty read its state, and Create delegates to its run().
+  const content = createContentCompose({
+    h,
+    api,
+    onChange: () => syncUI(),
+    aiDisabled,
   });
-  const btnSubUpload = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.subtab.uploadFile', 'Upload file'),
-  });
-  const btnSubNotion = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-hidden',
-    text: t('list.newPresentation.subtab.notion', 'Notion'),
-  });
-  contentSubtabs.append(btnSubPaste, btnSubUpload, btnSubNotion);
-
-  const panelPaste = h('div', { class: 'creation-subpanel' });
-  panelPaste.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.aiWizard.help', 'Paste your notes or any text. The wizard will turn it into a presentation automatically — you can edit everything afterwards.'),
-    }),
-    h('textarea', {
-      class: 'form-input form-textarea-lg',
-      placeholder: t('list.newPresentation.pasteText.placeholder', 'Paste your notes here...'),
-    })
-  );
-  const pasteTextarea = panelPaste.querySelector('textarea');
-
-  const panelUpload = h('div', { class: 'creation-subpanel is-hidden' });
-  const convertFileInput = h('input', {
-    type: 'file',
-    accept: '.pptx,.pdf,.docx,.rtf,.odt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,application/vnd.oasis.opendocument.text',
-    class: 'form-input',
-  });
-  const convertFileInfo = h('div', { class: 'help', text: '' });
-  convertFileInput.addEventListener('change', () => {
-    const file = convertFileInput.files?.[0];
-    if (file) {
-      selectedConvertFile = file;
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      convertFileInfo.textContent = `${file.name} (${sizeMB} MB)`;
-    } else {
-      selectedConvertFile = null;
-      convertFileInfo.textContent = '';
-    }
-  });
-  panelUpload.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.fileConverter.help', 'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.'),
-    }),
-    convertFileInput,
-    convertFileInfo
-  );
-
-  const panelNotion = h('div', { class: 'creation-subpanel is-hidden' });
-  const notionUrlInput = h('input', {
-    class: 'form-input',
-    placeholder: t('list.newPresentation.notion.placeholder', 'Paste Notion page URL...'),
-  });
-  panelNotion.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.notion.help', 'Import a Notion page as a presentation. Images, tables, and text structure will be converted to appropriate slides.'),
-    }),
-    notionUrlInput
-  );
-
-  const contentSubWrap = h('div', { class: 'creation-subpanels' }, [panelPaste, panelUpload, panelNotion]);
-  contentPanel.append(contentSubtabs, contentSubWrap);
-
-  // Reveal Notion sub-tab only when the integration is configured.
-  api('/api/notion/status')
-    .then((resp) => {
-      if (resp?.enabled && !aiDisabled) btnSubNotion.classList.remove('is-hidden');
-    })
-    .catch(() => {});
+  const contentPanel = content.panel;
 
   // --- Import panel ---
   const importPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'import' });
@@ -471,13 +394,8 @@ export function openCreationView({
     contentPanel.classList.toggle('is-hidden', method !== 'content');
     importPanel.classList.toggle('is-hidden', method !== 'import');
 
-    // Content sub-tabs
-    btnSubPaste.classList.toggle('is-active', contentSubtab === 'paste');
-    btnSubUpload.classList.toggle('is-active', contentSubtab === 'upload');
-    btnSubNotion.classList.toggle('is-active', contentSubtab === 'notion');
-    panelPaste.classList.toggle('is-hidden', contentSubtab !== 'paste');
-    panelUpload.classList.toggle('is-hidden', contentSubtab !== 'upload');
-    panelNotion.classList.toggle('is-hidden', contentSubtab !== 'notion');
+    // Content sub-tabs — the panel owns its controls.
+    content.syncPanel();
 
     // Library source (collections vs all slides) — the panel owns its controls.
     library.syncPanel();
@@ -527,9 +445,6 @@ export function openCreationView({
     if (key === 'library') library.ensurePicker();
   }
 
-  btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
-  btnSubUpload.addEventListener('click', () => { contentSubtab = 'upload'; syncUI(); });
-  btnSubNotion.addEventListener('click', () => { contentSubtab = 'notion'; syncUI(); });
   btnImpJson.addEventListener('click', () => { importSubtab = 'json'; syncUI(); });
   btnImpMd.addEventListener('click', () => { importSubtab = 'import-md'; syncUI(); });
   btnImpPasteMd.addEventListener('click', () => { importSubtab = 'paste-md'; syncUI(); });
@@ -545,9 +460,8 @@ export function openCreationView({
     const mode = getEffectiveMode();
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
     if (mode === 'library') return library.isDirty();
-    if (mode === 'paste-text') return !!String(pasteTextarea.value || '').trim();
+    if (method === 'content') return content.isDirty();
     if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
-    if (mode === 'notion') return !!String(notionUrlInput.value || '').trim();
     return false;
   };
 
@@ -605,28 +519,12 @@ export function openCreationView({
         });
         break;
       case 'paste-text':
-        await handlePasteText({
-          ...commonOpts,
-          raw: String(pasteTextarea.value || '').trim(),
-          langMode: langSelect.getLang(),
-          themeId: themeSelect.getTheme(),
-          focusTextarea: () => pasteTextarea.focus(),
-        });
-        break;
       case 'convert-file':
-        await handleConvertFile({
-          ...commonOpts,
-          selectedFile: selectedConvertFile,
+      case 'notion':
+        await content.run({
+          commonOpts,
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-        });
-        break;
-      case 'notion':
-        await handleNotion({
-          ...commonOpts,
-          notionUrl: String(notionUrlInput.value || '').trim(),
-          themeId: themeSelect.getTheme(),
-          focusInput: () => notionUrlInput.focus(),
         });
         break;
       case 'import-json':
