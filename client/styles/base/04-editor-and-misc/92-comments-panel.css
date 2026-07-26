@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--ps-space-2) var(--ps-space-3);
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
@@ -34,8 +34,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
   border-bottom: 1px solid var(--border-color, #e0e0e0);
 }
 
@@ -61,19 +61,19 @@
 .comments-panel-list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: var(--ps-space-3);
 }
 
 .comments-empty {
   text-align: center;
-  padding: 32px 16px;
+  padding: var(--ps-space-8) var(--ps-space-4);
   color: var(--text-muted, #666);
   font-style: italic;
 }
 
 .comment-thread {
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  margin-bottom: var(--ps-space-3);
+  padding-bottom: var(--ps-space-3);
   border-bottom: 1px solid var(--border-light, #f0f0f0);
 }
 
@@ -88,8 +88,8 @@
 .comment-thread.is-jumpable {
   margin-left: -8px;
   margin-right: -8px;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: var(--ps-space-2);
+  padding-right: var(--ps-space-2);
   border-radius: var(--ps-radius-md, 8px);
   cursor: pointer;
   transition: background 0.15s ease;
@@ -127,7 +127,7 @@
   border: 1px solid var(--color-border, #e5e7eb);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  padding: 4px;
+  padding: var(--ps-space-1);
 }
 
 .mention-autocomplete-dropdown.is-open {
@@ -164,7 +164,7 @@
 }
 
 .mention-autocomplete-empty {
-  padding: 8px;
+  padding: var(--ps-space-2);
   font-size: 12px;
   color: var(--text-muted, #888);
   font-style: italic;
@@ -185,12 +185,12 @@
 }
 
 .comment-item {
-  padding: 4px 0;
+  padding: var(--ps-space-1) 0;
 }
 
 .comment-reply {
-  margin-left: 12px;
-  padding-left: 12px;
+  margin-left: var(--ps-space-3);
+  padding-left: var(--ps-space-3);
   margin-top: 6px;
   border-left: 2px solid var(--border-light, #e0e0e0);
 }
@@ -246,7 +246,7 @@
 .comment-actions {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: var(--ps-space-1);
 }
 
 .comment-actions .btn-xs {
@@ -255,14 +255,14 @@
 }
 
 .comment-replies {
-  margin-top: 4px;
+  margin-top: var(--ps-space-1);
 }
 
 .comment-reply-input {
   display: flex;
   gap: 6px;
-  margin-top: 8px;
-  padding: 8px;
+  margin-top: var(--ps-space-2);
+  padding: var(--ps-space-2);
   background: var(--surface-alt, #f8f8f8);
   border-radius: 6px;
 }
@@ -284,7 +284,7 @@
 }
 
 .comments-panel-input {
-  padding: 12px;
+  padding: var(--ps-space-3);
   border-top: 1px solid var(--border-color, #e0e0e0);
   background: var(--surface-alt, #fafafa);
 }
@@ -376,7 +376,7 @@
 }
 
 .comments-input-controls .btn-sm {
-  padding: 4px 12px;
+  padding: var(--ps-space-1) var(--ps-space-3);
   font-size: 12px;
 }
 
@@ -509,7 +509,7 @@
 }
 
 .btn-sm {
-  padding: 4px 12px;
+  padding: var(--ps-space-1) var(--ps-space-3);
   font-size: 13px;
 }
 
@@ -609,7 +609,7 @@
   width: min(260px, 70%);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--ps-space-2);
   padding: 10px;
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
@@ -674,7 +674,7 @@
   background: linear-gradient(135deg, hsl(270 60% 98%), hsl(200 60% 98%));
   border-left: 3px solid hsl(270 60% 60%);
   border-radius: 6px;
-  padding: 8px;
+  padding: var(--ps-space-2);
   margin: -4px 0;
 }
 
@@ -757,12 +757,12 @@
    ============================================================ */
 
 .analyze-progress {
-  padding: 16px 0;
+  padding: var(--ps-space-4) 0;
 }
 
 .analyze-status {
   font-size: 14px;
-  margin-bottom: 12px;
+  margin-bottom: var(--ps-space-3);
   color: var(--text-color, #333);
 }
 
@@ -771,7 +771,7 @@
   background: var(--border-color, #e0e0e0);
   border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: var(--ps-space-4);
 }
 
 .analyze-progress-fill {
@@ -790,11 +790,11 @@
 .analyze-suggestion-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: var(--ps-space-2);
   padding: 6px 8px;
   background: var(--surface-alt, #f8f8f8);
   border-radius: 4px;
-  margin-bottom: 4px;
+  margin-bottom: var(--ps-space-1);
   font-size: 12px;
 }
 
@@ -828,9 +828,9 @@
   color: var(--text-muted, #666);
   font-size: 13px;
   line-height: 1.5;
-  margin: 0 0 12px 0;
+  margin: 0 0 var(--ps-space-3) 0;
 }
 
 .analyze-options {
-  padding: 8px 0;
+  padding: var(--ps-space-2) 0;
 }
