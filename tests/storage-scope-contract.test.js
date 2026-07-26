@@ -234,3 +234,113 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 // The cross-organization half of the cache contract — that organization B is
 // never served the entry read for organization A — needs two organizations with
 // real decks behind them, so it lives in tests/storage-scope-multi-org.test.js.
+
+// ─── PR 2: the seven small facades ──────────────────────────────────────────
+//
+// slide-library, slide-library-usage, published, tags, presentation-ydocs,
+// collections and image-library each had their own `getStorageContext()` with
+// the same hardcoded default organization. Some of them took a `repoRoot` first
+// argument; the tags and favorites functions took no scope argument *at all*,
+// so a caller had no way to say which organization it meant. Both old call
+// shapes must now fail, and fail pointing at the contract.
+//
+// Note where the check lives: the three facades that keep a file-backed
+// fallback validate the scope in `withStorageFallback` **before** choosing a
+// backend. That is deliberate — the file-mode suite is what CI runs, so a
+// missed call site has to fail there too, not only against Postgres.
+
+const smallFacades = {
+  'slide-library.js': [
+    ['listPersonalLibrary', (fn) => fn('/srv', 'a@b.c')],
+    ['createPersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', { name: 'x', slideType: 'title-slide' })],
+    ['updatePersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', 'item-1', {})],
+    ['deletePersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', 'item-1')],
+    ['listTeamLibrary', (fn) => fn('/srv', {})],
+    ['getTeamLibraryItem', (fn) => fn('/srv', 'item-1', {})],
+    ['createTeamLibraryItem', (fn) => fn('/srv', { name: 'x', slideType: 'title-slide' })],
+    ['updateTeamLibraryItem', (fn) => fn('/srv', 'item-1', {})],
+    ['setTeamLibraryItemTrashed', (fn) => fn('/srv', 'item-1', { trashed: true })],
+    ['deleteTeamLibraryItem', (fn) => fn('/srv', 'item-1', {})],
+    // These three never had a scope argument to begin with.
+    ['getTagsForSlideLibraryItem', (fn) => fn('item-1', {})],
+    ['getTagsForSlideLibraryItems', (fn) => fn(['item-1'], {})],
+    ['setTagsForSlideLibraryItem', (fn) => fn('item-1', ['tag'], {})],
+  ],
+  'slide-library-usage.js': [
+    ['listSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c')],
+    ['recordSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }])],
+  ],
+  'published.js': [
+    ['getPublishedIndex', (fn) => fn('/srv')],
+    ['getPublishedById', (fn) => fn('/srv', 'pub-1')],
+    ['upsertPublishedEntry', (fn) => fn('/srv', { publishId: 'pub-1', presentationId: 'deck-1' })],
+    ['removePublishedEntry', (fn) => fn('/srv', 'pub-1')],
+    ['updatePublishedSlug', (fn) => fn('/srv', 'pub-1', 'slug')],
+    ['listPublishedForFeed', (fn) => fn('/srv')],
+  ],
+  'tags.js': [
+    // The old shape took no scope at all, hence the missing first argument.
+    ['listTags', (fn) => fn()],
+    ['getTagsForPresentation', (fn) => fn('deck-1')],
+    ['getTagsForPresentations', (fn) => fn(['deck-1'])],
+    ['setTagsForPresentation', (fn) => fn('deck-1', ['tag'])],
+    ['createTag', (fn) => fn('tag')],
+    ['deleteTag', (fn) => fn('tag-1')],
+    ['searchTags', (fn) => fn('pre')],
+  ],
+  'presentation-ydocs.js': [
+    ['getYDocState', (fn) => fn('/srv', 'deck-1')],
+    ['setYDocState', (fn) => fn('/srv', 'deck-1', new Uint8Array([1]))],
+    ['deleteYDocState', (fn) => fn('/srv', 'deck-1')],
+  ],
+  'collections.js': [
+    ['listPersonalCollections', (fn) => fn('/srv', 'a@b.c')],
+    ['getPersonalCollection', (fn) => fn('/srv', 'a@b.c', 'col-1')],
+    ['createPersonalCollection', (fn) => fn('/srv', 'a@b.c', { name: 'x' })],
+    ['updatePersonalCollection', (fn) => fn('/srv', 'a@b.c', 'col-1', {})],
+    ['deletePersonalCollection', (fn) => fn('/srv', 'a@b.c', 'col-1')],
+    ['listTeamCollections', (fn) => fn('/srv', {})],
+    ['getTeamCollection', (fn) => fn('/srv', 'col-1', {})],
+    ['createTeamCollection', (fn) => fn('/srv', { name: 'x' })],
+    ['updateTeamCollection', (fn) => fn('/srv', 'col-1', {})],
+    ['deleteTeamCollection', (fn) => fn('/srv', 'col-1', {})],
+  ],
+  'image-library.js': [
+    ['listImageLibrary', (fn) => fn('/srv')],
+    ['getImageLibraryItem', (fn) => fn('/srv', 'img-1')],
+    ['createImageLibraryItem', (fn) => fn('/srv', { url: '/uploads/x.png' })],
+    ['updateImageLibraryItem', (fn) => fn('/srv', 'img-1', {})],
+    ['deleteImageLibraryItem', (fn) => fn('/srv', 'img-1')],
+    // Favorites had no scope argument either.
+    ['getImageFavorites', (fn) => fn('a@b.c')],
+    ['toggleImageFavorite', (fn) => fn('img-1', 'a@b.c')],
+  ],
+  'image-library-usage.js': [['getImageLibraryUsage', (fn) => fn('/srv', '/uploads/x.png')]],
+};
+
+for (const [file, calls] of Object.entries(smallFacades)) {
+  test(`${file} refuses every pre-scope call shape`, async () => {
+    const mod = await import(`../server/storage/${file}`);
+    for (const [name, invoke] of calls) {
+      assert.equal(typeof mod[name], 'function', `${name} is exported from ${file}`);
+      await assert.rejects(
+        async () => invoke(mod[name]),
+        /server\/storage\/scope\.js/,
+        `${name}() must refuse the pre-scope call shape and point at the contract`
+      );
+    }
+  });
+}
+
+test('a publish id is the one read the published facade may do unscoped', () => {
+  // Same reasoning as getPresentation: /p/:id, /embed/:id and the feed resolve a
+  // globally unique publish id, so the token is the authorization. Every other
+  // function on that facade — including the index the feed lists from — must
+  // state its organization.
+  const scope = crossOrganizationScope(null, 'published deck: the publish id is the authorization');
+  assert.doesNotThrow(() =>
+    resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true })
+  );
+  assert.throws(() => resolveScope(scope, 'getPublishedIndex'), /cannot run cross-organization/);
+  assert.throws(() => resolveScope(scope, 'upsertPublishedEntry'), /cannot run cross-organization/);
+});

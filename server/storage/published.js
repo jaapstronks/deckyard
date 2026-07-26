@@ -1,34 +1,35 @@
 /**
  * Published presentations storage facade.
  * Uses storage adapter when initialized, falls back to file-based storage.
+ *
+ * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
+ * organization comes from the caller instead of a hardcoded default (see
+ * server/storage/scope.js). The one deliberate exception is
+ * {@link getPublishedById}: a publish id is a globally unique public token that
+ * *is* the authorization, so filtering it by organization would break every
+ * public link the moment an instance holds a second organization.
  */
 
 import crypto from 'node:crypto';
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
 import { safeSlug } from '../utils/slug.js';
 import { getPresentation } from './presentations.js';
-import { crossOrganizationScope } from './scope.js';
-
-/**
- * Get the context for storage operations.
- * @returns {Object} Context with organizationId
- */
-function getStorageContext() {
-  return {
-    organizationId: getDefaultOrganizationId(),
-  };
-}
+import { crossOrganizationScope, resolveScope, repoRootOf } from './scope.js';
 
 export function newPublishId() {
   // Short, URL-friendly, unique enough for public share links.
   return crypto.randomUUID().split('-')[0];
 }
 
-export async function getPublishedIndex(repoRoot) {
+/**
+ * The publish index of the scope's organization, keyed by publish id.
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Object>}
+ */
+export async function getPublishedIndex(scope) {
+  const ctx = resolveScope(scope, 'getPublishedIndex');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     const list = await storage.listPublished(ctx);
     // Convert array to index object for backwards compatibility
     const index = {};
@@ -47,16 +48,27 @@ export async function getPublishedIndex(repoRoot) {
   }
   // Fall back to file-based storage
   const mod = await import('./published-file.js');
-  return mod.getPublishedIndex(repoRoot);
+  return mod.getPublishedIndex(repoRootOf(scope));
 }
 
-export async function getPublishedById(repoRoot, publishId) {
+/**
+ * Fetch one publish entry by its public publish id.
+ *
+ * The only cross-organization-capable function here: the publish id is the
+ * authorization, and public viewer/embed routes have no session to take an
+ * organization from.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publishId
+ * @returns {Promise<Object|null>}
+ */
+export async function getPublishedById(scope, publishId) {
+  const ctx = resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true });
   const id = String(publishId || '').trim();
   if (!id) return null;
 
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     const entry = await storage.getPublished(id, ctx);
     if (!entry) return null;
     return {
@@ -70,13 +82,20 @@ export async function getPublishedById(repoRoot, publishId) {
   }
   // Fall back to file-based storage
   const mod = await import('./published-file.js');
-  return mod.getPublishedById(repoRoot, publishId);
+  return mod.getPublishedById(repoRootOf(scope), publishId);
 }
 
+/**
+ * Create or update the publish entry of a deck in the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {{publishId: string, presentationId: string, title?: string, ogImageUrl?: string}} entry
+ * @returns {Promise<Object>}
+ */
 export async function upsertPublishedEntry(
-  repoRoot,
+  scope,
   { publishId, presentationId, title, ogImageUrl }
 ) {
+  const ctx = resolveScope(scope, 'upsertPublishedEntry');
   const id = String(publishId || '').trim();
   const pid = String(presentationId || '').trim();
   if (!id) throw new Error('publishId is required');
@@ -84,7 +103,6 @@ export async function upsertPublishedEntry(
 
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     const slug = safeSlug(title || 'presentation');
     const result = await storage.upsertPublished({
       id,
@@ -105,30 +123,48 @@ export async function upsertPublishedEntry(
   }
   // Fall back to file-based storage
   const mod = await import('./published-file.js');
-  return mod.upsertPublishedEntry(repoRoot, { publishId, presentationId, title, ogImageUrl });
+  return mod.upsertPublishedEntry(repoRootOf(scope), {
+    publishId,
+    presentationId,
+    title,
+    ogImageUrl,
+  });
 }
 
-export async function removePublishedEntry(repoRoot, publishId) {
+/**
+ * Unpublish: drop the publish entry within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publishId
+ * @returns {Promise<boolean>}
+ */
+export async function removePublishedEntry(scope, publishId) {
+  const ctx = resolveScope(scope, 'removePublishedEntry');
   const id = String(publishId || '').trim();
   if (!id) return false;
 
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.deletePublished(id, ctx);
   }
   // Fall back to file-based storage
   const mod = await import('./published-file.js');
-  return mod.removePublishedEntry(repoRoot, publishId);
+  return mod.removePublishedEntry(repoRootOf(scope), publishId);
 }
 
-export async function updatePublishedSlug(repoRoot, publishId, nextSlug) {
+/**
+ * Rename the public slug of a publish entry in the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} publishId
+ * @param {string} nextSlug
+ * @returns {Promise<Object>}
+ */
+export async function updatePublishedSlug(scope, publishId, nextSlug) {
+  const ctx = resolveScope(scope, 'updatePublishedSlug');
   const id = String(publishId || '').trim();
   if (!id) throw new Error('publishId is required');
 
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     const existing = await storage.getPublished(id, ctx);
     if (!existing) throw new Error('Published entry not found');
 
@@ -149,21 +185,28 @@ export async function updatePublishedSlug(repoRoot, publishId, nextSlug) {
   }
   // Fall back to file-based storage
   const mod = await import('./published-file.js');
-  return mod.updatePublishedSlug(repoRoot, publishId, nextSlug);
+  return mod.updatePublishedSlug(repoRootOf(scope), publishId, nextSlug);
 }
 
 /**
  * List published presentations with full metadata for RSS feed generation.
  * Joins published entries with presentation data, excludes opted-out decks.
- * @param {string} repoRoot
+ *
+ * The feed lists one organization's published decks, so the caller states which
+ * one; the per-deck read is then addressed by publish id and deliberately
+ * unscoped (see {@link getPublishedById}).
+ *
+ * @param {import('./scope.js').StorageScope} scope
  * @param {Object} [opts]
  * @param {number} [opts.limit=50] - Maximum items to return
  * @returns {Array} Enriched published presentation records
  */
-export async function listPublishedForFeed(repoRoot, opts = {}) {
+export async function listPublishedForFeed(scope, opts = {}) {
+  resolveScope(scope, 'listPublishedForFeed');
   const { limit = 50 } = opts;
+  const repoRoot = repoRootOf(scope);
 
-  const index = await getPublishedIndex(repoRoot);
+  const index = await getPublishedIndex(scope);
   const entries = Object.values(index);
 
   // Sort by modified date descending

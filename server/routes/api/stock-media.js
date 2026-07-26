@@ -58,7 +58,7 @@ async function getStockMediaStatus(repoRoot) {
  * @param {Object} ctx - Request context
  * @returns {Promise<boolean>} - True if handled
  */
-export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) {
+export async function handleStockMedia({ repoRoot, storageScope, req, res, url, authedUser }) {
   // Status endpoint (public for UI to know what's available)
   if (url.pathname === '/api/stock-media/status') {
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -134,7 +134,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       const localUrl = await saveUploadedFile(repoRoot, buffer, filename, contentType);
 
       // Add to image library with attribution
-      const libraryItem = await createImageLibraryItem(repoRoot, {
+      const libraryItem = await createImageLibraryItem(storageScope, {
         url: localUrl,
         description: photo.description || '',
         photographer: photo.photographer.name,
@@ -238,7 +238,7 @@ export async function handleStockMedia({ repoRoot, req, res, url, authedUser }) 
       const localUrl = await saveUploadedFile(repoRoot, buffer, filename, contentType);
 
       // Add to image library
-      const libraryItem = await createImageLibraryItem(repoRoot, {
+      const libraryItem = await createImageLibraryItem(storageScope, {
         url: localUrl,
         description: gif.title || '',
         source: 'giphy',

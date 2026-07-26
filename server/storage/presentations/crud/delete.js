@@ -10,6 +10,7 @@ import {
   writePresentation,
 } from '../io.js';
 import { removePublishedEntry } from '../../published.js';
+import { singleWorkspaceScope } from '../../scope.js';
 import { dataDir } from '../../../config/storage-paths.js';
 import { normalizeEmail, nowIso } from '../../../utils/normalize.js';
 import { getPresentation } from './read.js';
@@ -69,17 +70,32 @@ export async function restorePresentation(repoRoot, id) {
 
 /**
  * Permanently delete a presentation and all related artifacts.
+ *
+ * Unpublishing goes through the published facade, which is organization-scoped,
+ * so the organization has to travel here in `opts`. It matters: this cleanup sits
+ * inside a catch-all, so a scope error would be swallowed and the deck's public
+ * link would survive its deck. When the caller states nothing, the single
+ * workspace is the answer — and refuses to guess on an instance with several.
+ *
  * @param {string} repoRoot - Repository root path
  * @param {string} id - Presentation ID
+ * @param {Object} [opts]
+ * @param {string} [opts.organizationId] - The organization this delete acts in.
  * @returns {Promise<boolean>} True if deleted
  */
-export async function permanentlyDeletePresentation(repoRoot, id) {
+export async function permanentlyDeletePresentation(repoRoot, id, opts = {}) {
   // Permanently delete: clean up related artifacts and delete the file
   try {
     const existing = await readPresentation(repoRoot, id);
     if (existing && typeof existing === 'object') {
       const publishId = String(existing?.published?.id || '').trim();
-      if (publishId) await removePublishedEntry(repoRoot, publishId);
+      if (publishId) {
+        const scope =
+          typeof opts?.organizationId === 'string' && opts.organizationId
+            ? { repoRoot, organizationId: opts.organizationId }
+            : singleWorkspaceScope(repoRoot, 'permanently deleting a presentation');
+        await removePublishedEntry(scope, publishId);
+      }
       const versionsDir = path.join(
         dataDir(repoRoot),
         'presentation-versions',

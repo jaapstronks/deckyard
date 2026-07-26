@@ -6,25 +6,42 @@
  * point for a deck (compose or insert-into-existing). It powers the Home
  * building-blocks shelf's "new to you" badge: a team item the user has never
  * used is flagged; the flag clears after first use. Records references only.
+ *
+ * Both functions take a **storage scope** rather than a bare `repoRoot`, so the
+ * organization comes from the caller instead of a hardcoded default — see
+ * server/storage/scope.js.
  */
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import { resolveScope, repoRootOf } from './scope.js';
 
-function getStorageContext(opts = {}) {
+/**
+ * Reduce a caller's scope to the context the storage adapters take.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} operation - Facade function name, for the error message.
+ * @param {Object} [opts] - Options carrying a sharper actor.
+ * @returns {Object} Context for the storage adapter.
+ */
+function toStorageContext(scope, operation, opts = {}) {
+  const resolved = resolveScope(scope, operation);
   return {
-    organizationId: getDefaultOrganizationId(),
-    actorEmail: opts.actorEmail || opts.userEmail || null,
+    ...resolved,
+    actorEmail: opts.actorEmail || opts.userEmail || resolved.actorEmail,
   };
 }
 
 /**
  * Execute pgFn against the storage adapter when initialized, else fileFn.
+ * @param {import('./scope.js').StorageScope} scope - The caller's scope.
+ * @param {string} operation - Facade function name, for the error message.
  * @param {(storage: object) => Promise<any>} pgFn
  * @param {(mod: object) => Promise<any>} fileFn
  * @returns {Promise<any>}
  */
-async function withStorageFallback(pgFn, fileFn) {
+async function withStorageFallback(scope, operation, pgFn, fileFn) {
+  // Validate the scope before either backend runs, so a missed call site fails
+  // on the file-backed path too rather than slipping past the file-mode suite.
+  resolveScope(scope, operation);
   if (isStorageInitialized()) {
     return pgFn(getStorage());
   }
@@ -34,38 +51,42 @@ async function withStorageFallback(pgFn, fileFn) {
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail
  * @returns {Promise<{ items: Array<object> }>}
  */
-export async function listSlideLibraryUsage(repoRoot, userEmail) {
+export async function listSlideLibraryUsage(scope, userEmail) {
   const email = String(userEmail || '').trim().toLowerCase();
   return withStorageFallback(
+    scope,
+    'listSlideLibraryUsage',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail: email });
+      const ctx = toStorageContext(scope, 'listSlideLibraryUsage', { userEmail: email });
       const items = await storage.listSlideLibraryUsage(email, ctx);
       return { items: Array.isArray(items) ? items : [] };
     },
-    (mod) => mod.listSlideLibraryUsage(repoRoot, email)
+    (mod) => mod.listSlideLibraryUsage(repoRootOf(scope), email)
   );
 }
 
 /**
  * Record usage of one or more library items for a user.
- * @param {string} repoRoot
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail
  * @param {Array<{ type: 'slide'|'collection', id: string }>} items
  * @returns {Promise<{ ok: boolean, recorded: number }>}
  */
-export async function recordSlideLibraryUsage(repoRoot, userEmail, items) {
+export async function recordSlideLibraryUsage(scope, userEmail, items) {
   const email = String(userEmail || '').trim().toLowerCase();
   if (!email) return { ok: true, recorded: 0 };
   return withStorageFallback(
+    scope,
+    'recordSlideLibraryUsage',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail: email });
+      const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', { userEmail: email });
       const recorded = await storage.recordSlideLibraryUsage(email, items, ctx);
       return { ok: true, recorded: Number(recorded) || 0 };
     },
-    (mod) => mod.recordSlideLibraryUsage(repoRoot, email, items)
+    (mod) => mod.recordSlideLibraryUsage(repoRootOf(scope), email, items)
   );
 }

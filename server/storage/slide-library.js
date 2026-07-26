@@ -1,35 +1,53 @@
 /**
  * Slide library storage facade.
  * Uses storage adapter when initialized, falls back to file-based storage.
+ *
+ * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
+ * organization comes from the caller instead of a hardcoded default — see
+ * server/storage/scope.js. A team library is a workspace's shared shelf, so
+ * reading it out of the wrong organization is exactly what this removes.
+ *
+ * `userEmail` stays a separate argument where it appears: it names the *subject*
+ * of a personal-library operation, which is not the same question as who the
+ * scope attributes the write to (`actorEmail`).
  */
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import { resolveScope, repoRootOf } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 
 /**
- * Get the context for storage operations.
- * @param {Object} opts
- * @returns {Object} Context with organizationId
+ * Reduce a caller's scope to the context the storage adapters take.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} operation - Facade function name, for the error message.
+ * @param {Object} [opts] - Options carrying a sharper actor.
+ * @returns {Object} Context for the storage adapter.
  */
-function getStorageContext(opts = {}) {
+function toStorageContext(scope, operation, opts = {}) {
+  const resolved = resolveScope(scope, operation);
   return {
-    organizationId: getDefaultOrganizationId(),
-    actorEmail: opts.actorEmail || opts.userEmail || null,
+    ...resolved,
+    actorEmail: opts.actorEmail || opts.userEmail || resolved.actorEmail,
   };
 }
 
 /**
  * Higher-order function to handle storage fallback pattern.
  * Executes pgFn if storage is initialized, otherwise falls back to fileFn.
- * @param {Function} pgFn - Function to execute with postgres storage (receives storage, ctx)
+ * @param {import('./scope.js').StorageScope} scope - The caller's scope.
+ * @param {string} operation - Facade function name, for the error message.
+ * @param {Function} pgFn - Function to execute with postgres storage (receives storage)
  * @param {Function} fileFn - Function to execute with file-based storage
  * @returns {Promise<any>}
  */
-async function withStorageFallback(pgFn, fileFn) {
+async function withStorageFallback(scope, operation, pgFn, fileFn) {
+  // Validate the scope before either backend runs. Doing it here rather
+  // than inside the adapter branch is what makes a missed call site fail on
+  // the file-backed path too — otherwise the file-mode test suite would wave
+  // an un-migrated caller straight through.
+  resolveScope(scope, operation);
   if (isStorageInitialized()) {
-    const storage = getStorage();
-    return pgFn(storage);
+    return pgFn(getStorage());
   }
   const mod = await import('./slide-library-file.js');
   return fileFn(mod);
@@ -37,21 +55,25 @@ async function withStorageFallback(pgFn, fileFn) {
 
 // Personal library functions
 
-export async function listPersonalLibrary(repoRoot, userEmail, { themeId = '' } = {}) {
+export async function listPersonalLibrary(scope, userEmail, { themeId = '' } = {}) {
   return withStorageFallback(
+    scope,
+    'listPersonalLibrary',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'listPersonalLibrary', { userEmail });
       const items = await storage.listSlideLibrary(ctx, { scope: 'personal', ownerEmail: userEmail, themeId });
       return { items };
     },
-    (mod) => mod.listPersonalLibrary(repoRoot, userEmail, { themeId })
+    (mod) => mod.listPersonalLibrary(repoRootOf(scope), userEmail, { themeId })
   );
 }
 
-export async function createPersonalLibraryItem(repoRoot, userEmail, input, { actorEmail } = {}) {
+export async function createPersonalLibraryItem(scope, userEmail, input, { actorEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'createPersonalLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail, actorEmail });
+      const ctx = toStorageContext(scope, 'createPersonalLibraryItem', { userEmail, actorEmail });
       const name = typeof input?.name === 'string' ? input.name.trim() : '';
       const slideType = typeof input?.slideType === 'string' ? input.slideType.trim() : '';
       if (!name) return { ok: false, reason: 'name_required' };
@@ -64,14 +86,16 @@ export async function createPersonalLibraryItem(repoRoot, userEmail, input, { ac
       if (!result) return { ok: false, reason: 'create_failed' };
       return { ok: true, item: result };
     },
-    (mod) => mod.createPersonalLibraryItem(repoRoot, userEmail, input, { actorEmail })
+    (mod) => mod.createPersonalLibraryItem(repoRootOf(scope), userEmail, input, { actorEmail })
   );
 }
 
-export async function updatePersonalLibraryItem(repoRoot, userEmail, id, patch, { actorEmail } = {}) {
+export async function updatePersonalLibraryItem(scope, userEmail, id, patch, { actorEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'updatePersonalLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail, actorEmail });
+      const ctx = toStorageContext(scope, 'updatePersonalLibraryItem', { userEmail, actorEmail });
       const normalizedPatch = { ...patch };
       if ('trashed' in patch) {
         normalizedPatch.trashedAt = patch.trashed ? nowIso() : null;
@@ -82,55 +106,63 @@ export async function updatePersonalLibraryItem(repoRoot, userEmail, id, patch, 
       if (!result) return { ok: false, reason: 'not_found' };
       return { ok: true, item: result };
     },
-    (mod) => mod.updatePersonalLibraryItem(repoRoot, userEmail, id, patch, { actorEmail })
+    (mod) => mod.updatePersonalLibraryItem(repoRootOf(scope), userEmail, id, patch, { actorEmail })
   );
 }
 
-export async function deletePersonalLibraryItem(repoRoot, userEmail, id) {
+export async function deletePersonalLibraryItem(scope, userEmail, id) {
   return withStorageFallback(
+    scope,
+    'deletePersonalLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'deletePersonalLibraryItem', { userEmail });
       const deleted = await storage.deleteSlideLibraryItem(id, ctx);
       if (!deleted) return { ok: false, reason: 'not_found' };
       return { ok: true };
     },
-    (mod) => mod.deletePersonalLibraryItem(repoRoot, userEmail, id)
+    (mod) => mod.deletePersonalLibraryItem(repoRootOf(scope), userEmail, id)
   );
 }
 
 // Team library functions
 
-export async function listTeamLibrary(repoRoot, { themeId = '', userEmail = '' } = {}) {
+export async function listTeamLibrary(scope, { themeId = '', userEmail = '' } = {}) {
   return withStorageFallback(
+    scope,
+    'listTeamLibrary',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'listTeamLibrary', { userEmail });
       const items = await storage.listSlideLibrary(ctx, { scope: 'team', themeId });
       return { items };
     },
-    (mod) => mod.listTeamLibrary(repoRoot, { themeId, userEmail })
+    (mod) => mod.listTeamLibrary(repoRootOf(scope), { themeId, userEmail })
   );
 }
 
-export async function getTeamLibraryItem(repoRoot, id, { userEmail = '' } = {}) {
+export async function getTeamLibraryItem(scope, id, { userEmail = '' } = {}) {
   return withStorageFallback(
+    scope,
+    'getTeamLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'getTeamLibraryItem', { userEmail });
       const item = await storage.getSlideLibraryItem(id, ctx);
       if (!item || item.scope !== 'team') return null;
       return item;
     },
     async (mod) => {
       // File-based storage: list and find
-      const { items } = await mod.listTeamLibrary(repoRoot, { userEmail });
+      const { items } = await mod.listTeamLibrary(repoRootOf(scope), { userEmail });
       return (items || []).find((it) => it.id === id) || null;
     }
   );
 }
 
-export async function createTeamLibraryItem(repoRoot, input, { actorEmail } = {}) {
+export async function createTeamLibraryItem(scope, input, { actorEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'createTeamLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ actorEmail });
+      const ctx = toStorageContext(scope, 'createTeamLibraryItem', { actorEmail });
       const name = typeof input?.name === 'string' ? input.name.trim() : '';
       const slideType = typeof input?.slideType === 'string' ? input.slideType.trim() : '';
       if (!name) return { ok: false, reason: 'name_required' };
@@ -142,26 +174,30 @@ export async function createTeamLibraryItem(repoRoot, input, { actorEmail } = {}
       if (!result) return { ok: false, reason: 'create_failed' };
       return { ok: true, item: result };
     },
-    (mod) => mod.createTeamLibraryItem(repoRoot, input, { actorEmail })
+    (mod) => mod.createTeamLibraryItem(repoRootOf(scope), input, { actorEmail })
   );
 }
 
-export async function updateTeamLibraryItem(repoRoot, id, patch, { actorEmail } = {}) {
+export async function updateTeamLibraryItem(scope, id, patch, { actorEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'updateTeamLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ actorEmail });
+      const ctx = toStorageContext(scope, 'updateTeamLibraryItem', { actorEmail });
       const result = await storage.updateSlideLibraryItem(id, patch, ctx);
       if (!result) return { ok: false, reason: 'not_found' };
       return { ok: true, item: result };
     },
-    (mod) => mod.updateTeamLibraryItem(repoRoot, id, patch, { actorEmail })
+    (mod) => mod.updateTeamLibraryItem(repoRootOf(scope), id, patch, { actorEmail })
   );
 }
 
-export async function setTeamLibraryItemTrashed(repoRoot, id, { trashed, actorEmail, allowTrash } = {}) {
+export async function setTeamLibraryItemTrashed(scope, id, { trashed, actorEmail, allowTrash } = {}) {
   return withStorageFallback(
+    scope,
+    'setTeamLibraryItemTrashed',
     async (storage) => {
-      const ctx = getStorageContext({ actorEmail });
+      const ctx = toStorageContext(scope, 'setTeamLibraryItemTrashed', { actorEmail });
       if (typeof allowTrash === 'function') {
         const items = await storage.listSlideLibrary(ctx, { scope: 'team' });
         const item = items.find((x) => String(x?.id || '') === String(id || ''));
@@ -176,14 +212,16 @@ export async function setTeamLibraryItemTrashed(repoRoot, id, { trashed, actorEm
       if (!result) return { ok: false, reason: 'not_found' };
       return { ok: true, item: result };
     },
-    (mod) => mod.setTeamLibraryItemTrashed(repoRoot, id, { trashed, actorEmail, allowTrash })
+    (mod) => mod.setTeamLibraryItemTrashed(repoRootOf(scope), id, { trashed, actorEmail, allowTrash })
   );
 }
 
-export async function deleteTeamLibraryItem(repoRoot, id, { actorEmail, allowDelete } = {}) {
+export async function deleteTeamLibraryItem(scope, id, { actorEmail, allowDelete } = {}) {
   return withStorageFallback(
+    scope,
+    'deleteTeamLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ actorEmail });
+      const ctx = toStorageContext(scope, 'deleteTeamLibraryItem', { actorEmail });
       if (typeof allowDelete === 'function') {
         const items = await storage.listSlideLibrary(ctx, { scope: 'team' });
         const item = items.find((x) => String(x?.id || '') === String(id || ''));
@@ -195,7 +233,7 @@ export async function deleteTeamLibraryItem(repoRoot, id, { actorEmail, allowDel
       if (!deleted) return { ok: false, reason: 'not_found' };
       return { ok: true };
     },
-    (mod) => mod.deleteTeamLibraryItem(repoRoot, id, { actorEmail, allowDelete })
+    (mod) => mod.deleteTeamLibraryItem(repoRootOf(scope), id, { actorEmail, allowDelete })
   );
 }
 
@@ -208,30 +246,36 @@ export function _unsafeUserKeyFromEmailForTests(email) {
 
 // Slide library tag functions
 
-export async function getTagsForSlideLibraryItem(id, { userEmail } = {}) {
+export async function getTagsForSlideLibraryItem(scope, id, { userEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'getTagsForSlideLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItem', { userEmail });
       return storage.getTagsForSlideLibraryItem(id, ctx);
     },
     () => [] // File-based storage doesn't support tags
   );
 }
 
-export async function getTagsForSlideLibraryItems(ids, { userEmail } = {}) {
+export async function getTagsForSlideLibraryItems(scope, ids, { userEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'getTagsForSlideLibraryItems',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItems', { userEmail });
       return storage.getTagsForSlideLibraryItems(ids, ctx);
     },
     () => new Map() // File-based storage doesn't support tags
   );
 }
 
-export async function setTagsForSlideLibraryItem(id, tagNames, { userEmail } = {}) {
+export async function setTagsForSlideLibraryItem(scope, id, tagNames, { userEmail } = {}) {
   return withStorageFallback(
+    scope,
+    'setTagsForSlideLibraryItem',
     async (storage) => {
-      const ctx = getStorageContext({ userEmail });
+      const ctx = toStorageContext(scope, 'setTagsForSlideLibraryItem', { userEmail });
       return storage.setTagsForSlideLibraryItem(id, tagNames, ctx);
     },
     () => [] // File-based storage doesn't support tags

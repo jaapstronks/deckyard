@@ -3,6 +3,7 @@ import path from 'node:path';
 import { presDir } from './presentations/paths.js';
 import { readJsonIfExists } from './presentations/io.js';
 import { getPublishedIndex } from './published.js';
+import { repoRootOf } from './scope.js';
 
 function pickTitle(pres) {
   const dominant =
@@ -62,11 +63,23 @@ function presUsesUrl(pres, url) {
   return false;
 }
 
-export async function getImageLibraryUsage(repoRoot, url) {
+/**
+ * Where an image library URL is used across the scope's organization.
+ *
+ * File-backed scan (it walks the presentations dir), but the publish index it
+ * joins against is organization-scoped, so it takes a scope rather than a bare
+ * repo root — see server/storage/scope.js.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} url - The image URL to look for.
+ * @returns {Promise<Array<Object>>}
+ */
+export async function getImageLibraryUsage(scope, url) {
   const u = String(url || '').trim();
   if (!u) return [];
 
-  const idx = await getPublishedIndex(repoRoot);
+  const repoRoot = repoRootOf(scope);
+  const idx = await getPublishedIndex(scope);
   const publishedByPresId = new Map();
   for (const [publishId, entry] of Object.entries(idx || {})) {
     const pid = String(entry?.presentationId || '').trim();

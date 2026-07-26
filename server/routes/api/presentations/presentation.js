@@ -72,7 +72,7 @@ export async function handlePresentationItem(
     });
 
     // Fetch tags for the presentation
-    const tags = await getTagsForPresentation(id);
+    const tags = await getTagsForPresentation(storageScope, id);
 
     const lang = url.searchParams.get('lang');
     if (

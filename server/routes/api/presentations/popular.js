@@ -15,12 +15,14 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
  * Returns presentations that are workspace-scoped or published,
  * sorted by recent activity (views, updates).
  */
-export async function handlePopularPresentations({ res, authedUser }) {
+export async function handlePopularPresentations({ storageScope, res, authedUser }) {
   if (!authedUser) {
     return unauthorized(res);
   }
 
-  const ctx = { user: authedUser };
+  // The organization comes from the request's storage scope, so this list stays
+  // inside the workspace the session is working in.
+  const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
   const presentations = await getPopularPresentations(ctx);
 
   serveJson(res, 200, presentations);
@@ -31,7 +33,8 @@ export async function handlePopularPresentations({ res, authedUser }) {
  * Fetch popular presentations from the database.
  * Uses activity_events to find presentations with recent activity.
  * Exported so the `/api/home` aggregation can reuse the exact same list.
- * @param {{ user: object }} ctx
+ * @param {{ user: object, organizationId?: string }} ctx - Carries the session's
+ *   organization; it doubles as the storage scope for the tag lookup.
  * @returns {Promise<object[]>}
  */
 export async function getPopularPresentations(ctx) {
@@ -174,7 +177,7 @@ async function formatPresentations(rows, ctx) {
 
   // Get tags for all presentations
   const presentationIds = rows.map((r) => r.id);
-  const tagsMap = await getTagsForPresentations(presentationIds);
+  const tagsMap = await getTagsForPresentations(ctx, presentationIds);
 
   return rows.map((row) => {
     // Extract first slide from slides JSONB array

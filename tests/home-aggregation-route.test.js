@@ -34,6 +34,11 @@ const { createTeamCollection } = await import('../server/storage/collections.js'
 const { recordSlideLibraryUsage } = await import(
   '../server/storage/slide-library-usage.js'
 );
+const { testScope } = await import('./helpers/storage-scope.js');
+
+// The facades refuse to invent an organization, so the test states the one it
+// acts in — see server/storage/scope.js.
+const scope = testScope(repoRoot);
 
 const USER = 'user@example.com';
 
@@ -52,7 +57,7 @@ function makeRes() {
 function callHome({ user = { email: USER }, search = '' } = {}) {
   const res = makeRes();
   const url = new URL(`http://localhost/api/home${search}`);
-  return handleHome({ repoRoot, req: { method: 'GET' }, res, url, authedUser: user })
+  return handleHome({ storageScope: scope, req: { method: 'GET' }, res, url, authedUser: user })
     .then((handled) => ({ handled, res }));
 }
 
@@ -90,16 +95,16 @@ describe('handleHome (round-trip)', () => {
     await initializeStorage(repoRoot);
 
     await createTeamLibraryItem(
-      repoRoot,
+      scope,
       { name: 'Shared title slide', slideType: 'title', content: {} },
       { actorEmail: USER }
     );
     await createTeamCollection(
-      repoRoot,
+      scope,
       { name: 'Onboarding kit', slideIds: [] },
       { actorEmail: USER }
     );
-    await recordSlideLibraryUsage(repoRoot, USER, [{ type: 'slide', id: 'used-1' }]);
+    await recordSlideLibraryUsage(scope, USER, [{ type: 'slide', id: 'used-1' }]);
   });
 
   after(async () => {

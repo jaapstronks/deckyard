@@ -17,7 +17,7 @@ import { assertSandboxQuotaForCreate } from '../sandbox-quota.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemeIds } from '../../../utils/themes.js';
 import { getPresentationLock } from '../../../utils/presentation-locks.js';
-import { getDefaultOrganizationId } from '../../../config/database.js';
+import { singleWorkspaceScope } from '../../scope.js';
 import { normalizeEmail, nowIso } from '../../../utils/normalize.js';
 import { ConflictError, ValidationError } from '../../../utils/errors.js';
 import { getPresentation } from './read.js';
@@ -30,6 +30,27 @@ import {
   useEnforcedLocks,
   mergeSlidesAtSlideLevel,
 } from './helpers.js';
+
+/**
+ * The organization the lock tables must be queried in.
+ *
+ * This is the file-backed write path, but slide and presentation locks live in
+ * the database even here (USE_DB_LOCKS), so the query needs an organization. It
+ * used to hardcode `getDefaultOrganizationId()`, which is wrong for a session
+ * working in a second workspace. The facade passes the organization down in
+ * `opts.organizationId`; a caller that did not (a direct file-module call, a
+ * script) falls back to the single workspace, which is exact on a one-workspace
+ * instance and refuses to guess on one that holds several.
+ *
+ * @param {Object} [opts] - Write options, carrying `organizationId` when known.
+ * @param {string} operation - What is asking, for the error message.
+ * @returns {{organizationId: string}}
+ */
+function lockContext(opts, operation) {
+  const organizationId = opts?.organizationId;
+  if (typeof organizationId === 'string' && organizationId) return { organizationId };
+  return { organizationId: singleWorkspaceScope(null, operation).organizationId };
+}
 
 /**
  * Get allowed themes for validation.
@@ -173,7 +194,7 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
   // Skip lock check if bypassLockCheck is set (used for internal operations like restores).
   if (useEnforcedLocks() && !opts?.bypassLockCheck) {
     const actorEmail = normalizeEmail(opts?.actorEmail);
-    const ctx = { organizationId: getDefaultOrganizationId() };
+    const ctx = lockContext(opts, 'the file write path lock check');
     const lock = await getPresentationLock(id, ctx);
     if (lock && lock.holderEmail && lock.holderEmail !== actorEmail) {
       throw lockedError(lock);
@@ -226,7 +247,7 @@ export async function updatePresentation(repoRoot, id, body, opts = {}) {
     user: opts?.user || null,
     actorEmail: normalizeEmail(opts?.actorEmail),
     bypassLockCheck: !!opts?.bypassLockCheck,
-    ctx: { organizationId: getDefaultOrganizationId() },
+    ctx: lockContext(opts, 'the file write path slide-lock policy'),
   });
 
   const v = validatePresentation(candidate, {

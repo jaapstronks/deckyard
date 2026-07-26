@@ -94,7 +94,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     const id = presentationIdFromDocumentName(documentName);
     if (!id) return document;
 
-    const stored = await getYDocState(repoRoot, id);
+    const stored = await getYDocState(scopeFor(documentName), id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
       customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
@@ -121,7 +121,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     // Persist the bootstrap immediately so later opens load the doc binary
     // instead of re-bootstrapping (and re-normalizing) from JSON.
     try {
-      await setYDocState(repoRoot, id, Y.encodeStateAsUpdate(document));
+      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       log.error(`[collab] failed to store bootstrap state for ${id}:`, err?.message || err);
     }
@@ -170,7 +170,7 @@ export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) 
     }
 
     try {
-      await setYDocState(repoRoot, id, Y.encodeStateAsUpdate(document));
+      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       // Do NOT fall through to the JSON write. If the binary store failed but
       // the JSON write then succeeded, the stored binary would be OLDER than

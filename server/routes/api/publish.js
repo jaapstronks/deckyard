@@ -91,7 +91,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
       ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
     }
 
-    const entry = await upsertPublishedEntry(repoRoot, {
+    const entry = await upsertPublishedEntry(storageScope, {
       publishId,
       presentationId: pres.id,
       title: pres.title,
@@ -145,7 +145,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
     if (!pres) return true;
 
     const publishId = String(pres?.published?.id || '').trim();
-    if (publishId) await removePublishedEntry(repoRoot, publishId);
+    if (publishId) await removePublishedEntry(storageScope, publishId);
 
     const nextPres = { ...pres };
     delete nextPres.published;
@@ -183,7 +183,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
       body = {};
     }
     const nextSlug = body?.slug;
-    const entry = await updatePublishedSlug(repoRoot, publishId, nextSlug);
+    const entry = await updatePublishedSlug(storageScope, publishId, nextSlug);
 
     const nextPres = {
       ...pres,
@@ -267,7 +267,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
       );
 
       // Update the published entry
-      await upsertPublishedEntry(repoRoot, {
+      await upsertPublishedEntry(storageScope, {
         publishId,
         presentationId: pres.id,
         title: pres.title,

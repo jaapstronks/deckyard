@@ -184,32 +184,49 @@ async function handleSlideTypeSchema(ctx, slideType) {
  * GET /api/v1/image-library - List images in the image library.
  */
 async function handleImageLibrary(ctx) {
-  const { repoRoot, url } = ctx;
+  const { storageScope, url } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
   // Dynamic import to avoid circular dependencies
-  const { listImages } = await import('../../../storage/image-library.js');
+  const { listImageLibrary } = await import('../../../storage/image-library.js');
 
-  const search = url.searchParams.get('search') || '';
-  const category = url.searchParams.get('category') || '';
+  const search = (url.searchParams.get('search') || '').trim().toLowerCase();
+  const category = (url.searchParams.get('category') || '').trim().toLowerCase();
   const { limit, offset } = parsePaginationParams(url);
 
-  const result = await listImages(repoRoot, {
-    search,
-    category,
-    limit,
-    offset,
+  const all = await listImageLibrary(storageScope);
+  const items = Array.isArray(all) ? all : [];
+
+  // The library has no category column; tags are what images are grouped by, so
+  // that is what `category` filters on and what the categories list reports.
+  const categories = Array.from(
+    new Set(items.flatMap((it) => (Array.isArray(it?.tags) ? it.tags : [])).filter(Boolean))
+  ).sort();
+
+  const matches = items.filter((it) => {
+    const tags = (Array.isArray(it?.tags) ? it.tags : []).map((t) =>
+      String(t).toLowerCase()
+    );
+    if (category && !tags.includes(category)) return false;
+    if (!search) return true;
+    const haystack = [it?.title, it?.description, it?.photographer, ...tags]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(search);
   });
 
+  const total = matches.length;
+
   await apiSuccess(ctx, {
-    images: result.images || [],
-    categories: result.categories || [],
+    images: matches.slice(offset, offset + limit),
+    categories,
     pagination: {
-      total: result.total || 0,
+      total,
       limit,
       offset,
-      hasMore: offset + limit < (result.total || 0),
+      hasMore: offset + limit < total,
     },
   });
   return true;

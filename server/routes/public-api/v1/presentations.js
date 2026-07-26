@@ -114,7 +114,7 @@ async function handleList(ctx) {
 
   // Fetch tags for all presentations
   const presentationIds = paginated.map((p) => p.id);
-  const tagsMap = await getTagsForPresentations(presentationIds);
+  const tagsMap = await getTagsForPresentations(storageScope, presentationIds);
 
   // Build response
   const presentations = paginated.map((p) =>
@@ -155,7 +155,7 @@ async function handleCreate(ctx) {
     ownerEmail: apiKey.ownerEmail,
   });
 
-  const tags = await getTagsForPresentation(created.id);
+  const tags = await getTagsForPresentation(storageScope, created.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(created, tags, apiKey.ownerEmail),
   });
@@ -171,7 +171,7 @@ async function handleGet(ctx, id) {
   const { ok, pres } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
 
-  const tags = await getTagsForPresentation(id);
+  const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
     presentation: sanitizePresentation(pres, tags, ctx.apiKey?.ownerEmail),
   });
@@ -219,7 +219,7 @@ async function handleUpdate(ctx, id) {
     return true;
   }
 
-  const tags = await getTagsForPresentation(id);
+  const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
     presentation: sanitizePresentation(updated, tags, apiKey.ownerEmail),
   });
@@ -281,7 +281,7 @@ async function handleDuplicate(ctx, id) {
     return true;
   }
 
-  const tags = await getTagsForPresentation(duplicated.id);
+  const tags = await getTagsForPresentation(storageScope, duplicated.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(duplicated, tags, apiKey.ownerEmail),
   });
