@@ -30,7 +30,10 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
 
   const publishId = embedMatch[1];
   const reqSlug = String(embedMatch[2] || '').trim();
-  const entry = await getPublishedById(repoRoot, publishId);
+  const entry = await getPublishedById(
+    crossOrganizationScope(repoRoot, 'embedded deck: the publish id is the authorization'),
+    publishId
+  );
   if (!entry?.presentationId) {
     notFound(res);
     return true;

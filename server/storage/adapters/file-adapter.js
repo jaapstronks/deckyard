@@ -166,6 +166,9 @@ export class FileAdapter extends StorageAdapter {
     return fileUpdatePresentation(this.repoRoot, id, data, {
       expectedRevision: opts?.expectedRevision,
       actorEmail: ctx?.actorEmail,
+      // The file write path checks database-backed locks, so it needs the
+      // organization from the context rather than a default.
+      organizationId: ctx?.organizationId,
       allowScopeChange: opts?.allowScopeChange,
       reason: opts?.reason,
       restoreFromVersionId: opts?.restoreFromVersionId,
@@ -185,7 +188,11 @@ export class FileAdapter extends StorageAdapter {
   }
 
   async permanentlyDeletePresentation(id, ctx) {
-    return filePermanentlyDeletePresentation(this.repoRoot, id);
+    // Unpublishing runs through the organization-scoped published facade, so the
+    // organization has to travel with it.
+    return filePermanentlyDeletePresentation(this.repoRoot, id, {
+      organizationId: ctx?.organizationId,
+    });
   }
 
   async duplicatePresentation(id, ctx) {

@@ -36,7 +36,7 @@ function cleanThemeId(v) {
   return s.slice(0, 80);
 }
 
-export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }) {
+export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url, authedUser }) {
   if (!url.pathname.startsWith('/api/slide-library')) return false;
   if (!authedUser) return unauthorized(res);
 
@@ -48,13 +48,13 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
   // path (compose records server-side in the create handler instead).
   if (url.pathname === '/api/slide-library/usage') {
     if (req.method === 'GET') {
-      const out = await listSlideLibraryUsage(repoRoot, email);
+      const out = await listSlideLibraryUsage(storageScope, email);
       serveJson(res, 200, out);
       return true;
     }
     if (req.method === 'POST') {
       const body = await json(req);
-      const r = await recordSlideLibraryUsage(repoRoot, email, body?.items);
+      const r = await recordSlideLibraryUsage(storageScope, email, body?.items);
       serveJson(res, 200, { ok: true, recorded: r?.recorded || 0 });
       return true;
     }
@@ -64,11 +64,11 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
   // Personal library
   if (url.pathname === '/api/slide-library/personal') {
     if (req.method === 'GET') {
-      const out = await listPersonalLibrary(repoRoot, email, { themeId });
+      const out = await listPersonalLibrary(storageScope, email, { themeId });
       // Attach tags to each item
       if (Array.isArray(out?.items) && out.items.length > 0) {
         const ids = out.items.map((it) => it.id);
-        const tagsMap = await getTagsForSlideLibraryItems(ids, { userEmail: email });
+        const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
         for (const item of out.items) {
           item.tags = tagsMap.get(item.id) || [];
         }
@@ -78,7 +78,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
     }
     if (req.method === 'POST') {
       const body = await json(req);
-      const r = await createPersonalLibraryItem(repoRoot, email, body, {
+      const r = await createPersonalLibraryItem(storageScope, email, body, {
         actorEmail: email,
       });
       if (!r.ok) return badRequest(res, r.reason);
@@ -93,7 +93,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
     const id = personalIdMatch[1];
     if (req.method === 'PATCH') {
       const body = await json(req);
-      const r = await updatePersonalLibraryItem(repoRoot, email, id, body, {
+      const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
         actorEmail: email,
       });
       if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
@@ -101,7 +101,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
       return true;
     }
     if (req.method === 'DELETE') {
-      const r = await deletePersonalLibraryItem(repoRoot, email, id);
+      const r = await deletePersonalLibraryItem(storageScope, email, id);
       if (!r.ok) return notFound(res);
       serveJson(res, 200, { ok: true });
       return true;
@@ -112,11 +112,11 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
   // Team library (workspace-wide)
   if (url.pathname === '/api/slide-library/team') {
     if (req.method === 'GET') {
-      const out = await listTeamLibrary(repoRoot, { themeId, userEmail: email });
+      const out = await listTeamLibrary(storageScope, { themeId, userEmail: email });
       // Attach tags to each item
       if (Array.isArray(out?.items) && out.items.length > 0) {
         const ids = out.items.map((it) => it.id);
-        const tagsMap = await getTagsForSlideLibraryItems(ids, { userEmail: email });
+        const tagsMap = await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: email });
         for (const item of out.items) {
           item.tags = tagsMap.get(item.id) || [];
         }
@@ -126,7 +126,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
     }
     if (req.method === 'POST') {
       const body = await json(req);
-      const r = await createTeamLibraryItem(repoRoot, body, { actorEmail: email });
+      const r = await createTeamLibraryItem(storageScope, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
 
       // Generate preview image for the slide library item
@@ -174,7 +174,7 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
       // - Favorites are per-user and always allowed for authed users.
       // - Trashing (soft delete) is restricted to admins or the creator.
       if (body && typeof body === 'object' && 'trashed' in body) {
-        const r = await setTeamLibraryItemTrashed(repoRoot, id, {
+        const r = await setTeamLibraryItemTrashed(storageScope, id, {
           trashed: !!body.trashed,
           actorEmail: email,
           allowTrash: (item, { actorEmail }) => {
@@ -191,13 +191,13 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
         return true;
       }
 
-      const r = await updateTeamLibraryItem(repoRoot, id, body, { actorEmail: email });
+      const r = await updateTeamLibraryItem(storageScope, id, body, { actorEmail: email });
       if (!r.ok) return r.reason === 'not_found' ? notFound(res) : badRequest(res, r.reason);
       serveJson(res, 200, r.item);
       return true;
     }
     if (req.method === 'DELETE') {
-      const r = await deleteTeamLibraryItem(repoRoot, id, {
+      const r = await deleteTeamLibraryItem(storageScope, id, {
         actorEmail: email,
         allowDelete: (item, { actorEmail }) => {
           // Conservative policy:
@@ -223,14 +223,14 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
   if (personalTagsMatch) {
     const id = personalTagsMatch[1];
     if (req.method === 'GET') {
-      const tags = await getTagsForSlideLibraryItem(id, { userEmail: email });
+      const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: email });
       serveJson(res, 200, tags);
       return true;
     }
     if (req.method === 'PUT') {
       const body = await json(req);
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
-      const tags = await setTagsForSlideLibraryItem(id, tagNames, { userEmail: email });
+      const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
       serveJson(res, 200, tags);
       return true;
     }
@@ -242,14 +242,14 @@ export async function handleSlideLibrary({ repoRoot, req, res, url, authedUser }
   if (teamTagsMatch) {
     const id = teamTagsMatch[1];
     if (req.method === 'GET') {
-      const tags = await getTagsForSlideLibraryItem(id, { userEmail: email });
+      const tags = await getTagsForSlideLibraryItem(storageScope, id, { userEmail: email });
       serveJson(res, 200, tags);
       return true;
     }
     if (req.method === 'PUT') {
       const body = await json(req);
       const tagNames = Array.isArray(body) ? body : (body?.tags || []);
-      const tags = await setTagsForSlideLibraryItem(id, tagNames, { userEmail: email });
+      const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, { userEmail: email });
       serveJson(res, 200, tags);
       return true;
     }

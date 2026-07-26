@@ -221,7 +221,7 @@ export async function updatePresentation(scope, id, body, opts) {
     // off, or re-enabling the flag would resurrect stale state. No-op when
     // no binary exists.
     if (opts?.reason !== 'collab' && !appliedToLiveDoc) {
-      deleteYDocState(repoRoot, id).catch(() => {});
+      deleteYDocState(scope, id).catch(() => {});
     }
   }
   return result;
@@ -263,7 +263,15 @@ async function updatePresentationUncached(scope, id, body, opts) {
     return await storage.updatePresentation(id, normalized, ctx, opts);
   }
   const mod = await import('./presentations/crud.js');
-  return await mod.updatePresentation(repoRootOf(scope), id, body, opts);
+  // The file write path still queries the database for locks, so it needs the
+  // organization this write acts in — see lockContext() in crud/write.js.
+  const { organizationId } = toStorageContext(scope, 'updatePresentation', {
+    actorEmail: opts?.actorEmail,
+  });
+  return await mod.updatePresentation(repoRootOf(scope), id, body, {
+    ...opts,
+    organizationId,
+  });
 }
 
 /**
@@ -285,7 +293,7 @@ export async function deletePresentation(scope, id, opts) {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
     // Unconditional for the same reason as in updatePresentation.
-    deleteYDocState(repoRootOf(scope), id).catch(() => {});
+    deleteYDocState(scope, id).catch(() => {});
   }
 }
 
@@ -335,7 +343,11 @@ export async function permanentlyDeletePresentation(scope, id) {
       return await storage.permanentlyDeletePresentation(id, ctx);
     }
     const mod = await import('./presentations/crud.js');
-    return await mod.permanentlyDeletePresentation(repoRootOf(scope), id);
+    // The file module unpublishes through the (organization-scoped) published
+    // facade, so it needs the organization — see crud/delete.js.
+    return await mod.permanentlyDeletePresentation(repoRootOf(scope), id, {
+      organizationId: ctx.organizationId,
+    });
   } finally {
     invalidatePresentationCache(id);
   }

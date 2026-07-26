@@ -65,6 +65,34 @@ test.before(async () => {
         deckRow({ id: 'deck-alpha', org: ORG_A }),
         deckRow({ id: 'deck-beta', org: ORG_B }),
       ],
+      // PR 2: the same question for the seven small facades. One row per
+      // organization per table, so "did the facade filter on the session's
+      // organization" has a visibly different answer per workspace.
+      published_presentations: [
+        publishedRow({ id: 'pub-alpha', deck: 'deck-alpha', org: ORG_A }),
+        publishedRow({ id: 'pub-beta', deck: 'deck-beta', org: ORG_B }),
+      ],
+      image_library: [
+        imageRow({ id: 'img-alpha', org: ORG_A }),
+        imageRow({ id: 'img-beta', org: ORG_B }),
+      ],
+      slide_library: [
+        libraryRow({ id: 'lib-alpha', org: ORG_A }),
+        libraryRow({ id: 'lib-beta', org: ORG_B }),
+      ],
+      slide_collections: [
+        collectionRow({ id: 'col-alpha', org: ORG_A }),
+        collectionRow({ id: 'col-beta', org: ORG_B }),
+      ],
+      slide_collection_items: [],
+      tags: [
+        { id: 'tag-alpha', organization_id: ORG_A, name: 'alpha-tag' },
+        { id: 'tag-beta', organization_id: ORG_B, name: 'beta-tag' },
+      ],
+      presentation_tags: [
+        { presentation_id: 'deck-alpha', tag_id: 'tag-alpha' },
+        { presentation_id: 'deck-beta', tag_id: 'tag-beta' },
+      ],
     })
   );
   await initializeStorage('/srv/deckyard');
@@ -89,6 +117,73 @@ function deckRow({ id, org }) {
     trashed_at: null,
     created_at: '2026-01-01T00:00:00.000Z',
     modified_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function publishedRow({ id, deck, org }) {
+  return {
+    id,
+    organization_id: org,
+    presentation_id: deck,
+    title: deck,
+    slug: deck,
+    og_image_url: '',
+    created_at: '2026-01-01T00:00:00.000Z',
+    modified_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function imageRow({ id, org }) {
+  return {
+    id,
+    organization_id: org,
+    url: `/uploads/${id}.png`,
+    title: id,
+    description: '',
+    photographer: '',
+    tags: [],
+    alts: {},
+    sources: [],
+    uploaded_by: null,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function libraryRow({ id, org }) {
+  return {
+    id,
+    organization_id: org,
+    scope: 'team',
+    owner_email: null,
+    name: id,
+    description: '',
+    slide_type: 'title-slide',
+    theme_id: null,
+    content: {},
+    i18n: {},
+    favorites: [],
+    trashed_at: null,
+    trashed_by: null,
+    created_by: 'carol@example.com',
+    updated_by: 'carol@example.com',
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function collectionRow({ id, org }) {
+  return {
+    id,
+    organization_id: org,
+    scope: 'team',
+    owner_email: null,
+    name: id,
+    description: '',
+    created_by: 'carol@example.com',
+    updated_by: 'carol@example.com',
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
   };
 }
 
@@ -161,5 +256,91 @@ test('an entry point with no organization refuses to guess once there are severa
     () => singleWorkspaceScope('/srv', 'MCP stdio session'),
     /has no organization to act in, and this instance runs several/,
     'on a multi-organization instance "the default one" stops being an answer'
+  );
+});
+
+// ─── PR 2: the same isolation for the seven small facades ───────────────────
+//
+// Each of these used to read the default organization (Alpha here) regardless of
+// the session. Every assertion below that names Beta is one the old
+// `getStorageContext()` got wrong: it either handed Beta Alpha's rows or told
+// Beta its own rows did not exist.
+
+test("the published index is per organization", async () => {
+  const { getPublishedIndex } = await import('../server/storage/published.js');
+  const alpha = await getPublishedIndex({ organizationId: ORG_A });
+  const beta = await getPublishedIndex({ organizationId: ORG_B });
+  assert.deepEqual(Object.keys(alpha), ['pub-alpha']);
+  assert.deepEqual(
+    Object.keys(beta),
+    ['pub-beta'],
+    "Beta used to be handed Alpha's publish index"
+  );
+});
+
+test('a publish id still resolves across organizations, because it is the token', async () => {
+  const { getPublishedById } = await import('../server/storage/published.js');
+  const scope = crossOrganizationScope(null, 'published deck: the publish id is the authorization');
+  const entry = await getPublishedById(scope, 'pub-beta');
+  assert.equal(entry?.presentationId, 'deck-beta', 'a public link must work from any workspace');
+});
+
+test('the image library is per organization', async () => {
+  const { listImageLibrary, getImageLibraryItem } = await import(
+    '../server/storage/image-library.js'
+  );
+  const alpha = await listImageLibrary({ organizationId: ORG_A });
+  const beta = await listImageLibrary({ organizationId: ORG_B });
+  assert.deepEqual(alpha.map((i) => i.id), ['img-alpha']);
+  assert.deepEqual(beta.map((i) => i.id), ['img-beta']);
+  assert.equal(
+    await getImageLibraryItem({ organizationId: ORG_B }, 'img-alpha'),
+    null,
+    "Beta must not reach Alpha's image by id"
+  );
+});
+
+test('the team slide library is per organization', async () => {
+  const { listTeamLibrary, getTeamLibraryItem } = await import(
+    '../server/storage/slide-library.js'
+  );
+  const { items: alpha } = await listTeamLibrary({ organizationId: ORG_A });
+  const { items: beta } = await listTeamLibrary({ organizationId: ORG_B });
+  assert.deepEqual(alpha.map((i) => i.id), ['lib-alpha']);
+  assert.deepEqual(beta.map((i) => i.id), ['lib-beta']);
+  assert.equal(
+    await getTeamLibraryItem({ organizationId: ORG_B }, 'lib-alpha'),
+    null,
+    "a team shelf is a workspace's own shelf"
+  );
+});
+
+test('team collections are per organization', async () => {
+  const { listTeamCollections } = await import('../server/storage/collections.js');
+  const { items: alpha } = await listTeamCollections({ organizationId: ORG_A });
+  const { items: beta } = await listTeamCollections({ organizationId: ORG_B });
+  assert.deepEqual(alpha.map((c) => c.id), ['col-alpha']);
+  assert.deepEqual(beta.map((c) => c.id), ['col-beta']);
+});
+
+test('tags are per organization', async () => {
+  // `listTags` would be the obvious probe, but its query groups to compute usage
+  // counts and the database double has no GROUP BY. The per-deck lookup exercises
+  // the same organization filter on the same tables.
+  const { getTagsForPresentation } = await import('../server/storage/tags.js');
+
+  assert.deepEqual(
+    (await getTagsForPresentation({ organizationId: ORG_A }, 'deck-alpha')).map((t) => t.name),
+    ['alpha-tag']
+  );
+  assert.deepEqual(
+    (await getTagsForPresentation({ organizationId: ORG_B }, 'deck-beta')).map((t) => t.name),
+    ['beta-tag'],
+    "Beta's own tags used to come back empty: the lookup filtered on the default organization"
+  );
+  assert.deepEqual(
+    await getTagsForPresentation({ organizationId: ORG_B }, 'deck-alpha'),
+    [],
+    "and Alpha's tag vocabulary must not leak into Beta"
   );
 });

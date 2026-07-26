@@ -3,6 +3,7 @@ import path from 'node:path';
 import { sandboxEnabled, sandboxTtlMs } from '../../config/sandbox.js';
 import { dataDir } from '../../config/storage-paths.js';
 import { removePublishedEntry } from '../published.js';
+import { singleWorkspaceScope } from '../scope.js';
 import { deletePresentationFile } from './io.js';
 
 function safeIsoToMs(iso) {
@@ -53,7 +54,15 @@ export async function cleanupExpiredSandboxPresentation(repoRoot, pres) {
   // Best-effort: remove published entry (if any).
   try {
     const publishId = String(pres?.published?.id || '').trim();
-    if (publishId) await removePublishedEntry(repoRoot, publishId);
+    // Sandbox mode is an instance-wide, single-organization deployment (and the
+    // TTL sweep runs outside any request), so the instance's one organization
+    // *is* the answer here — singleWorkspaceScope says so, and refuses if an
+    // instance ever holds several.
+    if (publishId)
+      await removePublishedEntry(
+        singleWorkspaceScope(repoRoot, 'sandbox cleanup of an expired deck'),
+        publishId
+      );
   } catch {
     // ignore
   }

@@ -65,6 +65,11 @@ const { initializeStorage, closeStorage } = await import('../server/storage/adap
 const { createPersonalLibraryItem, listPersonalLibrary, updatePersonalLibraryItem } = await import(
   '../server/storage/slide-library.js'
 );
+const { testScope } = await import('./helpers/storage-scope.js');
+
+// The facades refuse to invent an organization, so the test states the one it
+// acts in — see server/storage/scope.js.
+const scope = testScope(repoRoot);
 
 const ALICE = 'alice@example.com';
 
@@ -82,7 +87,7 @@ describe('slide-library i18n round-trip (facade / file backend)', () => {
 
   it('keeps both languages through create and update', async () => {
     const created = await createPersonalLibraryItem(
-      repoRoot,
+      scope,
       ALICE,
       { name: 'Intro', slideType: 'content-slide', content: { title: 'Hallo' }, i18n: BILINGUAL },
       { actorEmail: ALICE }
@@ -90,7 +95,7 @@ describe('slide-library i18n round-trip (facade / file backend)', () => {
     assert.ok(created?.ok && created.item?.id, 'created item has an id');
     assert.deepStrictEqual(created.item.i18n, BILINGUAL, 'i18n survives create');
 
-    const listed = await listPersonalLibrary(repoRoot, ALICE);
+    const listed = await listPersonalLibrary(scope, ALICE);
     const found = listed.items.find((i) => i.id === created.item.id);
     assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
 
@@ -101,7 +106,7 @@ describe('slide-library i18n round-trip (facade / file backend)', () => {
       },
     };
     const updated = await updatePersonalLibraryItem(
-      repoRoot,
+      scope,
       ALICE,
       created.item.id,
       { i18n: nextI18n },

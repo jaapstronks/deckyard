@@ -1489,16 +1489,21 @@ paths:
       tags:
         - Resources
       summary: Search image library
-      description: Search and browse available images.
+      description: |
+        Search and browse the images in the API key's organization.
+
+        The library has no separate category column; images are grouped by their
+        tags, so `category` filters on tags and `categories` lists the distinct
+        tags in use.
       parameters:
         - name: search
           in: query
-          description: Search query
+          description: Matches title, description, photographer and tags
           schema:
             type: string
         - name: category
           in: query
-          description: Filter by category
+          description: Filter by tag
           schema:
             type: string
         - name: limit
@@ -1527,14 +1532,26 @@ paths:
                     items:
                       type: object
                       properties:
+                        id:
+                          type: string
                         url:
                           type: string
-                        thumbnail:
+                        title:
                           type: string
-                        category:
+                        description:
                           type: string
+                        photographer:
+                          type: string
+                        tags:
+                          type: array
+                          items:
+                            type: string
+                        alts:
+                          type: object
+                          description: Per-language alt texts
                   categories:
                     type: array
+                    description: The distinct tags in use across the library
                     items:
                       type: string
                   pagination:

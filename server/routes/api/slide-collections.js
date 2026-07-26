@@ -49,7 +49,7 @@ function mutationError(res, reason) {
   return badRequest(res, reason);
 }
 
-export async function handleSlideCollections({ repoRoot, req, res, url, authedUser }) {
+export async function handleSlideCollections({ storageScope, req, res, url, authedUser }) {
   if (!url.pathname.startsWith('/api/slide-collections')) return false;
   if (!authedUser) return unauthorized(res);
 
@@ -58,13 +58,13 @@ export async function handleSlideCollections({ repoRoot, req, res, url, authedUs
   // Personal collections
   if (url.pathname === '/api/slide-collections/personal') {
     if (req.method === 'GET') {
-      const out = await listPersonalCollections(repoRoot, email);
+      const out = await listPersonalCollections(storageScope, email);
       serveJson(res, 200, out);
       return true;
     }
     if (req.method === 'POST') {
       const body = await json(req);
-      const r = await createPersonalCollection(repoRoot, email, body, { actorEmail: email });
+      const r = await createPersonalCollection(storageScope, email, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
       serveJson(res, 201, r.item);
       return true;
@@ -76,20 +76,20 @@ export async function handleSlideCollections({ repoRoot, req, res, url, authedUs
   if (personalIdMatch) {
     const id = personalIdMatch[1];
     if (req.method === 'GET') {
-      const item = await getPersonalCollection(repoRoot, email, id);
+      const item = await getPersonalCollection(storageScope, email, id);
       if (!item) return notFound(res);
       serveJson(res, 200, item);
       return true;
     }
     if (req.method === 'PATCH') {
       const body = await json(req);
-      const r = await updatePersonalCollection(repoRoot, email, id, body, { actorEmail: email });
+      const r = await updatePersonalCollection(storageScope, email, id, body, { actorEmail: email });
       if (!r.ok) return mutationError(res, r.reason);
       serveJson(res, 200, r.item);
       return true;
     }
     if (req.method === 'DELETE') {
-      const r = await deletePersonalCollection(repoRoot, email, id);
+      const r = await deletePersonalCollection(storageScope, email, id);
       if (!r.ok) return notFound(res);
       serveJson(res, 200, { ok: true });
       return true;
@@ -100,13 +100,13 @@ export async function handleSlideCollections({ repoRoot, req, res, url, authedUs
   // Team collections (workspace-wide)
   if (url.pathname === '/api/slide-collections/team') {
     if (req.method === 'GET') {
-      const out = await listTeamCollections(repoRoot, { userEmail: email });
+      const out = await listTeamCollections(storageScope, { userEmail: email });
       serveJson(res, 200, out);
       return true;
     }
     if (req.method === 'POST') {
       const body = await json(req);
-      const r = await createTeamCollection(repoRoot, body, { actorEmail: email });
+      const r = await createTeamCollection(storageScope, body, { actorEmail: email });
       if (!r.ok) return badRequest(res, r.reason);
       serveJson(res, 201, r.item);
       return true;
@@ -118,14 +118,14 @@ export async function handleSlideCollections({ repoRoot, req, res, url, authedUs
   if (teamIdMatch) {
     const id = teamIdMatch[1];
     if (req.method === 'GET') {
-      const item = await getTeamCollection(repoRoot, id, { userEmail: email });
+      const item = await getTeamCollection(storageScope, id, { userEmail: email });
       if (!item) return notFound(res);
       serveJson(res, 200, item);
       return true;
     }
     if (req.method === 'PATCH') {
       const body = await json(req);
-      const r = await updateTeamCollection(repoRoot, id, body, {
+      const r = await updateTeamCollection(storageScope, id, body, {
         actorEmail: email,
         allowMutate: teamMutateGuard(authedUser),
       });
@@ -134,7 +134,7 @@ export async function handleSlideCollections({ repoRoot, req, res, url, authedUs
       return true;
     }
     if (req.method === 'DELETE') {
-      const r = await deleteTeamCollection(repoRoot, id, {
+      const r = await deleteTeamCollection(storageScope, id, {
         actorEmail: email,
         allowMutate: teamMutateGuard(authedUser),
       });

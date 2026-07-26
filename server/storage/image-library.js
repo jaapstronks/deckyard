@@ -1,81 +1,108 @@
 /**
  * Image library storage facade.
  * Uses storage adapter when initialized, falls back to file-based storage.
+ *
+ * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
+ * organization comes from the caller instead of a hardcoded default (see
+ * server/storage/scope.js). The image library is per-organization: two
+ * workspaces on one instance do not share each other's uploads, and neither do
+ * their per-user favorites.
  */
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import { resolveScope, repoRootOf } from './scope.js';
 
 /**
- * Get the context for storage operations.
- * @returns {Object} Context with organizationId
+ * List the image library of the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Array<Object>>}
  */
-function getStorageContext() {
-  return {
-    organizationId: getDefaultOrganizationId(),
-  };
-}
-
-export async function listImageLibrary(repoRoot) {
+export async function listImageLibrary(scope) {
+  const ctx = resolveScope(scope, 'listImageLibrary');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.listImages(ctx);
   }
   // Fall back to file-based storage
   const mod = await import('./image-library-file.js');
-  return mod.listImageLibrary(repoRoot);
+  return mod.listImageLibrary(repoRootOf(scope));
 }
 
-export async function getImageLibraryItem(repoRoot, id) {
+/**
+ * Fetch one image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @returns {Promise<Object|null>}
+ */
+export async function getImageLibraryItem(scope, id) {
+  const ctx = resolveScope(scope, 'getImageLibraryItem');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.getImage(id, ctx);
   }
   const mod = await import('./image-library-file.js');
-  return mod.getImageLibraryItem(repoRoot, id);
+  return mod.getImageLibraryItem(repoRootOf(scope), id);
 }
 
-export async function createImageLibraryItem(repoRoot, input) {
+/**
+ * Add an image to the scope's organization library.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {Object} input
+ * @returns {Promise<Object>}
+ */
+export async function createImageLibraryItem(scope, input) {
+  const ctx = resolveScope(scope, 'createImageLibraryItem');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.createImage(input, ctx);
   }
   const mod = await import('./image-library-file.js');
-  return mod.createImageLibraryItem(repoRoot, input);
+  return mod.createImageLibraryItem(repoRootOf(scope), input);
 }
 
-export async function updateImageLibraryItem(repoRoot, id, patch) {
+/**
+ * Patch an image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @param {Object} patch
+ * @returns {Promise<Object|null>}
+ */
+export async function updateImageLibraryItem(scope, id, patch) {
+  const ctx = resolveScope(scope, 'updateImageLibraryItem');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.updateImage(id, patch, ctx);
   }
   const mod = await import('./image-library-file.js');
-  return mod.updateImageLibraryItem(repoRoot, id, patch);
+  return mod.updateImageLibraryItem(repoRootOf(scope), id, patch);
 }
 
-export async function deleteImageLibraryItem(repoRoot, id) {
+/**
+ * Delete an image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} id
+ * @returns {Promise<boolean>}
+ */
+export async function deleteImageLibraryItem(scope, id) {
+  const ctx = resolveScope(scope, 'deleteImageLibraryItem');
   if (isStorageInitialized()) {
     const storage = getStorage();
-    const ctx = getStorageContext();
     return storage.deleteImage(id, ctx);
   }
   const mod = await import('./image-library-file.js');
-  return mod.deleteImageLibraryItem(repoRoot, id);
+  return mod.deleteImageLibraryItem(repoRootOf(scope), id);
 }
 
 /**
  * Get all favorite image IDs for a user.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail - User's email
  * @returns {Promise<string[]>} Array of image IDs
  */
-export async function getImageFavorites(userEmail) {
+export async function getImageFavorites(scope, userEmail) {
+  const ctx = resolveScope(scope, 'getImageFavorites');
   if (!isStorageInitialized()) return [];
   const storage = getStorage();
-  const ctx = getStorageContext();
   // Favorites are optional per backend (the file backend has no per-user
   // favorites store); treat an absent implementation as "no favorites".
   if (typeof storage.getImageFavorites !== 'function') return [];
@@ -84,14 +111,15 @@ export async function getImageFavorites(userEmail) {
 
 /**
  * Toggle favorite status for an image.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} imageId - Image ID
  * @param {string} userEmail - User's email
  * @returns {Promise<boolean>} New favorite status (true if now favorited)
  */
-export async function toggleImageFavorite(imageId, userEmail) {
+export async function toggleImageFavorite(scope, imageId, userEmail) {
+  const ctx = resolveScope(scope, 'toggleImageFavorite');
   if (!isStorageInitialized()) return false;
   const storage = getStorage();
-  const ctx = getStorageContext();
   if (typeof storage.toggleImageFavorite !== 'function') return false;
   return storage.toggleImageFavorite(imageId, userEmail, ctx);
 }

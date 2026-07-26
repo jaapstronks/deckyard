@@ -35,7 +35,10 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
 
   const publishId = pubReaderMatch[1];
   const reqSlug = String(pubReaderMatch[2] || '').trim();
-  const entry = await getPublishedById(repoRoot, publishId);
+  const entry = await getPublishedById(
+    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
+    publishId
+  );
   if (!entry?.presentationId) {
     notFound(res);
     return true;
@@ -95,7 +98,10 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
   const publishId = pubMatch[1];
   const reqSlug = String(pubMatch[2] || '').trim();
-  const entry = await getPublishedById(repoRoot, publishId);
+  const entry = await getPublishedById(
+    crossOrganizationScope(repoRoot, 'published-deck: the publish id is the authorization'),
+    publishId
+  );
   if (!entry?.presentationId) {
     notFound(res);
     return true;

@@ -199,11 +199,16 @@ organizations. Both are in place; what is still missing is listed under
   bound to the instance — so it takes the single workspace and refuses to guess
   once an instance holds several.
 
-- **The storage layer has no default to fall back on — done.** The presentations
-  facade used to build its own context with a hardcoded
+- **The storage layer has no default to fall back on — done.** The storage
+  facades used to build their own context with a hardcoded
   `getDefaultOrganizationId()`, so every route that loads a deck before
   authorizing it read out of the default organization rather than the one the
-  session was working in. It now takes a **storage scope** as its first
+  session was working in. The same defect sat in the seven smaller facades
+  (`slide-library`, `slide-library-usage`, `published`, `tags`,
+  `presentation-ydocs`, `collections`, `image-library`) — and in `tags` and the
+  image favorites it was sharper still, because those functions took no scope
+  argument at all, so a caller had no way to state an organization even if it
+  wanted to. Every one of them now takes a **storage scope** as its first
   argument — which organization, on whose behalf, and where the repository lives
   for the file-backed fallback — and `server/storage/scope.js` refuses anything
   that states neither an organization nor a reason it cannot have one. There is
@@ -239,12 +244,24 @@ organizations. Both are in place; what is still missing is listed under
   persistence hooks, which is what lets a collab store write into the deck's own
   organization.
 
+  Two file-backed write paths query the *database* for locks and for the publish
+  index even in file mode (`presentations/crud/write.js`,
+  `presentations/crud/delete.js`), so the organization travels down to them in
+  `opts` rather than being re-derived there.
+
+  Where the check sits matters as much as the check. The three facades that keep
+  a file-backed fallback validate the scope in `withStorageFallback()`, **before**
+  choosing a backend — otherwise the file-mode suite, which is what CI runs,
+  would wave an un-migrated caller straight through and the defect would only
+  surface on Postgres.
+
   Single-organization installations are unaffected in behaviour: there the
   session's organization *is* the default one, so every scoped call resolves to
   the value it did before. Pinned by `tests/storage-scope-contract.test.js` (the
-  rule itself) and `tests/storage-scope-multi-org.test.js` (two organizations
-  through the real facade; four of its assertions fail if the old
-  `getStorageContext()` comes back).
+  rule itself, for every facade function) and
+  `tests/storage-scope-multi-org.test.js` (two organizations through the real
+  facades; assertions verified to go red when the old `getStorageContext()` is
+  restored).
 
 #### Why not the hostname
 
@@ -273,16 +290,9 @@ External email leaks were closed separately (PR #214).
 
 ### What is not done yet
 
-- **Seven smaller storage facades still read the default organization.**
-  `slide-library.js`, `slide-library-usage.js`, `published.js`, `tags.js`,
-  `presentation-ydocs.js`, `collections.js` and `image-library.js` each carry
-  the same hardcoded `getStorageContext()` the presentations facade used to
-  have, as do two spots in `presentations/crud/write.js`. They are the same
-  shape of defect and a much smaller surface, since the pattern to apply is now
-  fixed; they are tracked as the second half of the facade work.
 - **There is no organization UI.** The switch endpoint exists, but no
   organization switcher, no member management screen and no per-organization
   invite flow.
 
-Until those are closed, shape 4 stays *in development*: usable to build
-against, not something to point two unrelated customers at.
+Until that is closed, shape 4 stays *in development*: usable to build against,
+not something to point two unrelated customers at.

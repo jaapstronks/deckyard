@@ -110,8 +110,8 @@ function handlePresentationItemRoute(ctx, id) {
  * @param {PresentationsContext} ctx
  * @param {string} id
  */
-function handlePresentationTagsRoute({ req, res, url }, id) {
-  return handlePresentationTags({ req, res, url, presentationId: id });
+function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
+  return handlePresentationTags({ storageScope, req, res, url, presentationId: id });
 }
 
 /**
