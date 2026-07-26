@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.5.0](https://github.com/jaapstronks/deckyard/compare/v1.4.1...v1.5.0) (2026-07-26)
+
+
+### Added
+
+* **theme:** one contrast implementation, three consumers, and a readout ([#397](https://github.com/jaapstronks/deckyard/issues/397)) ([105dd3f](https://github.com/jaapstronks/deckyard/commit/105dd3f227f4be5062c7163caebd51297680c146))
+
+
+### Fixed
+
+* **theme:** pick text colour by contrast ratio, not luminance midpoint ([#396](https://github.com/jaapstronks/deckyard/issues/396)) ([3f2a2d7](https://github.com/jaapstronks/deckyard/commit/3f2a2d75f07ed8642743c4bb494d00bbab6f2be4))
+
 ## [1.4.1](https://github.com/jaapstronks/deckyard/compare/v1.4.0...v1.4.1) (2026-07-26)
 
 
