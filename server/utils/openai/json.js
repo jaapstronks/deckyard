@@ -52,7 +52,7 @@ export function extractAndValidateJson(text, schema) {
 
   // Collect validation issues but still return raw data
   // (AI output is fixed rather than rejected)
-  const issues = result.error.errors.map((e) => {
+  const issues = result.error.issues.map((e) => {
     const path = e.path.join('.');
     return `${path || 'root'}: ${e.message}`;
   });

@@ -62,7 +62,7 @@ export function validateOutlineResponse(response) {
     };
   }
 
-  const issues = result.error.errors.map((e) => {
+  const issues = result.error.issues.map((e) => {
     const path = e.path.join('.');
     return `${path || 'root'}: ${e.message}`;
   });
@@ -87,7 +87,7 @@ export function validateOutlineSlide(slide) {
     return { valid: true, issues: [] };
   }
 
-  const issues = result.error.errors.map((e) => {
+  const issues = result.error.issues.map((e) => {
     const path = e.path.join('.');
     return `${path || 'root'}: ${e.message}`;
   });
