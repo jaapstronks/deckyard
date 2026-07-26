@@ -10,6 +10,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createFieldListEditor } from './field-editor.js';
 import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';
+import { USAGE_MAX_LENGTH } from '../../../../shared/slide-types/usage.js';
 
 /**
  * Generate a slug from a label.
@@ -74,6 +75,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
     defaults: slideType?.defaults || {},
     template: slideType?.template || '',
     css: slideType?.css || '',
+    usage: slideType?.usage || '',
     isPublished: slideType?.isPublished === true,
   };
 
@@ -313,6 +315,49 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
 
   cssCard.append(cssArea, cssHint);
 
+  // --- Usage rules (agent-facing) ---
+  // Deliberately the last authoring step before Publish: publishing is what
+  // exposes the type to agents, and this is what they are told about it.
+  const usageCard = h('div', { class: 'editor-card stack' });
+  usageCard.append(
+    h('div', {
+      class: 'field-label',
+      text: t('settings.slideTypes.usage', 'Usage rules for AI'),
+    })
+  );
+
+  const usageArea = h('textarea', {
+    class: 'input',
+    rows: '5',
+    maxlength: String(USAGE_MAX_LENGTH),
+    placeholder: t(
+      'settings.slideTypes.usagePlaceholder',
+      'Figures come from the published quarterly report, never from a draft.\nAlways state the cut-off date.\nA deviation over 5% needs a note explaining it.'
+    ),
+  });
+  usageArea.value = state.usage;
+
+  const usageCount = h('div', { class: 'help' });
+  const renderUsageCount = () => {
+    usageCount.textContent = `${state.usage.length} / ${USAGE_MAX_LENGTH}`;
+  };
+
+  usageArea.addEventListener('input', () => {
+    state.usage = usageArea.value;
+    renderUsageCount();
+  });
+  renderUsageCount();
+
+  const usageHint = h('div', {
+    class: 'help',
+    text: t(
+      'settings.slideTypes.usageHint',
+      'Rules an AI assistant must follow when filling this slide type — sources, cut-off dates, mandatory explanations. Not a description of what the type is: that is what the name and fields are for.'
+    ),
+  });
+
+  usageCard.append(usageArea, usageCount, usageHint);
+
   // --- Publish toggle ---
   const publishCard = h('div', { class: 'editor-card stack' });
   publishCard.append(
@@ -344,7 +389,16 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
   publishCard.append(publishToggle, publishHint);
 
   // Assemble form column
-  formColumn.append(nameCard, baseTypeCard, fieldsCard, defaultsCard, templateCard, cssCard, publishCard);
+  formColumn.append(
+    nameCard,
+    baseTypeCard,
+    fieldsCard,
+    defaultsCard,
+    templateCard,
+    cssCard,
+    usageCard,
+    publishCard
+  );
 
   // ============================================================
   // Right column: Live Preview
@@ -427,6 +481,7 @@ export function createSlideTypeEditor({ slideType, coreTypes, onSave, onCancel }
       defaults: state.defaults,
       template: state.template || null,
       css: state.css || null,
+      usage: state.usage.trim() || null,
       isPublished: state.isPublished,
     };
 

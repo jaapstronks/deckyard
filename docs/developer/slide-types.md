@@ -238,9 +238,37 @@ export default {
 | `notFor` | string[] | List of anti-patterns when NOT to use this slide type |
 | `schema` | object | Field constraints (type, required, maxLength, options for enums) |
 | `examples` | array | Example content objects. Use `_variation` to label different patterns |
+| `usage` | string | Your organization's rules for *filling* this type (optional, max 1000 chars) |
 
 Setting `ai` to `false` instead of an object is the explicit opt-out — see
 [Withholding a type from agents](#withholding-a-type-from-agents).
+
+#### `usage` — your rules, not the type's description
+
+`description`/`bestFor`/`notFor` help an agent decide **which type to pick**.
+`usage` tells it **how your organization requires that type to be filled**, and
+it is the one field here that describes you rather than the type:
+
+```js
+ai: {
+  category: 'content',
+  description: 'Quarterly figures for the supervisory board.',
+  bestFor: ['Quarterly reporting'],
+  usage: `
+    Figures come from the published quarterly report, never from a draft.
+    Always state the cut-off date in the 'asOf' field.
+    A deviation over 5% versus last quarter needs a note explaining it.
+  `,
+},
+```
+
+It travels in every `get_slide_types` response, so an agent reads it before it
+builds the slide. Indentation is stripped, so writing it as an indented template
+literal is fine. Over-long text is truncated here rather than rejected (losing
+the tail beats losing the type); the builder UI and API reject instead, because
+an author is standing right there. To put usage rules on a **core** type without
+patching the OSS catalog, use `custom/ai/catalog.js` — `usage` is an overridable
+field. Full contract: `docs/reference/mcp-server.md`.
 
 ### How the AI Uses This Metadata
 

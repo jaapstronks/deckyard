@@ -55,12 +55,17 @@ Full settings UI for creating, editing, and managing custom slide types. This co
      </div>
      ```
    - Add CSS: `.hero-banner { padding: 3em; text-align: center; }`
+   - Optionally fill "Usage rules for AI" (max 1000 chars, counter below the box)
+     with the rules an agent must follow when filling this type -- see
+     `docs/reference/mcp-server.md`, *`usage` -- the organization's own rules*
    - Verify the live preview on the right updates as you type
    - Click Save -- verify toast success, card appears in the list with "Draft" badge
 
 3. **Publish the type**
    - Click the three-dot menu on the card, select "Publish"
    - Badge should change to "Published"
+   - Any usage rules now travel to agents: `get_slide_types` lists the type as
+     `custom-<slug>` with its `usage` string attached
 
 4. **Use the type in the editor**
    - Open any presentation in the editor
@@ -97,7 +102,8 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 10. **Export a type**
     - Three-dot menu > "Export as JSON" -- downloads `<slug>.slidetype.json`
     - The file is a portable envelope carrying only the shape (label, base type,
-      fields, defaults, template, CSS); no id/slug/publish-state/audit columns
+      fields, defaults, template, CSS, usage rules); no id/slug/publish-state/audit
+      columns
 
 11. **Import a type**
     - Click "Import" in the section header, pick a `.slidetype.json` file

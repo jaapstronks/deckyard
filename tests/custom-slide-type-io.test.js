@@ -19,6 +19,7 @@ const FULL = {
   defaultsByLang: { en: { title: 'Hi' } },
   template: '<h1>{{esc title}}</h1>',
   css: '.x{}',
+  usage: 'Always state the cut-off date.',
   isPublished: true,
   sortOrder: 3,
   createdAt: '2026-01-01',
@@ -29,7 +30,7 @@ const FULL = {
 test('toPortableDefinition strips identity, audit, and publish state', () => {
   const def = toPortableDefinition(FULL);
   assert.deepEqual(Object.keys(def).sort(), [
-    'baseType', 'css', 'defaults', 'defaultsByLang', 'fields', 'label', 'template',
+    'baseType', 'css', 'defaults', 'defaultsByLang', 'fields', 'label', 'template', 'usage',
   ]);
   assert.equal(def.id, undefined);
   assert.equal(def.slug, undefined);

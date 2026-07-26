@@ -183,7 +183,7 @@ export function registerTools(
 
   server.tool(
     'get_slide_types',
-    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
+    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. When an entry carries a `usage` field, it holds the rules THIS organization set for filling that slide type (sources, cut-off dates, mandatory explanations); treat it as binding and follow it when you write the content. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
     {
       type: 'object',
       properties: {

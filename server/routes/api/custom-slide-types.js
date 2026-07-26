@@ -21,12 +21,16 @@ import {
   reorderCustomSlideTypes,
 } from '../../storage/custom-slide-types.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { USAGE_MAX_LENGTH } from '../../../shared/slide-types/usage.js';
+import { SLIDE_TYPE_CATALOG } from '../../utils/ai/slide-catalog/definitions.js';
 import { canManage } from '../../utils/route-middleware.js';
 
 const ERROR_MESSAGES = {
   invalid_label: 'Invalid slide type label.',
   invalid_slug: 'Invalid slide type slug.',
   invalid_fields: 'Invalid field definitions.',
+  invalid_usage: 'Usage rules must be text.',
+  usage_too_long: `Usage rules are too long (max ${USAGE_MAX_LENGTH} characters).`,
   slug_exists: 'A slide type with this slug already exists.',
   not_found: 'Slide type not found.',
   unavailable: 'Database unavailable.',
@@ -113,6 +117,10 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
           fields: coreDef.fields || [],
           defaults: coreDef.defaults || {},
           defaultsByLang: coreDef.defaultsByLang || null,
+          // Carry the core type's usage rules into the copy. "Fork our type and
+          // add our own rule on top" is the whole point of duplicating one, and
+          // starting from a blank rule loses whatever the catalog already said.
+          usage: SLIDE_TYPE_CATALOG[sourceId]?.usage || null,
         };
       }
     }
@@ -131,6 +139,7 @@ export async function handleCustomSlideTypes({ req, res, url, authedUser }) {
         defaultsByLang: sourceData.defaultsByLang,
         template: sourceData.template || null,
         css: sourceData.css || null,
+        usage: sourceData.usage || null,
       },
       ctx
     );

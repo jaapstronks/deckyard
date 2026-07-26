@@ -4,7 +4,7 @@
  * A definition is exported as a small self-describing JSON envelope so an import
  * can recognise it (and reject unrelated JSON) without guessing. Only the
  * portable half of a type travels: the shape (label, base type, fields,
- * defaults, template, CSS) but never install-specific identity (id, org, audit
+ * defaults, template, CSS, usage rules) but never install-specific identity (id, org, audit
  * columns, sort order) or publish state — imports always land as an unpublished
  * draft the user reviews and publishes explicitly.
  */
@@ -14,7 +14,19 @@ export const SLIDE_TYPE_ENVELOPE = 'deckyard-custom-slide-type';
 export const SLIDE_TYPE_ENVELOPE_VERSION = 1;
 
 /** The fields that make up a portable definition, in a stable order. */
-const PORTABLE_KEYS = ['label', 'baseType', 'fields', 'defaults', 'defaultsByLang', 'template', 'css'];
+const PORTABLE_KEYS = [
+  'label',
+  'baseType',
+  'fields',
+  'defaults',
+  'defaultsByLang',
+  'template',
+  'css',
+  // The organization's rules for filling this type travel with it: a type
+  // exported without them arrives somewhere else stripped of the very thing
+  // that made it theirs.
+  'usage',
+];
 
 /**
  * Reduce a full custom slide-type record to its portable definition.

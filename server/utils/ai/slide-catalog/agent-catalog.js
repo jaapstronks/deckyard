@@ -20,6 +20,12 @@
  * `buildPhase2CatalogPrompt` already use. That is what makes the no-code path
  * and the agent path meet: a type built in the builder UI reaches Claude.
  *
+ * On top of that sits `usage` (shared/slide-types/usage.js): the organization's
+ * own rules for filling a type, as opposed to the editorial copy that says which
+ * type to pick. It is optional everywhere and omitted when empty, and it is the
+ * only field here an organization writes about itself rather than about the
+ * type.
+ *
  * This module is pure: the caller supplies the org-resolved inputs
  * (`disabledSlideTypes`, `customSlideTypes`), exactly as
  * `buildPhase2CatalogPrompt` takes them, so there is no third convention and no
@@ -32,6 +38,7 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
+import { clampUsage } from '../../../../shared/slide-types/usage.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
@@ -140,6 +147,22 @@ function agentCategory(catalogEntry) {
 }
 
 /**
+ * The `usage` half of an agent entry, present only when there is a rule.
+ *
+ * Spread rather than assigned so absence stays absence: an empty `usage` on
+ * every type would be pure weight in a response that already carries a schema
+ * and an example for each one. Ordered after the schema at the call sites, so an
+ * agent reads "this is the shape" before "this is your house rule".
+ *
+ * @param {unknown} value - Raw usage text from a catalog entry or DB record.
+ * @returns {{ usage?: string }}
+ */
+function usageField(value) {
+  const usage = clampUsage(value);
+  return usage ? { usage } : {};
+}
+
+/**
  * Build the agent-facing entry for one registered (Tier-1) type.
  * @param {string} name
  * @param {object} def
@@ -172,6 +195,7 @@ function tier1Entry(name, def, catalogEntry, lang) {
     // false = registered and usable, but nobody has written the editorial copy.
     // Surfacing the gap beats hiding the type.
     documented,
+    ...usageField(catalogEntry?.usage),
   };
 }
 
@@ -195,8 +219,13 @@ function tier2Entry(ct, lang) {
     notFor: [],
     schema: deriveAgentSchema(ct.fields),
     example: exampleFor(ct, lang),
+    // `documented` tracks editorial copy on the description/bestFor axis, which
+    // Tier 2 has no columns for. A type with `usage` is better described, but
+    // not documented in that sense - overloading the flag would make it mean two
+    // things and stop being a usable signal for either.
     documented: false,
     isCustom: true,
+    ...usageField(ct.usage),
   };
 }
 
