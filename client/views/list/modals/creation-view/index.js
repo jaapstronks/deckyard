@@ -24,12 +24,8 @@ import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createLibraryCompose } from './library-compose.js';
 import { createContentCompose } from './content-compose.js';
-import {
-  handleEmpty,
-  handleImportJson,
-  handleImportMarkdown,
-  handlePasteMarkdown,
-} from '../new-presentation/handlers.js';
+import { createImportCompose } from './import-compose.js';
+import { handleEmpty } from '../new-presentation/handlers.js';
 
 export function openCreationView({
   h,
@@ -54,10 +50,7 @@ export function openCreationView({
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
-  let importSubtab = 'json'; // json | import-md | paste-md
   let busy = false;
-  let selectedImportFile = null;
-  let selectedImportMdFile = null;
   // null lets the visual picker adopt the workspace default theme.
   let themeId = preselectedTheme?.id || null;
   let onKey = null;
@@ -68,9 +61,7 @@ export function openCreationView({
     if (method === 'blank') return 'empty';
     if (method === 'library') return 'library';
     if (method === 'content') return content.getMode();
-    if (method === 'import') {
-      return { json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab];
-    }
+    if (method === 'import') return importMethod.getMode();
     return null;
   };
 
@@ -186,83 +177,16 @@ export function openCreationView({
   });
   const contentPanel = content.panel;
 
-  // --- Import panel ---
-  const importPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'import' });
-  const importSubtabs = h('div', { class: 'sb-segmented' });
-  const btnImpJson = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.newPresentation.mode.importJson', 'Import JSON'),
+  // --- Import panel (.json / .md file / paste markdown) ---
+  // A third self-contained concern: the active sub-tab, the two selected files,
+  // and the inline import-warnings renderer live in the module. syncUI drives
+  // its panel, getEffectiveMode/isDirty/themeApplies read its state, and Create
+  // delegates to its run().
+  const importMethod = createImportCompose({
+    h,
+    onChange: () => syncUI(),
   });
-  const btnImpMd = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.mode.importMarkdown', 'Import Markdown'),
-  });
-  const btnImpPasteMd = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
-  });
-  importSubtabs.append(btnImpJson, btnImpMd, btnImpPasteMd);
-
-  const panelJson = h('div', { class: 'creation-subpanel' });
-  const importFileInput = h('input', {
-    type: 'file',
-    accept: 'application/json,.json',
-    class: 'form-input',
-  });
-  const importFileInfo = h('div', { class: 'help', text: '' });
-  importFileInput.addEventListener('change', () => {
-    const file = importFileInput.files?.[0];
-    selectedImportFile = file || null;
-    importFileInfo.textContent = file ? file.name : '';
-  });
-  panelJson.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.importJson.help', 'Import a presentation from a previously exported .json file.'),
-    }),
-    importFileInput,
-    importFileInfo
-  );
-
-  const panelImportMd = h('div', { class: 'creation-subpanel is-hidden' });
-  const importMdFileInput = h('input', {
-    type: 'file',
-    accept: '.md,.markdown,.zip,text/markdown,text/x-markdown,application/zip',
-    class: 'form-input',
-  });
-  const importMdFileInfo = h('div', { class: 'help', text: '' });
-  importMdFileInput.addEventListener('change', () => {
-    const file = importMdFileInput.files?.[0];
-    selectedImportMdFile = file || null;
-    importMdFileInfo.textContent = file ? file.name : '';
-  });
-  panelImportMd.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.importMarkdown.help', 'Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
-    }),
-    importMdFileInput,
-    importMdFileInfo
-  );
-
-  const panelPasteMd = h('div', { class: 'creation-subpanel is-hidden' });
-  const pasteMdTextarea = h('textarea', {
-    class: 'form-input form-textarea-lg',
-    placeholder: t('list.newPresentation.pasteMarkdown.placeholder', 'Paste your markdown here...'),
-  });
-  panelPasteMd.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.pasteMarkdown.help', 'Paste your markdown directly. Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
-    }),
-    pasteMdTextarea
-  );
-
-  const importSubWrap = h('div', { class: 'creation-subpanels' }, [panelJson, panelImportMd, panelPasteMd]);
-  importPanel.append(importSubtabs, importSubWrap);
+  const importPanel = importMethod.panel;
 
   // --- Shared setup (language + theme) ---
   // Language sits first so it stays visible without scrolling past the tall
@@ -381,7 +305,7 @@ export function openCreationView({
   };
 
   // Theme applies to every method except JSON import (which carries its own).
-  const themeApplies = () => !(method === 'import' && importSubtab === 'json');
+  const themeApplies = () => !(method === 'import' && importMethod.carriesOwnTheme());
 
   const syncUI = () => {
     for (const [key, btn] of railItems) {
@@ -400,13 +324,8 @@ export function openCreationView({
     // Library source (collections vs all slides) — the panel owns its controls.
     library.syncPanel();
 
-    // Import sub-tabs
-    btnImpJson.classList.toggle('is-active', importSubtab === 'json');
-    btnImpMd.classList.toggle('is-active', importSubtab === 'import-md');
-    btnImpPasteMd.classList.toggle('is-active', importSubtab === 'paste-md');
-    panelJson.classList.toggle('is-hidden', importSubtab !== 'json');
-    panelImportMd.classList.toggle('is-hidden', importSubtab !== 'import-md');
-    panelPasteMd.classList.toggle('is-hidden', importSubtab !== 'paste-md');
+    // Import sub-tabs — the panel owns its controls.
+    importMethod.syncPanel();
 
     // Setup (theme + language) applies to every method; theme is hidden only
     // for JSON import (which carries its own theme). Composing from the library
@@ -445,10 +364,6 @@ export function openCreationView({
     if (key === 'library') library.ensurePicker();
   }
 
-  btnImpJson.addEventListener('click', () => { importSubtab = 'json'; syncUI(); });
-  btnImpMd.addEventListener('click', () => { importSubtab = 'import-md'; syncUI(); });
-  btnImpPasteMd.addEventListener('click', () => { importSubtab = 'paste-md'; syncUI(); });
-
   // ===== Close handling =====
   const close = () => {
     try { if (onKey) window.removeEventListener('keydown', onKey); } catch {}
@@ -461,7 +376,7 @@ export function openCreationView({
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
     if (mode === 'library') return library.isDirty();
     if (method === 'content') return content.isDirty();
-    if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
+    if (method === 'import') return importMethod.isDirty();
     return false;
   };
 
@@ -528,61 +443,17 @@ export function openCreationView({
         });
         break;
       case 'import-json':
-        await handleImportJson({
-          ...commonOpts,
-          selectedFile: selectedImportFile,
-          langMode: langSelect.getLang(),
-        });
-        break;
       case 'import-markdown':
-        await handleImportMarkdown({
-          ...commonOpts,
-          selectedFile: selectedImportMdFile,
-          langMode: langSelect.getLang(),
-          themeId: themeSelect.getTheme(),
-          showWarnings: makeWarningShower(panelImportMd),
-        });
-        break;
       case 'paste-markdown':
-        await handlePasteMarkdown({
-          ...commonOpts,
-          raw: String(pasteMdTextarea.value || '').trim(),
+        await importMethod.run({
+          commonOpts,
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-          focusTextarea: () => pasteMdTextarea.focus(),
-          showWarnings: makeWarningShower(panelPasteMd),
+          btnAction,
         });
         break;
     }
   });
-
-  // Import warnings render inline in their sub-panel, turning Create into "Open".
-  function makeWarningShower(panel) {
-    return ({ warnings, navUrl }) => {
-      panel.innerHTML = '';
-      panel.append(
-        h('div', {
-          class: 'help modal-hint',
-          text: t(
-            'list.newPresentation.importMarkdown.warningsIntro',
-            'Import succeeded, but {count} issue(s) were detected:',
-            { count: warnings.length }
-          ),
-        })
-      );
-      const list = h('ul', { class: 'import-warnings' });
-      for (const w of warnings) list.append(h('li', { class: 'help', text: w }));
-      panel.append(list);
-      setStatus('');
-      setBusy(false);
-      btnAction.textContent = t('list.newPresentation.importMarkdown.open', 'Open presentation');
-      btnAction.onclick = (e) => {
-        e.preventDefault();
-        close();
-        nav?.(navUrl);
-      };
-    };
-  }
 
   // ===== Mount =====
   onKey = (e) => {
