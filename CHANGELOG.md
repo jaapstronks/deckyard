@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.4.1](https://github.com/jaapstronks/deckyard/compare/v1.4.0...v1.4.1) (2026-07-26)
+
+
+### Fixed
+
+* **api:** give SSE error events one shape, distinct from the HTTP envelope ([#362](https://github.com/jaapstronks/deckyard/issues/362)) ([7411843](https://github.com/jaapstronks/deckyard/commit/7411843f25e9492b8490536ae7e00cf86df4718a))
+
 ## [1.4.0](https://github.com/jaapstronks/deckyard/compare/v1.3.0...v1.4.0) (2026-07-26)
 
 
