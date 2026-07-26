@@ -14,7 +14,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Why Deckyard
 
-**For presenters:** 39 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
+**For presenters:** 38 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 

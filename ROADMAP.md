@@ -5,7 +5,7 @@ heading. What has already shipped lives in the [CHANGELOG](CHANGELOG.md); this
 file looks forward.
 
 The previous roadmap (Feb 2026, "Type System → Intelligence → Agentic Platform")
-is retired: all three layers shipped — 39 typed slide types, an AI pipeline with
+is retired: all three layers shipped — 38 typed slide types, an AI pipeline with
 validation/iteration, and an MCP server with 27 tools + SSE transport.
 
 ## How this file works
