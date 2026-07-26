@@ -180,6 +180,11 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 - Import it from the corresponding aggregator file (`client/styles/slides/01-layout-and-title.css` or `03-components.css`).
 - Use theme variables via `.slide { --... }` indirection (see `client/styles/theme.css`).
   - Don’t hardcode brand colors/fonts inside the slide CSS.
+- **Don’t reach for the app-chrome tokens (`--ps-*`, `--z-*`) inside
+  `client/styles/slides/**`.** `slides.css` doesn’t import `ui-tokens.css`, and
+  the MCP preview bundles it alone — so the token resolves in the browser but
+  silently resolves to nothing there. Details and the spacing/z-index scales:
+  `docs/reference/css-tokens.md`.
 
 ### 4) Ensure the editor UX fits the patterns
 
