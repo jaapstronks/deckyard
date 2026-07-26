@@ -27,7 +27,7 @@
 export const CORE_NAMESPACE = 'core';
 
 const SEGMENT_RE = /^[a-z0-9][a-z0-9-]*$/;
-const VERSION_RE = /^[0-9A-Za-z][0-9A-Za-z.\-]*$/;
+const VERSION_RE = /^[0-9A-Za-z][0-9A-Za-z.-]*$/;
 
 /**
  * @typedef {object} TypeId

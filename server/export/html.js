@@ -446,7 +446,7 @@ ${css.wmCss}
           if (e.key.toLowerCase() === 'f') { e.preventDefault(); toggleFullscreen(); }
           if (e.key === 'Escape' && document.fullscreenElement) { e.preventDefault(); document.exitFullscreen(); }
         });
-        const m = location.hash.match(/slide=(\d+)/);
+        const m = location.hash.match(/slide=(\\d+)/);
         if (m) idx = clamp(parseInt(m[1], 10));
         show(idx);
 
