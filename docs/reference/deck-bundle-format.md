@@ -98,8 +98,12 @@ fixpoint (identical content-addressed refs, since identical bytes hash the same)
 - An asset whose mime is unsupported by `saveUploadedFile` (or that otherwise
   fails to write) is skipped — its ref is left in place and reported in a
   `failedAssets` field on the response, rather than crashing the import.
-- Unknown slide types become a harmless `content-slide` placeholder
-  (via `deckToPresentationParts`).
+- Unknown slide types become a `content-slide` placeholder (via
+  `deckToPresentationParts`) that names the missing type, says whether it was
+  deliberately removed and what replaces it, and carries the original content
+  across as markdown. Import persists rather than renders, so it applies the
+  same archived-slide contract as every render surface — see
+  `docs/reference/slide-type-removal.md`.
 - Local refs that were already missing at export time (`missingAssets`) keep
   their original `/uploads/…` ref and import as dangling (harmless) references.
 

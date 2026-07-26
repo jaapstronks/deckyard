@@ -44,10 +44,13 @@ test('freeform-slide is removed: off the registry, and a stored slide degrades s
   // around. Re-adding it needs a product decision, not an import.
   assert.equal(SLIDE_TYPES['freeform-slide'], undefined, 'no longer registered');
   // A deck that still carries one does not blow up: renderSlideHtml falls back
-  // to the unknown-type placeholder rather than throwing or emitting nothing.
-  const html = renderSlideHtml({ type: 'freeform-slide', content: { elements: [] } });
+  // to the archived-slide placeholder, which names the type rather than
+  // throwing, emitting nothing, or saying only "unknown".
+  const html = renderSlideHtml({ type: 'freeform-slide', content: { title: 'Old canvas' } });
   assert.match(html, /class="slide/);
-  assert.match(html, /Unknown slide type/);
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /freeform-slide/);
+  assert.match(html, /Old canvas/);
 });
 
 test('content-columns-slide is archived: deprecated + not insertable, still renders', () => {

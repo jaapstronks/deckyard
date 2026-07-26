@@ -1,5 +1,6 @@
 import { renderSlideHtml } from '../../../shared/slide-types.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { getRemovedSlideType } from '../../../shared/slide-types/removed.js';
 import { initFollowInviteSlides } from './follow-invite-runtime.js';
 import { initKpiMetricsSlides } from './kpi-metrics-runtime.js';
 import { initLeadCaptureSlides } from './lead-capture-runtime.js';
@@ -82,6 +83,20 @@ const serverRenderCache = new Map();
 function isBundledSlideType(type) {
   const def = BUNDLED_SLIDE_TYPES[type];
   return def && typeof def.renderHtml === 'function';
+}
+
+/**
+ * Whether an unbundled type should be fetched from the server.
+ *
+ * A type that is not bundled is normally a fork's custom type, which only the
+ * server can render. A type on the tombstone record is different: it is gone
+ * everywhere, so the round-trip can only come back with the same archived-slide
+ * placeholder the client can render itself. Asking anyway would leave the slide
+ * stuck on the bare "loading" box whenever there is no presentation id (a
+ * thumbnail, a preview, an offline render).
+ */
+function needsServerRender(type) {
+  return !!type && !isBundledSlideType(type) && !getRemovedSlideType(type);
 }
 
 /**
@@ -263,7 +278,7 @@ export function renderSlideElement(
   let html;
 
   // Check if this is a custom slide type that needs server-side rendering
-  if (slide?.type && !isBundledSlideType(slide.type)) {
+  if (needsServerRender(slide?.type)) {
     // For sync rendering, show a loading placeholder that will be replaced async
     html = `
       <div class="slide slide-loading" data-slide-type="${slide.type}" data-needs-server-render="1">
@@ -400,7 +415,7 @@ export async function renderSlideElementAsync(
   let html;
 
   // Check if this is a custom slide type that needs server-side rendering
-  if (slide?.type && !isBundledSlideType(slide.type) && presentationId) {
+  if (needsServerRender(slide?.type) && presentationId) {
     html = await serverRenderSlide({ slide, presentationId, mode, api });
   } else {
     html = renderSlideHtml(slide, {

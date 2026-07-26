@@ -110,11 +110,18 @@ describe('resilience', () => {
     assert.ok(out.includes('<main class="reader-main">'));
     assert.ok(out.includes('0 slides'));
   });
-  it('marks an unknown slide type as having no readable content', () => {
+  it('projects an unresolvable slide type as an archived slide, content and all', () => {
+    // The reader is the COMPLETE surface of the archived-slide contract: the
+    // canvas placeholder is bounded by a fixed frame, this one is not, so it is
+    // where an author recovers the content of a slide whose type is gone.
     const out = buildReaderHtml('/repo', {
       title: 'X',
-      slides: [{ id: 'z', type: 'no-such-slide', content: {} }],
+      slides: [
+        { id: 'z', type: 'no-such-slide', content: { title: 'Kept', tagline: 'Also kept' } },
+      ],
     });
-    assert.ok(out.includes('reader-empty'), out);
+    assert.ok(out.includes('reader-archived'), 'renders the archived note');
+    assert.ok(out.includes('no-such-slide'), 'names the missing type');
+    assert.ok(out.includes('Also kept'), 'stored content survives into the reader');
   });
 });
