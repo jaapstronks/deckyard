@@ -32,7 +32,6 @@ import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { uploadFile } from '../image-library/upload.js';
-import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
@@ -46,6 +45,7 @@ import { promptModal } from '../../../lib/dom/modal.js';
 import { createSelectionToolbar } from './selection-toolbar.js';
 import { slideLinkUrl } from './selection-toolbar-logic.js';
 import { createFocusDrag } from './focus-drag.js';
+import { createMarkdownEditModal } from './markdown-modal.js';
 
 /**
  * @param {Object} opts
@@ -132,7 +132,21 @@ export function createInlineEditor({
   /** @type {null | {el:HTMLElement, path:string, meta:Object, original:string, isNew:boolean}} */
   let editing = null;
   let pendingRerenderRaf = 0;
-  let closeMarkdownModal = null;
+
+  // The richer-than-inline markdown editor lives in its own modal concern; the
+  // inline editor routes to it (openMarkdownEdit) and reads isOpen().
+  const mdModal = createMarkdownEditModal({
+    h,
+    mdHost,
+    mdField,
+    getSlide,
+    fieldLabel: (path, meta) => fieldLabel(path, meta),
+    endActiveTextEdit: () => { if (editing) endTextEdit(); },
+    markDirty,
+    requestSave,
+    rerenderEditor,
+    rerenderPreview,
+  });
 
   const slideEl = () => thumb.querySelector('.slide');
   const currentDef = () => {
@@ -443,111 +457,6 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
   // Markdown modal (real editor with toolbar, dimmed backdrop)
   // ----------------------------------------------------------------
-  function openMarkdownModal(_anchorEl, path, meta, { isNew = false } = {}) {
-    if (editing) endTextEdit();
-    dismissMarkdownModal();
-    const slide = getSlide?.();
-    if (!slide) return;
-
-    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
-    const label = fieldLabel(path, meta);
-    let latest = raw;
-
-    // Canonical markdown editor: label + toolbar + textarea + help.
-    const editorEl = mdField(
-      label,
-      raw,
-      t('editor.markdown.help', 'Supports paragraphs, lists, bold/italic, links, and markdown tables.'),
-      (v) => {
-        latest = v;
-      },
-      { maxLength: meta?.maxLength, required: !!meta?.required, showHeading: true }
-    );
-    // Collab presence: while this modal is open, focus inside it reports the
-    // edited field's path, so collaborators see a ring on the matching canvas
-    // field (and on their own modal if they have the same field open).
-    editorEl.setAttribute('data-collab-field-key', String(path));
-
-    const save = () => {
-      if (latest !== raw) {
-        setByPath(slide.content, path, latest);
-        markDirty?.();
-        requestSave?.();
-        rerenderEditor?.();
-      }
-      dismissMarkdownModal();
-      rerenderPreview?.();
-    };
-    const cancel = () => {
-      dismissMarkdownModal();
-      if (isNew) rerenderPreview?.();
-    };
-
-    const closeBtn = h('button', {
-      class: 'ie-md-close',
-      type: 'button',
-      title: t('common.close', 'Close'),
-      text: '×',
-      onclick: cancel,
-    });
-    const header = h('div', { class: 'ie-md-header row spread' }, [
-      h('div', { class: 'ie-md-mode', text: t('editor.inline.editingField', 'Editing: {label}', { label }) }),
-      closeBtn,
-    ]);
-    const footer = h('div', { class: 'ie-md-footer row spread' }, [
-      h('span', { class: 'help', text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save') }),
-      h('div', { class: 'row' }, [
-        h('button', {
-          class: 'btn btn-secondary btn-sm',
-          type: 'button',
-          text: t('common.cancel', 'Cancel'),
-          onclick: cancel,
-        }),
-        h('button', {
-          class: 'btn btn-primary btn-sm',
-          type: 'button',
-          text: t('common.save', 'Save'),
-          onclick: save,
-        }),
-      ]),
-    ]);
-
-    const modal = h('div', { class: 'ie-md-modal' }, [header, editorEl, footer]);
-    const backdrop = h('div', { class: 'ie-modal-backdrop' });
-    backdrop.addEventListener('click', cancel);
-
-    mdHost.classList.add('is-ie-modal-open');
-    mdHost.append(backdrop, modal);
-
-    const detach = installDismissOnOutside({ rootEl: modal, isOpen: () => true, close: cancel });
-    closeMarkdownModal = () => {
-      detach?.();
-      backdrop.remove();
-      modal.remove();
-      mdHost.classList.remove('is-ie-modal-open');
-    };
-
-    const ta = editorEl.querySelector('textarea');
-    modal.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        save();
-      }
-    });
-    ta?.focus();
-  }
-
-  function dismissMarkdownModal() {
-    if (closeMarkdownModal) {
-      try {
-        closeMarkdownModal();
-      } catch {
-        /* ignore */
-      }
-      closeMarkdownModal = null;
-    }
-  }
-
   // ----------------------------------------------------------------
   // Ghost affordances (empty optional fields)
   // ----------------------------------------------------------------
@@ -704,7 +613,7 @@ export function createInlineEditor({
       // Renderer didn't emit the element for this path: modal fallback.
       setByPath(slide.content, path, '');
       rerenderPreview?.();
-      openMarkdownModal(null, path, meta, { isNew: true });
+      mdModal.open(path, meta, { isNew: true });
       return;
     }
     const slide = getSlide?.();
@@ -1672,7 +1581,7 @@ export function createInlineEditor({
     if (canInlineEditMarkdown(raw, markdownToSafeHtml)) {
       beginRichEdit(fieldEl, path, meta);
     } else {
-      openMarkdownModal(fieldEl, path, meta);
+      mdModal.open(path, meta);
     }
   }
 
@@ -1696,7 +1605,7 @@ export function createInlineEditor({
   thumb.addEventListener('dblclick', onThumbDblClick, true);
 
   function isEditing() {
-    return !!editing || !!closeMarkdownModal;
+    return !!editing || mdModal.isOpen();
   }
 
   function destroy() {
@@ -1708,7 +1617,7 @@ export function createInlineEditor({
     overlay.destroy();
     coach.destroy();
     cancelCommitRerender();
-    dismissMarkdownModal();
+    mdModal.dismiss();
     restoreThumbTitle();
     if (editing) {
       try {
