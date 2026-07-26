@@ -685,6 +685,30 @@
   border-radius: 999px;
   white-space: nowrap;
 }
+
+/* Background-image section summary. The section is collapsed by default, so
+   the summary carries the state: a thumbnail when a background is set, a quiet
+   "none" chip when it isn't. That replaces the force-open this section used to
+   do — the active setting stays visible without the panel's height. */
+.editor-bg-status {
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-text-secondary) / 0.1);
+}
+.editor-bg-summary-thumb {
+  width: 34px;
+  height: 20px;
+  margin-left: 8px;
+  vertical-align: middle;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid hsl(var(--app-border-default));
+}
 .editor-a11y-status.is-auto {
   color: hsl(var(--app-text-secondary));
   background: hsl(var(--app-text-secondary) / 0.1);
@@ -706,30 +730,31 @@
   content: '⚠ ';
 }
 
-.editor-form-header {
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--ps-space-3);
-  margin-bottom: var(--ps-space-4);
-  padding: var(--ps-space-3) 0;
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
-}
-
 .editor-form-header-left {
   align-items: center;
   gap: var(--ps-space-3);
   flex-wrap: wrap;
 }
 
-.editor-form-title {
-  margin: 0;
-  padding: 0;
-  border: none;
-  font-size: var(--ps-text-base);
-  font-weight: 700;
+/* Collapse control for the inspector rail. The header row it used to live in
+   (an "INSPECTOR" title beside the already-active Inspector pane tab, ~57px)
+   was dropped in the 2026-07-26 declutter; the button stays, because it has to
+   sit inside the surface it dismisses and hover-only would strand touch. A
+   zero-height slot lets it float over the first field's label band — labels are
+   left-aligned and short, so nothing collides — at no vertical cost. */
+.editor-form-close-slot {
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  position: relative;
+  z-index: 2;
+}
+.editor-form-close-btn {
+  color: hsl(var(--app-text-secondary));
+}
+.editor-form-close-btn:hover,
+.editor-form-close-btn:focus-visible {
   color: hsl(var(--app-text-primary));
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
 }
 
 /* Selection-aware inspector: the [This element | Slide] tab bar, shown only
