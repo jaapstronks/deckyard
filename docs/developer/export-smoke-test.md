@@ -20,6 +20,11 @@ hand. A habit is not a gate.
 Both render functions are also asserted to return a Node `Buffer`. That is not
 pedantry — see [Why the Buffer assertion](#why-the-buffer-assertion) below.
 
+The PDF text match collapses whitespace first. Where a line wraps is a function
+of font metrics, so the ubuntu runner breaks the subheading in a different place
+than a Mac does; the assertion is "this text rendered", not "it rendered on one
+line". Keep any new text assertion equally layout-agnostic.
+
 "Non-blank" is checked by counting distinct RGB values and the share of the
 most common one. A blank frame collapses to a single colour covering
 everything; a rendered slide spreads over hundreds of colours through

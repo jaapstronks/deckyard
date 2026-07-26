@@ -78,6 +78,11 @@ function smokeDeck() {
   return { title: 'Export smoke', theme: 'default', slides: [smokeSlide()] };
 }
 
+/** Collapse every whitespace run to a single space, so line breaks stop mattering. */
+function flattenSpace(text) {
+  return String(text).replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Count distinct RGB values and the share of the most common one.
  *
@@ -137,9 +142,16 @@ test('PDF export produces a real, non-blank PDF', { skip }, async () => {
   const parsed = await parsePdf(Buffer.from(buf));
   assert.deepEqual(parsed.errors, [], 'the PDF should parse without errors');
   assert.equal(parsed.slides.length, 1, 'one slide in → one page out');
-  const text = parsed.slides[0]?.textContent || '';
+  // Collapse whitespace before matching: where a line wraps is a function of
+  // font metrics, so the ubuntu CI runner breaks the subheading in a different
+  // place than a Mac does. The assertion is "this text rendered", not "it
+  // rendered on one line".
+  const text = flattenSpace(parsed.slides[0]?.textContent || '');
   assert.ok(text.includes(TITLE), `page text should contain the slide title, got: ${text}`);
-  assert.ok(text.includes(SUBHEADING), `page text should contain the subheading, got: ${text}`);
+  assert.ok(
+    text.includes(flattenSpace(SUBHEADING)),
+    `page text should contain the subheading, got: ${text}`
+  );
 });
 
 test('PNG export produces a correctly sized, non-blank image', { skip }, async () => {
