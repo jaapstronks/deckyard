@@ -12,46 +12,11 @@
  * scope attributes the write to (`actorEmail`).
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope, repoRootOf } from './scope.js';
+import { repoRootOf } from './scope.js';
+import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
 import { nowIso } from '../utils/normalize.js';
 
-/**
- * Reduce a caller's scope to the context the storage adapters take.
- * @param {import('./scope.js').StorageScope} scope
- * @param {string} operation - Facade function name, for the error message.
- * @param {Object} [opts] - Options carrying a sharper actor.
- * @returns {Object} Context for the storage adapter.
- */
-function toStorageContext(scope, operation, opts = {}) {
-  const resolved = resolveScope(scope, operation);
-  return {
-    ...resolved,
-    actorEmail: opts.actorEmail || opts.userEmail || resolved.actorEmail,
-  };
-}
-
-/**
- * Higher-order function to handle storage fallback pattern.
- * Executes pgFn if storage is initialized, otherwise falls back to fileFn.
- * @param {import('./scope.js').StorageScope} scope - The caller's scope.
- * @param {string} operation - Facade function name, for the error message.
- * @param {Function} pgFn - Function to execute with postgres storage (receives storage)
- * @param {Function} fileFn - Function to execute with file-based storage
- * @returns {Promise<any>}
- */
-async function withStorageFallback(scope, operation, pgFn, fileFn) {
-  // Validate the scope before either backend runs. Doing it here rather
-  // than inside the adapter branch is what makes a missed call site fail on
-  // the file-backed path too — otherwise the file-mode test suite would wave
-  // an un-migrated caller straight through.
-  resolveScope(scope, operation);
-  if (isStorageInitialized()) {
-    return pgFn(getStorage());
-  }
-  const mod = await import('./slide-library-file.js');
-  return fileFn(mod);
-}
+const withStorageFallback = createStorageDispatch(() => import('./slide-library-file.js'));
 
 // Personal library functions
 

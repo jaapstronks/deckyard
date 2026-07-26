@@ -13,7 +13,8 @@
  */
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope, repoRootOf } from './scope.js';
+import { repoRootOf } from './scope.js';
+import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
 import { isCollabLiveEditsEnabled } from '../config/features.js';
 import { deleteYDocState } from './presentation-ydocs.js';
 import { normalizeSlides } from './presentations/slides.js';
@@ -25,30 +26,17 @@ import { migratePresentation } from '../../shared/slide-types/schema-version.js'
 import { createLogger } from '../utils/logger.js';
 const log = createLogger('presentations');
 
-/**
- * Reduce a caller's scope to the context the storage adapters take.
- *
- * `actorEmail` may be sharpened per call (a create attributes to `ownerEmail`,
- * a write to `opts.actorEmail`) but the organization never is: it comes from
- * the scope or the call throws.
- *
- * @param {import('./scope.js').StorageScope} scope - The caller's scope.
- * @param {string} operation - Facade function name, for the error message.
- * @param {Object} [opts] - Options carrying a sharper actor.
- * @returns {Object} Context for the storage adapter.
- */
-function toStorageContext(scope, operation, opts = {}) {
-  const resolved = resolveScope(scope, operation, {
-    // Only the single-deck read may skip the organization filter, and only for
-    // a deck a public token already addressed. Everything else — listings and
-    // every write — must state its organization.
-    allowCrossOrganization: operation === 'getPresentation',
-  });
-  return {
-    ...resolved,
-    actorEmail: opts.actorEmail || opts.ownerEmail || resolved.actorEmail,
-  };
-}
+// The presentations facade dispatches to three file-backend modules depending
+// on the operation: list/trash reads, CRUD, and version history. One bound
+// dispatcher each, all sharing the DB-vs-file logic in backend-dispatch.js.
+const withList = createStorageDispatch(() => import('./presentations/list.js'));
+const withCrud = createStorageDispatch(() => import('./presentations/crud.js'));
+const withVersions = createStorageDispatch(() => import('./presentations/versions.js'));
+
+// Only the single-deck read may skip the organization filter, and only for a
+// deck a public token already addressed. Everything else — listings and every
+// write — must state its organization.
+const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
 
 /**
  * List the presentations of the scope's organization.
@@ -57,13 +45,12 @@ function toStorageContext(scope, operation, opts = {}) {
  */
 export async function listPresentations(scope) {
   const ctx = toStorageContext(scope, 'listPresentations');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.listPresentations(ctx);
-  }
-  // Fall back to file-based storage
-  const mod = await import('./presentations/list.js');
-  return await mod.listPresentations(repoRootOf(scope));
+  return withList(
+    scope,
+    'listPresentations',
+    (storage) => storage.listPresentations(ctx),
+    (mod) => mod.listPresentations(repoRootOf(scope))
+  );
 }
 
 /**
@@ -79,13 +66,14 @@ export async function getPresentation(scope, id) {
   // backend. Reads don't write; the upgraded deck is persisted on the next
   // write. migratePresentation is idempotent, so the file fallback (which also
   // migrates in readPresentation) is unaffected.
-  const ctx = toStorageContext(scope, 'getPresentation');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return migratePresentation(await storage.getPresentation(id, ctx));
-  }
-  const mod = await import('./presentations/crud.js');
-  return migratePresentation(await mod.getPresentation(repoRootOf(scope), id));
+  const ctx = toStorageContext(scope, 'getPresentation', {}, ALLOW_CROSS_ORG);
+  return withCrud(
+    scope,
+    'getPresentation',
+    async (storage) => migratePresentation(await storage.getPresentation(id, ctx)),
+    async (mod) => migratePresentation(await mod.getPresentation(repoRootOf(scope), id)),
+    ALLOW_CROSS_ORG
+  );
 }
 
 /**
@@ -95,6 +83,11 @@ export async function getPresentation(scope, id) {
  * @returns {Promise<Object>}
  */
 export async function createPresentation(scope, body) {
+  // Kept as an explicit dispatch rather than routed through withCrud: the DB
+  // branch also loads crud.js (for prepareNewPresentation), so its import is not
+  // a file-backend fallback and could not move into a fileFn. Consolidating the
+  // dispatch here would relocate that import, not remove it.
+  //
   // Validate the scope before doing any work: a caller that gave none must fail
   // here, not after preparing a deck it has nowhere to put.
   const ctx = toStorageContext(scope, 'createPresentation', { actorEmail: body?.ownerEmail });
@@ -227,51 +220,55 @@ export async function updatePresentation(scope, id, body, opts) {
   return result;
 }
 
-async function updatePresentationUncached(scope, id, body, opts) {
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    const ctx = toStorageContext(scope, 'updatePresentation', {
-      actorEmail: opts?.actorEmail,
-    });
+function updatePresentationUncached(scope, id, body, opts) {
+  return withCrud(
+    scope,
+    'updatePresentation',
+    async (storage) => {
+      const ctx = toStorageContext(scope, 'updatePresentation', {
+        actorEmail: opts?.actorEmail,
+      });
 
-    // Normalize slides and i18n before storing (mirrors crud.js behavior).
-    // This ensures pres.slides and i18n.versions[lang].slides stay in sync.
-    const normalized = { ...body };
-    normalized.slides = normalizeSlides(normalized.slides);
-    normalizeI18n(normalized);
+      // Normalize slides and i18n before storing (mirrors crud.js behavior).
+      // This ensures pres.slides and i18n.versions[lang].slides stay in sync.
+      const normalized = { ...body };
+      normalized.slides = normalizeSlides(normalized.slides);
+      normalizeI18n(normalized);
 
-    // Validate size limits before updating (unless bypassed)
-    if (!opts?.skipLimitCheck) {
-      const validation = validatePresentationSize(normalized);
-      if (!validation.ok) {
-        return {
-          ok: false,
-          reason: 'limit_exceeded',
-          errors: validation.errors,
-        };
+      // Validate size limits before updating (unless bypassed)
+      if (!opts?.skipLimitCheck) {
+        const validation = validatePresentationSize(normalized);
+        if (!validation.ok) {
+          return {
+            ok: false,
+            reason: 'limit_exceeded',
+            errors: validation.errors,
+          };
+        }
+
+        const result = await storage.updatePresentation(id, normalized, ctx, opts);
+
+        // Attach warnings to the result if any
+        if (validation.warnings && result && typeof result === 'object') {
+          result._warnings = validation.warnings;
+        }
+        return result;
       }
 
-      const result = await storage.updatePresentation(id, normalized, ctx, opts);
-
-      // Attach warnings to the result if any
-      if (validation.warnings && result && typeof result === 'object') {
-        result._warnings = validation.warnings;
-      }
-      return result;
+      return await storage.updatePresentation(id, normalized, ctx, opts);
+    },
+    async (mod) => {
+      // The file write path still queries the database for locks, so it needs
+      // the organization this write acts in — see lockContext() in crud/write.js.
+      const { organizationId } = toStorageContext(scope, 'updatePresentation', {
+        actorEmail: opts?.actorEmail,
+      });
+      return await mod.updatePresentation(repoRootOf(scope), id, body, {
+        ...opts,
+        organizationId,
+      });
     }
-
-    return await storage.updatePresentation(id, normalized, ctx, opts);
-  }
-  const mod = await import('./presentations/crud.js');
-  // The file write path still queries the database for locks, so it needs the
-  // organization this write acts in — see lockContext() in crud/write.js.
-  const { organizationId } = toStorageContext(scope, 'updatePresentation', {
-    actorEmail: opts?.actorEmail,
-  });
-  return await mod.updatePresentation(repoRootOf(scope), id, body, {
-    ...opts,
-    organizationId,
-  });
+  );
 }
 
 /**
@@ -283,12 +280,12 @@ async function updatePresentationUncached(scope, id, body, opts) {
 export async function deletePresentation(scope, id, opts) {
   const ctx = toStorageContext(scope, 'deletePresentation', { actorEmail: opts?.actorEmail });
   try {
-    if (isStorageInitialized()) {
-      const storage = getStorage();
-      return await storage.deletePresentation(id, ctx);
-    }
-    const mod = await import('./presentations/crud.js');
-    return await mod.deletePresentation(repoRootOf(scope), id, opts);
+    return await withCrud(
+      scope,
+      'deletePresentation',
+      (storage) => storage.deletePresentation(id, ctx),
+      (mod) => mod.deletePresentation(repoRootOf(scope), id, opts)
+    );
   } finally {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
@@ -303,12 +300,12 @@ export async function deletePresentation(scope, id, opts) {
  */
 export async function listTrashedPresentations(scope) {
   const ctx = toStorageContext(scope, 'listTrashedPresentations');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.listTrashedPresentations(ctx);
-  }
-  const mod = await import('./presentations/list.js');
-  return await mod.listTrashedPresentations(repoRootOf(scope));
+  return withList(
+    scope,
+    'listTrashedPresentations',
+    (storage) => storage.listTrashedPresentations(ctx),
+    (mod) => mod.listTrashedPresentations(repoRootOf(scope))
+  );
 }
 
 /**
@@ -319,12 +316,12 @@ export async function listTrashedPresentations(scope) {
 export async function restorePresentation(scope, id) {
   try {
     const ctx = toStorageContext(scope, 'restorePresentation');
-    if (isStorageInitialized()) {
-      const storage = getStorage();
-      return await storage.restorePresentation(id, ctx);
-    }
-    const mod = await import('./presentations/crud.js');
-    return await mod.restorePresentation(repoRootOf(scope), id);
+    return await withCrud(
+      scope,
+      'restorePresentation',
+      (storage) => storage.restorePresentation(id, ctx),
+      (mod) => mod.restorePresentation(repoRootOf(scope), id)
+    );
   } finally {
     invalidatePresentationCache(id);
   }
@@ -338,16 +335,16 @@ export async function restorePresentation(scope, id) {
 export async function permanentlyDeletePresentation(scope, id) {
   try {
     const ctx = toStorageContext(scope, 'permanentlyDeletePresentation');
-    if (isStorageInitialized()) {
-      const storage = getStorage();
-      return await storage.permanentlyDeletePresentation(id, ctx);
-    }
-    const mod = await import('./presentations/crud.js');
-    // The file module unpublishes through the (organization-scoped) published
-    // facade, so it needs the organization — see crud/delete.js.
-    return await mod.permanentlyDeletePresentation(repoRootOf(scope), id, {
-      organizationId: ctx.organizationId,
-    });
+    return await withCrud(
+      scope,
+      'permanentlyDeletePresentation',
+      (storage) => storage.permanentlyDeletePresentation(id, ctx),
+      // The file module unpublishes through the (organization-scoped) published
+      // facade, so it needs the organization — see crud/delete.js.
+      (mod) => mod.permanentlyDeletePresentation(repoRootOf(scope), id, {
+        organizationId: ctx.organizationId,
+      })
+    );
   } finally {
     invalidatePresentationCache(id);
   }
@@ -363,12 +360,12 @@ export async function duplicatePresentation(scope, id, opts) {
   const ctx = toStorageContext(scope, 'duplicatePresentation', {
     actorEmail: opts?.actorEmail,
   });
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.duplicatePresentation(id, ctx, opts);
-  }
-  const mod = await import('./presentations/crud.js');
-  return await mod.duplicatePresentation(repoRootOf(scope), id, opts);
+  return withCrud(
+    scope,
+    'duplicatePresentation',
+    (storage) => storage.duplicatePresentation(id, ctx, opts),
+    (mod) => mod.duplicatePresentation(repoRootOf(scope), id, opts)
+  );
 }
 
 /**
@@ -385,30 +382,31 @@ export async function getFirstSlidesForIds(scope, ids) {
   }
 
   const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    // If storage adapter supports batch first slides, use it
-    if (typeof storage.getFirstSlidesForIds === 'function') {
-      return await storage.getFirstSlidesForIds(ids, ctx);
-    }
-    // Fallback: fetch each presentation and extract first slide
-    const results = await Promise.all(
-      ids.map(async (id) => {
-        try {
-          const pres = await storage.getPresentation(id, ctx);
-          const first = pres?.slides?.[0];
-          return [id, first ? { id: first.id, type: first.type, content: first.content || {} } : null];
-        } catch {
-          return [id, null];
-        }
-      })
-    );
-    return new Map(results);
-  }
-
-  // File-based storage: batch read JSON files
-  const mod = await import('./presentations/crud.js');
-  return await mod.getFirstSlidesForIds(repoRootOf(scope), ids);
+  return withCrud(
+    scope,
+    'getFirstSlidesForIds',
+    async (storage) => {
+      // If storage adapter supports batch first slides, use it
+      if (typeof storage.getFirstSlidesForIds === 'function') {
+        return await storage.getFirstSlidesForIds(ids, ctx);
+      }
+      // Fallback: fetch each presentation and extract first slide
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const pres = await storage.getPresentation(id, ctx);
+            const first = pres?.slides?.[0];
+            return [id, first ? { id: first.id, type: first.type, content: first.content || {} } : null];
+          } catch {
+            return [id, null];
+          }
+        })
+      );
+      return new Map(results);
+    },
+    // File-based storage: batch read JSON files
+    (mod) => mod.getFirstSlidesForIds(repoRootOf(scope), ids)
+  );
 }
 
 // ============================================================
@@ -435,12 +433,12 @@ export async function getFirstSlidesForIds(scope, ids) {
  */
 export async function listPresentationVersions(scope, presentationId) {
   const ctx = toStorageContext(scope, 'listPresentationVersions');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.listPresentationVersions(presentationId, ctx);
-  }
-  const mod = await import('./presentations/versions.js');
-  return await mod.listPresentationVersions(repoRootOf(scope), presentationId);
+  return withVersions(
+    scope,
+    'listPresentationVersions',
+    (storage) => storage.listPresentationVersions(presentationId, ctx),
+    (mod) => mod.listPresentationVersions(repoRootOf(scope), presentationId)
+  );
 }
 
 /**
@@ -452,12 +450,12 @@ export async function listPresentationVersions(scope, presentationId) {
  */
 export async function getPresentationVersion(scope, presentationId, versionId) {
   const ctx = toStorageContext(scope, 'getPresentationVersion');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.getPresentationVersion(presentationId, versionId, ctx);
-  }
-  const mod = await import('./presentations/versions.js');
-  return await mod.getPresentationVersion(repoRootOf(scope), presentationId, versionId);
+  return withVersions(
+    scope,
+    'getPresentationVersion',
+    (storage) => storage.getPresentationVersion(presentationId, versionId, ctx),
+    (mod) => mod.getPresentationVersion(repoRootOf(scope), presentationId, versionId)
+  );
 }
 
 /**
@@ -475,15 +473,15 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
   const ctx = toStorageContext(scope, 'createPresentationVersion', {
     actorEmail: opts?.actorEmail,
   });
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.createPresentationVersion(presentationId, pres, ctx, {
+  return withVersions(
+    scope,
+    'createPresentationVersion',
+    (storage) => storage.createPresentationVersion(presentationId, pres, ctx, {
       reason: opts?.reason,
       label: opts?.label,
-    });
-  }
-  const mod = await import('./presentations/versions.js');
-  return await mod.createPresentationVersion(repoRootOf(scope), presentationId, pres, opts);
+    }),
+    (mod) => mod.createPresentationVersion(repoRootOf(scope), presentationId, pres, opts)
+  );
 }
 
 /**
@@ -496,12 +494,12 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
  */
 export async function prunePresentationVersions(scope, presentationId, opts = {}) {
   const ctx = toStorageContext(scope, 'prunePresentationVersions');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return await storage.prunePresentationVersions(presentationId, ctx, {
+  return withVersions(
+    scope,
+    'prunePresentationVersions',
+    (storage) => storage.prunePresentationVersions(presentationId, ctx, {
       keep: opts?.keep,
-    });
-  }
-  const mod = await import('./presentations/versions.js');
-  return await mod.prunePresentationVersions(repoRootOf(scope), presentationId, opts);
+    }),
+    (mod) => mod.prunePresentationVersions(repoRootOf(scope), presentationId, opts)
+  );
 }
