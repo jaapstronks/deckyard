@@ -381,6 +381,94 @@
   border: 1px solid hsl(var(--app-border-subtle));
 }
 
+/* Contrast readout
+   Reports, never blocks: a failing pair is stated plainly and saving stays
+   available. Colour alone never carries the verdict — the level text does. */
+.theme-contrast-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  margin-top: var(--ps-space-2);
+}
+
+.theme-contrast-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+  min-width: 0;
+}
+
+/* The unused pole on a background still gets measured, but its failure is
+   context rather than a problem, so it recedes instead of shouting. */
+.theme-contrast-badge.is-unused {
+  opacity: 0.55;
+}
+
+.theme-contrast-pair-label {
+  color: hsl(var(--app-text-secondary));
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-contrast-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 22px;
+  flex: none;
+  border-radius: var(--ps-radius-sm);
+  border: 1px solid hsl(var(--app-border-subtle));
+  font-weight: 600;
+  line-height: 1;
+}
+
+.theme-contrast-readout {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--ps-space-2);
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.theme-contrast-ratio {
+  font-family: monospace;
+  color: hsl(var(--app-text-secondary));
+}
+
+.theme-contrast-level {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Only failure is tinted. --app-success is a bright 142 70% 45%, which lands
+   around 2.2:1 on the light surface — shipping that inside a contrast checker
+   would be its own bug report. A passing verdict reads fine as plain text; the
+   word "AA" is what carries the meaning either way. */
+.theme-contrast-level[data-level='fail'] {
+  color: hsl(var(--app-danger));
+}
+
+/* APCA is the second opinion, so it sits quieter than the WCAG verdict. */
+.theme-contrast-apca {
+  font-family: monospace;
+  color: hsl(var(--app-text-secondary));
+  cursor: help;
+  white-space: nowrap;
+}
+
+.theme-contrast-apca[data-apca='fail'] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+/* Inside a variant row the badge trails the two pickers. */
+.theme-variant-row .theme-contrast-badge {
+  align-self: flex-end;
+  padding-bottom: var(--ps-space-1);
+}
+
 /* Fonts section */
 .theme-fonts-grid {
   display: grid;

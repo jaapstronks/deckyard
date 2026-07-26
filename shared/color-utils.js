@@ -52,7 +52,25 @@ export function getRelativeLuminance({ r, g, b }) {
 }
 
 /**
- * WCAG contrast ratio (1–21) between two hex colours.
+ * WCAG contrast ratio (1–21) from two relative luminances.
+ *
+ * The luminance-level entry point, for callers that already have luminances and
+ * would otherwise re-implement the formula — the background-image sampler walks
+ * a thousand pixels and never sees a hex string. {@link getContrastRatio} is the
+ * hex-level wrapper over this; between them they are the only place in the repo
+ * that spells `(lighter + 0.05) / (darker + 0.05)`.
+ * @param {number} l1
+ * @param {number} l2
+ * @returns {number}
+ */
+export function contrastRatioFromLuminance(l1, l2) {
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
+ * WCAG contrast ratio (1–21) between two hex colours. Order-independent.
  * @param {string} color1
  * @param {string} color2
  * @returns {number} 1 when either colour is unparseable
@@ -61,11 +79,10 @@ export function getContrastRatio(color1, color2) {
   const rgb1 = hexToRgb(color1);
   const rgb2 = hexToRgb(color2);
   if (!rgb1 || !rgb2) return 1;
-  const l1 = getRelativeLuminance(rgb1);
-  const l2 = getRelativeLuminance(rgb2);
-  const lighter = Math.max(l1, l2);
-  const darker = Math.min(l1, l2);
-  return (lighter + 0.05) / (darker + 0.05);
+  return contrastRatioFromLuminance(
+    getRelativeLuminance(rgb1),
+    getRelativeLuminance(rgb2)
+  );
 }
 
 /**

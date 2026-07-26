@@ -7,9 +7,14 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { isValidHexColor, deriveColorPalette } from '../../../lib/theme/color-utils.js';
+import {
+  isValidHexColor,
+  deriveColorPalette,
+  getContrastColor,
+} from '../../../lib/theme/color-utils.js';
 import { createFontPicker } from './font-picker.js';
 import { createColorPicker } from './color-picker.js';
+import { createContrastBadge } from './contrast-badge.js';
 import { createThemePreview } from './preview.js';
 import { createLogoUploader } from './logo-uploader.js';
 import { createConfigSections } from './config-sections.js';
@@ -188,6 +193,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     value: state.colors.primary,
     onChange: (color) => {
       state.colors.primary = color;
+      updateContrastReadout();
       updatePreview();
       updateDerivedColorsPreview();
     },
@@ -199,6 +205,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     value: state.colors.background,
     onChange: (color) => {
       state.colors.background = color;
+      updateContrastReadout();
       updatePreview();
     },
   });
@@ -209,6 +216,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     value: state.colors.textLight,
     onChange: (color) => {
       state.colors.textLight = color;
+      updateContrastReadout();
       updatePreview();
     },
   });
@@ -219,6 +227,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     value: state.colors.textDark,
     onChange: (color) => {
       state.colors.textDark = color;
+      updateContrastReadout();
       updatePreview();
     },
   });
@@ -250,7 +259,58 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   updateDerivedColorsPreview();
   derivedColorsPreview.append(derivedColorsLabel, derivedSwatches);
 
-  colorsCard.append(colorsHint, colorsGrid, derivedColorsPreview);
+  // ---- Contrast readout --------------------------------------------------
+  // The four pickers above are a grid, not paired rows, so the pairs they imply
+  // get measured here in one block instead of hanging a badge off each field.
+  // Nothing here blocks saving — it reports, and the choice stays the user's.
+  const contrastBlock = h('div', { class: 'theme-contrast-block' });
+  const contrastLabel = h('div', {
+    class: 'help',
+    style: 'margin-top: var(--ps-space-3);',
+    text: t('settings.themes.contrast.title', 'Contrast:'),
+  });
+  const contrastRows = h('div', { class: 'theme-contrast-rows' });
+
+  const bgDarkBadge = createContrastBadge({
+    size: 'body',
+    label: t('settings.themes.contrast.darkOnBackground', 'Text dark on background'),
+  });
+  const bgLightBadge = createContrastBadge({
+    size: 'body',
+    label: t('settings.themes.contrast.lightOnBackground', 'Text light on background'),
+  });
+  // Accent-contrast lands on buttons, table headers and badges — large text.
+  const accentBadge = createContrastBadge({
+    size: 'large',
+    label: t('settings.themes.contrast.textOnPrimary', 'Text on primary'),
+  });
+
+  function updateContrastReadout() {
+    const { background, primary, textLight, textDark } = state.colors;
+    bgDarkBadge.update(textDark, background);
+    bgLightBadge.update(textLight, background);
+    accentBadge.update(
+      getContrastColor(primary, { light: textLight, dark: textDark }),
+      primary
+    );
+
+    // Only one pole actually renders on the background. Mark the other as
+    // unused so its (inevitable) failure reads as context, not as an alarm —
+    // a badge that cries wolf is a badge people stop reading.
+    const inUse = getContrastColor(background, {
+      light: textLight,
+      dark: textDark,
+    });
+    const lightWins = inUse.toLowerCase() === String(textLight).toLowerCase();
+    bgLightBadge.el.classList.toggle('is-unused', !lightWins);
+    bgDarkBadge.el.classList.toggle('is-unused', lightWins);
+  }
+
+  contrastRows.append(bgDarkBadge.el, bgLightBadge.el, accentBadge.el);
+  contrastBlock.append(contrastLabel, contrastRows);
+  updateContrastReadout();
+
+  colorsCard.append(colorsHint, colorsGrid, derivedColorsPreview, contrastBlock);
 
   // ============================================================
   // Fonts Section

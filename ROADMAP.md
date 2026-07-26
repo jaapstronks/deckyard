@@ -63,10 +63,6 @@ documented under `docs/reference/` and `docs/developer/`._
   definition / note / tip) plus comparison sub-variants (versus / before-after /
   pros-cons / tradeoff), each shipping with matching AI-catalog / MCP logic so
   agents reach for the right block.
-- **Contrast checking in the theme editor** — one shared WCAG contrast helper
-  behind the colour derivation, the background-image detection, and a new
-  readability check in the theme editor, so you find out that a colour pair
-  fails AA while you are picking it rather than on a projector.
 
 ## Later — directional
 

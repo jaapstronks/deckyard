@@ -23,6 +23,7 @@ import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createColorPicker } from './color-picker.js';
+import { createContrastBadge } from './contrast-badge.js';
 import {
   SLIDE_BG_ID_RE,
   RESERVED_SLIDE_BG_IDS,
@@ -187,6 +188,10 @@ export function createVariantsSection({ config, colors, onChange }) {
       }),
     ]);
 
+    // Variant text is slide body copy, so it is judged at the body bar.
+    const badge = createContrastBadge({ size: 'body' });
+    const remeasure = () => badge.update(textPicker.getValue(), bgPicker.getValue());
+
     const bgPicker = createColorPicker({
       label: t('settings.themes.config.variantColor', 'Background'),
       value: entry.value,
@@ -195,22 +200,36 @@ export function createVariantsSection({ config, colors, onChange }) {
         // something other than what the background implied.
         const wasAuto =
           !entry.textColor || entry.textColor === autoTextColor(entry.value);
+        const nextText = wasAuto ? autoTextColor(value) : entry.textColor;
         update(index, {
           value,
-          ...(wasAuto ? { textColor: autoTextColor(value) } : {}),
+          ...(wasAuto ? { textColor: nextText } : {}),
         });
+        // update() rewrites the list but does not re-render this row, so the
+        // auto-followed text picker has to be pushed by hand before measuring.
+        if (wasAuto) textPicker.setValue(nextText);
+        remeasure();
       },
     });
 
     const textPicker = createColorPicker({
       label: t('settings.themes.config.variantTextColor', 'Text on it'),
       value: entry.textColor || autoTextColor(entry.value),
-      onChange: (textColor) => update(index, { textColor }),
+      onChange: (textColor) => {
+        update(index, { textColor });
+        remeasure();
+      },
     });
+
+    remeasure();
 
     row.append(
       head,
-      h('div', { class: 'row is-gap-3 is-wrap' }, [bgPicker.el, textPicker.el])
+      h('div', { class: 'row is-gap-3 is-wrap' }, [
+        bgPicker.el,
+        textPicker.el,
+        badge.el,
+      ])
     );
     return row;
   }
