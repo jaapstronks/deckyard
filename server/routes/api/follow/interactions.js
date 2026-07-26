@@ -16,6 +16,7 @@ const log = createLogger('interactions');
 import {
   computeAudienceCapabilitiesFromState,
   ensureInteractionDeviceCookie,
+  followAudienceScope,
   pickPresentationForLang,
 } from './helpers.js';
 import {
@@ -49,7 +50,7 @@ export async function handleFollowInteractionsCurrent(
   try {
     const lang = normalizeLang(url.searchParams.get('lang'));
     const state = await getFollowStateForPresentation(repoRoot, presentationId);
-    const pres0 = await getPresentationCached(repoRoot, presentationId);
+    const pres0 = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres0);
 
     const dev = ensureInteractionDeviceCookie(req);
@@ -195,7 +196,7 @@ export async function handleFollowInteractionState(
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   try {
     const state = await getFollowStateForPresentation(repoRoot, presentationId);
-    const pres = await getPresentationCached(repoRoot, presentationId);
+    const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     const dev = ensureInteractionDeviceCookie(req);
     const extraHeaders = dev.setCookie ? { 'Set-Cookie': dev.setCookie } : {};
@@ -279,7 +280,7 @@ export async function handleFollowInteractionVote(
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
 
-    const pres = await getPresentationCached(repoRoot, presentationId);
+    const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (!pres) return notFound(res);
 
@@ -371,7 +372,7 @@ export async function handleFollowInteractionFeedback(
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
 
-    const pres = await getPresentationCached(repoRoot, presentationId);
+    const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (!pres) return notFound(res);
 

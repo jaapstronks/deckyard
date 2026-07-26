@@ -27,6 +27,7 @@ import { getClientIp } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
 const log = createLogger('public');
 
 /**
@@ -46,7 +47,10 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
 
       // For revoked links, include additional info and trigger notification
       if (result.reason === 'revoked' && result.presentationId) {
-        const pres = await getPresentation(repoRoot, result.presentationId);
+        const pres = await getPresentation(
+          crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+          result.presentationId
+        );
         const responseData = {
           ok: false,
           error: result.reason,
@@ -178,7 +182,10 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     }
 
     // Get presentation title for email
-    const pres = await getPresentation(repoRoot, validation.shareLink.presentationId);
+    const pres = await getPresentation(
+      crossOrganizationScope(repoRoot, 'share link: the share token is the authorization'),
+      validation.shareLink.presentationId
+    );
     const presentationTitle = pres?.title || 'Presentation';
 
     // Send verification email

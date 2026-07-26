@@ -24,7 +24,7 @@ import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions.js';
 import { canWritePresentation } from '../../utils/presentation-authz.js';
 
-export async function handleQuestions({ repoRoot, req, res, url, authedUser }) {
+export async function handleQuestions({ repoRoot, storageScope, req, res, url, authedUser }) {
   // Moderator actions (auth required by api/index.js).
   const removeMatch = url.pathname.match(
     /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/
@@ -64,7 +64,7 @@ export async function handleQuestions({ repoRoot, req, res, url, authedUser }) {
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     if (!authedUser) return unauthorized(res);
 
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
 
     // Fetch collaborator permission for ACL check
@@ -174,7 +174,7 @@ export async function handleQuestions({ repoRoot, req, res, url, authedUser }) {
       };
     }
 
-    const updated = await updatePresentation(repoRoot, presentationId, nextPres, {
+    const updated = await updatePresentation(storageScope, presentationId, nextPres, {
       actorEmail: authedUser?.email || null,
     });
     // Lock / mark promoted so audience sees it will be addressed (and voting/removal stops).

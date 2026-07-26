@@ -39,10 +39,10 @@ function getLangSuffix(exportLang) {
  * Prepare export context with presentation loading and language projection.
  */
 async function prepareExportContext(ctx, presentationId) {
-  const { repoRoot, url, apiKey } = ctx;
+  const { repoRoot, storageScope, url, apiKey } = ctx;
   const exportLang = normalizeLang(url?.searchParams?.get('lang'));
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     return { ok: false, status: 404, error: 'Presentation not found' };
   }

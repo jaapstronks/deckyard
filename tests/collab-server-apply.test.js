@@ -19,6 +19,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as Yserver from 'yjs';
+import { testScope } from './helpers/storage-scope.js';
 
 process.env.COLLAB_ENABLED = 'true';
 process.env.COLLAB_LIVE_EDITS = 'true';
@@ -366,7 +367,7 @@ test('applyPresentationToDoc with base: deliberate removals still apply', () => 
 
 test('server-as-collaborator: facade writes reach live editors', async (t) => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-server-apply-'));
-  const stored = await createPresentation(repoRoot, {
+  const stored = await createPresentation(testScope(repoRoot), {
     title: 'Server apply deck',
     ownerEmail: 'anonymous',
     lang: 'nl',
@@ -386,7 +387,7 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
       url,
     });
     const doc = session._provider.document;
-    const pres = structuredClone(await getPresentation(repoRoot, stored.id));
+    const pres = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     const remoteEvents = [];
     const binder = createLiveDocBinder({
       Y,
@@ -425,12 +426,12 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
     await waitFor(() => b.pres.slides[0].notes === 'Notitie van Alice');
     assert.ok(a.binder.canUndo(), 'Alice has an undoable local edit');
     await waitFor(
-      async () => (await getPresentation(repoRoot, stored.id))?.slides?.[0]?.notes === 'Notitie van Alice',
+      async () => (await getPresentation(testScope(repoRoot), stored.id))?.slides?.[0]?.notes === 'Notitie van Alice',
       { timeout: 12000 }
     );
 
     // Server-side mutation through the facade (the MCP/public-API shape).
-    const body = structuredClone(await getPresentation(repoRoot, stored.id));
+    const body = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     body.title = 'Door de server hernoemd';
     const bs = body.slides.find((s) => s.id === firstId);
     bs.content.title = 'Server titel';
@@ -440,7 +441,7 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
       notes: '',
       content: { title: 'Server slide', body: 'toegevoegd via API' },
     });
-    const result = await updatePresentation(repoRoot, stored.id, body, {
+    const result = await updatePresentation(testScope(repoRoot), stored.id, body, {
       actorEmail: 'agent@example.com',
     });
     assert.ok(result && result.ok !== false, 'facade accepted the write');
@@ -478,7 +479,7 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
     // because the projection equals the just-stored deck. Give any stray
     // debounced store (2s) time to fire before asserting.
     await sleep(3000);
-    const p = await getPresentation(repoRoot, stored.id);
+    const p = await getPresentation(testScope(repoRoot), stored.id);
     assert.equal(p.revision, serverRevision, 'no extra revision bumps after the server write');
     assert.equal(p.title, 'Door de server hernoemd');
     const bin = await getYDocState(repoRoot, stored.id);
@@ -489,14 +490,14 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
     // Bob edits a field; the edit lives only in the doc (not yet stored).
     // The server write is based on the stored JSON, which predates it —
     // the three-way diff must leave Bob's field alone.
-    const body = structuredClone(await getPresentation(repoRoot, stored.id));
+    const body = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     const bSlide = b.pres.slides.find((s) => s.content?.title === 'Server slide');
     bSlide.content.body = 'Bob typt hier tegelijk';
     b.binder.syncLocal();
 
     const target = body.slides.find((s) => s.id === firstId);
     target.content.title = 'Server titel v2';
-    const result = await updatePresentation(repoRoot, stored.id, body, {
+    const result = await updatePresentation(testScope(repoRoot), stored.id, body, {
       actorEmail: 'agent@example.com',
     });
     assert.ok(result && result.ok !== false);
@@ -510,7 +511,7 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
     );
     // Both eventually reach the stored JSON too (Bob's via the debounce).
     await waitFor(async () => {
-      const p = await getPresentation(repoRoot, stored.id);
+      const p = await getPresentation(testScope(repoRoot), stored.id);
       return (
         p.slides.find((s) => s.id === firstId)?.content?.title === 'Server titel v2' &&
         p.slides.find((s) => s.id === bSlide.id)?.content?.body === 'Bob typt hier tegelijk'
@@ -519,9 +520,9 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
   });
 
   await t.test('a theme-change-style write reaches the doc', async () => {
-    const body = structuredClone(await getPresentation(repoRoot, stored.id));
+    const body = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     body.themeId = 'terminal';
-    const result = await updatePresentation(repoRoot, stored.id, body, {
+    const result = await updatePresentation(testScope(repoRoot), stored.id, body, {
       actorEmail: 'anonymous',
     });
     assert.ok(result && result.ok !== false);
@@ -538,13 +539,13 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
     b.binder.syncLocal();
     // Wait for the debounced store so the server JSON knows the language.
     await waitFor(
-      async () => (await getPresentation(repoRoot, stored.id))?.i18n?.versions?.['en-GB'],
+      async () => (await getPresentation(testScope(repoRoot), stored.id))?.i18n?.versions?.['en-GB'],
       { timeout: 12000 }
     );
 
     // Server-side translate: fill the EN texts (the translate endpoints'
     // write shape) — no client-side bridge involved anymore.
-    const body = structuredClone(await getPresentation(repoRoot, stored.id));
+    const body = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
     const en = body.i18n.versions['en-GB'];
     en.slides = structuredClone(body.slides).map((s) => {
       const copy = s;
@@ -554,7 +555,7 @@ test('server-as-collaborator: facade writes reach live editors', async (t) => {
       return copy;
     });
     const nlTitle = body.slides.find((s) => s.id === firstId).content.title;
-    const result = await updatePresentation(repoRoot, stored.id, body, {
+    const result = await updatePresentation(testScope(repoRoot), stored.id, body, {
       actorEmail: 'anonymous',
     });
     assert.ok(result && result.ok !== false);

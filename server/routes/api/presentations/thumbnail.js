@@ -49,7 +49,7 @@ export async function warmDeckThumbnail(repoRoot, pres, authedUser) {
 }
 
 export async function handlePresentationThumbnail(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   presentationId
 ) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -57,7 +57,7 @@ export async function handlePresentationThumbnail(
   }
 
   const ctx = createRouteContext(authedUser);
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
 
   const collaboratorPermission = await getCollaboratorPermission(

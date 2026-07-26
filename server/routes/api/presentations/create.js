@@ -24,9 +24,9 @@ function usageRefsFromBody(body) {
   return refs;
 }
 
-export async function handlePresentationsCreate({ repoRoot, req, res, authedUser } = {}) {
+export async function handlePresentationsCreate({ repoRoot, storageScope, req, res, authedUser } = {}) {
   const body = await json(req);
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(storageScope, {
     ...body,
     ownerEmail: authedUser?.email || null,
   });

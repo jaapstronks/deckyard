@@ -8,6 +8,7 @@ const log = createLogger('import-json');
 
 export async function handlePresentationsImportJson({
   repoRoot,
+  storageScope,
   req,
   res,
   authedUser,
@@ -34,7 +35,7 @@ export async function handlePresentationsImportJson({
     const parts = deckToPresentationParts(deck, { theme: themeConfig });
     log.info('[import-json] Parsed parts - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title,
       theme: parts.theme,
       lang,
@@ -56,8 +57,7 @@ export async function handlePresentationsImportJson({
       },
     };
 
-    const updated = await updatePresentation(
-      repoRoot,
+    const updated = await updatePresentation(storageScope,
       created.id,
       {
         title: parts.title,

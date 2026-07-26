@@ -20,6 +20,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { singleWorkspaceScope } from '../storage/scope.js';
 
 /**
  * Simple concurrency limiter.
@@ -231,6 +232,13 @@ export async function buildBulkExport(opts) {
     onProgress = () => {},
   } = opts;
 
+  // A bulk export runs detached from any request, so the organization it exports
+  // has to come from the caller. Falls back to the single workspace, and refuses
+  // to guess once an instance holds several.
+  const storageScope = organizationId
+    ? { repoRoot, organizationId, actorEmail: userEmail || null }
+    : singleWorkspaceScope(repoRoot, 'bulk export', { actorEmail: userEmail || null });
+
   const {
     includeVersions = false,
     includeImageLibrary = false,
@@ -251,7 +259,7 @@ export async function buildBulkExport(opts) {
   // ── 1. Collect presentations (0-15%) ────────────────────────
   await onProgress(2);
 
-  const allPresentations = await listPresentations(repoRoot);
+  const allPresentations = await listPresentations(storageScope);
   const userPresentations = allPresentations.filter(
     (p) =>
       p.ownerEmail === userEmail ||
@@ -261,7 +269,7 @@ export async function buildBulkExport(opts) {
   const presentations = [];
   for (let i = 0; i < userPresentations.length; i++) {
     const summary = userPresentations[i];
-    const full = await getPresentation(repoRoot, summary.id);
+    const full = await getPresentation(storageScope, summary.id);
     if (!full) continue;
 
     zip.file(`presentations/${summary.id}.json`, JSON.stringify(full, null, 2));
@@ -298,10 +306,10 @@ export async function buildBulkExport(opts) {
   if (includeVersions) {
     for (let i = 0; i < presentations.length; i++) {
       const pres = presentations[i];
-      const versions = await listPresentationVersions(repoRoot, pres.id);
+      const versions = await listPresentationVersions(storageScope, pres.id);
 
       for (const ver of versions) {
-        const full = await getPresentationVersion(repoRoot, pres.id, ver.id);
+        const full = await getPresentationVersion(storageScope, pres.id, ver.id);
         if (!full) continue;
         zip.file(`versions/${pres.id}/${ver.id}.json`, JSON.stringify(full, null, 2));
         versionCount++;

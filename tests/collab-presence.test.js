@@ -4,6 +4,7 @@ import http from 'node:http';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 // Enable the collab feature before the mount module reads it. Auth stays in
 // its dev default (disabled → anonymous admin), except in the 401 subtest.
@@ -44,7 +45,7 @@ async function startCollabServer(repoRoot) {
 
 test('presence: two clients on the same deck see each other', async (t) => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-collab-'));
-  const pres = await createPresentation(repoRoot, {
+  const pres = await createPresentation(testScope(repoRoot), {
     title: 'Collab test deck',
     ownerEmail: 'anonymous',
   });

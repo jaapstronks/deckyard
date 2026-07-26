@@ -25,7 +25,7 @@ const getCtx = createRouteContext;
 /**
  * Handle activity API routes.
  */
-export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
+export async function handleActivity({ repoRoot, storageScope, req, res, url, authedUser }) {
   const email = String(authedUser?.email || '').trim();
   if (!email) return unauthorized(res);
 
@@ -53,7 +53,7 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
       opts.excludeActorEmail = email;
     }
 
-    const payload = await getEnrichedActivity({ repoRoot, authedUser, ctx, opts });
+    const payload = await getEnrichedActivity({ storageScope, authedUser, ctx, opts });
 
     serveJson(res, 200, {
       ok: true,
@@ -77,7 +77,7 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
       }
       const pres = await getReadablePresentation(
         entry.presentationId,
-        repoRoot,
+        storageScope,
         authedUser,
         ctx
       );
@@ -122,11 +122,11 @@ export async function handleActivity({ repoRoot, req, res, url, authedUser }) {
  *   since, until)
  * @returns {Promise<{events: object[], total: number, limit: number, offset: number}>}
  */
-export async function getEnrichedActivity({ repoRoot, authedUser, ctx, opts }) {
+export async function getEnrichedActivity({ storageScope, authedUser, ctx, opts }) {
   const result = await listActivityEvents(ctx, opts);
   const events = await enrichEventsWithPresentations(
     result.events,
-    repoRoot,
+    storageScope,
     authedUser,
     ctx
   );
@@ -144,9 +144,9 @@ export async function getEnrichedActivity({ repoRoot, authedUser, ctx, opts }) {
  * Fetch a presentation and return it only if the user can read it
  * (collaborator-aware). Returns null when missing or not accessible.
  */
-async function getReadablePresentation(pid, repoRoot, authedUser, ctx) {
+async function getReadablePresentation(pid, storageScope, authedUser, ctx) {
   try {
-    const pres = await getPresentation(repoRoot, pid);
+    const pres = await getPresentation(storageScope, pid);
     if (!pres) return null;
 
     let collaboratorPermission = null;
@@ -174,7 +174,7 @@ async function getReadablePresentation(pid, repoRoot, authedUser, ctx) {
  * Fetches presentation titles for events that reference presentations,
  * and filters out events for presentations the user cannot access.
  */
-async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) {
+async function enrichEventsWithPresentations(events, storageScope, authedUser, ctx) {
   // Collect unique presentation IDs
   const presentationIds = new Set();
   for (const event of events) {
@@ -190,7 +190,7 @@ async function enrichEventsWithPresentations(events, repoRoot, authedUser, ctx) 
   const accessibleIds = new Set();
 
   for (const pid of presentationIds) {
-    const pres = await getReadablePresentation(pid, repoRoot, authedUser, ctx);
+    const pres = await getReadablePresentation(pid, storageScope, authedUser, ctx);
     if (pres) {
       accessibleIds.add(pid);
       presMap.set(pid, pres);

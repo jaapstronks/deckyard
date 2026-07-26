@@ -148,9 +148,7 @@ organizations. Both are in place; what is still missing is listed under
   context, and every storage query that is given that context scopes on it via
   `getOrgId(ctx)`. So a request acts in the workspace the person switched to:
   their own decks are visible, another organization's are not, and new decks
-  are created where they are working. The exception is the presentations
-  facade, which builds its own context and is listed under *What is not done
-  yet*.
+  are created where they are working.
 
   What may reach a query is only ever a membership-verified organization. The
   value comes from `getUserFromRequestAsync`, i.e. from
@@ -194,9 +192,59 @@ organizations. Both are in place; what is still missing is listed under
   `tests/authz-organization-scope-multi-org.test.js` (two organizations; six of
   its assertions fail without the check).
 
-  Machine-client surfaces (public API, MCP) know their actor by email only and
-  take the organization from the presentation, so they keep the behaviour they
-  had — see the open item on API keys below.
+  Machine-client surfaces now carry a real organization too: an API key row
+  holds `organization_id`, so the public API and MCP-over-SSE act in the
+  workspace their key belongs to rather than the default one. An MCP session
+  over stdio has no key and no organization — it is a trusted local process
+  bound to the instance — so it takes the single workspace and refuses to guess
+  once an instance holds several.
+
+- **The storage layer has no default to fall back on — done.** The presentations
+  facade used to build its own context with a hardcoded
+  `getDefaultOrganizationId()`, so every route that loads a deck before
+  authorizing it read out of the default organization rather than the one the
+  session was working in. It now takes a **storage scope** as its first
+  argument — which organization, on whose behalf, and where the repository lives
+  for the file-backed fallback — and `server/storage/scope.js` refuses anything
+  that states neither an organization nor a reason it cannot have one. There is
+  no fallback left: a caller that gives nothing gets a `TypeError`, not a guess.
+
+  Sessions get their scope from `createRouteContext()`, built once per request in
+  `server/routes/api/index.js` and carried on the same parameter bag that already
+  carried `repoRoot`, so route handlers pass the scope they were given.
+
+  Three kinds of caller genuinely have no session, and each says so explicitly:
+
+  - **A public token is the authorization.** A published deck, an embed, a share
+    link, a follow-along audience and the public feed resolve a globally unique
+    token first (`getPublishedById`, `getShareLinkByToken`, the follow code) and
+    fetch the deck by the id that lookup yielded. Those declare
+    `crossOrganizationScope(repoRoot, '<reason>')`, which skips the organization
+    filter — necessary, because filtering them on an organization nobody stated
+    would 404 every public link the moment an instance holds two workspaces.
+    The reason string is mandatory, so `grep -r crossOrganization` lists every
+    deliberately unscoped read. **Reads only**: a scope with no organization
+    cannot reach a write or a listing, because an unscoped write would land
+    wherever the storage layer guessed.
+  - **Queued work.** Export and translate jobs run detached from the request that
+    queued them, so the organization travels in the job payload (`jobScope`).
+  - **Instance-bound entry points.** The stdio MCP server and bulk export have no
+    workspace to belong to; `singleWorkspaceScope()` answers with the configured
+    organization in single-workspace mode and throws in multi-workspace mode,
+    where "the default one" has stopped being an answer.
+
+  Collaborative editing sits between the two: the Hocuspocus hooks run outside
+  any request, so the document's organization is recorded when the connection is
+  authorized (`authorizeDocument` has the deck in hand) and read back by the
+  persistence hooks, which is what lets a collab store write into the deck's own
+  organization.
+
+  Single-organization installations are unaffected in behaviour: there the
+  session's organization *is* the default one, so every scoped call resolves to
+  the value it did before. Pinned by `tests/storage-scope-contract.test.js` (the
+  rule itself) and `tests/storage-scope-multi-org.test.js` (two organizations
+  through the real facade; four of its assertions fail if the old
+  `getStorageContext()` comes back).
 
 #### Why not the hostname
 
@@ -225,21 +273,13 @@ External email leaks were closed separately (PR #214).
 
 ### What is not done yet
 
-- **The presentations facade still reads the default organization.**
-  `getPresentation(repoRoot, id)` in `server/storage/presentations.js` builds
-  its own context (`getStorageContext()`, which hardcodes
-  `getDefaultOrganizationId()`) instead of taking the request's. Every route
-  that loads a deck before authorizing it goes through this function, so in
-  multi-workspace mode those reads land in the default organization rather than
-  the one the session is acting in. The binding above is correct for every
-  storage call that is *given* a context; this facade is the path that never
-  asks for one. Closing it means threading a context through the facade's
-  callers, which is a piece of work in its own right.
-- **The public API resolves keys against the default organization.**
-  `server/routes/public-api/v1/resources.js` builds its context from the API
-  key's owner email only, so an `api_keys` row belonging to another
-  organization still reads the default one. This is a separate context source
-  from the session path fixed here.
+- **Seven smaller storage facades still read the default organization.**
+  `slide-library.js`, `slide-library-usage.js`, `published.js`, `tags.js`,
+  `presentation-ydocs.js`, `collections.js` and `image-library.js` each carry
+  the same hardcoded `getStorageContext()` the presentations facade used to
+  have, as do two spots in `presentations/crud/write.js`. They are the same
+  shape of defect and a much smaller surface, since the pattern to apply is now
+  fixed; they are tracked as the second half of the facade work.
 - **There is no organization UI.** The switch endpoint exists, but no
   organization switcher, no member management screen and no per-organization
   invite flow.

@@ -13,6 +13,7 @@ import http from 'node:http';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { testScope } from './helpers/storage-scope.js';
 
 // Enable collab + live edits before the mount reads the flags. Auth stays in
 // its dev default (disabled → anonymous admin), same as the presence test.
@@ -42,7 +43,7 @@ async function waitFor(fn, { timeout = 8000, interval = 50 } = {}) {
 
 test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t) => {
   const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-live-edits-'));
-  const pres = await createPresentation(repoRoot, {
+  const pres = await createPresentation(testScope(repoRoot), {
     title: 'Live edits deck',
     ownerEmail: 'anonymous',
     lang: 'nl',
@@ -97,7 +98,7 @@ test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t
 
   // The debounced store (2s) serializes back to the deck JSON.
   const updated = await waitFor(async () => {
-    const p = await getPresentation(repoRoot, pres.id);
+    const p = await getPresentation(testScope(repoRoot), pres.id);
     return p?.title === 'Onze Live edits deck' && p?.slides?.[0]?.content?.title === 'Door Bob bewerkt'
       ? p
       : null;

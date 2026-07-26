@@ -29,13 +29,13 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ownership');
 
 export async function handleOwnershipTransfer(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
   const ctx = createRouteContext(authedUser);
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for authorization check

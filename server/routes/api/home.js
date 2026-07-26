@@ -87,7 +87,7 @@ export function buildActivityOpts(searchParams, email) {
  * @param {object} ctx - { repoRoot, req, res, url, authedUser }
  * @returns {Promise<boolean>} true if handled
  */
-export async function handleHome({ repoRoot, req, res, url, authedUser }) {
+export async function handleHome({ repoRoot, storageScope, req, res, url, authedUser }) {
   if (url.pathname !== '/api/home') return false;
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
@@ -103,7 +103,7 @@ export async function handleHome({ repoRoot, req, res, url, authedUser }) {
   const [popular, activity, personalCols, teamCols, teamLib, usage] =
     await Promise.all([
       getPopularPresentations({ user: authedUser }).catch(() => []),
-      getEnrichedActivity({ repoRoot, authedUser, ctx, opts: activityOpts }).catch(
+      getEnrichedActivity({ storageScope, authedUser, ctx, opts: activityOpts }).catch(
         () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 })
       ),
       listPersonalCollections(repoRoot, email).catch(() => ({ items: [] })),

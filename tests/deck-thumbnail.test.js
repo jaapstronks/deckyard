@@ -26,6 +26,7 @@ import { dataDir } from '../server/config/storage-paths.js';
 import { createPresentation, getPresentation } from '../server/storage/presentations.js';
 import { loadTheme } from '../server/utils/themes.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
+import { testScope } from './helpers/storage-scope.js';
 
 function mockRes() {
   return {
@@ -107,13 +108,13 @@ test('requestThumbnailGeneration short-circuits (no render) when already cached'
 
 test('route serves a cached webp to the owner', async () => {
   const repoRoot = await tmpRoot();
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(testScope(repoRoot), {
     title: 'Owned deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
     slides: [{ id: 's1', type: 'text-slide', content: { title: 'Hi' } }],
   });
-  const pres = await getPresentation(repoRoot, created.id);
+  const pres = await getPresentation(testScope(repoRoot), created.id);
   const theme = await loadTheme(repoRoot, pres.theme);
   const { filename } = thumbCacheKey(pres, theme);
 
@@ -128,7 +129,7 @@ test('route serves a cached webp to the owner', async () => {
 
   const res = mockRes();
   const handled = await handlePresentationThumbnail(
-    { repoRoot, req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
+    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
     created.id
   );
   assert.equal(handled, true);
@@ -139,7 +140,7 @@ test('route serves a cached webp to the owner', async () => {
 
 test('route denies a non-owner on a private deck', async () => {
   const repoRoot = await tmpRoot();
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(testScope(repoRoot), {
     title: 'Private deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
@@ -148,7 +149,7 @@ test('route denies a non-owner on a private deck', async () => {
 
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, req: { method: 'GET' }, res, authedUser: { email: 'intruder@example.com' } },
+    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'intruder@example.com' } },
     created.id
   );
   assert.equal(res.statusCode, 401, 'private deck thumbnails require read access');
@@ -158,7 +159,7 @@ test('route 404s for an unknown deck', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
+    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
     'does-not-exist'
   );
   assert.equal(res.statusCode, 404);
@@ -168,7 +169,7 @@ test('route rejects non-GET methods', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, req: { method: 'POST' }, res, authedUser: { email: 'x@example.com' } },
+    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'POST' }, res, authedUser: { email: 'x@example.com' } },
     'whatever'
   );
   assert.equal(res.statusCode, 405);

@@ -107,10 +107,10 @@ export function reattachAiMeta(normalizedSlides, sourceSlides) {
  * Consolidates the repeated create→update-with-i18n pattern used across wizard endpoints.
  */
 export async function createPresentationWithI18n(
-  repoRoot,
+  storageScope,
   { parts, lang, authedUser, theme, settings, notionSourcePageId }
 ) {
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(storageScope, {
     title: parts.title,
     theme,
     ownerEmail: authedUser?.email || null,
@@ -132,7 +132,7 @@ export async function createPresentationWithI18n(
     },
   };
 
-  return updatePresentation(repoRoot, created.id, {
+  return updatePresentation(storageScope, created.id, {
     ...created,
     title: parts.title,
     slides: parts.slides,

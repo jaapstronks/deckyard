@@ -81,16 +81,25 @@ export function withPresentations(Base) {
       });
     }
 
+    /**
+     * Fetch one presentation.
+     *
+     * The organization filter is skipped only when the context declares
+     * `crossOrganization` (see server/storage/scope.js): a published deck, an
+     * embed or a share link resolves a globally unique token first and looks
+     * the deck up by the id that token yielded, so the token is the
+     * authorization and an organization filter would only break those links on
+     * a multi-organization instance. Every other read stays scoped.
+     */
     async getPresentation(id, ctx) {
       const db = getDb();
-      const orgId = getOrgId(ctx);
 
-      const row = await db
-        .selectFrom('presentations')
-        .selectAll()
-        .where('id', '=', id)
-        .where('organization_id', '=', orgId)
-        .executeTakeFirst();
+      let query = db.selectFrom('presentations').selectAll().where('id', '=', id);
+      if (!ctx?.crossOrganization) {
+        query = query.where('organization_id', '=', getOrgId(ctx));
+      }
+
+      const row = await query.executeTakeFirst();
 
       if (!row) return null;
       return mapPresentationRow(row);

@@ -18,13 +18,13 @@ import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { parseIfMatchRevision } from './helpers.js';
 
 export async function handlePresentationRestoreVersion(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   versionId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -41,13 +41,13 @@ export async function handlePresentationRestoreVersion(
   if (expectedRevision == null)
     return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
 
-  const v = await getPresentationVersion(repoRoot, id, versionId);
+  const v = await getPresentationVersion(storageScope, id, versionId);
   const snapPres = v?.presentation;
   if (!v || !snapPres) return notFound(res);
 
   // Safety net: snapshot current state before restoring.
   try {
-    await createPresentationVersion(repoRoot, id, pres, {
+    await createPresentationVersion(storageScope, id, pres, {
       actorEmail: authedUser?.email || null,
       reason: 'pre_restore',
       label: `before restore ${versionId}`,
@@ -57,7 +57,7 @@ export async function handlePresentationRestoreVersion(
   }
 
   try {
-    const updated = await updatePresentation(repoRoot, id, snapPres, {
+    const updated = await updatePresentation(storageScope, id, snapPres, {
       expectedRevision,
       actorEmail: authedUser?.email || null,
       restoreFromVersionId: versionId,
