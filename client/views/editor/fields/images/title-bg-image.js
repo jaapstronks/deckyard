@@ -116,7 +116,7 @@ export function createFieldTitleBgImage(ctx) {
 
     // Small preview
     if (current) {
-      wrap.append(h('img', { src: current, alt: '', class: 'editor-img-preview' }));
+      wrap.append(h('img', { src: current, alt: '', class: 'editor-img-preview', loading: 'lazy' }));
     }
 
     // Preset backgrounds declared by the deck's theme. Labelled as such so it's
@@ -134,7 +134,10 @@ export function createFieldTitleBgImage(ctx) {
       for (const url of presetUrls) {
         grid.append(
           h('button', { class: 'btn btn-secondary editor-img-thumb-btn', onclick: () => onUploadedUrl(url) }, [
-            h('img', { src: url, class: 'editor-img-thumb' }),
+            // Lazy + async: in the inspector this strip lives inside a
+            // collapsed section, so the thumbnails must not cost a request
+            // until the author actually opens it (declutter 2026-07-26).
+            h('img', { src: url, class: 'editor-img-thumb', loading: 'lazy', decoding: 'async' }),
           ])
         );
       }

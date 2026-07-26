@@ -1,7 +1,6 @@
 import { createRenderField } from './editor-form/render-field.js';
 import { renderSlideFormByType } from './editor-form/slide-form-router.js';
 import { buildDeckSlideOptions } from './fields/card-link-field.js';
-import { renderFocusGridField } from './editor-form/focus-picker.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../lib/dom/toast.js';
 import { isOrgDisabledSlideType } from './slide-types-policy.js';
@@ -23,78 +22,11 @@ import {
   unresolvedNotes,
 } from '../../../shared/slide-types/unresolved.js';
 import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
-import { isLocked } from '../../../shared/theme-locks.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
-import { detectBgTextContrast } from '../../lib/slide-authoring/bg-contrast.js';
 import { elementAppliesToSlide, elementTabLabel } from './editor-form/element-tab.js';
-
-/**
- * Sample the current slide's background image and store which theme text colour
- * (light/dark) reads best, plus whether a scrim is still needed. Runs async and
- * persists the result on slide content (slideBgTextAuto / slideBgNeedsScrim) so
- * the server render (export/PDF/PNG) honours it without re-sampling pixels.
- * Idempotent per image via slideBgAutoFor, so the UI refresh it triggers does
- * not loop.
- * @param {object} slide
- * @param {object} pres
- * @param {{ markDirty?: Function, scheduleUiRefresh?: Function }} cbs
- */
-async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh } = {}) {
-  const url = String(slide?.content?.slideBgImage || '').trim();
-  if (!url) return;
-  if (slide.content.slideBgAutoFor === url) return; // already detected for this image
-  let theme = null;
-  try {
-    theme = await loadThemeById(pres?.theme);
-  } catch {
-    theme = null;
-  }
-  let result;
-  try {
-    result = await detectBgTextContrast(url, {
-      light: theme?.textColorLight || '#ffffff',
-      dark: theme?.textColorDark || '#212121',
-    });
-  } catch {
-    result = { ok: false };
-  }
-  // Guard against a race: the author may have swapped the image mid-detection.
-  if (String(slide?.content?.slideBgImage || '').trim() !== url) return;
-  slide.content.slideBgAutoFor = url;
-  if (result?.ok) {
-    slide.content.slideBgTextAuto = result.text;
-    slide.content.slideBgNeedsScrim = !!result.needsScrim;
-  } else {
-    // Couldn't sample (e.g. cross-origin image) — drop any stale recommendation
-    // so 'auto' falls back to the theme default rather than a wrong swap.
-    delete slide.content.slideBgTextAuto;
-    delete slide.content.slideBgNeedsScrim;
-  }
-  markDirty?.();
-  scheduleUiRefresh?.();
-}
-
-// Sticky user preference for the unified "Background" section (colour +
-// custom image + corner logo). Defaults to open: the colour picker lives
-// here now, and hiding a primary design control behind a collapsed panel
-// would be a discoverability regression.
-const BG_SECTION_OPEN_KEY = 'editor.bgSection.open';
-
-function readBgSectionOpen() {
-  try {
-    return localStorage.getItem(BG_SECTION_OPEN_KEY) !== '0';
-  } catch {
-    return true;
-  }
-}
-
-function storeBgSectionOpen(open) {
-  try {
-    localStorage.setItem(BG_SECTION_OPEN_KEY, open ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
-}
+import {
+  buildBackgroundControls,
+  isBackgroundFieldKey,
+} from './editor-form/background-section.js';
 
 export function createRerenderEditor({
   h,
@@ -192,30 +124,33 @@ export function createRerenderEditor({
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
     if (!slide) return;
 
-    // Pane header: pure pane chrome (chrome re-org 2026-07-16). Everything
-    // scoped to the current slide (type chip, "All text", lock, actions
-    // menu) renders into the slide toolbar above the canvas instead.
+    /** @type {HTMLElement|null} The floating collapse control, appended last. */
+    let closeSlot = null;
+
+    // Pane chrome (chrome re-org 2026-07-16). Everything scoped to the current
+    // slide (type chip, "All text", lock, actions menu) renders into the slide
+    // toolbar above the canvas instead.
     if (!contentOnly) {
-    const header = h('div', { class: 'row spread editor-form-header' });
-    header.append(
-      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') })
-    );
+    // Collapse control. The "INSPECTOR" title it used to sit next to was
+    // redundant beside the already-active Inspector pane tab, so the whole
+    // 57px header row went (declutter 2026-07-26) — but the close button
+    // stays: it belongs inside the surface it dismisses, and hiding it behind
+    // hover would strand touch users. It floats in a zero-height slot over the
+    // first field's label band, which is empty on every type. Built here,
+    // appended at the very end — it has to land *under* the element tab bar,
+    // whose right-hand "Slide" tab it would otherwise cover.
     if (setInspectorCollapsed) {
-      header.append(
-        (() => {
-          const b = h('button', {
-            class: 'ghost-icon-btn editor-form-close-btn',
-            type: 'button',
-            title: t('editor.inspector.hide', 'Hide inspector'),
-            'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-            onclick: () => setInspectorCollapsed(true),
-          });
-          b.append(closeIcon({ size: 16 }));
-          return b;
-        })()
-      );
+      closeSlot = h('div', { class: 'editor-form-close-slot' });
+      const closeBtn = h('button', {
+        class: 'ghost-icon-btn editor-form-close-btn',
+        type: 'button',
+        title: t('editor.inspector.hide', 'Hide inspector'),
+        'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+        onclick: () => setInspectorCollapsed(true),
+      });
+      closeBtn.append(closeIcon({ size: 16 }));
+      closeSlot.append(closeBtn);
     }
-    editorMount.append(header);
 
     // Slide toolbar above the canvas: type chip + badges + "All text" on the
     // left; lock + slide-actions menu on the right. Rebuilt per slide.
@@ -679,33 +614,13 @@ export function createRerenderEditor({
         if (k !== activeKey) inactiveCollectionKeys.add(k);
       }
     }
-    // The unified "Background" section: colour choice, custom image and the
-    // theme corner logo live together (they used to be split between a
-    // top-level colour dropdown and a collapsed "Background & logo" panel).
-    // Sticky open preference (default open); force-open when a non-default
-    // image/logo is set so active settings are never hidden.
     // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
-    // slideBgImage before the Background section reads it, so the shared picker
+    // slideBgImage before the background controls read it, so the shared picker
     // shows the (now single) background and the legacy render fallback stops
     // firing. Idempotent; inspector mode only (the bulk modal never renders bg).
     if (!contentOnly && slide?.type === 'title-slide') {
       ensureTitleSlideBackground(slide.content);
     }
-    const hasBgImage = Boolean(String(slide?.content?.slideBgImage || '').trim());
-    const hasCornerLogo = slide?.content?.slideLogo === 'top-right';
-    const bgDetails = h('details', { class: 'editor-advanced editor-bg-section' });
-    if (readBgSectionOpen() || hasBgImage || hasCornerLogo) bgDetails.open = true;
-    bgDetails.addEventListener('toggle', () => storeBgSectionOpen(bgDetails.open));
-    const bgSummary = h('summary', {
-      class: 'editor-advanced-summary',
-      text: t('editor.slide.background.section', 'Background'),
-      title: t(
-        'editor.slide.background.sectionHelp',
-        'Background colour or a custom image, plus the theme corner logo.'
-      ),
-    });
-    const bgBody = h('div', { class: 'editor-advanced-body' });
-    bgDetails.append(bgSummary, bgBody);
 
     const renderField = createRenderField({
       h,
@@ -737,22 +652,13 @@ export function createRerenderEditor({
     });
 
     const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';
-    const isGlobalBgFieldKey = (key) =>
-      key === 'background' ||
-      key === 'bgCustomColor' ||
-      key === 'slideBgImage' ||
-      key === 'slideBgFit' ||
-      key === 'slideBgFocusX' ||
-      key === 'slideBgFocusY' ||
-      key === 'slideBgOverlay' ||
-      key === 'slideBgText' ||
-      key === 'slideLogo';
 
     const add = (key) => {
       const f = fieldByKey.get(key);
       if (!f) return;
-      // Global background fields are rendered by the dedicated Background section.
-      if (isGlobalBgFieldKey(key)) {
+      // Slide-wide background fields have their own surfaces (colour group +
+      // image section), built below.
+      if (isBackgroundFieldKey(key)) {
         used.add(key);
         return;
       }
@@ -782,104 +688,23 @@ export function createRerenderEditor({
       form.append(el);
     };
 
-    // Theme override locks. A locked property's controls are omitted rather
-    // than disabled — a disabled control invites you to wonder what it would
-    // do, and the renderer ignores the value either way. One note explains the
-    // absence, so the section never just looks broken.
-    const bgLocked = isLocked(theme, 'background');
-    const logoLocked = isLocked(theme, 'logo');
-    if (bgLocked || logoLocked) {
-      bgBody.append(
-        h('p', {
-          class: 'help',
-          text: t(
-            'editor.slide.background.lockedByTheme',
-            'Set by the theme and not editable per slide.'
-          ),
-        })
-      );
-    }
-
-    // Populate the Background section. Colour first: the section reads as
-    // "colour ór custom image, and optionally the logo on top".
-    const bgColorField =
-      contentOnly || bgLocked ? null : fieldByKey.get('background');
-    if (bgColorField) {
-      // Inside a section already titled "Background" the field label reads
-      // better as "Colour" (it sits next to "Background image").
-      const colorEl = renderField({
-        ...bgColorField,
-        label: t('editor.slide.background.colour', 'Color'),
-      });
-      if (colorEl) bgBody.append(colorEl);
-      // A type whose extended background enum offers a 'custom' value declares
-      // its own colour input alongside it; only shown while 'custom' is
-      // selected (the form rerenders on change, so this stays in sync). No core
-      // type declares `bgCustomColor` today — the routing is type-agnostic and
-      // stays available to fork types.
-      const bgCustomField = fieldByKey.get('bgCustomColor');
-      if (bgCustomField) {
-        const customEl = renderField(bgCustomField);
-        if (customEl) {
-          if (slide.content?.background !== 'custom') customEl.style.display = 'none';
-          bgBody.append(customEl);
-        }
-      }
-    }
-
-    // Custom image (+ crop focus + fit/overlay once an image is set).
-    const bgImageField =
-      contentOnly || bgLocked ? null : fieldByKey.get('slideBgImage');
-    if (bgImageField) {
-      const imgEl = renderField(bgImageField);
-      if (imgEl) bgBody.append(imgEl);
-      if (hasBgImage) {
-        bgBody.append(
-          renderFocusGridField({
-            h,
-            label: t('editor.slide.background.focus', 'Background focus (crop)'),
-            helpText: t(
-              'editor.slide.background.focusHelp',
-              'Pick which part stays visible when the image is cropped to fill the slide.'
-            ),
-            focusX: slide.content?.slideBgFocusX ?? 50,
-            focusY: slide.content?.slideBgFocusY ?? 50,
-            onChange: ({ focusX, focusY }) => {
-              slide.content.slideBgFocusX = focusX;
-              slide.content.slideBgFocusY = focusY;
-              markDirty?.();
-              scheduleUiRefresh?.();
-            },
-          })
-        );
-        if (slide.content.slideBgFit == null) slide.content.slideBgFit = 'cover';
-        if (slide.content.slideBgOverlay == null)
-          slide.content.slideBgOverlay = 'auto';
-        if (slide.content.slideBgText == null)
-          slide.content.slideBgText = 'auto';
-        // Auto-detect the readable text colour for the current image (async;
-        // stores slideBgTextAuto / slideBgNeedsScrim, then refreshes). No-op
-        // when already detected for this image URL.
-        runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh });
-        const fitField = fieldByKey.get('slideBgFit');
-        const overlayField = fieldByKey.get('slideBgOverlay');
-        const textField = fieldByKey.get('slideBgText');
-        const fitEl = fitField ? renderField(fitField) : null;
-        const overlayEl = overlayField ? renderField(overlayField) : null;
-        const textEl = textField ? renderField(textField) : null;
-        const optionsRow = fieldGrid([fitEl, overlayEl].filter(Boolean), 2);
-        if (optionsRow) bgBody.append(optionsRow);
-        if (textEl) bgBody.append(textEl);
-      }
-    }
-    // Theme logo (corner) toggle — independent of the background image.
-    const logoField =
-      contentOnly || logoLocked ? null : fieldByKey.get('slideLogo');
-    if (logoField) {
-      if (slide.content.slideLogo == null) slide.content.slideLogo = 'none';
-      const logoEl = renderField(logoField);
-      if (logoEl) bgBody.append(logoEl);
-    }
+    // Background, split by how often you reach for it: the colour is a plain
+    // field among the type's settings, the image (and everything that only
+    // matters once one is set) is a collapsed section. Inspector-only — the
+    // bulk modal renders content fields and nothing here.
+    const background = contentOnly
+      ? { colorGroup: null, imageSection: null }
+      : buildBackgroundControls({
+          h,
+          slide,
+          pres,
+          theme,
+          fieldByKey,
+          renderField,
+          fieldGrid,
+          markDirty,
+          scheduleUiRefresh,
+        });
 
     const formTypeCtx = {
       h,
@@ -948,9 +773,12 @@ export function createRerenderEditor({
       if (!used.has(f.key)) add(f.key);
     }
 
-    // Background section after the type fields: it's a design control set,
-    // and it replaces the colour dropdown that used to sit loose in the form.
-    if (!contentOnly && bgBody.childNodes?.length) form.append(bgDetails);
+    // Rail order, settled 2026-07-26: the type's own settings lead, then the
+    // background colour (a frequent one-click choice), then the two collapsed
+    // sections. Accessibility now sits within a screen of the top instead of
+    // below a background panel that filled the rail.
+    if (background.colorGroup) form.append(background.colorGroup);
+    if (background.imageSection) form.append(background.imageSection);
 
     // Append accessibility toggle if it has content
     if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
@@ -984,8 +812,12 @@ export function createRerenderEditor({
       editorMount.append(tabBar);
       elementForm.hidden = !activeElementTab;
       form.hidden = activeElementTab;
+      // The collapse control goes after the tab bar so it floats over the
+      // form's first row instead of over the "Slide" tab.
+      if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(elementForm, form);
     } else {
+      if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(form);
     }
   }
