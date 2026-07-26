@@ -30,12 +30,6 @@ export const BASIC_CONTENT_SLIDES = {
       'Tables (use table-slide or chart-slide)',
       'Genuine cause→effect / input→output flows between groups (use text-blocks-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      body: { type: 'markdown', required: false, maxLength: 2000 },
-      layout: { type: 'enum', options: ['one-column', 'two-column'] },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'list-slide': {
@@ -80,23 +74,6 @@ export const BASIC_CONTENT_SLIDES = {
       'Timeline/roadmap with phases over time (use timeline-slide)',
       'Simple bullets without title+text structure (use content-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 160 },
-      variant: { type: 'enum', options: ['bullets', 'numbers'] },
-      layout: { type: 'enum', options: ['one-column', 'two-column'] },
-      density: { type: 'enum', options: ['auto', 'comfortable', 'compact'] },
-      items: {
-        type: 'array',
-        minItems: 2,
-        maxItems: 8,
-        itemSchema: {
-          title: { type: 'string', required: true, maxLength: 80 },
-          text: { type: 'string', required: false, maxLength: 120 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   // content-columns-slide: DEPRECATED — removed from AI generation.

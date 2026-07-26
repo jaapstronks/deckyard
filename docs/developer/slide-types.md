@@ -196,13 +196,6 @@ export default {
       'Detailed technical specifications (use table-slide)',
     ],
 
-    // Schema constraints for AI-generated content
-    schema: {
-      title: { type: 'string', required: true, maxLength: 80 },
-      featureCount: { type: 'enum', options: ['3', '4', '5', '6'], required: true },
-      // Dynamic fields are inferred from featureCount
-    },
-
     // Example content for the AI (optional but recommended)
     examples: [
       {
@@ -236,7 +229,6 @@ export default {
 | `description` | string | Multi-line description explaining the slide type to the AI. Include structure, visual layout, and key concepts |
 | `bestFor` | string[] | List of use cases when this slide type is ideal |
 | `notFor` | string[] | List of anti-patterns when NOT to use this slide type |
-| `schema` | object | Field constraints (type, required, maxLength, options for enums) |
 | `examples` | array | Example content objects. Use `_variation` to label different patterns |
 | `usage` | string | Your organization's rules for *filling* this type (optional, max 1000 chars) |
 
@@ -272,9 +264,9 @@ field. Full contract: `docs/reference/mcp-server.md`.
 
 ### How the AI Uses This Metadata
 
-1. **Prompt Construction**: The AI system builds prompts that include your slide type's description, best-for scenarios, and schema
+1. **Prompt Construction**: The AI system builds prompts that include your slide type's description, best-for scenarios, and the schema derived from its `fields`
 2. **Slide Selection**: When analyzing presentations, the AI considers your custom slides alongside core slides
-3. **Content Generation**: When suggesting changes, the AI uses your examples and schema to generate valid content
+3. **Content Generation**: When suggesting changes, the AI uses your examples and that same derived schema to generate valid content
 4. **Theme Awareness**: If your slide has a `themeId`, the AI only suggests it for presentations using that theme
 
 ### Withholding a type from agents
@@ -300,6 +292,34 @@ offered. This is what keeps "deliberately withheld" distinguishable from
 "someone forgot to write the copy" — the distinction that used to be expressed
 by absence, and therefore not at all. The reader is
 `isAgentOptOut()` in `server/utils/ai/slide-catalog/agent-catalog.js`.
+
+### The agent-facing schema is derived — and so is withholding a *field*
+
+An `ai` block carries prose only: `description`, `bestFor`, `notFor`,
+`examples`, `usage`. It does **not** declare a schema. The shape an agent sees is
+derived from `fields[]` (`deriveAgentSchema()`), the same array the editor
+renders a form from and validation runs against, so the two cannot drift apart.
+An `ai.schema` left over from an older fork is ignored, with a warning on boot.
+
+The same defaults apply one level down: every field is offered unless it says
+otherwise.
+
+```javascript
+fields: [
+  { key: 'title', type: 'string', maxLength: 120 },
+  // Legacy mirror of items[] — kept for stored decks, never authored fresh.
+  { key: 'card1Title', type: 'string', deprecated: true },
+  // Live and editable, but not something an agent should invent.
+  { key: 'bunnyLibraryId', type: 'string', ai: false },
+  // helpText travels with the field and becomes the schema's `description`.
+  { key: 'sandbox', type: 'enum', options: ['restricted', 'permissive'],
+    helpText: "'restricted' blocks scripts and forms." },
+]
+```
+
+`hidden: true` (a legacy mirror the semantic projection also skips) withholds a
+field for the same reason `deprecated: true` does. Everything else — including
+layout and background enums — is part of the contract.
 
 ---
 
@@ -683,14 +703,6 @@ export default {
       'Detail-heavy content slides',
       'Multi-point bullet lists',
     ],
-
-    schema: {
-      headline: { type: 'string', required: true, maxLength: 60 },
-      subheadline: { type: 'string', required: false, maxLength: 120 },
-      body: { type: 'markdown', required: false },
-      ctaText: { type: 'string', required: false, maxLength: 30 },
-      background: { type: 'enum', options: ['lime', 'mist', 'night'] },
-    },
 
     examples: [
       {

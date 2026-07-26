@@ -45,25 +45,6 @@ export const VISUAL_CONTENT_SLIDES = {
       'Long bodies on the "wide" or "corner" layouts (little text room)',
       'Many images without text (use gallery-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      body: { type: 'markdown', required: false, maxLength: 800 },
-      image: { type: 'string', required: false },
-      images: {
-        type: 'array',
-        required: false,
-        maxItems: 3,
-        items: { src: { type: 'string' }, alt: { type: 'string', maxLength: 180 } },
-      },
-      imageSide: { type: 'enum', options: ['left', 'right'] },
-      imageWidth: { type: 'enum', options: ['narrow', 'half', 'wide'], default: 'half' },
-      layout: {
-        type: 'enum',
-        options: ['split', 'corner', 'duo', 'row-top', 'row-bottom'],
-        default: 'split',
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'image-slide': {
@@ -79,11 +60,6 @@ export const VISUAL_CONTENT_SLIDES = {
       'Visual breaks in the presentation',
     ],
     notFor: ['Content that needs text explanation (use image-text-slide)'],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      image: { type: 'string', required: false },
-      caption: { type: 'string', required: false, maxLength: 200 },
-    },
   },
 
   'gallery-slide': {
@@ -117,23 +93,6 @@ export const VISUAL_CONTENT_SLIDES = {
       'More than 6 images, or images each needing a Title + Caption (use team-cards-slide)',
       'Partner/sponsor logos (use logo-wall-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      layout: { type: 'enum', options: ['grid', 'masonry', 'featured'], default: 'grid' },
-      images: {
-        type: 'array',
-        required: true,
-        minItems: 2,
-        maxItems: 6,
-        itemSchema: {
-          src: { type: 'string', required: true, description: 'Image URL' },
-          caption: { type: 'string', required: false, maxLength: 100 },
-          alt: { type: 'string', required: false, maxLength: 200 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'table-slide': {
@@ -170,14 +129,6 @@ export const VISUAL_CONTENT_SLIDES = {
       'Large datasets (summarize or link externally)',
       'More than 10 columns (simplify or split)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      caption: { type: 'string', required: false, maxLength: 240 },
-      headerRow: { type: 'enum', options: ['on', 'off'], default: 'on' },
-      colCount: { type: 'enum', options: ['2', '3', '4', '5', '6', '7', '8', '9', '10'], required: true },
-      rows: { type: 'array', required: true, description: 'Array of {c1, c2, c3...} objects' },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'chart-slide': {
@@ -207,13 +158,5 @@ export const VISUAL_CONTENT_SLIDES = {
       'Complex multi-dimensional data',
       'Data that needs exact values shown (use table-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      chartType: { type: 'enum', options: ['bar', 'line', 'pie'], required: true },
-      data: { type: 'string', required: true, description: 'TSV format: header\\nrow1\\nrow2' },
-      xLabel: { type: 'string', required: false, maxLength: 60 },
-      yLabel: { type: 'string', required: false, maxLength: 60 },
-    },
   },
 };

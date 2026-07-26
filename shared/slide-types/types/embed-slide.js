@@ -55,6 +55,9 @@ export default {
       type: 'enum',
       required: false,
       options: ['restricted', 'permissive'],
+      helpText:
+        "'restricted' blocks scripts and forms; only raise it to 'permissive' " +
+        'when the embedded page is interactive and the author asked for it.',
     },
     BACKGROUND_FIELD,
   ],

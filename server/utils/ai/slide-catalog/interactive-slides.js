@@ -23,13 +23,6 @@ export const INTERACTIVE_SLIDES = {
       'Quick pulse checks',
     ],
     notFor: ['Open-ended questions (use feedback-slide)', 'Scale ratings (use likert slides)'],
-    schema: {
-      question: { type: 'string', required: true, maxLength: 200 },
-      option1: { type: 'string', required: true, maxLength: 100 },
-      option2: { type: 'string', required: true, maxLength: 100 },
-      option3: { type: 'string', required: false, maxLength: 100 },
-      option4: { type: 'string', required: false, maxLength: 100 },
-    },
   },
 
   'likert-slide': {
@@ -45,11 +38,6 @@ export const INTERACTIVE_SLIDES = {
       'Any question with a labeled scale',
     ],
     notFor: ['Multiple choice (use poll-slide)', 'Numeric 1-10 rating (use likert-slider-slide)'],
-    schema: {
-      question: { type: 'string', required: true, maxLength: 200 },
-      option1: { type: 'string', required: true, maxLength: 60 },
-      option2: { type: 'string', required: true, maxLength: 60 },
-    },
   },
 
   'likert-slider-slide': {
@@ -65,11 +53,6 @@ export const INTERACTIVE_SLIDES = {
       'Confidence or intensity ratings',
     ],
     notFor: ['Labeled categories (use likert-slide)', 'Multiple choice (use poll-slide)'],
-    schema: {
-      question: { type: 'string', required: true, maxLength: 200 },
-      minLabel: { type: 'string', required: true, maxLength: 60 },
-      maxLabel: { type: 'string', required: true, maxLength: 60 },
-    },
   },
 
   'feedback-slide': {
@@ -85,10 +68,6 @@ export const INTERACTIVE_SLIDES = {
       'Collecting ideas or suggestions',
     ],
     notFor: ['Structured questions (use poll or likert slides)'],
-    schema: {
-      question: { type: 'string', required: true, maxLength: 200 },
-      placeholder: { type: 'string', required: false, maxLength: 100 },
-    },
   },
 
   'countdown-slide': {
@@ -108,14 +87,5 @@ export const INTERACTIVE_SLIDES = {
       'Marking a section boundary (use chapter-title-slide)',
       'A deck that is presented straight through without pauses',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      durationMinutes: { type: 'number', required: false, min: 0, max: 60 },
-      durationSeconds: { type: 'number', required: false, min: 0, max: 59 },
-      autoStart: { type: 'enum', required: false, options: ['off', 'on'] },
-      flashOnZero: { type: 'enum', required: false, options: ['on', 'off'] },
-      soundOnZero: { type: 'enum', required: false, options: ['off', 'on'] },
-      zeroText: { type: 'string', required: false, maxLength: 60 },
-    },
   },
 };

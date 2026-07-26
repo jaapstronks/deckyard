@@ -136,6 +136,9 @@ export default {
       type: 'enum',
       required: false,
       options: ['1', '2', '3', '4', '5', '6'],
+      // Legacy counter for the numbered card{N}* fields below; items[] carries
+      // its own length. Out of the agent contract for the same reason they are.
+      ai: false,
     },
 
     // New items[] format (preferred for AI generation)

@@ -167,11 +167,11 @@ EXACT CONTENT SCHEMA (NO image field, NO bullets):
 
 --- payoff-slide ---
 For intent:"closing" ONLY. Final slide.
+It renders the theme's payoff logo and reads no content at all — the type has no
+fields. Emit an empty content object; a "tagline" here goes nowhere.
 EXACT CONTENT SCHEMA:
 \`\`\`json
-{
-  "tagline": "Optional closing message"
-}
+{}
 \`\`\`
 
 ===============================================================================

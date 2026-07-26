@@ -151,7 +151,9 @@ export default {
       ],
     },
 
-    // Legacy 1..12 logos: image + (optional) name + optional explicit alt (author intent)
+    // Legacy 1..12 logos: image + (optional) name + optional explicit alt (author intent).
+    // `ai: false` on the whole block (applied below): these mirror logos[], and
+    // an agent offered both shapes will sooner or later fill the fallback one.
     ...Array.from({ length: LEGACY_MAX }, (_v, idx) => {
       const i = idx + 1;
       return [
@@ -184,7 +186,9 @@ export default {
           deprecated: true,
         },
       ];
-    }).flat(),
+    })
+      .flat()
+      .map((field) => ({ ...field, ai: false })),
   ],
 
   defaults: {

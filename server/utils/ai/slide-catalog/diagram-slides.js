@@ -30,15 +30,6 @@ export const DIAGRAM_SLIDES = {
       'More than 2 options (use table-slide or icon-card-grid-slide)',
       '2x2 matrices like SWOT (use matrix-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      leftTitle: { type: 'string', required: true, maxLength: 100 },
-      leftBody: { type: 'markdown', required: true, maxLength: 2000 },
-      rightTitle: { type: 'string', required: true, maxLength: 100 },
-      rightBody: { type: 'markdown', required: true, maxLength: 2000 },
-      verdict: { type: 'string', required: false, maxLength: 100 },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'matrix-slide': {
@@ -59,20 +50,6 @@ export const DIAGRAM_SLIDES = {
       'Simple A vs B (use comparison-slide)',
       'More than 4 categories (use text-blocks or table)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      cells: {
-        type: 'array',
-        minItems: 4,
-        maxItems: 4,
-        itemSchema: {
-          title: { type: 'string', required: true, maxLength: 40 },
-          body: { type: 'markdown', required: true, maxLength: 1000 },
-          tone: { type: 'enum', options: ['default', 'positive', 'negative', 'neutral'] },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'pyramid-slide': {
@@ -94,19 +71,6 @@ export const DIAGRAM_SLIDES = {
       'Linear processes (use process-slide)',
       'Circular processes (use cycle-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      levels: {
-        type: 'array',
-        minItems: 3,
-        maxItems: 6,
-        itemSchema: {
-          label: { type: 'string', required: true, maxLength: 60 },
-          text: { type: 'string', required: false, maxLength: 120 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'funnel-slide': {
@@ -128,20 +92,6 @@ export const DIAGRAM_SLIDES = {
       'Processes that don\'t narrow (use process-slide)',
       'Circular processes (use cycle-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      stages: {
-        type: 'array',
-        minItems: 3,
-        maxItems: 6,
-        itemSchema: {
-          label: { type: 'string', required: true, maxLength: 60 },
-          value: { type: 'string', required: false, maxLength: 30 },
-          text: { type: 'string', required: false, maxLength: 120 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'cycle-slide': {
@@ -164,20 +114,6 @@ export const DIAGRAM_SLIDES = {
       'Timelines with dates (use timeline-slide)',
       'Narrowing funnels (use funnel-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      centerLabel: { type: 'string', required: false, maxLength: 60 },
-      stages: {
-        type: 'array',
-        minItems: 3,
-        maxItems: 6,
-        itemSchema: {
-          label: { type: 'string', required: true, maxLength: 40 },
-          text: { type: 'string', required: false, maxLength: 80 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'process-slide': {
@@ -201,20 +137,6 @@ export const DIAGRAM_SLIDES = {
       'Narrowing conversions (use funnel-slide)',
       'Chains where each item CAUSES the next rather than being carried out in order (use text-blocks-slide). Test: can you name who performs each step? If yes it is a process; if the items are consequences nobody performs, it is a causal chain',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      direction: { type: 'enum', options: ['horizontal', 'vertical'] },
-      steps: {
-        type: 'array',
-        minItems: 3,
-        maxItems: 7,
-        itemSchema: {
-          title: { type: 'string', required: true, maxLength: 60 },
-          text: { type: 'string', required: false, maxLength: 200 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 
   'timeline-slide': {
@@ -261,21 +183,5 @@ export const DIAGRAM_SLIDES = {
       'Processes without dates/phases (use process-slide)',
       'Undated summary/total lines as items (put them in bottomSubheading)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      bottomSubheading: { type: 'string', required: false, maxLength: 200 },
-      items: {
-        type: 'array',
-        minItems: 2,
-        maxItems: 10,
-        itemSchema: {
-          date: { type: 'string', required: true, maxLength: 60 },
-          title: { type: 'string', required: true, maxLength: 80 },
-          text: { type: 'string', required: false, maxLength: 200 },
-        },
-      },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 };

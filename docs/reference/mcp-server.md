@@ -196,9 +196,16 @@ entry lands in exactly one of three states:
 
 | State | How it is expressed | What the agent gets |
 |---|---|---|
-| Documented | An entry in the AI catalog (`server/utils/ai/slide-catalog/`) | Full `description` / `bestFor` / `notFor` / `schema`, `documented: true` |
-| Undocumented | Registered, no catalog entry | Schema derived from the field definitions, `documented: false` |
+| Documented | An entry in the AI catalog (`server/utils/ai/slide-catalog/`) | Full `description` / `bestFor` / `notFor`, `documented: true` |
+| Undocumented | Registered, no catalog entry | A generic description, `documented: false` |
 | Withheld | `deprecated: true` or `ai: false` on the definition | Not listed at all |
+
+The `schema` is the same in all three: it is **always** derived from the type's
+`fields[]` — what the editor renders a form from and validation runs against —
+so an agent is never told about a field the type does not have. A catalog entry
+contributes prose only. Individual fields opt out with `ai: false` (or
+`hidden` / `deprecated`, which legacy mirror fields already carry), and a
+field's `helpText` travels along as the schema entry's `description`.
 
 `ai: false` is the deliberate opt-out for a live type — an app-managed slide, a
 back-compat alias, a capability-gated escape hatch. It is the same `ai` key that

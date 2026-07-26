@@ -205,10 +205,15 @@ export default {
 
     // LEGACY: numbered row/block fields (row1Count, row1Block1Title, etc.)
     // Kept for backward compatibility with existing slides and editor form.
+    // Every one of them mirrors rows[], so they carry `ai: false`: an agent
+    // authors the array shape, never the numbered one. The row/block *content*
+    // mirrors are already `hidden` (see generateBlockFields), which says the
+    // same thing to the semantic projection.
 
     // Row 1 (always visible)
     {
       key: 'row1Count',
+      ai: false,
       label: 'Row 1 blocks',
       type: 'enum',
       required: false,
@@ -216,6 +221,7 @@ export default {
     },
     {
       key: 'row1Color',
+      ai: false,
       label: 'Row 1 color',
       type: 'enum',
       required: false,
@@ -229,6 +235,7 @@ export default {
     // Arrow 1 (between row 1 and 2)
     {
       key: 'arrow1',
+      ai: false,
       label: 'Arrow after row 1',
       type: 'enum',
       required: false,
@@ -242,6 +249,7 @@ export default {
     // Row 2 (optional)
     {
       key: 'row2Enabled',
+      ai: false,
       label: 'Row 2',
       type: 'enum',
       required: false,
@@ -260,6 +268,7 @@ export default {
     },
     {
       key: 'row2Count',
+      ai: false,
       label: 'Row 2 blocks',
       type: 'enum',
       required: false,
@@ -267,6 +276,7 @@ export default {
     },
     {
       key: 'row2Color',
+      ai: false,
       label: 'Row 2 color',
       type: 'enum',
       required: false,
@@ -280,6 +290,7 @@ export default {
     // Arrow 2 (between row 2 and 3)
     {
       key: 'arrow2',
+      ai: false,
       label: 'Arrow after row 2',
       type: 'enum',
       required: false,
@@ -293,6 +304,7 @@ export default {
     // Row 3 (optional)
     {
       key: 'row3Enabled',
+      ai: false,
       label: 'Row 3',
       type: 'enum',
       required: false,
@@ -311,6 +323,7 @@ export default {
     },
     {
       key: 'row3Count',
+      ai: false,
       label: 'Row 3 blocks',
       type: 'enum',
       required: false,
@@ -318,6 +331,7 @@ export default {
     },
     {
       key: 'row3Color',
+      ai: false,
       label: 'Row 3 color',
       type: 'enum',
       required: false,
