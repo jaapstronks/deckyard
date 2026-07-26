@@ -302,6 +302,13 @@ export const SLIDE_TYPES = Object.fromEntries(
 // these so a locally-installed fork customization can't leak into upstream files.
 export const CUSTOM_SLIDE_TYPE_NAMES = APPLIED_CUSTOM_NAMES;
 
+// The bare core type names, in registration order. This is the fork-stable
+// count of built-in types: unlike `Object.keys(SLIDE_TYPES)`, it excludes any
+// types a fork drops into `custom/slide-types/`, so tooling and docs that talk
+// about "the built-in slide types" derive a number that does not shift by
+// checkout (e.g. a fork carrying `ciiic-title-slide` would make SLIDE_TYPES 39).
+export const CORE_SLIDE_TYPE_NAMES = Object.keys(CORE_SLIDE_TYPES);
+
 // ---------------------------------------------------------------------------
 // Slide-type identity (namespace/name[@version]) — see ./type-id.js.
 //

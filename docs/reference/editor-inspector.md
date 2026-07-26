@@ -342,7 +342,7 @@ Column semantics:
   icons, URLs-as-config, focus points, chart config, code, Background,
   Accessibility).
 
-Shared by **all 38 types**, not repeated per row: `slideBgImage`,
+Shared by **all <!--gen:slide-type-count-->38<!--/gen:slide-type-count--> types**, not repeated per row: `slideBgImage`,
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`,
 `slideLogo` (Background image section) and `a11yTitle`, `a11ySummary`
 (Accessibility) → **inspector keeps**. The per-type `background` enum renders
