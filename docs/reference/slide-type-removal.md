@@ -13,8 +13,13 @@ slide-type seam work: a future removal should touch far fewer files.
 A slide type is never deleted in one step. Three rungs:
 
 1. **`deprecated: true`** — out of the picker (`isInsertableSlideType`) and out
-   of AI generation (`EXCLUDED_TYPES`), still registered and still rendering
-   stored decks. Reversible, non-destructive.
+   of AI generation and MCP (`isAgentOptOut`, since #386), still registered and
+   still rendering stored decks. Reversible, non-destructive. Rung 1 also means
+   dropping the type's **companions** (picker description, search aliases,
+   schematic, curation category, catalog entry, examples):
+   `tests/slide-type-companion-coverage.test.js` fails on an entry that outlives
+   the type it describes — see
+   [`slide-type-companions.md`](./slide-type-companions.md).
 2. **Migration** — `scripts/scan-slide-type.js <type>` reports every deck and
    slide still on the type, so each hit is consciously converted, exported as an
    image, or accepted as a loss. Exit code 1 while any deck still uses it, so a
@@ -43,16 +48,19 @@ Then, in rough dependency order:
 3. **Deregister** — the import and the `CORE_SLIDE_TYPES` entry in
    `shared/slide-types/registry.js`.
 4. **Remove the per-type entries in the hand-maintained tables that live outside
-   the type.** These are the ones a `grep` for the type name finds but nothing
-   keeps in sync:
-   - `INSPECTOR_KEEPS` in `client/views/editor/editor-form/inspector-form.js`
-   - `EXCLUDED_TYPES` in `server/utils/openai/slide-types-prompt.js`
-   - the curated group lists in `client/views/editor/slide-type-picker/index.js`
-   - `INLINE_DESCRIPTORS` in `client/views/editor/inline-edit/descriptors.js`,
-     the AI catalog entry under `server/utils/ai/slide-catalog/`, the conversion
-     map in `shared/slide-types/convert.js`, and the settings categories in
-     `client/views/settings/tabs/slide-types-tab/categories.js` — each only if
-     the type had one.
+   the type.** Most of these are now enumerated by the companion matrix, so
+   `node --test tests/slide-type-companion-coverage.test.js` reports the ones you
+   missed by name — see
+   [`slide-type-companions.md`](./slide-type-companions.md) for the full list
+   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `PICKER_GROUPS`, `SLIDE_TYPE_DESC`,
+   `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the AI catalog entry and its
+   examples, the settings categories).
+   Not in the matrix, still by hand:
+   - the conversion map in `shared/slide-types/convert.js`, if the type was a
+     conversion source or target.
+   - (`EXCLUDED_TYPES` in `server/utils/openai/slide-types-prompt.js` no longer
+     exists: #386 replaced it with `isAgentOptOut()`, so the definition's own
+     `deprecated`/`ai: false` marker is what withholds a type from the generator.)
 5. **Update the tests that enumerate types by name** — several suites carry
    hand-written per-type lists (placeholder coverage, policy, ydoc round-trip).
    Replace the type's archival test with a removal test that asserts it is off

@@ -25,7 +25,12 @@ function jsonExample(v) {
 
 // ─── Manual JSON examples for types that need specific patterns ───
 // These override both catalog examples AND defaults-based examples.
-const MANUAL_EXAMPLES = {
+//
+// Sparse on purpose: only types whose shape a catalog example gets wrong. It is
+// still a hand-maintained per-type list, so it is exported for the companion
+// matrix (tests/slide-type-companion-coverage.test.js), which fails if an
+// override outlives the type it overrides.
+export const MANUAL_EXAMPLES = {
   'team-cards-slide': (placeholder) => ({
     type: 'team-cards-slide',
     content: {

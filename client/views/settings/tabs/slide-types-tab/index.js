@@ -644,6 +644,11 @@ export function createSlideTypesTab({ user } = {}) {
       })
     );
 
+    // Curation is about which types an author may *insert*, so a deprecated type
+    // has nothing to curate: it is already unreachable from every insertion path
+    // (see isInsertableSlideType) while existing slides keep rendering.
+    const isCuratable = type => Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
+
     // Track all categorized types
     const categorized = new Set();
     for (const cat of CATEGORIES) {
@@ -652,7 +657,7 @@ export function createSlideTypesTab({ user } = {}) {
 
     // Find uncategorized types from the metadata
     const uncategorized = Object.keys(slideTypeMeta)
-      .filter(type => !categorized.has(type))
+      .filter(type => !categorized.has(type) && isCuratable(type))
       .sort();
 
     // Build categories including any uncategorized types.
@@ -671,14 +676,14 @@ export function createSlideTypesTab({ user } = {}) {
     const allTypesList = [];
     for (const cat of allCategories) {
       for (const type of cat.types) {
-        if (slideTypeMeta[type]) {
+        if (isCuratable(type)) {
           allTypesList.push({ type, category: cat.key });
         }
       }
     }
 
     for (const cat of allCategories) {
-      const validTypes = cat.types.filter(type => slideTypeMeta[type]);
+      const validTypes = cat.types.filter(isCuratable);
       if (!validTypes.length) continue;
 
       const group = h('div', { class: 'slide-type-curation-group' });

@@ -123,6 +123,23 @@ function exampleFor(def, lang) {
 }
 
 /**
+ * The coarse agent-facing category for a catalog entry.
+ *
+ * Entries declare `category: 'structural'|'content'` and, redundantly,
+ * `resolveInPhase1` (the AI generator's outline/detail split). Prefer the
+ * declared category and fall back to the phase flag; the two are held in sync by
+ * a test, so the fallback is belt-and-braces rather than a second convention.
+ *
+ * @param {object|undefined} catalogEntry
+ * @returns {'structural'|'content'}
+ */
+function agentCategory(catalogEntry) {
+  if (catalogEntry?.category === 'structural') return 'structural';
+  if (catalogEntry?.category === 'content') return 'content';
+  return catalogEntry?.resolveInPhase1 ? 'structural' : 'content';
+}
+
+/**
  * Build the agent-facing entry for one registered (Tier-1) type.
  * @param {string} name
  * @param {object} def
@@ -137,7 +154,13 @@ function tier1Entry(name, def, catalogEntry, lang) {
   return {
     typeId: SLIDE_TYPE_IDS[name] || `core/${name}`,
     label,
-    category: catalogEntry?.resolveInPhase1 ? 'structural' : 'content',
+    // The catalog entry states the category directly; `resolveInPhase1` carries
+    // the same split for entries written before the field existed. An
+    // undocumented type has neither signal and can only be filed as 'content',
+    // which would drop a structural one out of a category:'structural' filter —
+    // so "no core type reaches agents undocumented" is a gate, not a nicety
+    // (tests/slide-type-companion-coverage.test.js).
+    category: agentCategory(catalogEntry),
     description: documented
       ? (catalogEntry.description || '').trim()
       : `${label}. No editorial guidance has been written for this type yet; ` +
