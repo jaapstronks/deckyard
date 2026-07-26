@@ -15,6 +15,11 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 
 export default {
+  // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
+  // agent-catalog.js): this is a back-compat alias of list-slide, kept so old
+  // decks keep rendering. Offering both would just be a duplicate entry an
+  // agent has to choose between.
+  ai: false,
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'List',

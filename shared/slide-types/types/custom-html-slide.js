@@ -135,6 +135,11 @@ const DEFAULT_CSS = `.ch-center {
 
 export default {
   label: 'Custom HTML',
+  // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
+  // agent-catalog.js): authoring the raw markup is gated behind the
+  // canEditCustomHtml capability, and an escape hatch is only worth its
+  // sanitizer budget when a human chose it. Agents pick a typed slide.
+  ai: false,
   fields: [
     {
       key: 'html',

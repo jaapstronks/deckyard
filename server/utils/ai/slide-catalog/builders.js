@@ -7,6 +7,8 @@
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { getSlideTypeExamples } from './examples.js';
 import { buildGlobalOptionsPromptSection } from './global-options.js';
+import { isAgentOptOut } from './agent-catalog.js';
+import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 
 /**
  * Get slide types that should be fully resolved in Phase 1 (outline phase)
@@ -27,6 +29,10 @@ export function getPhase2SlideTypes(disabledSlideTypes = []) {
   const disabled = new Set(Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []);
   return Object.entries(SLIDE_TYPE_CATALOG)
     .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
+    // A catalog entry is not by itself permission to offer the type: the
+    // definition's opt-out wins, so the flag means the same thing on every
+    // agent-facing path (see isAgentOptOut).
+    .filter(([type]) => !SLIDE_TYPES[type] || !isAgentOptOut(SLIDE_TYPES[type]))
     .map(([type]) => type);
 }
 

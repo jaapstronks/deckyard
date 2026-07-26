@@ -54,7 +54,7 @@ Add to your Cursor MCP settings:
 
 | Tool | Description |
 |------|-------------|
-| `get_slide_types` | List all slide types with schemas and usage guidance |
+| `get_slide_types` | List the slide types you may use, resolved for your organization (see [below](#which-slide-types-an-agent-sees)) |
 | `list_presentations` | Browse presentations you can access (`scope`: owned/shared/all; with edit URLs) |
 | `get_presentation` | Get full deck data (all slides) |
 | `get_presentation_url` | Get edit and present URLs for sharing |
@@ -185,7 +185,41 @@ When the caller is itself an LLM (or any agent that already has structured data)
 - `validation: "fix"` applies auto-fixes (truncate, pad, layout switch) and returns them as `appliedFixes` in the response.
 - `auto_prepend_title: true` prepends the theme's default title-slide using `title` when the first slide isn't already one.
 
-Call `get_slide_types` first (it now returns an `example` field per type) to see the exact content shape for each slide type.
+Call `get_slide_types` first (it returns an `example` field per type) to see the exact content shape for each slide type.
+
+## Which slide types an agent sees
+
+`get_slide_types` derives its answer from the **runtime registry**, not from the
+hand-written editorial catalog. Every registered type is offered unless it opts
+out, so a type that shows up in the editor's picker also shows up here. Each
+entry lands in exactly one of three states:
+
+| State | How it is expressed | What the agent gets |
+|---|---|---|
+| Documented | An entry in the AI catalog (`server/utils/ai/slide-catalog/`) | Full `description` / `bestFor` / `notFor` / `schema`, `documented: true` |
+| Undocumented | Registered, no catalog entry | Schema derived from the field definitions, `documented: false` |
+| Withheld | `deprecated: true` or `ai: false` on the definition | Not listed at all |
+
+`ai: false` is the deliberate opt-out for a live type — an app-managed slide, a
+back-compat alias, a capability-gated escape hatch. It is the same `ai` key that
+carries the catalog entry on a custom file-based type, so one field says either
+"here is my agent contract" or "I deliberately have none". Silent absence is no
+longer a way to withhold a type: without the flag the type shows up, at worst
+as `documented: false`.
+
+The response is resolved **per organization**:
+
+- **Tier 1** — core plus `custom/slide-types/*.js` types from the registry.
+- **Tier 2** — slide types this organization published in the builder UI, keyed
+  `custom-<slug>` (the same key `/api/slide-types` uses).
+- Types the organization **disabled** in its settings are filtered out, so an
+  agent never offers what the editor forbids.
+
+Each entry carries its canonical `typeId` (`core/title-slide`,
+`acme/hero@2`, `custom/<slug>`) so an agent can talk about versions.
+
+A stdio session has no organization and resolves against the default one; an
+SSE session resolves against the organization its API key belongs to.
 
 ## Custom tools (forks)
 
