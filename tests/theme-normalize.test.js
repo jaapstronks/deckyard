@@ -17,6 +17,7 @@ import {
   hexToRgb,
   pickTextColorForBg,
 } from '../shared/theme-normalize.js';
+import { getContrastRatio } from '../shared/color-utils.js';
 
 const baseTheme = () => ({
   id: 'test',
@@ -254,6 +255,30 @@ test('pickTextColorForBg falls back to the dark pole for unparseable input', () 
   assert.equal(pickTextColorForBg('#ffffff'), '#212121');
   assert.equal(pickTextColorForBg('nonsense'), '#212121');
   assert.equal(pickTextColorForBg('nonsense', { dark: '#123456' }), '#123456');
+});
+
+test('pickTextColorForBg picks the higher-contrast pole, not the luminance midpoint', () => {
+  // Mid-light backgrounds: a midpoint split (L < 0.5) would hand these white
+  // text at 2.2-2.7:1. Measuring both poles picks dark, which clears AA.
+  for (const bg of ['#a78bfa', '#10b981', '#f59e0b', '#3b82f6']) {
+    assert.equal(pickTextColorForBg(bg), '#212121', `${bg} should take dark text`);
+    assert.ok(
+      getContrastRatio(bg, '#212121') > getContrastRatio(bg, '#ffffff'),
+      `${bg}: dark pole should win on ratio`
+    );
+  }
+  // Genuinely dark backgrounds keep light text.
+  for (const bg of ['#7c3aed', '#1e1b4b', '#111827']) {
+    assert.equal(pickTextColorForBg(bg), '#ffffff', `${bg} should take light text`);
+  }
+});
+
+test('pickTextColorForBg honours custom poles when measuring', () => {
+  // A dark "light" pole loses to white on a near-black background.
+  assert.equal(
+    pickTextColorForBg('#000000', { light: '#333333', dark: '#ffffff' }),
+    '#ffffff'
+  );
 });
 
 test('normalizeTheme keeps only valid, token-backed textSwatches', () => {

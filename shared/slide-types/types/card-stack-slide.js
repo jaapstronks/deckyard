@@ -289,7 +289,7 @@ export default {
       const itemAttrs = useItems
         ? ` data-inline-item="items" data-inline-item-index="${i - 1}"`
         : '';
-      const bg = palette[(i - 1) % palette.length] || '#7c3aed';
+      const bg = palette[(i - 1) % palette.length];
       const fg = pickTextColorForBg(bg, { light: lightText, dark: darkText });
       cards.push(`
           <div class="card-stack-row" data-morph-role="card-${i - 1}" role="group" aria-label="${esc(
