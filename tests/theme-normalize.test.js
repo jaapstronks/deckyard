@@ -94,7 +94,7 @@ test('emits the legacy alias family derived from the theme', () => {
     brandColors: ['#5b21b6', '#7c3aed', '#a78bfa', '#c4b5fd'],
   });
 
-  // Countdown / freeform / end-slide CSS reads these; nothing emitted them
+  // Countdown / end-slide CSS reads these; nothing emitted them
   // before, so those slides always painted the stylesheet's hardcoded purple.
   assert.equal(out.cssVars['--t-primary'], '#7c3aed');
   assert.equal(out.cssVars['--t-accent'], '#7c3aed');

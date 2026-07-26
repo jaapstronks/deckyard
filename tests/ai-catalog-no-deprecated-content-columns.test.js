@@ -7,7 +7,7 @@
  * to keep a full catalog entry + a "use content-columns-slide" recommendation in
  * image-slide's notFor, so the live Phase-2 refine/iterate prompt
  * (`buildPhase2CatalogPrompt`) handed the model the type with schema + examples —
- * the same leak that card-stack / split-partner / freeform were already spared.
+ * the same leak that card-stack / split-partner were already spared.
  *
  * Run with: node --test tests/ai-catalog-no-deprecated-content-columns.test.js
  */

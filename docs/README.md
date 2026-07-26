@@ -40,6 +40,7 @@ User documentation (getting started, configuration, hosting, integrations) lives
 | Dev environment | `docs/developer/dev-setup.md` |
 | Adding custom themes | `docs/developer/themes.md` |
 | Adding custom slide types | `docs/developer/slide-types.md` |
+| Removing a slide type | `docs/reference/slide-type-removal.md` |
 | Internationalization | `docs/developer/i18n.md` |
 | REST API | `docs/developer/api.md` + `docs/openapi.yaml` |
 | MCP server | `docs/reference/mcp-server.md` |

@@ -119,9 +119,9 @@ export function renderImagePositionPicker({
     // Cover-crop focus is now set by direct manipulation on the canvas: a
     // draggable, keyboard-operable focal point on the image itself. The old 3x3
     // grid here is retired so there's one control per value, not two. Only the
-    // cover path goes; contain-mode alignment (below) stays, as do the
-    // slide-background and freeform focus grids that use renderFocusGridField
-    // directly elsewhere.
+    // cover path goes; contain-mode alignment (below) stays, as does the
+    // slide-background focus grid that uses renderFocusGridField directly
+    // elsewhere.
     return null;
   }
 

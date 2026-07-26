@@ -659,7 +659,7 @@ export function createRerenderEditor({
     // just `title`. Most core types use `title`, but poll/likert/likert-slider
     // render their `<h2 class="heading">` from `question`, and comparison uses
     // `leftTitle`/`rightTitle`. Types that render NO heading (payoff,
-    // follow-invite, freeform, quote, image without a title) announce as bare
+    // follow-invite, quote, image without a title) announce as bare
     // "Slide N of M" until an a11yTitle is set — exactly where the override
     // earns its keep, so only those get the nudge.
     const HEADING_FIELDS = ['title', 'question', 'leftTitle', 'rightTitle'];
@@ -839,9 +839,11 @@ export function createRerenderEditor({
         label: t('editor.slide.background.colour', 'Color'),
       });
       if (colorEl) bgBody.append(colorEl);
-      // Freeform's extended option set has a 'custom' value with its own
-      // colour input; only shown while 'custom' is selected (the form
-      // rerenders on change, so this stays in sync).
+      // A type whose extended background enum offers a 'custom' value declares
+      // its own colour input alongside it; only shown while 'custom' is
+      // selected (the form rerenders on change, so this stays in sync). No core
+      // type declares `bgCustomColor` today — the routing is type-agnostic and
+      // stays available to fork types.
       const bgCustomField = fieldByKey.get('bgCustomColor');
       if (bgCustomField) {
         const customEl = renderField(bgCustomField);
