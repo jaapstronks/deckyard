@@ -62,9 +62,16 @@ Then, in rough dependency order:
    `docs/reference/editor-inspector.md`, `docs/reference/wysiwyg-inline-editing.md`,
    `docs/reference/ai-wizard-prompts.md`. The core-type count is written out by
    hand in several places.
-7. **Sweep the comments.** `grep -rni '<type>' client server shared tests docs`
-   and fix every prose mention. A comment naming a type that no longer exists is
-   how the next reader learns the wrong thing.
+7. **Record the removal and let the guardrail find the rest.** Add an entry to
+   `REMOVED_SLIDE_TYPES` in `shared/slide-types/removed.js` (when it went, the
+   successor or `null`, why, the migration if there was one), then run
+   `node --test tests/removed-slide-types.test.js`. It reports every remaining
+   reference as a worklist — comments, doc rows, hand-written test lists — so
+   this step replaces the manual grep sweep. Fix each one, or add it to that
+   type's `allowedReferences` **with a reason** if it must stay (a DB migration
+   recording the conversion, or a successor type explaining a legacy field
+   shape). The allowlist is checked in both directions, so an entry that
+   outlives its reference fails too.
 8. **Check for orphaned field keys.** A field key only that type declared leaves
    generic plumbing pointing at nothing (`bgCustomColor` after freeform). Either
    remove the plumbing or note in a comment that no core type declares it.
@@ -102,16 +109,36 @@ seam work the "owned" column should be one directory, the "registration" column
 one line, and the "duplicated knowledge" column should be empty because those
 consumers derive their lists from the registry instead of restating them.
 
+## The removal record
+
+`shared/slide-types/removed.js` is the tombstone list: every core type that used
+to exist, why it went, what stored decks should move to, and which files are
+still allowed to name it.
+
+It exists because a removed type does not fully vanish. Decks stored before the
+removal keep its `type` string, a DB migration may record the conversion, and a
+successor type often has to explain where an odd legacy field shape came from.
+Those references are legitimate; a stale comment or an orphaned doc row is not.
+The record draws that line explicitly instead of leaving it to memory.
+
+`getRemovedSlideType(name)` tells a deliberate removal apart from a name nobody
+recognises — the distinction the generic unknown-type render cannot make today.
+
+Two entries so far: `agenda-timeline-slide` (consolidated into `timeline-slide`,
+with migration 030 converting stored decks — the model case) and `freeform-slide`
+(no successor, no decks).
+
 ## Known gaps this removal exposed
 
 - **The unknown-type render is the entire migration story.** A removed type
   falls back to a generic "Unknown slide type" box; the stored content is not
   shown and not exported. Acceptable when the scan is clean, wrong as a general
-  contract. A placeholder that names the missing type and surfaces its raw
-  content would make removal safe even with decks in the wild.
-- **Nothing fails when a reference is orphaned.** Every step 4–7 item above was
-  found by grep, not by a failing test. A test that asserts no source file
-  mentions an unregistered type name would turn the sweep into a gate.
+  contract. Now that `getRemovedSlideType()` can distinguish "deliberately
+  removed, successor X" from "no idea what this is", a placeholder that names
+  the missing type and surfaces its raw content is buildable — and it is a
+  prerequisite for removing any type decks actually use.
+- ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
+  `tests/removed-slide-types.test.js` (step 7 above).
 - **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
   `EXCLUDED_TYPES` both had to have an entry *removed*; neither is derived from
   anything the type declares. They are the clearest candidates for being owned
@@ -120,5 +147,7 @@ consumers derive their lists from the registry instead of restating them.
 ## See also
 
 - `scripts/scan-slide-type.js` — the deck-population scan behind rung 2.
+- `shared/slide-types/removed.js` — the removal record.
+- `tests/removed-slide-types.test.js` — the guardrail that enforces it.
 - `docs/reference/editor-inspector.md` — the per-type inspector table.
 - `docs/reference/wysiwyg-inline-editing.md` — the per-type inline-edit table.
