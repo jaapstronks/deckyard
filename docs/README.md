@@ -53,6 +53,7 @@ ships:
 | Dev environment | `docs/developer/dev-setup.md` |
 | Adding custom themes | `docs/developer/themes.md` |
 | Adding custom slide types | `docs/developer/slide-types.md` |
+| The full list of built-in slide types | `docs/reference/slide-type-inventory.md` (generated) |
 | What a new slide type owes elsewhere | `docs/reference/slide-type-companions.md` |
 | Removing a slide type | `docs/reference/slide-type-removal.md` |
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
