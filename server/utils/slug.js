@@ -8,8 +8,8 @@ export function safeSlug(input) {
     // Keep alnum, space, dash
     .replace(/[^a-z0-9\- ]+/g, '')
     .replace(/\s+/g, '-')
-    .replace(/\-+/g, '-')
-    .replace(/^\-+|\-+$/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, 80);
   return s || 'presentation';
 }

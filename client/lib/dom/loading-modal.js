@@ -152,39 +152,3 @@ export function showLoadingModal({ h, root, initialMessage = '', title = '' } = 
     element: backdrop,
   };
 }
-
-/**
- * Show a loading modal and run a promise, auto-closing on completion
- *
- * @param {Object} options
- * @param {Function} options.h - Element helper
- * @param {HTMLElement} options.root - Root element
- * @param {Promise} options.promise - The promise to wait for
- * @param {string} options.initialMessage - Initial message
- * @param {string} options.successMessage - Message on success (shown briefly)
- * @returns {Promise} Resolves with the promise result
- */
-export async function withLoadingModal({
-  h,
-  root,
-  promise,
-  initialMessage = 'Loading...',
-  successMessage = 'Done!',
-  title = '',
-} = {}) {
-  const modal = showLoadingModal({ h, root, initialMessage, title });
-
-  try {
-    const result = await promise;
-    modal.update(successMessage);
-    modal.setProgress(100);
-
-    await new Promise((r) => setTimeout(r, 800));
-    modal.close();
-
-    return result;
-  } catch (e) {
-    modal.close();
-    throw e;
-  }
-}

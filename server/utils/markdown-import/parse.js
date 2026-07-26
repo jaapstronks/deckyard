@@ -422,7 +422,7 @@ function detectBrokenPatterns(body, slideIndex) {
     }
 
     // Broken link: `[text]url)` — missing opening paren (not an image)
-    if (!/!\[/.test(trimmed) && /\[[^\]]+\][^(!\[]/.test(trimmed) && !trimmed.includes('](') && /\]\s*http/.test(trimmed)) {
+    if (!/!\[/.test(trimmed) && /\[[^\]]+\][^(![]/.test(trimmed) && !trimmed.includes('](') && /\]\s*http/.test(trimmed)) {
       warnings.push(
         `Slide ${slideNum}: Broken link syntax — looks like a missing "(" in "${truncate(trimmed, 80)}"`
       );

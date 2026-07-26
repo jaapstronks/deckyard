@@ -15,7 +15,7 @@ const ESCAPE_PLACEHOLDER = '\x00ES\x00';
 // CommonMark backslash escapes: a backslash before any ASCII punctuation
 // (backslash itself included) yields that literal punctuation character.
 const BACKSLASH_ESCAPE_RE =
-  /\\([!"#$%&'()*+,\-.\/:;<=>?@\[\\\]^_`{|}~])/g;
+  /\\([!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~])/g;
 
 /**
  * Pull CommonMark backslash escapes out of `text` into placeholders so an

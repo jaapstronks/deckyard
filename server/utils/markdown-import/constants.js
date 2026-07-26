@@ -110,7 +110,7 @@ export const ATTRIBUTION_RE = /^-{1,2}\s*(.+)$/;
  * Bold-colon list item pattern: `- **Title**: description`
  * Groups: 1=title (inside bold), 2=description
  */
-export const BOLD_COLON_RE = /^\*\*(.+?)\*\*[:\u2013\u2014\-]\s*(.*)$/;
+export const BOLD_COLON_RE = /^\*\*(.+?)\*\*[:\u2013\u2014-]\s*(.*)$/;
 
 /**
  * Heading regex. Groups: 1=hashes, 2=text

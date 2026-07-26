@@ -459,27 +459,6 @@ export function createQuickModal({
 }
 
 /**
- * Create a status element for modal feedback
- *
- * @param {Function} h - DOM element helper function
- * @param {string} [className] - Additional CSS class
- * @returns {Object} { el, setText, clear }
- */
-export function createModalStatus(h, className = 'modal-status') {
-  const el = h('div', { class: `help ${className}`.trim(), text: '' });
-
-  return {
-    el,
-    setText: (text) => {
-      el.textContent = text || '';
-    },
-    clear: () => {
-      el.textContent = '';
-    },
-  };
-}
-
-/**
  * Create action buttons for modal footer
  *
  * @param {Function} h - DOM element helper function

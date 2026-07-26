@@ -57,24 +57,6 @@ export function trashIcon({ size = 16 } = {}) {
 }
 
 /**
- * Star icon (five-pointed star)
- * @param {Object} [options]
- * @param {number} [options.size=16]
- * @param {boolean} [options.filled=false]
- * @returns {SVGSVGElement}
- */
-export function starIcon({ size = 16, filled = false } = {}) {
-  const svg = createSvgIcon({
-    size,
-    innerHTML: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
-  });
-  if (filled) {
-    svg.setAttribute('fill', 'currentColor');
-  }
-  return svg;
-}
-
-/**
  * Close/X icon
  * @param {Object} [options]
  * @param {number} [options.size=16]
@@ -84,32 +66,6 @@ export function closeIcon({ size = 16 } = {}) {
   return createSvgIcon({
     size,
     innerHTML: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-  });
-}
-
-/**
- * Chevron right icon
- * @param {Object} [options]
- * @param {number} [options.size=16]
- * @returns {SVGSVGElement}
- */
-export function chevronRightIcon({ size = 16 } = {}) {
-  return createSvgIcon({
-    size,
-    innerHTML: '<path d="m9 18 6-6-6-6"/>',
-  });
-}
-
-/**
- * Chevron left icon
- * @param {Object} [options]
- * @param {number} [options.size=16]
- * @returns {SVGSVGElement}
- */
-export function chevronLeftIcon({ size = 16 } = {}) {
-  return createSvgIcon({
-    size,
-    innerHTML: '<path d="m15 18-6-6 6-6"/>',
   });
 }
 

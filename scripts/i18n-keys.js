@@ -63,7 +63,7 @@ export function isRuntimeBuiltKey(key) {
 // class, so a fallback may contain the *other* quote: t('k', "Logo's") and
 // t('k', 'A "quoted" phrase') both extract correctly.
 const T_CALL =
-  /\bt\(\s*(['"])([\w.\-]+)\1\s*(?:,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"))?/g;
+  /\bt\(\s*(['"])([\w.-]+)\1\s*(?:,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"))?/g;
 
 /**
  * Walk a directory tree yielding .js file paths.
