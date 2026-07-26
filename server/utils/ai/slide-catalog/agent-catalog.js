@@ -1,0 +1,222 @@
+/**
+ * The agent-facing slide-type contract.
+ *
+ * `get_slide_types` (MCP) used to iterate SLIDE_TYPE_CATALOG — the hand-written
+ * editorial catalog — which made a registered type without a catalog entry
+ * invisible to agents, and indistinguishable from a type that was withheld on
+ * purpose. Coverage now comes from the runtime registry, with the editorial
+ * catalog as an overlay on top of it. Every registered type lands in exactly
+ * one of three states:
+ *
+ *   registered type ─┬─ deprecated / `ai: false`  → deliberately not offered
+ *                    ├─ has a catalog entry       → full editorial copy
+ *                    └─ neither                   → derived entry, documented:false
+ *
+ * There is no fourth state, and "forgot to write an entry" is now the third
+ * one (visible but flagged) rather than silent absence.
+ *
+ * Tier 2 — per-organization slide types defined in the database — is resolved
+ * on top of that, keyed `custom-<slug>`, the same key `/api/slide-types` and
+ * `buildPhase2CatalogPrompt` already use. That is what makes the no-code path
+ * and the agent path meet: a type built in the builder UI reaches Claude.
+ *
+ * This module is pure: the caller supplies the org-resolved inputs
+ * (`disabledSlideTypes`, `customSlideTypes`), exactly as
+ * `buildPhase2CatalogPrompt` takes them, so there is no third convention and no
+ * storage import in the catalog layer.
+ */
+
+import {
+  SLIDE_TYPES,
+  SLIDE_TYPE_IDS,
+  GLOBAL_SLIDE_FIELD_KEYS,
+} from '../../../../shared/slide-types/registry.js';
+import { SLIDE_TYPE_CATALOG } from './definitions.js';
+
+const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
+
+// Editor field types → the coarse schema vocabulary the catalog entries use.
+// Anything unmapped degrades to 'string', which is the honest answer for a
+// free-text field an agent has never seen before.
+const FIELD_TYPE_TO_SCHEMA_TYPE = {
+  string: 'string',
+  markdown: 'string',
+  code: 'string',
+  csv: 'string',
+  image: 'string',
+  number: 'number',
+  boolean: 'boolean',
+  enum: 'enum',
+  items: 'array',
+  images: 'array',
+};
+
+/**
+ * True when a slide-type definition is deliberately withheld from agents.
+ *
+ * Two markers, both explicit on the definition:
+ *  - `deprecated: true` — already means "renderable, not authorable"; the
+ *    editor's picker and the AI generator have honoured it for a while.
+ *  - `ai: false` — "this type is not offered to agents", for live types with a
+ *    reason other than deprecation (app-managed, an alias, a gated escape
+ *    hatch). The same `ai` key carries the catalog entry on custom file-based
+ *    types (`custom/slide-types/*.js`), so one field says either "here is my
+ *    agent contract" or "I deliberately have none".
+ *
+ * @param {object} def - A slide-type definition from SLIDE_TYPES.
+ * @returns {boolean}
+ */
+export function isAgentOptOut(def) {
+  if (!def || typeof def !== 'object') return true;
+  return def.deprecated === true || def.ai === false;
+}
+
+/**
+ * Derive a coarse content schema from a type's editor field definitions.
+ * Used for registered types that have no editorial catalog entry: an imperfect
+ * schema an agent can act on beats a type it cannot see at all.
+ *
+ * Global fields (background image, logo, a11y…) are left out — they travel in
+ * the response's `globalOptions` instead, and repeating them on every type
+ * would bury the fields that actually distinguish it.
+ *
+ * @param {Array<object>} fields
+ * @returns {Object<string, object>}
+ */
+export function deriveAgentSchema(fields) {
+  const schema = {};
+  for (const field of Array.isArray(fields) ? fields : []) {
+    const key = typeof field?.key === 'string' ? field.key : '';
+    if (!key || GLOBAL_FIELDS.has(key)) continue;
+
+    const entry = { type: FIELD_TYPE_TO_SCHEMA_TYPE[field.type] || 'string' };
+    if (field.required === true) entry.required = true;
+    if (typeof field.maxLength === 'number') entry.maxLength = field.maxLength;
+    if (typeof field.min === 'number') entry.min = field.min;
+    if (typeof field.max === 'number') entry.max = field.max;
+    if (typeof field.minItems === 'number') entry.minItems = field.minItems;
+    if (typeof field.maxItems === 'number') entry.maxItems = field.maxItems;
+    if (Array.isArray(field.options)) {
+      // Options are either bare values or { value, label } pairs.
+      entry.options = field.options.map((o) =>
+        o && typeof o === 'object' ? o.value : o
+      );
+    }
+    if (Array.isArray(field.itemFields) && field.itemFields.length) {
+      entry.itemSchema = deriveAgentSchema(field.itemFields);
+    }
+    schema[key] = entry;
+  }
+  return schema;
+}
+
+/**
+ * Pick the example content object for a type in the requested language.
+ * @param {object} def - Definition or Tier-2 record (both carry defaults*).
+ * @param {string} lang
+ * @returns {object|null}
+ */
+function exampleFor(def, lang) {
+  return (
+    def?.defaultsByLang?.[lang] || def?.defaultsByLang?.nl || def?.defaults || null
+  );
+}
+
+/**
+ * Build the agent-facing entry for one registered (Tier-1) type.
+ * @param {string} name
+ * @param {object} def
+ * @param {object|undefined} catalogEntry
+ * @param {string} lang
+ * @returns {object}
+ */
+function tier1Entry(name, def, catalogEntry, lang) {
+  const documented = Boolean(catalogEntry);
+  const label = typeof def?.label === 'string' ? def.label : name;
+
+  return {
+    typeId: SLIDE_TYPE_IDS[name] || `core/${name}`,
+    label,
+    category: catalogEntry?.resolveInPhase1 ? 'structural' : 'content',
+    description: documented
+      ? (catalogEntry.description || '').trim()
+      : `${label}. No editorial guidance has been written for this type yet; ` +
+        'the schema below is derived from its field definitions.',
+    bestFor: catalogEntry?.bestFor || [],
+    notFor: catalogEntry?.notFor || [],
+    schema: catalogEntry?.schema || deriveAgentSchema(def?.fields),
+    example: exampleFor(def, lang),
+    // false = registered and usable, but nobody has written the editorial copy.
+    // Surfacing the gap beats hiding the type.
+    documented,
+  };
+}
+
+/**
+ * Build the agent-facing entry for one Tier-2 (per-organization) type.
+ * @param {object} ct - Record from listPublishedCustomSlideTypes().
+ * @param {string} lang
+ * @returns {object}
+ */
+function tier2Entry(ct, lang) {
+  const label = ct.label || ct.slug;
+  const base = ct.baseType ? ` Based on ${ct.baseType}.` : '';
+  return {
+    typeId: `custom/${ct.slug}`,
+    label,
+    category: 'content',
+    description:
+      `${label} — a slide type defined by this organization.${base} ` +
+      'The schema below is derived from its field definitions.',
+    bestFor: [],
+    notFor: [],
+    schema: deriveAgentSchema(ct.fields),
+    example: exampleFor(ct, lang),
+    documented: false,
+    isCustom: true,
+  };
+}
+
+/**
+ * Resolve the slide types one organization's agents may use.
+ *
+ * @param {Object} [options]
+ * @param {string} [options.lang='nl'] - Language for the example content.
+ * @param {'structural'|'content'|'all'} [options.category='all'] - Filter.
+ * @param {string[]} [options.disabledSlideTypes] - Org-level disabled types;
+ *   the editor and the AI generator honour these, so agents must too.
+ * @param {Array<object>} [options.customSlideTypes] - Published Tier-2 types
+ *   for the organization (from loadCustomSlideTypes).
+ * @returns {Object<string, object>} Entries keyed by slide-type name.
+ */
+export function resolveAgentSlideTypes({
+  lang = 'nl',
+  category = 'all',
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+} = {}) {
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : []
+  );
+  const types = {};
+
+  const keep = (entry) =>
+    category === 'all' || entry.category === category;
+
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    if (isAgentOptOut(def)) continue;
+    if (disabled.has(name)) continue;
+    const entry = tier1Entry(name, def, SLIDE_TYPE_CATALOG[name], lang);
+    if (keep(entry)) types[name] = entry;
+  }
+
+  for (const ct of Array.isArray(customSlideTypes) ? customSlideTypes : []) {
+    if (!ct?.slug) continue;
+    const key = `custom-${ct.slug}`;
+    if (disabled.has(key)) continue;
+    const entry = tier2Entry(ct, lang);
+    if (keep(entry)) types[key] = entry;
+  }
+
+  return types;
+}
