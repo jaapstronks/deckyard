@@ -4,6 +4,32 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.4.0](https://github.com/jaapstronks/deckyard/compare/v1.3.0...v1.4.0) (2026-07-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `freeform-slide` type is no longer registered. Slides stored with `type: "freeform-slide"` render the generic unknown-type placeholder instead of their canvas; their content remains in the deck JSON.
+
+### Added
+
+* **editor:** split the inspector background by frequency, drop the header row ([#393](https://github.com/jaapstronks/deckyard/issues/393)) ([5a842e4](https://github.com/jaapstronks/deckyard/commit/5a842e47f16996ccadf818b7ff3cb265f6aec782))
+* **mcp:** derive get_slide_types from the registry, not the AI catalog ([#386](https://github.com/jaapstronks/deckyard/issues/386)) ([84f87d3](https://github.com/jaapstronks/deckyard/commit/84f87d3696202451c44bb4720d9a8ed4a09c7bd1))
+* **slide-types:** gate companion coverage so a type cannot drift silently ([#388](https://github.com/jaapstronks/deckyard/issues/388)) ([b9b18ee](https://github.com/jaapstronks/deckyard/commit/b9b18eee395f07d4dfc3033969d514ed9bdf2aaa))
+* **slide-types:** give a removed slide type a real render contract ([#384](https://github.com/jaapstronks/deckyard/issues/384)) ([e1eb3d9](https://github.com/jaapstronks/deckyard/commit/e1eb3d9e2d87d2f46ba1ade9c2b6bea7b277e49b))
+* **slide-types:** let a type carry its own usage rules for agents ([#390](https://github.com/jaapstronks/deckyard/issues/390)) ([b1f79a0](https://github.com/jaapstronks/deckyard/commit/b1f79a041c989d2aa201a5d5026debb8be5cf5ef))
+
+
+### Fixed
+
+* **export:** repair broken #slide=&lt;n&gt; deep-link in exported HTML ([#391](https://github.com/jaapstronks/deckyard/issues/391)) ([ba8dadc](https://github.com/jaapstronks/deckyard/commit/ba8dadce470c02419e312c8559db32ad05a87bfc))
+
+
+### Changed
+
+* cap the version at 1.x while Deckyard is in beta ([18701a4](https://github.com/jaapstronks/deckyard/commit/18701a4adf586316895c5d7bc0f411224c9e8e6d))
+* remove the deprecated freeform slide type ([#377](https://github.com/jaapstronks/deckyard/issues/377)) ([e12a0ee](https://github.com/jaapstronks/deckyard/commit/e12a0ee7263a669bd283620c9557a9835256f7d3))
+
 ## [1.3.0](https://github.com/jaapstronks/deckyard/compare/v1.2.0...v1.3.0) (2026-07-25)
 
 
