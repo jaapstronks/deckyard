@@ -18,6 +18,7 @@ import {
   resolveFieldRole,
   fieldAllowsAlign,
   fieldAllowedAlignValues,
+  fieldAlignAffordance,
 } from '../shared/slide-types/text-roles.js';
 import { TEXT_ALIGN_VALUES } from '../shared/slide-types/text-styles.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
@@ -109,7 +110,13 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     // [type, key, allowsAlign]
     ['list-slide', 'items.0.text', false],
     ['list-slide', 'items.0.title', false],
-    ['list-slide', 'title', true],
+    // `list-slide.title` used to sit here as `true`. It now belongs to the
+    // header-block field group, which owns its alignment — a second reason for
+    // an empty value set, distinguishable via fieldAlignAffordance().owner.
+    // A field that is still genuinely standalone stands in for the true case.
+    ['list-slide', 'title', false],
+    ['content-slide', 'body', true],
+    ['image-slide', 'caption', true],
     ['lijstje-slide', 'items.0.text', false],
     ['process-slide', 'items.0.title', false],
     ['process-slide', 'items.0.text', false],
@@ -129,11 +136,18 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     });
   }
 
-  it("quote field offers left/centre only", () => {
-    assert.deepEqual(fieldAllowedAlignValues(SLIDE_TYPES['quote-slide'].fields, 'quote'), [
-      'left',
-      'center',
-    ]);
+  it('the quote ROLE offers left/centre only, wherever it is used', () => {
+    assert.deepEqual(allowedAlignValues('quote'), ['left', 'center']);
+  });
+
+  it("quote-slide's own quote field defers to its group, not to the role", () => {
+    // The role still says left/centre, but on this type the field joined the
+    // quote-block group, which moves quote + byline + portraits together. The
+    // group wins, so no per-field values are offered at all.
+    const out = fieldAlignAffordance(SLIDE_TYPES['quote-slide'].fields, 'quote');
+    assert.equal(out.owner, 'group');
+    assert.deepEqual(out.values, []);
+    assert.deepEqual(fieldAllowedAlignValues(SLIDE_TYPES['quote-slide'].fields, 'quote'), []);
   });
 });
 

@@ -17,26 +17,34 @@ export const CATEGORY_LABELS = {
 /**
  * Slide type category definitions.
  * Matches the picker categories for familiarity.
+ *
+ * Every insertable type belongs to exactly one group, and a deprecated type
+ * belongs to none — tests/slide-type-companion-coverage.test.js enforces both.
+ * (An uncategorized type is not lost: the tab folds it into "Other". That
+ * graceful degradation is why the drift used to go unnoticed.)
  */
 export const CATEGORIES = [
   {
     key: 'basic',
     label: 'Basic',
-    types: ['title-slide', 'chapter-title-slide', 'content-slide', 'quote-slide', 'lijstje-slide'],
+    types: [
+      'title-slide', 'chapter-title-slide', 'content-slide', 'quote-slide',
+      'lijstje-slide', 'list-slide',
+    ],
   },
   {
     key: 'media',
     label: 'Media',
     types: [
       'image-text-slide', 'image-slide', 'gallery-slide', 'video-slide',
-      'embed-slide', 'split-partner-title-slide', 'team-cards-slide', 'logo-wall-slide',
+      'embed-slide', 'team-cards-slide', 'logo-wall-slide',
     ],
   },
   {
     key: 'layouts',
     label: 'Layouts',
     types: [
-      'text-blocks-slide', 'card-stack-slide',
+      'text-blocks-slide',
       'icon-card-grid-slide',
     ],
   },
@@ -58,14 +66,14 @@ export const CATEGORIES = [
     label: 'Interaction',
     types: [
       'poll-slide', 'likert-slide', 'likert-slider-slide',
-      'feedback-slide', 'follow-invite-slide',
+      'feedback-slide', 'follow-invite-slide', 'countdown-slide',
     ],
   },
   {
     key: 'other',
     label: 'Other',
     types: [
-      'payoff-slide', 'lead-capture-slide',
+      'payoff-slide', 'end-slide', 'custom-html-slide',
     ],
   },
 ];

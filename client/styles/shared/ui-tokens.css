@@ -41,6 +41,34 @@
 
   --ps-focus-ring-offset: 2px;
 
+  /* Z-index scale (app chrome).
+     Named stacking tiers so cross-component overlap has one source of truth
+     instead of scattered magic numbers. Reach for the nearest tier rather than
+     inventing a new value; if two things must sit within one tier, order them
+     with the tier token + a small offset (calc(var(--z-header) + 1)).
+
+     Local sibling ordering *inside* a single component's own stacking context
+     (a slide's background/content/overlay layers, cards, thumbnails) stays as
+     plain small integers — those are not app layers and deliberately do not use
+     this scale. */
+  --z-behind: -1;      /* decorative layers sent behind their own content */
+  --z-base: 0;         /* default in-flow stacking */
+  --z-raised: 10;      /* lifted just above siblings (resize handles, sticky cells) */
+  --z-sticky: 50;      /* sticky in-flow chrome bars */
+  --z-nav: 90;         /* fixed side navigation */
+  --z-header: 100;     /* fixed app headers, dropdown menus, floating action buttons */
+  --z-drawer-backdrop: 199; /* scrim behind an off-canvas drawer */
+  --z-drawer: 200;     /* off-canvas drawers, fixed side panels, notification panel */
+  --z-overlay: 1000;   /* modal backdrops and full-screen overlays */
+  --z-modal: 1100;     /* dialogs stacked above their own backdrop */
+  --z-banner: 1150;    /* system-wide banner (e.g. sandbox notice) */
+  --z-toast: 1200;     /* transient toasts, above modals */
+  --z-loading: 2000;   /* blocking full-screen veil: AI-generation loading modal */
+  --z-lightbox: 3000;  /* full-screen preview lightboxes (slide-type peek, version-compare enlarge), above the loading veil */
+  --z-consent: 4000;   /* cookie-consent legal gate: banner, its full-screen scrim, and settings panel */
+  --z-skip-link: 5000; /* WCAG skip-link — the keyboard escape hatch, above every overlay */
+  --z-drag: 999999;    /* drag ghost — the ceiling, above everything */
+
   --ps-topbar-height: 56px;
   --ps-slides-collapsed-width: 64px;
   --ps-slides-expanded-width: 200px;

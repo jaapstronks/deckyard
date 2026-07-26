@@ -31,8 +31,8 @@ export function belongsInCollection({ user, pres } = {}) {
   return false;
 }
 
-export async function handlePresentationsList({ repoRoot, res, authedUser } = {}) {
-  const list = await listPresentations(repoRoot);
+export async function handlePresentationsList({ repoRoot, storageScope, res, authedUser } = {}) {
+  const list = await listPresentations(storageScope);
   // Filter to show only the user's own presentations + workspace presentations.
   // Admin status doesn't change what appears in their collection.
   const filtered = authedUser
@@ -41,10 +41,12 @@ export async function handlePresentationsList({ repoRoot, res, authedUser } = {}
 
   // Fetch tags for all presentations in the list
   const presentationIds = filtered.map((p) => p.id);
-  const tagsMap = await getTagsForPresentations(presentationIds);
+  const tagsMap = await getTagsForPresentations(storageScope, presentationIds);
 
-  // Fetch published status and collaborator counts
-  const ctx = { user: authedUser };
+  // Fetch published status and collaborator counts. The organization rides
+  // along on the request's storage scope, so these stay in the session's
+  // workspace instead of resolving against the instance default.
+  const ctx = { user: authedUser, organizationId: storageScope?.organizationId };
   const publishedSet = await getPublishedPresentationIds(presentationIds, ctx);
   const collaboratorCounts = await getCollaboratorCounts(presentationIds, ctx);
 

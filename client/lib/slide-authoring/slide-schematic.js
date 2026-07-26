@@ -45,6 +45,9 @@
 //   { kind: 'video' }            image with a play button
 //   { kind: 'embed' }            browser-window chrome
 //   { kind: 'partners' }         centred title + two partner logos
+// Modifier, valid on any kind:
+//   { align: 'left'|'center'|'right' }  horizontal placement of the text block,
+//                                       used by field-group alignment variants
 // Legacy image/text layout grammar (unchanged, used by the layout switcher):
 //   { split: <pct> } | { corner: <pct> } | { duo: <pct> } |
 //   { row: 'top'|'bottom' } | { cols: <n> } | { textCols: <n> } | {}
@@ -99,6 +102,14 @@ export function renderSlideSchematic(h, spec = {}, opts = {}) {
     ]);
 
   const kind = s.kind || legacyKind(s);
+
+  // Generic horizontal-alignment modifier, applied on top of any kind. Field
+  // groups use it to draw their alignment variants (`{kind:'title',
+  // align:'left'}` vs `align:'center'`) without needing a bespoke kind per
+  // type. Absent = unchanged, so every existing spec renders as before.
+  if (s.align === 'left' || s.align === 'center' || s.align === 'right') {
+    box.classList.add(`sd-align-${s.align}`);
+  }
 
   switch (kind) {
     // --- text / title family ------------------------------------------------

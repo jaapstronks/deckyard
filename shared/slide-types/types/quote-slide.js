@@ -7,6 +7,38 @@ import {
   imagePlaceholderHtml,
 } from '../helpers.js';
 import { normalizeTextStyles } from '../text-styles.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Quote, name and role are one composition — the type has always centred them
+ * TOGETHER rather than centring each field inside its own box. That behaviour
+ * used to be a hardcode reading one designated field's per-field alignment
+ * (`textStyles.quote.align`); it is now the declared field-group model, which
+ * is what text-roles.js has had booked as "retires the quote hardcode" since
+ * the role rollout.
+ *
+ * READ FALLBACK, and the one migration in this model: decks authored before
+ * the group stored their centring in `textStyles.quote.align`. `quoteAlign`
+ * wins when present, otherwise that legacy value is read. Same pattern the
+ * title slide uses for its legacy `bgImage`. Nothing is rewritten on disk; the
+ * editor simply writes the new key from now on.
+ */
+const QUOTE_BLOCK = alignGroup('quote-block', 'quoteAlign', {
+  label: 'Quote block alignment',
+  schematicKind: 'quote',
+});
+
+/**
+ * The content a group read should see: the stored `quoteAlign`, or the legacy
+ * per-field align it replaced.
+ * @param {Object} content
+ * @returns {Object} content with `quoteAlign` resolved
+ */
+function withResolvedQuoteAlign(content) {
+  if (content?.quoteAlign) return content;
+  const legacy = normalizeTextStyles(content?.textStyles)?.quote?.align;
+  return legacy ? { ...content, quoteAlign: legacy } : content;
+}
 
 // Portraits on the primary (legacy) quote: two slots so a shared quote (a duo)
 // can show both people. Extra quotes carry a single optional portrait each.
@@ -177,17 +209,20 @@ function activeExtraQuotes(content) {
 
 export default {
   label: 'Quote',
+  fieldGroups: [QUOTE_BLOCK.group],
+  layoutVariants: QUOTE_BLOCK.variants,
   fields: [
+    QUOTE_BLOCK.field,
     {
       key: 'quote',
       label: 'Quote',
       type: 'string',
       required: true,
       maxLength: 400,
-      // The quote block only supports left (hero) and centre, not right; the
-      // type also reads this align to centre the whole composition. See
-      // text-roles.js — replaces the former slide.type !== 'quote-slide' hardcode.
+      // Alignment belongs to the quote-block group, which moves quote, byline
+      // and portraits together; `role` still governs colour/size affordances.
       role: 'quote',
+      group: 'quote-block',
     },
     {
       key: 'authorName',
@@ -195,6 +230,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 80,
+      group: 'quote-block',
     },
     {
       key: 'authorTitle',
@@ -202,6 +238,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      group: 'quote-block',
     },
     // Optional round portrait photos, shown next to the name/byline. Two
     // slots so a shared quote (e.g. a duo) can show both people.
@@ -311,6 +348,7 @@ export default {
   // Defaults are language-aware (editor chooses based on current language mode).
   defaultsByLang: {
     nl: {
+      quoteAlign: 'left',
       quote: 'Een sterke quote komt hier.',
       authorName: 'Voornaam Achternaam',
       authorTitle: 'Functie / titel',
@@ -321,6 +359,7 @@ export default {
       quotes: [],
     },
     'en-GB': {
+      quoteAlign: 'left',
       quote: 'A strong quote goes here.',
       authorName: 'Name Surname',
       authorTitle: 'Function / title',
@@ -333,6 +372,7 @@ export default {
   },
   // Back-compat fallback (used when language is unknown).
   defaults: {
+    quoteAlign: 'left',
     quote: 'A strong quote goes here.',
     authorName: 'Name Surname',
     authorTitle: 'Role / title',
@@ -355,11 +395,11 @@ export default {
         ...(vars || {}),
         '--quote-scale': quoteFontScale(1, [content?.quote]),
       };
-      // When the quote text is centre-aligned (the "This text" tab), centre the
-      // WHOLE block - quote, byline and portraits - in the slide, not just the
-      // text within a left-hung column.
-      const quoteAlign = normalizeTextStyles(content?.textStyles)?.quote?.align;
-      const alignClass = quoteAlign === 'center' ? ' is-align-center' : '';
+      // Centre the WHOLE block - quote, byline and portraits - in the slide,
+      // not just the text within a left-hung column. Driven by the quote-block
+      // group (Layout chip), with the legacy per-field align as read fallback.
+      const groupClass = groupAlignClass(QUOTE_BLOCK.group, withResolvedQuoteAlign(content));
+      const alignClass = groupClass ? ` ${groupClass}` : '';
       const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
       const inner = quoteBlockInnerHtml({
         quote: content?.quote,

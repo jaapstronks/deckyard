@@ -19,6 +19,28 @@ is followed by `1.10.0`, not `2.0`.
 `1.0.0` was the commitment to honor the MAJOR rule from there on. A rewrite that
 breaks nothing stays `1.x`; MAJOR moves to `2` only on a genuine break.
 
+### While Deckyard is in beta: no MAJOR bumps
+
+Deckyard went open source and launched publicly in July 2026, and still carries a
+**beta** badge. The foundation is being reworked in the open: modules are moving,
+slide types are being consolidated, seams are being cut. In that phase a MAJOR
+bump communicates the wrong thing — `2.0.0` reads as "a second era of the
+product", not as "we removed a slide type nobody used while tidying up".
+
+So until the beta badge comes off, **the version stays in `1.x`**. Breaking
+changes are still *documented* (the `⚠ BREAKING CHANGES` section in the changelog
+is the point), but they ship as a MINOR bump, not a MAJOR one. `2.0.0` is reserved
+for a deliberate moment: leaving beta.
+
+Keep writing the `BREAKING CHANGE:` trailer when a change genuinely meets the
+criteria below — the warning in the notes is worth more than the digit. But
+`BREAKING CHANGE:` and `!` force a MAJOR bump automatically, and no
+release-please setting caps that. So during beta the Release PR's version is
+**reviewed, not trusted**: if it proposes a `2.x`, override it down to the next
+MINOR before merging (see [Correcting a version](#correcting-a-version)). A
+`1.x` release carrying a `⚠ BREAKING CHANGES` section is the intended shape
+while the badge is up, not a mistake.
+
 ## Merges are not releases
 
 Merging to `main` is **continuous integration** — internal, may happen dozens of
@@ -39,7 +61,21 @@ is **MAJOR** only if it breaks one of these for an existing install:
 
 Everything else — internal modules, UI microcopy, most refactors — is MINOR or
 PATCH. When in doubt, if a fork or self-hoster has to change something on upgrade,
-it's MAJOR.
+it's MAJOR (during beta: MINOR with a breaking note — see above).
+
+Two things this list deliberately does *not* make breaking:
+
+- **Retiring a slide type nobody stored.** A deck that carries the removed type
+  still loads; the slide falls back to the archived-slide placeholder, which
+  names the retired type, points at its successor and keeps the stored content
+  readable (`shared/slide-types/unresolved.js`). That is a degraded render, not a
+  load failure, and `scripts/scan-slide-type.js` is how you check the deck
+  population before removing. This is what the `freeform-slide` removal (#377)
+  was, and it should not have carried a `BREAKING CHANGE:` trailer.
+- **Moving or splitting an internal module.** Deckyard has no published JS package
+  surface; `client/` and `server/` internals are not a contract. A fork that
+  patched a specific file has to reconcile — that is what forking costs, and it is
+  not a version signal.
 
 ## Commit conventions
 
@@ -74,6 +110,33 @@ is what release-please reads — keep it a valid Conventional Commit.
 The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill
 nudges (phone push) when the accumulated merges warrant cutting a release, so the
 Release PR doesn't sit open and forgotten. It never cuts the release itself.
+
+## Correcting a version
+
+Step 3 above says you never pick the number by hand, and that holds for the
+normal path. The exception is when a commit already on `main` computed the wrong
+bump — a `BREAKING CHANGE:` trailer on something that isn't breaking, or a MAJOR
+during beta. The trailer can't be unwritten (history is history), so you override
+the result instead.
+
+Push a commit to `main` whose message carries a `Release-As:` trailer with the
+version you actually want:
+
+```
+docs: recalibrate the versioning policy for beta
+
+Release-As: 1.4.0
+```
+
+On the next push, release-please rewrites the open Release PR to that version —
+title, `package.json`, tag, changelog heading. The generated changelog *body*
+still reflects the commits (a `⚠ BREAKING CHANGES` section stays), which is
+correct: the note was accurate, only the digit was wrong.
+
+Use this sparingly. It is the release equivalent of a manual override — every
+use means the commit convention failed upstream, so fix that too (in this case:
+[the beta rule](#while-deckyard-is-in-beta-no-major-bumps) and the two
+non-breaking cases named above).
 
 ## One-time setup
 

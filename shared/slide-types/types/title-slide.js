@@ -1,9 +1,32 @@
 import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
 import { resolveTitleSlideBackground } from '../title-slide-background.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title, subtitle and meta are ONE visual block: they share a container and
+ * read as a single unit, so their horizontal placement is a property of the
+ * block and not of each field (see field-groups.js). The value lives in the
+ * `titleBlockAlign` content field, which the toolbar "Layout" chip writes via
+ * `layoutVariants` below; `renderHtml` turns a non-default value into
+ * `is-align-center` on the slide root and the CSS moves the whole block.
+ *
+ * Two values, not three: a right-aligned title block is not a layout we want
+ * to offer, and it is the one value that produced a broken slide in the deck
+ * history (a centred title next to a right-aligned subtitle). Same reasoning
+ * as ROLE_AFFORDANCES.quote, which also offers left/centre only.
+ *
+ * The VERTICAL axis stays the theme's (`titleLayout`: bottom | center | top).
+ * Two axes, two owners: the theme sets the posture of a title slide, the
+ * author composes this one.
+ */
+const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
+  label: 'Title block alignment',
+});
 
 export default {
   label: 'Title slide',
+  fieldGroups: [TITLE_BLOCK.group],
   fields: [
     {
       key: 'title',
@@ -11,6 +34,7 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      group: 'title-block',
     },
     {
       key: 'subheading',
@@ -18,6 +42,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 160,
+      group: 'title-block',
     },
     {
       // One generic meta line (author · date · organisation). Rendered in the
@@ -28,7 +53,9 @@ export default {
       type: 'string',
       required: false,
       maxLength: 160,
+      group: 'title-block',
     },
+    TITLE_BLOCK.field,
     // Background image is the generic, type-agnostic `slideBgImage` field
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
     // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
@@ -43,6 +70,11 @@ export default {
       options: ['left', 'right'],
     },
   ],
+  // Layout catalogue for the editor's layout switcher: the horizontal
+  // placement of the title block. Declared on the definition (JSON-safe) so a
+  // fork overriding this type by name controls its own set. Shape documented
+  // in types/image-text-slide.js.
+  layoutVariants: TITLE_BLOCK.variants,
   defaultsByLang: {
     nl: {
       title: 'Nieuwe titel',
@@ -50,6 +82,7 @@ export default {
       meta: '',
       background: 'lime',
       logoCorner: 'right',
+      titleBlockAlign: 'left',
     },
     'en-GB': {
       title: 'New title',
@@ -57,15 +90,19 @@ export default {
       meta: '',
       background: 'lime',
       logoCorner: 'right',
+      titleBlockAlign: 'left',
     },
   },
-  // Back-compat fallback
+  // Back-compat fallback. `titleBlockAlign` is listed so activeLayoutVariantId
+  // resolves the left tile as active on decks authored before the field
+  // existed, instead of showing no tile selected.
   defaults: {
     title: 'New title',
     subheading: '',
     meta: '',
     background: 'lime',
     logoCorner: 'right',
+    titleBlockAlign: 'left',
   },
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background || 'lime');
@@ -119,10 +156,16 @@ export default {
     const titleLayout = TITLE_LAYOUTS.includes(theme?.titleLayout)
       ? theme.titleLayout
       : DEFAULT_TITLE_LAYOUT;
+    // Horizontal placement of the title block (author-owned, one class for the
+    // whole group). Empty for the default, so untouched decks render exactly
+    // the markup they did before the group model.
+    const alignClass = groupAlignClass(TITLE_BLOCK.group, content);
     return `
         <div class="slide slide-title-universal ${bg}${
           legacyBg ? ' has-bg' : ''
-        } tsu-layout-${titleLayout} ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}">
+        } tsu-layout-${titleLayout} ${logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right'}${
+          alignClass ? ` ${alignClass}` : ''
+        }">
           <div class="slide-inner">
             ${bgImgHtml}
             <div class="tsu-overlay" aria-hidden="true"></div>

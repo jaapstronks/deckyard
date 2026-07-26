@@ -28,8 +28,8 @@ export const SLIDE_BG_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 /**
  * Ids a theme may NOT claim as variants: the built-in background values and
- * the classes that per-slide-type CSS already styles (freeform/countdown's
- * extended set). Relabeling lime/mist stays a `theme.backgroundLabels` job.
+ * the classes that per-slide-type CSS already styles (countdown's extended
+ * set). Relabeling lime/mist stays a `theme.backgroundLabels` job.
  */
 export const RESERVED_SLIDE_BG_IDS = new Set([
   'lime',

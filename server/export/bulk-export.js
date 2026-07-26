@@ -20,6 +20,7 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { singleWorkspaceScope } from '../storage/scope.js';
 
 /**
  * Simple concurrency limiter.
@@ -231,6 +232,13 @@ export async function buildBulkExport(opts) {
     onProgress = () => {},
   } = opts;
 
+  // A bulk export runs detached from any request, so the organization it exports
+  // has to come from the caller. Falls back to the single workspace, and refuses
+  // to guess once an instance holds several.
+  const storageScope = organizationId
+    ? { repoRoot, organizationId, actorEmail: userEmail || null }
+    : singleWorkspaceScope(repoRoot, 'bulk export', { actorEmail: userEmail || null });
+
   const {
     includeVersions = false,
     includeImageLibrary = false,
@@ -251,7 +259,7 @@ export async function buildBulkExport(opts) {
   // ── 1. Collect presentations (0-15%) ────────────────────────
   await onProgress(2);
 
-  const allPresentations = await listPresentations(repoRoot);
+  const allPresentations = await listPresentations(storageScope);
   const userPresentations = allPresentations.filter(
     (p) =>
       p.ownerEmail === userEmail ||
@@ -261,7 +269,7 @@ export async function buildBulkExport(opts) {
   const presentations = [];
   for (let i = 0; i < userPresentations.length; i++) {
     const summary = userPresentations[i];
-    const full = await getPresentation(repoRoot, summary.id);
+    const full = await getPresentation(storageScope, summary.id);
     if (!full) continue;
 
     zip.file(`presentations/${summary.id}.json`, JSON.stringify(full, null, 2));
@@ -298,10 +306,10 @@ export async function buildBulkExport(opts) {
   if (includeVersions) {
     for (let i = 0; i < presentations.length; i++) {
       const pres = presentations[i];
-      const versions = await listPresentationVersions(repoRoot, pres.id);
+      const versions = await listPresentationVersions(storageScope, pres.id);
 
       for (const ver of versions) {
-        const full = await getPresentationVersion(repoRoot, pres.id, ver.id);
+        const full = await getPresentationVersion(storageScope, pres.id, ver.id);
         if (!full) continue;
         zip.file(`versions/${pres.id}/${ver.id}.json`, JSON.stringify(full, null, 2));
         versionCount++;
@@ -317,7 +325,7 @@ export async function buildBulkExport(opts) {
   // ── 3. Collect image library (35-45%) ───────────────────────
   if (includeImageLibrary) {
     try {
-      const images = await listImageLibrary(repoRoot);
+      const images = await listImageLibrary(storageScope);
       zip.file('image-library/index.json', JSON.stringify(images, null, 2));
       manifest.stats.imageLibraryItems = Array.isArray(images) ? images.length : 0;
 
@@ -336,7 +344,7 @@ export async function buildBulkExport(opts) {
   // ── 4. Collect slide library (45-50%) ───────────────────────
   if (includeSlideLibrary) {
     try {
-      const personal = await listPersonalLibrary(repoRoot, userEmail);
+      const personal = await listPersonalLibrary(storageScope, userEmail);
       zip.file('slide-library/personal.json', JSON.stringify(personal, null, 2));
       manifest.stats.personalSlideLibraryItems = personal?.items?.length || 0;
     } catch (err) {
@@ -344,7 +352,7 @@ export async function buildBulkExport(opts) {
     }
 
     try {
-      const team = await listTeamLibrary(repoRoot, { userEmail });
+      const team = await listTeamLibrary(storageScope, { userEmail });
       zip.file('slide-library/team.json', JSON.stringify(team, null, 2));
       manifest.stats.teamSlideLibraryItems = team?.items?.length || 0;
     } catch (err) {

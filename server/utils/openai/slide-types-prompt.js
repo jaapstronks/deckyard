@@ -13,6 +13,7 @@
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
+import { isAgentOptOut } from '../ai/slide-catalog/agent-catalog.js';
 
 function stableSlideTypeEntries() {
   return Object.entries(SLIDE_TYPES || {});
@@ -22,22 +23,14 @@ function jsonExample(v) {
   return JSON.stringify(v, null, 2);
 }
 
-// ─── Legacy usage hints for types NOT in the AI catalog ───
-// Types IN the catalog get their description/bestFor from there instead.
-const LEGACY_WHEN_TO_USE = {
-  'embed-slide': [
-    'Use for embedding external content (iframes).',
-  ],
-  'lead-capture-slide': [
-    'Use for collecting email addresses or signup forms.',
-  ],
-  // split-partner-title-slide is archived (in EXCLUDED_TYPES) — no legacy
-  // when-to-use entry needed; the catalog loop skips it before this map.
-};
-
 // ─── Manual JSON examples for types that need specific patterns ───
 // These override both catalog examples AND defaults-based examples.
-const MANUAL_EXAMPLES = {
+//
+// Sparse on purpose: only types whose shape a catalog example gets wrong. It is
+// still a hand-maintained per-type list, so it is exported for the companion
+// matrix (tests/slide-type-companion-coverage.test.js), which fails if an
+// override outlives the type it overrides.
+export const MANUAL_EXAMPLES = {
   'team-cards-slide': (placeholder) => ({
     type: 'team-cards-slide',
     content: {
@@ -297,19 +290,12 @@ export function buildSlideTypesPrompt({
   lines.push('SLIDE TYPE CATALOG (use exact "type" strings; content must match the schemas):');
   lines.push('');
 
-  // Types excluded from AI generation (app-managed or deprecated)
-  const EXCLUDED_TYPES = new Set([
-    'follow-invite-slide',        // app-managed
-    'card-stack-slide',           // deprecated — use icon-card-grid-slide
-    'split-partner-title-slide',  // archived (deprecated)
-    'freeform-slide',             // archived (deprecated) — no longer authorable
-    'content-columns-slide',      // archived (deprecated) — no longer authorable
-    'lead-capture-slide',         // parked (deprecated) — pending cookie-consent wiring
-    'lijstje-slide',              // alias for list-slide (avoid duplicate entry)
-  ]);
-
   for (const [type, def] of stableSlideTypeEntries()) {
-    if (EXCLUDED_TYPES.has(type)) continue;
+    // Types withheld from agents (deprecated, app-managed, an alias, a gated
+    // escape hatch) declare that on the definition itself — see
+    // isAgentOptOut(). This used to be a hand-maintained list here, which is
+    // how it drifted from the MCP layer's view of the same question.
+    if (isAgentOptOut(def)) continue;
     if (disabled.has(type)) continue;
 
     const label = typeof def?.label === 'string' ? def.label : '';
@@ -322,14 +308,9 @@ export function buildSlideTypesPrompt({
       // Use catalog's rich description, bestFor, notFor
       const catalogLines = buildCatalogTypePrompt(type, catalogEntry);
       lines.push(...catalogLines);
-    } else {
-      // Fallback: legacy WHEN_TO_USE hints
-      const when = LEGACY_WHEN_TO_USE[type] || [];
-      if (when.length) {
-        lines.push('When to use:');
-        for (const w of when) lines.push(`- ${w}`);
-      }
     }
+    // No catalog entry: the type still appears, described by its field-derived
+    // schema below. Undocumented beats invisible.
 
     // Schema: prefer catalog schema, fall back to field-based
     if (catalogEntry?.schema) {

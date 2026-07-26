@@ -73,7 +73,13 @@ export async function handleFeed({ repoRoot, req, res, url }) {
     : `${proto}://${host}`;
 
   const maxItems = Math.max(1, Math.min(100, Number(settings.rss.maxItems) || 50));
-  const presentations = await listPublishedForFeed(repoRoot, { limit: maxItems });
+  // The feed is per-organization, and this route resolves the organization from
+  // configuration rather than a session (there is none) — so it states that
+  // organization explicitly instead of letting storage pick one.
+  const presentations = await listPublishedForFeed(
+    { repoRoot, organizationId: orgId },
+    { limit: maxItems }
+  );
 
   // Compute ETag from latest modified timestamp
   const latestModified =

@@ -26,6 +26,11 @@ const COPY = {
 
 export default {
   label: 'Follow-along invite',
+  // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
+  // agent-catalog.js): the app inserts and maintains this slide itself, right
+  // after the title slide, so an agent must never place one. The editor's
+  // picker disables insertion for the same reason.
+  ai: false,
   // Intentionally no editable fields:
   // - This slide is managed automatically by the server (kept right after title-slide)
   // - Our translation feature only translates fields declared as string/markdown in the slide schema;

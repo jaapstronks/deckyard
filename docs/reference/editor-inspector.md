@@ -104,8 +104,13 @@ toolbar in the canvas header (mount points filled by `rerenderEditor` on
 every slide change): the type chip (+ retired/custom badges), "All text"
 (the bulk modal), the Comment pin, the author lock, the "…" slide-actions
 menu (Fill / Save to library / Convert / AI Convert / Duplicate / Delete)
-and the zoom button. The inspector pane header is pure pane chrome (pane
-name + ×).
+and the zoom button. The inspector pane itself has **no header row**: the
+"INSPECTOR" title duplicated the already-active Inspector pane tab, so the
+row was dropped (declutter 2026-07-26) and only its collapse × survives, in
+a zero-height slot (`.editor-form-close-slot`) that floats it over the first
+field's label band. It is appended *after* the element tab bar so it cannot
+cover the "Slide" tab, and it is always visible — hover-only would strand
+touch users, and the × has to sit inside the surface it dismisses.
 
 The topbar holds only **deck-level** chrome, in zones: identity (back,
 title, save status, presence) - deck editing (undo/redo, language) - deck
@@ -133,8 +138,45 @@ together**.
   `renderInspectorExtrasByType` in the same module. Bulky widget blocks
   ("Card icons & links", "Column images & blocks", the image-slide
   animation settings) render as **collapsible groups, default closed**, so
-  the pane leads with the at-a-glance settings (layout/variant enums) and
-  ends with Background (sticky-open) and Accessibility.
+  the pane leads with the at-a-glance settings (layout/variant enums).
+
+### Background: split by frequency, not by topic
+
+`client/views/editor/editor-form/background-section.js` owns every
+slide-wide background key and hands back **two** surfaces, in this rail
+order: per-type settings → **background colour** (a plain, always-visible
+field) → **▸ Background image** (collapsed) → **▸ Accessibility** → AI refine.
+
+Until 2026-07-26 both halves lived in one "Background" `<details>`. That
+bundle forced a bad trade: the colour picker is a primary control, so the
+section had to default open, and the image tail came with it. Measured on a
+title slide it was 1187 px of a ~1310 px rail, pushing Accessibility a screen
+and a half down; after the split the same rail is 376 px and does not scroll.
+
+The split runs along how often you reach for something, not along
+"background yes/no":
+
+- **Colour** (`background`, `bgCustomColor`) — frequent, one click, so it is
+  a flat field among the type's own settings.
+- **Image** (`slideBgImage`, `slideBgFit`, `slideBgFocusX/Y`,
+  `slideBgOverlay`, `slideBgText`, `slideLogo`) — rare, and once an image is
+  set it grows a tail of crop/fit/overlay/text controls. Collapsed, sticky
+  preference `editor.bgImageSection.open`, **default closed** (a deliberately
+  new storage key — the old one carried the opposite default).
+
+Two consequences worth keeping:
+
+- **The summary carries the state instead of force-opening.** A set
+  background shows as a thumbnail in the summary
+  (`.editor-bg-summary-thumb`), an unset one as a quiet "none" chip. That
+  satisfies the never-hide-an-active-setting rule below at one row's cost
+  rather than the whole panel's height.
+- **Images inside the collapsed body are genuinely deferred.**
+  `loading="lazy"` is not enough: it defers on viewport proximity, and an
+  image in a closed `<details>` is display:none rather than far away, so the
+  browser fetches it anyway (measured — all four theme presets pulled their
+  full-size originals for a panel nobody opened). `deferImagesUntilOpen`
+  parks the URL in `data-deferred-src` and restores it on first open.
 
 ### Collapsible vs flat — the rule
 
@@ -142,11 +184,13 @@ A section is **flat** (always visible) by default: the at-a-glance per-type
 settings (enum/variant controls) and the selection element tabs are the common
 path and stay in view. A section is **collapsible** only when it is (a) bulky
 (the widget blocks above), (b) read-only / rarely opened (AI type reasoning),
-or (c) an **override that is usually left at its default** (Background,
-Accessibility). The consistency rule for case (c): a collapsible holding a
-**non-default value force-opens** and its summary carries a **filled
-indicator**, so an active setting is never hidden and its state is legible
-without opening the drawer.
+or (c) an **override that is usually left at its default** (Background image,
+Accessibility). The consistency rule for case (c): **an active setting is
+never hidden**, and its state is legible without opening the drawer. Two ways
+to honour that, and the choice is a size question: force-open when the
+contents are small (Accessibility), or keep it closed and put the state in the
+summary when opening would cost most of the rail (Background image's
+thumbnail). Either way the summary carries a **filled indicator**.
 
 **Accessibility status chip.** `a11yTitle`/`a11ySummary` are *overrides*, not
 the primary mechanism: export and present announce a slide by its own heading
@@ -156,7 +200,7 @@ reflects the honest state instead of nagging — `auto (from the heading)` when
 the slide renders a heading (neutral), `custom description ✓` when an override
 is set (force-opens), and `no heading — add a title ⚠` only for the slides that
 actually announce as bare "Slide N of M" (types that render no heading: payoff,
-follow-invite, freeform, quote, image without a title). The heading proxy
+follow-invite, quote, image without a title). The heading proxy
 mirrors what export reads (`readHeadingFromSlideEl` = the first non-empty
 `h1/h2/h3`): the fields `title`, `question` (poll/likert/likert-slider) and
 `leftTitle`/`rightTitle` (comparison). A `content.title`-only proxy would
@@ -273,11 +317,11 @@ chart-config block, per chart type, in inspector AND bulk); end
 on the bulk modal stays accepted: kpi metric subfields (delta/note), table
 row cell ops (column add/remove), content-columns numbered texts,
 text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
-(code editors are the bulk surface by design), freeform `elements[]` (own
-canvas editor). Deprecated/hidden fields (card-stack `card{n}Label`) need
+(code editors are the bulk surface by design). Deprecated/hidden fields
+(card-stack `card{n}Label`) need
 no surface.
 
-Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`
+Method: scripted walk of all 38 core types' `SLIDE_TYPES[type].fields`
 against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
 descriptors), then hand-reviewed. Every schema field of every type is
 classified below; **no orphans found**.
@@ -298,12 +342,11 @@ Column semantics:
   icons, URLs-as-config, focus points, chart config, code, Background,
   Accessibility).
 
-Shared by **all 39 types**, not repeated per row: `slideBgImage`,
+Shared by **all 38 types**, not repeated per row: `slideBgImage`,
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`,
-`slideLogo` (Background section) and `a11yTitle`, `a11ySummary`
-(Accessibility) → **inspector keeps**. The per-type `background` enum and
-freeform's `bgCustomColor` also render in the Background section →
-**inspector keeps**.
+`slideLogo` (Background image section) and `a11yTitle`, `a11ySummary`
+(Accessibility) → **inspector keeps**. The per-type `background` enum renders
+as the flat colour field → **inspector keeps**.
 
 Legacy numbered aliases (team-cards `card{n}*`, logo-wall `logo{n}*`,
 icon-card-grid `card{n}*`, text-blocks `row{n}*`, process `steps`, funnel
@@ -314,7 +357,7 @@ homed. Not listed per row.
 
 | Type | Wysiwyg | Bulk modal (only home) | Inspector keeps | Notes |
 |---|---|---|---|---|
-| title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
+| title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background image section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
 | chapter-title | title, subheading | - | layout | |
 | content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
@@ -349,7 +392,6 @@ homed. Not listed per row.
 | pyramid | title, subheading, bottomSubheading; levels[] (label/text, full) | - | - | |
 | cycle | title, subheading, bottomSubheading, centerLabel; items[] (label/text, full) | - | - | |
 | gallery | title, subheading, bottomSubheading; images[] popover (src/alt) + caption inline + add/remove/reorder | images[] cards (per-image focusX/Y) | layout | |
-| freeform | - | elements[] via the dedicated freeform canvas editor | snapToGrid | freeform has its own editing surface; bulk modal renders the raw items as fallback |
 | custom-html | - | html, css (code editors, capability-gated) | - | |
 | end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
 

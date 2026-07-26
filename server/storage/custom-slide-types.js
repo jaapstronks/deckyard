@@ -8,6 +8,7 @@ import { getOrgId } from '../utils/context.js';
 import { nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { parseJson, generateSlug, isValidSlug, getUserIdByEmail } from './utils/helpers.js';
+import { validateUsage } from '../../shared/slide-types/usage.js';
 
 // Valid field types for custom slide types
 const VALID_FIELD_TYPES = ['string', 'markdown', 'image', 'images', 'enum', 'items'];
@@ -24,6 +25,7 @@ const SELECT_COLUMNS = [
   'defaults_by_lang',
   'template',
   'css',
+  'usage',
   'is_published',
   'sort_order',
   'created_at',
@@ -152,6 +154,14 @@ export async function createCustomSlideType(data, ctx) {
   const template = data?.template && typeof data.template === 'string' ? data.template : null;
   const css = data?.css && typeof data.css === 'string' ? data.css : null;
 
+  // Rejected rather than truncated: an author is standing right here, and a
+  // silently shortened rule is worse than a refused save. The tolerant half of
+  // that pair guards the fork load path instead (see shared/slide-types/usage.js).
+  const usageResult = validateUsage(data?.usage);
+  if (!usageResult.ok) {
+    return { ok: false, reason: usageResult.reason };
+  }
+
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
 
@@ -181,6 +191,7 @@ export async function createCustomSlideType(data, ctx) {
         defaults_by_lang: data?.defaultsByLang ? JSON.stringify(data.defaultsByLang) : null,
         template,
         css,
+        usage: usageResult.usage,
         is_published: false,
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
@@ -264,6 +275,14 @@ export async function updateCustomSlideType(typeId, updates, ctx) {
 
     if ('css' in updates) {
       updateData.css = typeof updates.css === 'string' ? updates.css : null;
+    }
+
+    if ('usage' in updates) {
+      const usageResult = validateUsage(updates.usage);
+      if (!usageResult.ok) {
+        return { ok: false, reason: usageResult.reason };
+      }
+      updateData.usage = usageResult.usage;
     }
 
     if ('isPublished' in updates) {
@@ -386,6 +405,7 @@ function formatRow(row) {
     defaultsByLang: parseJson(row.defaults_by_lang, null),
     template: row.template || null,
     css: row.css || null,
+    usage: row.usage || null,
     isPublished: Boolean(row.is_published),
     sortOrder: row.sort_order || 0,
     createdAt: row.created_at,

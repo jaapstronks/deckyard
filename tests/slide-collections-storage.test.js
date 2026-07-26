@@ -34,6 +34,11 @@ const {
   updateTeamCollection,
   deleteTeamCollection,
 } = await import('../server/storage/collections.js');
+const { testScope } = await import('./helpers/storage-scope.js');
+
+// The facades refuse to invent an organization, so the test states the one it
+// acts in — see server/storage/scope.js.
+const scope = testScope(repoRoot);
 
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
@@ -52,7 +57,7 @@ after(async () => {
 describe('personal collections', () => {
   it('creates, lists and gets a collection with an ordered membership', async () => {
     const created = await createPersonalCollection(
-      repoRoot,
+      scope,
       ALICE,
       { name: 'Intro deck', description: 'Onboarding', slideIds: ['s1', 's2', 's3'] },
       { actorEmail: ALICE }
@@ -63,30 +68,30 @@ describe('personal collections', () => {
     assert.strictEqual(created.item.slideCount, 3);
     assert.deepStrictEqual(created.item.slideIds, ['s1', 's2', 's3']);
 
-    const { items } = await listPersonalCollections(repoRoot, ALICE);
+    const { items } = await listPersonalCollections(scope, ALICE);
     assert.strictEqual(items.length, 1);
     assert.strictEqual(items[0].id, created.item.id);
 
-    const fetched = await getPersonalCollection(repoRoot, ALICE, created.item.id);
+    const fetched = await getPersonalCollection(scope, ALICE, created.item.id);
     assert.ok(fetched, 'fetched by id');
     assert.strictEqual(fetched.name, 'Intro deck');
   });
 
   it('rejects a collection with no name', async () => {
-    const r = await createPersonalCollection(repoRoot, ALICE, { name: '  ' }, { actorEmail: ALICE });
+    const r = await createPersonalCollection(scope, ALICE, { name: '  ' }, { actorEmail: ALICE });
     assert.strictEqual(r.ok, false);
     assert.strictEqual(r.reason, 'name_required');
   });
 
   it('replaces the ordered membership on update and dedupes', async () => {
     const created = await createPersonalCollection(
-      repoRoot,
+      scope,
       ALICE,
       { name: 'Reorder me', slideIds: ['a', 'b'] },
       { actorEmail: ALICE }
     );
     const updated = await updatePersonalCollection(
-      repoRoot,
+      scope,
       ALICE,
       created.item.id,
       { slideIds: ['c', 'a', 'a', 'b'], name: 'Reordered' },
@@ -101,20 +106,20 @@ describe('personal collections', () => {
 
   it('isolates personal collections between users', async () => {
     const aliceCol = await createPersonalCollection(
-      repoRoot,
+      scope,
       ALICE,
       { name: 'Private to Alice' },
       { actorEmail: ALICE }
     );
 
     // Bob cannot see Alice's collection in his list.
-    const bobList = await listPersonalCollections(repoRoot, BOB);
+    const bobList = await listPersonalCollections(scope, BOB);
     assert.ok(!bobList.items.some((c) => c.id === aliceCol.item.id), 'not in Bob list');
 
     // Bob cannot fetch, update, or delete it.
-    assert.strictEqual(await getPersonalCollection(repoRoot, BOB, aliceCol.item.id), null);
+    assert.strictEqual(await getPersonalCollection(scope, BOB, aliceCol.item.id), null);
     const bobUpdate = await updatePersonalCollection(
-      repoRoot,
+      scope,
       BOB,
       aliceCol.item.id,
       { name: 'hijacked' },
@@ -122,27 +127,27 @@ describe('personal collections', () => {
     );
     assert.strictEqual(bobUpdate.ok, false);
     assert.strictEqual(bobUpdate.reason, 'not_found');
-    const bobDelete = await deletePersonalCollection(repoRoot, BOB, aliceCol.item.id);
+    const bobDelete = await deletePersonalCollection(scope, BOB, aliceCol.item.id);
     assert.strictEqual(bobDelete.ok, false);
   });
 
   it('deletes a collection', async () => {
     const created = await createPersonalCollection(
-      repoRoot,
+      scope,
       ALICE,
       { name: 'Temp' },
       { actorEmail: ALICE }
     );
-    const del = await deletePersonalCollection(repoRoot, ALICE, created.item.id);
+    const del = await deletePersonalCollection(scope, ALICE, created.item.id);
     assert.ok(del.ok, 'delete ok');
-    assert.strictEqual(await getPersonalCollection(repoRoot, ALICE, created.item.id), null);
+    assert.strictEqual(await getPersonalCollection(scope, ALICE, created.item.id), null);
   });
 });
 
 describe('team collections', () => {
   it('creates and lists a team collection', async () => {
     const created = await createTeamCollection(
-      repoRoot,
+      scope,
       { name: 'Team starter', slideIds: ['t1'] },
       { actorEmail: ALICE }
     );
@@ -150,13 +155,13 @@ describe('team collections', () => {
     assert.strictEqual(created.item.scope, 'team');
     assert.strictEqual(created.item.createdBy, ALICE);
 
-    const { items } = await listTeamCollections(repoRoot, { userEmail: BOB });
+    const { items } = await listTeamCollections(scope, { userEmail: BOB });
     assert.ok(items.some((c) => c.id === created.item.id), 'visible to any user');
   });
 
   it('enforces the mutate guard: only creator or admin', async () => {
     const created = await createTeamCollection(
-      repoRoot,
+      scope,
       { name: 'Guarded' },
       { actorEmail: ALICE }
     );
@@ -165,7 +170,7 @@ describe('team collections', () => {
 
     // Bob (non-creator, non-admin) is blocked.
     const blocked = await updateTeamCollection(
-      repoRoot,
+      scope,
       created.item.id,
       { name: 'nope' },
       { actorEmail: BOB, allowMutate }
@@ -175,7 +180,7 @@ describe('team collections', () => {
 
     // Alice (creator) may mutate and delete.
     const ok = await updateTeamCollection(
-      repoRoot,
+      scope,
       created.item.id,
       { name: 'Renamed' },
       { actorEmail: ALICE, allowMutate }
@@ -183,7 +188,7 @@ describe('team collections', () => {
     assert.ok(ok.ok);
     assert.strictEqual(ok.item.name, 'Renamed');
 
-    const del = await deleteTeamCollection(repoRoot, created.item.id, {
+    const del = await deleteTeamCollection(scope, created.item.id, {
       actorEmail: ALICE,
       allowMutate,
     });

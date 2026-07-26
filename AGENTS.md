@@ -91,7 +91,8 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`esc()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`).
-  - Don’t introduce raw/unsafe HTML insertion.
+  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom.js`) rather than an `innerHTML` template.
+  - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
 - **Lifecycle & cleanup (critical in this codebase)**
   - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-render.js`) supports cleanup via `__sbCleanup`.
@@ -188,6 +189,11 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 - Import it from the corresponding aggregator file (`client/styles/slides/01-layout-and-title.css` or `03-components.css`).
 - Use theme variables via `.slide { --... }` indirection (see `client/styles/theme.css`).
   - Don’t hardcode brand colors/fonts inside the slide CSS.
+- **Don’t reach for the app-chrome tokens (`--ps-*`, `--z-*`) inside
+  `client/styles/slides/**`.** `slides.css` doesn’t import `ui-tokens.css`, and
+  the MCP preview bundles it alone — so the token resolves in the browser but
+  silently resolves to nothing there. Details and the spacing/z-index scales:
+  `docs/reference/css-tokens.md`.
 
 ### 4) Ensure the editor UX fits the patterns
 
@@ -234,6 +240,7 @@ If the slide is an audience interaction:
 - **Do**: add small modules where the codebase already expects them (`shared/slide-types/types`, `client/views/*`, `client/lib/*`, `server/routes/*`, `server/storage/*`).
 - **Do**: reuse shared helpers instead of duplicating validation/escaping/URL logic.
 - **Do**: keep i18n in mind—translatable fields are detected by field `type === 'string' | 'markdown'`.
+- **Do**: test storage/identity/auth behaviour without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()` from `server/db/client.js`) — it enforces UNIQUE constraints and logs every table touched so you can assert what was *not* queried. See **`docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL**.
 - **Don’t**: paste large blocks of CSS into JS templates; keep styling in CSS files.
 - **Don’t**: hardcode user-facing copy in multiple places; centralize it.
 - **Don’t**: special-case new behavior in many files; create one reusable abstraction/module and call it.

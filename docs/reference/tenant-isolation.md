@@ -9,7 +9,7 @@ updated 2026-07-25.
 
 Deckyard's hosting story has four shapes:
 
-1. **Sandbox / playground** (`SANDBOX_MODE`, e.g. `try.deckyard.eu`) —
+1. **Sandbox / playground** (`SANDBOX_MODE`, e.g. `sandbox.deckyard.eu`) —
    anonymous, throwaway, one shared instance. Isolation model below.
 2. **Self-hosted** — one operator runs one instance for their own use.
 3. **Dedicated customer instance** — a manually provisioned, per-customer
@@ -69,8 +69,9 @@ storage layer that enforces org isolation:
   `organization_id` (`server/storage/adapters/postgres/presentations.js`), and
   in multi-workspace mode the org is resolved per request from the session,
   verified against membership (`server/utils/context.js`, see below). A
-  cross-org read returns nothing. (The subdomain / custom-domain hooks in the
-  same file are unused leftovers, not the resolution path.)
+  cross-org read returns nothing. The session is the *only* resolution path:
+  the hostname says nothing about which organization a request acts in (see
+  "Why not the hostname" below).
 - **File backend** (the OSS default, `STORAGE_MODE` unset) does **not**. Decks
   live flat in one directory (`server/storage/presentations/paths.js`) and
   `listPresentations()` never consults the org
@@ -90,7 +91,7 @@ multi-workspace unset. Guard behavior is pinned by
 Sandbox mode is exempt from the guard: it is single-org by construction (see
 below), so there is no second tenant even if the flag is combined with it.
 
-## Sandbox isolation (`try.deckyard.eu`)
+## Sandbox isolation (`sandbox.deckyard.eu`)
 
 Sandbox mode is safe to expose publicly. Its isolation rests on four things:
 
@@ -147,9 +148,7 @@ organizations. Both are in place; what is still missing is listed under
   context, and every storage query that is given that context scopes on it via
   `getOrgId(ctx)`. So a request acts in the workspace the person switched to:
   their own decks are visible, another organization's are not, and new decks
-  are created where they are working. The exception is the presentations
-  facade, which builds its own context and is listed under *What is not done
-  yet*.
+  are created where they are working.
 
   What may reach a query is only ever a membership-verified organization. The
   value comes from `getUserFromRequestAsync`, i.e. from
@@ -193,9 +192,97 @@ organizations. Both are in place; what is still missing is listed under
   `tests/authz-organization-scope-multi-org.test.js` (two organizations; six of
   its assertions fail without the check).
 
-  Machine-client surfaces (public API, MCP) know their actor by email only and
-  take the organization from the presentation, so they keep the behaviour they
-  had — see the open item on API keys below.
+  Machine-client surfaces now carry a real organization too: an API key row
+  holds `organization_id`, so the public API and MCP-over-SSE act in the
+  workspace their key belongs to rather than the default one. An MCP session
+  over stdio has no key and no organization — it is a trusted local process
+  bound to the instance — so it takes the single workspace and refuses to guess
+  once an instance holds several.
+
+- **The storage layer has no default to fall back on — done.** The storage
+  facades used to build their own context with a hardcoded
+  `getDefaultOrganizationId()`, so every route that loads a deck before
+  authorizing it read out of the default organization rather than the one the
+  session was working in. The same defect sat in the seven smaller facades
+  (`slide-library`, `slide-library-usage`, `published`, `tags`,
+  `presentation-ydocs`, `collections`, `image-library`) — and in `tags` and the
+  image favorites it was sharper still, because those functions took no scope
+  argument at all, so a caller had no way to state an organization even if it
+  wanted to. Every one of them now takes a **storage scope** as its first
+  argument — which organization, on whose behalf, and where the repository lives
+  for the file-backed fallback — and `server/storage/scope.js` refuses anything
+  that states neither an organization nor a reason it cannot have one. There is
+  no fallback left: a caller that gives nothing gets a `TypeError`, not a guess.
+
+  Sessions get their scope from `createRouteContext()`, built once per request in
+  `server/routes/api/index.js` and carried on the same parameter bag that already
+  carried `repoRoot`, so route handlers pass the scope they were given.
+
+  Three kinds of caller genuinely have no session, and each says so explicitly:
+
+  - **A public token is the authorization.** A published deck, an embed, a share
+    link, a follow-along audience and the public feed resolve a globally unique
+    token first (`getPublishedById`, `getShareLinkByToken`, the follow code) and
+    fetch the deck by the id that lookup yielded. Those declare
+    `crossOrganizationScope(repoRoot, '<reason>')`, which skips the organization
+    filter — necessary, because filtering them on an organization nobody stated
+    would 404 every public link the moment an instance holds two workspaces.
+    The reason string is mandatory, so `grep -r crossOrganization` lists every
+    deliberately unscoped read. **Reads only**: a scope with no organization
+    cannot reach a write or a listing, because an unscoped write would land
+    wherever the storage layer guessed.
+  - **Queued work.** Export and translate jobs run detached from the request that
+    queued them, so the organization travels in the job payload (`jobScope`).
+  - **Instance-bound entry points.** The stdio MCP server and bulk export have no
+    workspace to belong to; `singleWorkspaceScope()` answers with the configured
+    organization in single-workspace mode and throws in multi-workspace mode,
+    where "the default one" has stopped being an answer.
+
+  Collaborative editing sits between the two: the Hocuspocus hooks run outside
+  any request, so the document's organization is recorded when the connection is
+  authorized (`authorizeDocument` has the deck in hand) and read back by the
+  persistence hooks, which is what lets a collab store write into the deck's own
+  organization.
+
+  Two file-backed write paths query the *database* for locks and for the publish
+  index even in file mode (`presentations/crud/write.js`,
+  `presentations/crud/delete.js`), so the organization travels down to them in
+  `opts` rather than being re-derived there.
+
+  Where the check sits matters as much as the check. The three facades that keep
+  a file-backed fallback validate the scope in `withStorageFallback()`, **before**
+  choosing a backend — otherwise the file-mode suite, which is what CI runs,
+  would wave an un-migrated caller straight through and the defect would only
+  surface on Postgres.
+
+  Single-organization installations are unaffected in behaviour: there the
+  session's organization *is* the default one, so every scoped call resolves to
+  the value it did before. Pinned by `tests/storage-scope-contract.test.js` (the
+  rule itself, for every facade function) and
+  `tests/storage-scope-multi-org.test.js` (two organizations through the real
+  facades; assertions verified to go red when the old `getStorageContext()` is
+  restored).
+
+#### Why not the hostname
+
+Resolving the organization from the request hostname was half-built and is now
+**removed rather than finished** (subdomain extraction, the lookups by subdomain
+and custom domain, a second context builder, and the `subdomain` /
+`custom_domain` columns on `organizations`).
+
+The reason is a modelling one. A hostname identifies an **instance**; an
+organization is a dimension **within** an instance. Shapes 1-3 give a customer
+their own hostname by giving them their own deploy — DNS, a reverse proxy and
+`BASE_URL`, none of which the application needs to know about. Shape 4 puts
+several organizations behind one hostname, where a host header cannot
+distinguish them at all. So the hostname is either redundant or insufficient,
+and using it as a claim about ownership would conflate two things that are free
+to differ.
+
+Sessions carry the answer instead, re-verified against membership on every
+request. `organizations.slug` remains the stable human-readable identifier.
+Pinned by `tests/organization-host-independence.test.js`, which also fails if a
+write path for the removed columns comes back.
 
 None of these affects shapes 1-3, and none is a prerequisite for them: a
 dedicated instance stays safe because its tenant boundary is the deploy itself.
@@ -203,24 +290,9 @@ External email leaks were closed separately (PR #214).
 
 ### What is not done yet
 
-- **The presentations facade still reads the default organization.**
-  `getPresentation(repoRoot, id)` in `server/storage/presentations.js` builds
-  its own context (`getStorageContext()`, which hardcodes
-  `getDefaultOrganizationId()`) instead of taking the request's. Every route
-  that loads a deck before authorizing it goes through this function, so in
-  multi-workspace mode those reads land in the default organization rather than
-  the one the session is acting in. The binding above is correct for every
-  storage call that is *given* a context; this facade is the path that never
-  asks for one. Closing it means threading a context through the facade's
-  callers, which is a piece of work in its own right.
-- **The public API resolves keys against the default organization.**
-  `server/routes/public-api/v1/resources.js` builds its context from the API
-  key's owner email only, so an `api_keys` row belonging to another
-  organization still reads the default one. This is a separate context source
-  from the session path fixed here.
 - **There is no organization UI.** The switch endpoint exists, but no
   organization switcher, no member management screen and no per-organization
   invite flow.
 
-Until those are closed, shape 4 stays *in development*: usable to build
-against, not something to point two unrelated customers at.
+Until that is closed, shape 4 stays *in development*: usable to build against,
+not something to point two unrelated customers at.

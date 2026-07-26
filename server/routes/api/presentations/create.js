@@ -24,9 +24,9 @@ function usageRefsFromBody(body) {
   return refs;
 }
 
-export async function handlePresentationsCreate({ repoRoot, req, res, authedUser } = {}) {
+export async function handlePresentationsCreate({ storageScope, req, res, authedUser } = {}) {
   const body = await json(req);
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(storageScope, {
     ...body,
     ownerEmail: authedUser?.email || null,
   });
@@ -43,7 +43,9 @@ export async function handlePresentationsCreate({ repoRoot, req, res, authedUser
     // (non-blocking; badge tracking must never fail a create).
     const usageRefs = usageRefsFromBody(body);
     if (usageRefs.length) {
-      void recordSlideLibraryUsage(repoRoot, authedUser.email, usageRefs).catch(() => {});
+      void recordSlideLibraryUsage(storageScope, authedUser.email, usageRefs).catch(
+        () => {}
+      );
     }
   }
 

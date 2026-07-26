@@ -84,10 +84,10 @@ export function buildActivityOpts(searchParams, email) {
 
 /**
  * Handle `GET /api/home`.
- * @param {object} ctx - { repoRoot, req, res, url, authedUser }
+ * @param {object} ctx - { storageScope, req, res, url, authedUser }
  * @returns {Promise<boolean>} true if handled
  */
-export async function handleHome({ repoRoot, req, res, url, authedUser }) {
+export async function handleHome({ storageScope, req, res, url, authedUser }) {
   if (url.pathname !== '/api/home') return false;
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
@@ -102,14 +102,16 @@ export async function handleHome({ repoRoot, req, res, url, authedUser }) {
   // never takes down the rest of Home.
   const [popular, activity, personalCols, teamCols, teamLib, usage] =
     await Promise.all([
-      getPopularPresentations({ user: authedUser }).catch(() => []),
-      getEnrichedActivity({ repoRoot, authedUser, ctx, opts: activityOpts }).catch(
+      getPopularPresentations({ user: authedUser, organizationId: storageScope?.organizationId }).catch(
+        () => []
+      ),
+      getEnrichedActivity({ storageScope, authedUser, ctx, opts: activityOpts }).catch(
         () => ({ events: [], total: 0, limit: activityOpts.limit, offset: 0 })
       ),
-      listPersonalCollections(repoRoot, email).catch(() => ({ items: [] })),
-      listTeamCollections(repoRoot, { userEmail: email }).catch(() => ({ items: [] })),
-      listTeamLibrary(repoRoot, { userEmail: email }).catch(() => ({ items: [] })),
-      listSlideLibraryUsage(repoRoot, email).catch(() => ({ items: [] })),
+      listPersonalCollections(storageScope, email).catch(() => ({ items: [] })),
+      listTeamCollections(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
+      listTeamLibrary(storageScope, { userEmail: email }).catch(() => ({ items: [] })),
+      listSlideLibraryUsage(storageScope, email).catch(() => ({ items: [] })),
     ]);
 
   const asItems = (r) => (Array.isArray(r?.items) ? r.items : []);

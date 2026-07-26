@@ -7,6 +7,18 @@ import {
   BACKGROUND_FIELD,
   imagePlaceholderHtml,
 } from '../helpers.js';
+import { alignGroup, groupAlignClass } from '../field-groups.js';
+
+/**
+ * Title and subheading are one header block. The title spans the slide (1504px)
+ * while the subheading carries a 75ch measure cap that also anchored it to the
+ * start, so the two sat on centres 251px apart at a 1600px render. The logo
+ * grid is its own unit and is unaffected.
+ */
+const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
+  label: 'Header alignment',
+  schematicKind: 'logos',
+});
 import { getSlideCopy } from '../slide-copy.js';
 
 // Cap for the logos[] array. The legacy numbered fields (logo{N}*) stay at 12:
@@ -90,14 +102,18 @@ export function ensureLogos(content) {
 }
 
 export default {
+  fieldGroups: [HEADER_BLOCK.group],
+  layoutVariants: HEADER_BLOCK.variants,
   label: 'Logo wall',
   fields: [
+    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
       type: 'string',
       required: false,
       maxLength: 120,
+      group: 'header-block',
     },
     {
       key: 'subheading',
@@ -105,6 +121,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 220,
+      group: 'header-block',
     },
     BACKGROUND_FIELD,
     {
@@ -171,6 +188,7 @@ export default {
   ],
 
   defaults: {
+    headerAlign: 'left',
     title: '',
     subheading: '',
     background: 'mist',
@@ -195,6 +213,7 @@ export default {
     const title = nonEmpty(content?.title);
     const subtitle = nonEmpty(content?.subheading);
     const hasHeader = !!(title || subtitle);
+    const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
 
     const headerHtml =
       title || subtitle
@@ -271,7 +290,7 @@ export default {
     }
 
     return `
-      <div class="slide slide-logo-wall ${bg}${
+      <div class="slide slide-logo-wall ${alignClass ? `${alignClass} ` : ''}${bg}${
         hasHeader ? ' has-header' : ''
       }${fluidClass}" data-logo-count="${count}"${fluidStyle}>
         <div class="slide-inner">

@@ -286,11 +286,13 @@ export function createImportSlidesTab({
   });
 
   // Help text
-  const helpText = h('div', { class: 'import-slides-help help' });
-  helpText.innerHTML = t(
-    'editor.importSlides.help',
-    'Import slides from a PDF file. Each page will be converted to an image slide at 1920×1080 resolution.'
-  );
+  const helpText = h('div', {
+    class: 'import-slides-help help',
+    text: t(
+      'editor.importSlides.help',
+      'Import slides from a PDF file. Each page will be converted to an image slide at 1920×1080 resolution.'
+    ),
+  });
 
   // Assemble
   wrap.append(

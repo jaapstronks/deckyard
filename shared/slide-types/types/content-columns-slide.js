@@ -143,8 +143,8 @@ export default {
   // AI generator's EXCLUDED_TYPES, so no new content-columns slides are authored.
   // Existing instances are surfaced by scripts/scan-slide-type.js and converted
   // (to text-blocks / icon-cards) or PNG-replaced before this lands, rather than
-  // silently deprecated. Mirrors the freeform (#252) / split-partner (#197)
-  // archival precedent. Want this layout back later → a custom slide or a future
+  // silently deprecated. Mirrors the split-partner (#197) archival
+  // precedent. Want this layout back later → a custom slide or a future
   // explicit rich-nested type; not carried as core now.
   deprecated: true,
   label: 'Content columns',

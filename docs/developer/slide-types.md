@@ -13,6 +13,10 @@ Slide types are the canonical source of truth for:
 
 Custom slide types are loaded automatically at startup and merged with core types. The `custom/slide-types/` directory is **gitignored**, so your custom slides won't be overwritten when you update from upstream.
 
+Taking a type back *out* is the harder direction and has its own checklist:
+`docs/reference/slide-type-removal.md` (deprecation ladder, the deck scan, and
+every place a type name is currently duplicated).
+
 ### Type identity, namespaces & overriding core
 
 Every slide type has a canonical identity of the form `namespace/name[@version]`
@@ -127,6 +131,17 @@ Create `client/styles/slides/custom/my-title-slide.css` and import it from your 
 
 Your new slide type appears in the editor slide picker.
 
+### 4. Its companions elsewhere
+
+A registered type works, but a few things do **not** follow automatically: the
+AI/MCP catalog entry, the picker's description, search aliases and schematic
+glyph, the settings curation category. Each degrades quietly rather than
+breaking, so `tests/slide-type-companion-coverage.test.js` fails the build naming
+the type and the companion it is missing. Adding a **core** type means filling
+those in; the inventory (and what a fork-local type can supply from its own
+definition instead) is in
+[`docs/reference/slide-type-companions.md`](../reference/slide-type-companions.md).
+
 ---
 
 ## AI Wizard Integration
@@ -223,6 +238,37 @@ export default {
 | `notFor` | string[] | List of anti-patterns when NOT to use this slide type |
 | `schema` | object | Field constraints (type, required, maxLength, options for enums) |
 | `examples` | array | Example content objects. Use `_variation` to label different patterns |
+| `usage` | string | Your organization's rules for *filling* this type (optional, max 1000 chars) |
+
+Setting `ai` to `false` instead of an object is the explicit opt-out — see
+[Withholding a type from agents](#withholding-a-type-from-agents).
+
+#### `usage` — your rules, not the type's description
+
+`description`/`bestFor`/`notFor` help an agent decide **which type to pick**.
+`usage` tells it **how your organization requires that type to be filled**, and
+it is the one field here that describes you rather than the type:
+
+```js
+ai: {
+  category: 'content',
+  description: 'Quarterly figures for the supervisory board.',
+  bestFor: ['Quarterly reporting'],
+  usage: `
+    Figures come from the published quarterly report, never from a draft.
+    Always state the cut-off date in the 'asOf' field.
+    A deviation over 5% versus last quarter needs a note explaining it.
+  `,
+},
+```
+
+It travels in every `get_slide_types` response, so an agent reads it before it
+builds the slide. Indentation is stripped, so writing it as an indented template
+literal is fine. Over-long text is truncated here rather than rejected (losing
+the tail beats losing the type); the builder UI and API reject instead, because
+an author is standing right there. To put usage rules on a **core** type without
+patching the OSS catalog, use `custom/ai/catalog.js` — `usage` is an overridable
+field. Full contract: `docs/reference/mcp-server.md`.
 
 ### How the AI Uses This Metadata
 
@@ -230,6 +276,30 @@ export default {
 2. **Slide Selection**: When analyzing presentations, the AI considers your custom slides alongside core slides
 3. **Content Generation**: When suggesting changes, the AI uses your examples and schema to generate valid content
 4. **Theme Awareness**: If your slide has a `themeId`, the AI only suggests it for presentations using that theme
+
+### Withholding a type from agents
+
+Omitting the `ai` block does **not** hide a type. Every registered type is
+offered to agents (the AI generator and MCP `get_slide_types` alike); without an
+`ai` block it simply arrives with a schema derived from its `fields` and
+`documented: false`, so the missing guidance is visible rather than the type
+being invisible.
+
+To withhold a type on purpose, say so:
+
+```javascript
+export default {
+  label: 'Follow-along invite',
+  ai: false, // deliberately not offered to agents — the app manages this slide
+  // …
+};
+```
+
+`ai: false` and `deprecated: true` are the only two ways out. Everything else is
+offered. This is what keeps "deliberately withheld" distinguishable from
+"someone forgot to write the copy" — the distinction that used to be expressed
+by absence, and therefore not at all. The reader is
+`isAgentOptOut()` in `server/utils/ai/slide-catalog/agent-catalog.js`.
 
 ---
 
@@ -711,8 +781,9 @@ view-only on OSS installs. The gate is enforced:
   `customHtmlEditViolation()` - a non-capable actor cannot create or change a
   custom-html slide's `html`/`css`, even by hand-crafting a request.
 
-The type is intentionally **excluded from the AI slide catalog**, so the AI
-generator and MCP `get_slide_types` never surface or auto-pick it.
+The type declares `ai: false` on its definition, so the AI generator and MCP
+`get_slide_types` never surface or auto-pick it (see
+[Withholding a type from agents](#withholding-a-type-from-agents)).
 
 ---
 

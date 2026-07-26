@@ -97,12 +97,12 @@ function checkSlideTypeCompatibility(slideType, newTheme) {
  * }
  */
 export async function handleAnalyzeThemeChange(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Only users with edit permission can analyze theme changes
@@ -183,12 +183,12 @@ export async function handleAnalyzeThemeChange(
  * { success: boolean, presentation: object }
  */
 export async function handleChangeTheme(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Only users with edit permission can change theme
@@ -253,7 +253,7 @@ export async function handleChangeTheme(
     slides: updatedSlides,
   };
 
-  const result = await updatePresentation(repoRoot, id, updateData, {
+  const result = await updatePresentation(storageScope, id, updateData, {
     actorEmail: authedUser?.email,
     allowThemeChange: true,
   });

@@ -34,6 +34,7 @@ import {
 import { listPresentationVersions } from '../server/storage/presentations/versions.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { createRemoteRefresh } from '../client/views/editor/remote-refresh.js';
+import { testScope } from './helpers/storage-scope.js';
 
 const slide = (id, body, extra = {}) => ({
   id,
@@ -174,7 +175,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
 
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'stale-merge-followups-'));
-    const created = await createPresentation(tempRoot, {
+    const created = await createPresentation(testScope(tempRoot), {
       title: 'Stale merge follow-ups',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
@@ -204,12 +205,12 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     }
     return doc;
   };
-  const loadDoc = async () => structuredClone(await getPresentation(tempRoot, deckId));
+  const loadDoc = async () => structuredClone(await getPresentation(testScope(tempRoot), deckId));
   const resetDeck = async (slides) => {
     const doc = await loadDoc();
     doc.slides = structuredClone(slides);
     syncI18n(doc);
-    await updatePresentation(tempRoot, deckId, doc, { actorEmail: 'owner@example.com' });
+    await updatePresentation(testScope(tempRoot), deckId, doc, { actorEmail: 'owner@example.com' });
     return loadDoc();
   };
 
@@ -224,7 +225,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     let other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(tempRoot, deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
     other = await loadDoc();
     other.slides = [
       other.slides.find((s) => s.id === A),
@@ -233,12 +234,12 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
       other.slides.find((s) => s.id === C),
     ];
     syncI18n(other);
-    await updatePresentation(tempRoot, deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
 
     // The stale tab edited only C and did not reorder.
     setTitle(staleTab, C, 'C stale-tab edit');
     syncI18n(staleTab);
-    const updated = await updatePresentation(tempRoot, deckId, staleTab, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, staleTab, {
       expectedRevision: staleTab.revision,
       modifiedSlideIds: [C],
       slideBaseFingerprints: staleFingerprints,
@@ -273,14 +274,14 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     const other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(tempRoot, deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
 
     setTitle(staleTab, B, 'B tab edit');
     syncI18n(staleTab);
     const before = (await listPresentationVersions(tempRoot, deckId)).filter(
       (v) => v.reason === 'pre_merge'
     ).length;
-    const updated = await updatePresentation(tempRoot, deckId, staleTab, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, staleTab, {
       expectedRevision: staleTab.revision,
       modifiedSlideIds: [B],
       slideBaseFingerprints: {
@@ -301,7 +302,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     const doc = await loadDoc();
     setTitle(doc, A, 'A clean edit');
     syncI18n(doc);
-    const updated = await updatePresentation(tempRoot, deckId, doc, {
+    const updated = await updatePresentation(testScope(tempRoot), deckId, doc, {
       expectedRevision: doc.revision,
       modifiedSlideIds: [A],
       actorEmail: 'owner@example.com',

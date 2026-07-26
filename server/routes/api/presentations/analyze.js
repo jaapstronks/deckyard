@@ -51,12 +51,12 @@ function sendSSE(res, event, data) {
  * - error: { message }
  */
 export async function handlePresentationAnalyze(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Only users with edit permission can trigger analysis

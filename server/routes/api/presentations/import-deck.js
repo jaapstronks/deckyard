@@ -35,6 +35,7 @@ const log = createLogger('import-deck');
 
 export async function handlePresentationsImportDeck({
   repoRoot,
+  storageScope,
   req,
   res,
   authedUser,
@@ -91,7 +92,7 @@ export async function handlePresentationsImportDeck({
 
     const parts = deckToPresentationParts(rehydrated, { theme: themeConfig });
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title,
       theme: parts.theme,
       lang,
@@ -111,8 +112,7 @@ export async function handlePresentationsImportDeck({
       },
     };
 
-    const updated = await updatePresentation(
-      repoRoot,
+    const updated = await updatePresentation(storageScope,
       created.id,
       {
         title: parts.title,

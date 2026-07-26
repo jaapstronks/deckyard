@@ -79,12 +79,12 @@ function writeSseHeaders(res) {
  * }
  */
 export async function handlePresentationImportSlidesAsImages(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
   if (!canWritePresentation({ user: authedUser, pres })) {
     return forbidden(res, 'Not authorized');
@@ -226,7 +226,7 @@ export async function handlePresentationImportSlidesAsImages(
     existingSlides.splice(insertIndex, 0, ...newSlides);
 
     // Update the presentation
-    const updated = await updatePresentation(repoRoot, id, {
+    const updated = await updatePresentation(storageScope, id, {
       ...pres,
       slides: existingSlides,
     }, {

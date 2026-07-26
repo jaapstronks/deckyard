@@ -4,6 +4,56 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.4.0](https://github.com/jaapstronks/deckyard/compare/v1.3.0...v1.4.0) (2026-07-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* the `freeform-slide` type is no longer registered. Slides stored with `type: "freeform-slide"` render the generic unknown-type placeholder instead of their canvas; their content remains in the deck JSON.
+
+### Added
+
+* **editor:** split the inspector background by frequency, drop the header row ([#393](https://github.com/jaapstronks/deckyard/issues/393)) ([5a842e4](https://github.com/jaapstronks/deckyard/commit/5a842e47f16996ccadf818b7ff3cb265f6aec782))
+* **mcp:** derive get_slide_types from the registry, not the AI catalog ([#386](https://github.com/jaapstronks/deckyard/issues/386)) ([84f87d3](https://github.com/jaapstronks/deckyard/commit/84f87d3696202451c44bb4720d9a8ed4a09c7bd1))
+* **slide-types:** gate companion coverage so a type cannot drift silently ([#388](https://github.com/jaapstronks/deckyard/issues/388)) ([b9b18ee](https://github.com/jaapstronks/deckyard/commit/b9b18eee395f07d4dfc3033969d514ed9bdf2aaa))
+* **slide-types:** give a removed slide type a real render contract ([#384](https://github.com/jaapstronks/deckyard/issues/384)) ([e1eb3d9](https://github.com/jaapstronks/deckyard/commit/e1eb3d9e2d87d2f46ba1ade9c2b6bea7b277e49b))
+* **slide-types:** let a type carry its own usage rules for agents ([#390](https://github.com/jaapstronks/deckyard/issues/390)) ([b1f79a0](https://github.com/jaapstronks/deckyard/commit/b1f79a041c989d2aa201a5d5026debb8be5cf5ef))
+
+
+### Fixed
+
+* **export:** repair broken #slide=&lt;n&gt; deep-link in exported HTML ([#391](https://github.com/jaapstronks/deckyard/issues/391)) ([ba8dadc](https://github.com/jaapstronks/deckyard/commit/ba8dadce470c02419e312c8559db32ad05a87bfc))
+
+
+### Changed
+
+* cap the version at 1.x while Deckyard is in beta ([18701a4](https://github.com/jaapstronks/deckyard/commit/18701a4adf586316895c5d7bc0f411224c9e8e6d))
+* remove the deprecated freeform slide type ([#377](https://github.com/jaapstronks/deckyard/issues/377)) ([e12a0ee](https://github.com/jaapstronks/deckyard/commit/e12a0ee7263a669bd283620c9557a9835256f7d3))
+
+## [1.3.0](https://github.com/jaapstronks/deckyard/compare/v1.2.0...v1.3.0) (2026-07-25)
+
+
+### Added
+
+* **auth:** bind each request to the organization its session resolved to ([#356](https://github.com/jaapstronks/deckyard/issues/356)) ([ddab92f](https://github.com/jaapstronks/deckyard/commit/ddab92f90501d0c5ffc5df1fb9d11719e05fe42f))
+* **auth:** make the presentation authorization layer organization-aware ([#359](https://github.com/jaapstronks/deckyard/issues/359)) ([2f8e823](https://github.com/jaapstronks/deckyard/commit/2f8e8230ba62c927e41bcb59072088e807734187))
+* **auth:** resolve identity independently of organization ([#349](https://github.com/jaapstronks/deckyard/issues/349)) ([20cb58f](https://github.com/jaapstronks/deckyard/commit/20cb58f0b80918af7697ca591bc892a38667a16d))
+* **slide-types:** make alignment a property of the block, not of each field ([#365](https://github.com/jaapstronks/deckyard/issues/365)) ([a1c8349](https://github.com/jaapstronks/deckyard/commit/a1c8349c993726ede5715587f6bca78d25570fd3))
+
+
+### Fixed
+
+* **api:** route optimistic-lock errors through the canonical envelope ([#361](https://github.com/jaapstronks/deckyard/issues/361)) ([b4de3a3](https://github.com/jaapstronks/deckyard/commit/b4de3a3a8c304e38876fe4f2ff4310a1fa56f192))
+* **card-stack:** derive the fallback palette from theme tokens ([#364](https://github.com/jaapstronks/deckyard/issues/364)) ([676135e](https://github.com/jaapstronks/deckyard/commit/676135eb2e1a8331c340ae6c17cccc8f1b42aac0))
+* **client:** stop listeners, timers and streams outliving their view ([#343](https://github.com/jaapstronks/deckyard/issues/343)) ([76ea389](https://github.com/jaapstronks/deckyard/commit/76ea389618abf9dea1dd3b888c4646bf1aa450c5))
+* **i18n:** default a new deck's language to the UI locale ([#360](https://github.com/jaapstronks/deckyard/issues/360)) ([d5df6ed](https://github.com/jaapstronks/deckyard/commit/d5df6eda282183dceedb1951f40aac62bfc93bdb))
+* **list:** guarantee the deck-grid shimmer always reaches a terminal state ([#363](https://github.com/jaapstronks/deckyard/issues/363)) ([4f28aff](https://github.com/jaapstronks/deckyard/commit/4f28aff6f376594e243a5ed5617e59068f1e86e4))
+
+
+### Security
+
+* escape user-authored content in editor innerHTML sinks (B8 slice 1) ([#370](https://github.com/jaapstronks/deckyard/issues/370)) ([1e6267c](https://github.com/jaapstronks/deckyard/commit/1e6267cb8c8292e18ef644445aece07a17bdeede))
+
 ## [1.2.0](https://github.com/jaapstronks/deckyard/compare/v1.1.0...v1.2.0) (2026-07-24)
 
 

@@ -27,12 +27,10 @@
 
 import { getInlineDescriptor } from './descriptors.js';
 import { getByPath, setByPath, fieldMetaForPath, isEmptyValue } from './field-path.js';
-import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { uploadFile } from '../image-library/upload.js';
-import { installDismissOnOutside } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
@@ -45,6 +43,9 @@ import {
 import { promptModal } from '../../../lib/dom/modal.js';
 import { createSelectionToolbar } from './selection-toolbar.js';
 import { slideLinkUrl } from './selection-toolbar-logic.js';
+import { createFocusDrag } from './focus-drag.js';
+import { createMarkdownEditModal } from './markdown-modal.js';
+import { createReorderDrag } from './reorder-drag.js';
 
 /**
  * @param {Object} opts
@@ -131,7 +132,21 @@ export function createInlineEditor({
   /** @type {null | {el:HTMLElement, path:string, meta:Object, original:string, isNew:boolean}} */
   let editing = null;
   let pendingRerenderRaf = 0;
-  let closeMarkdownModal = null;
+
+  // The richer-than-inline markdown editor lives in its own modal concern; the
+  // inline editor routes to it (openMarkdownEdit) and reads isOpen().
+  const mdModal = createMarkdownEditModal({
+    h,
+    mdHost,
+    mdField,
+    getSlide,
+    fieldLabel: (path, meta) => fieldLabel(path, meta),
+    endActiveTextEdit: () => { if (editing) endTextEdit(); },
+    markDirty,
+    requestSave,
+    rerenderEditor,
+    rerenderPreview,
+  });
 
   const slideEl = () => thumb.querySelector('.slide');
   const currentDef = () => {
@@ -442,111 +457,6 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
   // Markdown modal (real editor with toolbar, dimmed backdrop)
   // ----------------------------------------------------------------
-  function openMarkdownModal(_anchorEl, path, meta, { isNew = false } = {}) {
-    if (editing) endTextEdit();
-    dismissMarkdownModal();
-    const slide = getSlide?.();
-    if (!slide) return;
-
-    const raw = isNew ? '' : String(getByPath(slide.content, path) ?? '');
-    const label = fieldLabel(path, meta);
-    let latest = raw;
-
-    // Canonical markdown editor: label + toolbar + textarea + help.
-    const editorEl = mdField(
-      label,
-      raw,
-      t('editor.markdown.help', 'Supports paragraphs, lists, bold/italic, links, and markdown tables.'),
-      (v) => {
-        latest = v;
-      },
-      { maxLength: meta?.maxLength, required: !!meta?.required, showHeading: true }
-    );
-    // Collab presence: while this modal is open, focus inside it reports the
-    // edited field's path, so collaborators see a ring on the matching canvas
-    // field (and on their own modal if they have the same field open).
-    editorEl.setAttribute('data-collab-field-key', String(path));
-
-    const save = () => {
-      if (latest !== raw) {
-        setByPath(slide.content, path, latest);
-        markDirty?.();
-        requestSave?.();
-        rerenderEditor?.();
-      }
-      dismissMarkdownModal();
-      rerenderPreview?.();
-    };
-    const cancel = () => {
-      dismissMarkdownModal();
-      if (isNew) rerenderPreview?.();
-    };
-
-    const closeBtn = h('button', {
-      class: 'ie-md-close',
-      type: 'button',
-      title: t('common.close', 'Close'),
-      text: '×',
-      onclick: cancel,
-    });
-    const header = h('div', { class: 'ie-md-header row spread' }, [
-      h('div', { class: 'ie-md-mode', text: t('editor.inline.editingField', 'Editing: {label}', { label }) }),
-      closeBtn,
-    ]);
-    const footer = h('div', { class: 'ie-md-footer row spread' }, [
-      h('span', { class: 'help', text: t('editor.inline.markdownHint', 'Ctrl/⌘ + Enter to save') }),
-      h('div', { class: 'row' }, [
-        h('button', {
-          class: 'btn btn-secondary btn-sm',
-          type: 'button',
-          text: t('common.cancel', 'Cancel'),
-          onclick: cancel,
-        }),
-        h('button', {
-          class: 'btn btn-primary btn-sm',
-          type: 'button',
-          text: t('common.save', 'Save'),
-          onclick: save,
-        }),
-      ]),
-    ]);
-
-    const modal = h('div', { class: 'ie-md-modal' }, [header, editorEl, footer]);
-    const backdrop = h('div', { class: 'ie-modal-backdrop' });
-    backdrop.addEventListener('click', cancel);
-
-    mdHost.classList.add('is-ie-modal-open');
-    mdHost.append(backdrop, modal);
-
-    const detach = installDismissOnOutside({ rootEl: modal, isOpen: () => true, close: cancel });
-    closeMarkdownModal = () => {
-      detach?.();
-      backdrop.remove();
-      modal.remove();
-      mdHost.classList.remove('is-ie-modal-open');
-    };
-
-    const ta = editorEl.querySelector('textarea');
-    modal.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        save();
-      }
-    });
-    ta?.focus();
-  }
-
-  function dismissMarkdownModal() {
-    if (closeMarkdownModal) {
-      try {
-        closeMarkdownModal();
-      } catch {
-        /* ignore */
-      }
-      closeMarkdownModal = null;
-    }
-  }
-
   // ----------------------------------------------------------------
   // Ghost affordances (empty optional fields)
   // ----------------------------------------------------------------
@@ -703,7 +613,7 @@ export function createInlineEditor({
       // Renderer didn't emit the element for this path: modal fallback.
       setByPath(slide.content, path, '');
       rerenderPreview?.();
-      openMarkdownModal(null, path, meta, { isNew: true });
+      mdModal.open(path, meta, { isNew: true });
       return;
     }
     const slide = getSlide?.();
@@ -901,7 +811,7 @@ export function createInlineEditor({
           type: 'button',
           title: t('editor.inline.reorderItem', 'Drag to reorder'),
           text: '⠿',
-          onpointerdown: (e) => beginReorder(e, { path, scopeEl, itemSelector, fromIdx: idx }),
+          onpointerdown: (e) => reorderDrag.begin(e, { path, scopeEl, itemSelector, fromIdx: idx }),
           // The button "click" after a drag must never bubble into the slide's
           // click-to-edit routing.
           onclick: (e) => {
@@ -1014,82 +924,17 @@ export function createInlineEditor({
     afterStructuralChange();
   }
 
-  /**
-   * Pointer-based drag from a grip: measure the level's item rects once (the
-   * slide doesn't rerender mid-drag), snap the pointer to the nearest
-   * insertion gap (reorder-geometry.js) and show an indicator line there;
-   * pointerup commits the array move. Pointer capture keeps the events on the
-   * grip, so nothing leaks into click-to-edit. Esc cancels.
-   */
-  function beginReorder(e, { path, scopeEl, itemSelector, fromIdx }) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const grip = e.currentTarget;
-    const thumbRect = thumb.getBoundingClientRect();
-    const items = [...scopeEl.querySelectorAll(itemSelector)]
-      .filter((el) => Number.isInteger(Number(el.getAttribute('data-inline-item-index'))))
-      .sort(
-        (a, b) =>
-          Number(a.getAttribute('data-inline-item-index')) -
-          Number(b.getAttribute('data-inline-item-index'))
-      );
-    if (items.length < 2) return;
-    const rects = items.map((el) => {
-      const r = el.getBoundingClientRect();
-      return { left: r.left - thumbRect.left, top: r.top - thumbRect.top, width: r.width, height: r.height };
-    });
-
-    const indicator = h('div', { class: 'ie-drop-indicator' });
-    overlay.layer.appendChild(indicator);
-    thumb.classList.add('is-ie-dragging');
-    grip.classList.add('is-dragging');
-    grip.setPointerCapture?.(e.pointerId);
-
-    let drop = null;
-    const onMove = (ev) => {
-      drop = computeDrop(rects, { x: ev.clientX - thumbRect.left, y: ev.clientY - thumbRect.top });
-      if (!drop) return;
-      const line = drop.line;
-      const s = indicator.style;
-      if (line.orientation === 'v') {
-        s.left = `${line.x - 1.5}px`;
-        s.top = `${line.y}px`;
-        s.width = '3px';
-        s.height = `${line.length}px`;
-      } else {
-        s.left = `${line.x}px`;
-        s.top = `${line.y - 1.5}px`;
-        s.width = `${line.length}px`;
-        s.height = '3px';
-      }
-    };
-    const onKeyDown = (ev) => {
-      if (ev.key === 'Escape') {
-        ev.stopPropagation();
-        finish(false);
-      }
-    };
-    const onUp = () => finish(true);
-    const onCancel = () => finish(false);
-    function finish(commit) {
-      grip.removeEventListener('pointermove', onMove);
-      grip.removeEventListener('pointerup', onUp);
-      grip.removeEventListener('pointercancel', onCancel);
-      window.removeEventListener('keydown', onKeyDown, true);
-      indicator.remove();
-      thumb.classList.remove('is-ie-dragging');
-      grip.classList.remove('is-dragging');
-      if (commit && drop) {
-        const to = resolveMove(fromIdx, drop.index);
-        if (to !== fromIdx) moveCard(path, fromIdx, to);
-      }
-    }
-    grip.addEventListener('pointermove', onMove);
-    grip.addEventListener('pointerup', onUp);
-    grip.addEventListener('pointercancel', onCancel);
-    window.addEventListener('keydown', onKeyDown, true);
-  }
+  // Drag-to-reorder is a self-contained concern (owns only its transient drag
+  // state) lifted to ./reorder-drag.js — the host hands it the overlay + thumb
+  // and the array-move commit. `moveCard` is a hoisted function declaration and
+  // the first `begin()` call is a user drag via insertCardLevel (after the host
+  // calls refresh()), so referencing it here is never a TDZ hazard.
+  const reorderDrag = createReorderDrag({
+    h,
+    thumb,
+    overlay,
+    onReorder: moveCard,
+  });
 
   function afterStructuralChange() {
     cancelCommitRerender();
@@ -1355,147 +1200,17 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
   // Focal-point drag (descriptor `focus`)
   // ----------------------------------------------------------------
-  // A handle on each filled, cropped image sets the crop focus
-  // (object-position) by direct manipulation, replacing a trip to the 3x3 grid
-  // in the inspector. The handle updates the image live during the drag; the
-  // model write + save happens on pointerup (same dirty/save path as the
-  // popover), with no rerender mid-drag - the inline style already reflects it.
-  const clampPct = (n) => Math.max(0, Math.min(100, n));
-  const focusNum = (v) => {
-    if (v === '' || v == null) return 50;
-    const n = Number(v);
-    return Number.isFinite(n) ? clampPct(n) : 50;
-  };
-
-  /**
-   * Resolve where a photo's focal point reads/writes: reuse resolveMediaTarget
-   * for the member object + index, then the descriptor's `focus` knob for the
-   * field keys, the crop mode, and (optionally) the effective initial value.
-   * @returns {{idx:number, member:Object, xKey:string, yKey:string,
-   *   cropMode:string, initial:{x:number, y:number}}|null}
-   */
-  function resolveFocusTarget(photoEl) {
-    const base = resolveMediaTarget(photoEl);
-    if (!base) return null;
-    const slide = getSlide?.();
-    const descriptor = slide
-      ? getInlineDescriptor(slide.type, getSlideDef?.(slide.type))
-      : null;
-    const focus = descriptor?.focus;
-    if (!focus) return null;
-    const { idx, member, media } = base;
-    const sub = (s) => (media.list ? s : String(s).replace('{n}', String(idx)));
-    const xKey = sub(focus.xField);
-    const yKey = sub(focus.yField);
-    const cropMode =
-      typeof focus.cropMode === 'function' ? focus.cropMode(slide, idx) : 'cover';
-    const raw =
-      typeof focus.get === 'function'
-        ? focus.get(slide, idx)
-        : { x: member[xKey], y: member[yKey] };
-    return {
-      idx,
-      member,
-      xKey,
-      yKey,
-      cropMode,
-      initial: { x: focusNum(raw?.x), y: focusNum(raw?.y) },
-    };
-  }
-
-  /** A draggable focal point on each filled image whose current mode crops. */
-  function insertFocusAffordances(root, _def, descriptor) {
-    if (!descriptor.focus || !descriptor.media?.photoSelector) return;
-    for (const photo of root.querySelectorAll(descriptor.media.photoSelector)) {
-      if (photo.classList.contains('is-empty')) continue; // filled images only
-      const ft = resolveFocusTarget(photo);
-      if (!ft || ft.cropMode !== 'cover') continue; // crop focus only
-      const pt = overlay.focusPoint(photo, ft.initial);
-      pt.title = t('editor.inline.focus.hint', 'Drag to set image focus');
-      wireFocusDrag(pt, photo, ft);
-    }
-  }
-
-  function wireFocusDrag(pt, photo, ft) {
-    let dragging = false;
-    // object-position lives on the <img>. Some types tag the wrapper as the
-    // photo element (content-columns' .cc-image div holds the img inside), so
-    // resolve the actual image for the live style; the wrapper still gives the
-    // rect for pointer mapping (the img fills it).
-    const styleTarget =
-      photo.tagName === 'IMG' ? photo : photo.querySelector('img') || photo;
-    const toPct = (e) => {
-      const r = photo.getBoundingClientRect();
-      return {
-        x: clampPct(((e.clientX - r.left) / (r.width || 1)) * 100),
-        y: clampPct(((e.clientY - r.top) / (r.height || 1)) * 100),
-      };
-    };
-    const apply = ({ x, y }) => {
-      pt.dataset.fx = String(x);
-      pt.dataset.fy = String(y);
-      pt.setAttribute('aria-valuetext', `${Math.round(x)}% ${Math.round(y)}%`);
-      overlay.reposition();
-      styleTarget.style.objectPosition = `${x}% ${y}%`;
-    };
-    const commit = () => {
-      ft.member[ft.xKey] = Math.round(focusNum(pt.dataset.fx));
-      ft.member[ft.yKey] = Math.round(focusNum(pt.dataset.fy));
-      markDirty?.();
-      requestSave?.();
-    };
-    pt.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      dragging = true;
-      pt.classList.add('is-dragging');
-      try {
-        pt.setPointerCapture(e.pointerId);
-      } catch {
-        /* pointer capture is best-effort */
-      }
-    });
-    pt.addEventListener('pointermove', (e) => {
-      if (dragging) apply(toPct(e));
-    });
-    const end = (e) => {
-      if (!dragging) return;
-      dragging = false;
-      pt.classList.remove('is-dragging');
-      try {
-        pt.releasePointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
-      }
-      commit();
-    };
-    pt.addEventListener('pointerup', end);
-    pt.addEventListener('pointercancel', end);
-    // Keyboard: arrows nudge (Shift = fine 1%, else 5%), Home centers. Writes +
-    // saves per keypress; no rerender, so focus stays on the handle for repeats.
-    pt.addEventListener('keydown', (e) => {
-      const step = e.shiftKey ? 1 : 5;
-      let x = focusNum(pt.dataset.fx);
-      let y = focusNum(pt.dataset.fy);
-      switch (e.key) {
-        case 'ArrowLeft': x -= step; break;
-        case 'ArrowRight': x += step; break;
-        case 'ArrowUp': y -= step; break;
-        case 'ArrowDown': y += step; break;
-        case 'Home': x = 50; y = 50; break;
-        default: return;
-      }
-      e.preventDefault();
-      e.stopPropagation();
-      apply({ x: clampPct(x), y: clampPct(y) });
-      commit();
-    });
-    // A tap on the handle must not bubble to the image click (select + open tab).
-    pt.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-  }
+  // Self-contained concern; owns only its clamp/resolve helpers and the drag
+  // wiring. Lifted to ./focus-drag.js — the host just hands it the overlay, the
+  // shared media-target resolver, and the slide/dirty/save accessors.
+  const focusDrag = createFocusDrag({
+    overlay,
+    resolveMediaTarget,
+    getSlide,
+    getSlideDef,
+    markDirty,
+    requestSave,
+  });
 
   // Fit (Cover/Contain) and the per-image "Settings" doorway used to live on
   // the image itself (a floating pill + a chip). Both moved into the inspector's
@@ -1646,7 +1361,7 @@ export function createInlineEditor({
     insertClearButtons(root, def, descriptor);
     insertCardControls(root, def, descriptor);
     insertMediaAffordances(root, def, descriptor);
-    insertFocusAffordances(root, def, descriptor);
+    focusDrag.insertFocusAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
 
@@ -1801,7 +1516,7 @@ export function createInlineEditor({
     if (canInlineEditMarkdown(raw, markdownToSafeHtml)) {
       beginRichEdit(fieldEl, path, meta);
     } else {
-      openMarkdownModal(fieldEl, path, meta);
+      mdModal.open(path, meta);
     }
   }
 
@@ -1825,7 +1540,7 @@ export function createInlineEditor({
   thumb.addEventListener('dblclick', onThumbDblClick, true);
 
   function isEditing() {
-    return !!editing || !!closeMarkdownModal;
+    return !!editing || mdModal.isOpen();
   }
 
   function destroy() {
@@ -1837,7 +1552,7 @@ export function createInlineEditor({
     overlay.destroy();
     coach.destroy();
     cancelCommitRerender();
-    dismissMarkdownModal();
+    mdModal.dismiss();
     restoreThumbTitle();
     if (editing) {
       try {

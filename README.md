@@ -14,7 +14,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Why Deckyard
 
-**For presenters:** 39 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
+**For presenters:** 38 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 
@@ -25,7 +25,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 | | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard |
 |---|---|---|---|
 | AI generation | ✅ | ✅ | ✅ 39 typed slides |
-| MCP interface | ❌ | ❌ | ✅ 27 tools + 6 prompts |
+| MCP interface | ❌ | ❌ | ✅ 27 tools + 7 prompts |
 | Self-hosted | ❌ | ❌ | ✅ |
 | BYO LLM | ❌ | ❌ | ✅ |
 | Custom themes | Limited | Limited | ✅ Full control |
@@ -110,7 +110,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 - `create_presentation` — Generate a full deck from raw text, bullet points, or meeting notes
 - `iterate_presentation` — Modify with natural language ("make slide 3 punchier", "split the KPI slide")
 - `append_slides` — Add content to an existing deck (smart positioning before closing slides)
-- `convert_slide` — Switch between 39 slide types with AI-powered content adaptation
+- `convert_slide` — Switch between 38 slide types with AI-powered content adaptation
 - `compress_presentation` — Reduce slide count while preserving key messages
 - `analyze_presentation` — Get suggestions for improving structure and content
 - `validate_presentation` — Check for density issues, repetition, readability problems
@@ -307,7 +307,7 @@ deckyard/
 ## Documentation
 
 - [deckyard.eu](https://deckyard.eu) — product site and published documentation (features, usage, guides)
-- [MCP Server reference](docs/reference/mcp-server.md) — All 27 tools, 6 prompts, transport options
+- [MCP Server reference](docs/reference/mcp-server.md) — All 27 tools, 7 prompts, transport options
 - [Developer docs](docs/developer/README.md) — Architecture and extending
 - [Theme reference](docs/developer/themes.md) — Theming system
 - [Self-hosting guide](docs/ops/self-hosting.md) — VPS bootstrap, updates, backups

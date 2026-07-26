@@ -33,6 +33,7 @@ import { deckYdocCodec } from '../server/collab/deck-doc.js';
 import { extractCustomHtml, guardCustomHtml } from '../server/collab/custom-html-guard.js';
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { applyServerWriteToActiveDoc } from '../server/collab/live-apply.js';
+import { testScope } from './helpers/storage-scope.js';
 import {
   createPresentation,
   getPresentation,
@@ -170,20 +171,20 @@ describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
 
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-ch-gate-'));
-    const created = await createPresentation(tempRoot, {
+    const created = await createPresentation(testScope(tempRoot), {
       title: 'CH gate deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
     });
     deckId = created.id;
     chId = crypto.randomUUID(); // the facade validates slide ids as uuids
-    const pres = await getPresentation(tempRoot, deckId);
+    const pres = await getPresentation(testScope(tempRoot), deckId);
     pres.slides = [
       { id: chId, type: 'custom-html-slide', notes: '', content: { html: '<p>ok</p>', css: '', background: 'lime' } },
     ];
     // The facade does not enforce the capability (that's the route's job) —
     // exactly the gap the doc-level gate closes.
-    await updatePresentation(tempRoot, deckId, pres);
+    await updatePresentation(testScope(tempRoot), deckId, pres);
   });
   after(async () => {
     await fs.rm(tempRoot, { recursive: true, force: true });
@@ -286,7 +287,7 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
 
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-binfail-'));
-    const created = await createPresentation(tempRoot, {
+    const created = await createPresentation(testScope(tempRoot), {
       title: 'Binfail deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
@@ -303,7 +304,7 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
     const loader = createCollabPersistence({ repoRoot: tempRoot, deps: { log: makeLog() } });
     const doc = new Y.Doc();
     await loader.onLoadDocument({ documentName: docName(deckId), document: doc });
-    const before = await getPresentation(tempRoot, deckId);
+    const before = await getPresentation(testScope(tempRoot), deckId);
 
     let jsonWriteAttempted = false;
     const failing = createCollabPersistence({
@@ -325,7 +326,7 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
     await failing.onStoreDocument({ documentName: docName(deckId), document: doc });
 
     assert.equal(jsonWriteAttempted, false, 'must not attempt the JSON write');
-    const after = await getPresentation(tempRoot, deckId);
+    const after = await getPresentation(testScope(tempRoot), deckId);
     assert.equal(after.revision, before.revision, 'revision unchanged');
     assert.equal(after.title, before.title, 'JSON untouched');
     assert.equal(log.lines.error.length, 1);

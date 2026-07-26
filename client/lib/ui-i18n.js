@@ -34,10 +34,6 @@ export function getUiLocale() {
   return currentLocale;
 }
 
-export function defaultUiLocale() {
-  return DEFAULT_LOCALE;
-}
-
 export function readUiLocale() {
   const raw = storage.get(LS_UI_LOCALE, null);
   return normalizeUiLocale(raw) || DEFAULT_LOCALE;

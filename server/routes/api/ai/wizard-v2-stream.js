@@ -35,7 +35,7 @@ import {
  * presentation.
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiWizardV2Stream({ repoRoot, req, res, authedUser }) {
+export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res, authedUser }) {
   const body = await json(req);
   const {
     raw,
@@ -209,7 +209,7 @@ export async function handleAiWizardV2Stream({ repoRoot, req, res, authedUser })
       phase: 'save',
     });
 
-    const updated = await createPresentationWithI18n(repoRoot, {
+    const updated = await createPresentationWithI18n(storageScope, {
       parts,
       lang,
       authedUser,

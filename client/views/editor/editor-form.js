@@ -1,25 +1,14 @@
 import { createRenderField } from './editor-form/render-field.js';
 import { renderSlideFormByType } from './editor-form/slide-form-router.js';
 import { buildDeckSlideOptions } from './fields/card-link-field.js';
-import { renderFocusGridField } from './editor-form/focus-picker.js';
-import { newId } from '../../lib/util/id.js';
-import { debugLog } from '../../lib/util/debug.js';
-import { installDismissOnOutside } from '../../lib/dom.js';
-import { createDropdown } from '../../lib/dom/dropdown.js';
-import { confirmModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
-import { slidePrimaryLabel } from './editor-utils.js';
 import { toast as defaultToast } from '../../lib/dom/toast.js';
-import { getConvertibleSlideTypes } from '../../../shared/slide-types.js';
-import { convertSlideWithConfirm } from './convert-slide-action.js';
-import { openJsonDebugModal } from './modals/json-debug-modal.js';
-import { openSaveToLibraryModal } from './modals/save-to-library-modal.js';
 import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
-import { iconUrl } from '../../../shared/icon-names.js';
 import { readPreferredLlmVendor } from '../../lib/net/llm-vendor.js';
-import { moreIcon, closeIcon } from '../../lib/dom/icons.js';
+import { closeIcon } from '../../lib/dom/icons.js';
+import { buildHeaderActions } from './editor-form/header-actions.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
 import { createLayoutSwitcherChip } from './layout-switcher.js';
 import {
@@ -28,521 +17,16 @@ import {
 } from './editor-form/inspector-form.js';
 import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import {
+  describeUnresolvedType,
+  unresolvedNotes,
+} from '../../../shared/slide-types/unresolved.js';
 import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
-import { isLocked } from '../../../shared/theme-locks.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
-import { detectBgTextContrast } from '../../lib/slide-authoring/bg-contrast.js';
-
-/**
- * Sample the current slide's background image and store which theme text colour
- * (light/dark) reads best, plus whether a scrim is still needed. Runs async and
- * persists the result on slide content (slideBgTextAuto / slideBgNeedsScrim) so
- * the server render (export/PDF/PNG) honours it without re-sampling pixels.
- * Idempotent per image via slideBgAutoFor, so the UI refresh it triggers does
- * not loop.
- * @param {object} slide
- * @param {object} pres
- * @param {{ markDirty?: Function, scheduleUiRefresh?: Function }} cbs
- */
-async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh } = {}) {
-  const url = String(slide?.content?.slideBgImage || '').trim();
-  if (!url) return;
-  if (slide.content.slideBgAutoFor === url) return; // already detected for this image
-  let theme = null;
-  try {
-    theme = await loadThemeById(pres?.theme);
-  } catch {
-    theme = null;
-  }
-  let result;
-  try {
-    result = await detectBgTextContrast(url, {
-      light: theme?.textColorLight || '#ffffff',
-      dark: theme?.textColorDark || '#212121',
-    });
-  } catch {
-    result = { ok: false };
-  }
-  // Guard against a race: the author may have swapped the image mid-detection.
-  if (String(slide?.content?.slideBgImage || '').trim() !== url) return;
-  slide.content.slideBgAutoFor = url;
-  if (result?.ok) {
-    slide.content.slideBgTextAuto = result.text;
-    slide.content.slideBgNeedsScrim = !!result.needsScrim;
-  } else {
-    // Couldn't sample (e.g. cross-origin image) — drop any stale recommendation
-    // so 'auto' falls back to the theme default rather than a wrong swap.
-    delete slide.content.slideBgTextAuto;
-    delete slide.content.slideBgNeedsScrim;
-  }
-  markDirty?.();
-  scheduleUiRefresh?.();
-}
-
-// Sticky user preference for the unified "Background" section (colour +
-// custom image + corner logo). Defaults to open: the colour picker lives
-// here now, and hiding a primary design control behind a collapsed panel
-// would be a discoverability regression.
-const BG_SECTION_OPEN_KEY = 'editor.bgSection.open';
-
-function readBgSectionOpen() {
-  try {
-    return localStorage.getItem(BG_SECTION_OPEN_KEY) !== '0';
-  } catch {
-    return true;
-  }
-}
-
-function storeBgSectionOpen(open) {
-  try {
-    localStorage.setItem(BG_SECTION_OPEN_KEY, open ? '1' : '0');
-  } catch {
-    /* ignore */
-  }
-}
-
-/**
- * Whether a selected canvas element ({kind, idx}) has an element tab on this
- * slide type. Every image type now carries a "This image" tab (the shared
- * image-element card, or image-text's own images manager). Cards: icon-card-grid
- * (idx in range).
- * @returns {boolean}
- */
-function elementAppliesToSlide(slide, sel) {
-  if (!slide || !sel) return false;
-  const c = slide.content || {};
-  // Any text field the user selected on this slide is stylable (block-level
-  // alignment/colour, editing-surfaces text step 3). The selection is cleared
-  // on slide change, so a non-empty fieldKey is enough — no schema lookup.
-  if (sel.kind === 'text') {
-    return typeof sel.fieldKey === 'string' && sel.fieldKey.length > 0;
-  }
-  if (sel.kind === 'image') {
-    const inList = (key) =>
-      Array.isArray(c[key]) && sel.idx >= 0 && sel.idx < c[key].length;
-    switch (slide.type) {
-      case 'image-slide':
-        return sel.idx === 0;
-      case 'image-text-slide':
-        return true; // images[] is padded to the layout's cell count on demand
-      case 'gallery-slide':
-        return inList('images');
-      case 'team-cards-slide':
-        return inList('members');
-      case 'logo-wall-slide':
-        return inList('logos');
-      case 'content-columns-slide': {
-        const count = Math.max(1, Math.min(7, Number(c.columnCount || 3) || 3));
-        return sel.idx >= 1 && sel.idx <= count; // 1-based column number
-      }
-      case 'quote-slide':
-        return sel.idx >= 1 && sel.idx <= 3; // up to three author portraits
-      default:
-        return false;
-    }
-  }
-  if (sel.kind === 'card' && slide.type === 'icon-card-grid-slide') {
-    const items = slide.content?.items;
-    return Array.isArray(items) && sel.idx >= 0 && sel.idx < items.length;
-  }
-  return false;
-}
-
-/** Label for the element tab, by selected element kind. */
-function elementTabLabel(sel) {
-  if (sel?.kind === 'image') return t('editor.inspector.tab.image', 'This image');
-  if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
-  if (sel?.kind === 'text') return t('editor.inspector.tab.text', 'This text');
-  return t('editor.inspector.tab.element', 'This element');
-}
-
-// AI conversion targets — which types can each slide type convert to?
-const AI_CONVERT_TARGETS = {
-  'content-slide': [
-    { type: 'lijstje-slide', labelKey: 'slideType.lijstje-slide.label', label: 'List' },
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-    { type: 'kpi-metrics-slide', labelKey: 'slideType.kpi-metrics-slide.label', label: 'KPI metrics' },
-  ],
-  'list-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-  ],
-  // Also match the alias
-  'lijstje-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-  ],
-  'icon-card-grid-slide': [
-    { type: 'lijstje-slide', labelKey: 'slideType.lijstje-slide.label', label: 'List' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-  ],
-  'text-blocks-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'lijstje-slide', labelKey: 'slideType.lijstje-slide.label', label: 'List' },
-  ],
-  'kpi-metrics-slide': [
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'lijstje-slide', labelKey: 'slideType.lijstje-slide.label', label: 'List' },
-  ],
-};
-
-/**
- * Build the header actions dropdown menu
- */
-function buildHeaderActions({
-  h,
-  slide,
-  pres,
-  api,
-  toast,
-  SLIDE_TYPES,
-  openSlideLibraryModal,
-  setSelectedSlideId,
-  editorState,
-  rerenderEditor,
-  onTranslateSlide,
-  user,
-  openOverlayClosers,
-  markDirty,
-  rerenderPreview,
-  rerenderSlideList,
-  isAuthor,
-}) {
-  const headerActions = h('div', { class: 'row editor-form-header-actions' });
-  const isFollowInviteSlide = slide.type === 'follow-invite-slide';
-  // Follow-invite slides shouldn't be saved to library (they're presentation-specific)
-  const canSaveToLibrary = !!api && !isFollowInviteSlide;
-
-  const saveToLibrary = () => {
-    if (!api) return;
-    const suggestedName = slidePrimaryLabel(slide, SLIDE_TYPES) || '';
-    openSaveToLibraryModal({
-      h,
-      root: document.body,
-      slide,
-      pres,
-      api,
-      suggestedName,
-      openOverlayClosers,
-      openSlideLibraryModal,
-    });
-  };
-
-  // Top-level actions menu. dismissOnOutside is handled below with a custom
-  // close that also collapses the Convert / AI Convert submenus.
-  const { details: actionsDetails, menu: actionsMenu } = createDropdown({
-    h,
-    triggerClass: 'ghost-icon-btn',
-    triggerContent: [moreIcon({ size: 16 })],
-    title: t('common.moreOptions', 'More options'),
-    ariaLabel: t('common.moreOptions', 'More options'),
-    menuClass: 'dropdown-menu-right',
-    dismissOnOutside: false,
-  });
-
-  // Build conversion submenu
-  const convertible = getConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES });
-  const defFor = (type) => SLIDE_TYPES?.[type] || null;
-  const typeLabel = (type) => {
-    const def = defFor(type);
-    return t(def?.labelKey || `slideType.${type}.label`, def?.label || type);
-  };
-
-  // Helper: position a fixed submenu next to its trigger (opens LEFT to avoid viewport edge)
-  const positionSubmenu = (details, summary, menu) => {
-    details.addEventListener('toggle', () => {
-      if (!details.open) return;
-      const rect = summary.getBoundingClientRect();
-      menu.style.position = 'fixed';
-      menu.style.top = `${rect.top}px`;
-      menu.style.left = 'auto';
-      menu.style.right = `${window.innerWidth - rect.left + 4}px`;
-    });
-  };
-
-  let convertDetails = null;
-  if (convertible.length) {
-    const built = createDropdown({
-      h,
-      triggerClass: 'dropdown-item',
-      triggerContent: [
-        h('span', { text: t('editor.slide.convert', 'Convert…') }),
-        h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
-      ],
-      title: t('editor.slide.convert.title', 'Convert this slide to a different type (best-effort).'),
-      detailsClass: 'dropdown-submenu',
-      menuClass: 'dropdown-submenu-menu',
-      dismissOnOutside: false,
-    });
-    convertDetails = built.details;
-    const convertMenu = built.menu;
-    positionSubmenu(convertDetails, built.summary, convertMenu);
-
-    for (const toType of convertible) {
-      convertMenu.append(
-        h('button', {
-          class: 'dropdown-item',
-          type: 'button',
-          text: typeLabel(toType),
-          onclick: async () => {
-            actionsDetails.open = false;
-            convertDetails.open = false;
-            await convertSlideWithConfirm({
-              h,
-              slide,
-              toType,
-              pres,
-              editorState,
-              SLIDE_TYPES,
-            });
-          },
-        })
-      );
-    }
-  }
-
-  // Build AI conversion submenu
-  const aiConvertTargets = AI_CONVERT_TARGETS[slide.type] || [];
-  let aiConvertDetails = null;
-  if (aiConvertTargets.length && api) {
-    const built = createDropdown({
-      h,
-      triggerClass: 'dropdown-item',
-      triggerContent: [
-        h('span', { text: t('editor.slide.aiConvert', 'AI Convert…') }),
-        h('span', { class: 'dropdown-submenu-caret', text: '›', 'aria-hidden': 'true' }),
-      ],
-      title: t('editor.slide.aiConvert.title', 'Use AI to intelligently convert this slide to a different type.'),
-      detailsClass: 'dropdown-submenu',
-      menuClass: 'dropdown-submenu-menu',
-      dismissOnOutside: false,
-    });
-    aiConvertDetails = built.details;
-    const aiConvertMenu = built.menu;
-    positionSubmenu(aiConvertDetails, built.summary, aiConvertMenu);
-
-    // Guard against re-triggering a convert while one is already in flight
-    // (the menu closes on click, but reopening it must not fire a second call).
-    let aiConvertBusy = false;
-
-    for (const target of aiConvertTargets) {
-      const targetLabel = t(target.labelKey, target.label);
-      aiConvertMenu.append(
-        h('button', {
-          class: 'dropdown-item',
-          type: 'button',
-          text: targetLabel,
-          onclick: async () => {
-            actionsDetails.open = false;
-            aiConvertDetails.open = false;
-            if (aiConvertBusy) return;
-            aiConvertBusy = true;
-
-            const controller = new AbortController();
-            const converting = toast.info(
-              t('editor.slide.aiConvert.converting', 'Converting with AI…'),
-              {
-                id: 'ai-convert',
-                durationMs: 120000,
-                action: {
-                  label: t('editor.slide.aiConvert.cancel', 'Cancel'),
-                  onClick: () => controller.abort(),
-                },
-              }
-            );
-
-            try {
-              const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-              const vendor = readPreferredLlmVendor() || null;
-
-              const resp = await api('/api/ai/convert-slide', {
-                method: 'POST',
-                signal: controller.signal,
-                body: JSON.stringify({
-                  slide: { id: slide.id, type: slide.type, content: slide.content, notes: slide.notes || '' },
-                  toType: target.type,
-                  lang,
-                  vendor,
-                }),
-              });
-
-              if (resp?.slide) {
-                slide.type = resp.slide.type;
-                slide.content = resp.slide.content;
-                if (resp.slide.notes) slide.notes = resp.slide.notes;
-                converting.dismiss();
-                editorState.dirtyRefreshWithItem();
-                toast.success(t('editor.slide.aiConvert.done', 'Converted successfully!'));
-              } else {
-                throw new Error(resp?.error || t('common.unknownError', 'Unknown error'));
-              }
-            } catch (e) {
-              converting.dismiss();
-              if (e?.name === 'AbortError') {
-                toast.info(t('editor.slide.aiConvert.cancelled', 'Conversion cancelled.'));
-              } else {
-                debugLog('[editor] AI convert slide failed', e);
-                toast.error(t('editor.slide.aiConvert.failed', 'Conversion failed: {error}', { error: e?.message || String(e) }));
-              }
-            } finally {
-              aiConvertBusy = false;
-            }
-          },
-        })
-      );
-    }
-  }
-
-  // Assemble menu items (filter out null entries to avoid "null" text in DOM)
-  const menuItems = [
-    h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('editor.slide.fillTranslation', 'Fill slide…'),
-      title: t('editor.slide.fillTranslation.title', 'Fill this slide from the other language (with preview).'),
-      onclick: async () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        try {
-          await onTranslateSlide?.({ slideId: slide.id });
-        } catch (e) {
-          debugLog('[editor] translate slide failed', e);
-        }
-      },
-    }),
-    h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('editor.slideLibrary.save', 'Save to slide library…'),
-      title: canSaveToLibrary
-        ? t('editor.slideLibrary.save.title', 'Save this slide so you can reuse it later.')
-        : t('editor.slideLibrary.save.disabled', "This slide is managed automatically and can't be saved."),
-      disabled: !canSaveToLibrary,
-      onclick: () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        saveToLibrary();
-      },
-    }),
-    convertDetails,
-    aiConvertDetails,
-    h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('editor.slide.duplicate', 'Duplicate'),
-      onclick: () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        const clone = structuredClone(slide);
-        clone.id = newId();
-        if (clone.type === 'poll-slide') {
-          if (!clone.content || typeof clone.content !== 'object') clone.content = {};
-          clone.content.pollId = newId();
-        }
-        pres.slides.splice(pres.slides.findIndex((s) => s.id === slide.id) + 1, 0, clone);
-        setSelectedSlideId?.(clone.id);
-        editorState.dirtyRefreshAll();
-      },
-    }),
-    // Admin-only: View/edit raw JSON
-    user?.isAdmin ? h('button', {
-      class: 'dropdown-item',
-      type: 'button',
-      text: t('admin.jsonDebug.menuItem', 'View JSON (Debug)'),
-      title: t('admin.jsonDebug.menuItemTitle', 'View and edit raw slide JSON data'),
-      onclick: () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        openJsonDebugModal({
-          h,
-          root: document.body,
-          slide,
-          SLIDE_TYPES,
-          openOverlayClosers,
-          markDirty,
-          rerenderEditor,
-          rerenderPreview,
-          rerenderSlideList,
-        });
-      },
-    }) : null,
-    // Destructive action last, visually separated. Lives in the menu (not as a
-    // standing header button) so the default chrome stays calm; power users
-    // also have Delete/Backspace on the slide list and the bulk-action bar.
-    h('button', {
-      class: 'dropdown-item is-danger',
-      type: 'button',
-      text: t('editor.slide.deleteMenu', 'Delete slide…'),
-      onclick: async () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        if (!(await confirmModal(h, document.body, {
-          title: t('editor.slide.delete', 'Delete slide'),
-          message: t('editor.slide.deleteConfirm', 'Delete this slide?'),
-          confirmLabel: t('common.delete', 'Delete'),
-          danger: true,
-        }))) return;
-        // Keep the viewport where it was: select the slide that slid into the
-        // deleted slot (former N+1 becomes the new N), clamped to the last
-        // slide. Jumping back to slide 1 was inconsistent with the slide list,
-        // which stays put. Mirrors deleteSlides() in slide-list/slide-actions.js.
-        const delIdx = pres.slides.findIndex((s) => s.id === slide.id);
-        pres.slides = pres.slides.filter((s) => s.id !== slide.id);
-        const nextIdx = Math.max(0, Math.min(delIdx, pres.slides.length - 1));
-        setSelectedSlideId?.(pres.slides?.[nextIdx]?.id || null);
-        editorState.dirtyRefreshAll();
-      },
-    }),
-  ].filter(Boolean);
-  actionsMenu.append(...menuItems);
-
-  // Close the dropdown on outside click / Escape
-  const detachDismiss = installDismissOnOutside({
-    rootEl: actionsDetails,
-    isOpen: () => !!actionsDetails.open,
-    close: () => {
-      actionsDetails.open = false;
-      if (convertDetails) convertDetails.open = false;
-      if (aiConvertDetails) aiConvertDetails.open = false;
-    },
-  });
-
-  // Lock/unlock button (author only)
-  let btnLock = null;
-  if (isAuthor) {
-    const isLocked = !!slide.lockedByAuthor;
-    btnLock = h('button', {
-      class: `ghost-icon-btn${isLocked ? ' is-active' : ''}`,
-      type: 'button',
-      title: isLocked
-        ? t('editor.slide.unlock', 'Unlock slide')
-        : t('editor.slide.lock', 'Lock slide'),
-      'aria-label': isLocked
-        ? t('editor.slide.unlock', 'Unlock slide')
-        : t('editor.slide.lock', 'Lock slide'),
-      onclick: () => {
-        slide.lockedByAuthor = !slide.lockedByAuthor;
-        markDirty?.();
-        rerenderEditor?.();
-        rerenderSlideList?.();
-      },
-    });
-    btnLock.append(h('img', { class: 'btn-lock-icon', src: isLocked ? iconUrl('lock-open') : iconUrl('lock'), alt: '', 'aria-hidden': 'true' }));
-  }
-
-  if (btnLock) headerActions.append(btnLock);
-  headerActions.append(actionsDetails);
-  return { el: headerActions, detach: detachDismiss };
-}
+import { elementAppliesToSlide, elementTabLabel } from './editor-form/element-tab.js';
+import {
+  buildBackgroundControls,
+  isBackgroundFieldKey,
+} from './editor-form/background-section.js';
 
 export function createRerenderEditor({
   h,
@@ -640,30 +124,33 @@ export function createRerenderEditor({
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
     if (!slide) return;
 
-    // Pane header: pure pane chrome (chrome re-org 2026-07-16). Everything
-    // scoped to the current slide (type chip, "All text", lock, actions
-    // menu) renders into the slide toolbar above the canvas instead.
+    /** @type {HTMLElement|null} The floating collapse control, appended last. */
+    let closeSlot = null;
+
+    // Pane chrome (chrome re-org 2026-07-16). Everything scoped to the current
+    // slide (type chip, "All text", lock, actions menu) renders into the slide
+    // toolbar above the canvas instead.
     if (!contentOnly) {
-    const header = h('div', { class: 'row spread editor-form-header' });
-    header.append(
-      h('h2', { class: 'editor-form-title', text: t('editor.inspector.title', 'Inspector') })
-    );
+    // Collapse control. The "INSPECTOR" title it used to sit next to was
+    // redundant beside the already-active Inspector pane tab, so the whole
+    // 57px header row went (declutter 2026-07-26) — but the close button
+    // stays: it belongs inside the surface it dismisses, and hiding it behind
+    // hover would strand touch users. It floats in a zero-height slot over the
+    // first field's label band, which is empty on every type. Built here,
+    // appended at the very end — it has to land *under* the element tab bar,
+    // whose right-hand "Slide" tab it would otherwise cover.
     if (setInspectorCollapsed) {
-      header.append(
-        (() => {
-          const b = h('button', {
-            class: 'ghost-icon-btn editor-form-close-btn',
-            type: 'button',
-            title: t('editor.inspector.hide', 'Hide inspector'),
-            'aria-label': t('editor.inspector.hide', 'Hide inspector'),
-            onclick: () => setInspectorCollapsed(true),
-          });
-          b.append(closeIcon({ size: 16 }));
-          return b;
-        })()
-      );
+      closeSlot = h('div', { class: 'editor-form-close-slot' });
+      const closeBtn = h('button', {
+        class: 'ghost-icon-btn editor-form-close-btn',
+        type: 'button',
+        title: t('editor.inspector.hide', 'Hide inspector'),
+        'aria-label': t('editor.inspector.hide', 'Hide inspector'),
+        onclick: () => setInspectorCollapsed(true),
+      });
+      closeBtn.append(closeIcon({ size: 16 }));
+      closeSlot.append(closeBtn);
     }
-    editorMount.append(header);
 
     // Slide toolbar above the canvas: type chip + badges + "All text" on the
     // left; lock + slide-actions menu on the right. Rebuilt per slide.
@@ -831,6 +318,29 @@ export function createRerenderEditor({
     const form = h('div', { class: 'stack editor-form' });
     const fieldByKey = new Map((def?.fields || []).map((f) => [f.key, f]));
     const used = new Set();
+
+    // A slide whose type no longer resolves has no fields to inspect, so the
+    // inspector would otherwise be a silent empty pane next to a placeholder
+    // slide. Say the same thing the canvas says: which type is missing, whether
+    // it was deliberately removed, and what replaces it. Read-only on purpose —
+    // the content is recoverable (canvas, reader view), the type is not.
+    if (!def) {
+      const info = describeUnresolvedType(slide.type);
+      const notice = h('div', { class: 'editor-card' });
+      notice.append(
+        h('p', {
+          class: 'field-label',
+          text:
+            info.state === 'removed'
+              ? t('editor.slide.archivedType', 'Archived slide type')
+              : t('editor.slide.unavailableType', 'Unavailable slide type'),
+        })
+      );
+      for (const line of unresolvedNotes(info)) {
+        notice.append(h('p', { class: 'help', text: line }));
+      }
+      form.append(notice);
+    }
 
     // Selection-aware inspector: when a canvas element (image/card) is selected
     // and applies to this slide, its settings render into `elementForm` (the
@@ -1057,7 +567,7 @@ export function createRerenderEditor({
     // just `title`. Most core types use `title`, but poll/likert/likert-slider
     // render their `<h2 class="heading">` from `question`, and comparison uses
     // `leftTitle`/`rightTitle`. Types that render NO heading (payoff,
-    // follow-invite, freeform, quote, image without a title) announce as bare
+    // follow-invite, quote, image without a title) announce as bare
     // "Slide N of M" until an a11yTitle is set — exactly where the override
     // earns its keep, so only those get the nudge.
     const HEADING_FIELDS = ['title', 'question', 'leftTitle', 'rightTitle'];
@@ -1104,33 +614,13 @@ export function createRerenderEditor({
         if (k !== activeKey) inactiveCollectionKeys.add(k);
       }
     }
-    // The unified "Background" section: colour choice, custom image and the
-    // theme corner logo live together (they used to be split between a
-    // top-level colour dropdown and a collapsed "Background & logo" panel).
-    // Sticky open preference (default open); force-open when a non-default
-    // image/logo is set so active settings are never hidden.
     // Migrate-on-edit: fold a title slide's legacy bgImage into the canonical
-    // slideBgImage before the Background section reads it, so the shared picker
+    // slideBgImage before the background controls read it, so the shared picker
     // shows the (now single) background and the legacy render fallback stops
     // firing. Idempotent; inspector mode only (the bulk modal never renders bg).
     if (!contentOnly && slide?.type === 'title-slide') {
       ensureTitleSlideBackground(slide.content);
     }
-    const hasBgImage = Boolean(String(slide?.content?.slideBgImage || '').trim());
-    const hasCornerLogo = slide?.content?.slideLogo === 'top-right';
-    const bgDetails = h('details', { class: 'editor-advanced editor-bg-section' });
-    if (readBgSectionOpen() || hasBgImage || hasCornerLogo) bgDetails.open = true;
-    bgDetails.addEventListener('toggle', () => storeBgSectionOpen(bgDetails.open));
-    const bgSummary = h('summary', {
-      class: 'editor-advanced-summary',
-      text: t('editor.slide.background.section', 'Background'),
-      title: t(
-        'editor.slide.background.sectionHelp',
-        'Background colour or a custom image, plus the theme corner logo.'
-      ),
-    });
-    const bgBody = h('div', { class: 'editor-advanced-body' });
-    bgDetails.append(bgSummary, bgBody);
 
     const renderField = createRenderField({
       h,
@@ -1162,22 +652,13 @@ export function createRerenderEditor({
     });
 
     const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';
-    const isGlobalBgFieldKey = (key) =>
-      key === 'background' ||
-      key === 'bgCustomColor' ||
-      key === 'slideBgImage' ||
-      key === 'slideBgFit' ||
-      key === 'slideBgFocusX' ||
-      key === 'slideBgFocusY' ||
-      key === 'slideBgOverlay' ||
-      key === 'slideBgText' ||
-      key === 'slideLogo';
 
     const add = (key) => {
       const f = fieldByKey.get(key);
       if (!f) return;
-      // Global background fields are rendered by the dedicated Background section.
-      if (isGlobalBgFieldKey(key)) {
+      // Slide-wide background fields have their own surfaces (colour group +
+      // image section), built below.
+      if (isBackgroundFieldKey(key)) {
         used.add(key);
         return;
       }
@@ -1207,102 +688,23 @@ export function createRerenderEditor({
       form.append(el);
     };
 
-    // Theme override locks. A locked property's controls are omitted rather
-    // than disabled — a disabled control invites you to wonder what it would
-    // do, and the renderer ignores the value either way. One note explains the
-    // absence, so the section never just looks broken.
-    const bgLocked = isLocked(theme, 'background');
-    const logoLocked = isLocked(theme, 'logo');
-    if (bgLocked || logoLocked) {
-      bgBody.append(
-        h('p', {
-          class: 'help',
-          text: t(
-            'editor.slide.background.lockedByTheme',
-            'Set by the theme and not editable per slide.'
-          ),
-        })
-      );
-    }
-
-    // Populate the Background section. Colour first: the section reads as
-    // "colour ór custom image, and optionally the logo on top".
-    const bgColorField =
-      contentOnly || bgLocked ? null : fieldByKey.get('background');
-    if (bgColorField) {
-      // Inside a section already titled "Background" the field label reads
-      // better as "Colour" (it sits next to "Background image").
-      const colorEl = renderField({
-        ...bgColorField,
-        label: t('editor.slide.background.colour', 'Color'),
-      });
-      if (colorEl) bgBody.append(colorEl);
-      // Freeform's extended option set has a 'custom' value with its own
-      // colour input; only shown while 'custom' is selected (the form
-      // rerenders on change, so this stays in sync).
-      const bgCustomField = fieldByKey.get('bgCustomColor');
-      if (bgCustomField) {
-        const customEl = renderField(bgCustomField);
-        if (customEl) {
-          if (slide.content?.background !== 'custom') customEl.style.display = 'none';
-          bgBody.append(customEl);
-        }
-      }
-    }
-
-    // Custom image (+ crop focus + fit/overlay once an image is set).
-    const bgImageField =
-      contentOnly || bgLocked ? null : fieldByKey.get('slideBgImage');
-    if (bgImageField) {
-      const imgEl = renderField(bgImageField);
-      if (imgEl) bgBody.append(imgEl);
-      if (hasBgImage) {
-        bgBody.append(
-          renderFocusGridField({
-            h,
-            label: t('editor.slide.background.focus', 'Background focus (crop)'),
-            helpText: t(
-              'editor.slide.background.focusHelp',
-              'Pick which part stays visible when the image is cropped to fill the slide.'
-            ),
-            focusX: slide.content?.slideBgFocusX ?? 50,
-            focusY: slide.content?.slideBgFocusY ?? 50,
-            onChange: ({ focusX, focusY }) => {
-              slide.content.slideBgFocusX = focusX;
-              slide.content.slideBgFocusY = focusY;
-              markDirty?.();
-              scheduleUiRefresh?.();
-            },
-          })
-        );
-        if (slide.content.slideBgFit == null) slide.content.slideBgFit = 'cover';
-        if (slide.content.slideBgOverlay == null)
-          slide.content.slideBgOverlay = 'auto';
-        if (slide.content.slideBgText == null)
-          slide.content.slideBgText = 'auto';
-        // Auto-detect the readable text colour for the current image (async;
-        // stores slideBgTextAuto / slideBgNeedsScrim, then refreshes). No-op
-        // when already detected for this image URL.
-        runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh });
-        const fitField = fieldByKey.get('slideBgFit');
-        const overlayField = fieldByKey.get('slideBgOverlay');
-        const textField = fieldByKey.get('slideBgText');
-        const fitEl = fitField ? renderField(fitField) : null;
-        const overlayEl = overlayField ? renderField(overlayField) : null;
-        const textEl = textField ? renderField(textField) : null;
-        const optionsRow = fieldGrid([fitEl, overlayEl].filter(Boolean), 2);
-        if (optionsRow) bgBody.append(optionsRow);
-        if (textEl) bgBody.append(textEl);
-      }
-    }
-    // Theme logo (corner) toggle — independent of the background image.
-    const logoField =
-      contentOnly || logoLocked ? null : fieldByKey.get('slideLogo');
-    if (logoField) {
-      if (slide.content.slideLogo == null) slide.content.slideLogo = 'none';
-      const logoEl = renderField(logoField);
-      if (logoEl) bgBody.append(logoEl);
-    }
+    // Background, split by how often you reach for it: the colour is a plain
+    // field among the type's settings, the image (and everything that only
+    // matters once one is set) is a collapsed section. Inspector-only — the
+    // bulk modal renders content fields and nothing here.
+    const background = contentOnly
+      ? { colorGroup: null, imageSection: null }
+      : buildBackgroundControls({
+          h,
+          slide,
+          pres,
+          theme,
+          fieldByKey,
+          renderField,
+          fieldGrid,
+          markDirty,
+          scheduleUiRefresh,
+        });
 
     const formTypeCtx = {
       h,
@@ -1364,13 +766,19 @@ export function createRerenderEditor({
     // Add any remaining fields not handled above. In inspector mode add()
     // gates on the keeps set, so this renders keeps in schema order and
     // routes a11y/background keys to their sections.
-    for (const f of def.fields || []) {
+    // `def?.` because a stored slide can outlive its type: a removed core type
+    // or a fork's type this install doesn't have resolves to nothing, and the
+    // inspector has to degrade rather than take the whole editor down with it.
+    for (const f of def?.fields || []) {
       if (!used.has(f.key)) add(f.key);
     }
 
-    // Background section after the type fields: it's a design control set,
-    // and it replaces the colour dropdown that used to sit loose in the form.
-    if (!contentOnly && bgBody.childNodes?.length) form.append(bgDetails);
+    // Rail order, settled 2026-07-26: the type's own settings lead, then the
+    // background colour (a frequent one-click choice), then the two collapsed
+    // sections. Accessibility now sits within a screen of the top instead of
+    // below a background panel that filled the rail.
+    if (background.colorGroup) form.append(background.colorGroup);
+    if (background.imageSection) form.append(background.imageSection);
 
     // Append accessibility toggle if it has content
     if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
@@ -1404,8 +812,12 @@ export function createRerenderEditor({
       editorMount.append(tabBar);
       elementForm.hidden = !activeElementTab;
       form.hidden = activeElementTab;
+      // The collapse control goes after the tab bar so it floats over the
+      // form's first row instead of over the "Slide" tab.
+      if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(elementForm, form);
     } else {
+      if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(form);
     }
   }

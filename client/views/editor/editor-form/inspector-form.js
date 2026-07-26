@@ -47,7 +47,13 @@ import { renderImageElementCard } from './image-element-card.js';
 // point at on the canvas (URLs, config texts, alt/bg images) must render in
 // the inspector. The 2026-07-21 additions below restore exactly the fields
 // the 2026-07-16 audit had parked in its "Bulk modal (only home)" column.
-const INSPECTOR_KEEPS = {
+//
+// A per-type override, sparse by design: without an entry, every field the
+// inline layer does not cover renders in the inspector (the safe default), so
+// only a *stale* entry is a problem. Exported for the companion matrix
+// (tests/slide-type-companion-coverage.test.js), which catches one for a type
+// that no longer exists.
+export const INSPECTOR_KEEPS = {
   // The title background is now the shared slideBgImage (rendered by the
   // Background section); the type's own bgImage/bgAlt were removed
   // (title-bg-unification). logoCorner is the only title-specific keep.
@@ -122,7 +128,6 @@ const INSPECTOR_KEEPS = {
   'pyramid-slide': [],
   'cycle-slide': [],
   'gallery-slide': ['layout'],
-  'freeform-slide': ['snapToGrid'],
   'custom-html-slide': [],
   // Contact/social URLs and labels have no canvas surface (the canvas
   // inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).

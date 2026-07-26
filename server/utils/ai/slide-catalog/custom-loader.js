@@ -12,12 +12,15 @@
  * - notFor: Array of anti-patterns when NOT to use this slide type
  * - schema: Object defining content field constraints for the AI
  * - examples: Array of example content objects (optional)
+ * - usage: String with the organization's own rules for filling this type
+ *   (optional; normalized and truncated, see shared/slide-types/usage.js)
  */
 
 import { readdirSync, existsSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
+import { clampUsage } from '../../../../shared/slide-types/usage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -80,10 +83,14 @@ export async function loadCustomAiCatalog() {
       if (def.ai && typeof def.ai === 'object') {
         const aiDef = def.ai;
 
-        // Validate required AI fields
+        // Validate required AI fields. `description` stays mandatory because it
+        // is what the picker and the agent lean on hardest — but say out loud
+        // that `usage` goes down with it, since a fork author who wrote only a
+        // usage rule would otherwise get silence.
         if (!aiDef.description) {
           console.warn(
-            `[custom-ai-loader] Skipping AI metadata for ${typeName}: missing 'description'`
+            `[custom-ai-loader] Skipping AI metadata for ${typeName}: missing 'description'` +
+              (aiDef.usage ? " (its 'usage' rule is dropped with it)" : '')
           );
           continue;
         }
@@ -96,6 +103,10 @@ export async function loadCustomAiCatalog() {
           bestFor: Array.isArray(aiDef.bestFor) ? aiDef.bestFor : [],
           notFor: Array.isArray(aiDef.notFor) ? aiDef.notFor : [],
           schema: aiDef.schema || {},
+          // Truncated rather than rejected: a rule that runs long should lose
+          // its tail, not take a working slide type down with it. A non-string
+          // (a function, an object) normalizes to null and is simply absent.
+          usage: clampUsage(aiDef.usage),
           // Mark as custom for potential filtering
           isCustom: true,
           // Store themeId if present (for theme-aware AI suggestions)

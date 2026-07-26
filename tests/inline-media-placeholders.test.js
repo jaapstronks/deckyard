@@ -167,7 +167,6 @@ const ALL_PLACEHOLDER_TYPES = [
   ['logo-wall-slide', {}],
   ['quote-slide', { quote: 'Hi' }],
   ['team-cards-slide', { members: [{ name: 'A' }] }],
-  ['freeform-slide', { elements: [{ id: 'e1', type: 'image' }] }],
 ];
 
 test('every empty placeholder carries the shared icon + label inner', () => {
@@ -255,7 +254,6 @@ test('each type keeps its own modifier class for sizing and colour', () => {
     'logo-wall-slide': 'logo-wall-placeholder',
     'quote-slide': 'quote-portrait',
     'team-cards-slide': 'team-card-photo',
-    'freeform-slide': 'freeform-image-placeholder',
   };
   for (const [type, content] of ALL_PLACEHOLDER_TYPES) {
     const modifier = modifiers[type];
@@ -268,7 +266,7 @@ test('each type keeps its own modifier class for sizing and colour', () => {
 test('small slots are compact and carry no label', () => {
   // A 112px round portrait or a logo cell cannot fit a label; the helper
   // drops it rather than each type remembering to leave it out.
-  for (const type of ['quote-slide', 'team-cards-slide', 'freeform-slide']) {
+  for (const type of ['quote-slide', 'team-cards-slide']) {
     const content = ALL_PLACEHOLDER_TYPES.find(([t]) => t === type)[1];
     const html = SLIDE_TYPES[type].renderHtml(content, {}, { mode: 'edit', lang: 'nl' });
     assert.ok(html.includes('is-compact'), `${type}: expected the compact modifier`);

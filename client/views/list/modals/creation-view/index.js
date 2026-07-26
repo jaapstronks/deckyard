@@ -22,18 +22,10 @@ import { createFocusTrap } from '../../../../lib/dom.js';
 import { getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
-import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
-import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
-import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
-import {
-  handleEmpty,
-  handlePasteText,
-  handleConvertFile,
-  handleImportJson,
-  handleImportMarkdown,
-  handlePasteMarkdown,
-  handleNotion,
-} from '../new-presentation/handlers.js';
+import { createLibraryCompose } from './library-compose.js';
+import { createContentCompose } from './content-compose.js';
+import { createImportCompose } from './import-compose.js';
+import { handleEmpty } from '../new-presentation/handlers.js';
 
 export function openCreationView({
   h,
@@ -58,12 +50,7 @@ export function openCreationView({
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
-  let contentSubtab = 'paste'; // paste | upload | notion
-  let importSubtab = 'json'; // json | import-md | paste-md
   let busy = false;
-  let selectedConvertFile = null;
-  let selectedImportFile = null;
-  let selectedImportMdFile = null;
   // null lets the visual picker adopt the workspace default theme.
   let themeId = preselectedTheme?.id || null;
   let onKey = null;
@@ -73,12 +60,8 @@ export function openCreationView({
   const getEffectiveMode = () => {
     if (method === 'blank') return 'empty';
     if (method === 'library') return 'library';
-    if (method === 'content') {
-      return { paste: 'paste-text', upload: 'convert-file', notion: 'notion' }[contentSubtab];
-    }
-    if (method === 'import') {
-      return { json: 'import-json', 'import-md': 'import-markdown', 'paste-md': 'paste-markdown' }[importSubtab];
-    }
+    if (method === 'content') return content.getMode();
+    if (method === 'import') return importMethod.getMode();
     return null;
   };
 
@@ -170,458 +153,40 @@ export function openCreationView({
   blankPanel.append(blankTitleField);
 
   // --- Library panel (compose from reusable slides) ---
-  const libraryPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' });
-
-  // Source toggle: start from a saved Collection, or pick from all slides.
-  let libraryMode = 'all'; // 'all' | 'collections'
-  const librarySourceTabs = h('div', { class: 'sb-segmented creation-library-source' });
-  const btnSourceCollections = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.creationView.library.source.collections', 'Collections'),
+  // The whole "From the library" method is a self-contained concern; it owns
+  // its source toggle, picker, selection tray, and collections cache. The host
+  // only wires it in: syncUI drives its panel, isDirty/count read its state.
+  const library = createLibraryCompose({
+    h,
+    api,
+    onSelectionChange: () => syncUI(),
+    setStatus: (text) => setStatus(text),
+    isBusy: () => busy,
   });
-  const btnSourceAll = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.creationView.library.source.all', 'All slides'),
+  const libraryPanel = library.panel;
+
+  // --- Content (AI) panel (paste / upload / Notion) ---
+  // Another self-contained concern: the active sub-tab, the selected upload
+  // file, and the Notion reveal all live in the module. syncUI drives its panel,
+  // getEffectiveMode/isDirty read its state, and Create delegates to its run().
+  const content = createContentCompose({
+    h,
+    api,
+    onChange: () => syncUI(),
+    aiDisabled,
   });
-  librarySourceTabs.append(btnSourceCollections, btnSourceAll);
+  const contentPanel = content.panel;
 
-  const libraryHint = h('div', {
-    class: 'help modal-hint',
-    text: t(
-      'list.creationView.library.help',
-      'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.'
-    ),
+  // --- Import panel (.json / .md file / paste markdown) ---
+  // A third self-contained concern: the active sub-tab, the two selected files,
+  // and the inline import-warnings renderer live in the module. syncUI drives
+  // its panel, getEffectiveMode/isDirty/themeApplies read its state, and Create
+  // delegates to its run().
+  const importMethod = createImportCompose({
+    h,
+    onChange: () => syncUI(),
   });
-  const libraryPickerMount = h('div', { class: 'creation-library-picker' });
-  const libraryCollectionsMount = h('div', { class: 'creation-library-collections is-hidden' });
-  const libraryTrayWrap = h('div', { class: 'creation-library-tray is-hidden' });
-  libraryPanel.append(
-    librarySourceTabs,
-    libraryHint,
-    libraryPickerMount,
-    libraryCollectionsMount,
-    libraryTrayWrap
-  );
-
-  // Selected library slides, in the order they will appear in the new deck.
-  // The picker owns selection; the panel keeps an ordered id list so drag
-  // reorder is stable across selection toggles.
-  let libraryPicker = null;
-  let libraryLoaded = false;
-  let selectedOrder = []; // slide-library item ids, in deck order
-  let selectedById = new Map(); // id -> library item
-
-  const orderedSelectedItems = () =>
-    selectedOrder.map((id) => selectedById.get(id)).filter(Boolean);
-
-  const renderTray = () => {
-    const items = orderedSelectedItems();
-    libraryTrayWrap.classList.toggle('is-hidden', items.length === 0);
-    libraryTrayWrap.innerHTML = '';
-    if (!items.length) return;
-
-    libraryTrayWrap.append(
-      h('div', {
-        class: 'field-label',
-        text: t('list.creationView.library.selected', 'Selected slides ({count})', {
-          count: String(items.length),
-        }),
-      })
-    );
-
-    const list = h('div', { class: 'creation-tray-list' });
-    items.forEach((item, index) => {
-      const chip = h('div', {
-        class: 'creation-tray-chip',
-        draggable: 'true',
-        'data-id': item.id,
-      });
-      chip.append(
-        h('span', { class: 'creation-tray-order', text: String(index + 1) }),
-        h('span', {
-          class: 'creation-tray-name',
-          text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
-        }),
-        h('button', {
-          type: 'button',
-          class: 'creation-tray-remove',
-          'aria-label': t('common.remove', 'Remove'),
-          text: '×',
-          onclick: () => deselectFromTray(item.id),
-        })
-      );
-
-      // Drag to reorder within the tray.
-      chip.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', item.id);
-        e.dataTransfer.effectAllowed = 'move';
-        chip.classList.add('is-dragging');
-      });
-      chip.addEventListener('dragend', () => chip.classList.remove('is-dragging'));
-      chip.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      });
-      chip.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const draggedId = e.dataTransfer.getData('text/plain');
-        if (!draggedId || draggedId === item.id) return;
-        const from = selectedOrder.indexOf(draggedId);
-        const to = selectedOrder.indexOf(item.id);
-        if (from < 0 || to < 0) return;
-        selectedOrder.splice(from, 1);
-        selectedOrder.splice(to, 0, draggedId);
-        renderTray();
-      });
-
-      list.append(chip);
-    });
-    libraryTrayWrap.append(list);
-  };
-
-  // Remove a slide from the tray. In "all slides" mode the picker owns
-  // membership, so tell it to deselect (onSelectionChange reconciles). In
-  // "collections" mode the tray is the source of truth, so edit it directly.
-  const deselectFromTray = (id) => {
-    if (libraryMode === 'collections') {
-      selectedOrder = selectedOrder.filter((x) => x !== id);
-      selectedById.delete(id);
-      renderTray();
-      syncUI();
-      return;
-    }
-    libraryPicker?.deselectItem?.(id, libraryPickerMount);
-  };
-
-  // Reconcile the ordered tray against the picker's current selection:
-  // keep existing order for still-selected items, append newly-checked ones,
-  // drop unchecked ones.
-  const reconcileSelection = (items) => {
-    const nextIds = items.map((it) => it.id);
-    const nextSet = new Set(nextIds);
-    selectedById = new Map(items.map((it) => [it.id, it]));
-    selectedOrder = selectedOrder.filter((id) => nextSet.has(id));
-    for (const id of nextIds) {
-      if (!selectedOrder.includes(id)) selectedOrder.push(id);
-    }
-    renderTray();
-    syncUI();
-  };
-
-  // Lazily mount the library picker the first time the method is selected.
-  const ensureLibraryPicker = async () => {
-    if (libraryLoaded) return;
-    libraryLoaded = true;
-    libraryPicker = createSlideLibraryPicker({
-      h,
-      api,
-      allowInsert: false,
-      compose: true,
-      initialScope: 'team',
-      onSelectionChange: (items) => reconcileSelection(items),
-    });
-    try {
-      await libraryPicker.renderSlideLibraryPicker(libraryPickerMount);
-    } catch {
-      libraryPickerMount.innerHTML = '';
-      libraryPickerMount.append(
-        h('div', {
-          class: 'help is-error',
-          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
-        })
-      );
-    }
-  };
-
-  // ===== Collections source =====
-  const collectionsApi = createCollectionsApi({ api });
-  let collectionsLoaded = false;
-  let slideIndexCache = null; // id -> library item (skips trashed)
-  // The collection the current compose started from, if any. Forwarded to the
-  // server so it records collection usage (clears the Home "new to you" badge).
-  let activeCollectionId = null;
-
-  // Resolve library items once so a collection's ids can become real slides.
-  const ensureSlideIndex = async () => {
-    if (slideIndexCache) return slideIndexCache;
-    const index = new Map();
-    for (const scope of ['personal', 'team']) {
-      try {
-        const r = await api(`/api/slide-library/${scope}`);
-        for (const it of Array.isArray(r?.items) ? r.items : []) {
-          const trashed = !!(it?.isTrashed || it?.trashedAt);
-          if (it?.id && !trashed && !index.has(it.id)) index.set(it.id, it);
-        }
-      } catch {
-        // ignore; unresolved members are skipped when seeding
-      }
-    }
-    slideIndexCache = index;
-    return index;
-  };
-
-  // Pre-seed the compose tray with a collection's slides, in its stored order.
-  const seedFromCollection = async (collection) => {
-    const index = await ensureSlideIndex();
-    const ids = Array.isArray(collection?.slideIds) ? collection.slideIds : [];
-    const resolved = ids.map((id) => index.get(id)).filter(Boolean);
-    activeCollectionId = collection?.id || null;
-    selectedById = new Map(resolved.map((it) => [it.id, it]));
-    selectedOrder = resolved.map((it) => it.id);
-    // Reflect the active collection in the chooser.
-    for (const btn of libraryCollectionsMount.querySelectorAll('.creation-collection-card')) {
-      btn.classList.toggle('is-active', btn.getAttribute('data-id') === collection.id);
-    }
-    renderTray();
-    syncUI();
-    if (!resolved.length) {
-      setStatus(t('list.creationView.library.collectionEmpty', 'This collection has no available slides.'));
-    } else {
-      setStatus('');
-    }
-  };
-
-  const renderCollectionsChooser = (collections) => {
-    libraryCollectionsMount.innerHTML = '';
-    const all = [...(collections?.personal || []), ...(collections?.team || [])];
-    if (!all.length) {
-      libraryCollectionsMount.append(
-        h('div', {
-          class: 'help',
-          text: t('list.creationView.library.noCollections', 'No collections yet. Create one from the slide library to start decks from it.'),
-        })
-      );
-      return;
-    }
-    const grid = h('div', { class: 'creation-collection-grid' });
-    for (const col of all) {
-      const card = h('button', {
-        type: 'button',
-        class: 'creation-collection-card',
-        'data-id': col.id,
-        onclick: () => seedFromCollection(col),
-      });
-      card.append(
-        h('span', { class: 'creation-collection-card-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') })
-      );
-      const meta = h('span', { class: 'creation-collection-card-meta' });
-      if (col.scope === 'team') {
-        meta.append(h('span', { class: 'creation-collection-card-badge', text: t('slideLibrary.scope.team', 'Team') }));
-      }
-      meta.append(
-        h('span', {
-          class: 'creation-collection-card-count',
-          text: t('list.creationView.library.collectionCount', '{count} slides', {
-            count: String(col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0)),
-          }),
-        })
-      );
-      card.append(meta);
-      grid.append(card);
-    }
-    libraryCollectionsMount.append(grid);
-  };
-
-  const ensureCollectionsChooser = async () => {
-    if (collectionsLoaded) return;
-    collectionsLoaded = true;
-    libraryCollectionsMount.innerHTML = '';
-    libraryCollectionsMount.append(
-      h('div', { class: 'help', text: t('common.loading', 'Loading…') })
-    );
-    try {
-      const collections = await collectionsApi.listAll();
-      renderCollectionsChooser(collections);
-    } catch {
-      libraryCollectionsMount.innerHTML = '';
-      libraryCollectionsMount.append(
-        h('div', { class: 'help is-error', text: t('list.creationView.library.collectionsError', 'Failed to load collections.') })
-      );
-    }
-  };
-
-  // Switch the library source. Changing source clears the current selection so
-  // the tray always reflects exactly one source.
-  const switchLibraryMode = (mode) => {
-    if (busy || mode === libraryMode) return;
-    libraryMode = mode;
-    // Clear selection on both sides.
-    libraryPicker?.clearSelection?.(libraryPickerMount);
-    activeCollectionId = null;
-    selectedOrder = [];
-    selectedById = new Map();
-    renderTray();
-    setStatus('');
-    if (mode === 'collections') ensureCollectionsChooser();
-    else ensureLibraryPicker();
-    syncUI();
-  };
-
-  btnSourceCollections.addEventListener('click', () => switchLibraryMode('collections'));
-  btnSourceAll.addEventListener('click', () => switchLibraryMode('all'));
-
-  // --- Content (AI) panel ---
-  const contentPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
-  const contentSubtabs = h('div', { class: 'sb-segmented' });
-  const btnSubPaste = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.newPresentation.subtab.pasteText', 'Paste text'),
-  });
-  const btnSubUpload = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.subtab.uploadFile', 'Upload file'),
-  });
-  const btnSubNotion = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-hidden',
-    text: t('list.newPresentation.subtab.notion', 'Notion'),
-  });
-  contentSubtabs.append(btnSubPaste, btnSubUpload, btnSubNotion);
-
-  const panelPaste = h('div', { class: 'creation-subpanel' });
-  panelPaste.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.aiWizard.help', 'Paste your notes or any text. The wizard will turn it into a presentation automatically — you can edit everything afterwards.'),
-    }),
-    h('textarea', {
-      class: 'form-input form-textarea-lg',
-      placeholder: t('list.newPresentation.pasteText.placeholder', 'Paste your notes here...'),
-    })
-  );
-  const pasteTextarea = panelPaste.querySelector('textarea');
-
-  const panelUpload = h('div', { class: 'creation-subpanel is-hidden' });
-  const convertFileInput = h('input', {
-    type: 'file',
-    accept: '.pptx,.pdf,.docx,.rtf,.odt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,application/vnd.oasis.opendocument.text',
-    class: 'form-input',
-  });
-  const convertFileInfo = h('div', { class: 'help', text: '' });
-  convertFileInput.addEventListener('change', () => {
-    const file = convertFileInput.files?.[0];
-    if (file) {
-      selectedConvertFile = file;
-      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      convertFileInfo.textContent = `${file.name} (${sizeMB} MB)`;
-    } else {
-      selectedConvertFile = null;
-      convertFileInfo.textContent = '';
-    }
-  });
-  panelUpload.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.fileConverter.help', 'Upload a .pptx, .pdf, .docx, .rtf, or .odt file to convert it into a presentation. The converter will extract content and use AI to create appropriate slides.'),
-    }),
-    convertFileInput,
-    convertFileInfo
-  );
-
-  const panelNotion = h('div', { class: 'creation-subpanel is-hidden' });
-  const notionUrlInput = h('input', {
-    class: 'form-input',
-    placeholder: t('list.newPresentation.notion.placeholder', 'Paste Notion page URL...'),
-  });
-  panelNotion.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.notion.help', 'Import a Notion page as a presentation. Images, tables, and text structure will be converted to appropriate slides.'),
-    }),
-    notionUrlInput
-  );
-
-  const contentSubWrap = h('div', { class: 'creation-subpanels' }, [panelPaste, panelUpload, panelNotion]);
-  contentPanel.append(contentSubtabs, contentSubWrap);
-
-  // Reveal Notion sub-tab only when the integration is configured.
-  api('/api/notion/status')
-    .then((resp) => {
-      if (resp?.enabled && !aiDisabled) btnSubNotion.classList.remove('is-hidden');
-    })
-    .catch(() => {});
-
-  // --- Import panel ---
-  const importPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'import' });
-  const importSubtabs = h('div', { class: 'sb-segmented' });
-  const btnImpJson = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.newPresentation.mode.importJson', 'Import JSON'),
-  });
-  const btnImpMd = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.mode.importMarkdown', 'Import Markdown'),
-  });
-  const btnImpPasteMd = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.newPresentation.mode.pasteMarkdown', 'Paste Markdown'),
-  });
-  importSubtabs.append(btnImpJson, btnImpMd, btnImpPasteMd);
-
-  const panelJson = h('div', { class: 'creation-subpanel' });
-  const importFileInput = h('input', {
-    type: 'file',
-    accept: 'application/json,.json',
-    class: 'form-input',
-  });
-  const importFileInfo = h('div', { class: 'help', text: '' });
-  importFileInput.addEventListener('change', () => {
-    const file = importFileInput.files?.[0];
-    selectedImportFile = file || null;
-    importFileInfo.textContent = file ? file.name : '';
-  });
-  panelJson.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.importJson.help', 'Import a presentation from a previously exported .json file.'),
-    }),
-    importFileInput,
-    importFileInfo
-  );
-
-  const panelImportMd = h('div', { class: 'creation-subpanel is-hidden' });
-  const importMdFileInput = h('input', {
-    type: 'file',
-    accept: '.md,.markdown,.zip,text/markdown,text/x-markdown,application/zip',
-    class: 'form-input',
-  });
-  const importMdFileInfo = h('div', { class: 'help', text: '' });
-  importMdFileInput.addEventListener('change', () => {
-    const file = importMdFileInput.files?.[0];
-    selectedImportMdFile = file || null;
-    importMdFileInfo.textContent = file ? file.name : '';
-  });
-  panelImportMd.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.importMarkdown.help', 'Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
-    }),
-    importMdFileInput,
-    importMdFileInfo
-  );
-
-  const panelPasteMd = h('div', { class: 'creation-subpanel is-hidden' });
-  const pasteMdTextarea = h('textarea', {
-    class: 'form-input form-textarea-lg',
-    placeholder: t('list.newPresentation.pasteMarkdown.placeholder', 'Paste your markdown here...'),
-  });
-  panelPasteMd.append(
-    h('div', {
-      class: 'help modal-hint',
-      text: t('list.newPresentation.pasteMarkdown.help', 'Paste your markdown directly. Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.'),
-    }),
-    pasteMdTextarea
-  );
-
-  const importSubWrap = h('div', { class: 'creation-subpanels' }, [panelJson, panelImportMd, panelPasteMd]);
-  importPanel.append(importSubtabs, importSubWrap);
+  const importPanel = importMethod.panel;
 
   // --- Shared setup (language + theme) ---
   // Language sits first so it stays visible without scrolling past the tall
@@ -740,7 +305,7 @@ export function openCreationView({
   };
 
   // Theme applies to every method except JSON import (which carries its own).
-  const themeApplies = () => !(method === 'import' && importSubtab === 'json');
+  const themeApplies = () => !(method === 'import' && importMethod.carriesOwnTheme());
 
   const syncUI = () => {
     for (const [key, btn] of railItems) {
@@ -753,31 +318,14 @@ export function openCreationView({
     contentPanel.classList.toggle('is-hidden', method !== 'content');
     importPanel.classList.toggle('is-hidden', method !== 'import');
 
-    // Content sub-tabs
-    btnSubPaste.classList.toggle('is-active', contentSubtab === 'paste');
-    btnSubUpload.classList.toggle('is-active', contentSubtab === 'upload');
-    btnSubNotion.classList.toggle('is-active', contentSubtab === 'notion');
-    panelPaste.classList.toggle('is-hidden', contentSubtab !== 'paste');
-    panelUpload.classList.toggle('is-hidden', contentSubtab !== 'upload');
-    panelNotion.classList.toggle('is-hidden', contentSubtab !== 'notion');
+    // Content sub-tabs — the panel owns its controls.
+    content.syncPanel();
 
-    // Library source (collections vs all slides)
-    btnSourceCollections.classList.toggle('is-active', libraryMode === 'collections');
-    btnSourceAll.classList.toggle('is-active', libraryMode === 'all');
-    libraryPickerMount.classList.toggle('is-hidden', libraryMode !== 'all');
-    libraryCollectionsMount.classList.toggle('is-hidden', libraryMode !== 'collections');
-    libraryHint.textContent =
-      libraryMode === 'collections'
-        ? t('list.creationView.library.collectionsHelp', 'Pick a collection to pre-fill the deck. Reorder or remove slides below, then create.')
-        : t('list.creationView.library.help', 'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.');
+    // Library source (collections vs all slides) — the panel owns its controls.
+    library.syncPanel();
 
-    // Import sub-tabs
-    btnImpJson.classList.toggle('is-active', importSubtab === 'json');
-    btnImpMd.classList.toggle('is-active', importSubtab === 'import-md');
-    btnImpPasteMd.classList.toggle('is-active', importSubtab === 'paste-md');
-    panelJson.classList.toggle('is-hidden', importSubtab !== 'json');
-    panelImportMd.classList.toggle('is-hidden', importSubtab !== 'import-md');
-    panelPasteMd.classList.toggle('is-hidden', importSubtab !== 'paste-md');
+    // Import sub-tabs — the panel owns its controls.
+    importMethod.syncPanel();
 
     // Setup (theme + language) applies to every method; theme is hidden only
     // for JSON import (which carries its own theme). Composing from the library
@@ -796,7 +344,7 @@ export function openCreationView({
     const mode = getEffectiveMode();
     btnAction.classList.toggle('is-hidden', !mode);
     if (mode === 'library') {
-      const count = selectedOrder.length;
+      const count = library.getSelectedCount();
       btnAction.textContent = count
         ? t('list.creationView.library.create', 'Create · {count} slides', { count: String(count) })
         : t('common.create', 'Create');
@@ -813,15 +361,8 @@ export function openCreationView({
     syncThemeDefaultOpen();
     syncUI();
     if (key === 'blank') emptyTitleInput.focus();
-    if (key === 'library') ensureLibraryPicker();
+    if (key === 'library') library.ensurePicker();
   }
-
-  btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
-  btnSubUpload.addEventListener('click', () => { contentSubtab = 'upload'; syncUI(); });
-  btnSubNotion.addEventListener('click', () => { contentSubtab = 'notion'; syncUI(); });
-  btnImpJson.addEventListener('click', () => { importSubtab = 'json'; syncUI(); });
-  btnImpMd.addEventListener('click', () => { importSubtab = 'import-md'; syncUI(); });
-  btnImpPasteMd.addEventListener('click', () => { importSubtab = 'paste-md'; syncUI(); });
 
   // ===== Close handling =====
   const close = () => {
@@ -833,10 +374,9 @@ export function openCreationView({
   const isDirty = () => {
     const mode = getEffectiveMode();
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
-    if (mode === 'library') return selectedOrder.length > 0;
-    if (mode === 'paste-text') return !!String(pasteTextarea.value || '').trim();
-    if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
-    if (mode === 'notion') return !!String(notionUrlInput.value || '').trim();
+    if (mode === 'library') return library.isDirty();
+    if (method === 'content') return content.isDirty();
+    if (method === 'import') return importMethod.isDirty();
     return false;
   };
 
@@ -858,34 +398,6 @@ export function openCreationView({
     if (e.target === backdrop) requestClose();
   });
 
-  // Compose a new deck from the selected library slides (batch primitive,
-  // preserving both languages via the shared compose helper).
-  async function handleLibraryCompose() {
-    const items = orderedSelectedItems();
-    if (!items.length) {
-      setStatus(t('list.creationView.library.selectFirst', 'Select at least one slide.'));
-      return;
-    }
-    setBusy(true);
-    setStatus(t('list.newPresentation.creating', 'Creating...'));
-    try {
-      const lang = langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl';
-      const created = await createDeckFromLibraryItems({
-        api,
-        items,
-        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
-        theme: themeSelect.getTheme(),
-        lang,
-        sourceCollectionId: libraryMode === 'collections' ? activeCollectionId : null,
-      });
-      close();
-      nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
-    } catch (e) {
-      setStatus(String(e?.message || e));
-      setBusy(false);
-    }
-  }
-
   // ===== Create =====
   btnAction.addEventListener('click', async () => {
     const mode = getEffectiveMode();
@@ -904,7 +416,13 @@ export function openCreationView({
 
     switch (mode) {
       case 'library':
-        await handleLibraryCompose();
+        await library.compose({
+          lang: langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl',
+          theme: themeSelect.getTheme(),
+          nav,
+          close,
+          setBusy,
+        });
         break;
       case 'empty':
         await handleEmpty({
@@ -916,86 +434,26 @@ export function openCreationView({
         });
         break;
       case 'paste-text':
-        await handlePasteText({
-          ...commonOpts,
-          raw: String(pasteTextarea.value || '').trim(),
-          langMode: langSelect.getLang(),
-          themeId: themeSelect.getTheme(),
-          focusTextarea: () => pasteTextarea.focus(),
-        });
-        break;
       case 'convert-file':
-        await handleConvertFile({
-          ...commonOpts,
-          selectedFile: selectedConvertFile,
+      case 'notion':
+        await content.run({
+          commonOpts,
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-        });
-        break;
-      case 'notion':
-        await handleNotion({
-          ...commonOpts,
-          notionUrl: String(notionUrlInput.value || '').trim(),
-          themeId: themeSelect.getTheme(),
-          focusInput: () => notionUrlInput.focus(),
         });
         break;
       case 'import-json':
-        await handleImportJson({
-          ...commonOpts,
-          selectedFile: selectedImportFile,
-          langMode: langSelect.getLang(),
-        });
-        break;
       case 'import-markdown':
-        await handleImportMarkdown({
-          ...commonOpts,
-          selectedFile: selectedImportMdFile,
-          langMode: langSelect.getLang(),
-          themeId: themeSelect.getTheme(),
-          showWarnings: makeWarningShower(panelImportMd),
-        });
-        break;
       case 'paste-markdown':
-        await handlePasteMarkdown({
-          ...commonOpts,
-          raw: String(pasteMdTextarea.value || '').trim(),
+        await importMethod.run({
+          commonOpts,
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-          focusTextarea: () => pasteMdTextarea.focus(),
-          showWarnings: makeWarningShower(panelPasteMd),
+          btnAction,
         });
         break;
     }
   });
-
-  // Import warnings render inline in their sub-panel, turning Create into "Open".
-  function makeWarningShower(panel) {
-    return ({ warnings, navUrl }) => {
-      panel.innerHTML = '';
-      panel.append(
-        h('div', {
-          class: 'help modal-hint',
-          text: t(
-            'list.newPresentation.importMarkdown.warningsIntro',
-            'Import succeeded, but {count} issue(s) were detected:',
-            { count: warnings.length }
-          ),
-        })
-      );
-      const list = h('ul', { class: 'import-warnings' });
-      for (const w of warnings) list.append(h('li', { class: 'help', text: w }));
-      panel.append(list);
-      setStatus('');
-      setBusy(false);
-      btnAction.textContent = t('list.newPresentation.importMarkdown.open', 'Open presentation');
-      btnAction.onclick = (e) => {
-        e.preventDefault();
-        close();
-        nav?.(navUrl);
-      };
-    };
-  }
 
   // ===== Mount =====
   onKey = (e) => {
@@ -1015,19 +473,15 @@ export function openCreationView({
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).
-    libraryMode = 'collections';
+    library.setMode('collections');
     syncThemeDefaultOpen();
     syncUI();
     if (preselect.collection) {
-      // Render the chooser first so seedFromCollection can flag the active card.
-      ensureCollectionsChooser().then(() => seedFromCollection(preselect.collection));
+      // Render the chooser first so seedCollection can flag the active card.
+      library.ensureCollectionsChooser().then(() => library.seedCollection(preselect.collection));
     } else {
-      ensureCollectionsChooser();
-      const items = preselect.items.filter(Boolean);
-      selectedById = new Map(items.map((it) => [it.id, it]));
-      selectedOrder = items.map((it) => it.id);
-      renderTray();
-      syncUI();
+      library.ensureCollectionsChooser();
+      library.seedItems(preselect.items.filter(Boolean));
     }
   } else {
     emptyTitleInput.focus();

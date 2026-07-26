@@ -53,10 +53,21 @@ export async function maybeAttachCollab(server, { repoRoot }) {
   // Phase 2 (COLLAB_LIVE_EDITS): document persistence. Without the flag the
   // Y.Doc stays ephemeral (presence-only) and nothing is ever stored.
   const liveEdits = isCollabLiveEditsEnabled();
+
+  // A collab document belongs to exactly one deck, and therefore to exactly one
+  // organization. The persistence hooks run outside any request, so they cannot
+  // resolve it themselves — onConnect records it here (authorizeDocument has the
+  // deck in hand) and the hooks read it back. Cleared when the document unloads.
+  const documentOrganizations = new Map();
+  const documentScope = (documentName) => ({
+    repoRoot,
+    organizationId: documentOrganizations.get(documentName) ?? undefined,
+  });
+
   let persistence = {};
   if (liveEdits) {
     const { createCollabPersistence } = await import('./persistence.js');
-    persistence = createCollabPersistence({ repoRoot });
+    persistence = createCollabPersistence({ repoRoot, documentScope });
   }
 
   const hocuspocus = new Hocuspocus({
@@ -66,11 +77,12 @@ export async function maybeAttachCollab(server, { repoRoot }) {
     // Per-document authorization. The user was already authenticated on the
     // upgrade (see below) and rides in via the connection context.
     async onConnect({ documentName, context, connectionConfig }) {
-      const { readOnly } = await authz.authorizeDocument({
+      const { readOnly, organizationId } = await authz.authorizeDocument({
         repoRoot,
         documentName,
         user: context?.user,
       });
+      if (organizationId) documentOrganizations.set(documentName, organizationId);
       connectionConfig.readOnly = readOnly;
     },
     ...persistence,

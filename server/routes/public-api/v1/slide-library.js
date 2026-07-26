@@ -39,14 +39,14 @@ function sanitizeLibraryItem(item, tags = []) {
  * GET /api/v1/slide-library - List team library items.
  */
 async function handleList(ctx) {
-  const { repoRoot, apiKey, url } = ctx;
+  const { storageScope, apiKey, url } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
   const themeId = url.searchParams.get('themeId') || '';
   const { limit, offset } = parsePaginationParams(url);
 
-  const { items: allItems } = await listTeamLibrary(repoRoot, {
+  const { items: allItems } = await listTeamLibrary(storageScope, {
     themeId,
     userEmail: apiKey.ownerEmail,
   });
@@ -61,7 +61,7 @@ async function handleList(ctx) {
   // Fetch tags for items
   const ids = paginated.map((it) => it.id);
   const tagsMap = ids.length > 0
-    ? await getTagsForSlideLibraryItems(ids, { userEmail: apiKey.ownerEmail })
+    ? await getTagsForSlideLibraryItems(storageScope, ids, { userEmail: apiKey.ownerEmail })
     : new Map();
 
   const sanitizedItems = paginated.map((it) =>
@@ -84,11 +84,11 @@ async function handleList(ctx) {
  * GET /api/v1/slide-library/:itemId - Get a single library item.
  */
 async function handleGet(ctx, itemId) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
-  const item = await getTeamLibraryItem(repoRoot, itemId, {
+  const item = await getTeamLibraryItem(storageScope, itemId, {
     userEmail: apiKey.ownerEmail,
   });
 
@@ -97,7 +97,7 @@ async function handleGet(ctx, itemId) {
     return true;
   }
 
-  const tags = await getTagsForSlideLibraryItem(itemId, {
+  const tags = await getTagsForSlideLibraryItem(storageScope, itemId, {
     userEmail: apiKey.ownerEmail,
   });
 
@@ -111,7 +111,7 @@ async function handleGet(ctx, itemId) {
  * POST /api/v1/presentations/:id/slides/from-library - Add a slide from library.
  */
 async function handleAddFromLibrary(ctx, presentationId) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -129,7 +129,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   if (!ok) return true;
 
   // Load library item
-  const libraryItem = await getTeamLibraryItem(repoRoot, libraryItemId, {
+  const libraryItem = await getTeamLibraryItem(storageScope, libraryItemId, {
     userEmail: apiKey.ownerEmail,
   });
 
@@ -168,7 +168,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {

@@ -185,3 +185,16 @@
 
 
 
+
+/* Header-block alignment (author-driven, horizontal axis). The `header-block`
+   field group moves the heading + subheading as one; `is-align-center` comes
+   from the type's `headerAlign`. The subheading carries a 70ch measure cap that
+   also anchored it to the start, so it needs `margin-inline: auto` to share the
+   heading's centre line. The list itself is a separate unit and deliberately
+   does NOT move: its items are marker-anchored (role:'list-item'), and
+   centring a bullet list detaches every line from its marker. */
+.slide-lijstje.is-align-center .heading,
+.slide-lijstje.is-align-center .subheading {
+  margin-inline: auto;
+  text-align: center;
+}

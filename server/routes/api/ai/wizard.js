@@ -10,7 +10,7 @@ import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
  * POST /api/ai/wizard — generate a deck from raw input and create a new presentation.
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiWizard({ repoRoot, req, res, authedUser }) {
+export async function handleAiWizard({ repoRoot, storageScope, req, res, authedUser }) {
   const body = await json(req);
   const {
     raw,
@@ -37,7 +37,7 @@ export async function handleAiWizard({ repoRoot, req, res, authedUser }) {
   const effectiveTheme =
     themeFromRequest || (sandboxEnabled() ? sandboxDefaultThemeId() : parts.theme);
 
-  const updated = await createPresentationWithI18n(repoRoot, {
+  const updated = await createPresentationWithI18n(storageScope, {
     parts,
     lang,
     authedUser,

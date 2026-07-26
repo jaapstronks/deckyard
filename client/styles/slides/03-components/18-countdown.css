@@ -1,7 +1,7 @@
 /* Countdown timer slide - big presenter-controlled timer */
 
-/* Background variants beyond lime/mist (which 00-base.css handles globally).
-   Mirrors the freeform slide so the extended background enum renders correctly. */
+/* Background variants beyond lime/mist (which 00-base.css handles globally),
+   so countdown's extended background enum renders correctly. */
 .slide-countdown.slide-bg-dark {
   background-color: var(--t-bg-dark, #212121);
   color: var(--t-text-color-light, #ffffff);

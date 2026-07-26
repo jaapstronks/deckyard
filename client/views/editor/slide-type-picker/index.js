@@ -31,6 +31,7 @@ import {
   SLIDE_TYPE_ALIASES,
   SLIDE_TYPE_PRESETS,
   SLIDE_TYPE_DESC,
+  PICKER_GROUPS,
 } from './data.js';
 import {
   readViewMode,
@@ -739,67 +740,23 @@ export function createSlideTypePicker({
       }
     });
 
-    // Base "Basic" slide types - themes can add more via basicSlideTypes
-    const baseBasicDefs = [
-      { type: 'title-slide' },
-      { type: 'chapter-title-slide' },
-      { type: 'content-slide' },
-      // content-columns-slide archived (deprecated): filtered out by allowed()
-      // anyway, dropped here to keep the curated list honest.
-      { type: 'quote-slide' },
-      { type: 'lijstje-slide' },
-      // The styled "List" slide is a close cousin of the bulleted/numbered
-      // list, so it sits right next to it rather than adrift in "Other".
-      { type: 'list-slide' },
-    ];
+    // Curated group membership lives in ./data.js (PICKER_GROUPS) so the
+    // companion-coverage test can see it; a group that still named a retired
+    // type used to be caught only by someone noticing.
+    const groupDefs = (key) => PICKER_GROUPS[key].map((type) => ({ type }));
+
+    // Themes can prepend their own types to "Basic" via basicSlideTypes.
     const themeBasicTypes = Array.isArray(theme?.basicSlideTypes)
       ? theme.basicSlideTypes
       : [];
     const basicDefs = [
       ...themeBasicTypes.filter((type) => SLIDE_TYPES?.[type]).map((type) => ({ type })),
-      ...baseBasicDefs,
+      ...groupDefs('basic'),
     ];
-
-    const mediaDefs = [
-      { type: 'image-text-slide' },
-      { type: 'image-slide' },
-      { type: 'gallery-slide' },
-      { type: 'video-slide' },
-      { type: 'embed-slide' },
-      // split-partner-title-slide archived (deprecated): filtered out by
-      // allowed() anyway, dropped here to keep the curated list honest.
-      { type: 'team-cards-slide' },
-      { type: 'logo-wall-slide' },
-    ];
-    // Layouts also absorbs the old "Process" group: process/timeline are just
-    // structured layouts, not different enough to warrant a section of their own
-    // (which showed 2 tiles and a wall of whitespace).
-    const layoutDefs = [
-      { type: 'text-blocks-slide' },
-      { type: 'icon-card-grid-slide' },
-      // freeform-slide archived (deprecated): filtered out by allowed() anyway,
-      // dropped here to keep the curated list honest.
-      { type: 'process-slide' },
-      { type: 'timeline-slide' },
-    ];
-    const dataDefs = [
-      { type: 'table-slide' },
-      { type: 'chart-slide' },
-      { type: 'kpi-metrics-slide' },
-      { type: 'comparison-slide' },
-      { type: 'matrix-slide' },
-      { type: 'funnel-slide' },
-      { type: 'pyramid-slide' },
-      { type: 'cycle-slide' },
-    ];
-    const interactionDefs = [
-      { type: 'poll-slide' },
-      { type: 'likert-slide' },
-      { type: 'likert-slider-slide' },
-      { type: 'feedback-slide' },
-      { type: 'follow-invite-slide' },
-      { type: 'countdown-slide' },
-    ];
+    const mediaDefs = groupDefs('media');
+    const layoutDefs = groupDefs('layouts');
+    const dataDefs = groupDefs('data');
+    const interactionDefs = groupDefs('interaction');
 
     // Custom slide types (keys starting with 'custom-' or marked isCustom)
     const customDefs = Object.keys(SLIDE_TYPES || {})

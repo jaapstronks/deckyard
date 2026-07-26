@@ -1,5 +1,9 @@
 # CSS breakpoints
 
+> The other CSS scales — spacing, z-index, typography, radius — live in
+> [CSS design tokens](css-tokens.md). Unlike this ladder, they are not yet
+> test-enforced.
+
 Deckyard has **one** breakpoint ladder. Every width-based `@media` in
 `client/styles/**` must land on a rung of it. This is enforced by
 `tests/css-breakpoints.test.js`, not by the language — see

@@ -21,6 +21,7 @@ const log = createLogger('import-markdown');
 
 export async function handlePresentationsImportMarkdown({
   repoRoot,
+  storageScope,
   req,
   res,
   authedUser,
@@ -68,7 +69,7 @@ export async function handlePresentationsImportMarkdown({
     log.info('[import-markdown] Normalized - title:', parts.title, 'theme:', parts.theme, 'slides:', parts.slides?.length);
 
     // Create presentation
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title,
       theme: parts.theme,
       lang,
@@ -88,8 +89,7 @@ export async function handlePresentationsImportMarkdown({
       },
     };
 
-    const updated = await updatePresentation(
-      repoRoot,
+    const updated = await updatePresentation(storageScope,
       created.id,
       {
         title: parts.title,

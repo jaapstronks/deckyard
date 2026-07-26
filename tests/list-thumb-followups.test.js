@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createPresentation, listPresentations } from '../server/storage/presentations.js';
 import { resolveThemeThumbBg } from '../server/utils/themes.js';
+import { testScope } from './helpers/storage-scope.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -39,12 +40,12 @@ test('resolveThemeThumbBg never throws and falls back sanely', async () => {
 
 test('list payload reports hasSlides instead of shipping slide content', async () => {
   const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-hasslides-'));
-  await createPresentation(tmp, {
+  await createPresentation(testScope(tmp), {
     title: 'Has a slide',
     ownerEmail: 'owner@example.com',
     slides: [{ id: 's1', type: 'text-slide', content: { title: 'Hi' } }],
   });
-  const list = await listPresentations(tmp);
+  const list = await listPresentations(testScope(tmp));
   const item = list.find((p) => p.title === 'Has a slide');
   assert.ok(item, 'deck is listed');
   assert.equal(item.hasSlides, true, 'presence flag set');

@@ -29,13 +29,13 @@ import {
 } from '../../../utils/http.js';
 
 export async function handleRenderSlide(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   presentationId
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
   const ctx = createRouteContext(authedUser);
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
 
   // Authorization check

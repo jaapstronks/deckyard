@@ -2,6 +2,26 @@ import crypto from 'node:crypto';
 import { parseCookies } from '../../../utils/cookies.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
 import { isHttpsRequest } from '../../../utils/request-url.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
+
+/**
+ * The storage scope the follow-along audience reads under.
+ *
+ * These routes are sessionless by design — an audience member scans a QR code
+ * and never authenticates — so there is no organization to state. The live
+ * follow code resolved the presentation id, which makes it the authorization
+ * (see server/storage/scope.js). Read-only, as a cross-organization scope must
+ * be.
+ *
+ * @param {string|null} repoRoot
+ * @returns {import('../../../storage/scope.js').StorageScope}
+ */
+export function followAudienceScope(repoRoot) {
+  return crossOrganizationScope(
+    repoRoot,
+    'follow-along audience: the live follow code is the authorization'
+  );
+}
 
 export function pickPresentationForLang(pres, lang) {
   const l = normalizeLang(lang);

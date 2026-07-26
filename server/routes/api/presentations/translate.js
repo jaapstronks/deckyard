@@ -15,7 +15,7 @@ import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
 
 export async function handlePresentationTranslate(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -23,7 +23,7 @@ export async function handlePresentationTranslate(
   if (flags.disableAi) return notFound(res);
 
   const body = await json(req);
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -99,7 +99,7 @@ export async function handlePresentationTranslate(
   pres.i18n.versions[to] = { title: translated.title, slides: translated.slides };
 
   // Persist (server-side update will keep top-level aligned to dominant)
-  const updated = await updatePresentation(repoRoot, id, pres, {
+  const updated = await updatePresentation(storageScope, id, pres, {
     actorEmail: authedUser?.email || null,
   });
   serveJson(res, 200, { ok: true, from, to, presentation: updated });

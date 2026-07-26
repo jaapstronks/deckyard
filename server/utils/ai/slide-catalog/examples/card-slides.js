@@ -49,45 +49,6 @@ export const CARD_SLIDE_EXAMPLES = {
     },
   ],
 
-  'card-stack-slide': [
-    {
-      _variation: '3 cards with bullet lists',
-      title: 'Implementation Phases',
-      subheading: 'Detailed breakdown',
-      cardCount: '3',
-      card1Title: 'Phase 1: Discovery',
-      card1Body: '- Stakeholder interviews\n- Requirements gathering\n- Technical assessment',
-      card2Title: 'Phase 2: Design',
-      card2Body: '- Architecture planning\n- Prototype development\n- User testing',
-      card3Title: 'Phase 3: Delivery',
-      card3Body: '- Implementation\n- Training and rollout\n- Support setup',
-    },
-    {
-      _variation: '2 cards for comparison (pros/cons style)',
-      title: 'Option Comparison',
-      subheading: 'Weighing our choices',
-      cardCount: '2',
-      card1Title: 'Option A: Build',
-      card1Body: '- Full customization\n- Higher initial cost\n- Long-term ownership\n- Complete control',
-      card2Title: 'Option B: Buy',
-      card2Body: '- Faster deployment\n- Lower upfront cost\n- Vendor dependency\n- Standard features',
-    },
-    {
-      _variation: '4 cards for detailed breakdown',
-      title: 'Quarterly Objectives',
-      subheading: 'What we aim to achieve',
-      cardCount: '4',
-      card1Title: 'Q1: Foundation',
-      card1Body: '- Team hiring\n- Infrastructure setup\n- Initial planning',
-      card2Title: 'Q2: Development',
-      card2Body: '- Core features\n- Testing framework\n- Documentation',
-      card3Title: 'Q3: Launch',
-      card3Body: '- Beta release\n- User feedback\n- Iteration',
-      card4Title: 'Q4: Scale',
-      card4Body: '- Full release\n- Marketing push\n- Growth metrics',
-    },
-  ],
-
   'team-cards-slide': [{
     title: 'Leadership Team',
     subheading: 'Meet our experts',
@@ -111,4 +72,9 @@ export const CARD_SLIDE_EXAMPLES = {
 
   // content-columns-slide examples removed with the deprecated catalog entry
   // (see server/utils/ai/slide-catalog/basic-content-slides.js).
+  //
+  // card-stack-slide examples removed likewise: the type is deprecated
+  // (superseded by icon-card-grid-slide) and has no catalog entry, so its three
+  // examples were unreachable dead weight. Both removals are now held in place
+  // by tests/slide-type-companion-coverage.test.js instead of by memory.
 };

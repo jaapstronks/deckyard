@@ -17,6 +17,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { repoRoot } from '../server/config/paths.js';
+import { getDefaultOrganizationId } from '../server/config/database.js';
 import {
   listAccessiblePresentationRefs,
   listRecentCommentsForOwner,
@@ -25,20 +26,24 @@ import {
 // An address that owns no decks and is shared none, in any environment.
 const NOBODY = 'nobody-xyz@example.invalid';
 
+// A storage context states the organization it acts in; these helpers reach the
+// presentations facade, which no longer accepts one that does not.
+const ORG = { organizationId: getDefaultOrganizationId() };
+
 describe('listAccessiblePresentationRefs', () => {
   it('returns [] when there is no acting owner', async () => {
-    assert.deepStrictEqual(await listAccessiblePresentationRefs(repoRoot, {}, 'all'), []);
+    assert.deepStrictEqual(await listAccessiblePresentationRefs(repoRoot, { ...ORG }, 'all'), []);
     assert.deepStrictEqual(await listAccessiblePresentationRefs(repoRoot, null, 'all'), []);
   });
 
   it('returns [] for an owner with no owned or shared decks', async () => {
-    const refs = await listAccessiblePresentationRefs(repoRoot, { actorEmail: NOBODY }, 'all');
+    const refs = await listAccessiblePresentationRefs(repoRoot, { ...ORG, actorEmail: NOBODY }, 'all');
     assert.deepStrictEqual(refs, []);
   });
 
   it('accepts every scope without throwing', async () => {
     for (const scope of ['owned', 'shared', 'all', 'bogus']) {
-      const refs = await listAccessiblePresentationRefs(repoRoot, { actorEmail: NOBODY }, scope);
+      const refs = await listAccessiblePresentationRefs(repoRoot, { ...ORG, actorEmail: NOBODY }, scope);
       assert.ok(Array.isArray(refs), `scope ${scope} should return an array`);
     }
   });
@@ -46,21 +51,21 @@ describe('listAccessiblePresentationRefs', () => {
 
 describe('listRecentCommentsForOwner', () => {
   it('returns an empty result when there is no acting owner', async () => {
-    assert.deepStrictEqual(await listRecentCommentsForOwner(repoRoot, {}), {
+    assert.deepStrictEqual(await listRecentCommentsForOwner(repoRoot, { ...ORG }), {
       comments: [],
       total: 0,
     });
   });
 
   it('returns an empty result for an owner with no accessible decks', async () => {
-    const result = await listRecentCommentsForOwner(repoRoot, { actorEmail: NOBODY });
+    const result = await listRecentCommentsForOwner(repoRoot, { ...ORG, actorEmail: NOBODY });
     assert.deepStrictEqual(result, { comments: [], total: 0 });
   });
 
   it('tolerates odd options (bad scope/status, oversized limit) without throwing', async () => {
     const result = await listRecentCommentsForOwner(
       repoRoot,
-      { actorEmail: NOBODY },
+      { ...ORG, actorEmail: NOBODY },
       { scope: 'nonsense', status: 'weird', limit: 100000, authorEmail: 'x@y.z' }
     );
     assert.deepStrictEqual(result, { comments: [], total: 0 });

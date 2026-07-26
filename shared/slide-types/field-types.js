@@ -12,11 +12,10 @@ import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
  * move 1a). The drift test in `tests/field-types.test.js` fails the build if a
  * definition introduces an unknown type or the docs stop matching this list.
  *
- * NOT part of this vocabulary: freeform-canvas *element* types
- * (`'text'`, `'heading'`, `'image'`). Those are enum VALUES of a canvas
- * element's own `type` property (see `types/freeform-slide.js` itemFields), not
- * `field.type` values. The audit conflated the two; they are deliberately kept
- * separate here.
+ * NOT part of this vocabulary: the enum VALUES an item's own `type` property
+ * may take inside an `items[]` field (e.g. `'text'`, `'heading'`, `'image'`).
+ * Those are content values, not `field.type` values. The datamodel-purity audit
+ * conflated the two; they are deliberately kept separate here.
  *
  * Each entry carries:
  * - `label`       - short human name (docs / tooling).

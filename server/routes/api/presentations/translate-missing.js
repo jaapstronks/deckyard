@@ -22,7 +22,7 @@ import { canWritePresentation } from '../../../utils/presentation-authz.js';
 const missingTranslationJobs = new Map();
 
 export async function handlePresentationTranslateMissing(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -31,7 +31,7 @@ export async function handlePresentationTranslateMissing(
 
   const body = await json(req);
   const vendor = getOptionalString(body, 'vendor');
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
   if (!canWritePresentation({ user: authedUser, pres })) return unauthorized(res);
 
@@ -84,7 +84,7 @@ export async function handlePresentationTranslateMissing(
       updatedAt: new Date().toISOString(),
       missingCount,
     };
-    await updatePresentation(repoRoot, id, pres, {
+    await updatePresentation(storageScope, id, pres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -97,7 +97,7 @@ export async function handlePresentationTranslateMissing(
       { from, to, vendor }
     );
 
-    const fresh = await getPresentation(repoRoot, id);
+    const fresh = await getPresentation(storageScope, id);
     if (!fresh) return null;
     fresh.i18n = fresh.i18n && typeof fresh.i18n === 'object' ? fresh.i18n : {};
     fresh.i18n.versions =
@@ -121,7 +121,7 @@ export async function handlePresentationTranslateMissing(
       missingCount: Number(afterMissing?.missingCount || 0) || 0,
     };
 
-    return await updatePresentation(repoRoot, id, fresh, {
+    return await updatePresentation(storageScope, id, fresh, {
       actorEmail: authedUser?.email || null,
     });
   };

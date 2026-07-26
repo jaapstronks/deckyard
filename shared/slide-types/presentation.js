@@ -12,6 +12,7 @@ import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
+import { renderUnresolvedSlideHtml } from './unresolved.js';
 
 export function newPresentation({
   title = 'Untitled presentation',
@@ -321,13 +322,11 @@ export function renderSlideHtml(slide, ctx = {}) {
     : SLIDE_TYPES;
   const def = slideTypes[slide?.type];
   if (!def || typeof def.renderHtml !== 'function') {
-    return `
-      <div class="slide">
-        <div class="slide-inner">
-          <div class="heading">Unknown slide type</div>
-        </div>
-      </div>
-    `;
+    // A deck outlives the code that rendered it. An unresolvable type gets the
+    // archived-slide contract (names the type, says whether it was deliberately
+    // removed and what replaces it, keeps the stored content visible) rather
+    // than a blank box — see shared/slide-types/unresolved.js.
+    return renderUnresolvedSlideHtml(slide);
   }
   // Theme override locks: strip anything the theme has locked before the type
   // renders, so a deck authored before the lock cannot leak past the branding.

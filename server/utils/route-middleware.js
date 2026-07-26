@@ -221,7 +221,7 @@ const PERMISSION_CHECKS = {
  * // Continue with handler logic...
  */
 export async function withPresentationAuth({ repoRoot, id, authedUser, res, permission = 'read' }) {
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
   if (!pres) {
     notFound(res);
     return null;
@@ -279,7 +279,7 @@ export async function getGuestFromRequest(req) {
  * if (!pres) return true; // Response already sent
  */
 export async function withPresentationReadAuth({ repoRoot, req, id, authedUser, res }) {
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
@@ -309,7 +309,7 @@ export async function withPresentationReadAuth({ repoRoot, req, id, authedUser, 
  * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
  */
 export async function withPresentationCommentAuth({ repoRoot, req, id, authedUser, res }) {
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(createRouteContext(authedUser, { repoRoot }), id);
   if (!pres) {
     notFound(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
@@ -348,8 +348,11 @@ export function requireMethod(allowedMethods, handler) {
  */
 export function withPresentation(handler) {
   return async (params, presentationId) => {
-    const { repoRoot, res } = params;
-    const pres = await getPresentation(repoRoot, presentationId);
+    const { repoRoot, res, authedUser } = params;
+    const pres = await getPresentation(
+      createRouteContext(authedUser, { repoRoot }),
+      presentationId
+    );
     if (!pres) return notFound(res);
     return handler({ ...params, pres }, presentationId);
   };

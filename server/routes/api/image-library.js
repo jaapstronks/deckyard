@@ -21,21 +21,21 @@ import { getFeatureFlags } from '../../config/feature-flags.js';
 import { generateImageAltTexts } from '../../utils/llm/alt-text.js';
 import { listSandboxMedia } from '../../sandbox/media.js';
 
-export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }) {
+export async function handleImageLibrary({ repoRoot, storageScope, req, res, url, authedUser }) {
   const flags = getFeatureFlags();
 
   // Shared image library (shared across users)
   if (url.pathname === '/api/image-library') {
     if (flags.disableImageLibrary) return notFound(res);
     if (req.method === 'GET') {
-      const items = await listImageLibrary(repoRoot);
+      const items = await listImageLibrary(storageScope);
       // Sandbox: uploads are off, so seed a curated set of sample images and
       // logos a guest can actually place on a slide.
       if (flags.sandboxMode) items.unshift(...listSandboxMedia());
       // Get user's favorites if logged in
       let favoriteIds = [];
       if (authedUser?.email) {
-        favoriteIds = await getImageFavorites(authedUser.email);
+        favoriteIds = await getImageFavorites(storageScope, authedUser.email);
       }
       const favoriteSet = new Set(favoriteIds);
       // Add isFavorite flag to each item
@@ -52,7 +52,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
       if (!authedUser) return unauthorized(res, 'Login required');
       const body = await json(req);
       // Capture who uploaded this image
-      const created = await createImageLibraryItem(repoRoot, {
+      const created = await createImageLibraryItem(storageScope, {
         ...body,
         uploadedBy: authedUser.email || null,
       });
@@ -89,9 +89,9 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (flags.disableImageLibrary) return notFound(res);
     const imageId = usageMatch[1];
     if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
-    const item = await getImageLibraryItem(repoRoot, imageId);
+    const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
-    const usage = await getImageLibraryUsage(repoRoot, item.url);
+    const usage = await getImageLibraryUsage(storageScope, item.url);
     serveJson(res, 200, {
       id: item.id,
       url: item.url,
@@ -110,7 +110,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
     if (!authedUser) return unauthorized(res, 'Login required');
     if (!flags.aiAltText) return unauthorized(res, 'AI alt text is not enabled');
-    const item = await getImageLibraryItem(repoRoot, imageId);
+    const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
     const body = await json(req);
     const out = await generateImageAltTexts({
@@ -136,7 +136,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
     if (!authedUser) return unauthorized(res, 'Login required');
 
-    const item = await getImageLibraryItem(repoRoot, imageId);
+    const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
     if (!String(item.url || '').startsWith('/uploads/')) {
       return badRequest(
@@ -152,7 +152,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     }
 
     await replaceUploadFromDataUrl(repoRoot, item.url, dataUrl);
-    const updated = await updateImageLibraryItem(repoRoot, imageId, {});
+    const updated = await updateImageLibraryItem(storageScope, imageId, {});
     serveJson(res, 200, updated);
     return true;
   }
@@ -167,10 +167,10 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
     if (!authedUser) return unauthorized(res, 'Login required');
 
-    const item = await getImageLibraryItem(repoRoot, imageId);
+    const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
 
-    const isFavorite = await toggleImageFavorite(imageId, authedUser.email);
+    const isFavorite = await toggleImageFavorite(storageScope, imageId, authedUser.email);
     serveJson(res, 200, { id: imageId, isFavorite });
     return true;
   }
@@ -180,7 +180,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (flags.disableImageLibrary) return notFound(res);
     const imageId = imgLibMatch[1];
     if (req.method === 'GET') {
-      const item = await getImageLibraryItem(repoRoot, imageId);
+      const item = await getImageLibraryItem(storageScope, imageId);
       if (!item) return notFound(res);
       serveJson(res, 200, item);
       return true;
@@ -189,7 +189,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
       if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
       if (!authedUser) return unauthorized(res, 'Login required');
       const body = await json(req);
-      const updated = await updateImageLibraryItem(repoRoot, imageId, body);
+      const updated = await updateImageLibraryItem(storageScope, imageId, body);
       if (!updated) return notFound(res);
       serveJson(res, 200, updated);
       return true;
@@ -197,7 +197,7 @@ export async function handleImageLibrary({ repoRoot, req, res, url, authedUser }
     if (req.method === 'DELETE') {
       if (flags.demoMode || flags.sandboxMode) return methodNotAllowed(res, ['GET']);
       if (!authedUser?.isAdmin) return unauthorized(res, 'Admin required');
-      const ok = await deleteImageLibraryItem(repoRoot, imageId);
+      const ok = await deleteImageLibraryItem(storageScope, imageId);
       if (!ok) return notFound(res);
       serveJson(res, 200, { ok: true });
       return true;

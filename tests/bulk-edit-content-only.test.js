@@ -38,7 +38,7 @@ const { createFieldRenderers } = await import('../client/views/editor/fields.js'
 const { createRerenderEditor } = await import('../client/views/editor/editor-form.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 
-function renderForm({ contentOnly }) {
+function renderForm({ contentOnly, setInspectorCollapsed = null }) {
   const editorMount = document.createElement('div');
   document.body.append(editorMount);
   const slide = {
@@ -72,16 +72,17 @@ function renderForm({ contentOnly }) {
     fieldRenderers: createFieldRenderers(deps),
     openOverlayClosers: new Set(),
     contentOnly,
+    setInspectorCollapsed,
   }).rerender;
   rerender();
   return editorMount;
 }
 
 test('contentOnly renders content fields without panel chrome or settings sections', () => {
-  const mount = renderForm({ contentOnly: true });
+  const mount = renderForm({ contentOnly: true, setInspectorCollapsed: () => {} });
 
   assert.ok(mount.querySelector('.editor-form'), 'form container renders');
-  assert.equal(mount.querySelector('.editor-form-header'), null, 'no header');
+  assert.equal(mount.querySelector('.editor-form-close-slot'), null, 'no rail chrome');
   assert.equal(mount.querySelector('.editor-bg-section'), null, 'no Background section');
   assert.equal(mount.querySelector('.editor-text-fields'), null, 'no collapsed Text section');
   assert.equal(mount.querySelector('.ai-iterate-panel'), null, 'no AI refine box');
@@ -97,8 +98,20 @@ test('contentOnly renders content fields without panel chrome or settings sectio
   assert.ok(editables.length > 0, 'editable content fields present');
 });
 
-test('default mode keeps the header and the settings sections', () => {
-  const mount = renderForm({ contentOnly: false });
-  assert.ok(mount.querySelector('.editor-form-header'), 'header renders');
-  assert.ok(mount.querySelector('.editor-bg-section'), 'Background section renders');
+test('default mode keeps the rail chrome and the settings sections', () => {
+  // The "INSPECTOR" header row went in the 2026-07-26 declutter, but the
+  // collapse button it held did not: it now floats in a zero-height slot.
+  let collapsed = null;
+  const mount = renderForm({
+    contentOnly: false,
+    setInspectorCollapsed: (v) => {
+      collapsed = v;
+    },
+  });
+  const closeBtn = mount.querySelector('.editor-form-close-slot .editor-form-close-btn');
+  assert.ok(closeBtn, 'collapse button renders');
+  closeBtn.click();
+  assert.equal(collapsed, true, 'clicking it collapses the rail');
+  assert.ok(mount.querySelector('.editor-bg-color'), 'background colour renders in the form');
+  assert.ok(mount.querySelector('.editor-bg-section'), 'Background image section renders');
 });

@@ -92,11 +92,11 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
  * - viewOnly: if 'true', only return view-only presentations
  */
 async function handleList(ctx) {
-  const { repoRoot, apiKey, url } = ctx;
+  const { storageScope, apiKey, url } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
-  const list = await listPresentations(repoRoot);
+  const list = await listPresentations(storageScope);
   let filtered = filterByOwner(list, apiKey.ownerEmail);
 
   // Optional filters
@@ -114,7 +114,7 @@ async function handleList(ctx) {
 
   // Fetch tags for all presentations
   const presentationIds = paginated.map((p) => p.id);
-  const tagsMap = await getTagsForPresentations(presentationIds);
+  const tagsMap = await getTagsForPresentations(storageScope, presentationIds);
 
   // Build response
   const presentations = paginated.map((p) =>
@@ -137,7 +137,7 @@ async function handleList(ctx) {
  * POST /api/v1/presentations - Create a new presentation.
  */
 async function handleCreate(ctx) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -150,12 +150,12 @@ async function handleCreate(ctx) {
   }
 
   // Create presentation with API key owner as the owner
-  const created = await createPresentation(repoRoot, {
+  const created = await createPresentation(storageScope, {
     ...body,
     ownerEmail: apiKey.ownerEmail,
   });
 
-  const tags = await getTagsForPresentation(created.id);
+  const tags = await getTagsForPresentation(storageScope, created.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(created, tags, apiKey.ownerEmail),
   });
@@ -171,7 +171,7 @@ async function handleGet(ctx, id) {
   const { ok, pres } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
 
-  const tags = await getTagsForPresentation(id);
+  const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
     presentation: sanitizePresentation(pres, tags, ctx.apiKey?.ownerEmail),
   });
@@ -182,7 +182,7 @@ async function handleGet(ctx, id) {
  * PUT /api/v1/presentations/:id - Update a presentation.
  */
 async function handleUpdate(ctx, id) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -203,7 +203,7 @@ async function handleUpdate(ctx, id) {
 
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, id, body, {
+    updated = await updatePresentation(storageScope, id, body, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {
@@ -219,7 +219,7 @@ async function handleUpdate(ctx, id) {
     return true;
   }
 
-  const tags = await getTagsForPresentation(id);
+  const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
     presentation: sanitizePresentation(updated, tags, apiKey.ownerEmail),
   });
@@ -230,11 +230,11 @@ async function handleUpdate(ctx, id) {
  * DELETE /api/v1/presentations/:id - Delete a presentation.
  */
 async function handleDelete(ctx, id) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
-  const existing = await getPresentation(repoRoot, id);
+  const existing = await getPresentation(storageScope, id);
   if (!existing) {
     await apiError(ctx, 404, 'Presentation not found');
     return true;
@@ -248,7 +248,7 @@ async function handleDelete(ctx, id) {
     return true;
   }
 
-  const deleted = await deletePresentation(repoRoot, id, {
+  const deleted = await deletePresentation(storageScope, id, {
     actorEmail: apiKey.ownerEmail,
   });
 
@@ -265,14 +265,14 @@ async function handleDelete(ctx, id) {
  * POST /api/v1/presentations/:id/duplicate - Duplicate a presentation.
  */
 async function handleDuplicate(ctx, id) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
   const { ok } = await getPresentationWithAccess(ctx, id);
   if (!ok) return true;
 
-  const duplicated = await duplicatePresentation(repoRoot, id, {
+  const duplicated = await duplicatePresentation(storageScope, id, {
     actorEmail: apiKey.ownerEmail,
   });
 
@@ -281,7 +281,7 @@ async function handleDuplicate(ctx, id) {
     return true;
   }
 
-  const tags = await getTagsForPresentation(duplicated.id);
+  const tags = await getTagsForPresentation(storageScope, duplicated.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(duplicated, tags, apiKey.ownerEmail),
   });

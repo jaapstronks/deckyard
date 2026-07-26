@@ -66,7 +66,7 @@ const cssVar = (vars, key) => String(vars[key] || '').trim();
 /**
  * Emit the legacy `--t-<name>` alias family.
  *
- * Countdown, freeform and end-slide CSS read `--t-primary`, `--t-accent`,
+ * Countdown and end-slide CSS read `--t-primary`, `--t-accent`,
  * `--t-bg-dark`, `--t-brand-1` and `--t-brand-2`, but no theme file and no DB
  * theme has ever emitted them — those slides always painted the hardcoded
  * fallbacks in the stylesheet (a purple/teal that belongs to no current theme).

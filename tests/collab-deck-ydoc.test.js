@@ -377,7 +377,7 @@ describe('round-trip: every registered slide type with real defaults', () => {
   // Builds one bilingual deck containing every slide type's realistic
   // default content (nl structure; en-GB texts overlaid per the same
   // classification the editor's language-sync uses). Catches content shapes
-  // the hand-written fixtures miss (charts, tables, freeform, images…).
+  // the hand-written fixtures miss (charts, tables, images…).
   function overlayTexts(content, spec, fn) {
     for (const k of spec.textKeys) {
       if (typeof content[k] === 'string') content[k] = fn(content[k]);

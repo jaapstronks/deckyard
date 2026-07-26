@@ -116,8 +116,8 @@ test('every keeps key exists in its slide-type schema (no audit/schema drift)', 
 test('inspector renders settings but no content text fields (content-slide)', () => {
   const mount = renderForm({ type: 'content-slide' });
 
-  assert.ok(mount.querySelector('.editor-form-header'), 'header renders');
-  assert.ok(mount.querySelector('.editor-bg-section'), 'Background section renders');
+  assert.ok(mount.querySelector('.editor-bg-color'), 'background colour renders in the form');
+  assert.ok(mount.querySelector('.editor-bg-section'), 'Background image section renders');
   assert.equal(mount.querySelector('.editor-text-fields'), null, 'Text section is gone');
 
   const labels = fieldLabels(mount);
@@ -136,6 +136,41 @@ test('inspector renders settings but no content text fields (content-slide)', ()
     outsideSections('input[type="text"], input:not([type])').length,
     0,
     'no content text inputs in the inspector'
+  );
+});
+
+test('the background image section stays collapsed but never hides an active image', () => {
+  // The declutter (2026-07-26) traded force-open for a summary thumbnail: the
+  // section costs one row whether or not a background is set, and a set one is
+  // still visible at a glance. Both halves matter — a collapsed section that
+  // also hid the thumbnail would be the regression the brief warned about.
+  const plain = renderForm({ type: 'content-slide' });
+  const plainSection = plain.querySelector('.editor-bg-section');
+  assert.equal(plainSection.open, false, 'closed with no background set');
+  assert.ok(
+    plainSection.querySelector('.editor-bg-status'),
+    'says so in the summary'
+  );
+  assert.equal(plainSection.querySelector('.editor-bg-summary-thumb'), null, 'no thumbnail');
+
+  const withImage = renderForm({
+    type: 'content-slide',
+    content: {
+      ...structuredClone(SLIDE_TYPES['content-slide'].defaults),
+      slideBgImage: '/uploads/bg.jpg',
+    },
+  });
+  const setSection = withImage.querySelector('.editor-bg-section');
+  assert.equal(setSection.open, false, 'a set image no longer forces the panel open');
+  const thumb = setSection.querySelector('.editor-bg-summary-thumb');
+  assert.ok(thumb, 'the active background shows as a summary thumbnail');
+  assert.equal(thumb.getAttribute('src'), '/uploads/bg.jpg');
+  // The crop/fit/overlay tail — the 581px that made the old section huge —
+  // renders only once an image is set, and only inside the collapsed body.
+  const body = setSection.querySelector('.editor-advanced-body');
+  assert.ok(
+    (body.textContent || '').toLowerCase().includes('focus'),
+    'crop focus renders for a set image'
   );
 });
 

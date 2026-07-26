@@ -25,7 +25,7 @@ import { requireScope, getPresentationWithAccess, apiSuccess } from './middlewar
  * POST /api/v1/presentations/:id/publish - Publish a presentation.
  */
 async function handlePublish(ctx, id) {
-  const { repoRoot, apiKey } = ctx;
+  const { repoRoot, storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -83,7 +83,7 @@ async function handlePublish(ctx, id) {
   }
 
   // Upsert published entry
-  const entry = await upsertPublishedEntry(repoRoot, {
+  const entry = await upsertPublishedEntry(storageScope, {
     publishId,
     presentationId: pres.id,
     title: pres.title,
@@ -101,7 +101,7 @@ async function handlePublish(ctx, id) {
       modified: entry.modified,
     },
   };
-  await updatePresentation(repoRoot, id, nextPres, {
+  await updatePresentation(storageScope, id, nextPres, {
     actorEmail: apiKey.ownerEmail,
   });
 
@@ -146,7 +146,7 @@ async function handleGetPublishStatus(ctx, id) {
  * DELETE /api/v1/presentations/:id/publish - Unpublish a presentation.
  */
 async function handleUnpublish(ctx, id) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -155,12 +155,12 @@ async function handleUnpublish(ctx, id) {
 
   const publishId = String(pres?.published?.id || '').trim();
   if (publishId) {
-    await removePublishedEntry(repoRoot, publishId);
+    await removePublishedEntry(storageScope, publishId);
   }
 
   const nextPres = { ...pres };
   delete nextPres.published;
-  await updatePresentation(repoRoot, id, nextPres, {
+  await updatePresentation(storageScope, id, nextPres, {
     actorEmail: apiKey.ownerEmail,
   });
 

@@ -78,35 +78,42 @@ function renderForm({ theme = null } = {}) {
   return editorMount;
 }
 
-const bgSectionText = (mount) =>
-  (mount.querySelector('.editor-bg-section')?.textContent || '').toLowerCase();
+// Since the 2026-07-26 declutter the background lives on two surfaces: the
+// colour is a plain field in the form, the image machinery a collapsed section.
+// A lock has to reach both.
+const hasColourPicker = (mount) => Boolean(mount.querySelector('.editor-bg-color .bg-picker'));
+const imageBodyText = (mount) =>
+  (mount.querySelector('.editor-bg-section .editor-advanced-body')?.textContent || '').toLowerCase();
+const mountText = (mount) => (mount.textContent || '').toLowerCase();
 
 test('an unlocked theme still offers the background controls', () => {
-  const text = bgSectionText(renderForm({ theme: { id: 't', locks: {} } }));
-  assert.ok(text.includes('color'), 'colour control is offered');
-  assert.ok(!text.includes('set by the theme'), 'no lock note');
+  const mount = renderForm({ theme: { id: 't', locks: {} } });
+  assert.ok(hasColourPicker(mount), 'colour control is offered');
+  assert.ok(imageBodyText(mount).includes('upload'), 'image control is offered');
+  assert.ok(!mountText(mount).includes('set by the theme'), 'no lock note');
 });
 
 test('no theme at all behaves exactly as unlocked', () => {
   // The editor must degrade to today's behaviour when the theme is missing.
-  const text = bgSectionText(renderForm({ theme: null }));
-  assert.ok(text.includes('color'));
-  assert.ok(!text.includes('set by the theme'));
+  const mount = renderForm({ theme: null });
+  assert.ok(hasColourPicker(mount));
+  assert.ok(imageBodyText(mount).includes('upload'));
+  assert.ok(!mountText(mount).includes('set by the theme'));
 });
 
 test('a locked background removes its controls and explains why', () => {
   const mount = renderForm({ theme: { id: 't', locks: { background: 'locked' } } });
-  const text = bgSectionText(mount);
 
-  assert.ok(text.includes('set by the theme'), 'the absence is explained');
-  assert.ok(!text.includes('color'), 'colour control is gone');
-  assert.ok(!text.includes('background image'), 'image control is gone');
+  assert.ok(mountText(mount).includes('set by the theme'), 'the absence is explained');
+  assert.ok(!hasColourPicker(mount), 'colour control is gone');
+  assert.ok(!imageBodyText(mount).includes('upload'), 'image control is gone');
   // The section itself survives — the corner logo still lives there.
-  assert.ok(mount.querySelector('.editor-bg-section'), 'Background section renders');
+  assert.ok(mount.querySelector('.editor-bg-section'), 'Background image section renders');
 });
 
 test('locking the logo leaves the background controls alone', () => {
-  const text = bgSectionText(renderForm({ theme: { id: 't', locks: { logo: 'locked' } } }));
-  assert.ok(text.includes('set by the theme'));
-  assert.ok(text.includes('color'), 'background colour is still editable');
+  const mount = renderForm({ theme: { id: 't', locks: { logo: 'locked' } } });
+  assert.ok(imageBodyText(mount).includes('set by the theme'));
+  assert.ok(hasColourPicker(mount), 'background colour is still editable');
+  assert.ok(imageBodyText(mount).includes('upload'), 'image control is untouched');
 });

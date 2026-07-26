@@ -9,7 +9,7 @@
 
 import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
-import { computeAudienceCapabilitiesFromState } from './helpers.js';
+import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 
 const TICK_MS = 2000;
 
@@ -25,7 +25,7 @@ const groups = new Map();
 
 async function computeShared(g) {
   const state = await getFollowStateForPresentation(g.repoRoot, g.presentationId);
-  const pres = await getPresentationCached(g.repoRoot, g.presentationId);
+  const pres = await getPresentationCached(followAudienceScope(g.repoRoot), g.presentationId);
   const capabilities = computeAudienceCapabilitiesFromState(state, pres);
   return {
     state,

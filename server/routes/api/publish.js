@@ -18,7 +18,7 @@ import { isMediaProviderInitialized } from '../../media/index.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('publish');
 
-export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
+export async function handlePublish({ repoRoot, storageScope, req, res, url, authedUser }) {
   // Publish (public share link)
   const publishMatch = url.pathname.match(
     /^\/api\/presentations\/([^/]+)\/publish$/
@@ -91,7 +91,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       ogImageUrl = pickOgImageUrlFromPresentation(pres) || ogImageUrl;
     }
 
-    const entry = await upsertPublishedEntry(repoRoot, {
+    const entry = await upsertPublishedEntry(storageScope, {
       publishId,
       presentationId: pres.id,
       title: pres.title,
@@ -109,7 +109,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
         modified: entry.modified,
       },
     };
-    const updated = await updatePresentation(repoRoot, id, nextPres, {
+    const updated = await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -145,11 +145,11 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
     if (!pres) return true;
 
     const publishId = String(pres?.published?.id || '').trim();
-    if (publishId) await removePublishedEntry(repoRoot, publishId);
+    if (publishId) await removePublishedEntry(storageScope, publishId);
 
     const nextPres = { ...pres };
     delete nextPres.published;
-    await updatePresentation(repoRoot, id, nextPres, {
+    await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -183,7 +183,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       body = {};
     }
     const nextSlug = body?.slug;
-    const entry = await updatePublishedSlug(repoRoot, publishId, nextSlug);
+    const entry = await updatePublishedSlug(storageScope, publishId, nextSlug);
 
     const nextPres = {
       ...pres,
@@ -194,7 +194,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
         modified: entry.modified,
       },
     };
-    await updatePresentation(repoRoot, id, nextPres, {
+    await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -267,7 +267,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
       );
 
       // Update the published entry
-      await upsertPublishedEntry(repoRoot, {
+      await upsertPublishedEntry(storageScope, {
         publishId,
         presentationId: pres.id,
         title: pres.title,
@@ -282,7 +282,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
           ogImageUrl,
         },
       };
-      await updatePresentation(repoRoot, id, nextPres, {
+      await updatePresentation(storageScope, id, nextPres, {
         actorEmail: authedUser?.email || null,
       });
 

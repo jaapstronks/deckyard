@@ -33,6 +33,7 @@
 import { existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { clampUsage } from '../../../../shared/slide-types/usage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,13 +42,21 @@ const __dirname = dirname(__filename);
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
 const DEFAULT_CUSTOM_CATALOG_FILE = join(REPO_ROOT, 'custom', 'ai', 'catalog.js');
 
-/** The partial-override keys a fork may set on a core catalog entry. */
+/**
+ * The partial-override keys a fork may set on a core catalog entry.
+ *
+ * `usage` belongs here more than anywhere: it is the organization's own rule for
+ * filling a type, and the types it most often applies to are *core* ones. Absent
+ * from this list it would only be reachable by patching the OSS catalog, which
+ * is the fork this whole seam exists to avoid.
+ */
 const OVERRIDABLE_FIELDS = new Set([
   'description',
   'bestFor',
   'notFor',
   'category',
   'resolveInPhase1',
+  'usage',
 ]);
 
 /**
@@ -100,7 +109,13 @@ export async function loadCustomCatalogOverrides({ file = DEFAULT_CUSTOM_CATALOG
     // unexpected shape into a core entry.
     const partial = {};
     for (const [k, v] of Object.entries(value)) {
-      if (OVERRIDABLE_FIELDS.has(k)) partial[k] = v;
+      if (k === 'usage') {
+        // Normalized and length-clamped on the way in, so the merged entry can
+        // never carry a raw template literal's indentation or an unbounded rule.
+        const usage = clampUsage(v);
+        if (usage) partial.usage = usage;
+        else console.warn(`[custom-ai-catalog] override "${type}.usage" is not a non-empty string; ignoring`);
+      } else if (OVERRIDABLE_FIELDS.has(k)) partial[k] = v;
       else console.warn(`[custom-ai-catalog] override "${type}.${k}" is not an overridable field; ignoring`);
     }
     if (Object.keys(partial).length === 0) continue;

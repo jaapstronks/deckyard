@@ -6,6 +6,7 @@
  * - likert-slide: Labeled scale ratings
  * - likert-slider-slide: Numeric 1-10 slider
  * - feedback-slide: Open-ended text input
+ * - countdown-slide: Presenter-run timer for a break or exercise
  */
 
 export const INTERACTIVE_SLIDES = {
@@ -87,6 +88,34 @@ export const INTERACTIVE_SLIDES = {
     schema: {
       question: { type: 'string', required: true, maxLength: 200 },
       placeholder: { type: 'string', required: false, maxLength: 100 },
+    },
+  },
+
+  'countdown-slide': {
+    category: 'interactive',
+    resolveInPhase1: false,
+    description: `
+      A large presenter-controlled countdown timer. Place it where the audience
+      works or pauses: a break, a group exercise, a writing round. Only add one
+      when the deck actually has such a moment — a timer nobody runs is dead
+      weight.
+    `,
+    bestFor: [
+      'Breaks with a stated length ("15 minutes")',
+      'Timeboxed exercises in a workshop deck',
+    ],
+    notFor: [
+      'Marking a section boundary (use chapter-title-slide)',
+      'A deck that is presented straight through without pauses',
+    ],
+    schema: {
+      title: { type: 'string', required: false, maxLength: 120 },
+      durationMinutes: { type: 'number', required: false, min: 0, max: 60 },
+      durationSeconds: { type: 'number', required: false, min: 0, max: 59 },
+      autoStart: { type: 'enum', required: false, options: ['off', 'on'] },
+      flashOnZero: { type: 'enum', required: false, options: ['on', 'off'] },
+      soundOnZero: { type: 'enum', required: false, options: ['off', 'on'] },
+      zeroText: { type: 'string', required: false, maxLength: 60 },
     },
   },
 };

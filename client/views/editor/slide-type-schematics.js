@@ -10,8 +10,10 @@
 //   3. the base entry for the type here
 //   4. null -> the picker falls back to a generic text-only diagram
 //
-// Keep this aligned with SLIDE_TYPE_DESC / SLIDE_TYPE_PRESETS in
-// slide-type-picker.js: every curated type should have a recognisable glyph.
+// Every insertable type needs a glyph, and a retired one must not keep its own:
+// tests/slide-type-companion-coverage.test.js enforces both directions, so this
+// map no longer relies on someone remembering to keep it aligned with
+// SLIDE_TYPE_DESC / SLIDE_TYPE_ALIASES.
 
 export const SLIDE_TYPE_SCHEMATIC = {
   // basics
@@ -27,7 +29,6 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'gallery-slide': { kind: 'gallery', cells: 6 },
   'video-slide': { kind: 'video' },
   'embed-slide': { kind: 'embed' },
-  'split-partner-title-slide': { kind: 'partners' },
   'team-cards-slide': { kind: 'cards', cells: 6, cols: 3, rows: 2 },
   'logo-wall-slide': { kind: 'logos', cells: 8 },
   // layouts
@@ -53,10 +54,8 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'follow-invite-slide': { kind: 'qr' },
   'countdown-slide': { kind: 'countdown' },
   // other core types (land in the picker's "Other" group)
-  'card-stack-slide': { kind: 'cards', cells: 4, cols: 2, rows: 2 },
   'list-slide': { kind: 'bullets' },
   'end-slide': { kind: 'statement' },
-  'lead-capture-slide': { kind: 'feedback' },
   'custom-html-slide': { kind: 'code' },
 };
 

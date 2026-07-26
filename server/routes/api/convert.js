@@ -30,6 +30,7 @@ import {
  */
 export async function handleConvert({
   repoRoot,
+  storageScope,
   req,
   res,
   url,
@@ -125,7 +126,7 @@ export async function handleConvert({
         deck._generationMeta?.effectiveLang ||
         'nl';
 
-      const created = await createPresentation(repoRoot, {
+      const created = await createPresentation(storageScope, {
         title:
           parts.title ||
           deck.title ||
@@ -135,8 +136,7 @@ export async function handleConvert({
         lang: effectiveLang,
       });
 
-      const updated = await updatePresentation(
-        repoRoot,
+      const updated = await updatePresentation(storageScope,
         created.id,
         {
           ...created,
@@ -426,7 +426,7 @@ export async function handleConvert({
         deck._generationMeta?.effectiveLang ||
         'nl';
 
-      const created = await createPresentation(repoRoot, {
+      const created = await createPresentation(storageScope, {
         title:
           parts.title ||
           deck.title ||
@@ -436,8 +436,7 @@ export async function handleConvert({
         lang: effectiveLang,
       });
 
-      const updated = await updatePresentation(
-        repoRoot,
+      const updated = await updatePresentation(storageScope,
         created.id,
         {
           ...created,

@@ -30,7 +30,7 @@
   border-bottom: 1px solid hsl(var(--app-border-default));
   box-shadow: var(--app-shadow-sm);
   flex-shrink: 0;
-  z-index: 50;
+  z-index: var(--z-sticky);
 }
 
 .topbar .title-input {
@@ -341,7 +341,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   position: absolute;
   top: calc(100% + var(--ps-space-1));
   right: 0;
-  z-index: 100;
+  z-index: var(--z-header);
   min-width: 200px;
   padding: var(--ps-space-1);
   border-radius: var(--ps-radius-lg);
@@ -592,7 +592,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
   box-shadow: var(--app-shadow-xl);
-  z-index: 100;
+  z-index: var(--z-header);
   text-align: center;
   white-space: normal;
   line-height: 1.4;

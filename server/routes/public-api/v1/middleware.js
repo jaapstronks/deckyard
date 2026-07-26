@@ -64,6 +64,14 @@ export async function authenticateApiKey(ctx) {
     email: result.ownerEmail,
     role: 'user',
   };
+  // A machine client acts in the organization its key belongs to. That is a
+  // real answer rather than the default organization the storage layer used to
+  // assume, so public-API reads and writes stay inside the key's workspace.
+  ctx.storageScope = {
+    repoRoot: ctx.repoRoot ?? null,
+    organizationId: result.organizationId,
+    actorEmail: result.ownerEmail,
+  };
 
   return { ok: true };
 }
@@ -147,9 +155,9 @@ export function canAccessPresentation(presentation, ownerEmail) {
  * @returns {Promise<{ok: boolean, pres?: Object}>} - Result with presentation if successful
  */
 export async function getPresentationWithAccess(ctx, presentationId, { access = 'read' } = {}) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     await apiError(ctx, 404, 'Presentation not found');
     return { ok: false };

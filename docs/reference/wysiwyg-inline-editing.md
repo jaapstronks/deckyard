@@ -159,7 +159,7 @@ renderer lacks the field.
 
 Every empty slot is one `imagePlaceholderHtml()` box
 (`shared/slide-types/helpers.js`), used by image, image-text, gallery,
-content-columns, logo-wall, quote, team-cards and freeform. It emits the
+content-columns, logo-wall, quote and team-cards. It emits the
 shared `image-placeholder` base class, the glyph, `is-empty` (the hook the
 inline editor keys off), and `aria-hidden` — the box is decorative; the
 accessible affordance is the "Add image" chip.
@@ -256,7 +256,7 @@ coverage table below only summarizes what the *canvas* offers per type.
 
 ## Per-type coverage
 
-35 of the 39 core types have a descriptor. Legend: "header set" = the shared
+35 of the 38 core types have a descriptor. Legend: "header set" = the shared
 `HEADER_GHOSTS` trio (title / subheading / bottomSubheading with anchor
 fallbacks).
 
@@ -296,8 +296,8 @@ fallbacks).
 | content-columns-slide | header, col titles, block title/body | header set | – | col text, block bodies | media: flat `col{n}Image` incl. empty-slot add |
 
 Not inline (intentional, no descriptor): `payoff-slide` and
-`follow-invite-slide` (no editable content), `freeform-slide` (has its own
-canvas editor), `custom-html-slide` (escape hatch, out of scope).
+`follow-invite-slide` (no editable content), `custom-html-slide` (escape
+hatch, out of scope).
 
 Deliberately not inline within covered types: layout/variant/background/
 density enums (inspector; the canvas layout switcher uses the separate

@@ -26,8 +26,6 @@ export {
 
 export {
   getOrganizationById,
-  getOrganizationBySubdomain,
-  getOrganizationByCustomDomain,
   createOrganization,
   updateOrganization,
   deleteOrganization,

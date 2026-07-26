@@ -27,6 +27,66 @@ export const SURFACE_CANDIDATES = ['lime', 'mist', 'dark'];
 export const FREQUENT_MAX = 6;
 export const FREQUENT_MIN_TOTAL = 3;
 
+// Curated picker groups, in display order, as type names. Anything registered,
+// insertable and absent here lands in the computed "Other" group — a deliberate
+// home for the long tail (payoff, end, custom-html), not a gap. Because absence
+// is legitimate, only the *reverse* direction is gated: a group must not name a
+// deprecated or unregistered type (see
+// tests/slide-type-companion-coverage.test.js). The picker's grouping is
+// intentionally coarser than the settings-tab curation list: process/timeline
+// live under Layouts here, and there is no explicit "other" group.
+//
+// The theme's own `basicSlideTypes` are prepended to `basic` at render time, and
+// custom types get their own computed group — neither belongs in this table.
+export const PICKER_GROUPS = {
+  basic: [
+    'title-slide',
+    'chapter-title-slide',
+    'content-slide',
+    'quote-slide',
+    'lijstje-slide',
+    // The styled "List" slide is a close cousin of the bulleted/numbered list,
+    // so it sits right next to it rather than adrift in "Other".
+    'list-slide',
+  ],
+  media: [
+    'image-text-slide',
+    'image-slide',
+    'gallery-slide',
+    'video-slide',
+    'embed-slide',
+    'team-cards-slide',
+    'logo-wall-slide',
+  ],
+  // Layouts also absorbs the old "Process" group: process/timeline are just
+  // structured layouts, not different enough to warrant a section of their own
+  // (which showed 2 tiles and a wall of whitespace).
+  layouts: [
+    'text-blocks-slide',
+    'icon-card-grid-slide',
+    'process-slide',
+    'timeline-slide',
+  ],
+  data: [
+    'table-slide',
+    'chart-slide',
+    'kpi-metrics-slide',
+    'comparison-slide',
+    'matrix-slide',
+    'funnel-slide',
+    'pyramid-slide',
+    'cycle-slide',
+  ],
+  interaction: [
+    'poll-slide',
+    'likert-slide',
+    'likert-slider-slide',
+    'feedback-slide',
+    'follow-invite-slide',
+    'countdown-slide',
+  ],
+};
+
 // Extra search terms per type so people find a slide by an unofficial name
 // (incl. Dutch), e.g. "smoelenboek"/"roster" -> team cards. Folded into the
 // search haystack only; never shown.
@@ -42,7 +102,6 @@ export const SLIDE_TYPE_ALIASES = {
   'gallery-slide': 'photos images grid fotogalerij beelden',
   'video-slide': 'youtube vimeo movie film',
   'embed-slide': 'iframe figma miro sheet website',
-  'split-partner-title-slide': 'partners logos two co-branding',
   'team-cards-slide': 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
   'logo-wall-slide': 'sponsors clients brands partners logos logowand klanten',
   'text-blocks-slide': 'blocks process blokken stappen',
@@ -64,6 +123,8 @@ export const SLIDE_TYPE_ALIASES = {
   'follow-invite-slide': 'qr join volgen',
   'countdown-slide': 'timer break pauze aftellen',
   'payoff-slide': 'closing thanks afsluiter bedankt',
+  'end-slide': 'contact details closing thanks afsluiter bedankt gegevens',
+  'custom-html-slide': 'raw html css code escape hatch eigen code',
 };
 
 // Curated layout variants surfaced as their own picker tiles (item 15). Each
@@ -110,7 +171,6 @@ export const SLIDE_TYPE_DESC = {
   'gallery-slide': 'A grid of images',
   'video-slide': 'An embedded video',
   'embed-slide': 'Embed an external page or iframe',
-  'split-partner-title-slide': 'A title with two partner logos',
   'team-cards-slide': 'Image blocks in a grid',
   'logo-wall-slide': 'A wall of logos',
   'text-blocks-slide': 'Several labelled text blocks',
@@ -132,4 +192,6 @@ export const SLIDE_TYPE_DESC = {
   'follow-invite-slide': 'A QR code to follow along',
   'countdown-slide': 'A countdown timer',
   'payoff-slide': 'A closing payoff statement',
+  'end-slide': 'A closing slide with contact details',
+  'custom-html-slide': 'Your own HTML and CSS, for anything else',
 };

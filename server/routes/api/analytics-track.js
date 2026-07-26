@@ -37,6 +37,7 @@ import {
 } from '../../storage/analytics/slide-views.js';
 import { getFollowStateForPresentation } from '../../storage/present-sessions/follow-state.js';
 import { createLogger } from '../../utils/logger.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 const log = createLogger('analytics-track');
 
 /**
@@ -53,7 +54,10 @@ async function validatePresentationAccess(data, ctx) {
   const { presentationId, sourceType, sourceId } = data;
 
   // Get the presentation first
-  const presentation = await getPresentation(null, presentationId);
+  const presentation = await getPresentation(
+    crossOrganizationScope(null, 'analytics ingest from a public viewer; the source token is verified below'),
+    presentationId
+  );
   if (!presentation) {
     return { ok: false, reason: 'Presentation not found' };
   }

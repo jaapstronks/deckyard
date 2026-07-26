@@ -37,7 +37,7 @@ import { broadcastToPresentation, PresentationEventTypes } from '../../../servic
  * downloading the whole deck (see client/views/editor/remote-refresh.js).
  */
 export async function handlePresentationRevision(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
@@ -53,7 +53,7 @@ export async function handlePresentationRevision(
 }
 
 export async function handlePresentationItem(
-  { repoRoot, req, res, url, authedUser } = {},
+  { repoRoot, storageScope, req, res, url, authedUser } = {},
   id
 ) {
   if (req.method === 'GET') {
@@ -72,7 +72,7 @@ export async function handlePresentationItem(
     });
 
     // Fetch tags for the presentation
-    const tags = await getTagsForPresentation(id);
+    const tags = await getTagsForPresentation(storageScope, id);
 
     const lang = url.searchParams.get('lang');
     if (
@@ -178,7 +178,7 @@ export async function handlePresentationItem(
 
     let updated = null;
     try {
-      updated = await updatePresentation(repoRoot, id, body, {
+      updated = await updatePresentation(storageScope, id, body, {
         expectedRevision,
         actorEmail: authedUser?.email || null,
         user: authedUser || null,
@@ -275,7 +275,7 @@ export async function handlePresentationItem(
       // No body or invalid JSON is fine
     }
 
-    const deleted = await deletePresentation(repoRoot, id, {
+    const deleted = await deletePresentation(storageScope, id, {
       actorEmail: authedUser?.email,
       message,
     });

@@ -34,6 +34,7 @@ import {
   setYDocState as defaultSetYDocState,
 } from '../storage/presentation-ydocs.js';
 import { canEditCustomHtml } from '../utils/route-middleware.js';
+import { singleWorkspaceScope } from '../storage/scope.js';
 import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
 
 /**
@@ -41,12 +42,35 @@ import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
  *
  * @param {Object} options
  * @param {string} options.repoRoot
+ * @param {(documentName: string) => Object} [options.documentScope] - Storage scope
+ *   for this document. The hooks run outside any request, so the organization is
+ *   recorded at connect time by mount.js (which has the authorized deck) and read
+ *   back here. Defaults to the deck's own organization for standalone use.
  * @param {Object} [options.deps] - Test seam: override storage/codec/Y/log/
  *   canEditCustomHtmlFn
  * @returns {{onLoadDocument: Function, onStoreDocument: Function,
  *   onChange: Function, afterUnloadDocument: Function}}
  */
-export function createCollabPersistence({ repoRoot, deps = {} }) {
+export function createCollabPersistence({ repoRoot, documentScope, deps = {} }) {
+  /** Organization per open document, learned on the first (bootstrap) read. */
+  const documentOrganizations = new Map();
+
+  /**
+   * The storage scope for one collab document. Preferred source is the
+   * organization mount.js recorded when it authorized the connection; the
+   * bootstrap read fills it in as a backstop. A deck with no organization at all
+   * means the file backend, which multi-workspace refuses outright — so falling
+   * back to the single workspace there is exact, and throws if there ever is
+   * more than one.
+   */
+  function scopeFor(documentName) {
+    const base = documentScope ? documentScope(documentName) : {};
+    const organizationId =
+      base.organizationId || documentOrganizations.get(documentName) || null;
+    return organizationId
+      ? { ...base, repoRoot, organizationId }
+      : singleWorkspaceScope(repoRoot, 'collab document persistence');
+  }
   const {
     Y = YDefault,
     codec = deckYdocCodec,
@@ -70,15 +94,21 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     const id = presentationIdFromDocumentName(documentName);
     if (!id) return document;
 
-    const stored = await getYDocState(repoRoot, id);
+    const stored = await getYDocState(scopeFor(documentName), id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
       customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
       return document;
     }
 
-    const pres = await getPresentation(repoRoot, id);
+    // The connection was authorized in onConnect, which is where a deck the user
+    // may not read is rejected; this read is addressed by that authorization.
+    const pres = await getPresentation(
+      { ...scopeFor(documentName), crossOrganization: 'collab document load: the connection was authorized in onConnect' },
+      id
+    );
     if (!pres) return document; // authz already rejected unknown decks
+    if (pres.organizationId) documentOrganizations.set(documentName, pres.organizationId);
 
     const { warnings } = codec.bootstrapPresentationToDoc(pres, document);
     if (warnings.length) {
@@ -91,7 +121,7 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     // Persist the bootstrap immediately so later opens load the doc binary
     // instead of re-bootstrapping (and re-normalizing) from JSON.
     try {
-      await setYDocState(repoRoot, id, Y.encodeStateAsUpdate(document));
+      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       log.error(`[collab] failed to store bootstrap state for ${id}:`, err?.message || err);
     }
@@ -125,6 +155,7 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
   /** Drop the per-document snapshot when Hocuspocus unloads the doc. */
   function afterUnloadDocument({ documentName }) {
     customHtmlSnapshots.delete(documentName);
+    documentOrganizations.delete(documentName);
   }
 
   async function onStoreDocument({ documentName, document }) {
@@ -139,7 +170,7 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
     }
 
     try {
-      await setYDocState(repoRoot, id, Y.encodeStateAsUpdate(document));
+      await setYDocState(scopeFor(documentName), id, Y.encodeStateAsUpdate(document));
     } catch (err) {
       // Do NOT fall through to the JSON write. If the binary store failed but
       // the JSON write then succeeded, the stored binary would be OLDER than
@@ -166,9 +197,10 @@ export function createCollabPersistence({ repoRoot, deps = {} }) {
       // server save to the doc (live-apply.js flushes this hook on
       // disconnect). Storing anyway would bump the revision and fire SSE
       // for a byte-identical deck.
-      const current = await getPresentation(repoRoot, id);
+      const scope = scopeFor(documentName);
+      const current = await getPresentation(scope, id);
       if (current && isDeepStrictEqual(projected, current)) return;
-      const result = await updatePresentation(repoRoot, id, projected, {
+      const result = await updatePresentation(scope, id, projected, {
         bypassLockCheck: true,
         reason: 'collab',
       });

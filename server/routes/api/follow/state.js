@@ -3,7 +3,7 @@ import {
   getFollowStateForPresentation,
 } from '../../../storage/present-sessions.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
-import { computeAudienceCapabilitiesFromState } from './helpers.js';
+import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('state');
 
@@ -11,7 +11,7 @@ export async function handleFollowState({ repoRoot, req, res }, presentationId) 
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
   try {
     const state = await getFollowStateForPresentation(repoRoot, presentationId);
-    const pres = await getPresentationCached(repoRoot, presentationId);
+    const pres = await getPresentationCached(followAudienceScope(repoRoot), presentationId);
     if (!pres) {
       return notFound(res, 'Presentation not found');
     }

@@ -11,11 +11,18 @@ import {
 } from '../../../storage/questions.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
 import { computeAudienceCapabilitiesFromState, ensureQaDeviceCookie } from './helpers.js';
+import { crossOrganizationScope } from '../../../storage/scope.js';
 
 export async function handleFollowQuestions({ repoRoot, req, res }, presentationId) {
+  // The audience has no session: the live follow code is what authorizes this,
+  // so the deck lookup must not be organization-filtered.
+  const followScope = crossOrganizationScope(
+    repoRoot,
+    'follow-along audience: the live follow code is the authorization'
+  );
   if (req.method === 'GET') {
     const state = await getFollowStateForPresentation(repoRoot, presentationId);
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(followScope, presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (state.status !== 'live' || !state.sessionId) {
       const dev = ensureQaDeviceCookie(req);
@@ -55,7 +62,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const state = await getFollowStateForPresentation(repoRoot, presentationId);
     if (state.status !== 'live' || !state.sessionId)
       return badRequest(res, 'Presentation is not live');
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(followScope, presentationId);
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (caps.canUseQa === false)
       return badRequest(res, 'Q&A is disabled for this presentation');
@@ -94,11 +101,15 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
 }
 
 export async function handleFollowUpvote({ repoRoot, req, res }, presentationId, questionId) {
+  const followScope = crossOrganizationScope(
+    repoRoot,
+    'follow-along audience: the live follow code is the authorization'
+  );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const state = await getFollowStateForPresentation(repoRoot, presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(followScope, presentationId);
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (caps.canUseQa === false)
     return badRequest(res, 'Q&A is disabled for this presentation');
@@ -129,11 +140,15 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
 }
 
 export async function handleFollowCancel({ repoRoot, req, res }, presentationId, questionId) {
+  const followScope = crossOrganizationScope(
+    repoRoot,
+    'follow-along audience: the live follow code is the authorization'
+  );
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   const state = await getFollowStateForPresentation(repoRoot, presentationId);
   if (state.status !== 'live' || !state.sessionId)
     return badRequest(res, 'Presentation is not live');
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(followScope, presentationId);
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (caps.canUseQa === false)
     return badRequest(res, 'Q&A is disabled for this presentation');

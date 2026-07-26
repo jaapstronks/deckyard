@@ -271,7 +271,7 @@ export async function listAccessiblePresentationRefs(repoRoot, ctx, scope = 'all
   const titleById = new Map();
 
   if (wantOwned) {
-    const all = await listPresentations(repoRoot);
+    const all = await listPresentations({ ...ctx, repoRoot });
     for (const p of all) {
       if (normalizeEmail(p.ownerEmail) === owner) {
         titleById.set(p.id, p.title || 'Untitled');

@@ -29,7 +29,7 @@ import { requireScope, getPresentationWithAccess, parseJsonBody, checkAiLimit, t
  * - fillMissing: Fill only missing fields (optional, default true)
  */
 async function handleTranslate(ctx, presentationId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { storageScope, req, apiKey } = ctx;
 
   // Require 'ai' scope for translation
   if (!requireScope(ctx, 'ai')) return true;
@@ -148,7 +148,7 @@ async function handleTranslate(ctx, presentationId) {
   // Persist
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, pres, {
+    updated = await updatePresentation(storageScope, presentationId, pres, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {

@@ -26,6 +26,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { testScope } from './helpers/storage-scope.js';
 
 // ---------------------------------------------------------------------------
 // 1. File-mode round-trip through the facade + adapter
@@ -61,7 +62,7 @@ describe('version history via the facade (file adapter)', () => {
       slides: [{ id: 's1', type: 'title-slide', content: {} }],
     };
 
-    const created = await facade.createPresentationVersion(repoRoot, presentationId, pres, {
+    const created = await facade.createPresentationVersion(testScope(repoRoot), presentationId, pres, {
       actorEmail: 'alice@example.com',
       reason: 'manual',
       label: 'checkpoint',
@@ -74,14 +75,14 @@ describe('version history via the facade (file adapter)', () => {
     assert.strictEqual(created.revision, 7);
     assert.strictEqual(created.createdBy, 'alice@example.com');
 
-    const list = await facade.listPresentationVersions(repoRoot, presentationId);
+    const list = await facade.listPresentationVersions(testScope(repoRoot), presentationId);
     assert.strictEqual(list.length, 1, 'one version listed');
     assert.strictEqual(list[0].id, created.id);
     assert.strictEqual(list[0].reason, 'manual');
     // File summaries carry slideCount; this proves we went through the file backend.
     assert.strictEqual(list[0].slideCount, 1);
 
-    const full = await facade.getPresentationVersion(repoRoot, presentationId, created.id);
+    const full = await facade.getPresentationVersion(testScope(repoRoot), presentationId, created.id);
     assert.ok(full, 'full version fetched');
     assert.strictEqual(full.id, created.id);
     assert.ok(full.presentation, 'full version carries the presentation payload');
@@ -91,8 +92,7 @@ describe('version history via the facade (file adapter)', () => {
 
   it('writes the snapshot to the same on-disk path the file module always used', async () => {
     const presentationId = 'deck-2';
-    const created = await facade.createPresentationVersion(
-      repoRoot,
+    const created = await facade.createPresentationVersion(testScope(repoRoot),
       presentationId,
       { id: presentationId, title: 'Disk deck', revision: 1, slides: [] },
       { actorEmail: null, reason: 'snapshot' }
@@ -108,8 +108,8 @@ describe('version history via the facade (file adapter)', () => {
 
   it('prunes through the adapter without error', async () => {
     // Retention keeps recent snapshots; this just proves the wire-through works.
-    await facade.prunePresentationVersions(repoRoot, 'deck-1');
-    const list = await facade.listPresentationVersions(repoRoot, 'deck-1');
+    await facade.prunePresentationVersions(testScope(repoRoot), 'deck-1');
+    const list = await facade.listPresentationVersions(testScope(repoRoot), 'deck-1');
     assert.strictEqual(list.length, 1, 'recent manual snapshot retained');
   });
 });

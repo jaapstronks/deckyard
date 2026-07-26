@@ -34,10 +34,13 @@ test('loadCustomCatalogOverrides: known type kept + fields filtered, unknowns/no
   const loaded = await loadCustomCatalogOverrides({ file, knownTypes });
 
   assert.deepEqual(Object.keys(loaded), ['content-slide'], 'only the valid known override survives');
-  // Unrecognised field is stripped; only overridable fields remain.
+  // Unrecognised field is stripped; only overridable fields remain. `usage` is
+  // overridable on purpose — an organization's rules most often apply to a core
+  // type, and without this seam that would take a patch of the OSS catalog.
   assert.deepEqual(loaded['content-slide'], {
     description: 'FORK content description',
     bestFor: ['fork use'],
+    usage: 'Cijfers komen uit de vastgestelde rapportage.',
   });
 });
 

@@ -254,7 +254,7 @@
    `is-empty` hook the inline editor keys off.
 
    Used by: image, image-text, gallery, content-columns, logo-wall, quote,
-   team-cards, freeform.
+   team-cards.
 
    The base only centres the inner content. Each type keeps a *modifier*
    class for size and colour, because a 112px round portrait and a
@@ -308,7 +308,7 @@
   padding: 10px;
 }
 
-/* Small slots — round portraits, logo cells, freeform boxes — carry no label
+/* Small slots — round portraits, logo cells — carry no label
    (the helper drops it) and would be swamped by the full-size glyph, so the
    glyph scales with the slot instead of being a fixed 72px. */
 .image-placeholder.is-compact .image-placeholder-inner {

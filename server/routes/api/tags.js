@@ -23,12 +23,12 @@ import { parsePaginationParams } from '../../utils/request-validators.js';
 /**
  * Handle tags API requests
  */
-export async function handleTags({ req, res, url }) {
+export async function handleTags({ storageScope, req, res, url }) {
   const pathname = url.pathname;
 
   // GET /api/tags - List all tags
   if (pathname === '/api/tags' && req.method === 'GET') {
-    const tags = await listTags();
+    const tags = await listTags(storageScope);
     serveJson(res, 200, tags);
     return true;
   }
@@ -37,19 +37,19 @@ export async function handleTags({ req, res, url }) {
   if (pathname === '/api/tags/search' && req.method === 'GET') {
     const query = url.searchParams.get('q') || '';
     const { limit } = parsePaginationParams(url.searchParams, { defaultLimit: 10, maxLimit: 50 });
-    const tags = await searchTags(query, limit);
+    const tags = await searchTags(storageScope, query, limit);
     serveJson(res, 200, tags);
     return true;
   }
 
   // POST /api/tags - Create a new tag
   if (pathname === '/api/tags' && req.method === 'POST') {
-    const body = await parseJsonBody(req);
+    const { body } = await parseJsonBody(req);
     if (!body?.name) {
       return badRequest(res, 'Tag name is required');
     }
     try {
-      const tag = await createTag(body.name);
+      const tag = await createTag(storageScope, body.name);
       serveJson(res, 201, tag);
     } catch (err) {
       if (err.statusCode === 400) {
@@ -64,7 +64,7 @@ export async function handleTags({ req, res, url }) {
   const deleteMatch = pathname.match(/^\/api\/tags\/([a-f0-9-]+)$/);
   if (deleteMatch && req.method === 'DELETE') {
     const tagId = deleteMatch[1];
-    const deleted = await deleteTag(tagId);
+    const deleted = await deleteTag(storageScope, tagId);
     if (!deleted) {
       return notFound(res, 'Tag not found');
     }
@@ -79,7 +79,7 @@ export async function handleTags({ req, res, url }) {
  * Handle presentation tags API requests
  * These are called from the presentations handler.
  */
-export async function handlePresentationTags({ req, res, url, presentationId }) {
+export async function handlePresentationTags({ storageScope, req, res, url, presentationId }) {
   const pathname = url.pathname;
   const tagsPath = `/api/presentations/${presentationId}/tags`;
 
@@ -89,18 +89,18 @@ export async function handlePresentationTags({ req, res, url, presentationId }) 
 
   // GET /api/presentations/:id/tags - Get tags for a presentation
   if (req.method === 'GET') {
-    const tags = await getTagsForPresentation(presentationId);
+    const tags = await getTagsForPresentation(storageScope, presentationId);
     serveJson(res, 200, tags);
     return true;
   }
 
   // PUT /api/presentations/:id/tags - Set tags for a presentation
   if (req.method === 'PUT') {
-    const body = await parseJsonBody(req);
+    const { body } = await parseJsonBody(req);
     if (!Array.isArray(body?.tags)) {
       return badRequest(res, 'Tags array is required');
     }
-    const tags = await setTagsForPresentation(presentationId, body.tags);
+    const tags = await setTagsForPresentation(storageScope, presentationId, body.tags);
     serveJson(res, 200, tags);
     return true;
   }

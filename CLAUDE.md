@@ -85,6 +85,13 @@ Three planning horizons, three files:
   (`feat:`, `fix:`, `security:`, `feat!:` for breaking, …) — release-please reads
   the **squash-merge PR title** to compute the next version and changelog. Full
   prefix→bump table in `docs/reference/versioning.md`.
+- **No MAJOR bumps while Deckyard is in beta.** The version stays in `1.x` until
+  the beta badge comes off; `2.0.0` is reserved for leaving beta, not for a
+  tidy-up that happens to break something. `BREAKING CHANGE:` / `!` still force a
+  MAJOR automatically, so if the Release PR proposes a `2.x`, override it down
+  with a `Release-As: 1.<next>.0` trailer before merging. Retiring an unused
+  slide type and moving internal modules are explicitly **not** breaking —
+  rationale and procedure in `docs/reference/versioning.md`.
 - **Releases are automated** via `release-please`: it keeps one open Release PR
   (`chore(main): release X.Y.Z`) up to date on every push to `main`. Cutting a
   release = **merging that Release PR** (bumps `package.json`, finalizes
