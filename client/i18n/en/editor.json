@@ -726,6 +726,8 @@
   "editor.slide.aiIterate.reverted": "Reverted the change.",
   "editor.slide.aiIterate.title": "Use AI to refine this slide",
   "editor.slide.aiIterate.undo": "Undo",
+  "editor.slide.archivedType": "Archived slide type",
+  "editor.slide.unavailableType": "Unavailable slide type",
   "editor.slide.aiReasoning": "AI type reasoning",
   "editor.slide.aiWarningItem": "\\u26A0\\uFE0F {warning}",
   "editor.slide.altText": "Alt text",
