@@ -86,6 +86,34 @@ The one exception is **external** managed fonts (Adobe / Monotype / Google via
 `/assets/...`) and uploaded fonts are base64-embedded for true offline use. See
 `docs/reference/font-management.md` for the font-source distinctions.
 
+## Third-party requests
+
+Everything above is inlined, so the only things a reader's browser can fetch
+from someone else's server are the three optional runtime libraries. All three
+are conditional — a deck with no code, no math and no video makes **zero**
+third-party requests:
+
+| Library | Loaded when | Emitted by |
+|---------|-------------|------------|
+| Prism (jsDelivr) | a slide renders a `.md-code-block` | `detectPrismKatexNeeds` → `buildPrismKatexCdnTags` (`prism-katex.js`) |
+| KaTeX (jsDelivr) | a slide renders `.md-math-block` / `.md-math-inline` | same |
+| Bunny `player.js` | the reader reaches a slide with a Bunny video iframe | `ensureBunnyPlayerJs()` in the page runtime |
+
+Detection reads the **rendered slide HTML**, not the deck model, so it can't
+drift from what the init script queries and it covers custom slide types for
+free. Prism additionally loads only the language packs the deck uses
+(`language-*` classes), resolved through an alias/dependency map; languages the
+default Prism bundle already contains (markup, CSS, JavaScript) and unknown
+languages get no extra script.
+
+Bunny is not detected at build time at all: the eager `<script>` tag in the head
+was redundant with the runtime's own lazy `ensureBunnyPlayerJs()`, which is what
+the live app has always used. The same applies to the embed runtime
+(`server/utils/embed-html/template.js`).
+
+The render paths that rasterize a deck server-side (PNG, PDF, print) still load
+the fixed default set; they run in headless Chrome, not in a reader's browser.
+
 ## Verifying
 
 Download an export (or generate one via `buildStandaloneHtml`) and open it with

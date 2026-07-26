@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.5.1](https://github.com/jaapstronks/deckyard/compare/v1.5.0...v1.5.1) (2026-07-26)
+
+
+### Fixed
+
+* **ai:** adopt zod 4 and read ZodError.issues ([ffac67e](https://github.com/jaapstronks/deckyard/commit/ffac67e2bd8f75ec5f66cab1ff3336aeb39a48a5))
+
 ## [1.5.0](https://github.com/jaapstronks/deckyard/compare/v1.4.1...v1.5.0) (2026-07-26)
 
 

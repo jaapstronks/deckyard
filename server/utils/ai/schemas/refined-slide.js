@@ -320,7 +320,7 @@ export function validateSlideContent(type, content) {
     return { valid: true, issues: [] };
   } catch (err) {
     if (err instanceof z.ZodError) {
-      const issues = err.errors.map((e) => {
+      const issues = err.issues.map((e) => {
         const path = e.path.join('.');
         return `${path || 'root'}: ${e.message}`;
       });
@@ -353,7 +353,7 @@ export function safeParseSlideContent(type, content) {
     return { data: result.data, issues: [] };
   }
 
-  const issues = result.error.errors.map((e) => {
+  const issues = result.error.issues.map((e) => {
     const path = e.path.join('.');
     return `${path || 'root'}: ${e.message}`;
   });

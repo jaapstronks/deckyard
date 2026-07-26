@@ -55,7 +55,6 @@ export function renderEmbedHtmlDocument({
     <title>${safeTitle}</title>
     ${extraHead}
     ${extraFontHtml}
-    <script src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js" data-bunny-playerjs="1"></script>
     <link rel="stylesheet" href="/client/styles/shared/fonts.css" />
     <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
     <link rel="stylesheet" href="/client/styles/embed.css" />
@@ -241,7 +240,9 @@ export function renderEmbedHtmlDocument({
 
       // Poll slides were removed as a standalone feature (no poll runtime here).
 
-      // Bunny video embeds: best-effort init on active slide
+      // Bunny video embeds: best-effort init on active slide. This lazy loader
+      // is the only thing that fetches player.js, so an embed without a Bunny
+      // video makes no request to assets.mediadelivery.net.
       let bunnyPlayerJsPromise = null;
       function ensureBunnyPlayerJs() {
         if (window.playerjs && window.playerjs.Player) return Promise.resolve();
