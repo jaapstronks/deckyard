@@ -17,6 +17,7 @@ import {
   slideHeading,
   renderSlideBodySemanticHtml,
 } from '../../shared/slide-types/semantic-projection.js';
+import { renderUnresolvedSlideSemanticHtml } from '../../shared/slide-types/unresolved.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation, getDocDir } from '../utils/doc-lang.js';
 import { escapeHtml } from '../utils/html-utils.js';
@@ -75,7 +76,11 @@ body {
 .reader-table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
 .reader-table th, .reader-table td { border: 1px solid rgba(0,0,0,0.15); padding: 0.35rem 0.5rem; text-align: left; }
 .reader-code { overflow-x: auto; background: rgba(0,0,0,0.05); padding: 0.6rem 0.75rem; border-radius: 6px; }
-.reader-empty { opacity: 0.55; font-style: italic; }
+.reader-archived { opacity: 0.75; font-style: italic; }
+.reader-fields { margin: 0.75rem 0; }
+.reader-field { margin: 0.6rem 0; padding-left: 0.9rem; border-left: 3px solid rgba(0,0,0,0.12); }
+.reader-field dt { font-weight: 600; font-size: 0.9rem; opacity: 0.75; }
+.reader-field dd { margin: 0.15rem 0 0; }
 .reader-footer { padding-block: 1.5rem 3rem; font-size: 0.85rem; opacity: 0.7; }
 a { color: #0b57d0; }
 img { max-width: 100%; height: auto; }
@@ -83,6 +88,7 @@ img { max-width: 100%; height: auto; }
   body { color: #e7ebf2; background: #14181f; }
   .reader-slide { border-color: rgba(255,255,255,0.12); }
   .reader-item { border-left-color: rgba(255,255,255,0.16); }
+  .reader-field { border-left-color: rgba(255,255,255,0.16); }
   .reader-slide blockquote { border-left-color: rgba(255,255,255,0.24); }
   .reader-table th, .reader-table td { border-color: rgba(255,255,255,0.2); }
   .reader-code { background: rgba(255,255,255,0.08); }
@@ -132,13 +138,14 @@ export function buildReaderHtml(
   const sections = headings
     .map(({ slide, def, index, text, key }) => {
       const n = index + 1;
-      const body = def
-        ? renderSlideBodySemanticHtml(slide, def, { headingKey: key, headingText: text })
-        : '';
       // A known content-light slide (title/divider) is a clean heading-only
-      // section — its <h2> IS the content. Only flag a genuinely unresolvable
-      // slide (unknown type) as having nothing to read.
-      const inner = body || (def ? '' : '<p class="reader-empty">No readable content on this slide.</p>');
+      // section — its <h2> IS the content. A slide whose type no longer
+      // resolves gets the archived-slide projection instead: the reader is the
+      // *complete* surface of that contract (no canvas size limit), so it is
+      // where an author recovers content the placeholder slide had to truncate.
+      const inner = def
+        ? renderSlideBodySemanticHtml(slide, def, { headingKey: key, headingText: text })
+        : renderUnresolvedSlideSemanticHtml(slide, { headingKey: key });
       return `<section id="slide-${n}" class="reader-slide" aria-labelledby="slide-${n}-title">
         <h2 id="slide-${n}-title"><span class="reader-num">${n}.</span>${escapeHtml(text)}</h2>
         ${inner}

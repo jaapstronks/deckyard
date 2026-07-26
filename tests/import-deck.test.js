@@ -136,9 +136,14 @@ test('unknown slide type degrades to a placeholder, not a crash', async () => {
   const { res, body } = await importBundle(bundle);
   assert.equal(res.statusCode, 201);
   const placeholder = body.slides.find(
-    (s) => s.type === 'content-slide' && /unknown slide type/i.test(JSON.stringify(s.content))
+    (s) => s.type === 'content-slide' && /does not have/i.test(JSON.stringify(s.content))
   );
   assert.ok(placeholder, 'unknown type became a content-slide placeholder');
+  // Import is the one surface that PERSISTS rather than renders, so the
+  // archived-slide contract has to hold here too: the placeholder names the
+  // missing type and carries its content across as text instead of dropping it.
+  assert.match(JSON.stringify(placeholder.content), /totally-unknown-type/);
+  assert.match(JSON.stringify(placeholder.content), /bar/, 'stored content carried across');
 });
 
 // Known-only variant: the unknown-type placeholder is a deliberately lossy

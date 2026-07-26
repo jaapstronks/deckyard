@@ -50,6 +50,8 @@ export const REMOVED_SLIDE_TYPES = {
         'the AI schema accepts the legacy `time` field and says why',
       'docs/reference/slide-type-removal.md':
         'cites this removal as the model case: migrated, with a successor',
+      'tests/unresolved-slide-render.test.js':
+        'the render contract needs a removal WITH a successor to pin the "rebuild it as X" promise',
     },
   },
   'freeform-slide': {
@@ -65,6 +67,10 @@ export const REMOVED_SLIDE_TYPES = {
         'asserts the type is off the registry and a stored slide degrades safely',
       'docs/reference/slide-type-removal.md':
         'the removal checklist uses this removal as its worked example',
+      'tests/unresolved-slide-render.test.js':
+        'the render contract needs a removal WITHOUT a successor to pin the no-replacement wording',
+      'docs/reference/versioning.md':
+        'cites this removal as the worked example of a slide-type retirement that is NOT a breaking change',
     },
   },
 };

@@ -6,6 +6,7 @@ import {
   getSlideType,
 } from './registry.js';
 import { tryParseTypeId } from './type-id.js';
+import { unresolvedSlideAsMarkdown } from './unresolved.js';
 
 // --------
 // Portable deck format (for export/import)
@@ -94,15 +95,18 @@ function normalizeDeckSlide(raw, theme = null) {
   const def = getSlideType(type);
   const localName = tryParseTypeId(type)?.name || type;
   if (!def) {
-    // Unknown types are preserved as a harmless placeholder so imports never crash.
+    // Unknown types become a real content-slide so the imported deck stays
+    // editable and saveable (an unregistered type would be neither). The
+    // archived-slide contract still applies to what that placeholder SAYS: it
+    // names the type, says whether it was deliberately removed and what
+    // replaces it, and carries the original content across as text. Import is
+    // the one surface that persists rather than renders, so dropping the
+    // content here would lose it for good.
+    const { title, body } = unresolvedSlideAsMarkdown({ type: localName, content: raw?.content });
     return {
       id: cryptoUuid(),
       type: 'content-slide',
-      content: {
-        title: 'Unknown slide type',
-        body: `This deck contains an unknown slide type: ${type || '(missing)'}`,
-        background: 'mist',
-      },
+      content: { title, body, background: 'mist' },
     };
   }
 

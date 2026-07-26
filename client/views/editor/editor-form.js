@@ -18,6 +18,10 @@ import {
 } from './editor-form/inspector-form.js';
 import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import {
+  describeUnresolvedType,
+  unresolvedNotes,
+} from '../../../shared/slide-types/unresolved.js';
 import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
 import { isLocked } from '../../../shared/theme-locks.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
@@ -433,6 +437,29 @@ export function createRerenderEditor({
     const form = h('div', { class: 'stack editor-form' });
     const fieldByKey = new Map((def?.fields || []).map((f) => [f.key, f]));
     const used = new Set();
+
+    // A slide whose type no longer resolves has no fields to inspect, so the
+    // inspector would otherwise be a silent empty pane next to a placeholder
+    // slide. Say the same thing the canvas says: which type is missing, whether
+    // it was deliberately removed, and what replaces it. Read-only on purpose —
+    // the content is recoverable (canvas, reader view), the type is not.
+    if (!def) {
+      const info = describeUnresolvedType(slide.type);
+      const notice = h('div', { class: 'editor-card' });
+      notice.append(
+        h('p', {
+          class: 'field-label',
+          text:
+            info.state === 'removed'
+              ? t('editor.slide.archivedType', 'Archived slide type')
+              : t('editor.slide.unavailableType', 'Unavailable slide type'),
+        })
+      );
+      for (const line of unresolvedNotes(info)) {
+        notice.append(h('p', { class: 'help', text: line }));
+      }
+      form.append(notice);
+    }
 
     // Selection-aware inspector: when a canvas element (image/card) is selected
     // and applies to this slide, its settings render into `elementForm` (the
@@ -968,7 +995,10 @@ export function createRerenderEditor({
     // Add any remaining fields not handled above. In inspector mode add()
     // gates on the keeps set, so this renders keeps in schema order and
     // routes a11y/background keys to their sections.
-    for (const f of def.fields || []) {
+    // `def?.` because a stored slide can outlive its type: a removed core type
+    // or a fork's type this install doesn't have resolves to nothing, and the
+    // inspector has to degrade rather than take the whole editor down with it.
+    for (const f of def?.fields || []) {
       if (!used.has(f.key)) add(f.key);
     }
 

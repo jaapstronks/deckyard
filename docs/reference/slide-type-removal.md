@@ -20,9 +20,9 @@ A slide type is never deleted in one step. Three rungs:
    image, or accepted as a loss. Exit code 1 while any deck still uses it, so a
    CI/maintenance step can gate on a clean scan.
 3. **Removed** — the definition, its CSS and every reference are gone. Decks
-   that still carry the type fall back to the "Unknown slide type" render in
-   `renderSlideHtml()`; the stored content survives in the deck JSON but is not
-   shown. Only take this rung after rung 2 comes back clean.
+   that still carry the type render as an *archived slide*: named, explained and
+   with their content still visible (see "The render contract" below). Only take
+   this rung after rung 2 comes back clean.
 
 `deprecated` is a fine waypoint and a bad end state: a deprecated type is still
 mounted, still a support promise, and still an exception every later refactor
@@ -122,21 +122,55 @@ Those references are legitimate; a stale comment or an orphaned doc row is not.
 The record draws that line explicitly instead of leaving it to memory.
 
 `getRemovedSlideType(name)` tells a deliberate removal apart from a name nobody
-recognises — the distinction the generic unknown-type render cannot make today.
+recognises — the distinction that makes the render contract below possible.
 
 Two entries so far: `agenda-timeline-slide` (consolidated into `timeline-slide`,
 with migration 030 converting stored decks — the model case) and `freeform-slide`
 (no successor, no decks).
 
+## The render contract
+
+A deck outlives the code that rendered it. Removal is a code-side operation —
+nothing rewrites stored deck JSON — so a slide with a retired type keeps its
+`type` string forever, and something has to render it. What that something
+promises is `shared/slide-types/unresolved.js`:
+
+1. **Name the type.** The author sees exactly which type is missing.
+2. **Say why, when the answer is known.** A type on the tombstone record renders
+   as *archived* ("The `card-stack-slide` slide type was removed (…)"), with the
+   successor when there is one ("Rebuild this slide as an *Icon card grid*
+   slide"). A name that resolves to nothing renders as *unavailable* — a fork's
+   custom type, a typo, a deck from a newer Deckyard. The record draws that line;
+   the render never guesses.
+3. **Keep the content visible.** Every stored field is shown as readable text,
+   keyed by its stored key. Nothing is silently dropped, so the author can move
+   the content into the successor by hand.
+4. **Stay a slide, not an error.** It renders, exports, prints and reads as a
+   quiet archival card. A deck with one of these is a deck with an old slide in
+   it, not a broken deck.
+
+Per surface:
+
+| Surface | Behaviour |
+|---|---|
+| Canvas (editor, presenter, embed, HTML/PNG/PDF export) | `renderSlideHtml()` → `.slide-unresolved` placeholder. **Bounded** — a 1600x900 frame cannot grow, so it shows the first fields and says how many it withheld. |
+| Reader / reflow (`server/export/reader.js`) | The archived note plus **every** field, no elision. This is the recovery surface: whatever the canvas truncates is readable here. |
+| Deck import (`deckToPresentationParts`) | Becomes a real `content-slide` (an unregistered type would be neither editable nor saveable) carrying the same explanation and the original content as markdown. Import *persists* rather than renders, so what it drops is gone for good. |
+| Client sync render | A tombstoned type skips the custom-type server round-trip: it is gone server-side too, so the client renders the placeholder directly instead of stalling on the "loading" box. |
+
+The contract is pinned by `tests/unresolved-slide-render.test.js`, which asserts
+the promise rather than one surface's markup.
+
+**Why this matters for the next removal.** `freeform-slide` could go without it
+(zero decks). `content-columns-slide` and `card-stack-slide` cannot: those were
+in real use, so "the content is still in the JSON somewhere" is not an answer an
+author can act on. The contract is the prerequisite for rung 3 on any type decks
+actually used.
+
 ## Known gaps this removal exposed
 
-- **The unknown-type render is the entire migration story.** A removed type
-  falls back to a generic "Unknown slide type" box; the stored content is not
-  shown and not exported. Acceptable when the scan is clean, wrong as a general
-  contract. Now that `getRemovedSlideType()` can distinguish "deliberately
-  removed, successor X" from "no idea what this is", a placeholder that names
-  the missing type and surfaces its raw content is buildable — and it is a
-  prerequisite for removing any type decks actually use.
+- ~~**The unknown-type render is the entire migration story.**~~ Fixed by the
+  render contract above (`shared/slide-types/unresolved.js`).
 - ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
   `tests/removed-slide-types.test.js` (step 7 above).
 - **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
@@ -148,6 +182,7 @@ with migration 030 converting stored decks — the model case) and `freeform-sli
 
 - `scripts/scan-slide-type.js` — the deck-population scan behind rung 2.
 - `shared/slide-types/removed.js` — the removal record.
+- `shared/slide-types/unresolved.js` — the render contract for a type that is gone.
 - `tests/removed-slide-types.test.js` — the guardrail that enforces it.
 - `docs/reference/editor-inspector.md` — the per-type inspector table.
 - `docs/reference/wysiwyg-inline-editing.md` — the per-type inline-edit table.
