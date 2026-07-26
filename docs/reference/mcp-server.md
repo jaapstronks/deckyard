@@ -221,6 +221,35 @@ Each entry carries its canonical `typeId` (`core/title-slide`,
 A stdio session has no organization and resolves against the default one; an
 SSE session resolves against the organization its API key belongs to.
 
+### `usage` — the organization's own rules
+
+An entry may also carry a `usage` string, and it answers a different question
+from the rest of the entry:
+
+| Field | Question it answers | Written by |
+|---|---|---|
+| `description` / `bestFor` / `notFor` | which type should I pick? | whoever authored the type |
+| `usage` | how does this organization require the type to be filled? | the organization |
+
+Sources, cut-off dates, mandatory explanations, escalation rules. It sits after
+`schema` in the entry so an agent reads the shape first and the house rule
+second, and it is **omitted entirely when there is no rule** rather than sent
+empty. Agents should treat it as binding.
+
+Four authoring surfaces, one field:
+
+| Where | How |
+|---|---|
+| Core type | `usage` on the catalog entry in `server/utils/ai/slide-catalog/` |
+| Core type, fork override | `usage` in `custom/ai/catalog.js` (no OSS patch needed) |
+| Fork file-JS type | `ai.usage` in `custom/slide-types/<type>.js` |
+| Tier-2 DB type | the **Usage rules for AI** field in the slide-type builder |
+
+Text is dedented and capped at 1000 characters per type (it multiplies by every
+visible type in every response). The authoring paths reject over-long input; the
+fork load path truncates instead, so a long rule costs its tail rather than the
+whole type. Rules live in `shared/slide-types/usage.js`.
+
 ## Custom tools (forks)
 
 Downstream forks add their own MCP tools **without editing

@@ -66,6 +66,34 @@ an inspector override). Forward coverage there is a quality goal, so only the
 reverse direction is a gate — which is exactly the drift #323 hit: examples for a
 type whose catalog entry was already gone.
 
+### `usage` — inside the catalog entry, deliberately never gated
+
+The catalog entry carries an optional `usage` string: the rules *this
+organization* set for filling the type (sources, cut-off dates, mandatory
+explanations), as opposed to the editorial copy that says which type to pick.
+It ships in `get_slide_types`, so an agent reads it before it builds the slide.
+Written in one of three places, all resolving to the same field:
+the catalog entry (core), `ai.usage` on a `custom/slide-types/*.js` definition,
+`custom/ai/catalog.js` for a core-type override, or the `usage` column edited in
+the Tier-2 builder UI.
+
+It gets **no row of its own**, and that is the design, not an oversight:
+
+- **Forward coverage would be actively harmful.** Requiring `usage` on every
+  visible type produces invented filler on ~31 core types that have no
+  organization whose rules to codify. Absence here means "no rule", which is the
+  normal case and a true statement.
+- **Reverse coverage is already free.** Because `usage` lives *inside* the
+  catalog entry rather than beside it, the `AI / MCP catalog entry` row's stale
+  check retires it along with the entry. A second row would have restated the
+  same iteration with a different exemption shape — the duplication this matrix
+  exists to remove.
+
+What no cheap test can catch: a `usage` rule that still applies to a live type
+but names a field that has since been renamed. That is content rot, not
+structural rot, and pretending otherwise would be worse than saying so here.
+Rules and limits: `shared/slide-types/usage.js`.
+
 ## Derived — nothing to maintain
 
 | Layer | Derived from |
