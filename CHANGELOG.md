@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.6.0](https://github.com/jaapstronks/deckyard/compare/v1.5.1...v1.6.0) (2026-07-26)
+
+
+### Added
+
+* **export:** add ?ui=min to the standalone export runtime ([8312d4e](https://github.com/jaapstronks/deckyard/commit/8312d4e958e400113bb7811464ca49423c1e62ca))
+
+
+### Fixed
+
+* **export:** load Prism, KaTeX and player.js only when a deck needs them ([14d239c](https://github.com/jaapstronks/deckyard/commit/14d239c4d49037b8e9ab54f5f503748291f44190))
+
 ## [1.5.1](https://github.com/jaapstronks/deckyard/compare/v1.5.0...v1.5.1) (2026-07-26)
 
 
