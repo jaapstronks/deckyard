@@ -22,9 +22,7 @@ import { createFocusTrap } from '../../../../lib/dom.js';
 import { getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
-import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
-import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
-import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
+import { createLibraryCompose } from './library-compose.js';
 import {
   handleEmpty,
   handlePasteText,
@@ -170,297 +168,17 @@ export function openCreationView({
   blankPanel.append(blankTitleField);
 
   // --- Library panel (compose from reusable slides) ---
-  const libraryPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'library' });
-
-  // Source toggle: start from a saved Collection, or pick from all slides.
-  let libraryMode = 'all'; // 'all' | 'collections'
-  const librarySourceTabs = h('div', { class: 'sb-segmented creation-library-source' });
-  const btnSourceCollections = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn',
-    text: t('list.creationView.library.source.collections', 'Collections'),
+  // The whole "From the library" method is a self-contained concern; it owns
+  // its source toggle, picker, selection tray, and collections cache. The host
+  // only wires it in: syncUI drives its panel, isDirty/count read its state.
+  const library = createLibraryCompose({
+    h,
+    api,
+    onSelectionChange: () => syncUI(),
+    setStatus: (text) => setStatus(text),
+    isBusy: () => busy,
   });
-  const btnSourceAll = h('button', {
-    type: 'button',
-    class: 'sb-segmented-btn is-active',
-    text: t('list.creationView.library.source.all', 'All slides'),
-  });
-  librarySourceTabs.append(btnSourceCollections, btnSourceAll);
-
-  const libraryHint = h('div', {
-    class: 'help modal-hint',
-    text: t(
-      'list.creationView.library.help',
-      'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.'
-    ),
-  });
-  const libraryPickerMount = h('div', { class: 'creation-library-picker' });
-  const libraryCollectionsMount = h('div', { class: 'creation-library-collections is-hidden' });
-  const libraryTrayWrap = h('div', { class: 'creation-library-tray is-hidden' });
-  libraryPanel.append(
-    librarySourceTabs,
-    libraryHint,
-    libraryPickerMount,
-    libraryCollectionsMount,
-    libraryTrayWrap
-  );
-
-  // Selected library slides, in the order they will appear in the new deck.
-  // The picker owns selection; the panel keeps an ordered id list so drag
-  // reorder is stable across selection toggles.
-  let libraryPicker = null;
-  let libraryLoaded = false;
-  let selectedOrder = []; // slide-library item ids, in deck order
-  let selectedById = new Map(); // id -> library item
-
-  const orderedSelectedItems = () =>
-    selectedOrder.map((id) => selectedById.get(id)).filter(Boolean);
-
-  const renderTray = () => {
-    const items = orderedSelectedItems();
-    libraryTrayWrap.classList.toggle('is-hidden', items.length === 0);
-    libraryTrayWrap.innerHTML = '';
-    if (!items.length) return;
-
-    libraryTrayWrap.append(
-      h('div', {
-        class: 'field-label',
-        text: t('list.creationView.library.selected', 'Selected slides ({count})', {
-          count: String(items.length),
-        }),
-      })
-    );
-
-    const list = h('div', { class: 'creation-tray-list' });
-    items.forEach((item, index) => {
-      const chip = h('div', {
-        class: 'creation-tray-chip',
-        draggable: 'true',
-        'data-id': item.id,
-      });
-      chip.append(
-        h('span', { class: 'creation-tray-order', text: String(index + 1) }),
-        h('span', {
-          class: 'creation-tray-name',
-          text: item.name || item.slideType || t('slideLibrary.preview.untitled', 'Untitled'),
-        }),
-        h('button', {
-          type: 'button',
-          class: 'creation-tray-remove',
-          'aria-label': t('common.remove', 'Remove'),
-          text: '×',
-          onclick: () => deselectFromTray(item.id),
-        })
-      );
-
-      // Drag to reorder within the tray.
-      chip.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', item.id);
-        e.dataTransfer.effectAllowed = 'move';
-        chip.classList.add('is-dragging');
-      });
-      chip.addEventListener('dragend', () => chip.classList.remove('is-dragging'));
-      chip.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      });
-      chip.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const draggedId = e.dataTransfer.getData('text/plain');
-        if (!draggedId || draggedId === item.id) return;
-        const from = selectedOrder.indexOf(draggedId);
-        const to = selectedOrder.indexOf(item.id);
-        if (from < 0 || to < 0) return;
-        selectedOrder.splice(from, 1);
-        selectedOrder.splice(to, 0, draggedId);
-        renderTray();
-      });
-
-      list.append(chip);
-    });
-    libraryTrayWrap.append(list);
-  };
-
-  // Remove a slide from the tray. In "all slides" mode the picker owns
-  // membership, so tell it to deselect (onSelectionChange reconciles). In
-  // "collections" mode the tray is the source of truth, so edit it directly.
-  const deselectFromTray = (id) => {
-    if (libraryMode === 'collections') {
-      selectedOrder = selectedOrder.filter((x) => x !== id);
-      selectedById.delete(id);
-      renderTray();
-      syncUI();
-      return;
-    }
-    libraryPicker?.deselectItem?.(id, libraryPickerMount);
-  };
-
-  // Reconcile the ordered tray against the picker's current selection:
-  // keep existing order for still-selected items, append newly-checked ones,
-  // drop unchecked ones.
-  const reconcileSelection = (items) => {
-    const nextIds = items.map((it) => it.id);
-    const nextSet = new Set(nextIds);
-    selectedById = new Map(items.map((it) => [it.id, it]));
-    selectedOrder = selectedOrder.filter((id) => nextSet.has(id));
-    for (const id of nextIds) {
-      if (!selectedOrder.includes(id)) selectedOrder.push(id);
-    }
-    renderTray();
-    syncUI();
-  };
-
-  // Lazily mount the library picker the first time the method is selected.
-  const ensureLibraryPicker = async () => {
-    if (libraryLoaded) return;
-    libraryLoaded = true;
-    libraryPicker = createSlideLibraryPicker({
-      h,
-      api,
-      allowInsert: false,
-      compose: true,
-      initialScope: 'team',
-      onSelectionChange: (items) => reconcileSelection(items),
-    });
-    try {
-      await libraryPicker.renderSlideLibraryPicker(libraryPickerMount);
-    } catch {
-      libraryPickerMount.innerHTML = '';
-      libraryPickerMount.append(
-        h('div', {
-          class: 'help is-error',
-          text: t('slideLibrary.loadError', 'Failed to load slide library.'),
-        })
-      );
-    }
-  };
-
-  // ===== Collections source =====
-  const collectionsApi = createCollectionsApi({ api });
-  let collectionsLoaded = false;
-  let slideIndexCache = null; // id -> library item (skips trashed)
-  // The collection the current compose started from, if any. Forwarded to the
-  // server so it records collection usage (clears the Home "new to you" badge).
-  let activeCollectionId = null;
-
-  // Resolve library items once so a collection's ids can become real slides.
-  const ensureSlideIndex = async () => {
-    if (slideIndexCache) return slideIndexCache;
-    const index = new Map();
-    for (const scope of ['personal', 'team']) {
-      try {
-        const r = await api(`/api/slide-library/${scope}`);
-        for (const it of Array.isArray(r?.items) ? r.items : []) {
-          const trashed = !!(it?.isTrashed || it?.trashedAt);
-          if (it?.id && !trashed && !index.has(it.id)) index.set(it.id, it);
-        }
-      } catch {
-        // ignore; unresolved members are skipped when seeding
-      }
-    }
-    slideIndexCache = index;
-    return index;
-  };
-
-  // Pre-seed the compose tray with a collection's slides, in its stored order.
-  const seedFromCollection = async (collection) => {
-    const index = await ensureSlideIndex();
-    const ids = Array.isArray(collection?.slideIds) ? collection.slideIds : [];
-    const resolved = ids.map((id) => index.get(id)).filter(Boolean);
-    activeCollectionId = collection?.id || null;
-    selectedById = new Map(resolved.map((it) => [it.id, it]));
-    selectedOrder = resolved.map((it) => it.id);
-    // Reflect the active collection in the chooser.
-    for (const btn of libraryCollectionsMount.querySelectorAll('.creation-collection-card')) {
-      btn.classList.toggle('is-active', btn.getAttribute('data-id') === collection.id);
-    }
-    renderTray();
-    syncUI();
-    if (!resolved.length) {
-      setStatus(t('list.creationView.library.collectionEmpty', 'This collection has no available slides.'));
-    } else {
-      setStatus('');
-    }
-  };
-
-  const renderCollectionsChooser = (collections) => {
-    libraryCollectionsMount.innerHTML = '';
-    const all = [...(collections?.personal || []), ...(collections?.team || [])];
-    if (!all.length) {
-      libraryCollectionsMount.append(
-        h('div', {
-          class: 'help',
-          text: t('list.creationView.library.noCollections', 'No collections yet. Create one from the slide library to start decks from it.'),
-        })
-      );
-      return;
-    }
-    const grid = h('div', { class: 'creation-collection-grid' });
-    for (const col of all) {
-      const card = h('button', {
-        type: 'button',
-        class: 'creation-collection-card',
-        'data-id': col.id,
-        onclick: () => seedFromCollection(col),
-      });
-      card.append(
-        h('span', { class: 'creation-collection-card-name', text: col.name || t('slideLibrary.preview.untitled', 'Untitled') })
-      );
-      const meta = h('span', { class: 'creation-collection-card-meta' });
-      if (col.scope === 'team') {
-        meta.append(h('span', { class: 'creation-collection-card-badge', text: t('slideLibrary.scope.team', 'Team') }));
-      }
-      meta.append(
-        h('span', {
-          class: 'creation-collection-card-count',
-          text: t('list.creationView.library.collectionCount', '{count} slides', {
-            count: String(col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0)),
-          }),
-        })
-      );
-      card.append(meta);
-      grid.append(card);
-    }
-    libraryCollectionsMount.append(grid);
-  };
-
-  const ensureCollectionsChooser = async () => {
-    if (collectionsLoaded) return;
-    collectionsLoaded = true;
-    libraryCollectionsMount.innerHTML = '';
-    libraryCollectionsMount.append(
-      h('div', { class: 'help', text: t('common.loading', 'Loading…') })
-    );
-    try {
-      const collections = await collectionsApi.listAll();
-      renderCollectionsChooser(collections);
-    } catch {
-      libraryCollectionsMount.innerHTML = '';
-      libraryCollectionsMount.append(
-        h('div', { class: 'help is-error', text: t('list.creationView.library.collectionsError', 'Failed to load collections.') })
-      );
-    }
-  };
-
-  // Switch the library source. Changing source clears the current selection so
-  // the tray always reflects exactly one source.
-  const switchLibraryMode = (mode) => {
-    if (busy || mode === libraryMode) return;
-    libraryMode = mode;
-    // Clear selection on both sides.
-    libraryPicker?.clearSelection?.(libraryPickerMount);
-    activeCollectionId = null;
-    selectedOrder = [];
-    selectedById = new Map();
-    renderTray();
-    setStatus('');
-    if (mode === 'collections') ensureCollectionsChooser();
-    else ensureLibraryPicker();
-    syncUI();
-  };
-
-  btnSourceCollections.addEventListener('click', () => switchLibraryMode('collections'));
-  btnSourceAll.addEventListener('click', () => switchLibraryMode('all'));
+  const libraryPanel = library.panel;
 
   // --- Content (AI) panel ---
   const contentPanel = h('div', { class: 'creation-panel is-hidden', 'data-method': 'content' });
@@ -761,15 +479,8 @@ export function openCreationView({
     panelUpload.classList.toggle('is-hidden', contentSubtab !== 'upload');
     panelNotion.classList.toggle('is-hidden', contentSubtab !== 'notion');
 
-    // Library source (collections vs all slides)
-    btnSourceCollections.classList.toggle('is-active', libraryMode === 'collections');
-    btnSourceAll.classList.toggle('is-active', libraryMode === 'all');
-    libraryPickerMount.classList.toggle('is-hidden', libraryMode !== 'all');
-    libraryCollectionsMount.classList.toggle('is-hidden', libraryMode !== 'collections');
-    libraryHint.textContent =
-      libraryMode === 'collections'
-        ? t('list.creationView.library.collectionsHelp', 'Pick a collection to pre-fill the deck. Reorder or remove slides below, then create.')
-        : t('list.creationView.library.help', 'Pick reusable slides to compose a new deck. Check slides to add them, then drag to reorder.');
+    // Library source (collections vs all slides) — the panel owns its controls.
+    library.syncPanel();
 
     // Import sub-tabs
     btnImpJson.classList.toggle('is-active', importSubtab === 'json');
@@ -796,7 +507,7 @@ export function openCreationView({
     const mode = getEffectiveMode();
     btnAction.classList.toggle('is-hidden', !mode);
     if (mode === 'library') {
-      const count = selectedOrder.length;
+      const count = library.getSelectedCount();
       btnAction.textContent = count
         ? t('list.creationView.library.create', 'Create · {count} slides', { count: String(count) })
         : t('common.create', 'Create');
@@ -813,7 +524,7 @@ export function openCreationView({
     syncThemeDefaultOpen();
     syncUI();
     if (key === 'blank') emptyTitleInput.focus();
-    if (key === 'library') ensureLibraryPicker();
+    if (key === 'library') library.ensurePicker();
   }
 
   btnSubPaste.addEventListener('click', () => { contentSubtab = 'paste'; syncUI(); });
@@ -833,7 +544,7 @@ export function openCreationView({
   const isDirty = () => {
     const mode = getEffectiveMode();
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
-    if (mode === 'library') return selectedOrder.length > 0;
+    if (mode === 'library') return library.isDirty();
     if (mode === 'paste-text') return !!String(pasteTextarea.value || '').trim();
     if (mode === 'paste-markdown') return !!String(pasteMdTextarea.value || '').trim();
     if (mode === 'notion') return !!String(notionUrlInput.value || '').trim();
@@ -858,34 +569,6 @@ export function openCreationView({
     if (e.target === backdrop) requestClose();
   });
 
-  // Compose a new deck from the selected library slides (batch primitive,
-  // preserving both languages via the shared compose helper).
-  async function handleLibraryCompose() {
-    const items = orderedSelectedItems();
-    if (!items.length) {
-      setStatus(t('list.creationView.library.selectFirst', 'Select at least one slide.'));
-      return;
-    }
-    setBusy(true);
-    setStatus(t('list.newPresentation.creating', 'Creating...'));
-    try {
-      const lang = langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl';
-      const created = await createDeckFromLibraryItems({
-        api,
-        items,
-        title: t('slideLibrary.newPresentation.defaultTitle', 'New Presentation'),
-        theme: themeSelect.getTheme(),
-        lang,
-        sourceCollectionId: libraryMode === 'collections' ? activeCollectionId : null,
-      });
-      close();
-      nav?.(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
-    } catch (e) {
-      setStatus(String(e?.message || e));
-      setBusy(false);
-    }
-  }
-
   // ===== Create =====
   btnAction.addEventListener('click', async () => {
     const mode = getEffectiveMode();
@@ -904,7 +587,13 @@ export function openCreationView({
 
     switch (mode) {
       case 'library':
-        await handleLibraryCompose();
+        await library.compose({
+          lang: langSelect.getLang() === 'en-GB' ? 'en-GB' : 'nl',
+          theme: themeSelect.getTheme(),
+          nav,
+          close,
+          setBusy,
+        });
         break;
       case 'empty':
         await handleEmpty({
@@ -1015,19 +704,15 @@ export function openCreationView({
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).
-    libraryMode = 'collections';
+    library.setMode('collections');
     syncThemeDefaultOpen();
     syncUI();
     if (preselect.collection) {
-      // Render the chooser first so seedFromCollection can flag the active card.
-      ensureCollectionsChooser().then(() => seedFromCollection(preselect.collection));
+      // Render the chooser first so seedCollection can flag the active card.
+      library.ensureCollectionsChooser().then(() => library.seedCollection(preselect.collection));
     } else {
-      ensureCollectionsChooser();
-      const items = preselect.items.filter(Boolean);
-      selectedById = new Map(items.map((it) => [it.id, it]));
-      selectedOrder = items.map((it) => it.id);
-      renderTray();
-      syncUI();
+      library.ensureCollectionsChooser();
+      library.seedItems(preselect.items.filter(Boolean));
     }
   } else {
     emptyTitleInput.focus();
