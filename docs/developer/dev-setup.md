@@ -291,6 +291,45 @@ npm run i18n:validate
 `npm test` runs the node test suite (`tests/**/*.test.js`, using the built-in
 `node --test` runner). CI runs the same suite on every push and PR.
 
+### Testing storage behaviour without PostgreSQL
+
+The suite has no live database, yet the storage/identity/auth modules reach
+PostgreSQL exclusively through `getDb()` behind `isDatabaseAvailable()`
+(`server/storage/utils/db-guard.js`). To exercise their real query behaviour
+instead of grepping source, install the in-memory double:
+
+```js
+const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+
+const db = createFakeDb({ users: [/* seed rows */] });
+__setTestDb(db);          // every storage module now runs against the double
+// ... call the storage function under test ...
+__setTestDb(null);        // uninstall in afterEach
+```
+
+**Reach for it when** you need to assert what the storage layer *does* against
+the DB — which rows it writes, which tables it reads, which lookups it skips.
+
+**What it deliberately models** (tests depend on these):
+- **UNIQUE constraints** — the globally unique `users.email` and the
+  `(user_id, organization_id)` membership pair throw a pg-shaped
+  `UniqueViolationError` (code `23505`), so a path that wrongly re-inserts an
+  existing person fails loudly.
+- **`db.__queryLog` / `touchedTables(db, op?)`** — every table touched, in order,
+  so a test can assert what was *not* queried (e.g. single-workspace mode issues
+  no membership lookups at all).
+- **`db.__tables`** — direct access to the backing rows for arrange/assert.
+- **jsonb round-trip** — columns written via the `jsonb()` helper read back as
+  parsed objects, exactly like production.
+
+**What it is not**: not a Kysely implementation. It supports only the query
+shapes the storage layer actually uses (the `selectFrom`/`insertInto`/
+`updateTable`/`deleteFrom` chains, joins, `where`/`orderBy`/`limit`/`offset`,
+`db.fn.count()`). An unsupported operator or predicate throws on purpose rather
+than pretending — if a new storage query needs a shape the double lacks, extend
+`tests/helpers/fake-db.js`.
+
 ### Manual Testing
 
 Beyond the test suite, UI changes should be verified by hand:
