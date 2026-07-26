@@ -27,7 +27,6 @@
 
 import { getInlineDescriptor } from './descriptors.js';
 import { getByPath, setByPath, fieldMetaForPath, isEmptyValue } from './field-path.js';
-import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { createInlineOverlay } from './overlay.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
@@ -46,6 +45,7 @@ import { createSelectionToolbar } from './selection-toolbar.js';
 import { slideLinkUrl } from './selection-toolbar-logic.js';
 import { createFocusDrag } from './focus-drag.js';
 import { createMarkdownEditModal } from './markdown-modal.js';
+import { createReorderDrag } from './reorder-drag.js';
 
 /**
  * @param {Object} opts
@@ -811,7 +811,7 @@ export function createInlineEditor({
           type: 'button',
           title: t('editor.inline.reorderItem', 'Drag to reorder'),
           text: '⠿',
-          onpointerdown: (e) => beginReorder(e, { path, scopeEl, itemSelector, fromIdx: idx }),
+          onpointerdown: (e) => reorderDrag.begin(e, { path, scopeEl, itemSelector, fromIdx: idx }),
           // The button "click" after a drag must never bubble into the slide's
           // click-to-edit routing.
           onclick: (e) => {
@@ -924,82 +924,17 @@ export function createInlineEditor({
     afterStructuralChange();
   }
 
-  /**
-   * Pointer-based drag from a grip: measure the level's item rects once (the
-   * slide doesn't rerender mid-drag), snap the pointer to the nearest
-   * insertion gap (reorder-geometry.js) and show an indicator line there;
-   * pointerup commits the array move. Pointer capture keeps the events on the
-   * grip, so nothing leaks into click-to-edit. Esc cancels.
-   */
-  function beginReorder(e, { path, scopeEl, itemSelector, fromIdx }) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const grip = e.currentTarget;
-    const thumbRect = thumb.getBoundingClientRect();
-    const items = [...scopeEl.querySelectorAll(itemSelector)]
-      .filter((el) => Number.isInteger(Number(el.getAttribute('data-inline-item-index'))))
-      .sort(
-        (a, b) =>
-          Number(a.getAttribute('data-inline-item-index')) -
-          Number(b.getAttribute('data-inline-item-index'))
-      );
-    if (items.length < 2) return;
-    const rects = items.map((el) => {
-      const r = el.getBoundingClientRect();
-      return { left: r.left - thumbRect.left, top: r.top - thumbRect.top, width: r.width, height: r.height };
-    });
-
-    const indicator = h('div', { class: 'ie-drop-indicator' });
-    overlay.layer.appendChild(indicator);
-    thumb.classList.add('is-ie-dragging');
-    grip.classList.add('is-dragging');
-    grip.setPointerCapture?.(e.pointerId);
-
-    let drop = null;
-    const onMove = (ev) => {
-      drop = computeDrop(rects, { x: ev.clientX - thumbRect.left, y: ev.clientY - thumbRect.top });
-      if (!drop) return;
-      const line = drop.line;
-      const s = indicator.style;
-      if (line.orientation === 'v') {
-        s.left = `${line.x - 1.5}px`;
-        s.top = `${line.y}px`;
-        s.width = '3px';
-        s.height = `${line.length}px`;
-      } else {
-        s.left = `${line.x}px`;
-        s.top = `${line.y - 1.5}px`;
-        s.width = `${line.length}px`;
-        s.height = '3px';
-      }
-    };
-    const onKeyDown = (ev) => {
-      if (ev.key === 'Escape') {
-        ev.stopPropagation();
-        finish(false);
-      }
-    };
-    const onUp = () => finish(true);
-    const onCancel = () => finish(false);
-    function finish(commit) {
-      grip.removeEventListener('pointermove', onMove);
-      grip.removeEventListener('pointerup', onUp);
-      grip.removeEventListener('pointercancel', onCancel);
-      window.removeEventListener('keydown', onKeyDown, true);
-      indicator.remove();
-      thumb.classList.remove('is-ie-dragging');
-      grip.classList.remove('is-dragging');
-      if (commit && drop) {
-        const to = resolveMove(fromIdx, drop.index);
-        if (to !== fromIdx) moveCard(path, fromIdx, to);
-      }
-    }
-    grip.addEventListener('pointermove', onMove);
-    grip.addEventListener('pointerup', onUp);
-    grip.addEventListener('pointercancel', onCancel);
-    window.addEventListener('keydown', onKeyDown, true);
-  }
+  // Drag-to-reorder is a self-contained concern (owns only its transient drag
+  // state) lifted to ./reorder-drag.js — the host hands it the overlay + thumb
+  // and the array-move commit. `moveCard` is a hoisted function declaration and
+  // the first `begin()` call is a user drag via insertCardLevel (after the host
+  // calls refresh()), so referencing it here is never a TDZ hazard.
+  const reorderDrag = createReorderDrag({
+    h,
+    thumb,
+    overlay,
+    onReorder: moveCard,
+  });
 
   function afterStructuralChange() {
     cancelCommitRerender();
