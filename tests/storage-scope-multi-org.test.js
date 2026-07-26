@@ -143,6 +143,19 @@ test('a public token still reaches its deck across organizations', async () => {
   assert.equal(beta?.id, 'deck-beta');
 });
 
+test('the short-TTL read cache is keyed per organization', async () => {
+  // presentation-cache.js sits in front of the facade on the audience hot paths.
+  // A cache keyed on repo root alone would undo the isolation above inside its
+  // 2s window: Beta asks for 'deck-alpha' and gets Alpha's entry back.
+  const { getPresentationCached } = await import('../server/storage/presentation-cache.js');
+
+  const alpha = await getPresentationCached({ repoRoot: '/srv', organizationId: ORG_A }, 'deck-alpha');
+  assert.equal(alpha?.id, 'deck-alpha');
+
+  const beta = await getPresentationCached({ repoRoot: '/srv', organizationId: ORG_B }, 'deck-alpha');
+  assert.equal(beta, null, "Beta must miss the cache entry Alpha just filled, not inherit it");
+});
+
 test('an entry point with no organization refuses to guess once there are several', () => {
   assert.throws(
     () => singleWorkspaceScope('/srv', 'MCP stdio session'),

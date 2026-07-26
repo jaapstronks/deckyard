@@ -204,3 +204,33 @@ test('every facade entry point refuses a bare repoRoot', async () => {
     );
   }
 });
+
+// ─── the read funnels in FRONT of the facade take a scope too ──────────────
+//
+// The short-TTL cache (server/storage/presentation-cache.js) calls
+// getPresentation on the audience hot paths — follow status ticks, interaction
+// state, votes. It kept passing a bare repoRoot after the facade stopped
+// accepting one, which turned every follow-along audience request into a 500.
+// The facade contract above cannot catch that: the cache reaches the facade
+// through a dynamic import, so nothing type-checks the hand-off. These pin it.
+
+const { getPresentationCached } = await import('../server/storage/presentation-cache.js');
+const { followAudienceScope } = await import('../server/routes/api/follow/helpers.js');
+
+test('the presentation cache passes its caller scope through to the facade', async () => {
+  // Resolves to null (no storage, no file) — what matters is that it resolves
+  // at all instead of throwing the scope TypeError at the audience.
+  const pres = await getPresentationCached(followAudienceScope('/srv'), 'deck-1');
+  assert.equal(pres, null);
+});
+
+test('the presentation cache refuses a bare repoRoot, like the facade does', async () => {
+  await assert.rejects(
+    async () => getPresentationCached('/srv', 'deck-1'),
+    /takes a storage scope, not a repoRoot string/
+  );
+});
+
+// The cross-organization half of the cache contract — that organization B is
+// never served the entry read for organization A — needs two organizations with
+// real decks behind them, so it lives in tests/storage-scope-multi-org.test.js.
