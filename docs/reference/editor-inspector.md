@@ -156,7 +156,7 @@ reflects the honest state instead of nagging — `auto (from the heading)` when
 the slide renders a heading (neutral), `custom description ✓` when an override
 is set (force-opens), and `no heading — add a title ⚠` only for the slides that
 actually announce as bare "Slide N of M" (types that render no heading: payoff,
-follow-invite, freeform, quote, image without a title). The heading proxy
+follow-invite, quote, image without a title). The heading proxy
 mirrors what export reads (`readHeadingFromSlideEl` = the first non-empty
 `h1/h2/h3`): the fields `title`, `question` (poll/likert/likert-slider) and
 `leftTitle`/`rightTitle` (comparison). A `content.title`-only proxy would
@@ -273,11 +273,11 @@ chart-config block, per chart type, in inspector AND bulk); end
 on the bulk modal stays accepted: kpi metric subfields (delta/note), table
 row cell ops (column add/remove), content-columns numbered texts,
 text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
-(code editors are the bulk surface by design), freeform `elements[]` (own
-canvas editor). Deprecated/hidden fields (card-stack `card{n}Label`) need
+(code editors are the bulk surface by design). Deprecated/hidden fields
+(card-stack `card{n}Label`) need
 no surface.
 
-Method: scripted walk of all 39 core types' `SLIDE_TYPES[type].fields`
+Method: scripted walk of all 38 core types' `SLIDE_TYPES[type].fields`
 against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
 descriptors), then hand-reviewed. Every schema field of every type is
 classified below; **no orphans found**.
@@ -298,12 +298,11 @@ Column semantics:
   icons, URLs-as-config, focus points, chart config, code, Background,
   Accessibility).
 
-Shared by **all 39 types**, not repeated per row: `slideBgImage`,
+Shared by **all 38 types**, not repeated per row: `slideBgImage`,
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`,
 `slideLogo` (Background section) and `a11yTitle`, `a11ySummary`
-(Accessibility) → **inspector keeps**. The per-type `background` enum and
-freeform's `bgCustomColor` also render in the Background section →
-**inspector keeps**.
+(Accessibility) → **inspector keeps**. The per-type `background` enum also
+renders in the Background section → **inspector keeps**.
 
 Legacy numbered aliases (team-cards `card{n}*`, logo-wall `logo{n}*`,
 icon-card-grid `card{n}*`, text-blocks `row{n}*`, process `steps`, funnel
@@ -349,7 +348,6 @@ homed. Not listed per row.
 | pyramid | title, subheading, bottomSubheading; levels[] (label/text, full) | - | - | |
 | cycle | title, subheading, bottomSubheading, centerLabel; items[] (label/text, full) | - | - | |
 | gallery | title, subheading, bottomSubheading; images[] popover (src/alt) + caption inline + add/remove/reorder | images[] cards (per-image focusX/Y) | layout | |
-| freeform | - | elements[] via the dedicated freeform canvas editor | snapToGrid | freeform has its own editing surface; bulk modal renders the raw items as fallback |
 | custom-html | - | html, css (code editors, capability-gated) | - | |
 | end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
 

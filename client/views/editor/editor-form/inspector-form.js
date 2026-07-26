@@ -122,7 +122,6 @@ const INSPECTOR_KEEPS = {
   'pyramid-slide': [],
   'cycle-slide': [],
   'gallery-slide': ['layout'],
-  'freeform-slide': ['snapToGrid'],
   'custom-html-slide': [],
   // Contact/social URLs and labels have no canvas surface (the canvas
   // inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).

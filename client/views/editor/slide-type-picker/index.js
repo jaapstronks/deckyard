@@ -777,8 +777,6 @@ export function createSlideTypePicker({
     const layoutDefs = [
       { type: 'text-blocks-slide' },
       { type: 'icon-card-grid-slide' },
-      // freeform-slide archived (deprecated): filtered out by allowed() anyway,
-      // dropped here to keep the curated list honest.
       { type: 'process-slide' },
       { type: 'timeline-slide' },
     ];

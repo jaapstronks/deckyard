@@ -13,6 +13,10 @@ Slide types are the canonical source of truth for:
 
 Custom slide types are loaded automatically at startup and merged with core types. The `custom/slide-types/` directory is **gitignored**, so your custom slides won't be overwritten when you update from upstream.
 
+Taking a type back *out* is the harder direction and has its own checklist:
+`docs/reference/slide-type-removal.md` (deprecation ladder, the deck scan, and
+every place a type name is currently duplicated).
+
 ### Type identity, namespaces & overriding core
 
 Every slide type has a canonical identity of the form `namespace/name[@version]`

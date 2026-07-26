@@ -1,7 +1,6 @@
 import cardStackSlide from './types/card-stack-slide.js';
 import chapterTitleSlide from './types/chapter-title-slide.js';
 import contentSlide from './types/content-slide.js';
-import freeformSlide from './types/freeform-slide.js';
 import iconCardGridSlide from './types/icon-card-grid-slide.js';
 import imageSlide from './types/image-slide.js';
 import imageTextSlide from './types/image-text-slide.js';
@@ -228,7 +227,6 @@ const CORE_SLIDE_TYPES = {
   'pyramid-slide': pyramidSlide,
   'cycle-slide': cycleSlide,
   'gallery-slide': gallerySlide,
-  'freeform-slide': freeformSlide,
   'custom-html-slide': customHtmlSlide,
   'end-slide': endSlide,
 };

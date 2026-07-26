@@ -302,7 +302,6 @@ export function buildSlideTypesPrompt({
     'follow-invite-slide',        // app-managed
     'card-stack-slide',           // deprecated — use icon-card-grid-slide
     'split-partner-title-slide',  // archived (deprecated)
-    'freeform-slide',             // archived (deprecated) — no longer authorable
     'content-columns-slide',      // archived (deprecated) — no longer authorable
     'lead-capture-slide',         // parked (deprecated) — pending cookie-consent wiring
     'lijstje-slide',              // alias for list-slide (avoid duplicate entry)

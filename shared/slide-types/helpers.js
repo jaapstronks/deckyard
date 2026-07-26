@@ -668,7 +668,7 @@ export function imagePlaceholderInnerHtml(label) {
  * @param {string} [options.className] - Type modifier, e.g. `quote-portrait`.
  * @param {string} [options.label] - Localised label; omit for icon-only.
  * @param {number|string} [options.index] - `data-inline-photo` value. Omit to
- *   leave the attribute off entirely (freeform uses its own hooks).
+ *   leave the attribute off entirely (types with their own hooks).
  * @param {boolean} [options.compact] - Small slot: shrink the glyph, drop the
  *   label. For round portraits and logo cells, where a label cannot fit.
  * @param {string} [options.attrs] - Extra pre-rendered attributes.
