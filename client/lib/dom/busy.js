@@ -123,14 +123,3 @@ export function createBusyManager(options = {}) {
     run,
   };
 }
-
-/**
- * Create a simple busy manager for common patterns.
- * Shorthand for the most common use case.
- *
- * @param  {...HTMLElement} elements - Elements to disable when busy
- * @returns {Object} Busy manager
- */
-export function simpleBusyManager(...elements) {
-  return createBusyManager({ elements });
-}
