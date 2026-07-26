@@ -1,4 +1,4 @@
-import { getPuppeteerBrowser } from './puppeteer-browser.js';
+import { getPuppeteerBrowser, toNodeBuffer } from './puppeteer-browser.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 
 export async function renderSandboxOgImagePng() {
@@ -118,7 +118,7 @@ export async function renderSandboxOgImagePng() {
 
     await page.setContent(html, { waitUntil: 'load' });
     const buf = await page.screenshot({ type: 'png', fullPage: false });
-    return buf;
+    return toNodeBuffer(buf);
   } finally {
     try {
       await page.close();

@@ -1,6 +1,6 @@
 /* global document */ // page.evaluate() callbacks below run in the browser context.
 import { renderSlideHtml } from '../utils/render-slide.js';
-import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
+import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import {
   escapeHtml,
@@ -110,7 +110,7 @@ export async function renderSlideToPngBuffer(
       type: 'png',
       fullPage: false,
     });
-    return buf;
+    return toNodeBuffer(buf);
   } finally {
     try {
       await page.close();

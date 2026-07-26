@@ -19,5 +19,23 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # The export chain (PDF, PNG, PPTX, deck thumbnails, sandbox OG image)
+      # drives headless Chrome, and puppeteer-core deliberately ships without a
+      # browser — which is exactly why that chain went untested for so long.
+      # Install the Chrome build the installed puppeteer-core pins, so a
+      # puppeteer bump is exercised against the browser it expects. That
+      # pairing is what tests/export-chrome-smoke.test.js guards.
+      # Rationale and alternatives: docs/developer/export-smoke-test.md.
+      - name: Install Chrome for the export smoke test
+        run: |
+          set -euo pipefail
+          CHROME_VERSION="$(node -e "import('puppeteer-core').then(m => console.log(m.PUPPETEER_REVISIONS.chrome))")"
+          echo "Installing Chrome $CHROME_VERSION (pinned by puppeteer-core)"
+          # @puppeteer/browsers ships as a puppeteer-core dependency, so this
+          # needs no extra package and no third-party action.
+          INSTALL_LOG="$(npx --no-install @puppeteer/browsers install "chrome@$CHROME_VERSION" --path "$RUNNER_TEMP/chrome")"
+          CHROME_PATH="$(printf '%s\n' "$INSTALL_LOG" | tail -n1 | cut -d' ' -f2-)"
+          test -x "$CHROME_PATH"
+          echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - run: npm run lint
       - run: npm test
