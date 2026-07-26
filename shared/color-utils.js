@@ -69,15 +69,22 @@ export function getContrastRatio(color1, color2) {
 }
 
 /**
- * Pick the readable text colour (the light or dark pole) for a background,
- * using the WCAG luminance midpoint: light text on dark backgrounds and vice
- * versa.
+ * Pick the readable text colour (the light or dark pole) for a background, by
+ * measuring both poles with {@link getContrastRatio} and returning the winner.
+ *
+ * This deliberately does *not* split on a luminance midpoint. A midpoint picks
+ * the pole that looks logical rather than the pole that actually reads: white
+ * on `#a78bfa` scores 2.72:1 where the dark pole scores 5.92:1, and both sides
+ * of a midpoint split can land under WCAG AA (4.5:1) without anything flagging
+ * it. Because contrast is not symmetric around L=0.5, the crossover sits near
+ * L≈0.21 for the default poles — so mid-light backgrounds now get dark text.
+ *
+ * Ties go to the dark pole, matching the unparseable fallback.
  * @param {string} bgHex
  * @param {{light?: string, dark?: string}} [poles]
  * @returns {string} the light or dark pole (dark when bgHex is unparseable)
  */
 export function pickTextColorForBg(bgHex, { light = '#ffffff', dark = '#212121' } = {}) {
-  const rgb = hexToRgb(bgHex);
-  if (!rgb) return dark;
-  return getRelativeLuminance(rgb) < 0.5 ? light : dark;
+  if (!hexToRgb(bgHex)) return dark;
+  return getContrastRatio(bgHex, light) > getContrastRatio(bgHex, dark) ? light : dark;
 }
