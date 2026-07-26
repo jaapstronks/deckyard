@@ -1,5 +1,5 @@
 /* global window */ // page.evaluate() callbacks below run in the browser context.
-import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
+import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
 
 /**
  * Convert a PDF file (as a data URL or buffer) to an array of PNG image buffers.
@@ -170,7 +170,7 @@ export async function pdfToImages({
 
       results.push({
         page: pageNum,
-        buffer: imageBuffer,
+        buffer: toNodeBuffer(imageBuffer),
       });
     }
 

@@ -1,6 +1,6 @@
 /* global document */ // page.evaluate() callbacks below run in the browser context.
 import { buildSlidesPdfHtml } from '../export/pdf-slides.js';
-import { getPuppeteerBrowser } from '../utils/puppeteer-browser.js';
+import { getPuppeteerBrowser, toNodeBuffer } from '../utils/puppeteer-browser.js';
 
 /** Puppeteer raises a TimeoutError (name === 'TimeoutError') on timeout. */
 function isTimeoutError(err) {
@@ -71,7 +71,7 @@ export async function renderSlidesToPdfBuffer(
         left: '0',
       },
     });
-    return buf;
+    return toNodeBuffer(buf);
   } finally {
     try {
       await page.close();

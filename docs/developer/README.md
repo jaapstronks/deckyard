@@ -8,6 +8,7 @@ This section is for developers working on the codebase.
 - **Architecture overview**: `docs/developer/architecture.md`
 - **Contributing guide**: `docs/developer/contributing.md`
 - **Linting**: `docs/developer/linting.md` - the CI gate, the suppressions burndown, and the dead-code discovery pass
+- **Export smoke test**: `docs/developer/export-smoke-test.md` - the one test that starts real Chrome, and how CI gets a browser
 
 ### API Development
 
