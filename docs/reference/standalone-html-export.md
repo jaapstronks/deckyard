@@ -9,6 +9,50 @@ The design goal for the downloaded file is **works offline**: opening it from
 disk, with no server to resolve app-relative URLs, must still render the deck
 exactly as published.
 
+## URL parameters
+
+The runtime reads its options from the URL, so **one exported file serves every
+case** — full-page at `/p/`, chrome-less in an iframe, kiosk loop on a screen —
+without re-exporting. They apply to the downloaded `.html` and to `/p/` alike.
+
+| Param | Values | Effect |
+|-------|--------|--------|
+| `ui` | `min` | Hide the topbar and the control row; the scaled stage fills the frame. Anything else is the default chrome. |
+| `loop` | `1`/`0` (also `true`/`false`, `on`/`off`, `yes`/`no`) | Autoplay and restart at the end. Overrides the deck's auto-advance setting. |
+| `autoplay` | same | Autoplay without looping at the end. |
+| `interval` | `1`–`300` | Seconds per slide; overrides per-slide and deck defaults. |
+
+The `#slide=N` hash deep-links to a slide and is kept in sync while navigating;
+it combines with the params above (`?ui=min#slide=2`).
+
+### `ui=min`
+
+Same name and meaning as `buildEmbedHtml`'s `ui` option, so the two runtimes
+share one vocabulary. It exists because `/p/` pages get iframed: with the chrome
+in place a host page cannot size the frame by aspect ratio (it has to add a
+fixed chrome height, which silently rots), and below ~400px wide the topbar and
+the buttons each wrap to two lines and squeeze the slide to a strip.
+
+It is CSS only — `?ui` is parsed by a small script at the top of `<body>` (before
+the shell renders, so no chrome flashes) which puts `.ui-min` on `<html>`. The
+chrome stays in the DOM, which is why:
+
+- **keyboard navigation and fullscreen keep working** (arrows/space/Home/End,
+  `F`, `Esc`) — with the buttons gone they are the whole interaction surface;
+- **`#srStatus` still announces** "Slide 3 of 9: <title>" on every change, so
+  dropping the visible counter costs no accessibility;
+- the deck's own auto-advance/loop runtime is unaffected.
+
+Two deliberate choices about what "min" keeps:
+
+- **The 3px progress fill stays**, absolutely positioned so it adds no layout
+  height. A reader in an iframe still benefits from seeing there are nine
+  slides; it is not interactive and cannot wrap, and keeping the frame exactly
+  16:9 is the point of the mode.
+- **The slide counter and the loop bar go.** The counter is the part that wraps
+  at narrow widths and the host page can render its own; the loop bar is an
+  operator control, not reader information.
+
 ## What gets inlined
 
 Everything the page needs is embedded into the one HTML file:

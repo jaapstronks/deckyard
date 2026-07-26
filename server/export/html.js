@@ -227,9 +227,61 @@ ${css.wmCss}
         margin-bottom: 0;
         white-space: nowrap;
       }
+
+      /* ?ui=min — embed-shaped chrome. The topbar and the control row go away
+         and their grid rows collapse to 0, so the scaled stage is the whole
+         frame and a host page can size the iframe with aspect-ratio: 16 / 9
+         alone (no "chrome height" constant to keep in sync). What remains is
+         the 3px progress fill, absolutely positioned so it costs no layout
+         height: it is the only cue that the deck has more slides, it is not
+         interactive, and it cannot wrap. The slide counter is dropped from
+         view but still announced through #srStatus.
+         Keyboard nav (arrows/space/Home/End) and F for fullscreen are
+         untouched — with the buttons gone they are the interaction surface. */
+      html.ui-min .presenter-shell {
+        --presenter-topbar-height: 0px;
+        --presenter-progress-height: 0px;
+      }
+      html.ui-min .presenter-topbar,
+      html.ui-min .ps-standalone-progress-row,
+      html.ui-min .ps-standalone-loop-bar {
+        display: none;
+      }
+      html.ui-min .presenter-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 60;
+        padding: 0;
+        background: transparent;
+        border-top: none;
+        backdrop-filter: none;
+        pointer-events: none;
+      }
+      html.ui-min .presenter-progress-bar {
+        height: 3px;
+        border-radius: 0;
+        background: transparent;
+      }
     </style>
   </head>
   <body class="export-body">
+    <script>
+      // ?ui=min: hide the presenter chrome (see the .ui-min rules above). Read
+      // before the shell renders so an embedded deck never flashes a topbar it
+      // is about to drop. Same param name and meaning as buildEmbedHtml's ui
+      // option, so the two runtimes keep one vocabulary.
+      (function () {
+        var ui = 'default';
+        try {
+          var raw = new URLSearchParams(location.search).get('ui');
+          if (String(raw || '').toLowerCase().trim() === 'min') ui = 'min';
+        } catch (e) {}
+        window.__DECK_UI__ = ui;
+        if (ui === 'min') document.documentElement.classList.add('ui-min');
+      })();
+    </script>
     <a class="skip-link" href="#deck">Skip to slides</a>
     <div class="presenter-shell">
       <header class="presenter-topbar">
@@ -453,6 +505,7 @@ ${css.wmCss}
         // Auto-advance / loop runtime — driven by deck settings, URL params override.
         // URL params: ?loop=1|0 (autoplay + loop at end), ?autoplay=1|0 (autoplay only),
         // ?interval=N (seconds per slide, 1–300; overrides per-slide + deck defaults).
+        // (?ui=min is handled by the inline script at the top of <body>.)
         (function setupAutoLoop() {
           const cfg = window.__DECK_AUTO_ADVANCE__ || {};
           const baseEnabled = !!cfg.enabled;
