@@ -13,10 +13,18 @@
  * `{ ok: false }` and the caller should leave the theme default untouched.
  */
 
-import { hexToRgb, getRelativeLuminance } from '../theme/color-utils.js';
+import {
+  hexToRgb,
+  getRelativeLuminance,
+  contrastRatioFromLuminance,
+} from '../theme/color-utils.js';
+import { WCAG_THRESHOLDS } from '../../../shared/contrast.js';
 
 const SAMPLE_SIZE = 32; // downscaled sampling canvas edge, px
-const CONTRAST_TARGET = 3.0; // per-pixel pass threshold for large/title text (WCAG AA)
+// Per-pixel pass threshold. Titles over a background image are large text, so
+// the large-text AA bar applies — taken from the shared threshold table rather
+// than restated here, so it sits next to the 4.5 that body text needs.
+const CONTRAST_TARGET = WCAG_THRESHOLDS.large.aa;
 // Fraction of the title region that may fail the chosen colour before we
 // recommend a scrim. Above this the image is "busy" (mixed light+dark), where
 // no single flat text colour reads everywhere and an overlay is warranted.
@@ -84,8 +92,8 @@ export async function detectBgTextContrast(
     const a = data[i + 3] / 255;
     if (a === 0) continue;
     const lPx = getRelativeLuminance({ r: data[i], g: data[i + 1], b: data[i + 2] });
-    if (contrast(lLight, lPx) < CONTRAST_TARGET) failLight += a;
-    if (contrast(lDark, lPx) < CONTRAST_TARGET) failDark += a;
+    if (contrastRatioFromLuminance(lLight, lPx) < CONTRAST_TARGET) failLight += a;
+    if (contrastRatioFromLuminance(lDark, lPx) < CONTRAST_TARGET) failDark += a;
     total += a;
   }
   if (total === 0) return { ok: false };
@@ -106,13 +114,6 @@ export async function detectBgTextContrast(
 function candidateLuminance(hex, fallback) {
   const rgb = hexToRgb(hex) || hexToRgb(fallback);
   return getRelativeLuminance(rgb);
-}
-
-// WCAG contrast ratio from two relative luminances.
-function contrast(l1, l2) {
-  const hi = Math.max(l1, l2);
-  const lo = Math.min(l1, l2);
-  return (hi + 0.05) / (lo + 0.05);
 }
 
 function loadImage(url) {

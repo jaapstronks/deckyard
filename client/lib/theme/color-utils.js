@@ -12,10 +12,16 @@ import {
   hexToRgb,
   getRelativeLuminance,
   getContrastRatio,
+  contrastRatioFromLuminance,
   pickTextColorForBg,
 } from '../../../shared/color-utils.js';
 
-export { hexToRgb, getRelativeLuminance, getContrastRatio };
+export {
+  hexToRgb,
+  getRelativeLuminance,
+  getContrastRatio,
+  contrastRatioFromLuminance,
+};
 
 /**
  * Convert RGB to hex color.
