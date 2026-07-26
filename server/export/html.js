@@ -5,7 +5,11 @@ import {
   escapeHtml,
   embedImgSrcDataUrls,
 } from '../utils/html-utils.js';
-import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
+import {
+  buildPrismKatexCdnTags,
+  buildPrismKatexInitScript,
+  detectPrismKatexNeeds,
+} from '../utils/prism-katex.js';
 import { loadExportCssBundle, embedSlideImages } from './css-bundle.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
 import { getSlideEffectiveDuration, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../shared/slide-timing.js';
@@ -121,6 +125,13 @@ export async function buildStandaloneHtml(
   const extraHead = String(headHtml || '');
   const extraTopbar = String(topbarRightHtml || '');
 
+  // Prism/KaTeX are the only third-party CDN requests this page can make, so
+  // they are emitted only when the rendered slides actually contain a code
+  // block or math — and Prism only loads the language packs this deck uses.
+  // A deck with neither loads nothing from a CDN at all, which is the point:
+  // the same builder serves every published /p/ page, not just downloads.
+  const highlightNeeds = detectPrismKatexNeeds(slidesHtml);
+
   return `<!doctype html>
 <html lang="${escapeHtml(docLang)}" dir="${escapeHtml(docDir)}">
   <head>
@@ -131,8 +142,7 @@ export async function buildStandaloneHtml(
     ${extraHead}
     ${externalFontCssLinks}
     ${externalFontScripts}
-    <script src="https://assets.mediadelivery.net/playerjs/player-0.1.0.min.js" data-bunny-playerjs="1"></script>
-    ${buildPrismKatexCdnTags()}
+    ${buildPrismKatexCdnTags(highlightNeeds)}
     <style>
 ${css.fontCss}
 ${appCss}
@@ -275,7 +285,9 @@ ${css.wmCss}
         const BASE_W = 1600;
         const BASE_H = 900;
 
-        // Bunny Stream Player.js support (for video-slide embeds)
+        // Bunny Stream Player.js support (for video-slide embeds). This lazy
+        // loader is the only thing that fetches player.js: a deck without a
+        // Bunny video never touches assets.mediadelivery.net.
         let bunnyPlayerJsPromise = null;
         function ensureBunnyPlayerJs() {
           if (window.playerjs && window.playerjs.Player) return Promise.resolve();
@@ -589,7 +601,7 @@ ${css.wmCss}
           else updateButton();
         })();
 
-        ${buildPrismKatexInitScript()}
+        ${buildPrismKatexInitScript(highlightNeeds)}
 
         // Lead capture form handling
         function initLeadCaptureForms() {
