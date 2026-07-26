@@ -66,10 +66,12 @@ it's MAJOR (during beta: MINOR with a breaking note — see above).
 Two things this list deliberately does *not* make breaking:
 
 - **Retiring a slide type nobody stored.** A deck that carries the removed type
-  still loads; the slide falls back to the unknown-type placeholder. That is a
-  degraded render, not a load failure, and `scripts/scan-slide-type.js` is how
-  you check the deck population before removing. This is what the `freeform-slide`
-  removal (#377) was, and it should not have carried a `BREAKING CHANGE:` trailer.
+  still loads; the slide falls back to the archived-slide placeholder, which
+  names the retired type, points at its successor and keeps the stored content
+  readable (`shared/slide-types/unresolved.js`). That is a degraded render, not a
+  load failure, and `scripts/scan-slide-type.js` is how you check the deck
+  population before removing. This is what the `freeform-slide` removal (#377)
+  was, and it should not have carried a `BREAKING CHANGE:` trailer.
 - **Moving or splitting an internal module.** Deckyard has no published JS package
   surface; `client/` and `server/` internals are not a contract. A fork that
   patched a specific file has to reconcile — that is what forking costs, and it is

@@ -718,6 +718,8 @@
   "editor.slide.aiIterate.reverted": "Wijziging teruggedraaid.",
   "editor.slide.aiIterate.title": "Gebruik AI om deze slide te verfijnen",
   "editor.slide.aiIterate.undo": "Ongedaan maken",
+  "editor.slide.archivedType": "Gearchiveerd slidetype",
+  "editor.slide.unavailableType": "Niet-beschikbaar slidetype",
   "editor.slide.aiReasoning": "AI-onderbouwing van het type",
   "editor.slide.aiWarningItem": "\\u26A0\\uFE0F {warning}",
   "editor.slide.altText": "Alt-tekst",
