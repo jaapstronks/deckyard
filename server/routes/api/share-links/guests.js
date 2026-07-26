@@ -36,7 +36,7 @@ async function getCollabPermission(pres, authedUser, ctx) {
 /**
  * Handle guest management endpoints.
  */
-export async function handleGuestManagement({ repoRoot, req, res, url, authedUser }) {
+export async function handleGuestManagement({ repoRoot, storageScope, req, res, url, authedUser }) {
   const ctx = createRouteContext(authedUser);
 
   // Match /api/presentations/:id/share-links/:linkId/guests
@@ -48,7 +48,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
   if (guestsMatch && req.method === 'POST') {
     const presentationId = guestsMatch[1];
     const linkId = guestsMatch[2];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -120,7 +120,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
   if (guestsMatch && req.method === 'GET') {
     const presentationId = guestsMatch[1];
     const linkId = guestsMatch[2];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -141,7 +141,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
   if (guestMatch && req.method === 'DELETE') {
     const presentationId = guestMatch[1];
     const guestId = guestMatch[3];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -167,7 +167,7 @@ export async function handleGuestManagement({ repoRoot, req, res, url, authedUse
     const presentationId = resendMatch[1];
     const linkId = resendMatch[2];
     const guestId = resendMatch[3];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {

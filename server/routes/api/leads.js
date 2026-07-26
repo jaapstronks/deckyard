@@ -24,6 +24,7 @@ import {
 import { maybeFireLeadWebhook } from '../../utils/webhooks.js';
 import { maybeSendLeadNotification } from '../../integrations/email/senders-leads.js';
 import crypto from 'node:crypto';
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 // Rate limits for public lead submission.
 // Token bucket: capacity = burst, refillPerSec = sustained rate. The limiter
@@ -82,8 +83,12 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
       return badRequest(res, 'Consent is required'), true;
     }
 
-    // Verify presentation exists
-    const pres = await getPresentation(repoRoot, presentationId);
+    // Verify presentation exists. Lead capture happens on a published deck, so
+    // the viewer has no session and the deck must not be organization-filtered.
+    const pres = await getPresentation(
+      crossOrganizationScope(repoRoot, 'lead capture from a published deck'),
+      presentationId
+    );
     if (!pres) {
       return notFound(res), true;
     }
@@ -209,9 +214,9 @@ export async function handleLeads(ctx) {
 // ============================================================
 
 async function handleGetLeads(ctx, presentationId) {
-  const { repoRoot, res, url, authedUser } = ctx;
+  const { storageScope, res, url, authedUser } = ctx;
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     return notFound(res), true;
   }
@@ -248,9 +253,9 @@ async function handleGetLeads(ctx, presentationId) {
 }
 
 async function handleGetLeadCount(ctx, presentationId) {
-  const { repoRoot, res, authedUser } = ctx;
+  const { storageScope, res, authedUser } = ctx;
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     return notFound(res), true;
   }
@@ -273,9 +278,9 @@ async function handleGetLeadCount(ctx, presentationId) {
 }
 
 async function handleExportLeads(ctx, presentationId) {
-  const { repoRoot, res, url, authedUser } = ctx;
+  const { storageScope, res, url, authedUser } = ctx;
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(storageScope, presentationId);
   if (!pres) {
     return notFound(res), true;
   }
@@ -303,7 +308,7 @@ async function handleExportLeads(ctx, presentationId) {
 }
 
 async function handleDeleteLead(ctx, leadId) {
-  const { repoRoot, res, authedUser } = ctx;
+  const { storageScope, res, authedUser } = ctx;
 
   // Get the lead first to check permissions
   const lead = await getLeadById(leadId);
@@ -312,7 +317,7 @@ async function handleDeleteLead(ctx, leadId) {
   }
 
   // Get the presentation to check permissions
-  const pres = await getPresentation(repoRoot, lead.presentationId);
+  const pres = await getPresentation(storageScope, lead.presentationId);
   if (!pres) {
     return notFound(res), true;
   }

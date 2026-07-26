@@ -27,6 +27,9 @@ export async function transferPresentationOwnership(
   options,
   ctx
 ) {
+  // The caller's storage context already states the organization; the repo root
+  // only matters for the file-backed fallback.
+  const scope = { ...ctx, repoRoot };
   const newOwnerEmail = normalizeEmail(options?.newOwnerEmail);
   const previousOwnerEmail = normalizeEmail(options?.previousOwnerEmail);
   const keepAsCollaborator = options?.keepAsCollaborator !== false;
@@ -37,7 +40,7 @@ export async function transferPresentationOwnership(
   }
 
   // Get current presentation
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(scope, presentationId);
   if (!pres) {
     return { ok: false, reason: 'not_found' };
   }
@@ -49,7 +52,7 @@ export async function transferPresentationOwnership(
 
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, updates, {
+    updated = await updatePresentation(scope, presentationId, updates, {
       actorEmail,
       reason: 'ownership_transfer',
     });

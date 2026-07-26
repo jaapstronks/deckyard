@@ -17,7 +17,7 @@ import {
  * selection (for testing/comparison against the v1 wizard).
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiWizardV2({ repoRoot, req, res, authedUser }) {
+export async function handleAiWizardV2({ repoRoot, storageScope, req, res, authedUser }) {
   const body = await json(req);
   const {
     raw,
@@ -56,7 +56,7 @@ export async function handleAiWizardV2({ repoRoot, req, res, authedUser }) {
     const parts = deckToPresentationParts(deck);
     reattachAiMeta(parts.slides, deck.slides);
 
-    const updated = await createPresentationWithI18n(repoRoot, {
+    const updated = await createPresentationWithI18n(storageScope, {
       parts,
       lang,
       authedUser,

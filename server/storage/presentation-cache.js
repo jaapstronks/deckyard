@@ -9,14 +9,27 @@
  * write path that misses invalidation.
  */
 
+import { repoRootOf } from './scope.js';
+
 const TTL_MS = 2000;
 const MAX_ENTRIES = 200;
 
 /** @type {Map<string, { at: number, promise: Promise<any> }>} */
 const cache = new Map();
 
-function cacheKey(repoRoot, id) {
-  return `${String(repoRoot || '')}\n${String(id || '')}`;
+/**
+ * Key an entry by the scope it was read under, not just by repo root.
+ *
+ * Two organizations can hold decks with the same id, so an entry read in one
+ * must not be served to the other — that would reintroduce, in the cache, the
+ * cross-organization read the scope contract exists to prevent. Entries read
+ * cross-organization (a published deck, a live follow code) share one bucket:
+ * there the id came out of a globally unique token, so it addresses exactly one
+ * deck by construction.
+ */
+function cacheKey(scope, id) {
+  const org = scope?.organizationId || `cross:${scope?.crossOrganization || ''}`;
+  return `${org}\n${String(repoRootOf(scope) || '')}\n${String(id || '')}`;
 }
 
 function sweep(nowTs) {
@@ -29,19 +42,25 @@ function sweep(nowTs) {
 /**
  * Get a presentation through the short-TTL cache.
  * Concurrent callers share a single in-flight load.
- * @param {string} repoRoot
+ *
+ * Takes the same storage scope the facade takes (see server/storage/scope.js)
+ * rather than a bare repo root: this is a read funnel in front of
+ * `getPresentation`, so it must state which organization it reads in for the
+ * same reason the facade does.
+ *
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<any>}
  */
-export async function getPresentationCached(repoRoot, id) {
-  const key = cacheKey(repoRoot, id);
+export async function getPresentationCached(scope, id) {
+  const key = cacheKey(scope, id);
   const nowTs = Date.now();
   const hit = cache.get(key);
   if (hit && nowTs - hit.at < TTL_MS) return hit.promise;
   // Dynamic import keeps this module free of a static cycle with the facade,
   // which imports invalidatePresentationCache from here.
   const promise = import('./presentations.js')
-    .then((mod) => mod.getPresentation(repoRoot, id))
+    .then((mod) => mod.getPresentation(scope, id))
     .catch((err) => {
       cache.delete(key);
       throw err;

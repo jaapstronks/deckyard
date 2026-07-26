@@ -64,7 +64,7 @@ function pickSlidesForPrompt(slides) {
 }
 
 export async function handlePresentationDescriptionGenerate(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -74,7 +74,7 @@ export async function handlePresentationDescriptionGenerate(
   const body = await json(req);
   const vendor = getOptionalString(body, 'vendor');
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
   if (!canReadPresentation({ user: authedUser, pres })) return unauthorized(res);
 

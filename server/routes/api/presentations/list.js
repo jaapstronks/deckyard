@@ -31,8 +31,8 @@ export function belongsInCollection({ user, pres } = {}) {
   return false;
 }
 
-export async function handlePresentationsList({ repoRoot, res, authedUser } = {}) {
-  const list = await listPresentations(repoRoot);
+export async function handlePresentationsList({ repoRoot, storageScope, res, authedUser } = {}) {
+  const list = await listPresentations(storageScope);
   // Filter to show only the user's own presentations + workspace presentations.
   // Admin status doesn't change what appears in their collection.
   const filtered = authedUser

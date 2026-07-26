@@ -28,6 +28,7 @@ import path from 'node:path';
 import { McpServer } from '../../server/mcp/protocol.js';
 import { registerTools } from '../../server/mcp/tools.js';
 import { repoRoot } from '../../server/config/paths.js';
+import { testScope } from '../helpers/storage-scope.js';
 import {
   createPresentation,
   getPresentation,
@@ -49,7 +50,7 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
     server.tools.get(name).handler(args, ownerEmail ? { ownerEmail } : undefined);
 
   /** Fresh read of the stored deck (bypasses any stale in-memory copies). */
-  const loadStored = () => getPresentation(repoRoot, deckId);
+  const loadStored = () => getPresentation(testScope(repoRoot), deckId);
 
   before(async () => {
     tempDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-slide-lock-test-'));
@@ -58,7 +59,7 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
     server = new McpServer();
     registerTools(server, {});
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(testScope(repoRoot), {
       title: 'MCP lock deck',
       ownerEmail: OWNER,
       lang: 'nl',
@@ -67,7 +68,7 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
 
     // Workspace scope so the non-author has write access and reaches the
     // slide-lock policy instead of failing the per-deck access check.
-    await updatePresentation(repoRoot, deckId, {
+    await updatePresentation(testScope(repoRoot), deckId, {
       ...created,
       scope: 'workspace',
     }, { allowScopeChange: true, actorEmail: OWNER });
@@ -86,7 +87,7 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
       { ...structuredClone(base), id: LOCKED_ID, lockedByAuthor: true },
       { ...structuredClone(base), id: FREE_ID, lockedByAuthor: false },
     ];
-    await updatePresentation(repoRoot, deckId, doc, { actorEmail: OWNER });
+    await updatePresentation(testScope(repoRoot), deckId, doc, { actorEmail: OWNER });
   });
 
   it('lets the author edit their own author-locked slide (the PR #27 follow-up)', async () => {

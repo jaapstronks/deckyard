@@ -75,7 +75,7 @@ async function checkCommentDeleteAccess({ req, authedUser, pres, comment }) {
  * Supports both authenticated users and verified guests with share link access.
  */
 export async function handlePresentationCommentsCreate(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -183,13 +183,13 @@ export async function handlePresentationCommentsCreate(
  * Supports both authenticated users and verified guests editing their own comments.
  */
 export async function handlePresentationCommentUpdate(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);
@@ -255,13 +255,13 @@ export async function handlePresentationCommentUpdate(
  * Supports both authenticated users and verified guests deleting their own comments.
  */
 export async function handlePresentationCommentDelete(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
   if (req.method !== 'DELETE') return methodNotAllowed(res, ['DELETE']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res, 'Presentation not found');
 
   const ctx = getCtx(authedUser);

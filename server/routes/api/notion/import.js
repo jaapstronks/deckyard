@@ -24,7 +24,7 @@ const log = createLogger('import');
  * Import from Notion: convert a Notion page to a full presentation.
  * Uses the same AI pipeline as file conversion.
  */
-export async function handleNotionImport({ req, res, url, authedUser, repoRoot }) {
+export async function handleNotionImport({ req, res, url, authedUser, repoRoot, storageScope }) {
   if (url.pathname !== '/api/notion/import' || req.method !== 'POST') {
     return false;
   }
@@ -74,7 +74,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
     const parts = deckToPresentationParts(deck);
     const effectiveLang = deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
       theme,
       ownerEmail: authedUser?.email || null,
@@ -86,8 +86,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
       },
     });
 
-    const updated = await updatePresentation(
-      repoRoot,
+    const updated = await updatePresentation(storageScope,
       created.id,
       {
         ...created,
@@ -121,7 +120,7 @@ export async function handleNotionImport({ req, res, url, authedUser, repoRoot }
  * Handle POST /api/notion/import/stream
  * Streaming import from Notion: provides real-time status updates via SSE.
  */
-export async function handleNotionImportStream({ req, res, url, authedUser, repoRoot }) {
+export async function handleNotionImportStream({ req, res, url, authedUser, repoRoot, storageScope }) {
   if (url.pathname !== '/api/notion/import/stream' || req.method !== 'POST') {
     return false;
   }
@@ -250,7 +249,7 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
     const parts = deckToPresentationParts(deck);
     const effectiveLang = deck.lang || deck._generationMeta?.effectiveLang || 'nl';
 
-    const created = await createPresentation(repoRoot, {
+    const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
       theme,
       ownerEmail: authedUser?.email || null,
@@ -262,8 +261,7 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
       },
     });
 
-    const updated = await updatePresentation(
-      repoRoot,
+    const updated = await updatePresentation(storageScope,
       created.id,
       {
         ...created,

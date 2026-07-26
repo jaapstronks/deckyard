@@ -18,6 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { loadPresentationChecked } from '../../server/mcp/presentation-access.js';
+import { testScope } from '../helpers/storage-scope.js';
 import {
   createPresentation,
   updatePresentation,
@@ -35,28 +36,28 @@ describe('loadPresentationChecked (file-mode storage)', () => {
   before(async () => {
     tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-authz-test-'));
 
-    const privateDeck = await createPresentation(tempRoot, {
+    const privateDeck = await createPresentation(testScope(tempRoot), {
       title: 'Private deck',
       ownerEmail: OWNER,
     });
     privateId = privateDeck.id;
 
-    const workspaceDeck = await createPresentation(tempRoot, {
+    const workspaceDeck = await createPresentation(testScope(tempRoot), {
       title: 'Workspace deck',
       ownerEmail: OWNER,
     });
     workspaceId = workspaceDeck.id;
-    await updatePresentation(tempRoot, workspaceId, {
+    await updatePresentation(testScope(tempRoot), workspaceId, {
       ...workspaceDeck,
       scope: 'workspace',
     }, { allowScopeChange: true });
 
-    const viewOnlyDeck = await createPresentation(tempRoot, {
+    const viewOnlyDeck = await createPresentation(testScope(tempRoot), {
       title: 'View-only workspace deck',
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
-    await updatePresentation(tempRoot, viewOnlyId, {
+    await updatePresentation(testScope(tempRoot), viewOnlyId, {
       ...viewOnlyDeck,
       scope: 'workspace',
       isViewOnly: true,
@@ -69,61 +70,61 @@ describe('loadPresentationChecked (file-mode storage)', () => {
 
   it('throws "not found" for a nonexistent deck', async () => {
     await assert.rejects(
-      loadPresentationChecked(tempRoot, 'nope-does-not-exist', OWNER),
+      loadPresentationChecked(testScope(tempRoot), 'nope-does-not-exist', OWNER),
       /Presentation not found: nope-does-not-exist/
     );
   });
 
   it('lets the owner read and write their private deck', async () => {
-    const read = await loadPresentationChecked(tempRoot, privateId, OWNER);
+    const read = await loadPresentationChecked(testScope(tempRoot), privateId, OWNER);
     assert.equal(read.id, privateId);
-    const write = await loadPresentationChecked(tempRoot, privateId, OWNER, { access: 'write' });
+    const write = await loadPresentationChecked(testScope(tempRoot), privateId, OWNER, { access: 'write' });
     assert.equal(write.id, privateId);
   });
 
   it('hides a private deck from another user (read), without leaking existence', async () => {
     await assert.rejects(
-      loadPresentationChecked(tempRoot, privateId, OTHER),
+      loadPresentationChecked(testScope(tempRoot), privateId, OTHER),
       /not found or not accessible/
     );
   });
 
   it('blocks another user from writing a private deck', async () => {
     await assert.rejects(
-      loadPresentationChecked(tempRoot, privateId, OTHER, { access: 'write' }),
+      loadPresentationChecked(testScope(tempRoot), privateId, OTHER, { access: 'write' }),
       /not found or not accessible/
     );
   });
 
   it('allows read and write on a workspace deck for any workspace user', async () => {
-    const read = await loadPresentationChecked(tempRoot, workspaceId, OTHER);
+    const read = await loadPresentationChecked(testScope(tempRoot), workspaceId, OTHER);
     assert.equal(read.id, workspaceId);
-    const write = await loadPresentationChecked(tempRoot, workspaceId, OTHER, { access: 'write' });
+    const write = await loadPresentationChecked(testScope(tempRoot), workspaceId, OTHER, { access: 'write' });
     assert.equal(write.id, workspaceId);
   });
 
   it('view-only workspace decks are readable but not writable by non-owners', async () => {
-    const read = await loadPresentationChecked(tempRoot, viewOnlyId, OTHER);
+    const read = await loadPresentationChecked(testScope(tempRoot), viewOnlyId, OTHER);
     assert.equal(read.id, viewOnlyId);
     await assert.rejects(
-      loadPresentationChecked(tempRoot, viewOnlyId, OTHER, { access: 'write' }),
+      loadPresentationChecked(testScope(tempRoot), viewOnlyId, OTHER, { access: 'write' }),
       /read-only access/
     );
   });
 
   it('delete access is owner-only', async () => {
-    const own = await loadPresentationChecked(tempRoot, workspaceId, OWNER, { access: 'delete' });
+    const own = await loadPresentationChecked(testScope(tempRoot), workspaceId, OWNER, { access: 'delete' });
     assert.equal(own.id, workspaceId);
     await assert.rejects(
-      loadPresentationChecked(tempRoot, workspaceId, OTHER, { access: 'delete' }),
+      loadPresentationChecked(testScope(tempRoot), workspaceId, OTHER, { access: 'delete' }),
       /Only the presentation owner can delete it/
     );
   });
 
   it('skips per-deck checks when no owner is configured (trusted local stdio)', async () => {
-    const read = await loadPresentationChecked(tempRoot, privateId, null);
+    const read = await loadPresentationChecked(testScope(tempRoot), privateId, null);
     assert.equal(read.id, privateId);
-    const write = await loadPresentationChecked(tempRoot, privateId, null, { access: 'write' });
+    const write = await loadPresentationChecked(testScope(tempRoot), privateId, null, { access: 'write' });
     assert.equal(write.id, privateId);
   });
 });

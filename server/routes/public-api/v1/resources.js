@@ -23,7 +23,13 @@ async function handleThemes(ctx) {
 
   if (!requireScope(ctx, 'read')) return true;
 
-  const routeCtx = createRouteContext({ email: apiKey.ownerEmail });
+  // A key acts in the organization it belongs to. Building this from the owner
+  // email alone resolved every key against the default organization, which is
+  // wrong for any key issued to a second workspace.
+  const routeCtx = createRouteContext({
+    email: apiKey.ownerEmail,
+    organizationId: apiKey.organizationId,
+  });
 
   // Load system themes from filesystem
   const systemThemeIds = await listThemeIds(repoRoot);

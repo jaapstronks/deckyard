@@ -36,7 +36,7 @@ import { getCtx, broadcastCommentCounts } from './comments-shared.js';
  * POST /api/presentations/:id/comments/:commentId/resolve
  */
 export async function handlePresentationCommentResolve(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
@@ -86,7 +86,7 @@ export async function handlePresentationCommentResolve(
  * POST /api/presentations/:id/comments/:commentId/reopen
  */
 export async function handlePresentationCommentReopen(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
@@ -138,7 +138,7 @@ export async function handlePresentationCommentReopen(
  * Different from resolve - used specifically for AI suggestions the user doesn't want to act on.
  */
 export async function handlePresentationCommentDismiss(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
@@ -183,7 +183,7 @@ export async function handlePresentationCommentDismiss(
  * after the slide referenced by the comment's slideId.
  */
 export async function handlePresentationCommentApply(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId
 ) {
@@ -210,7 +210,7 @@ export async function handlePresentationCommentApply(
   }
 
   // Get the full presentation to modify
-  const fullPres = await getFullPresentation(repoRoot, id);
+  const fullPres = await getFullPresentation(storageScope, id);
   if (!fullPres) return notFound(res, 'Presentation not found');
 
   // Find the slide referenced by the comment
@@ -235,7 +235,7 @@ export async function handlePresentationCommentApply(
 
   // Update the presentation
   fullPres.slides = updatedSlides;
-  await updatePresentation(repoRoot, id, fullPres, ctx);
+  await updatePresentation(storageScope, id, fullPres, ctx);
 
   // Mark the suggestion as resolved
   const resolveResult = await resolveComment(commentId, { email: authedUser?.email }, ctx);
@@ -267,7 +267,7 @@ export async function handlePresentationCommentApply(
  * so the client doesn't need a special guest path.
  */
 export async function handlePresentationCommentsMarkRead(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);

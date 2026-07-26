@@ -18,7 +18,7 @@ import { isMediaProviderInitialized } from '../../media/index.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('publish');
 
-export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
+export async function handlePublish({ repoRoot, storageScope, req, res, url, authedUser }) {
   // Publish (public share link)
   const publishMatch = url.pathname.match(
     /^\/api\/presentations\/([^/]+)\/publish$/
@@ -109,7 +109,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
         modified: entry.modified,
       },
     };
-    const updated = await updatePresentation(repoRoot, id, nextPres, {
+    const updated = await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -149,7 +149,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
 
     const nextPres = { ...pres };
     delete nextPres.published;
-    await updatePresentation(repoRoot, id, nextPres, {
+    await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -194,7 +194,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
         modified: entry.modified,
       },
     };
-    await updatePresentation(repoRoot, id, nextPres, {
+    await updatePresentation(storageScope, id, nextPres, {
       actorEmail: authedUser?.email || null,
     });
 
@@ -282,7 +282,7 @@ export async function handlePublish({ repoRoot, req, res, url, authedUser }) {
           ogImageUrl,
         },
       };
-      await updatePresentation(repoRoot, id, nextPres, {
+      await updatePresentation(storageScope, id, nextPres, {
         actorEmail: authedUser?.email || null,
       });
 

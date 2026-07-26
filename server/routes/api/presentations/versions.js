@@ -29,10 +29,10 @@ import { logError, logDebug } from '../../../utils/logger.js';
 const SESSION_END_THROTTLE_MS = 60 * 1000;
 
 export async function handlePresentationVersions(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -45,7 +45,7 @@ export async function handlePresentationVersions(
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
 
   if (req.method === 'GET') {
-    const versions = await listPresentationVersions(repoRoot, id);
+    const versions = await listPresentationVersions(storageScope, id);
     serveJson(res, 200, versions);
     return true;
   }
@@ -54,7 +54,7 @@ export async function handlePresentationVersions(
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
     const body = await json(req);
     const label = getTrimmedString(body, 'label') || '';
-    const snap = await createPresentationVersion(repoRoot, id, pres, {
+    const snap = await createPresentationVersion(storageScope, id, pres, {
       actorEmail: authedUser?.email || null,
       reason: 'manual',
       label,
@@ -84,7 +84,7 @@ export async function handlePresentationVersions(
  * Returns full version data including presentation for preview/comparison.
  */
 export async function handlePresentationVersionItem(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   versionId
 ) {
@@ -92,7 +92,7 @@ export async function handlePresentationVersionItem(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -106,7 +106,7 @@ export async function handlePresentationVersionItem(
     return unauthorized(res);
   }
 
-  const version = await getPresentationVersion(repoRoot, id, versionId);
+  const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
 
   serveJson(res, 200, {
@@ -128,7 +128,7 @@ export async function handlePresentationVersionItem(
  * Returns the full version as a downloadable JSON file.
  */
 export async function handlePresentationVersionExport(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   versionId
 ) {
@@ -136,7 +136,7 @@ export async function handlePresentationVersionExport(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -150,7 +150,7 @@ export async function handlePresentationVersionExport(
     return unauthorized(res);
   }
 
-  const version = await getPresentationVersion(repoRoot, id, versionId);
+  const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
 
   // Build export data
@@ -189,7 +189,7 @@ export async function handlePresentationVersionExport(
  * Returns an AI-generated summary of differences between current and snapshot.
  */
 export async function handlePresentationVersionCompareAi(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   versionId
 ) {
@@ -204,7 +204,7 @@ export async function handlePresentationVersionCompareAi(
     });
   }
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -218,7 +218,7 @@ export async function handlePresentationVersionCompareAi(
     return unauthorized(res);
   }
 
-  const version = await getPresentationVersion(repoRoot, id, versionId);
+  const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
 
   const currentSlides = pres.slides || [];
@@ -257,14 +257,14 @@ export async function handlePresentationVersionCompareAi(
  * Throttled to prevent duplicate snapshots from rapid beacon delivery.
  */
 export async function handlePresentationSessionEnd(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') {
     return methodNotAllowed(res, ['POST']);
   }
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -281,7 +281,7 @@ export async function handlePresentationSessionEnd(
   try {
     // Throttle check: skip if a session-end snapshot was created recently
     // This prevents duplicates from rapid beacon delivery (beforeunload + visibilitychange)
-    const existing = await listPresentationVersions(repoRoot, id);
+    const existing = await listPresentationVersions(storageScope, id);
     const lastSessionEnd = existing?.find((v) => v.reason === 'session_end');
     if (lastSessionEnd?.created) {
       const lastCreatedMs = new Date(lastSessionEnd.created).getTime();
@@ -292,12 +292,12 @@ export async function handlePresentationSessionEnd(
     }
 
     // Create session-end snapshot
-    await createPresentationVersion(repoRoot, id, pres, {
+    await createPresentationVersion(storageScope, id, pres, {
       actorEmail: authedUser?.email || null,
       reason: 'session_end',
     });
     // Apply tiered pruning after creating snapshot
-    await prunePresentationVersions(repoRoot, id);
+    await prunePresentationVersions(storageScope, id);
   } catch (err) {
     // Session-end snapshots are best-effort; don't fail the request
     // But log the error for debugging/monitoring

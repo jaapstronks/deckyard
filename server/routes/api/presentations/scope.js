@@ -14,11 +14,11 @@ import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 
 export async function handlePresentationScope(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'PATCH') return methodNotAllowed(res, ['PATCH']);
-  const existing = await getPresentation(repoRoot, id);
+  const existing = await getPresentation(storageScope, id);
   if (!existing) return notFound(res);
   if (!authedUser) return unauthorized(res);
 
@@ -59,7 +59,7 @@ export async function handlePresentationScope(
 
   const nextPres = { ...existing, scope: nextScope, isViewOnly: nextIsViewOnly };
   try {
-    const updated = await updatePresentation(repoRoot, id, nextPres, {
+    const updated = await updatePresentation(storageScope, id, nextPres, {
       expectedRevision,
       actorEmail: authedUser?.email || null,
       allowScopeChange: true,

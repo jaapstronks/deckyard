@@ -8,6 +8,7 @@ import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { safeSlug } from '../utils/slug.js';
 import { getPresentation } from './presentations.js';
+import { crossOrganizationScope } from './scope.js';
 
 /**
  * Get the context for storage operations.
@@ -176,7 +177,10 @@ export async function listPublishedForFeed(repoRoot, opts = {}) {
   for (const entry of entries) {
     if (enriched.length >= limit) break;
     try {
-      const pres = await getPresentation(repoRoot, entry.presentationId);
+      const pres = await getPresentation(
+        crossOrganizationScope(repoRoot, 'public feed: entries are addressed by publish id'),
+        entry.presentationId
+      );
       if (!pres) continue;
 
       const presSettings =

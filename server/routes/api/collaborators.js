@@ -35,7 +35,7 @@ const log = createLogger('collaborators');
 /**
  * Handle collaborator management endpoints.
  */
-export async function handleCollaborators({ repoRoot, req, res, url, authedUser }) {
+export async function handleCollaborators({ repoRoot, storageScope, req, res, url, authedUser }) {
   const ctx = createRouteContext(authedUser);
 
   // GET /api/presentations/shared-with-me - List presentations shared with current user
@@ -52,7 +52,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
       // The grid only needs the presence signal — the thumbnail is a
       // server-rasterized PNG — so this collapses to a boolean.
       const ids = presentations.map((p) => p.id);
-      const firstSlidesMap = await getFirstSlidesForIds(repoRoot, ids);
+      const firstSlidesMap = await getFirstSlidesForIds(storageScope, ids);
 
       const presentationsWithSlides = presentations.map((p) => ({
         ...p,
@@ -71,7 +71,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
   const baseMatch = url.pathname.match(/^\/api\/presentations\/([^/]+)\/collaborators$/);
   if (baseMatch && req.method === 'POST') {
     const presentationId = baseMatch[1];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
@@ -296,7 +296,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
   // GET /api/presentations/:id/collaborators - List collaborators
   if (baseMatch && req.method === 'GET') {
     const presentationId = baseMatch[1];
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
@@ -333,7 +333,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
   if (deleteMatch && req.method === 'DELETE') {
     const presentationId = deleteMatch[1];
     const email = decodeURIComponent(deleteMatch[2]);
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
@@ -370,7 +370,7 @@ export async function handleCollaborators({ repoRoot, req, res, url, authedUser 
   if (deleteMatch && req.method === 'PATCH') {
     const presentationId = deleteMatch[1];
     const email = decodeURIComponent(deleteMatch[2]);
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
     const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {

@@ -119,8 +119,8 @@ function handlePresentationTagsRoute({ req, res, url }, id) {
  * @param {PresentationsContext} ctx
  * @param {string} id
  */
-function handleRenderSlideRoute({ repoRoot, req, res, authedUser }, id) {
-  return handleRenderSlide({ repoRoot, req, res, authedUser }, id);
+function handleRenderSlideRoute({ repoRoot, storageScope, req, res, authedUser }, id) {
+  return handleRenderSlide({ repoRoot, storageScope, req, res, authedUser }, id);
 }
 
 /**
@@ -311,12 +311,13 @@ const ROUTES = [
  */
 export async function handlePresentations({
   repoRoot,
+  storageScope,
   req,
   res,
   url,
   authedUser,
 }) {
-  const ctx = { repoRoot, req, res, url, authedUser };
+  const ctx = { repoRoot, storageScope, req, res, url, authedUser };
 
   for (const route of ROUTES) {
     if (route.method && req.method !== route.method) continue;

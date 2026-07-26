@@ -57,7 +57,7 @@ async function handleGetSlide(ctx, presentationId, slideId) {
  * PUT /api/v1/presentations/:presentationId/slides/:slideId - Update a slide (full replacement).
  */
 async function handleUpdateSlide(ctx, presentationId, slideId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { storageScope, req, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -123,7 +123,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {
@@ -149,7 +149,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
  * POST /api/v1/presentations/:presentationId/slides - Create a new slide.
  */
 async function handleCreateSlide(ctx, presentationId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { repoRoot, storageScope, req, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -236,7 +236,7 @@ async function handleCreateSlide(ctx, presentationId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {
@@ -263,7 +263,7 @@ async function handleCreateSlide(ctx, presentationId) {
  * DELETE /api/v1/presentations/:presentationId/slides/:slideId - Delete a slide.
  */
 async function handleDeleteSlide(ctx, presentationId, slideId) {
-  const { repoRoot, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -290,7 +290,7 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {
@@ -316,7 +316,7 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
  * POST /api/v1/presentations/:presentationId/slides/reorder - Reorder slides.
  */
 async function handleReorderSlides(ctx, presentationId) {
-  const { repoRoot, req, apiKey } = ctx;
+  const { storageScope, req, apiKey } = ctx;
 
   if (!requireScope(ctx, 'write')) return true;
 
@@ -363,7 +363,7 @@ async function handleReorderSlides(ctx, presentationId) {
   // Update presentation
   let updated;
   try {
-    updated = await updatePresentation(repoRoot, presentationId, { slides: reorderedSlides }, {
+    updated = await updatePresentation(storageScope, presentationId, { slides: reorderedSlides }, {
       actorEmail: apiKey.ownerEmail,
     });
   } catch (e) {

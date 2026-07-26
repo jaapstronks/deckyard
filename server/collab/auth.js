@@ -10,6 +10,7 @@
 import { getUserFromRequestAsync } from '../auth/auth.js';
 import { getPresentation } from '../storage/presentations.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
+import { createRouteContext } from '../utils/context.js';
 import {
   canReadPresentation,
   canWritePresentation,
@@ -70,14 +71,17 @@ export function presentationIdFromDocumentName(documentName) {
  * @param {string} opts.repoRoot
  * @param {string} opts.documentName - `presentation:<id>`
  * @param {Object} opts.user - authenticated user
- * @returns {Promise<{ presentationId: string, readOnly: boolean }>}
+ * @returns {Promise<{ presentationId: string, readOnly: boolean, organizationId: string|null }>}
  */
 export async function authorizeDocument({ repoRoot, documentName, user }) {
   const presentationId = presentationIdFromDocumentName(documentName);
   if (!presentationId) throw httpError('Unknown collab document', 404);
   if (!user?.email) throw httpError('Unauthorized', 401);
 
-  const pres = await getPresentation(repoRoot, presentationId);
+  const pres = await getPresentation(
+    createRouteContext(user, { repoRoot }),
+    presentationId
+  );
   if (!pres) throw httpError('Presentation not found', 404);
 
   const collaboratorPermission = await getCollaboratorPermission(
@@ -93,5 +97,8 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
     pres,
     collaboratorPermission,
   });
-  return { presentationId, readOnly };
+  // The document's organization, so the persistence hooks — which run outside
+  // any request — can write back into the organization the deck actually lives
+  // in instead of the instance default.
+  return { presentationId, readOnly, organizationId: pres.organizationId ?? null };
 }

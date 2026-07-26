@@ -5,12 +5,12 @@ import { json, methodNotAllowed, notFound, serveJson, unauthorized } from '../..
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 
 export async function handlePresentationDuplicate(
-  { repoRoot, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(repoRoot, id);
+  const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
@@ -30,7 +30,7 @@ export async function handlePresentationDuplicate(
     // ignore invalid/empty bodies
   }
 
-  const created = await duplicatePresentation(repoRoot, id, {
+  const created = await duplicatePresentation(storageScope, id, {
     actorEmail: authedUser?.email || null,
   });
   if (!created) return notFound(res);

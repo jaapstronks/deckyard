@@ -9,6 +9,7 @@ import {
   ensureLikertInteractionForSlide,
 } from '../interactions.js';
 import { ensureFeedbackForSlide } from '../feedback.js';
+import { crossOrganizationScope } from '../scope.js';
 
 /**
  * Get slides array from presentation, respecting i18n active language
@@ -86,7 +87,10 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
   // instead of waiting for presenter window to process control event and post state.
   try {
     const presentationId = s.presentationId;
-    const pres = await getPresentation(repoRoot, presentationId);
+    const pres = await getPresentation(
+      crossOrganizationScope(repoRoot, 'present session control: the session id is the authorization'),
+      presentationId
+    );
     if (pres) {
       const slides = getSlidesFromPresentation(pres);
       const slideCount = slides.length;
