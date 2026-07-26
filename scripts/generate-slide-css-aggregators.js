@@ -26,7 +26,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const SLIDES_DIR = fileURLToPath(new URL('../client/styles/slides/', import.meta.url));
 
@@ -195,6 +195,9 @@ function main() {
   console.log(changed ? `\n${changed} aggregator(s) rewritten.` : 'Aggregators already up to date.');
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL, not a template literal: the repo path may contain spaces,
+// which import.meta.url percent-encodes and a raw `file://${argv[1]}` does not
+// — the mismatch would make this script a silent no-op (see scripts/i18n-audit.js).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main();
 }
