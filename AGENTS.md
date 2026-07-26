@@ -79,6 +79,15 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     from `api()`. See **`docs/reference/api-error-format.md`**; covered by
     `tests/api-error-envelope.test.js`. The public `/api/v1/*` surface keeps its
     own openapi-documented schema.
+  - **SSE `error` events are not the envelope.** They carry
+    `{ message:'<human>' }` (plus endpoint-specific extras like `report`) — no
+    `ok`, and no `error` key. The `event: error` line is already the
+    discriminator, so `ok:false` would duplicate the routing in the payload, and
+    `error` stays reserved for the machine code it means on the HTTP side rather
+    than being re-used for prose. This also matches `status` events, which
+    already use `message` for human text. Should a client ever need to branch on
+    the cause, add `error:'<snake_case_code>'` alongside `message` — additive,
+    with exactly the HTTP meaning, never a rename.
 
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`esc()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`).

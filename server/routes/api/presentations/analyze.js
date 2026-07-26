@@ -23,6 +23,7 @@ import {
 } from '../../../services/comment-events.js';
 import { getAiIdentity } from '../../../storage/settings.js';
 import { createLogger } from '../../../utils/logger.js';
+import { sseErrorPayload } from '../../../utils/sse.js';
 const log = createLogger('analyze');
 
 const getCtx = createRouteContext;
@@ -141,9 +142,7 @@ export async function handlePresentationAnalyze(
     });
   } catch (error) {
     log.error('[analyze] Error:', error);
-    sendSSE(res, 'error', {
-      message: error?.message || 'Analysis failed',
-    });
+    sendSSE(res, 'error', sseErrorPayload(error?.message || 'Analysis failed'));
   }
 
   res.end();

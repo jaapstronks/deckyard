@@ -19,6 +19,7 @@ import {
   validateSlideCount,
 } from '../../../utils/ai/validate-slides.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
+import { sseErrorPayload } from '../../../utils/sse.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../../../config/sandbox.js';
 import {
   log,
@@ -250,9 +251,7 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
       }
     }
 
-    sendEvent('error', {
-      error: e?.message || 'Deck generation failed',
-    });
+    sendEvent('error', sseErrorPayload(e?.message || 'Deck generation failed'));
   }
 
   res.end();

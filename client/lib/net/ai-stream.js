@@ -78,7 +78,7 @@ export async function generatePresentationStreaming({
       },
       onError: (data) => {
         onError(data);
-        throw new Error(data.error || t('ai.generationFailed', 'Generation failed'));
+        throw new Error(data.message || t('ai.generationFailed', 'Generation failed'));
       },
     });
 

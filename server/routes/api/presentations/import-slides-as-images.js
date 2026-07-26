@@ -9,7 +9,7 @@ import {
   forbidden,
   badRequest,
 } from '../../../utils/http.js';
-import { sseWrite } from '../../../utils/sse.js';
+import { sseWrite, sseError } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-slides-as-images');
@@ -112,10 +112,7 @@ export async function handlePresentationImportSlidesAsImages(
   };
 
   const sendError = (message) => {
-    sseWrite(res, {
-      event: 'error',
-      data: { error: message },
-    });
+    sseError(res, message);
     res.end();
   };
 

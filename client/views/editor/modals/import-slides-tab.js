@@ -217,7 +217,7 @@ export function createImportSlidesTab({
                 }
                 setProgress(pct, 100, message);
               } else if (event === 'error') {
-                throw new Error(parsed.error || t('editor.import.failed', 'Import failed'));
+                throw new Error(parsed.message || t('editor.import.failed', 'Import failed'));
               } else if (event === 'complete') {
                 setProgress(100, 100, t('editor.importSlides.progress.complete', 'Complete!'));
                 showStatus(

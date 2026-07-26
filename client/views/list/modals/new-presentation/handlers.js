@@ -125,9 +125,9 @@ export async function handlePasteText({
         rotator.setMessages(statusMessages || []);
         rotator.start();
       },
-      onError: ({ error }) => {
+      onError: ({ message }) => {
         rotator.stop();
-        loadingModal.update(error || t('editor.aiAppend.failed', 'Generation failed.'));
+        loadingModal.update(message || t('editor.aiAppend.failed', 'Generation failed.'));
       },
     });
 
@@ -272,7 +272,7 @@ export async function handleConvertFile({
             rotator.stop();
             loadingModal.close();
             showBackdrop?.();
-            setStatus(data?.error || t('list.fileConverter.failed', 'Conversion failed.'));
+            setStatus(data?.message || t('list.fileConverter.failed', 'Conversion failed.'));
             setBusy(false);
           },
         });
@@ -565,7 +565,7 @@ export async function handleNotion({
             rotator.stop();
             loadingModal.close();
             showBackdrop?.();
-            setStatus(data?.error || t('list.newPresentation.notion.failed', 'Import failed.'));
+            setStatus(data?.message || t('list.newPresentation.notion.failed', 'Import failed.'));
             setBusy(false);
           },
         });

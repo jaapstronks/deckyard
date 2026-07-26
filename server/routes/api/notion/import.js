@@ -17,6 +17,7 @@ import {
 } from '../../../storage/presentations.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { createLogger } from '../../../utils/logger.js';
+import { sseErrorPayload } from '../../../utils/sse.js';
 const log = createLogger('import');
 
 /**
@@ -213,10 +214,10 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
     }
 
     if (!deck || report.errors.length > 0) {
-      sendEvent('error', {
-        error: report.errors.join('; ') || 'Conversion failed',
-        report,
-      });
+      sendEvent(
+        'error',
+        sseErrorPayload(report.errors.join('; ') || 'Conversion failed', { report })
+      );
       res.end();
       return true;
     }
@@ -279,7 +280,7 @@ export async function handleNotionImportStream({ req, res, url, authedUser, repo
   } catch (e) {
     log.error('[Notion Import Stream] Error:', e);
     const msg = String(e?.message || e || 'Unknown error');
-    sendEvent('error', { error: msg });
+    sendEvent('error', sseErrorPayload(msg));
   }
 
   res.end();
