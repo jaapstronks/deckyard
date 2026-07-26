@@ -55,14 +55,15 @@ import {
   diffAppliedFixes,
   RawSlideValidationError,
 } from '../utils/ai/validate-slides.js';
-import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
 import { iteratePresentation } from '../utils/ai/iterate-deck.js';
 import { analyzeForCompression, applyCompression } from '../utils/ai/compress-deck.js';
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/ai.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import { listThemeIds, loadTheme, resolveThemeId } from '../utils/themes.js';
-import { SLIDE_TYPE_CATALOG, GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
+import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
+import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
+import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../utils/org-slide-types.js';
 import { buildSlidePreviewHtml, buildSingleSlidePreviewHtml } from './preview.js';
 
 /**
@@ -182,7 +183,7 @@ export function registerTools(
 
   server.tool(
     'get_slide_types',
-    'List all available slide types with their schemas, descriptions, and best-use guidance. Each entry also includes a working `example` content object (from defaults) you can copy and edit when calling create_presentation_from_slides. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
+    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
     {
       type: 'object',
       properties: {
@@ -198,30 +199,23 @@ export function registerTools(
         },
       },
     },
-    async ({ category = 'all', lang = 'nl' } = {}) => {
-      const types = {};
+    async ({ category = 'all', lang = 'nl' } = {}, context) => {
+      // Resolve for the calling session's organization, the same way
+      // /api/slide-types and the AI generator do: Tier 1 from the registry,
+      // Tier 2 from the database, minus whatever the org disabled. A stdio
+      // session has no organization and falls back to the default one.
+      const ctx = { organizationId: context?.organizationId };
+      const [disabledSlideTypes, customSlideTypes] = await Promise.all([
+        loadDisabledSlideTypes(ctx),
+        loadCustomSlideTypes(ctx),
+      ]);
 
-      for (const [name, def] of Object.entries(SLIDE_TYPE_CATALOG)) {
-        const isStructural = def.resolveInPhase1;
-
-        if (category === 'structural' && !isStructural) continue;
-        if (category === 'content' && isStructural) continue;
-
-        const registryDef = SLIDE_TYPES[name];
-        const example = registryDef?.defaultsByLang?.[lang]
-          || registryDef?.defaultsByLang?.nl
-          || registryDef?.defaults
-          || null;
-
-        types[name] = {
-          category: isStructural ? 'structural' : 'content',
-          description: (def.description || '').trim(),
-          bestFor: def.bestFor || [],
-          notFor: def.notFor || [],
-          schema: def.schema || null,
-          example,
-        };
-      }
+      const types = resolveAgentSlideTypes({
+        lang,
+        category,
+        disabledSlideTypes,
+        customSlideTypes,
+      });
 
       return {
         types,

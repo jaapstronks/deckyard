@@ -9,6 +9,7 @@
  * - examples.js: Content examples for each slide type
  * - builders.js: Functions for building AI prompts
  * - custom-loader.js: Loads AI metadata from custom slide types
+ * - agent-catalog.js: The registry→agent derivation behind MCP get_slide_types
  */
 
 // Re-export definitions
@@ -37,6 +38,13 @@ export {
   buildSlideTypeDescription,
   buildPhase2CatalogPrompt,
 } from './builders.js';
+
+// Re-export the agent-facing contract (registry coverage + editorial overlay)
+export {
+  isAgentOptOut,
+  deriveAgentSchema,
+  resolveAgentSlideTypes,
+} from './agent-catalog.js';
 
 // Re-export custom loader functions
 export {

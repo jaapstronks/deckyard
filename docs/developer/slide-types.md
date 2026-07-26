@@ -228,12 +228,39 @@ export default {
 | `schema` | object | Field constraints (type, required, maxLength, options for enums) |
 | `examples` | array | Example content objects. Use `_variation` to label different patterns |
 
+Setting `ai` to `false` instead of an object is the explicit opt-out — see
+[Withholding a type from agents](#withholding-a-type-from-agents).
+
 ### How the AI Uses This Metadata
 
 1. **Prompt Construction**: The AI system builds prompts that include your slide type's description, best-for scenarios, and schema
 2. **Slide Selection**: When analyzing presentations, the AI considers your custom slides alongside core slides
 3. **Content Generation**: When suggesting changes, the AI uses your examples and schema to generate valid content
 4. **Theme Awareness**: If your slide has a `themeId`, the AI only suggests it for presentations using that theme
+
+### Withholding a type from agents
+
+Omitting the `ai` block does **not** hide a type. Every registered type is
+offered to agents (the AI generator and MCP `get_slide_types` alike); without an
+`ai` block it simply arrives with a schema derived from its `fields` and
+`documented: false`, so the missing guidance is visible rather than the type
+being invisible.
+
+To withhold a type on purpose, say so:
+
+```javascript
+export default {
+  label: 'Follow-along invite',
+  ai: false, // deliberately not offered to agents — the app manages this slide
+  // …
+};
+```
+
+`ai: false` and `deprecated: true` are the only two ways out. Everything else is
+offered. This is what keeps "deliberately withheld" distinguishable from
+"someone forgot to write the copy" — the distinction that used to be expressed
+by absence, and therefore not at all. The reader is
+`isAgentOptOut()` in `server/utils/ai/slide-catalog/agent-catalog.js`.
 
 ---
 
@@ -715,8 +742,9 @@ view-only on OSS installs. The gate is enforced:
   `customHtmlEditViolation()` - a non-capable actor cannot create or change a
   custom-html slide's `html`/`css`, even by hand-crafting a request.
 
-The type is intentionally **excluded from the AI slide catalog**, so the AI
-generator and MCP `get_slide_types` never surface or auto-pick it.
+The type declares `ai: false` on its definition, so the AI generator and MCP
+`get_slide_types` never surface or auto-pick it (see
+[Withholding a type from agents](#withholding-a-type-from-agents)).
 
 ---
 
