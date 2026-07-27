@@ -29,10 +29,10 @@ const { initializeStorage, closeStorage } = await import(
 const { handleHome, buildActivityOpts } = await import(
   '../server/routes/api/home.js'
 );
-const { createTeamLibraryItem } = await import('../server/storage/slide-library.js');
-const { createTeamCollection } = await import('../server/storage/collections.js');
+const { createTeamLibraryItem } = await import('../server/storage/slide-library/index.js');
+const { createTeamCollection } = await import('../server/storage/collections/index.js');
 const { recordSlideLibraryUsage } = await import(
-  '../server/storage/slide-library-usage.js'
+  '../server/storage/slide-library-usage/index.js'
 );
 const { testScope } = await import('./helpers/storage-scope.js');
 

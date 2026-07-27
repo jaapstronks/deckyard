@@ -11,8 +11,8 @@ import {
   listPresentationVersions,
   getPresentationVersion,
 } from '../storage/presentations.js';
-import { listImageLibrary } from '../storage/image-library.js';
-import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library.js';
+import { listImageLibrary } from '../storage/image-library/index.js';
+import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library/index.js';
 import { listThemes } from '../storage/themes.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import crypto from 'node:crypto';

@@ -15,7 +15,7 @@ import {
   listGuestsForShareLink,
   removeGuest,
   markInvitationSent,
-} from '../../../storage/share-links.js';
+} from '../../../storage/share-links/index.js';
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
 import { canWritePresentation } from '../../../utils/presentation-authz.js';
 import { createRouteContext } from '../../../utils/context.js';

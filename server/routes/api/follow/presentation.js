@@ -1,5 +1,5 @@
 import { notFound, methodNotAllowed, serveJson } from '../../../utils/http.js';
-import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
+import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations.js';
 import {
   computeMissingTranslation,

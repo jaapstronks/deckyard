@@ -1,7 +1,7 @@
 /**
  * Per-user slide-library usage storage round-trip.
  *
- * Drives the storage facade (server/storage/slide-library-usage.js) against an
+ * Drives the storage facade (server/storage/slide-library-usage/index.js) against an
  * initialized file adapter - the same path the running server uses in default
  * OSS (file) mode. Covers:
  * - recording slide + collection usage and reading back the used set
@@ -25,7 +25,7 @@ process.env.DATA_DIR = path.join(repoRoot, 'data');
 
 const { initializeStorage, closeStorage } = await import('../server/storage/adapters/index.js');
 const { listSlideLibraryUsage, recordSlideLibraryUsage } = await import(
-  '../server/storage/slide-library-usage.js'
+  '../server/storage/slide-library-usage/index.js'
 );
 const { testScope } = await import('./helpers/storage-scope.js');
 

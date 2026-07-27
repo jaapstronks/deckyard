@@ -13,7 +13,7 @@ import {
   serverError,
 } from '../../utils/http.js';
 import { readAppSettings } from '../../storage/settings.js';
-import { createImageLibraryItem } from '../../storage/image-library.js';
+import { createImageLibraryItem } from '../../storage/image-library/index.js';
 import { saveUploadedFile } from '../../storage/uploads.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('stock-media');

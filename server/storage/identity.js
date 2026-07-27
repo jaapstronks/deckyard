@@ -22,7 +22,7 @@ import { normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
-import { listUserOrganizations } from './user-organizations.js';
+import { listUserOrganizations } from './user-organizations/index.js';
 
 /**
  * Look up a person by email, across all organizations.

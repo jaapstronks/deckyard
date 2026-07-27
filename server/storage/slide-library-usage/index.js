@@ -12,14 +12,14 @@
  * server/storage/scope.js.
  */
 
-import { repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
+import { repoRootOf } from '../scope.js';
+import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
 
-const withStorageFallback = createStorageDispatch(() => import('./slide-library-usage-file.js'));
+const withStorageFallback = createStorageDispatch(() => import('./file.js'));
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} userEmail
  * @returns {Promise<{ items: Array<object> }>}
  */
@@ -39,7 +39,7 @@ export async function listSlideLibraryUsage(scope, userEmail) {
 
 /**
  * Record usage of one or more library items for a user.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} userEmail
  * @param {Array<{ type: 'slide'|'collection', id: string }>} items
  * @returns {Promise<{ ok: boolean, recorded: number }>}

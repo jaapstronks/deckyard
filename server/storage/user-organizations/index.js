@@ -22,11 +22,11 @@ export {
   updateMemberRole,
   removeMember,
   transferOwnership,
-} from './user-organizations/memberships.js';
+} from './memberships.js';
 
 export {
   getOrganizationById,
   createOrganization,
   updateOrganization,
   deleteOrganization,
-} from './user-organizations/organizations.js';
+} from './organizations.js';

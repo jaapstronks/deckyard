@@ -1,5 +1,5 @@
 import { listPresentations } from '../../../storage/presentations.js';
-import { getTagsForPresentations } from '../../../storage/tags.js';
+import { getTagsForPresentations } from '../../../storage/tags/index.js';
 import { serveJson } from '../../../utils/http.js';
 import { normalizePresentationScope, isUnrestricted } from '../../../utils/presentation-authz.js';
 import { resolveThemeThumbBg } from '../../../utils/themes.js';

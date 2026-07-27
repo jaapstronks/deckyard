@@ -53,6 +53,15 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Canonical example: `client/views/settings/` — every panel is a folder with an
     `index.js` barrel (`api-keys/`, `admin-users/`, `theme-editor/`, …), no
     wrappers, no role suffixes.
+  - **`server/storage/` applies this literally.** A bare `X.js` is an
+    *undecomposed* single-concern store (`feedback.js`, `settings.js`). The
+    moment a store splits into more than one module it becomes a folder `X/`
+    whose `index.js` is the facade/seam — consumers import
+    `server/storage/X/index.js`, never a concern file. The DB-vs-file dispatch
+    facades follow this too: the file backend is the concern module `X/file.js`
+    *inside* the folder, not an `X-file.js` sibling *beside* it. So reading a
+    storage import tells you the shape: `X.js` = one module; `X/index.js` = a
+    seam over concern modules (`X/file.js`, `X/list.js`, …).
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).

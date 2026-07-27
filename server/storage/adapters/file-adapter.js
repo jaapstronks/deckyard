@@ -40,30 +40,30 @@ import {
 import {
   getImageLibrary as fileGetImageLibrary,
   saveImageLibrary as fileSaveImageLibrary,
-} from '../image-library-file.js';
+} from '../image-library/file.js';
 
 import {
   getSlideLibrary as fileGetSlideLibrary,
   saveSlideLibrary as fileSaveSlideLibrary,
-} from '../slide-library-file.js';
+} from '../slide-library/file.js';
 
 import {
   getSlideCollections as fileGetSlideCollections,
   saveSlideCollections as fileSaveSlideCollections,
   normalizeSlideIds,
-} from '../collections-file.js';
+} from '../collections/file.js';
 
 import {
   listSlideLibraryUsage as fileListSlideLibraryUsage,
   recordSlideLibraryUsage as fileRecordSlideLibraryUsage,
-} from '../slide-library-usage-file.js';
+} from '../slide-library-usage/file.js';
 
 import {
   getPublishedIndex,
   upsertPublishedEntry,
   removePublishedEntry,
   getPublishedById,
-} from '../published-file.js';
+} from '../published/file.js';
 
 import {
   readAppSettings as fileGetAppSettings,
@@ -86,7 +86,7 @@ import {
   createTag as fileCreateTag,
   deleteTag as fileDeleteTag,
   searchTags as fileSearchTags,
-} from '../tags-file.js';
+} from '../tags/file.js';
 
 /**
  * Normalize a stored collection into the adapter's API shape (adds slideCount).

@@ -6,7 +6,7 @@ import {
   sendPresentSessionControlCommand,
   setPresentSessionControlEnabled,
   updatePresentSessionState,
-} from '../../storage/present-sessions.js';
+} from '../../storage/present-sessions/index.js';
 import {
   ensurePollInteractionForSlide,
   resetPollInteraction,

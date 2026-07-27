@@ -6,7 +6,7 @@ import {
   writeUserSettings,
 } from '../../storage/settings.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
-import { getOrganizationById, updateOrganization } from '../../storage/user-organizations.js';
+import { getOrganizationById, updateOrganization } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('settings');

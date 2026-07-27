@@ -8,7 +8,7 @@ import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
 import { isRssFeedEnabled } from '../../config/features.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
-import { getOrganizationById } from '../../storage/user-organizations.js';
+import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 
 /** Read the SPA shell (client/index.html). */

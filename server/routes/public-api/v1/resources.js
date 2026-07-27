@@ -189,7 +189,7 @@ async function handleImageLibrary(ctx) {
   if (!requireScope(ctx, 'read')) return true;
 
   // Dynamic import to avoid circular dependencies
-  const { listImageLibrary } = await import('../../../storage/image-library.js');
+  const { listImageLibrary } = await import('../../../storage/image-library/index.js');
 
   const search = (url.searchParams.get('search') || '').trim().toLowerCase();
   const category = (url.searchParams.get('category') || '').trim().toLowerCase();
