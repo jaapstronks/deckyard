@@ -7,7 +7,7 @@
  *
  * Flow (see docs/reference/deck-bundle-format.md):
  *   readDeckBundle(buffer)                     verify sentinel + asset integrity
- *   → saveUploadedFile per asset               assets/<hash> -> /uploads/<uuid>
+ *   → writeUploadedFile per asset               assets/<hash> -> /uploads/<uuid>
  *   → rewriteBundleRefs(deck, mapFn)           bundle refs -> /uploads/ refs
  *   → deckToPresentationParts(deck, {theme})   normalize (shared with JSON import)
  *   → createPresentation + updatePresentation  same shape as import-json.js
@@ -26,7 +26,7 @@ import {
 } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { readDeckBundle } from '../../../export/deck-bundle.js';
-import { saveUploadedFile } from '../../../storage/uploads.js';
+import { writeUploadedFile } from '../../../storage/uploads.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { rewriteBundleRefs } from '../../../../shared/slide-types/deck-assets.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
@@ -69,7 +69,7 @@ export async function handlePresentationsImportDeck({
       if (!buf) continue; // readDeckBundle guarantees presence, but be defensive
       const sourceName = Array.isArray(asset.sources) ? asset.sources[0] : '';
       try {
-        const url = await saveUploadedFile(repoRoot, buf, sourceName || asset.ref, asset.mime);
+        const url = await writeUploadedFile(repoRoot, buf, sourceName || asset.ref, asset.mime);
         refToUpload.set(asset.ref, url);
       } catch (err) {
         // Unsupported mime / oversized asset: leave the ref in place so the rest

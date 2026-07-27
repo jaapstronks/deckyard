@@ -88,7 +88,7 @@ export async function getSlideCollections(repoRoot) {
   return readStore(storePath(repoRoot));
 }
 
-export async function saveSlideCollections(repoRoot, store) {
+export async function writeSlideCollections(repoRoot, store) {
   return writeStore(storePath(repoRoot), store);
 }
 

@@ -51,7 +51,7 @@ export function schedulePersist(s) {
   s.persistTimer.unref?.();
 }
 
-export async function loadSessionsFromDisk(repoRoot) {
+export async function getSessionsFromDisk(repoRoot) {
   const root = String(repoRoot || '');
   if (!root || loadedRoots.has(root)) return;
   loadedRoots.add(root);

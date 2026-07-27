@@ -39,17 +39,17 @@ import {
 
 import {
   getImageLibrary as fileGetImageLibrary,
-  saveImageLibrary as fileSaveImageLibrary,
+  writeImageLibrary as fileSaveImageLibrary,
 } from '../image-library/file.js';
 
 import {
   getSlideLibrary as fileGetSlideLibrary,
-  saveSlideLibrary as fileSaveSlideLibrary,
+  writeSlideLibrary as fileSaveSlideLibrary,
 } from '../slide-library/file.js';
 
 import {
   getSlideCollections as fileGetSlideCollections,
-  saveSlideCollections as fileSaveSlideCollections,
+  writeSlideCollections as fileSaveSlideCollections,
   normalizeSlideIds,
 } from '../collections/file.js';
 
@@ -66,9 +66,9 @@ import {
 } from '../published/file.js';
 
 import {
-  readAppSettings as fileGetAppSettings,
+  getAppSettings as fileGetAppSettings,
   writeAppSettings as fileSetAppSettings,
-  readUserSettings as fileGetUserSettings,
+  getUserSettings as fileGetUserSettings,
   writeUserSettings as fileSetUserSettings,
 } from '../settings.js';
 

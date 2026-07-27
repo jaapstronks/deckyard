@@ -1,5 +1,5 @@
 import { LIVE_WINDOW_MS } from './constants.js';
-import { loadSessionsFromDisk } from './disk.js';
+import { getSessionsFromDisk } from './disk.js';
 import { sessions } from './state.js';
 
 export async function getFollowStateForPresentation(
@@ -7,7 +7,7 @@ export async function getFollowStateForPresentation(
   presentationId,
   { liveWindowMs = LIVE_WINDOW_MS } = {}
 ) {
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   const pid = String(presentationId || '').trim();
   if (!pid)
     return {

@@ -85,7 +85,7 @@ presentation from it — the mirror of the export. The flow:
 1. `readDeckBundle(buffer)` — verify the mimetype sentinel and re-hash every
    asset (integrity), yielding `{ manifest, deck, assets }`.
 2. For each manifest asset, write its bytes back into `/uploads/` via
-   `saveUploadedFile`, using the manifest `sources[0]` as the human basename.
+   `writeUploadedFile`, using the manifest `sources[0]` as the human basename.
    This builds a `assets/<hash>.<ext>` → `/uploads/<uuid>.<ext>` map.
 3. `rewriteBundleRefs(deck, mapFn)` — rewrite the deck's bundle refs to the new
    upload URLs (the inverse of the export's `rewriteAssetRefs`).
@@ -97,7 +97,7 @@ fixpoint (identical content-addressed refs, since identical bytes hash the same)
 
 **Graceful degradation:**
 
-- An asset whose mime is unsupported by `saveUploadedFile` (or that otherwise
+- An asset whose mime is unsupported by `writeUploadedFile` (or that otherwise
   fails to write) is skipped — its ref is left in place and reported in a
   `failedAssets` field on the response, rather than crashing the import.
 - Unknown slide types become a `content-slide` placeholder (via

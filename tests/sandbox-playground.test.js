@@ -20,7 +20,7 @@ import path from 'node:path';
 
 import { handlePublish } from '../server/routes/api/publish.js';
 import { uploadsDir } from '../server/config/storage-paths.js';
-import { saveUploadedFile } from '../server/storage/uploads.js';
+import { writeUploadedFile } from '../server/storage/uploads.js';
 import { getFeatureFlags } from '../server/config/feature-flags.js';
 import { listThemeIds, listCoreThemeIds } from '../server/utils/themes.js';
 import { listSandboxExamples } from '../server/sandbox/examples.js';
@@ -95,7 +95,7 @@ test('stock-media download persists into the sandbox uploads dir', async () => {
         assert.equal(uploadsDir(process.cwd()), tmp);
 
         // This is the exact call the Unsplash/Giphy download endpoints make.
-        const localUrl = await saveUploadedFile(
+        const localUrl = await writeUploadedFile(
           process.cwd(),
           PNG_1x1,
           'unsplash-test-regular.png',

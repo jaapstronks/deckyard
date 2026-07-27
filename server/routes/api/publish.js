@@ -5,7 +5,7 @@ import {
   upsertPublishedEntry,
 } from '../../storage/published/index.js';
 import { updatePresentation } from '../../storage/presentations/index.js';
-import { readUserSettings } from '../../storage/settings.js';
+import { getUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';
 import { serveJson, json, forbidden, serverError, badRequest, payloadTooLarge } from '../../utils/http.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -61,7 +61,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
           const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
           if (ownerEmail) {
             try {
-              const userSettings = await readUserSettings(repoRoot, ownerEmail);
+              const userSettings = await getUserSettings(repoRoot, ownerEmail);
               authorInfo = {
                 name: userSettings?.profile?.name || ownerEmail.split('@')[0],
                 imageUrl: userSettings?.profile?.imageUrl || '',
@@ -247,7 +247,7 @@ export async function handlePublish({ repoRoot, storageScope, req, res, url, aut
         const ownerEmail = pres?.ownerEmail || pres?.createdBy || authedUser?.email;
         if (ownerEmail) {
           try {
-            const userSettings = await readUserSettings(repoRoot, ownerEmail);
+            const userSettings = await getUserSettings(repoRoot, ownerEmail);
             authorInfo = {
               name: userSettings?.profile?.name || ownerEmail.split('@')[0],
               imageUrl: userSettings?.profile?.imageUrl || '',

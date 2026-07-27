@@ -18,7 +18,7 @@ process.env.DATA_DIR = tmp;
 
 const {
   defaultAppSettings,
-  readAppSettings,
+  getAppSettings,
   writeAppSettings,
   getDefaultThemeId,
 } = await import('../server/storage/settings.js');
@@ -38,14 +38,14 @@ describe('app settings: default theme + picker allowlist', () => {
       defaultThemeId: 'clicknl',
       enabledThemes: ['deckyard', 'clicknl'],
     });
-    const s = await readAppSettings(repoRoot);
+    const s = await getAppSettings(repoRoot);
     assert.strictEqual(s.defaultThemeId, 'clicknl');
     assert.deepStrictEqual(s.enabledThemes, ['deckyard', 'clicknl']);
   });
 
   it('rejects an invalid defaultThemeId (stored as empty)', async () => {
     await writeAppSettings(repoRoot, { defaultThemeId: 'bad id!!' });
-    const s = await readAppSettings(repoRoot);
+    const s = await getAppSettings(repoRoot);
     assert.strictEqual(s.defaultThemeId, '');
   });
 
@@ -56,7 +56,7 @@ describe('app settings: default theme + picker allowlist', () => {
     });
     // Write only the allowlist; defaultThemeId must survive.
     await writeAppSettings(repoRoot, { enabledThemes: ['deckyard', 'clicknl'] });
-    const s = await readAppSettings(repoRoot);
+    const s = await getAppSettings(repoRoot);
     assert.strictEqual(s.defaultThemeId, 'deckyard');
     assert.deepStrictEqual(s.enabledThemes, ['deckyard', 'clicknl']);
   });

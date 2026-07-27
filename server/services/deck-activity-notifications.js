@@ -27,7 +27,7 @@ import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 import { normalizeEmail } from '../utils/normalize.js';
 import { listCollaborators } from '../storage/collaborators.js';
 import { listSubscriptions } from '../storage/presentation-subscriptions.js';
-import { readUserSettings } from '../storage/settings.js';
+import { getUserSettings } from '../storage/settings.js';
 import { levelAllows } from './comment-subscriptions.js';
 import {
   createNotification,
@@ -147,7 +147,7 @@ export async function resolveDeckActivityRecipients({ repoRoot, presentation, ac
       let level = overrides.get(email);
       if (!level) {
         try {
-          const settings = await readUserSettings(repoRoot || defaultRepoRoot, email);
+          const settings = await getUserSettings(repoRoot || defaultRepoRoot, email);
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
           level = 'participating';

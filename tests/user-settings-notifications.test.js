@@ -16,7 +16,7 @@ import path from 'node:path';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-settings-'));
 process.env.DATA_DIR = tmp;
 
-const { readUserSettings, writeUserSettings } = await import('../server/storage/settings.js');
+const { getUserSettings, writeUserSettings } = await import('../server/storage/settings.js');
 
 const repoRoot = tmp;
 const email = 'merge@example.com';
@@ -26,13 +26,13 @@ describe('writeUserSettings notification merge', () => {
     await writeUserSettings(repoRoot, email, {
       notifications: { emailByType: { comment_reply: false } },
     });
-    let s = await readUserSettings(repoRoot, email);
+    let s = await getUserSettings(repoRoot, email);
     assert.strictEqual(s.notifications.emailByType.comment_reply, false);
 
     await writeUserSettings(repoRoot, email, {
       notifications: { emailByType: { comment_created: false } },
     });
-    s = await readUserSettings(repoRoot, email);
+    s = await getUserSettings(repoRoot, email);
     assert.strictEqual(s.notifications.emailByType.comment_created, false);
     assert.strictEqual(s.notifications.emailByType.comment_reply, false);
     assert.strictEqual(s.notifications.emailByType.comment_mention, true);
@@ -45,7 +45,7 @@ describe('writeUserSettings notification merge', () => {
     await writeUserSettings(repoRoot, email, {
       notifications: { slackEnabled: false },
     });
-    const s = await readUserSettings(repoRoot, email);
+    const s = await getUserSettings(repoRoot, email);
     assert.strictEqual(s.notifications.emailEnabled, false);
     assert.strictEqual(s.notifications.slackEnabled, false);
     assert.strictEqual(s.notifications.defaultLevel, 'watching');

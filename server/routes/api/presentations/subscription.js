@@ -23,7 +23,7 @@ import {
   setSubscription,
   SUBSCRIPTION_LEVELS,
 } from '../../../storage/presentation-subscriptions.js';
-import { readUserSettings } from '../../../storage/settings.js';
+import { getUserSettings } from '../../../storage/settings.js';
 import { getCtx } from './comments-shared.js';
 
 export async function handlePresentationSubscription(
@@ -45,7 +45,7 @@ export async function handlePresentationSubscription(
 
   if (req.method === 'GET') {
     const sub = await getSubscription(id, authedUser.email, ctx);
-    const settings = await readUserSettings(repoRoot, authedUser.email);
+    const settings = await getUserSettings(repoRoot, authedUser.email);
     serveJson(res, 200, {
       ok: true,
       level: sub?.level || null,

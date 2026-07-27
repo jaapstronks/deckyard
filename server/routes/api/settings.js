@@ -1,7 +1,7 @@
 import { badRequest, json, methodNotAllowed, serveJson, unauthorized, serverError } from '../../utils/http.js';
 import {
-  readAppSettings,
-  readUserSettings,
+  getAppSettings,
+  getUserSettings,
   writeAppSettings,
   writeUserSettings,
 } from '../../storage/settings.js';
@@ -17,7 +17,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
   // - writable by admins only
   if (url.pathname === '/api/settings/app') {
     if (req.method === 'GET') {
-      const settings = await readAppSettings(repoRoot);
+      const settings = await getAppSettings(repoRoot);
       // Webhook URLs are admin-only; keep them out of non-admin clients.
       if (!authedUser?.isAdmin) {
         try {
@@ -133,7 +133,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
     if (!email) return unauthorized(res);
 
     if (req.method === 'GET') {
-      const settings = await readUserSettings(repoRoot, email);
+      const settings = await getUserSettings(repoRoot, email);
       serveJson(res, 200, { settings });
       return true;
     }

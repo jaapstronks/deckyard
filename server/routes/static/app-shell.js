@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { sandboxAppSeoHeadHtml } from '../../utils/sandbox-seo.js';
 import { isClientDebugLogEnabled } from '../../utils/debug-log.js';
-import { readAppSettings } from '../../storage/settings.js';
+import { getAppSettings } from '../../storage/settings.js';
 import { analyticsHeadHtml } from '../../analytics/head.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
@@ -37,7 +37,7 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
       `  <script>window.__DEBUG_LOG__=true;</script>\n</head>`
     );
   }
-  const appSettings = await readAppSettings(repoRoot);
+  const appSettings = await getAppSettings(repoRoot);
   const analytics = analyticsHeadHtml({
     context: 'app',
     sandbox: sandboxEnabled(),

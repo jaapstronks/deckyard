@@ -16,7 +16,7 @@ import {
   generateTeamDigestWithAI,
 } from '../services/digest-generation.js';
 import { sendWeeklyDigestEmail, sendTeamDigestEmail } from '../integrations/brevo.js';
-import { readAppSettings } from '../storage/settings.js';
+import { getAppSettings } from '../storage/settings.js';
 
 // ============================================================
 // JOB RUNNER
@@ -38,7 +38,7 @@ export async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = 
   // Check if analytics is enabled globally
   if (repoRoot) {
     try {
-      const appSettings = await readAppSettings(repoRoot);
+      const appSettings = await getAppSettings(repoRoot);
       if (!appSettings.analytics?.enabled) {
         console.log('[digest-email] Analytics disabled, skipping digest job');
         return results;

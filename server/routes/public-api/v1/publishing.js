@@ -9,7 +9,7 @@ import {
   upsertPublishedEntry,
 } from '../../../storage/published/index.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { readUserSettings } from '../../../storage/settings.js';
+import { getUserSettings } from '../../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../../render/og-image.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { loadTheme } from '../../../utils/themes.js';
@@ -56,7 +56,7 @@ async function handlePublish(ctx, id) {
         const ownerEmail = pres?.ownerEmail || pres?.createdBy || apiKey.ownerEmail;
         if (ownerEmail) {
           try {
-            const userSettings = await readUserSettings(repoRoot, ownerEmail);
+            const userSettings = await getUserSettings(repoRoot, ownerEmail);
             authorInfo = {
               name: userSettings?.profile?.name || ownerEmail.split('@')[0],
               imageUrl: userSettings?.profile?.imageUrl || '',

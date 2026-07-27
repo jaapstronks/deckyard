@@ -10,7 +10,7 @@ import { getPresentation } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { canWritePresentation, canReadPresentation } from '../../utils/presentation-authz.js';
-import { readAppSettings } from '../../storage/settings.js';
+import { getAppSettings } from '../../storage/settings.js';
 import {
   createLead,
   getLeadById,
@@ -94,7 +94,7 @@ export async function handleLeadsPublic({ repoRoot, req, res, url }) {
     }
 
     // Get app settings for retention period
-    const settings = await readAppSettings(repoRoot);
+    const settings = await getAppSettings(repoRoot);
     const retentionDays = settings?.leads?.retentionDays || 365;
 
     // Create the lead

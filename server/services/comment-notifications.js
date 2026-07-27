@@ -5,7 +5,7 @@
  * and email notifications (via Brevo).
  */
 
-import { readAppSettings, readUserSettings } from '../storage/settings.js';
+import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
 import { getRequestOrigin } from '../utils/request-url.js';
@@ -70,7 +70,7 @@ export async function notifyCommentCreated(repoRoot, req, {
 
   if (recipientEmails.size === 0 && webhookRecipients.size === 0) return;
 
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   const origin = getRequestOrigin(req);
   const editUrl = origin && presentation?.id
     ? `${origin}/app/${presentation.id}`
@@ -90,7 +90,7 @@ export async function notifyCommentCreated(repoRoot, req, {
   const recipientPrefs = new Map();
   await Promise.all(
     [...new Set([...recipientEmails, ...webhookRecipients])].map(async (email) => {
-      const userSettings = await readUserSettings(repoRoot, email);
+      const userSettings = await getUserSettings(repoRoot, email);
       recipientPrefs.set(email, userSettings?.notifications || {});
     })
   );
@@ -249,14 +249,14 @@ export async function notifyMentionsAdded(repoRoot, req, {
     ctx,
   });
 
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   const origin = getRequestOrigin(req);
   const editUrl = origin && presentation?.id
     ? `${origin}/app/${presentation.id}`
     : null;
   const recipientPrefs = new Map();
   await Promise.all(recipients.map(async ({ email }) => {
-    const userSettings = await readUserSettings(repoRoot, email);
+    const userSettings = await getUserSettings(repoRoot, email);
     recipientPrefs.set(email, userSettings?.notifications || {});
   }));
   await sendCommentEmails({

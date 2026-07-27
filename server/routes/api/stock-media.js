@@ -12,9 +12,9 @@ import {
   badRequest,
   serverError,
 } from '../../utils/http.js';
-import { readAppSettings } from '../../storage/settings.js';
+import { getAppSettings } from '../../storage/settings.js';
 import { createImageLibraryItem } from '../../storage/image-library/index.js';
-import { saveUploadedFile } from '../../storage/uploads.js';
+import { writeUploadedFile } from '../../storage/uploads.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('stock-media');
 import {
@@ -38,7 +38,7 @@ import {
  * @returns {Promise<Object>}
  */
 async function getStockMediaStatus(repoRoot) {
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   const stockMedia = settings?.stockMedia || {};
 
   return {
@@ -131,7 +131,7 @@ export async function handleStockMedia({ repoRoot, storageScope, req, res, url, 
       const filename = `unsplash-${photoId}-${size}.${ext}`;
 
       // Save to uploads
-      const localUrl = await saveUploadedFile(repoRoot, buffer, filename, contentType);
+      const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
 
       // Add to image library with attribution
       const libraryItem = await createImageLibraryItem(storageScope, {
@@ -235,7 +235,7 @@ export async function handleStockMedia({ repoRoot, storageScope, req, res, url, 
 
       // Save to uploads
       const filename = `giphy-${gifId}.gif`;
-      const localUrl = await saveUploadedFile(repoRoot, buffer, filename, contentType);
+      const localUrl = await writeUploadedFile(repoRoot, buffer, filename, contentType);
 
       // Add to image library
       const libraryItem = await createImageLibraryItem(storageScope, {
