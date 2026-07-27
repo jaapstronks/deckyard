@@ -163,7 +163,13 @@ export default {
       type: 'items',
       required: false,
       minItems: 1,
-      maxItems: 3,
+      // The array shape is canonical and carries up to 4 rows. The legacy
+      // numbered mirror below is deliberately FROZEN at 3 (row1/2/3 is the whole
+      // vocabulary): a 4-row slide exists only in rows[] form. resolveRows()
+      // already prefers rows[], so the 4th row round-trips through save/load and
+      // AI validation without a numbered counterpart, while legacy ≤3-row decks
+      // render byte-for-byte unchanged. See A0.4 in docs/plans.
+      maxItems: 4,
       // The per-row `arrow` is a typed relation to the NEXT row, not content:
       // "down" ≈ leads-to, "up" ≈ follows-from. In the reader/reflow projection
       // this turns the rows into an ordered causal sequence (<ol>) with a small
