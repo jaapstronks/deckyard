@@ -327,3 +327,7 @@ For security reports, use GitHub's private vulnerability reporting (see
 ## License
 
 MIT License — see `LICENSE` for details.
+
+The `deckyard.deck` **format specification** (the deck-format reference docs) is
+dedicated to the public domain under CC0 1.0, separately from the MIT-licensed
+code, so anyone can implement the format freely — see `LICENSE-spec`.

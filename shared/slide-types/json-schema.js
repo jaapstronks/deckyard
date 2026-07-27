@@ -22,8 +22,13 @@ import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 
 const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 
-/** Canonical publish base for `$id`s. Adjust if the format gets its own host. */
-export const SCHEMA_BASE_URI = 'https://deckyard.app/schema';
+/**
+ * Canonical publish base for `$id`s. The schemas are (to be) served statically
+ * under this host by deckyard-website. The version in the path is
+ * `CURRENT_SCHEMA_VERSION` (the content-schema version), not the envelope
+ * `version` — see `schema-version.js`.
+ */
+export const SCHEMA_BASE_URI = 'https://deckyard.eu/schema';
 
 /** `$defs` key for a slide type's content schema. */
 function contentDefKey(typeName) {

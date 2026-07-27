@@ -90,7 +90,7 @@ from the same `fields[]` registry that drives validation and the editor — one
 source, no hand-synced copy. The schemas are served live and are versioned by
 `$id`:
 
-- Per-type: `https://deckyard.app/schema/v<N>/slide-types/<type>.schema.json`
+- Per-type: `https://deckyard.eu/schema/v<N>/slide-types/<type>.schema.json`
 - Whole deck (discriminated by `type`): `.../v<N>/deck.schema.json`
 - Reflected at runtime alongside `GET /api/slide-types`.
 
