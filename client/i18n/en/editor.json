@@ -546,6 +546,8 @@
   "editor.lang.versionCreatedInvite": "The {lang} version was just created and has no texts yet. Translate them automatically? Fields you fill in yourself are never overwritten.",
   "editor.lang.versionIncompleteInvite": "This {lang} version still has untranslated texts. Translate them automatically? Fields you filled in yourself are never overwritten.",
   "editor.langMode.title": "Language mode (edit + present)",
+  "editor.list.oneColumnFallback": "Shown in one column: two columns do not fit.",
+  "editor.list.sizeSteppedDown": "Large does not fit these items, so they are shown at the default size. Shorten the item text, or use fewer items, to get Large back.",
   "editor.layoutSwitcher.chip": "Layout",
   "editor.layoutSwitcher.imageLeft": "Image left",
   "editor.layoutSwitcher.imagePosition": "Image position",
