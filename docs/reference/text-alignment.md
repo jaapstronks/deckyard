@@ -147,9 +147,19 @@ Two CSS traps worth knowing:
 
 Types whose repeated cells each own their box — `text-blocks`,
 `content-columns`, `comparison`, `matrix`, `process`, `timeline`, `funnel`,
-`cycle`, `team-cards`, `card-stack`, `poll`, `likert-slider` — are deliberately
-**not** grouped. There "centre this field" means "centre it within its cell",
-which is exactly right, and their sibling fields already share a centre.
+`cycle`, `pyramid`, `team-cards`, `card-stack`, `poll`, `likert-slider` — are
+deliberately **not** grouped. There "centre this field" means "centre it within
+its cell", which is exactly right, and their sibling fields already share a
+centre.
+
+The shape/node diagram types among these — `cycle`, `funnel`, `pyramid` — are a
+decided contract, not an accidental exception (option B, 2026-07-22; #226). Their
+labels are marker-anchored like a list item, but each label sits **inside a
+shape** (a ring node, a funnel band, a pyramid tier), so centring it within that
+node is a legitimate authoring choice rather than the marker-detachment
+`list-item` guards against. They therefore carry **no** `list-item` role and keep
+block alignment on purpose; `tests/text-roles.test.js` asserts this so tagging
+them `list-item` later trips as a regression.
 
 Groups offer **left and centre only**. A right-aligned text block is not a
 layout worth handing people, and it is the one value that produced a broken
