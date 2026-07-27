@@ -62,7 +62,7 @@
   }
 }
 .publish-row-label {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   font-weight: 600;
   white-space: nowrap;
@@ -87,7 +87,7 @@
 .publish-row-input {
   min-width: 0;
   font-family: var(--ps-font-mono);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 .publish-row-textarea {
   min-height: 92px;
@@ -152,7 +152,7 @@
   min-height: 92px;
   resize: vertical;
   font-family: var(--ps-font-mono);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   line-height: 1.35;
 }
 

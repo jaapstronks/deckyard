@@ -114,7 +114,7 @@
 
 .export-format-name {
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 .export-format-desc {

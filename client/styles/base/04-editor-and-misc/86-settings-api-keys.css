@@ -118,7 +118,7 @@
 
 .api-key-copy-prefix {
   padding: 2px 6px;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
 }
 
 /* Scopes column */
@@ -132,7 +132,7 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: var(--ps-radius-full);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
   background: hsl(var(--app-accent-soft));
   color: hsl(var(--app-accent-text));

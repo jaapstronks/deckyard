@@ -96,7 +96,7 @@
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   border: none;
   opacity: 0;
   transition: opacity var(--ps-transition-fast), background var(--ps-transition-fast);
@@ -269,7 +269,7 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   background: transparent;
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
@@ -644,7 +644,7 @@
   border-radius: var(--ps-radius-full);
   background: hsl(var(--author-group-accent) / 0.15);
   color: hsl(var(--author-group-accent));
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   font-weight: 700;
   flex-shrink: 0;
 }

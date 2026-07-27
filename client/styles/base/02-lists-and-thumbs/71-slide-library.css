@@ -227,7 +227,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   pointer-events: auto;
   backdrop-filter: blur(4px);
   box-shadow: 0 1px 3px hsl(0 0% 0% / 0.15);
@@ -656,7 +656,7 @@
   width: 24px;
   height: 24px;
   border-radius: var(--ps-radius-full);
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   color: hsl(var(--app-text-tertiary));
   cursor: pointer;

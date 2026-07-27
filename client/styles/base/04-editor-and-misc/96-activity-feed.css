@@ -71,7 +71,7 @@
   border-radius: var(--ps-radius-full);
   background: hsl(var(--app-accent-soft));
   color: hsl(var(--app-accent-text));
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 700;
   flex-shrink: 0;
   text-transform: uppercase;
