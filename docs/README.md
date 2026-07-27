@@ -170,3 +170,4 @@ nothing is discoverable only by `ls`.
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |
 | [`html-escaping.md`](reference/html-escaping.md) | Escaping and `innerHTML` in the client |
+| [`dynamic-imports.md`](reference/dynamic-imports.md) | When a dynamic `import()` is justified, and where they survive |
