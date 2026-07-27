@@ -14,7 +14,7 @@ import {
   getCollapsedState,
   saveCollapsedState,
 } from './slide-list/nested-helpers.js';
-import { createSlideItem } from './slide-list/render-item.js';
+import { createSlideItem, applySlideLockIndicator } from './slide-list/render-item.js';
 import { attachDragHandlers } from './slide-list/drag-handlers.js';
 import { attachLongPress } from '../../lib/dom/long-press.js';
 import { attachClickHandler } from './slide-list/click-handlers.js';
@@ -555,6 +555,39 @@ export function setupSlideList({
     }
   };
 
+  // Patch the concurrent-lock affordances on the affected rows instead of
+  // rebuilding the list. Lock events arrive on every SSE tick as soon as a
+  // second editor is in the deck, and a full rerender re-renders every
+  // thumbnail (~17 ms on an 80-slide deck) just to move one badge.
+  //
+  // Rows that show an indicator right now are always re-checked on top of the
+  // caller's ids: an unlock is only visible as a badge that must disappear,
+  // and the caller typically knows just the still-locked slides.
+  //
+  // @param {Iterable<string>} [lockedIds] Slide ids currently locked by others.
+  const updateSlideLockIndicators = (lockedIds) => {
+    const targets = new Set();
+    for (const id of lockedIds || []) {
+      if (id) targets.add(String(id));
+    }
+    for (const el of slideListEl.querySelectorAll('.list-item.is-locked-by-other')) {
+      const sid = el.dataset.slideId;
+      if (sid) targets.add(sid);
+    }
+    if (!targets.size) return;
+
+    for (const slideId of targets) {
+      const item = slideListEl.querySelector(`.list-item[data-slide-id="${slideId}"]`);
+      if (!item) continue;
+      applySlideLockIndicator({
+        h,
+        item,
+        lockInfo: getSlideLockInfo?.(slideId) || null,
+        lockedByOther: isSlideLockedByOther?.(slideId) || false,
+      });
+    }
+  };
+
   const getSlidesForNav = () => {
     const q = normalizeQuery(getSearchQuery?.());
     const allSlides = pres?.slides || [];
@@ -672,6 +705,7 @@ export function setupSlideList({
   return {
     rerenderSlideList,
     updateSelectedSlideListItem,
+    updateSlideLockIndicators,
     selectSlideByIndex,
     detach,
     getSelectedSlideIds,

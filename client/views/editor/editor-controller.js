@@ -212,10 +212,13 @@ export async function createEditorController({
     api,
     presentationId: id,
     getSelectedSlideId: () => selectedSlideId,
-    onLocksChanged: ({ currentSlideIsLocked } = {}) => {
-      // Rerender slide list to update lock indicators
+    onLocksChanged: ({ currentSlideIsLocked, lockedByOthers } = {}) => {
+      // Patch the affected rows' lock indicators. A full rerenderSlideList()
+      // here re-rendered every thumbnail on every SSE lock echo, which on a
+      // large deck with a second editor blocked the main thread for hundreds
+      // of milliseconds a minute while sitting idle.
       try {
-        rerenderSlideList?.();
+        updateSlideLockIndicators?.(lockedByOthers);
       } catch {
         // ignore
       }
@@ -460,6 +463,7 @@ export async function createEditorController({
   let rerenderEditor = () => {};
   let rerenderPreview = () => {};
   let updateSelectedSlideListItem = () => {};
+  let updateSlideLockIndicators = () => {};
   let lastNotesSlideId = null;
 
   const scheduleUiRefresh = () => {
@@ -1071,6 +1075,7 @@ export async function createEditorController({
     return stats;
   };
   updateSelectedSlideListItem = slideListApi.updateSelectedSlideListItem;
+  updateSlideLockIndicators = slideListApi.updateSlideLockIndicators;
   cleanup.register('slideListKeys', slideListApi.detach);
 
   // Initialize slide lock manager. In live-edit mode the lock machinery is

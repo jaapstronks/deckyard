@@ -19,6 +19,60 @@ import {
 import { normalizeQuery, renderHighlightedText } from './search.js';
 
 /**
+ * Add, update or remove the concurrent-lock affordances on one slide row.
+ *
+ * Shared by the full render and by the in-place patch in slide-list.js, so the
+ * markup a lock produces is defined once. Both indicators are absolutely
+ * positioned overlays, so append order carries no meaning.
+ *
+ * @param {Object} opts
+ * @param {Function} opts.h DOM helper
+ * @param {HTMLElement} opts.item The `.list-item` row
+ * @param {HTMLElement} [opts.thumbEl] The row's `.thumb.thumb-mini` (looked up when omitted)
+ * @param {HTMLElement} [opts.numCollapsedEl] The row's `.slide-num-collapsed` (looked up when omitted)
+ * @param {Object|null} opts.lockInfo Lock record for the slide, if any
+ * @param {boolean} opts.lockedByOther Whether another user holds the lock
+ */
+export function applySlideLockIndicator({
+  h,
+  item,
+  thumbEl,
+  numCollapsedEl,
+  lockInfo,
+  lockedByOther,
+}) {
+  if (!item) return;
+  const active = !!lockedByOther && !!lockInfo;
+  item.classList.toggle('is-locked-by-other', active);
+
+  const existing = item.querySelector('.slide-lock-indicator');
+  const existingCollapsed = item.querySelector('.slide-lock-indicator-collapsed');
+
+  if (!active) {
+    existing?.remove();
+    existingCollapsed?.remove();
+    return;
+  }
+
+  const lockedBy = lockInfo.holderName || lockInfo.holderEmail || '';
+  const lockTitle = t('editor.slideList.lockedBy', 'Locked by {name}', { name: lockedBy });
+
+  const thumb = thumbEl || item.querySelector('.thumb.thumb-mini');
+  if (existing) {
+    existing.title = lockTitle;
+  } else if (thumb) {
+    thumb.append(h('div', { class: 'slide-lock-indicator', title: lockTitle }));
+  }
+
+  const numCollapsed = numCollapsedEl || item.querySelector('.slide-num-collapsed');
+  if (existingCollapsed) {
+    existingCollapsed.title = lockTitle;
+  } else if (numCollapsed) {
+    numCollapsed.append(h('div', { class: 'slide-lock-indicator-collapsed', title: lockTitle }));
+  }
+}
+
+/**
  * Create a slide item element
  */
 export function createSlideItem({
@@ -201,23 +255,14 @@ export function createSlideItem({
   }
 
   // Lock indicator (concurrent editing)
-  const lockInfo = getSlideLockInfo?.(s.id);
-  const lockedByOther = isSlideLockedByOther?.(s.id) || false;
-  if (lockedByOther && lockInfo) {
-    const lockedBy = lockInfo.holderName || lockInfo.holderEmail || '';
-    const lockTitle = t('editor.slideList.lockedBy', 'Locked by {name}', { name: lockedBy });
-    const lockIndicator = h('div', {
-      class: 'slide-lock-indicator',
-      title: lockTitle,
-    });
-    thumbMini.append(lockIndicator);
-    const lockIndicatorCollapsed = h('div', {
-      class: 'slide-lock-indicator-collapsed',
-      title: lockTitle,
-    });
-    numCollapsed.append(lockIndicatorCollapsed);
-    item.classList.add('is-locked-by-other');
-  }
+  applySlideLockIndicator({
+    h,
+    item,
+    thumbEl: thumbMini,
+    numCollapsedEl: numCollapsed,
+    lockInfo: getSlideLockInfo?.(s.id) || null,
+    lockedByOther: isSlideLockedByOther?.(s.id) || false,
+  });
 
   // Search results: show title and snippet below thumbnail
   const q = searchActive ? normalizeQuery(context.getSearchQuery?.()) : '';
