@@ -10,7 +10,6 @@
  * - description: Multi-line description for the AI
  * - bestFor: Array of use cases when this slide type is ideal
  * - notFor: Array of anti-patterns when NOT to use this slide type
- * - schema: Object defining content field constraints for the AI
  * - examples: Array of example content objects (optional)
  * - usage: String with the organization's own rules for filling this type
  *   (optional; normalized and truncated, see shared/slide-types/usage.js)
@@ -95,6 +94,19 @@ export async function loadCustomAiCatalog() {
           continue;
         }
 
+        // A fork written against the old contract may still carry `ai.schema`.
+        // The shape now comes from the type's own `fields[]`, so the block is
+        // ignored — said out loud, because silently dropping it is how a fork
+        // ends up wondering why its constraints stopped reaching the model.
+        if (aiDef.schema && typeof aiDef.schema === 'object') {
+          console.warn(
+            `[custom-ai-loader] Ignoring 'ai.schema' on ${typeName}: the agent-facing ` +
+              'schema is derived from the type definition\'s fields[]. Move any ' +
+              'constraint you need onto the field itself, and use `ai: false` on a ' +
+              'field you do not want agents to fill.'
+          );
+        }
+
         // Build the AI catalog entry
         catalog[typeName] = {
           category: aiDef.category || 'content',
@@ -102,7 +114,6 @@ export async function loadCustomAiCatalog() {
           description: aiDef.description,
           bestFor: Array.isArray(aiDef.bestFor) ? aiDef.bestFor : [],
           notFor: Array.isArray(aiDef.notFor) ? aiDef.notFor : [],
-          schema: aiDef.schema || {},
           // Truncated rather than rejected: a rule that runs long should lose
           // its tail, not take a working slide type down with it. A non-string
           // (a function, an object) normalizes to null and is simply absent.

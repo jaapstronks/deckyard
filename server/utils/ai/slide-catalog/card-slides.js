@@ -54,20 +54,6 @@ export const CARD_SLIDES = {
       'rocket-launch', 'gear', 'shield-check', 'check-circle',
       'warning-circle', 'calendar', 'globe', 'heart', 'star',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      items: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 6,
-        itemSchema: {
-          icon: { type: 'string', required: true, maxLength: 40 },
-          title: { type: 'string', required: true, maxLength: 80 },
-          body: { type: 'markdown', required: false, maxLength: 700 },
-        },
-      },
-    },
   },
 
   // card-stack-slide: DEPRECATED — removed from AI generation.
@@ -122,29 +108,6 @@ export const CARD_SLIDES = {
       'Sequential timelines with dates (use timeline-slide)',
       'Items that each need an icon (use icon-card-grid-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      rows: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 3,
-        itemSchema: {
-          title: { type: 'string', required: false, maxLength: 120 },
-          color: { type: 'enum', options: ['yellow', 'black'], default: 'yellow' },
-          arrow: { type: 'enum', options: ['none', 'down', 'up'], default: 'none' },
-          blocks: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 6,
-            itemSchema: {
-              title: { type: 'string', required: true, maxLength: 80 },
-              body: { type: 'markdown', required: false, maxLength: 500 },
-            },
-          },
-        },
-      },
-    },
   },
 
   'kpi-metrics-slide': {
@@ -184,21 +147,6 @@ export const CARD_SLIDES = {
       'Qualitative descriptions without clear numeric values',
       'Lists of activities or processes (use list-slide or text-blocks-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-      metrics: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 4,
-        itemSchema: {
-          value: { type: 'string', required: true, maxLength: 30 },
-          unit: { type: 'string', required: false, maxLength: 12 },
-          label: { type: 'string', required: true, maxLength: 60 },
-          note: { type: 'string', required: false, maxLength: 100 },
-        },
-      },
-    },
   },
 
 };

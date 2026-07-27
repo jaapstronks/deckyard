@@ -16,10 +16,6 @@ export const MEDIA_SLIDES = {
     `,
     bestFor: ['Embedded video content'],
     notFor: ['Content without a video URL'],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      videoUrl: { type: 'string', required: true },
-    },
   },
 
   'embed-slide': {
@@ -40,13 +36,5 @@ export const MEDIA_SLIDES = {
       'A static picture of a tool (use image-slide)',
       'Any case where you would have to invent the URL',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      embedUrl: { type: 'string', required: true, maxLength: 500 },
-      aspectRatio: { type: 'enum', required: false, options: ['16:9', '4:3', '1:1', 'auto'] },
-      // 'restricted' blocks scripts and forms; only raise it to 'permissive'
-      // when the embedded page is interactive and the author asked for it.
-      sandbox: { type: 'enum', required: false, options: ['restricted', 'permissive'] },
-    },
   },
 };

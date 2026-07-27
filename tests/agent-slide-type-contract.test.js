@@ -5,9 +5,10 @@
  * coverage comes from the runtime registry, the editorial catalog is an
  * overlay, and a withheld type says so on its definition.
  *
- * This is NOT the full coverage test from T7 (which must fail the build when a
- * new type is neither documented nor opted out) — that lands with the T7 work.
- * These are the regression anchors for the three types that were invisible.
+ * Type-level coverage (a new type is either documented or opted out) is gated by
+ * tests/slide-type-companion-coverage.test.js. What lives here is the *shape*:
+ * the regression anchors for the three types that were invisible, plus the rules
+ * deriveAgentSchema() applies to a type's fields[].
  */
 
 import { test } from 'node:test';
@@ -19,6 +20,7 @@ import {
   deriveAgentSchema,
   resolveAgentSlideTypes,
 } from '../server/utils/ai/slide-catalog/agent-catalog.js';
+import { getCoreSlideCatalog } from '../server/utils/ai/slide-catalog/definitions.js';
 
 test('every registered type is offered, derived, or explicitly opted out', () => {
   const resolved = resolveAgentSlideTypes({});
@@ -84,6 +86,81 @@ test('an undocumented registered type is still offered, flagged documented:false
     itemSchema: { text: { type: 'string' } },
   });
   assert.equal(schema.slideLogo, undefined);
+});
+
+test('the derived schema is the only schema — no catalog entry declares one', () => {
+  // The gate under T7-slice 3: the editorial catalog owns the prose, the type
+  // definition owns the shape. A `schema` block reappearing in a catalog entry
+  // is the duplication coming back, and it drifted last time — two of the 31
+  // entries ended up naming a field no renderer reads.
+  const offenders = Object.entries(getCoreSlideCatalog())
+    .filter(([, entry]) => entry && 'schema' in entry)
+    .map(([name]) => name);
+  assert.deepEqual(
+    offenders,
+    [],
+    'catalog entries must not declare a schema; put the constraint on the ' +
+      'field in shared/slide-types/types/<type>.js instead'
+  );
+});
+
+test('every offered core type resolves a schema out of its own fields', () => {
+  // payoff-slide is the one legitimate empty: it renders the theme logo and
+  // reads no content at all (fields: []). Anything else resolving to {} means
+  // the fields[] and the agent contract have come apart.
+  const FIELDLESS = new Set(['payoff-slide']);
+  for (const [name, entry] of Object.entries(resolveAgentSlideTypes({}))) {
+    if (entry.isCustom || FIELDLESS.has(name)) continue;
+    assert.ok(
+      Object.keys(entry.schema).length > 0,
+      `${name}: derived schema is empty — every field is global or opted out`
+    );
+  }
+});
+
+test('a field opts out of the agent contract three ways', () => {
+  const schema = deriveAgentSchema([
+    { key: 'live', type: 'string' },
+    // Legacy mirrors of a structured array: the agent authors items[], never
+    // card3Title. `hidden` is the same marker semantic-projection.js reads.
+    { key: 'legacyHidden', type: 'string', hidden: true },
+    { key: 'legacyDeprecated', type: 'string', deprecated: true },
+    // Live and editable, but withheld — same key and meaning as the type-level
+    // `ai: false` that isAgentOptOut() honours.
+    { key: 'infra', type: 'string', ai: false },
+  ]);
+
+  assert.deepEqual(Object.keys(schema), ['live']);
+});
+
+test('markdown stays markdown, and helpText becomes the field description', () => {
+  const schema = deriveAgentSchema([
+    { key: 'body', type: 'markdown', maxLength: 700 },
+    { key: 'mode', type: 'enum', options: ['a'], helpText: '  Only used in the duo layout.  ' },
+    { key: 'plain', type: 'string', helpText: '   ' },
+  ]);
+
+  // 'markdown' is not collapsed to 'string': it tells an agent that emphasis and
+  // links render instead of showing up as literal asterisks.
+  assert.equal(schema.body.type, 'markdown');
+  assert.equal(schema.mode.description, 'Only used in the duo layout.');
+  assert.ok(!('description' in schema.plain), 'blank helpText adds nothing');
+});
+
+test('the opt-out rules reach into item fields too', () => {
+  const schema = deriveAgentSchema([
+    {
+      key: 'items',
+      type: 'items',
+      maxItems: 3,
+      itemFields: [
+        { key: 'label', type: 'string' },
+        { key: 'legacy', type: 'string', deprecated: true },
+      ],
+    },
+  ]);
+
+  assert.deepEqual(Object.keys(schema.items.itemSchema), ['label']);
 });
 
 test('org disabled types are filtered out for agents too', () => {

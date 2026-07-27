@@ -15,6 +15,10 @@
  * There is no fourth state, and "forgot to write an entry" is now the third
  * one (visible but flagged) rather than silent absence.
  *
+ * The three states differ only in *prose*. The content schema is the same
+ * derivation in all of them — the type's own `fields[]`, via deriveAgentSchema()
+ * — because a hand-written second copy is a copy that drifts, and did.
+ *
  * Tier 2 — per-organization slide types defined in the database — is resolved
  * on top of that, keyed `custom-<slug>`, the same key `/api/slide-types` and
  * `buildPhase2CatalogPrompt` already use. That is what makes the no-code path
@@ -42,12 +46,15 @@ import { clampUsage } from '../../../../shared/slide-types/usage.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
-// Editor field types → the coarse schema vocabulary the catalog entries use.
+// Editor field types → the coarse schema vocabulary the agent contract uses.
 // Anything unmapped degrades to 'string', which is the honest answer for a
-// free-text field an agent has never seen before.
+// free-text field an agent has never seen before. `markdown` keeps its own name
+// rather than collapsing to 'string': the hand-written schemas this derivation
+// replaced made that distinction, and it tells an agent that inline emphasis
+// and links will render instead of showing up as literal asterisks.
 const FIELD_TYPE_TO_SCHEMA_TYPE = {
   string: 'string',
-  markdown: 'string',
+  markdown: 'markdown',
   code: 'string',
   csv: 'string',
   image: 'string',
@@ -79,13 +86,45 @@ export function isAgentOptOut(def) {
 }
 
 /**
- * Derive a coarse content schema from a type's editor field definitions.
- * Used for registered types that have no editorial catalog entry: an imperfect
- * schema an agent can act on beats a type it cannot see at all.
+ * True when a single field definition is outside the agent contract.
+ *
+ * Three markers, in order of how often they apply:
+ *  - `deprecated: true` / `hidden: true` — the legacy numbered slots
+ *    (`card3Title`, `logo7Image`, `row2Block1Body`) that mirror a structured
+ *    array the agent already gets. `semantic-projection.js` reads `hidden` the
+ *    same way, so this is the existing vocabulary rather than a new one.
+ *  - `ai: false` — "this field is not offered to agents" for a live, editable
+ *    field. Same key and same meaning as the type-level `ai: false` that
+ *    isAgentOptOut() honours, one level down.
+ *
+ * The default is therefore *offered*: a field an author may fill is a field an
+ * agent may fill, and withholding one is a decision somebody has to write down.
+ * That is deliberate — the opposite default is what let the hand-written
+ * schemas drift out of the registry unnoticed for as long as they did.
+ *
+ * @param {object} field - A field definition from a slide type's `fields[]`.
+ * @returns {boolean}
+ */
+function isFieldOptOut(field) {
+  return field?.deprecated === true || field?.hidden === true || field?.ai === false;
+}
+
+/**
+ * Derive a content schema from a type's editor field definitions.
+ *
+ * This is the *only* source of the agent-facing `fields[]` shape. Catalog
+ * entries carry the editorial layer (description, bestFor, notFor, examples)
+ * and nothing about field types, limits or options: those live on the
+ * definition, which is what the editor validates and the renderer reads. A
+ * second hand-written copy could only ever be right by accident — and by the
+ * time this derivation replaced it, two of the 31 entries were telling agents
+ * to fill a field no renderer reads (`payoff-slide.tagline`,
+ * `video-slide.videoUrl`).
  *
  * Global fields (background image, logo, a11y…) are left out — they travel in
  * the response's `globalOptions` instead, and repeating them on every type
- * would bury the fields that actually distinguish it.
+ * would bury the fields that actually distinguish it. Opted-out fields
+ * (see isFieldOptOut) are left out too.
  *
  * @param {Array<object>} fields
  * @returns {Object<string, object>}
@@ -95,6 +134,7 @@ export function deriveAgentSchema(fields) {
   for (const field of Array.isArray(fields) ? fields : []) {
     const key = typeof field?.key === 'string' ? field.key : '';
     if (!key || GLOBAL_FIELDS.has(key)) continue;
+    if (isFieldOptOut(field)) continue;
 
     const entry = { type: FIELD_TYPE_TO_SCHEMA_TYPE[field.type] || 'string' };
     if (field.required === true) entry.required = true;
@@ -109,6 +149,11 @@ export function deriveAgentSchema(fields) {
         o && typeof o === 'object' ? o.value : o
       );
     }
+    // The editor's own prose about the field. It answers exactly the question
+    // an agent has ("what goes in here, and when"), so it carries over rather
+    // than being rewritten a second time in the catalog.
+    const help = typeof field.helpText === 'string' ? field.helpText.trim() : '';
+    if (help) entry.description = help;
     if (Array.isArray(field.itemFields) && field.itemFields.length) {
       entry.itemSchema = deriveAgentSchema(field.itemFields);
     }
@@ -190,7 +235,9 @@ function tier1Entry(name, def, catalogEntry, lang) {
         'the schema below is derived from its field definitions.',
     bestFor: catalogEntry?.bestFor || [],
     notFor: catalogEntry?.notFor || [],
-    schema: catalogEntry?.schema || deriveAgentSchema(def?.fields),
+    // Always derived — a catalog entry has no say in the shape, only in the
+    // prose about it. See deriveAgentSchema().
+    schema: deriveAgentSchema(def?.fields),
     example: exampleFor(def, lang),
     // false = registered and usable, but nobody has written the editorial copy.
     // Surfacing the gap beats hiding the type.

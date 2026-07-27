@@ -21,12 +21,6 @@ export const STRUCTURAL_SLIDES = {
     `,
     bestFor: ['Opening/first slide of any deck'],
     notFor: ['Anything other than the deck opening'],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-      meta: { type: 'string', required: false, maxLength: 160 },
-      background: { type: 'enum', options: ['lime', 'transparent'] },
-    },
   },
 
   'chapter-title-slide': {
@@ -46,10 +40,6 @@ export const STRUCTURAL_SLIDES = {
       'Content that needs explanation (use content slides after this)',
       'Minor sub-topics within a section',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 200 },
-    },
   },
 
   'quote-slide': {
@@ -72,11 +62,6 @@ export const STRUCTURAL_SLIDES = {
       'Back-to-back placement (space them out in the deck)',
     ],
     varietyRule: 'Never place two quote-slides adjacent to each other',
-    schema: {
-      quote: { type: 'string', required: true, maxLength: 280 },
-      authorName: { type: 'string', required: true, maxLength: 80 },
-      authorTitle: { type: 'string', required: true, maxLength: 120 },
-    },
   },
 
   'payoff-slide': {
@@ -88,9 +73,6 @@ export const STRUCTURAL_SLIDES = {
     `,
     bestFor: ['Final slide of a presentation', 'Brand reinforcement'],
     notFor: ['Content that needs explanation', 'Anything mid-deck', 'Slides that need contact details (use end-slide)'],
-    schema: {
-      tagline: { type: 'string', required: false, maxLength: 120 },
-    },
   },
 
   'end-slide': {
@@ -100,6 +82,9 @@ export const STRUCTURAL_SLIDES = {
       A closing "Thank you" slide with optional contact information and social links.
       More functional than payoff-slide — includes space for contact details.
       Use as the last slide when the audience needs to know how to follow up.
+
+      The social link labels name the network (LinkedIn, Mastodon, Bluesky…);
+      the matching URL field holds the profile address.
     `,
     bestFor: [
       'Final slide with contact information',
@@ -110,18 +95,5 @@ export const STRUCTURAL_SLIDES = {
       'Brand-only closing without contact info (use payoff-slide)',
       'Content slides mid-deck',
     ],
-    schema: {
-      title: { type: 'string', required: true, maxLength: 120 },
-      body: { type: 'markdown', required: false, maxLength: 500 },
-      contactName: { type: 'string', required: false, maxLength: 80 },
-      contactEmail: { type: 'string', required: false, maxLength: 120 },
-      contactPhone: { type: 'string', required: false, maxLength: 40 },
-      contactUrl: { type: 'string', required: false, maxLength: 200 },
-      social1Label: { type: 'string', required: false, maxLength: 40, description: 'Label for social link (e.g. LinkedIn, Mastodon, Bluesky)' },
-      social1Url: { type: 'string', required: false, maxLength: 200 },
-      social2Label: { type: 'string', required: false, maxLength: 40, description: 'Label for social link (e.g. LinkedIn, Mastodon, Bluesky)' },
-      social2Url: { type: 'string', required: false, maxLength: 200 },
-      background: { type: 'enum', options: ['lime', 'mist'] },
-    },
   },
 };

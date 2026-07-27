@@ -43,6 +43,10 @@ export default {
       type: 'string',
       required: false,
       maxLength: 20,
+      // Infrastructure, not content: the id belongs to whoever owns the Bunny
+      // account, and an invented one silently yields an empty player. Agents
+      // supply `source` and inherit the configured library.
+      ai: false,
     },
   ],
   defaults: {

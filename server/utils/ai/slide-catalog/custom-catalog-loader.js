@@ -6,7 +6,10 @@
  * `custom/slide-types/*.js` already *adds* whole new types (see
  * `custom-loader.js`); this loader lets a fork replace the `description` /
  * `bestFor` / `notFor` that a **core** type contributes to the generation
- * prompt, while the core type keeps its schema, `allowedIcons`, category, etc.
+ * prompt, while the core type keeps its `allowedIcons`, category, etc. The
+ * content schema is not overridable at all: it is derived from the type
+ * definition's `fields[]` (see deriveAgentSchema), which is what the editor
+ * validates — a fork that wants a different shape changes the fields.
  *
  * Drop a `custom/ai/catalog.js` in the repo root whose default export maps a
  * core type name to a partial override:

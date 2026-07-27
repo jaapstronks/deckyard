@@ -2,18 +2,22 @@
  * Slide Types Prompt Builder (V1 generation + append)
  *
  * Builds a prompt section describing all available slide types.
- * Delegates to the AI catalog (server/utils/ai/slide-catalog/) for types that
- * have rich catalog entries. Falls back to legacy field-based descriptions for
- * types not in the catalog.
+ * Delegates to the AI catalog (server/utils/ai/slide-catalog/) for the prose —
+ * description, bestFor, notFor — of types that have a catalog entry; a type
+ * without one still appears, described by its schema alone.
  *
- * This ensures that catalog improvements (bestFor, notFor, description, schema)
+ * The content schema is never taken from the catalog: it is derived from the
+ * type definition's `fields[]` (deriveAgentSchema), so the prompt cannot drift
+ * from what the editor validates and the renderer reads.
+ *
+ * This ensures that catalog improvements (bestFor, notFor, description)
  * automatically flow to both v1 (single-pass) and v2 (two-phase) generation.
  */
 
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
-import { isAgentOptOut } from '../ai/slide-catalog/agent-catalog.js';
+import { isAgentOptOut, deriveAgentSchema } from '../ai/slide-catalog/agent-catalog.js';
 
 function stableSlideTypeEntries() {
   return Object.entries(SLIDE_TYPES || {});
@@ -247,34 +251,34 @@ function buildCatalogTypePrompt(type, catalogEntry) {
 }
 
 /**
- * Build a compact field schema from a type definition's fields array.
- * Used as fallback for types not in the AI catalog.
+ * Render the derived agent schema as compact prompt lines.
+ *
+ * One renderer for every type: the shape always comes from deriveAgentSchema()
+ * (the definition's `fields[]`), never from a hand-written copy in the catalog.
+ * Before this, a documented type was rendered from the catalog's `schema` and an
+ * undocumented one from its raw `fields[]` — two formats, and the raw one listed
+ * legacy mirror fields the agent should never fill.
+ *
+ * @param {Object<string, object>} schema - Output of deriveAgentSchema().
+ * @returns {string[]}
  */
-function compactFieldSchema(fields) {
-  const f = Array.isArray(fields) ? fields : [];
+function compactAgentSchema(schema) {
   const lines = [];
-  for (const field of f) {
-    if (!field || typeof field.key !== 'string') continue;
-    const req = field.required ? 'required' : 'optional';
-    if (field.type === 'enum') {
-      const opts = Array.isArray(field.options)
-        ? field.options
-            .map((o) =>
-              typeof o === 'string' ? o : o?.value != null ? String(o.value) : null
-            )
-            .filter(Boolean)
-        : [];
-      lines.push(`- ${field.key}: enum (${req})${opts.length ? ` = ${opts.join('|')}` : ''}`);
-      continue;
+  for (const [key, fieldDef] of Object.entries(schema || {})) {
+    if (fieldDef.type === 'array') {
+      const itemFields = fieldDef.itemSchema
+        ? Object.keys(fieldDef.itemSchema).join(', ')
+        : '';
+      lines.push(
+        `- ${key}: array[${fieldDef.minItems || 1}-${fieldDef.maxItems || '?'}]` +
+          `${itemFields ? ` of { ${itemFields} }` : ''}`
+      );
+    } else if (fieldDef.type === 'enum') {
+      lines.push(`- ${key}: enum = ${(fieldDef.options || []).join('|')}`);
+    } else {
+      const req = fieldDef.required ? 'required' : 'optional';
+      lines.push(`- ${key}: ${fieldDef.type || 'string'} (${req})`);
     }
-    if (field.type === 'items') {
-      const itemKeys = Array.isArray(field.itemFields)
-        ? field.itemFields.map((x) => x?.key).filter(Boolean)
-        : [];
-      lines.push(`- ${field.key}: items[] (${req})${itemKeys.length ? ` objects with keys: ${itemKeys.join(', ')}` : ''}`);
-      continue;
-    }
-    lines.push(`- ${field.key}: ${field.type || 'unknown'} (${req})`);
   }
   return lines;
 }
@@ -312,36 +316,14 @@ export function buildSlideTypesPrompt({
     // No catalog entry: the type still appears, described by its field-derived
     // schema below. Undocumented beats invisible.
 
-    // Schema: prefer catalog schema, fall back to field-based
-    if (catalogEntry?.schema) {
-      // Show a compact schema from the catalog
-      const schemaLines = [];
-      for (const [key, fieldDef] of Object.entries(catalogEntry.schema)) {
-        if (fieldDef.type === 'array') {
-          const itemFields = fieldDef.itemSchema
-            ? Object.keys(fieldDef.itemSchema).join(', ')
-            : '';
-          schemaLines.push(`- ${key}: array[${fieldDef.minItems || 1}-${fieldDef.maxItems || '?'}]${itemFields ? ` of { ${itemFields} }` : ''}`);
-        } else if (fieldDef.type === 'enum') {
-          schemaLines.push(`- ${key}: enum = ${(fieldDef.options || []).join('|')}`);
-        } else {
-          const req = fieldDef.required ? 'required' : 'optional';
-          schemaLines.push(`- ${key}: ${fieldDef.type || 'string'} (${req})`);
-        }
-      }
-      if (schemaLines.length) {
-        lines.push('Content schema:');
-        lines.push(...schemaLines);
-      }
+    // Schema: always derived from the definition. A catalog entry contributes
+    // the prose above and nothing about the shape.
+    const schemaLines = compactAgentSchema(deriveAgentSchema(def?.fields));
+    if (schemaLines.length) {
+      lines.push('Content schema:');
+      lines.push(...schemaLines);
     } else {
-      // Legacy: build from type def fields
-      const schemaLines = compactFieldSchema(def?.fields);
-      if (schemaLines.length) {
-        lines.push('Content schema:');
-        lines.push(...schemaLines);
-      } else {
-        lines.push('Content schema: (no fields)');
-      }
+      lines.push('Content schema: (no fields)');
     }
 
     // JSON example: manual override > catalog examples > defaults
@@ -382,7 +364,9 @@ export function buildSlideTypesPrompt({
       lines.push('When to use:');
       lines.push(`- Use for content that matches the "${ctLabel}" template.`);
       if (ct.baseType) lines.push(`- Based on: ${ct.baseType}`);
-      const schemaLines = compactFieldSchema(ct.fields);
+      // Same derivation as core and as tier2Entry() in the MCP layer: a Tier-2
+      // type is a different storage shape, not a different contract.
+      const schemaLines = compactAgentSchema(deriveAgentSchema(ct.fields));
       if (schemaLines.length) {
         lines.push('Content schema:');
         lines.push(...schemaLines);

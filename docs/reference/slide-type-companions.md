@@ -43,7 +43,7 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 
 | Companion | Source of truth | Owed by | Silent degradation |
 |---|---|---|---|
-| AI / MCP catalog entry | `server/utils/ai/slide-catalog/` (`SLIDE_TYPE_CATALOG`) | not `ai: false`, not deprecated | derived entry flagged `documented: false`; category falls back to `content` |
+| AI / MCP catalog **prose** (description, bestFor, notFor) | `server/utils/ai/slide-catalog/` (`SLIDE_TYPE_CATALOG`) | not `ai: false`, not deprecated | derived entry flagged `documented: false`; category falls back to `content` |
 | AI prompt examples | `server/utils/ai/slide-catalog/examples/` | sparse by design (reverse only) | prompt shows the schema without filled-in content |
 | v1 generator manual example | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`) | sparse by design (reverse only) | falls through to the catalog example, then to defaults |
 | Picker description | `client/views/editor/slide-type-picker/data.js` (`SLIDE_TYPE_DESC`) | every insertable type | tile shows the bare label, no tooltip |
@@ -99,10 +99,35 @@ Rules and limits: `shared/slide-types/usage.js`.
 | Layer | Derived from |
 |---|---|
 | Editor form, JSON schema, validation | `fields[]` on the definition |
+| Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written until T7-slice 3; see below |
 | i18n key scaffolding | `addUiI18nKeysToSlideType()` at registry build |
 | Agent-visible type list (MCP `get_slide_types`) | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
 | Canonical type id (`core/title-slide`) | `SLIDE_TYPE_IDS` |
 | Deck type manifest | `collectSlideTypeManifest()` |
+
+### The agent-facing schema, and how a field opts out
+
+Until T7-slice 3 the AI catalog carried a hand-written `schema:` block per type —
+a second copy of what `fields[]` already said. It drifted: of 135 field entries,
+five named something no renderer reads (`payoff-slide.tagline`,
+`video-slide.videoUrl`, and the deprecated `stages`/`steps` aliases on
+funnel/cycle/process). The shape now has exactly one owner, the definition, and
+the catalog carries prose only.
+
+Which fields reach an agent is therefore a property of the field:
+
+| On the field | Meaning | Reaches agents |
+|---|---|---|
+| *(nothing)* | an ordinary authorable field | yes — this is the default |
+| `hidden: true` | legacy mirror of a structured field; also skipped by the semantic projection | no |
+| `deprecated: true` | legacy field kept for stored decks | no |
+| `ai: false` | live and editable, but deliberately withheld (infrastructure, legacy counters) | no |
+| `helpText: '…'` | the editor's own prose about the field | yes — becomes the schema entry's `description` |
+
+The default is *offered*, matching the type-level rule from #386: withholding is
+a decision somebody writes down, not something that happens by omission. The
+`ai` key means the same thing on a field as it does on a type
+(`isAgentOptOut`), one level down.
 
 ## Deliberately not in the matrix
 

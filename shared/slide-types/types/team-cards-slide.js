@@ -207,13 +207,22 @@ export default {
         // photo's name is the block Title, the byline is its Caption. These
         // labels also drive the in-slide inline "+ …" ghost chips.
         { key: 'image', type: 'image', label: 'Photo' },
+        // Declared because the renderer reads it (see resolveMembers) and
+        // itemDefaults seeds it — it was only ever missing here, which made the
+        // definition an incomplete description of the block. gallery-slide's
+        // images[] declares its `alt` the same way.
+        { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
         { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
         { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
         { key: 'linkedin', type: 'string', label: 'LinkedIn URL', maxLength: 300 },
       ],
     },
 
-    // Legacy 1..12 cards: image + name + byline + optional explicit alt (author intent) + focus
+    // Legacy 1..12 cards: image + name + byline + optional explicit alt (author intent) + focus.
+    // `ai: false` on the whole block (applied below): these mirror members[],
+    // and an agent offered both shapes will sooner or later fill the one the
+    // editor treats as the fallback. Same call icon-card-grid-slide makes for
+    // its card{N}* fields.
     ...Array.from({ length: MAX_CARDS }, (_v, idx) => {
       const i = idx + 1;
       return [
@@ -270,7 +279,9 @@ export default {
           maxLength: 300,
         },
       ];
-    }).flat(),
+    })
+      .flat()
+      .map((field) => ({ ...field, ai: false })),
   ],
 
   defaults: {

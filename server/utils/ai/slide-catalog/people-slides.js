@@ -50,27 +50,6 @@ export const PEOPLE_SLIDES = {
       'A curated photo gallery with masonry/featured layout (use gallery-slide)',
       'More than 25 blocks (split into multiple slides)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 220 },
-      imageAspect: { type: 'string', required: false, description: "'square' (crop) | 'original' (no crop — screenshots/logos)" },
-      imageShape: { type: 'string', required: false, description: "'rounded' | 'square' | 'circle'" },
-      textPosition: { type: 'string', required: false, description: "'below' (default) | 'split'" },
-      showPhotoFrame: { type: 'string', required: false, description: "'off' (default) | 'on'" },
-      columnSplit: { type: 'string', required: false, description: "'' (none) | '1'..'5' left-group columns" },
-      members: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 25,
-        itemSchema: {
-          image: { type: 'string', required: false, description: 'Image URL or empty string' },
-          name: { type: 'string', required: false, maxLength: 80, description: 'Block Title' },
-          byline: { type: 'string', required: false, maxLength: 120, description: 'Block Caption' },
-          alt: { type: 'string', required: false, maxLength: 180, description: 'Alt text for the image' },
-          linkedin: { type: 'string', required: false, maxLength: 300, description: 'Optional LinkedIn URL (people)' },
-        },
-      },
-    },
   },
 
   'logo-wall-slide': {
@@ -103,19 +82,5 @@ export const PEOPLE_SLIDES = {
       'People (use team-cards-slide)',
       'Screenshots or photos that want captions (use team-cards-slide or gallery-slide)',
     ],
-    schema: {
-      title: { type: 'string', required: false, maxLength: 120 },
-      subheading: { type: 'string', required: false, maxLength: 220 },
-      logos: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 30,
-        itemSchema: {
-          image: { type: 'string', required: false, description: 'Logo URL or empty string' },
-          name: { type: 'string', required: true, maxLength: 80 },
-          link: { type: 'string', required: false, maxLength: 500, description: "URL or '#N' slide jump" },
-        },
-      },
-    },
   },
 };
