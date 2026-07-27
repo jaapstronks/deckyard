@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.7.1](https://github.com/jaapstronks/deckyard/compare/v1.7.0...v1.7.1) (2026-07-27)
+
+
+### Fixed
+
+* **process-slide:** top-align the steps in the horizontal layout ([#411](https://github.com/jaapstronks/deckyard/issues/411)) ([67d84d7](https://github.com/jaapstronks/deckyard/commit/67d84d7e1db02329ac6aa4e9b09d790c8982988f))
+
 ## [1.7.0](https://github.com/jaapstronks/deckyard/compare/v1.6.0...v1.7.0) (2026-07-27)
 
 
