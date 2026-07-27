@@ -10,6 +10,11 @@ This section is for developers working on the codebase.
 - **Linting**: `docs/developer/linting.md` - the CI gate, the suppressions burndown, and the dead-code discovery pass
 - **Export smoke test**: `docs/developer/export-smoke-test.md` - the one test that starts real Chrome, and how CI gets a browser
 
+- **Internationalization**: `docs/developer/i18n.md` - locales, `t()`, and the translation files
+- **Live data sources**: `docs/developer/live-data-sources-testing.md` - testing checklist
+
+The complete documentation index lives in `docs/README.md`.
+
 ### API Development
 
 - **Public API**: `docs/developer/api.md` - Architecture, authentication, adding endpoints
