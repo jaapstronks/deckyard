@@ -69,7 +69,7 @@
   height: 48px;
   padding: 0 var(--ps-space-4);
   font-family: inherit;
-  font-size: 16px; /* Prevents zoom on iOS */
+  font-size: var(--ps-text-lg); /* Prevents zoom on iOS */
   color: hsl(var(--app-text-primary));
   background: hsl(var(--app-bg-base));
   border: 1px solid hsl(var(--app-border-default));
@@ -479,7 +479,7 @@
   width: 100%;
   height: 48px;
   padding: 0 var(--ps-space-4);
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   box-sizing: border-box;
   border-radius: var(--ps-radius-lg);
 }
@@ -601,7 +601,7 @@
   width: 100%;
   height: 48px;
   box-sizing: border-box;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   border-radius: var(--ps-radius-lg);
 }
 

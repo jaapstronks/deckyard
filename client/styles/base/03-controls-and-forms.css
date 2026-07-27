@@ -81,7 +81,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   color: hsl(var(--app-text-secondary));
   flex-shrink: 0;

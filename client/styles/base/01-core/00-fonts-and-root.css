@@ -6,7 +6,7 @@ html {
 
 body {
   padding: 0; /* override foundation's padding for app layout */
-  font-size: 14px; /* match UI token scale (Lovable design base) */
+  font-size: var(--ps-text-base); /* match UI token scale (Lovable design base) */
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

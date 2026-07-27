@@ -17,7 +17,7 @@
   align-items: center;
 }
 .poll-bar-name {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   line-height: 1.2;
   color: hsl(var(--app-text-primary));
   overflow: hidden;
@@ -39,7 +39,7 @@
 }
 .poll-bar-count {
   font-family: var(--ps-font-mono);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   text-align: right;
 }
@@ -47,13 +47,13 @@
   grid-template-columns: 1fr 1fr 44px;
 }
 .poll-bars.poll-bars-compact .poll-bar-name {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 .poll-bars.poll-bars-compact .poll-bar-track {
   height: 12px;
 }
 .poll-bars.poll-bars-compact .poll-bar-count {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 

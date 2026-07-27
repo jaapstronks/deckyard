@@ -208,7 +208,7 @@
 }
 
 .slide-type-preview-key {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-family: var(--ps-font-mono, monospace);
   color: hsl(var(--app-text-tertiary));
 }
@@ -292,7 +292,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--ps-radius-full);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
   background: hsl(45 80% 92%);
   color: hsl(35 60% 35%);

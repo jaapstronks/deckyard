@@ -38,7 +38,7 @@
 .avatar--lg {
   width: 40px;
   height: 40px;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 .avatar--xl {

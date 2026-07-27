@@ -190,7 +190,7 @@
   appearance: none;
   width: 24px;
   height: 24px;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   background: transparent;
   border: 0;

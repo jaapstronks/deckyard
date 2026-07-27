@@ -31,7 +31,7 @@
   align-items: center;
 }
 .share-form-label {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 600;
 }
 .share-form-actions {
@@ -54,7 +54,7 @@
   padding: var(--ps-space-5);
   text-align: center;
   opacity: 0.65;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 .share-link-item {
   display: flex;
@@ -214,7 +214,7 @@ img.share-link-badge {
 
 /* Error presentation title */
 .share-viewer-error-presentation {
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 600;
   opacity: 0.85;
   margin-bottom: var(--ps-space-3);
@@ -252,7 +252,7 @@ img.share-link-badge {
   border-radius: 10px;
   background: hsl(var(--app-danger) / 0.12);
   color: hsl(var(--app-danger));
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 /* Viewer layout */
@@ -329,7 +329,7 @@ img.share-link-badge {
   justify-content: center;
   height: 100%;
   opacity: 0.6;
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
 }
 
 .share-viewer-nav {
@@ -356,7 +356,7 @@ img.share-link-badge {
 
 .share-viewer-counter {
   font-family: var(--ps-font-mono);
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   opacity: 0.85;
   min-width: 60px;
   text-align: center;
@@ -387,7 +387,7 @@ img.share-link-badge {
 }
 
 .share-viewer-join-btn {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   padding: 6px 12px;
 }
 
@@ -415,7 +415,7 @@ img.share-link-badge {
 }
 
 .share-viewer-guest-name {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 500;
   max-width: 100px;
   overflow: hidden;
@@ -493,7 +493,7 @@ img.share-link-badge {
 
 .share-viewer-modal .help {
   margin: 0 0 var(--ps-space-5);
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   opacity: 0.85;
   line-height: 1.45;
 }
@@ -506,7 +506,7 @@ img.share-link-badge {
 }
 
 .share-viewer-guest-form label {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 600;
   margin-bottom: -6px;
 }
@@ -540,19 +540,19 @@ img.share-link-badge {
 
 .share-viewer-success h3 {
   margin: 0 0 10px;
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
   font-weight: 700;
 }
 
 .share-viewer-success p {
   margin: 0 0 var(--ps-space-2);
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   line-height: 1.5;
 }
 
 .share-viewer-success .help {
   opacity: 0.7;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 @media (max-width: 480px) {
@@ -566,7 +566,7 @@ img.share-link-badge {
 
 /* --- Share viewer comments section --- */
 .share-viewer-comments-toggle {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   padding: 6px 12px;
 }
 .share-viewer-comments-toggle.is-active {
@@ -591,7 +591,7 @@ img.share-link-badge {
 }
 .share-viewer-comments-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 700;
 }
 
@@ -634,7 +634,7 @@ img.share-link-badge {
   padding: var(--ps-space-6) var(--ps-space-4);
   text-align: center;
   opacity: 0.65;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 .share-viewer-comments-error {
   color: hsl(var(--app-danger));
@@ -679,15 +679,15 @@ img.share-link-badge {
 }
 .share-viewer-comment-author {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 .share-viewer-comment-time {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   opacity: 0.65;
 }
 
 .share-viewer-comment-body {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
@@ -700,7 +700,7 @@ img.share-link-badge {
 }
 .share-viewer-comment-actions .btn-xs {
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
 }
 
 .share-viewer-comment-reply-input {
@@ -713,7 +713,7 @@ img.share-link-badge {
 .share-viewer-comment-reply-input .comment-rich-input {
   flex: 1;
   min-height: 32px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   padding: 6px 10px;
 }
 
@@ -725,7 +725,7 @@ img.share-link-badge {
 .share-viewer-comments-input .comment-rich-input {
   width: 100%;
   min-height: 48px;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   padding: 10px 12px;
 }
 .share-viewer-comments-input-controls {
@@ -763,7 +763,7 @@ img.share-link-badge {
 
 .revoke-modal-message-toggle {
   display: inline-block;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-accent-text));
   text-decoration: none;
 }
@@ -777,7 +777,7 @@ img.share-link-badge {
 .revoke-modal-message-expanded .form-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 600;
 }
 

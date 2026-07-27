@@ -77,7 +77,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.8);
   color: #ccc;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   padding: 12px;
   text-align: center;
   z-index: 2;

@@ -809,7 +809,7 @@
 
 .onboarding-checklist-status.is-locked {
   border: none;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   line-height: 20px;
   text-align: center;
 }
