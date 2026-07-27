@@ -124,6 +124,24 @@ test('two organizations: both listed, the active one checked', async () => {
   assert.equal(rows[1].getAttribute('aria-checked'), 'false');
   assert.equal(rows[0].disabled, false, 'the active row keeps full contrast');
   assert.match(rows[1].textContent, /Beta/);
+
+  // `radio` inside `radiogroup`, not `menuitemradio`: this dropdown has no
+  // `menu` ancestor, and a menu role would promise arrow-key navigation that
+  // nothing here implements.
+  assert.equal(section.el.getAttribute('role'), 'radiogroup');
+  assert.deepEqual(
+    rows.map((r) => r.getAttribute('role')),
+    ['radio', 'radio']
+  );
+
+  // Both rows carry the fixed-width check slot — the empty one on the inactive
+  // row is what keeps the two labels starting on the same x.
+  assert.equal(
+    section.el.querySelectorAll('.user-menu-org-check').length,
+    2,
+    'every row has the check slot, filled or not'
+  );
+  assert.equal(rows[1].querySelector('.user-menu-org-check').textContent, '');
 });
 
 test('clicking the organization you are already in does nothing', async () => {

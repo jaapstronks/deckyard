@@ -84,7 +84,16 @@ export function createOrganizationSection({
 } = {}) {
   if (!getFeatures()?.multiWorkspace) return null;
 
-  const el = h('div', { class: 'user-menu-orgs' });
+  // `radiogroup` + `radio`, the same pairing `ui-mode-switcher.js` uses for
+  // "pick exactly one of these". Deliberately *not* `menuitemradio`: that role
+  // must be owned by a `menu`, and this dropdown has none — its other entries
+  // are plain buttons. An orphan menu role promises arrow-key navigation that
+  // nothing here implements.
+  const el = h('div', {
+    class: 'user-menu-orgs',
+    role: 'radiogroup',
+    'aria-label': t('common.organization', 'Organization'),
+  });
 
   const ready = load()
     .then((organizations) => {
@@ -118,7 +127,7 @@ export function createOrganizationSection({
       {
         class: 'dropdown-item user-menu-org',
         type: 'button',
-        role: 'menuitemradio',
+        role: 'radio',
         'aria-checked': isActive ? 'true' : 'false',
         'data-organization-id': org.id,
         title: isActive
@@ -133,11 +142,10 @@ export function createOrganizationSection({
         },
       },
       [
-        // Fixed-width slot so active and inactive labels line up. Inline because
-        // this slice adds no CSS (see PR notes).
+        // Fixed-width slot so active and inactive labels line up.
         h('span', {
+          class: 'user-menu-org-check',
           'aria-hidden': 'true',
-          style: 'width:1em;flex:0 0 auto;text-align:center',
           text: isActive ? '✓' : '',
         }),
         h('span', { text: label }),
