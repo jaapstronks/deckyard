@@ -238,11 +238,16 @@ export function isRemoteHttpUrl(s) {
  * @param {Object} [opts]
  * @param {number} [opts.timeoutMs]
  * @param {number} [opts.maxBytes]
+ * @param {Record<string, string>} [opts.headers] Extra request headers. Only for
+ *   callers that know the target needs one (a CDN with hotlink protection wants
+ *   a `Referer`); the URL still passes the same public-address validation, and
+ *   nothing here is derived from user input.
  * @returns {Promise<{buffer: Buffer, contentType: string}|null>}
  */
 export async function safeFetchRemoteImage(rawUrl, opts = {}) {
   const timeoutMs = opts.timeoutMs || REMOTE_FETCH_TIMEOUT_MS;
   const maxBytes = opts.maxBytes || MAX_REMOTE_IMAGE_BYTES;
+  const headers = opts.headers && typeof opts.headers === 'object' ? opts.headers : undefined;
   try {
     await assertPublicHttpUrl(rawUrl);
   } catch {
@@ -252,6 +257,7 @@ export async function safeFetchRemoteImage(rawUrl, opts = {}) {
     const response = await fetch(rawUrl, {
       signal: AbortSignal.timeout(timeoutMs),
       redirect: 'error', // don't follow redirects into private space
+      ...(headers ? { headers } : {}),
     });
     if (!response.ok) return null;
 
