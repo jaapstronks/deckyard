@@ -100,6 +100,13 @@ the smell. Only `fit`, `focus`, `alt` (and the portrait `image` in quote) do.
 (`card{n}`, `logo{n}`, `row{n}`). Render reads the **array first**; the
 inspector writes the array and syncs the numbered mirror — so they agree, array
 canonical (`ensureMembers` `descriptors.js:578`, `ensureLogos` `:638`).
+`text-blocks` is the asymmetric case (since A0.4): the `rows[]` array carries
+**up to 4 rows**, but the numbered mirror is **frozen at 3** (`row1/2/3` is the
+whole vocabulary). A 4th row exists only in array form — it round-trips through
+save/load and AI validation with no numbered counterpart, while legacy ≤3-row
+decks keep their mirror. The refine schema
+(`server/utils/ai/schemas/refined-slide.js`) validates `rows[]` (max 4) and
+keeps the numbered fields optional to match.
 `content-columns` is the exception: **numbered-only, no array**. Since step 4
 that duality is resolved the ImageRef way rather than by a storage rewrite:
 the numbered keys stay the storage shape, but every column's image *resolves*
