@@ -91,18 +91,26 @@ survive a header-row removal (#393) unnoticed.
 names here are *composed* (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
 `renderHtml` template builds), so a naive scanner flags every composed class as
 dead and is worse than nothing. The scanner therefore errs towards **alive**: it
-harvests every string/template token from `client/**` + `shared/**` as "used"
-and treats any static chunk preceding a `${` as a live prefix. It reports a
+harvests every class-shaped token from `client/**` + `shared/**` as "used" and
+treats any static chunk preceding a `${` as a live prefix. It reports a
 selector only when it appears *nowhere* — not as a literal, not as a composition
 prefix. Under-reporting is the intended failure mode; over-reporting is the one
 that makes the tool untrustworthy.
+
+**Tokens are cut on any non-`[\w-]` run, not on whitespace.** The two commonest
+ways a class is named here are `class="a b"` inside a larger string and
+`querySelector('.a .b')`; splitting on whitespace yields `class="a` and `.a`,
+neither of which is a class token, so both classes read as dead. Class
+attributes are additionally harvested straight from the raw text, because the
+string scanner desyncs on quote characters inside a regex literal on the same
+line. Those two together account for 28 of the 164 the first cut reported.
 
 Two properties worth knowing:
 
 - **It measures `git ls-files`, not the working tree.** A class used only by an
   untracked scratch file still counts as dead — otherwise "green for the author"
   is not "green in CI" (the #413 lesson).
-- **It stays advisory (exit 0) until the report is clean.** Today it lists ~160
+- **It stays advisory (exit 0) until the report is clean.** Today it lists ~136
   candidates; promote it to a gate only once those are triaged away. Each hit is
   a *candidate* — verify by hand (a fully dynamic `class` built from a variable
   the scanner can't see is a false positive) before deleting.

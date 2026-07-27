@@ -74,8 +74,12 @@ export function trackedFiles(cwd = REPO_ROOT) {
  * Harvest class-name evidence from a chunk of source text.
  *
  * Two kinds of evidence, both conservative:
- *   - `used`: every whitespace-delimited token inside a string or template
- *     literal that looks like a class name. Non-class strings leak in too, which
+ *   - `used`: every class-shaped token inside a string or template literal.
+ *     Tokens are cut on any non-`[\w-]` run, not on whitespace: the two commonest
+ *     ways this codebase names a class are `class="a b"` inside a larger string
+ *     and `querySelector('.a .b')`, and whitespace-splitting yields
+ *     `class="table-step-row"` / `.table-step-row` — neither of which is a class
+ *     token, so both classes read as dead. Non-class strings leak in too, which
  *     only ever marks a selector alive — the safe direction.
  *   - `prefixes`: the last token of any static template chunk that sits directly
  *     before a `${` interpolation, e.g. `slide-bg-` in `` `slide-bg-${id}` ``.
@@ -89,6 +93,17 @@ export function harvestSource(text, acc = { used: new Set(), prefixes: new Set()
   // Quoted strings: 'x', "x". Group 2 is the (unescaped-enough) content.
   const quoted = /(['"])((?:\\.|(?!\1)[^\\\n])*)\1/g;
   for (let m; (m = quoted.exec(text)); ) {
+    addTokens(m[2], acc.used);
+  }
+
+  // Class attributes, read straight from the raw text rather than from inside a
+  // recognised string. The scan above walks quotes left to right and desyncs on
+  // quote characters inside regex literals — on a line like
+  // `.replace(/"([^"]+)":/g, '<span class="json-key">…')` the regex's quotes
+  // consume the attribute's, so `json-key` reads as unreferenced. This pass is
+  // immune to that, and class attributes are how most markup here names classes.
+  const classAttr = /class\s*=\s*(['"])([^'"]*)\1/g;
+  for (let m; (m = classAttr.exec(text)); ) {
     addTokens(m[2], acc.used);
   }
 
@@ -106,8 +121,11 @@ export function harvestSource(text, acc = { used: new Set(), prefixes: new Set()
       // Every chunk except the last is immediately followed by an interpolation,
       // so its trailing token is a composition prefix (`slide-bg-`, `is-`).
       if (i < chunks.length - 1) {
-        const tail = chunk.split(/\s/).pop();
-        if (tail && /[_a-zA-Z][\w-]*-?$/.test(tail)) acc.prefixes.add(tail);
+        // The trailing run of class characters, not the trailing whitespace-
+        // delimited word: in `class="slide-bg-${id}"` the word is
+        // `class="slide-bg-`, which matches no selector.
+        const tail = /[_a-zA-Z][\w-]*$/.exec(chunk)?.[0];
+        if (tail) acc.prefixes.add(tail);
       }
     });
   }
@@ -115,12 +133,18 @@ export function harvestSource(text, acc = { used: new Set(), prefixes: new Set()
 }
 
 /**
- * Split a literal's content on whitespace and add class-like tokens to a set.
+ * Cut a literal's content into class-shaped tokens and add them to a set.
+ *
+ * Splits on any run of characters a class name cannot contain, so a class
+ * survives being embedded in markup (`class="a b"`) or in a selector
+ * (`.a > .b`). That is more generous than splitting on whitespace, which is the
+ * safe direction for this tool: it can only mark a selector alive.
+ *
  * @param {string} chunk - Literal content
  * @param {Set<string>} into - Destination set
  */
 function addTokens(chunk, into) {
-  for (const token of chunk.split(/\s+/)) {
+  for (const token of chunk.split(/[^\w-]+/)) {
     if (CLASS_TOKEN.test(token)) into.add(token);
   }
 }

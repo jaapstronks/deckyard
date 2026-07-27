@@ -86,6 +86,37 @@ describe('isAlive', () => {
   });
 });
 
+describe('harvestSource — classes embedded in markup and selectors', () => {
+  // These are the two commonest ways this codebase names a class, and both used
+  // to read as dead: whitespace-splitting yields `class="table-step-row"` and
+  // `.table-step-row`, neither of which is a class token.
+  it('reads a class out of a class attribute inside a larger string', () => {
+    const ev = harvestSource(`const row = ' class="table-step-row"';`);
+    assert.equal(ev.used.has('table-step-row'), true);
+  });
+
+  it('reads classes out of a selector string', () => {
+    const ev = harvestSource(`el.querySelectorAll('.slide-table > .table-step-cell');`);
+    assert.equal(ev.used.has('slide-table'), true);
+    assert.equal(ev.used.has('table-step-cell'), true);
+  });
+
+  it('survives quote characters inside a regex literal on the same line', () => {
+    // The string scanner desyncs here — the regex's quotes pair up with the
+    // attribute's — so the class attribute is harvested separately.
+    const ev = harvestSource(
+      `s.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')`
+    );
+    assert.equal(ev.used.has('json-key'), true);
+  });
+
+  it('takes the class-shaped tail as a composition prefix, not the whole word', () => {
+    const ev = harvestSource('const el = `<div class="slide-bg-${id}">`;');
+    assert.equal(ev.prefixes.has('slide-bg-'), true);
+    assert.equal(isAlive('slide-bg-red', ev), true);
+  });
+});
+
 describe('scan (end to end, injected reader)', () => {
   it('reports only the genuinely unreferenced selector', () => {
     const files = {
