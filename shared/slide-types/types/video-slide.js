@@ -38,6 +38,18 @@ export default {
       options: ['off', 'on'],
     },
     {
+      key: 'watchUrl',
+      label: 'Watch link for exports',
+      type: 'string',
+      required: false,
+      maxLength: 400,
+      helpText:
+        'Shown in PDF/PNG exports instead of the generated link. Use it for a short, readable URL.',
+      // Author-chosen, not inferable: it points at a real landing page (a
+      // shortened link, a campaign page) that only a human knows exists.
+      ai: false,
+    },
+    {
       key: 'bunnyLibraryId',
       label: 'Bunny library ID',
       type: 'string',
@@ -51,6 +63,7 @@ export default {
   ],
   defaults: {
     title: '',
+    watchUrl: '',
     // Default Bunny video: "Ride the immersive wave"
     source: '3045cc09-605c-40d9-aa76-9ace93e7f637',
     background: 'mist',

@@ -85,7 +85,9 @@ export const INSPECTOR_KEEPS = {
   // canvas (the descriptor only inline-edits the title), so leaving them out
   // orphaned them to the bulk modal — a parity-invariant violation. They are
   // inspector material (editing-surfaces decision 2026-07-21).
-  'video-slide': ['source', 'autoplay', 'bunnyLibraryId'],
+  // `watchUrl` is the same kind of field: export configuration with no canvas
+  // surface, so the parity invariant puts it here rather than the bulk modal.
+  'video-slide': ['source', 'autoplay', 'bunnyLibraryId', 'watchUrl'],
   'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
   'logo-wall-slide': [],
   // Card count is items[]-driven and managed by the side form's add/remove
