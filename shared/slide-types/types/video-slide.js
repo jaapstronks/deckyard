@@ -39,12 +39,12 @@ export default {
     },
     {
       key: 'watchUrl',
-      label: 'Watch link for exports',
+      label: 'Watch link for the PDF export',
       type: 'string',
       required: false,
       maxLength: 400,
       helpText:
-        'Shown in PDF/PNG exports instead of the generated link. Use it for a short, readable URL.',
+        'Shown in the PDF export instead of the generated link. Use it for a short, readable URL.',
       // Author-chosen, not inferable: it points at a real landing page (a
       // shortened link, a campaign page) that only a human knows exists.
       ai: false,

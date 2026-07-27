@@ -82,8 +82,9 @@ provider's autoplay parameter when autoplay is on.
 
 ### Filling in a watch link
 
-The field is `watchUrl` on the video slide ("Watch link for exports" in the
-editor). It is `ai: false` — an agent can't know that a short link exists, let
+The field is `watchUrl` on the video slide ("Watch link for the PDF export" in
+the editor). It is PDF-only: the PNG placeholder shows the still and the title,
+not a link. It is `ai: false` — an agent can't know that a short link exists, let
 alone which one — so it is authored by hand. Automating it (generating the short
 link through a shortener API at export time) is a separate, open item:
 `docs/plans/briefs/video-slide-export-placeholder.md` § B.
