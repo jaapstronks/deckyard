@@ -1,5 +1,5 @@
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
-import { getPresentation } from '../../storage/presentations.js';
+import { getPresentation } from '../../storage/presentations/index.js';
 import { getShareLinkByToken } from '../../storage/share-links/index.js';
 import { getAppName } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';

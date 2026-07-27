@@ -1,4 +1,4 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { uploadImageKitBuffer, getImageKitConfigFromEnv } from '../../../media/imagekit.js';
 import { getMediaProvider, isMediaProviderInitialized } from '../../../media/index.js';
 import { pdfToImages } from '../../../render/pdf-to-images.js';

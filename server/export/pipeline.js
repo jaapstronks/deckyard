@@ -1,7 +1,7 @@
 import { safeFilename } from '../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { badRequest, notFound, unauthorized, serveJson } from '../utils/http.js';
-import { getPresentation } from '../storage/presentations.js';
+import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { loadTheme } from '../utils/themes.js';
 import { canReadPresentation } from '../utils/presentation-authz.js';

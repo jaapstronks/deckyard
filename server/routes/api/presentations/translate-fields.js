@@ -1,4 +1,4 @@
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';

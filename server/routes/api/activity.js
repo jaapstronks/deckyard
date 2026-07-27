@@ -16,7 +16,7 @@ import {
   updateUserEventRead,
 } from '../../storage/activity-events.js';
 import { createRouteContext } from '../../utils/context.js';
-import { getPresentation } from '../../storage/presentations.js';
+import { getPresentation } from '../../storage/presentations/index.js';
 import { canReadPresentation } from '../../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 

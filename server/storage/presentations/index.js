@@ -12,26 +12,26 @@
  * legitimate way to say "this operation is not organization-scoped".
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
-import { isCollabLiveEditsEnabled } from '../config/features.js';
-import { deleteYDocState } from './presentation-ydocs.js';
-import { normalizeSlides } from './presentations/slides.js';
-import { normalizeI18n } from './presentations/i18n.js';
-import { recordSlideLevelMerge } from '../services/activity-events.js';
-import { validatePresentationSize } from '../utils/presentation-limits.js';
-import { invalidatePresentationCache } from './presentation-cache.js';
-import { migratePresentation } from '../../shared/slide-types/schema-version.js';
-import { createLogger } from '../utils/logger.js';
+import { isStorageInitialized, getStorage } from '../adapters/index.js';
+import { repoRootOf } from '../scope.js';
+import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
+import { isCollabLiveEditsEnabled } from '../../config/features.js';
+import { deleteYDocState } from '../presentation-ydocs.js';
+import { normalizeSlides } from './slides.js';
+import { normalizeI18n } from './i18n.js';
+import { recordSlideLevelMerge } from '../../services/activity-events.js';
+import { validatePresentationSize } from '../../utils/presentation-limits.js';
+import { invalidatePresentationCache } from '../presentation-cache.js';
+import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
+import { createLogger } from '../../utils/logger.js';
 const log = createLogger('presentations');
 
 // The presentations facade dispatches to three file-backend modules depending
 // on the operation: list/trash reads, CRUD, and version history. One bound
 // dispatcher each, all sharing the DB-vs-file logic in backend-dispatch.js.
-const withList = createStorageDispatch(() => import('./presentations/list.js'));
-const withCrud = createStorageDispatch(() => import('./presentations/crud.js'));
-const withVersions = createStorageDispatch(() => import('./presentations/versions.js'));
+const withList = createStorageDispatch(() => import('./list.js'));
+const withCrud = createStorageDispatch(() => import('./crud/index.js'));
+const withVersions = createStorageDispatch(() => import('./versions.js'));
 
 // Only the single-deck read may skip the organization filter, and only for a
 // deck a public token already addressed. Everything else — listings and every
@@ -40,7 +40,7 @@ const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
 
 /**
  * List the presentations of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<Array>}
  */
 export async function listPresentations(scope) {
@@ -55,7 +55,7 @@ export async function listPresentations(scope) {
 
 /**
  * Fetch one presentation by id, within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
@@ -78,7 +78,7 @@ export async function getPresentation(scope, id) {
 
 /**
  * Create a presentation in the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {Object} body
  * @returns {Promise<Object>}
  */
@@ -94,7 +94,7 @@ export async function createPresentation(scope, body) {
   const repoRoot = repoRootOf(scope);
   if (isStorageInitialized()) {
     // Prepare the full presentation object (with slides, i18n, etc.) before storing
-    const mod = await import('./presentations/crud.js');
+    const mod = await import('./crud/index.js');
     const preparedPresentation = await mod.prepareNewPresentation(repoRoot, body);
 
     // Validate size limits before creating
@@ -116,13 +116,13 @@ export async function createPresentation(scope, body) {
     }
     return result;
   }
-  const mod = await import('./presentations/crud.js');
+  const mod = await import('./crud/index.js');
   return await mod.createPresentation(repoRoot, body);
 }
 
 /**
  * Update a presentation within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} body
  * @param {Object} [opts]
@@ -182,7 +182,7 @@ export async function updatePresentation(scope, id, body, opts) {
   // Any successful mutation (editor save, public API, MCP tool) refreshes
   // live presenting clients. Fire-and-forget: a no-op without a live session.
   if (result && result.ok !== false) {
-    import('./present-sessions/sse.js')
+    import('../present-sessions/sse.js')
       .then((m) => m.notifyDeckUpdatedForPresentation(repoRoot, id))
       .catch(() => {});
     // Collab live edits, server-as-collaborator seam (ADR 001 §6): when the
@@ -193,7 +193,7 @@ export async function updatePresentation(scope, id, body, opts) {
     let appliedToLiveDoc = false;
     if (collabEligible) {
       try {
-        const { applyServerWriteToActiveDoc } = await import('../collab/live-apply.js');
+        const { applyServerWriteToActiveDoc } = await import('../../collab/live-apply.js');
         appliedToLiveDoc = await applyServerWriteToActiveDoc(id, result, { base: collabBase });
       } catch (err) {
         // The JSON save already succeeded; the live doc just didn't get it
@@ -273,7 +273,7 @@ function updatePresentationUncached(scope, id, body, opts) {
 
 /**
  * Move a presentation to the trash.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  */
@@ -296,7 +296,7 @@ export async function deletePresentation(scope, id, opts) {
 
 /**
  * List trashed presentations of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  */
 export async function listTrashedPresentations(scope) {
   const ctx = toStorageContext(scope, 'listTrashedPresentations');
@@ -310,7 +310,7 @@ export async function listTrashedPresentations(scope) {
 
 /**
  * Restore a presentation out of the trash.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  */
 export async function restorePresentation(scope, id) {
@@ -329,7 +329,7 @@ export async function restorePresentation(scope, id) {
 
 /**
  * Permanently delete a trashed presentation.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  */
 export async function permanentlyDeletePresentation(scope, id) {
@@ -352,7 +352,7 @@ export async function permanentlyDeletePresentation(scope, id) {
 
 /**
  * Duplicate a presentation within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  */
@@ -372,7 +372,7 @@ export async function duplicatePresentation(scope, id, opts) {
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
  * This avoids N+1 queries when loading shared presentations.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string[]} ids - Array of presentation IDs
  * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
  */
@@ -427,7 +427,7 @@ export async function getFirstSlidesForIds(scope, ids) {
 
 /**
  * List version snapshots for a presentation (newest first).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @returns {Promise<Array>}
  */
@@ -443,7 +443,7 @@ export async function listPresentationVersions(scope, presentationId) {
 
 /**
  * Get a single version snapshot (full presentation data included).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {string} versionId
  * @returns {Promise<Object|null>}
@@ -460,7 +460,7 @@ export async function getPresentationVersion(scope, presentationId, versionId) {
 
 /**
  * Create a version snapshot of a presentation.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} pres - Full presentation object to snapshot
  * @param {Object} [opts]
@@ -486,7 +486,7 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
 
 /**
  * Prune old version snapshots per the retention policy.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} [opts]
  * @param {number} [opts.keep]

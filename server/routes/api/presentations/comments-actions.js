@@ -3,7 +3,7 @@
  * Includes resolve, reopen, dismiss, and apply operations.
  */
 
-import { getPresentation as getFullPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { getPresentation as getFullPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
   methodNotAllowed,
   serveJson,

@@ -9,7 +9,7 @@ import {
   getTagsForSlideLibraryItems,
   getTagsForSlideLibraryItem,
 } from '../../../storage/slide-library/index.js';
-import { updatePresentation } from '../../../storage/presentations.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';
 import { requireScope, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';

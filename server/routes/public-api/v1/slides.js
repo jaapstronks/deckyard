@@ -3,7 +3,7 @@
  * Handles CRUD operations for individual slides within presentations.
  */
 
-import { updatePresentation } from '../../../storage/presentations.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide, validateSlide, SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';

@@ -39,7 +39,7 @@ const STALE_REVISION = '999';
 test.before(async () => {
   repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-conflict-envelope-'));
   ({ createPresentation, createPresentationVersion } = await import(
-    '../server/storage/presentations.js'
+    '../server/storage/presentations/index.js'
   ));
   ({ handlePresentationItem } = await import(
     '../server/routes/api/presentations/presentation.js'

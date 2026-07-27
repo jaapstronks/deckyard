@@ -8,7 +8,7 @@ import {
   removePublishedEntry,
   upsertPublishedEntry,
 } from '../../../storage/published/index.js';
-import { updatePresentation } from '../../../storage/presentations.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import { readUserSettings } from '../../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../../render/og-image.js';
 import { methodNotAllowed } from '../../../utils/http.js';

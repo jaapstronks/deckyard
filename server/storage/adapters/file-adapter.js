@@ -14,7 +14,7 @@ import {
   duplicatePresentation as fileDuplicatePresentation,
   restorePresentation as fileRestorePresentation,
   permanentlyDeletePresentation as filePermanentlyDeletePresentation,
-} from '../presentations/crud.js';
+} from '../presentations/crud/index.js';
 import { writePresentation } from '../presentations/io.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('file-adapter');

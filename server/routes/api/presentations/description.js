@@ -1,4 +1,4 @@
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { methodNotAllowed, notFound, serveJson, unauthorized, json } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';

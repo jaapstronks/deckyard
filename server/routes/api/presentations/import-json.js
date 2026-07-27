@@ -1,4 +1,4 @@
-import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { json, serveJson, serverError } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';

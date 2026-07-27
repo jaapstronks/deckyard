@@ -25,7 +25,7 @@ delete process.env.AUTH_DEV_BYPASS;
 
 const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mount.js');
 const { createPresentation, getPresentation } = await import(
-  '../server/storage/presentations.js'
+  '../server/storage/presentations/index.js'
 );
 const { getYDocState } = await import('../server/storage/presentations/ydoc-state.js');
 const { createPresenceSession } = await import('../client/lib/collab/presence-session.js');

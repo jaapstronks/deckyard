@@ -1,7 +1,7 @@
 /**
  * The storage scope contract (A1 follow-up: the presentations facade).
  *
- * `server/storage/presentations.js` used to build its own storage context with
+ * `server/storage/presentations/index.js` used to build its own storage context with
  * a hardcoded `getDefaultOrganizationId()`, so `getPresentation(repoRoot, id)`
  * read out of the default organization no matter which one the session was
  * working in. The facade now takes a scope and has no default left to fall back
@@ -37,7 +37,7 @@ const {
   jobScope,
 } = await import('../server/storage/scope.js');
 const { createRouteContext } = await import('../server/utils/context.js');
-const facade = await import('../server/storage/presentations.js');
+const facade = await import('../server/storage/presentations/index.js');
 
 // ─── the rule: no scope, no answer ──────────────────────────────────────────
 

@@ -13,7 +13,7 @@
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getTheme } from '../../../storage/themes.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';

@@ -14,7 +14,7 @@
  * key is derived from slide 1 and the theme, not from the deck revision.
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { loadTheme } from '../../../utils/themes.js';

@@ -1,4 +1,4 @@
-import { duplicatePresentation, getPresentation } from '../../../storage/presentations.js';
+import { duplicatePresentation, getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { json, methodNotAllowed, notFound, serveJson, unauthorized } from '../../../utils/http.js';

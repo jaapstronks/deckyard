@@ -1,4 +1,4 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
   badRequest,
   json,

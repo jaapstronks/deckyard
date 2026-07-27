@@ -5,7 +5,7 @@
  * Follows the same pattern as import-json.js.
  */
 
-import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
   json,
   jsonError,

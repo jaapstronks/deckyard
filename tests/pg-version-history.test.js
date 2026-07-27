@@ -6,7 +6,7 @@
  * backups). Two independent concerns:
  *
  *  1. File mode is 100% unchanged. The presentations facade
- *     (server/storage/presentations.js) now drives version create/list/get/
+ *     (server/storage/presentations/index.js) now drives version create/list/get/
  *     prune through the storage adapter. With the file adapter initialized
  *     (default OSS mode) a create→list→get round-trip must still work AND the
  *     snapshot must still land at the same on-disk path the file module always
@@ -44,7 +44,7 @@ describe('version history via the facade (file adapter)', () => {
     await fs.mkdir(dataDir, { recursive: true });
     adapters = await import('../server/storage/adapters/index.js');
     await adapters.initializeStorage(repoRoot);
-    facade = await import('../server/storage/presentations.js');
+    facade = await import('../server/storage/presentations/index.js');
   });
 
   after(async () => {

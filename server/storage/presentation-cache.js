@@ -59,7 +59,7 @@ export async function getPresentationCached(scope, id) {
   if (hit && nowTs - hit.at < TTL_MS) return hit.promise;
   // Dynamic import keeps this module free of a static cycle with the facade,
   // which imports invalidatePresentationCache from here.
-  const promise = import('./presentations.js')
+  const promise = import('./presentations/index.js')
     .then((mod) => mod.getPresentation(scope, id))
     .catch((err) => {
       cache.delete(key);

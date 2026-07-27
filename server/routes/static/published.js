@@ -1,6 +1,6 @@
 import { notFound } from '../../utils/http.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
-import { getPresentation } from '../../storage/presentations.js';
+import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
 import { buildStandaloneHtml } from '../../export/html.js';
 import { buildReaderHtml } from '../../export/reader.js';

@@ -9,7 +9,7 @@
  *   GET    /api/presentations/shared-with-me          - List presentations shared with current user
  */
 
-import { getPresentation, getFirstSlidesForIds } from '../../storage/presentations.js';
+import { getPresentation, getFirstSlidesForIds } from '../../storage/presentations/index.js';
 import {
   addCollaborator,
   listCollaborators,

@@ -10,7 +10,7 @@ import {
   getPresentation,
   listPresentationVersions,
   getPresentationVersion,
-} from '../storage/presentations.js';
+} from '../storage/presentations/index.js';
 import { listImageLibrary } from '../storage/image-library/index.js';
 import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library/index.js';
 import { listThemes } from '../storage/themes.js';

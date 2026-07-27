@@ -38,7 +38,7 @@ import {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations.js';
+} from '../server/storage/presentations/index.js';
 
 function makeLog() {
   const lines = { warn: [], error: [] };

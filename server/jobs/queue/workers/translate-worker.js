@@ -7,7 +7,7 @@
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import { normalizeTranslationLang, normalizeLang } from '../../../storage/presentations/i18n.js';
 import { jobScope } from '../../../storage/scope.js';

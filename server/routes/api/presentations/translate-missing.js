@@ -1,4 +1,4 @@
-import { getPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { translatePresentationStringsFillMissing } from '../../../utils/ai.js';
 import {

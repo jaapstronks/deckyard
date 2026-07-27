@@ -3,7 +3,7 @@
  * Searches across presentation metadata and slide content.
  */
 
-import { listPresentations, getPresentation } from '../../../storage/presentations.js';
+import { listPresentations, getPresentation } from '../../../storage/presentations/index.js';
 import { serveJson, badRequest } from '../../../utils/http.js';
 import { belongsInCollection } from './list.js';
 

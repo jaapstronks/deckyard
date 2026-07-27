@@ -9,7 +9,7 @@
  * Body: { slide: { id, type, content, notes }, mode?: 'preview' | 'thumb' }
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { loadTheme } from '../../../utils/themes.js';

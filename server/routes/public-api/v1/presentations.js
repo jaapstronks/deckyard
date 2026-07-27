@@ -10,7 +10,7 @@ import {
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';

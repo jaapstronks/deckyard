@@ -17,7 +17,7 @@ import {
 import {
   getPresentation,
   updatePresentation,
-} from '../../storage/presentations.js';
+} from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { normalizeLang } from '../../utils/translation-status.js';

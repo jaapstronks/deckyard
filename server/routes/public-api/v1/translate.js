@@ -3,7 +3,7 @@
  * Handles presentation translation via AI.
  */
 
-import { updatePresentation } from '../../../storage/presentations.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';

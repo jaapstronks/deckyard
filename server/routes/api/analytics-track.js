@@ -7,7 +7,7 @@ import { json } from '../../utils/http.js';
 import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
-import { getPresentation } from '../../storage/presentations.js';
+import { getPresentation } from '../../storage/presentations/index.js';
 import { validateShareLink } from '../../storage/share-links/crud.js';
 import { readAppSettings, readUserSettings } from '../../storage/settings.js';
 import {

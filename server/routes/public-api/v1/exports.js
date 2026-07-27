@@ -3,7 +3,7 @@
  * Handles presentation exports via API key authentication.
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { buildStandaloneHtml } from '../../../export/html.js';
 import { buildPrintHtml } from '../../../export/print.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';

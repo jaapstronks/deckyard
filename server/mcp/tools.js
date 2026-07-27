@@ -14,7 +14,7 @@ import {
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
-} from '../storage/presentations.js';
+} from '../storage/presentations/index.js';
 import { loadPresentationChecked } from './presentation-access.js';
 import { singleWorkspaceScope } from '../storage/scope.js';
 import {
