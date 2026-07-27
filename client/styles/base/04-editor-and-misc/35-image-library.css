@@ -380,12 +380,6 @@
     hsl(var(--app-accent-primary) / 0.25);
 }
 
-.image-lib-card-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
 .image-lib-detail {
   flex: 1;
   overflow-y: auto;
@@ -555,25 +549,6 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 16px;
-}
-
-/* Legacy styles for backwards compatibility */
-.image-lib-admin-add {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid hsl(var(--app-border-subtle));
-}
-
-.image-lib-admin-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-@media (max-width: 640px) {
-  .image-lib-admin-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 

@@ -814,13 +814,6 @@
   grid-template-columns: 1fr !important;
 }
 
-.editor-form .editor-field-half {
-  /* Half-width field container (do NOT turn a single field into a 2-col grid). */
-  width: 100%;
-  max-width: 340px;
-  align-self: flex-start;
-}
-
 .editor-callout {
   padding: 10px;
   border-radius: 12px;
