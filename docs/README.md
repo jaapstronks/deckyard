@@ -58,6 +58,7 @@ ships:
 | Removing a slide type | `docs/reference/slide-type-removal.md` |
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
 | CSS breakpoints | `docs/reference/css-breakpoints.md` |
+| Which `!important` are by design | `docs/reference/css-important.md` |
 | Internationalization | `docs/developer/i18n.md` |
 | REST API | `docs/developer/api.md` + `docs/openapi.yaml` |
 | MCP server | `docs/reference/mcp-server.md` |
@@ -122,6 +123,7 @@ nothing is discoverable only by `ls`.
 | [`contrast.md`](reference/contrast.md) | The one contrast implementation |
 | [`css-tokens.md`](reference/css-tokens.md) | CSS design tokens (app chrome) |
 | [`css-breakpoints.md`](reference/css-breakpoints.md) | The shared breakpoint ladder |
+| [`css-important.md`](reference/css-important.md) | Every `!important`, by-design vs cascade-patch |
 | [`font-management.md`](reference/font-management.md) | Font management |
 
 **Agents, AI & API**
