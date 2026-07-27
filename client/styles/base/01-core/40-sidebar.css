@@ -80,7 +80,7 @@
 }
 
 .sidebar-new-icon {
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
 }
 

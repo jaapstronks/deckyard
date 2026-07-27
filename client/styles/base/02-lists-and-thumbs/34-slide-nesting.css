@@ -297,7 +297,7 @@
   z-index: 11;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: var(--ps-text-xs);
   font-weight: 700;
   white-space: nowrap;
   color: hsl(var(--app-text-on-solid));

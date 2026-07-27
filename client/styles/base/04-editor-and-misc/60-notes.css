@@ -89,7 +89,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-size: 0.6875rem;
+  font-size: var(--ps-text-xs);
 }
 .notes-next-preview {
   max-width: 55%;
@@ -148,7 +148,7 @@
 .notes-body .md-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 .notes-body .md-table th,
 .notes-body .md-table td {

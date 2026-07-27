@@ -392,7 +392,7 @@
 
 .profile-image-actions .btn-sm {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 @media (max-width: 480px) {
@@ -418,7 +418,7 @@
   border-radius: 4px;
   background: hsl(var(--app-warning-bg, 45 100% 90%));
   color: hsl(var(--app-warning-text, 30 100% 25%));
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
 }
 
@@ -549,7 +549,7 @@
   .settings-modal-grid .form-input,
   .settings-modal-grid select {
     min-height: 44px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: var(--ps-text-lg); /* Prevents zoom on iOS */
   }
 
   /* Adjust callout padding */
@@ -581,7 +581,7 @@
   /* Textarea adjustments */
   .modal-content textarea.form-input {
     min-height: 80px;
-    font-size: 16px;
+    font-size: var(--ps-text-lg);
   }
 }
 

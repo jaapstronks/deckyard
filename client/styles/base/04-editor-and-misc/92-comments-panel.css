@@ -24,7 +24,7 @@
 
 .comments-panel-header h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   font-weight: 600;
 }
 
@@ -159,7 +159,7 @@
 }
 
 .mention-autocomplete-email {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: var(--text-muted, #888);
 }
 
@@ -213,7 +213,7 @@
 }
 
 .comment-time {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: var(--text-muted, #999);
 }
 
@@ -236,7 +236,7 @@
 }
 
 .comment-body {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   line-height: 1.4;
   color: var(--text-color, #333);
   white-space: pre-wrap;
@@ -251,7 +251,7 @@
 
 .comment-actions .btn-xs {
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
 }
 
 .comment-replies {
@@ -292,7 +292,7 @@
 .comments-input-textarea {
   width: 100%;
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 6px;
   resize: none;
@@ -388,7 +388,7 @@
   right: -4px;
   background: var(--danger-color, #dc3545);
   color: white;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   min-width: 18px;
   height: 18px;
@@ -418,7 +418,7 @@
   height: 20px;
   background: var(--primary-color, #007bff);
   color: white;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   border-radius: 50%;
   display: flex;
@@ -440,7 +440,7 @@
   height: 20px;
   background: hsl(var(--app-status-warning, 45 100% 50%));
   color: hsl(0 0% 10%);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   border-radius: 50%;
   display: flex;
@@ -510,7 +510,7 @@
 
 .btn-sm {
   padding: var(--ps-space-1) var(--ps-space-3);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 /* Marker-click highlight: flash the targeted thread in the pane list. */
@@ -761,7 +761,7 @@
 }
 
 .analyze-status {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   margin-bottom: var(--ps-space-3);
   color: var(--text-color, #333);
 }
@@ -826,7 +826,7 @@
 
 .analyze-info {
   color: var(--text-muted, #666);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   line-height: 1.5;
   margin: 0 0 var(--ps-space-3) 0;
 }
