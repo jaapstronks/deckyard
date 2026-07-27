@@ -9,9 +9,35 @@ A video slide can't play inside a static PDF. When a deck is exported to PDF
 - **Left:** a laptop outline (CSS chrome, not hand-authored path data) framing
   a still of the video with a play badge overlaid. The still reuses the video's
   own thumbnail/poster where one can be resolved (Bunny/YouTube/Vimeo); when it
-  can't, a neutral gradient stands in.
+  can't, a neutral gradient stands in. See
+  [How the still is resolved](#how-the-still-is-resolved-server-side).
 - **Right:** copy in the deck's language explaining this is a video slide, plus
   the live URL where the video can be watched.
+
+## How the still is resolved (server-side)
+
+`resolveVideoThumbnailDataUrl(content)` in `server/export/video-thumbnail.js`
+fetches the poster and returns it **already inlined as a `data:` URL**, for both
+the PDF and the PNG placeholder. It does not emit a remote `<img src>` for the
+generic export embed pass to pick up, because two Bunny quirks make that pass
+drop the image:
+
+1. **The pull zone isn't in the slide.** A Bunny thumbnail lives at
+   `https://<pullzone>.b-cdn.net/<videoId>/thumbnail.jpg`, and the pull zone used
+   to come only from `BUNNY_PULLZONE` — an env var documented as an optional
+   *PPTX* setting. A fork that never enabled PPTX video embedding got an empty
+   grey box. The pull zone is now discovered from the library's own play page
+   (`og:image`) and cached per library id for the process; a configured
+   `BUNNY_PULLZONE` still wins and skips the lookup. The discovered URL is only
+   accepted when it is `https`, on a `*.b-cdn.net` host, and names the video id
+   we asked for.
+2. **Bunny pull zones ship with hotlink protection.** A request without a
+   `Referer` gets a 403, and the generic embed pass sends none. The fetch here
+   passes `Referer: https://iframe.mediadelivery.net/` (the player host every
+   Bunny library allows by construction) through the same SSRF guard.
+
+YouTube (`img.youtube.com`) and Vimeo (`vumbnail.com`) have neither problem and
+take the same path, so every provider ends up as inlined bytes.
 
 ## How the watch URL is resolved (server-side)
 
@@ -64,6 +90,7 @@ nl). Keep them centralised there rather than scattered through the renderer.
 - `server/export/video-watch-url.js` — URL resolver + localised copy.
 - `server/export/pdf-slides.js` — `renderVideoSlidePdfHtml()` builds the
   placeholder page and its scoped CSS (`.vpdf-*`).
-- `server/utils/video-slide-html.js` — `getVideoThumbnailUrl()` (shared with the
-  PNG export).
-- Tests: `tests/video-watch-url.test.js`.
+- `server/export/video-thumbnail.js` — poster resolution + inlining (shared with
+  the PNG export).
+- `server/utils/video-slide-html.js` — the PNG placeholder markup.
+- Tests: `tests/video-watch-url.test.js`, `tests/video-thumbnail.test.js`.

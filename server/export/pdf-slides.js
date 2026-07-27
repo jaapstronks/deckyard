@@ -5,7 +5,7 @@ import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import { debugLog } from '../utils/debug-log.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
 import { getAppBaseUrl } from '../config/utils.js';
-import { getVideoThumbnailUrl } from '../utils/video-slide-html.js';
+import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
 import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
@@ -25,26 +25,29 @@ import { pdfImageEmbedTransform } from './image-compress.js';
  * @param {number} opts.slideIndex - 0-based export index (for the deck deep-link).
  * @param {string} opts.baseUrl - Public base URL (from getAppBaseUrl()).
  * @param {string} opts.docLang - Normalised document language.
- * @returns {string} HTML for one PDF page.
+ * @param {Function} [opts.transform] - Image-bytes transform for the still.
+ * @param {Map<string, Promise<string>>} [opts.cache] - Per-run embed cache.
+ * @returns {Promise<string>} HTML for one PDF page.
  */
-function renderVideoSlidePdfHtml(slide, { pres, slideIndex, baseUrl, docLang }) {
+async function renderVideoSlidePdfHtml(
+  slide,
+  { pres, slideIndex, baseUrl, docLang, transform = null, cache = null }
+) {
   const content = slide && typeof slide === 'object' ? slide.content : {};
   const title = String(content?.title || '').trim();
   const bg = content?.background === 'lime' ? 'slide-bg-lime' : 'slide-bg-mist';
-  const source = String(content?.source || '').trim();
-  const bunnyLibraryId = String(content?.bunnyLibraryId || '366590').trim();
   const copy = videoPdfCopy(docLang);
 
   const titleHtml = title
     ? `<div class="heading vpdf-title">${escapeHtml(title)}</div>`
     : `<div class="heading vpdf-title vpdf-kicker">${escapeHtml(copy.kicker)}</div>`;
 
-  // The still: reuse the video's poster/thumbnail if we can resolve one. It's
-  // emitted as a plain <img> so the export pipeline inlines it through the SSRF
-  // guard (embedRemote), same as any other export image.
-  const { thumbnailUrl } = getVideoThumbnailUrl(source, bunnyLibraryId);
-  const stillHtml = thumbnailUrl
-    ? `<img class="vpdf-still" src="${escapeHtml(thumbnailUrl)}" alt="${escapeHtml(
+  // The still: the video's own poster, fetched and inlined here rather than left
+  // as a remote <img src> for the generic embed pass. Bunny's CDN 403s a request
+  // without a referer, so that pass would silently drop it. See video-thumbnail.js.
+  const thumbnailDataUrl = await resolveVideoThumbnailDataUrl(content, { transform, cache });
+  const stillHtml = thumbnailDataUrl
+    ? `<img class="vpdf-still" src="${escapeHtml(thumbnailDataUrl)}" alt="${escapeHtml(
         title || copy.kicker
       )}" />`
     : `<div class="vpdf-still vpdf-still--empty"></div>`;
@@ -122,20 +125,24 @@ export async function buildSlidesPdfHtml(
     cache: embedCache,
   });
 
-  let pagesHtml = slides
-    .map((s, i) => {
-      const slideHtml =
-        s?.type === 'video-slide'
-          ? renderVideoSlidePdfHtml(s, {
-              pres,
-              slideIndex: i,
-              baseUrl,
-              docLang,
-            })
-          : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
-      return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
-    })
-    .join('\n');
+  let pagesHtml = (
+    await Promise.all(
+      slides.map(async (s, i) => {
+        const slideHtml =
+          s?.type === 'video-slide'
+            ? await renderVideoSlidePdfHtml(s, {
+                pres,
+                slideIndex: i,
+                baseUrl,
+                docLang,
+                transform: imageTransform,
+                cache: embedCache,
+              })
+            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
+        return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
+      })
+    )
+  ).join('\n');
   pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
     includeClient: true,
     transform: imageTransform,

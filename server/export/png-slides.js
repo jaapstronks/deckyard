@@ -26,21 +26,23 @@ export async function buildSlidesPngExportHtml(
   const embedCache = new Map();
   const slides = await embedSlideImages(repoRoot, pres.slides, { cache: embedCache });
 
-  let slidesHtml = slides
-    .map((s, idx) => {
-      const slideHtml =
-        s?.type === 'video-slide'
-          ? renderVideoSlidePngHtml(s)
-          : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
-      return `<div class="png-item" data-idx="${idx}">
+  let slidesHtml = (
+    await Promise.all(
+      slides.map(async (s, idx) => {
+        const slideHtml =
+          s?.type === 'video-slide'
+            ? await renderVideoSlidePngHtml(s)
+            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
+        return `<div class="png-item" data-idx="${idx}">
         <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
         <div class="png-actions">
           <button class="btn btn-secondary png-one">Download slide ${idx + 1}</button>
           <span class="png-status" aria-live="polite"></span>
         </div>
       </div>`;
-    })
-    .join('\n');
+      })
+    )
+  ).join('\n');
 
   // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {

@@ -4,58 +4,25 @@
  */
 
 import { escapeHtml } from './html-utils.js';
-import {
-  parseVideoSource,
-  getBunnyConfig,
-  buildBunnyThumbnailUrl,
-  buildYouTubeThumbnailUrl,
-  buildVimeoThumbnailUrl,
-} from '../export/video-helpers.js';
-
-/**
- * Get the thumbnail URL for a video based on provider and ID.
- * @param {string} source - The video source (URL or ID)
- * @param {string} bunnyLibraryId - The Bunny library ID
- * @returns {{ thumbnailUrl: string | null, provider: string | null }}
- */
-export function getVideoThumbnailUrl(source, bunnyLibraryId) {
-  const parsed = parseVideoSource(source, bunnyLibraryId);
-
-  if (!parsed.provider || !parsed.videoId) {
-    return { thumbnailUrl: null, provider: null };
-  }
-
-  switch (parsed.provider) {
-    case 'bunny': {
-      const { pullZone } = getBunnyConfig();
-      if (pullZone) {
-        return {
-          thumbnailUrl: buildBunnyThumbnailUrl(pullZone, parsed.videoId),
-          provider: 'bunny',
-        };
-      }
-      return { thumbnailUrl: null, provider: 'bunny' };
-    }
-    case 'youtube':
-      return {
-        thumbnailUrl: buildYouTubeThumbnailUrl(parsed.videoId, 'hqdefault'),
-        provider: 'youtube',
-      };
-    case 'vimeo':
-      return {
-        thumbnailUrl: buildVimeoThumbnailUrl(parsed.videoId),
-        provider: 'vimeo',
-      };
-    default:
-      return { thumbnailUrl: null, provider: null };
-  }
-}
+import { resolveVideoThumbnailDataUrl } from '../export/video-thumbnail.js';
 
 /**
  * Render a video slide as a static HTML for PNG export.
  * Shows the video thumbnail when available, otherwise falls back to a placeholder.
+ *
+ * The still is fetched and inlined by {@link resolveVideoThumbnailDataUrl}
+ * rather than emitted as a remote `<img src>`: Bunny's CDN 403s a request that
+ * carries no referer, which the generic export embed pass cannot send.
+ *
+ * @param {object} slide - The video slide.
+ * @param {object} [options]
+ * @param {string} [options.missingSourceText] - Copy for a slide with no source.
+ * @returns {Promise<string>} HTML for the placeholder slide.
  */
-export function renderVideoSlidePngHtml(slide, { missingSourceText = 'Video bron ontbreekt' } = {}) {
+export async function renderVideoSlidePngHtml(
+  slide,
+  { missingSourceText = 'Video bron ontbreekt' } = {}
+) {
   const content =
     slide && typeof slide === 'object' ? slide.content : {};
   const title = String(content?.title || '').trim();
@@ -64,22 +31,21 @@ export function renderVideoSlidePngHtml(slide, { missingSourceText = 'Video bron
       ? 'slide-bg-lime'
       : 'slide-bg-mist';
   const source = String(content?.source || '').trim();
-  const bunnyLibraryId = String(content?.bunnyLibraryId || '366590').trim();
 
   const titleHtml = title
     ? `<div class="heading">${escapeHtml(title)}</div>`
     : '';
 
-  // Try to get a thumbnail URL for the video
-  const { thumbnailUrl } = getVideoThumbnailUrl(source, bunnyLibraryId);
+  // Try to get a thumbnail for the video, already inlined as a data URL.
+  const thumbnailDataUrl = await resolveVideoThumbnailDataUrl(content);
 
   let frameHtml;
-  if (thumbnailUrl) {
+  if (thumbnailDataUrl) {
     // Show the video thumbnail with a play button overlay
     frameHtml = `
       <div class="video-frame" style="position:relative;">
         <img
-          src="${escapeHtml(thumbnailUrl)}"
+          src="${escapeHtml(thumbnailDataUrl)}"
           alt="${escapeHtml(title || 'Video thumbnail')}"
           style="width:100%; height:100%; object-fit:cover; display:block;"
         />
