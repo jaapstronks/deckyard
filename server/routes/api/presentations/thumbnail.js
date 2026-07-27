@@ -30,9 +30,11 @@ import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js
 
 /**
  * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
- * Called after a publish, and after a save that changed slide 1, so the deck
- * shows its raster on the next list load instead of making that load the
- * trigger. Best-effort: any failure just leaves the on-demand route to
+ * Called after a publish, so the deck shows its raster on the next list load
+ * instead of making that load the trigger. Saves deliberately do *not* warm:
+ * an unthrottled render on the autosave path costs a headless-Chrome launch
+ * per keystroke-batch, and the stale-while-revalidate fallback already keeps
+ * the card filled. Best-effort: any failure just leaves the on-demand route to
  * regenerate later. Uses slide 1, matching what
  * {@link handlePresentationThumbnail} serves.
  *
