@@ -10,6 +10,7 @@ import { createAvatar, updateAvatar } from './avatar.js';
 import { getUserProfileAsync } from './user-profiles.js';
 import { displayNameFromEmail } from './user-format.js';
 import { logout } from './auth.js';
+import { createOrganizationSection } from './organization-switcher.js';
 import { storage } from '../storage.js';
 import { t } from '../ui-i18n.js';
 import { getHelpUrl } from '../theme/branding.js';
@@ -19,7 +20,7 @@ import { getHelpUrl } from '../theme/branding.js';
  *
  * @param {Object} options
  * @param {Function} [options.h] - DOM helper function
- * @param {Object} options.user - Current user object { email, name? }
+ * @param {Object} options.user - Current user object { email, name?, organizationId? }
  * @param {Function} options.nav - Navigation function
  * @param {Function} [options.onLogout] - Optional custom logout handler
  * @returns {{ el: HTMLElement, detach: Function }}
@@ -81,6 +82,19 @@ export function createUserMenu({ h = defaultH, user, nav, onLogout } = {}) {
 
   // Separator
   menuItems.push(h('div', { class: 'dropdown-sep' }));
+
+  // Organizations (multi-workspace only; returns null — and fetches nothing —
+  // when the feature is off, and stays empty with a single organization).
+  const orgSection = isAnonymous
+    ? null
+    : createOrganizationSection({
+        h,
+        activeOrganizationId: user?.organizationId || null,
+        onBeforeSwitch: () => {
+          details.open = false;
+        },
+      });
+  if (orgSection) menuItems.push(orgSection.el);
 
   // Settings
   const btnSettings = h('button', {

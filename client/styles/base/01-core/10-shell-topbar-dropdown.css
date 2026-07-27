@@ -445,6 +445,15 @@ summary.ghost-icon-btn::-webkit-details-marker {
   transition: all var(--ps-transition-fast);
 }
 
+/* Organization switcher: a fixed-width check slot so the labels of the active
+   and inactive rows start on the same x. Empty on the inactive rows, hence the
+   explicit width rather than a margin. */
+.user-menu-org-check {
+  flex: 0 0 auto;
+  width: 1em;
+  text-align: center;
+}
+
 .user-menu-trigger:hover {
   background: hsl(var(--app-bg-hover));
 }
