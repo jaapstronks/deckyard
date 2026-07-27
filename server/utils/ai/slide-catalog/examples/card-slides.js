@@ -1,53 +1,16 @@
 /**
  * Card-based Slide Type Examples
  * Icon grids, card stacks, team cards, and content columns
+ *
+ * Types in the directory form own their examples in their own (server-only)
+ * ai.js and are imported here — see docs/reference/slide-type-directory.md.
  */
 
+import { aiExamples as iconCardGridExamples } from '../../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
+
 export const CARD_SLIDE_EXAMPLES = {
-  'icon-card-grid-slide': [
-    {
-      _variation: '4 cards (2x2 grid)',
-      title: 'Our Strategic Pillars',
-      subheading: 'Building for the future',
-      cardCount: '4',
-      card1Icon: 'lightbulb',
-      card1Title: 'Innovation',
-      card1Body: 'Driving creative solutions through research',
-      card2Icon: 'users',
-      card2Title: 'Collaboration',
-      card2Body: 'Working together across all teams',
-      card3Icon: 'target',
-      card3Title: 'Focus',
-      card3Body: 'Prioritizing what truly matters',
-      card4Icon: 'rocket-launch',
-      card4Title: 'Growth',
-      card4Body: 'Scaling our impact continuously',
-    },
-    {
-      _variation: '6 cards (2x3 grid)',
-      title: 'Service Offerings',
-      subheading: 'What we provide',
-      cardCount: '6',
-      card1Icon: 'gear',
-      card1Title: 'Consulting',
-      card1Body: 'Strategic advice and planning',
-      card2Icon: 'file-text',
-      card2Title: 'Research',
-      card2Body: 'In-depth market analysis',
-      card3Icon: 'chart-line-up',
-      card3Title: 'Analytics',
-      card3Body: 'Data-driven insights',
-      card4Icon: 'users-three',
-      card4Title: 'Training',
-      card4Body: 'Team capability building',
-      card5Icon: 'shield-check',
-      card5Title: 'Compliance',
-      card5Body: 'Regulatory guidance',
-      card6Icon: 'globe',
-      card6Title: 'Global Support',
-      card6Body: '24/7 worldwide assistance',
-    },
-  ],
+  // Owned by shared/slide-types/types/icon-card-grid-slide/ai.js.
+  'icon-card-grid-slide': iconCardGridExamples,
 
   'team-cards-slide': [{
     title: 'Leadership Team',

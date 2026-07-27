@@ -13,7 +13,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
-import { ensureIconCards } from '../shared/slide-types/types/icon-card-grid-slide.js';
+import { ensureIconCards } from '../shared/slide-types/types/icon-card-grid-slide/cards.js';
 
 function render(content, ctx = {}) {
   return renderSlideHtml({ type: 'icon-card-grid-slide', content }, ctx);

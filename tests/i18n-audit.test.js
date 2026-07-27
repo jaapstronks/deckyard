@@ -32,12 +32,26 @@ import { findHardcodedCopy, findOrphanKeys, hardcodedId } from '../scripts/i18n-
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const clientDir = path.join(repoRoot, 'client');
+const slideTypesDir = path.join(repoRoot, 'shared', 'slide-types', 'types');
 const allowlistPath = path.join(repoRoot, 'scripts', 'i18n-audit-allowlist.json');
 
 const allowlist = JSON.parse(await fs.readFile(allowlistPath, 'utf8'));
 const allowed = allowlist.hardcoded || {};
 const allowedOrphans = allowlist.orphans || {};
-const hits = await findHardcodedCopy(clientDir);
+const hits = [
+  ...(await findHardcodedCopy(clientDir)),
+  // Slide types in the directory form carry their picker copy (description,
+  // sample content) in their own `authoring.js`, which is outside client/ —
+  // scanning it here keeps that copy inside the gate as types migrate
+  // (docs/reference/slide-type-directory.md).
+  //
+  // Only `authoring.js`, deliberately. A definition's field labels and defaults
+  // are localised through the derived `slideType.*` keys rather than t(), so
+  // scanning `index.js` would demand exemptions for copy that *is* translated.
+  ...(await findHardcodedCopy(slideTypesDir)).filter((h) =>
+    h.file.endsWith(`${path.sep}authoring.js`)
+  ),
+];
 const orphans = await findOrphanKeys('en');
 
 describe('i18n hardcoded copy', () => {

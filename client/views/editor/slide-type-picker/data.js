@@ -5,7 +5,13 @@
  * localStorage keys live in ./preferences.js (its sole storage concern); these
  * are the domain data (aliases, curated presets, descriptions) and the layout /
  * tuning knobs the render and thumbnail modules read.
+ *
+ * Types that have moved to the directory form own their own picker copy; this
+ * file imports it rather than restating it. See
+ * docs/reference/slide-type-directory.md.
  */
+
+import iconCardGridAuthoring from '../../../../shared/slide-types/types/icon-card-grid-slide/authoring.js';
 
 // The slide canvas is rendered at this width, then scaled down to fit each
 // thumbnail tile. Scale is computed per tile from its measured width.
@@ -105,7 +111,7 @@ export const SLIDE_TYPE_ALIASES = {
   'team-cards-slide': 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
   'logo-wall-slide': 'sponsors clients brands partners logos logowand klanten',
   'text-blocks-slide': 'blocks process blokken stappen',
-  'icon-card-grid-slide': 'cards features icons kaarten iconen',
+  'icon-card-grid-slide': iconCardGridAuthoring.aliases,
   'table-slide': 'grid spreadsheet rows columns tabel',
   'chart-slide': 'graph bar line pie data viz grafiek diagram',
   'kpi-metrics-slide': 'numbers stats metrics figures cijfers kengetallen',
@@ -174,7 +180,7 @@ export const SLIDE_TYPE_DESC = {
   'team-cards-slide': 'Image blocks in a grid',
   'logo-wall-slide': 'A wall of logos',
   'text-blocks-slide': 'Several labelled text blocks',
-  'icon-card-grid-slide': 'Cards with an icon and label',
+  'icon-card-grid-slide': iconCardGridAuthoring.description,
   'table-slide': 'A data table',
   'chart-slide': 'A bar, line or pie chart',
   'kpi-metrics-slide': 'Big numbers with deltas',

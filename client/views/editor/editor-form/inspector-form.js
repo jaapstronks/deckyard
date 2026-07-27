@@ -3,7 +3,10 @@ import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { renderChartConfigControls } from './slide-forms/chart.js';
-import { syncIconCardsToNumbered } from './slide-forms/icon-card-grid.js';
+import {
+  inspectorKeeps as iconCardGridInspectorKeeps,
+} from '../../../../shared/slide-types/types/icon-card-grid-slide/inline-edit.js';
+import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
 import {
   appendImageFocusPicker,
   appendImageSlideFitControls,
@@ -88,7 +91,8 @@ export const INSPECTOR_KEEPS = {
   // (like icon-card-grid), so the raw cardCount enum is no longer an inspector
   // control.
   'card-stack-slide': [],
-  'icon-card-grid-slide': ['layout'],
+  // Owned by shared/slide-types/types/icon-card-grid-slide/inline-edit.js.
+  'icon-card-grid-slide': iconCardGridInspectorKeeps,
   'payoff-slide': [],
   'quote-slide': [],
   // `layout` is intentionally absent since datamodel step 3: the conflated
