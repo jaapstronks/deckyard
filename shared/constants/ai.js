@@ -34,6 +34,11 @@ export const DREAMBOT_NAME = DEFAULT_AI_NAME;
  * the effective configured address, the built-in default, and any legacy
  * address. Kept in `shared/` so client (comment styling) and server agree.
  *
+ * Comparison is case-insensitive: comment rows store the author address
+ * lowercased (see storage/presentation-comments.js), while the configured
+ * setting is kept verbatim, so a mixed-case identity would otherwise never
+ * match its own comments.
+ *
  * @param {string} [email] - candidate comment author email
  * @param {string} [configuredEmail] - the effective settings.aiAssistant.email
  *   (already resolved to the default when unset); optional
@@ -41,7 +46,9 @@ export const DREAMBOT_NAME = DEFAULT_AI_NAME;
  */
 export function isAiAuthorEmail(email, configuredEmail) {
   if (!email) return false;
-  if (configuredEmail && email === configuredEmail) return true;
-  if (email === DEFAULT_AI_EMAIL) return true;
-  return LEGACY_AI_EMAILS.includes(email);
+  const candidate = String(email).trim().toLowerCase();
+  if (!candidate) return false;
+  if (configuredEmail && candidate === String(configuredEmail).trim().toLowerCase()) return true;
+  if (candidate === DEFAULT_AI_EMAIL) return true;
+  return LEGACY_AI_EMAILS.includes(candidate);
 }

@@ -52,6 +52,14 @@ describe('AI-author identity', () => {
     assert.equal(isAiAuthorEmail('ai-assistant@deckyard.app'), true);
   });
 
+  it('matches case-insensitively, as stored rows are lowercased', () => {
+    // Comment rows lowercase the author address on write, the setting keeps
+    // whatever was typed — a mixed-case identity must still match its own rows.
+    assert.equal(isAiAuthorEmail('bot@self-hoster.example', 'Bot@Self-Hoster.Example'), true);
+    assert.equal(isAiAuthorEmail('AI-Assistant@Deckyard.eu'), true);
+    assert.equal(isAiAuthorEmail('AI-Assistant@Deckyard.app'), true);
+  });
+
   it('does not recognise an unrelated author', () => {
     assert.equal(isAiAuthorEmail('alice@example.com', 'bot@self-hoster.example'), false);
     assert.equal(isAiAuthorEmail(''), false);
