@@ -3,7 +3,7 @@
  * Uses the storage adapter when initialized, falls back to file-based storage.
  *
  * A collection is a named, ordered, scoped set of slide-library item ids
- * (see collections-file.js). It stores references only, never slide content.
+ * (see ./file.js). It stores references only, never slide content.
  *
  * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
  * organization comes from the caller instead of a hardcoded default — see
@@ -16,10 +16,10 @@
  * (who may see it). They are unrelated.
  */
 
-import { repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
+import { repoRootOf } from '../scope.js';
+import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
 
-const withStorageFallback = createStorageDispatch(() => import('./collections-file.js'));
+const withStorageFallback = createStorageDispatch(() => import('./file.js'));
 
 function cleanName(input) {
   return typeof input?.name === 'string' ? input.name.trim() : '';

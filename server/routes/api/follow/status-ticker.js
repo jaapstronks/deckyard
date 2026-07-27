@@ -7,7 +7,7 @@
  * and fans the (once-serialized) result out to all subscribed connections.
  */
 
-import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
+import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { computeAudienceCapabilitiesFromState, followAudienceScope } from './helpers.js';
 

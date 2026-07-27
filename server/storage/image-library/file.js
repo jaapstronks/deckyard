@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { dataDir } from '../config/storage-paths.js';
-import { nowIso } from '../utils/normalize.js';
-import { cleanStr } from '../../shared/string-utils.js';
-import { normalizeLang } from '../../shared/i18n-utils.js';
-import { readJsonIfExists } from './io.js';
+import { dataDir } from '../../config/storage-paths.js';
+import { nowIso } from '../../utils/normalize.js';
+import { cleanStr } from '../../../shared/string-utils.js';
+import { normalizeLang } from '../../../shared/i18n-utils.js';
+import { readJsonIfExists } from '../io.js';
 
 function libraryPath(repoRoot) {
   return path.join(dataDir(repoRoot), 'image-library.json');

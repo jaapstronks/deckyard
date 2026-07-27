@@ -3,7 +3,7 @@
  * Shared by both the internal API and the public API v1.
  */
 
-import { getOrganizationById } from '../storage/user-organizations.js';
+import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
 import { getOrgSettings } from './org-settings.js';

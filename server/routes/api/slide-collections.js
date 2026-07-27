@@ -26,7 +26,7 @@ import {
   createTeamCollection,
   updateTeamCollection,
   deleteTeamCollection,
-} from '../../storage/collections.js';
+} from '../../storage/collections/index.js';
 
 /**
  * Team collections may only be mutated by an admin or the creator.

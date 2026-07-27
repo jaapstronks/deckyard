@@ -30,12 +30,12 @@ import { parsePaginationParams } from '../../utils/request-validators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { getPopularPresentations } from './presentations/popular.js';
 import { getEnrichedActivity } from './activity.js';
-import { listTeamLibrary } from '../../storage/slide-library.js';
-import { listSlideLibraryUsage } from '../../storage/slide-library-usage.js';
+import { listTeamLibrary } from '../../storage/slide-library/index.js';
+import { listSlideLibraryUsage } from '../../storage/slide-library-usage/index.js';
 import {
   listPersonalCollections,
   listTeamCollections,
-} from '../../storage/collections.js';
+} from '../../storage/collections/index.js';
 
 /**
  * Build the activity filter opts from the request, mirroring `/api/activity`.

@@ -16,7 +16,7 @@ import {
   requestGuestVerification,
   verifyGuestEmail,
   getGuestBySessionToken,
-} from '../../../storage/share-links.js';
+} from '../../../storage/share-links/index.js';
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';

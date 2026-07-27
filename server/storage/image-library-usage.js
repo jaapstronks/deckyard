@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { presDir } from './presentations/paths.js';
 import { readJsonIfExists } from './presentations/io.js';
-import { getPublishedIndex } from './published.js';
+import { getPublishedIndex } from './published/index.js';
 import { repoRootOf } from './scope.js';
 
 function pickTitle(pres) {

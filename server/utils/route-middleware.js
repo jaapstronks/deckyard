@@ -20,7 +20,7 @@ import {
   canCommentOnPresentation,
 } from './presentation-authz.js';
 import { createRouteContext } from './context.js';
-import { getGuestBySessionToken } from '../storage/share-links.js';
+import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
 
 // ============================================================

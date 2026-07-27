@@ -7,7 +7,7 @@ import {
   serveJson,
   serverError,
 } from '../../../utils/http.js';
-import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
+import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { getPresentationCached } from '../../../storage/presentation-cache.js';
 import { normalizeLang } from '../../../utils/translation-status.js';

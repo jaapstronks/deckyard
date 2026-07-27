@@ -19,11 +19,11 @@ import {
   getTagsForSlideLibraryItem,
   getTagsForSlideLibraryItems,
   setTagsForSlideLibraryItem,
-} from '../../storage/slide-library.js';
+} from '../../storage/slide-library/index.js';
 import {
   listSlideLibraryUsage,
   recordSlideLibraryUsage,
-} from '../../storage/slide-library-usage.js';
+} from '../../storage/slide-library-usage/index.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
 import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';

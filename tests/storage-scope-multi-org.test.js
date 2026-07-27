@@ -267,7 +267,7 @@ test('an entry point with no organization refuses to guess once there are severa
 // Beta its own rows did not exist.
 
 test("the published index is per organization", async () => {
-  const { getPublishedIndex } = await import('../server/storage/published.js');
+  const { getPublishedIndex } = await import('../server/storage/published/index.js');
   const alpha = await getPublishedIndex({ organizationId: ORG_A });
   const beta = await getPublishedIndex({ organizationId: ORG_B });
   assert.deepEqual(Object.keys(alpha), ['pub-alpha']);
@@ -279,7 +279,7 @@ test("the published index is per organization", async () => {
 });
 
 test('a publish id still resolves across organizations, because it is the token', async () => {
-  const { getPublishedById } = await import('../server/storage/published.js');
+  const { getPublishedById } = await import('../server/storage/published/index.js');
   const scope = crossOrganizationScope(null, 'published deck: the publish id is the authorization');
   const entry = await getPublishedById(scope, 'pub-beta');
   assert.equal(entry?.presentationId, 'deck-beta', 'a public link must work from any workspace');
@@ -287,7 +287,7 @@ test('a publish id still resolves across organizations, because it is the token'
 
 test('the image library is per organization', async () => {
   const { listImageLibrary, getImageLibraryItem } = await import(
-    '../server/storage/image-library.js'
+    '../server/storage/image-library/index.js'
   );
   const alpha = await listImageLibrary({ organizationId: ORG_A });
   const beta = await listImageLibrary({ organizationId: ORG_B });
@@ -302,7 +302,7 @@ test('the image library is per organization', async () => {
 
 test('the team slide library is per organization', async () => {
   const { listTeamLibrary, getTeamLibraryItem } = await import(
-    '../server/storage/slide-library.js'
+    '../server/storage/slide-library/index.js'
   );
   const { items: alpha } = await listTeamLibrary({ organizationId: ORG_A });
   const { items: beta } = await listTeamLibrary({ organizationId: ORG_B });
@@ -316,7 +316,7 @@ test('the team slide library is per organization', async () => {
 });
 
 test('team collections are per organization', async () => {
-  const { listTeamCollections } = await import('../server/storage/collections.js');
+  const { listTeamCollections } = await import('../server/storage/collections/index.js');
   const { items: alpha } = await listTeamCollections({ organizationId: ORG_A });
   const { items: beta } = await listTeamCollections({ organizationId: ORG_B });
   assert.deepEqual(alpha.map((c) => c.id), ['col-alpha']);
@@ -327,7 +327,7 @@ test('tags are per organization', async () => {
   // `listTags` would be the obvious probe, but its query groups to compute usage
   // counts and the database double has no GROUP BY. The per-deck lookup exercises
   // the same organization filter on the same tables.
-  const { getTagsForPresentation } = await import('../server/storage/tags.js');
+  const { getTagsForPresentation } = await import('../server/storage/tags/index.js');
 
   assert.deepEqual(
     (await getTagsForPresentation({ organizationId: ORG_A }, 'deck-alpha')).map((t) => t.name),

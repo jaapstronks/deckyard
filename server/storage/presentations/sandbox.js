@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { sandboxEnabled, sandboxTtlMs } from '../../config/sandbox.js';
 import { dataDir } from '../../config/storage-paths.js';
-import { removePublishedEntry } from '../published.js';
+import { removePublishedEntry } from '../published/index.js';
 import { singleWorkspaceScope } from '../scope.js';
 import { deletePresentationFile } from './io.js';
 

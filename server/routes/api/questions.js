@@ -6,7 +6,7 @@ import {
   serveJson,
   unauthorized,
 } from '../../utils/http.js';
-import { getFollowStateForPresentation } from '../../storage/present-sessions.js';
+import { getFollowStateForPresentation } from '../../storage/present-sessions/index.js';
 import crypto from 'node:crypto';
 import {
   ensureQuestionsSession,
@@ -21,7 +21,7 @@ import {
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { normalizeLang } from '../../utils/translation-status.js';
-import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions.js';
+import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions/index.js';
 import { canWritePresentation } from '../../utils/presentation-authz.js';
 
 export async function handleQuestions({ repoRoot, storageScope, req, res, url, authedUser }) {

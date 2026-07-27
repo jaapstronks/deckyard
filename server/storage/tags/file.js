@@ -13,8 +13,8 @@
  */
 
 import path from 'node:path';
-import { readJsonIfExists, writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
+import { readJsonIfExists, writeJsonAtomic } from '../io.js';
+import { dataDir } from '../../config/storage-paths.js';
 
 const MAX_TAG_LEN = 100;
 
