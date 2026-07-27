@@ -20,6 +20,7 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
+import { getAiIdentity } from '../../../storage/settings.js';
 import { getCtx } from './comments-shared.js';
 
 /**
@@ -46,7 +47,19 @@ export async function handlePresentationCommentsList(
   const comments = await listComments(id, ctx, { slideId, status, commentType });
   const openCount = await getOpenCommentCount(id, ctx);
 
-  serveJson(res, 200, { ok: true, comments, openCount });
+  // The effective AI-author identity so the client can recognise legacy
+  // AI-suggestion comments that predate the commentType field, including
+  // self-hosters who configured a custom aiAssistant.email. App-global, but
+  // shipped with the list so guests (who cannot read /api/settings/app) get it
+  // too. Best-effort: recognition falls back to the default/legacy addresses.
+  let aiEmail;
+  try {
+    aiEmail = (await getAiIdentity(repoRoot)).email;
+  } catch {
+    aiEmail = undefined;
+  }
+
+  serveJson(res, 200, { ok: true, comments, openCount, aiEmail });
   return true;
 }
 

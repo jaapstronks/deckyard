@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { DREAMBOT_EMAIL } from '../../../shared/constants/ai.js';
+import { isAiAuthorEmail } from '../../../shared/constants/ai.js';
 import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
@@ -15,6 +15,9 @@ import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
  * @param {Function} deps.h - DOM helper function
  * @param {Object} deps.filter - Current filter state
  * @param {Function} deps.getSlideNumber - Function to get slide number from ID
+ * @param {Function} [deps.getAiEmail] - Returns the effective AI-author email
+ *   (settings.aiAssistant.email, resolved to the default when unset) so
+ *   author-address recognition of AI suggestions honours a configured identity
  * @param {Function} deps.formatTime - Time formatting function
  * @param {Function} deps.isOwner - Check if current user is owner
  * @param {Function} deps.isAuthor - Check if current user is author of a comment
@@ -31,6 +34,7 @@ export function createCommentRenderers({
   h,
   filter,
   getSlideNumber,
+  getAiEmail,
   formatTime,
   isOwner,
   isAuthor,
@@ -112,7 +116,8 @@ export function createCommentRenderers({
    * Render a single comment.
    */
   function renderComment(comment, isReply, threadEl = null) {
-    const isAiSuggestion = comment.commentType === 'ai-suggestion' || comment.authorEmail === DREAMBOT_EMAIL;
+    const isAiSuggestion = comment.commentType === 'ai-suggestion'
+      || isAiAuthorEmail(comment.authorEmail, getAiEmail?.());
     const isDismissed = comment.status === 'dismissed';
     const hasProposedSlide = !!(comment.proposedSlide && comment.proposedSlide.type);
 
