@@ -271,6 +271,16 @@ export async function createEditorController({
   const applyReadOnly = () => {
     readOnlyMode = lockReadOnly || maintenanceReadOnly;
     shell.classList.toggle('is-read-only', readOnlyMode);
+    if (!readOnlyMode) return;
+    // The caption is derived here rather than set at each source, because both
+    // can be up at once. Maintenance wins while it lasts, but the lock text has
+    // to come back when it ends — otherwise a deploy that overlaps someone
+    // else's lock leaves the editor read-only under a "paused for maintenance"
+    // caption that is no longer true.
+    const bannerText = maintenanceReadOnly
+      ? t('maintenance.readOnly.banner', 'Paused for maintenance - your work is kept')
+      : t('editor.readOnly.banner', 'View only - someone else is editing');
+    shell.style.setProperty('--read-only-banner-text', `"${bannerText}"`);
   };
 
   // Store user email for SSE event filtering
@@ -654,10 +664,6 @@ export async function createEditorController({
       return (isReadOnly, lockInfo) => {
         lockReadOnly = !!isReadOnly;
         applyReadOnly();
-        if (isReadOnly) {
-          const bannerText = t('editor.readOnly.banner', 'View only - someone else is editing');
-          shell.style.setProperty('--read-only-banner-text', `"${bannerText}"`);
-        }
         if (isReadOnly && !wasReadOnly && lockInfo) {
           const who = lockInfo.holderName || lockInfo.holderEmail || t('editor.readOnly.someone', 'someone else');
           toast.info(
@@ -1177,10 +1183,6 @@ export async function createEditorController({
       maintenanceReadOnly = state.active;
       applyReadOnly();
       if (state.active) {
-        shell.style.setProperty(
-          '--read-only-banner-text',
-          `"${t('maintenance.readOnly.banner', 'Paused for maintenance - your work is kept')}"`
-        );
         saveManager.cancelAutosave();
         toast.info(
           t(
