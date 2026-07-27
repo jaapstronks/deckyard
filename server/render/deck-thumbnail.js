@@ -18,10 +18,14 @@ const log = createLogger('deck-thumbnail');
  *   present and otherwise kicks generation off asynchronously (see
  *   {@link requestThumbnailGeneration}); the client shows a cheap placeholder
  *   and retries.
- * - **Cache-key = deck-id + revision + theme signature.** `revision` bumps on
- *   every deck save and rides in the thumbnail URL as `?v=`, so an edit changes
- *   the URL and the old raster ages out — no explicit invalidation bookkeeping.
- *   The theme is folded in too, so editing a custom theme regenerates as well.
+ * - **Cache-key = deck-id + slide-1 signature + theme signature.** The key hashes
+ *   what the raster is actually made of, so an edit anywhere *else* in the deck
+ *   doesn't invalidate it. Keying on the deck `revision` (which bumps on every
+ *   save) meant opening and closing a deck was enough for a guaranteed miss, and
+ *   a miss costs the card a ~10s placeholder shimmer.
+ * - **Stale-while-revalidate.** When slide 1 genuinely did change, the previous
+ *   raster for that deck is served while the new one renders in the background,
+ *   so a card is never empty just because it is one edit out of date.
  * - **Degrades to placeholders.** Both dependencies are optional: if headless
  *   Chrome or sharp is missing (or a render fails) generation returns false and
  *   the card just keeps its placeholder. Never throws to the caller.
@@ -40,32 +44,104 @@ function sanitizeId(id) {
   return String(id || 'deck').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
 }
 
+/** Stable sha1 prefix of any JSON-able value, with a caller-supplied fallback. */
+function hashOf(value, fallback) {
+  try {
+    return crypto.createHash('sha1').update(JSON.stringify(value ?? null)).digest('hex').slice(0, 12);
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * Compute the deterministic cache identity for a deck's thumbnail.
- * @param {object} presentation - Full presentation (needs `id`, `revision`, `theme`).
+ *
+ * Keyed on the raster's actual inputs — slide 1 and the resolved theme — rather
+ * than on the deck `revision`. A revision bumps on every save, including saves
+ * that never touch slide 1, so keying on it guaranteed a cache miss (and a
+ * placeholder shimmer) after any edit anywhere in the deck.
+ *
+ * @param {object} presentation - Full presentation (needs `id`, `slides`, `theme`).
  * @param {object|null} theme - Resolved theme object, folded into the signature so
- *   a theme edit invalidates even when the deck revision hasn't moved.
- * @returns {{ id: string, sig: string, filename: string }}
+ *   a theme edit invalidates too.
+ * @returns {{ id: string, sig: string, prefix: string, filename: string }}
  */
 export function thumbCacheKey(presentation, theme) {
   const id = String(presentation?.id || '');
-  const rev = Number(presentation?.revision) || 1;
-  let themeSig;
-  try {
-    themeSig = crypto
-      .createHash('sha1')
-      .update(JSON.stringify(theme ?? presentation?.theme ?? null))
-      .digest('hex')
-      .slice(0, 12);
-  } catch {
-    themeSig = String(presentation?.theme || 'default');
-  }
+  const firstSlide = Array.isArray(presentation?.slides) ? presentation.slides[0] : null;
+  const slideSig = hashOf(firstSlide, 'noslide');
+  const themeSig = hashOf(theme ?? presentation?.theme ?? null, String(presentation?.theme || 'default'));
   const sig = crypto
     .createHash('sha1')
-    .update(`${id}|${rev}|${themeSig}`)
+    .update(`${id}|${slideSig}|${themeSig}`)
     .digest('hex')
     .slice(0, 16);
-  return { id, sig, filename: `${sanitizeId(id)}-${sig}.webp` };
+  const prefix = sanitizeId(id);
+  return { id, sig, prefix, filename: `${prefix}-${sig}.webp` };
+}
+
+/**
+ * Newest cached raster for a deck other than `exceptFilename`, or null.
+ *
+ * Backs the stale-while-revalidate path: when slide 1 really did change, the
+ * card shows the previous raster (at most one edit old) instead of flashing a
+ * placeholder for as long as headless Chrome needs.
+ *
+ * @param {string} repoRoot
+ * @param {string} prefix - Filesystem-safe deck id, from {@link thumbCacheKey}.
+ * @param {string} exceptFilename - The fresh key, which we already know is absent.
+ * @returns {Promise<{ buffer: Buffer, filename: string } | null>}
+ */
+export async function readStaleThumbnail(repoRoot, prefix, exceptFilename) {
+  const dir = cacheDir(repoRoot);
+  let names;
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return null;
+  }
+  const candidates = names.filter(
+    (n) => n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== exceptFilename
+  );
+  let newest = null;
+  for (const name of candidates) {
+    try {
+      const stat = await fs.stat(path.join(dir, name));
+      if (!newest || stat.mtimeMs > newest.mtimeMs) newest = { name, mtimeMs: stat.mtimeMs };
+    } catch {
+      // raced with a prune; skip
+    }
+  }
+  if (!newest) return null;
+  try {
+    return { buffer: await fs.readFile(path.join(dir, newest.name)), filename: newest.name };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Drop every cached raster for a deck except `keepFilename`.
+ * Without this the cache dir grows by one file per slide-1 edit, forever.
+ *
+ * @param {string} repoRoot
+ * @param {string} prefix - Filesystem-safe deck id, from {@link thumbCacheKey}.
+ * @param {string} keepFilename
+ * @returns {Promise<void>}
+ */
+export async function pruneOldThumbnails(repoRoot, prefix, keepFilename) {
+  const dir = cacheDir(repoRoot);
+  let names;
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return;
+  }
+  await Promise.all(
+    names
+      .filter((n) => n.startsWith(`${prefix}-`) && n.endsWith('.webp') && n !== keepFilename)
+      .map((n) => fs.rm(path.join(dir, n), { force: true }).catch(() => {}))
+  );
 }
 
 /**
@@ -158,18 +234,23 @@ async function generateAndCache(repoRoot, filename, slide, theme, slideTypes) {
  * @returns {Promise<boolean>} whether a raster now exists.
  */
 export function requestThumbnailGeneration(repoRoot, presentation, slide, theme, slideTypes) {
-  const { filename } = thumbCacheKey(presentation, theme);
+  const { filename, prefix } = thumbCacheKey(presentation, theme);
   if (inFlight.has(filename)) return inFlight.get(filename);
 
   const promise = (async () => {
     // Another request may have generated it between the route's read and here.
     if (await readCachedThumbnail(repoRoot, filename)) return true;
     await acquireSlot();
+    let ok;
     try {
-      return await generateAndCache(repoRoot, filename, slide, theme, slideTypes);
+      ok = await generateAndCache(repoRoot, filename, slide, theme, slideTypes);
     } finally {
       releaseSlot();
     }
+    // Prune only after the fresh raster landed, so the stale-while-revalidate
+    // path always has something to serve until the replacement exists.
+    if (ok) await pruneOldThumbnails(repoRoot, prefix, filename);
+    return ok;
   })()
     .catch((err) => {
       log.warn('generation failed:', err?.message);
