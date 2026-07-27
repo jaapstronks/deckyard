@@ -52,10 +52,10 @@ import { createChromeAutoHide } from './chrome-autohide.js';
 import { createPresenterHighlighter } from './highlighter.js';
 import { fetchMySettings } from '../../lib/net/settings.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
-import { createAutoAdvance } from './auto-advance.js';
 import { createPresentChannel } from '../../lib/net/present-channel.js';
 import { readDeckLangFromUrl } from './present-lang.js';
-import { getSlideEffectiveDuration, calculateDeckTime, DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
+import { createPresenterAutoAdvanceUi } from './auto-advance-ui.js';
+import { createPresenterTeardown } from './teardown.js';
 import { resolveRevealStyle } from '../../../shared/reveal-style.js';
 import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
@@ -275,21 +275,6 @@ export async function renderPresenter(
   const renderStepIndicator = createStepIndicatorRenderer(stepIndicator);
   const edgeHintCtl = createEdgeHint(edgeHint);
 
-  // Total deck time in progress area (visible when auto-advance is enabled)
-  const progressTimeEl = h('div', { class: 'presenter-progress-time', text: '' });
-  if (autoAdvanceEnabled) {
-    progress.append(progressTimeEl);
-  }
-  const syncProgressTime = () => {
-    if (!autoAdvanceEnabled) return;
-    const slides = deckCtl?.getState?.()?.presentation?.slides || pres?.slides || [];
-    const { formatted } = calculateDeckTime(slides, autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS);
-    const st = deckCtl?.getState?.();
-    const idx = (st?.idx ?? 0) + 1;
-    const total = st?.slidesCount ?? slides.length;
-    progressTimeEl.textContent = `${idx} / ${total} · ${formatted}`;
-  };
-
   shell.append(top, deck, progress);
   root.append(shell);
 
@@ -303,69 +288,21 @@ export async function renderPresenter(
   });
   videoLayer.setConfig(pres?.settings?.liveVideo);
 
-  // Auto-advance countdown bar
-  const autoAdvanceBarEl = h('div', { class: 'auto-advance-bar' });
-  const autoAdvanceBarFill = h('div', { class: 'auto-advance-bar-fill' });
-  autoAdvanceBarEl.append(autoAdvanceBarFill);
-  // Only show bar if enabled + showCountdown
-  autoAdvanceBarEl.hidden = !(autoAdvanceEnabled && autoAdvanceCfg?.showCountdown !== false);
-  stageWrap.append(autoAdvanceBarEl);
-
-  const autoAdvance = createAutoAdvance({
-    onAdvance: () => deckCtl?.next?.(),
-    onTick: (progress) => {
-      if (progress <= 1) {
-        autoAdvanceBarFill.style.width = `${(progress * 100).toFixed(1)}%`;
-        autoAdvanceBarEl.classList.remove('is-overtime');
-      } else {
-        // Pacing overtime: bar stays at 100%, visual indicator changes
-        autoAdvanceBarFill.style.width = '100%';
-        autoAdvanceBarEl.classList.add('is-overtime');
-      }
-    },
-    onStateChange: (s) => {
-      autoAdvanceBarEl.classList.toggle('is-paused', s === 'paused');
-      syncAutoAdvanceBtn();
-    },
-    onLoopComplete: () => deckCtl?.show?.(0),
-    onTimerExpired: () => {
-      // Pacing mode: show edge hint when timer runs out
-      edgeHintCtl.show(t('presenter.timesUp', "Time's up"));
-    },
+  // Auto-advance UI: countdown bar, deck-time readout and the pause button's
+  // label/handler around the timer engine. The deck controller is created
+  // below, so it's reached through a thunk (as it was when this lived inline).
+  const { autoAdvance, syncProgressTime } = createPresenterAutoAdvanceUi({
+    h,
+    pres,
+    autoAdvanceCfg,
+    autoAdvanceEnabled,
+    autoAdvanceMode,
+    autoAdvanceBtn,
+    progress,
+    stageWrap,
+    edgeHintCtl,
+    getDeck: () => deckCtl,
   });
-
-  // Wire up auto-advance button handlers (button created earlier, timer available now)
-  const syncAutoAdvanceBtn = () => {
-    const s = autoAdvance.getState();
-    if (autoAdvanceMode === 'pacing') {
-      autoAdvanceBtn.textContent = s === 'running'
-        ? t('presenter.pacingPause', 'Pause timer')
-        : t('presenter.pacingResume', 'Resume timer');
-    } else {
-      autoAdvanceBtn.textContent = s === 'running'
-        ? t('presenter.autoAdvancePause', 'Pause auto')
-        : t('presenter.autoAdvanceResume', 'Resume auto');
-    }
-    autoAdvanceBtn.classList.toggle('is-active', s === 'running');
-  };
-  autoAdvanceBtn.addEventListener('click', () => {
-    autoAdvance.toggle();
-  });
-
-  // Per-slide duration lookup: reads live from deck state
-  const getSlideInterval = (idx) => {
-    const slides = deckCtl?.getState?.()?.presentation?.slides || pres?.slides || [];
-    return getSlideEffectiveDuration(slides[idx], autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS);
-  };
-
-  if (autoAdvanceEnabled) {
-    autoAdvance.configure({
-      intervalSeconds: autoAdvanceCfg?.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS,
-      loop: !!autoAdvanceCfg?.loop,
-      mode: autoAdvanceMode,
-      getSlideInterval,
-    });
-  }
 
   const detachStageScale = attachStageScale(
     stageWrap,
@@ -825,77 +762,27 @@ export async function renderPresenter(
   });
 
   // Let the SPA router unmount this view cleanly (pushState navigation doesn't fire popstate).
-  return () => {
-    animator.cancel();
-    try {
-      const section =
-        stage?.querySelector?.('.deck-slide.is-active') ||
-        null;
-      if (section) pauseVideoEmbeds(section);
-    } catch {}
-    cleanupSlideRuntimes(stage);
-    try {
-      stage.innerHTML = '';
-    } catch {}
-    try {
-      detachKeys?.();
-    } catch {}
-    try {
-      detachSwipe?.();
-    } catch {}
-    document.removeEventListener(
-      'fullscreenchange',
-      syncFullscreenClass
-    );
-    document.documentElement.classList.remove(
-      'is-fullscreen'
-    );
-    if (typeof closeSessionEvents === 'function')
-      closeSessionEvents();
-    closeSessionEvents = null;
-    toolsMenu.cleanup();
-    try {
-      detachStageScale?.();
-    } catch {}
-    try {
-      chromeAutoHide?.destroy?.();
-    } catch {}
-    try {
-      startCurtain?.dismiss?.();
-    } catch {}
-    try {
-      highlighter?.destroy?.();
-    } catch {}
-    try {
-      autoAdvance?.destroy?.();
-    } catch {}
-    try {
-      presenterConsole?.destroy?.();
-    } catch {}
-    try {
-      window.removeEventListener('pagehide', handlePageHide);
-    } catch {}
-    try {
-      presentChannel.close();
-    } catch {}
-    try {
-      shortcutsOverlay?.close?.();
-    } catch {}
-    videoLayer.destroy();
-    edgeHintCtl.destroy();
-    if (keepAliveTid) {
-      try {
-        clearInterval(keepAliveTid);
-      } catch {}
-      keepAliveTid = null;
-    }
-    if (document.fullscreenElement) {
-      try {
-        const p =
-          document.exitFullscreen &&
-          document.exitFullscreen();
-        if (p?.catch) p.catch(() => {});
-      } catch {}
-    }
-  };
+  return createPresenterTeardown({
+    animator,
+    stage,
+    pauseVideoEmbeds,
+    cleanupSlideRuntimes,
+    detachKeys,
+    detachSwipe,
+    syncFullscreenClass,
+    closeSessionEvents,
+    toolsMenu,
+    detachStageScale,
+    chromeAutoHide,
+    startCurtain,
+    highlighter,
+    autoAdvance,
+    presenterConsole,
+    handlePageHide,
+    presentChannel,
+    getShortcutsOverlay: () => shortcutsOverlay,
+    videoLayer,
+    edgeHintCtl,
+    keepAliveTid,
+  });
 }
