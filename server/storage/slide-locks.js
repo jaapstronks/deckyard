@@ -122,54 +122,20 @@ export async function acquireSlideLock(presentationId, slideId, { email, name } 
     const now = nowIso();
     const expiresAt = isoAfter(LOCK_TTL_MS);
 
-    // Check for existing non-expired lock
-    const existing = await db
-      .selectFrom('slide_locks')
-      .selectAll()
-      .where('presentation_id', '=', pid)
-      .where('slide_id', '=', sid)
-      .where('organization_id', '=', orgId)
-      .where('expires_at', '>', now)
-      .executeTakeFirst();
-
-    if (existing) {
-      // If held by someone else, return error
-      if (existing.holder_email !== holderEmail) {
-        return {
-          ok: false,
-          reason: 'held',
-          lock: mapLockRow(existing),
-        };
-      }
-
-      // Same user - refresh the lock
-      const updated = await db
-        .updateTable('slide_locks')
-        .set({
-          holder_name: holderName,
-          refreshed_at: now,
-          expires_at: expiresAt,
-        })
-        .where('presentation_id', '=', pid)
-        .where('slide_id', '=', sid)
-        .where('organization_id', '=', orgId)
-        .returningAll()
-        .executeTakeFirst();
-
-      return {
-        ok: true,
-        lock: mapLockRow(updated),
-      };
-    }
-
-    // No existing lock - clean up expired and insert new
-    await db
-      .deleteFrom('slide_locks')
-      .where('presentation_id', '=', pid)
-      .where('slide_id', '=', sid)
-      .where('organization_id', '=', orgId)
-      .execute();
-
+    // One atomic upsert replaces the old check-then-delete-then-insert, which
+    // raced two concurrent acquires into a unique-constraint 500: both passed
+    // the "no existing lock" SELECT, both deleted nothing, and the second INSERT
+    // violated slide_locks_presentation_id_slide_id_key.
+    //
+    // The conflict target is the *real* unique constraint — (presentation_id,
+    // slide_id), WITHOUT organization_id (migration 023). The DO UPDATE only
+    // fires when the current lock is expired or already held by this user, so a
+    // live lock held by someone else survives untouched and is reported as
+    // { ok: false, reason: 'held' } below.
+    //
+    // acquired_at is reset to `now` on every successful acquire, including a
+    // same-user refresh. Nothing reads a slide lock's acquiredAt today, so the
+    // plain upsert is preferred over a CASE that would preserve the original.
     const inserted = await db
       .insertInto('slide_locks')
       .values({
@@ -182,12 +148,45 @@ export async function acquireSlideLock(presentationId, slideId, { email, name } 
         refreshed_at: now,
         expires_at: expiresAt,
       })
+      .onConflict((oc) =>
+        oc
+          .columns(['presentation_id', 'slide_id'])
+          .doUpdateSet({
+            holder_email: holderEmail,
+            holder_name: holderName,
+            acquired_at: now,
+            refreshed_at: now,
+            expires_at: expiresAt,
+          })
+          .where((eb) =>
+            eb.or([
+              eb('slide_locks.expires_at', '<=', now),
+              eb('slide_locks.holder_email', '=', holderEmail),
+            ])
+          )
+      )
       .returningAll()
       .executeTakeFirst();
 
+    if (inserted) {
+      return { ok: true, lock: mapLockRow(inserted) };
+    }
+
+    // No row returned: the DO UPDATE guard was false, i.e. a live lock held by
+    // someone else. Report the current holder.
+    const held = await db
+      .selectFrom('slide_locks')
+      .selectAll()
+      .where('presentation_id', '=', pid)
+      .where('slide_id', '=', sid)
+      .where('organization_id', '=', orgId)
+      .where('expires_at', '>', now)
+      .executeTakeFirst();
+
     return {
-      ok: true,
-      lock: mapLockRow(inserted),
+      ok: false,
+      reason: 'held',
+      lock: held ? mapLockRow(held) : undefined,
     };
   });
 }
