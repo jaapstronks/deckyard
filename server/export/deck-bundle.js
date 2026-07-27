@@ -30,8 +30,16 @@ import {
   rewriteAssetRefs,
   assetRefForHash,
 } from '../../shared/slide-types/deck-assets.js';
+import {
+  DECK_FORMAT_ID,
+  DECK_MIMETYPE,
+  isDeckMimetype,
+} from '../../shared/slide-types/deck-format-id.js';
 
-export const DECK_MIMETYPE = 'application/vnd.slidecreator.deck';
+// Re-exported so bundle callers keep one import for the whole bundle surface;
+// the values themselves (and the historical ones a reader still accepts) live
+// in shared/slide-types/deck-format-id.js.
+export { DECK_MIMETYPE };
 export const DECK_BUNDLE_VERSION = 1;
 
 /** SRI-shaped integrity id (`sha256-<base64>`) from a hex digest. */
@@ -109,7 +117,7 @@ export async function buildDeckBundle(repoRoot, pres) {
   const portableDeck = rewriteAssetRefs(deck, (ref) => refToBundle.get(ref));
 
   const manifest = {
-    format: 'slidecreator.deck',
+    format: DECK_FORMAT_ID,
     bundleVersion: DECK_BUNDLE_VERSION,
     mimetype: DECK_MIMETYPE,
     deck: 'deck.json',
@@ -148,7 +156,9 @@ export async function readDeckBundle(buffer) {
 
   const mtEntry = zip.file('mimetype');
   const mimetype = mtEntry ? (await mtEntry.async('string')).trim() : '';
-  if (mimetype !== DECK_MIMETYPE) {
+  // Accepts the historical `vnd.slidecreator.deck` too: bundles already in the
+  // wild carry it, and a published format does not stop reading its own past.
+  if (!isDeckMimetype(mimetype)) {
     throw new Error('Not a .deck bundle: mimetype sentinel missing or mismatched');
   }
 

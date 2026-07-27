@@ -180,7 +180,7 @@ export function deckJsonSchema(slideTypes) {
     $id: `${SCHEMA_BASE_URI}/v${CURRENT_SCHEMA_VERSION}/deck.schema.json`,
     title: 'Deckyard deck',
     description:
-      'A Deckyard presentation (the durable slidecreator.deck envelope). ' +
+      'A Deckyard presentation (the durable deckyard.deck envelope). ' +
       'Generated from the slide-type field registry; do not edit by hand.',
     type: 'object',
     properties: {

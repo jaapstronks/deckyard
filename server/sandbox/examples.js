@@ -1,7 +1,7 @@
 /**
  * Sandbox example presentations.
  *
- * A small set of ready-made demo decks (stored as slidecreator.deck JSON under
+ * A small set of ready-made demo decks (stored as deckyard.deck JSON under
  * server/sandbox-examples/) that a first-time sandbox visitor can open and edit
  * — the fastest way to try the editor without building a deck from scratch.
  *

@@ -59,7 +59,7 @@ describe('buildDeckBundle', () => {
     assert.ok(Buffer.isBuffer(buf) && buf.length > 0);
     const { mimetype, manifest, assets } = await readDeckBundle(buf);
     assert.equal(mimetype, DECK_MIMETYPE);
-    assert.equal(manifest.format, 'slidecreator.deck');
+    assert.equal(manifest.format, 'deckyard.deck');
     assert.equal(manifest.bundleVersion, 1);
     // a.png (referenced twice) + b.png → 2 unique assets; gone.png is missing.
     assert.equal(manifest.assets.length, 2);
@@ -106,6 +106,30 @@ describe('readDeckBundle validation', () => {
     zip.file('deck.json', '{}');
     const bad = await zip.generateAsync({ type: 'nodebuffer' });
     await assert.rejects(() => readDeckBundle(bad), /mimetype sentinel/);
+  });
+
+  it('accepts a bundle carrying the historical mimetype sentinel', async () => {
+    // `application/vnd.slidecreator.deck` was written by every version before
+    // the format took its publisher's name. Bundles with it exist; the reader
+    // keeps accepting them. See shared/slide-types/deck-format-id.js.
+    const buf = await buildDeckBundle('/repo', pres());
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(buf);
+    zip.file('mimetype', 'application/vnd.slidecreator.deck', { compression: 'STORE' });
+    const legacy = await zip.generateAsync({ type: 'nodebuffer' });
+
+    const { mimetype, manifest } = await readDeckBundle(legacy);
+    assert.equal(mimetype, 'application/vnd.slidecreator.deck');
+    assert.equal(manifest.assets.length, 2);
+  });
+
+  it('rejects a foreign mimetype sentinel', async () => {
+    const buf = await buildDeckBundle('/repo', pres());
+    const JSZip = (await import('jszip')).default;
+    const zip = await JSZip.loadAsync(buf);
+    zip.file('mimetype', 'application/vnd.acme.deck', { compression: 'STORE' });
+    const foreign = await zip.generateAsync({ type: 'nodebuffer' });
+    await assert.rejects(() => readDeckBundle(foreign), /mimetype sentinel/);
   });
 
   it('rejects a tampered asset (integrity check)', async () => {

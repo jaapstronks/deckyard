@@ -14,6 +14,7 @@ import { reviseOutline } from './revise-outline.js';
 import { createSessionLogger, generateSessionId } from './logging.js';
 import { validateAndFixRefinedSlides } from './validate-slides.js';
 import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
+import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 
 /**
  * Assemble the final deck from refined slides
@@ -26,7 +27,7 @@ import { cryptoUuid } from '../../../shared/slide-types/helpers.js';
  */
 export function assembleDeck(outline, refinedSlides, { theme = 'default', titleSlideType = 'title-slide' } = {}) {
   const deck = {
-    format: 'slidecreator.deck',
+    format: DECK_FORMAT_ID,
     version: 1,
     title: outline.title,
     theme,

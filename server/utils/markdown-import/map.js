@@ -7,9 +7,10 @@
  * 1. Explicit frontmatter `layout:` (highest priority)
  * 2. Content-based heuristics (heading patterns, images, tables, quotes, etc.)
  *
- * Output: a `slidecreator.deck` format object ready for deckToPresentationParts().
+ * Output: a `deckyard.deck` format object ready for deckToPresentationParts().
  */
 
+import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import {
   LAYOUT_TO_SLIDE_TYPE,
   HEADING_RE,
@@ -33,7 +34,7 @@ export function mapParsedDeckToSlides(parsed, opts = {}) {
   const mappedSlides = slides.map((s, i) => mapSingleSlide(s, i, slides.length));
 
   return {
-    format: 'slidecreator.deck',
+    format: DECK_FORMAT_ID,
     version: 1,
     title,
     theme,

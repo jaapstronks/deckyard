@@ -1,4 +1,5 @@
 import { ICON_NAMES } from '../../../shared/icon-names.js';
+import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from './json.js';
@@ -40,7 +41,7 @@ export async function generateDeckJsonFromRawContent(
     '',
     'Output MUST match this portable deck format:',
     '{',
-    '  "format": "slidecreator.deck",',
+    `  "format": "${DECK_FORMAT_ID}",`,
     '  "version": 1,',
     '  "title": "Presentation Title",',
     '  "theme": "default",',

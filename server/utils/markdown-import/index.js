@@ -1,7 +1,7 @@
 /**
  * Markdown Import - Public API
  *
- * Converts raw markdown text into the portable `slidecreator.deck` format,
+ * Converts raw markdown text into the portable `deckyard.deck` format,
  * ready for deckToPresentationParts().
  */
 
