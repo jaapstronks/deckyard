@@ -136,6 +136,19 @@ test('Escape renders immediately and cancels a pending keystroke render', (t) =>
   detach();
 });
 
+test('detach drops a queued keystroke render (editor unmount)', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { panel, input, getRebuilds, detach } = mount();
+
+  typeChar(input, 'wo'); // queue a debounced render
+  panel.detach(); // editor unmounts before the timer fires
+
+  t.mock.timers.tick(500);
+  assert.equal(getRebuilds(), 0, 'no rerender of a torn-down editor');
+
+  detach();
+});
+
 test('the programmatic entry (setSearchQuery) renders immediately', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] });
   const { panel, getRebuilds, detach } = mount();

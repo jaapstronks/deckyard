@@ -640,6 +640,9 @@ export function createSlidesPanel({
     closeDrawer,
     getSearchQuery: () => searchQuery,
     setSearchQuery: (q, opts) => applySearchNow(q, opts),
+    // Drop a queued keystroke render on unmount — it would otherwise fire up to
+    // SEARCH_DEBOUNCE_MS later and rerender a torn-down editor.
+    detach: cancelPendingSearch,
     setSearchStats,
     updateBulkActionBar,
     pasteFromClipboard,
