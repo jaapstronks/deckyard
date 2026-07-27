@@ -72,9 +72,13 @@
 
   display: flex;
   flex-direction: column;
-  /* Centred, not top-aligned: a tall tile (1- and 2-up) otherwise leaves a
-     block of dead space under the note. */
-  justify-content: center;
+  /* Top-aligned on purpose: the big numbers must share one baseline across a
+     row, and only a common start edge guarantees that. Centring the whole
+     stack instead drifts the values apart as soon as one tile in the row has
+     a note and its neighbour has none (measured 26px on 3-up, 39px on 4-up).
+     The dead space a tall tile used to leave is taken by the note, which is
+     pushed to the foot of the tile below. */
+  justify-content: flex-start;
   gap: 12px;
   border-radius: 26px;
   padding: 32px 34px;
@@ -251,13 +255,15 @@
   font-size: 26px;
   line-height: 1.15;
   color: var(--kpi-tile-fg-muted, var(--color-text-muted));
-  margin-top: 4px;
+  /* `auto` is what takes the slack: value and label stay at the top edge, the
+     note drops to the foot of the tile. In a short tile it collapses to the
+     4px minimum, so nothing moves in the 3- and 4-up rows. */
+  margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid color-mix(in srgb, var(--kpi-tile-fg) 22%, transparent);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-meta {
   justify-content: center;
-  margin-top: 18px;
   padding-top: 0;
   border-top: 0;
 }
