@@ -5,8 +5,6 @@ import { t } from '../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../lib/dom/toast.js';
 import { isOrgDisabledSlideType } from './slide-types-policy.js';
 import { buildDataSourceIndicator } from './data-source-panel.js';
-import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../shared/slide-timing.js';
-import { readPreferredLlmVendor } from '../../lib/net/llm-vendor.js';
 import { closeIcon } from '../../lib/dom/icons.js';
 import { buildHeaderActions } from './editor-form/header-actions.js';
 import { getInlineDescriptor } from './inline-edit/descriptors.js';
@@ -27,6 +25,12 @@ import {
   buildBackgroundControls,
   isBackgroundFieldKey,
 } from './editor-form/background-section.js';
+import { buildSlideDurationControl } from './editor-form/slide-duration.js';
+import {
+  buildAiReasoningPanel,
+  buildAiWarningsPanel,
+} from './editor-form/ai-slide-notes.js';
+import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
 
 export function createRerenderEditor({
   h,
@@ -257,61 +261,10 @@ export function createRerenderEditor({
     }
 
     // Per-slide duration input (shown only when auto-advance is enabled)
-    const timingEnabled = !contentOnly && !!pres?.settings?.autoAdvance?.enabled;
-    if (timingEnabled) {
-      const deckDefault = pres.settings.autoAdvance.intervalSeconds || DEFAULT_ADVANCE_INTERVAL_SECONDS;
-      const durationWrap = h('div', { class: 'editor-slide-duration' });
-      const durationLabel = h('div', {
-        class: 'help',
-        text: t('editor.slide.duration.label', 'Slide duration (seconds)'),
-      });
-      const durationInput = h('input', {
-        type: 'number',
-        class: 'form-input form-input-sm',
-        min: '1',
-        max: '300',
-        placeholder: String(deckDefault) + 's (default)',
-        value: slide.duration != null ? String(slide.duration) : '',
-      });
-      const durationHelp = h('div', {
-        class: 'help',
-        text: t(
-          'editor.slide.duration.help',
-          'Leave empty to use the deck default ({default}s). Override for this slide only.',
-          { default: String(deckDefault) }
-        ),
-      });
-      durationInput.addEventListener('input', () => {
-        const v = durationInput.value.trim();
-        if (v === '') {
-          delete slide.duration;
-          markDirty?.();
-        } else {
-          const n = Number(v);
-          if (Number.isFinite(n) && n >= 1 && n <= 300) {
-            slide.duration = Math.round(n);
-            markDirty?.();
-          }
-        }
-      });
-      durationInput.addEventListener('blur', () => {
-        const v = durationInput.value.trim();
-        if (v === '') {
-          delete slide.duration;
-        } else {
-          let n = Number(v);
-          if (!Number.isFinite(n) || n < 1) n = 1;
-          if (n > 300) n = 300;
-          n = Math.round(n);
-          durationInput.value = String(n);
-          slide.duration = n;
-        }
-        markDirty?.();
-        requestSave?.();
-      });
-      durationWrap.append(durationLabel, durationInput, durationHelp);
-      editorMount.append(durationWrap);
-    }
+    const durationWrap = buildSlideDurationControl({
+      h, pres, slide, contentOnly, markDirty, requestSave,
+    });
+    if (durationWrap) editorMount.append(durationWrap);
 
     // Build form
     const def = SLIDE_TYPES[slide.type];
@@ -359,198 +312,25 @@ export function createRerenderEditor({
     const elementForm = h('div', { class: 'stack editor-form editor-element-form' });
 
     // AI reasoning panel (shown for AI-generated slides)
-    if (!contentOnly && slide._aiReasoning) {
-      const aiSection = h('details', { class: 'ai-reasoning-panel' });
-      const summary = h('summary', { class: 'ai-reasoning-toggle' });
-      summary.textContent = t('editor.slide.aiReasoning', 'AI type reasoning');
-      aiSection.append(summary);
-
-      const reasoningText = h('p', { class: 'ai-reasoning-text' });
-      reasoningText.textContent = slide._aiReasoning;
-      aiSection.append(reasoningText);
-
-      // Alternatives: newer slides carry _aiAlternatives [{type, reason}];
-      // older stored slides may still have the flat _aiAlternativeType pair.
-      const alternatives = Array.isArray(slide._aiAlternatives)
-        ? slide._aiAlternatives.filter((a) => a?.type && a?.reason)
-        : slide._aiAlternativeType && slide._aiAlternativeReason
-          ? [{ type: slide._aiAlternativeType, reason: slide._aiAlternativeReason }]
-          : [];
-      for (const alt of alternatives) {
-        const altDiv = h('div', { class: 'ai-reasoning-alternative' });
-        const altLabel = h('strong');
-        altLabel.textContent = t('editor.slide.aiAlternativeLabel', 'Alternative:');
-        const altCode = h('code');
-        altCode.textContent = alt.type;
-        // One key for the whole suggestion: {type} marks where the <code> node
-        // goes, so translations control word order and punctuation.
-        const tpl = t('editor.slide.aiAlternativeSuggestion', 'Consider {type} — {reason}');
-        const [beforeType, afterType = ''] = tpl.split('{type}');
-        const fillReason = (s) => s.replace('{reason}', () => String(alt.reason));
-        altDiv.append(
-          altLabel,
-          document.createTextNode(' '),
-          document.createTextNode(fillReason(beforeType)),
-          altCode,
-          document.createTextNode(fillReason(afterType))
-        );
-        aiSection.append(altDiv);
-      }
-
-      form.append(aiSection);
+    if (!contentOnly) {
+      const aiReasoning = buildAiReasoningPanel({ h, slide });
+      if (aiReasoning) form.append(aiReasoning);
     }
 
     // AI warnings panel (shown when validation found issues)
-    if (!contentOnly && slide._aiWarnings?.length) {
-      const warningsDiv = h('div', { class: 'ai-warnings' });
-      for (const w of slide._aiWarnings) {
-        const p = h('p', { class: 'ai-warning-item' });
-        p.textContent = t('editor.slide.aiWarningItem', '\u26A0\uFE0F {warning}', { warning: w });
-        warningsDiv.append(p);
-      }
-      form.append(warningsDiv);
+    if (!contentOnly) {
+      const aiWarnings = buildAiWarningsPanel({ h, slide });
+      if (aiWarnings) form.append(aiWarnings);
     }
 
     // AI Iterate panel (slide-level AI refinement). Built here, appended at
     // the very end of the form: the inspector is a settings pane first, and
     // the refine box is a tool, not a setting.
-    let aiIteratePanel = null;
-    if (api && !contentOnly) {
-      const iteratePanel = h('div', { class: 'ai-iterate-panel' });
-      const iterateForm = h('div', { class: 'ai-iterate-form' });
-      const iterateInput = h('input', {
-        type: 'text',
-        class: 'form-input ai-iterate-input',
-        placeholder: t('editor.slide.aiIterate.placeholder', 'Make this punchier, split this slide...'),
-      });
-      const iterateBtn = h('button', {
-        type: 'button',
-        class: 'btn btn-secondary ai-iterate-btn',
-        title: t('editor.slide.aiIterate.title', 'Use AI to refine this slide'),
-      });
-      iterateBtn.textContent = t('editor.slide.aiIterate.button', 'Refine');
-
-      let isIterating = false;
-      let iterateController = null;
-
-      // While a refine is in flight the button becomes a Cancel control (with a
-      // spinner) so the user can abort a slow LLM call instead of waiting.
-      const setIterateBusy = (busy) => {
-        isIterating = busy;
-        iterateBtn.classList.toggle('is-loading', busy);
-        iterateBtn.textContent = busy
-          ? t('editor.slide.aiIterate.cancel', 'Cancel')
-          : t('editor.slide.aiIterate.button', 'Refine');
-      };
-
-      const handleIterate = async () => {
-        const command = iterateInput.value.trim();
-        if (!command || isIterating) return;
-
-        iterateController = new AbortController();
-        setIterateBusy(true);
-
-        try {
-          const vendor = readPreferredLlmVendor() || null;
-          const lang = pres?.i18n?.active === 'en-GB' ? 'en-GB' : 'nl';
-
-          // This panel edits one slide: tell the server which slide so refine
-          // scopes to it (faster) unless the command names another slide.
-          const currentSlideIndex = pres.slides.findIndex(
-            (s) => s.id === slide.id
-          );
-
-          const resp = await api('/api/ai/iterate', {
-            method: 'POST',
-            signal: iterateController.signal,
-            body: JSON.stringify({
-              presentation: pres,
-              command,
-              lang,
-              vendor,
-              currentSlideIndex,
-              applyChanges: true,
-            }),
-          });
-
-          if (resp?.plan?.modifications?.length > 0 && resp.presentation?.slides) {
-            // Apply the change immediately, then offer a one-click Undo.
-            // There is no non-destructive preview surface here, so a preview the
-            // user can't see reflected on the slide is worse than just applying
-            // it and using the plan summary to explain what was done — with Undo
-            // as the safety net. The editor's own undo history also captures it.
-            const prevSlides = structuredClone(pres.slides);
-            const prevSelectedId = getSelectedSlideId?.();
-
-            pres.slides = resp.presentation.slides;
-            // Keep the edited slide selected/visible if the server flagged one.
-            if (resp.targetSlideIndex != null && pres.slides[resp.targetSlideIndex]) {
-              setSelectedSlideId?.(pres.slides[resp.targetSlideIndex].id);
-            }
-            editorState.dirtyRefreshAll();
-            iterateInput.value = '';
-
-            // Explain what was done. The per-modification `reasoning` is the
-            // human-readable account of the edit (e.g. "translated to Dutch,
-            // keeping structure and formatting"); fall back to the terse plan
-            // summary, then a generic string.
-            const reasons = resp.plan.modifications
-              .map((m) => String(m?.reasoning || '').trim())
-              .filter(Boolean);
-            const summaryText =
-              (reasons.length ? reasons.join(' • ') : '') ||
-              resp.plan.summary ||
-              t('editor.slide.aiIterate.applied', 'Changes applied');
-            toast.success(summaryText, {
-              durationMs: 15000,
-              action: {
-                label: t('editor.slide.aiIterate.undo', 'Undo'),
-                onClick: () => {
-                  pres.slides = structuredClone(prevSlides);
-                  if (
-                    prevSelectedId &&
-                    pres.slides.some((s) => s.id === prevSelectedId)
-                  ) {
-                    setSelectedSlideId?.(prevSelectedId);
-                  }
-                  editorState.dirtyRefreshAll();
-                  toast.info(
-                    t('editor.slide.aiIterate.reverted', 'Reverted the change.')
-                  );
-                },
-              },
-            });
-          } else {
-            toast.info(t('editor.slide.aiIterate.noChanges', 'No changes suggested'));
-          }
-        } catch (e) {
-          if (e?.name === 'AbortError') {
-            toast.info(t('editor.slide.aiIterate.cancelled', 'Refinement cancelled.'));
-          } else {
-            console.error('[AI Iterate] Error:', e);
-            toast.error(t('editor.slide.aiIterate.failed', 'Refinement failed: {error}', { error: e?.message || String(e) }));
-          }
-        } finally {
-          iterateController = null;
-          setIterateBusy(false);
-        }
-      };
-
-      iterateBtn.onclick = () => {
-        if (isIterating) {
-          iterateController?.abort();
-          return;
-        }
-        handleIterate();
-      };
-      iterateInput.onkeydown = (e) => {
-        if (e.key === 'Enter' && !isIterating) handleIterate();
-      };
-
-      iterateForm.append(iterateInput, iterateBtn);
-      iteratePanel.append(iterateForm);
-      aiIteratePanel = iteratePanel;
-    }
+    const aiIteratePanel = contentOnly
+      ? null
+      : buildAiIteratePanel({
+          h, api, pres, slide, getSelectedSlideId, setSelectedSlideId, editorState, toast,
+        });
 
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
     // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present
