@@ -16,42 +16,10 @@
  * (who may see it). They are unrelated.
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope, repoRootOf } from './scope.js';
+import { repoRootOf } from './scope.js';
+import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
 
-/**
- * Reduce a caller's scope to the context the storage adapters take.
- * @param {import('./scope.js').StorageScope} scope
- * @param {string} operation - Facade function name, for the error message.
- * @param {Object} [opts] - Options carrying a sharper actor.
- * @returns {Object} Context for the storage adapter.
- */
-function toStorageContext(scope, operation, opts = {}) {
-  const resolved = resolveScope(scope, operation);
-  return {
-    ...resolved,
-    actorEmail: opts.actorEmail || opts.userEmail || resolved.actorEmail,
-  };
-}
-
-/**
- * Execute pgFn against the storage adapter when initialized, else fileFn.
- * @param {import('./scope.js').StorageScope} storageScope - The caller's scope.
- * @param {string} operation - Facade function name, for the error message.
- * @param {(storage: object) => Promise<any>} pgFn
- * @param {(mod: object) => Promise<any>} fileFn
- * @returns {Promise<any>}
- */
-async function withStorageFallback(storageScope, operation, pgFn, fileFn) {
-  // Validate the scope before either backend runs, so a missed call site fails
-  // on the file-backed path too rather than slipping past the file-mode suite.
-  resolveScope(storageScope, operation);
-  if (isStorageInitialized()) {
-    return pgFn(getStorage());
-  }
-  const mod = await import('./collections-file.js');
-  return fileFn(mod);
-}
+const withStorageFallback = createStorageDispatch(() => import('./collections-file.js'));
 
 function cleanName(input) {
   return typeof input?.name === 'string' ? input.name.trim() : '';

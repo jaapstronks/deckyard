@@ -11,10 +11,12 @@
  */
 
 import crypto from 'node:crypto';
-import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { safeSlug } from '../utils/slug.js';
 import { getPresentation } from './presentations.js';
 import { crossOrganizationScope, resolveScope, repoRootOf } from './scope.js';
+import { createStorageDispatch } from './backend-dispatch.js';
+
+const withStorageFallback = createStorageDispatch(() => import('./published-file.js'));
 
 export function newPublishId() {
   // Short, URL-friendly, unique enough for public share links.
@@ -28,27 +30,28 @@ export function newPublishId() {
  */
 export async function getPublishedIndex(scope) {
   const ctx = resolveScope(scope, 'getPublishedIndex');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    const list = await storage.listPublished(ctx);
-    // Convert array to index object for backwards compatibility
-    const index = {};
-    for (const entry of list) {
-      index[entry.id] = {
-        publishId: entry.id,
-        presentationId: entry.presentationId,
-        title: entry.title,
-        slug: entry.slug,
-        ogImageUrl: entry.ogImageUrl,
-        created: entry.created,
-        modified: entry.modified,
-      };
-    }
-    return index;
-  }
-  // Fall back to file-based storage
-  const mod = await import('./published-file.js');
-  return mod.getPublishedIndex(repoRootOf(scope));
+  return withStorageFallback(
+    scope,
+    'getPublishedIndex',
+    async (storage) => {
+      const list = await storage.listPublished(ctx);
+      // Convert array to index object for backwards compatibility
+      const index = {};
+      for (const entry of list) {
+        index[entry.id] = {
+          publishId: entry.id,
+          presentationId: entry.presentationId,
+          title: entry.title,
+          slug: entry.slug,
+          ogImageUrl: entry.ogImageUrl,
+          created: entry.created,
+          modified: entry.modified,
+        };
+      }
+      return index;
+    },
+    (mod) => mod.getPublishedIndex(repoRootOf(scope))
+  );
 }
 
 /**
@@ -63,26 +66,29 @@ export async function getPublishedIndex(scope) {
  * @returns {Promise<Object|null>}
  */
 export async function getPublishedById(scope, publishId) {
-  const ctx = resolveScope(scope, 'getPublishedById', { allowCrossOrganization: true });
+  const allowCross = { allowCrossOrganization: true };
+  const ctx = resolveScope(scope, 'getPublishedById', allowCross);
   const id = String(publishId || '').trim();
   if (!id) return null;
 
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    const entry = await storage.getPublished(id, ctx);
-    if (!entry) return null;
-    return {
-      publishId: entry.id,
-      presentationId: entry.presentationId,
-      slug: entry.slug || '',
-      ogImageUrl: entry.ogImageUrl || '',
-      modified: entry.modified || null,
-      created: entry.created || null,
-    };
-  }
-  // Fall back to file-based storage
-  const mod = await import('./published-file.js');
-  return mod.getPublishedById(repoRootOf(scope), publishId);
+  return withStorageFallback(
+    scope,
+    'getPublishedById',
+    async (storage) => {
+      const entry = await storage.getPublished(id, ctx);
+      if (!entry) return null;
+      return {
+        publishId: entry.id,
+        presentationId: entry.presentationId,
+        slug: entry.slug || '',
+        ogImageUrl: entry.ogImageUrl || '',
+        modified: entry.modified || null,
+        created: entry.created || null,
+      };
+    },
+    (mod) => mod.getPublishedById(repoRootOf(scope), publishId),
+    allowCross
+  );
 }
 
 /**
@@ -101,34 +107,35 @@ export async function upsertPublishedEntry(
   if (!id) throw new Error('publishId is required');
   if (!pid) throw new Error('presentationId is required');
 
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    const slug = safeSlug(title || 'presentation');
-    const result = await storage.upsertPublished({
-      id,
-      presentationId: pid,
-      title: String(title || ''),
-      slug,
-      ogImageUrl: typeof ogImageUrl === 'string' ? ogImageUrl : '',
-    }, ctx);
-    return {
-      publishId: result.id,
-      presentationId: result.presentationId,
-      title: result.title,
-      slug: result.slug,
-      ogImageUrl: result.ogImageUrl,
-      created: result.created,
-      modified: result.modified,
-    };
-  }
-  // Fall back to file-based storage
-  const mod = await import('./published-file.js');
-  return mod.upsertPublishedEntry(repoRootOf(scope), {
-    publishId,
-    presentationId,
-    title,
-    ogImageUrl,
-  });
+  return withStorageFallback(
+    scope,
+    'upsertPublishedEntry',
+    async (storage) => {
+      const slug = safeSlug(title || 'presentation');
+      const result = await storage.upsertPublished({
+        id,
+        presentationId: pid,
+        title: String(title || ''),
+        slug,
+        ogImageUrl: typeof ogImageUrl === 'string' ? ogImageUrl : '',
+      }, ctx);
+      return {
+        publishId: result.id,
+        presentationId: result.presentationId,
+        title: result.title,
+        slug: result.slug,
+        ogImageUrl: result.ogImageUrl,
+        created: result.created,
+        modified: result.modified,
+      };
+    },
+    (mod) => mod.upsertPublishedEntry(repoRootOf(scope), {
+      publishId,
+      presentationId,
+      title,
+      ogImageUrl,
+    })
+  );
 }
 
 /**
@@ -142,13 +149,12 @@ export async function removePublishedEntry(scope, publishId) {
   const id = String(publishId || '').trim();
   if (!id) return false;
 
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.deletePublished(id, ctx);
-  }
-  // Fall back to file-based storage
-  const mod = await import('./published-file.js');
-  return mod.removePublishedEntry(repoRootOf(scope), publishId);
+  return withStorageFallback(
+    scope,
+    'removePublishedEntry',
+    (storage) => storage.deletePublished(id, ctx),
+    (mod) => mod.removePublishedEntry(repoRootOf(scope), publishId)
+  );
 }
 
 /**
@@ -163,29 +169,30 @@ export async function updatePublishedSlug(scope, publishId, nextSlug) {
   const id = String(publishId || '').trim();
   if (!id) throw new Error('publishId is required');
 
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    const existing = await storage.getPublished(id, ctx);
-    if (!existing) throw new Error('Published entry not found');
+  return withStorageFallback(
+    scope,
+    'updatePublishedSlug',
+    async (storage) => {
+      const existing = await storage.getPublished(id, ctx);
+      if (!existing) throw new Error('Published entry not found');
 
-    const slug = safeSlug(nextSlug);
-    const result = await storage.upsertPublished({
-      ...existing,
-      slug,
-    }, ctx);
-    return {
-      publishId: result.id,
-      presentationId: result.presentationId,
-      title: result.title,
-      slug: result.slug,
-      ogImageUrl: result.ogImageUrl,
-      created: result.created,
-      modified: result.modified,
-    };
-  }
-  // Fall back to file-based storage
-  const mod = await import('./published-file.js');
-  return mod.updatePublishedSlug(repoRootOf(scope), publishId, nextSlug);
+      const slug = safeSlug(nextSlug);
+      const result = await storage.upsertPublished({
+        ...existing,
+        slug,
+      }, ctx);
+      return {
+        publishId: result.id,
+        presentationId: result.presentationId,
+        title: result.title,
+        slug: result.slug,
+        ogImageUrl: result.ogImageUrl,
+        created: result.created,
+        modified: result.modified,
+      };
+    },
+    (mod) => mod.updatePublishedSlug(repoRootOf(scope), publishId, nextSlug)
+  );
 }
 
 /**

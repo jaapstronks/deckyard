@@ -11,6 +11,9 @@
 
 import { isStorageInitialized, getStorage } from './adapters/index.js';
 import { resolveScope, repoRootOf } from './scope.js';
+import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
+
+const withStorageFallback = createStorageDispatch(() => import('./image-library-file.js'));
 
 /**
  * List the image library of the scope's organization.
@@ -18,14 +21,13 @@ import { resolveScope, repoRootOf } from './scope.js';
  * @returns {Promise<Array<Object>>}
  */
 export async function listImageLibrary(scope) {
-  const ctx = resolveScope(scope, 'listImageLibrary');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.listImages(ctx);
-  }
-  // Fall back to file-based storage
-  const mod = await import('./image-library-file.js');
-  return mod.listImageLibrary(repoRootOf(scope));
+  const ctx = toStorageContext(scope, 'listImageLibrary');
+  return withStorageFallback(
+    scope,
+    'listImageLibrary',
+    (storage) => storage.listImages(ctx),
+    (mod) => mod.listImageLibrary(repoRootOf(scope))
+  );
 }
 
 /**
@@ -35,13 +37,13 @@ export async function listImageLibrary(scope) {
  * @returns {Promise<Object|null>}
  */
 export async function getImageLibraryItem(scope, id) {
-  const ctx = resolveScope(scope, 'getImageLibraryItem');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.getImage(id, ctx);
-  }
-  const mod = await import('./image-library-file.js');
-  return mod.getImageLibraryItem(repoRootOf(scope), id);
+  const ctx = toStorageContext(scope, 'getImageLibraryItem');
+  return withStorageFallback(
+    scope,
+    'getImageLibraryItem',
+    (storage) => storage.getImage(id, ctx),
+    (mod) => mod.getImageLibraryItem(repoRootOf(scope), id)
+  );
 }
 
 /**
@@ -51,13 +53,13 @@ export async function getImageLibraryItem(scope, id) {
  * @returns {Promise<Object>}
  */
 export async function createImageLibraryItem(scope, input) {
-  const ctx = resolveScope(scope, 'createImageLibraryItem');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.createImage(input, ctx);
-  }
-  const mod = await import('./image-library-file.js');
-  return mod.createImageLibraryItem(repoRootOf(scope), input);
+  const ctx = toStorageContext(scope, 'createImageLibraryItem');
+  return withStorageFallback(
+    scope,
+    'createImageLibraryItem',
+    (storage) => storage.createImage(input, ctx),
+    (mod) => mod.createImageLibraryItem(repoRootOf(scope), input)
+  );
 }
 
 /**
@@ -68,13 +70,13 @@ export async function createImageLibraryItem(scope, input) {
  * @returns {Promise<Object|null>}
  */
 export async function updateImageLibraryItem(scope, id, patch) {
-  const ctx = resolveScope(scope, 'updateImageLibraryItem');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.updateImage(id, patch, ctx);
-  }
-  const mod = await import('./image-library-file.js');
-  return mod.updateImageLibraryItem(repoRootOf(scope), id, patch);
+  const ctx = toStorageContext(scope, 'updateImageLibraryItem');
+  return withStorageFallback(
+    scope,
+    'updateImageLibraryItem',
+    (storage) => storage.updateImage(id, patch, ctx),
+    (mod) => mod.updateImageLibraryItem(repoRootOf(scope), id, patch)
+  );
 }
 
 /**
@@ -84,13 +86,13 @@ export async function updateImageLibraryItem(scope, id, patch) {
  * @returns {Promise<boolean>}
  */
 export async function deleteImageLibraryItem(scope, id) {
-  const ctx = resolveScope(scope, 'deleteImageLibraryItem');
-  if (isStorageInitialized()) {
-    const storage = getStorage();
-    return storage.deleteImage(id, ctx);
-  }
-  const mod = await import('./image-library-file.js');
-  return mod.deleteImageLibraryItem(repoRootOf(scope), id);
+  const ctx = toStorageContext(scope, 'deleteImageLibraryItem');
+  return withStorageFallback(
+    scope,
+    'deleteImageLibraryItem',
+    (storage) => storage.deleteImage(id, ctx),
+    (mod) => mod.deleteImageLibraryItem(repoRootOf(scope), id)
+  );
 }
 
 /**
