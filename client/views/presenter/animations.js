@@ -19,41 +19,6 @@ function retriggerCssAnimation(el, { preClass, animClass } = {}) {
   el.classList.add(anim);
 }
 
-function prepareQuoteTypewriter(slideSectionEl) {
-  if (!slideSectionEl?.querySelectorAll) return [];
-  const quoteSlides = Array.from(
-    slideSectionEl.querySelectorAll('.slide.slide-quote')
-  );
-  if (!quoteSlides.length) return [];
-
-  const cleanups = [];
-
-  for (const slideEl of quoteSlides) {
-    const block = slideEl.querySelector('blockquote.quote-text');
-    const p = block?.querySelector('p');
-    if (!block || !p) continue;
-
-    const fullText =
-      p?.dataset?.fullText != null
-        ? String(p.dataset.fullText)
-        : String(p.textContent || '');
-    if (p?.dataset) p.dataset.fullText = fullText;
-
-    const cleanup = () => {
-      try {
-        if (p?.dataset?.fullText != null)
-          p.textContent = String(p.dataset.fullText);
-        p.style.minHeight = '';
-        p.style.display = '';
-      } catch {}
-    };
-
-    cleanups.push(cleanup);
-  }
-
-  return cleanups;
-}
-
 /**
  * Type an element's text content in char-by-char, reserving its final height so
  * the layout doesn't jump. Generalized from the quote typewriter so per-bullet
@@ -112,80 +77,9 @@ function typeTextInElement(el, { registerCleanup, setRaf, setTimeoutSafe, msPerC
   if (typeof setRaf === 'function') setRaf(requestAnimationFrame(tick));
 }
 
-function runQuoteTypewriter(slideSectionEl, { registerCleanup, setRaf, setTimeoutSafe } = {}) {
-  if (!slideSectionEl?.querySelectorAll) return;
-  const block = slideSectionEl.querySelector(
-    '.slide.slide-quote blockquote.quote-text'
-  );
-  const p = block?.querySelector('p');
-  if (!block || !p) return;
-
-  const fullText =
-    p?.dataset?.fullText != null
-      ? String(p.dataset.fullText)
-      : String(p.textContent || '');
-  if (p?.dataset) p.dataset.fullText = fullText;
-
-  const cleanup = () => {
-    try {
-      if (p?.dataset?.fullText != null)
-        p.textContent = String(p.dataset.fullText);
-      p.style.minHeight = '';
-      p.style.display = '';
-    } catch {}
-  };
-  if (typeof registerCleanup === 'function') registerCleanup(cleanup);
-
-  // Reserve final layout height so the quote doesn't "move" while we type.
-  // We force block layout to get a stable height measurement.
-  p.style.display = 'block';
-  p.textContent = fullText;
-  const measured = p.getBoundingClientRect?.().height;
-  if (Number.isFinite(measured) && measured > 0) {
-    p.style.minHeight = `${Math.ceil(measured)}px`;
-  }
-
-  // Reset + start typing (no caret/cursor UI)
-  p.textContent = '';
-
-  // Simple time-based typewriter (presenter-only).
-  // Tuned for "feels like typing" without being too slow for ~400 chars.
-  const msPerChar = 30;
-  const len = fullText.length;
-  const start = performance.now ? performance.now() : Date.now();
-
-  const tick = () => {
-    const now = performance.now ? performance.now() : Date.now();
-    const elapsed = Math.max(0, now - start);
-    const n = Math.min(len, Math.floor(elapsed / msPerChar));
-    p.textContent = fullText.slice(0, n);
-    if (n >= len) {
-      // Restore normal layout (no reserved height).
-      if (typeof setTimeoutSafe === 'function') {
-        setTimeoutSafe(() => {
-          try {
-            p.style.minHeight = '';
-            p.style.display = '';
-          } catch {}
-        }, 0);
-      } else {
-        try {
-          p.style.minHeight = '';
-          p.style.display = '';
-        } catch {}
-      }
-      return;
-    }
-    if (typeof setRaf === 'function') setRaf(requestAnimationFrame(tick));
-  };
-
-  if (typeof setRaf === 'function') setRaf(requestAnimationFrame(tick));
-}
-
 export function createPresenterAnimator() {
   let raf = null;
   const timeouts = new Set();
-  let cleanups = [];
   // Per-bullet typewriter runs on step-advance, independent of slide-change
   // animations, so it gets its own cleanup channel — snapping an in-progress
   // bullet to its full text before the next one starts (or on slide change).
@@ -222,13 +116,6 @@ export function createPresenterAnimator() {
     timeouts.clear();
 
     runTypeCleanups();
-
-    for (const fn of cleanups) {
-      try {
-        fn();
-      } catch {}
-    }
-    cleanups = [];
   };
 
   const setRaf = (id) => {
@@ -246,20 +133,11 @@ export function createPresenterAnimator() {
     return id;
   };
 
-  const registerCleanup = (fn) => {
-    if (typeof fn === 'function') cleanups.push(fn);
-  };
-
   const runSlideAnimations = (slideSectionEl) => {
     if (!slideSectionEl?.querySelectorAll) return;
 
     // Cancel any pending run; we only animate the currently shown slide.
     cancel();
-
-    // Ensure quote text is always readable in reduced motion mode.
-    // (This also initializes cleanup state for quotes.)
-    const quoteCleanups = prepareQuoteTypewriter(slideSectionEl);
-    for (const fn of quoteCleanups) registerCleanup(fn);
 
     if (prefersReducedMotion()) return;
 
@@ -279,13 +157,6 @@ export function createPresenterAnimator() {
         }
       });
     }
-
-    // Quote slide: typewriter-in (presenter-only; CSS caret + JS text reveal).
-    runQuoteTypewriter(slideSectionEl, {
-      registerCleanup,
-      setRaf,
-      setTimeoutSafe,
-    });
   };
 
   /**
