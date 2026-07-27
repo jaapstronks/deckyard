@@ -11,7 +11,7 @@
  * as a whole:
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
  *   where / orderBy / limit / offset / execute / executeTakeFirst,
- *   insertInto / values / returningAll / onConflict-free inserts,
+ *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set, deleteFrom, and `db.fn.count()`.
  *
  * Two behaviours are modelled on purpose because tests depend on them:
@@ -33,6 +33,10 @@ const UNIQUE_CONSTRAINTS = {
   users: [['email']],
   user_organizations: [['user_id', 'organization_id']],
   organizations: [['slug']],
+  // slide_locks unique is on (presentation_id, slide_id) only — organization_id
+  // is NOT part of it (migration 023_slide_locks.js). Matching the real columns
+  // is what lets the acquire-race test exercise the ON CONFLICT path.
+  slide_locks: [['presentation_id', 'slide_id']],
 };
 
 /**
@@ -377,10 +381,51 @@ export function createFakeDb(seed = {}) {
       queryLog.push({ op: 'insert', table });
       let pending = [];
       let returning = false;
+      /** @type {null | {columns: string[], doNothing: boolean, set: Object|null, where: Object[]}} */
+      let conflict = null;
 
       const builder = {
         values(input) {
           pending = Array.isArray(input) ? input : [input];
+          return builder;
+        },
+        /**
+         * Model INSERT ... ON CONFLICT. Supports the two shapes the storage
+         * layer uses: `.columns([...]).doNothing()` and
+         * `.columns([...]).doUpdateSet({...}).where(cb)`. The optional WHERE on
+         * the update branch matches the *existing* row (as PostgreSQL does), so
+         * a suppressed update inserts/returns nothing.
+         */
+        onConflict(callback) {
+          const oc = { columns: [], doNothing: false, set: null, where: [] };
+          const ocBuilder = {
+            columns(cols) {
+              oc.columns = Array.isArray(cols) ? cols : [cols];
+              return ocBuilder;
+            },
+            column(col) {
+              oc.columns = [col];
+              return ocBuilder;
+            },
+            doNothing() {
+              oc.doNothing = true;
+              return ocBuilder;
+            },
+            doUpdateSet(set) {
+              oc.set = set;
+              return ocBuilder;
+            },
+            where(columnOrCallback, op, value) {
+              if (typeof columnOrCallback === 'function') {
+                oc.where.push(columnOrCallback(makeExpressionBuilder()));
+              } else {
+                oc.where.push({ kind: 'cmp', column: columnOrCallback, op, value });
+              }
+              return ocBuilder;
+            },
+          };
+          callback(ocBuilder);
+          conflict = oc;
           return builder;
         },
         returningAll() {
@@ -394,6 +439,20 @@ export function createFakeDb(seed = {}) {
         async execute() {
           const inserted = [];
           for (const value of pending) {
+            if (conflict) {
+              const existing = rowsOf(table).find((row) =>
+                conflict.columns.every((c) => row[c] === value[c])
+              );
+              if (existing) {
+                if (conflict.doNothing) continue;
+                // DO UPDATE, gated by the optional WHERE against the existing row.
+                if (!conflict.where.every((p) => matches(existing, p))) continue;
+                const applied = parseJsonbColumns(table, conflict.set || {});
+                Object.assign(existing, applied);
+                if (returning) inserted.push({ ...existing });
+                continue;
+              }
+            }
             const row = parseJsonbColumns(table, { id: crypto.randomUUID(), ...value });
             assertUnique(table, row);
             rowsOf(table).push(row);
