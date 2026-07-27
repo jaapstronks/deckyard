@@ -127,5 +127,9 @@
   "notifications.filter.archived": "Zarchiwizowane",
   "notifications.archive": "Archiwizuj",
   "notifications.archiveAll": "Archiwizuj wszystko",
-  "notifications.empty.archived": "Nic jeszcze nie zarchiwizowano"
+  "notifications.empty.archived": "Nic jeszcze nie zarchiwizowano",
+  "maintenance.banner.text": "Deckyard jest chwilowo niedostępny z powodu konserwacji. Twoja praca zostaje tutaj i zapisze się, gdy tylko wróci.",
+  "maintenance.readOnly.banner": "Wstrzymane na czas konserwacji - twoja praca jest zachowana",
+  "maintenance.toast.paused": "Deckyard jest chwilowo niedostępny. Edycja jest wstrzymana, a twoja praca zostaje tutaj.",
+  "maintenance.toast.resumed": "Deckyard wrócił. Twoja praca znów się zapisuje."
 }

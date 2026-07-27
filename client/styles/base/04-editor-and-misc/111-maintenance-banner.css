@@ -1,0 +1,57 @@
+/* Maintenance banner: "we're right back, your work is saved".
+
+   Top-centre rather than the sandbox banner's bottom-left. The two can be up at
+   the same time on a sandbox instance, and this one interrupts — the user's
+   saves have stopped — so it takes the position the eye goes to first while
+   staying clear of the bottom-right toast stack. */
+
+.maintenance-banner {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  /* Centred by spanning the viewport and letting `margin-inline: auto` do it,
+     not by `left: 50%` + a translate. With the translate, a shrink-to-fit box
+     only has the right half of the screen to lay out in, so on a phone the
+     banner collapses to half the width and wraps to four lines. */
+  left: 12px;
+  right: 12px;
+  margin-inline: auto;
+  width: fit-content;
+  z-index: var(--z-banner);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* No global border-box reset in this codebase, so without this the padding
+     and border sit outside max-width and the box overflows its own guard. */
+  box-sizing: border-box;
+  max-width: 520px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: var(--ps-text-sm);
+  line-height: 1.35;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-warning) / 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  /* Purely informational: never swallow a click meant for what is underneath. */
+  pointer-events: none;
+}
+
+.maintenance-banner-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: hsl(var(--app-warning));
+  box-shadow: 0 0 0 3px color-mix(in srgb, hsl(var(--app-warning)) 22%, transparent);
+}
+
+.maintenance-banner-text {
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .maintenance-banner {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}

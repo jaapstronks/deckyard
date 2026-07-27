@@ -90,5 +90,9 @@
   "notifications.filter.archived": "Arquivadas",
   "notifications.archive": "Arquivar",
   "notifications.archiveAll": "Arquivar tudo",
-  "notifications.empty.archived": "Ainda nada arquivado"
+  "notifications.empty.archived": "Ainda nada arquivado",
+  "maintenance.banner.text": "O Deckyard está brevemente indisponível para manutenção. O teu trabalho fica aqui e será guardado assim que voltar.",
+  "maintenance.readOnly.banner": "Em pausa para manutenção - o teu trabalho fica guardado",
+  "maintenance.toast.paused": "O Deckyard está brevemente indisponível. A edição está em pausa e o teu trabalho fica aqui.",
+  "maintenance.toast.resumed": "O Deckyard voltou. O teu trabalho está a ser guardado outra vez."
 }
