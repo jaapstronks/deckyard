@@ -123,10 +123,10 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     ['timeline-slide', 'items.0.date', false],
     ['timeline-slide', 'items.0.title', false],
     ['timeline-slide', 'items.0.text', false],
-    // node/shape diagrams: text sits inside a shape, centering is legitimate
-    ['cycle-slide', 'items.0.text', true],
-    ['funnel-slide', 'items.0.label', true],
-    ['pyramid-slide', 'levels.0.text', true],
+    // The shape/node diagram types (cycle/funnel/pyramid) also have
+    // marker-anchored labels, but they keep block alignment on purpose — that
+    // is a decided contract, asserted on its own below rather than as a plain
+    // `true` row here.
   ];
   for (const [type, key, expected] of cases) {
     it(`${type} · ${key} allowsAlign=${expected}`, () => {
@@ -135,6 +135,40 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
       assert.equal(fieldAllowsAlign(def.fields, key), expected);
     });
   }
+
+  // Contract — decided 2026-07-22 (option B: form-freedom stays; #226).
+  //
+  // cycle/funnel/pyramid render each label INSIDE its own shape (a ring node, a
+  // funnel band, a pyramid tier). There "centre this field" means "centre it
+  // within its node", which is a legitimate authoring choice — not the
+  // marker-detachment that `list-item` exists to prevent. So these fields
+  // deliberately carry NO `list-item` role and block alignment stays available.
+  //
+  // This is a contract, not an accidental exception. A future change that tags
+  // these fields `list-item` (or otherwise strips their alignment) is a
+  // regression, and this test is its tripwire. Prose in
+  // docs/reference/text-alignment.md ("deliberately not grouped").
+  it('shape/node diagram labels keep block alignment by design (not list-item)', () => {
+    const shapeFields = [
+      ['cycle-slide', 'items.0.text'],
+      ['funnel-slide', 'items.0.label'],
+      ['pyramid-slide', 'levels.0.text'],
+    ];
+    for (const [type, key] of shapeFields) {
+      const def = SLIDE_TYPES[type];
+      assert.ok(def, `${type} should be registered`);
+      assert.notEqual(
+        resolveFieldRole(def.fields, key),
+        'list-item',
+        `${type} · ${key} must not be list-item — its text lives inside a shape node`
+      );
+      assert.equal(
+        fieldAllowsAlign(def.fields, key),
+        true,
+        `${type} · ${key} should keep block alignment (centre-within-node is legitimate)`
+      );
+    }
+  });
 
   it('the quote ROLE offers left/centre only, wherever it is used', () => {
     assert.deepEqual(allowedAlignValues('quote'), ['left', 'center']);
