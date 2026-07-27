@@ -48,15 +48,136 @@
   margin-top: var(--slide-space-6);
 }
 
+/* Tile surface tokens.
+   Every colour inside a tile resolves from the four per-tile vars below, so a
+   theme can turn the neutral default into a coloured tile set by defining
+   `--t-kpi-tile-<n>-bg` / `-fg` / `-value` (and optionally `-border`). Without
+   those tokens each tile keeps the historical translucent-white surface, so a
+   theme that says nothing about KPI tiles renders exactly as before. */
 .slide-kpi-metrics .kpi-metric {
+  --kpi-tile-bg: rgba(255, 255, 255, 0.45);
+  --kpi-tile-fg: var(--color-text);
+  --kpi-tile-value: var(--kpi-tile-fg);
+  --kpi-tile-border: rgba(0, 0, 0, 0.16);
+  /* Deltas read against the tile, not the slide: a theme with dark tiles sets
+     `--t-kpi-delta-pos/-neg` once and both stay legible on every fill. */
+  --kpi-delta-pos: var(
+    --t-kpi-delta-pos,
+    color-mix(in srgb, var(--color-accent) 75%, var(--kpi-tile-fg))
+  );
+  --kpi-delta-neg: var(
+    --t-kpi-delta-neg,
+    color-mix(in srgb, var(--slide-color-danger) 80%, var(--kpi-tile-fg))
+  );
+
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  /* Centred, not top-aligned: a tall tile (1- and 2-up) otherwise leaves a
+     block of dead space under the note. */
+  justify-content: center;
   gap: 12px;
   border-radius: 26px;
   padding: 32px 34px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: var(--kpi-tile-bg);
+  color: var(--kpi-tile-fg);
+  border: 1px solid var(--kpi-tile-border);
+}
+
+/* On the dark calm surface a filled tile sits too close to the background to
+   read as its own block, so give every tile a rim in its own text colour. A
+   theme that named an explicit border still wins here. */
+.slide-bg-calm.slide-kpi-metrics .kpi-metric {
+  border-color: var(
+    --kpi-tile-border-set,
+    color-mix(in srgb, var(--kpi-tile-fg) 26%, transparent)
+  );
+}
+
+/* Per-tile palette slots. `-border` falls back to the fill so a solid tile
+   reads as one colour block instead of a block with a stray outline.
+   The two `-muted` tokens are deliberately written *without* a var() fallback:
+   with no theme token they resolve to the guaranteed-invalid value, so every
+   use site falls through to the slide's own `--color-text-muted` and an
+   untokenised theme keeps its exact muted colour instead of a derived one. */
+.slide-kpi-metrics .kpi-metric:nth-child(1) {
+  --kpi-tile-bg: var(--t-kpi-tile-1-bg, rgba(255, 255, 255, 0.45));
+  --kpi-tile-fg: var(--t-kpi-tile-1-fg, var(--color-text));
+  --kpi-tile-value: var(--t-kpi-tile-1-value, var(--kpi-tile-fg));
+  --kpi-tile-border: var(
+    --t-kpi-tile-1-border,
+    var(--t-kpi-tile-1-bg, rgba(0, 0, 0, 0.16))
+  );
+  --kpi-tile-border-set: var(--t-kpi-tile-1-border);
+  --kpi-tile-fg-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-1-fg) 72%,
+    transparent
+  );
+  --kpi-tile-value-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-1-value, var(--t-kpi-tile-1-fg)) 72%,
+    transparent
+  );
+}
+.slide-kpi-metrics .kpi-metric:nth-child(2) {
+  --kpi-tile-bg: var(--t-kpi-tile-2-bg, rgba(255, 255, 255, 0.45));
+  --kpi-tile-fg: var(--t-kpi-tile-2-fg, var(--color-text));
+  --kpi-tile-value: var(--t-kpi-tile-2-value, var(--kpi-tile-fg));
+  --kpi-tile-border: var(
+    --t-kpi-tile-2-border,
+    var(--t-kpi-tile-2-bg, rgba(0, 0, 0, 0.16))
+  );
+  --kpi-tile-border-set: var(--t-kpi-tile-2-border);
+  --kpi-tile-fg-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-2-fg) 72%,
+    transparent
+  );
+  --kpi-tile-value-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-2-value, var(--t-kpi-tile-2-fg)) 72%,
+    transparent
+  );
+}
+.slide-kpi-metrics .kpi-metric:nth-child(3) {
+  --kpi-tile-bg: var(--t-kpi-tile-3-bg, rgba(255, 255, 255, 0.45));
+  --kpi-tile-fg: var(--t-kpi-tile-3-fg, var(--color-text));
+  --kpi-tile-value: var(--t-kpi-tile-3-value, var(--kpi-tile-fg));
+  --kpi-tile-border: var(
+    --t-kpi-tile-3-border,
+    var(--t-kpi-tile-3-bg, rgba(0, 0, 0, 0.16))
+  );
+  --kpi-tile-border-set: var(--t-kpi-tile-3-border);
+  --kpi-tile-fg-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-3-fg) 72%,
+    transparent
+  );
+  --kpi-tile-value-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-3-value, var(--t-kpi-tile-3-fg)) 72%,
+    transparent
+  );
+}
+.slide-kpi-metrics .kpi-metric:nth-child(4) {
+  --kpi-tile-bg: var(--t-kpi-tile-4-bg, rgba(255, 255, 255, 0.45));
+  --kpi-tile-fg: var(--t-kpi-tile-4-fg, var(--color-text));
+  --kpi-tile-value: var(--t-kpi-tile-4-value, var(--kpi-tile-fg));
+  --kpi-tile-border: var(
+    --t-kpi-tile-4-border,
+    var(--t-kpi-tile-4-bg, rgba(0, 0, 0, 0.16))
+  );
+  --kpi-tile-border-set: var(--t-kpi-tile-4-border);
+  --kpi-tile-fg-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-4-fg) 72%,
+    transparent
+  );
+  --kpi-tile-value-muted: color-mix(
+    in srgb,
+    var(--t-kpi-tile-4-value, var(--t-kpi-tile-4-fg)) 72%,
+    transparent
+  );
 }
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-metric {
@@ -83,7 +204,7 @@
   font-family: var(--font-heading);
   font-weight: 400;
   font-synthesis: none;
-  color: var(--color-text);
+  color: var(--kpi-tile-value);
   letter-spacing: -0.02em;
 }
 
@@ -94,7 +215,7 @@
 .slide-kpi-metrics .kpi-unit {
   font-size: 40px;
   line-height: 1;
-  color: var(--color-text-muted);
+  color: var(--kpi-tile-value-muted, var(--color-text-muted));
 }
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-value-num {
@@ -114,10 +235,13 @@
   font-family: var(--font-body);
   font-size: calc(var(--font-size-body) + 6px);
   line-height: 1.18;
-  color: var(--color-text);
+  color: var(--kpi-tile-fg);
   margin-top: 2px;
 }
 
+/* The note sits at the foot of the tile, under a hairline drawn in the tile's
+   own text colour, so a tall tile reads as a designed block instead of leaving
+   dead space under the label. */
 .slide-kpi-metrics .kpi-meta {
   display: flex;
   flex-wrap: wrap;
@@ -126,32 +250,45 @@
   font-family: var(--font-mono);
   font-size: 26px;
   line-height: 1.15;
-  color: var(--color-text-muted);
-  margin-top: 6px;
+  color: var(--kpi-tile-fg-muted, var(--color-text-muted));
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--kpi-tile-fg) 22%, transparent);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-meta {
   justify-content: center;
+  margin-top: 18px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .slide-kpi-metrics .kpi-delta {
-  color: var(--color-text);
+  color: var(--kpi-tile-fg);
 }
 .slide-kpi-metrics .kpi-delta.is-positive {
-  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text));
+  color: var(--kpi-delta-pos);
 }
 .slide-kpi-metrics .kpi-delta.is-negative {
-  color: color-mix(in srgb, var(--slide-color-danger) 80%, var(--color-text));
+  color: var(--kpi-delta-neg);
 }
 
 /* Accent: highlight first metric tile */
 .slide-kpi-metrics.is-accent-best .kpi-metric.is-primary {
-  border-color: color-mix(in srgb, var(--color-accent) 55%, rgba(0, 0, 0, 0.16));
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 55%,
+    var(--kpi-tile-border)
+  );
   box-shadow:
     0 0 0 6px color-mix(in srgb, var(--color-accent) 18%, transparent),
     0 18px 48px rgba(0, 0, 0, 0.12);
 }
 .slide-kpi-metrics.is-accent-risk .kpi-metric.is-primary {
-  border-color: color-mix(in srgb, var(--slide-color-danger) 55%, rgba(0, 0, 0, 0.16));
+  border-color: color-mix(
+    in srgb,
+    var(--slide-color-danger) 55%,
+    var(--kpi-tile-border)
+  );
   box-shadow:
     0 0 0 6px color-mix(in srgb, var(--slide-color-danger) 16%, transparent),
     0 18px 48px rgba(0, 0, 0, 0.12);
