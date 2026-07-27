@@ -40,7 +40,7 @@ const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
 
 /**
  * List the presentations of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<Array>}
  */
 export async function listPresentations(scope) {
@@ -55,7 +55,7 @@ export async function listPresentations(scope) {
 
 /**
  * Fetch one presentation by id, within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
@@ -78,7 +78,7 @@ export async function getPresentation(scope, id) {
 
 /**
  * Create a presentation in the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {Object} body
  * @returns {Promise<Object>}
  */
@@ -122,7 +122,7 @@ export async function createPresentation(scope, body) {
 
 /**
  * Update a presentation within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} body
  * @param {Object} [opts]
@@ -273,7 +273,7 @@ function updatePresentationUncached(scope, id, body, opts) {
 
 /**
  * Move a presentation to the trash.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  */
@@ -296,7 +296,7 @@ export async function deletePresentation(scope, id, opts) {
 
 /**
  * List trashed presentations of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  */
 export async function listTrashedPresentations(scope) {
   const ctx = toStorageContext(scope, 'listTrashedPresentations');
@@ -310,7 +310,7 @@ export async function listTrashedPresentations(scope) {
 
 /**
  * Restore a presentation out of the trash.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  */
 export async function restorePresentation(scope, id) {
@@ -329,7 +329,7 @@ export async function restorePresentation(scope, id) {
 
 /**
  * Permanently delete a trashed presentation.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  */
 export async function permanentlyDeletePresentation(scope, id) {
@@ -352,7 +352,7 @@ export async function permanentlyDeletePresentation(scope, id) {
 
 /**
  * Duplicate a presentation within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} [opts]
  */
@@ -372,7 +372,7 @@ export async function duplicatePresentation(scope, id, opts) {
  * Batch-fetch first slides for multiple presentations.
  * Returns a Map of presentationId -> firstSlide object.
  * This avoids N+1 queries when loading shared presentations.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string[]} ids - Array of presentation IDs
  * @returns {Promise<Map<string, Object>>} Map of id -> firstSlide
  */
@@ -427,7 +427,7 @@ export async function getFirstSlidesForIds(scope, ids) {
 
 /**
  * List version snapshots for a presentation (newest first).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @returns {Promise<Array>}
  */
@@ -443,7 +443,7 @@ export async function listPresentationVersions(scope, presentationId) {
 
 /**
  * Get a single version snapshot (full presentation data included).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {string} versionId
  * @returns {Promise<Object|null>}
@@ -460,7 +460,7 @@ export async function getPresentationVersion(scope, presentationId, versionId) {
 
 /**
  * Create a version snapshot of a presentation.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} pres - Full presentation object to snapshot
  * @param {Object} [opts]
@@ -486,7 +486,7 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
 
 /**
  * Prune old version snapshots per the retention policy.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId
  * @param {Object} [opts]
  * @param {number} [opts.keep]
