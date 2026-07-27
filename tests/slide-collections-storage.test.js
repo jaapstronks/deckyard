@@ -1,7 +1,7 @@
 /**
  * Slide collections storage: CRUD, ordering, scope isolation, and authz.
  *
- * Drives the storage facade (server/storage/collections.js) against an
+ * Drives the storage facade (server/storage/collections/index.js) against an
  * initialized file adapter - the same path the running server uses in the
  * default OSS (file) mode. Covers:
  * - personal create/list/get/update/delete round-trip
@@ -33,7 +33,7 @@ const {
   createTeamCollection,
   updateTeamCollection,
   deleteTeamCollection,
-} = await import('../server/storage/collections.js');
+} = await import('../server/storage/collections/index.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 
 // The facades refuse to invent an organization, so the test states the one it

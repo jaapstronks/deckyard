@@ -57,7 +57,7 @@ const auth = await import('../server/auth/auth.js');
 const context = await import('../server/utils/context.js');
 const { createRouteContext } = context;
 const { createOrganization, updateOrganization, listUserOrganizations } = await import(
-  '../server/storage/user-organizations.js'
+  '../server/storage/user-organizations/index.js'
 );
 
 let passwordHash;

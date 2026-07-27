@@ -10,12 +10,12 @@
  * adapter these degrade to empty results exactly as before.
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope } from './scope.js';
+import { isStorageInitialized, getStorage } from '../adapters/index.js';
+import { resolveScope } from '../scope.js';
 
 /**
  * List all tags of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}
  */
 export async function listTags(scope) {
@@ -30,7 +30,7 @@ export async function listTags(scope) {
 
 /**
  * Get tags for a specific presentation.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId - Presentation ID
  * @returns {Promise<Array<{id: string, name: string}>>}
  */
@@ -46,7 +46,7 @@ export async function getTagsForPresentation(scope, presentationId) {
 
 /**
  * Get tags for multiple presentations at once (for list views).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string[]} presentationIds - Array of presentation IDs
  * @returns {Promise<Map<string, Array<{id: string, name: string}>>>}
  */
@@ -62,7 +62,7 @@ export async function getTagsForPresentations(scope, presentationIds) {
 
 /**
  * Set tags for a presentation (replaces existing tags).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
  * @returns {Promise<Array<{id: string, name: string}>>}
@@ -79,7 +79,7 @@ export async function setTagsForPresentation(scope, presentationId, tagNames) {
 
 /**
  * Create a new tag in the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} name - Tag name
  * @returns {Promise<{id: string, name: string}>}
  */
@@ -101,7 +101,7 @@ export async function createTag(scope, name) {
 
 /**
  * Delete a tag from the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} tagId - Tag ID
  * @returns {Promise<boolean>}
  */
@@ -117,7 +117,7 @@ export async function deleteTag(scope, tagId) {
 
 /**
  * Search tags by prefix (for autocomplete).
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} prefix - Search prefix
  * @param {number} [limit=10] - Max results
  * @returns {Promise<Array<{id: string, name: string, count: number}>>}

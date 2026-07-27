@@ -2,7 +2,7 @@ import {
   deletePresentation,
   updatePresentation,
 } from '../../../storage/presentations.js';
-import { getTagsForPresentation } from '../../../storage/tags.js';
+import { getTagsForPresentation } from '../../../storage/tags/index.js';
 import {
   json,
   methodNotAllowed,

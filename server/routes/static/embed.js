@@ -1,7 +1,7 @@
 import { notFound } from '../../utils/http.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations.js';
-import { getPublishedById } from '../../storage/published.js';
+import { getPublishedById } from '../../storage/published/index.js';
 import { loadTheme } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { getDefaultOrganizationId } from '../../config/database.js';

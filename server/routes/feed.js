@@ -4,9 +4,9 @@
  */
 
 import { getDefaultOrganizationId } from '../config/database.js';
-import { getOrganizationById } from '../storage/user-organizations.js';
+import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
-import { listPublishedForFeed } from '../storage/published.js';
+import { listPublishedForFeed } from '../storage/published/index.js';
 import { buildFeed } from '../utils/rss-feed.js';
 import { isRssFeedEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';

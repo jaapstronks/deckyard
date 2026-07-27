@@ -9,15 +9,15 @@
  * their per-user favorites.
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope, repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
+import { isStorageInitialized, getStorage } from '../adapters/index.js';
+import { resolveScope, repoRootOf } from '../scope.js';
+import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
 
-const withStorageFallback = createStorageDispatch(() => import('./image-library-file.js'));
+const withStorageFallback = createStorageDispatch(() => import('./file.js'));
 
 /**
  * List the image library of the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @returns {Promise<Array<Object>>}
  */
 export async function listImageLibrary(scope) {
@@ -32,7 +32,7 @@ export async function listImageLibrary(scope) {
 
 /**
  * Fetch one image library item within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
@@ -48,7 +48,7 @@ export async function getImageLibraryItem(scope, id) {
 
 /**
  * Add an image to the scope's organization library.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {Object} input
  * @returns {Promise<Object>}
  */
@@ -64,7 +64,7 @@ export async function createImageLibraryItem(scope, input) {
 
 /**
  * Patch an image library item within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} patch
  * @returns {Promise<Object|null>}
@@ -81,7 +81,7 @@ export async function updateImageLibraryItem(scope, id, patch) {
 
 /**
  * Delete an image library item within the scope's organization.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<boolean>}
  */
@@ -97,7 +97,7 @@ export async function deleteImageLibraryItem(scope, id) {
 
 /**
  * Get all favorite image IDs for a user.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} userEmail - User's email
  * @returns {Promise<string[]>} Array of image IDs
  */
@@ -113,7 +113,7 @@ export async function getImageFavorites(scope, userEmail) {
 
 /**
  * Toggle favorite status for an image.
- * @param {import('./scope.js').StorageScope} scope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} imageId - Image ID
  * @param {string} userEmail - User's email
  * @returns {Promise<boolean>} New favorite status (true if now favorited)

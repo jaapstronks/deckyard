@@ -1,7 +1,7 @@
 /**
  * Tags storage: the file-adapter tag methods behind the storage facade.
  *
- * Drives server/storage/tags.js against an initialized file adapter — the same
+ * Drives server/storage/tags/index.js against an initialized file adapter — the same
  * path the running server uses in default OSS (file) mode. This is the surface
  * that used to 500 on a default install (the file adapter shipped no tag
  * methods), so it covers the round-trip the editor and list views depend on:
@@ -33,7 +33,7 @@ const {
   createTag,
   deleteTag,
   searchTags,
-} = await import('../server/storage/tags.js');
+} = await import('../server/storage/tags/index.js');
 const { testScope } = await import('./helpers/storage-scope.js');
 
 // The facade refuses to invent an organization, so the test states the one it

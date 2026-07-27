@@ -8,7 +8,7 @@ import {
   getTeamLibraryItem,
   getTagsForSlideLibraryItems,
   getTagsForSlideLibraryItem,
-} from '../../../storage/slide-library.js';
+} from '../../../storage/slide-library/index.js';
 import { updatePresentation } from '../../../storage/presentations.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { newSlide } from '../../../../shared/slide-types.js';

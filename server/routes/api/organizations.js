@@ -16,7 +16,7 @@ import {
   deleteOrganization,
   getMembership,
   hasWorkspaceRole,
-} from '../../storage/user-organizations.js';
+} from '../../storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('organizations');

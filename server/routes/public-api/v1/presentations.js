@@ -11,7 +11,7 @@ import {
   deletePresentation,
   duplicatePresentation,
 } from '../../../storage/presentations.js';
-import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags.js';
+import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { requireScope, canAccessPresentation, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';

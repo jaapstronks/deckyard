@@ -4,10 +4,10 @@
  */
 
 import path from 'node:path';
-import { safeSlug } from '../utils/slug.js';
-import { dataDir } from '../config/storage-paths.js';
-import { nowIso } from '../utils/normalize.js';
-import { readJsonIfExists, writeJsonAtomic } from './io.js';
+import { safeSlug } from '../../utils/slug.js';
+import { dataDir } from '../../config/storage-paths.js';
+import { nowIso } from '../../utils/normalize.js';
+import { readJsonIfExists, writeJsonAtomic } from '../io.js';
 
 function publishedDir(repoRoot) {
   return path.join(dataDir(repoRoot), 'published');
