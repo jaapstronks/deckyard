@@ -14,6 +14,7 @@ import {
   appendImageTextLayoutOptions,
 } from './slide-forms/image-slide.js';
 import { ensureImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
+import { resolveListLayout } from '../../../../shared/slide-types/types/list-slide.js';
 import {
   ensureContentColumnsImages,
   resolveContentColumnImage,
@@ -484,6 +485,45 @@ export function renderInspectorExtrasByType(ctx) {
       );
       for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
       if (colSection.body.childNodes.length) form.append(colSection.el);
+      return;
+    }
+
+    case 'list-slide':
+    case 'lijstje-slide': {
+      // "Text size" is the one list setting the renderer can overrule: a list
+      // long AND wordy enough to spill even across two columns steps down a
+      // size. That used to happen silently, so an author who picked Large saw
+      // nothing change and no reason why. Render the field here (instead of
+      // via the generic keeps loop) so a note can sit under it when the step
+      // down is actually in effect.
+      const densityField = fieldByKey.get('density');
+      if (!densityField) return;
+      used.add('density');
+      const el = renderField(densityField);
+      if (!el) return;
+      form.append(el);
+      const { steppedDownFrom, twoCol } = resolveListLayout(slide?.content);
+      if (steppedDownFrom === 'comfortable') {
+        el.append(
+          h('div', {
+            class: 'help',
+            text: t(
+              'editor.list.sizeSteppedDown',
+              'Large does not fit these items, so they are shown at the default size. Shorten the item text, or use fewer items, to get Large back.'
+            ),
+          })
+        );
+      } else if (!twoCol && slide?.content?.layout === 'two-column') {
+        // Defensive: the resolver honours an explicit two-column choice, so
+        // this should not occur. Kept so a future capacity change cannot make
+        // the column count silently disagree with the field.
+        el.append(
+          h('div', {
+            class: 'help',
+            text: t('editor.list.oneColumnFallback', 'Shown in one column: two columns do not fit.'),
+          })
+        );
+      }
       return;
     }
 

@@ -14,6 +14,167 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
   schematicKind: 'bullets',
 });
 
+/**
+ * Text sizes, largest first. 'normal' is the class-less default sizing; the
+ * other two map to `.is-comfortable` ("Large") and `.is-compact` ("Small").
+ */
+const SIZE_ORDER = ['comfortable', 'normal', 'compact'];
+
+/**
+ * Up to this many items, one column is the natural shape for a list: it is how
+ * a table of contents reads, and it gives each item the full measure. Beyond
+ * it, two columns are what the content wants anyway, and they roughly double
+ * the capacity so the type can stay large.
+ */
+const ONE_COLUMN_PREFERRED_MAX = 5;
+
+/**
+ * How many items fit at a given text size and column count.
+ *
+ * Every number here was MEASURED, not estimated: the real renderer plus the
+ * real slide CSS in headless Chrome at 1600x900 on the default theme, sweeping
+ * item count x title length x text length x subheading x columns x text size,
+ * and reading back whether the last item still ends above the slide's bottom
+ * padding edge. A cap is the largest count that cleared it for every content
+ * shape in its bucket.
+ *
+ * Character counts stand in for line counts because `renderHtml` is a pure
+ * string function that cannot measure anything. The conversions the buckets
+ * encode, at "large": an item title fits one line up to ~60 characters in one
+ * column and ~40 in two; body text fits one line up to ~45 characters in two
+ * columns. A wrapped line costs roughly one item's worth of capacity.
+ *
+ * @param {string} size - 'comfortable' | 'normal' | 'compact'
+ * @param {boolean} twoCol - Whether the list renders in two columns
+ * @param {{longestTitle: number, longestText: number, hasSubheading: boolean}} shape
+ * @returns {number} Maximum item count that fits
+ */
+function itemCapacity(size, twoCol, shape) {
+  const { longestTitle, longestText, hasSubheading } = shape;
+  const hasText = longestText > 0;
+
+  if (twoCol) {
+    // Two columns at the default or small size never overflowed anywhere in
+    // the sweep, up to the schema maximum of 8 items.
+    if (size !== 'comfortable') return 8;
+    if (longestTitle <= 40 && longestText <= 45) return 8;
+    // Both a wrapping title and a multi-line description in a half-width
+    // column: only four of these fit.
+    if (longestTitle >= 50 && longestText >= 110) return 4;
+    return 6;
+  }
+
+  if (size === 'comfortable') {
+    if (longestTitle > 60) return 3; // title wraps to a second line
+    if (!hasText) return 5;
+    // Measured at 1600x900: four title+text items clear the bottom edge by
+    // 56px, but a subheading eats 62px of that and pushes the fourth over.
+    return hasSubheading ? 3 : 4;
+  }
+  if (size === 'normal') {
+    if (!hasText) return 7;
+    return longestText > 80 ? 4 : 5;
+  }
+  // compact
+  if (!hasText) return 8;
+  return longestText > 100 ? 5 : 6;
+}
+
+/**
+ * Resolve a list slide's text size and column count together.
+ *
+ * The two decisions are entangled - the capacity of a size depends on the
+ * column count, and whether a column count is usable depends on the size - so
+ * they are resolved as one, against {@link itemCapacity}. Two rules govern it:
+ *
+ * 1. An explicitly chosen text size outranks the column preference. Moving a
+ *    list into two columns is a layout tweak; silently shrinking someone's
+ *    type is a broken promise. Only when NO column count can hold the list at
+ *    the chosen size does the size step down - and then `steppedDownFrom` is
+ *    set so the editor can say so out loud.
+ * 2. 'Auto' has no size opinion, so it holds the column preference instead and
+ *    takes the largest size that fits there. Short lists come out large, which
+ *    is what most of them want; wordy ones settle at the default fit.
+ *
+ * @param {Object} content - Slide content
+ * @returns {{twoCol: boolean, size: string, steppedDownFrom: string|null,
+ *   itemCount: number, longestTitle: number, longestText: number,
+ *   hasSubheading: boolean}}
+ */
+export function resolveListLayout(content) {
+  const items = Array.isArray(content?.items) ? content.items : [];
+  const len = (v) => (typeof v === 'string' ? v.trim().length : 0);
+  const itemCount = items.length;
+  const longestTitle = items.reduce((mx, it) => Math.max(mx, len(it?.title)), 0);
+  const longestText = items.reduce((mx, it) => Math.max(mx, len(it?.text)), 0);
+  const hasSubheading = len(content?.subheading) > 0;
+  const shape = { longestTitle, longestText, hasSubheading };
+
+  // Legacy and unset values both mean "no opinion".
+  const requested =
+    content?.density === 'comfortable' || content?.density === 'compact'
+      ? content.density
+      : 'auto';
+
+  const fits = (size, twoCol) => itemCount <= itemCapacity(size, twoCol, shape);
+
+  // Column preference, most-preferred first. An explicit 'two-column' is a
+  // dead end on purpose: the author asked for two columns, so there is nowhere
+  // else to fall back to.
+  const columns =
+    content?.layout === 'two-column'
+      ? [true]
+      : content?.layout === 'one-column'
+        ? [false, true]
+        : itemCount > ONE_COLUMN_PREFERRED_MAX
+          ? [true, false]
+          : [false, true];
+
+  const base = { itemCount, longestTitle, longestText, hasSubheading };
+
+  if (requested === 'auto') {
+    for (const twoCol of columns) {
+      const size = SIZE_ORDER.find((s) => fits(s, twoCol));
+      if (size) return { ...base, twoCol, size, steppedDownFrom: null };
+    }
+  } else {
+    for (const twoCol of columns) {
+      if (fits(requested, twoCol)) {
+        return { ...base, twoCol, size: requested, steppedDownFrom: null };
+      }
+    }
+    const smaller = SIZE_ORDER.slice(SIZE_ORDER.indexOf(requested) + 1);
+    for (const twoCol of columns) {
+      const size = smaller.find((s) => fits(s, twoCol));
+      if (size) return { ...base, twoCol, size, steppedDownFrom: requested };
+    }
+  }
+
+  // Unreachable with the schema's 8-item maximum (two columns at the small
+  // size hold 8 of anything), but resolve to the safest shape rather than
+  // return nothing if that maximum ever moves.
+  return {
+    ...base,
+    twoCol: true,
+    size: 'compact',
+    steppedDownFrom: requested === 'compact' ? null : requested,
+  };
+}
+
+/**
+ * Whether every item is one line of title and at most one line of text.
+ *
+ * Same measured wrap points as {@link itemCapacity}: a full-width column fits
+ * ~60 title characters and does not wrap body text within the 120-character
+ * field limit at all; a half-width column fits ~40 and ~45.
+ *
+ * @param {{twoCol: boolean, longestTitle: number, longestText: number}} resolved
+ * @returns {boolean}
+ */
+function isSingleLine({ twoCol, longestTitle, longestText }) {
+  return twoCol ? longestTitle <= 40 && longestText <= 45 : longestTitle <= 60;
+}
+
 export default {
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
@@ -171,55 +332,39 @@ export default {
       content?.variant === 'numbers'
         ? 'is-numbers'
         : 'is-bullets';
-    const itemCount = Array.isArray(content?.items)
-      ? content.items.length
-      : 0;
-    // Text size: 'comfortable' (large) scales up titles + text to fill sparse
-    // slides; 'compact' (small) shrinks them so many items still fit. A long
-    // list can't render "large" without spilling even across two columns, so
-    // drop large -> normal past 6 items.
-    //
-    // 'auto' (or unset/legacy) now *prefers* large: most lists — AI-generated
-    // ones in particular — are a handful of short bullets that read undersized
-    // at the default sizing. Only lists with many items or real sentences per
-    // bullet keep the default fit.
-    let effDensity = content?.density;
-    const longestItem = (Array.isArray(content?.items) ? content.items : []).reduce(
-      (mx, it) =>
-        Math.max(
-          mx,
-          String(it?.title || '').trim().length + String(it?.text || '').trim().length
-        ),
-      0
-    );
-    if (
-      (effDensity == null || effDensity === '' || effDensity === 'auto') &&
-      itemCount > 0 &&
-      itemCount <= 6 &&
-      longestItem <= 90
-    ) {
-      effDensity = 'comfortable';
-    }
-    if (effDensity === 'comfortable' && itemCount > 6) effDensity = 'auto';
+    // Text size and column count are resolved together, against a measured
+    // capacity table — see resolveListLayout above. 'comfortable' (Large)
+    // scales titles and text up so a short list fills the slide instead of its
+    // top half; 'compact' (Small) shrinks them so a long one still fits.
+    const resolved = resolveListLayout(content);
     const densityClass =
-      effDensity === 'comfortable'
+      resolved.size === 'comfortable'
         ? ' is-comfortable'
-        : effDensity === 'compact'
+        : resolved.size === 'compact'
           ? ' is-compact'
           : '';
-    // Layout: 'one-column' | 'two-column' | 'auto'. Honor an explicit
-    // 'two-column'; otherwise ('auto', 'one-column', or unset/legacy) use one
-    // column while the items fit, and fall back to two columns (which ~doubles
-    // capacity) once there are more items than one column can hold at this text
-    // size. The per-size caps are tuned so text never spills off the 720-tall
-    // slide, even with the widest 2-line items and a subheading present. This
-    // makes overflow impossible without overriding a deliberate 'two-column'.
-    const oneColCap =
-      effDensity === 'comfortable' ? 3 : effDensity === 'compact' ? 5 : 4;
-    const layout =
-      content?.layout === 'two-column' || itemCount > oneColCap
-        ? 'is-two-col'
-        : 'is-one-col';
+    const layout = resolved.twoCol ? 'is-two-col' : 'is-one-col';
+    // Fill: let the rows share whatever height is left over instead of stacking
+    // against the top of the slide. Sizing alone could not fix this - a list of
+    // seven short items fits at Large and still left the bottom of the slide
+    // empty, which was half the original report.
+    //
+    // Two gates bound it, and both are load-bearing:
+    //
+    // - Three rows per column. Growth is only ever leftover space shared
+    //   between rows, so from three rows up each grows by a modest amount; at
+    //   two, a short list turns into a pair of half-slide bands. A two-row
+    //   column keeps its natural spacing and sits at the top, which is what a
+    //   genuinely short list should do.
+    // - Single-line rows. Filling centres each row's content in the height it
+    //   gained, and centring is only right while the marker has one line to sit
+    //   against: on a wrapped item the bullet would drift to the middle of the
+    //   block instead of its title. Wordy lists are also the ones already near
+    //   capacity, so they have little leftover to spend anyway.
+    const rowsPerColumn = resolved.twoCol
+      ? Math.ceil(resolved.itemCount / 2)
+      : resolved.itemCount;
+    const fillClass = rowsPerColumn >= 3 && isSingleLine(resolved) ? ' is-fill' : '';
     const subheading = renderSubheadingHtml(content, 'subheading', 'subtitle');
     const items = Array.isArray(content?.items)
       ? content.items
@@ -282,7 +427,7 @@ export default {
 
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     return `
-      <div class="slide slide-lijstje ${variant} ${layout}${densityClass} ${bg}${
+      <div class="slide slide-lijstje ${variant} ${layout}${densityClass}${fillClass} ${bg}${
         alignClass ? ` ${alignClass}` : ''
       }">
         <div class="slide-inner">

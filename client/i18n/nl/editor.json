@@ -538,6 +538,8 @@
   "editor.lang.versionCreatedInvite": "De {lang} versie is net aangemaakt en heeft nog geen teksten. Automatisch laten vertalen? Velden die je zelf invult worden nooit overschreven.",
   "editor.lang.versionIncompleteInvite": "Deze {lang} versie heeft nog onvertaalde teksten. Automatisch laten vertalen? Velden die je zelf hebt ingevuld worden nooit overschreven.",
   "editor.langMode.title": "Taalmodus (bewerken + presenteren)",
+  "editor.list.oneColumnFallback": "Staat in één kolom: twee kolommen passen niet.",
+  "editor.list.sizeSteppedDown": "Groot past niet bij deze items, dus ze staan op de standaardgrootte. Maak de itemteksten korter, of gebruik minder items, om Groot terug te krijgen.",
   "editor.layoutSwitcher.chip": "Layout",
   "editor.layoutSwitcher.imageLeft": "Beeld links",
   "editor.layoutSwitcher.imagePosition": "Beeldpositie",

@@ -148,6 +148,34 @@
   margin-top: 12px;
 }
 
+/* Fill: share the leftover height between the rows.
+   The list box already spans the space under the header (`.lijst` is flex:1),
+   but the rows used to stack against its top and leave the rest of the slide
+   empty - the other half of the "list uses half the slide" report. Growing the
+   rows spends that space on rhythm instead: the dividers spread evenly and the
+   list reads as a designed table of contents rather than a truncated one.
+
+   Only leftover space is ever distributed - `flex-grow` cannot shrink a row
+   below its natural height - so this never causes an overflow and the measured
+   capacities in list-slide.js stay valid as-is. The renderer adds `is-fill`
+   only from three rows per column up, and only while every row is a single
+   line; both gates are explained there. */
+.slide-lijstje.is-fill .lijst-item {
+  flex-grow: 1;
+  /* Centre the row's content in the height it just gained, so each divider
+     sits midway between the two items it separates instead of hugging the one
+     below it. */
+  align-items: center;
+}
+/* The marker's top margin exists to drop the bullet onto the first line of a
+   top-aligned item. Centred, it would push it below the text instead. */
+.slide-lijstje.is-fill.is-bullets .marker {
+  margin-top: 0;
+}
+.slide-lijstje.is-fill.is-numbers .marker {
+  margin-top: 0;
+}
+
 /* Two-column layout */
 .slide-lijstje.is-two-col .lijst {
   max-width: 100%;
