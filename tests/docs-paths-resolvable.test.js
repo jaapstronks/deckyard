@@ -29,6 +29,17 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const TOP_LEVEL_DIRS = ['assets', 'client', 'docs', 'scripts', 'server', 'shared', 'tests', 'themes'];
 
 /**
+ * Gitignored roots that only exist once the app has been installed or run:
+ * `server/data/` + `server/uploads/` (created on first run) and
+ * `assets/fonts/google/` (fetched by the `postinstall` hook). The docs name them
+ * precisely *because* they are not in the tree — backup targets, volume mounts,
+ * `chown` targets, the reason the export smoke test wants a normal checkout. They
+ * are permanently absent by design, so this is a skip, not an allowlist entry
+ * that could ever go stale.
+ */
+const GITIGNORED_RUNTIME_ROOTS = ['server/data/', 'server/uploads/', 'assets/fonts/google/'];
+
+/**
  * Docs the gate reads. Prose that ships with the repo, minus the private planning
  * workspace: `docs/**` outside `docs/plans/`, plus the four anchor files at the
  * root.
@@ -130,10 +141,20 @@ for (const f of TRACKED) {
 }
 const DOC_FILES = TRACKED.filter(isDocFile);
 
-/** A cited path resolves if it is a tracked file, a tracked directory, or on disk. */
+/**
+ * A cited path resolves if it is a tracked file or a tracked directory.
+ *
+ * Deliberately *not* an `fs.existsSync` check: the working tree of a machine that
+ * has run the app holds gitignored runtime output (`server/data/`, build
+ * artefacts, scratch files) that a fresh clone and CI do not. Falling back to disk
+ * would make the gate machine-dependent in both directions — a genuinely dead path
+ * that happens to exist locally would pass here and fail in CI. `TRACKED` is the
+ * one oracle, and on a tarball deploy `collectTracked()` already degrades to a
+ * walk.
+ */
 function pathResolves(rel) {
-  if (TRACKED_FILES.has(rel) || TRACKED_DIRS.has(rel)) return true;
-  return fs.existsSync(path.join(REPO_ROOT, rel));
+  const bare = rel.replace(/\/+$/, ''); // docs cite directories as `client/lib/`
+  return TRACKED_FILES.has(bare) || TRACKED_DIRS.has(bare);
 }
 
 /**
@@ -144,7 +165,9 @@ function pathResolves(rel) {
  * - `docs/plans/**` — a gitignored symlink to the private planning repo, absent on
  *   a fresh clone;
  * - `client/i18n/**` — generated translation payloads, gitignored (the same
- *   exclusion `removed-slide-types.test.js` makes).
+ *   exclusion `removed-slide-types.test.js` makes);
+ * - the gitignored runtime roots above — absent in CI and on a fresh clone by
+ *   design, so a citation of one is correct, not dead.
  */
 function citedPaths() {
   const backtick = /`([^`\n]+)`/g;
@@ -160,6 +183,7 @@ function citedPaths() {
       if (/[*?<>{}|]/.test(tok) || tok.includes('…')) continue; // a pattern, not a path
       if (tok.startsWith('docs/plans/')) continue; // gitignored symlink
       if (tok.startsWith('client/i18n/')) continue; // generated payloads
+      if (GITIGNORED_RUNTIME_ROOTS.some((d) => tok === d || tok.startsWith(d))) continue;
       out.push({ p: tok, doc });
     }
   }
