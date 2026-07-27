@@ -150,8 +150,18 @@ export function createCommentSSE({
     }
   }
 
+  /**
+   * Whether the SSE stream is currently connected. Callers use this to decide
+   * whether the `comment:created` echo will arrive (and reload for them) or
+   * whether they must reload themselves as a fallback.
+   */
+  function isConnected() {
+    return sseConnection?.isConnected?.() ?? false;
+  }
+
   return {
     startPolling,
     stopPolling,
+    isConnected,
   };
 }
