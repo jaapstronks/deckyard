@@ -55,6 +55,11 @@ export function createCommentsPanel({
   let comments = [];
   let openCount = 0;
   let slideCommentCounts = {};
+  // Effective AI-author email, shipped with each list response. Lets the
+  // renderer recognise legacy AI-suggestion comments by author address (see
+  // comments-panel-renderers.js). Null until the first load lands; the
+  // renderer still falls back to the default/legacy addresses meanwhile.
+  let aiEmail = null;
   // Scope is the primary axis: the pane is slide-scoped by default (like the
   // inspector and notes panes it sits between); "All slides" is the explicit
   // deck-wide overview. filter.slideId is DERIVED from scope on every load,
@@ -128,6 +133,7 @@ export function createCommentsPanel({
       const result = await commentsApi.listComments(opts);
       comments = result.comments || [];
       openCount = result.openCount || 0;
+      if (result.aiEmail) aiEmail = result.aiEmail;
       const visibleThreads = filter.slideMissing
         ? []
         : filter.attention === 'waiting'
@@ -380,6 +386,7 @@ export function createCommentsPanel({
     h,
     filter,
     getSlideNumber,
+    getAiEmail: () => aiEmail,
     formatTime,
     isOwner,
     isAuthor,
