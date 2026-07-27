@@ -259,8 +259,7 @@
 }
 
 /* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
-.slide-title-universal.is-logo-left,
-.slide-title-universal.align-left {
+.slide-title-universal.is-logo-left {
   --tsu-pad-left: 72px;
 }
 

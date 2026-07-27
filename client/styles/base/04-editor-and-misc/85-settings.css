@@ -245,16 +245,6 @@
   cursor: pointer;
 }
 
-/* Admin placeholder for coming soon features */
-.admin-placeholder {
-  padding: var(--ps-space-3);
-  border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-secondary) / 0.5);
-  color: hsl(var(--app-text-tertiary));
-  font-size: var(--ps-text-sm);
-  font-style: italic;
-}
-
 /* Field row for admin settings (label + input pair) */
 .field-row {
   display: flex;
@@ -402,7 +392,7 @@
 
 .profile-image-actions .btn-sm {
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 @media (max-width: 480px) {
@@ -422,49 +412,13 @@
   grid-column: 1 / -1;
 }
 
-.admin-users-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9em;
-  margin-top: 8px;
-}
-
-.admin-users-table th,
-.admin-users-table td {
-  text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid hsl(var(--app-border-subtle));
-}
-
-.admin-users-table th {
-  font-weight: 600;
-  color: hsl(var(--app-text-secondary));
-  background: hsl(var(--app-bg-secondary) / 0.5);
-}
-
-.admin-users-table tr:hover td {
-  background: hsl(var(--app-bg-secondary) / 0.3);
-}
-
-.admin-users-actions {
-  white-space: nowrap;
-}
-
-.admin-users-actions .btn {
-  margin-right: 4px;
-}
-
-.admin-users-actions .btn:last-child {
-  margin-right: 0;
-}
-
 .badge-warning {
   display: inline-block;
   padding: 2px 6px;
   border-radius: 4px;
   background: hsl(var(--app-warning-bg, 45 100% 90%));
   color: hsl(var(--app-warning-text, 30 100% 25%));
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
 }
 
@@ -595,7 +549,7 @@
   .settings-modal-grid .form-input,
   .settings-modal-grid select {
     min-height: 44px;
-    font-size: 16px; /* Prevents zoom on iOS */
+    font-size: var(--ps-text-lg); /* Prevents zoom on iOS */
   }
 
   /* Adjust callout padding */
@@ -627,7 +581,7 @@
   /* Textarea adjustments */
   .modal-content textarea.form-input {
     min-height: 80px;
-    font-size: 16px;
+    font-size: var(--ps-text-lg);
   }
 }
 

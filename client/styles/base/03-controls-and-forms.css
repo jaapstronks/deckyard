@@ -81,7 +81,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   color: hsl(var(--app-text-secondary));
   flex-shrink: 0;
@@ -812,13 +812,6 @@
    cramps both fields — keying it off viewport width was the bug. */
 .editor-title-row {
   grid-template-columns: 1fr !important;
-}
-
-.editor-form .editor-field-half {
-  /* Half-width field container (do NOT turn a single field into a 2-col grid). */
-  width: 100%;
-  max-width: 340px;
-  align-self: flex-start;
 }
 
 .editor-callout {

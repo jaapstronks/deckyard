@@ -136,7 +136,7 @@
   border: none;
   color: hsl(var(--app-accent-text));
   font: inherit;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   cursor: pointer;
   text-decoration: underline;
 }
@@ -186,7 +186,7 @@
 }
 
 .theme-card-heading {
-  font-size: 22px;
+  font-size: var(--ps-text-2xl);
   line-height: 1.2;
   max-width: 100%;
   overflow: hidden;
@@ -317,7 +317,7 @@
   }
 
   .theme-card-heading {
-    font-size: 18px;
+    font-size: var(--ps-text-xl);
   }
 }
 
@@ -672,7 +672,7 @@
   border: none;
   background: none;
   color: hsl(var(--app-text-secondary));
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
@@ -1508,7 +1508,7 @@
 
 .subscription-level-label {
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: var(--text-color, #333);
 }
 

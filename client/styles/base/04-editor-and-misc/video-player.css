@@ -16,15 +16,6 @@ body {
   padding: 20px;
 }
 
-.header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
 .video-title {
   font-family: Arial, sans-serif;
   font-size: 24px;
@@ -44,7 +35,7 @@ body {
   border-radius: 25px;
   padding: 8px 16px;
   color: #ffffff;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -55,7 +46,7 @@ body {
 }
 
 .language-toggle .flag {
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
 }
 
 .language-toggle .current-lang {
@@ -129,7 +120,7 @@ body {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   outline: none;
 }
 
@@ -197,7 +188,7 @@ body {
 }
 
 .chapters-title {
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
   font-weight: 400;
   font-synthesis: none;
   color: #ffffff;
@@ -212,7 +203,7 @@ body {
   border-radius: 30px;
   padding: 14px 24px;
   color: #ffffff;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -240,7 +231,7 @@ body {
 }
 
 .toggle-icon {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   transition: transform 0.3s ease;
 }
 
@@ -271,7 +262,7 @@ body {
   border-radius: 20px;
   color: #ffffff;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
@@ -295,20 +286,7 @@ body {
   opacity: 0.8;
 }
 
-.loading-indicator {
-  text-align: center;
-  padding: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  font-style: italic;
-}
-
 @media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-
   .video-title {
     font-size: 20px;
   }

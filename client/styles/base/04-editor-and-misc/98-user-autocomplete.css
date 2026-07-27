@@ -25,7 +25,7 @@
   background: hsl(var(--app-accent-soft));
   color: hsl(var(--app-accent-text));
   border-radius: 1rem;
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
   line-height: 1.2;
 }
 
@@ -46,7 +46,7 @@
   border: none;
   background: transparent;
   color: inherit;
-  font-size: 1rem;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   cursor: pointer;
   opacity: 0.7;
@@ -152,7 +152,7 @@
 }
 
 .user-autocomplete-item-email {
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
   color: var(--color-gray-500, #6b7280);
 }
 
@@ -179,7 +179,7 @@
   background: var(--color-info-50, #eff6ff);
   color: var(--color-info-700, #1d4ed8);
   border-radius: 0.25rem;
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
 }
 
 .share-collaborator-progress.is-visible {

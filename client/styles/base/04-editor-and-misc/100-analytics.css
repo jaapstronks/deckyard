@@ -44,7 +44,7 @@
 }
 
 .analytics-title > span:first-child {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   font-weight: 600;
 }
 
@@ -89,7 +89,7 @@
 
 .analytics-section-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 600;
 }
 
@@ -312,7 +312,7 @@
   background: hsl(var(--app-bg-base));
   border-radius: 4px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 .analytics-heatmap-info {
@@ -322,14 +322,14 @@
 
 .analytics-heatmap-title {
   font-weight: 500;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .analytics-heatmap-stats {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-secondary));
 }
 
@@ -364,7 +364,7 @@
   justify-content: center;
   gap: var(--ps-space-3);
   margin-top: var(--ps-space-5);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-secondary));
 }
 
@@ -402,7 +402,7 @@
 }
 
 .analytics-viewer-cell {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 .analytics-viewer-name {
@@ -412,7 +412,7 @@
 }
 
 .analytics-viewer-badge {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 img.analytics-viewer-badge {
@@ -434,7 +434,7 @@ img.analytics-viewer-badge {
   background: hsl(var(--app-bg-base));
   border-radius: 8px;
   margin-bottom: var(--ps-space-4);
-  font-size: 14px;
+  font-size: var(--ps-text-base);
 }
 
 .analytics-internal-icon {
@@ -453,7 +453,7 @@ img.analytics-viewer-badge {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
   background: hsl(var(--app-bg-base));
   border: 1px solid hsl(var(--app-border-default));
@@ -524,7 +524,7 @@ img.analytics-viewer-badge {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-primary));
   transition: background var(--ps-transition-fast);
 }
@@ -557,7 +557,7 @@ img.analytics-viewer-badge {
 
 .analytics-date-picker-custom label {
   display: block;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-secondary));
   margin-bottom: var(--ps-space-2);
   text-transform: uppercase;
@@ -585,12 +585,12 @@ img.analytics-viewer-badge {
   padding: var(--ps-space-2) var(--ps-space-3);
   background: hsl(var(--app-bg-base));
   border-radius: 4px;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 .analytics-report-error {
   color: hsl(var(--app-danger));
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   padding: 10px 12px;
   background: hsl(var(--app-danger) / 0.1);
   border-radius: var(--ps-radius-md);
@@ -612,7 +612,7 @@ img.analytics-viewer-badge {
   align-items: center;
   gap: var(--ps-space-2);
   color: hsl(var(--app-success));
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   font-weight: 500;
 }
 
@@ -635,7 +635,7 @@ img.analytics-viewer-badge {
 
 .analytics-report-share-input input {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 .analytics-report-actions {
@@ -650,7 +650,7 @@ img.analytics-viewer-badge {
 
 .analytics-report-private-note p {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
 }
 
@@ -691,7 +691,7 @@ img.analytics-viewer-badge {
 }
 
 .shared-report-meta {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
 }
 
@@ -701,7 +701,7 @@ img.analytics-viewer-badge {
 
 .shared-report-section h2 {
   margin: 0 0 var(--ps-space-4);
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
   padding-bottom: var(--ps-space-2);
   border-bottom: 1px solid hsl(var(--app-border-default));
 }
@@ -742,7 +742,7 @@ img.analytics-viewer-badge {
   display: flex;
   align-items: center;
   gap: var(--ps-space-3);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 .shared-report-chart-label {
@@ -784,7 +784,7 @@ img.analytics-viewer-badge {
 }
 
 .shared-report-table th {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   color: hsl(var(--app-text-secondary));
   text-transform: uppercase;
@@ -874,7 +874,7 @@ img.analytics-viewer-badge {
 }
 
 .analytics-lead-cell {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   min-width: 0;
 }
 
@@ -904,7 +904,7 @@ img.analytics-viewer-badge {
 
 .analytics-lead-date-full {
   display: none;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-secondary));
 }
 
@@ -925,11 +925,6 @@ img.analytics-viewer-badge {
   opacity: 1;
 }
 
-.analytics-empty-hint {
-  font-size: 13px;
-  margin-top: var(--ps-space-2);
-}
-
 /* Enhanced Empty States */
 .analytics-empty-state {
   display: flex;
@@ -948,21 +943,17 @@ img.analytics-viewer-badge {
 }
 
 .analytics-empty-state-title {
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
   margin: 0 0 var(--ps-space-2);
 }
 
 .analytics-empty-state-description {
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-secondary));
   margin: 0 0 var(--ps-space-4);
   max-width: 280px;
-}
-
-.analytics-empty-state-action {
-  margin-top: var(--ps-space-2);
 }
 
 /* Skeleton Loading */
@@ -1009,11 +1000,6 @@ img.analytics-viewer-badge {
 .analytics-skeleton-text {
   height: 16px;
   width: 60%;
-}
-
-.analytics-skeleton-text-short {
-  height: 14px;
-  width: 40%;
 }
 
 /* Sortable Table Headers */
@@ -1132,11 +1118,11 @@ img.analytics-viewer-badge {
   }
 
   .analytics-title > span:first-child {
-    font-size: 13px;
+    font-size: var(--ps-text-sm);
   }
 
   .analytics-pres-name {
-    font-size: 11px;
+    font-size: var(--ps-text-xs);
   }
 
   .analytics-content {
@@ -1150,7 +1136,7 @@ img.analytics-viewer-badge {
   }
 
   .analytics-section-header h3 {
-    font-size: 14px;
+    font-size: var(--ps-text-base);
   }
 
   .analytics-overview-cards {
@@ -1173,7 +1159,7 @@ img.analytics-viewer-badge {
   }
 
   .analytics-card-label {
-    font-size: 11px;
+    font-size: var(--ps-text-xs);
   }
 
   .analytics-heatmap-grid {
@@ -1205,7 +1191,7 @@ img.analytics-viewer-badge {
 
   .analytics-viewer-cell::before {
     content: attr(data-label);
-    font-size: 11px;
+    font-size: var(--ps-text-xs);
     font-weight: 600;
     color: hsl(var(--app-text-secondary));
     text-transform: uppercase;
@@ -1245,7 +1231,7 @@ img.analytics-viewer-badge {
 
   .analytics-lead-cell::before {
     content: attr(data-label);
-    font-size: 11px;
+    font-size: var(--ps-text-xs);
     font-weight: 600;
     color: hsl(var(--app-text-secondary));
     text-transform: uppercase;

@@ -87,7 +87,7 @@
 
 .preview-lightbox-counter {
   font-family: var(--ps-font-mono);
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   min-width: 50px;
   text-align: center;

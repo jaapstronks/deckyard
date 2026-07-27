@@ -115,7 +115,7 @@
   flex: 1;
   min-height: 300px;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   line-height: 1.5;
   tab-size: 2;
   resize: none;

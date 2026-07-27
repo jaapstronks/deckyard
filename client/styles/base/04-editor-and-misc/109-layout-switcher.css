@@ -55,7 +55,7 @@
 }
 
 .layout-tile-label {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   line-height: 1.2;
   white-space: nowrap;
 }
