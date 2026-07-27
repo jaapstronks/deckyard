@@ -13,6 +13,7 @@ code, duplicate keys).
 | `npm run lint` | The **gate**. Must stay green; CI runs it before the tests. |
 | `npm run lint:fix` | Auto-fix what ESLint can fix safely. |
 | `npm run lint:deadcode` | **Advisory** dead-exports + import-cycle discovery. Never gates. |
+| `npm run lint:deadcss` | **Advisory** unreferenced CSS-selector discovery. Never gates. |
 
 ## The gate (`npm run lint`)
 
@@ -79,6 +80,33 @@ deleting anything. The import-cycle hits, by contrast, are precise.
 > `eslint.config.js` by default, so `.eslintrc.json` does not affect
 > `npm run lint`.
 
+## The advisory pass (`npm run lint:deadcss`)
+
+Script: [`scripts/lint-dead-css.js`](../../scripts/lint-dead-css.js). Where
+`lint:deadcode` counts unused JS *exports*, this counts CSS class selectors that
+no source file references — the blind spot that let `.editor-form-header-left`
+survive a header-row removal (#393) unnoticed.
+
+**Also a triage tool, not a gate — and deliberately more conservative.** Class
+names here are *composed* (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`,
+`renderHtml` template builds), so a naive scanner flags every composed class as
+dead and is worse than nothing. The scanner therefore errs towards **alive**: it
+harvests every string/template token from `client/**` + `shared/**` as "used"
+and treats any static chunk preceding a `${` as a live prefix. It reports a
+selector only when it appears *nowhere* — not as a literal, not as a composition
+prefix. Under-reporting is the intended failure mode; over-reporting is the one
+that makes the tool untrustworthy.
+
+Two properties worth knowing:
+
+- **It measures `git ls-files`, not the working tree.** A class used only by an
+  untracked scratch file still counts as dead — otherwise "green for the author"
+  is not "green in CI" (the #413 lesson).
+- **It stays advisory (exit 0) until the report is clean.** Today it lists ~160
+  candidates; promote it to a gate only once those are triaged away. Each hit is
+  a *candidate* — verify by hand (a fully dynamic `class` built from a variable
+  the scanner can't see is a false positive) before deleting.
+
 ## Cadence — what runs when
 
 - **`npm run lint` (gate): every push/PR, automatically.** CI runs it before the
@@ -90,6 +118,9 @@ deleting anything. The import-cycle hits, by contrast, are precise.
   - after a large feature or a big deletion lands (that's when exports get
     orphaned and cycles appear),
   - as part of the periodic reorganization audit (the deep-reconcile pass).
+
+  `npm run lint:deadcss` fits the same cadence and the same moments — run it
+  alongside `lint:deadcode` when hunting orphans after a UI removal or refactor.
 
   Each run, also prune the burndown so it stays honest:
 
