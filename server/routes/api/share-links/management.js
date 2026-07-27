@@ -17,7 +17,7 @@ import {
   updateShareLink,
   getShareLinkAccessLog,
   getShareLinkById,
-} from '../../../storage/share-links.js';
+} from '../../../storage/share-links/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { serveJson, notFound, badRequest, requireJsonBody, parseJsonBody } from '../../../utils/http.js';

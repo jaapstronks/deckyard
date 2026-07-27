@@ -16,7 +16,7 @@ import {
   deleteTag,
   getTagsForPresentation,
   setTagsForPresentation,
-} from '../../storage/tags.js';
+} from '../../storage/tags/index.js';
 import { serveJson, badRequest, notFound, parseJsonBody, methodNotAllowed } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 

@@ -63,7 +63,7 @@ process.env.DATA_DIR = path.join(repoRoot, 'data');
 
 const { initializeStorage, closeStorage } = await import('../server/storage/adapters/index.js');
 const { createPersonalLibraryItem, listPersonalLibrary, updatePersonalLibraryItem } = await import(
-  '../server/storage/slide-library.js'
+  '../server/storage/slide-library/index.js'
 );
 const { testScope } = await import('./helpers/storage-scope.js');
 

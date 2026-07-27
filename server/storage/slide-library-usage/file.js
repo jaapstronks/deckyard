@@ -12,9 +12,9 @@
  */
 
 import path from 'node:path';
-import { readJsonIfExists, writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
-import { cleanStr } from '../../shared/string-utils.js';
+import { readJsonIfExists, writeJsonAtomic } from '../io.js';
+import { dataDir } from '../../config/storage-paths.js';
+import { cleanStr } from '../../../shared/string-utils.js';
 
 const ITEM_TYPES = new Set(['slide', 'collection']);
 

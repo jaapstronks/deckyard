@@ -6,7 +6,7 @@ import {
   updateImageLibraryItem,
   getImageFavorites,
   toggleImageFavorite,
-} from '../../storage/image-library.js';
+} from '../../storage/image-library/index.js';
 import { getImageLibraryUsage } from '../../storage/image-library-usage.js';
 import { replaceUploadFromDataUrl } from '../../storage/uploads.js';
 import {

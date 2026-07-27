@@ -24,8 +24,8 @@ import {
   updateMemberDesigner,
   hasDesignerCapability,
   addMember,
-} from '../../storage/user-organizations.js';
-import { getOrganizationById } from '../../storage/user-organizations.js';
+} from '../../storage/user-organizations/index.js';
+import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('admin-users');

@@ -4,8 +4,8 @@
  * membership flags, role, and organization settings.
  */
 
-import { getMembershipByEmail, hasDesignerCapability } from '../storage/user-organizations.js';
-import { getOrganizationById } from '../storage/user-organizations.js';
+import { getMembershipByEmail, hasDesignerCapability } from '../storage/user-organizations/index.js';
+import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { getOrgSettings } from './org-settings.js';
 

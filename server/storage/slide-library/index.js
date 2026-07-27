@@ -12,11 +12,11 @@
  * scope attributes the write to (`actorEmail`).
  */
 
-import { repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
-import { nowIso } from '../utils/normalize.js';
+import { repoRootOf } from '../scope.js';
+import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
+import { nowIso } from '../../utils/normalize.js';
 
-const withStorageFallback = createStorageDispatch(() => import('./slide-library-file.js'));
+const withStorageFallback = createStorageDispatch(() => import('./file.js'));
 
 // Personal library functions
 
@@ -204,7 +204,7 @@ export async function deleteTeamLibraryItem(scope, id, { actorEmail, allowDelete
 
 // Test helper - re-export from file implementation
 export function _unsafeUserKeyFromEmailForTests(email) {
-  return import('./slide-library-file.js').then((mod) =>
+  return import('./file.js').then((mod) =>
     mod._unsafeUserKeyFromEmailForTests(email)
   );
 }

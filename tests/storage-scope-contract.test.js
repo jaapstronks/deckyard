@@ -250,7 +250,7 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 // missed call site has to fail there too, not only against Postgres.
 
 const smallFacades = {
-  'slide-library.js': [
+  'slide-library/index.js': [
     ['listPersonalLibrary', (fn) => fn('/srv', 'a@b.c')],
     ['createPersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', { name: 'x', slideType: 'title-slide' })],
     ['updatePersonalLibraryItem', (fn) => fn('/srv', 'a@b.c', 'item-1', {})],
@@ -266,11 +266,11 @@ const smallFacades = {
     ['getTagsForSlideLibraryItems', (fn) => fn(['item-1'], {})],
     ['setTagsForSlideLibraryItem', (fn) => fn('item-1', ['tag'], {})],
   ],
-  'slide-library-usage.js': [
+  'slide-library-usage/index.js': [
     ['listSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c')],
     ['recordSlideLibraryUsage', (fn) => fn('/srv', 'a@b.c', [{ type: 'slide', id: 'x' }])],
   ],
-  'published.js': [
+  'published/index.js': [
     ['getPublishedIndex', (fn) => fn('/srv')],
     ['getPublishedById', (fn) => fn('/srv', 'pub-1')],
     ['upsertPublishedEntry', (fn) => fn('/srv', { publishId: 'pub-1', presentationId: 'deck-1' })],
@@ -278,7 +278,7 @@ const smallFacades = {
     ['updatePublishedSlug', (fn) => fn('/srv', 'pub-1', 'slug')],
     ['listPublishedForFeed', (fn) => fn('/srv')],
   ],
-  'tags.js': [
+  'tags/index.js': [
     // The old shape took no scope at all, hence the missing first argument.
     ['listTags', (fn) => fn()],
     ['getTagsForPresentation', (fn) => fn('deck-1')],
@@ -293,7 +293,7 @@ const smallFacades = {
     ['setYDocState', (fn) => fn('/srv', 'deck-1', new Uint8Array([1]))],
     ['deleteYDocState', (fn) => fn('/srv', 'deck-1')],
   ],
-  'collections.js': [
+  'collections/index.js': [
     ['listPersonalCollections', (fn) => fn('/srv', 'a@b.c')],
     ['getPersonalCollection', (fn) => fn('/srv', 'a@b.c', 'col-1')],
     ['createPersonalCollection', (fn) => fn('/srv', 'a@b.c', { name: 'x' })],
@@ -305,7 +305,7 @@ const smallFacades = {
     ['updateTeamCollection', (fn) => fn('/srv', 'col-1', {})],
     ['deleteTeamCollection', (fn) => fn('/srv', 'col-1', {})],
   ],
-  'image-library.js': [
+  'image-library/index.js': [
     ['listImageLibrary', (fn) => fn('/srv')],
     ['getImageLibraryItem', (fn) => fn('/srv', 'img-1')],
     ['createImageLibraryItem', (fn) => fn('/srv', { url: '/uploads/x.png' })],

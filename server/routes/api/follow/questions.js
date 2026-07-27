@@ -1,6 +1,6 @@
 import { badRequest, json, methodNotAllowed, serveJson } from '../../../utils/http.js';
 import { getString } from '../../../utils/request-validators.js';
-import { getFollowStateForPresentation } from '../../../storage/present-sessions.js';
+import { getFollowStateForPresentation } from '../../../storage/present-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations.js';
 import {
   cancelQuestion,

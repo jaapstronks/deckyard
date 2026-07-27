@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { notifyPresentSessionInteractionState } from './present-sessions.js';
+import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
 import { writeJsonAtomic } from './io.js';
 import { dataDir } from '../config/storage-paths.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';

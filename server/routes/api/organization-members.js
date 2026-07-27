@@ -20,7 +20,7 @@ import {
   transferOwnership,
   hasWorkspaceRole,
   WORKSPACE_ROLES,
-} from '../../storage/user-organizations.js';
+} from '../../storage/user-organizations/index.js';
 import { createUser } from '../../storage/users.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';

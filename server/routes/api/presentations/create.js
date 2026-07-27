@@ -2,7 +2,7 @@ import { createPresentation } from '../../../storage/presentations.js';
 import { json, serveJson } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';
-import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage.js';
+import { recordSlideLibraryUsage } from '../../../storage/slide-library-usage/index.js';
 import { createRouteContext } from '../../../utils/context.js';
 
 /**

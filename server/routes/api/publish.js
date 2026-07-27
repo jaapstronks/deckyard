@@ -3,7 +3,7 @@ import {
   removePublishedEntry,
   updatePublishedSlug,
   upsertPublishedEntry,
-} from '../../storage/published.js';
+} from '../../storage/published/index.js';
 import { updatePresentation } from '../../storage/presentations.js';
 import { readUserSettings } from '../../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../../render/og-image.js';

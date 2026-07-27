@@ -9,7 +9,7 @@ import {
   readPresentation,
   writePresentation,
 } from '../io.js';
-import { removePublishedEntry } from '../../published.js';
+import { removePublishedEntry } from '../../published/index.js';
 import { singleWorkspaceScope } from '../../scope.js';
 import { dataDir } from '../../../config/storage-paths.js';
 import { normalizeEmail, nowIso } from '../../../utils/normalize.js';

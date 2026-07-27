@@ -61,7 +61,7 @@ export function toStorageContext(scope, operation, opts = {}, resolveOpts) {
  * Bind the DB-vs-file dispatch to one file module.
  *
  * @param {() => Promise<object>} loadFileModule - A thunk that lazily imports the
- *   facade's file-backend module, e.g. `() => import('./collections-file.js')`.
+ *   facade's file-backend module, e.g. `() => import('./file.js')`.
  *   Kept as a thunk so the module is only loaded on the file-backed path.
  * @returns {(
  *   scope: import('./scope.js').StorageScope,
