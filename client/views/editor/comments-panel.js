@@ -144,11 +144,17 @@ export function createCommentsPanel({
       }
       notifyBadge();
 
-      // Fetch per-slide counts for indicators
+      // Fetch per-slide counts for indicators. Only notify when the map
+      // actually changed: onSlideCommentCountsChange rebuilds the whole slide
+      // list, and an unchanged count-map (the common case on reload) must not
+      // trigger that. Mirrors the guard the SSE handler already has for the
+      // `comment:counts` echo (comments-panel-sse.js).
       try {
         const countsResult = await commentsApi.getCommentCounts();
-        slideCommentCounts = countsResult.counts || {};
-        onSlideCommentCountsChange?.(slideCommentCounts);
+        const nextCounts = countsResult.counts || {};
+        const changed = JSON.stringify(nextCounts) !== JSON.stringify(slideCommentCounts);
+        slideCommentCounts = nextCounts;
+        if (changed) onSlideCommentCountsChange?.(slideCommentCounts);
       } catch {
         // Non-critical, ignore
       }
@@ -277,7 +283,10 @@ export function createCommentsPanel({
         slideId: getSelectedSlideId?.() || null,
       });
       commentInput.clear();
-      loadComments();
+      // The `comment:created` echo reloads the panel; only reload directly as
+      // a fallback when SSE is down, otherwise the post triggers a second,
+      // redundant load (and slide-list rebuild).
+      if (!sse.isConnected()) loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.postFailed', 'Failed to post comment'));
     }
@@ -292,7 +301,9 @@ export function createCommentsPanel({
         slideId: getSelectedSlideId?.() || null,
       });
       replyInput.clear();
-      loadComments();
+      // See submitComment: the SSE echo reloads; direct reload is the
+      // fallback for a dropped connection only.
+      if (!sse.isConnected()) loadComments();
     } catch (err) {
       toast?.error?.(t('comments.error.replyFailed', 'Failed to post reply'));
     }
