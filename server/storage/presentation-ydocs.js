@@ -10,8 +10,10 @@
  * state on the wrong workspace's deck.
  */
 
-import { isStorageInitialized, getStorage } from './adapters/index.js';
-import { resolveScope, repoRootOf } from './scope.js';
+import { repoRootOf } from './scope.js';
+import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
+
+const withStorageFallback = createStorageDispatch(() => import('./presentations/ydoc-state.js'));
 
 /**
  * Read the stored Y.Doc state (one merged yjs update) for a presentation.
@@ -20,12 +22,13 @@ import { resolveScope, repoRootOf } from './scope.js';
  * @returns {Promise<Uint8Array|null>}
  */
 export async function getYDocState(scope, id) {
-  const ctx = resolveScope(scope, 'getYDocState');
-  if (isStorageInitialized()) {
-    return getStorage().getYDocState(id, ctx);
-  }
-  const mod = await import('./presentations/ydoc-state.js');
-  return mod.getYDocState(repoRootOf(scope), id);
+  const ctx = toStorageContext(scope, 'getYDocState');
+  return withStorageFallback(
+    scope,
+    'getYDocState',
+    (storage) => storage.getYDocState(id, ctx),
+    (mod) => mod.getYDocState(repoRootOf(scope), id)
+  );
 }
 
 /**
@@ -36,12 +39,13 @@ export async function getYDocState(scope, id) {
  * @returns {Promise<boolean>}
  */
 export async function setYDocState(scope, id, state) {
-  const ctx = resolveScope(scope, 'setYDocState');
-  if (isStorageInitialized()) {
-    return getStorage().setYDocState(id, state, ctx);
-  }
-  const mod = await import('./presentations/ydoc-state.js');
-  return mod.setYDocState(repoRootOf(scope), id, state);
+  const ctx = toStorageContext(scope, 'setYDocState');
+  return withStorageFallback(
+    scope,
+    'setYDocState',
+    (storage) => storage.setYDocState(id, state, ctx),
+    (mod) => mod.setYDocState(repoRootOf(scope), id, state)
+  );
 }
 
 /**
@@ -51,10 +55,11 @@ export async function setYDocState(scope, id, state) {
  * @returns {Promise<boolean>}
  */
 export async function deleteYDocState(scope, id) {
-  const ctx = resolveScope(scope, 'deleteYDocState');
-  if (isStorageInitialized()) {
-    return getStorage().deleteYDocState(id, ctx);
-  }
-  const mod = await import('./presentations/ydoc-state.js');
-  return mod.deleteYDocState(repoRootOf(scope), id);
+  const ctx = toStorageContext(scope, 'deleteYDocState');
+  return withStorageFallback(
+    scope,
+    'deleteYDocState',
+    (storage) => storage.deleteYDocState(id, ctx),
+    (mod) => mod.deleteYDocState(repoRootOf(scope), id)
+  );
 }
