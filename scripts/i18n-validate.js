@@ -4,6 +4,10 @@
  *
  * Validates i18n files for:
  * - JSON syntax errors
+ * - Duplicate keys (JSON.parse silently keeps the last, so a fork-merge that
+ *   pasted 22 keys twice into editor.json parsed clean and this script said
+ *   PASSED — the files were quietly corrupt. Detected over the raw lines below,
+ *   not the parsed object, which is the only place the duplicate survives.)
  * - Missing keys (compared to English reference)
  * - Empty values
  *
@@ -41,9 +45,49 @@ function warn(msg) {
   console.warn(`WARN: ${msg}`);
 }
 
+/**
+ * Duplicate keys, found over the raw text because `JSON.parse` keeps only the
+ * last of a repeated key and so erases the very evidence of the bug. The i18n
+ * files are flat, one-key-per-line maps (as `i18n:merge`/`i18n:sync` emit them),
+ * so a leading `"key":` on a line reliably marks a top-level key. Keys are
+ * compared by their raw source text — locale keys are plain dotted identifiers
+ * with no escapes, so a repeat is byte-identical.
+ * @param {string} content - the file's raw text
+ * @returns {Array<{key: string, line: number, firstLine: number}>}
+ */
+export function findDuplicateKeys(content) {
+  const keyRe = /^\s*"((?:\\.|[^"\\])*)"\s*:/;
+  const firstSeen = new Map();
+  const duplicates = [];
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const match = keyRe.exec(lines[i]);
+    if (!match) continue;
+    const key = match[1];
+    if (firstSeen.has(key)) {
+      duplicates.push({ key, line: i + 1, firstLine: firstSeen.get(key) });
+    } else {
+      firstSeen.set(key, i + 1);
+    }
+  }
+  return duplicates;
+}
+
+// English module files are loaded twice (once as the reference, once in the
+// per-locale loop); check each path for duplicates only the first time so a hit
+// is reported once, not twice.
+const dupChecked = new Set();
+
 function loadJson(filePath) {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
+    if (!dupChecked.has(filePath)) {
+      dupChecked.add(filePath);
+      const rel = path.relative(path.join(__dirname, '..'), filePath);
+      for (const dup of findDuplicateKeys(content)) {
+        error(`${rel}:${dup.line}: Duplicate key "${dup.key}" (first defined at line ${dup.firstLine})`);
+      }
+    }
     return { data: JSON.parse(content), content };
   } catch (e) {
     error(`${filePath}: ${e.message}`);
@@ -146,4 +190,8 @@ function main() {
   }
 }
 
-main();
+// Run the full validation only when invoked directly (`node scripts/...`), not
+// when imported for its helpers — importing must not trigger process.exit.
+if (process.argv[1] === __filename) {
+  main();
+}
