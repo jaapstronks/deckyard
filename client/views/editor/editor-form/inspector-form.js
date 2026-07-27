@@ -65,7 +65,7 @@ export const INSPECTOR_KEEPS = {
   'chapter-title-slide': ['layout'],
   // actions: CTA buttons (label/url/style) have no canvas surface — config.
   'content-slide': ['layout', 'density', 'actions'],
-  'table-slide': ['headerRow', 'tableStyle', 'animateByCell'],
+  'table-slide': ['headerRow', 'tableStyle', 'animateByCell', 'cornerCell'],
   'list-slide': ['variant', 'layout', 'density'],
   'lijstje-slide': ['variant', 'layout', 'density'],
   'kpi-metrics-slide': ['accent', 'countUp'],

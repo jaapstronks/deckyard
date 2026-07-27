@@ -355,6 +355,7 @@ export function renderTableSlideForm({
   // moved to the unified Background section, editor-form.js).
   const headerField = fieldByKey.get('headerRow');
   const styleField = fieldByKey.get('tableStyle');
+  const cornerField = fieldByKey.get('cornerCell');
   const animateByCellField = fieldByKey.get('animateByCell');
   if (headerField || styleField) {
     used.add('headerRow');
@@ -363,6 +364,14 @@ export function renderTableSlideForm({
     const styleEl = styleField ? renderField(styleField) : null;
     const row = fieldGrid([hEl, styleEl], 2);
     if (row) form.append(row);
+  }
+
+  // Corner-cell toggle sits with the style controls: it's a style-orthogonal
+  // choice about the top-left cell, not table content.
+  if (cornerField) {
+    used.add('cornerCell');
+    const cornerEl = renderField(cornerField);
+    if (cornerEl) form.append(cornerEl);
   }
 
   // Animate by cell toggle (for step-by-step builds)
