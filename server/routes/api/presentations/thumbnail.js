@@ -22,19 +22,20 @@ import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   thumbCacheKey,
+  firstSlideSignature,
   readCachedThumbnail,
   readStaleThumbnail,
   requestThumbnailGeneration,
 } from '../../../render/deck-thumbnail.js';
+import { scheduleThumbnailWarm } from '../../../render/thumbnail-warm-queue.js';
 import { methodNotAllowed, notFound, unauthorized } from '../../../utils/http.js';
 
 /**
  * Warm the deck-grid thumbnail cache for a presentation (fire-and-forget).
- * Called after a publish, so the deck shows its raster on the next list load
- * instead of making that load the trigger. Saves deliberately do *not* warm:
- * an unthrottled render on the autosave path costs a headless-Chrome launch
- * per keystroke-batch, and the stale-while-revalidate fallback already keeps
- * the card filled. Best-effort: any failure just leaves the on-demand route to
+ * Called after a publish, and — debounced, via
+ * {@link scheduleDeckThumbnailWarm} — after a save that touched slide 1, so the
+ * deck shows its raster on the next list load instead of making that load the
+ * trigger. Best-effort: any failure just leaves the on-demand route to
  * regenerate later. Uses slide 1, matching what
  * {@link handlePresentationThumbnail} serves.
  *
@@ -54,6 +55,35 @@ export async function warmDeckThumbnail(repoRoot, pres, authedUser) {
   } catch {
     // best-effort: the on-demand route regenerates on next request
   }
+}
+
+/**
+ * Queue a debounced thumbnail warm after a save, but only when the save
+ * actually changed slide 1.
+ *
+ * Both halves are load-bearing. The signature check keeps the 90% case free —
+ * most saves edit a slide the card never shows, and since PR #422 those don't
+ * invalidate the raster either, so there is nothing to warm. The debounce
+ * (see server/render/thumbnail-warm-queue.js) keeps the remaining case off the
+ * autosave treadmill: a typing burst on slide 1 collapses into one render once
+ * the deck goes quiet.
+ *
+ * Returns immediately; the render happens later, on no request's thread.
+ *
+ * @param {object} params
+ * @param {string} params.repoRoot
+ * @param {object} params.before - Presentation as it was before the save.
+ * @param {object} params.after - Presentation as stored after the save.
+ * @param {object|null} [params.authedUser]
+ * @returns {boolean} whether a warm is now pending for this deck.
+ */
+export function scheduleDeckThumbnailWarm({ repoRoot, before, after, authedUser = null } = {}) {
+  const id = after?.id;
+  if (!id) return false;
+  if (firstSlideSignature(before) === firstSlideSignature(after)) return false;
+  return scheduleThumbnailWarm(String(id), () =>
+    warmDeckThumbnail(repoRoot, after, authedUser)
+  );
 }
 
 export async function handlePresentationThumbnail(

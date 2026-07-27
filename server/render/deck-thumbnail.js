@@ -26,6 +26,10 @@ const log = createLogger('deck-thumbnail');
  * - **Stale-while-revalidate.** When slide 1 genuinely did change, the previous
  *   raster for that deck is served while the new one renders in the background,
  *   so a card is never empty just because it is one edit out of date.
+ * - **Warmed off the request path.** Publishing warms immediately; a save warms
+ *   through the debounce in ./thumbnail-warm-queue.js, and only when it actually
+ *   changed slide 1. Warming a deck on every save would put a Chrome render on
+ *   the autosave treadmill.
  * - **Degrades to placeholders.** Both dependencies are optional: if headless
  *   Chrome or sharp is missing (or a render fails) generation returns false and
  *   the card just keeps its placeholder. Never throws to the caller.
@@ -54,6 +58,19 @@ function hashOf(value, fallback) {
 }
 
 /**
+ * Signature of the slide the thumbnail is made of (slide 1), for cheap
+ * "did the raster's input change?" checks on the save path — comparing two
+ * signatures costs a hash, not a theme load or a render.
+ *
+ * @param {object} presentation - Full presentation (needs `slides`).
+ * @returns {string}
+ */
+export function firstSlideSignature(presentation) {
+  const firstSlide = Array.isArray(presentation?.slides) ? presentation.slides[0] : null;
+  return hashOf(firstSlide, 'noslide');
+}
+
+/**
  * Compute the deterministic cache identity for a deck's thumbnail.
  *
  * Keyed on the raster's actual inputs — slide 1 and the resolved theme — rather
@@ -68,8 +85,7 @@ function hashOf(value, fallback) {
  */
 export function thumbCacheKey(presentation, theme) {
   const id = String(presentation?.id || '');
-  const firstSlide = Array.isArray(presentation?.slides) ? presentation.slides[0] : null;
-  const slideSig = hashOf(firstSlide, 'noslide');
+  const slideSig = firstSlideSignature(presentation);
   const themeSig = hashOf(theme ?? presentation?.theme ?? null, String(presentation?.theme || 'default'));
   const sig = crypto
     .createHash('sha1')

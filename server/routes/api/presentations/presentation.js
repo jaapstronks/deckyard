@@ -30,6 +30,7 @@ import { notifyDeckActivity } from '../../../services/deck-activity-notification
 import { createRouteContext } from '../../../utils/context.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
 import { broadcastToPresentation, PresentationEventTypes } from '../../../services/comment-events.js';
+import { scheduleDeckThumbnailWarm } from './thumbnail.js';
 
 /**
  * GET /api/presentations/:id/revision — lightweight revision probe.
@@ -257,6 +258,11 @@ export async function handlePresentationItem(
     } catch {
       // Ignore broadcast failures — SSE is best-effort
     }
+
+    // Deck-grid raster: queue a debounced re-render when this save changed
+    // slide 1, so the next Home load is a cache hit instead of the thing that
+    // triggers the render. No-ops for every other save.
+    scheduleDeckThumbnailWarm({ repoRoot, before: existing, after: updated, authedUser });
 
     serveJson(res, 200, updated);
     return true;
