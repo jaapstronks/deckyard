@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.8.0](https://github.com/jaapstronks/deckyard/compare/v1.7.1...v1.8.0) (2026-07-27)
+
+
+### Added
+
+* **text-blocks:** allow a fourth row ([#417](https://github.com/jaapstronks/deckyard/issues/417)) ([d5fbd40](https://github.com/jaapstronks/deckyard/commit/d5fbd4039cb32d936a17c19289bb6577fe3d977c))
+
+
+### Fixed
+
+* **list-slide:** stop dropping "Large" and fill the slide ([#414](https://github.com/jaapstronks/deckyard/issues/414)) ([c344b54](https://github.com/jaapstronks/deckyard/commit/c344b54ffbdb682dd7681cd400df0a0c2b64065d))
+* **quote-slide:** remove the quote typewriter effect ([#416](https://github.com/jaapstronks/deckyard/issues/416)) ([a71f036](https://github.com/jaapstronks/deckyard/commit/a71f036b92cfe8ddf781b5ecbc9155dc7f37c5eb))
+
 ## [1.7.1](https://github.com/jaapstronks/deckyard/compare/v1.7.0...v1.7.1) (2026-07-27)
 
 
