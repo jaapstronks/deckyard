@@ -14,12 +14,19 @@
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set, deleteFrom, and `db.fn.count()`.
  *
- * Two behaviours are modelled on purpose because tests depend on them:
+ * Four behaviours are modelled on purpose because tests depend on them:
  *   1. UNIQUE constraints (notably the globally unique `users.email`) throw the
  *      way PostgreSQL does, so a code path that wrongly tries to insert a
  *      second row for an existing person fails loudly in tests.
  *   2. Every table touched is recorded in `db.__queryLog`, so a test can assert
  *      that single-workspace mode issues no membership lookups at all.
+ *   3. Kysely leaves `undefined` values out of the SET/VALUES clause it
+ *      compiles, so such a column keeps its stored value. The difference
+ *      between that and an explicit `null` is the whole subject of the
+ *      partial-write tests, so the double drops `undefined` too.
+ *   4. `sql` template values (the storage layer writes `sql`revision + 1``) are
+ *      evaluated for the one arithmetic shape that layer uses; anything else
+ *      throws rather than storing a builder object as if it were a value.
  */
 
 import crypto from 'node:crypto';
@@ -50,6 +57,8 @@ const JSONB_COLUMNS = {
   organizations: ['settings'],
   app_settings: ['supported_slide_langs', 'webhooks'],
   auth_audit_log: ['metadata'],
+  presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
+  presentation_versions: ['presentation_data'],
 };
 
 /**
@@ -70,6 +79,60 @@ function parseJsonbColumns(table, row) {
         // Not JSON: leave the value untouched rather than guess.
       }
     }
+  }
+  return out;
+}
+
+/**
+ * Is this a Kysely `sql` template value rather than a plain column value?
+ * @param {*} value - Value from a VALUES/SET object
+ * @returns {boolean}
+ */
+function isRawExpression(value) {
+  return !!value && typeof value === 'object' && typeof value.toOperationNode === 'function';
+}
+
+/**
+ * Evaluate a `sql` template against the row it updates.
+ *
+ * Only `<column> + <number>` and `<column> - <number>` are understood — the
+ * shape the storage layer writes for `revision + 1`. Anything else throws, so
+ * an unmodelled expression fails the test instead of landing in a row as a
+ * builder object.
+ *
+ * @param {*} value - Raw expression from a SET object
+ * @param {Object} row - Row being updated
+ * @param {string} column - Column being written
+ * @returns {*}
+ */
+function evaluateRawExpression(value, row, column) {
+  const node = value.toOperationNode();
+  const fragments = Array.isArray(node?.sqlFragments) ? node.sqlFragments : [];
+  const text = fragments.join('').trim();
+  const arithmetic = text.match(/^"?([a-z_]+)"?\s*([+-])\s*(\d+)$/i);
+  if (arithmetic && (node.parameters || []).length === 0) {
+    const [, operand, operator, amount] = arithmetic;
+    const base = Number(row[operand]) || 0;
+    return operator === '+' ? base + Number(amount) : base - Number(amount);
+  }
+  throw new Error(`fake-db: unsupported sql expression for "${column}": ${text}`);
+}
+
+/**
+ * Drop `undefined` values the way Kysely does when it compiles a SET or VALUES
+ * clause, and resolve any `sql` template against the row being written.
+ *
+ * @param {Object} input - SET/VALUES object as the storage layer wrote it
+ * @param {Object} [row] - Row being updated, for raw expressions
+ * @returns {Object}
+ */
+function resolveWriteValues(input, row = {}) {
+  const out = {};
+  for (const [column, value] of Object.entries(input || {})) {
+    if (value === undefined) continue;
+    out[column] = isRawExpression(value)
+      ? evaluateRawExpression(value, row, column)
+      : value;
   }
   return out;
 }
@@ -447,13 +510,19 @@ export function createFakeDb(seed = {}) {
                 if (conflict.doNothing) continue;
                 // DO UPDATE, gated by the optional WHERE against the existing row.
                 if (!conflict.where.every((p) => matches(existing, p))) continue;
-                const applied = parseJsonbColumns(table, conflict.set || {});
+                const applied = parseJsonbColumns(
+                  table,
+                  resolveWriteValues(conflict.set || {}, existing)
+                );
                 Object.assign(existing, applied);
                 if (returning) inserted.push({ ...existing });
                 continue;
               }
             }
-            const row = parseJsonbColumns(table, { id: crypto.randomUUID(), ...value });
+            const row = parseJsonbColumns(
+              table,
+              resolveWriteValues({ id: crypto.randomUUID(), ...value })
+            );
             assertUnique(table, row);
             rowsOf(table).push(row);
             inserted.push({ ...row });
@@ -493,8 +562,8 @@ export function createFakeDb(seed = {}) {
         },
         async execute() {
           const targets = rowsOf(table).filter((row) => predicates.every((p) => matches(row, p)));
-          const applied = parseJsonbColumns(table, updates);
           for (const row of targets) {
+            const applied = parseJsonbColumns(table, resolveWriteValues(updates, row));
             assertUnique(table, { ...row, ...applied }, row);
             Object.assign(row, applied);
           }

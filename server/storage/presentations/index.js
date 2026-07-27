@@ -231,8 +231,16 @@ function updatePresentationUncached(scope, id, body, opts) {
 
       // Normalize slides and i18n before storing (mirrors crud.js behavior).
       // This ensures pres.slides and i18n.versions[lang].slides stay in sync.
+      //
+      // Only normalize slides the caller actually sent: `normalizeSlides`
+      // answers `[]` for an absent list, and handing the adapter an invented
+      // empty array would make a body that never mentioned slides (an
+      // unpublish, say) erase them. The adapter treats `undefined` as "leave
+      // this column alone", so the key has to stay absent to get there.
       const normalized = { ...body };
-      normalized.slides = normalizeSlides(normalized.slides);
+      if (normalized.slides !== undefined) {
+        normalized.slides = normalizeSlides(normalized.slides);
+      }
       normalizeI18n(normalized);
 
       // Validate size limits before updating (unless bypassed)

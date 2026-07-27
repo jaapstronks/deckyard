@@ -235,17 +235,34 @@ export function withPresentations(Base) {
         ctx,
       });
 
+      // Partial writes: a caller may speak about only part of the document.
+      // The public API's slide handlers pass `{ slides }` and nothing else, so
+      // only the columns a caller actually named may reach the UPDATE.
+      //
+      // The rule, and it is the same one for every column below:
+      //   - value `undefined` (key absent, or explicitly not stated) -> the
+      //     column is left out of the SET clause entirely, so the stored value
+      //     survives;
+      //   - value `null` -> written as NULL, because a caller that says `null`
+      //     is asking for the column to be cleared.
+      //
+      // This used to be built unconditionally, and the two halves disagreed:
+      // Kysely drops an `undefined` from a SET clause, so `title` survived a
+      // partial write, while `jsonb(undefined)` turned the same absence into an
+      // explicit `null` and wiped `settings`, `i18n`, `published` and
+      // `description`. One partial `POST /api/v1/presentations/:id/slides`
+      // emptied a production deck's whole i18n object that way.
       const updateData = {
-        title: data.title,
-        description: data.description ?? null,
-        settings: jsonb(data.settings),
-        i18n: jsonb(data.i18n),
-        slides: jsonb(data.slides),
-        published: data.published ? jsonb(data.published) : null,
         updated_by: ctx?.actorEmail || data.updatedBy,
         modified_at: now(),
         revision: sql`revision + 1`,
       };
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.settings !== undefined) updateData.settings = jsonb(data.settings);
+      if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
+      if (data.slides !== undefined) updateData.slides = jsonb(data.slides);
+      if (data.published !== undefined) updateData.published = jsonb(data.published);
 
       if (opts?.allowScopeChange && data.scope) {
         updateData.scope = data.scope;
