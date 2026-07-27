@@ -45,6 +45,23 @@
 .slide-process .process-container[data-direction='horizontal'] {
   flex-direction: row;
   flex-wrap: nowrap;
+  /* Steps hang from a shared top edge, so every step number and title sits on
+     one line regardless of how many lines its description wraps to. The
+     container's default `center` (above) instead centred each step against the
+     tallest one, sinking a short step - number, title and all - below its
+     neighbours. The vertical multi-column layout already declares this; the
+     horizontal branch was simply never given it.
+
+     `align-items` alone is not enough here, because the container is a stretched
+     flex item and is therefore much taller than the steps: switching it to
+     flex-start would also drag the whole group up to the top of the slide body.
+     So the container shrink-wraps to the tallest step and centres itself in the
+     leftover space, which leaves `align-items` governing nothing but
+     step-to-step alignment. Measured: the group keeps the exact vertical
+     position it had while the steps were individually centred. */
+  align-items: flex-start;
+  flex: 0 1 auto;
+  margin-block: auto;
 }
 
 /* Multi-row layout for 5+ items in horizontal mode */
@@ -218,6 +235,11 @@
 .slide-process .process-container[data-direction='horizontal'] .process-arrow {
   width: var(--slide-text-lg);
   height: var(--slide-space-5);
+  /* Top-aligned like the steps (inherited from the container), which is what
+     this margin was written for: it drops the arrow onto the number circles'
+     axis. While the container centred its children the margin only biased that
+     centring, and the arrow floated at half the container's height - far below
+     the steps whenever the container was taller than its content. */
   margin: 14px 0 0; /* TODO: between --slide-space-3 (12px) and --slide-space-4 (16px) */
 }
 
