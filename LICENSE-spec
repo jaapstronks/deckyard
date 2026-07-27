@@ -1,0 +1,22 @@
+Deckyard deck format specification — CC0 1.0 Universal (public domain)
+
+This license applies ONLY to the `deckyard.deck` format specification text:
+
+  - docs/reference/deck-format.md
+  - docs/reference/deck-bundle-format.md
+
+It does NOT apply to Deckyard's source code, which is licensed separately under
+the MIT License (see the LICENSE file). The specification text is placed under
+CC0 so that any third party can implement, document, or republish the format
+without restriction, independent of the engine's code license.
+
+To the extent possible under law, the Deckyard Contributors have waived all
+copyright and related or neighboring rights to the Deckyard deck format
+specification text. The work is published from the Netherlands.
+
+You should have received the full legal text of the CC0 1.0 Universal Public
+Domain Dedication along with this notice. If not, the canonical text is at:
+
+  https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+SPDX-License-Identifier: CC0-1.0
