@@ -1,6 +1,6 @@
-# The `slidecreator.deck` format
+# The `deckyard.deck` format
 
-`slidecreator.deck` is Deckyard's **portable, versioned deck interchange
+`deckyard.deck` is Deckyard's **portable, versioned deck interchange
 format** — the durable envelope a presentation serializes to so a second
 implementation can read, render, and round-trip it without Deckyard's server or
 storage. It is what `GET /api/presentations/:id/export/json` returns, and what
@@ -17,7 +17,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 
 ```json
 {
-  "format": "slidecreator.deck",
+  "format": "deckyard.deck",
   "version": 1,
   "title": "My deck",
   "theme": "default",
@@ -30,7 +30,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 
 | Field        | Type     | Notes |
 |--------------|----------|-------|
-| `format`     | string   | Always `"slidecreator.deck"`. The magic sentinel that identifies the format. |
+| `format`     | string   | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
 | `version`    | integer  | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)). |
 | `title`      | string   | Human title of the deck. |
 | `theme`      | string   | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected. |
@@ -139,6 +139,25 @@ Deliberate lossy edges (they degrade, they do not crash):
   [schema versioning](../developer/slide-types.md)). A reader validates content
   against the schema version it understands; the lenient contract lets it tolerate
   newer keys.
+
+## Legacy sentinel
+
+Before the format took its publisher's name it was written as
+`"slidecreator.deck"`, and the bundle mimetype as
+`application/vnd.slidecreator.deck`. That name predates the product: it was
+invented in the commit that first added JSON export, when the package was still
+called `presentation-system`.
+
+Decks and bundles carrying the old sentinel exist in the wild, so **a reader
+accepts it forever**; only writers moved. Re-exporting a legacy deck stamps it
+with the current sentinel.
+
+Both values, current and historical, live in
+`shared/slide-types/deck-format-id.js` (`DECK_FORMAT_ID`, `DECK_MIMETYPE`,
+`LEGACY_DECK_FORMAT_IDS`, `LEGACY_DECK_MIMETYPES`, plus the `isDeckFormatId()` /
+`isDeckMimetype()` predicates). The **file extension is unaffected**: a bundle
+has always downloaded as `<title>.deck` and still does. The namespace lives
+before the dot, never in the filename.
 
 ## Producing and consuming a deck
 

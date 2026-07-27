@@ -26,7 +26,7 @@ OUTPUT FORMAT
 Return ONLY valid JSON in this exact structure:
 
 {
-  "format": "slidecreator.deck",
+  "format": "deckyard.deck",
   "version": 1,
   "title": "Presentation Title",
   "theme": "{{THEME}}",

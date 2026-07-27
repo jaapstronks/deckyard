@@ -1972,7 +1972,10 @@ components:
       properties:
         format:
           type: string
-          example: "slidecreator.deck"
+          description: >-
+            Format sentinel. Written as `deckyard.deck`; the historical
+            `slidecreator.deck` is still accepted on import.
+          example: "deckyard.deck"
         version:
           type: integer
         title:

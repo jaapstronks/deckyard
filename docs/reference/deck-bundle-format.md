@@ -1,7 +1,7 @@
 # `.deck` bundle format
 
 > The container. For the portable deck envelope it carries (`deck.json`), see
-> [`deck-format.md`](./deck-format.md) — the `slidecreator.deck` format spec.
+> [`deck-format.md`](./deck-format.md) — the `deckyard.deck` format spec.
 
 A `.deck` bundle is a self-contained, portable archive of a presentation and
 its assets. Where the JSON export (`/export/json`) carries only the deck and
@@ -15,8 +15,10 @@ The layout is OCF/EPUB-inspired.
 
 ```
 mimetype               First entry, STORED (uncompressed). Content:
-                       "application/vnd.slidecreator.deck". Lets the archive be
-                       identified by magic number.
+                       "application/vnd.deckyard.deck". Lets the archive be
+                       identified by magic number. The historical
+                       "application/vnd.slidecreator.deck" is still accepted on
+                       read (see deck-format.md, "Legacy sentinel").
 manifest.json          Bundle metadata + the asset inventory (see below).
 deck.json              The portable deck (as from presentationToDeck), with
                        every asset ref rewritten to a bundle ref.
@@ -28,9 +30,9 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 
 ```json
 {
-  "format": "slidecreator.deck",
+  "format": "deckyard.deck",
   "bundleVersion": 1,
-  "mimetype": "application/vnd.slidecreator.deck",
+  "mimetype": "application/vnd.deckyard.deck",
   "deck": "deck.json",
   "assets": [
     {
