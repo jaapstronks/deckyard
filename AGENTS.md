@@ -35,6 +35,24 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Prefer small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`.
   - Avoid adding dependencies unless there is a strong reason (this project works great without them).
 
+- **Optional dependencies match how the code loads them**
+  - A package that is only reached through a gated `await import()` — behind a
+    feature flag or with graceful "not installed" handling — lives in
+    `optionalDependencies`, not `dependencies`, so a minimal install can omit it
+    (`npm install --omit=optional`) and a failed install doesn't break the rest.
+    Current set: `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (S3
+    media), `puppeteer-core` (Chrome exports), `pptxgenjs` (PPTX export),
+    `pdf-parse` (PDF import), `bullmq` + `ioredis` (Redis job queue),
+    `@hocuspocus/server` + `crossws` (live collaboration). A package that is
+    *statically* imported (e.g. `openid-client`) stays a hard `dependency` even
+    if its feature is off, because loading the module pulls it in regardless.
+  - **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
+    in `package.json`: it's a private package that ships only in the CIIIC fork,
+    loaded through an optional `await import()` in
+    `server/utils/openai/translate.js` that falls back to empty rules when it's
+    absent. Adding it to `package.json` would break `npm install` for the OSS
+    repo, so it stays undeclared by design.
+
 - **Module layout: one folder = one seam**
   - When a unit is decomposed into concern modules, it lives as a **folder `X/`
     whose `index.js` is the sole public seam** (a barrel re-exporting the public
