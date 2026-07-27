@@ -43,13 +43,6 @@
   font-synthesis: none;
   margin: 0;
 }
-.slide-image .img-subtitle {
-  margin: 10px 0 0;
-  font-size: 18px;
-  color: var(--color-text-muted);
-  max-width: 70ch;
-}
-
 .slide-image .media {
   flex: 1;
   min-height: 0;
@@ -129,7 +122,6 @@
 .slide-image.is-bleed .img-title {
   color: rgba(255, 255, 255, 0.92);
 }
-.slide-image.is-bleed .img-subtitle,
 .slide-image.is-bleed .subheading {
   color: rgba(255, 255, 255, 0.86);
 }

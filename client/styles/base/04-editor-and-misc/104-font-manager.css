@@ -243,11 +243,6 @@
   flex-shrink: 0;
 }
 
-.font-variant-empty {
-  font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-tertiary));
-}
-
 /* Adobe discover results */
 .font-discover-results {
   display: flex;
