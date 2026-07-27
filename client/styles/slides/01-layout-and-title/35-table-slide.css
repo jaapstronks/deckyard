@@ -74,6 +74,17 @@
   color: var(--table-text, var(--color-text));
 }
 
+/* cornerCell: 'header' — the top-left corner cell joins the header band rather
+   than the label column, so the whole top row is one colour. The first-column
+   rule above (`thead th:first-child`) otherwise wins the corner by source
+   order; the doubled `.md-table.md-table--corner-header` outbids it on
+   specificity. Orthogonal to the named styles, so it works with every
+   tableStyle (plain/soft/panel and any future one) without duplicating them. */
+.slide-table .md-table.md-table--corner-header thead th:first-child {
+  background: var(--table-header-bg, transparent);
+  color: var(--table-header-text, var(--color-text));
+}
+
 /* plain — all vars stay at their defaults → historical transparent look */
 .slide-table .md-table--plain {
   /* intentionally empty */
