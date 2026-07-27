@@ -4,6 +4,21 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.9.0](https://github.com/jaapstronks/deckyard/compare/v1.8.0...v1.9.0) (2026-07-27)
+
+
+### Added
+
+* **lint:** add advisory dead-CSS-selector scanner ([#424](https://github.com/jaapstronks/deckyard/issues/424)) ([3c48ed1](https://github.com/jaapstronks/deckyard/commit/3c48ed168ef9aa9f4ea6455612d8b0f5fb9b9d4a))
+* **table-slide:** add cornerCell to colour the whole top row ([#418](https://github.com/jaapstronks/deckyard/issues/418)) ([ac15833](https://github.com/jaapstronks/deckyard/commit/ac15833c4633acd7802d749c2902e68f2b7061c0))
+
+
+### Fixed
+
+* **ai:** accept rows[]-canonical text-blocks slides in the refine schema ([#420](https://github.com/jaapstronks/deckyard/issues/420)) ([0bee87e](https://github.com/jaapstronks/deckyard/commit/0bee87e0cbd53169861ad5a3c1ab929e2d329351))
+* **slide-locks:** make acquire atomic to stop a delete-then-insert 500 ([#423](https://github.com/jaapstronks/deckyard/issues/423)) ([a30996a](https://github.com/jaapstronks/deckyard/commit/a30996abfa8f6e13a1f7394a9b0cda12a093ce58))
+* **thumbnails:** stop invalidating deck rasters on unrelated saves ([#422](https://github.com/jaapstronks/deckyard/issues/422)) ([87ca965](https://github.com/jaapstronks/deckyard/commit/87ca9654d3418b75b2174abd6d519ea2e8ec44e2))
+
 ## [1.8.0](https://github.com/jaapstronks/deckyard/compare/v1.7.1...v1.8.0) (2026-07-27)
 
 
