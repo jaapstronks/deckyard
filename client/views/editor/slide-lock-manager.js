@@ -50,11 +50,45 @@ export function createSlideLockManager({
   let currentSlideIsLocked = false; // true if current slide is locked by another user
   let refreshTimer = null;
   let stopped = false;
+  let lastEmittedSignature = null;
 
   /**
-   * Notify listeners that locks have changed.
+   * Stable signature of the state emitLocksChanged would broadcast, used to
+   * suppress redundant emits (each of which triggers a full slide-list
+   * rebuild downstream). Only the display-relevant fields go in:
+   * - `lockedByOthers` is a Set emitted as an Array, so it is sorted first —
+   *   iteration order must not read as a change.
+   * - per-slide the holder identity (`holderEmail` / `holderName`), the only
+   *   lock fields the slide-list indicator and the locked-slide banner read.
+   *   Volatile lock timestamps (`expiresAt` / `refreshedAt`) are deliberately
+   *   excluded: a 30s lock refresh advances them without changing anything on
+   *   screen, and letting that through would defeat this guard on exactly the
+   *   concurrent-editing path it exists for.
+   * A real lock take/release still flips `lockedByOthers` membership (and the
+   * holder identity), so indicators appear and disappear as before.
+   */
+  const computeLockSignature = () =>
+    JSON.stringify({
+      locks: Object.keys(locks)
+        .sort()
+        .map((slideId) => {
+          const lock = locks[slideId] || {};
+          return [slideId, lock.holderEmail || '', lock.holderName || ''];
+        }),
+      lockedByOthers: Array.from(lockedByOthers).sort(),
+      currentLockedSlideId,
+      currentSlideIsLocked,
+    });
+
+  /**
+   * Notify listeners that locks have changed. No-op when the broadcast state
+   * is identical to the last one emitted — the SSE stream produces a flood of
+   * echoes that leave the visible lock state untouched.
    */
   const emitLocksChanged = () => {
+    const signature = computeLockSignature();
+    if (signature === lastEmittedSignature) return;
+    lastEmittedSignature = signature;
     try {
       onLocksChanged?.({
         locks,
