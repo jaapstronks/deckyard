@@ -23,7 +23,7 @@ persisted result of the edit-time detection described below.
 ## How `auto` text colour works
 
 When `slideBgText` is `auto`, the editor samples the image in the title region
-on a canvas (`client/lib/bg-contrast.js`), computes the WCAG contrast of the
+on a canvas (`client/lib/slide-authoring/bg-contrast.js`), computes the WCAG contrast of the
 theme's two candidate text colours against it, and stores the winner in
 `slideBgTextAuto`. At render time (editor, presenter, exports) the slide gets
 `has-slide-bg-light-text` or `has-slide-bg-dark-text` accordingly.

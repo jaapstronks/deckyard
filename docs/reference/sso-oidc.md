@@ -9,8 +9,9 @@ Password and magic-link login keep working alongside SSO unless you turn on
 `SSO_ENFORCE`.
 
 > Multi-tenant, per-organization SSO (each org brings its own IdP through an
-> admin UI) is a separate, later track gated behind the cloud go/no-go. See
-> `docs/plans/briefs/sso-integration.md`.
+> admin UI) is a separate, later track and is not planned for this codebase;
+> see [`tenant-isolation.md`](tenant-isolation.md) for which isolation shapes
+> Deckyard does support.
 
 ## How it works
 

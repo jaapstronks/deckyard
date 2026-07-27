@@ -54,10 +54,10 @@ Three planning horizons, three files:
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`
   (`client/i18n/en.json` is a stale build artifact, ignore it).
-- **Feedback**: `toast` from `client/lib/toast.js`. No `alert()`.
+- **Feedback**: `toast` from `client/lib/dom/toast.js`. No `alert()`.
 - **Confirmations**: `confirmModal` / `createTextInput` from
-  `client/lib/modal.js`. No native `confirm()`/`prompt()` in new code.
-- **Modals**: follow the `client/lib/modal.js` helpers (focus trap and
+  `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
+- **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
   aria wiring come free).
 - **CSS**: reuse `.editor-card`, `.field-label`, `.help`, `.btn`/`.btn-primary`/
   `.btn-danger`, `.row`/`.stack`, `.is-between` — check existing views before
@@ -74,13 +74,12 @@ Three planning horizons, three files:
   anything substantial).
 - **Long-running feature tracks** use an integration branch: sub-PRs target
   that branch (not `main`), which gets one umbrella PR to `main` when the
-  whole track is accepted. Active: `collab` (real-time collaboration, ADR
-  001) — all collab PRs base on `collab`; merge `main` into it periodically.
-  **The base branch is set at PR creation** and GitHub defaults to `main`,
-  so always pass it explicitly: `gh pr create --base collab …`. Double-check
-  the "wants to merge into" line before finishing up. Exception only when
-  the plan explicitly says a step goes to `main` (e.g. a standalone fix
-  that must survive a track no-go, like collab step 0 / PR #6).
+  whole track is accepted. **No integration branch is active right now** —
+  the `collab` track (ADR 001) shipped to `main` and its branch is gone, so
+  everything currently bases on `main`. When a track *does* open one:
+  **the base branch is set at PR creation** and GitHub defaults to `main`,
+  so always pass it explicitly (`gh pr create --base <track> …`) and
+  double-check the "wants to merge into" line before finishing up.
 - **Commit / PR titles** use [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `security:`, `feat!:` for breaking, …) — release-please reads
   the **squash-merge PR title** to compute the next version and changelog. Full

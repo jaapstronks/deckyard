@@ -18,7 +18,7 @@ one of three surfaces:
    have nothing to occlude) and accept a desktop file-drop. Everything
    *settable* on an image (replace, alt, fit, focus grid, per-item metadata)
    lives in the inspector's "This image" tab, not on the image - see the
-   editing-surface principle in `docs/plans/briefs/editing-surfaces.md`. Descriptor
+   editing-surface principle in `docs/reference/editing-surfaces.md`. Descriptor
    registry: `client/views/editor/inline-edit/descriptors.js` (custom types
    declare an `inline` descriptor on the type definition, see
    `docs/developer/slide-types.md`).
@@ -69,14 +69,15 @@ sits on the **right**, has a drag-resizable width on its left edge
 default 340px), and is a **toggleable rail with swappable panes**
 (`client/views/editor/inspector-panes.js`):
 
-- Exactly one pane is active at a time. Panes: **settings**, **comments**
-  (the deck-level comment threads, incl. jump-to-slide and
-  highlight-from-marker via `data-comment-id`) and **notes** (presenter
-  notes, `client/views/editor/notes-pane.js`).
+- Exactly one pane is active at a time. Two panes are registered:
+  **settings** and **comments** (the deck-level comment threads, incl.
+  jump-to-slide and highlight-from-marker via `data-comment-id`) —
+  `editor-controller.js`, `registerPane`.
 - The rail is driven by the **pane switcher**: a labeled tab group
-  ([Inspector | Comments | Notes]) at the far right of the topbar, in its
-  own visual zone exactly above the rail. It is always visible - also with
-  the rail closed - which is what makes the rail findable.
+  ([Inspector | Comments], `client/views/editor/pane-tabs.js`) at the far
+  right of the topbar, in its own visual zone exactly above the rail. It is
+  always visible - also with the rail closed - which is what makes the rail
+  findable.
 - **Pressed-state semantics**: `aria-pressed` on a tab means "rail open on
   MY pane", so a pane switch flips one tab off and the other on. Clicking
   the active pane's own tab dismisses the rail.
@@ -86,11 +87,14 @@ default 340px), and is a **toggleable rail with swappable panes**
   entirely).
 - The unseen-comments badge sits on the Comments tab, so it is visible
   while the rail is closed.
-- **Notes are a pane, not an under-canvas block**: notes are rarely used
-  and only matter again while presenting, so they live out of sight. The
+- **Notes are not a pane**: presenter notes used to be a third pane, but
+  they are not position-bound the way comments are, so they moved to a
+  collapsible **strip under the slide preview**
+  (`client/views/editor/notes-strip.js`, Keynote/PowerPoint convention),
+  which also fills the otherwise-empty space beneath the 16:9 stage. The
   textarea keeps its collab seams (`data-collab-field-key="notes"` for
-  presence, the same element reference for the live-edits binder); the
-  "Notes (QR)" companion flow sits in the pane header. Panes are
+  presence, the same element reference for the live-edits binder) and the
+  "Notes (QR)" companion flow sits in the strip header; the strip is
   persistent DOM, so those bindings survive rerenders.
 - Lock/read-only gating is **not** the pane host's job: every editing
   surface consumes the state-driven `getSlideLockKind` seam itself (see

@@ -23,7 +23,7 @@ its own console so the laptop keeps notes/next/timer.
 
 ## The sync bus: `present-channel`
 
-`client/lib/present-channel.js` wraps a `BroadcastChannel` named
+`client/lib/net/present-channel.js` wraps a `BroadcastChannel` named
 `deckyard:present:<id>`. It is **local** (same-origin, same-browser) and instant
 — no server round-trip. This deliberately complements, rather than duplicates,
 the SSE present-session, which handles cross-*device* follow/companion. A no-op

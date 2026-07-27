@@ -21,7 +21,7 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 | File | Change |
 |------|--------|
 | `client/styles/base/04-editor-and-misc.css` | Added `@import` for the new CSS file |
-| `client/views/settings/tabs/slide-types-tab.js` | Added custom types section (CRUD, card grid, context menu, publish toggle), editor open/close, "Duplicate as Custom" on core types |
+| `client/views/settings/tabs/slide-types-tab/index.js` | Added custom types section (CRUD, card grid, context menu, publish toggle), editor open/close, "Duplicate as Custom" on core types |
 | `client/views/editor/slide-type-picker.js` | Added "Custom" group between "Interaction" and "Other" for types with `isCustom` or `custom-` prefix |
 | `client/views/editor/editor-form.js` | Added blue "Custom type" badge with "Based on: X" tooltip |
 
@@ -133,5 +133,6 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 The remaining backlog for this feature (template-editor enhancements such as
 syntax highlighting and version history, AI-assisted template generation,
 markdown-import mapping, export-pipeline verification with complex templates) is
-tracked in `docs/plans/TODO.md` — this doc describes only what exists.
+tracked outside this document — see [`ROADMAP.md`](../../ROADMAP.md) for what is
+planned. This doc describes only what exists.
 Import/export of type definitions shipped in PR #124 (see above).

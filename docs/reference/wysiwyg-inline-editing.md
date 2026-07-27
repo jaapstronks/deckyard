@@ -58,10 +58,13 @@ Types without both are completely untouched.
 | --- | --- |
 | Descriptor registry + `getInlineDescriptor` / `getInlineFormTextKeys` | `client/views/editor/inline-edit/descriptors.js` |
 | Field-path read/write + schema-meta resolver (`getByPath`, `setByPath`, `fieldMetaForPath`, `isEmptyValue`) | `client/views/editor/inline-edit/field-path.js` |
-| Main module (edit lifecycle, click routing, ghosts, cards, clear, markdown modal, icon picker, convert, reorder drag) | `client/views/editor/inline-edit/inline-editor.js` |
+| Main module (edit lifecycle, click routing, ghosts, cards, clear, icon picker, convert, media affordances) | `client/views/editor/inline-edit/inline-editor.js` |
 | Overlay layer (affordance positioning on the unscaled thumb) | `client/views/editor/inline-edit/overlay.js` |
-| In-slide media popover (image + alt + extra fields) | `client/views/editor/inline-edit/media-popover.js` |
+| Markdown edit modal | `client/views/editor/inline-edit/markdown-modal.js` |
+| Drag-to-reorder controller | `client/views/editor/inline-edit/reorder-drag.js` |
 | Pure reorder geometry (pointer → insertion gap + indicator line) | `client/views/editor/inline-edit/reorder-geometry.js` |
+| Focal-point drag on images | `client/views/editor/inline-edit/focus-drag.js` |
+| Selection toolbar (+ its pure positioning logic) | `client/views/editor/inline-edit/selection-toolbar.js`, `selection-toolbar-logic.js` |
 | One-time "click any text to edit" coach mark | `client/views/editor/inline-edit/coach-mark.js` |
 | Wiring + rerender guard + convert action | `client/views/editor/editor-controller.js` |
 | Lightbox-click suppression on inline-editable slides | `client/views/editor/preview-panel.js` |
@@ -110,7 +113,7 @@ renderer lacks the field.
 - **Markdown** → in-place rich `contentEditable` on the RENDERED block
   (editing-surfaces text phase, 2026-07-21): the commit serializes the
   edited DOM back to dialect markdown via
-  `client/lib/markdown-serialize.js`. Gated per edit by
+  `client/lib/slide-authoring/markdown-serialize.js`. Gated per edit by
   `canInlineEditMarkdown`: the content must avoid modal-only constructs
   (tables, code, math) AND the serializer must provably round-trip it
   (`render(serialize(render(raw))) === render(raw)`); anything that fails

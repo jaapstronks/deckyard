@@ -75,7 +75,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - Width-based `@media` queries must sit on the shared breakpoint ladder (480/640/768/1024/1280, `min-width` counterparts one pixel up, plus the ultra-wide 1400/1600/1800). See **`docs/reference/css-breakpoints.md`**; enforced by `tests/css-breakpoints.test.js`.
 
 - **Avoid hardcoded copy scattered across templates**
-  - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/copy.js`).
+  - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/i18n.js`, whose `createFollowCopy(lang)` resolves `client/i18n/<locale>/follow.json` against the *deck* language).
   - Slide-specific “static” copy should be centralized in a small per-slide `COPY` map keyed by language if needed (see `follow-invite-slide`).
   - Don’t sprinkle ad-hoc strings across unrelated modules.
 
@@ -104,7 +104,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
 - **Lifecycle & cleanup (critical in this codebase)**
-  - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-render.js`) supports cleanup via `__sbCleanup`.
+  - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-runtime/slide-render.js`) supports cleanup via `__sbCleanup`.
   - If you add any runtime side-effects (EventSource, timers, window listeners, observers), you must return a cleanup function and ensure it’s called when slide DOM is replaced.
 
 ---
@@ -123,7 +123,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 ### Rendering
 
 - Shared renderer: `renderSlideHtml()` in `shared/slide-types/presentation.js` calls `def.renderHtml(...)`.
-- Client mounting: `client/lib/slide-render.js`:
+- Client mounting: `client/lib/slide-runtime/slide-render.js`:
   - renders HTML → element
   - applies theme vars to the slide element (scoped)
   - initializes known slide runtimes (e.g. follow-invite QR, video embeds)
@@ -217,7 +217,7 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 Preferred pattern:
 - **Markup**: add `data-*` attributes/classes in `renderHtml()` that the runtime can target.
 - **Runtime**: implement in `client/lib/<feature>.js` or a view module, returning a cleanup function.
-- **Mount**: call the runtime from `client/lib/slide-render.js` (or the relevant view controller) and register cleanup via `__sbCleanup`.
+- **Mount**: call the runtime from `client/lib/slide-runtime/slide-render.js` (or the relevant view controller) and register cleanup via `__sbCleanup`.
 
 Avoid:
 - Starting runtimes inside `renderHtml()`

@@ -120,6 +120,26 @@ visual preview rather than a downloadable file.
 |------|-------------|
 | `delete_presentation` | Move a presentation to trash |
 
+## Guided prompts
+
+Alongside the tools, the server registers seven **prompts** — the entries a
+client surfaces in its `/` menu (Claude Desktop) or prompt picker. A prompt is a
+parameterized workflow: the client collects the arguments, the server returns
+the composed instruction, and the model then drives the tools itself.
+
+| Prompt | What it does | Required | Optional |
+|--------|--------------|----------|----------|
+| `create-presentation` | Generate a slide deck from text, notes, or a document | `content` | `language`, `speaker` |
+| `create-from-structured-data` | Build a deck from pre-structured slides — no AI rewriting. Use when you already know the exact slide types and content | `title`, `data` | `language` |
+| `improve-presentation` | Analyze an existing presentation and apply improvements | `presentationId` | `focus` |
+| `refine-slide` | Improve a specific slide with natural-language instructions | `presentationId`, `instruction` | — |
+| `compress-presentation` | Make a presentation shorter and punchier by merging or removing slides | `presentationId` | `intensity` |
+| `add-content` | Add new slides to an existing presentation from additional text | `presentationId`, `content` | — |
+| `deck-overview` | Quick overview of a presentation: slides, themes, validation | — | `presentationId` |
+
+`server/mcp/prompts.js` is the source of truth for both the list and the
+argument shapes.
+
 ## Example Workflow
 
 A typical agent interaction might look like:

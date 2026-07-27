@@ -48,7 +48,7 @@ Slice 1 (PR #370) found exactly **one** real vulnerability: the slide-list
 `innerHTML` div appended to `document.body`, so a slide titled
 `<img src=x onerror=…>` executed on drag — a cross-user vector in a shared deck.
 It plus two lower-risk editor sinks (`json-debug-modal.js`, `import-slides-tab.js`)
-were converted to `h()`. Full write-up: `docs/plans/done/2026-07.md`.
+were converted to `h()`.
 
 ## Adding new client code
 

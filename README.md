@@ -18,7 +18,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 
-**For AI agents:** 27 MCP tools, 6 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup; it describes what it wants, and Deckyard handles the rest.
+**For AI agents:** 27 MCP tools, 7 guided prompts, and a type-aware generation pipeline that understands the difference between a KPI dashboard and a timeline. Connect via stdio (Claude Desktop, Cursor) or SSE (remote agents, [OpenClaw](https://openclaw.ai), webhooks). Your agent doesn't generate slide markup; it describes what it wants, and Deckyard handles the rest.
 
 ### What makes it different
 
@@ -118,9 +118,10 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 - Comments: `list_comments` / `list_recent_comments` (with slide context + snapshots), `add_comment`, `reply_to_comment`, `set_comment_status` — agents can triage and answer reviewer feedback
 - Plus: `add_slide`, `update_slide`, `remove_slide`, `reorder_slides`, `duplicate_presentation`, `list_themes`, `get_presentation_url`, and more
 
-**6 guided prompts** for Claude Desktop's `/` menu:
+**7 guided prompts** for Claude Desktop's `/` menu:
 
 - `/create-presentation` — Guided deck creation workflow
+- `/create-from-structured-data` — Build a deck from pre-structured slides, no AI rewriting
 - `/improve-presentation` — Analyze and improve an existing deck
 - `/refine-slide` — Deep-dive into a single slide
 - `/compress-presentation` — Distill a long deck

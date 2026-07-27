@@ -35,7 +35,7 @@ shared height (`--team-orig-photo-h`, a small boost over the per-count
 the rendered image width. This alone satisfies gaps 1 and 3 and is the
 **no-JS fallback** (static/server render): correct, just not optimally filled.
 
-### JS justify pass (`client/lib/team-cards-autofit.js`, `justifyOriginal`)
+### JS justify pass (`client/lib/slide-runtime/team-cards-autofit.js`, `justifyOriginal`)
 
 Runs inside the existing team-cards auto-fit runtime (client-side only, not in
 thumbnail mode). It reads each image's intrinsic aspect ratio (so it re-runs on

@@ -38,7 +38,7 @@ The default `deckyard` theme ships a `calm` variant as a living example.
 Everything lives in `shared/theme-slide-backgrounds.js`; both theme
 normalizers use it:
 
-1. **Normalization** (`client/lib/theme.js` + `server/utils/themes.js`)
+1. **Normalization** (`client/lib/theme/theme.js` + `server/utils/themes.js`)
    validates entries into `theme.slideBackgrounds` and merges
    `--t-slide-bg-<id>[-text[-muted]]` into `theme.cssVars`, which flow through
    the existing per-slide var application and export CSS emission untouched.

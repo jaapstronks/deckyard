@@ -50,12 +50,12 @@ does not copy content. Fields: `id`, `name`, `description?`, `scope`
 (personal/team, mirroring the library split), `ownerEmail`, ordered
 `slideIds[]`, timestamps.
 
-- **Storage** is dual-backend like the slide library: file backend
-  `server/storage/collections-file.js`; DB backend migration
-  `046_slide_collections.js` (`slide_collections` + ordered
+- **Storage** is dual-backend like the slide library, in the standard
+  `folder/index.js` seam: file backend `server/storage/collections/file.js`; DB
+  backend migration `046_slide_collections.js` (`slide_collections` + ordered
   `slide_collection_items`) with the Postgres `withCollections` mixin. Facade
-  `server/storage/collections.js` (`withStorageFallback`) keeps them parallel,
-  with personal-owner and team-creator/admin guards.
+  `server/storage/collections/index.js` (`withStorageFallback`) keeps them
+  parallel, with personal-owner and team-creator/admin guards.
 - **API:** `/api/slide-collections` (GET/POST/PATCH/DELETE + reorder), same
   scope/authz conventions as `server/routes/api/slide-library.js`.
 - **Manage** from the library sidebar (`client/lib/slide-collections/`): a

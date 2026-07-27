@@ -165,7 +165,7 @@ export function attachFeature(element) {
 
 ### Mount from slide-render.js
 
-Wire up runtime behavior in `client/lib/slide-render.js`:
+Wire up runtime behavior in `client/lib/slide-runtime/slide-render.js`:
 
 ```javascript
 import { attachFeature } from './my-feature.js';

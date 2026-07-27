@@ -579,7 +579,7 @@ export function attachMySlideRuntime(slideEl) {
 
 ### 3. Mount from slide-render.js
 
-Wire it up in `client/lib/slide-render.js` to attach/cleanup on slide transitions.
+Wire it up in `client/lib/slide-runtime/slide-render.js` to attach/cleanup on slide transitions.
 
 ---
 

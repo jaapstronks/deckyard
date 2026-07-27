@@ -88,7 +88,7 @@ iframe embed URL (with autoplay+mute params baked in) or a raw stream URL.
 | `hls` | any `.m3u8` URL | `<video>`; native HLS on Safari, else hls.js |
 | `dash` | any `.mpd` URL | `<video>` with plain `src` (dash.js deferred; only works where natively supported) |
 
-hls.js is **not an npm dependency**: `client/lib/ensure-hls.js` lazy-loads
+hls.js is **not an npm dependency**: `client/lib/slide-runtime/ensure-hls.js` lazy-loads
 `hls.js@1` from the jsdelivr CDN (promise-cached) only when a non-Safari
 browser needs an HLS stream. Unrecognized URLs produce an empty embed URL and
 an inline "Unable to embed this stream URL." error panel; fatal hls.js errors
@@ -134,8 +134,8 @@ shows no video.
 | File | Role |
 |------|------|
 | `shared/video-stream-providers.js` | Provider detection, embed-URL builders, position presets, `resolvePosition` (shared, but currently client-only consumers) |
-| `client/lib/video-layer.js` | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning |
-| `client/lib/ensure-hls.js` | Lazy CDN loader for hls.js |
+| `client/lib/slide-runtime/video-layer.js` | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning |
+| `client/lib/slide-runtime/ensure-hls.js` | Lazy CDN loader for hls.js |
 | `client/styles/base/04-editor-and-misc/72-video-layer.css` | Layer positioning, transitions, mobile docks, error/unmute styling |
 | `shared/slide-types/presentation.js` | `settings.liveVideo` defaults on new presentations |
 | `client/views/editor/modals/settings-modal.js` | Settings normalization + "Live Video" section UI |

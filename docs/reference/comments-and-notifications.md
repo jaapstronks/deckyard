@@ -121,7 +121,7 @@ slides"; a future edit trigger would generalise it.
 ## The comment composer
 
 All four composers (editor main + reply, share-viewer main + reply) are the
-same component: `createRichCommentInput` in `client/lib/comment-rich-input.js`.
+same component: `createRichCommentInput` in `client/lib/comments/comment-rich-input.js`.
 It is a `contenteditable`, not a `<textarea>`, so a mention can show as a chip
 **while typing** instead of as raw `@[Name](user:email)` markup.
 
@@ -149,7 +149,7 @@ Other invariants: chips are `contenteditable="false"` and deleted as a unit by
 backspace; **paste is forced to plain text**, so no HTML can enter the composer
 and reach the body.
 
-The mention autocomplete (`client/lib/mention-autocomplete.js`) works through a
+The mention autocomplete (`client/lib/comments/mention-autocomplete.js`) works through a
 small **caret adapter** — `getTextBeforeCaret()` + `replaceQueryWithMention()` —
 so the same search, ranking and keyboard nav drive both the contenteditable
 (inserts a chip) and a plain textarea (`textareaCaretAdapter`, inserts markup).
@@ -190,7 +190,7 @@ round-trip: on the next parse the regex stops at the inner `(` and the whole
 markdown-link-parsing hard case; acceptable while link demand is light, and the
 fix (balanced-paren or angle-bracket URLs) waits for actual need.
 
-The link button (`client/lib/comment-toolbar.js`) lives beside Post rather than
+The link button (`client/lib/comments/comment-toolbar.js`) lives beside Post rather than
 in a bar of its own, so the composer keeps its height. It snapshots the
 selection on `mousedown` via `rememberSelection()` — by the time the dialog is
 open the live selection is gone, and closing a modal restores focus to the

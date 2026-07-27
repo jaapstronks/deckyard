@@ -3,8 +3,11 @@
 > **Historical snapshot (2026-07-15, pre-implementation).** The collab track
 > has since shipped to `main`; how it works now is documented in
 > `collab-presence.md`, `collab-deck-doc.md` and `collab-editor-binder.md`.
-> Codebase observations below (counts, "pre-existing gaps" — e.g. the MCP
-> authz gap in §4, since fixed) describe the code as it was on this date.
+> Codebase observations below (counts, file paths, "pre-existing gaps" — e.g.
+> the MCP authz gap in §4, since fixed) describe the code as it was on this
+> date and are deliberately left unrewritten. Several `client/lib/*` modules
+> cited here have since moved into subfolders (`slide-runtime/`, `state/`,
+> …); follow the current layout, not these paths.
 
 *2026-07-15. Groundwork for [ADR 001](../adr/001-realtime-collaboration.md).
 Research question: can Deckyard support Miro/Google-Docs-style multi-user

@@ -187,7 +187,7 @@ Guest authentication for public demos:
 ## MCP Server
 
 Deckyard is MCP-native: `server/mcp/` exposes the full presentation lifecycle
-(27 tools + 6 guided prompts) to AI agents, over two transports:
+(27 tools + 7 guided prompts) to AI agents, over two transports:
 
 - **stdio** (`npm run mcp`, `server/mcp/index.js`) — for local clients like
   Claude Desktop; owner set via `DECKYARD_MCP_OWNER_EMAIL`.
@@ -288,7 +288,7 @@ Slide types are the single source of truth for schema, defaults, and rendering:
 2. Registry: shared/slide-types/registry.js
 3. Server exposes metadata: GET /api/slide-types
 4. Shared rendering: shared/slide-types.js
-5. Client mounts HTML: client/lib/slide-render.js
+5. Client mounts HTML: client/lib/slide-runtime/slide-render.js
 ```
 
 ### Slide Type Structure
@@ -324,7 +324,7 @@ export default {
 Slides can have runtime behavior (timers, event listeners, SSE connections). If you add side-effects:
 
 1. **Attach in client runtime** (not in shared renderers)
-2. **Return a cleanup function** so `client/lib/slide-render.js` can dispose when slides change
+2. **Return a cleanup function** so `client/lib/slide-runtime/slide-render.js` can dispose when slides change
 
 ```javascript
 // client/lib/slide-runtime.js
