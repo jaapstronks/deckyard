@@ -158,8 +158,10 @@ async function handleUnpublish(ctx, id) {
     await removePublishedEntry(storageScope, publishId);
   }
 
-  const nextPres = { ...pres };
-  delete nextPres.published;
+  // Explicit null, not a deleted key: the storage layer reads an absent key
+  // as "leave this column alone", so dropping it would keep the deck published
+  // in the database.
+  const nextPres = { ...pres, published: null };
   await updatePresentation(storageScope, id, nextPres, {
     actorEmail: apiKey.ownerEmail,
   });
