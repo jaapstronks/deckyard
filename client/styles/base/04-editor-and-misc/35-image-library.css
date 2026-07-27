@@ -52,7 +52,7 @@
 }
 
 .media-lib-nav-header {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -72,7 +72,7 @@
   border: none;
   background: transparent;
   text-align: left;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-secondary));
   transition: all 0.1s ease;
 }
@@ -112,11 +112,11 @@
 }
 
 .media-lib-tag-nav {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
 }
 
 .media-lib-tag-count {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-tertiary));
   background: hsl(var(--app-bg-raised));
   padding: 1px 6px;
@@ -173,13 +173,13 @@
 }
 
 .media-lib-section-title {
-  font-size: 16px;
+  font-size: var(--ps-text-lg);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
 }
 
 .media-lib-section-count {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -210,7 +210,7 @@
     border-radius: var(--ps-radius-md);
     background: transparent;
     border: 1px solid hsl(var(--app-border-default));
-    font-size: 13px;
+    font-size: var(--ps-text-sm);
     white-space: nowrap;
     color: hsl(var(--app-text-secondary));
     cursor: pointer;
@@ -340,7 +340,7 @@
 
 .image-lib-title {
   font-weight: 650;
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   line-height: 1.2;
 }
 
@@ -486,7 +486,7 @@
 }
 
 .image-lib-dropzone-hint {
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   opacity: 0.7;
 }
 
@@ -519,7 +519,7 @@
   border: none;
   background: none;
   color: hsl(var(--app-text-secondary));
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;

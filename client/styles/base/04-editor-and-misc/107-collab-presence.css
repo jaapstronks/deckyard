@@ -119,7 +119,7 @@
   border-radius: 4px;
   background: var(--presence-color, #888);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -170,7 +170,7 @@
   border-radius: 4px;
   background: var(--presence-color, #888);
   color: #fff;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;

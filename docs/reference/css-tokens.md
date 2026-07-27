@@ -113,13 +113,44 @@ Rules:
   WCAG skip-link sits above the cookie-consent gate on purpose: a keyboard user
   must be able to escape a modal legal gate.
 
+## Typography — a fixed 6-step scale
+
+Six named font sizes, plus `--ps-font-sans` / `--ps-font-mono`. Because the root
+element is `16px` and `rem` is always root-relative, each token equals a fixed
+pixel value regardless of nesting — so a raw `font-size` and its token are
+value-identical:
+
+| Token | Value | px |
+|---|---|---|
+| `--ps-text-xs` | 0.6875rem | 11 |
+| `--ps-text-sm` | 0.8125rem | 13 |
+| `--ps-text-base` | 0.875rem | 14 |
+| `--ps-text-lg` | 1rem | 16 |
+| `--ps-text-xl` | 1.125rem | 18 |
+| `--ps-text-2xl` | 1.375rem | 22 |
+
+### Migrating hardcoded font-size onto the scale
+
+The same rule as spacing: **convert a `font-size` only when its value lands
+exactly on the scale** (11/13/14/16/18/22px or the `rem` equivalent). Leave
+everything else literal — `!important` declarations, `em`/unitless/`%` sizes, and
+off-scale px (10, 12, 15, 20, 24, 26, 28…). A high skip-rate is the same finding
+as with spacing: those files were sized against a rhythm the 6-step scale does
+not carry, and closing that gap is a design decision, not a conversion.
+
+Two things stay literal by construction:
+
+- **The root anchor.** `html { font-size: 16px }` defines what `1rem` *is*;
+  tokenising it to `var(--ps-text-lg)` would be circular. It stays `16px`.
+- **`slides/**` and parked stylesheets.** Same trap as spacing — a `--ps-text-*`
+  inside `client/styles/slides/**` resolves to nothing in the MCP preview bundle.
+  `cookie-consent.css` is parked (not in the load path), so it is left alone too.
+
 ## Where the other tokens are
 
 The remaining scales in `ui-tokens.css` carry no migration rule and are used
 directly:
 
-- **Typography** — `--ps-text-xs` … `--ps-text-2xl`, plus `--ps-font-sans` /
-  `--ps-font-mono`. Being moved onto tokens is still open work.
 - **Radius** — `--ps-radius-sm` … `--ps-radius-2xl`, `--ps-radius-full`.
 - **Transitions** — `--ps-transition-fast` / `-normal` / `-slow`.
 - **Colour** — the `--app-*` tokens, defined for light mode on `:root` and

@@ -17,7 +17,7 @@
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
   transition: all var(--ps-transition-fast);
@@ -81,7 +81,7 @@
   border: none;
   border-bottom: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg) var(--ps-radius-lg) 0 0;
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
   background: transparent;
   color: hsl(var(--app-text-primary));
 }
@@ -105,7 +105,7 @@
   padding: var(--ps-space-2);
   text-align: center;
   color: hsl(var(--app-text-tertiary));
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
 }
 
 .tag-filter-item {
@@ -132,7 +132,7 @@
 
 .tag-filter-item-name {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
 }
 
@@ -197,7 +197,7 @@
   background: hsl(var(--app-accent-soft));
   border: 1px solid hsl(var(--app-accent-primary) / 0.2);
   border-radius: var(--ps-radius-full);
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-accent-text));
 }
 
@@ -219,7 +219,7 @@
   border-radius: 50%;
   background: transparent;
   color: hsl(var(--app-accent-text));
-  font-size: 1rem;
+  font-size: var(--ps-text-lg);
   line-height: 1;
   cursor: pointer;
   transition: all var(--ps-transition-fast);
@@ -240,7 +240,7 @@
   padding: var(--ps-space-1);
   border: none;
   background: transparent;
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
 }
 
@@ -278,7 +278,7 @@
 
 .tag-editor-suggestion {
   padding: var(--ps-space-2);
-  font-size: 0.875rem;
+  font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
   cursor: pointer;
   transition: background var(--ps-transition-fast);
@@ -306,7 +306,7 @@
   padding: 2px var(--ps-space-1);
   background: hsl(var(--app-bg-sunken));
   border-radius: var(--ps-radius-sm);
-  font-size: 0.6875rem;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-secondary));
   max-width: 80px;
   overflow: hidden;
@@ -362,7 +362,7 @@
   border: none;
   border-right: 1px solid hsl(var(--app-border-default));
   background: transparent;
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   cursor: pointer;
   transition: all var(--ps-transition-fast);
@@ -391,7 +391,7 @@
 
 /* Count pill inside each chip. */
 .scope-filter-count {
-  font-size: 0.6875rem;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: hsl(var(--app-text-tertiary));
@@ -405,7 +405,7 @@
 .sort-select {
   width: auto;
   padding: var(--ps-space-1) var(--ps-space-2);
-  font-size: 0.8125rem;
+  font-size: var(--ps-text-sm);
 }
 
 /* The Presentations header carries more controls than a single tag filter, so

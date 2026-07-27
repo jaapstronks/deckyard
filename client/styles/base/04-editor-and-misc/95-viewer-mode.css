@@ -47,7 +47,7 @@
 .viewer-permission-badge {
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -79,7 +79,7 @@
   border: 1px solid hsl(210 70% 50% / 0.3);
   color: hsl(210 70% 45%);
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   border-radius: 8px;
   transition: all 0.15s ease;
 }
@@ -112,7 +112,7 @@
   border-radius: 999px;
   background: hsl(0 70% 50%);
   color: white;
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -167,7 +167,7 @@
 
 .viewer-slides-panel .slides-panel-header h2 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ps-text-sm);
   font-weight: 600;
   color: hsl(var(--app-text-secondary));
 }
@@ -218,7 +218,7 @@
   justify-content: center;
   height: 100%;
   opacity: 0.6;
-  font-size: 18px;
+  font-size: var(--ps-text-xl);
 }
 
 /* --- Viewer navigation --- */
@@ -249,7 +249,7 @@
 
 .viewer-counter {
   font-family: var(--ps-font-mono, monospace);
-  font-size: 14px;
+  font-size: var(--ps-text-base);
   opacity: 0.85;
   min-width: 60px;
   text-align: center;
@@ -264,7 +264,7 @@
 
   .viewer-slide-num {
     width: 20px;
-    font-size: 11px;
+    font-size: var(--ps-text-xs);
   }
 
   .viewer-slide-thumb {
@@ -288,7 +288,7 @@
 
   .viewer-topbar-title {
     max-width: 120px;
-    font-size: 14px;
+    font-size: var(--ps-text-base);
   }
 
   .viewer-permission-badge {
@@ -298,7 +298,7 @@
   .viewer-nav-btn {
     width: 40px;
     height: 40px;
-    font-size: 18px;
+    font-size: var(--ps-text-xl);
   }
 }
 
@@ -383,6 +383,6 @@
   }
 
   .access-error-message {
-    font-size: 14px;
+    font-size: var(--ps-text-base);
   }
 }

@@ -67,7 +67,7 @@
 }
 
 .custom-type-card-slug {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-family: var(--ps-font-mono, monospace);
   color: hsl(var(--app-text-tertiary));
 }
@@ -90,7 +90,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--ps-radius-full);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -113,7 +113,7 @@
   gap: 4px;
   padding: 2px 8px;
   border-radius: var(--ps-radius-full);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 500;
   background: hsl(210 80% 92%);
   color: hsl(210 60% 35%);
@@ -247,7 +247,7 @@
 }
 
 .field-list-item-key {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-family: var(--ps-font-mono, monospace);
   color: hsl(var(--app-text-tertiary));
 }
@@ -306,7 +306,7 @@
 
 /* Button sizes */
 .btn-xs {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   padding: 2px 6px;
   min-height: 22px;
   min-width: 22px;

@@ -50,7 +50,7 @@
   align-items: center;
   padding: 2px 8px;
   border-radius: var(--ps-radius-full);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -195,7 +195,7 @@
   grid-template-columns: 80px 1fr 1fr;
   gap: var(--ps-space-2);
   padding: var(--ps-space-1) var(--ps-space-2);
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -238,7 +238,7 @@
 }
 
 .font-variant-size {
-  font-size: 11px;
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-tertiary));
   flex-shrink: 0;
 }
