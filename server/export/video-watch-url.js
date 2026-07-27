@@ -2,8 +2,13 @@
  * Resolve the "watch online" URL for a video slide in static exports (PDF).
  *
  * A video can't play inside a PDF, so the PDF placeholder points the reader at
- * a live URL instead. The ladder (decided 2026-07-18):
+ * a live URL instead. The ladder (decided 2026-07-18, rung 0 added 2026-07-27):
  *
+ *   0. Explicit `watchUrl` — whatever the author typed on the slide wins. The
+ *      generated rungs below are correct but long (a deck deep-link carries a
+ *      UUID), and a printed page is where that hurts most. This is the escape
+ *      hatch for a short, human-chosen link: a link-shortener URL, a campaign
+ *      page, anything the author would rather have in print.
  *   1. Published deck — if the presentation is published and a public base URL
  *      is configured, deep-link into the published deck at the video slide
  *      (`/p/<id>-<slug>#slide=<index>`). The reader lands on the video and can
@@ -19,6 +24,32 @@
  */
 
 import { parseVideoSource } from './video-helpers.js';
+
+/**
+ * Normalise an author-typed watch URL, or return null when it isn't usable.
+ *
+ * Forgiving about the scheme (`go.ciiic.nl/our-video` is what someone types)
+ * and strict about everything else: only http(s) survives, so a `javascript:`
+ * or `data:` URL can't ride into an exported document as a clickable link.
+ *
+ * @param {unknown} raw
+ * @returns {string|null}
+ */
+function normaliseWatchUrl(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const candidate = /^[a-z][a-z0-9+.-]*:/i.test(s) ? s : `https://${s}`;
+  let url;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  // A bare word ("intranet") parses fine once prefixed; require a real host.
+  if (!url.hostname.includes('.')) return null;
+  return url.href;
+}
 
 /**
  * Build the public provider URL for a parsed video source.
@@ -65,12 +96,17 @@ function buildProviderUrl(parsed, autoplay) {
  *   export-context index; it matches the published-deck index when the deck has
  *   no per-context hidden slides (the common case). If export/published
  *   visibility diverge, the link may land on a neighbouring slide.
- * @returns {{ url: string, kind: 'deck' | 'provider' } | { url: null, kind: null }}
+ * @returns {{ url: string, kind: 'explicit' | 'deck' | 'provider' } | { url: null, kind: null }}
  */
 export function resolveVideoWatchUrl(slide, pres, { baseUrl = '', slideIndex = 0 } = {}) {
   const content = slide && typeof slide === 'object' ? slide.content : {};
   const source = String(content?.source || '').trim();
   const autoplay = content?.autoplay === 'on';
+
+  // Rung 0: the author's own link wins. An unusable value falls through rather
+  // than blanking the placeholder — a typo shouldn't cost the reader the link.
+  const explicit = normaliseWatchUrl(content?.watchUrl);
+  if (explicit) return { url: explicit, kind: 'explicit' };
 
   // Rung 1: published deck deep-link.
   const published = pres && typeof pres.published === 'object' ? pres.published : null;

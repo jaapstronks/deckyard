@@ -67,11 +67,14 @@ async function renderVideoSlidePdfHtml(
   `;
 
   // Right: deck-language copy + the resolved watch URL (or a "not online" line).
+  // Printed link text drops the scheme (and a trailing slash): the reader has to
+  // read or retype it, and `https://` is noise in both cases. The href keeps it.
   const { url } = resolveVideoWatchUrl(slide, pres, { baseUrl, slideIndex });
+  const linkText = String(url || '').replace(/^https?:\/\//i, '').replace(/\/$/, '');
   const linkHtml = url
     ? `<p class="vpdf-lead">${escapeHtml(copy.lead)}</p>
        <a class="vpdf-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-         url
+         linkText
        )}</a>`
     : `<p class="vpdf-lead">${escapeHtml(copy.noUrl)}</p>`;
 

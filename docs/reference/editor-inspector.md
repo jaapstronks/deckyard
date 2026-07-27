@@ -369,7 +369,7 @@ homed. Not listed per row.
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | split-partner-title _(archived)_ | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | archived 2026-07-21 (`deprecated: true`): hidden from picker + AI, but existing decks still render and their inspector keeps these |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
-| video | title | - | source, autoplay, bunnyLibraryId | source is a URL/ID → inspector (PR #191) |
+| video | title | - | source, autoplay, bunnyLibraryId, watchUrl | source is a URL/ID → inspector (PR #191); watchUrl is export config with no canvas surface |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
 | logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |
 | card-stack | title, subheading; card{n}Title/Body in-place | - | cardCount | card{n}Title/Body are canvas-inline; card{n}Label is deprecated+hidden (no surface needed); no array migration yet |

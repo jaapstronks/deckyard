@@ -5,13 +5,57 @@ import { resolveVideoWatchUrl, videoPdfCopy } from '../server/export/video-watch
 
 /**
  * The PDF video-slide placeholder resolves a "watch online" URL server-side.
- * Ladder: published deck deep-link → provider URL → none. (2026-07-18 decision.)
+ * Ladder: explicit watchUrl → published deck deep-link → provider URL → none.
+ * (2026-07-18 decision; rung 0 added 2026-07-27.)
  */
 
 const youtubeSlide = (autoplay = 'off') => ({
   id: 'v1',
   type: 'video-slide',
   content: { source: 'https://youtu.be/dQw4w9WgXcQ', autoplay },
+});
+
+test('an explicit watchUrl beats every generated rung', () => {
+  const pres = { published: { id: 'ab12', slug: 'mijn-deck' } };
+  const slide = {
+    id: 'v1',
+    content: {
+      source: 'https://youtu.be/dQw4w9WgXcQ',
+      watchUrl: 'https://go.ciiic.nl/our-video',
+    },
+  };
+  const { url, kind } = resolveVideoWatchUrl(slide, pres, {
+    baseUrl: 'https://slides.ciiic.nl',
+    slideIndex: 6,
+  });
+  assert.equal(kind, 'explicit');
+  assert.equal(url, 'https://go.ciiic.nl/our-video');
+});
+
+test('a scheme-less watchUrl is read as https (that is what people type)', () => {
+  const slide = { id: 'v1', content: { source: '', watchUrl: 'go.ciiic.nl/our-video' } };
+  const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
+  assert.equal(kind, 'explicit');
+  assert.equal(url, 'https://go.ciiic.nl/our-video');
+});
+
+test('a non-http watchUrl is ignored, and the ladder continues', () => {
+  for (const watchUrl of ['javascript:alert(1)', 'data:text/html,x', 'intranet', '   ']) {
+    const slide = {
+      id: 'v1',
+      content: { source: 'https://youtu.be/dQw4w9WgXcQ', watchUrl },
+    };
+    const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
+    assert.equal(kind, 'provider', `${watchUrl} must not be used as a link`);
+    assert.equal(url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+  }
+});
+
+test('a watchUrl on a slide with no source still resolves', () => {
+  const slide = { id: 'v1', content: { source: '', watchUrl: 'https://go.ciiic.nl/x' } };
+  const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
+  assert.equal(kind, 'explicit');
+  assert.equal(url, 'https://go.ciiic.nl/x');
 });
 
 test('published deck wins: deep-links to the slide by index', () => {
