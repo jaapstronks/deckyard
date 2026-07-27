@@ -16,6 +16,7 @@ import { refineAllSlideGroups } from './ai/refine-slides.js';
 import { validateAndFixRefinedSlides } from './ai/validate-slides.js';
 import { createSessionLogger, generateSessionId } from './ai/logging.js';
 import { cryptoUuid } from '../../shared/slide-types/helpers.js';
+import { DECK_FORMAT_ID } from '../../shared/slide-types/deck-format-id.js';
 import { uploadImageKitUrl, getImageKitConfigFromEnv } from '../media/imagekit.js';
 
 /**
@@ -299,7 +300,7 @@ async function convertWithAi(formattedContent, options = {}) {
 
   // Assemble the deck
   const deck = {
-    format: 'slidecreator.deck',
+    format: DECK_FORMAT_ID,
     version: 1,
     title: outline.title || metadata.title || 'Untitled',
     theme: 'default',

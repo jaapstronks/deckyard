@@ -7,6 +7,7 @@ import {
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
+import { DECK_FORMAT_ID } from '../../../../shared/slide-types/deck-format-id.js';
 import { generateSessionId, createSessionLogger } from '../../../utils/ai/index.js';
 import {
   generateOutline,
@@ -159,7 +160,7 @@ export async function handleAiWizardV2Stream({ repoRoot, storageScope, req, res,
 
     // Assemble deck with automatic title slide using theme-appropriate type
     const deck = {
-      format: 'slidecreator.deck',
+      format: DECK_FORMAT_ID,
       version: 1,
       title: outline.title,
       theme: effectiveTheme,

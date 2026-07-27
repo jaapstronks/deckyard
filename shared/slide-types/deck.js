@@ -7,6 +7,7 @@ import {
 } from './registry.js';
 import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
+import { DECK_FORMAT_ID } from './deck-format-id.js';
 
 // --------
 // Portable deck format (for export/import)
@@ -17,7 +18,7 @@ import { unresolvedSlideAsMarkdown } from './unresolved.js';
 //
 // Example:
 // {
-//   "format": "slidecreator.deck",
+//   "format": "deckyard.deck",
 //   "version": 1,
 //   "title": "My deck",
 //   "theme": "default",
@@ -33,6 +34,10 @@ import { unresolvedSlideAsMarkdown } from './unresolved.js';
 // hand-maintained, so it can't drift) and lets a second implementation see
 // which type definitions/versions a deck needs. `slides[].type` stays the bare
 // key for back-compat.
+//
+// The `format` sentinel and the bundle mimetype both live in
+// ./deck-format-id.js — one place to change them, and the place that records
+// which historical values a reader still accepts.
 // --------
 
 export function presentationToDeck(pres) {
@@ -41,7 +46,7 @@ export function presentationToDeck(pres) {
     content: s?.content || {},
   }));
   return {
-    format: 'slidecreator.deck',
+    format: DECK_FORMAT_ID,
     version: 1,
     title: pres?.title || 'Untitled presentation',
     theme: pres?.theme || 'default',

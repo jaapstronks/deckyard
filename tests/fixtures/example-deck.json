@@ -1,7 +1,7 @@
 {
-  "format": "slidecreator.deck",
+  "format": "deckyard.deck",
   "version": 1,
-  "title": "The slidecreator.deck format",
+  "title": "The deckyard.deck format",
   "theme": "default",
   "slideTypes": {
     "title-slide": "core/title-slide",
@@ -14,7 +14,7 @@
     {
       "type": "title-slide",
       "content": {
-        "title": "The slidecreator.deck format",
+        "title": "The deckyard.deck format",
         "subheading": "A portable, versioned deck interchange format",
         "background": "lime"
       }
@@ -24,7 +24,7 @@
       "content": {
         "title": "Why a format",
         "layout": "one-column",
-        "body": "A deck is **data**, not a rendering. The `slidecreator.deck` envelope lets a second implementation read, render, and round-trip a presentation without Deckyard.",
+        "body": "A deck is **data**, not a rendering. The `deckyard.deck` envelope lets a second implementation read, render, and round-trip a presentation without Deckyard.",
         "background": "mist"
       }
     },

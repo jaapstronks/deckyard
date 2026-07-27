@@ -1,5 +1,5 @@
 /**
- * Contract test for the published `slidecreator.deck` format (PR 8, move 5b).
+ * Contract test for the published `deckyard.deck` format (PR 8, move 5b).
  *
  * `tests/fixtures/example-deck.json` is the canonical example deck referenced by
  * `docs/reference/deck-format.md`. This test is the CI gate behind that spec:
@@ -23,6 +23,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { presentationToDeck, deckToPresentationParts } from '../shared/slide-types/deck.js';
+import {
+  DECK_FORMAT_ID,
+  LEGACY_DECK_FORMAT_IDS,
+  isDeckFormatId,
+} from '../shared/slide-types/deck-format-id.js';
 import { collectSlideTypeManifest, getSlideType } from '../shared/slide-types/registry.js';
 import { tryParseTypeId } from '../shared/slide-types/type-id.js';
 import { slideTypeContentSchema } from '../shared/slide-types/json-schema.js';
@@ -37,7 +42,7 @@ const contentShape = (deck) =>
   (deck.slides || []).map((s) => ({ type: s.type, content: s.content }));
 
 test('the example conforms to the documented deck envelope', () => {
-  assert.equal(example.format, 'slidecreator.deck', 'format sentinel');
+  assert.equal(example.format, DECK_FORMAT_ID, 'format sentinel');
   assert.equal(example.version, 1, 'format version');
   assert.equal(typeof example.title, 'string');
   assert.equal(typeof example.theme, 'string');
@@ -69,7 +74,7 @@ test('the example round-trips: import → export → import → export is conten
 
   assert.deepEqual(contentShape(deck3), contentShape(deck2), 'round-trip is content-stable');
   // The envelope is reproduced verbatim by the exporter.
-  assert.equal(deck2.format, 'slidecreator.deck');
+  assert.equal(deck2.format, DECK_FORMAT_ID);
   assert.equal(deck2.version, 1);
   assert.deepEqual(deck2.slideTypes, example.slideTypes);
 });
@@ -95,4 +100,21 @@ test('local asset refs use the /uploads/ convention; external URLs stay external
   assert.ok(localRefs.length >= 1, 'example demonstrates a local /uploads/ asset ref');
   // No bundle refs leak into the portable (non-bundled) deck.
   assert.ok(!json.includes('assets/'), 'portable deck has no bundle refs');
+});
+
+test('the historical `slidecreator.deck` sentinel is still recognised and still imports', () => {
+  // The name was a placeholder from before this project was called Deckyard.
+  // Decks written with it are in the wild; a published format keeps reading its
+  // own past, so the legacy sentinel is accepted forever — it is just no longer
+  // written. See shared/slide-types/deck-format-id.js.
+  assert.ok(LEGACY_DECK_FORMAT_IDS.includes('slidecreator.deck'));
+  assert.ok(isDeckFormatId('slidecreator.deck'), 'legacy sentinel is accepted');
+  assert.ok(isDeckFormatId(DECK_FORMAT_ID), 'current sentinel is accepted');
+  assert.ok(!isDeckFormatId('acme.deck'), 'a foreign sentinel is not');
+
+  const legacy = { ...example, format: 'slidecreator.deck' };
+  const parts = deckToPresentationParts(legacy);
+  assert.equal(parts.slides.length, example.slides.length);
+  // Re-exporting a legacy deck stamps it with the current sentinel.
+  assert.equal(presentationToDeck(parts).format, DECK_FORMAT_ID);
 });
