@@ -1,82 +1,54 @@
-// Schematic descriptor per slide type (and per curated layout preset), consumed
-// by the slide-type picker's "Schematic" view mode. A descriptor is a JSON-safe
-// spec understood by renderSlideSchematic() — see client/lib/slide-schematic.js
-// for the grammar.
+// Schematic glyph resolution for the slide-type picker's "Schematic" view mode.
+// A descriptor is a JSON-safe spec understood by renderSlideSchematic() — see
+// client/lib/slide-authoring/slide-schematic.js for the grammar.
 //
-// Resolution precedence (see schematicFor):
+// This file no longer *holds* the glyphs. Every core type declares its own in
+// `shared/slide-types/types/<name>/authoring.js`, and the two maps below are
+// derived from the aggregator in shared/slide-types/authoring.js. That is the
+// point of the A7.1 seam work: a glyph is a fact about a slide type, so adding
+// or retiring a type touches the type's own directory and nothing here. The old
+// hand-maintained map carried the comment "Keep this aligned with
+// SLIDE_TYPE_DESC / SLIDE_TYPE_PRESETS" — a human asked to do a derivation's
+// job. See docs/reference/slide-type-directory.md.
+//
+// Resolution precedence (see schematicFor) is unchanged:
 //   1. a preset-specific override (key `"<type>:<presetId>"`)
 //   2. the slide-type definition's own `schematic` field (lets custom/fork
-//      types ship an icon without touching this map)
-//   3. the base entry for the type here
+//      types ship an icon without owning a directory here)
+//   3. the base entry for the type
 //   4. null -> the picker falls back to a generic text-only diagram
 //
-// Every insertable type needs a glyph, and a retired one must not keep its own:
-// tests/slide-type-companion-coverage.test.js enforces both directions, so this
-// map no longer relies on someone remembering to keep it aligned with
-// SLIDE_TYPE_DESC / SLIDE_TYPE_ALIASES.
-//
-// Types in the directory form declare their glyph in their own authoring.js and
-// are imported here — see docs/reference/slide-type-directory.md.
+// Every insertable type still needs a glyph, and a retired one must not keep
+// its own: tests/slide-type-companion-coverage.test.js enforces both directions
+// against the derived map below.
 
-import iconCardGridAuthoring from '../../../shared/slide-types/types/icon-card-grid-slide/authoring.js';
+import { SLIDE_TYPE_AUTHORING } from '../../../shared/slide-types/authoring.js';
 
-export const SLIDE_TYPE_SCHEMATIC = {
-  // basics
-  'title-slide': { kind: 'title' },
-  'chapter-title-slide': { kind: 'section' },
-  'content-slide': { kind: 'oneCol' },
-  'quote-slide': { kind: 'quote' },
-  'lijstje-slide': { kind: 'bullets' },
-  'payoff-slide': { kind: 'statement' },
-  // media
-  'image-text-slide': { split: 50 },
-  'image-slide': { kind: 'image' },
-  'gallery-slide': { kind: 'gallery', cells: 6 },
-  'video-slide': { kind: 'video' },
-  'embed-slide': { kind: 'embed' },
-  'team-cards-slide': { kind: 'cards', cells: 6, cols: 3, rows: 2 },
-  'logo-wall-slide': { kind: 'logos', cells: 8 },
-  // layouts
-  'text-blocks-slide': { kind: 'blocks', cells: 4 },
-  'icon-card-grid-slide': iconCardGridAuthoring.schematic,
-  // data
-  'table-slide': { kind: 'table' },
-  'chart-slide': { kind: 'chart' },
-  'kpi-metrics-slide': { kind: 'kpi', cells: 4 },
-  'comparison-slide': { kind: 'comparison' },
-  'matrix-slide': { kind: 'matrix' },
-  // process / relationship
-  'funnel-slide': { kind: 'funnel' },
-  'pyramid-slide': { kind: 'pyramid' },
-  'cycle-slide': { kind: 'cycle' },
-  'process-slide': { kind: 'process' },
-  'timeline-slide': { kind: 'timeline' },
-  // interaction
-  'poll-slide': { kind: 'poll' },
-  'likert-slide': { kind: 'bars', rows: 5 },
-  'likert-slider-slide': { kind: 'slider' },
-  'feedback-slide': { kind: 'feedback' },
-  'follow-invite-slide': { kind: 'qr' },
-  'countdown-slide': { kind: 'countdown' },
-  // other core types (land in the picker's "Other" group)
-  'list-slide': { kind: 'bullets' },
-  'end-slide': { kind: 'statement' },
-  'custom-html-slide': { kind: 'code' },
-};
+/**
+ * Base glyph per slide type, derived from each type's `authoring.js`.
+ * Kept as an exported map because the picker and the companion-coverage test
+ * both read it by type name.
+ * @type {Record<string, Object>}
+ */
+export const SLIDE_TYPE_SCHEMATIC = Object.fromEntries(
+  Object.entries(SLIDE_TYPE_AUTHORING)
+    .filter(([, authoring]) => authoring?.schematic)
+    .map(([type, authoring]) => [type, authoring.schematic])
+);
 
-// Per-preset overrides. Keyed "<type>:<presetId>" — presets absent here fall
-// back to the base type's schematic.
-const SLIDE_TYPE_PRESET_SCHEMATIC = {
-  // content-slide has no picker presets (see slide-type-picker.js); its
-  // two-column text-flow layout is reachable via the in-editor layout switcher.
-  'lijstje-slide:bullets': { kind: 'bullets' },
-  'lijstje-slide:numbers': { kind: 'numbers' },
-  'image-text-slide:image-left': { split: 50 },
-  'image-text-slide:image-right': { split: 50, mirror: true },
-  'image-text-slide:image-wide': { split: 63 },
-  'image-text-slide:image-corner': { corner: 45, mirror: true },
-  'image-text-slide:image-row': { row: 'top' },
-};
+/**
+ * Per-preset overrides, keyed "<type>:<presetId>" — flattened from each type's
+ * `presetSchematics`. Presets absent here fall back to the base type's glyph.
+ * @type {Record<string, Object>}
+ */
+const SLIDE_TYPE_PRESET_SCHEMATIC = Object.fromEntries(
+  Object.entries(SLIDE_TYPE_AUTHORING).flatMap(([type, authoring]) =>
+    Object.entries(authoring?.presetSchematics || {}).map(([presetId, spec]) => [
+      `${type}:${presetId}`,
+      spec,
+    ])
+  )
+);
 
 /**
  * Resolve the schematic spec for a picker tile.
