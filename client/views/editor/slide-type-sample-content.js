@@ -2,7 +2,12 @@
  * Sample content for each slide type to display in the slide type picker thumbnails.
  * This provides rich, visually appealing example content that helps users understand
  * what each slide type looks like when rendered.
+ *
+ * Types in the directory form carry their sample in their own authoring.js and
+ * are imported here — see docs/reference/slide-type-directory.md.
  */
+
+import iconCardGridAuthoring from '../../../shared/slide-types/types/icon-card-grid-slide/authoring.js';
 
 // Placeholder image URLs (using picsum for random images)
 const SAMPLE_IMAGE = 'https://picsum.photos/seed/slide-picker/800/600';
@@ -112,16 +117,7 @@ export const SLIDE_TYPE_SAMPLE_CONTENT = {
   // card-stack-slide: DEPRECATED — removed from picker.
   // Existing slides still render; new slides use icon-card-grid-slide.
 
-  'icon-card-grid-slide': {
-    title: 'Our Approach',
-    subheading: 'What makes us different',
-    items: [
-      { icon: 'lightbulb', title: 'Insight', body: 'Deep understanding' },
-      { icon: 'target', title: 'Focus', body: 'Clear objectives' },
-      { icon: 'users', title: 'Collaboration', body: 'Working together' },
-      { icon: 'trend-up', title: 'Growth', body: 'Continuous progress' },
-    ],
-  },
+  'icon-card-grid-slide': iconCardGridAuthoring.sampleContent,
 
   'team-cards-slide': {
     title: 'Meet the Team',

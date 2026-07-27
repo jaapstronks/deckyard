@@ -14,6 +14,11 @@
 // tests/slide-type-companion-coverage.test.js enforces both directions, so this
 // map no longer relies on someone remembering to keep it aligned with
 // SLIDE_TYPE_DESC / SLIDE_TYPE_ALIASES.
+//
+// Types in the directory form declare their glyph in their own authoring.js and
+// are imported here — see docs/reference/slide-type-directory.md.
+
+import iconCardGridAuthoring from '../../../shared/slide-types/types/icon-card-grid-slide/authoring.js';
 
 export const SLIDE_TYPE_SCHEMATIC = {
   // basics
@@ -33,7 +38,7 @@ export const SLIDE_TYPE_SCHEMATIC = {
   'logo-wall-slide': { kind: 'logos', cells: 8 },
   // layouts
   'text-blocks-slide': { kind: 'blocks', cells: 4 },
-  'icon-card-grid-slide': { kind: 'iconCards', cells: 6, cols: 3, rows: 2 },
+  'icon-card-grid-slide': iconCardGridAuthoring.schematic,
   // data
   'table-slide': { kind: 'table' },
   'chart-slide': { kind: 'chart' },
