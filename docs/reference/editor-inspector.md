@@ -364,7 +364,7 @@ homed. Not listed per row.
 | title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background image section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
 | chapter-title | title, subheading | - | layout | |
 | content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
-| table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle | slide-view entry points for the table modal are an open follow-up |
+| table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle, cornerCell | slide-view entry points for the table modal are an open follow-up. `cornerCell` (label\|header) is style-orthogonal: it decides whether the top-left cell reads with the label column or the header row |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | split-partner-title _(archived)_ | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | archived 2026-07-21 (`deprecated: true`): hidden from picker + AI, but existing decks still render and their inspector keeps these |

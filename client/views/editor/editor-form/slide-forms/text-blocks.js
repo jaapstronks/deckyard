@@ -3,7 +3,12 @@ import { dragHandleIcon, chevronDownIcon } from '../../../../lib/dom/icons.js';
 import { createCollapsedState } from '../../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
 
-const MAX_ROWS = 3;
+// rows[] is array-canonical and allows up to 4 rows. syncToNumbered() below only
+// mirrors the first 3 into the legacy numbered fields — that mirror is frozen at
+// 3 on purpose (route (b), A0.4): a 4th row lives only in rows[], which
+// resolveRows() already prefers, so it survives save/reload without a numbered
+// counterpart.
+const MAX_ROWS = 4;
 const MAX_BLOCKS = 6;
 
 // Collapsed state manager for rows

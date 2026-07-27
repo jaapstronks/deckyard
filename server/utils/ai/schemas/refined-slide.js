@@ -131,10 +131,32 @@ const cardStackSlideSchema = z.object({
 }).passthrough();
 
 // Text Blocks Slide
+// rows[] is the canonical shape (post-A0.4): an agent authors the array, which
+// carries up to 4 rows. The legacy numbered mirror below (row1Count, ...) is
+// FROZEN at 3 rows and optional — a 4-row slide exists only in rows[] form.
+// Mirrors how cardStack/teamCards/logoWall accept their items[]: the array is
+// validated here, the numbered fields stay optional and pass through. Before
+// this, row1Count was required and rows[] unknown, so every array-canonical
+// slide (including each new one, whose defaults are rows[]-only) failed refine
+// validation. See A0.4 in docs/plans.
+const textBlockSchema = z.object({
+  title: z.string().max(80).optional(),
+  body: z.string().max(500).optional(),
+}).passthrough();
+
+const textBlocksRowSchema = z.object({
+  title: z.string().max(120).optional(),
+  color: z.enum(['yellow', 'black']).optional(),
+  arrow: z.enum(['none', 'down', 'up']).optional(),
+  blocks: z.array(textBlockSchema).max(6).optional(),
+}).passthrough();
+
 const textBlocksSlideSchema = z.object({
   title: requiredTitleSchema,
   subheading: subheadingSchema,
-  row1Count: z.enum(['1', '2', '3', '4', '5', '6']),
+  bottomSubheading: subheadingSchema,
+  rows: z.array(textBlocksRowSchema).min(1).max(4).optional(),
+  row1Count: z.enum(['1', '2', '3', '4', '5', '6']).optional(),
   row1Color: z.enum(['yellow', 'black']).optional(),
   arrow1: z.enum(['none', 'down', 'up']).optional(),
   row2Enabled: z.enum(['yes', 'no']).optional(),
