@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.7.0](https://github.com/jaapstronks/deckyard/compare/v1.6.0...v1.7.0) (2026-07-27)
+
+
+### Added
+
+* **deck-format:** name the interchange format deckyard.deck ([#410](https://github.com/jaapstronks/deckyard/issues/410)) ([e5397c3](https://github.com/jaapstronks/deckyard/commit/e5397c3654bba28574ff0dbd8f79f929fff4e034))
+* **slide-types:** derive the agent-facing schema from the registry ([#407](https://github.com/jaapstronks/deckyard/issues/407)) ([a194159](https://github.com/jaapstronks/deckyard/commit/a1941599b898f7db8c4060cc81949dd1d1a288da))
+
+
+### Fixed
+
+* **export:** return Node Buffers from headless Chrome, guard with a smoke test ([#404](https://github.com/jaapstronks/deckyard/issues/404)) ([d458ad9](https://github.com/jaapstronks/deckyard/commit/d458ad97dd1d63a164ffb1b98ef01811a3fe6ef2))
+
 ## [1.6.0](https://github.com/jaapstronks/deckyard/compare/v1.5.1...v1.6.0) (2026-07-26)
 
 
