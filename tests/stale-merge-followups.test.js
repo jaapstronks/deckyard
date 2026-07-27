@@ -30,7 +30,7 @@ import {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations.js';
+} from '../server/storage/presentations/index.js';
 import { listPresentationVersions } from '../server/storage/presentations/versions.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { createRemoteRefresh } from '../client/views/editor/remote-refresh.js';

@@ -30,7 +30,7 @@ import {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations.js';
+} from '../server/storage/presentations/index.js';
 import { loadTheme } from '../server/utils/themes.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
 import { testScope } from './helpers/storage-scope.js';

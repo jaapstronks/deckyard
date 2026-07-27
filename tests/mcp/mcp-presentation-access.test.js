@@ -22,7 +22,7 @@ import { testScope } from '../helpers/storage-scope.js';
 import {
   createPresentation,
   updatePresentation,
-} from '../../server/storage/presentations.js';
+} from '../../server/storage/presentations/index.js';
 
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';

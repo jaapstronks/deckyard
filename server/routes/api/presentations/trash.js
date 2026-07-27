@@ -7,7 +7,7 @@ import {
   restorePresentation,
   permanentlyDeletePresentation,
   getPresentation,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import {
   methodNotAllowed,
   notFound,

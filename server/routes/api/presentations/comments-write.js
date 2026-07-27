@@ -3,7 +3,7 @@
  * Includes create, update, and delete operations.
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   json,
   methodNotAllowed,

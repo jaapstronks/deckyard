@@ -7,7 +7,7 @@
  * POST   /api/presentations/:id/share-links/:linkId/guests/:guestId/resend - Resend invitation
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import {
   listShareLinks,

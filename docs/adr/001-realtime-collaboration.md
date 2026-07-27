@@ -141,7 +141,7 @@ ydoc
 
 ### 6. Server-side mutations: one seam in the facade
 
-`updatePresentation` (`server/storage/presentations.js`) gains a guard: if
+`updatePresentation` (`server/storage/presentations/index.js`) gains a guard: if
 collab is enabled **and** the deck has a loaded collab document, the incoming
 whole-deck JSON is applied *to the Y.Doc* via
 `openDirectConnection().transact()` using a structural differ (match slides

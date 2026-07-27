@@ -13,7 +13,7 @@
  * "no owner filter" behavior.
  */
 
-import { getPresentation } from '../storage/presentations.js';
+import { getPresentation } from '../storage/presentations/index.js';
 import {
   canActorAccessPresentation,
   canDeletePresentation,

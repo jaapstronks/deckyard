@@ -5,7 +5,7 @@
  * Body: { newOwnerEmail: "user@example.com", keepAsCollaborator?: boolean }
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import { transferPresentationOwnership } from '../../../storage/presentations/ownership.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { listUsers } from '../../../storage/users.js';

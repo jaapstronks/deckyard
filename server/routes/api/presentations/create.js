@@ -1,4 +1,4 @@
-import { createPresentation } from '../../../storage/presentations.js';
+import { createPresentation } from '../../../storage/presentations/index.js';
 import { json, serveJson } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { recordPresentationCreated } from '../../../services/activity-events.js';

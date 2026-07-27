@@ -27,7 +27,7 @@ import {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations.js';
+} from '../server/storage/presentations/index.js';
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';

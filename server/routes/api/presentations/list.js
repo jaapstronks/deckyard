@@ -1,4 +1,4 @@
-import { listPresentations } from '../../../storage/presentations.js';
+import { listPresentations } from '../../../storage/presentations/index.js';
 import { getTagsForPresentations } from '../../../storage/tags/index.js';
 import { serveJson } from '../../../utils/http.js';
 import { normalizePresentationScope, isUnrestricted } from '../../../utils/presentation-authz.js';

@@ -6,7 +6,7 @@
 import { badRequest, json, notFound, serveJson, unauthorized, jsonError } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
-import { getPresentation } from '../../storage/presentations.js';
+import { getPresentation } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { createRouteContext } from '../../utils/context.js';
 import { canWritePresentation, canReadPresentation } from '../../utils/presentation-authz.js';

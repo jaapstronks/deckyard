@@ -37,7 +37,7 @@ const OWNER = 'owner@example.com';
 test.before(async () => {
   repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-ifmatch-repo-'));
   ({ createPresentation, getPresentation, createPresentationVersion } = await import(
-    '../server/storage/presentations.js'
+    '../server/storage/presentations/index.js'
   ));
   ({ handlePresentationItem } = await import(
     '../server/routes/api/presentations/presentation.js'

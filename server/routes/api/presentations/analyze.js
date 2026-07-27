@@ -3,7 +3,7 @@
  * Analyzes presentations and creates improvement suggestions as comments.
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   json,
   methodNotAllowed,

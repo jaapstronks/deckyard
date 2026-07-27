@@ -6,7 +6,7 @@
 import {
   createPresentation,
   updatePresentation,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import {
   generateDeckJsonFromRawContent,

@@ -20,7 +20,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { createPresentation, listPresentations } from '../server/storage/presentations.js';
+import { createPresentation, listPresentations } from '../server/storage/presentations/index.js';
 import { resolveThemeThumbBg } from '../server/utils/themes.js';
 import { testScope } from './helpers/storage-scope.js';
 

@@ -28,7 +28,7 @@ import {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations.js';
+} from '../server/storage/presentations/index.js';
 
 function stripVolatile(pres) {
   const p = JSON.parse(JSON.stringify(pres));

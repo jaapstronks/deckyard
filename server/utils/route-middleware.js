@@ -3,7 +3,7 @@
  * Reduces boilerplate in route handlers by providing composable wrappers.
  */
 
-import { getPresentation } from '../storage/presentations.js';
+import { getPresentation } from '../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
 import {
   notFound,

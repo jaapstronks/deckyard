@@ -17,7 +17,7 @@
  * slide types become a harmless placeholder (deckToPresentationParts).
  */
 
-import { createPresentation, updatePresentation } from '../../../storage/presentations.js';
+import { createPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import {
   readRequestBody,
   serveJson,

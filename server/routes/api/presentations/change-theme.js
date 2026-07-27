@@ -6,7 +6,7 @@
 import {
   getPresentation,
   updatePresentation,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import {
   serveJson,
   methodNotAllowed,

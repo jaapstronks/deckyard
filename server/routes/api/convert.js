@@ -5,7 +5,7 @@
 import {
   createPresentation,
   updatePresentation,
-} from '../../storage/presentations.js';
+} from '../../storage/presentations/index.js';
 import {
   badRequest,
   json,

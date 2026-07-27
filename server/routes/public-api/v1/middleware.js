@@ -9,7 +9,7 @@ import { normalizePresentationScope, canActorAccessPresentation } from '../../..
 import { incrementUsage, getRateLimitHeaders, checkAiRateLimit, checkExportRateLimit } from '../../../storage/api-usage.js';
 import { allowRequest } from '../../../utils/rate-limit.js';
 import { serveJson, forbidden, rateLimited as sendRateLimited, json } from '../../../utils/http.js';
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 
 // ============================================================
 // API KEY AUTHENTICATION

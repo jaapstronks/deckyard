@@ -4,7 +4,7 @@ import {
   getPresentationVersion,
   listPresentationVersions,
   prunePresentationVersions,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { createRouteContext } from '../../../utils/context.js';
 import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';

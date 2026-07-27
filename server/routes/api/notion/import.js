@@ -14,7 +14,7 @@ import { convertNotionPage } from '../../../utils/convert-notion.js';
 import {
   createPresentation,
   updatePresentation,
-} from '../../../storage/presentations.js';
+} from '../../../storage/presentations/index.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseErrorPayload } from '../../../utils/sse.js';

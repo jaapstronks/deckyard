@@ -8,7 +8,7 @@
  * GET    /api/share/:token/guest/me                   - Get current guest session info
  */
 
-import { getPresentation } from '../../../storage/presentations.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   validateShareLink,
   verifyShareLinkAccess,

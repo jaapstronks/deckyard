@@ -59,7 +59,7 @@ export async function handleAnalyticsReportPublic({ req, res, url }) {
 
     // Verify the associated presentation still exists and is accessible
     // This prevents sharing reports for deleted/private presentations
-    const { getPresentation } = await import('../../../storage/presentations.js');
+    const { getPresentation } = await import('../../../storage/presentations/index.js');
     const presentation = await getPresentation(
       crossOrganizationScope(null, 'public analytics report: the report token is the authorization'),
       report.presentationId

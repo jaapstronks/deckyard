@@ -17,7 +17,7 @@ const { maybeAttachCollab, shutdownCollab } = await import(
   '../server/collab/mount.js'
 );
 const { createPresentation } = await import(
-  '../server/storage/presentations.js'
+  '../server/storage/presentations/index.js'
 );
 const { createPresenceSession } = await import(
   '../client/lib/collab/presence-session.js'

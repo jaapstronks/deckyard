@@ -12,7 +12,7 @@
 
 import crypto from 'node:crypto';
 import { safeSlug } from '../../utils/slug.js';
-import { getPresentation } from '../presentations.js';
+import { getPresentation } from '../presentations/index.js';
 import { crossOrganizationScope, resolveScope, repoRootOf } from '../scope.js';
 import { createStorageDispatch } from '../backend-dispatch.js';
 

@@ -2,7 +2,7 @@
  * The presentations facade under MULTI_WORKSPACE_ENABLED (A1 follow-up).
  *
  * This is the file that holds the bug the scope work exists to remove. Before
- * it, `server/storage/presentations.js` built its own context with a hardcoded
+ * it, `server/storage/presentations/index.js` built its own context with a hardcoded
  * `getDefaultOrganizationId()`, so a session working in organization Beta that
  * asked the facade for a deck got an answer computed against organization
  * Alpha. Phase 2 (#359) caught the consequence fail-closed at the authorization
@@ -50,7 +50,7 @@ const { isMultiWorkspaceEnabled } = await import('../server/config/features.js')
 const { crossOrganizationScope, singleWorkspaceScope } = await import(
   '../server/storage/scope.js'
 );
-const facade = await import('../server/storage/presentations.js');
+const facade = await import('../server/storage/presentations/index.js');
 const { initializeStorage } = await import('../server/storage/adapters/index.js');
 
 test.before(async () => {

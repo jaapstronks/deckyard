@@ -1,5 +1,5 @@
 import { broadcast, getSessionSync, touchSessionSync, updatePresentSessionState } from './sse.js';
-import { getPresentation } from '../presentations.js';
+import { getPresentation } from '../presentations/index.js';
 import {
   isInteractiveSlideType,
   getOptionCountForSlide,

@@ -28,7 +28,7 @@ import { presentationIdFromDocumentName } from './auth.js';
 import {
   getPresentation as defaultGetPresentation,
   updatePresentation as defaultUpdatePresentation,
-} from '../storage/presentations.js';
+} from '../storage/presentations/index.js';
 import {
   getYDocState as defaultGetYDocState,
   setYDocState as defaultSetYDocState,
