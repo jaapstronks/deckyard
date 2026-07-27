@@ -98,7 +98,7 @@ function schedulePersist(s) {
   s.persistTimer.unref?.();
 }
 
-async function loadSessionsFromDisk(repoRoot) {
+async function getSessionsFromDisk(repoRoot) {
   const root = String(repoRoot || '');
   if (!root || loadedRoots.has(root)) return;
   loadedRoots.add(root);
@@ -234,13 +234,13 @@ async function broadcast(repoRoot, sessionId, event, data) {
 }
 
 export async function getQuestionsSession(repoRoot, sessionId) {
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   return sessions.get(String(sessionId || '')) || null;
 }
 
 export async function ensureQuestionsSession(repoRoot, sessionId, { presentationId } = {}) {
   ensureCleanupTimer();
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   const sid = String(sessionId || '').trim();
   const pid = String(presentationId || '').trim();
   if (!sid || !pid) return null;

@@ -23,7 +23,7 @@ import { parseMentions } from '../../shared/comment-mentions.js';
 import { listCollaborators } from '../storage/collaborators.js';
 import { getThreadParticipants } from '../storage/presentation-comments.js';
 import { listSubscriptions } from '../storage/presentation-subscriptions.js';
-import { readUserSettings } from '../storage/settings.js';
+import { getUserSettings } from '../storage/settings.js';
 import { getUserByEmail } from '../storage/users.js';
 
 /** Notification type per recipient reason. */
@@ -184,7 +184,7 @@ export async function resolveCommentRecipients({
       let level = overrides.get(email);
       if (!level) {
         try {
-          const settings = await readUserSettings(repoRoot || defaultRepoRoot, email);
+          const settings = await getUserSettings(repoRoot || defaultRepoRoot, email);
           level = settings?.notifications?.defaultLevel || 'participating';
         } catch {
           level = 'participating';

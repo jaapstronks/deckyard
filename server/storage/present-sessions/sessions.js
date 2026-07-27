@@ -1,7 +1,7 @@
 import { createFollowCode } from '../follow-codes.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
-import { isExpired, loadSessionsFromDisk, schedulePersist } from './disk.js';
+import { isExpired, getSessionsFromDisk, schedulePersist } from './disk.js';
 import { newSessionId, nowState } from './ids.js';
 import { closeSession } from './close.js';
 import { createLogger } from '../../utils/logger.js';
@@ -63,7 +63,7 @@ function ensureCleanupTimer() {
 
 export async function createPresentSession(repoRoot, { presentationId }) {
   ensureCleanupTimer();
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   const presId = String(presentationId || '').trim();
   if (!presId) return null;
 
@@ -140,12 +140,12 @@ export async function createPresentSession(repoRoot, { presentationId }) {
 }
 
 export async function getPresentSession(repoRoot, sessionId) {
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   return sessions.get(String(sessionId || '')) || null;
 }
 
 export async function findMostRecentSessionForPresentation(repoRoot, presentationId) {
-  await loadSessionsFromDisk(repoRoot);
+  await getSessionsFromDisk(repoRoot);
   const pid = String(presentationId || '').trim();
   if (!pid) return null;
   let best = null;

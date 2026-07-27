@@ -290,6 +290,6 @@ export async function getImageLibrary(repoRoot) {
   return readLibrary(repoRoot);
 }
 
-export async function saveImageLibrary(repoRoot, lib) {
+export async function writeImageLibrary(repoRoot, lib) {
   return writeLibrary(repoRoot, lib);
 }

@@ -6,7 +6,7 @@
 
 import { createTranslator } from '../i18n/index.js';
 import {
-  readEmailTemplates,
+  getEmailTemplates,
   getEmailTemplateOverride,
   TEMPLATE_METADATA,
   SUPPORTED_LOCALES,
@@ -245,7 +245,7 @@ export async function resolveTemplate(repoRoot, type, locale) {
  * @returns {Promise<AllTemplatesResult>} All templates with metadata and resolved values
  */
 export async function getAllTemplates(repoRoot) {
-  const data = await readEmailTemplates(repoRoot);
+  const data = await getEmailTemplates(repoRoot);
   const result = {
     defaultLocale: data.defaultLocale,
     supportedLocales: SUPPORTED_LOCALES,

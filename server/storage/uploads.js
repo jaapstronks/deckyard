@@ -26,7 +26,7 @@ const EXT_TO_MIMES = {
   svg: ['image/svg+xml'],
 };
 
-export async function saveUploadFromDataUrl(repoRoot, dataUrl, originalName) {
+export async function writeUploadFromDataUrl(repoRoot, dataUrl, originalName) {
   const { mime, base64 } = parseDataUrl(dataUrl);
   const ext = MIME_TO_EXT[mime];
   if (!ext) {
@@ -90,7 +90,7 @@ export async function saveUploadFromDataUrl(repoRoot, dataUrl, originalName) {
  * @param {string} contentType - MIME type
  * @returns {Promise<string>} Local URL path
  */
-export async function saveUploadedFile(repoRoot, buffer, filename, contentType) {
+export async function writeUploadedFile(repoRoot, buffer, filename, contentType) {
   const ext = MIME_TO_EXT[contentType];
   if (!ext) {
     const err = new Error(`Unsupported image type: ${contentType}`);

@@ -240,7 +240,7 @@ function normalizeDayOfWeek(v) {
   return n;
 }
 
-export async function readAppSettings(repoRoot) {
+export async function getAppSettings(repoRoot) {
   const raw = await readJsonIfExists(settingsPath(repoRoot));
   const obj = raw && typeof raw === 'object' ? raw : {};
   const defaults = defaultAppSettings();
@@ -357,7 +357,7 @@ export async function readAppSettings(repoRoot) {
 }
 
 export async function writeAppSettings(repoRoot, next) {
-  const prev = await readAppSettings(repoRoot);
+  const prev = await getAppSettings(repoRoot);
   const defaults = defaultAppSettings();
 
   const supportedSlideLangs = normalizeSupportedLangList(
@@ -601,7 +601,7 @@ function normalizeThickness(v, fallback = 4) {
   return Math.min(n, 10);
 }
 
-export async function readUserSettings(repoRoot, email) {
+export async function getUserSettings(repoRoot, email) {
   const raw = await readJsonIfExists(
     userSettingsPath(repoRoot, email)
   );
@@ -664,7 +664,7 @@ export async function readUserSettings(repoRoot, email) {
 }
 
 export async function writeUserSettings(repoRoot, email, next) {
-  const prev = await readUserSettings(repoRoot, email);
+  const prev = await getUserSettings(repoRoot, email);
   const nextProfile =
     next?.profile && typeof next.profile === 'object'
       ? next.profile
@@ -767,7 +767,7 @@ export async function writeUserSettings(repoRoot, email, next) {
  * @returns {Promise<{ name: string, email: string }>}
  */
 export async function getAiIdentity(repoRoot) {
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   return {
     name: settings.aiAssistant?.name || DEFAULT_AI_NAME,
     email: settings.aiAssistant?.email || DEFAULT_AI_EMAIL,
@@ -781,7 +781,7 @@ export async function getAiIdentity(repoRoot) {
  * @returns {Promise<{ email: string, name: string }>}
  */
 export async function getEmailSender(repoRoot) {
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   return {
     email:
       settings.emailSender?.email ||
@@ -803,7 +803,7 @@ export async function getEmailSender(repoRoot) {
  * @returns {Promise<string>}
  */
 export async function getDefaultThemeId(repoRoot) {
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   return (
     settings.defaultThemeId ||
     normalizeThemeId(process.env.DEFAULT_THEME) ||
@@ -817,6 +817,6 @@ export async function getDefaultThemeId(repoRoot) {
  * @returns {Promise<number>}
  */
 export async function getSessionDurationDays(repoRoot) {
-  const settings = await readAppSettings(repoRoot);
+  const settings = await getAppSettings(repoRoot);
   return settings.sessionDurationDays || 30;
 }

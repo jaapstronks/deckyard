@@ -368,7 +368,7 @@ export async function getSlideLibrary(repoRoot) {
   return readStore(p);
 }
 
-export async function saveSlideLibrary(repoRoot, lib) {
+export async function writeSlideLibrary(repoRoot, lib) {
   const p = teamPath(repoRoot);
   return writeStore(p, lib);
 }

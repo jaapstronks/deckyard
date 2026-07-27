@@ -9,7 +9,7 @@ import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { validateShareLink } from '../../storage/share-links/crud.js';
-import { readAppSettings, readUserSettings } from '../../storage/settings.js';
+import { getAppSettings, getUserSettings } from '../../storage/settings.js';
 import {
   TRACKING_RATE_LIMITS,
   isValidDeviceId,
@@ -234,7 +234,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     }
 
     // Check app-level analytics settings
-    const appSettings = await readAppSettings(ctx.repoRoot);
+    const appSettings = await getAppSettings(ctx.repoRoot);
     if (!appSettings.analytics?.enabled) {
       // Analytics disabled at app level - silently accept but don't track
       return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
@@ -248,7 +248,7 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
     // Check user privacy settings if viewer is authenticated
     let viewerPrivacySettings = null;
     if (isAuthenticatedViewer) {
-      viewerPrivacySettings = await readUserSettings(ctx.repoRoot, viewerEmail);
+      viewerPrivacySettings = await getUserSettings(ctx.repoRoot, viewerEmail);
 
       // If viewer has opted out of all tracking, don't track
       if (viewerPrivacySettings?.privacy?.disableAllTracking) {

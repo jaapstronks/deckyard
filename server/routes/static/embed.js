@@ -14,7 +14,7 @@ import {
   resolveLangModeFromPresOrUrl,
 } from '../../utils/i18n.js';
 import { analyticsHeadHtml } from '../../analytics/head.js';
-import { readAppSettings } from '../../storage/settings.js';
+import { getAppSettings } from '../../storage/settings.js';
 import { log } from './log.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
@@ -67,7 +67,7 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
   const theme = await loadTheme(repoRoot, pres?.theme);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
-  const embedSettings = await readAppSettings(repoRoot);
+  const embedSettings = await getAppSettings(repoRoot);
   const analytics = analyticsHeadHtml({
     context: 'embed',
     sandbox: sandboxEnabled(),

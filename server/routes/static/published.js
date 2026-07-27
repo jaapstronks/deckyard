@@ -17,7 +17,7 @@ import {
 } from '../../utils/i18n.js';
 import { analyticsHeadHtml } from '../../analytics/head.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
-import { readAppSettings } from '../../storage/settings.js';
+import { getAppSettings } from '../../storage/settings.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
@@ -204,7 +204,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
 
     ${jsonLdScript}
     `.trim();
-  const publishedSettings = await readAppSettings(repoRoot);
+  const publishedSettings = await getAppSettings(repoRoot);
   const analytics = analyticsHeadHtml({
     context: 'published',
     sandbox: sandboxNoindex,

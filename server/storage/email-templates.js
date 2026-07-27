@@ -190,7 +190,7 @@ function emailTemplatesPath(repoRoot) {
  * @param {string} repoRoot - Repository root directory
  * @returns {Promise<Object>} Email templates configuration
  */
-export async function readEmailTemplates(repoRoot) {
+export async function getEmailTemplates(repoRoot) {
   const raw = await readJsonIfExists(emailTemplatesPath(repoRoot));
   const obj = raw && typeof raw === 'object' ? raw : {};
 
@@ -221,7 +221,7 @@ export async function writeEmailTemplate(repoRoot, type, locale, fields) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await readEmailTemplates(repoRoot);
+  const current = await getEmailTemplates(repoRoot);
 
   // Initialize template type if not exists
   if (!current.templates[type]) {
@@ -276,7 +276,7 @@ export async function deleteEmailTemplate(repoRoot, type, locale) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await readEmailTemplates(repoRoot);
+  const current = await getEmailTemplates(repoRoot);
 
   // Remove locale override
   if (current.templates[type]) {
@@ -303,7 +303,7 @@ export async function updateDefaultLocale(repoRoot, locale) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await readEmailTemplates(repoRoot);
+  const current = await getEmailTemplates(repoRoot);
   current.defaultLocale = locale;
 
   await writeJsonAtomic(emailTemplatesPath(repoRoot), current);
@@ -318,7 +318,7 @@ export async function updateDefaultLocale(repoRoot, locale) {
  * @returns {Promise<Object|null>} Template override or null if not set
  */
 export async function getEmailTemplateOverride(repoRoot, type, locale) {
-  const data = await readEmailTemplates(repoRoot);
+  const data = await getEmailTemplates(repoRoot);
   return data.templates[type]?.[locale] || null;
 }
 
@@ -329,6 +329,6 @@ export async function getEmailTemplateOverride(repoRoot, type, locale) {
  * @returns {Promise<string>} Default locale code
  */
 export async function getEmailDefaultLocale(repoRoot) {
-  const data = await readEmailTemplates(repoRoot);
+  const data = await getEmailTemplates(repoRoot);
   return data.defaultLocale || DEFAULT_LOCALE;
 }

@@ -4,7 +4,7 @@
 
 import { buildLeadNotificationEmail } from '../email-templates.js';
 import { sendEmail, getSenderIdentity } from './core.js';
-import { readUserSettings } from '../../storage/settings.js';
+import { getUserSettings } from '../../storage/settings.js';
 import { resolveTemplate, interpolatePlaceholders } from '../email-template-resolver.js';
 
 /**
@@ -22,7 +22,7 @@ export async function maybeSendLeadNotification(repoRoot, { presentation, lead }
   if (!ownerEmail) return;
 
   // Check if user has lead notifications enabled
-  const userSettings = await readUserSettings(repoRoot, ownerEmail);
+  const userSettings = await getUserSettings(repoRoot, ownerEmail);
   if (!userSettings?.notifications?.leadEmails) {
     return; // User has disabled lead notifications
   }

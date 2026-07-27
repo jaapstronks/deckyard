@@ -7,7 +7,7 @@
  */
 
 import { searchUsers } from '../../storage/users.js';
-import { readUserSettings } from '../../storage/settings.js';
+import { getUserSettings } from '../../storage/settings.js';
 import { createRouteContext } from '../../utils/context.js';
 import { serveJson, methodNotAllowed, unauthorized } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
@@ -64,7 +64,7 @@ export async function handleUsers({ repoRoot, req, res, url, authedUser }) {
     const profileEntries = await Promise.all(
       emails.map(async (email) => {
         try {
-          const settings = await readUserSettings(repoRoot, email);
+          const settings = await getUserSettings(repoRoot, email);
           return [
             email,
             {

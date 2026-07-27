@@ -33,7 +33,7 @@ import {
 import { CURATED_FONTS, getFontsByCategory } from '../../../shared/theme-fonts.js';
 import { buildThemeConfig } from '../../utils/theme-builder.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
-import { readAppSettings, getDefaultThemeId } from '../../storage/settings.js';
+import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
 
 /**
  * Check if user can manage themes.
@@ -110,7 +110,7 @@ export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
     // picker can show a default-visible subset and hide the rest behind a
     // "Show all themes" toggle. An empty allowlist means every theme is shown.
     const [{ enabledThemes }, defaultThemeId] = await Promise.all([
-      readAppSettings(repoRoot),
+      getAppSettings(repoRoot),
       getDefaultThemeId(repoRoot),
     ]);
     const allowlist = Array.isArray(enabledThemes) ? enabledThemes : [];
