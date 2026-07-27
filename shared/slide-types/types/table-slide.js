@@ -96,6 +96,22 @@ export default {
       })),
     },
     TABLE_STYLE_FIELD,
+    {
+      key: 'cornerCell',
+      label: 'Top-left cell',
+      type: 'enum',
+      required: false,
+      options: [
+        { value: 'label', label: 'Label column' },
+        { value: 'header', label: 'Header row' },
+      ],
+      helpText:
+        'Which band the top-left corner cell belongs to. "label" (default) ' +
+        'keeps it the label-column colour, so it reads as the head of the ' +
+        'first column (the historical look). "header" gives it the header-row ' +
+        'colour instead, so the entire top row is one colour. Orthogonal to ' +
+        'Table style — works with every style.',
+    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -111,6 +127,7 @@ export default {
         { c1: 'Rij 2', c2: '…', c3: '…', c4: '…' },
       ],
       tableStyle: 'plain',
+      cornerCell: 'label',
       background: 'lime',
     },
     'en-GB': {
@@ -125,6 +142,7 @@ export default {
         { c1: 'Row 2', c2: '…', c3: '…', c4: '…' },
       ],
       tableStyle: 'plain',
+      cornerCell: 'label',
       background: 'lime',
     },
   },
@@ -141,11 +159,20 @@ export default {
       { c1: 'Row 2', c2: '…', c3: '…', c4: '…' },
     ],
     tableStyle: 'plain',
+    cornerCell: 'label',
     background: 'lime',
   },
   renderHtml: (content) => {
     const bg = bgClass(content?.background);
     const tableStyle = tableStyleClass(content?.tableStyle);
+    // cornerCell: 'header' folds the top-left cell into the header band (whole
+    // top row one colour). Default/absent/unknown → 'label' (historical look),
+    // so old decks render byte-for-byte unchanged. Orthogonal to tableStyle:
+    // one modifier class, works with every style incl. future ones.
+    const cornerClass =
+      String(content?.cornerCell || 'label') === 'header'
+        ? ' md-table--corner-header'
+        : '';
     const colCount = colCountFromContent(content);
     const rows = normalizeRows(content, colCount);
     const animateByCell = String(content?.animateByCell || 'off') === 'on';
@@ -194,7 +221,7 @@ export default {
         <div class="slide-inner">
           <h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content?.title)}</h2>
           <div class="md-table-wrap">
-            <table class="md-table ${tableStyle}">
+            <table class="md-table ${tableStyle}${cornerClass}">
               ${thead}
               ${tbody}
             </table>
