@@ -715,6 +715,8 @@ export async function createEditorController({
     isAuthor,
   });
 
+  cleanup.register('slidesPanel', slidesPanel.detach);
+
   const { leftEl: left, slideListEl, openSlideTypeModal, openSlideLibraryModal } = slidesPanel;
 
   // ============================================================

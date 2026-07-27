@@ -136,11 +136,41 @@ export function createSlidesPanel({
     }
   };
 
-  searchInput.addEventListener('input', () => applySearch(searchInput.value));
+  // Debounce only the per-keystroke input path. Each `rerenderSlideList()`
+  // rebuilds every thumbnail from scratch (`slide-list.js:305`,
+  // `slideListEl.innerHTML = ''`), so typing an 8-char query used to trigger 8
+  // full rebuilds — ~137 ms of blocked main thread on an 80-slide deck. The
+  // timer resets on each keystroke, so a word typed at fluent cadence
+  // (~120–180 ms between keys) collapses into a single rebuild that fires once
+  // the user pauses. 200 ms sits just above that cadence yet inside the
+  // search-as-you-type responsiveness band, so results still feel immediate.
+  const SEARCH_DEBOUNCE_MS = 200;
+  let searchDebounceTimer = null;
+  const cancelPendingSearch = () => {
+    if (searchDebounceTimer != null) {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = null;
+    }
+  };
+  // Immediate path — clear and the programmatic entry (AI review) render right
+  // away, and drop any keystroke render still queued so it can't fire stale.
+  const applySearchNow = (q, opts) => {
+    cancelPendingSearch();
+    applySearch(q, opts);
+  };
+  const applySearchDebounced = () => {
+    cancelPendingSearch();
+    searchDebounceTimer = setTimeout(() => {
+      searchDebounceTimer = null;
+      applySearch(searchInput.value);
+    }, SEARCH_DEBOUNCE_MS);
+  };
+
+  searchInput.addEventListener('input', applySearchDebounced);
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
-      applySearch('', { autoSelect: false });
+      applySearchNow('', { autoSelect: false });
       try {
         searchInput.blur();
       } catch {
@@ -149,7 +179,7 @@ export function createSlidesPanel({
     }
   });
   searchClearBtn.addEventListener('click', () => {
-    applySearch('', { autoSelect: false });
+    applySearchNow('', { autoSelect: false });
     searchInput.focus?.();
   });
 
@@ -609,7 +639,10 @@ export function createSlidesPanel({
     openSlideDrawer,
     closeDrawer,
     getSearchQuery: () => searchQuery,
-    setSearchQuery: (q, opts) => applySearch(q, opts),
+    setSearchQuery: (q, opts) => applySearchNow(q, opts),
+    // Drop a queued keystroke render on unmount — it would otherwise fire up to
+    // SEARCH_DEBOUNCE_MS later and rerender a torn-down editor.
+    detach: cancelPendingSearch,
     setSearchStats,
     updateBulkActionBar,
     pasteFromClipboard,
