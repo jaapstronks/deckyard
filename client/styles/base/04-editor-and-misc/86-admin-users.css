@@ -4,10 +4,6 @@
    USER STATUS INDICATORS
    ============================================================ */
 
-.admin-users-status {
-  white-space: nowrap;
-}
-
 .status-indicators {
   display: flex;
   gap: 12px;

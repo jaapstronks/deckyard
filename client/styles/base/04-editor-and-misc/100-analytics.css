@@ -925,11 +925,6 @@ img.analytics-viewer-badge {
   opacity: 1;
 }
 
-.analytics-empty-hint {
-  font-size: 13px;
-  margin-top: var(--ps-space-2);
-}
-
 /* Enhanced Empty States */
 .analytics-empty-state {
   display: flex;
@@ -959,10 +954,6 @@ img.analytics-viewer-badge {
   color: hsl(var(--app-text-secondary));
   margin: 0 0 var(--ps-space-4);
   max-width: 280px;
-}
-
-.analytics-empty-state-action {
-  margin-top: var(--ps-space-2);
 }
 
 /* Skeleton Loading */
@@ -1009,11 +1000,6 @@ img.analytics-viewer-badge {
 .analytics-skeleton-text {
   height: 16px;
   width: 60%;
-}
-
-.analytics-skeleton-text-short {
-  height: 14px;
-  width: 40%;
 }
 
 /* Sortable Table Headers */

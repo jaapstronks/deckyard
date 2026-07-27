@@ -148,14 +148,6 @@
   flex-wrap: wrap;
 }
 
-.publish-field-textarea {
-  min-height: 92px;
-  resize: vertical;
-  font-family: var(--ps-font-mono);
-  font-size: 13px;
-  line-height: 1.35;
-}
-
 .publish-field-status {
   margin-top: 6px;
 }

@@ -347,12 +347,6 @@
   margin-top: var(--ps-space-1);
 }
 
-.api-key-usage-limits {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-1);
-}
-
 .api-key-usage-table {
   width: 100%;
   border-collapse: collapse;

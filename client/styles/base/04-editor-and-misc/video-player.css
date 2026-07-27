@@ -16,15 +16,6 @@ body {
   padding: 20px;
 }
 
-.header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
 .video-title {
   font-family: Arial, sans-serif;
   font-size: 24px;
@@ -295,20 +286,7 @@ body {
   opacity: 0.8;
 }
 
-.loading-indicator {
-  text-align: center;
-  padding: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  font-style: italic;
-}
-
 @media (max-width: 768px) {
-  .header-container {
-    flex-direction: column;
-    align-items: stretch;
-    text-align: center;
-  }
-
   .video-title {
     font-size: 20px;
   }

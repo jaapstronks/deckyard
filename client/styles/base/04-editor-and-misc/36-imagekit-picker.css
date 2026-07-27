@@ -229,11 +229,4 @@
   color: hsl(var(--app-text-primary));
 }
 
-.imagekit-tag-more {
-  font-size: 12px;
-  color: hsl(var(--app-text-tertiary));
-  font-style: italic;
-  padding: 0 8px;
-}
-
 
