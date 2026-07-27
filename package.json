@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:deadcode": "eslint . --config eslint.deadcode.config.js",
+    "lint:deadcss": "node scripts/lint-dead-css.js",
     "audit": "node scripts/audit-codebase.js",
     "gen:slide-css": "node scripts/generate-slide-css-aggregators.js",
     "gen:slide-docs": "node scripts/generate-slide-type-docs.js",
