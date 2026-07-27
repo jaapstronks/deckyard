@@ -127,5 +127,9 @@
   "notifications.filter.archived": "Arkistoidut",
   "notifications.archive": "Arkistoi",
   "notifications.archiveAll": "Arkistoi kaikki",
-  "notifications.empty.archived": "Ei vielä arkistoituja"
+  "notifications.empty.archived": "Ei vielä arkistoituja",
+  "maintenance.banner.text": "Deckyard on hetken poissa käytöstä huollon vuoksi. Työsi säilyy tässä ja tallentuu heti kun palvelu palaa.",
+  "maintenance.readOnly.banner": "Keskeytetty huollon ajaksi - työsi säilyy",
+  "maintenance.toast.paused": "Deckyard on hetken poissa käytöstä. Muokkaus on keskeytetty ja työsi säilyy tässä.",
+  "maintenance.toast.resumed": "Deckyard on taas käytössä. Työsi tallentuu jälleen."
 }

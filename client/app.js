@@ -15,6 +15,11 @@ import {
 import { meWithMeta } from './lib/user/auth.js';
 import { setFeatures } from './lib/state/features.js';
 import { syncSandboxBanner } from './views/shared/sandbox-banner.js';
+import {
+  startMaintenanceBanner,
+  syncMaintenanceBanner,
+} from './views/shared/maintenance-banner.js';
+import { refreshMaintenanceState } from './lib/state/maintenance.js';
 import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list.js';
 import { renderEditor } from './views/editor.js';
@@ -312,9 +317,17 @@ async function bootstrap() {
     queueMicrotask(() => {
       rerenderQueued = false;
       syncSandboxBanner();
+      syncMaintenanceBanner();
       render();
     });
   });
+
+  // The maintenance banner outlives every route: a restart is equally confusing
+  // in the deck list and in the editor, and the notice has to survive the view
+  // root being cleared on navigation. Document-long by design, same as the
+  // sandbox banner above.
+  startMaintenanceBanner();
+  refreshMaintenanceState();
   render();
 }
 

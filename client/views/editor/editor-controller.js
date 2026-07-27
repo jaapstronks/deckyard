@@ -80,6 +80,7 @@ import { createUndoManager } from '../../lib/state/undo-manager.js';
 import { createUndoActions } from './slide-list/undo-actions.js';
 import { createSlideUpdateHandler } from './slide-update-handler.js';
 import { createRemoteRefresh } from './remote-refresh.js';
+import { onMaintenanceChange } from '../../lib/state/maintenance.js';
 
 export async function createEditorController({
   root,
@@ -256,9 +257,21 @@ export async function createEditorController({
     return null;
   };
 
-  // State mirror of the shell's is-read-only class (presentation-level lock
-  // by another user); surfaces read this instead of the classList.
+  // State mirror of the shell's is-read-only class; surfaces read this instead
+  // of the classList. Two independent sources can lock the editor and they must
+  // not clobber each other: another user holding the presentation lock, and the
+  // server being in maintenance. `readOnlyMode` is the OR of the two — without
+  // this split, a lock released during a deploy would hand editing back while
+  // every save is still being refused with a 503.
   let readOnlyMode = false;
+  let lockReadOnly = false;
+  let maintenanceReadOnly = false;
+
+  /** Recompute read-only state from both sources and reflect it in the shell. */
+  const applyReadOnly = () => {
+    readOnlyMode = lockReadOnly || maintenanceReadOnly;
+    shell.classList.toggle('is-read-only', readOnlyMode);
+  };
 
   // Store user email for SSE event filtering
   if (user?.email) {
@@ -639,8 +652,8 @@ export async function createEditorController({
     onReadOnlyChange: (() => {
       let wasReadOnly = false;
       return (isReadOnly, lockInfo) => {
-        readOnlyMode = !!isReadOnly;
-        shell.classList.toggle('is-read-only', isReadOnly);
+        lockReadOnly = !!isReadOnly;
+        applyReadOnly();
         if (isReadOnly) {
           const bannerText = t('editor.readOnly.banner', 'View only - someone else is editing');
           shell.style.setProperty('--read-only-banner-text', `"${bannerText}"`);
@@ -1149,6 +1162,44 @@ export async function createEditorController({
   // Load initial comment counts
   commentsPanel?.loadComments?.().catch(() => {});
   commentsPanel?.startPolling?.();
+
+  // ============================================================
+  // MAINTENANCE MODE
+  // ============================================================
+
+  // While the server is restarting, every write is refused with a 503. Rather
+  // than let the user keep typing into saves that bounce, lock the editor and
+  // stop the autosave timer — the work stays in the browser's in-memory deck
+  // and goes out in one save once the server answers again.
+  cleanup.register(
+    'maintenance',
+    onMaintenanceChange((state) => {
+      maintenanceReadOnly = state.active;
+      applyReadOnly();
+      if (state.active) {
+        shell.style.setProperty(
+          '--read-only-banner-text',
+          `"${t('maintenance.readOnly.banner', 'Paused for maintenance - your work is kept')}"`
+        );
+        saveManager.cancelAutosave();
+        toast.info(
+          t(
+            'maintenance.toast.paused',
+            'Deckyard is briefly unavailable. Editing is paused and your work is kept here.'
+          ),
+          { id: 'editor-maintenance', durationMs: 8000 }
+        );
+        return;
+      }
+      // Back up. Anything edited during the window is still dirty, so one save
+      // flushes it; a clean deck needs nothing and must not be written.
+      if (saveManager.isDirty()) saveManager.requestSave();
+      toast.success(
+        t('maintenance.toast.resumed', 'Deckyard is back. Your work is saving again.'),
+        { id: 'editor-maintenance', durationMs: 4000 }
+      );
+    })
+  );
 
   // ============================================================
   // IMAGE PICKERS

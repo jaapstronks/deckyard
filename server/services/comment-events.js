@@ -66,6 +66,37 @@ export function broadcastToPresentation(presentationId, eventType, data) {
 }
 
 /**
+ * Broadcast an event to every connected client, across all presentations.
+ *
+ * Used for server-wide announcements (maintenance mode) rather than
+ * presentation-scoped updates. Deliberately reuses this channel instead of
+ * opening a second one: the editor already holds this stream open for the whole
+ * session (`editor-controller.js` starts it on load, not when the comments
+ * panel opens), so an announcement reaches every open editor without a new
+ * connection or any polling.
+ *
+ * @param {string} eventType - Event type (e.g. 'maintenance:changed').
+ * @param {object} data - Event data to send.
+ * @returns {number} Number of client connections written to.
+ */
+export function broadcastToAll(eventType, data) {
+  const message = formatSSEMessage(eventType, data);
+  let sent = 0;
+
+  for (const presClients of clients.values()) {
+    for (const res of presClients) {
+      try {
+        res.write(message);
+        sent += 1;
+      } catch {
+        // Client disconnected, will be cleaned up on 'close' event
+      }
+    }
+  }
+  return sent;
+}
+
+/**
  * Send a heartbeat ping to all clients for a presentation.
  * Helps keep connections alive through proxies.
  * @param {string} presentationId - The presentation ID
@@ -114,6 +145,11 @@ export const SlideLockEventTypes = {
 // Presentation-level event types (for real-time sync)
 export const PresentationEventTypes = {
   UPDATED: 'presentation:updated',
+};
+
+// Server-wide event types (broadcast to every connected client)
+export const MaintenanceEventTypes = {
+  CHANGED: 'maintenance:changed',
 };
 
 // Data source event types (for live data refresh)

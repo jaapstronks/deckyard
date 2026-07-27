@@ -4,6 +4,10 @@
  */
 
 import { createSSEConnection } from '../../lib/net/sse-connection.js';
+import {
+  refreshMaintenanceState,
+  setMaintenanceState,
+} from '../../lib/state/maintenance.js';
 
 /**
  * Creates SSE handling functions for comment updates.
@@ -76,6 +80,13 @@ export function createCommentSSE({
           }
           break;
 
+        // Server-wide maintenance announcement. Rides this stream because the
+        // editor holds it open for the whole session, so every open editor
+        // hears it without a second connection.
+        case 'maintenance:changed':
+          setMaintenanceState(data);
+          break;
+
         // Slide lock events for concurrent editing
         case 'slide:locked':
         case 'slide:unlocked':
@@ -131,8 +142,17 @@ export function createCommentSSE({
         'slide:locks-changed',
         // Presentation update events (real-time sync)
         'presentation:updated',
+        // Server-wide maintenance announcements
+        'maintenance:changed',
       ],
       onEvent: handleSSEEvent,
+      onConnected: () => {
+        // The announcement that maintenance *started* arrived on a connection
+        // the restart then dropped, so nothing will ever announce the end of
+        // it over that same stream. Reconnecting is the hint; asking is the
+        // answer. Cheap, and it also covers an editor opened mid-maintenance.
+        refreshMaintenanceState();
+      },
       onError: (err) => {
         console.warn('SSE connection error:', err);
       },

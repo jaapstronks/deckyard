@@ -90,5 +90,9 @@
   "notifications.filter.archived": "Archivées",
   "notifications.archive": "Archiver",
   "notifications.archiveAll": "Tout archiver",
-  "notifications.empty.archived": "Rien d'archivé pour l'instant"
+  "notifications.empty.archived": "Rien d'archivé pour l'instant",
+  "maintenance.banner.text": "Deckyard est brièvement indisponible pour maintenance. Votre travail est conservé ici et sera enregistré dès son retour.",
+  "maintenance.readOnly.banner": "En pause pour maintenance - votre travail est conservé",
+  "maintenance.toast.paused": "Deckyard est brièvement indisponible. L'édition est en pause et votre travail est conservé ici.",
+  "maintenance.toast.resumed": "Deckyard est de retour. Votre travail est de nouveau enregistré."
 }
