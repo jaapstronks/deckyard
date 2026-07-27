@@ -3,31 +3,12 @@ import { dragHandleIcon, chevronDownIcon } from '../../../../lib/dom/icons.js';
 import { createCollapsedState } from '../../../../lib/slide-authoring/collapsed-state.js';
 import { fieldCardLink } from '../../fields/card-link-field.js';
 import { collapseAllToggle } from '../../fields/collapse-all-toggle.js';
+// items[] → numbered-field mirroring is a fact about the type's data model, so
+// it lives in the type's own directory rather than in this editing surface.
+import { syncIconCardsToNumbered as syncToNumbered } from '../../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
 
 // Collapsed state manager for icon cards
 const iconCardsState = createCollapsedState('iconcard');
-
-/**
- * Sync items[] back to numbered fields for backward compatibility.
- * This ensures older code paths and the renderer can use either format.
- * Exported for the phase-3 inspector, whose per-card icon/link controls
- * write items[] and must keep the numbered mirror in sync like the form.
- */
-export function syncIconCardsToNumbered(slide) {
-  syncToNumbered(slide);
-}
-
-function syncToNumbered(slide) {
-  const items = slide.content.items || [];
-  slide.content.cardCount = String(items.length);
-  for (let i = 0; i < 6; i++) {
-    const item = items[i] || {};
-    slide.content[`card${i + 1}Icon`] = item.icon || '';
-    slide.content[`card${i + 1}Title`] = item.title || '';
-    slide.content[`card${i + 1}Body`] = item.body || '';
-    slide.content[`card${i + 1}Link`] = item.link || '';
-  }
-}
 
 export function renderIconCardGridForm({
   h,

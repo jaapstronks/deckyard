@@ -6,55 +6,16 @@
  * - card-stack-slide: DEPRECATED — use icon-card-grid-slide instead
  * - text-blocks-slide: Multi-row blocks with arrows
  * - kpi-metrics-slide: Prominent numeric KPIs
+ *
+ * Types in the directory form own their editorial copy in their own (server-only)
+ * ai.js and are imported here — see docs/reference/slide-type-directory.md.
  */
 
+import { ai as iconCardGridAi } from '../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
+
 export const CARD_SLIDES = {
-  'icon-card-grid-slide': {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
-      A VISUALLY STRIKING grid of 1-6 cards, each with an icon, title, and body text.
-      This is one of the BEST slide types for presenting parallel concepts visually!
-
-      STRUCTURE:
-      - items: Array of 1-6 card objects, each with { icon, title, body }
-
-      ICONS: Choose from this list - pick icons that represent the concept:
-        People: user, users, users-three, handshake
-        Progress: arrow-right, arrow-up, trend-up, chart-line-up, rocket-launch
-        Documents: file-text, clipboard-text
-        Concepts: lightbulb (ideas), target (goals), gear (settings), globe (global)
-        Status: shield-check (security), check-circle (done), warning-circle (alert)
-        Other: calendar, heart, star, link
-
-      LAYOUT TIP: 4 cards = 2x2 grid, 5-6 cards = 2x3 grid. Very clean and professional.
-
-      PREFER THIS over content-slide bullets when you have 4-6 distinct categories!
-    `,
-    bestFor: [
-      '4-6 parallel categories or pillars',
-      'Focus areas or strategic priorities',
-      'Company values or principles',
-      'Product features or capabilities',
-      'Workstreams, departments, or teams',
-      'Service offerings',
-      'Benefits or advantages',
-      'Any set of 4-6 things that can each have a meaningful icon',
-    ],
-    notFor: [
-      'Time-based sequences (use timeline-slide)',
-      'Items that need very long descriptions or bullets (use text-blocks-slide)',
-      'Cause-effect relationships (use text-blocks-slide)',
-      'Simple lists without icons (use list-slide)',
-    ],
-    allowedIcons: [
-      'user', 'users', 'users-three', 'handshake', 'link',
-      'arrow-right', 'arrow-up', 'trend-up', 'chart-line-up',
-      'file-text', 'clipboard-text', 'lightbulb', 'target',
-      'rocket-launch', 'gear', 'shield-check', 'check-circle',
-      'warning-circle', 'calendar', 'globe', 'heart', 'star',
-    ],
-  },
+  // Owned by shared/slide-types/types/icon-card-grid-slide/ai.js.
+  'icon-card-grid-slide': iconCardGridAi,
 
   // card-stack-slide: DEPRECATED — removed from AI generation.
   // Existing slides still render via shared/slide-types/types/card-stack-slide.js.

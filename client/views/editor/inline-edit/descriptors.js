@@ -145,11 +145,16 @@
  * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]
  */
 
-import { syncIconCardsToNumbered } from '../editor-form/slide-forms/icon-card-grid.js';
 import { ensureLogos } from '../../../../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../../../../shared/slide-types/types/team-cards-slide.js';
-import { ensureIconCards } from '../../../../shared/slide-types/types/icon-card-grid-slide.js';
 import { ensureCardStack } from '../../../../shared/slide-types/types/card-stack-slide.js';
+// Directory-form types own their descriptor; this file aggregates them next to
+// the entries that have not moved yet. See docs/reference/slide-type-directory.md.
+import { inlineEdit as iconCardGridInlineEdit } from '../../../../shared/slide-types/types/icon-card-grid-slide/inline-edit.js';
+import {
+  HEADER_GHOSTS,
+  HEADER_TEXT,
+} from '../../../../shared/slide-types/inline-edit-common.js';
 import {
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
@@ -160,41 +165,10 @@ import {
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/content-columns-images.js';
 
-/**
- * The standard header pattern shared by most content/data-viz types: optional
- * `title` + `subheading` in a `.header` (or directly in `.slide-inner`) and an
- * optional `bottomSubheading` at the bottom. Renderers omit each element - and
- * the whole `.header` - when empty, hence the anchor fallbacks.
- */
-const HEADER_GHOSTS = [
-  {
-    field: 'title',
-    anchors: [
-      { sel: '.header', pos: 'prepend', chip: 'top-start' },
-      { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
-    ],
-  },
-  {
-    field: 'subheading',
-    anchors: [
-      // below-end (right-aligned) so the opaque chip clears the first body line
-      // that starts immediately under the heading (issue #113).
-      { sel: '.heading', pos: 'after', chip: 'below-end' },
-      { sel: '.header', pos: 'append', chip: 'below-end' },
-      { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
-    ],
-  },
-  {
-    field: 'bottomSubheading',
-    anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }],
-  },
-];
-
-/**
- * The header text trio shared by the header-pattern types. All three are plain
- * inline-editable strings everywhere they appear.
- */
-const HEADER_TEXT = ['title', 'subheading', 'bottomSubheading'];
+// HEADER_GHOSTS / HEADER_TEXT — the standard header pattern shared by most
+// content/data-viz types — moved to shared/slide-types/inline-edit-common.js so
+// a type directory's own descriptor can build on them without importing this
+// file back (which would be a cycle). Imported above.
 
 /** @type {Record<string, InlineDescriptor>} */
 export const INLINE_DESCRIPTORS = {
@@ -560,40 +534,8 @@ export const INLINE_DESCRIPTORS = {
   // ---- Card types (dual model: items[]/members[] or legacy numbered fields).
   // Renderers emit paths for whichever source they resolved; add/remove cards
   // only works in array mode (skipWhenEmpty guards the legacy decks). ----
-  'icon-card-grid-slide': {
-    ghosts: HEADER_GHOSTS,
-    // Dual-model (items[] or legacy cardCount + numbered card{n}*): canonicalize
-    // to items[] on mount so add/remove/reorder work from the canvas like
-    // team-cards / logo-wall. Without this, legacy decks stayed in numbered mode
-    // (renderer emitted no data-inline-item-index) and cards were only editable
-    // via the bulk modal.
-    ensure: ensureIconCards,
-    cards: {
-      field: 'items',
-      container: '.icon-card-grid',
-      itemSelector: '.icon-card:not(.is-empty)',
-      addLabelKey: 'editor.inline.addCard',
-      addLabel: 'Add card',
-      removeLabelKey: 'editor.inline.removeCard',
-      removeLabel: 'Remove card',
-    },
-    // Clicking a card's icon opens the icon-picker modal in-slide. The write
-    // lands on whichever path the renderer emitted (items.N.icon or the
-    // legacy card{i}Icon); in items-mode the numbered mirror is re-synced,
-    // the same contract the side form and phase-3 inspector follow. The
-    // items[] guard matters: syncing a legacy deck (no items[]) would wipe
-    // its numbered fields.
-    icons: {
-      selector: '.icon-card-icon[data-inline-icon]',
-      afterWrite: (slide) => {
-        if (Array.isArray(slide?.content?.items) && slide.content.items.length > 0) {
-          syncIconCardsToNumbered(slide);
-        }
-      },
-    },
-    // Card editors stay in the form: they carry link + reorder controls.
-    formText: HEADER_TEXT,
-  },
+  // Owned by shared/slide-types/types/icon-card-grid-slide/inline-edit.js.
+  'icon-card-grid-slide': iconCardGridInlineEdit,
   'card-stack-slide': {
     ghosts: HEADER_GHOSTS,
     // Dual-model (items[] or legacy cardCount + numbered card{n}*): canonicalize
