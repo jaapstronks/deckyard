@@ -20,6 +20,15 @@ function nonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
+/**
+ * The one List type answers to two names: `list-slide` and its retired Dutch
+ * alias `lijstje-slide` (one definition, see types/lijstje-slide.js). Every
+ * type-keyed branch here must accept both, or the two drift apart again.
+ */
+function isListType(type) {
+  return type === 'list-slide' || type === 'lijstje-slide';
+}
+
 function defaultsForType(type, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
   const def = slideTypes?.[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
@@ -122,6 +131,15 @@ const CONSUMED_SOURCE_KEYS = {
       'background',
     ],
   },
+  // Both names of the one List type. `lijstje-slide` is the retired alias
+  // (deprecated, render/edit only); `list-slide` is what every insertion path
+  // produces now. They share one definition, so they must share one convert map
+  // — keying only the alias would leave newly authored lists without the
+  // convert-away route that legacy ones still have.
+  'list-slide': {
+    'content-slide': ['subtitle', 'variant', 'items'],
+    'content-columns-slide': ['variant', 'layout', 'items'],
+  },
   'lijstje-slide': {
     'content-slide': ['subtitle', 'variant', 'items'],
     'content-columns-slide': ['variant', 'layout', 'items'],
@@ -161,7 +179,9 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   // through the picker, where it no longer appears.
   if (type === 'image-text-slide') return ['content-slide', 'content-columns-slide'];
   if (type === 'image-slide') return ['image-text-slide'];
-  if (type === 'lijstje-slide') return ['content-slide', 'content-columns-slide'];
+  if (type === 'list-slide' || type === 'lijstje-slide') {
+    return ['content-slide', 'content-columns-slide'];
+  }
   if (type === 'card-stack-slide') return ['icon-card-grid-slide'];
   if (type === 'icon-card-grid-slide') return ['card-stack-slide'];
   if (type === 'title-slide') return ['chapter-title-slide'];
@@ -341,8 +361,8 @@ export function convertSlideToType(
     else to.body = '- ';
   }
 
-  // lijstje -> content
-  if (fromType === 'lijstje-slide' && targetType === 'content-slide') {
+  // list -> content (either name of the List type)
+  if (isListType(fromType) && targetType === 'content-slide') {
     const subtitle =
       typeof from?.subtitle === 'string' ? from.subtitle.trim() : '';
     const items = Array.isArray(from?.items) ? from.items : [];
@@ -367,8 +387,8 @@ export function convertSlideToType(
     if (typeof to.layout === 'string') to.layout = 'one-column';
   }
 
-  // lijstje -> content-columns
-  if (fromType === 'lijstje-slide' && targetType === 'content-columns-slide') {
+  // list -> content-columns (either name of the List type)
+  if (isListType(fromType) && targetType === 'content-columns-slide') {
     // Copy subheading
     if (nonEmptyString(from?.subheading) && typeof to.subheading === 'string') {
       to.subheading = from.subheading;

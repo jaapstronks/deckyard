@@ -29,7 +29,7 @@ export const CATEGORIES = [
     label: 'Basic',
     types: [
       'title-slide', 'chapter-title-slide', 'content-slide', 'quote-slide',
-      'lijstje-slide', 'list-slide',
+      'list-slide',
     ],
   },
   {

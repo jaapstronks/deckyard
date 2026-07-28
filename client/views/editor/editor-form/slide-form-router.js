@@ -6,7 +6,7 @@ import { renderTableSlideForm } from './slide-forms/table.js';
 import { renderTeamCardsForm } from './slide-forms/team-cards.js';
 import { renderLogoWallForm } from './slide-forms/logo-wall.js';
 import { renderTitleSlideForm } from './slide-forms/title-slide.js';
-import { renderContentSlideForm, renderLijstjeSlideForm } from './slide-forms/content-slide.js';
+import { renderContentSlideForm, renderListSlideForm } from './slide-forms/content-slide.js';
 import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
 import { renderKpiMetricsSlideForm } from './slide-forms/kpi-metrics.js';
 import { renderTextBlocksForm } from './slide-forms/text-blocks.js';
@@ -162,8 +162,10 @@ export function renderSlideFormByType(ctx) {
       });
       return true;
 
+    // One curated form for the one List type, under both its names.
+    case 'list-slide':
     case 'lijstje-slide':
-      renderLijstjeSlideForm({
+      renderListSlideForm({
         form,
         add,
         used,

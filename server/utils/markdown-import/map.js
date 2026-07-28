@@ -117,9 +117,9 @@ function mapSingleSlide(parsed, slideIndex, totalSlides) {
     return buildCodeSlide(parsed, directiveOverrides);
   }
 
-  // 2l. Bullet list with **bold**: description pattern -> lijstje-slide
+  // 2l. Bullet list with **bold**: description pattern -> list-slide
   if (isBoldColonList(parsed)) {
-    return buildLijstjeSlide(parsed, directiveOverrides);
+    return buildListSlide(parsed, directiveOverrides);
   }
 
   // 2m. Default -> content-slide (one-column)
@@ -213,7 +213,7 @@ function buildSlide(type, parsed, contentOverrides = {}) {
     case 'image-text-slide':  return buildImageTextSlide(parsed, contentOverrides);
     case 'comparison-slide':  return buildComparisonSlide(parsed, contentOverrides);
     case 'table-slide':       return buildTableSlide(parsed, contentOverrides);
-    case 'lijstje-slide':     return buildLijstjeSlide(parsed, contentOverrides);
+    case 'list-slide':        return buildListSlide(parsed, contentOverrides);
     case 'payoff-slide':      return buildPayoffSlide(parsed, contentOverrides);
     case 'chart-slide':       return buildChartSlide(parsed, contentOverrides);
     case 'kpi-metrics-slide': return buildKpiSlide(parsed, contentOverrides);
@@ -378,7 +378,7 @@ function buildTableSlide(parsed, overrides = {}) {
   }, parsed.notes);
 }
 
-function buildLijstjeSlide(parsed, overrides = {}) {
+function buildListSlide(parsed, overrides = {}) {
   const heading = parsed.headings[0];
   const items = [];
 
@@ -424,7 +424,7 @@ function buildLijstjeSlide(parsed, overrides = {}) {
     }
   }
 
-  return slide('lijstje-slide', {
+  return slide('list-slide', {
     title: heading?.text || '',
     items: items.slice(0, 8), // max 8 items
     ...overrides,

@@ -50,9 +50,6 @@ export const PICKER_GROUPS = {
     'chapter-title-slide',
     'content-slide',
     'quote-slide',
-    'lijstje-slide',
-    // The styled "List" slide is a close cousin of the bulleted/numbered list,
-    // so it sits right next to it rather than adrift in "Other".
     'list-slide',
   ],
   media: [
@@ -101,8 +98,9 @@ export const SLIDE_TYPE_ALIASES = {
   'chapter-title-slide': 'section divider hoofdstuk tussentitel',
   'content-slide': 'text body paragraph tekst inhoud',
   'quote-slide': 'testimonial pull quote citaat',
-  'lijstje-slide': 'bullets list opsomming lijst',
-  'list-slide': 'list styled items opsomming lijst genummerd',
+  // Carries the Dutch terms of the retired `lijstje-slide` alias too, so someone
+  // typing "lijstje" still lands on the one List type.
+  'list-slide': 'bullets numbered list styled items opsomming lijstje lijst genummerd',
   'image-text-slide': 'photo text foto beeld tekst',
   'image-slide': 'photo full bleed foto beeld',
   'gallery-slide': 'photos images grid fotogalerij beelden',
@@ -155,9 +153,9 @@ export const SLIDE_TYPE_PRESETS = {
   // via the layout switcher (content-slide's layoutVariants), which is where the
   // "I explicitly want two columns" use case lives now that content-columns-slide
   // is archived.
-  'lijstje-slide': [
-    { id: 'bullets', labelKey: 'editor.slideTypePreset.lijstje.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
-    { id: 'numbers', labelKey: 'editor.slideTypePreset.lijstje.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
+  'list-slide': [
+    { id: 'bullets', labelKey: 'editor.slideTypePreset.list.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
+    { id: 'numbers', labelKey: 'editor.slideTypePreset.list.numbers', label: 'Numbered list', content: { variant: 'numbers' } },
   ],
 };
 
@@ -170,8 +168,7 @@ export const SLIDE_TYPE_DESC = {
   'chapter-title-slide': 'Section divider between topics',
   'content-slide': 'A heading with body text',
   'quote-slide': 'A pull quote with attribution',
-  'lijstje-slide': 'A simple bulleted list',
-  'list-slide': 'A styled list of items',
+  'list-slide': 'A bulleted or numbered list',
   'image-text-slide': 'An image beside text',
   'image-slide': 'A single full-bleed image',
   'gallery-slide': 'A grid of images',
