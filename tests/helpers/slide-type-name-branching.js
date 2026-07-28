@@ -201,6 +201,14 @@ export const INVENTORY = {
       'schematic). Regenerating it is the only way to change it, so it cannot ' +
       'drift from the per-type sources it imports.',
   },
+  'shared/slide-types/inline-edit.js': {
+    kind: generated,
+    gate: 'scripts/generate-slide-inline-edit-aggregator.js',
+    why:
+      'Generated aggregator over each type\'s own inline-edit.js (the on-canvas ' +
+      'editing descriptor). Regenerating it is the only way to change it, so it ' +
+      'cannot drift from the per-type sources it imports.',
+  },
 
   // --- the companions proper: gated by the matrix ---------------------------
   'client/views/editor/slide-type-picker/data.js': {
@@ -214,13 +222,6 @@ export const INVENTORY = {
     kind: table,
     companion: 'settings-curation-category',
     why: 'CATEGORIES, the settings curation grouping. One row per curated type.',
-  },
-  'client/views/editor/inline-edit/descriptors.js': {
-    kind: table,
-    companion: 'inline-edit-descriptor',
-    why:
-      'INLINE_DESCRIPTORS — which fields are inline-editable on canvas per type. ' +
-      'An editing companion, so it outlives deprecation.',
   },
   'client/views/editor/editor-form/inspector-form.js': {
     kind: table,

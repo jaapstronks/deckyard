@@ -223,6 +223,26 @@ describe('the client render path stays clear of the server-only layer', () => {
     );
   });
 
+  it('no inline-edit.js is reachable from the browser render entry', () => {
+    // Same argument as authoring.js: the inline-edit descriptor is editor
+    // payload — what the editor lets someone change on the canvas. The presenter
+    // and the export render slides without ever offering that surface, so a route
+    // from the render entry into a type's inline-edit.js means the presenter now
+    // downloads editing descriptors it never uses. The aggregator
+    // (shared/slide-types/inline-edit.js) is the same footgun as authoring's: it
+    // sits in shared/, one careless import from registry.js away from the payload.
+    const leaked = [...reachable]
+      .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'inline-edit.js')
+      .map(rel)
+      .sort();
+    assert.deepStrictEqual(
+      leaked,
+      [],
+      'a type\'s inline-edit.js is reachable from the client render entry — the ' +
+        'registry must never import shared/slide-types/inline-edit.js.'
+    );
+  });
+
   it('no ai.js is reachable from the browser render entry', () => {
     const leaked = [...reachable]
       .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'ai.js')
