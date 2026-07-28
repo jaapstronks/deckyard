@@ -12,6 +12,7 @@ import { api } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { cleanupSlideRuntimes, renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createAnalyticsTracker, isAnalyticsEnabled } from '../../lib/format/analytics-tracker.js';
 
@@ -332,6 +333,7 @@ export async function renderShareViewer(root, token) {
       mode: 'thumb',
       theme,
       presentationId: presentation.id,
+      lang: resolveDeckLang(presentation),
     });
 
     slideWrap.append(slideEl);

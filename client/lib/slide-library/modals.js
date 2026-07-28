@@ -105,7 +105,10 @@ export function createSlideLibraryModals({
     const stage = h('div', { class: 'ps-lib-lightbox-stage' });
     const bigThumb = h('div', { class: 'thumb ps-lib-lightbox-thumb' });
 
-    const slideEl = renderSlideElement(slide, { theme: thTheme });
+    const slideEl = renderSlideElement(slide, {
+      theme: thTheme,
+      lang: state.getLang?.(),
+    });
     bigThumb.appendChild(slideEl);
     stage.append(bigThumb);
 

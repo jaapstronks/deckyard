@@ -17,6 +17,7 @@ import {
 } from '../sandbox-watermark.js';
 import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { resolveDocLangFromPresentation, getDocDir } from '../doc-lang.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 
 export function buildEmbedHtml(
   repoRoot,
@@ -44,6 +45,9 @@ export function buildEmbedHtml(
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const title = pres?.title || 'Presentation';
   const docLang = detectLang(pres);
+  // See the note in server/export/html.js: docLang answers <html lang>, deckLang
+  // answers which copy table an interactive slide type reads.
+  const deckLang = resolveDeckLang(pres);
   // Direction is resolved from the deck's real language (pres.lang / i18n),
   // which — unlike detectLang's nl/en heuristic — can surface RTL locales
   // (ar/he/fa/ur). Parity with export/reader/print, which all set dir via getDocDir.
@@ -67,7 +71,7 @@ export function buildEmbedHtml(
       const ariaHidden = isFirst ? 'false' : 'true';
       let innerHtml = '';
       try {
-        innerHtml = renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i] });
+        innerHtml = renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang });
       } catch (e) {
         const msg = escapeHtml(String(e?.message || e));
         innerHtml = `

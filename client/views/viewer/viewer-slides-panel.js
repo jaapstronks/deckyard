@@ -4,6 +4,7 @@
  */
 
 import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { isDraftSlide } from '../../../shared/slide-visibility.js';
 
@@ -52,7 +53,12 @@ export function createViewerSlidesPanel({
       // Thumbnail container - same structure as editor
       const thumbMini = h('div', { class: 'thumb thumb-mini' });
       try {
-        thumbMini.append(renderSlideElement(slide, { mode: 'thumb', theme, presentationId: pres?.id }));
+        thumbMini.append(renderSlideElement(slide, {
+            mode: 'thumb',
+            theme,
+            presentationId: pres?.id,
+            lang: resolveDeckLang(pres),
+          }));
       } catch {
         // ignore render errors
       }

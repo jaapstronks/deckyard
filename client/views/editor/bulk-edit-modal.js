@@ -12,6 +12,7 @@
 
 import { createModal } from '../../lib/dom/modal.js';
 import { mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { t } from '../../lib/ui-i18n.js';
 
@@ -110,6 +111,7 @@ export function createBulkEditModal({
         mountSlideInto(previewThumb, slide, {
           theme: getTheme?.(),
           presentationId: pres?.id,
+          lang: resolveDeckLang(pres),
         });
       });
     };

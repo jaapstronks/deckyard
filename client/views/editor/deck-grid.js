@@ -34,6 +34,8 @@ function slideTileLabel(slide, SLIDE_TYPES) {
  * @param {Object} options.theme - Resolved theme (for truthful slide renders)
  * @param {Object} [options.SLIDE_TYPES] - Type registry (for tile labels)
  * @param {string} [options.presentationId] - Passed to renderSlideElement
+ * @param {string|null} [options.lang] - Deck language, passed to renderSlideElement
+ *   so interactive tiles show their built-in copy in the deck's language
  * @param {Function} options.getSlides - () => slide[] (re-read on every render)
  * @param {Function} [options.annotationFor] - (slide, index) => Node|string|null,
  *   rendered under the tile label (the AI layer hook)
@@ -56,6 +58,7 @@ export function createDeckGridView({
   theme,
   SLIDE_TYPES = null,
   presentationId = null,
+  lang = null,
   getSlides,
   annotationFor = null,
   selectable = false,
@@ -107,6 +110,7 @@ export function createDeckGridView({
         mode: 'thumb',
         theme,
         presentationId,
+        lang,
       });
       thumbWrap.append(rendered);
       applyThumbScale(thumbWrap);
@@ -239,7 +243,7 @@ export function createDeckGridView({
       bigThumb.innerHTML = '';
       try {
         bigThumb.append(
-          renderSlideElement(slide, { mode: 'thumb', theme, presentationId })
+          renderSlideElement(slide, { mode: 'thumb', theme, presentationId, lang })
         );
       } catch {
         bigThumb.append(h('div', { class: 'deck-grid-thumb-error', text: '?' }));

@@ -1,6 +1,7 @@
 import { renderSlideHtml, computeHeadingShifts } from '../utils/render-slide.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation, getDocDir } from '../utils/doc-lang.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import {
   escapeHtml,
   embedImgSrcDataUrls,
@@ -22,6 +23,11 @@ export async function buildStandaloneHtml(
   // Apply the appropriate visibility filter based on context
   pres = context === 'published' ? filterForPublished(pres) : filterForExport(pres);
   const docLang = resolveDocLangFromPresentation(pres);
+  // The deck's own language, for slide types that render built-in copy. Not
+  // the same value as docLang: that one always answers (falling back to nl for
+  // <html lang>), this one stays null when the deck names no language so the
+  // copy table can apply its own documented default.
+  const deckLang = resolveDeckLang(pres);
   const docDir = getDocDir(docLang);
   // Meta description: use the caller-supplied string (the published route
   // passes one with its own fallback), else the deck's own description. The
@@ -113,7 +119,7 @@ export async function buildStandaloneHtml(
           : '';
         return `<section class="deck-slide" data-slide-id="${escapeHtml(
           s.id
-        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i] })}</section>`;
+        )}"${a11yTitleAttr}${a11ySummaryAttr}>${renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, headingShift: headingShifts[i], lang: deckLang })}</section>`;
       }
     )
     .join('\n');

@@ -20,6 +20,7 @@ import {
   mountSlideInto,
   renderSlideElement,
 } from '../../lib/slide-runtime/slide-render.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
 import { readFileAsDataUrl } from './image-library-picker.js';
@@ -783,6 +784,7 @@ export async function createEditorController({
       slide,
       theme,
       presentationId: pres?.id,
+      lang: resolveDeckLang(pres),
       markDirty,
       requestSave,
       rerenderEditor: () => rerenderEditor(),
@@ -826,7 +828,8 @@ export async function createEditorController({
     lockDocumentScroll,
     attachThumbScale,
     attachThumbScaleContain,
-    renderSlideElement,
+    renderSlideElement: (s, opts) =>
+      renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
     openOverlayClosers,
     getSelectedSlideId: () => selectedSlideId,
     nav,
@@ -1055,7 +1058,13 @@ export async function createEditorController({
     clearMultiSelection: () => { selectedSlideIds = new Set(); },
     onMultiSelectionChange: () => { slidesPanel?.updateBulkActionBar?.(); },
     SLIDE_TYPES,
-    renderSlideElement: (s, opts) => renderSlideElement(s, { ...(opts || {}), theme, presentationId: pres?.id }),
+    renderSlideElement: (s, opts) =>
+      renderSlideElement(s, {
+        ...(opts || {}),
+        theme,
+        presentationId: pres?.id,
+        lang: resolveDeckLang(pres),
+      }),
     editorState,
     markDirty,
     rerenderEditor: () => rerenderEditor(),
@@ -1450,7 +1459,14 @@ export async function createEditorController({
     // otherwise intercept click-to-edit). Behaves like the default mode for all
     // runtime guards in slide-render (verified: only 'thumb'/'present'/'follow'
     // are special-cased).
-    mountSlideInto(thumb, slide, { mode: 'edit', theme, presentationId: pres?.id });
+    mountSlideInto(thumb, slide, {
+      mode: 'edit',
+      theme,
+      presentationId: pres?.id,
+      // The canvas is a render surface like any other: without this the
+      // interactive types cannot know the deck's language.
+      lang: resolveDeckLang(pres),
+    });
     if (!slide) {
       inlineEditor.refresh();
       return;

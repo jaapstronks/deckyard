@@ -1,6 +1,7 @@
 import { renderSlideHtml } from '../utils/render-slide.js';
 import { filterForExport } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { escapeHtml, embedImgSrcDataUrls } from '../utils/html-utils.js';
 import { debugLog } from '../utils/debug-log.js';
 import { buildPrismKatexCdnTags, buildPrismKatexInitScript } from '../utils/prism-katex.js';
@@ -141,7 +142,7 @@ export async function buildSlidesPdfHtml(
                 transform: imageTransform,
                 cache: embedCache,
               })
-            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
+            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, lang: resolveDeckLang(pres) });
         return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
       })
     )

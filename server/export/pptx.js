@@ -1,4 +1,5 @@
 import { renderSlideToPngBuffer } from '../render/png.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import {
   parseVideoSource,
   buildBunnyMp4Url,
@@ -56,6 +57,7 @@ export async function buildPptxBuffer(
 
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const s = safeScale(scale);
+  const deckLang = resolveDeckLang(pres);
 
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];
@@ -77,7 +79,7 @@ export async function buildPptxBuffer(
     const pngBuf = await renderSlideToPngBuffer(
       repoRoot,
       slide,
-      { scale: s, theme, slideTypes }
+      { scale: s, theme, slideTypes, lang: deckLang }
     );
 
     const pptxSlide = pptx.addSlide();

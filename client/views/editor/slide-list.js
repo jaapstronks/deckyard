@@ -22,6 +22,7 @@ import {
   showSlideContextMenu,
   closeSlideContextMenu,
 } from './slide-list/context-menu.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 
 export function setupSlideList({
   h,
@@ -397,7 +398,8 @@ export function setupSlideList({
       childrenMap,
       collapsedParents,
       SLIDE_TYPES,
-      renderSlideElement,
+      renderSlideElement: (s, opts) =>
+        renderSlideElement(s, { ...(opts || {}), lang: resolveDeckLang(pres) }),
       getSlideCommentCount,
       getSlideLockInfo,
       isSlideLockedByOther,
@@ -540,7 +542,11 @@ export function setupSlideList({
       const oldSlideEl = thumbEl.querySelector('.slide');
       if (oldSlideEl) {
         try {
-          const newSlideEl = renderSlideElement(slide, { mode: 'thumb', presentationId: pres?.id });
+          const newSlideEl = renderSlideElement(slide, {
+            mode: 'thumb',
+            presentationId: pres?.id,
+            lang: resolveDeckLang(pres),
+          });
           oldSlideEl.replaceWith(newSlideEl);
         } catch {
           // ignore render errors

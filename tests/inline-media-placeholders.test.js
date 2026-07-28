@@ -192,9 +192,13 @@ test('the placeholder label follows the deck language', () => {
   }
 });
 
-test('an unknown language falls back to Dutch, matching getSlideCopy', () => {
+test('an unknown language falls back to English, matching getSlideCopy', () => {
+  // Was Dutch until 2026-07-28, and only because Dutch happened to be the
+  // `else` branch of slide-copy.js. The fallback is now a named decision
+  // (DEFAULT_SLIDE_COPY_LANG) and it is English — see
+  // docs/reference/slide-copy-language.md.
   const html = SLIDE_TYPES['image-slide'].renderHtml({}, {}, { lang: 'de' });
-  assert.match(html, /image-placeholder-text">Afbeelding/);
+  assert.match(html, /image-placeholder-text">Image/);
 });
 
 test('gallery keeps its slot numbering, now localised', () => {

@@ -12,7 +12,7 @@ import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/p
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { loadExportCssBundle, buildExportStyleContent } from '../export/css-bundle.js';
 
-async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null } = {}) {
+async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null, lang = null } = {}) {
   const css = await loadExportCssBundle(repoRoot, theme, null);
 
   const cloned = structuredClone(slide);
@@ -32,7 +32,7 @@ async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = n
   let slideHtml =
     cloned?.type === 'video-slide'
       ? await renderVideoSlidePngHtml(cloned)
-      : renderSlideHtml(cloned, { theme, slideTypes, stripEditorAttrs: true });
+      : renderSlideHtml(cloned, { theme, slideTypes, stripEditorAttrs: true, lang });
   slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
     includeClient: true,
     embedRemote: true,
@@ -65,7 +65,7 @@ ${buildExportStyleContent(css)}
 export async function renderSlideToPngBuffer(
   repoRoot,
   slide,
-  { scale = 2, theme = null, slideTypes = null } = {}
+  { scale = 2, theme = null, slideTypes = null, lang = null } = {}
 ) {
   const s = Math.max(1, Math.min(3, Number(scale) || 2));
   const browser = await getPuppeteerBrowser({ featureName: 'PNG export' });
@@ -76,7 +76,7 @@ export async function renderSlideToPngBuffer(
       height: 900,
       deviceScaleFactor: s,
     });
-    const html = await buildSlidePngHtml(repoRoot, slide, { theme, slideTypes });
+    const html = await buildSlidePngHtml(repoRoot, slide, { theme, slideTypes, lang });
     await page.setContent(html, { waitUntil: 'networkidle0' });
     try {
       await page.evaluate(() => document.fonts?.ready);

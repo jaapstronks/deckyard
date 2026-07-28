@@ -43,8 +43,7 @@ export default {
   },
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
-    const lang = ctx?.lang || 'nl';
-    const copy = getSlideCopy(lang);
+    const copy = getSlideCopy(ctx?.lang);
     const followCodes = ctx && typeof ctx === 'object' ? ctx.followCodes || {} : {};
     const presId =
       ctx && typeof ctx === 'object' ? String(ctx.presentationId || '').trim() : '';
