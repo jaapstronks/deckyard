@@ -107,6 +107,36 @@ test('hasWorkspaceRole ranks the roles like the server does', () => {
   assert.equal(hasWorkspaceRole(null, 'member'), false);
 });
 
+test('the client ladder is still the server ladder', async () => {
+  // workspace-role.js copies WORKSPACE_ROLES because the client cannot import
+  // from server/. A copy drifts, and this one drifts *open*: a role the client
+  // does not recognise reads as "no role", which falls back to the bare isAdmin
+  // check the gate exists to narrow. So pin the mirror rather than the comment.
+  const { WORKSPACE_ROLES, hasWorkspaceRole: serverHasRole } = await import(
+    '../server/storage/user-organizations/memberships.js'
+  );
+
+  for (const role of WORKSPACE_ROLES) {
+    assert.equal(
+      getWorkspaceRole({ organizationRole: role }),
+      role,
+      `the client does not know the membership role "${role}" — update ` +
+        'WORKSPACE_ROLES in client/lib/user/workspace-role.js'
+    );
+  }
+
+  // Same ranking for every pair, not just the ones the gate happens to ask for.
+  for (const role of WORKSPACE_ROLES) {
+    for (const required of WORKSPACE_ROLES) {
+      assert.equal(
+        hasWorkspaceRole(role, required),
+        serverHasRole(role, required),
+        `client and server disagree on whether "${role}" satisfies "${required}"`
+      );
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // What the user actually sees
 // ---------------------------------------------------------------------------
