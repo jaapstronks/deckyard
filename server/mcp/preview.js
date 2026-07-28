@@ -41,9 +41,10 @@ async function getMinimalCss() {
  * @param {Object} options.theme - Theme object (from loadTheme)
  * @param {string} options.title - Presentation title
  * @param {number} options.startIndex - Starting slide index (for numbering)
+ * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
  * @returns {Promise<string>} Self-contained HTML string
  */
-export async function buildSlidePreviewHtml(slides, { theme = null, title = '', startIndex = 0 } = {}) {
+export async function buildSlidePreviewHtml(slides, { theme = null, title = '', startIndex = 0, lang = null } = {}) {
   const baseCss = await getMinimalCss();
   const themeVars = theme ? themeVarsCssText(theme) : '';
 
@@ -52,7 +53,7 @@ export async function buildSlidePreviewHtml(slides, { theme = null, title = '', 
 
   // Render each slide at 1600×900
   const slideHtmls = embeddedSlides.map((slide, i) => {
-    const html = renderSlideHtml(slide, { theme, stripEditorAttrs: true });
+    const html = renderSlideHtml(slide, { theme, stripEditorAttrs: true, lang });
     const num = startIndex + i + 1;
     return `
       <div class="preview-item">
@@ -170,15 +171,21 @@ export async function buildSlidePreviewHtml(slides, { theme = null, title = '', 
 
 /**
  * Build preview for a single slide (same technique, lighter output).
+ *
+ * @param {Object} slide - Slide object
+ * @param {Object} [options]
+ * @param {Object} [options.theme] - Theme object (from loadTheme)
+ * @param {'nl'|'en-GB'|null} [options.lang] - Deck language, from `resolveDeckLang(pres)`
+ * @returns {Promise<string>} Self-contained HTML string
  */
-export async function buildSingleSlidePreviewHtml(slide, { theme = null } = {}) {
+export async function buildSingleSlidePreviewHtml(slide, { theme = null, lang = null } = {}) {
   const baseCss = await getMinimalCss();
   const themeVars = theme ? themeVarsCssText(theme) : '';
 
   // Embed local images
   const [embeddedSlide] = await embedSlideImages(repoRoot, [slide]);
 
-  const html = renderSlideHtml(embeddedSlide, { theme, stripEditorAttrs: true });
+  const html = renderSlideHtml(embeddedSlide, { theme, stripEditorAttrs: true, lang });
 
   return `<!DOCTYPE html>
 <html lang="en">

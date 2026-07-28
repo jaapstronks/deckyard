@@ -123,6 +123,44 @@ test('no slide type carries its own language fallback', () => {
   );
 });
 
+test('every renderSlideHtml call site passes a language', () => {
+  // The other half of the same defect: a type that reads only ctx.lang is
+  // correct precisely as long as every caller SETS it. Removing the per-type
+  // `|| 'nl'` turns a missed call site from "wrong language" into "always the
+  // default", which is quieter and therefore worse — the MCP preview tools
+  // were exactly that, rendering en-GB copy under a Dutch deck.
+  //
+  // Source scan rather than a runtime probe: the call sites are spread over
+  // client, server and the export paths, and half of them need a browser or a
+  // live deck to reach.
+  const roots = ['client', 'server', 'shared'];
+  const offenders = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules') continue;
+        walk(p);
+      } else if (entry.name.endsWith('.js')) {
+        const src = readFileSync(p, 'utf8');
+        // Match the call and its options object, across lines.
+        for (const m of src.matchAll(/renderSlideHtml\(\s*[^,)]+,\s*\{([^}]*)\}/g)) {
+          if (!/\blang\b/.test(m[1])) {
+            const line = src.slice(0, m.index).split('\n').length;
+            offenders.push(`${p.slice(repoRoot.length + 1)}:${line}`);
+          }
+        }
+      }
+    }
+  };
+  for (const r of roots) walk(join(repoRoot, r));
+  assert.deepEqual(
+    offenders,
+    [],
+    `every renderSlideHtml caller must pass ctx.lang (from resolveDeckLang):\n${offenders.join('\n')}`
+  );
+});
+
 // --- 3. The tables agree ---------------------------------------------------
 
 test('every copy table carries exactly the same keys', () => {

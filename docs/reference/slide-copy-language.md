@@ -106,9 +106,17 @@ viewer panel, the bulk-edit and chart-data previews, and the slide library
 (which passes the library item's own language, not a deck's).
 
 Server-side: standalone HTML, PDF, PNG, PPTX, the handoff zip, the embed
-fragment, and the custom-slide-type render route.
+fragment, the custom-slide-type render route, and the MCP `preview_slide` /
+`preview_presentation` tools (`server/mcp/preview.js`).
 
 Sample and preview surfaces that have no deck — the theme picker, the theme
 editor preview, sandbox examples, curation thumbnails — deliberately pass
 nothing and get `DEFAULT_SLIDE_COPY_LANG`. Leaving `lang` out is not neutral, so
 anywhere a presentation is in hand it should be passed.
+
+`tests/slide-copy-language.test.js` enforces that second sentence: it scans
+`client/`, `server/` and `shared/` and fails on any `renderSlideHtml` call whose
+options object has no `lang`. That gate exists because the two MCP preview tools
+were missed on the first pass — and with the per-type `|| 'nl'` gone, a missed
+call site no longer renders the *wrong* language loudly; it renders the default
+quietly, which is harder to notice.

@@ -65,6 +65,7 @@ import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
 import { loadDisabledSlideTypes, loadCustomSlideTypes } from '../utils/org-slide-types.js';
 import { buildSlidePreviewHtml, buildSingleSlidePreviewHtml } from './preview.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
@@ -1277,7 +1278,7 @@ export function registerTools(
         theme = await loadTheme(repoRoot, resolveThemeId(pres.theme));
       } catch { /* use default styling */ }
 
-      const html = await buildSingleSlidePreviewHtml(slide, { theme });
+      const html = await buildSingleSlidePreviewHtml(slide, { theme, lang: resolveDeckLang(pres) });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
       return html;
@@ -1326,6 +1327,7 @@ export function registerTools(
         theme,
         title: pres.title,
         startIndex,
+        lang: resolveDeckLang(pres),
       });
 
       // Return HTML directly as text — Claude Desktop will render it as an artifact
