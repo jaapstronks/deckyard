@@ -9,10 +9,12 @@
  * follow-along invite for the join-screen shot.
  *
  * Both languages live in one deck (`i18n.versions`), so a recipe switches
- * language with `?lang=nl` / `?lang=en` instead of seeding a second deck.
- * Slide ids are shared between the versions — that is what pairs a Dutch slide
- * with its English translation, and it keeps poll interaction state (keyed on
- * slide id) identical in both languages.
+ * language with `?lang=nl` / `?lang=en-GB` instead of seeding a second deck.
+ * Use `en-GB`, not `en`: `normalizeLang()` only accepts the two canonical
+ * presentation languages, so `?lang=en` silently falls back to the dominant
+ * one. Slide ids are shared between the versions — that is what pairs a Dutch
+ * slide with its English translation, and it keeps poll interaction state
+ * (keyed on slide id) identical in both languages.
  *
  * Content is a fictional lemonade stand: no real people, no addresses, no
  * client data. The running joke — an ambitious marketing budget financed by
@@ -60,8 +62,12 @@ const SLIDE_SPECS = [
     },
   },
   {
-    // Managed by the server (presentationId / sourceLang are filled in on
-    // save); it has no translatable fields, so both versions are identical.
+    // Managed by the server (presentationId / sourceLang / enabled are filled
+    // in by normalizeFollowInviteSlides on save); it has no translatable
+    // fields, so both versions are identical. Note for the join-screen shots:
+    // the invite copy follows the deck's *dominant* language, not the viewing
+    // one, so both versions render Dutch here. An English join-screen shot
+    // needs a deck whose dominant language is en-GB.
     type: 'follow-invite-slide',
     nl: { presentationId: '', sourceLang: 'nl', enabled: true },
     'en-GB': { presentationId: '', sourceLang: 'nl', enabled: true },
