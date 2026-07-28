@@ -142,6 +142,11 @@ those in; the inventory (and what a fork-local type can supply from its own
 definition instead) is in
 [`docs/reference/slide-type-companions.md`](../reference/slide-type-companions.md).
 
+A core type also owes one key on the definition itself: `structure` (see the
+Extension Properties table below). That one is not a companion — a missing
+`structure` fails CI outright rather than degrading — and fork-local types are
+exempt.
+
 ---
 
 ## AI Wizard Integration
@@ -429,6 +434,7 @@ For image fields, `presetSource` controls which presets appear:
 | `defaultsByLang` | object | Localized default content: `{ nl: {...}, 'en-GB': {...} }` |
 | `ai` | object | AI wizard metadata (see AI Wizard Integration section) |
 | `inline` | object | Inline (WYSIWYG) edit descriptor for the editor canvas (see below) |
+| `structure` | string | The shape of the type's primary content: `singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-structure.md`](../reference/slide-type-structure.md) |
 
 ---
 

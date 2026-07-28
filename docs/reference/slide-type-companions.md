@@ -129,6 +129,25 @@ a decision somebody writes down, not something that happens by omission. The
 `ai` key means the same thing on a field as it does on a type
 (`isAgentOptOut`), one level down.
 
+## Also owed, but not a companion: `structure`
+
+Since #453 every **core** type must declare `structure` on its definition —
+`singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`.
+It is not in the matrix above and should not be: a companion is a hand-written
+entry in *another* file that degrades quietly when missing, whereas `structure`
+lives on the definition itself and its absence is a hard CI failure. Different
+shape, different gate — `tests/slide-type-structure.test.js` rather than
+`slide-type-companion-coverage.test.js`.
+
+The reason it is mentioned here anyway is that this page is where a contributor
+looks for "what does a new type owe", and the answer now includes one key that is
+not a companion. Fork-local types in `custom/slide-types/` are **not** required to
+declare it (the gate iterates `CORE_SLIDE_TYPE_NAMES`), the same core-only line
+the matrix draws.
+
+What the facet is for, and the four assertions that keep the declaration honest,
+are in [`slide-type-structure.md`](slide-type-structure.md).
+
 ## Deliberately not in the matrix
 
 - **Translations** (`client/i18n/<locale>/slide-types.json`) — a generated
