@@ -225,8 +225,8 @@ CLAUDE_API=sk-ant-...
 MISTRAL_API=...
 DEEPSEEK_API=sk-...
 
-# Default theme (optional, defaults to 'deckyard')
-DEFAULT_THEME=deckyard
+# Default theme (optional, defaults to 'brand')
+DEFAULT_THEME=brand
 
 # MCP owner (for stdio transport)
 DECKYARD_MCP_OWNER_EMAIL=you@example.com
