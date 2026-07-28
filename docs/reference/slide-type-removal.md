@@ -19,7 +19,8 @@ A slide type is never deleted in one step. Three rungs:
    schematic, curation category, catalog entry, examples):
    `tests/slide-type-companion-coverage.test.js` fails on an entry that outlives
    the type it describes — see
-   [`slide-type-companions.md`](./slide-type-companions.md).
+   [`slide-type-companions.md`](./slide-type-companions.md). **Unless the type
+   is an alias** — read the next section before touching a single companion.
 2. **Migration** — `scripts/scan-slide-type.js <type>` reports every deck and
    slide still on the type, so each hit is consciously converted, exported as an
    image, or accepted as a loss. Exit code 1 while any deck still uses it, so a
@@ -32,6 +33,53 @@ A slide type is never deleted in one step. Three rungs:
 `deprecated` is a fine waypoint and a bad end state: a deprecated type is still
 mounted, still a support promise, and still an exception every later refactor
 has to route around.
+
+## Deprecating a *type* versus deprecating an *alias*
+
+The ladder above describes retiring a type: a definition nobody should author
+any more, and the companions that describe it go with it. An **alias** is a
+different operation wearing the same word, and treating it like a deprecation
+breaks the type you are keeping.
+
+An alias is two registry names resolving to **one definition** — the state
+`lijstje-slide` and `list-slide` were in until #451. There is one field schema,
+one renderer, one stylesheet; the second name exists only so stored decks keep
+resolving. Retiring the alias is a **rename**, and the rule follows from that:
+
+> **On a real deprecation, companions are dropped. On an alias, every companion
+> moves to the surviving name.**
+
+Nothing is deleted, because nothing became unauthorable: the shape is still
+offered, still edited, still convertible — under one name instead of two. A
+companion left behind on the retired name is not just rot, it is a **hole in the
+survivor**.
+
+That failure is not hypothetical. The first version of #451 moved the
+*authoring* companions (picker description, aliases, schematic, category) to
+`list-slide` and left the *editing* companions (`INLINE_DESCRIPTORS`,
+`INSPECTOR_KEEPS`) plus the conversion map, the form router and the field
+special-cases pointing at `lijstje-slide`. Newly authored lists lost affordances
+that legacy lists kept — the asymmetry exactly inverted — and the **Convert**
+submenu vanished entirely, because `getConvertibleSlideTypes('list-slide')`
+returned `[]`.
+
+Two things to carry into the next one:
+
+- **Sweep on the name, not on the matrix.** The companion matrix covers the
+  authoring side plus two editing tables; the conversion map in
+  `shared/slide-types/convert.js`, the form router and the field special-cases
+  in `render-field.js` are outside it. `grep -rn "'<old-name>'"` is the actual
+  worklist, and every hit is a *move*.
+- **Pin the parity while both names exist.** `tests/list-slide-name-parity.test.js`
+  asserts that no module branches on one name without the other. It is the
+  cheap guardrail an alias needs between rung 1 and rung 3, and it deletes
+  itself when rung 3 lands. (A general version — assertion 5 in
+  `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
+  name-branching modules instead of enumerating them.)
+
+Rungs 2 and 3 are unchanged: the alias still needs a clean deck scan before its
+name can leave the registry, and the surviving name is its `successor` in
+`shared/slide-types/removed.js`.
 
 ## The removal checklist
 
@@ -55,9 +103,15 @@ Then, in rough dependency order:
    (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `PICKER_GROUPS`, `SLIDE_TYPE_DESC`,
    `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the AI catalog entry and its
    examples, the settings categories).
-   Not in the matrix, still by hand:
+   Not in the matrix, still by hand — each one branches on the type *name* and
+   nothing checks that the set is complete (#451 hit all three):
    - the conversion map in `shared/slide-types/convert.js`, if the type was a
      conversion source or target.
+   - the `case` in `client/views/editor/editor-form/slide-form-router.js`, if
+     the type had a curated side form.
+   - the per-type special cases in
+     `client/views/editor/editor-form/render-field.js` (slide-list label
+     refresh, items-editor layout).
    - (`EXCLUDED_TYPES` in `server/utils/openai/slide-types-prompt.js` no longer
      exists: #386 replaced it with `isAgentOptOut()`, so the definition's own
      `deprecated`/`ai: false` marker is what withholds a type from the generator.)
