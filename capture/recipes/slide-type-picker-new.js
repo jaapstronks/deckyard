@@ -5,7 +5,7 @@
  * Doc pages: docs/slide-types/index.md, docs/creating/new-presentation.md
  */
 
-import { deleteDecksByPrefix, seedDeck } from '../lib/api.js';
+import { deleteDecksByPrefix, seedDeck, setUiLocale } from '../lib/api.js';
 import { sampleDeckSlides, SAMPLE_DECK_TITLE } from './_sample-content.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
@@ -20,17 +20,19 @@ export default {
   localStorage: { 'editor.inline.coachSeen': '1' },
 
   async state(api) {
+    // See editor-full.js: `uiLocale` is sticky, so an English docs shot has to
+    // say so rather than inherit whatever ran before it.
+    await setUiLocale(api, 'en');
     await deleteDecksByPrefix(api, SAMPLE_DECK_TITLE);
     const slides = sampleDeckSlides();
     const deckId = await seedDeck(api, {
       title: SAMPLE_DECK_TITLE,
-      theme: 'deckyard',
       slides,
     });
     return { deckId };
   },
 
-  navigate: (ctx) => `/app/${ctx.deckId}?lang=en`,
+  navigate: (ctx) => `/app/${ctx.deckId}`,
 
   waitFor: '.app-shell.editor-shell .slides-add-btn',
 

@@ -4,7 +4,7 @@
  * Doc page: docs/editing/index.md
  */
 
-import { deleteDecksByPrefix, seedDeck } from '../lib/api.js';
+import { deleteDecksByPrefix, seedDeck, setUiLocale } from '../lib/api.js';
 import { sampleDeckSlides, SAMPLE_DECK_TITLE } from './_sample-content.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
@@ -18,17 +18,22 @@ export default {
   localStorage: { 'editor.inline.coachSeen': '1' },
 
   async state(api) {
+    // The docs this illustrates are English, and `uiLocale` is a sticky account
+    // setting — inheriting it would make the shot's language depend on which
+    // recipe ran before it.
+    await setUiLocale(api, 'en');
     await deleteDecksByPrefix(api, SAMPLE_DECK_TITLE);
     const slides = sampleDeckSlides();
     const deckId = await seedDeck(api, {
       title: SAMPLE_DECK_TITLE,
-      theme: 'deckyard',
       slides,
     });
     return { deckId, firstSlideId: slides[0].id };
   },
 
-  navigate: (ctx) => `/app/${ctx.deckId}?slideId=${ctx.firstSlideId}&lang=en`,
+  // No `&lang=`: the sample deck is single-language, and `en` is not a valid
+  // presentation language anyway (`normalizeLang` takes `nl` and `en-GB` only).
+  navigate: (ctx) => `/app/${ctx.deckId}?slideId=${ctx.firstSlideId}`,
 
   // Editor is fully rendered once the shell mounts and the add-slide button
   // (left panel) exists; the loading skeleton is removed by then.

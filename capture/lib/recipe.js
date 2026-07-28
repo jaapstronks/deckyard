@@ -24,6 +24,10 @@
  * @property {Record<string, string>} [localStorage]
  *                                   Key/value pairs seeded before app scripts run
  *                                   (e.g. to suppress one-time hints/coach-marks).
+ * @property {string} [clip]        CSS selector to shoot instead of the page. Use for
+ *                                   "pure slide" shots where the surrounding app chrome
+ *                                   is not the subject — the presenter toolbar around a
+ *                                   live poll, say. Mutually exclusive with `fullPage`.
  * @property {(api: import('./api.js').ApiClient, ctx: object) => Promise<void>} [cleanup]
  *                                   Optional teardown after the shot.
  */
@@ -61,6 +65,9 @@ export function validateRecipe(recipe) {
     problems.push(
       `"output" (${recipe.output}) is not the basename of "registryPath" (${recipe.registryPath})`
     );
+  }
+  if (recipe.clip && recipe.fullPage) {
+    problems.push('"clip" and "fullPage" are mutually exclusive');
   }
   return problems;
 }

@@ -98,7 +98,20 @@ async function captureOne(recipe, api, outRoot) {
 
     const outPath = path.resolve(outRoot, recipe.registryPath);
     await fs.mkdir(path.dirname(outPath), { recursive: true });
-    await page.screenshot({ path: outPath, fullPage: Boolean(recipe.fullPage) });
+    if (recipe.clip) {
+      // Element shot: the surrounding app chrome is not the subject. Puppeteer
+      // clips to the element's box at the page's deviceScaleFactor, so the PNG
+      // stays retina without a second viewport.
+      const el = await page.$(recipe.clip);
+      if (!el) {
+        throw new Error(
+          `Recipe "${recipe.id}" clip selector matched nothing: ${recipe.clip}`
+        );
+      }
+      await el.screenshot({ path: outPath });
+    } else {
+      await page.screenshot({ path: outPath, fullPage: Boolean(recipe.fullPage) });
+    }
     return outPath;
   } finally {
     await page.close();
