@@ -101,6 +101,7 @@ export function ensureMembers(content) {
 }
 
 export default {
+  structure: 'collection',
   label: 'Image blocks',
   fields: [
     {

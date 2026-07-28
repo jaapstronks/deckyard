@@ -2,6 +2,7 @@ import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 export default {
+  structure: 'singleton',
   label: 'Likert slider (1–10)',
   fields: [
     {

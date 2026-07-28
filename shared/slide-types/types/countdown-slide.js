@@ -41,6 +41,7 @@ function isOn(v, fallback) {
 }
 
 export default {
+  structure: 'singleton',
   label: 'Countdown timer',
   fields: [
     {

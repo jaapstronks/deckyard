@@ -1,5 +1,6 @@
 import { serveJson } from '../../utils/http.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { slideStructure } from '../../../shared/slide-types/structure.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { createRouteContext } from '../../utils/context.js';
 
@@ -19,6 +20,12 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         // insertion policy hides them from the picker + AI. The client needs
         // the flag to enforce that, so it travels in the metadata.
         deprecated: def.deprecated === true ? true : undefined,
+        // The `structure` facet: what shape this type's content has
+        // (singleton / collection / tabular / …). Spec-level and additive —
+        // consumers that do not know the key ignore it, and the ones that do
+        // (picker groups, settings categories, conversion) stop needing a
+        // hand-written table. See shared/slide-types/structure.js.
+        structure: slideStructure(def) || undefined,
         themeId:
           typeof def.themeId === 'string' && def.themeId.trim()
             ? def.themeId.trim()

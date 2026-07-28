@@ -26,6 +26,7 @@ function getSandboxValue(mode) {
 }
 
 export default {
+  structure: 'singleton',
   label: 'Embed',
   fields: [
     {

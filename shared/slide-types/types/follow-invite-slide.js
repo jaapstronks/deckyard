@@ -25,6 +25,7 @@ const COPY = {
 };
 
 export default {
+  structure: 'chrome',
   label: 'Follow-along invite',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): the app inserts and maintains this slide itself, right

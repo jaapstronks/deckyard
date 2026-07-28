@@ -16,6 +16,7 @@ import {
 } from '../image-slide-image.js';
 
 export default {
+  structure: 'singleton',
   label: 'Image slide',
   fields: [
     {
