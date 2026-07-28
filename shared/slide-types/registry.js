@@ -416,7 +416,11 @@ export function collectSlideTypeManifest(slides) {
 // Note: Themes are discovered dynamically at runtime from /themes/*.json and /custom/themes/*.json
 export const THEMES = [
   DEFAULT_THEME_ID,
-  // Neutral, non-branded base themes covering the common archetypes.
+  // Neutral, non-branded base themes covering the common archetypes. Every
+  // built-in other than the default is listed by id here: this array is the
+  // validation enum, so a theme missing from it is rejected on save even
+  // though `themes/<id>.json` exists on disk.
+  'deckyard',
   'corporate',
   'editorial',
   'playful',

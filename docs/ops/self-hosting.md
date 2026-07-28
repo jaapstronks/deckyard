@@ -149,7 +149,7 @@ What sandbox mode does, and what it deliberately leaves on:
   server AI routes are disabled, so a public URL can't run up an open-ended
   per-prompt LLM bill. (Same behaviour as `DEMO_MODE`.)
 - **Only neutral built-in themes show.** The theme picker lists the generic
-  built-ins (corporate, deckyard, editorial, midnight, playful) and hides any
+  built-ins (brand, corporate, deckyard, editorial, midnight, playful) and hides any
   workspace custom themes, which may carry a customer's branding. Drop in
   `themes/sandbox-*.json` to curate a smaller set.
 - **The slide library is hidden** in the New-presentation flow: a throwaway
