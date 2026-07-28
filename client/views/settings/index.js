@@ -6,6 +6,7 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
+import { isWorkspaceAdmin } from '../../lib/user/workspace-role.js';
 import {
   createAccountTab,
   createPreferencesTab,
@@ -74,7 +75,10 @@ function setTabHash(tab) {
  * @returns {Function|null} Cleanup function
  */
 export async function renderSettingsPage(root, { nav, user } = {}) {
-  const isAdmin = Boolean(user?.isAdmin);
+  // Admin tabs follow the role held in the *active* organization, not the
+  // instance-wide flag: switching to an organization where you are a plain
+  // member must take the admin surfaces with it. See lib/user/workspace-role.js.
+  const isAdmin = isWorkspaceAdmin(user);
   const isDesigner = Boolean(user?.isDesigner);
   const initialTab = getTabFromHash(isAdmin, isDesigner);
 

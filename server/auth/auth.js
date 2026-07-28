@@ -3,7 +3,7 @@ import { parseCookies } from '../utils/cookies.js';
 import { verifyPassword as verifyDbPassword } from '../storage/password-reset.js';
 import {
   getUserByEmailGlobal,
-  resolveActiveOrganization,
+  resolveActiveMembership,
 } from '../storage/identity.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { sessionVersion } from '../utils/session-version.js';
@@ -357,7 +357,11 @@ export async function getUserFromRequestAsync(req, ctx) {
     const user = devBypassUser();
     return {
       ...user,
+      // The bypass pins the organization on the default one and ignores the
+      // session cookie, so there is no membership to read a role from. Every
+      // organization-dependent flow therefore needs a real login to verify.
       organizationId: getDefaultOrganizationId(),
+      organizationRole: null,
     };
   }
 
@@ -368,7 +372,7 @@ export async function getUserFromRequestAsync(req, ctx) {
 
   // Check database users - support all auth sources. Identity is resolved
   // across organizations: which workspace the session is in is a separate
-  // question, answered by resolveActiveOrganization() below.
+  // question, answered by resolveActiveMembership() below.
   const dbUser = await getUserByEmailGlobal(email);
   if (!dbUser) return null;
 
@@ -380,7 +384,10 @@ export async function getUserFromRequestAsync(req, ctx) {
     // Which workspace this session may act in. Single-workspace mode answers
     // this from configuration without touching the database; multi-workspace
     // mode re-verifies membership, because the token outlives a revocation.
-    const organizationId = await resolveActiveOrganization(dbUser.id, payload?.orgId);
+    const { organizationId, role: organizationRole } = await resolveActiveMembership(
+      dbUser.id,
+      payload?.orgId
+    );
     if (!organizationId) return null;
 
     const adminEmail = getAdminEmail();
@@ -395,6 +402,11 @@ export async function getUserFromRequestAsync(req, ctx) {
       isAdmin: role === 'admin',
       authSource: dbUser.auth_source || 'database',
       organizationId,
+      // The role held in *this* organization (owner/admin/member), as opposed
+      // to the instance-wide `isAdmin` above. Null in single-workspace mode,
+      // where there is only one organization and no membership to read. The
+      // UI gates admin surfaces on both; see client/lib/user/workspace-role.js.
+      organizationRole,
     };
   }
 
