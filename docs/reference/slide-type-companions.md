@@ -53,6 +53,8 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Inline-edit descriptor | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type | no on-canvas editing; every field is side-form only |
 | Inspector keep-list | `client/views/editor/editor-form/inspector-form.js` (`INSPECTOR_KEEPS`) | sparse by design (reverse only) | inspector shows every field the inline layer misses (the safe default) |
 | Settings curation category | `client/views/settings/tabs/slide-types-tab/categories.js` | every insertable type | lands in the "Other" group |
+| Refine content schema | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`) | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content |
+| Structural validator | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`) | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
 inline companions from its own definition (`ai: {}`, `schematic: {}`,
@@ -206,8 +208,8 @@ it; three or more is where a module stops being about a type and becomes a table
 
 | Kind | Count | What it means |
 |---|---|---|
-| `table` | 14 | a row per eligible type; must name a companion, which gates it both ways |
-| `sparse` | 15 | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
+| `table` | 16 | a row per eligible type; must name a companion, which gates it both ways |
+| `sparse` | 13 | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
 | `specific` | 5 | a closed set of types that behave differently; not a table |
 | `generated` | 1 | produced by a script from per-type sources, so it cannot drift |
 | `source` | 1 | the registry — the list every other list derives from |
@@ -218,10 +220,24 @@ recognising its name — which is the shape of progress this gate exists to
 produce: the count drops because knowledge moved onto the types, not because the
 threshold moved.
 
-Two entries carry `promote: true`: `server/utils/ai/schemas/refined-slide.js`
-and `server/utils/ai/validate-slide-structure.js`. Both are companion-shaped —
-a type with no entry is silently unrefinable, or silently unvalidated — and
-neither is gated. They are the shortlist for the next companion.
+`server/utils/ai/schemas/refined-slide.js` and
+`server/utils/ai/validate-slide-structure.js` used to carry `promote: true`:
+both companion-shaped — a type with no entry is silently unvalidated by the
+refine phase — and neither was gated. They have now been promoted to the matrix
+(the two AI-refine companions above), so no inventory entry carries `promote`.
+Their eligibility rules differ, which is the point of writing them down:
+
+- **Refine content schema** is owed by *every* agent-emittable type
+  (`!isAgentOptOut`), because the refine phase can emit any of them and a
+  missing schema silently skips validation. Even a chrome type owes a trivial
+  schema — it keeps the "unknown slide type" warning meaningful.
+- **Structural validator** is owed only by the `collection` /
+  `fixed-collection` types: its unique job over the flat field/Zod schema is
+  checking a repeated-item array's cardinality and per-item required fields, and
+  `singleton` / `dataset` / `tabular` / `chrome` types have no such invariant.
+
+The next ungated per-type table should get `promote: true` again as the
+signpost to the following promotion.
 
 ### What the inventory measured
 
