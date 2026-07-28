@@ -27,4 +27,24 @@ export default {
     'image-corner': { corner: 45, mirror: true },
     'image-row': { row: 'top' },
   },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   *
+   * The placeholder image URL is inlined (see image-slide's note). This is the
+   * shared `slide-picker` seed the old module also used for team-cards-slide;
+   * the value is byte-identical, the sharing was incidental.
+   */
+  sample: {
+    image: 'https://picsum.photos/seed/slide-picker/800/600',
+    caption: '',
+    alt: 'Sample image',
+    imageRole: 'content',
+    imageSide: 'left',
+    title: 'Visual Storytelling',
+    body: '- Engage your audience\n- Communicate complex ideas\n- Leave a lasting impression',
+    background: 'lime',
+  },
 };

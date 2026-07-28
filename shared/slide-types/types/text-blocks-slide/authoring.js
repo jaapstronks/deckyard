@@ -14,4 +14,36 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'blocks', cells: 4 },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Our Process',
+    subheading: 'From concept to delivery',
+    rows: [
+      {
+        title: '',
+        color: 'yellow',
+        arrow: 'down',
+        blocks: [
+          { title: 'Research', body: 'Understanding the challenge' },
+          { title: 'Design', body: 'Creating the solution' },
+          { title: 'Build', body: 'Making it real' },
+        ],
+      },
+      {
+        title: 'The Result',
+        color: 'black',
+        arrow: 'none',
+        blocks: [
+          { title: 'Launch', body: 'Going live' },
+          { title: 'Measure', body: 'Tracking success' },
+          { title: 'Iterate', body: 'Continuous improvement' },
+        ],
+      },
+    ],
+  },
 };

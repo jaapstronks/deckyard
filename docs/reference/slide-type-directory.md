@@ -127,6 +127,13 @@ export const SLIDE_TYPE_SCHEMATIC = Object.fromEntries(
 );
 ```
 
+Each consumer reads one field and filters on it. The picker's schematic view
+does this for `authoring.schematic` (`slide-type-schematics.js`), and the
+picker's preview thumbnails do the identical thing for `authoring.sample`
+(`slide-type-sample-content.js`) — a type with no `sample` key just falls out of
+the map and the caller takes its default branch, never an error. New consumers
+follow the same shape.
+
 It is a **generated file** — `npm run gen:slide-authoring`, from
 `scripts/generate-slide-authoring-aggregator.js` — because a hand-maintained
 import list is a second registration list next to `registry.js`, and it would

@@ -14,4 +14,21 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'pyramid' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Priority Pyramid',
+    subheading: 'Our focus areas',
+    levels: [
+      { label: 'Vision', text: 'Long-term goals' },
+      { label: 'Strategy', text: 'How we get there' },
+      { label: 'Tactics', text: 'Day-to-day actions' },
+      { label: 'Operations', text: 'Foundation' },
+    ],
+    background: 'mist',
+  },
 };

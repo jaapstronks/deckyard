@@ -56,7 +56,7 @@ export default {
    * slide of this type looks like, not what an empty one looks like (that is
    * `defaults` on the definition).
    */
-  sampleContent: {
+  sample: {
     title: 'Our Approach',
     subheading: 'What makes us different',
     items: [

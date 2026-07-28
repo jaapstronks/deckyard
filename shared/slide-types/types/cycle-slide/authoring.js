@@ -14,4 +14,22 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'cycle' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Feedback Loop',
+    subheading: 'Continuous improvement',
+    centerLabel: 'Quality',
+    items: [
+      { label: 'Plan', text: 'Set objectives' },
+      { label: 'Do', text: 'Implement changes' },
+      { label: 'Check', text: 'Measure results' },
+      { label: 'Act', text: 'Standardise' },
+    ],
+    background: 'mist',
+  },
 };

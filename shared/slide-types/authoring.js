@@ -30,6 +30,7 @@ import pollSlideAuthoring from './types/poll-slide/authoring.js';
 import processSlideAuthoring from './types/process-slide/authoring.js';
 import pyramidSlideAuthoring from './types/pyramid-slide/authoring.js';
 import quoteSlideAuthoring from './types/quote-slide/authoring.js';
+import splitPartnerTitleSlideAuthoring from './types/split-partner-title-slide/authoring.js';
 import tableSlideAuthoring from './types/table-slide/authoring.js';
 import teamCardsSlideAuthoring from './types/team-cards-slide/authoring.js';
 import textBlocksSlideAuthoring from './types/text-blocks-slide/authoring.js';
@@ -80,6 +81,7 @@ export const SLIDE_TYPE_AUTHORING = {
   'process-slide': processSlideAuthoring,
   'pyramid-slide': pyramidSlideAuthoring,
   'quote-slide': quoteSlideAuthoring,
+  'split-partner-title-slide': splitPartnerTitleSlideAuthoring,
   'table-slide': tableSlideAuthoring,
   'team-cards-slide': teamCardsSlideAuthoring,
   'text-blocks-slide': textBlocksSlideAuthoring,
