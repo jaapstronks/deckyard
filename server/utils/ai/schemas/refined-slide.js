@@ -98,9 +98,13 @@ const chapterTitleSlideSchema = z.object({
 }).passthrough();
 
 // Quote Slide (Phase 1 resolved)
+// `authorName` is required here rather than optional because the structural
+// validator used to check it and no longer does: quote-slide is a singleton, so
+// it owes no entry under the structure-validation rule. The check has to live
+// somewhere, and the field contract already says required.
 const quoteSlideSchema = z.object({
   quote: z.string().min(1).max(280),
-  authorName: z.string().max(80).optional(),
+  authorName: z.string().min(1).max(80),
   authorTitle: z.string().max(120).optional(),
 });
 
@@ -217,12 +221,16 @@ const imageSlideSchema = z.object({
 }).passthrough();
 
 // Comparison Slide
+// Same move as quote-slide: the four side fields are `required: true` in the
+// field contract and were checked by the structural validator, which a singleton
+// no longer owes. Requiring them here keeps the refine phase warning about a
+// half-filled comparison.
 const comparisonSlideSchema = z.object({
   title: requiredTitleSchema,
-  leftTitle: z.string().max(80).optional(),
-  leftBody: z.string().max(800).optional(),
-  rightTitle: z.string().max(80).optional(),
-  rightBody: z.string().max(800).optional(),
+  leftTitle: z.string().min(1).max(80),
+  leftBody: z.string().min(1).max(800),
+  rightTitle: z.string().min(1).max(80),
+  rightBody: z.string().min(1).max(800),
   background: backgroundSchema,
 }).passthrough();
 
