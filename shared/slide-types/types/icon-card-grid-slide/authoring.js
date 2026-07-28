@@ -47,7 +47,7 @@ export default {
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
-   * renderSlideSchematic() — grammar in client/lib/slide-schematic.js.
+   * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'iconCards', cells: 6, cols: 3, rows: 2 },
 

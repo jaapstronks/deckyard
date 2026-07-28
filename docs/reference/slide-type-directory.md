@@ -11,6 +11,15 @@ a single `types/<name>-slide.js` module with its companions still scattered
 across the consumers; both forms work, and the registry does not care which one
 a type uses.
 
+**Most types are mid-move, and that is the designed state.** The migration is
+cut along the *consumer*, not along the type: one PR takes one consumer and
+moves that one fact for every type at once. So a type's directory appears the
+first time a companion of its is claimed, and fills up PR by PR while its
+definition is still the flat `types/<name>-slide.js` next door. A directory
+holding nothing but `authoring.js` is a type two-thirds of the way here, not a
+mistake. The definition module moves in last, and until it does, that type is
+absent from the checks below that only apply to `index.js`.
+
 ## The layout
 
 ```
@@ -70,7 +79,7 @@ subject of the track this form came out of.
 | label, `fields[]`, `defaults`, `defaultsByLang` | `index.js` | registry, editor form, validation, agent schema |
 | `renderHtml` | `render.js` | presenter, editor preview, export |
 | picker description, search aliases | `authoring.js` | `slide-type-picker/data.js` |
-| schematic glyph | `authoring.js` | `slide-type-schematics.js` |
+| schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |
 | picker sample content | `authoring.js` | `slide-type-sample-content.js` |
 | picker group, curation category | `authoring.js` | picker + settings curation |
 | inline-edit descriptor | `inline-edit.js` | `inline-edit/descriptors.js` |
@@ -102,10 +111,47 @@ would otherwise silently leave the gate's scope when a type migrates. `index.js`
 is deliberately *not* scanned: its field labels are localised through the derived
 `slideType.*` keys rather than `t()`.
 
+## Reaching a companion: the authoring aggregator
+
+Deckyard has no bundler, so a browser consumer cannot scan a directory — it needs
+a static import per type. `shared/slide-types/authoring.js` is that import list,
+and it exists so there is exactly **one** of them instead of one per consumer:
+
+```js
+import { SLIDE_TYPE_AUTHORING } from '…/shared/slide-types/authoring.js';
+
+export const SLIDE_TYPE_SCHEMATIC = Object.fromEntries(
+  Object.entries(SLIDE_TYPE_AUTHORING)
+    .filter(([, authoring]) => authoring?.schematic)
+    .map(([type, authoring]) => [type, authoring.schematic])
+);
+```
+
+It is a **generated file** — `npm run gen:slide-authoring`, from
+`scripts/generate-slide-authoring-aggregator.js` — because a hand-maintained
+import list is a second registration list next to `registry.js`, and it would
+drift the first time a type was added or retired. The generator globs: a
+directory with an `authoring.js` is in, one without is out. Both directions are
+gated by `tests/slide-authoring-aggregator.test.js`, byte-for-byte.
+
+> **It is a sibling of `registry.js`, never a dependency of it.** The registry is
+> what the browser loads to *render* a slide, and the presenter renders slides
+> without ever offering one. An import from `registry.js` (or from any type's
+> `index.js`) would put picker copy into the presenter's payload — the softer
+> version of the `ai.js` mistake. `tests/slide-type-directory-boundary.test.js`
+> walks the real module graph from the render entry and fails on any route into
+> an `authoring.js`.
+
+There is no equivalent aggregator for `inline-edit.js` or `ai.js` yet; their
+consumers still import per type. When one is added it follows this shape.
+
 ## Migrating a consumer
 
-While a consumer still enumerates types itself, it imports the moved type's
-companion and drops its own copy of the value:
+A rollout PR takes one consumer and moves its fact for every type at once, so
+the consumer stops holding a per-type map and derives one instead — the
+`SLIDE_TYPE_SCHEMATIC` example above is the finished form. Before that, while a
+consumer still enumerates types itself, it can import a single moved type's
+companion and drop its own copy of that one value:
 
 ```js
 import iconCardGridAuthoring from '…/types/icon-card-grid-slide/authoring.js';
@@ -123,3 +169,9 @@ ordered array — and `tests/slide-type-directory-boundary.test.js` asserts the 
 agree. That keeps a single authority during the transition instead of two sources
 that can drift, and it is the pattern to reuse for any other ordered companion:
 **declare the fact, gate the copy, convert the consumer later.**
+
+### Consumers converted so far
+
+| Consumer | Fact | Landed |
+|---|---|---|
+| `client/views/editor/slide-type-schematics.js` | schematic glyph + per-preset overrides | A7.1 rollout PR 1 |

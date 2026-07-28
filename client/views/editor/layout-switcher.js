@@ -87,7 +87,7 @@ function getLayoutTextColumns(def) {
  * Draw the mini-schematic for one variant tile via the shared schematic
  * renderer, so the layout switcher and the slide-type picker speak one visual
  * language. Reads the variant's declared `schematic` spec (see
- * client/lib/slide-schematic.js for the grammar).
+ * client/lib/slide-authoring/slide-schematic.js for the grammar).
  * @param {Function} h
  * @param {Object} variant
  * @param {boolean} mirrored

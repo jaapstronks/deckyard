@@ -190,7 +190,9 @@ export const COMPANIONS = [
   {
     id: 'picker-schematic',
     label: 'Picker schematic glyph',
-    where: 'client/views/editor/slide-type-schematics.js (SLIDE_TYPE_SCHEMATIC)',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (schematic) — surfaced as ' +
+      'SLIDE_TYPE_SCHEMATIC by client/views/editor/slide-type-schematics.js',
     degradesTo: 'the picker tile falls back to a generic text-only diagram',
     appliesTo: (name, def) => isAuthorable(def),
     // A fork type may ship its own `schematic` on the definition (schematicFor

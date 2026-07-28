@@ -54,13 +54,25 @@ const CLIENT_RENDER_ENTRY = path.join(
   repoRoot, 'client', 'lib', 'slide-runtime', 'slide-render.js'
 );
 
-/** Slide types that have been converted to the directory form. */
+/**
+ * Every slide type that owns a directory. A directory arrives with the first
+ * companion a rollout PR moves into it, so most of them hold companions while
+ * their definition is still a flat `types/<name>.js` — see the "interim shape"
+ * note in docs/reference/slide-type-directory.md.
+ */
 function directoryTypes() {
   return fs
     .readdirSync(TYPES_DIR, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(TYPES_DIR, e.name, 'index.js')))
+    .filter((e) => e.isDirectory())
     .map((e) => e.name)
     .sort();
+}
+
+/** The subset whose definition module has moved in as well. */
+function definitionTypes() {
+  return directoryTypes().filter((name) =>
+    fs.existsSync(path.join(TYPES_DIR, name, 'index.js'))
+  );
 }
 
 /**
@@ -123,6 +135,7 @@ function reachableFrom(entry) {
 }
 
 const TYPE_NAMES = directoryTypes();
+const DEFINITION_NAMES = definitionTypes();
 
 describe('slide-type directory form', () => {
   it('at least one type is in the directory form', () => {
@@ -176,15 +189,37 @@ describe('the client render path stays clear of the server-only layer', () => {
   const rel = (f) => path.relative(repoRoot, f);
 
   it('the walk actually reaches the type definitions', () => {
-    // Without this the next assertion would pass on a broken walk.
-    const found = TYPE_NAMES.filter((n) =>
+    // Without this the next assertion would pass on a broken walk. Scoped to the
+    // types whose definition has moved into the directory: a companion-only
+    // directory has no index.js for the walk to reach.
+    const found = DEFINITION_NAMES.filter((n) =>
       reachable.has(path.join(TYPES_DIR, n, 'index.js'))
     );
     assert.deepStrictEqual(
       found,
-      TYPE_NAMES,
+      DEFINITION_NAMES,
       'the module-graph walk did not reach every directory type from ' +
         `${rel(CLIENT_RENDER_ENTRY)} — the check below would be vacuous`
+    );
+  });
+
+  it('no authoring.js is reachable from the browser render entry', () => {
+    // Same argument as ai.js below, one tier weaker: authoring copy is picker
+    // payload. The presenter and the export render slides without ever offering
+    // one, so a route from the render entry into a type's authoring.js means the
+    // presenter now downloads glyphs, descriptions and sample decks it never
+    // uses. The aggregator (shared/slide-types/authoring.js) is what makes this
+    // easy to get wrong: it sits next to registry.js, and registry.js *is* on
+    // the render path.
+    const leaked = [...reachable]
+      .filter((f) => f.startsWith(TYPES_DIR + path.sep) && path.basename(f) === 'authoring.js')
+      .map(rel)
+      .sort();
+    assert.deepStrictEqual(
+      leaked,
+      [],
+      'a type\'s authoring.js is reachable from the client render entry — the ' +
+        'registry must never import shared/slide-types/authoring.js.'
     );
   });
 
