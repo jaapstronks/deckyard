@@ -82,9 +82,8 @@ the same keys — asserted, so a key added to one and forgotten in the other fai
 rather than rendering `undefined` when someone switches language. No value may
 be empty.
 
-Copy that a renderer prints must go through `getSlideCopy()`. There are a few
-strings that still do not, all of them editor-canvas affordances rather than
-deck content:
+Copy that a renderer prints must go through `getSlideCopy()`. Some strings still
+do not. The first group are editor-canvas affordances rather than deck content:
 
 | Type | Strings |
 | --- | --- |
@@ -93,9 +92,22 @@ deck content:
 | `embed-slide` | the "Paste an HTTPS URL to embed…" hint |
 | `video-slide` | the "Paste a YouTube/Vimeo URL…" hint |
 
-These are English-only, so they are an untranslated string rather than a
+The second group *is* deck content — it is just only ever heard, not seen. Four
+types hardcode the `aria-label` on their structural list, where their siblings
+(`poll-slide`, `likert-slide`, `timeline-slide`) take it from `copy`:
+
+| Type | Label |
+| --- | --- |
+| `cycle-slide` | `Cycle stages` |
+| `funnel-slide` | `Funnel stages` |
+| `process-slide` | `Process steps` |
+| `pyramid-slide` | `Pyramid levels` |
+
+All of these are English-only, so they are an untranslated string rather than a
 wrong-language one — a different defect from the one this page describes, and
-not yet fixed.
+not yet fixed. The `aria-label` group is the closer of the two to this page's
+defect (a Dutch deck's screen reader announces English), and it is the cheaper
+fix: four keys in each table, no markup change.
 
 ## Where the language is passed from
 
