@@ -50,8 +50,9 @@ export function slideLabel(slide, slideTypes) {
     return content.title || defLabel || 'Content slide';
   if (slide?.type === 'chart-slide')
     return content.title || defLabel || 'Chart';
-  if (slide?.type === 'lijstje-slide')
-    return content.title || defLabel || 'List';
+  // No List case here on purpose: `content.title || defLabel` is exactly what
+  // the generic fallback below already does, so both names of the List type
+  // resolve identically without a special case that only names one of them.
   if (slide?.type === 'image-text-slide')
     return content.title || defLabel || 'Image + text (split)';
   if (slide?.type === 'quote-slide')
