@@ -86,6 +86,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // `.slide-pyramid .level-content` centres both of these
+          // (91-pyramid-slide.css).
+          defaultAlign: 'center',
         },
         {
           key: 'text',
@@ -93,6 +96,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          defaultAlign: 'center',
         },
       ],
     },

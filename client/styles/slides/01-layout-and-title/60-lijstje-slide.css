@@ -219,8 +219,9 @@
    from the type's `headerAlign`. The subheading carries a 70ch measure cap that
    also anchored it to the start, so it needs `margin-inline: auto` to share the
    heading's centre line. The list itself is a separate unit and deliberately
-   does NOT move: its items are marker-anchored (role:'list-item'), and
-   centring a bullet list detaches every line from its marker. */
+   does NOT move: its items are marker-anchored (role:'list-item'). The reason
+   is the general one — see the marker-anchored-list rule in 00-base.css and
+   docs/reference/text-alignment.md — so it is not restated here. */
 .slide-lijstje.is-align-center .heading,
 .slide-lijstje.is-align-center .subheading {
   margin-inline: auto;

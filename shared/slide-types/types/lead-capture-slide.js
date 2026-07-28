@@ -25,6 +25,8 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      // `.lead-capture-header` centres both of these (17-lead-capture.css).
+      defaultAlign: 'center',
     },
     {
       key: 'description',
@@ -32,6 +34,7 @@ export default {
       type: 'markdown',
       required: false,
       maxLength: 500,
+      defaultAlign: 'center',
     },
     {
       key: 'nameLabel',

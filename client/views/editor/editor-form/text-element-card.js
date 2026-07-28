@@ -29,7 +29,8 @@ import {
 } from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
 
-const ALIGN_DEFAULT = 'left';
+// Alignment has no module-level default any more: it is per field, resolved by
+// fieldAlignAffordance(), because a type may centre in its own slide CSS.
 const COLOR_DEFAULT = 'default';
 const SIZE_DEFAULT = 'md';
 
@@ -192,7 +193,7 @@ function renderGroupAlignHint({ h, fieldRenderers, group, slide }) {
  * Write one style property for a field, pruning defaults so the stored map
  * never carries no-op overrides. Mutates `slide.content.textStyles`.
  */
-function setTextStyle(slide, fieldKey, prop, value, defaultValue) {
+function setTextStyle(slide, fieldKey, prop, value, defaultValue, typeDef = null) {
   const content = slide.content || (slide.content = {});
   const map = { ...(content.textStyles || {}) };
   const style = { ...(map[fieldKey] || {}) };
@@ -200,7 +201,7 @@ function setTextStyle(slide, fieldKey, prop, value, defaultValue) {
   else style[prop] = value;
   if (Object.keys(style).length) map[fieldKey] = style;
   else delete map[fieldKey];
-  const cleaned = normalizeTextStyles(map);
+  const cleaned = normalizeTextStyles(map, typeDef);
   if (Object.keys(cleaned).length) content.textStyles = cleaned;
   else delete content.textStyles;
 }
@@ -232,7 +233,9 @@ export function renderTextElementCard({
 }) {
   const fieldEnum = fieldRenderers?.fieldEnum;
   if (!fieldEnum || !fieldKey) return false;
-  const current = normalizeTextStyles(slide?.content?.textStyles)[fieldKey] || {};
+  const slideTypeDef = getSlideType(slide?.type) || null;
+  const current =
+    normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[fieldKey] || {};
 
   const commit = () => {
     markDirty?.();
@@ -245,12 +248,15 @@ export function renderTextElementCard({
   // list/step items can never align; a quote offers left/centre only) and its
   // GROUP membership (a field inside a declared visual block hands alignment
   // to that block's layout variant). No per-type hardcode.
-  const slideFields = getSlideType(slide?.type)?.fields || null;
+  // Pass the whole definition, not just its fields: the type-level
+  // `defaultAlign` is what makes the control show the alignment actually in
+  // force on a type that centres in its own slide CSS.
   const {
     values: roleValues,
     owner: alignOwner,
     groupId,
-  } = fieldAlignAffordance(slideFields, fieldKey);
+    defaultAlign,
+  } = fieldAlignAffordance(slideTypeDef || null, fieldKey);
   let alignValues = roleValues;
   // A value already stored outside the allowed set stays selectable so it is
   // never a stuck, invisible override the user can't clear. Group members are
@@ -259,7 +265,7 @@ export function renderTextElementCard({
   if (
     alignOwner === 'field' &&
     current.align &&
-    current.align !== ALIGN_DEFAULT &&
+    current.align !== defaultAlign &&
     !alignValues.includes(current.align)
   ) {
     alignValues = [...alignValues, current.align];
@@ -273,8 +279,8 @@ export function renderTextElementCard({
     })),
   };
   const alignEl = alignValues.length
-    ? fieldEnum(alignField, current.align || ALIGN_DEFAULT, (v) => {
-        setTextStyle(slide, fieldKey, 'align', v, ALIGN_DEFAULT);
+    ? fieldEnum(alignField, current.align || defaultAlign, (v) => {
+        setTextStyle(slide, fieldKey, 'align', v, defaultAlign, slideTypeDef);
         commit();
       })
     : null;

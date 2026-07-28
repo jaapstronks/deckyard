@@ -103,6 +103,8 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          // `.slide-funnel .stage-text` is centred (90-funnel-slide.css).
+          defaultAlign: 'center',
         },
       ],
     },
@@ -141,6 +143,8 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          // `.slide-funnel .stage-text` is centred (90-funnel-slide.css).
+          defaultAlign: 'center',
         },
       ],
     },

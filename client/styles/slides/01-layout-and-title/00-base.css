@@ -29,6 +29,32 @@
   text-align: start;
 }
 
+/* A marker-anchored list never inherits block alignment.
+   -----------------------------------------------------
+   A bullet or number ::marker sits at the content box's start and does not
+   move. Centre or right-align the block and every line drifts a different
+   distance from its own marker — three bullets, three indents. So the list
+   itself is pinned to the logical start, whatever the block around it does;
+   the surrounding prose still aligns freely.
+
+   `:not([class])` is the marker test. A markdown-authored list is emitted
+   bare (`<ul dir="auto">`, see buildList in shared/markdown.js) and keeps its
+   markers, so it is exactly the case this guards. The slide types that use a
+   list as a layout container instead — poll options, funnel stages, pyramid
+   levels, timeline, cycle, process — all carry a class, all set
+   `list-style: none`, and several centre their labels on purpose inside a
+   shape. Those must not be touched, and are not.
+   `tests/list-alignment.test.js` pins both halves of that assumption.
+
+   This rule is deliberately stated in terms of the MARKER, not the mechanism
+   that moved the block. Its two predecessors were anchored on `tf-align-*`,
+   which covered a block the author had aligned but missed every type that
+   centres in its own slide CSS — `end-slide` being the one that surfaced it.
+   See docs/reference/text-alignment.md. */
+.slide :is(ul, ol):not([class]) {
+  text-align: start;
+}
+
 .slide-bg-lime {
   --slide-bg: var(--slide-bg-lime);
 }
