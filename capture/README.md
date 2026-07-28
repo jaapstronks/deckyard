@@ -115,6 +115,53 @@ flagged for review — the same drift mechanism the registry uses for source dep
   are deleted-by-title before each seed, so re-runs stay clean. The title reads
   as a normal deck name (it shows in the editor title bar) rather than a
   debug marker. Only run captures against a throwaway dev instance.
+- **The UI language is set, never inherited.** `uiLocale` is an *account*
+  setting, so it survives from one recipe to the next inside a `--all` run —
+  a shot that contains UI text and doesn't call `setUiLocale()` comes out in
+  whatever language the previous recipe happened to leave behind. Every recipe
+  with visible chrome now pins it. Note `?lang=` cannot do this job: that is the
+  *deck* language, and its English code is `en-GB` where the UI locale's is `en`.
+
+## Marketing shots
+
+`public/images/marketing/` is the second destination, driven by the shot list in
+deckyard-website `planning/marketing-beeld.md`. Six recipes, three shots × two
+languages: `editor-form`, `poll-live`, `join-screen`. They share the docs
+harness but differ in four ways, each for a stated reason:
+
+| | docs shots | marketing shots |
+|---|---|---|
+| viewport | 1440×900 @2x | **1280×800 @2x** → 2560×1600, the size the site's layout is built around |
+| theme | whatever `DEFAULT_THEME_ID` is | **pinned to `brand`** — a marketing image must not change colour the day the default does |
+| content | `_sample-content.js` | `_marketing-deck.js` — typed slides with something to photograph |
+| frame | whole viewport | `poll-live` / `join-screen` are **clipped** to the slide (`clip:`), because the presenter toolbar around them is a different shot |
+
+Three mechanisms live in `lib/marketing.js` because a docs screenshot never
+needs them:
+
+- **`seedBilingualDeck()`** writes the `i18n.versions` envelope, so `?lang=nl`
+  and `?lang=en-GB` are two versions of one deck rather than two decks.
+- **`startLiveSession()` + `seedPollVotes()`** — a poll has no votes outside a
+  presentation session, so the editor preview always renders `Total: 0`. The
+  votes go through the public vote route, one fresh device cookie each, and the
+  helper then blocks until the server reports the expected tally rather than
+  handing that race to the browser.
+- **`rewriteJoinOrigin()`** puts `deckyard.eu` on the join screen. This is *not*
+  `APP_URL`: the follow-invite slide builds its URL client-side from
+  `location.origin`, which no server setting can reach. The human-readable URL
+  is substituted after render; the QR is deliberately left encoding the capture
+  instance, because a scannable code pointing at a deck nobody hosts would be
+  worse than a decorative one. A genuinely scannable join shot has to be taken
+  on a real deckyard.eu instance.
+
+Two known limits, both worth knowing before trusting a re-run:
+
+- **The recipe hash does not cover `_marketing-shots.js`.** `hashRecipeFile()`
+  hashes the recipe module only, and the six marketing modules are thin wrappers
+  over shared factories. Change a factory and the registry will *not* flag the
+  shots as stale — re-run them by hand. (`_sample-content.js` has the same gap.)
+- **The join screen's access code is per-session**, so it differs on every run.
+  Everything else in these shots is deterministic.
 
 ## Adding the next screenshot
 

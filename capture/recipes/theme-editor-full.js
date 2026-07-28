@@ -8,7 +8,14 @@
  * tab of settings. We land on /settings#themes (the dev-bypass user is admin, so
  * the designer-gated tab is available) and click "Create Theme" to open it.
  * This is a tall, full-page capture.
+ *
+ * The recipe finds that button by its English label, so it pins the UI locale
+ * rather than inheriting one. `?lang=` cannot do this — that sets the *deck*
+ * language — and the account's `uiLocale` is sticky: whatever the previous
+ * recipe in a `--all` run left behind is what this one would have started with.
  */
+
+import { setUiLocale } from '../lib/api.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
 export default {
@@ -17,7 +24,12 @@ export default {
   registryPath: 'public/images/screenshots/theme-editor-full.png',
   fullPage: true,
 
-  navigate: () => '/settings?lang=en#themes',
+  async state(api) {
+    await setUiLocale(api, 'en');
+    return {};
+  },
+
+  navigate: () => '/settings#themes',
 
   // The Themes tab is rendered; the "Create Theme" button lives in its header.
   waitFor: '.settings-view, .settings-page, main',

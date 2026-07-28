@@ -82,6 +82,27 @@ export async function assertServerUp(base) {
 }
 
 /**
+ * Set the signed-in user's UI language, which is what the app chrome follows.
+ *
+ * Call this *before* navigating: `client/app.js` reads `mySettings.uiLocale`
+ * during boot and overrides whatever `?lang=`/localStorage suggested, so
+ * setting it after the page has loaded changes nothing for this shot.
+ *
+ * It is also **sticky** — an account setting, not a per-request one — so any
+ * recipe whose shot contains UI text should set it rather than inherit
+ * whatever the previous recipe in a `--all` run left behind.
+ *
+ * @param {ApiClient} api
+ * @param {string} locale A UI locale id from `client/i18n/manifest.json`
+ *   (`'en'`, `'nl'`, …). Note this is *not* a presentation language: English
+ *   is `en` here and `en-GB` in `?lang=`.
+ * @returns {Promise<void>}
+ */
+export async function setUiLocale(api, locale) {
+  await api.put('/api/settings/me', { uiLocale: locale });
+}
+
+/**
  * Delete every presentation whose title starts with the given prefix. Recipes
  * seed decks under a reserved title prefix so re-runs stay idempotent without
  * touching a user's real decks.
