@@ -79,7 +79,7 @@ contract* under the same id.
 
 ## The guardrail
 
-`tests/slide-type-structure.test.js` runs two assertions:
+`tests/slide-type-structure.test.js` runs four assertions:
 
 1. **Completeness** — every registered type declares a `structure` from the
    vocabulary.
@@ -88,6 +88,24 @@ contract* under the same id.
    one whose `minItems === maxItems`; `chrome` carries no content field at all.
    `dataset`'s payload is an encoded blob, so there is nothing derivable to
    check and the test says so rather than pretending.
+3. **No duplicates** — no two types offer the same **field signature** (every
+   content field as `key:type`, sorted, with repeated-item fields carrying their
+   item shape). This is the assertion that would have caught `lijstje-slide` on
+   day one. The signature is deliberately coarse: it ignores enum options and
+   length limits, so it collides easily, and "they really are different, here is
+   why" is an answer the burndown can carry. `chrome` types are skipped — they
+   have the empty signature by construction, so colliding there says nothing.
+4. **Variants are lossless** — every same-type `layoutVariants` tile of a type
+   renders the same content. The rule at the top of this page, made operational:
+   populate the type completely with sentinel values, flip to each tile, render,
+   and see which values still reach the output. A value that survives one tile
+   and not another is content the author loses by switching, which makes it a
+   type boundary. Tiles with `convertTo` are cross-type exits through the convert
+   seam — a boundary already modelled correctly — and are out of scope.
+
+Assertions 3 and 4 are gates first: they each carry exactly one violation today
+and their value is what they stop from being added tomorrow. Assertion 4 checks
+ten types with variant sets and clears nine of them.
 
 `actions[]` is excluded from "content". `content-slide` and `image-text-slide`
 both carry an `actions[0-3]` array beside their scalar slots, and by field type
@@ -112,13 +130,29 @@ point: this is what the facet was built to make visible.
 | `poll-slide` | declared `fixed-collection`, carries `option1..option4` as scalars | never got the `items[]` migration the other collections did |
 | `likert-slide` | same, `option1..option10` | as poll-slide |
 
+Assertion 3 adds one pair, in `SIGNATURE_BURNDOWN`:
+
+| Pair | Why |
+|---|---|
+| `lijstje-slide == list-slide` | one definition behind two names (`{ ...listSlide, ai: false }`); already on rung 1 of the removal ladder, so the entry dies with rung 3 |
+
+Assertion 4 adds one type, in `VARIANT_BURNDOWN`:
+
+| Type | Why |
+|---|---|
+| `image-text-slide` | the tiles disagree about how many images they render — `split`/`corner` one cell, `duo` two, the rows up to three — so flipping `duo` → `split` orphans image 2. The same finding as the structure burndown, reached from the render side instead of the schema side |
+
+That the two assertions converge on `image-text-slide` from opposite directions
+is the useful part: the schema says it declares `singleton` while carrying
+`images[0-3]`, and the renderer says its tiles are not interchangeable. One
+boundary, two witnesses.
+
 ## What is not here yet
 
-- **Three more assertions.** No two active types sharing a field signature (the
-  test that would have caught `lijstje-slide` on day one); every value of a
-  `layoutVariants` enum carrying the same content-bearing fields (which
-  codifies the rule above); and the companion matrix having no hole. Each finds
-  real violations and needs its own burndown.
+- **The fifth assertion.** The companion matrix having no hole: derive the set
+  of modules that branch on a type name and fail on any that the matrix does not
+  list. It is the only one of the five that comes from a real regression rather
+  than from design (PR #451), and it needs its own burndown.
 - **Derivation.** `PICKER_GROUPS` and the settings `CATEGORIES` are still two
   hand-written tables that disagree. They become derivations once the consumers
   read from the registry — that is slide-type-seam work, not facet work.
