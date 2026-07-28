@@ -2,6 +2,7 @@ import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
+  structure: 'singleton',
   label: 'End / Contact',
   fields: [
     {

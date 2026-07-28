@@ -41,6 +41,7 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
 }
 
 export default {
+  structure: 'collection',
   label: 'Process',
   fields: [
     {

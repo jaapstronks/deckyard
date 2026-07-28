@@ -14,6 +14,7 @@
 import renderHtml from './render.js';
 
 export default {
+  structure: 'collection',
   label: 'Icon cards',
   fields: [
     {

@@ -2,6 +2,7 @@ import { bgClass, esc, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 
 export default {
+  structure: 'singleton',
   label: 'Feedback',
   fields: [
     {

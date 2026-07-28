@@ -22,6 +22,7 @@ import listSlide from './list-slide.js';
  * that number rather than confirm it.
  */
 export default {
+  structure: 'collection',
   ...listSlide,
   // Renderable, not authorable: drops out of the picker (isInsertableSlideType)
   // and out of AI/MCP (isAgentOptOut).

@@ -44,6 +44,7 @@ function rowToCellsHtml(rowObj, colCount, cellTag, stepByCell = false, rowIdx = 
 }
 
 export default {
+  structure: 'tabular',
   label: 'Table',
   fields: [
     {

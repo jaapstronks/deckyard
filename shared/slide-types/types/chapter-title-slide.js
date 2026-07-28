@@ -20,6 +20,7 @@ const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
 });
 
 export default {
+  structure: 'singleton',
   label: 'Section title',
   fieldGroups: [TITLE_BLOCK.group],
   layoutVariants: TITLE_BLOCK.variants,

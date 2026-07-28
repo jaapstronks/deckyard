@@ -12,6 +12,7 @@ import {
 } from '../helpers.js';
 
 export default {
+  structure: 'singleton',
   label: 'Video',
   fields: [
     {

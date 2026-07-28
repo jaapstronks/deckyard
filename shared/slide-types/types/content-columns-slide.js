@@ -134,6 +134,7 @@ function generateColumnDefaults(colNum, lang) {
 }
 
 export default {
+  structure: 'collection',
   // Archived: retired as an authoring surface (decided 2026-07-22). It was the
   // only type with the rich nested column structure (heading + image + several
   // sub-items per column), which is the heaviest reader/reflow projection case,
