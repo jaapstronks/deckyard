@@ -181,7 +181,7 @@ export default {
       .map(
         (t, i) => `
           <li class="likert-option">
-            <div class="likert-option-inner">
+            <div class="likert-option-inner on-surface-light">
               <span class="likert-num" aria-hidden="true">${
                 i + 1
               }</span>
@@ -212,7 +212,7 @@ export default {
               </ol>
             </div>
             <div class="poll-right">
-              <div class="poll-results poll-results-main likert-results" aria-label="${esc(copy.likertResultsLabel)}">
+              <div class="poll-results poll-results-main likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
                 <div class="poll-results-title">${esc(copy.likertResultsTitle)}</div>
                 <div class="likert-hill" data-likert-hill="1"></div>
                 <div class="likert-axis" data-likert-axis="1">${axisHtml}</div>

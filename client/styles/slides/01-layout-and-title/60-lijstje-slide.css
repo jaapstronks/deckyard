@@ -81,11 +81,16 @@
   line-height: 1;
   margin-top: 2px;
 }
+/* The dot is a pure graphic: it follows --slide-marker-color, not the accent
+   directly, so it stays visible on a background variant that flipped the text
+   colour. See the marker note in 00-base.css. The numbered variant above keeps
+   the raw accent on purpose — its number reads against the disc via
+   --t-color-accent-contrast, and moving the disc would break that pair. */
 .slide-lijstje.is-bullets .marker {
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: var(--color-accent);
+  background: var(--slide-marker-color, var(--color-accent));
   margin-top: 16px; /* align with first line of text */
 }
 .slide-lijstje .lijst-item-body {

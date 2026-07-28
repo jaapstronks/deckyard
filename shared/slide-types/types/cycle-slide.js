@@ -203,8 +203,8 @@ export default {
 
     const centerLabel = typeof content?.centerLabel === 'string' ? content.centerLabel.trim() : '';
     const centerHtml = centerLabel
-      ? `<div class="cycle-center"><span class="center-label" data-inline-field="centerLabel" dir="auto">${esc(centerLabel)}</span></div>`
-      : '<div class="cycle-center"></div>';
+      ? `<div class="cycle-center on-surface-mist"><span class="center-label" data-inline-field="centerLabel" dir="auto">${esc(centerLabel)}</span></div>`
+      : '<div class="cycle-center on-surface-mist"></div>';
 
     // DEPRECATED: 'stages' fallback - Remove after April 2026
     const stages = getCollectionItems(content, 'items', ['stages']).slice(0, 6);

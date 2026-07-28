@@ -72,7 +72,7 @@ export default {
           <h2 class="heading" data-inline-field="question" dir="auto">${esc(content?.question)}</h2>
           <div class="poll-layout likert-layout">
             <div class="poll-left">
-              <div class="likert-slider-scale" aria-label="${esc(copy.likertSliderScaleLabel)}">
+              <div class="likert-slider-scale on-surface-light" aria-label="${esc(copy.likertSliderScaleLabel)}">
                 <div class="likert-slider-labels">
                   <div class="likert-slider-label">
                     <span class="likert-slider-num" aria-hidden="true">1</span>
@@ -87,7 +87,7 @@ export default {
               </div>
             </div>
             <div class="poll-right">
-              <div class="poll-results poll-results-main likert-results" aria-label="${esc(copy.likertResultsLabel)}">
+              <div class="poll-results poll-results-main likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
                 <div class="poll-results-title">${esc(copy.likertResultsTitle)}</div>
                 <div class="likert-hill" data-likert-hill="1"></div>
                 <div class="likert-axis" data-likert-axis="1">${axisHtml}</div>

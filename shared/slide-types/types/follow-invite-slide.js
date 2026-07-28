@@ -90,7 +90,7 @@ export default {
             </div>
 
             <div class="sfi-methods" role="group" aria-label="${esc(base.followMethodsLabel)}">
-              <div class="sfi-card sfi-card-qr">
+              <div class="sfi-card sfi-card-qr on-surface-light">
                 <div class="sfi-card-kicker">${esc(
                   base.methodScan
                 )}</div>
@@ -101,7 +101,7 @@ export default {
                 </div>
               </div>
 
-              <div class="sfi-card sfi-card-code">
+              <div class="sfi-card sfi-card-code on-surface-light">
                 <div class="sfi-card-kicker">${esc(
                   base.methodType
                 )}</div>

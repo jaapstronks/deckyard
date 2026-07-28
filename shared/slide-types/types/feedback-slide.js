@@ -66,7 +66,7 @@ export default {
             </div>
 
             <div class="sfi-methods" role="group" aria-label="${esc(copy.feedbackMethodsLabel)}">
-              <div class="sfi-card sfi-card-qr">
+              <div class="sfi-card sfi-card-qr on-surface-light">
                 <div class="sfi-card-kicker">${esc(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${esc(
@@ -75,7 +75,7 @@ export default {
                 </div>
               </div>
 
-              <div class="sfi-card sfi-card-code">
+              <div class="sfi-card sfi-card-code on-surface-light">
                 <div class="sfi-card-kicker">${esc(copy.feedbackOrGoTo)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 <div class="sfi-code-row">

@@ -39,6 +39,48 @@ its marker — `list-item` therefore offers no alignment at all.
 
 A field declares `role` only when it differs from the safe default.
 
+### `defaultAlign` — what is it aligned at right now?
+
+`shared/slide-types/text-roles.js`. Almost always `left`, and then nobody
+declares it. It is a declaration because a handful of types centre in their own
+slide CSS: `end-slide` centres its whole `.slide-inner`, `funnel-slide` centres
+a stage's description, `pyramid-slide` centres a level's label and text,
+`text-blocks-slide` centres a row heading, `lead-capture-slide` centres its
+header.
+
+Without the declaration the panel had no way to see any of that. It reported
+"Left" over visibly centred text, and clicking "Left" changed nothing — `left`
+was treated as "no override", so it stored nothing and emitted no class, and
+the type's own slide rule kept winning unopposed.
+
+A type declares it at type level when the whole slide centres, or on a single
+`fields[]` entry when only that field does; field beats type. A value outside
+the field's role-allowed set is ignored, so no type can default a list item to
+centre.
+
+```js
+export default {
+  defaultAlign: 'center',   // the whole .slide-inner centres
+  fields: [ /* … */ ],
+};
+```
+
+Two consequences worth knowing, because they are the reason this is a
+declaration rather than "always emit a class":
+
+- **What counts as an override moves with it.** On a centring type, `left` is a
+  real choice and is stored and emitted; `center` is the no-op that gets pruned.
+  On every other type the reverse holds, exactly as before.
+- **An untouched deck stays byte-identical.** Defaults are still pruned, so
+  adding `defaultAlign` starts no classes on decks nobody has styled. The
+  always-emit alternative would have rewritten the markup of every deck in
+  existence to fix a panel label.
+
+Variant-conditional centring cannot be expressed here — team-cards' circular
+shape, icon-card tiles, a single-metric KPI grid, a horizontal process, a
+one-block text row all centre based on a content value, and a static field
+declaration has no access to that. Those panels still report `left`.
+
 ### `group` — which fields move together?
 
 `shared/slide-types/field-groups.js`. Extrinsic, type-local, an arbitrary set
@@ -116,6 +158,41 @@ Horizontal and vertical are owned by different parties:
 
 One owner per axis, so there are no precedence rules to reason about. The theme
 sets a title slide's posture; the author composes this one slide.
+
+## A marker-anchored list never inherits alignment
+
+A bullet or number `::marker` sits at the content box's start and does not move.
+Centre or right-align the block and every line drifts a different distance from
+its own marker — three bullets, three indents. So the list itself is pinned to
+the logical start, whatever the block around it does; the surrounding prose
+still aligns freely.
+
+One rule, in `01-layout-and-title/00-base.css`:
+
+```css
+.slide :is(ul, ol):not([class]) {
+  text-align: start;
+}
+```
+
+`:not([class])` is the marker test. A markdown-authored list is emitted bare
+(`<ul dir="auto">`, see `buildList` in `shared/markdown.js`) and keeps its
+markers, so it is exactly the case this guards — including the content-dependent
+one, where an author types `- bla` into a prose field and gets a list without
+ever touching an alignment control. The slide types that use a list as a *layout
+container* — poll options, funnel stages, pyramid levels, timeline, cycle,
+process — all carry a class, all set `list-style: none`, and several centre
+their labels inside a shape on purpose. Those are untouched.
+
+The rule is stated in terms of the **marker**, not the mechanism that moved the
+block. Its two predecessors were anchored on `tf-align-*`, which covered a block
+the author had aligned and missed every type that centres in its own slide CSS —
+`end-slide` being the one that surfaced it. `tests/list-alignment.test.js` pins
+both halves of the `:not([class])` assumption, so the rule cannot silently stop
+firing.
+
+List and step SLIDE types are a separate mechanism: their item fields carry
+`role: 'list-item'`, so they never get an align class in the first place.
 
 ## Rendering
 

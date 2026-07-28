@@ -30,7 +30,7 @@ function levelHtml(level, idx, total) {
 
   return `
     <li class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" data-inline-item="levels" data-inline-item-index="${idx}">
-      <div class="level-bar">
+      <div class="level-bar on-surface-lime">
         <div class="level-content">
           ${labelHtml}
           ${textHtml}

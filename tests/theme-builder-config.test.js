@@ -42,6 +42,10 @@ const PRE_MIGRATION_CSS_VARS = {
   '--t-slide-bg-lime': '#fefefe',
   '--t-slide-bg-mist': '#f7f4fa',
   '--t-slide-bg-dark': '#1f1434',
+  // Derived, not authored: what reads ON lime/mist, for elements that paint
+  // one of those as their own surface (see docs/reference/nested-surfaces.md).
+  '--t-slide-bg-lime-text': '#1f2937',
+  '--t-slide-bg-mist-text': '#1f2937',
   '--t-quote-author-color': '#7c3aed',
   '--t-radius': '16px',
   '--t-radius-sm': '12px',

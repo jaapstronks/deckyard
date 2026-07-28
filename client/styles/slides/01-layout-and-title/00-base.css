@@ -304,18 +304,113 @@
   :is(.subheading, .bottom-subheading, .subtitle, .tsu-subtitle, .tsu-meta) {
   color: var(--slide-bg-text-muted);
 }
+/* =============================================================================
+   NESTED SURFACES
+   ============================================================================
+   A slide picks ONE text colour, from its own background. An element that
+   paints its own background invalidates that answer for its own subtree: the
+   text no longer sits on the slide, it sits on the element. Get this wrong and
+   you get white on a lime funnel bar, or #fafafa on the #ebebeb poll results
+   panel (~1.1:1) — the same defect three times, because the contrast logic
+   stopped at the slide background.
+
+   The rule: a block that paints its own background says which surface it is,
+   with one class. The class redirects the text tokens the same way a
+   background variant does at slide level, so every descendant that reads
+   --color-text follows without a per-element override.
+
+     <div class="poll-results on-surface-light">
+
+   The five surfaces are the ones a theme can actually answer for. `light` and
+   `dark` are the theme's two poles (--t-text-color-dark/-light, the same pair
+   background-image auto-contrast picks between). `accent`, `lime` and `mist`
+   read a DERIVED token: shared/theme-normalize.js runs each of those
+   backgrounds through pickTextColorForBg, so a theme that ships a dark lime
+   (`midnight` does) gets light text on its funnel bars without saying so.
+
+   Where the surface itself swaps in CSS — a funnel bar is lime normally and
+   accent on a lime slide — the swapping rule overrides `--surface-text` on the
+   same selector that swaps `background`. The redirect stays owned here.
+
+   See docs/reference/nested-surfaces.md.
+   ============================================================================ */
+
+.slide :is(
+    .on-surface-light,
+    .on-surface-dark,
+    .on-surface-accent,
+    .on-surface-lime,
+    .on-surface-mist
+  ) {
+  --color-text: var(--surface-text);
+  --color-text-muted: var(
+    --surface-text-muted,
+    color-mix(in srgb, var(--surface-text) 70%, transparent)
+  );
+  --color-link: var(--surface-link, var(--color-accent));
+  color: var(--surface-text);
+}
+
+.slide .on-surface-light {
+  --surface-text: var(--t-text-color-dark, #212121);
+}
+.slide .on-surface-dark {
+  --surface-text: var(--t-text-color-light, #ffffff);
+  /* The brand accent is tuned for light grounds, so a link keeping the raw
+     accent goes near-invisible here — same lightening the slide-level dark
+     block does. */
+  --surface-link: var(
+    --t-color-link-on-dark,
+    color-mix(in srgb, var(--color-accent) 42%, #ffffff)
+  );
+}
+.slide .on-surface-accent {
+  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+}
+.slide .on-surface-lime {
+  --surface-text: var(--t-slide-bg-lime-text, var(--t-text-color-dark, #212121));
+}
+.slide .on-surface-mist {
+  --surface-text: var(--t-slide-bg-mist-text, var(--t-text-color-dark, #212121));
+}
+
+/* A marker is a graphic, not text.
+   -------------------------------
+   A bullet dot carries the brand accent, and the accent does NOT follow a
+   background variant — so on a dark variant the dots all but vanish while the
+   text beside them has flipped to white. Text has --color-text to follow;
+   a graphic needs its own token, because "readable" for a 12px disc is the
+   3:1 of WCAG 1.4.11, not 4.5:1, and the answer is a colour rather than a
+   pole.
+
+   On an ordinary slide this is simply the accent. Where the slide has flipped
+   its text colour — a background image, or a variant that declared one — the
+   accent is no longer guaranteed against that ground, so the dot is mixed
+   mostly toward the colour that IS guaranteed there, keeping a brand tint
+   without betting on it. A numbered marker is deliberately NOT included: it is
+   a filled disc with a number on it, and that number already reads via
+   --t-color-accent-contrast, which is the pair that would break if the disc
+   moved. */
+.slide {
+  --slide-marker-color: var(--color-accent);
+}
+.slide.has-slide-bg-light-text,
+.slide.has-slide-bg-dark-text {
+  --slide-marker-color: color-mix(
+    in srgb,
+    var(--color-accent) 35%,
+    var(--slide-bg-text)
+  );
+}
+
 /* Several slide types render text on their own opaque light surfaces (cards,
    matrix cells, the cycle hub, the partner-split panel). Those sit ON TOP of
-   the background image, so their text must stay dark — re-assert dark tokens. */
-.slide.has-slide-bg-light-text
-  :is(
-    .icon-card-body,
-    .card-stack-body,
-    .cycle-center,
-    .sfi-card,
-    .matrix-cell,
-    .slide-partner-split .left
-  ) {
+   the background image, so their text must stay dark — re-assert dark tokens.
+
+   Kept for the elements that have not been converted to an `on-surface-*`
+   class yet; the ones that have are gone from this list, because the class
+   covers background VARIANTS too and this block never did. */
+.slide.has-slide-bg-light-text :is(.icon-card-body, .card-stack-body, .matrix-cell) {
   --color-text: rgba(11, 11, 11, 0.92);
   --color-text-muted: rgba(11, 11, 11, 0.7);
   /* These cards are light surfaces sitting on the dark background, so the

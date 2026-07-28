@@ -197,6 +197,27 @@ export function normalizeTheme(theme) {
     poles
   );
 
+  // Nested-surface text colours: same "set a bg token → get readable text for
+  // free" pattern as the accent above, for the two built-in slide surfaces.
+  //
+  // These are NOT the same question as `--t-color-text`. That one answers "what
+  // reads on the slide background", and a slide-background VARIANT may flip it
+  // to white. An element that paints lime or mist on top of that variant did
+  // not flip with it, so its text needs the surface's own answer — otherwise
+  // you get white on lime, which is the funnel-bar defect.
+  //
+  // Derived, never assumed: `midnight` ships lime as #18181b, so hardcoding a
+  // dark pole here would be wrong for a shipped theme. A theme-declared variant
+  // already gets `--t-slide-bg-<id>-text` from its own `textColor`
+  // (shared/theme-slide-backgrounds.js); this covers the two that predate that
+  // mechanism. See docs/reference/nested-surfaces.md.
+  for (const surface of ['lime', 'mist']) {
+    const key = `--t-slide-bg-${surface}-text`;
+    if (vars[key]) continue;
+    const bgHex = cssVar(vars, `--t-slide-bg-${surface}`);
+    if (hexToRgb(bgHex)) vars[key] = pickTextColorForBg(bgHex, poles);
+  }
+
   // Table style variants: when a theme overrides a variant's header, label-column
   // or body background, auto-derive readable text for it — the same "set a bg
   // token → get readable text for free" pattern as the accent contrast above.

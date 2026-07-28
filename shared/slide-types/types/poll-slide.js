@@ -132,7 +132,7 @@ export default {
       .map(
         (t, i) => `
           <li class="poll-option">
-            <div class="poll-option-inner">
+            <div class="poll-option-inner on-surface-light">
               <span class="poll-letter" aria-hidden="true">${letterForIdx(i)}</span>
               <span class="poll-text" data-inline-field="${t.key}" dir="auto">${esc(t.text)}</span>
             </div>
@@ -177,7 +177,7 @@ export default {
               <ol class="poll-options poll-options-grid" aria-label="${esc(copy.pollOptionsLabel)}">
                 ${optsHtml}
               </ol>
-              <div class="poll-results poll-results-main" aria-label="${esc(copy.pollResultsLabel)}">
+              <div class="poll-results poll-results-main on-surface-light" aria-label="${esc(copy.pollResultsLabel)}">
                 <div class="poll-results-title">${esc(copy.pollResultsTitle)}</div>
                 <div class="poll-bars" data-poll-bars="1">
                   ${barsHtml}
@@ -187,7 +187,7 @@ export default {
               </div>
             </div>
             <div class="poll-right">
-              <div class="poll-scan">
+              <div class="poll-scan on-surface-light">
                 <div class="poll-scan-title">${esc(copy.pollJoinTitle)}</div>
                 <div class="help">${esc(joinHelp)}</div>
                 ${codesHtml}
