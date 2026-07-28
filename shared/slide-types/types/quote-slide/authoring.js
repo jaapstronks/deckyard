@@ -14,4 +14,15 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'quote' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    quote: 'The best way to predict the future is to create it.',
+    authorName: 'Peter Drucker',
+    authorTitle: 'Management Consultant',
+  },
 };

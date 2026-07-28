@@ -14,4 +14,23 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'cards', cells: 6, cols: 3, rows: 2 },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   *
+   * Placeholder image URLs inlined (see image-slide's note). The first seed is
+   * the shared `slide-picker` placeholder the old module also used for
+   * image-text-slide; the values are byte-identical, the sharing was incidental.
+   */
+  sample: {
+    title: 'Meet the Team',
+    subheading: '',
+    members: [
+      { image: 'https://picsum.photos/seed/slide-picker/800/600', name: 'Jane Doe', byline: 'CEO & Founder' },
+      { image: 'https://picsum.photos/seed/slide-picker-3/800/600', name: 'John Smith', byline: 'Head of Design' },
+      { image: 'https://picsum.photos/seed/slide-picker-4/800/600', name: 'Alex Johnson', byline: 'Lead Developer' },
+    ],
+  },
 };

@@ -1,299 +1,42 @@
 /**
- * Sample content for each slide type to display in the slide type picker thumbnails.
- * This provides rich, visually appealing example content that helps users understand
- * what each slide type looks like when rendered.
+ * Sample content for the slide-type picker's preview thumbnails: rich example
+ * content that shows what each type looks like filled in, not empty.
  *
- * Types in the directory form carry their sample in their own authoring.js and
- * are imported here — see docs/reference/slide-type-directory.md.
+ * This file no longer *holds* the samples. Every core type declares its own as
+ * `sample` in `shared/slide-types/types/<name>/authoring.js`, and the map below
+ * is derived from the aggregator in shared/slide-types/authoring.js — the same
+ * A7.1 seam move that already pulled the picker glyphs out of
+ * slide-type-schematics.js (#448). A sample is a fact about a slide type, so
+ * adding or retiring a type touches the type's own directory and nothing here.
+ * See docs/reference/slide-type-directory.md.
+ *
+ * The four `SAMPLE_IMAGE*` module consts are gone: each type now inlines the
+ * placeholder picsum URL it needs. The seeds are meaningless ids and an
+ * authoring.js is self-contained plain data, so a shared const would only force
+ * an import against that principle or the same literal duplicated anyway —
+ * gallery-slide and logo-wall-slide already inlined theirs. The one seed the old
+ * module shared between image-text-slide and team-cards-slide (`slide-picker`)
+ * was an incidental collision, not a semantic link; both keep the exact URL.
  */
 
-import iconCardGridAuthoring from '../../../shared/slide-types/types/icon-card-grid-slide/authoring.js';
+import { SLIDE_TYPE_AUTHORING } from '../../../shared/slide-types/authoring.js';
 
-// Placeholder image URLs (using picsum for random images)
-const SAMPLE_IMAGE = 'https://picsum.photos/seed/slide-picker/800/600';
-const SAMPLE_IMAGE_2 = 'https://picsum.photos/seed/slide-picker-2/800/600';
-const SAMPLE_IMAGE_3 = 'https://picsum.photos/seed/slide-picker-3/800/600';
-const SAMPLE_IMAGE_4 = 'https://picsum.photos/seed/slide-picker-4/800/600';
-
-export const SLIDE_TYPE_SAMPLE_CONTENT = {
-  'title-slide': {
-    title: 'Presentation Title',
-    subheading: 'Your subtitle or tagline here',
-    meta: 'Your Name · June 2026',
-    background: 'lime',
-    logoCorner: 'right',
-  },
-
-  // Note: Custom slide types (from custom/slide-types/) should define their own
-  // sampleContent in the slide type definition. See getSampleContent().
-
-  'chapter-title-slide': {
-    title: 'Chapter One',
-  },
-
-  'content-slide': {
-    title: 'Key Insights',
-    layout: 'one-column',
-    body: '- First important point with details\n- Second point that matters\n- Third supporting argument\n- Final conclusion to remember',
-    background: 'lime',
-  },
-
-  'quote-slide': {
-    quote: 'The best way to predict the future is to create it.',
-    authorName: 'Peter Drucker',
-    authorTitle: 'Management Consultant',
-  },
-
-  'lijstje-slide': {
-    title: 'Our Process',
-    subheading: 'How we approach every project',
-    variant: 'numbers',
-    layout: 'one-column',
-    items: [
-      { title: 'Discovery', text: 'Understanding your needs and goals' },
-      { title: 'Strategy', text: 'Planning the optimal approach' },
-      { title: 'Execution', text: 'Delivering exceptional results' },
-      { title: 'Review', text: 'Continuous improvement' },
-    ],
-    background: 'lime',
-  },
-
-  'image-text-slide': {
-    image: SAMPLE_IMAGE,
-    caption: '',
-    alt: 'Sample image',
-    imageRole: 'content',
-    imageSide: 'left',
-    title: 'Visual Storytelling',
-    body: '- Engage your audience\n- Communicate complex ideas\n- Leave a lasting impression',
-    background: 'lime',
-  },
-
-  'image-slide': {
-    title: 'Full Image',
-    subheading: 'Beautiful visuals matter',
-    image: SAMPLE_IMAGE_2,
-    alt: 'Sample image',
-    imageRole: 'content',
-    caption: 'Caption for context',
-  },
-
-  'video-slide': {
-    title: 'Video Content',
-    source: '',
-    background: 'mist',
-    autoplay: 'off',
-  },
-
-  'poll-slide': {
-    pollId: 'sample-poll',
-    question: 'What do you think?',
-    option1: 'Strongly agree',
-    option2: 'Somewhat agree',
-    option3: 'Neutral',
-    option4: 'Disagree',
-    background: 'lime',
-  },
-
-  'likert-slide': {
-    statement: 'Rate your experience',
-    labels: ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'],
-    background: 'lime',
-  },
-
-  'likert-slider-slide': {
-    statement: 'How satisfied are you?',
-    labelLow: 'Not at all',
-    labelHigh: 'Completely',
-    background: 'lime',
-  },
-
-  'feedback-slide': {
-    question: 'What would you improve?',
-    placeholder: 'Share your thoughts...',
-    background: 'lime',
-  },
-
-  // card-stack-slide: DEPRECATED — removed from picker.
-  // Existing slides still render; new slides use icon-card-grid-slide.
-
-  'icon-card-grid-slide': iconCardGridAuthoring.sampleContent,
-
-  'team-cards-slide': {
-    title: 'Meet the Team',
-    subheading: '',
-    members: [
-      { image: SAMPLE_IMAGE, name: 'Jane Doe', byline: 'CEO & Founder' },
-      { image: SAMPLE_IMAGE_3, name: 'John Smith', byline: 'Head of Design' },
-      { image: SAMPLE_IMAGE_4, name: 'Alex Johnson', byline: 'Lead Developer' },
-    ],
-  },
-
-  'logo-wall-slide': {
-    title: 'Our Partners',
-    subheading: 'Trusted by industry leaders',
-    logos: [
-      { image: 'https://picsum.photos/seed/logo1/200/80', name: 'Acme Corp', alt: 'Acme Corp logo' },
-      { image: 'https://picsum.photos/seed/logo2/200/80', name: 'TechFlow', alt: 'TechFlow logo' },
-      { image: 'https://picsum.photos/seed/logo3/200/80', name: 'Innovate Inc', alt: 'Innovate Inc logo' },
-      { image: 'https://picsum.photos/seed/logo4/200/80', name: 'GlobalNet', alt: 'GlobalNet logo' },
-      { image: 'https://picsum.photos/seed/logo5/200/80', name: 'Summit Co', alt: 'Summit Co logo' },
-      { image: 'https://picsum.photos/seed/logo6/200/80', name: 'Bright Labs', alt: 'Bright Labs logo' },
-    ],
-  },
-
-  'payoff-slide': {
-    title: 'Thank You',
-    subheading: 'Questions?',
-    cta: 'Get in touch',
-  },
-
-  'split-partner-title-slide': {
-    title: 'Partnership',
-    subheading: 'Working together',
-    partnerLogo: '',
-    background: 'lime',
-  },
-
-  'table-slide': {
-    title: 'Quarterly Results',
-    caption: 'All figures in thousands',
-    headerRow: 'on',
-    colCount: '4',
-    rows: [
-      { c1: 'Metric', c2: 'Q1', c3: 'Q2', c4: 'Q3' },
-      { c1: 'Revenue', c2: '$120K', c3: '$185K', c4: '$240K' },
-      { c1: 'Users', c2: '2,400', c3: '3,800', c4: '5,200' },
-      { c1: 'Growth', c2: '+18%', c3: '+42%', c4: '+67%' },
-    ],
-    background: 'lime',
-  },
-
-  'chart-slide': (() => {
-    const chartTypes = ['bar', 'line', 'pie'];
-    const chartType = chartTypes[Math.floor(Math.random() * chartTypes.length)];
-    const chartData = {
-      bar: 'Quarter,Revenue\nQ1,45\nQ2,72\nQ3,89\nQ4,120',
-      line: 'Month,Sales,Target\nJan,30,25\nFeb,45,40\nMar,55,50\nApr,70,60\nMay,85,75',
-      pie: 'Category,Share\nProduct A,35\nProduct B,28\nProduct C,22\nProduct D,15',
-    };
-    return {
-      title: 'Growth Metrics',
-      chartType,
-      data: chartData[chartType],
-      showValues: 'yes',
-      showLegend: 'yes',
-      background: 'lime',
-    };
-  })(),
-
-
-  'kpi-metrics-slide': {
-    title: 'Key Metrics',
-    metric1Value: '98%',
-    metric1Label: 'Customer Satisfaction',
-    metric2Value: '500+',
-    metric2Label: 'Projects Completed',
-    metric3Value: '24/7',
-    metric3Label: 'Support Available',
-    background: 'lime',
-  },
-
-  'text-blocks-slide': {
-    title: 'Our Process',
-    subheading: 'From concept to delivery',
-    rows: [
-      {
-        title: '',
-        color: 'yellow',
-        arrow: 'down',
-        blocks: [
-          { title: 'Research', body: 'Understanding the challenge' },
-          { title: 'Design', body: 'Creating the solution' },
-          { title: 'Build', body: 'Making it real' },
-        ],
-      },
-      {
-        title: 'The Result',
-        color: 'black',
-        arrow: 'none',
-        blocks: [
-          { title: 'Launch', body: 'Going live' },
-          { title: 'Measure', body: 'Tracking success' },
-          { title: 'Iterate', body: 'Continuous improvement' },
-        ],
-      },
-    ],
-  },
-
-  'follow-invite-slide': {
-    enabled: true,
-    title: 'Join the presentation',
-    subheading: 'Scan the QR code',
-  },
-
-  'countdown-slide': {
-    title: 'Break',
-    durationMinutes: 5,
-    durationSeconds: 0,
-    background: 'dark',
-  },
-
-  'funnel-slide': {
-    title: 'Sales Funnel',
-    subheading: 'From awareness to conversion',
-    items: [
-      { label: 'Awareness', value: '10,000', text: 'Website visitors' },
-      { label: 'Interest', value: '3,000', text: '30% engagement' },
-      { label: 'Consideration', value: '800', text: 'Qualified leads' },
-      { label: 'Conversion', value: '200', text: 'New customers' },
-    ],
-    background: 'mist',
-  },
-
-  'pyramid-slide': {
-    title: 'Priority Pyramid',
-    subheading: 'Our focus areas',
-    levels: [
-      { label: 'Vision', text: 'Long-term goals' },
-      { label: 'Strategy', text: 'How we get there' },
-      { label: 'Tactics', text: 'Day-to-day actions' },
-      { label: 'Operations', text: 'Foundation' },
-    ],
-    background: 'mist',
-  },
-
-  'cycle-slide': {
-    title: 'Feedback Loop',
-    subheading: 'Continuous improvement',
-    centerLabel: 'Quality',
-    items: [
-      { label: 'Plan', text: 'Set objectives' },
-      { label: 'Do', text: 'Implement changes' },
-      { label: 'Check', text: 'Measure results' },
-      { label: 'Act', text: 'Standardise' },
-    ],
-    background: 'mist',
-  },
-
-  'gallery-slide': {
-    title: 'Project Highlights',
-    subheading: 'Recent work',
-    layout: 'grid',
-    images: [
-      { src: 'https://picsum.photos/seed/gallery1/800/600', caption: 'Project Alpha', alt: '' },
-      { src: 'https://picsum.photos/seed/gallery2/800/600', caption: 'Project Beta', alt: '' },
-      { src: 'https://picsum.photos/seed/gallery3/800/600', caption: 'Project Gamma', alt: '' },
-      { src: 'https://picsum.photos/seed/gallery4/800/600', caption: 'Project Delta', alt: '' },
-    ],
-    background: 'mist',
-  },
-};
+/**
+ * Sample content per slide type, derived from each type's `authoring.js`.
+ * Kept exported and keyed by type name because getSampleContent() below reads it
+ * by name, exactly as the old hand-written map was read.
+ * @type {Record<string, Object>}
+ */
+export const SLIDE_TYPE_SAMPLE_CONTENT = Object.fromEntries(
+  Object.entries(SLIDE_TYPE_AUTHORING)
+    .filter(([, authoring]) => authoring?.sample !== undefined)
+    .map(([type, authoring]) => [type, authoring.sample])
+);
 
 /**
  * Get sample content for a slide type, merging with defaults if needed.
  * Checks the slide type definition for sampleContent first, then falls back to
- * the hardcoded samples in this file.
+ * the per-type samples derived from each type's authoring.js.
  * @param {string} type - The slide type
  * @param {object} SLIDE_TYPES - The slide type definitions
  * @param {object} [theme] - Optional theme object for theme-specific sample content
@@ -304,7 +47,7 @@ export function getSampleContent(type, SLIDE_TYPES, theme) {
   const defaults = def?.defaults || def?.defaultsByLang?.['en-GB'] || {};
 
   // Check for sampleContent in the slide type definition first (for custom slide types)
-  // Then fall back to hardcoded samples in this file (for core slide types)
+  // Then fall back to the per-type samples derived from authoring.js (core types)
   const sample = def?.sampleContent || SLIDE_TYPE_SAMPLE_CONTENT[type];
 
   // Merge defaults with sample content (sample takes precedence)

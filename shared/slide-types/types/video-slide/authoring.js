@@ -14,4 +14,16 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'video' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Video Content',
+    source: '',
+    background: 'mist',
+    autoplay: 'off',
+  },
 };

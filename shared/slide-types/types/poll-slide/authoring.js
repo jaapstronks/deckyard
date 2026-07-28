@@ -14,4 +14,19 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'poll' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    pollId: 'sample-poll',
+    question: 'What do you think?',
+    option1: 'Strongly agree',
+    option2: 'Somewhat agree',
+    option3: 'Neutral',
+    option4: 'Disagree',
+    background: 'lime',
+  },
 };

@@ -24,4 +24,23 @@ export default {
     bullets: { kind: 'bullets' },
     numbers: { kind: 'numbers' },
   },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Our Process',
+    subheading: 'How we approach every project',
+    variant: 'numbers',
+    layout: 'one-column',
+    items: [
+      { title: 'Discovery', text: 'Understanding your needs and goals' },
+      { title: 'Strategy', text: 'Planning the optimal approach' },
+      { title: 'Execution', text: 'Delivering exceptional results' },
+      { title: 'Review', text: 'Continuous improvement' },
+    ],
+    background: 'lime',
+  },
 };

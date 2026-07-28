@@ -14,4 +14,20 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'kpi', cells: 4 },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Key Metrics',
+    metric1Value: '98%',
+    metric1Label: 'Customer Satisfaction',
+    metric2Value: '500+',
+    metric2Label: 'Projects Completed',
+    metric3Value: '24/7',
+    metric3Label: 'Support Available',
+    background: 'lime',
+  },
 };

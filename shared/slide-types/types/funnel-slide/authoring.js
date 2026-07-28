@@ -14,4 +14,21 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'funnel' },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Sales Funnel',
+    subheading: 'From awareness to conversion',
+    items: [
+      { label: 'Awareness', value: '10,000', text: 'Website visitors' },
+      { label: 'Interest', value: '3,000', text: '30% engagement' },
+      { label: 'Consideration', value: '800', text: 'Qualified leads' },
+      { label: 'Conversion', value: '200', text: 'New customers' },
+    ],
+    background: 'mist',
+  },
 };

@@ -14,4 +14,22 @@ export default {
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */
   schematic: { kind: 'logos', cells: 8 },
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Our Partners',
+    subheading: 'Trusted by industry leaders',
+    logos: [
+      { image: 'https://picsum.photos/seed/logo1/200/80', name: 'Acme Corp', alt: 'Acme Corp logo' },
+      { image: 'https://picsum.photos/seed/logo2/200/80', name: 'TechFlow', alt: 'TechFlow logo' },
+      { image: 'https://picsum.photos/seed/logo3/200/80', name: 'Innovate Inc', alt: 'Innovate Inc logo' },
+      { image: 'https://picsum.photos/seed/logo4/200/80', name: 'GlobalNet', alt: 'GlobalNet logo' },
+      { image: 'https://picsum.photos/seed/logo5/200/80', name: 'Summit Co', alt: 'Summit Co logo' },
+      { image: 'https://picsum.photos/seed/logo6/200/80', name: 'Bright Labs', alt: 'Bright Labs logo' },
+    ],
+  },
 };

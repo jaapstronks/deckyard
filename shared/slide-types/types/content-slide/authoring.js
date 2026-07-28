@@ -20,4 +20,16 @@ export default {
   // two-column layout is a CSS text-flow variant that only splits once the body
   // is long enough, so it reads as "one column" in an empty new slide. That
   // layout stays reachable via the editor's layout switcher.
+
+  /**
+   * Rich example content for the picker's preview thumbnails — what a good
+   * slide of this type looks like, not what an empty one looks like (that is
+   * `defaults` on the definition).
+   */
+  sample: {
+    title: 'Key Insights',
+    layout: 'one-column',
+    body: '- First important point with details\n- Second point that matters\n- Third supporting argument\n- Final conclusion to remember',
+    background: 'lime',
+  },
 };
