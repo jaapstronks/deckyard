@@ -26,6 +26,9 @@ const COPY = {
 
 export default {
   structure: 'chrome',
+  // `static`: the join code it renders is a render input the session hands
+  // over (ctx.followCodes), not state the session keeps for this slide.
+  runtime: 'static',
   label: 'Follow-along invite',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): the app inserts and maintains this slide itself, right

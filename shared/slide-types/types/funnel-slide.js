@@ -44,6 +44,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
 
 export default {
   structure: 'collection',
+  runtime: 'static',
   label: 'Funnel',
   fields: [
     {

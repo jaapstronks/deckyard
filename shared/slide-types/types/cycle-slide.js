@@ -55,6 +55,7 @@ function arrowHtml(idx, total) {
 
 export default {
   structure: 'collection',
+  runtime: 'static',
   label: 'Cycle',
   fields: [
     {

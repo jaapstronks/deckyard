@@ -53,6 +53,7 @@ function imageHtml(image, idx, copy) {
 
 export default {
   structure: 'collection',
+  runtime: 'static',
   label: 'Gallery',
   fields: [
     {

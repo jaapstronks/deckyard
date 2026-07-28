@@ -39,6 +39,7 @@ function cellHtml(cell, idx) {
 
 export default {
   structure: 'fixed-collection',
+  runtime: 'static',
   label: 'Matrix',
   fields: [
     {

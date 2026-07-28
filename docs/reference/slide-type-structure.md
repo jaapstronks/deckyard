@@ -158,10 +158,13 @@ or more type names must be accounted for, with a kind and a reason; 46 modules
 qualify. Full account in
 [`slide-type-companions.md`](./slide-type-companions.md#the-name-branching-inventory--no-hole-in-the-matrix).
 
-Its most useful finding is an argument for the next facet: **nine modules
-re-derive the live-interaction quartet by hand**, all asking one question the
-types cannot answer — does this slide collect answers from the audience? That is
-`runtime`, deferred below for want of a consumer. There are nine.
+Its most useful finding was an argument for the next facet: **nine modules
+re-derived the live-interaction quartet by hand**, all asking one question the
+types could not answer — does this slide collect answers from the audience?
+That is `runtime`, and it now exists: see
+[`slide-type-runtime.md`](./slide-type-runtime.md). Ten modules left the
+inventory when it landed, and the floor assertion that measured them was
+replaced by a ceiling that forbids the pattern.
 
 ## What is not here yet
 
@@ -170,14 +173,15 @@ types cannot answer — does this slide collect answers from the audience? That 
   read from the registry — that is slide-type-seam work, not facet work.
 - **The other facets.** `intent` (frame / enumerate / sequence / compare /
   quantify / ask) and `payload` are real and still without a consumer; built
-  when there is one. `runtime` (static / live / timed) no longer qualifies —
-  assertion 5 found nine modules hand-rolling it — but declaring it is its own
-  change, with its own burndown.
+  when there is one. `runtime` (static / live / timed) shipped as the second
+  facet — nine modules were hand-rolling it — and has its own page.
 
 ## See also
 
 - `shared/slide-types/structure.js` — the vocabulary.
 - `tests/slide-type-structure.test.js` — the guardrail and the burndown.
+- [`slide-type-runtime.md`](./slide-type-runtime.md) — the second facet: what
+  the presenting session has to do for a type.
 - [`slide-type-removal.md`](./slide-type-removal.md) — the deprecation ladder,
   including the alias-versus-deprecation distinction.
 - [`slide-type-companions.md`](./slide-type-companions.md) — the per-type

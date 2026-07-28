@@ -1,6 +1,10 @@
 import { serveJson } from '../../utils/http.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { slideStructure } from '../../../shared/slide-types/structure.js';
+import {
+  slideLiveInteraction,
+  slideRuntime,
+} from '../../../shared/slide-types/runtime.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { createRouteContext } from '../../utils/context.js';
 
@@ -26,6 +30,14 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         // (picker groups, settings categories, conversion) stop needing a
         // hand-written table. See shared/slide-types/structure.js.
         structure: slideStructure(def) || undefined,
+        // The `runtime` facet: what the presenting session has to do for this
+        // type beyond serving it (static / timed / live). Additive in the same
+        // way, and the answer nine modules used to hard-code as a list of four
+        // type names. `interaction` is the sub-contract `live` implies — which
+        // kind of answer the audience sends — and is absent on everything else.
+        // See shared/slide-types/runtime.js.
+        runtime: slideRuntime(def) || undefined,
+        interaction: slideLiveInteraction(def) || undefined,
         themeId:
           typeof def.themeId === 'string' && def.themeId.trim()
             ? def.themeId.trim()

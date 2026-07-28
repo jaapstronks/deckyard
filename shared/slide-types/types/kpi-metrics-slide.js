@@ -46,6 +46,7 @@ function parseNoteTone(noteRaw) {
 
 export default {
   structure: 'collection',
+  runtime: 'static',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',

@@ -23,6 +23,7 @@ import listSlide from './list-slide.js';
  */
 export default {
   structure: 'collection',
+  runtime: 'static',
   ...listSlide,
   // Renderable, not authorable: drops out of the picker (isInsertableSlideType)
   // and out of AI/MCP (isAgentOptOut).

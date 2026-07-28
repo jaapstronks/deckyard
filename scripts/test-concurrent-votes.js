@@ -16,6 +16,8 @@
 import http from 'http';
 import https from 'https';
 
+import { liveInteractionKind } from '../shared/slide-types/runtime.js';
+
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4177';
 const PRESENTATION_ID = process.argv[2];
 const NUM_CLIENTS = parseInt(process.argv[3], 10) || 15;
@@ -284,7 +286,11 @@ async function runTest() {
   console.log(`      Slide type: ${sampleClient.slideType}`);
   console.log(`      Option count: ${sampleClient.optionCount}`);
 
-  if (!['poll-slide', 'likert-slide', 'likert-slider-slide'].includes(sampleClient.slideType)) {
+  // A vote needs a slide that collects a choice, which the type declares: any
+  // live type except the free-text one. Even the throwaway tooling used to pay
+  // for the missing capability with its own list of names.
+  const kind = liveInteractionKind(sampleClient.slideType);
+  if (kind !== 'poll' && kind !== 'likert') {
     console.error('');
     console.error('ERROR: Current slide is not interactive.');
     console.error(`       Found: ${sampleClient.slideType || 'none'}`);

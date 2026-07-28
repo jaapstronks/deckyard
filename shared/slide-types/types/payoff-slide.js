@@ -2,6 +2,7 @@ import { esc } from '../helpers.js';
 
 export default {
   structure: 'chrome',
+  runtime: 'static',
   label: 'Payoff',
   fields: [],
   defaults: {},

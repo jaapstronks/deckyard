@@ -142,10 +142,10 @@ those in; the inventory (and what a fork-local type can supply from its own
 definition instead) is in
 [`docs/reference/slide-type-companions.md`](../reference/slide-type-companions.md).
 
-A core type also owes one key on the definition itself: `structure` (see the
-Extension Properties table below). That one is not a companion — a missing
-`structure` fails CI outright rather than degrading — and fork-local types are
-exempt.
+A core type also owes two keys on the definition itself: `structure` and
+`runtime` (see the Extension Properties table below), plus `interaction` if it
+declares `runtime: 'live'`. Those are not companions — a missing declaration
+fails CI outright rather than degrading — and fork-local types are exempt.
 
 ---
 
@@ -435,6 +435,8 @@ For image fields, `presetSource` controls which presets appear:
 | `ai` | object | AI wizard metadata (see AI Wizard Integration section) |
 | `inline` | object | Inline (WYSIWYG) edit descriptor for the editor canvas (see below) |
 | `structure` | string | The shape of the type's primary content: `singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-structure.md`](../reference/slide-type-structure.md) |
+| `runtime` | string | What the presenting session has to do for the type: `static`, `timed` or `live`. **Required on core types** and CI-enforced; optional on fork-local types. See [`docs/reference/slide-type-runtime.md`](../reference/slide-type-runtime.md) |
+| `interaction` | string | Which kind of answer a `live` type collects: `poll`, `likert` or `feedback`. Required on `live` types, forbidden on the others |
 
 ---
 

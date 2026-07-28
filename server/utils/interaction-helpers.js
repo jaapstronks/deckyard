@@ -4,23 +4,14 @@
  */
 
 import { nonEmpty } from '../../shared/slide-types/helpers.js';
+import { liveInteractionKind } from '../../shared/slide-types/runtime.js';
 
 // Re-export for backwards compatibility
 export { nonEmpty };
 
-/**
- * Check if a slide type is interactive (requires interaction state)
- * @param {string} slideType - The slide type
- * @returns {boolean} True if the slide type supports interactions
- */
-export function isInteractiveSlideType(slideType) {
-  return (
-    slideType === 'poll-slide' ||
-    slideType === 'likert-slide' ||
-    slideType === 'likert-slider-slide' ||
-    slideType === 'feedback-slide'
-  );
-}
+// `isInteractiveSlideType()` used to live here as a hard-coded list of four
+// type names — one of nine copies. It is now `isLiveSlideType()` in
+// shared/slide-types/runtime.js, which asks the type instead of recognising it.
 
 /**
  * Get content object from slide safely
@@ -150,20 +141,25 @@ export function findSlideById(pres, slideId) {
 }
 
 /**
- * Get option count for any interactive slide type
+ * Get option count for any live slide type
+ *
+ * Dispatches on the declared interaction kind, not on the type name. The one
+ * remaining name check is `likert-slider-slide`'s: the slider asks for a point
+ * on the same scale a likert slide does (same protocol kind), but its ten stops
+ * are fixed by the widget rather than authored as options.
+ *
  * @param {string} slideType - The slide type
  * @param {Object} slide - The slide object
  * @returns {number} Number of options for the slide type
  */
 export function getOptionCountForSlide(slideType, slide) {
-  if (slideType === 'likert-slide') {
-    return slide ? likertOptionCountFromSlide(slide) : 0;
+  if (!slide) return 0;
+  const kind = liveInteractionKind(slideType);
+  if (kind === 'likert') {
+    return slideType === 'likert-slider-slide'
+      ? likertSliderOptionCountFromSlide(slide)
+      : likertOptionCountFromSlide(slide);
   }
-  if (slideType === 'likert-slider-slide') {
-    return slide ? likertSliderOptionCountFromSlide(slide) : 0;
-  }
-  if (slideType === 'poll-slide') {
-    return slide ? pollOptionCountFromSlide(slide) : 0;
-  }
+  if (kind === 'poll') return pollOptionCountFromSlide(slide);
   return 0;
 }

@@ -3,6 +3,8 @@ import { getSlideCopy } from '../slide-copy.js';
 
 export default {
   structure: 'singleton',
+  runtime: 'live',
+  interaction: 'feedback',
   label: 'Feedback',
   fields: [
     {

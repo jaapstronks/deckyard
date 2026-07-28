@@ -35,6 +35,7 @@ import {
 
 export default {
   structure: 'dataset',
+  runtime: 'static',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Chart',

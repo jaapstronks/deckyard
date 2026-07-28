@@ -12,17 +12,14 @@ import { isInsertableSlideType } from './slide-types-policy.js';
 import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
+import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 
-// Interactive slide types that require audience participation
-const INTERACTIVE_SLIDE_TYPES = new Set([
-  'poll-slide',
-  'likert-slide',
-  'likert-slider-slide',
-  'feedback-slide',
-]);
-
+// Which slide types need audience participation, and therefore a follow-invite
+// slide in the deck for the audience to join through. Declared by the type
+// (`runtime: 'live'`), not listed here — this used to be one of nine hand-rolled
+// copies of the same four names. See shared/slide-types/runtime.js.
 function isInteractiveSlideType(type) {
-  return INTERACTIVE_SLIDE_TYPES.has(type);
+  return isLiveSlideType(type);
 }
 
 function hasFollowInviteSlide(slides) {

@@ -26,6 +26,7 @@ const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'Title slide',
   fieldGroups: [TITLE_BLOCK.group],
   fields: [

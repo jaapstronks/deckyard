@@ -3,6 +3,7 @@ import { parseCookies } from '../../../utils/cookies.js';
 import { normalizeLang } from '../../../utils/translation-status.js';
 import { isHttpsRequest } from '../../../utils/request-url.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
 
 /**
  * The storage scope the follow-along audience reads under.
@@ -130,19 +131,10 @@ export function isQaEnabledForPresentation(pres) {
 export function computeAudienceCapabilitiesFromState(state, pres) {
   const live = String(state?.status || '') === 'live';
   const slideType = String(state?.slideType || '');
-  const interactionType =
-    live &&
-    (slideType === 'poll-slide' ||
-      slideType === 'likert-slide' ||
-      slideType === 'likert-slider-slide' ||
-      slideType === 'feedback-slide')
-      ? slideType === 'likert-slide' ||
-        slideType === 'likert-slider-slide'
-        ? 'likert'
-        : slideType === 'feedback-slide'
-          ? 'feedback'
-        : 'poll'
-      : null;
+  // What the audience may do here is the slide type's declared capability, not
+  // a list of names this module keeps: `runtime: 'live'` plus the interaction
+  // kind it collects. See shared/slide-types/runtime.js.
+  const interactionType = (live && liveInteractionKind(slideType)) || null;
   const interaction = interactionType
     ? {
         type: interactionType,

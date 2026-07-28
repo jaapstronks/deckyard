@@ -53,6 +53,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  * renames one type into another, a keyboard handler that treats title and
  * chapter-title alike) whose reasons would all read "these two, by nature". The
  * gate would get noisier without getting stricter, so: 3, written down.
+ *
+ * (Those counts are the reading from 2026-07-28. Ten modules left the inventory
+ * when the `runtime` facet landed, which is the shape of progress this gate is
+ * supposed to produce: the number goes down because knowledge moved onto the
+ * types, not because the threshold moved.)
  */
 export const BRANCH_THRESHOLD = 3;
 
@@ -402,76 +407,19 @@ export const INVENTORY = {
   },
 
   // --- closed-set special cases: not tables --------------------------------
-  'client/views/follow/interactions.js': {
-    kind: specific,
-    why:
-      'The live-interaction quartet (poll, likert, likert-slider, feedback): ' +
-      'which slide the audience view accepts input on, and which widget it ' +
-      'draws. One of nine modules that re-derive the same four names — see the ' +
-      'measurement at the foot of the test.',
-  },
-  'client/views/presenter/interaction-controls.js': {
-    kind: specific,
-    why:
-      'The quartet again, presenter side: whether the toolbar shows open/close ' +
-      'voting and a live result count for the current slide.',
-  },
-  'client/views/presenter/deck-controller.js': {
-    kind: specific,
-    why:
-      'Which slides the presenter treats as live and therefore polls for state: ' +
-      'part of the quartet plus follow-invite. A fifth variation on the same ' +
-      'question, with a slightly different answer — which is how these drift.',
-  },
-  'server/utils/interaction-helpers.js': {
-    kind: specific,
-    why:
-      'The quartet again, plus the shape each one stores a response in (an ' +
-      'option index, a scale value, free text). The closest thing to a real ' +
-      'home for the capability, and still a hard-coded list.',
-  },
-  'server/routes/api/follow/helpers.js': {
-    kind: specific,
-    why:
-      'The quartet again, deciding whether a follow request may submit anything ' +
-      'for the slide it names. A security-adjacent copy of the same list.',
-  },
-  'server/routes/api/follow/interactions.js': {
-    kind: specific,
-    why:
-      'The quartet again, validating the submitted payload against the type of ' +
-      'the slide it targets.',
-  },
-  'server/routes/api/present-sessions.js': {
-    kind: specific,
-    why:
-      'The quartet again, guarding which slide a running session will accept ' +
-      'votes for and how it aggregates them.',
-  },
-  'server/storage/present-sessions/control.js': {
-    kind: specific,
-    why:
-      'The quartet again, at the storage layer: which state a slide keeps while ' +
-      'the session is live.',
-  },
-  'scripts/test-concurrent-votes.js': {
-    kind: specific,
-    why:
-      'A load-test script that needs a votable slide to hammer, so it names the ' +
-      'quartet too. Even the throwaway tooling pays for the missing capability.',
-  },
-  'client/views/editor/slides-panel.js': {
-    kind: specific,
-    why:
-      'The interaction quartet (which slides get a live badge) plus ' +
-      'follow-invite\'s singleton behaviour — one per deck, appended at the end.',
-  },
+  //
+  // Ten entries left this section when the `runtime` facet landed: nine that
+  // hand-rolled the live-interaction set plus the presenter's deck controller,
+  // which answered the same question a tenth way. They ask the type now.
   'client/lib/slide-runtime/slide-render.js': {
     kind: specific,
     why:
       'The three types that mount runtime behaviour after render: follow-invite, ' +
       'lead-capture and countdown. A closed set by construction — a type without ' +
-      'a runtime hook needs no entry.',
+      'a runtime hook needs no entry. Note this is *not* the `runtime` facet: ' +
+      'that one is about what the session does for a slide, and cuts the set ' +
+      'differently (these three are static, static and timed). One consumer, one ' +
+      'near-miss axis, deliberately not folded in.',
   },
   'server/mcp/tools.js': {
     kind: specific,
@@ -499,13 +447,8 @@ export const INVENTORY = {
   },
 };
 
-/**
- * The interaction quartet, named once here so the test can measure how many
- * modules re-derive it by hand.
- */
-export const INTERACTION_TYPES = Object.freeze([
-  'poll-slide',
-  'likert-slide',
-  'likert-slider-slide',
-  'feedback-slide',
-]);
+// The interaction quartet used to be named here, so the test could measure how
+// many modules re-derived it by hand. The answer was nine, which is why the
+// types now declare `runtime: 'live'` and the set comes from
+// shared/slide-types/runtime.js. The measurement lives on as a ceiling in
+// tests/slide-type-runtime.test.js: no module may write the set out again.

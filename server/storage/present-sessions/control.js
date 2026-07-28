@@ -1,9 +1,7 @@
 import { broadcast, getSessionSync, touchSessionSync, updatePresentSessionState } from './sse.js';
 import { getPresentation } from '../presentations/index.js';
-import {
-  isInteractiveSlideType,
-  getOptionCountForSlide,
-} from '../../utils/interaction-helpers.js';
+import { getOptionCountForSlide } from '../../utils/interaction-helpers.js';
+import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import {
   ensurePollInteractionForSlide,
   ensureLikertInteractionForSlide,
@@ -118,11 +116,12 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
             updatedAt: Date.now(),
           });
 
-          // If this is an interactive slide, eagerly ensure interaction state exists
+          // If this is a live slide, eagerly ensure interaction state exists
           // (same logic as in present-sessions.js POST /state handler)
-          if (isInteractiveSlideType(slideType) && slideId) {
+          const kind = liveInteractionKind(slideType);
+          if (kind && slideId) {
             try {
-              if (slideType === 'feedback-slide') {
+              if (kind === 'feedback') {
                 await ensureFeedbackForSlide(repoRoot, sessionId, {
                   presentationId,
                   slideId,
@@ -130,7 +129,7 @@ export async function sendPresentSessionControlCommand(repoRoot, sessionId, cmd)
               } else {
                 const optionCount = getOptionCountForSlide(slideType, slide);
                 if (optionCount > 0) {
-                  if (slideType === 'likert-slide' || slideType === 'likert-slider-slide') {
+                  if (kind === 'likert') {
                     await ensureLikertInteractionForSlide(repoRoot, sessionId, {
                       presentationId,
                       slideId,
