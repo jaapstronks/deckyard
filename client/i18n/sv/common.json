@@ -90,5 +90,9 @@
   "notifications.filter.archived": "Arkiverade",
   "notifications.archive": "Arkivera",
   "notifications.archiveAll": "Arkivera alla",
-  "notifications.empty.archived": "Inget arkiverat ännu"
+  "notifications.empty.archived": "Inget arkiverat ännu",
+  "maintenance.banner.text": "Deckyard är kortvarigt otillgängligt på grund av underhåll. Ditt arbete finns kvar här och sparas så snart det är tillbaka.",
+  "maintenance.readOnly.banner": "Pausat för underhåll - ditt arbete finns kvar",
+  "maintenance.toast.paused": "Deckyard är kortvarigt otillgängligt. Redigering är pausad och ditt arbete finns kvar här.",
+  "maintenance.toast.resumed": "Deckyard är tillbaka. Ditt arbete sparas igen."
 }

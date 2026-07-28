@@ -23,6 +23,7 @@ import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
 import { initializeMediaProvider } from './media/index.js';
 import { startHeartbeat, stopHeartbeat } from './services/comment-events.js';
+import { announceMaintenance } from './services/maintenance.js';
 import { scheduleAuthCleanup } from './jobs/auth-cleanup.js';
 import { scheduleDigestEmailJob } from './jobs/digest-email.js';
 import { scheduleAnalyticsCleanup } from './jobs/analytics-cleanup.js';
@@ -250,6 +251,16 @@ server.listen(PORT, HOST, () => {
 // Graceful shutdown
 async function shutdown(signal) {
   console.log(`\n[Server] Received ${signal}, shutting down...`);
+  // Tell open editors before anything closes: go read-only, pause autosave,
+  // keep the work in the browser. This is the moment a deploy actually hurts —
+  // a container booting with MAINTENANCE_MODE set would be announcing it to
+  // nobody, because the connections are all on the container going down.
+  try {
+    const { notified } = announceMaintenance(true, { reason: 'shutdown' });
+    if (notified > 0) console.log(`[Server] Maintenance announced to ${notified} client(s)`);
+  } catch {
+    // Never let the announcement block the shutdown it precedes.
+  }
   stopHeartbeat(); // Stop SSE heartbeat
   await shutdownCollab(); // Close collab WebSocket connections
   authCleanupJob.stop(); // Stop auth cleanup job

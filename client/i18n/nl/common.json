@@ -296,5 +296,9 @@
   "viewer.permission.comment": "Mag reageren",
   "viewer.permission.edit": "Bewerken",
   "viewer.permission.view": "Alleen bekijken",
-  "viewer.slides.title": "Slides"
+  "viewer.slides.title": "Slides",
+  "maintenance.banner.text": "Deckyard is even niet bereikbaar wegens onderhoud. Je werk blijft hier staan en wordt opgeslagen zodra het terug is.",
+  "maintenance.readOnly.banner": "Gepauzeerd voor onderhoud - je werk blijft bewaard",
+  "maintenance.toast.paused": "Deckyard is even niet bereikbaar. Bewerken is gepauzeerd en je werk blijft hier staan.",
+  "maintenance.toast.resumed": "Deckyard is terug. Je werk wordt weer opgeslagen."
 }

@@ -90,5 +90,9 @@
   "notifications.filter.archived": "Archiviert",
   "notifications.archive": "Archivieren",
   "notifications.archiveAll": "Alle archivieren",
-  "notifications.empty.archived": "Noch nichts archiviert"
+  "notifications.empty.archived": "Noch nichts archiviert",
+  "maintenance.banner.text": "Deckyard ist wegen Wartung kurz nicht erreichbar. Deine Arbeit bleibt hier und wird gespeichert, sobald es wieder da ist.",
+  "maintenance.readOnly.banner": "Wegen Wartung pausiert - deine Arbeit bleibt erhalten",
+  "maintenance.toast.paused": "Deckyard ist kurz nicht erreichbar. Die Bearbeitung ist pausiert und deine Arbeit bleibt hier.",
+  "maintenance.toast.resumed": "Deckyard ist zurück. Deine Arbeit wird wieder gespeichert."
 }

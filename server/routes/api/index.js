@@ -1,5 +1,11 @@
-import { notFound, unauthorized, forbidden } from '../../utils/http.js';
+import { notFound, unauthorized, forbidden, jsonError, serveJson, methodNotAllowed } from '../../utils/http.js';
 import { isCsrfSafe } from '../../utils/csrf.js';
+import {
+  getMaintenanceState,
+  isMaintenanceActive,
+  isWriteMethod,
+  maintenanceRetryAfterSeconds,
+} from '../../config/maintenance.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { getFeatureFlags } from '../../config/feature-flags.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
@@ -65,6 +71,33 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // same-origin requests. See docs/plans/security-hardening.md item 5c.
   if (!isCsrfSafe(req)) {
     return forbidden(res, 'Cross-site request blocked (CSRF)');
+  }
+
+  // Maintenance state. Public and unauthenticated on purpose: a client that
+  // reconnects after a restart has to be able to ask "are you back?" before it
+  // knows whether its session survived, and the answer leaks nothing.
+  if (url.pathname === '/api/maintenance') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+    serveJson(res, 200, getMaintenanceState());
+    return;
+  }
+
+  // Maintenance mode refuses writes with a 503 that says when to come back,
+  // instead of letting them hit a database that is mid-migration or a process
+  // that is mid-shutdown. Reads stay open: a read-only Deckyard still serves
+  // viewers and presenters, and blocking GETs would turn a restart into an
+  // outage for people who are not writing anything.
+  if (isMaintenanceActive() && isWriteMethod(req.method)) {
+    return jsonError(
+      res,
+      503,
+      'maintenance',
+      'Deckyard is briefly unavailable for maintenance. Your work is kept in the browser and will save when it is back.',
+      {
+        details: getMaintenanceState(),
+        headers: { 'Retry-After': String(maintenanceRetryAfterSeconds()) },
+      }
+    );
   }
 
   // Public API v1 routes (API key authentication, separate from session-based auth)

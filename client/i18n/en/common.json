@@ -288,5 +288,9 @@
   "viewer.permission.comment": "Can comment",
   "viewer.permission.edit": "Edit",
   "viewer.permission.view": "View only",
-  "viewer.slides.title": "Slides"
+  "viewer.slides.title": "Slides",
+  "maintenance.banner.text": "Deckyard is briefly unavailable for maintenance. Your work is kept here and saves as soon as it is back.",
+  "maintenance.readOnly.banner": "Paused for maintenance - your work is kept",
+  "maintenance.toast.paused": "Deckyard is briefly unavailable. Editing is paused and your work is kept here.",
+  "maintenance.toast.resumed": "Deckyard is back. Your work is saving again."
 }
