@@ -36,6 +36,32 @@ function contentDefKey(typeName) {
 }
 
 /**
+ * Whether a field belongs in the *published* contract.
+ *
+ * A definition's `fields[]` is the editor's list, and it deliberately carries
+ * shapes we no longer want anyone to build on: the legacy numbered mirrors of
+ * an `items[]` array (`card1Name`…`card25Linkedin`), their counters, and the
+ * hidden slots the dual-write still reads. Those keys keep *parsing* - the
+ * schema stays lenient (`additionalProperties: true`), so stored decks that
+ * carry them still validate - but publishing them under `properties` states
+ * them as the contract, which is the opposite of what `deprecated`/`hidden`
+ * mean.
+ *
+ * `ai: false` is deliberately **not** part of this test. That flag withholds a
+ * field from agents for editorial reasons (`video-slide.watchUrl` points at a
+ * landing page only a human knows exists); it is a live field an author fills,
+ * so it stays in the contract. Compare `isFieldOptOut()` in
+ * `server/utils/ai/slide-catalog/agent-catalog.js`, which is the agent-facing
+ * predicate and does include `ai: false`.
+ *
+ * @param {any} field
+ * @returns {boolean}
+ */
+function isPublishedField(field) {
+  return field?.deprecated !== true && field?.hidden !== true;
+}
+
+/**
  * JSON Schema for a single field's value, derived from its declared type plus
  * field-level constraints. Kept lenient (no `additionalProperties: false`) so
  * legacy decks with extra keys still validate - the schema is a contract, not a
@@ -96,6 +122,7 @@ function itemsToJsonSchema(field) {
   const required = [];
   for (const f of itemFields) {
     if (!f || typeof f.key !== 'string') continue;
+    if (!isPublishedField(f)) continue;
     properties[f.key] = fieldToJsonSchema(f);
     if (f.required) required.push(f.key);
   }
@@ -111,6 +138,10 @@ function itemsToJsonSchema(field) {
 
 /**
  * JSON Schema for one slide type's `content` object.
+ *
+ * Only fields that pass `isPublishedField()` become `properties`: a
+ * `deprecated`/`hidden` field is a legacy representation the editor still
+ * reads, not something the published contract should promise.
  * @param {string} typeName
  * @param {any} def - the slide-type definition (with `fields[]`)
  * @param {{withMeta?: boolean}} [opts] - withMeta adds `$id`/`$schema` (for a
@@ -123,6 +154,7 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
   const required = [];
   for (const field of fields) {
     if (!field || typeof field.key !== 'string') continue;
+    if (!isPublishedField(field)) continue;
     properties[field.key] = fieldToJsonSchema(field);
     if (field.required) required.push(field.key);
   }

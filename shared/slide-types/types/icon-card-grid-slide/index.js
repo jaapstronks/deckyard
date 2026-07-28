@@ -54,8 +54,11 @@ export default {
       required: false,
       options: ['1', '2', '3', '4', '5', '6'],
       // Legacy counter for the numbered card{N}* fields below; items[] carries
-      // its own length. Out of the agent contract for the same reason they are.
+      // its own length. Out of the agent contract for the same reason they are,
+      // and `deprecated` for the same reason: it is not part of the published
+      // contract either.
       ai: false,
+      deprecated: true,
     },
 
     // New items[] format (preferred for AI generation)
