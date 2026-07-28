@@ -22,6 +22,36 @@ resolves a custom theme by trying the folder layout first, then the flat file.
 
 ---
 
+## The built-in set
+
+Six themes ship in `themes/`. Only one of them is Deckyard's own; the rest are
+neutral archetypes meant to be picked, forked or ignored.
+
+| id | label | palette | note |
+|----|-------|---------|------|
+| `brand` | Forest | forest green `#254d38` + brass `#b8860f` on warm paper | **the default** — Deckyard's own colours, the ones the logo mark and deckyard.eu use |
+| `deckyard` | Deckyard | violet `#7c3aed` | keeps its id and label; was the default until the brand theme landed |
+| `corporate` | Boardroom | blue `#2563eb` | |
+| `editorial` | Editorial | carmine `#9f1239` | |
+| `midnight` | Midnight | cyan `#38bdf8` on near-black | the dark archetype |
+| `playful` | Sunset | orange `#ea580c` | |
+
+Two things follow from `brand` being the default rather than `deckyard`:
+
+- **A theme is the *user's* house style, not the product's.** That claim is on
+  the marketing site, so the product's own colours have to live in one theme
+  among six, not in the fallback everyone inherits by accident.
+- **Marketing and docs screenshots are shot on `brand`**, so a screenshot and
+  the page around it are the same colour. `capture/` recipes therefore pin the
+  theme explicitly rather than relying on the default.
+
+Adding or renaming a built-in touches **two** places: the JSON file in
+`themes/`, and the `THEMES` array in `shared/slide-types/registry.js`. That
+array is the validation enum — a theme file on disk that is missing from it is
+rejected when a deck tries to save with it.
+
+---
+
 ## Quick Start: Adding a Custom Theme (folder layout)
 
 1. Create the folder and `theme.json`:

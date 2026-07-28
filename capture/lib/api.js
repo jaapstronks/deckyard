@@ -7,6 +7,8 @@
  * auth headers are needed.
  */
 
+import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+
 /**
  * @typedef {object} ApiClient
  * @property {(pathname: string) => Promise<any>} get
@@ -119,7 +121,7 @@ export async function deleteDecksByPrefix(api, prefix) {
  * @param {{title: string, theme?: string, slides?: unknown[]}} spec
  * @returns {Promise<string>} deck id
  */
-export async function seedDeck(api, { title, theme = 'deckyard', slides = [] }) {
+export async function seedDeck(api, { title, theme = DEFAULT_THEME_ID, slides = [] }) {
   const created = await api.post('/api/presentations', { title, theme });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);

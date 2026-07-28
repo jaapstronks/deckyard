@@ -9,6 +9,7 @@ import {
   hasEnvValue,
   strayAiKeyWarnings,
 } from '../scripts/setup.js';
+import { DEFAULT_THEME_ID } from '../shared/constants/themes.js';
 
 test('upsertEnv uncomments and sets a commented template line in place', () => {
   const example = ['# PORT=4177', '# DEFAULT_THEME=deckyard'].join('\n');
@@ -99,7 +100,7 @@ test('flagUpdates --auth on generates a secret and omits AUTH_ENABLED', () => {
 });
 
 test('flagUpdates ignores a provider key without a value, and default theme', () => {
-  const u = flagUpdates({ ai: 'openai', theme: 'deckyard' });
+  const u = flagUpdates({ ai: 'openai', theme: DEFAULT_THEME_ID });
   assert.equal(u.OPENAI_API, undefined); // no --ai-key given
   assert.equal(u.DEFAULT_THEME, undefined); // default theme not written
 });

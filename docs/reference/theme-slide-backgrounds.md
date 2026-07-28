@@ -31,7 +31,8 @@ per-slide-type code.
 - `textColorMuted` (optional, needs `textColor`) — explicit muted colour;
   defaults to a 70% `color-mix` of `textColor`.
 
-The default `deckyard` theme ships a `calm` variant as a living example.
+The default `brand` theme (and the older `deckyard` one) ships a `calm` variant
+as a living example.
 
 ## How it works
 

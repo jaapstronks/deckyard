@@ -75,7 +75,7 @@ Recognised flags:
 | `--auth` | `on` \| `off` | On generates a strong `AUTH_SECRET`; off disables auth |
 | `--admin-email` | email | The user who gets the admin role (with `--auth=on`) |
 | `--port` | number | App port (default 4177) |
-| `--theme` | theme id | Default theme (default `deckyard`) |
+| `--theme` | theme id | Default theme (default `brand`) |
 
 The wizard upserts only the keys it is given on top of `.env.example`, so
 `.env.example` stays the full reference and nothing set by hand is lost. Never
