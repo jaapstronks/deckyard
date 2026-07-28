@@ -5,6 +5,11 @@ export default {
   structure: 'singleton',
   runtime: 'static',
   label: 'End / Contact',
+  // `.slide-end .slide-inner` centres everything (11-end-slide.css). Declared
+  // so the style panel reports the alignment that is actually in force, and so
+  // picking "Left" emits a class that can beat that slide rule instead of
+  // silently storing nothing. See docs/reference/text-alignment.md.
+  defaultAlign: 'center',
   fields: [
     {
       key: 'title',

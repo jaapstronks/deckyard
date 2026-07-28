@@ -117,7 +117,7 @@ export default {
         <div class="slide slide-partner-split">
           <div class="slide-inner">
             <div class="split-50">
-              <div class="left">
+              <div class="left on-surface-light">
                 <div class="logo-stack" data-morph-role="logo">${logosHtml}</div>
               </div>
               <div class="right">

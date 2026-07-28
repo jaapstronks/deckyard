@@ -8,6 +8,7 @@ import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
 import { buildNotesDocxBuffer, buildNotesMarkdown } from '../../export/notes.js';
 import { renderSlideToPngBuffer } from '../../render/png.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
 import { badRequest } from '../../utils/http.js';
@@ -188,6 +189,7 @@ async function handlePngSlideExport({ repoRoot, req, res, url, authedUser }) {
       scale,
       theme: ctx.theme,
       slideTypes: ctx.slideTypes,
+      lang: resolveDeckLang(ctx.pres),
     });
 
     sendExportResponse(res, {

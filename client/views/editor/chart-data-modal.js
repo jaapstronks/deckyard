@@ -22,6 +22,8 @@ import { t } from '../../lib/ui-i18n.js';
  * @param {Object} opts.slide - The chart slide being edited
  * @param {Object} [opts.theme] - Active theme, for a faithful preview
  * @param {string} [opts.presentationId]
+ * @param {string|null} [opts.lang] - Deck language, so the preview's legend label
+ *   matches what the canvas shows
  * @param {Function} opts.markDirty
  * @param {Function} [opts.requestSave]
  * @param {Function} [opts.rerenderEditor]
@@ -34,6 +36,7 @@ export function openChartDataModal({
   slide,
   theme,
   presentationId,
+  lang = null,
   markDirty,
   requestSave,
   rerenderEditor,
@@ -61,7 +64,12 @@ export function openChartDataModal({
     // Render the real slide with the buffered data so the preview is faithful
     // (title + chart, exactly as the slide will look).
     const tempSlide = { ...slide, content: { ...slide.content, data: latest } };
-    mountSlideInto(previewThumb, tempSlide, { mode: 'thumb', theme, presentationId });
+    mountSlideInto(previewThumb, tempSlide, {
+      mode: 'thumb',
+      theme,
+      presentationId,
+      lang,
+    });
   };
 
   // --- Grid (left / bottom) ------------------------------------------------

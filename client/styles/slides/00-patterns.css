@@ -133,7 +133,10 @@
   align-items: center;
   justify-content: center;
   background: var(--slide-bg-lime, #e2fe52);
-  color: var(--color-text, #0b0b0b);
+  /* The number sits on the lime disc, not on the slide, so it reads the
+     surface's own text colour. See docs/reference/nested-surfaces.md. */
+  --color-text: var(--t-slide-bg-lime-text, #0b0b0b);
+  color: var(--color-text);
   font-family: var(--font-heading);
   font-size: var(--slide-step-font);
   font-weight: var(--heading-weight, 400);
@@ -142,10 +145,12 @@
   box-shadow: var(--slide-shadow-md);
 }
 
-/* On lime background, invert colors */
+/* On a lime slide the disc swaps to the accent, and so does the surface its
+   number sits on. */
 .slide-bg-lime .slide-step-indicator {
   background: var(--color-accent, #375c5d);
-  color: #fff;
+  --color-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
+  color: var(--color-text);
 }
 
 /* Size variants */

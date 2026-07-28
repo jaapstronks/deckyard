@@ -72,6 +72,8 @@
 
 .slide-cycle.slide-bg-lime .cycle-center {
   background: rgba(255, 255, 255, 0.95);
+  /* Near-white, whatever the theme's mist is, so the pole is fixed here. */
+  --surface-text: var(--t-text-color-dark, #212121);
 }
 
 .slide-cycle .center-label {
@@ -146,7 +148,10 @@
   align-items: center;
   justify-content: center;
   background: var(--slide-bg-lime, #e2fe52);
-  color: var(--color-text, #0b0b0b);
+  /* The number sits on the lime disc, not on the slide, so it reads the
+     surface's own text colour. See docs/reference/nested-surfaces.md. */
+  --color-text: var(--t-slide-bg-lime-text, #0b0b0b);
+  color: var(--color-text);
   border-radius: 50%;
   box-shadow: var(--slide-shadow-md);
 }

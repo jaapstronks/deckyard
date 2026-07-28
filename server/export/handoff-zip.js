@@ -5,6 +5,7 @@ import { buildNotesDocxBuffer, buildNotesMarkdown } from './notes.js';
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { renderSlidesToPdfBuffer } from '../render/pdf.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -51,6 +52,9 @@ export async function buildHandoffZipBuffer(
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
   const s = safeScale(scale);
+  // `lang` above is the README's display label as the caller supplied it; the
+  // render language is the deck's own, resolved the same way everywhere else.
+  const deckLang = resolveDeckLang(filteredPres);
 
   const title = String(filteredPres?.title || 'presentation');
   const base = 'handoff';
@@ -81,7 +85,7 @@ export async function buildHandoffZipBuffer(
   const pngFolder = zip.folder(filenames.pngDir);
   for (let i = 0; i < slides.length; i += 1) {
     const slide = slides[i];
-    const buf = await renderSlideToPngBuffer(repoRoot, slide, { scale: s, theme, slideTypes });
+    const buf = await renderSlideToPngBuffer(repoRoot, slide, { scale: s, theme, slideTypes, lang: deckLang });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     pngFolder.file(name, buf);
   }

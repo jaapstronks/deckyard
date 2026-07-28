@@ -123,7 +123,11 @@ export function createSlideLibraryPicker({
       });
     }
     const thTheme = await resolveThemeForItem(it);
-    const el = renderSlideElement(slide, { mode: 'thumb', theme: thTheme });
+    const el = renderSlideElement(slide, {
+      mode: 'thumb',
+      theme: thTheme,
+      lang: state.getLang?.(),
+    });
     th.appendChild(el);
     return th;
   };

@@ -63,9 +63,11 @@
   transition: width 0.3s ease;
 }
 
-/* On lime background, use accent color for bars */
+/* See the funnel note: the bar swaps surface on a lime slide, so it swaps the
+   text colour on the same selector. */
 .slide-pyramid.slide-bg-lime .level-bar {
   background: var(--color-accent, #375c5d);
+  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
 }
 
 .slide-pyramid.slide-bg-lime .level-bar .level-label,

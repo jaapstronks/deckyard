@@ -181,8 +181,7 @@ export default {
   },
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background);
-    const lang = ctx?.lang || 'nl';
-    const copy = getSlideCopy(lang);
+    const copy = getSlideCopy(ctx?.lang);
     const chartType = String(content?.chartType || 'bar');
     const parsed = parseChartData({
       chartType,

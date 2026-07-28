@@ -14,6 +14,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { openModal, confirmModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
 
 /**
@@ -129,6 +130,7 @@ export function openAiDeckReviewModal({
     theme,
     SLIDE_TYPES,
     presentationId: pres?.id,
+    lang: resolveDeckLang(pres),
     getSlides: () => pres?.slides || [],
     annotationFor,
     selectable: true,

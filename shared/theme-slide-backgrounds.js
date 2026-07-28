@@ -136,6 +136,11 @@ export function slideBackgroundsCssText(entries) {
         `  --slide-bg-text-muted: var(--t-slide-bg-${e.id}-text-muted, color-mix(in srgb, var(--slide-bg-text) 70%, transparent));`,
         '  --color-text: var(--slide-bg-text);',
         '  --color-text-muted: var(--slide-bg-text-muted);',
+        // A variant that flips the text colour has moved the ground out from
+        // under the brand accent too, and a bullet dot has no --color-text to
+        // follow. Same treatment the background-image classes get in
+        // 00-base.css; see the marker note there.
+        '  --slide-marker-color: color-mix(in srgb, var(--color-accent) 35%, var(--slide-bg-text));',
         '  color: var(--slide-bg-text);'
       );
     }

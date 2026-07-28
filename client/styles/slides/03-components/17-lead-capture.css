@@ -107,6 +107,9 @@
   border: 2px solid var(--interaction-border);
   border-radius: var(--t-radius, 16px);
   background: var(--interaction-surface-2);
+  /* --interaction-surface-2 is ~white mixed with the slide background: a
+     light surface whatever the variant did to the slide's text colour. */
+  --color-text: var(--t-text-color-dark, #212121);
   color: var(--color-text);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;

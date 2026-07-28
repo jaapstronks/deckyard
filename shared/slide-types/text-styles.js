@@ -58,9 +58,12 @@ export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SW
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 
-import { fieldAllowedAlignValues } from './text-roles.js';
+import {
+  fieldAllowedAlignValues,
+  fieldDefaultAlign,
+  DEFAULT_ALIGN,
+} from './text-roles.js';
 
-const DEFAULT_ALIGN = 'left';
 const DEFAULT_COLOR = 'default';
 const DEFAULT_SIZE = 'md';
 
@@ -68,16 +71,27 @@ const DEFAULT_SIZE = 'md';
  * Normalize a raw `textStyles` map: keep only known keys/values and drop
  * defaults, so stored JSON never carries no-op overrides (a click-in-click-out
  * leaves the deck unchanged). Returns a fresh object; input is not mutated.
+ *
+ * "Default" for alignment is the FIELD's default, not a global `left`: on a
+ * type that centres, choosing `left` is a real override and must survive, while
+ * choosing `center` is the no-op. Without the type context the global default
+ * applies, which is what every caller got before types could declare one.
+ *
  * @param {unknown} raw
+ * @param {Array<Object>|Object|null} [typeOrFields] - the slide type definition
+ *   (or its `fields`), so a per-field `defaultAlign` is honoured
  * @returns {Record<string, {align?: string, color?: string, size?: string}>}
  */
-export function normalizeTextStyles(raw) {
+export function normalizeTextStyles(raw, typeOrFields = null) {
   if (!raw || typeof raw !== 'object') return {};
   const out = {};
   for (const [key, style] of Object.entries(raw)) {
     if (!key || !style || typeof style !== 'object') continue;
     const clean = {};
-    if (TEXT_ALIGN_VALUES.includes(style.align) && style.align !== DEFAULT_ALIGN) {
+    const defaultAlign = typeOrFields
+      ? fieldDefaultAlign(typeOrFields, key)
+      : DEFAULT_ALIGN;
+    if (TEXT_ALIGN_VALUES.includes(style.align) && style.align !== defaultAlign) {
       clean.align = style.align;
     }
     if (TEXT_COLOR_VALUES.includes(style.color) && style.color !== DEFAULT_COLOR) {
@@ -94,18 +108,24 @@ export function normalizeTextStyles(raw) {
 /**
  * The CSS classes for one field's style, or '' when it is all defaults.
  * @param {{align?: string, color?: string, size?: string}} style
- * @param {{allowedAligns?: string[]}} [opts] - the alignment values the field's
- *   role permits; a stored `align` outside this set emits no class (colour/size
- *   still apply). Defaults to all values (back-compat for callers without the
- *   schema). See text-roles.js.
+ * @param {{allowedAligns?: string[], defaultAlign?: string}} [opts]
+ *   `allowedAligns`: the alignment values the field's role permits; a stored
+ *   `align` outside this set emits no class (colour/size still apply). Defaults
+ *   to all values (back-compat for callers without the schema).
+ *   `defaultAlign`: what the field already renders at, so `left` on a centring
+ *   type emits `tf-align-left` (it has a slide rule to beat) while `left` on an
+ *   ordinary type stays classless. See text-roles.js.
  * @returns {string}
  */
-export function textStyleClasses(style, { allowedAligns = TEXT_ALIGN_VALUES } = {}) {
+export function textStyleClasses(
+  style,
+  { allowedAligns = TEXT_ALIGN_VALUES, defaultAlign = DEFAULT_ALIGN } = {}
+) {
   if (!style || typeof style !== 'object') return '';
   const classes = [];
   if (
     TEXT_ALIGN_VALUES.includes(style.align) &&
-    style.align !== DEFAULT_ALIGN &&
+    style.align !== defaultAlign &&
     allowedAligns.includes(style.align)
   ) {
     classes.push(`tf-align-${style.align}`);
@@ -131,19 +151,26 @@ function escapeRegExp(s) {
  * (or adds one). Unknown / default-only keys emit nothing.
  * @param {string} html - rendered slide HTML
  * @param {Object} content - slide content (reads `content.textStyles`)
- * @param {Array<Object>} [fields] - the slide type's `fields[]`, so a field's
- *   role can gate its alignment (a list item never block-aligns). Omitted =
- *   every field may align (back-compat for callers without the schema).
+ * @param {Array<Object>|Object} [typeOrFields] - the slide type definition (or
+ *   just its `fields[]`), so a field's role can gate its alignment (a list item
+ *   never block-aligns) and a type's `defaultAlign` is honoured. Omitted =
+ *   every field may align, default `left` (back-compat for callers without the
+ *   schema).
  * @returns {string}
  */
-export function injectTextStyles(html, content, fields = null) {
-  const styles = normalizeTextStyles(content?.textStyles);
+export function injectTextStyles(html, content, typeOrFields = null) {
+  const styles = normalizeTextStyles(content?.textStyles, typeOrFields);
   const keys = Object.keys(styles);
   if (!keys.length || typeof html !== 'string') return html;
   let out = html;
   for (const key of keys) {
-    const allowedAligns = fields ? fieldAllowedAlignValues(fields, key) : TEXT_ALIGN_VALUES;
-    const cls = textStyleClasses(styles[key], { allowedAligns });
+    const allowedAligns = typeOrFields
+      ? fieldAllowedAlignValues(typeOrFields, key)
+      : TEXT_ALIGN_VALUES;
+    const defaultAlign = typeOrFields
+      ? fieldDefaultAlign(typeOrFields, key)
+      : DEFAULT_ALIGN;
+    const cls = textStyleClasses(styles[key], { allowedAligns, defaultAlign });
     if (!cls) continue;
     // The `"` after the key anchors the match, so `card1` never matches
     // `card1Body`; `data-morph-role="body"` never matches field `body`.

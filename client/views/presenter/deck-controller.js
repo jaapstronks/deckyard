@@ -1,5 +1,6 @@
 import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { morphTransition } from './morph-engine.js';
 
 export function filterPresentSlides(presentation) {
@@ -118,7 +119,7 @@ export function createPresenterDeckController({
       // live renderers that read `ctx.followCodes` — a fifth interaction type
       // would silently not get them. Passing codes to a renderer that ignores
       // them is free, so the capability is the safe line to draw here.
-      const renderOptions = { theme, mode: 'present' };
+      const renderOptions = { theme, mode: 'present', lang: resolveDeckLang(pres) };
       // Also pass `presentationId` so slides can render follow URLs/QR codes.
       renderOptions.presentationId = presentationId;
       if (s?.type === 'follow-invite-slide' || isLiveSlideType(s?.type)) {

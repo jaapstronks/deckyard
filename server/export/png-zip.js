@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { renderSlideToPngBuffer } from '../render/png.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -29,6 +30,7 @@ export async function buildSlidesPngZipBuffer(
   const filteredPres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(filteredPres?.slides) ? filteredPres.slides : [];
   const s = safeScale(scale);
+  const lang = resolveDeckLang(pres);
 
   const zip = new JSZip();
 
@@ -37,6 +39,7 @@ export async function buildSlidesPngZipBuffer(
       scale: s,
       theme,
       slideTypes,
+      lang,
     });
     const name = `slide-${String(i + 1).padStart(2, '0')}.png`;
     zip.file(name, buf);

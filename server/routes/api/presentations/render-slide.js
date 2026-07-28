@@ -15,6 +15,7 @@ import { createRouteContext } from '../../../utils/context.js';
 import { loadTheme } from '../../../utils/themes.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 import { renderSlideHtml } from '../../../../shared/slide-types.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('render-slide');
@@ -74,6 +75,9 @@ export async function handleRenderSlide(
       theme,
       slideTypes,
       presentationId,
+      // Custom types render here, so they get the same deck language the
+      // bundled ones get on the client canvas.
+      lang: resolveDeckLang(pres),
     });
     serveJson(res, 200, { html });
   } catch (err) {

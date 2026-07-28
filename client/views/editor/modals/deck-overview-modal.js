@@ -7,6 +7,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 import { createDeckGridView } from '../deck-grid.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 
 /**
  * @param {Object} options
@@ -53,6 +54,7 @@ export function openDeckOverviewModal({
     theme,
     SLIDE_TYPES,
     presentationId: pres?.id,
+    lang: resolveDeckLang(pres),
     getSlides: () => pres?.slides || [],
     onTilePick: (slide) => {
       modalApi.close();

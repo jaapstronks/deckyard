@@ -138,6 +138,7 @@ describe('fieldAlignAffordance: one resolver, three owners', () => {
       values: [],
       owner: 'group',
       groupId: 'title-block',
+      defaultAlign: 'left',
     });
   });
 
@@ -146,6 +147,7 @@ describe('fieldAlignAffordance: one resolver, three owners', () => {
       values: [],
       owner: 'role',
       groupId: null,
+      defaultAlign: 'left',
     });
   });
 

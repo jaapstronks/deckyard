@@ -31,7 +31,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
 
   return `
     <li class="funnel-stage" data-stage="${stageNum}" style="--stage-width: ${widthPercent}%;" data-inline-item="${colKey}" data-inline-item-index="${idx}">
-      <div class="stage-bar">
+      <div class="stage-bar on-surface-lime">
         <div class="stage-content">
           ${labelHtml}
           ${valueHtml}
@@ -103,6 +103,8 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          // `.slide-funnel .stage-text` is centred (90-funnel-slide.css).
+          defaultAlign: 'center',
         },
       ],
     },
@@ -141,6 +143,8 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          // `.slide-funnel .stage-text` is centred (90-funnel-slide.css).
+          defaultAlign: 'center',
         },
       ],
     },

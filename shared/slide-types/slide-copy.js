@@ -2,6 +2,11 @@
  * Language-aware copy for slide type rendering.
  * Used by interactive slide types (poll, likert, feedback) that need
  * to display UI copy in the presentation language.
+ *
+ * This module owns ONE decision: given a language code, which copy table does a
+ * renderer read. It does not decide what a deck's language IS — that is
+ * `resolveDeckLang()` in shared/i18n-utils.js, and every caller passes the
+ * result in as `ctx.lang`. See docs/reference/slide-copy-language.md.
  */
 
 export const SLIDE_COPY = {
@@ -106,13 +111,46 @@ export const SLIDE_COPY = {
 };
 
 /**
+ * The language slide copy falls back to when the deck names none, or names one
+ * this table does not carry (a German deck, a stale locale, a render context
+ * that never learned the deck's language).
+ *
+ * English, not Dutch. Dutch was never a product decision — it was the `else`
+ * branch of this one file, and every renderer that repeated `ctx?.lang || 'nl'`
+ * inherited it. The product's stated fallback tier is English: the whole
+ * `t(key, fallback)` convention ships English fallbacks, and the locale-tiering
+ * direction degrades tier-2 locales to English rather than Dutch.
+ *
+ * This is NOT the default language of a new deck. That is a stored, editable
+ * property of the presentation (`pres.lang`, seeded from the workspace by
+ * `resolveInitialDeckLang()`), and it still starts at `nl` for a Dutch
+ * workspace. This constant only decides what happens when there is genuinely no
+ * language information to go on.
+ */
+export const DEFAULT_SLIDE_COPY_LANG = 'en-GB';
+
+/** The languages this table carries. */
+export const SLIDE_COPY_LANGS = Object.keys(SLIDE_COPY);
+
+/**
+ * Resolve any language code to a language this copy table carries.
+ * `en` is an accepted alias for the canonical `en-GB`; anything else the table
+ * does not know resolves to {@link DEFAULT_SLIDE_COPY_LANG}.
+ * @param {string} [lang]
+ * @returns {'nl'|'en-GB'}
+ */
+export function slideCopyLang(lang) {
+  const l = String(lang || '').trim();
+  if (l === 'en') return 'en-GB';
+  return Object.hasOwn(SLIDE_COPY, l) ? l : DEFAULT_SLIDE_COPY_LANG;
+}
+
+/**
  * Get copy for a specific language.
- * Falls back to Dutch if language is not supported.
- * @param {string} lang - Language code ('nl' or 'en-GB')
+ * @param {string} [lang] - Language code ('nl' or 'en-GB'); anything else falls
+ *   back to {@link DEFAULT_SLIDE_COPY_LANG}.
  * @returns {Object} Copy object for the language
  */
 export function getSlideCopy(lang) {
-  const l = String(lang || '').trim();
-  if (l === 'en-GB' || l === 'en') return SLIDE_COPY['en-GB'];
-  return SLIDE_COPY.nl;
+  return SLIDE_COPY[slideCopyLang(lang)];
 }

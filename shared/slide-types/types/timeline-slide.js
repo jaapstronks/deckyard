@@ -179,8 +179,7 @@ export default {
   },
   renderHtml: (content, _slide, ctx = {}) => {
     const bg = bgClass(content?.background);
-    const lang = ctx?.lang || 'nl';
-    const copy = getSlideCopy(lang);
+    const copy = getSlideCopy(ctx?.lang);
     const title =
       typeof content?.title === 'string' && content.title.trim()
         ? `<h2 class="heading" data-morph-role="title" data-inline-field="title" dir="auto">${esc(content.title.trim())}</h2>`

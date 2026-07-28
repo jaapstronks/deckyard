@@ -245,6 +245,17 @@ export function deriveThemeTokens({
     '--t-slide-bg-lime': background,
     '--t-slide-bg-mist': mistBg,
     '--t-slide-bg-dark': darkBg,
+    // …and what reads ON each of them, for elements that paint one of these as
+    // their own surface (a funnel bar, a cycle hub). Derived here as well as in
+    // shared/theme-normalize.js, because a DB-built theme skips that path.
+    '--t-slide-bg-lime-text': pickTextColorForBg(background, {
+      light: textLight,
+      dark: textDark,
+    }),
+    '--t-slide-bg-mist-text': pickTextColorForBg(mistBg, {
+      light: textLight,
+      dark: textDark,
+    }),
 
     // Quote styling
     '--t-quote-author-color': primary,

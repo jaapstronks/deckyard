@@ -1,6 +1,7 @@
 import { renderSlideHtml } from '../utils/render-slide.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import {
   escapeHtml,
   embedImgSrcDataUrls,
@@ -32,7 +33,7 @@ export async function buildSlidesPngExportHtml(
         const slideHtml =
           s?.type === 'video-slide'
             ? await renderVideoSlidePngHtml(s)
-            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true });
+            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, lang: resolveDeckLang(pres) });
         return `<div class="png-item" data-idx="${idx}">
         <div class="png-thumb ps-theme">${css.wmHtml}${slideHtml}</div>
         <div class="png-actions">

@@ -63,14 +63,15 @@
   transition: width 0.3s ease;
 }
 
-/* On lime background, use accent color for bars */
+/* On a lime slide the bar would disappear into the background, so it swaps to
+   the accent — and with it, the surface its text sits on. Overriding
+   --surface-text on the same selector that swaps `background` keeps the pair
+   together; the redirect itself stays owned by 00-base.css. This used to name
+   .stage-label and .stage-value one by one, which is why .stage-text (and
+   anything added later) kept the slide's colour on a surface it isn't on. */
 .slide-funnel.slide-bg-lime .stage-bar {
   background: var(--color-accent, #375c5d);
-}
-
-.slide-funnel.slide-bg-lime .stage-bar .stage-label,
-.slide-funnel.slide-bg-lime .stage-bar .stage-value {
-  color: var(--t-color-accent-contrast, #ffffff);
+  --surface-text: var(--t-color-accent-contrast, var(--t-text-color-light, #ffffff));
 }
 
 /* Stage content (label + value) */

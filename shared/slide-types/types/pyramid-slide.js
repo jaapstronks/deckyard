@@ -30,7 +30,7 @@ function levelHtml(level, idx, total) {
 
   return `
     <li class="pyramid-level" data-level="${levelNum}" style="--level-width: ${widthPercent}%;" data-inline-item="levels" data-inline-item-index="${idx}">
-      <div class="level-bar">
+      <div class="level-bar on-surface-lime">
         <div class="level-content">
           ${labelHtml}
           ${textHtml}
@@ -86,6 +86,9 @@ export default {
           type: 'string',
           required: true,
           maxLength: 60,
+          // `.slide-pyramid .level-content` centres both of these
+          // (91-pyramid-slide.css).
+          defaultAlign: 'center',
         },
         {
           key: 'text',
@@ -93,6 +96,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 120,
+          defaultAlign: 'center',
         },
       ],
     },

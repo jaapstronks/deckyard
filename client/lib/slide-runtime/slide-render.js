@@ -252,7 +252,11 @@ export function cleanupSlideRuntimes(rootEl) {
  * Replace the contents of `container` with a newly rendered slide element.
  * Always cleans up any previous slide runtimes first.
  */
-export function mountSlideInto(container, slide, { mode, theme, presentationId } = {}) {
+export function mountSlideInto(
+  container,
+  slide,
+  { mode, theme, presentationId, lang } = {}
+) {
   if (!container) return null;
   cleanupSlideRuntimes(container);
   try {
@@ -261,7 +265,7 @@ export function mountSlideInto(container, slide, { mode, theme, presentationId }
     // ignore
   }
   if (!slide) return null;
-  const el = renderSlideElement(slide, { mode, theme, presentationId });
+  const el = renderSlideElement(slide, { mode, theme, presentationId, lang });
   container.append(el);
   return el;
 }
@@ -270,10 +274,15 @@ export function mountSlideInto(container, slide, { mode, theme, presentationId }
  * Render a slide element synchronously.
  * Falls back to "Unknown slide type" for custom types not bundled in client.
  * Use renderSlideElementAsync for custom slide type support.
+ *
+ * `lang` is the deck's language (`resolveDeckLang(pres)`), and it is what the
+ * interactive types read for their built-in copy. Leaving it out is not
+ * neutral: the slide then falls back to `DEFAULT_SLIDE_COPY_LANG`, so a caller
+ * that has a presentation in hand should always pass it.
  */
 export function renderSlideElement(
   slide,
-  { mode, theme, followCodes, presentationId, api } = {}
+  { mode, theme, followCodes, presentationId, api, lang } = {}
 ) {
   let html;
 
@@ -293,6 +302,7 @@ export function renderSlideElement(
       theme,
       followCodes,
       presentationId,
+      lang,
     }).trim();
   }
 
@@ -410,7 +420,7 @@ async function triggerServerRender(el, slide, { mode, theme, presentationId, api
  */
 export async function renderSlideElementAsync(
   slide,
-  { mode, theme, followCodes, presentationId, api } = {}
+  { mode, theme, followCodes, presentationId, api, lang } = {}
 ) {
   let html;
 
@@ -423,6 +433,7 @@ export async function renderSlideElementAsync(
       theme,
       followCodes,
       presentationId,
+      lang,
     }).trim();
   }
 

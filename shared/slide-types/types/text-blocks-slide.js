@@ -192,7 +192,15 @@ export default {
         ],
       },
       itemFields: [
-        { key: 'title', label: 'Row heading', type: 'string', required: false, maxLength: 120 },
+        // `.text-blocks-row-title` is centred (04-columns.css).
+        {
+          key: 'title',
+          label: 'Row heading',
+          type: 'string',
+          required: false,
+          maxLength: 120,
+          defaultAlign: 'center',
+        },
         { key: 'color', label: 'Color', type: 'enum', required: false, options: ['yellow', 'black'] },
         { key: 'arrow', label: 'Arrow after row', type: 'enum', required: false, options: ['none', 'down', 'up'] },
         {
@@ -278,6 +286,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 120,
+      defaultAlign: 'center', // as rows[].title
       hidden: true, // legacy mirror of rows[1].title — hidden from projection
     },
     {
@@ -337,6 +346,7 @@ export default {
       type: 'string',
       required: false,
       maxLength: 120,
+      defaultAlign: 'center', // as rows[].title
       hidden: true, // legacy mirror of rows[2].title — hidden from projection
     },
     {

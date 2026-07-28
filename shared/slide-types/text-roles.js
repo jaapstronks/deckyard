@@ -31,6 +31,22 @@ import { fieldGroupId } from './field-groups.js';
 /** The controlled vocabulary of text roles. */
 export const TEXT_ROLES = ['heading', 'prose', 'list-item', 'quote', 'caption', 'label'];
 
+/**
+ * The alignment a field has when the author has chosen nothing.
+ *
+ * Almost always `left`, and then nobody declares it. It is a declaration
+ * because a handful of types centre in their own slide CSS — `end-slide`
+ * centres its whole `.slide-inner`, `funnel-slide` centres a stage's
+ * description — and the style panel has no way to see that. Without the
+ * declaration it showed "Left" over visibly centred text, and clicking "Left"
+ * changed nothing, because `left` was treated as "no override" and emitted no
+ * class for the slide rule to lose to.
+ *
+ * A type declares `defaultAlign` at type level when the whole slide centres,
+ * or on a single `fields[]` entry when only that field does. Field beats type.
+ */
+export const DEFAULT_ALIGN = 'left';
+
 /** Default role for an untagged field: safe, all affordances allowed. */
 export const DEFAULT_TEXT_ROLE = 'prose';
 
@@ -92,6 +108,47 @@ export function roleAllowsAlign(role) {
 }
 
 /**
+ * Accept either a slide type definition or its bare `fields` array.
+ *
+ * The two-shape input is deliberate: the type-level `defaultAlign` can only be
+ * read from the definition, but plenty of existing callers (and every test
+ * fixture) hold nothing but a fields array, and forcing them to synthesise a
+ * definition would be churn for no gain. An array simply has no type-level
+ * default.
+ * @param {Array<Object>|Object|null} input
+ * @returns {{fields: Array<Object>|null, typeDef: Object|null}}
+ */
+function asTypeAndFields(input) {
+  if (Array.isArray(input)) return { fields: input, typeDef: null };
+  if (input && typeof input === 'object' && Array.isArray(input.fields)) {
+    return { fields: input.fields, typeDef: input };
+  }
+  return { fields: null, typeDef: null };
+}
+
+/**
+ * The alignment a field renders at before the author touches anything:
+ * the field's own `defaultAlign`, else the type's, else `left`.
+ *
+ * A declared value outside the field's allowed set is ignored — a type cannot
+ * default a list item to centre, since the role says list items do not align
+ * at all.
+ *
+ * @param {Array<Object>|Object|null} typeOrFields - a slide type definition, or
+ *   its `fields` array (an array has no type-level default)
+ * @param {string} key - the field key from `data-inline-field`
+ * @returns {string} one of TEXT_ALIGN values
+ */
+export function fieldDefaultAlign(typeOrFields, key) {
+  const { fields, typeDef } = asTypeAndFields(typeOrFields);
+  const declared =
+    resolveFieldDef(fields, key)?.defaultAlign ?? typeDef?.defaultAlign;
+  if (!declared || declared === DEFAULT_ALIGN) return DEFAULT_ALIGN;
+  const allowed = allowedAlignValues(resolveFieldRole(fields, key));
+  return allowed.includes(declared) ? declared : DEFAULT_ALIGN;
+}
+
+/**
  * Resolve a `data-inline-field` key (possibly dotted, e.g. `items.0.text`)
  * against a slide type's `fields[]` declarations and return its declared role,
  * or the safe default. Numeric path segments descend into the preceding
@@ -106,7 +163,8 @@ export function resolveFieldRole(fields, key) {
 }
 
 /**
- * Who decides a field's block alignment, and which values are on offer.
+ * Who decides a field's block alignment, which values are on offer, and what
+ * the field already renders at.
  *
  * The single read path for both affordance axes — the editor calls it to know
  * which control to draw, the renderer to know whether a stored `align` may
@@ -122,26 +180,38 @@ export function resolveFieldRole(fields, key) {
  * `values` is always empty for the two non-field owners: neither the role nor
  * the group case may emit a per-field alignment class.
  *
- * @param {Array<Object>} fields - a slide type's `fields` array
+ * `defaultAlign` is what the field renders at with nothing stored, so the
+ * editor can show the alignment that is actually in force instead of assuming
+ * `left`, and the renderer knows which value counts as "no override".
+ *
+ * @param {Array<Object>|Object} typeOrFields - a slide type definition, or its
+ *   `fields` array
  * @param {string} key - the field key from `data-inline-field`
- * @returns {{values: string[], owner: 'field'|'role'|'group', groupId: string|null}}
+ * @returns {{values: string[], owner: 'field'|'role'|'group', groupId: string|null, defaultAlign: string}}
  */
-export function fieldAlignAffordance(fields, key) {
+export function fieldAlignAffordance(typeOrFields, key) {
+  const { fields } = asTypeAndFields(typeOrFields);
+  const defaultAlign = fieldDefaultAlign(typeOrFields, key);
   const groupId = fieldGroupId(fields, key);
-  if (groupId) return { values: [], owner: 'group', groupId };
+  if (groupId) return { values: [], owner: 'group', groupId, defaultAlign };
   const values = allowedAlignValues(resolveFieldRole(fields, key));
-  return { values, owner: values.length ? 'field' : 'role', groupId: null };
+  return {
+    values,
+    owner: values.length ? 'field' : 'role',
+    groupId: null,
+    defaultAlign,
+  };
 }
 
 /**
  * Convenience: whether a field key permits any block alignment, given its slide
  * type's `fields`. Used by the editor (whether to show the control at all).
- * @param {Array<Object>} fields
+ * @param {Array<Object>|Object} typeOrFields
  * @param {string} key
  * @returns {boolean}
  */
-export function fieldAllowsAlign(fields, key) {
-  return fieldAlignAffordance(fields, key).values.length > 0;
+export function fieldAllowsAlign(typeOrFields, key) {
+  return fieldAlignAffordance(typeOrFields, key).values.length > 0;
 }
 
 /**
@@ -150,10 +220,10 @@ export function fieldAllowsAlign(fields, key) {
  * align value may emit a `tf-align-*` class). A group member returns `[]`, so
  * an `align` stored before the field joined a group goes inert on render
  * without any migration — the same gate that already drops a list item's align.
- * @param {Array<Object>} fields
+ * @param {Array<Object>|Object} typeOrFields
  * @param {string} key
  * @returns {string[]}
  */
-export function fieldAllowedAlignValues(fields, key) {
-  return fieldAlignAffordance(fields, key).values;
+export function fieldAllowedAlignValues(typeOrFields, key) {
+  return fieldAlignAffordance(typeOrFields, key).values;
 }

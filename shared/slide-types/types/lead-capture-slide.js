@@ -25,6 +25,8 @@ export default {
       type: 'string',
       required: true,
       maxLength: 120,
+      // `.lead-capture-header` centres both of these (17-lead-capture.css).
+      defaultAlign: 'center',
     },
     {
       key: 'description',
@@ -32,6 +34,7 @@ export default {
       type: 'markdown',
       required: false,
       maxLength: 500,
+      defaultAlign: 'center',
     },
     {
       key: 'nameLabel',
@@ -200,7 +203,7 @@ export default {
         <div class="slide-inner">
           <div class="lead-capture-container">
             <!-- Form state -->
-            <div class="lead-capture-form-state" data-lead-state="form">
+            <div class="lead-capture-form-state on-surface-light" data-lead-state="form">
               <div class="lead-capture-header">
                 <h2 class="lead-capture-title" data-inline-field="title" dir="auto">${esc(title)}</h2>
                 ${descriptionHtml ? `<div class="lead-capture-description" data-inline-field="description">${descriptionHtml}</div>` : ''}
@@ -260,13 +263,13 @@ export default {
               </form>
 
               <!-- Cookie consent required message -->
-              <div class="lead-capture-cookie-notice" data-lead-cookie-notice="1" hidden>
+              <div class="lead-capture-cookie-notice on-surface-light" data-lead-cookie-notice="1" hidden>
                 <p>${esc(cookieNoticeText)}</p>
               </div>
             </div>
 
             <!-- Thank you state -->
-            <div class="lead-capture-thankyou-state" data-lead-state="thankyou" hidden>
+            <div class="lead-capture-thankyou-state on-surface-light" data-lead-state="thankyou" hidden>
               <div class="lead-capture-thankyou">
                 <div class="lead-capture-thankyou-icon" aria-hidden="true">
                   <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
