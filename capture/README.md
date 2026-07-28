@@ -105,6 +105,12 @@ flagged for review — the same drift mechanism the registry uses for source dep
   don't depend on the host OS appearance or catch a mid-transition frame.
 - **Fixed sample content** from `recipes/_sample-content.js` — one shared,
   PII-free deck so seeded shots are visually stable across runs and machines.
+  Marketing shots use the richer `recipes/_marketing-deck.js` instead: same
+  determinism rules, but bilingual (one deck, `i18n.versions` for `nl` and
+  `en-GB`, so a recipe switches with `?lang=nl` / `?lang=en-GB`) and stocked
+  with typed slides that have something to show — a funnel, a timeline, a poll
+  whose seeded result is uneven (`MARKETING_POLL_VOTES`), and the follow-along
+  invite.
 - **Idempotent seeding** — seeded decks use the fixed `SAMPLE_DECK_TITLE` and
   are deleted-by-title before each seed, so re-runs stay clean. The title reads
   as a normal deck name (it shows in the editor title bar) rather than a
