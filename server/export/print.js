@@ -243,7 +243,7 @@ export async function buildPrintHtml(repoRoot, pres, { theme = null, watermark =
     ${buildPrismKatexCdnTags()}
     <style>
 ${css.fontCss}
-${stripFontFacesFromCss(css.appCss)}
+${stripFontFacesFromCss(css.chromeCss)}
 ${css.themeVarsCss}
 ${css.themeCss}
 ${stripFontFacesFromCss(css.slidesCss)}
