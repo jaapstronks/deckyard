@@ -18,6 +18,7 @@ function letterForIdx(i) {
 }
 
 export default {
+  structure: 'fixed-collection',
   label: 'Poll',
   fields: [
     {

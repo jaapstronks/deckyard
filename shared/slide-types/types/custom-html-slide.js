@@ -134,6 +134,7 @@ const DEFAULT_CSS = `.ch-center {
 .ch-sub { opacity: 0.7; }`;
 
 export default {
+  structure: 'singleton',
   label: 'Custom HTML',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
   // agent-catalog.js): authoring the raw markup is gated behind the

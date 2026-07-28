@@ -16,6 +16,7 @@ import {
 } from '../image-text-images.js';
 
 export default {
+  structure: 'singleton',
   label: 'Image + text',
   fields: [
     {

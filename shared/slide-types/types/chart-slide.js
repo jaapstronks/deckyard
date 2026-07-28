@@ -34,6 +34,7 @@ import {
 } from '../chart/render-pie.js';
 
 export default {
+  structure: 'dataset',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Chart',

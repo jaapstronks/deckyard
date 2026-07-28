@@ -9,6 +9,7 @@ import {
 import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
+  structure: 'singleton',
   label: 'Comparison',
   fields: [
     {

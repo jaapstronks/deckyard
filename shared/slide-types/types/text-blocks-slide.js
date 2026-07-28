@@ -131,6 +131,7 @@ function generateDefaultRows(lang) {
 }
 
 export default {
+  structure: 'collection',
   label: 'Text blocks',
   fields: [
     // Header

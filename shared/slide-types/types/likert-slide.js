@@ -16,6 +16,7 @@ function optionsFromContent(content) {
 }
 
 export default {
+  structure: 'fixed-collection',
   label: 'Likert (agree/disagree)',
   fields: [
     {

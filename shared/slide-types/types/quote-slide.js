@@ -208,6 +208,7 @@ function activeExtraQuotes(content) {
 }
 
 export default {
+  structure: 'singleton',
   label: 'Quote',
   fieldGroups: [QUOTE_BLOCK.group],
   layoutVariants: QUOTE_BLOCK.variants,

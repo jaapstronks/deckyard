@@ -2,6 +2,7 @@ import { bgClass, esc, nonEmpty, BACKGROUND_FIELD, cryptoUuid } from '../helpers
 import { renderMarkdown } from '../../markdown.js';
 
 export default {
+  structure: 'singleton',
   label: 'Lead Capture',
   // PARKED, not superseded (decision 2026-07-24). The form is consent-gated on
   // marketing cookies (see lead-capture-runtime.js → hasMarketingConsent), but

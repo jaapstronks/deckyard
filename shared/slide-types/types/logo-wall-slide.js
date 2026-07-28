@@ -102,6 +102,7 @@ export function ensureLogos(content) {
 }
 
 export default {
+  structure: 'collection',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Logo wall',

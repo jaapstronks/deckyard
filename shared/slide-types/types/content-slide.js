@@ -3,6 +3,7 @@ import { markdownToSafeHtml } from '../../markdown.js';
 import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 
 export default {
+  structure: 'singleton',
   label: 'Text slide',
   fields: [
     {

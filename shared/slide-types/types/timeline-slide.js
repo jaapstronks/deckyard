@@ -61,6 +61,7 @@ function itemHtml(item, idx, total) {
 }
 
 export default {
+  structure: 'collection',
   label: 'Timeline',
   fields: [
     {
