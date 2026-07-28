@@ -74,18 +74,23 @@ test('a prototype key cannot masquerade as a language', () => {
 // --- 2. One place decides a deck's language --------------------------------
 
 test('resolveDeckLang reads the deck, in the documented order', () => {
-  assert.equal(resolveDeckLang({ lang: 'en-GB' }), 'en-GB');
+  // The one that matters: a bilingual deck created in Dutch and currently being
+  // read in English. `lang` never moves; `active` is what is on screen. Reading
+  // `lang` first put Dutch poll copy under English slides — the defect itself,
+  // caught in the browser after the plumbing was already in place.
   assert.equal(
-    resolveDeckLang({ lang: 'en-GB', i18n: { active: 'nl' } }),
+    resolveDeckLang({ lang: 'nl', i18n: { dominant: 'nl', active: 'en-GB' } }),
     'en-GB',
-    'an explicit deck language outranks the i18n state'
+    'the active language is the one on screen'
   );
   assert.equal(resolveDeckLang({ i18n: { active: 'nl' } }), 'nl');
   assert.equal(
-    resolveDeckLang({ i18n: { dominant: 'en-GB' } }),
+    resolveDeckLang({ lang: 'nl', i18n: { dominant: 'en-GB' } }),
     'en-GB',
-    'dominant is the last resort before "no answer"'
+    'dominant answers when no active choice was made'
   );
+  // A deck with no i18n block at all is the legacy single-language case.
+  assert.equal(resolveDeckLang({ lang: 'en-GB' }), 'en-GB');
 });
 
 test('resolveDeckLang answers null rather than guessing', () => {

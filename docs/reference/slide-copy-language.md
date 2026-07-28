@@ -13,11 +13,20 @@ a deck's language. Every render entrypoint calls it and passes the result to
 `renderSlideHtml` as `ctx.lang`; every slide type reads `ctx.lang` and nothing
 else.
 
-It reads, in order: the deck's own `pres.lang`, then `i18n.active`, then
-`i18n.dominant`. When none of those says anything it returns **`null`** — not a
-guess. That matters: a caller cannot mistake "the deck says nothing" for a real
-answer, and the copy layer gets to apply its own documented default rather than
-inheriting an accident.
+It reads, in order: `i18n.active`, then `i18n.dominant`, then `pres.lang`. When
+none of those says anything it returns **`null`** — not a guess.
+
+That order is load-bearing. `active` is the language the deck is currently being
+shown in — the editor swaps `pres.slides` to that version, and the language
+toggle reads it — while `pres.lang` is the language the deck was *created* in
+and never moves. A bilingual deck created in Dutch and read in English has
+`lang: 'nl'` and `active: 'en-GB'`, so reading `lang` first puts Dutch copy
+under English slides. `dominant` covers a deck with an i18n block but no active
+choice; `lang` covers a deck with no i18n block at all.
+
+Returning `null` rather than a guess matters too: a caller cannot mistake "the
+deck says nothing" for a real answer, and the copy layer gets to apply its own
+documented default rather than inheriting an accident.
 
 This is a narrower question than `<html lang>`, which also honours legacy
 per-slide `content.lang` values and RTL codes and always produces a string. That

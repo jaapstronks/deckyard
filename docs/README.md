@@ -97,6 +97,7 @@ nothing is discoverable only by `ls`.
 | [`slide-type-removal.md`](reference/slide-type-removal.md) | Retiring a type without leaving rot |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor |
 | [`text-alignment.md`](reference/text-alignment.md) | Who decides alignment, and why |
+| [`slide-copy-language.md`](reference/slide-copy-language.md) | Which language a type's built-in copy speaks |
 | [`team-cards-original-aspect.md`](reference/team-cards-original-aspect.md) | `imageAspect: original` layout |
 | [`video-slide-pdf-export.md`](reference/video-slide-pdf-export.md) | Video slides in PDF export |
 
@@ -123,6 +124,7 @@ nothing is discoverable only by `ls`.
 | [`theme-slide-backgrounds.md`](reference/theme-slide-backgrounds.md) | Theme-defined background variants |
 | [`slide-background-contrast.md`](reference/slide-background-contrast.md) | Background images, contrast and overlays |
 | [`contrast.md`](reference/contrast.md) | The one contrast implementation |
+| [`nested-surfaces.md`](reference/nested-surfaces.md) | Text on a panel, bar or card that paints its own background |
 | [`css-tokens.md`](reference/css-tokens.md) | CSS design tokens (app chrome) |
 | [`css-breakpoints.md`](reference/css-breakpoints.md) | The shared breakpoint ladder |
 | [`css-important.md`](reference/css-important.md) | Every `!important`, by-design vs cascade-patch |

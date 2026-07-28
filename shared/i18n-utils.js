@@ -72,6 +72,15 @@ export function otherLang(lang) {
  * how an English deck ended up with Dutch poll copy: nothing ever set
  * `ctx.lang`, so the per-type fallback was the only thing that ran.
  *
+ * `i18n.active` comes FIRST, and that ordering is load-bearing. `active` is the
+ * language the deck is currently being shown in — the editor swaps `pres.slides`
+ * to that version, and the toggle reads it — while `pres.lang` is the language
+ * the deck was created in and never moves. A bilingual deck created in Dutch and
+ * being read in English has `lang: 'nl'` and `active: 'en-GB'`; reading `lang`
+ * first would put Dutch copy under English slides, which is the exact defect
+ * this function exists to fix. `dominant` is the fallback for a deck with an
+ * i18n block but no active choice; `lang` for one with no i18n block at all.
+ *
  * Returns `null` when the deck names no language — deliberately, so the caller
  * cannot mistake "no answer" for a real one. `getSlideCopy()` turns that null
  * into `DEFAULT_SLIDE_COPY_LANG`.
@@ -85,9 +94,9 @@ export function otherLang(lang) {
  */
 export function resolveDeckLang(pres) {
   return (
-    normalizeLang(pres?.lang) ||
     normalizeLang(pres?.i18n?.active) ||
     normalizeLang(pres?.i18n?.dominant) ||
+    normalizeLang(pres?.lang) ||
     null
   );
 }
