@@ -147,18 +147,32 @@ is the useful part: the schema says it declares `singleton` while carrying
 `images[0-3]`, and the renderer says its tiles are not interchangeable. One
 boundary, two witnesses.
 
+## The fifth assertion
+
+**The companion matrix has no hole.** It lives in
+`tests/slide-type-name-branching.test.js` rather than beside the four above,
+because it guards the codebase around the types rather than the types
+themselves, and it is the only one of the five that comes from a real regression
+(PR #451) rather than from design. Every tracked module that branches on three
+or more type names must be accounted for, with a kind and a reason; 46 modules
+qualify. Full account in
+[`slide-type-companions.md`](./slide-type-companions.md#the-name-branching-inventory--no-hole-in-the-matrix).
+
+Its most useful finding is an argument for the next facet: **nine modules
+re-derive the live-interaction quartet by hand**, all asking one question the
+types cannot answer — does this slide collect answers from the audience? That is
+`runtime`, deferred below for want of a consumer. There are nine.
+
 ## What is not here yet
 
-- **The fifth assertion.** The companion matrix having no hole: derive the set
-  of modules that branch on a type name and fail on any that the matrix does not
-  list. It is the only one of the five that comes from a real regression rather
-  than from design (PR #451), and it needs its own burndown.
 - **Derivation.** `PICKER_GROUPS` and the settings `CATEGORIES` are still two
   hand-written tables that disagree. They become derivations once the consumers
   read from the registry — that is slide-type-seam work, not facet work.
 - **The other facets.** `intent` (frame / enumerate / sequence / compare /
-  quantify / ask), `runtime` (static / live / timed) and `payload` are all real,
-  and all still without a consumer. Built when there is one.
+  quantify / ask) and `payload` are real and still without a consumer; built
+  when there is one. `runtime` (static / live / timed) no longer qualifies —
+  assertion 5 found nine modules hand-rolling it — but declaring it is its own
+  change, with its own burndown.
 
 ## See also
 

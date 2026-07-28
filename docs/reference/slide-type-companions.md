@@ -170,6 +170,68 @@ are in [`slide-type-structure.md`](slide-type-structure.md).
   Asserting total coverage over them would mean asserting a judgement the list
   does not record. Consolidating them is a separate question (STRATEGY A7.1).
 
+These four exclusions are judgements, and until recently nothing checked that
+the list of judgements was complete. That is what the inventory below is for.
+
+## The name-branching inventory — no hole in the matrix
+
+The matrix guards the companions. Nothing guarded the matrix: it is itself a
+hand-written list, so a module carrying per-type knowledge that nobody had ever
+added simply was not checked. That has a cost on the record. When
+`lijstje-slide` was folded into `list-slide` (PR #451) the *offer* companions
+moved because the matrix named them, and `shared/slide-types/convert.js`,
+`slide-form-router.js` and two special cases in `render-field.js` stayed behind
+because it did not — so newly authored lists lost affordances that legacy lists
+kept, with the whole **Convert** submenu missing.
+
+`tests/slide-type-name-branching.test.js` closes that by *deriving* the set
+instead of declaring it: every tracked module that branches on **three or more**
+core type names must be accounted for in `INVENTORY`
+(`tests/helpers/slide-type-name-branching.js`), with a kind and a reason. The
+gate is on the accounting, not the contents — a module may be a closed-set
+special case; it may not be a surprise.
+
+The threshold is the whole judgement, so it is written down rather than implied:
+94 modules *name* a type, 46 branch on three or more. One or two names reads as
+type-specific behaviour (the custom-HTML guard exists for `custom-html-slide`)
+and no future type can be "missing" from it; three or more is where a module
+stops being about a type and becomes a table *of* types.
+
+| Kind | Count | What it means |
+|---|---|---|
+| `table` | 14 | a row per eligible type; must name a companion, which gates it both ways |
+| `sparse` | 15 | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
+| `specific` | 15 | a closed set of types that behave differently; not a table |
+| `generated` | 1 | produced by a script from per-type sources, so it cannot drift |
+| `source` | 1 | the registry — the list every other list derives from |
+
+Two entries carry `promote: true`: `server/utils/ai/schemas/refined-slide.js`
+and `server/utils/ai/validate-slide-structure.js`. Both are companion-shaped —
+a type with no entry is silently unrefinable, or silently unvalidated — and
+neither is gated. They are the shortlist for the next companion.
+
+### What the inventory measured
+
+**Nine `specific`-kind modules re-derive the live-interaction quartet**
+(`poll` / `likert` / `likert-slider` / `feedback`) by hand, to answer one
+question: does this slide collect answers from the audience? None of them wants
+to know which type it is; they all want a capability the type does not declare.
+They already disagree at the edges — the presenter's live set includes
+`follow-invite`, the session storage covers three of the four — and every one is
+a place a fifth interaction type would be forgotten.
+
+That is the `runtime` facet, which
+[`slide-type-structure.md`](./slide-type-structure.md) deferred with "real, but
+no consumer yet". There are nine consumers. The test asserts a *floor* on that
+count, so it fails when the number drops — which is the moment to delete it and
+point at the facet instead.
+
+**Conversion knowledge lives in three places**: `shared/slide-types/convert.js`,
+`client/views/editor/editor-form/header-actions.js` and
+`server/utils/openai/convert-slide.js` each write out which type turns into
+which. That is the strongest argument in the inventory for deriving conversion
+from the `structure` facet rather than maintaining three maps.
+
 ## Adding a companion to the matrix
 
 Add an entry to `COMPANIONS` in `tests/helpers/slide-type-companions.js`: `id`,
