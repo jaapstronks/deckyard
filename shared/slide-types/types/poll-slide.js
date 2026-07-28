@@ -19,6 +19,8 @@ function letterForIdx(i) {
 
 export default {
   structure: 'fixed-collection',
+  runtime: 'live',
+  interaction: 'poll',
   label: 'Poll',
   fields: [
     {

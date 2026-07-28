@@ -4,6 +4,7 @@ import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'Text slide',
   fields: [
     {

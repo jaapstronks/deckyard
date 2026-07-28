@@ -3,6 +3,7 @@ import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'End / Contact',
   fields: [
     {

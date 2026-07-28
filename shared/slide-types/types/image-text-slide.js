@@ -17,6 +17,7 @@ import {
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'Image + text',
   fields: [
     {

@@ -2,6 +2,7 @@ import { esc, pickAltText } from '../helpers.js';
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'Partner split',
   // Archived 2026-07-21: rarely used and a generic placeholder-y layout (a
   // handful of stored decks still carry it — they keep rendering, see below).

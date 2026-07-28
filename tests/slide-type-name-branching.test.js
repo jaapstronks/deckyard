@@ -26,7 +26,6 @@ import assert from 'node:assert/strict';
 import {
   BRANCH_THRESHOLD,
   CORE_TYPE_NAMES,
-  INTERACTION_TYPES,
   INVENTORY,
   KINDS,
   deriveNameBranchingModules,
@@ -123,37 +122,10 @@ test('the inventory is a worklist, not a hiding place', () => {
   }
 });
 
-test('the live-interaction quartet is hard-coded in module after module', () => {
-  // Not a gate — a measurement, and the most useful thing this inventory found.
-  //
-  // Nine modules independently write out most or all of the same four type names
-  // to answer one question: "does this slide collect answers from the audience?"
-  // None of them wants to know *which* type it is; they all want a capability the
-  // type does not declare. That is the `runtime` facet, which brief B deferred
-  // with "real, but no consumer yet". There are nine consumers, they already
-  // disagree at the edges (the presenter's live set includes follow-invite, the
-  // session storage only covers three of the four), and every one of them is a
-  // place a fifth interaction type would be forgotten.
-  //
-  // Counted over `specific`-kind modules only: a table with a row per type has a
-  // row for each of these four for the same reason it has one for every type,
-  // and that is not the duplication in question.
-  //
-  // The assertion is a floor, not an equality: it fails when the count drops,
-  // which is the moment to delete this test and point at the facet instead.
-  const quartetModules = [...derived]
-    .filter(([file, names]) => {
-      if (INVENTORY[file]?.kind !== KINDS.specific) return false;
-      return names.filter((n) => INTERACTION_TYPES.includes(n)).length >= 3;
-    })
-    .map(([file]) => file)
-    .sort();
-
-  assert.ok(
-    quartetModules.length >= 8,
-    `expected the interaction quartet re-derived across modules, found ` +
-      `${quartetModules.length}:\n${quartetModules.map((f) => `  - ${f}`).join('\n')}\n\n` +
-      `If this dropped because the types now declare a runtime capability, ` +
-      `delete this\ntest — it has done its job.`
-  );
-});
+// The sixth test here used to be a measurement, not a gate: nine `specific`
+// modules wrote out the live-interaction quartet by hand, and it asserted a
+// floor so it would fail the moment that count dropped — "if this dropped
+// because the types now declare a runtime capability, delete this test, it has
+// done its job." It did. The types declare `runtime: 'live'`, the nine ask the
+// type instead of recognising a name, and the measurement lives on as a ceiling
+// in tests/slide-type-runtime.test.js: no module may write the set out again.

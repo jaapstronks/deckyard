@@ -13,6 +13,7 @@ import {
 
 export default {
   structure: 'singleton',
+  runtime: 'static',
   label: 'Video',
   fields: [
     {

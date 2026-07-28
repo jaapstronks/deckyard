@@ -30,13 +30,10 @@ import {
   unauthorized,
 } from '../../utils/http.js';
 import {
-  isInteractiveSlideType,
   findSlideById,
   getOptionCountForSlide,
-  pollOptionCountFromSlide,
-  likertOptionCountFromSlide,
-  likertSliderOptionCountFromSlide,
 } from '../../utils/interaction-helpers.js';
+import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { getString } from '../../utils/request-validators.js';
 import { guardSseConnection } from '../../utils/sse-limiter.js';
@@ -151,14 +148,15 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
         updatedAt,
       });
 
-      // If this is an interactive slide, eagerly ensure interaction state exists so the
+      // If this is a live slide, eagerly ensure interaction state exists so the
       // presenter can show live results immediately (even before the first vote).
       try {
-        if (isInteractiveSlideType(slideType) && slideId) {
+        const kind = liveInteractionKind(slideType);
+        if (kind && slideId) {
           // Reuse the authorized presentation loaded above (presentationId is
           // validated to equal s.presentationId), avoiding a second read.
           const slide = pres ? findSlideById(pres, slideId) : null;
-          if (slideType === 'feedback-slide') {
+          if (kind === 'feedback') {
             await ensureFeedbackForSlide(repoRoot, sessionId, {
               presentationId,
               slideId,
@@ -166,7 +164,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
           } else {
             const optionCount = getOptionCountForSlide(slideType, slide);
             if (optionCount > 0) {
-              if (slideType === 'likert-slide' || slideType === 'likert-slider-slide') {
+              if (kind === 'likert') {
                 await ensureLikertInteractionForSlide(repoRoot, sessionId, {
                   presentationId,
                   slideId,
@@ -212,39 +210,24 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     const slide = findSlideById(pres, slideId);
     if (!slide) return badRequest(res, 'slide not found');
     const slideType = String(slide?.type || '');
-    if (
-      slideType !== 'poll-slide' &&
-      slideType !== 'likert-slide' &&
-      slideType !== 'likert-slider-slide' &&
-      slideType !== 'feedback-slide'
-    )
-      return badRequest(res, 'slide is not interactive');
-    const optionCount =
-      slideType === 'feedback-slide'
-        ? 0
-        : slideType === 'likert-slide'
-          ? likertOptionCountFromSlide(slide)
-          : slideType === 'likert-slider-slide'
-            ? likertSliderOptionCountFromSlide(slide)
-          : pollOptionCountFromSlide(slide);
-    if (slideType !== 'feedback-slide' && !optionCount)
+    // Opening, closing and resetting is the same action for every live type;
+    // only the store it reaches differs, which is what the kind selects.
+    const kind = liveInteractionKind(slideType);
+    if (!kind) return badRequest(res, 'slide is not interactive');
+    const optionCount = getOptionCountForSlide(slideType, slide);
+    if (kind !== 'feedback' && !optionCount)
       return badRequest(
         res,
-        slideType === 'likert-slide' || slideType === 'likert-slider-slide'
-          ? 'likert has no options'
-          : 'poll has no options'
+        kind === 'likert' ? 'likert has no options' : 'poll has no options'
       );
 
     // Ensure interaction exists first.
-    if (slideType === 'feedback-slide') {
+    if (kind === 'feedback') {
       await ensureFeedbackForSlide(repoRoot, sessionId, {
         presentationId: s.presentationId,
         slideId,
       });
-    } else if (
-      slideType === 'likert-slide' ||
-      slideType === 'likert-slider-slide'
-    ) {
+    } else if (kind === 'likert') {
       await ensureLikertInteractionForSlide(repoRoot, sessionId, {
         presentationId: s.presentationId,
         slideId,
@@ -260,9 +243,9 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
 
     if (action === 'reset') {
       const agg =
-        slideType === 'feedback-slide'
+        kind === 'feedback'
           ? await resetFeedback(repoRoot, sessionId, { slideId })
-          : slideType === 'likert-slide' || slideType === 'likert-slider-slide'
+          : kind === 'likert'
             ? await resetLikertInteraction(repoRoot, sessionId, {
                 slideId,
                 optionCount,
@@ -276,12 +259,12 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     }
 
     const agg =
-      slideType === 'feedback-slide'
+      kind === 'feedback'
         ? await setFeedbackStatus(repoRoot, sessionId, {
             slideId,
             status: action === 'close' ? 'closed' : 'open',
           })
-        : slideType === 'likert-slide' || slideType === 'likert-slider-slide'
+        : kind === 'likert'
           ? await setLikertInteractionStatus(repoRoot, sessionId, {
               slideId,
               status: action === 'close' ? 'closed' : 'open',
@@ -294,7 +277,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
             });
 
     // Broadcast branch event when closing an interaction with onClose configured
-    if (action === 'close' && slideType !== 'feedback-slide') {
+    if (action === 'close' && kind !== 'feedback') {
       const content = slide?.content || slide?.contentNl || slide?.contentEn || {};
       const onClose = String(content?.onClose || 'stay').trim();
       const onCloseTarget = String(content?.onCloseTarget || '').trim();
@@ -330,7 +313,7 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     if (!pres) return true;
     const slide = findSlideById(pres, slideId);
     if (!slide) return badRequest(res, 'slide not found');
-    if (String(slide?.type || '') !== 'feedback-slide')
+    if (liveInteractionKind(String(slide?.type || '')) !== 'feedback')
       return badRequest(res, 'slide is not a feedback slide');
 
     const entries = await listFeedbackEntries(repoRoot, sessionId, { slideId });

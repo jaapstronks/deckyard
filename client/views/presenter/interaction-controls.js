@@ -1,21 +1,16 @@
 import { confirmModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
+import {
+  isLiveSlideType,
+  liveInteractionKind,
+} from '../../../shared/slide-types/runtime.js';
 
-function isInteractionSlideType(t) {
-  return (
-    t === 'poll-slide' ||
-    t === 'likert-slide' ||
-    t === 'likert-slider-slide' ||
-    t === 'feedback-slide'
-  );
-}
-
-function interactionTypeFromSlideType(t) {
-  if (t === 'likert-slide' || t === 'likert-slider-slide') return 'likert';
-  if (t === 'feedback-slide') return 'feedback';
-  if (t === 'poll-slide') return 'poll';
-  return null;
-}
+// Which slides get open/close/reset controls, and which store the presenter is
+// talking to, both come from the type's declared runtime capability. This
+// module used to answer both questions with its own list of four type names —
+// one of nine copies. See shared/slide-types/runtime.js.
+const isInteractionSlideType = (type) => isLiveSlideType(type);
+const interactionTypeFromSlideType = (type) => liveInteractionKind(type) || null;
 
 export function createPresenterInteractionControls({
   h,
@@ -39,7 +34,8 @@ export function createPresenterInteractionControls({
     onclick: () => {
       const cur = getCurrentSlide?.() || null;
       const sessionId = getSessionId?.() || null;
-      if (!sessionId || !cur || cur.type !== 'feedback-slide') return;
+      if (!sessionId || !cur || interactionTypeFromSlideType(cur.type) !== 'feedback')
+        return;
       try {
         const url = `/api/present-sessions/${encodeURIComponent(
           sessionId

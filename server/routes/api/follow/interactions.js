@@ -34,6 +34,7 @@ import {
 } from '../../../storage/feedback.js';
 import {
   findSlideById,
+  getOptionCountForSlide,
   pollOptionsFromSlide,
   pollQuestionFromSlide,
   likertOptionsFromSlide,
@@ -41,6 +42,7 @@ import {
   slider10InteractionFromSlide,
   feedbackInteractionFromSlide,
 } from '../../../utils/interaction-helpers.js';
+import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
 
 export async function handleFollowInteractionsCurrent(
   { repoRoot, req, res, url },
@@ -66,13 +68,10 @@ export async function handleFollowInteractionsCurrent(
     const slideId = String(state.slideId || '').trim();
     const slide = findSlideById(pres, slideId);
     const slideType = String(state.slideType || '');
-    if (
-      !slide ||
-      (slideType !== 'poll-slide' &&
-        slideType !== 'likert-slide' &&
-        slideType !== 'likert-slider-slide' &&
-        slideType !== 'feedback-slide')
-    ) {
+    // The type says whether it collects answers and which kind; this route no
+    // longer keeps its own list of the four (shared/slide-types/runtime.js).
+    const type = liveInteractionKind(slideType);
+    if (!slide || !type) {
       serveJson(
         res,
         200,
@@ -86,23 +85,20 @@ export async function handleFollowInteractionsCurrent(
       return true;
     }
 
-    const type =
-      slideType === 'feedback-slide'
-        ? 'feedback'
-        : slideType === 'likert-slide' || slideType === 'likert-slider-slide'
-          ? 'likert'
-          : 'poll';
+    // The slider is the one thing the kind does not settle: same protocol kind
+    // as a likert slide, ten fixed stops instead of authored options.
     const slider =
       slideType === 'likert-slider-slide'
         ? slider10InteractionFromSlide(slide)
         : null;
-    const feedback =
-      slideType === 'feedback-slide' ? feedbackInteractionFromSlide(slide) : null;
+    const feedback = type === 'feedback' ? feedbackInteractionFromSlide(slide) : null;
     const options = slider
       ? slider.options
       : type === 'likert'
         ? likertOptionsFromSlide(slide)
-        : pollOptionsFromSlide(slide);
+        : type === 'poll'
+          ? pollOptionsFromSlide(slide)
+          : [];
     const question = slider
       ? slider.question
       : feedback
@@ -215,29 +211,10 @@ export async function handleFollowInteractionState(
 
     const slide = findSlideById(pres, requested);
     const slideType = String(state.slideType || '');
-    if (
-      !slide ||
-      (slideType !== 'poll-slide' &&
-        slideType !== 'likert-slide' &&
-        slideType !== 'likert-slider-slide' &&
-        slideType !== 'feedback-slide')
-    )
-      return badRequest(res, 'current slide is not interactive');
+    const type = liveInteractionKind(slideType);
+    if (!slide || !type) return badRequest(res, 'current slide is not interactive');
 
-    const type =
-      slideType === 'feedback-slide'
-        ? 'feedback'
-        : slideType === 'likert-slide' || slideType === 'likert-slider-slide'
-          ? 'likert'
-          : 'poll';
-    const optionCount =
-      type === 'feedback'
-        ? 0
-        : type === 'likert'
-          ? slideType === 'likert-slider-slide'
-            ? 10
-            : likertOptionsFromSlide(slide).length
-          : pollOptionsFromSlide(slide).length;
+    const optionCount = getOptionCountForSlide(slideType, slide);
     const agg =
       type === 'feedback'
         ? await getFeedbackAggregate(repoRoot, state.sessionId, {
@@ -292,25 +269,15 @@ export async function handleFollowInteractionVote(
     if (!requested || requested !== currentSlideId)
       return badRequest(res, 'you can only vote on the current slide');
     const slideType = String(state.slideType || '');
-    if (
-      slideType !== 'poll-slide' &&
-      slideType !== 'likert-slide' &&
-      slideType !== 'likert-slider-slide'
-    )
+    // This is the vote endpoint, so free-text feedback is out even though it is
+    // just as live — it has its own handler below.
+    const type = liveInteractionKind(slideType);
+    if (type !== 'poll' && type !== 'likert')
       return badRequest(res, 'current slide is not interactive');
 
     const slide = findSlideById(pres, requested);
     if (!slide) return badRequest(res, 'slide not found');
-    const type =
-      slideType === 'likert-slide' || slideType === 'likert-slider-slide'
-        ? 'likert'
-        : 'poll';
-    const optionCount =
-      type === 'likert'
-        ? slideType === 'likert-slider-slide'
-          ? 10
-          : likertOptionsFromSlide(slide).length
-        : pollOptionsFromSlide(slide).length;
+    const optionCount = getOptionCountForSlide(slideType, slide);
     if (!optionCount)
       return badRequest(
         res,
@@ -385,7 +352,7 @@ export async function handleFollowInteractionFeedback(
       return badRequest(res, 'you can only submit feedback on the current slide');
 
     const slideType = String(state.slideType || '');
-    if (slideType !== 'feedback-slide')
+    if (liveInteractionKind(slideType) !== 'feedback')
       return badRequest(res, 'current slide is not a feedback slide');
 
     const body = await json(req);

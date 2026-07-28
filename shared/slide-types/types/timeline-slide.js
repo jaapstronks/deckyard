@@ -62,6 +62,7 @@ function itemHtml(item, idx, total) {
 
 export default {
   structure: 'collection',
+  runtime: 'static',
   label: 'Timeline',
   fields: [
     {

@@ -2,6 +2,10 @@ import { debugLog } from '../../lib/util/debug.js';
 import { createFollowInteractionStorage } from './interactions/storage.js';
 import { createFollowInteractionLocalCache } from './interactions/local-cache.js';
 import { renderLikertSliderUi } from './interactions/likert-slider-ui.js';
+import {
+  isLiveSlideType,
+  liveInteractionKind,
+} from '../../../shared/slide-types/runtime.js';
 
 function safeObj(v) {
   return v && typeof v === 'object' ? v : null;
@@ -23,6 +27,11 @@ export function createFollowInteractionController({
   let capabilities = null;
   let currentSlideId = '';
   let currentSlideType = '';
+  // Whether the slide the audience is looking at collects free text rather than
+  // a choice. Asks the type's declared capability instead of recognising a name
+  // — this module was one of nine that kept its own copy of the live four. See
+  // shared/slide-types/runtime.js.
+  const isFeedbackSlide = () => liveInteractionKind(currentSlideType) === 'feedback';
   let model = null; // { interaction, interactionState }
   let busy = false;
   // Likert slider UX: SSE updates can arrive while the user is dragging the range input.
@@ -80,7 +89,7 @@ export function createFollowInteractionController({
       pendingRenderAfterDrag = true;
       return;
     }
-    if (feedbackEditActive && currentSlideType === 'feedback-slide') {
+    if (feedbackEditActive && isFeedbackSlide()) {
       pendingRenderAfterFeedbackEdit = true;
       return;
     }
@@ -134,7 +143,7 @@ export function createFollowInteractionController({
     const type = String(interaction.type || '');
     const isSliderLikert =
       type === 'likert' && currentSlideType === 'likert-slider-slide';
-    const isFeedback = type === 'feedback' && currentSlideType === 'feedback-slide';
+    const isFeedback = type === 'feedback' && isFeedbackSlide();
 
     const vote = async (idx) => {
       if (busy || !open) return;
@@ -428,14 +437,7 @@ export function createFollowInteractionController({
 
   const refreshCurrent = async () => {
     if (!isActive()) return false;
-    if (
-      !currentSlideId ||
-      (currentSlideType !== 'poll-slide' &&
-        currentSlideType !== 'likert-slide' &&
-        currentSlideType !== 'likert-slider-slide' &&
-        currentSlideType !== 'feedback-slide')
-    )
-      return false;
+    if (!currentSlideId || !isLiveSlideType(currentSlideType)) return false;
     try {
       const lang = String(getLang?.() || '').trim();
       const base = `/api/follow/${encodeURIComponent(
@@ -452,16 +454,12 @@ export function createFollowInteractionController({
       }
       model = {
         interaction: resp?.interaction || null,
-        interactionState:
-          currentSlideType === 'feedback-slide'
-            ? applyLocalFeedbackToState(
-                currentSlideId,
-                resp?.interactionState || null
-              )
-            : applyLocalVoteToState(
-                currentSlideId,
-                resp?.interactionState || null
-              ),
+        interactionState: isFeedbackSlide()
+          ? applyLocalFeedbackToState(
+              currentSlideId,
+              resp?.interactionState || null
+            )
+          : applyLocalVoteToState(currentSlideId, resp?.interactionState || null),
       };
       render();
       return true;
@@ -505,10 +503,9 @@ export function createFollowInteractionController({
     if (!slideId || slideId !== currentSlideId) return;
     // SSE broadcasts aggregate-only interaction state (may omit per-device `myVote`).
     // Always apply the local vote cache to keep UI stable.
-    const next =
-      currentSlideType === 'feedback-slide'
-        ? applyLocalFeedbackToState(slideId, safeObj(data))
-        : applyLocalVoteToState(slideId, safeObj(data));
+    const next = isFeedbackSlide()
+      ? applyLocalFeedbackToState(slideId, safeObj(data))
+      : applyLocalVoteToState(slideId, safeObj(data));
 
     // Only re-render if something meaningful changed (e.g., open/closed state).
     // Aggregate vote counts don't need to trigger re-renders - they just cause
@@ -527,7 +524,7 @@ export function createFollowInteractionController({
       pendingRenderAfterDrag = true;
       return;
     }
-    if (feedbackEditActive && currentSlideType === 'feedback-slide') {
+    if (feedbackEditActive && isFeedbackSlide()) {
       pendingRenderAfterFeedbackEdit = true;
       return;
     }

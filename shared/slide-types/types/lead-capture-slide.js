@@ -3,6 +3,10 @@ import { renderMarkdown } from '../../markdown.js';
 
 export default {
   structure: 'singleton',
+  // `static` even though the form collects: submissions go to lead storage
+  // over their own endpoint, never into the presenting session. `live` means
+  // the session aggregates answers, which no code path here does.
+  runtime: 'static',
   label: 'Lead Capture',
   // PARKED, not superseded (decision 2026-07-24). The form is consent-gated on
   // marketing cookies (see lead-capture-runtime.js → hasMarketingConsent), but

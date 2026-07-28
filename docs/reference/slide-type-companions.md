@@ -131,14 +131,19 @@ a decision somebody writes down, not something that happens by omission. The
 `ai` key means the same thing on a field as it does on a type
 (`isAgentOptOut`), one level down.
 
-## Also owed, but not a companion: `structure`
+## Also owed, but not a companion: `structure` and `runtime`
 
 Since #453 every **core** type must declare `structure` on its definition —
-`singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`.
-It is not in the matrix above and should not be: a companion is a hand-written
-entry in *another* file that degrades quietly when missing, whereas `structure`
-lives on the definition itself and its absence is a hard CI failure. Different
-shape, different gate — `tests/slide-type-structure.test.js` rather than
+`singleton`, `collection`, `fixed-collection`, `tabular`, `dataset` or `chrome`
+— and since the `runtime` facet landed it must also declare `runtime`:
+`static`, `timed` or `live`. A `live` type owes one key more, `interaction`
+(`poll` / `likert` / `feedback`), which is the contract `live` implies.
+
+Neither is in the matrix above, and neither should be: a companion is a
+hand-written entry in *another* file that degrades quietly when missing, whereas
+these live on the definition itself and their absence is a hard CI failure.
+Different shape, different gate — `tests/slide-type-structure.test.js` and
+`tests/slide-type-runtime.test.js` rather than
 `slide-type-companion-coverage.test.js`.
 
 The reason it is mentioned here anyway is that this page is where a contributor
@@ -147,8 +152,9 @@ not a companion. Fork-local types in `custom/slide-types/` are **not** required 
 declare it (the gate iterates `CORE_SLIDE_TYPE_NAMES`), the same core-only line
 the matrix draws.
 
-What the facet is for, and the four assertions that keep the declaration honest,
-are in [`slide-type-structure.md`](slide-type-structure.md).
+What the facets are for, and the assertions that keep the declarations honest,
+are in [`slide-type-structure.md`](slide-type-structure.md) and
+[`slide-type-runtime.md`](slide-type-runtime.md).
 
 ## Deliberately not in the matrix
 
@@ -194,18 +200,25 @@ gate is on the accounting, not the contents — a module may be a closed-set
 special case; it may not be a surprise.
 
 The threshold is the whole judgement, so it is written down rather than implied:
-94 modules *name* a type, 46 branch on three or more. One or two names reads as
-type-specific behaviour (the custom-HTML guard exists for `custom-html-slide`)
-and no future type can be "missing" from it; three or more is where a module
-stops being about a type and becomes a table *of* types.
+94 modules *name* a type, 46 branched on three or more when the inventory was
+first taken. One or two names reads as type-specific behaviour (the custom-HTML
+guard exists for `custom-html-slide`) and no future type can be "missing" from
+it; three or more is where a module stops being about a type and becomes a table
+*of* types.
 
 | Kind | Count | What it means |
 |---|---|---|
 | `table` | 16 | a row per eligible type; must name a companion, which gates it both ways |
 | `sparse` | 13 | intentionally partial (repair rules, conversion pairs, the CSS map); only staleness is a defect |
-| `specific` | 15 | a closed set of types that behave differently; not a table |
+| `specific` | 5 | a closed set of types that behave differently; not a table |
 | `generated` | 1 | produced by a script from per-type sources, so it cannot drift |
 | `source` | 1 | the registry — the list every other list derives from |
+
+`specific` was 15 at the first reading. Ten of those entries left when the
+`runtime` facet landed and the modules started asking the type instead of
+recognising its name — which is the shape of progress this gate exists to
+produce: the count drops because knowledge moved onto the types, not because the
+threshold moved.
 
 `server/utils/ai/schemas/refined-slide.js` and
 `server/utils/ai/validate-slide-structure.js` used to carry `promote: true`:
@@ -228,19 +241,22 @@ signpost to the following promotion.
 
 ### What the inventory measured
 
-**Nine `specific`-kind modules re-derive the live-interaction quartet**
+**Nine `specific`-kind modules re-derived the live-interaction quartet**
 (`poll` / `likert` / `likert-slider` / `feedback`) by hand, to answer one
-question: does this slide collect answers from the audience? None of them wants
-to know which type it is; they all want a capability the type does not declare.
-They already disagree at the edges — the presenter's live set includes
-`follow-invite`, the session storage covers three of the four — and every one is
-a place a fifth interaction type would be forgotten.
+question: does this slide collect answers from the audience? None of them wanted
+to know which type it was; they all wanted a capability the type did not declare.
+They had already drifted at the edges — the presenter's live set included
+`follow-invite`, the session storage covered three of the four — and every one
+was a place a fifth interaction type would be forgotten.
 
 That is the `runtime` facet, which
-[`slide-type-structure.md`](./slide-type-structure.md) deferred with "real, but
-no consumer yet". There are nine consumers. The test asserts a *floor* on that
-count, so it fails when the number drops — which is the moment to delete it and
-point at the facet instead.
+[`slide-type-structure.md`](./slide-type-structure.md) had deferred with "real,
+but no consumer yet". There were nine. The test asserted a *floor* on that count
+so it would fail the moment the number dropped, which was the signal to delete
+it and point at the facet instead — and that is what happened: see
+[`slide-type-runtime.md`](./slide-type-runtime.md). The measurement survives as
+a ceiling in `tests/slide-type-runtime.test.js`: no module may write the live
+set out again.
 
 **Conversion knowledge lives in three places**: `shared/slide-types/convert.js`,
 `client/views/editor/editor-form/header-actions.js` and

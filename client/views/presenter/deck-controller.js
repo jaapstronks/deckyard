@@ -1,4 +1,5 @@
 import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
+import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { morphTransition } from './morph-engine.js';
 
 export function filterPresentSlides(presentation) {
@@ -110,15 +111,17 @@ export function createPresenterDeckController({
         'data-slide-id': s.id,
       });
       
-      // Pass follow codes for follow-invite slides during presentations
+      // Pass follow codes to the slides that render a join hint: the invite
+      // itself, plus every live slide (their renderers show "join with code
+      // ABCD" beside the question). This used to name poll and feedback
+      // literally, which was right only for as long as those were the only two
+      // live renderers that read `ctx.followCodes` — a fifth interaction type
+      // would silently not get them. Passing codes to a renderer that ignores
+      // them is free, so the capability is the safe line to draw here.
       const renderOptions = { theme, mode: 'present' };
       // Also pass `presentationId` so slides can render follow URLs/QR codes.
       renderOptions.presentationId = presentationId;
-      if (
-        s?.type === 'follow-invite-slide' ||
-        s?.type === 'poll-slide' ||
-        s?.type === 'feedback-slide'
-      ) {
+      if (s?.type === 'follow-invite-slide' || isLiveSlideType(s?.type)) {
         const followCodes = getFollowCodes?.();
         if (followCodes) {
           renderOptions.followCodes = followCodes;
