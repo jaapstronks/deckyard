@@ -14,7 +14,7 @@
    embed DOM — it has a full presenter topbar, prev/next/loop nav and the
    pdf/png/print toolbars — so it needs a few more chrome selectors than
    embed.css carries: the whole .btn family (incl. .btn-primary and
-   .btn.is-compact) and .row.
+   .btn.is-compact), .form-input (the PNG toolbar's scale picker) and .row.
 
    The presenter chrome itself (.presenter-*, .deck-slide, .sr-only,
    .skip-link, progress bar) already lives in slides.css; those rules reference
@@ -95,6 +95,33 @@ body {
 .btn.is-compact {
   padding: var(--ps-space-1) var(--ps-space-3);
   font-size: var(--ps-text-sm);
+}
+
+/* Form input — the PNG-export toolbar renders a <select class="form-input">
+   (the scale picker). Also copied verbatim from app/components.css. */
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-base);
+  line-height: 1.5;
+  outline: none;
+  transition: all var(--ps-transition-fast);
+  box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
+}
+.form-input::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+.form-input:focus {
+  border-color: hsl(var(--app-border-focus));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow:
+    inset 0 1px 2px hsl(var(--app-text-primary) / 0.03),
+    0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
 }
 
 /* Row layout util — the exported presenter topbar uses <div class="row">.

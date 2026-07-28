@@ -74,10 +74,10 @@ slide-type picker, settings, analytics) that no exported DOM ever references —
 it only shipped because the bundle used to inline `app.css` wholesale, which put
 a ~1 MB `<style>` block on every download.
 
-`export.css` is a thin chrome layer: `shared/ui-tokens.css` (the design tokens
-the presenter chrome in `slides.css` reads unfallbacked), `shared/fonts.css`,
-and the `.btn` family + `.row` that the exported deck nav and the pdf/png/print
-toolbars use. The presenter chrome itself (`.presenter-*`, `.deck-slide`,
+`export.css` is a thin chrome layer: `client/styles/shared/ui-tokens.css` (the
+design tokens the presenter chrome in `slides.css` reads unfallbacked),
+`client/styles/shared/fonts.css`, and the `.btn` family + `.form-input` + `.row`
+that the exported deck nav and the pdf/png/print toolbars use. The presenter chrome itself (`.presenter-*`, `.deck-slide`,
 `.sr-only`, `.skip-link`, progress bar) already lives in `slides.css`. This
 mirrors `embed.css`, the iframe viewer's entrypoint, which drops `app.css` the
 same way.

@@ -40,6 +40,7 @@ const VIEWER_NEEDED = [
   '.btn', // deck nav + pdf/png/print toolbars
   '.btn-primary', // pdf/png/print toolbars
   '.btn-secondary', // deck nav
+  '.form-input', // png-slides toolbar scale picker
   '.row', // exported presenter topbar
   '.presenter-shell', // slides.css chrome
   '.presenter-progress', // slides.css chrome
