@@ -63,7 +63,31 @@ Everything the page needs is embedded into the one HTML file:
 | Lucide icon SVGs / client assets | base64 data URLs | same image-embed pass (`includeClient: true`) |
 | Theme fonts (curated + uploaded) | base64 `@font-face` data URLs | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
 | Shared / UI fonts referenced by `/assets/...` in the bundled CSS | base64 data URLs, in place | `inlineLocalFontUrls` (`embed-fonts.js`) |
-| App + slide CSS | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle` |
+| Viewer chrome + slide CSS | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle` |
+
+### Which CSS ships — the viewer boundary
+
+An exported deck is a **viewer**, not the editor, so `loadExportCssBundle`
+bundles `client/styles/export.css`, **not** the editor entrypoint `app.css`.
+`app.css` drags in ~630 KB of editor-only CSS (modals, inspectors, the
+slide-type picker, settings, analytics) that no exported DOM ever references —
+it only shipped because the bundle used to inline `app.css` wholesale, which put
+a ~1 MB `<style>` block on every download.
+
+`export.css` is a thin chrome layer: `shared/ui-tokens.css` (the design tokens
+the presenter chrome in `slides.css` reads unfallbacked), `shared/fonts.css`,
+and the `.btn` family + `.row` that the exported deck nav and the pdf/png/print
+toolbars use. The presenter chrome itself (`.presenter-*`, `.deck-slide`,
+`.sr-only`, `.skip-link`, progress bar) already lives in `slides.css`. This
+mirrors `embed.css`, the iframe viewer's entrypoint, which drops `app.css` the
+same way.
+
+The boundary is a maintained line: `tests/export-css-boundary.test.js` fails if
+editor-only selectors creep back in or if a viewer selector the DOM needs goes
+missing. If you change `.btn` in `app/components.css`, mirror it in `export.css`
+(the rules are copied verbatim so exported buttons look identical). Trimming the
+remaining bulk — `slides.css` is ~310 KB of per-slide-type CSS shipped whole —
+is separate, out-of-scope work.
 
 `inlineLocalFontUrls` rewrites any root-relative `url('/…​.woff2')` in the CSS
 to a data URL by reading the file from the repo. It covers the shared UI

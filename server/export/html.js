@@ -42,8 +42,8 @@ export async function buildStandaloneHtml(
   // fonts are already embedded via css.fontCss; this only embeds the handful
   // of small weights the CSS actually references (a few KB each), not the
   // whole ~2.5 MB font library. See docs/reference/standalone-html-export.md.
-  const [appCss, slidesCss] = await Promise.all([
-    inlineLocalFontUrls(repoRoot, css.appCss),
+  const [chromeCss, slidesCss] = await Promise.all([
+    inlineLocalFontUrls(repoRoot, css.chromeCss),
     inlineLocalFontUrls(repoRoot, css.slidesCss),
   ]);
 
@@ -145,7 +145,7 @@ export async function buildStandaloneHtml(
     ${buildPrismKatexCdnTags(highlightNeeds)}
     <style>
 ${css.fontCss}
-${appCss}
+${chromeCss}
 ${css.themeVarsCss}
 ${css.themeCss}
 ${slidesCss}

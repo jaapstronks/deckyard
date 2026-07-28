@@ -28,8 +28,12 @@ import { mapLimit, exportEmbedConcurrency } from '../utils/map-limit.js';
  * @returns {Promise<Object>} CSS bundle
  */
 export async function loadExportCssBundle(repoRoot, theme, watermark) {
-  const [appCss, themeCss, slidesCss, fontCss] = await Promise.all([
-    readCssWithImports(repoRoot, path.join(repoRoot, 'client', 'styles', 'app.css')),
+  // `chromeCss` is the viewer/export chrome entrypoint (export.css), NOT the
+  // editor's app.css. An exported deck is a viewer: it needs slide CSS + theme
+  // + a thin presenter/toolbar chrome layer, never the ~620 KB of editor-only
+  // CSS app.css drags in. See client/styles/export.css for the boundary.
+  const [chromeCss, themeCss, slidesCss, fontCss] = await Promise.all([
+    readCssWithImports(repoRoot, path.join(repoRoot, 'client', 'styles', 'export.css')),
     readTextIfExists(path.join(repoRoot, 'client', 'styles', 'theme.css')),
     readCssWithImports(repoRoot, path.join(repoRoot, 'client', 'styles', 'slides.css')),
     buildEmbeddedFontCss(repoRoot, theme),
@@ -40,7 +44,7 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
   const wmCss = wmOn ? sandboxWatermarkCss() : '';
   const wmHtml = wmOn ? sandboxWatermarkHtml() : '';
 
-  return { appCss, themeCss, slidesCss, fontCss, themeVarsCss, wmOn, wmCss, wmHtml };
+  return { chromeCss, themeCss, slidesCss, fontCss, themeVarsCss, wmOn, wmCss, wmHtml };
 }
 
 /**
@@ -53,7 +57,7 @@ export async function loadExportCssBundle(repoRoot, theme, watermark) {
 export function buildExportStyleContent(bundle) {
   return [
     bundle.fontCss,
-    stripFontFacesFromCss(bundle.appCss),
+    stripFontFacesFromCss(bundle.chromeCss),
     bundle.themeVarsCss,
     bundle.themeCss,
     stripFontFacesFromCss(bundle.slidesCss),

@@ -1,0 +1,116 @@
+/* Export / download viewer CSS entrypoint.
+
+   A downloaded or rendered deck is a *viewer*, not the editor. It needs the
+   slide CSS (bundled separately as slides.css), the theme layer (theme.css +
+   per-theme vars) and a thin layer of presenter/toolbar chrome — but never the
+   ~620 KB of editor-only CSS that app.css drags in (app/components.css,
+   base/01-core, base/03-controls-and-forms, base/04-editor-and-misc: modals,
+   inspectors, the slide-type picker, settings, analytics, …). None of those
+   selectors appear in an exported deck's DOM; they only shipped because
+   loadExportCssBundle inlined app.css wholesale.
+
+   This mirrors embed.css (the iframe viewer), which already proves a deck
+   viewer needs only tokens + slides.css. The export DOM is a superset of the
+   embed DOM — it has a full presenter topbar, prev/next/loop nav and the
+   pdf/png/print toolbars — so it needs a few more chrome selectors than
+   embed.css carries: the whole .btn family (incl. .btn-primary and
+   .btn.is-compact) and .row.
+
+   The presenter chrome itself (.presenter-*, .deck-slide, .sr-only,
+   .skip-link, progress bar) already lives in slides.css; those rules reference
+   --app-* / --ps-* / --z-skip-link design tokens with no inline fallback, so
+   the one thing this file MUST provide for that chrome to render is
+   shared/ui-tokens.css.
+
+   Why the .btn rules are copied here rather than shared with app/components.css:
+   keeping them byte-for-byte identical to the editor's current buttons is what
+   makes an exported deck look the same before and after this split. A future
+   consolidation of the three .btn copies (app / embed / export) into one shared
+   partial is a separate, editor-touching refactor — see the PR discussion. If
+   you change .btn in app/components.css, mirror the change here. */
+
+@import url('./shared/fonts.css');
+@import url('./shared/ui-tokens.css');
+
+/* Base body chrome (from app/tokens.css — the export never loads app.css). */
+body {
+  font-family: var(--ps-font-sans);
+  margin: 0;
+  min-height: 100vh;
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-base));
+}
+
+/* Button family — copied verbatim from app/components.css so exported deck nav
+   (prev/next/loop) and the pdf/png/print toolbars render identically. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-4);
+  border-radius: var(--ps-radius-md);
+  text-decoration: none;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  line-height: 1.25;
+  border: 1px solid hsl(var(--app-border-default));
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ps-transition-fast);
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+.btn-primary {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+}
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
+}
+.btn-secondary {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-strong));
+  box-shadow: var(--app-shadow-sm);
+  color: hsl(var(--app-text-primary));
+}
+.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+}
+.btn.is-compact {
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+}
+
+/* Row layout util — the exported presenter topbar uses <div class="row">.
+   Copied (unscoped) from base/02-lists-and-thumbs/50-layout-utils.css, where it
+   is scoped under .presenter-shell among other app shells. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+.row.spread {
+  justify-content: space-between;
+}
+.row.is-wrap {
+  flex-wrap: wrap;
+}
+.row.is-end {
+  justify-content: flex-end;
+}
