@@ -214,6 +214,16 @@ test('single-workspace session resolution issues no membership lookup', async ()
   );
 });
 
+test('a single-workspace session carries no membership role', async () => {
+  seedSingleOrg();
+  const login = await auth.verifyLoginAsync('alice@example.com', 'correct horse battery', ctx);
+  const resolved = await auth.getUserFromRequestAsync(requestWithSession(login), ctx);
+
+  // There is one organization and no membership to read, so the instance-wide
+  // role is the only one there is. The UI reads this as "fall back to isAdmin".
+  assert.equal(resolved.organizationRole, null);
+});
+
 // ---------------------------------------------------------------------------
 // Identity lookups used by the auth-adjacent routes
 // ---------------------------------------------------------------------------
