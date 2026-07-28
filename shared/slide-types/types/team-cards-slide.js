@@ -219,10 +219,12 @@ export default {
     },
 
     // Legacy 1..12 cards: image + name + byline + optional explicit alt (author intent) + focus.
-    // `ai: false` on the whole block (applied below): these mirror members[],
-    // and an agent offered both shapes will sooner or later fill the one the
-    // editor treats as the fallback. Same call icon-card-grid-slide makes for
-    // its card{N}* fields.
+    // `ai: false` + `deprecated: true` on the whole block (applied below):
+    // these mirror members[], and an agent offered both shapes will sooner or
+    // later fill the one the editor treats as the fallback. `deprecated` also
+    // keeps them out of the published JSON Schema, so the contract shows
+    // members[] rather than 175 numbered keys. Same call icon-card-grid-slide
+    // makes for its card{N}* fields.
     ...Array.from({ length: MAX_CARDS }, (_v, idx) => {
       const i = idx + 1;
       return [
@@ -281,7 +283,7 @@ export default {
       ];
     })
       .flat()
-      .map((field) => ({ ...field, ai: false })),
+      .map((field) => ({ ...field, ai: false, deprecated: true })),
   ],
 
   defaults: {

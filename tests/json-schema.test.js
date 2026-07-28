@@ -82,6 +82,67 @@ test('items fields recurse into an object schema shaped by itemFields', () => {
   assert.deepEqual(schema.items.required, ['label']);
 });
 
+// --- what the schema publishes --------------------------------------------
+
+test('deprecated and hidden fields stay out of the published contract', () => {
+  const schema = slideTypeContentSchema('demo-slide', {
+    fields: [
+      { key: 'title', type: 'string', required: true },
+      { key: 'legacyCount', type: 'string', deprecated: true, required: true },
+      { key: 'legacyMirror', type: 'string', hidden: true },
+      // `ai: false` withholds a field from agents, not from the contract: it is
+      // a live field an author fills (see video-slide.watchUrl).
+      { key: 'watchUrl', type: 'string', ai: false },
+    ],
+  });
+  assert.deepEqual(Object.keys(schema.properties), ['title', 'watchUrl']);
+  // A dropped field cannot be required either.
+  assert.deepEqual(schema.required, ['title']);
+  // Still lenient: a deck carrying the legacy key validates.
+  assert.deepEqual(
+    validate(schema, { title: 'x', legacyCount: '3', legacyMirror: 'y' }, 'demo-slide', []),
+    []
+  );
+});
+
+test('itemFields are filtered the same way', () => {
+  const schema = fieldToJsonSchema({
+    type: 'items',
+    key: 'rows',
+    itemFields: [
+      { key: 'label', type: 'string', required: true },
+      { key: 'oldLabel', type: 'string', deprecated: true, required: true },
+      { key: 'mirror', type: 'string', hidden: true },
+    ],
+  });
+  assert.deepEqual(Object.keys(schema.items.properties), ['label']);
+  assert.deepEqual(schema.items.required, ['label']);
+});
+
+test('team-cards publishes members[], not its 175 numbered mirror keys', () => {
+  // The concrete leak this filter closes: `fields[]` is the editor's list and
+  // carries card1Image…card25Linkedin beside members[]. Publishing those under
+  // `properties` stated the legacy representation as the contract.
+  const schema = slideTypeContentSchema('team-cards-slide', SLIDE_TYPES['team-cards-slide']);
+  const keys = Object.keys(schema.properties);
+  assert.ok(keys.includes('members'), 'the array shape is the contract');
+  assert.deepEqual(keys.filter((k) => /^card\d/.test(k)), []);
+  assert.ok(!keys.includes('cardCount'));
+});
+
+test('no core type publishes a field it marked deprecated or hidden', () => {
+  const leaks = [];
+  for (const [name, def] of CORE_ENTRIES) {
+    const published = new Set(Object.keys(slideTypeContentSchema(name, def).properties));
+    for (const field of def.fields || []) {
+      if (!field?.key) continue;
+      if (field.deprecated !== true && field.hidden !== true) continue;
+      if (published.has(field.key)) leaks.push(`${name}.${field.key}`);
+    }
+  }
+  assert.deepEqual(leaks, [], `legacy fields published as contract:\n${leaks.join('\n')}`);
+});
+
 // --- deck schema structure ------------------------------------------------
 
 test('the deck schema is self-contained and discriminates content by type', () => {
