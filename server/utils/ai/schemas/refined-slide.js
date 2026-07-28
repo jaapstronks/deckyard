@@ -48,6 +48,37 @@ const metricSchema = z.object({
   note: z.string().max(80).optional(),
 });
 
+// Diagram-geometry item shapes. The canonical array is `items`; the legacy
+// `steps`/`stages` aliases carry the same shape (see the type definitions).
+const processItemSchema = z.object({
+  title: z.string().min(1).max(60),
+  text: z.string().max(200).optional(),
+});
+
+const funnelItemSchema = z.object({
+  label: z.string().min(1).max(60),
+  value: z.string().max(30).optional(),
+  text: z.string().max(120).optional(),
+});
+
+const pyramidLevelSchema = z.object({
+  label: z.string().min(1).max(60),
+  text: z.string().max(120).optional(),
+});
+
+const cycleItemSchema = z.object({
+  label: z.string().min(1).max(40),
+  text: z.string().max(80).optional(),
+});
+
+const galleryImageSchema = z.object({
+  src: z.string().min(1),
+  focusX: z.number().optional(),
+  focusY: z.number().optional(),
+  caption: z.string().max(100).optional(),
+  alt: z.string().max(200).optional(),
+}).passthrough();
+
 // =============================================================================
 // SLIDE CONTENT SCHEMAS
 // =============================================================================
@@ -67,9 +98,13 @@ const chapterTitleSlideSchema = z.object({
 }).passthrough();
 
 // Quote Slide (Phase 1 resolved)
+// `authorName` is required here rather than optional because the structural
+// validator used to check it and no longer does: quote-slide is a singleton, so
+// it owes no entry under the structure-validation rule. The check has to live
+// somewhere, and the field contract already says required.
 const quoteSlideSchema = z.object({
   quote: z.string().min(1).max(280),
-  authorName: z.string().max(80).optional(),
+  authorName: z.string().min(1).max(80),
   authorTitle: z.string().max(120).optional(),
 });
 
@@ -120,16 +155,6 @@ const iconCardGridSlideSchema = z.object({
   // Dynamic card fields validated separately
 }).passthrough();
 
-// Card Stack Slide
-const cardStackSlideSchema = z.object({
-  title: requiredTitleSchema,
-  subheading: subheadingSchema,
-  // Optional: items[] is the canonical card source (post-migration); cardCount
-  // is a legacy mirror. Widened to 1-6 to match the schema/enum.
-  cardCount: z.enum(['1', '2', '3', '4', '5', '6']).optional(),
-  // Dynamic card fields (items[] or numbered) validated separately.
-}).passthrough();
-
 // Text Blocks Slide
 // rows[] is the canonical shape (post-A0.4): an agent authors the array, which
 // carries up to 4 rows. The legacy numbered mirror below (row1Count, ...) is
@@ -170,13 +195,6 @@ const textBlocksSlideSchema = z.object({
   row3Color: z.enum(['yellow', 'black']).optional(),
 }).passthrough();
 
-// Content Columns Slide
-const contentColumnsSlideSchema = z.object({
-  title: titleSchema,
-  columnCount: z.enum(['1', '2', '3', '4', '5', '6', '7']),
-  background: backgroundSchema,
-}).passthrough();
-
 // Table Slide
 const tableSlideSchema = z.object({
   title: titleSchema,
@@ -203,12 +221,16 @@ const imageSlideSchema = z.object({
 }).passthrough();
 
 // Comparison Slide
+// Same move as quote-slide: the four side fields are `required: true` in the
+// field contract and were checked by the structural validator, which a singleton
+// no longer owes. Requiring them here keeps the refine phase warning about a
+// half-filled comparison.
 const comparisonSlideSchema = z.object({
   title: requiredTitleSchema,
-  leftTitle: z.string().max(80).optional(),
-  leftBody: z.string().max(800).optional(),
-  rightTitle: z.string().max(80).optional(),
-  rightBody: z.string().max(800).optional(),
+  leftTitle: z.string().min(1).max(80),
+  leftBody: z.string().min(1).max(800),
+  rightTitle: z.string().min(1).max(80),
+  rightBody: z.string().min(1).max(800),
   background: backgroundSchema,
 }).passthrough();
 
@@ -276,16 +298,109 @@ const feedbackSlideSchema = z.object({
   placeholder: z.string().max(100).optional(),
 }).passthrough();
 
-// Follow Invite Slide
-const followInviteSlideSchema = z.object({
+// Image + Text Slide — title and body are the required content; the image and
+// its many layout enums travel through untouched.
+const imageTextSlideSchema = z.object({
+  title: requiredTitleSchema,
+  body: z.string().min(1).max(3000),
+  caption: z.string().max(160).optional(),
+  alt: z.string().max(180).optional(),
+}).passthrough();
+
+// Embed Slide — an external URL in an iframe; embedUrl is the only required field.
+const embedSlideSchema = z.object({
+  title: titleSchema,
+  embedUrl: z.string().min(1).max(500),
+}).passthrough();
+
+// Countdown Slide — every field optional; the duration defaults when omitted.
+const countdownSlideSchema = z.object({
+  title: titleSchema,
+  durationMinutes: z.number().min(0).max(60).optional(),
+  durationSeconds: z.number().min(0).max(59).optional(),
+  zeroText: z.string().max(60).optional(),
+  background: backgroundSchema,
+}).passthrough();
+
+// Likert Slider Slide — a single question with two endpoint labels.
+const likertSliderSlideSchema = z.object({
+  question: z.string().min(1).max(200),
+  minLabel: z.string().max(120).optional(),
+  maxLabel: z.string().max(120).optional(),
+}).passthrough();
+
+// Process Slide — 3-7 ordered steps. `items` is canonical; `steps` is the
+// legacy alias with the same shape (validated, not required, so an alias-only
+// slide still passes).
+const processSlideSchema = z.object({
+  title: requiredTitleSchema,
+  subheading: subheadingSchema,
+  bottomSubheading: subheadingSchema,
+  items: z.array(processItemSchema).min(3).max(7).optional(),
+  steps: z.array(processItemSchema).min(3).max(7).optional(),
+  background: backgroundSchema,
+}).passthrough();
+
+// Funnel Slide — 3-6 stages. `items` canonical, `stages` legacy alias.
+const funnelSlideSchema = z.object({
+  title: requiredTitleSchema,
+  subheading: subheadingSchema,
+  bottomSubheading: subheadingSchema,
+  items: z.array(funnelItemSchema).min(3).max(6).optional(),
+  stages: z.array(funnelItemSchema).min(3).max(6).optional(),
+  background: backgroundSchema,
+}).passthrough();
+
+// Pyramid Slide — 3-6 levels; only `levels` exists (no alias).
+const pyramidSlideSchema = z.object({
+  title: requiredTitleSchema,
+  subheading: subheadingSchema,
+  bottomSubheading: subheadingSchema,
+  levels: z.array(pyramidLevelSchema).min(3).max(6).optional(),
+  background: backgroundSchema,
+}).passthrough();
+
+// Cycle Slide — 3-6 items around a loop. `items` canonical, `stages` legacy alias.
+const cycleSlideSchema = z.object({
+  title: requiredTitleSchema,
+  subheading: subheadingSchema,
+  bottomSubheading: subheadingSchema,
+  centerLabel: z.string().max(60).optional(),
+  items: z.array(cycleItemSchema).min(3).max(6).optional(),
+  stages: z.array(cycleItemSchema).min(3).max(6).optional(),
+  background: backgroundSchema,
+}).passthrough();
+
+// Gallery Slide — 2-6 images; `images` is the required collection.
+const gallerySlideSchema = z.object({
   title: titleSchema,
   subheading: subheadingSchema,
+  bottomSubheading: subheadingSchema,
+  images: z.array(galleryImageSchema).min(2).max(6),
+  background: backgroundSchema,
+}).passthrough();
+
+// End Slide — a closing card: title plus optional contact/social lines.
+const endSlideSchema = z.object({
+  title: requiredTitleSchema,
+  body: z.string().max(500).optional(),
+  contactName: z.string().max(80).optional(),
+  contactEmail: z.string().max(120).optional(),
+  contactUrl: z.string().max(200).optional(),
+  background: backgroundSchema,
 }).passthrough();
 
 // =============================================================================
 // SCHEMA REGISTRY
 // =============================================================================
 
+// Keyed by type name. Coverage rule (the `refine-schema` companion in
+// tests/helpers/slide-type-companions.js): every core type an agent can emit —
+// i.e. every type that is NOT agent-opt-out (`deprecated` / `ai: false`) — owes
+// a schema here. The refine phase only ever validates agent output, so a
+// deprecated or withheld type never reaches this map; a missing entry for an
+// offered type means its refined content is silently unvalidated. Both
+// directions are gated by tests/slide-type-companion-coverage.test.js.
 const SLIDE_SCHEMAS = {
   'title-slide': titleSlideSchema,
   'chapter-title-slide': chapterTitleSlideSchema,
@@ -293,25 +408,31 @@ const SLIDE_SCHEMAS = {
   'payoff-slide': payoffSlideSchema,
   'content-slide': contentSlideSchema,
   'list-slide': lijstjeSlideSchema,
-  'lijstje-slide': lijstjeSlideSchema, // Back-compat alias
   'timeline-slide': timelineSlideSchema,
   'kpi-metrics-slide': kpiMetricsSlideSchema,
   'icon-card-grid-slide': iconCardGridSlideSchema,
-  'card-stack-slide': cardStackSlideSchema,
   'text-blocks-slide': textBlocksSlideSchema,
-  'content-columns-slide': contentColumnsSlideSchema,
   'table-slide': tableSlideSchema,
   'chart-slide': chartSlideSchema,
   'image-slide': imageSlideSchema,
+  'image-text-slide': imageTextSlideSchema,
   'comparison-slide': comparisonSlideSchema,
   'matrix-slide': matrixSlideSchema,
   'video-slide': videoSlideSchema,
+  'embed-slide': embedSlideSchema,
+  'countdown-slide': countdownSlideSchema,
   'team-cards-slide': teamCardsSlideSchema,
   'logo-wall-slide': logoWallSlideSchema,
+  'gallery-slide': gallerySlideSchema,
   'poll-slide': pollSlideSchema,
   'likert-slide': likertSlideSchema,
+  'likert-slider-slide': likertSliderSlideSchema,
   'feedback-slide': feedbackSlideSchema,
-  'follow-invite-slide': followInviteSlideSchema,
+  'process-slide': processSlideSchema,
+  'funnel-slide': funnelSlideSchema,
+  'pyramid-slide': pyramidSlideSchema,
+  'cycle-slide': cycleSlideSchema,
+  'end-slide': endSlideSchema,
 };
 
 // =============================================================================
@@ -394,9 +515,7 @@ export {
   timelineSlideSchema,
   kpiMetricsSlideSchema,
   iconCardGridSlideSchema,
-  cardStackSlideSchema,
   textBlocksSlideSchema,
-  contentColumnsSlideSchema,
   tableSlideSchema,
   chartSlideSchema,
   SLIDE_SCHEMAS,
