@@ -65,22 +65,49 @@ export async function getUserByEmailGlobal(email) {
  * back to their oldest remaining membership instead of being logged out
  * entirely or silently dropped into the default organization.
  *
+ * The membership row that decides this also carries the person's role in that
+ * organization (owner/admin/member), which is what the UI must gate on rather
+ * than the instance-wide `users.role`. Returning both from one call is what
+ * keeps that role free: the membership list is already read here, so no caller
+ * has to look it up a second time.
+ *
+ * @param {string} userId - `users.id` of the resolved person
+ * @param {string} [requestedOrganizationId] - Organization from the session
+ * @returns {Promise<{organizationId: string|null, role: string|null}>} - The
+ *   organization to act in plus the role held there. `organizationId` is null
+ *   when the person holds no membership at all (the caller must refuse the
+ *   request). `role` is null in single-workspace mode, where memberships are
+ *   not consulted and the instance-wide role is the only one there is.
+ */
+export async function resolveActiveMembership(userId, requestedOrganizationId) {
+  if (!isMultiWorkspaceEnabled())
+    return { organizationId: getDefaultOrganizationId(), role: null };
+  if (!userId) return { organizationId: null, role: null };
+
+  // Ordered by joined_at ascending, so the fallback is deterministic.
+  const memberships = await listUserOrganizations(userId);
+  if (!memberships.length) return { organizationId: null, role: null };
+
+  const requested =
+    requestedOrganizationId &&
+    memberships.find((org) => org.id === requestedOrganizationId);
+  const active = requested || memberships[0];
+
+  return { organizationId: active.id, role: active.membership?.role || null };
+}
+
+/**
+ * Resolve which organization a session is allowed to act in.
+ *
+ * Thin wrapper over {@link resolveActiveMembership} for callers that only need
+ * the organization.
+ *
  * @param {string} userId - `users.id` of the resolved person
  * @param {string} [requestedOrganizationId] - Organization from the session
  * @returns {Promise<string|null>} - Organization to act in, or null when the
  *   person holds no membership at all (the caller must refuse the request)
  */
 export async function resolveActiveOrganization(userId, requestedOrganizationId) {
-  if (!isMultiWorkspaceEnabled()) return getDefaultOrganizationId();
-  if (!userId) return null;
-
-  // Ordered by joined_at ascending, so the fallback is deterministic.
-  const memberships = await listUserOrganizations(userId);
-  if (!memberships.length) return null;
-
-  if (requestedOrganizationId && memberships.some((org) => org.id === requestedOrganizationId)) {
-    return requestedOrganizationId;
-  }
-
-  return memberships[0].id;
+  const { organizationId } = await resolveActiveMembership(userId, requestedOrganizationId);
+  return organizationId;
 }

@@ -39,7 +39,7 @@ const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
 const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 const ORG_GONE = '00000000-0000-0000-0000-0000000000cc';
 
-const { createFakeDb } = await import('./helpers/fake-db.js');
+const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
@@ -249,6 +249,79 @@ test('resolveActiveOrganization is the single decision point', async () => {
   assert.equal(await identity.resolveActiveOrganization('user-alice', undefined), ORG_A);
   assert.equal(await identity.resolveActiveOrganization('user-nobody', ORG_A), null);
   assert.equal(await identity.resolveActiveOrganization(null, ORG_A), null);
+});
+
+// ---------------------------------------------------------------------------
+// The membership role travels with the session (organization UI, slice 2)
+// ---------------------------------------------------------------------------
+
+test('the session carries the role held in the active organization', async () => {
+  seedMultiOrg();
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctxIn(ORG_A)
+  );
+
+  // Alice is a plain member of ORG_A and the owner of ORG_B. The role must
+  // follow the organization the session is in, not the person.
+  const inA = await auth.getUserFromRequestAsync(requestWithSession(login, ORG_A), {});
+  assert.equal(inA.organizationRole, 'member');
+
+  const inB = await auth.getUserFromRequestAsync(requestWithSession(login, ORG_B), {});
+  assert.equal(inB.organizationRole, 'owner');
+});
+
+test('the role follows the fallback when the requested membership is gone', async () => {
+  seedMultiOrg();
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctxIn(ORG_A)
+  );
+
+  const resolved = await auth.getUserFromRequestAsync(requestWithSession(login, ORG_GONE), {});
+  assert.equal(resolved.organizationId, ORG_A);
+  assert.equal(resolved.organizationRole, 'member', 'the role belongs to the org fallen back to');
+});
+
+test('the role is read from the membership list the session already needs', async () => {
+  const db = seedMultiOrg();
+  const login = await auth.verifyLoginAsync(
+    'alice@example.com',
+    'correct horse battery',
+    ctxIn(ORG_A)
+  );
+  const req = requestWithSession(login, ORG_B);
+
+  db.__queryLog.length = 0;
+  const resolved = await auth.getUserFromRequestAsync(req, {});
+
+  assert.equal(resolved.organizationRole, 'owner');
+  // The membership lookup that decides the active organization is the same one
+  // that carries the role: two reads (the person, their memberships), which is
+  // what this path cost before the role was added.
+  assert.deepEqual(
+    touchedTables(db, 'select'),
+    ['users', 'user_organizations'],
+    'no second lookup was issued for the role'
+  );
+});
+
+test('resolveActiveMembership answers both questions from one lookup', async () => {
+  seedMultiOrg();
+  assert.deepEqual(await identity.resolveActiveMembership('user-alice', ORG_B), {
+    organizationId: ORG_B,
+    role: 'owner',
+  });
+  assert.deepEqual(await identity.resolveActiveMembership('user-alice', ORG_GONE), {
+    organizationId: ORG_A,
+    role: 'member',
+  });
+  assert.deepEqual(await identity.resolveActiveMembership('user-nobody', ORG_A), {
+    organizationId: null,
+    role: null,
+  });
 });
 
 // ---------------------------------------------------------------------------
