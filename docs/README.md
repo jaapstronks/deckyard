@@ -54,6 +54,7 @@ ships:
 | Adding custom themes | `docs/developer/themes.md` |
 | Adding custom slide types | `docs/developer/slide-types.md` |
 | The full list of built-in slide types | `docs/reference/slide-type-inventory.md` (generated) |
+| Whether something is a new type or a variant | `docs/reference/slide-type-structure.md` |
 | What a new slide type owes elsewhere | `docs/reference/slide-type-companions.md` |
 | Removing a slide type | `docs/reference/slide-type-removal.md` |
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
@@ -91,6 +92,7 @@ nothing is discoverable only by `ls`.
 |-----|----------------|
 | [`slide-type-inventory.md`](reference/slide-type-inventory.md) | The built-in types (generated from the registry) |
 | [`slide-type-directory.md`](reference/slide-type-directory.md) | The directory form a type ships in |
+| [`slide-type-structure.md`](reference/slide-type-structure.md) | The `structure` facet, and type vs variant |
 | [`slide-type-companions.md`](reference/slide-type-companions.md) | What a new type owes elsewhere |
 | [`slide-type-removal.md`](reference/slide-type-removal.md) | Retiring a type without leaving rot |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor |
