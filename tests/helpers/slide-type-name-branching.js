@@ -172,8 +172,11 @@ const { table, sparse, specific, generated, source } = KINDS;
  *
  * The reason field is the point. An inventory that says "yes, we know" for 46
  * modules is worth nothing; one that says *why* each is safe, and which ones are
- * only safe for now, is a worklist. Entries marked `promote` are the ones that
- * look like companions and are not gated as such yet.
+ * only safe for now, is a worklist. `promote: true` used to flag the modules
+ * that looked like companions and were not gated as such; the last two —
+ * refined-slide.js and validate-slide-structure.js — were promoted to the matrix
+ * (kind `table`), so no entry carries it now. A future ungated per-type table
+ * should get it again as a signpost to the next promotion.
  *
  * @type {Record<string, {kind: string, companion?: string, gate?: string, promote?: boolean, why: string}>}
  */
@@ -294,6 +297,22 @@ export const INVENTORY = {
       'chart, where a worked example carries the most weight because the field ' +
       'shape is the least guessable.',
   },
+  'server/utils/ai/schemas/refined-slide.js': {
+    kind: table,
+    companion: 'refine-schema',
+    why:
+      'SLIDE_SCHEMAS — the per-type Zod schema the refine phase validates agent ' +
+      'content against. Every agent-emittable type owes one; a missing entry ' +
+      'silently skips validation. Promoted from a `promote: true` sparse entry.',
+  },
+  'server/utils/ai/validate-slide-structure.js': {
+    kind: table,
+    companion: 'structure-validation',
+    why:
+      'STRUCTURE_VALIDATORS — the per-type structural check for agent output. ' +
+      'Owed by every non-opt-out collection / fixed-collection type; a missing ' +
+      'entry accepts a malformed collection unvalidated. Promoted from `promote`.',
+  },
 
   // --- sparse tables: absence is normal, staleness is the defect ------------
   'scripts/generate-slide-css-aggregators.js': {
@@ -346,21 +365,6 @@ export const INVENTORY = {
       'Per-type label extraction for the slide list. The generic fallback covers ' +
       'most types; PR #451 removed one special case here because the fallback ' +
       'already did exactly the same thing.',
-  },
-  'server/utils/ai/schemas/refined-slide.js': {
-    kind: sparse,
-    promote: true,
-    why:
-      'Per-type JSON schema for the refine step. A type with no entry silently ' +
-      'cannot be refined, which is companion-shaped degradation with no gate — ' +
-      'the strongest candidate in this inventory for promotion to the matrix.',
-  },
-  'server/utils/ai/validate-slide-structure.js': {
-    kind: sparse,
-    promote: true,
-    why:
-      'Per-type structural validation of agent output. A type with no case is ' +
-      'accepted unvalidated — also companion-shaped, also ungated.',
   },
   'server/utils/ai/validate-slides/fix.js': {
     kind: sparse,

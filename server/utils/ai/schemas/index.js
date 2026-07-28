@@ -29,9 +29,7 @@ export {
   timelineSlideSchema,
   kpiMetricsSlideSchema,
   iconCardGridSlideSchema,
-  cardStackSlideSchema,
   textBlocksSlideSchema,
-  contentColumnsSlideSchema,
   tableSlideSchema,
   chartSlideSchema,
 } from './refined-slide.js';
