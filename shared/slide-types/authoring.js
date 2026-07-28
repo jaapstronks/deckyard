@@ -19,7 +19,6 @@ import iconCardGridSlideAuthoring from './types/icon-card-grid-slide/authoring.j
 import imageSlideAuthoring from './types/image-slide/authoring.js';
 import imageTextSlideAuthoring from './types/image-text-slide/authoring.js';
 import kpiMetricsSlideAuthoring from './types/kpi-metrics-slide/authoring.js';
-import lijstjeSlideAuthoring from './types/lijstje-slide/authoring.js';
 import likertSlideAuthoring from './types/likert-slide/authoring.js';
 import likertSliderSlideAuthoring from './types/likert-slider-slide/authoring.js';
 import listSlideAuthoring from './types/list-slide/authoring.js';
@@ -70,7 +69,6 @@ export const SLIDE_TYPE_AUTHORING = {
   'image-slide': imageSlideAuthoring,
   'image-text-slide': imageTextSlideAuthoring,
   'kpi-metrics-slide': kpiMetricsSlideAuthoring,
-  'lijstje-slide': lijstjeSlideAuthoring,
   'likert-slide': likertSlideAuthoring,
   'likert-slider-slide': likertSliderSlideAuthoring,
   'list-slide': listSlideAuthoring,

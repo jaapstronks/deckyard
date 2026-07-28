@@ -40,7 +40,7 @@ export const LAYOUT_TO_SLIDE_TYPE = {
   'table':        { type: 'table-slide' },
 
   // List
-  'list':         { type: 'lijstje-slide' },
+  'list':         { type: 'list-slide' },
 
   // End / outro
   'end':          { type: 'payoff-slide' },

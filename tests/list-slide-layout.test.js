@@ -24,6 +24,7 @@ import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { resolveListLayout } from '../shared/slide-types/types/list-slide.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 function content({ n, density, layout, text = 'Short line', title = 'Item', subheading = '' } = {}) {
   return {
@@ -227,10 +228,13 @@ describe('list-slide: layout choices', () => {
   });
 });
 
-describe('list-slide: lijstje-slide is a true alias', () => {
+describe('list-slide: lijstje-slide is a retired alias', () => {
   // It used to be a full copy of the definition and had drifted to a much older
-  // layout resolution, so imported decks (the markdown importer still emits
-  // this type name) rendered worse than the same content on a list-slide.
+  // layout resolution, so imported decks rendered worse than the same content on
+  // a list-slide. Making it a genuine alias fixed that but left one type with
+  // two names, and the picker offered both — two adjacent tiles labelled "List".
+  // Rung 1 of the ladder retired the name; these three assertions are what
+  // "retired but still renders" means.
   it('resolves identically to list-slide', () => {
     for (const n of [3, 4, 7]) {
       const c = content({ n, density: 'comfortable', layout: 'auto' });
@@ -239,5 +243,23 @@ describe('list-slide: lijstje-slide is a true alias', () => {
         renderSlideHtml({ type: 'list-slide', content: c })
       );
     }
+  });
+
+  it('is registered and deprecated, so stored decks keep rendering', () => {
+    assert.ok(SLIDE_TYPES['lijstje-slide'], 'still registered');
+    assert.equal(SLIDE_TYPES['lijstje-slide'].deprecated, true);
+    assert.notEqual(SLIDE_TYPES['list-slide'].deprecated, true);
+  });
+
+  it('is offered nowhere: exactly one insertable type carries the List label', () => {
+    const insertable = Object.entries(SLIDE_TYPES).filter(
+      ([, def]) => def?.deprecated !== true
+    );
+    const lists = insertable.filter(([, def]) => def.label === 'List');
+    assert.deepEqual(
+      lists.map(([name]) => name),
+      ['list-slide'],
+      'two insertable types labelled "List" is the bug this consolidation removed'
+    );
   });
 });
