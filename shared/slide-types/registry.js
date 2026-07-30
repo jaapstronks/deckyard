@@ -9,7 +9,6 @@ import listSlide from './types/list-slide.js';
 import endSlide from './types/end-slide.js';
 import payoffSlide from './types/payoff-slide.js';
 import quoteSlide from './types/quote-slide.js';
-import splitPartnerTitleSlide from './types/split-partner-title-slide.js';
 import teamCardsSlide from './types/team-cards-slide.js';
 import logoWallSlide from './types/logo-wall-slide.js';
 import titleSlide from './types/title-slide.js';
@@ -198,7 +197,6 @@ const CORE_SLIDE_TYPES = {
   'list-slide': listSlide,
   'lijstje-slide': lijstjeSlide, // Back-compat alias (same definition as list-slide)
   'kpi-metrics-slide': kpiMetricsSlide,
-  'split-partner-title-slide': splitPartnerTitleSlide,
   'image-text-slide': imageTextSlide,
   'video-slide': videoSlide,
   'team-cards-slide': teamCardsSlide,

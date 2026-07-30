@@ -73,6 +73,30 @@ export const REMOVED_SLIDE_TYPES = {
         'cites this removal as the worked example of a slide-type retirement that is NOT a breaking change',
     },
   },
+  'split-partner-title-slide': {
+    removed: '2026-07-30, PR #480',
+    successor: null,
+    reason:
+      'a rarely-used "two partner logos side by side" title layout, archived ' +
+      '(deprecated: true) on 2026-07-21 and removed as the A7.1 KPI measurement ' +
+      'closing the slide-type-seam done-gate. The use case may return later as ' +
+      'reusable editorial components rather than a bespoke type.',
+    // No conversion migration: the render contract (unresolved.js) degrades
+    // stored decks to an archived slide with content visible. The Postgres scan
+    // on 2026-07-30 found 4 dev decks / 7 slides still carrying it; production
+    // stores must be scanned before this ships (see removal PR).
+    migration: null,
+    allowedReferences: {
+      'server/db/migrations/020_rename_subtitle_to_subheading.js':
+        'a past migration that renamed subtitle→subheading across several title types; it must keep naming this one to stay a faithful record of what it did',
+      'scripts/migrate-title-bg.js':
+        'a one-off migration whose comment notes this type was deliberately out of its scope',
+      'tests/slide-types-policy.test.js':
+        'asserts the type is off the registry and a stored slide degrades safely',
+      'docs/reference/slide-type-removal.md':
+        'records this removal as the second cost measurement (the KPI that closed the A7.1 done-gate), so it must name the type it measured',
+    },
+  },
 };
 
 /** @type {string[]} */

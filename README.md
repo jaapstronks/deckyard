@@ -110,7 +110,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 - `create_presentation` — Generate a full deck from raw text, bullet points, or meeting notes
 - `iterate_presentation` — Modify with natural language ("make slide 3 punchier", "split the KPI slide")
 - `append_slides` — Add content to an existing deck (smart positioning before closing slides)
-- `convert_slide` — Switch between <!--gen:slide-type-count-->38<!--/gen:slide-type-count--> slide types with AI-powered content adaptation
+- `convert_slide` — Switch between <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> slide types with AI-powered content adaptation
 - `compress_presentation` — Reduce slide count while preserving key messages
 - `analyze_presentation` — Get suggestions for improving structure and content
 - `validate_presentation` — Check for density issues, repetition, readability problems

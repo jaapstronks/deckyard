@@ -190,7 +190,6 @@ test('no config field is bulk-modal-only (coverage audit 2026-07-21)', () => {
     // title-slide: bgImage/bgAlt were removed (title-bg-unification) — the
     // background is now the shared slideBgImage in the Background section.
     ['content-slide', 'action buttons'],
-    ['split-partner-title-slide', 'partnerlogo'],
     ['countdown-slide', 'text at zero'],
     ['poll-slide', 'target slide id'],
     ['likert-slide', 'target slide id'],

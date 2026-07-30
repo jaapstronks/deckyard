@@ -283,7 +283,6 @@ fallbacks).
 | image-slide | title, subheading, caption, bottom | all four | – | – | media: flat image + alt |
 | video-slide / embed-slide / countdown-slide | title | title | – | – | – |
 | chart-slide | title, subheading, bottom | subheading, bottom | – | chart data (click the chart) | – |
-| split-partner-title-slide | label, title, subheading | label, subheading | – | – | – |
 | poll-slide | question, options | next empty option 1–4 (grouped) | – | – | – |
 | likert-slide | question, options | next empty option 1–10 (grouped) | – | – | – |
 | likert-slider-slide | question, min/max labels | min/max labels | – | – | – |
