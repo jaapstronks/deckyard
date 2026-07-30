@@ -21,12 +21,11 @@ function nonEmptyString(v) {
 }
 
 /**
- * The one List type answers to two names: `list-slide` and its retired Dutch
- * alias `lijstje-slide` (one definition, see types/lijstje-slide.js). Every
- * type-keyed branch here must accept both, or the two drift apart again.
+ * The List type. (Its retired Dutch alias was removed in the rung-3
+ * consolidation; stored decks are migrated to `list-slide`.)
  */
 function isListType(type) {
-  return type === 'list-slide' || type === 'lijstje-slide';
+  return type === 'list-slide';
 }
 
 function defaultsForType(type, { slideTypes = SLIDE_TYPES, lang = null } = {}) {
@@ -131,16 +130,7 @@ const CONSUMED_SOURCE_KEYS = {
       'background',
     ],
   },
-  // Both names of the one List type. `lijstje-slide` is the retired alias
-  // (deprecated, render/edit only); `list-slide` is what every insertion path
-  // produces now. They share one definition, so they must share one convert map
-  // — keying only the alias would leave newly authored lists without the
-  // convert-away route that legacy ones still have.
   'list-slide': {
-    'content-slide': ['subtitle', 'variant', 'items'],
-    'content-columns-slide': ['variant', 'layout', 'items'],
-  },
-  'lijstje-slide': {
     'content-slide': ['subtitle', 'variant', 'items'],
     'content-columns-slide': ['variant', 'layout', 'items'],
   },
@@ -179,7 +169,7 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   // through the picker, where it no longer appears.
   if (type === 'image-text-slide') return ['content-slide', 'content-columns-slide'];
   if (type === 'image-slide') return ['image-text-slide'];
-  if (type === 'list-slide' || type === 'lijstje-slide') {
+  if (type === 'list-slide') {
     return ['content-slide', 'content-columns-slide'];
   }
   if (type === 'card-stack-slide') return ['icon-card-grid-slide'];

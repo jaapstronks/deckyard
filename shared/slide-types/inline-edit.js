@@ -22,7 +22,6 @@ import * as imageSlide from './types/image-slide/inline-edit.js';
 import * as imageTextSlide from './types/image-text-slide/inline-edit.js';
 import * as kpiMetricsSlide from './types/kpi-metrics-slide/inline-edit.js';
 import * as leadCaptureSlide from './types/lead-capture-slide/inline-edit.js';
-import * as lijstjeSlide from './types/lijstje-slide/inline-edit.js';
 import * as likertSlide from './types/likert-slide/inline-edit.js';
 import * as likertSliderSlide from './types/likert-slider-slide/inline-edit.js';
 import * as listSlide from './types/list-slide/inline-edit.js';
@@ -69,7 +68,6 @@ const MODULES = Object.freeze({
   'image-text-slide': imageTextSlide,
   'kpi-metrics-slide': kpiMetricsSlide,
   'lead-capture-slide': leadCaptureSlide,
-  'lijstje-slide': lijstjeSlide,
   'likert-slide': likertSlide,
   'likert-slider-slide': likertSliderSlide,
   'list-slide': listSlide,

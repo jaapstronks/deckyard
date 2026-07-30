@@ -228,29 +228,11 @@ describe('list-slide: layout choices', () => {
   });
 });
 
-describe('list-slide: lijstje-slide is a retired alias', () => {
-  // It used to be a full copy of the definition and had drifted to a much older
-  // layout resolution, so imported decks rendered worse than the same content on
-  // a list-slide. Making it a genuine alias fixed that but left one type with
-  // two names, and the picker offered both — two adjacent tiles labelled "List".
-  // Rung 1 of the ladder retired the name; these three assertions are what
-  // "retired but still renders" means.
-  it('resolves identically to list-slide', () => {
-    for (const n of [3, 4, 7]) {
-      const c = content({ n, density: 'comfortable', layout: 'auto' });
-      assert.equal(
-        renderSlideHtml({ type: 'lijstje-slide', content: c }),
-        renderSlideHtml({ type: 'list-slide', content: c })
-      );
-    }
-  });
-
-  it('is registered and deprecated, so stored decks keep rendering', () => {
-    assert.ok(SLIDE_TYPES['lijstje-slide'], 'still registered');
-    assert.equal(SLIDE_TYPES['lijstje-slide'].deprecated, true);
-    assert.notEqual(SLIDE_TYPES['list-slide'].deprecated, true);
-  });
-
+describe('list-slide: exactly one type carries the List label', () => {
+  // The List type was once registered twice — under `list-slide` and a Dutch
+  // alias — so the picker offered two adjacent tiles both labelled "List". The
+  // consolidation collapsed that to one; rung 3 removed the alias entirely. This
+  // is the guard that the duplicate never comes back.
   it('is offered nowhere: exactly one insertable type carries the List label', () => {
     const insertable = Object.entries(SLIDE_TYPES).filter(
       ([, def]) => def?.deprecated !== true

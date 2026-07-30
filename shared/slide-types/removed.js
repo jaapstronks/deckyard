@@ -73,6 +73,28 @@ export const REMOVED_SLIDE_TYPES = {
         'cites this removal as the worked example of a slide-type retirement that is NOT a breaking change',
     },
   },
+  'lijstje-slide': {
+    removed: '2026-07-30, rung 3 of the list consolidation (DB migration 056)',
+    successor: 'list-slide',
+    reason:
+      'a back-compat alias, not a second type: since the drift fix it was ' +
+      'literally `{ ...listSlide, ai: false }`, so the two names shared one ' +
+      'definition and stood beside each other in the picker. Rung 3 drops the ' +
+      'Dutch alias; every stored deck is renamed to `list-slide` (a lossless ' +
+      'rename — same field schema, only the `type` string changes).',
+    migration:
+      'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js',
+    allowedReferences: {
+      'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js':
+        'the migration itself — it renames stored decks and must name both types',
+      'scripts/migrate-lijstje-slide.js':
+        'the standalone rename for file-store installs and exports (which have no migration runner); it names both types by design',
+      'tests/lijstje-slide-migration.test.js':
+        'exercises that rename script, so it must name the old type it renames',
+      'docs/reference/slide-type-removal.md':
+        'the "deprecating a type versus deprecating an alias" section uses this exact rename as its worked example',
+    },
+  },
   'split-partner-title-slide': {
     removed: '2026-07-30, PR #480',
     successor: null,

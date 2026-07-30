@@ -6,7 +6,7 @@ This document contains a prompt template for instructing an LLM to generate a pr
 > use. It is not wired into the app; the real generation prompts live in
 > `server/utils/ai/` and evolve independently. The slide-type catalog below
 > is a curated subset (the codebase has
-> <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> core types) and may lag behind.
+> <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> core types) and may lag behind.
 
 ---
 
@@ -76,7 +76,7 @@ SLIDE TYPE SELECTION PRINCIPLES
 
 CRITICAL: Always prefer specialized slide types over content-slide!
 
-- 4+ items with title+description → lijstje-slide
+- 4+ items with title+description → list-slide
 - 4-6 parallel categories with icons → icon-card-grid-slide
 - Timeline/roadmap with phases → timeline-slide
 - Cause→effect or input→output → text-blocks-slide (with arrows)
@@ -164,11 +164,11 @@ Fields:
 - layout: "one-column" (default) or "two-column"
 - background: "lime" or "mist"
 
---- lijstje-slide ---
+--- list-slide ---
 Fancy list with structured items. Each item has a title and description.
 
 {
-  "type": "lijstje-slide",
+  "type": "list-slide",
   "content": {
     "title": "Four Key Principles",
     "subtitle": "Guiding our approach",
@@ -220,7 +220,7 @@ Fields:
 - background: "lime" or "mist"
 
 Best for: Roadmaps, historical timelines, project milestones, evolution over time
-NOT for: Meeting agendas (use lijstje-slide), non-sequential items
+NOT for: Meeting agendas (use list-slide), non-sequential items
 
 --- icon-card-grid-slide ---
 Grid of 1-6 cards with icons. Excellent for parallel concepts!

@@ -63,7 +63,7 @@ const bilingualPres = () => ({
   slides: [
     {
       id: 's1',
-      type: 'lijstje-slide',
+      type: 'list-slide',
       notes: 'nl notitie',
       content: {
         title: 'Lijstje NL',
@@ -89,7 +89,7 @@ const bilingualPres = () => ({
         slides: [
           {
             id: 's1',
-            type: 'lijstje-slide',
+            type: 'list-slide',
             notes: 'en note',
             content: {
               title: 'List EN',
@@ -274,12 +274,12 @@ test('applyPresentationToDoc: never stores i18n.active; slide type change reclas
   const doc = makeBootstrappedDoc(bilingualPres());
   const next = codec.projectDocToPresentation(doc);
   next.i18n.active = 'en-GB'; // per-client state; must not stick
-  next.slides[1].type = 'lijstje-slide';
-  next.slides[1].content = { title: 'Nu een lijstje', items: [{ title: 'A', text: 'a' }] };
+  next.slides[1].type = 'list-slide';
+  next.slides[1].content = { title: 'Nu een lijst', items: [{ title: 'A', text: 'a' }] };
   next.i18n.versions.nl.slides = next.slides;
   next.i18n.versions['en-GB'].slides[1] = {
     id: 's2',
-    type: 'lijstje-slide',
+    type: 'list-slide',
     notes: '',
     content: { title: 'Now a list', items: [{ title: 'A(en)', text: 'a(en)' }] },
   };
@@ -287,7 +287,7 @@ test('applyPresentationToDoc: never stores i18n.active; slide type change reclas
   codec.applyPresentationToDoc(next, doc);
   const out = codec.projectDocToPresentation(doc);
   assert.equal(out.i18n.active, 'nl', 'projection emits active = dominant');
-  assert.equal(out.slides[1].type, 'lijstje-slide');
+  assert.equal(out.slides[1].type, 'list-slide');
   assert.equal(out.slides[1].content.items[0].title, 'A');
   assert.equal(out.i18n.versions['en-GB'].slides[1].content.items[0].title, 'A(en)');
 });
@@ -311,7 +311,7 @@ test('applyPresentationToDoc with base: three-way diff spares concurrent doc sta
   yslides.get(0).get('content').get('items').push([
     codec.buildItemForLang(
       { title: 'Client item', text: 'client' },
-      codec.textSpecForType('lijstje-slide').items.get('items'),
+      codec.textSpecForType('list-slide').items.get('items'),
       'nl'
     ),
   ]);

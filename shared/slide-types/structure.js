@@ -11,8 +11,9 @@
  * function, `interaction` is runtime behaviour. So there was no place a new type
  * *belonged*, no rule for when something is its own type versus a variant, and
  * no way to see that two types do the same thing. The result was measurable:
- * seven near-duplicates, one of which (`list-slide` / `lijstje-slide`) was
- * literally the same object standing beside itself in the picker for months.
+ * seven near-duplicates, one of which (the List type, briefly registered under
+ * both `list-slide` and a Dutch alias) was literally the same object standing
+ * beside itself in the picker for months.
  *
  * The fix is not one hierarchy - every tree goes wrong the moment types differ
  * along independent axes - but a small number of orthogonal, declarative facets,

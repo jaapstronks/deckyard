@@ -164,7 +164,6 @@ describe('every adopting type behaves the same way', () => {
     ['title-slide', 'titleBlockAlign', ['title', 'subheading', 'meta']],
     ['chapter-title-slide', 'titleBlockAlign', ['title', 'subheading']],
     ['list-slide', 'headerAlign', ['title', 'subheading']],
-    ['lijstje-slide', 'headerAlign', ['title', 'subheading']],
     ['logo-wall-slide', 'headerAlign', ['title', 'subheading']],
     ['chart-slide', 'headerAlign', ['title', 'subheading']],
     ['kpi-metrics-slide', 'headerAlign', ['title', 'subheading']],

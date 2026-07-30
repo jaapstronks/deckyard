@@ -1,6 +1,6 @@
 # The `structure` facet, and when something is a type
 
-Deckyard has <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
+Deckyard has <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
 statement anywhere about how any of them relate to any other: the registry is a
 flat `name -> definition` map, so every type is a sibling of every other type.
 
@@ -13,9 +13,10 @@ behaviour. So there was no place a new type *belonged*, no rule for when
 something is its own type versus a variant of one, and no way to see that two
 types do the same thing.
 
-The cost was measurable: seven near-duplicates, one of which (`list-slide` and
-`lijstje-slide`) was literally the same definition standing beside itself in the
-picker for months, under two tiles both labelled "List".
+The cost was measurable: seven near-duplicates, one of which (the List type,
+briefly registered under both `list-slide` and a Dutch alias) was literally the
+same definition standing beside itself in the picker for months, under two tiles
+both labelled "List".
 
 ## Facets, not a hierarchy
 
@@ -51,7 +52,7 @@ each type's definition; served out through `/api/slide-types`.
 | `dataset` | data points plus an encoding | chart |
 | `chrome` | no content fields at all | payoff, follow-invite |
 
-These six partition the current <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
+These six partition the current <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
 
 ## The rule: type or variant?
@@ -90,8 +91,8 @@ contract* under the same id.
    check and the test says so rather than pretending.
 3. **No duplicates** — no two types offer the same **field signature** (every
    content field as `key:type`, sorted, with repeated-item fields carrying their
-   item shape). This is the assertion that would have caught `lijstje-slide` on
-   day one. The signature is deliberately coarse: it ignores enum options and
+   item shape). This is the assertion that would have caught the List type's
+   duplicate registration on day one. The signature is deliberately coarse: it ignores enum options and
    length limits, so it collides easily, and "they really are different, here is
    why" is an answer the burndown can carry. `chrome` types are skipped — they
    have the empty signature by construction, so colliding there says nothing.
@@ -130,11 +131,9 @@ point: this is what the facet was built to make visible.
 | `poll-slide` | declared `fixed-collection`, carries `option1..option4` as scalars | never got the `items[]` migration the other collections did |
 | `likert-slide` | same, `option1..option10` | as poll-slide |
 
-Assertion 3 adds one pair, in `SIGNATURE_BURNDOWN`:
-
-| Pair | Why |
-|---|---|
-| `lijstje-slide == list-slide` | one definition behind two names (`{ ...listSlide, ai: false }`); already on rung 1 of the removal ladder, so the entry dies with rung 3 |
+Assertion 3's `SIGNATURE_BURNDOWN` is now empty: its one pair was the List type
+registered under both `list-slide` and a Dutch alias, and rung 3 of the list
+consolidation removed the alias, so no two core types share a field signature.
 
 Assertion 4 adds one type, in `VARIANT_BURNDOWN`:
 

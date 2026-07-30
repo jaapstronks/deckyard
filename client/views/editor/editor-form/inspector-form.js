@@ -416,8 +416,7 @@ export function renderInspectorExtrasByType(ctx) {
       return;
     }
 
-    case 'list-slide':
-    case 'lijstje-slide': {
+    case 'list-slide': {
       // "Text size" is the one list setting the renderer can overrule: a list
       // long AND wordy enough to spill even across two columns steps down a
       // size. That used to happen silently, so an author who picked Large saw

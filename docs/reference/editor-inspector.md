@@ -311,7 +311,7 @@ only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
 `lg` 1.2, `md` = no class → fallback 1), and each primary text element
 expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled
 out **per type**. Types wired so far: **content** (heading + body, all density
-steps), **image-text** (body, all width/density steps), **lijstje** (per-item
+steps), **image-text** (body, all width/density steps), **list** (per-item
 title + text, all density steps), **quote** (quote text), **chapter-title**
 (title). Other types/fields store the value cleanly but do not yet scale — add
 the `calc()` to their primary text element to enable it.
@@ -357,7 +357,7 @@ Column semantics:
   icons, URLs-as-config, focus points, chart config, code, Background,
   Accessibility).
 
-Shared by **all <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> types**, not repeated per row: `slideBgImage`,
+Shared by **all <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> types**, not repeated per row: `slideBgImage`,
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`,
 `slideLogo` (Background image section) and `a11yTitle`, `a11ySummary`
 (Accessibility) → **inspector keeps**. The per-type `background` enum renders
@@ -376,7 +376,7 @@ homed. Not listed per row.
 | chapter-title | title, subheading | - | layout | |
 | content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle, cornerCell | slide-view entry points for the table modal are an open follow-up. `cornerCell` (label\|header) is style-orthogonal: it decides whether the top-left cell reads with the label column or the header row |
-| list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
+| list | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | - | source, autoplay, bunnyLibraryId, watchUrl | source is a URL/ID → inspector (PR #191); watchUrl is export config with no canvas surface |
