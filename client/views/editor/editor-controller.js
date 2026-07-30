@@ -82,6 +82,7 @@ import { createUndoActions } from './slide-list/undo-actions.js';
 import { createSlideUpdateHandler } from './slide-update-handler.js';
 import { createRemoteRefresh } from './remote-refresh.js';
 import { onMaintenanceChange } from '../../lib/state/maintenance.js';
+import { createReadOnlyController } from './read-only-controller.js';
 
 export async function createEditorController({
   root,
@@ -258,31 +259,9 @@ export async function createEditorController({
     return null;
   };
 
-  // State mirror of the shell's is-read-only class; surfaces read this instead
-  // of the classList. Two independent sources can lock the editor and they must
-  // not clobber each other: another user holding the presentation lock, and the
-  // server being in maintenance. `readOnlyMode` is the OR of the two — without
-  // this split, a lock released during a deploy would hand editing back while
-  // every save is still being refused with a 503.
-  let readOnlyMode = false;
-  let lockReadOnly = false;
-  let maintenanceReadOnly = false;
-
-  /** Recompute read-only state from both sources and reflect it in the shell. */
-  const applyReadOnly = () => {
-    readOnlyMode = lockReadOnly || maintenanceReadOnly;
-    shell.classList.toggle('is-read-only', readOnlyMode);
-    if (!readOnlyMode) return;
-    // The caption is derived here rather than set at each source, because both
-    // can be up at once. Maintenance wins while it lasts, but the lock text has
-    // to come back when it ends — otherwise a deploy that overlaps someone
-    // else's lock leaves the editor read-only under a "paused for maintenance"
-    // caption that is no longer true.
-    const bannerText = maintenanceReadOnly
-      ? t('maintenance.readOnly.banner', 'Paused for maintenance - your work is kept')
-      : t('editor.readOnly.banner', 'View only - someone else is editing');
-    shell.style.setProperty('--read-only-banner-text', `"${bannerText}"`);
-  };
+  // Read-only state (lock source OR maintenance source) is owned by
+  // createReadOnlyController; it mirrors onto the shell, so it is created once
+  // the shell exists (below). See ./read-only-controller.js.
 
   // Store user email for SSE event filtering
   if (user?.email) {
@@ -454,6 +433,10 @@ export async function createEditorController({
 
   const shell = h('div', { class: 'app-shell editor-shell' });
   let topbarTitle = null;
+
+  // Read-only state machine (presentation lock OR maintenance). Reads mirror to
+  // the shell class + banner caption; both sources feed it independently below.
+  const readOnlyController = createReadOnlyController({ shell });
 
   setDocumentTitle(pres?.title);
   const titleCtl = createEditorTitleController({
@@ -663,8 +646,7 @@ export async function createEditorController({
     onReadOnlyChange: (() => {
       let wasReadOnly = false;
       return (isReadOnly, lockInfo) => {
-        lockReadOnly = !!isReadOnly;
-        applyReadOnly();
+        readOnlyController.setLockReadOnly(isReadOnly);
         if (isReadOnly && !wasReadOnly && lockInfo) {
           const who = lockInfo.holderName || lockInfo.holderEmail || t('editor.readOnly.someone', 'someone else');
           toast.info(
@@ -1189,8 +1171,7 @@ export async function createEditorController({
   cleanup.register(
     'maintenance',
     onMaintenanceChange((state) => {
-      maintenanceReadOnly = state.active;
-      applyReadOnly();
+      readOnlyController.setMaintenanceReadOnly(state.active);
       if (state.active) {
         saveManager.cancelAutosave();
         toast.info(
@@ -1390,7 +1371,7 @@ export async function createEditorController({
     getSlideDef: (type) => SLIDE_TYPES[type],
     // State-driven, not classList-driven: the lock seam is the source of
     // truth; the shell classes are presentation only.
-    getCanEdit: () => !readOnlyMode && !getSlideLockKind(selectedSlideId),
+    getCanEdit: () => !readOnlyController.isReadOnly() && !getSlideLockKind(selectedSlideId),
     // While placing a positioned comment, the inline editor must yield its
     // click capture so the pin lands anywhere on the slide (not just margins).
     isCommentAddMode: () => previewPanel.isCommentAddMode?.(),
