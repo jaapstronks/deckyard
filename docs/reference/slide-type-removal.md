@@ -130,8 +130,11 @@ Then, in rough dependency order:
    render rather than throwing.
 6. **Update the docs that carry per-type rows or a type count** —
    `docs/reference/editor-inspector.md`, `docs/reference/wysiwyg-inline-editing.md`,
-   `docs/reference/ai-wizard-prompts.md`. The core-type count is written out by
-   hand in several places.
+   `docs/reference/ai-wizard-prompts.md`. The count is generated where a
+   `<!--gen:slide-type-count-->` marker sits (`README.md`,
+   `editor-inspector.md`), and **written by hand where it does not** —
+   `ROADMAP.md` line 8 is the one that keeps being missed, most recently by the
+   split-partner removal. Grep the old and the new number, not just the marker.
 7. **Record the removal and let the guardrail find the rest.** Add an entry to
    `REMOVED_SLIDE_TYPES` in `shared/slide-types/removed.js` (when it went, the
    successor or `null`, why, the migration if there was one), then run
