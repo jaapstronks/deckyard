@@ -169,6 +169,35 @@ export const INLINE_DESCRIPTORS = { ...SLIDE_TYPE_INLINE_EDIT };
  * - no core file needs editing. Same seam philosophy as the MCP custom-tools
  * hook. Note a definition-declared descriptor is JSON, so function-valued
  * options (addPlacement as a function) are core-map-only.
+ *
+ * ## Why core first, against the aggregator-seam rule
+ *
+ * Every other companion resolves definition-first (slideTypeInspectorKeeps,
+ * slideTypeGroup, …): the definition as it exists at runtime is asked before
+ * core's generated aggregator. This one is deliberately the other way round,
+ * and it is the seam rule's one documented exception - see
+ * docs/reference/slide-type-directory.md, "The one exception: the inline
+ * descriptor".
+ *
+ * A descriptor is not a fact about the type, it is a description of the DOM the
+ * type's renderer emits: `.title`, `.tsu-content`, `data-inline-field="meta"`.
+ * So it has to agree with whichever renderer actually drew the slide, and in
+ * the browser that is not always the fork's. `custom/slide-types/` is loaded by
+ * node only (registry.js gates on `isNode`) and is not on the static allowlist
+ * (server/config/paths.js serves `custom/assets/` and `custom/themes/`, not
+ * `custom/slide-types/`), so a fork type that overrides a CORE NAME is still
+ * bundled under that name client-side - `isBundledSlideType()` in
+ * client/lib/slide-runtime/slide-render.js finds core's entry and renders
+ * core's markup. Reading `def.inline` first would then point every ghost anchor
+ * and every formText key at elements that are not in the document.
+ *
+ * A fork type with a NEW name is not bundled, gets server-rendered (the fork's
+ * own markup), and has no core entry - so the fallback below fires and the seam
+ * works exactly where the fork's renderer is the one that drew the slide.
+ * Net: this lookup is renderer-first, and in the browser the renderer
+ * precedence happens to be core-first. Flip it the day an override type's
+ * renderer reaches the browser, not before.
+ *
  * @param {string} type
  * @param {Object} [def] - slide-type definition (SLIDE_TYPES[type] / API meta)
  * @returns {InlineDescriptor | null}
