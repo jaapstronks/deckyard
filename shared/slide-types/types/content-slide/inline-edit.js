@@ -22,3 +22,12 @@ export const inlineEdit = {
       },
     },
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `actions`: CTA buttons (label/url/style) have no canvas surface — config.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['layout', 'density', 'actions'];

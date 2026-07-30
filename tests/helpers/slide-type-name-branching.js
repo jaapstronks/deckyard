@@ -240,11 +240,15 @@ export const INVENTORY = {
       'off the /api/slide-types response. Only staleness of the hint remains.',
   },
   'client/views/editor/editor-form/inspector-form.js': {
-    kind: table,
-    companion: 'inspector-keeps',
+    kind: sparse,
     why:
-      'INSPECTOR_KEEPS — which fields stay in the inspector per type. Also an ' +
-      'editing companion.',
+      'No longer the keep-list table: INSPECTOR_KEEPS is re-exported from the ' +
+      'generated inline-edit aggregator, and each type declares its own keeps ' +
+      'in types/<name>/inline-edit.js. What still names types here is ' +
+      'renderInspectorExtrasByType — the per-type widget blocks a flat ' +
+      'keep-list cannot express (chart data editor, image focus/zoom pickers, ' +
+      'per-column image cards). Intentionally partial: a type without a case ' +
+      'renders through the generic keeps loop, which is the right default.',
   },
   'server/utils/openai/slide-types-prompt.js': {
     kind: table,

@@ -13,3 +13,12 @@
 export const inlineEdit = {
     formText: ['question'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `placeholder`: input placeholder — config, not canvas-editable text.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['placeholder'];

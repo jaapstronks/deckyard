@@ -273,7 +273,10 @@ export const COMPANIONS = [
   {
     id: 'inspector-keeps',
     label: 'inspector keep-list',
-    where: 'client/views/editor/editor-form/inspector-form.js (INSPECTOR_KEEPS)',
+    where:
+      'shared/slide-types/types/<name>/inline-edit.js (inspectorKeeps) — ' +
+      'surfaced as INSPECTOR_KEEPS by ' +
+      'client/views/editor/editor-form/inspector-form.js',
     degradesTo:
       'the inspector shows every field the inline layer does not cover — the ' +
       'safe default, which is why only a stale entry is a problem',

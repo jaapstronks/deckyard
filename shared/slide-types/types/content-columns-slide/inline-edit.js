@@ -44,3 +44,10 @@ export const inlineEdit = {
     },
     formText: HEADER_TEXT,
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['columnCount'];

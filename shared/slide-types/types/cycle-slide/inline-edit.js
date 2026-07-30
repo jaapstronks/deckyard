@@ -23,3 +23,10 @@ export const inlineEdit = {
     cards: { field: 'items', fieldAliases: ['stages'], container: '.cycle-container', itemSelector: '.cycle-stage' },
     formText: [...HEADER_TEXT, 'centerLabel', 'items', 'stages'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = [];

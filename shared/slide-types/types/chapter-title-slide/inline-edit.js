@@ -14,3 +14,10 @@ export const inlineEdit = {
     ghosts: [{ field: 'subheading', anchor: '.title', pos: 'after' }],
     formText: ['title', 'subheading'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['layout'];

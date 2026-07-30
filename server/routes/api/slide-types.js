@@ -12,6 +12,7 @@ import {
   slideTypeSample,
   slideTypeSchematic,
 } from '../../../shared/slide-types/authoring-companions.js';
+import { slideTypeInspectorKeeps } from '../../../shared/slide-types/inline-edit-companions.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { createRouteContext } from '../../utils/context.js';
 
@@ -61,6 +62,14 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.inline && typeof def.inline === 'object'
             ? def.inline
             : undefined,
+        // The descriptor's counterpart: which fields the settings inspector
+        // keeps rendering once the canvas covers the rest. Resolved, and on the
+        // wire for the same reason `schematic` is — the editor holds this
+        // response, not the registry, so a fork type declaring its own
+        // `inspectorKeeps` would otherwise never be heard. Absent (rather than
+        // `[]`) when nobody narrows the type: the inspector's conservative
+        // fallback depends on telling those two apart.
+        inspectorKeeps: slideTypeInspectorKeeps(key, def) || undefined,
         // Layout catalogue for the editor's layout switcher. Declared on the
         // definition (JSON-safe) so forks that override a type by name bring
         // their own variant set; absent = no switcher chip.

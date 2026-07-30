@@ -23,3 +23,13 @@ export const inlineEdit = {
     // card chrome); the header text edits inline.
     formText: ['title', 'subheading'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Card count is items[]-driven and managed by the side form's add/remove (like
+ * icon-card-grid), so the raw cardCount enum is no longer an inspector control.
+ * @type {string[]}
+ */
+export const inspectorKeeps = [];
