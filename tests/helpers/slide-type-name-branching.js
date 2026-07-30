@@ -10,8 +10,8 @@
  * the matrix — which is the exact class of failure the `structure` facet exists
  * to kill, one layer up.
  *
- * That gap has a cost on the record. When `lijstje-slide` was folded into
- * `list-slide` (PR #451), the *offer* companions moved because the matrix named
+ * That gap has a cost on the record. When the List type's Dutch alias was folded
+ * into `list-slide` (PR #451), the *offer* companions moved because the matrix named
  * them, and `shared/slide-types/convert.js`, `slide-form-router.js` and two
  * special cases in `render-field.js` stayed behind because it did not. Net
  * effect: newly authored lists lost affordances that legacy lists kept — the
@@ -320,8 +320,8 @@ export const INVENTORY = {
     why:
       'TYPE_CSS maps a type to its stylesheet; only types with their own CSS ' +
       'appear. Already gated the right way — every key must be a registered ' +
-      'type — which is why removing `lijstje-slide` at rung 3 will fail loudly ' +
-      'here until the key is moved to `list-slide`.',
+      'type — which is why rung 3 of the list consolidation had to rekey the ' +
+      'List stylesheet from the retired Dutch alias to `list-slide`.',
   },
   'shared/slide-types/convert.js': {
     kind: sparse,
@@ -389,7 +389,7 @@ export const INVENTORY = {
     why:
       'Which builder each markdown construct maps to. Partial by nature: only ' +
       'types markdown can express appear. This is the module that kept minting ' +
-      '`lijstje-slide` until brief A step 1 stopped it.',
+      'the retired Dutch list alias until brief A step 1 stopped it.',
   },
   'server/export/print.js': {
     kind: sparse,

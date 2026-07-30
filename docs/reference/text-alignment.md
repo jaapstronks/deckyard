@@ -216,7 +216,7 @@ Two CSS traps worth knowing:
 | --- | --- | --- |
 | `title-slide` | `title-block` | title, subheading, meta |
 | `chapter-title-slide` | `title-block` | title, subheading |
-| `list-slide`, `lijstje-slide` | `header-block` | title, subheading |
+| `list-slide` | `header-block` | title, subheading |
 | `logo-wall-slide` | `header-block` | title, subheading |
 | `chart-slide` | `header-block` | title, subheading |
 | `kpi-metrics-slide` | `header-block` | title, subheading |

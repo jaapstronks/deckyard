@@ -53,7 +53,7 @@ const fixturePres = () => {
     },
     {
       id: 's2',
-      type: 'lijstje-slide',
+      type: 'list-slide',
       notes: '',
       content: {
         title: 'Lijstje',
@@ -180,7 +180,7 @@ test('move vs delete of the same slide: the move wins (clone survives)', () => {
 test('move vs concurrent edit inside the moved slide: the edit is lost', () => {
   const [a, b] = makeReplicas();
 
-  // A moves the lijstje slide to the front…
+  // A moves the list slide to the front…
   const moved = a.pres.slides.find((s) => s.id === 's2');
   a.pres.slides = [moved, ...a.pres.slides.filter((s) => s !== moved)];
   a.binder.syncLocal();

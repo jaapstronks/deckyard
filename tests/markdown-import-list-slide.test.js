@@ -1,11 +1,10 @@
 /**
- * The markdown importer must emit `list-slide`, never the retired
- * `lijstje-slide` alias.
+ * The markdown importer must emit `list-slide` for every bullet-list import.
  *
- * This is the regression that matters most in the list consolidation. The alias
- * had zero decks on the scan, but the importer was still *producing* it on every
- * bullet-list import — so the population would have kept growing while we tried
- * to empty it. Both routes into the list builder are covered: the explicit
+ * This is the regression that matters most in the list consolidation. The
+ * importer once produced a now-retired Dutch alias of this type on every
+ * bullet-list import, so the alias population would have kept growing while we
+ * tried to empty it. Both routes into the list builder are covered: the explicit
  * `layout: list` directive and the "**bold**: description" heuristic.
  *
  * Run with: node --test tests/markdown-import-list-slide.test.js
@@ -43,14 +42,14 @@ describe('markdown import: lists land on list-slide', () => {
     assert.equal(slides[0].content.items[0].text, 'understand the goal');
   });
 
-  it('never emits the retired alias, whatever the input', () => {
+  it('always emits list-slide, whatever the input', () => {
     const decks = [
       '# Plain\n\n- **A**: one\n- **B**: two',
       '---\nlayout: list\n---\n\n# Directed\n\n- **A**: one\n- **B**: two',
     ];
     for (const md of decks) {
       for (const slide of mapped(md)) {
-        assert.notEqual(slide.type, 'lijstje-slide');
+        assert.equal(slide.type, 'list-slide');
       }
     }
   });

@@ -1,4 +1,5 @@
-/* Lijstje slide */
+/* List slide (CSS classes keep the historical `.slide-lijstje` / `.lijst`
+   names; the type id is `list-slide`). */
 .slide-lijstje .slide-inner {
   justify-content: flex-start;
 }

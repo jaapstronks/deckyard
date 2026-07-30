@@ -1,7 +1,7 @@
 /**
  * Semantic text-role affordance model: role vocabulary, affordance table, the
  * dotted-path field-key resolver, and alignment gating. Also asserts the real
- * list-slide / lijstje-slide schemas tag their item fields as list-item.
+ * list-slide schema tags its item fields as list-item.
  *
  * Run with: node --test tests/text-roles.test.js
  */
@@ -117,7 +117,7 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     ['list-slide', 'title', false],
     ['content-slide', 'body', true],
     ['image-slide', 'caption', true],
-    ['lijstje-slide', 'items.0.text', false],
+    ['list-slide', 'items.0.text', false],
     ['process-slide', 'items.0.title', false],
     ['process-slide', 'items.0.text', false],
     ['timeline-slide', 'items.0.date', false],

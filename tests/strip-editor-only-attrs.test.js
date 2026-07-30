@@ -15,7 +15,7 @@ import {
 /** A collection type, so the data-inline-item hooks are present to strip. */
 const slide = {
   id: 's',
-  type: 'lijstje-slide',
+  type: 'list-slide',
   content: {
     title: 'T',
     variant: 'bullets',
@@ -25,7 +25,7 @@ const slide = {
 };
 
 /**
- * Alignment needs a field that still owns it: `lijstje-slide.title` joined the
+ * Alignment needs a field that still owns it: `list-slide.title` joined the
  * header-block field group, so its alignment comes from the group and no
  * tf-align-* class is emitted for it. `content-slide.body` is standalone.
  */

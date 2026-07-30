@@ -184,8 +184,8 @@ the list of judgements was complete. That is what the inventory below is for.
 
 The matrix guards the companions. Nothing guarded the matrix: it is itself a
 hand-written list, so a module carrying per-type knowledge that nobody had ever
-added simply was not checked. That has a cost on the record. When
-`lijstje-slide` was folded into `list-slide` (PR #451) the *offer* companions
+added simply was not checked. That has a cost on the record. When the List
+type's Dutch alias was folded into `list-slide` (PR #451) the *offer* companions
 moved because the matrix named them, and `shared/slide-types/convert.js`,
 `slide-form-router.js` and two special cases in `render-field.js` stayed behind
 because it did not — so newly authored lists lost affordances that legacy lists

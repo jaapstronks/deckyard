@@ -70,11 +70,11 @@ Two things to carry into the next one:
   `shared/slide-types/convert.js`, the form router and the field special-cases
   in `render-field.js` are outside it. `grep -rn "'<old-name>'"` is the actual
   worklist, and every hit is a *move*.
-- **Pin the parity while both names exist.** `tests/list-slide-name-parity.test.js`
-  asserts that no module branches on one name without the other. It is the
-  cheap guardrail an alias needs between rung 1 and rung 3, and it deletes
-  itself when rung 3 lands. (A general version — assertion 5 in
-  `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
+- **Pin the parity while both names exist.** For the list consolidation a
+  dedicated test asserted that no module branched on one name without the other
+  — the cheap guardrail an alias needs between rung 1 and rung 3. It was written
+  to delete itself when rung 3 lands, and did. (A general version — assertion 5
+  in `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
   name-branching modules instead of enumerating them.)
 
 Rungs 2 and 3 are unchanged: the alias still needs a clean deck scan before its

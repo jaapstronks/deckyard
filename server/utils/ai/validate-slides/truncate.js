@@ -49,7 +49,7 @@ export function truncateContentFields(type, content) {
   if (fixed.authorName) fixed.authorName = truncate(fixed.authorName, MAX_LENGTHS.authorName, 'authorName');
   if (fixed.authorTitle) fixed.authorTitle = truncate(fixed.authorTitle, MAX_LENGTHS.authorTitle, 'authorTitle');
 
-  // Array items (lijstje, timeline, metrics)
+  // Array items (list, timeline, metrics)
   if (Array.isArray(fixed.items)) {
     fixed.items = fixed.items.map((item, idx) => {
       if (!item || typeof item !== 'object') return item;

@@ -27,7 +27,7 @@ const layoutSchema = z.enum(['one-column', 'two-column']).optional();
 // ITEM SCHEMAS
 // =============================================================================
 
-const lijstjeItemSchema = z.object({
+const listItemSchema = z.object({
   title: z.string().min(1).max(80),
   text: z.string().max(120).optional(),
 });
@@ -119,13 +119,13 @@ const contentSlideSchema = z.object({
   background: backgroundSchema,
 });
 
-// Lijstje Slide (fancy list)
-const lijstjeSlideSchema = z.object({
+// List Slide (fancy list)
+const listSlideSchema = z.object({
   title: requiredTitleSchema,
   subheading: z.string().max(160).optional(),
   variant: z.enum(['bullets', 'numbers']).optional(),
   layout: layoutSchema,
-  items: z.array(lijstjeItemSchema).min(2).max(8),
+  items: z.array(listItemSchema).min(2).max(8),
   background: backgroundSchema,
 });
 
@@ -407,7 +407,7 @@ const SLIDE_SCHEMAS = {
   'quote-slide': quoteSlideSchema,
   'payoff-slide': payoffSlideSchema,
   'content-slide': contentSlideSchema,
-  'list-slide': lijstjeSlideSchema,
+  'list-slide': listSlideSchema,
   'timeline-slide': timelineSlideSchema,
   'kpi-metrics-slide': kpiMetricsSlideSchema,
   'icon-card-grid-slide': iconCardGridSlideSchema,
@@ -511,7 +511,7 @@ export {
   quoteSlideSchema,
   payoffSlideSchema,
   contentSlideSchema,
-  lijstjeSlideSchema,
+  listSlideSchema,
   timelineSlideSchema,
   kpiMetricsSlideSchema,
   iconCardGridSlideSchema,

@@ -7,8 +7,8 @@
  * copy has no business in their payload.
  * See docs/reference/slide-type-directory.md.
  *
- * The presets and sample below came from the retired `lijstje-slide` alias,
- * which held the richer companions while sharing this type's definition.
+ * The presets and sample below came from the retired Dutch alias, which held
+ * the richer companions while sharing this type's definition.
  */
 
 export default {

@@ -39,8 +39,8 @@ test('list-slide numbered variant renders <ol>', () => {
   assert.equal((html.match(/<li[ >]/g) || []).length, 2);
 });
 
-test('lijstje bullet variant renders <ul>', () => {
-  const html = render('lijstje-slide', {
+test('list bullet variant renders <ul>', () => {
+  const html = render('list-slide', {
     title: 'LJ',
     variant: 'bullets',
     items: [{ title: 'a' }, { title: 'b' }],

@@ -33,13 +33,6 @@ const AI_CONVERT_TARGETS = {
     { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
     { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
   ],
-  // `lijstje-slide` is deprecated: never offered as a *target* any more, but a
-  // stored slide still opens in the editor and must keep its convert-away menu.
-  'lijstje-slide': [
-    { type: 'icon-card-grid-slide', labelKey: 'slideType.icon-card-grid-slide.label', label: 'Icon cards' },
-    { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
-    { type: 'text-blocks-slide', labelKey: 'slideType.text-blocks-slide.label', label: 'Text blocks' },
-  ],
   'icon-card-grid-slide': [
     { type: 'list-slide', labelKey: 'slideType.list-slide.label', label: 'List' },
     { type: 'content-slide', labelKey: 'slideType.content-slide.label', label: 'Content' },
