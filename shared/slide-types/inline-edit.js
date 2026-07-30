@@ -33,7 +33,6 @@ import * as pollSlide from './types/poll-slide/inline-edit.js';
 import * as processSlide from './types/process-slide/inline-edit.js';
 import * as pyramidSlide from './types/pyramid-slide/inline-edit.js';
 import * as quoteSlide from './types/quote-slide/inline-edit.js';
-import * as splitPartnerTitleSlide from './types/split-partner-title-slide/inline-edit.js';
 import * as tableSlide from './types/table-slide/inline-edit.js';
 import * as teamCardsSlide from './types/team-cards-slide/inline-edit.js';
 import * as textBlocksSlide from './types/text-blocks-slide/inline-edit.js';
@@ -81,7 +80,6 @@ const MODULES = Object.freeze({
   'process-slide': processSlide,
   'pyramid-slide': pyramidSlide,
   'quote-slide': quoteSlide,
-  'split-partner-title-slide': splitPartnerTitleSlide,
   'table-slide': tableSlide,
   'team-cards-slide': teamCardsSlide,
   'text-blocks-slide': textBlocksSlide,

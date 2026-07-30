@@ -20,20 +20,22 @@ test('deprecated types are never insertable (hidden from picker + AI)', () => {
   );
 });
 
-test('split-partner-title-slide is archived: deprecated + not insertable, still registered', () => {
-  const def = SLIDE_TYPES['split-partner-title-slide'];
-  assert.ok(def, 'type stays registered so stored/forked decks keep rendering');
-  assert.equal(def.deprecated, true, 'marked deprecated (archive convention)');
-  assert.equal(
-    isInsertableSlideType({ type: 'split-partner-title-slide', def }),
-    false,
-    'hidden from every insertion path (picker + AI)'
-  );
-  // Rendering never goes through the insertability gate, so an existing deck
-  // still renders unchanged.
-  assert.doesNotThrow(() =>
-    def.renderHtml({ title: 'T', logos: [], bgImage: '/x.jpg' })
-  );
+test('split-partner-title-slide is removed: off the registry, and a stored slide degrades safely', () => {
+  // Removed as the A7.1 KPI measurement closing the slide-type-seam done-gate:
+  // `deprecated: true` was a waypoint, not an end state. No successor — the
+  // "two partner logos side by side" use case may return as reusable editorial
+  // components rather than a bespoke type.
+  assert.equal(SLIDE_TYPES['split-partner-title-slide'], undefined, 'no longer registered');
+  // A deck that still carries one degrades to the archived-slide placeholder,
+  // which names the type and keeps its content visible rather than throwing.
+  const html = renderSlideHtml({
+    type: 'split-partner-title-slide',
+    content: { title: 'Old partners' },
+  });
+  assert.match(html, /class="slide/);
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /split-partner-title-slide/);
+  assert.match(html, /Old partners/);
 });
 
 test('freeform-slide is removed: off the registry, and a stored slide degrades safely', () => {

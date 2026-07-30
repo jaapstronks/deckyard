@@ -172,6 +172,58 @@ seam work the "owned" column should be one directory, the "registration" column
 one line, and the "duplicated knowledge" column should be empty because those
 consumers derive their lists from the registry instead of restating them.
 
+## Second measurement: split-partner-title-slide (2026-07-30)
+
+The KPI measurement that closes the slide-type-seam done-gate (A7.1 phase 2),
+run *after* the fact-rollout landed (#403–#477). Same counting method as
+freeform — every file the removal touches, grouped by why — so the two numbers
+are comparable.
+
+**Store measured: PostgreSQL** (this install is `STORAGE_MODE=postgres`).
+`scripts/scan-slide-type.js` is file-based and the file store here is empty, so
+it reports a meaningless clean scan — the #464 trap. Scanning the DB directly
+(the `presentations.slides` jsonb plus `i18n.versions.*.slides`) found **4 decks
+/ 7 slides** still carrying the type, all dev/test decks ("Split check", "SP
+deckyard", "SP before", "SP sandbox-sage"). So the "probably zero decks"
+assumption was wrong for this store; the render contract (`unresolved.js`)
+degrades them to archived slides, and any **production** store must still be
+scanned before this ships.
+
+**15 files, 279 deletions.** Grouped by *why*:
+
+| Group | Files | What was in them |
+|---|---|---|
+| **Owned by the type** | 3 | the definition (`types/split-partner-title-slide.js`, 147 lines) and its directory companions (`authoring.js`, `inline-edit.js`); no stylesheet |
+| **Registration / wiring** | 3 | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited) |
+| **Removal mechanism** | 2 | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design |
+| **Derived docs** | 3 | `README.md`, `editor-inspector.md`, `slide-type-inventory.md` — machine-generated count/inventory, now *derived* rather than hand-restated |
+| **Residual duplicated knowledge** | 4 | a hand table row (`wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`) |
+
+**Verdict: the done-gate is not met.** The gate is ≤3 files ideal, and anything
+above 10 fails "regardless of how clean the architecture looks." 15 > 10. The
+seam did most of its work — freeform's 18 duplicated-knowledge files fell to 4,
+and the doc/count duplication became derivation — but four hand-maintained
+per-type references survive, and they are the concrete worklist to actually
+close the gate:
+
+1. `docs/reference/wysiwyg-inline-editing.md` — a per-type table that should be
+   generated like `slide-type-inventory.md`.
+2. `tests/inspector-form.test.js` — a per-type pin in a hand list that could
+   iterate the registry.
+3. `tests/theme-background-presets.test.js` — per-type render assertions that
+   should live in (or derive from) the type's own directory.
+4. `scripts/i18n-audit-allowlist.json` — sample-content entries that follow from
+   each type's `authoring.js` and could be derived.
+
+Two side-notes the measurement surfaced. The definition still sits *beside* its
+directory (`types/split-partner-title-slide.js` + `types/split-partner-title-slide/`)
+rather than inside it — the state the per-companion rollout left every type in,
+not specific to this one. And split-partner carried **i18n keys** in all 12
+locale files despite being deprecated, which contradicts this doc's claim that
+deprecated types are excluded from extraction; `i18n:validate` tolerates the
+orphans (extra keys are not errors), so they are left as separate hygiene, but
+the extraction exclusion for deprecated types is not actually pruning.
+
 ## The removal record
 
 `shared/slide-types/removed.js` is the tombstone list: every core type that used
