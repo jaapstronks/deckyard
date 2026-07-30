@@ -93,6 +93,8 @@ nothing is discoverable only by `ls`.
 | [`slide-type-inventory.md`](reference/slide-type-inventory.md) | The built-in types (generated from the registry) |
 | [`slide-type-directory.md`](reference/slide-type-directory.md) | The directory form a type ships in |
 | [`slide-type-structure.md`](reference/slide-type-structure.md) | The `structure` facet, and type vs variant |
+| [`slide-type-runtime.md`](reference/slide-type-runtime.md) | The `runtime` facet — what the presenting session does for a type |
+| [`slide-type-groups.md`](reference/slide-type-groups.md) | The `group` axis — which shelf a type is offered on |
 | [`slide-type-companions.md`](reference/slide-type-companions.md) | What a new type owes elsewhere |
 | [`slide-type-removal.md`](reference/slide-type-removal.md) | Retiring a type without leaving rot |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor |

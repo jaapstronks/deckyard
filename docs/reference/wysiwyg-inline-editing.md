@@ -259,7 +259,9 @@ coverage table below only summarizes what the *canvas* offers per type.
 
 ## Per-type coverage
 
-35 of the 38 core types have a descriptor. Legend: "header set" = the shared
+Every core type has a descriptor except `payoff-slide`, `follow-invite-slide`
+and `custom-html-slide` — the table below is the complete set, so a type missing
+from it has no canvas editing. Legend: "header set" = the shared
 `HEADER_GHOSTS` trio (title / subheading / bottomSubheading with anchor
 fallbacks).
 

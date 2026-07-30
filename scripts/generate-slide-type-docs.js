@@ -12,7 +12,12 @@
 //
 // The count is of CORE types (shared/slide-types/types/*.js), via
 // CORE_SLIDE_TYPE_NAMES — NOT Object.keys(SLIDE_TYPES), which on a fork checkout
-// includes types dropped into custom/slide-types/ and would report 39, not 38.
+// includes types dropped into custom/slide-types/ and would over-report.
+//
+// A count that is NOT inside a marker span is unguarded and will go stale: a
+// docs audit on 2026-07-30 found five such numbers still saying 38 after #480
+// took the core count to 37. If you write a type count into prose, wrap it in
+// the marker and add the file to COUNT_MARKER_FILES below.
 //
 // Run `node scripts/generate-slide-type-docs.js` to regenerate.
 
@@ -30,7 +35,12 @@ export const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const INVENTORY_DOC = 'docs/reference/slide-type-inventory.md';
 
 /** Files carrying a hand-written type count inside marker spans (see below). */
-export const COUNT_MARKER_FILES = ['README.md', 'docs/reference/editor-inspector.md'];
+export const COUNT_MARKER_FILES = [
+  'README.md',
+  'docs/reference/editor-inspector.md',
+  'docs/reference/slide-type-structure.md',
+  'docs/reference/ai-wizard-prompts.md',
+];
 
 const MARKER_OPEN = '<!--gen:slide-type-count-->';
 const MARKER_CLOSE = '<!--/gen:slide-type-count-->';

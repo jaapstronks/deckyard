@@ -336,5 +336,5 @@ convert the consumer later — which is how `group` itself got there.
 | `slide-type-picker/data.js` (`index.js`) | picker description + search aliases, 33 types (two hand-maintained tables retired) | A7.1 rollout PR 5 |
 | `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |
 | `server/routes/api/slide-types.js` | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response | A7.1 rollout PR 5 |
-| `client/views/editor/editor-form/inspector-form.js` | inspector keep-list, all 38 types (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane) | A7.1 rollout PR 6 |
+| `client/views/editor/editor-form/inspector-form.js` | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane) | A7.1 rollout PR 6 |
 | `server/utils/ai/slide-catalog/` | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | A7.1 rollout PR 7 |

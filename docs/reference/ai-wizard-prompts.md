@@ -5,7 +5,8 @@ This document contains a prompt template for instructing an LLM to generate a pr
 > **Note**: this is a manually maintained copy-paste artifact for external
 > use. It is not wired into the app; the real generation prompts live in
 > `server/utils/ai/` and evolve independently. The slide-type catalog below
-> is a curated subset (the codebase has 38 core types) and may lag behind.
+> is a curated subset (the codebase has
+> <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> core types) and may lag behind.
 
 ---
 
