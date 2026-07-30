@@ -322,8 +322,7 @@ the `calc()` to their primary text element to enable it.
 under the tightened invariant above): every field the 2026-07-16 table had
 parked in its "Bulk modal (only home)" column was reclassified. Config/
 metadata fields moved to the inspector keeps (the table below reflects the
-new state): content + image-text `actions`;
-split-partner `logos`/`logo{n}Alt`/`bgImage`/`bgAlt`; video
+new state): content + image-text `actions`; video
 `source`/`bunnyLibraryId` (PR #191); embed `embedUrl` (PR #191); countdown
 `zeroText`; poll/likert `onCloseTarget`; feedback `placeholder`;
 lead-capture `thankYouTitle`/`thankYouMessage`/`privacyText`/`privacyUrl`;
@@ -337,7 +336,7 @@ text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
 (card-stack `card{n}Label`) need
 no surface.
 
-Method: scripted walk of all 38 core types' `SLIDE_TYPES[type].fields`
+Method: scripted walk of all core types' `SLIDE_TYPES[type].fields`
 against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
 descriptors), then hand-reviewed. Every schema field of every type is
 classified below; **no orphans found**.
@@ -379,7 +378,6 @@ homed. Not listed per row.
 | table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle, cornerCell | slide-view entry points for the table modal are an open follow-up. `cornerCell` (label\|header) is style-orthogonal: it decides whether the top-left cell reads with the label column or the header row |
 | list / lijstje | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
 | kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
-| split-partner-title _(archived)_ | label, title, subheading | - | logos[], logo1-5Alt, bgImage, bgAlt | archived 2026-07-21 (`deprecated: true`): hidden from picker + AI, but existing decks still render and their inspector keeps these |
 | image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
 | video | title | - | source, autoplay, bunnyLibraryId, watchUrl | source is a URL/ID → inspector (PR #191); watchUrl is export config with no canvas surface |
 | team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |

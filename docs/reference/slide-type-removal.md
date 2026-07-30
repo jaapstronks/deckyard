@@ -92,7 +92,14 @@ Then, in rough dependency order:
 1. **Delete the definition** — `shared/slide-types/types/<type>.js`.
 2. **Delete the stylesheet** — `client/styles/slides/**/<n>-<type>.css`, and
    remove its `@import` from the section aggregator
-   (`client/styles/slides/0*-<section>.css`).
+   (`client/styles/slides/0*-<section>.css`). **Not every type owns a file**:
+   older types carry their rules as a block inside a shared section sheet
+   (split-partner's 118 lines sat at the top of
+   `02-content-and-media/02-layouts.css`), so read the class off the
+   definition's `renderHtml` and grep *that* before deleting anything. The
+   removal guardrail matches the type **id** and a CSS class is not derived from
+   it — nothing will tell you `.slide-partner-split` outlived
+   `split-partner-title-slide`.
 3. **Deregister** — the import and the `CORE_SLIDE_TYPES` entry in
    `shared/slide-types/registry.js`.
 4. **Remove the per-type entries in the hand-maintained tables that live outside
@@ -142,11 +149,15 @@ Then, in rough dependency order:
 
 ### What you do *not* have to do
 
-- **i18n**: deprecated types are excluded from extraction, so a type that spent
-  time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json` and no
-  locale file needs touching. (`client/i18n/en.json` is a stale build artifact —
-  ignore it.) A type removed straight from active use would touch 12 locale
-  files.
+- ~~**i18n**: deprecated types are excluded from extraction, so a type that
+  spent time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json`.~~
+  **Wrong — corrected 2026-07-30.** `scripts/i18n-extract.js` walks
+  `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
+  label and field keys in every locale. Split-partner still had six keys × 12
+  locales when it was removed. **Every removal touches the 12 locale files**:
+  delete the type's `slideType.<type>.*` keys, then `npm run i18n:validate`
+  (orphan keys are not an error, so nothing fails if you forget — they just ship
+  forever). (`client/i18n/en.json` is a stale build artifact — ignore it.)
 - **Stored decks**: nothing rewrites deck JSON. Removal is a code-side operation;
   content already on disk keeps its `type` string.
 
@@ -189,40 +200,72 @@ assumption was wrong for this store; the render contract (`unresolved.js`)
 degrades them to archived slides, and any **production** store must still be
 scanned before this ships.
 
-**15 files, 279 deletions.** Grouped by *why*:
+**28 files, 472 deletions.** Grouped by *why*:
 
 | Group | Files | What was in them |
 |---|---|---|
-| **Owned by the type** | 3 | the definition (`types/split-partner-title-slide.js`, 147 lines) and its directory companions (`authoring.js`, `inline-edit.js`); no stylesheet |
+| **Owned by the type** | 4 | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the shared `02-content-and-media/02-layouts.css`, not a file of its own |
 | **Registration / wiring** | 3 | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited) |
 | **Removal mechanism** | 2 | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design |
-| **Derived docs** | 3 | `README.md`, `editor-inspector.md`, `slide-type-inventory.md` — machine-generated count/inventory, now *derived* rather than hand-restated |
-| **Residual duplicated knowledge** | 4 | a hand table row (`wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`) |
+| **Derived docs** | 2 | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now *derived* rather than hand-restated |
+| **Residual duplicated knowledge** | 5 | two hand table rows (`editor-inspector.md`, `wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`) |
+| **Locale payloads** | 12 | `slideType.split-partner-title-slide.*` — six keys in every `client/i18n/<locale>/slide-types.json`, which the type should never have had (see below) |
 
 **Verdict: the done-gate is not met.** The gate is ≤3 files ideal, and anything
-above 10 fails "regardless of how clean the architecture looks." 15 > 10. The
-seam did most of its work — freeform's 18 duplicated-knowledge files fell to 4,
-and the doc/count duplication became derivation — but four hand-maintained
-per-type references survive, and they are the concrete worklist to actually
-close the gate:
+above 10 fails "regardless of how clean the architecture looks." 28 > 10 — and
+even the like-for-like number against freeform (16 files, dropping the locale
+payloads freeform never had) fails it.
 
-1. `docs/reference/wysiwyg-inline-editing.md` — a per-type table that should be
-   generated like `slide-type-inventory.md`.
+What the seam *did* buy is real, and it is not the headline: files carrying
+**hand-maintained duplicated knowledge** fell from freeform's 18 to 5, and the
+type count and inventory became derivation instead of prose. What it did not
+touch is the long tail — the CSS block, the two doc tables, the two per-type test
+lists, the allowlist entry and twelve locale payloads all still had to be found
+and edited by hand. That tail is the worklist to actually close the gate:
+
+1. `docs/reference/editor-inspector.md` + `docs/reference/wysiwyg-inline-editing.md`
+   — per-type tables that should be generated like `slide-type-inventory.md`.
 2. `tests/inspector-form.test.js` — a per-type pin in a hand list that could
    iterate the registry.
 3. `tests/theme-background-presets.test.js` — per-type render assertions that
    should live in (or derive from) the type's own directory.
 4. `scripts/i18n-audit-allowlist.json` — sample-content entries that follow from
    each type's `authoring.js` and could be derived.
+5. **Locale payloads** — nothing prunes `slideType.<type>.*` when a type leaves
+   the registry, and `i18n:validate` accepts orphans, so dead keys ship forever
+   unless someone remembers. A prune step in `i18n:sync` would make this
+   derivation too.
+6. **Per-type CSS** — while a type's rules live in a shared section sheet, the
+   only thing tying them to the type is the class name in `renderHtml`. Moving
+   CSS into the type's directory would put it under the same guardrail as the
+   rest.
 
-Two side-notes the measurement surfaced. The definition still sits *beside* its
-directory (`types/split-partner-title-slide.js` + `types/split-partner-title-slide/`)
-rather than inside it — the state the per-companion rollout left every type in,
-not specific to this one. And split-partner carried **i18n keys** in all 12
-locale files despite being deprecated, which contradicts this doc's claim that
-deprecated types are excluded from extraction; `i18n:validate` tolerates the
-orphans (extra keys are not errors), so they are left as separate hygiene, but
-the extraction exclusion for deprecated types is not actually pruning.
+### Two things the guardrail could not see
+
+`tests/removed-slide-types.test.js` was green with both the CSS block and a
+present-tense `editor-inspector.md` row still in the tree, because it matches the
+type **id**, word-bounded:
+
+- **the CSS class is not derived from the id.** `.slide-partner-split` never
+  contains `split-partner-title-slide`, so 118 lines of dead CSS shipped to every
+  client and no test objected. Step 2 of the checklist above now says to grep the
+  class off `renderHtml` by hand.
+- **prose drops the `-slide` suffix.** `editor-inspector.md` said
+  "split-partner-title _(archived)_ … existing decks still render and their
+  inspector keeps these" — false after removal, and invisible to a word-bounded
+  match on the full id. Adding it to `allowedReferences` would not have helped
+  either: that test checks the file mentions the *full* id, so the entry would
+  have failed as stale.
+
+Neither is fixable by tightening the regex (a looser match would flag every
+historical mention in `CHANGELOG.md` and every migration comment). They are
+arguments for the same thing as the worklist above: fewer places that restate a
+type's name at all.
+
+One side-note the measurement surfaced and did not act on: the definition still
+sits *beside* its directory (`types/split-partner-title-slide.js` +
+`types/split-partner-title-slide/`) rather than inside it — the state the
+per-companion rollout left every type in, not specific to this one.
 
 ## The removal record
 

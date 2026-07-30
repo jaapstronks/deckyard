@@ -74,7 +74,7 @@ export const REMOVED_SLIDE_TYPES = {
     },
   },
   'split-partner-title-slide': {
-    removed: '2026-07-30, PR #TBD',
+    removed: '2026-07-30, PR #480',
     successor: null,
     reason:
       'a rarely-used "two partner logos side by side" title layout, archived ' +
@@ -93,6 +93,8 @@ export const REMOVED_SLIDE_TYPES = {
         'a one-off migration whose comment notes this type was deliberately out of its scope',
       'tests/slide-types-policy.test.js':
         'asserts the type is off the registry and a stored slide degrades safely',
+      'docs/reference/slide-type-removal.md':
+        'records this removal as the second cost measurement (the KPI that closed the A7.1 done-gate), so it must name the type it measured',
     },
   },
 };
