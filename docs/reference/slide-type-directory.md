@@ -142,7 +142,9 @@ the ones a fork owns. Five rules, and they apply to every companion derived this
 way:
 
 1. **Definition first, aggregator second.** A companion looked up at runtime is
-   looked up against the definition *as it exists at runtime*.
+   looked up against the definition *as it exists at runtime*. (One companion is
+   deliberately the other way round — the inline descriptor. See the exception
+   below before "fixing" it.)
 2. **One lookup per facet, in the facet module.** Not in the consumer. Every
    consumer that writes its own precedence rule is a place the next drift starts.
 3. **Enumerate the live map.** `typesInGroup(group, order, types)` takes the map
@@ -163,6 +165,82 @@ three: +13 KB on an 800 KB response (+3 KB gzipped), once per deck opened;
 
 Pinned by `tests/slide-type-api-companions.test.js` (the wire) and
 `tests/slide-type-groups.test.js` (the precedence).
+
+## The one exception: the inline descriptor
+
+`getInlineDescriptor()` in `client/views/editor/inline-edit/descriptors.js`
+reads the core map **before** `def.inline` — rule 1 backwards. It looks like the
+drift the rule exists to prevent, and it was logged as one. It is not, and this
+section is here so the next reader does not re-open it.
+
+**A descriptor is not a fact about the type, it is a description of the DOM.**
+`{ sel: '.tsu-content' }`, `formText: ['title','subheading','meta']` — these are
+claims about the markup a renderer emitted. Every other companion answers "what
+does this type declare about itself", which the definition is always the
+authority on. This one has to agree with whichever renderer actually drew the
+slide, and for one population that renderer is not the fork's.
+
+### What a fork override actually gets, measured
+
+Fixture: `custom/slide-types/title-slide.js` with `override: true`, its own
+fields (`headline`/`kicker`/`sponsor`), its own markup, its own `inline`
+descriptor and its own `inspectorKeeps`. Measured against a real
+`GET /api/slide-types` response and the real client render path in jsdom, once
+with node's registry and once with `process` removed so `registry.js` takes its
+browser branch.
+
+| | server (node) | browser |
+|---|---|---|
+| registry holds | the fork's definition | **core's** — `custom/slide-types/` is behind `isNode` and is not on the static allowlist (`server/config/paths.js` serves `custom/assets/` and `custom/themes/` only) |
+| renders | `<div class="slide acme-title">` | `<div class="slide slide-title-universal …">` — `isBundledSlideType()` finds core's `renderHtml` under that name, so `needsServerRender` is false |
+| `data-inline-field` in the DOM | `headline` | `title` |
+
+The fork's `inline` **is** on the wire (measured: `inline.formText:
+["headline","kicker","sponsor"]`), and `inspectorKeeps` resolves definition-first
+to `["sponsor"]` exactly as rule 1 says. Only the descriptor is resolved the
+other way — and against that browser DOM:
+
+| order | formText keys present in the DOM | ghost anchors that resolve |
+|---|---|---|
+| today (core first) | 1/3 (`title`) | **2/2** (`.title`, `.tsu-content`) |
+| flipped (definition first) | 0/3 | **0/2** |
+
+So flipping in isolation does not hand a fork its descriptor — it hands the
+editor a descriptor for markup that is not in the document: no ghost chips, no
+card affordances, and `getInlineFormTextKeys()` telling the inspector to drop
+fields the canvas cannot edit either. The type ends up with no editing surface
+at all.
+
+### The rule this lookup actually follows
+
+**Renderer first.** In the browser the renderer precedence *is* core-first, so
+the two coincide:
+
+| fork type | bundled client-side? | renders in the browser as | descriptor used | right? |
+|---|---|---|---|---|
+| new name (`acme-hero`) | no | server-rendered, the fork's markup | `def.inline` (no core entry) | yes — both orders agree |
+| overrides a core name that has a descriptor | yes, under core's entry | core's markup | core's | yes — the flip would break it |
+| overrides a core name **without** a descriptor (`payoff-slide`, `follow-invite-slide`, `custom-html-slide`) | yes | core's markup | `def.inline` | **no** — latent in both orders, see below |
+
+Row 3 is the hole neither order closes: the fallback fires for a bundled type,
+so a fork's descriptor is applied to core's markup. It is unexploited today (no
+fork declares one) and left as-is rather than gated, because the honest fix is
+the one below, not a second special case here.
+
+### When to revisit
+
+The exception is a consequence of a bigger gap the measurement surfaced: **an
+override fork type's renderer never reaches the browser.** The same slide is
+core's markup in the editor and the presenter, and the fork's markup in every
+server-side export. Close that (bundle overrides client-side, or route them
+through `needsServerRender`) and this lookup should be flipped to
+definition-first in the same change — at that point `def.inline` describes the
+DOM again. Tracked as its own item; do not flip it before then.
+
+Pinned by `tests/inline-descriptor-seam-order.test.js`, which asserts both
+branches and the premise underneath them (every type in the core descriptor map
+is bundled client-side, so core-first and renderer-first cannot diverge without
+the test failing).
 
 It is a **generated file** — `npm run gen:slide-authoring`, from
 `scripts/generate-slide-authoring-aggregator.js` — because a hand-maintained
