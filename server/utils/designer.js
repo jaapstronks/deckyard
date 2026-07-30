@@ -7,13 +7,24 @@
 import { getMembershipByEmail, hasDesignerCapability } from '../storage/user-organizations/index.js';
 import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getDefaultOrganizationId } from '../config/database.js';
+import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getOrgSettings } from './org-settings.js';
 
 /**
  * Resolve whether a user has designer capability.
  * Looks up the user's membership and org settings to determine capability.
  *
- * For non-database modes (auth disabled, dev bypass, sandbox), admins get designer capability.
+ * On a single-workspace instance the instance admin is the only administrator
+ * there is, and the modes that have no database at all (auth disabled, dev
+ * bypass, sandbox) have no membership row to read — so `isAdmin` stands in for
+ * the membership there, as it always has.
+ *
+ * In multi-workspace mode it must not: designer capability is held *per
+ * organization*, the same way the membership role is (see
+ * client/lib/user/workspace-role.js). An instance-wide admin who is a plain
+ * member of the organization they switched into gets designer capability only
+ * if that membership says so — via `is_designer`, via being its owner, or via
+ * the organization's `adminsAreDesigners` setting.
  *
  * @param {Object} user - User object from auth (must have email, organizationId)
  * @returns {Promise<boolean>}
@@ -21,8 +32,7 @@ import { getOrgSettings } from './org-settings.js';
 export async function resolveDesignerCapability(user) {
   if (!user?.email) return false;
 
-  // Admins always get designer capability in single-user / non-DB modes
-  if (user.isAdmin) return true;
+  if (!isMultiWorkspaceEnabled() && user.isAdmin) return true;
 
   const orgId = user.organizationId || getDefaultOrganizationId();
 
