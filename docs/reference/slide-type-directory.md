@@ -78,7 +78,7 @@ subject of the track this form came out of.
 |---|---|---|
 | label, `fields[]`, `defaults`, `defaultsByLang` | `index.js` | registry, editor form, validation, agent schema |
 | `renderHtml` | `render.js` | presenter, editor preview, export |
-| picker description, search aliases | `authoring.js` | `slide-type-picker/data.js` |
+| picker description, search aliases | `authoring.js` | the picker, via `authoring-companions.js` |
 | schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |
 | picker sample content | `authoring.js` | `slide-type-sample-content.js` |
 | curated group (`group`) | `authoring.js` | picker shelves + settings curation (derived) |
@@ -205,6 +205,9 @@ export const SLIDE_TYPE_DESC = {
 };
 ```
 
+That intermediate form is what the picker's description and alias tables looked
+like between PR 0 and rollout PR 6; both are fully derived now.
+
 One fact needed a variation on that, because the consumer's data structure
 encodes **order** as well as membership: which shelf a type is offered on. It is
 declared as `group` in `authoring.js`, both consumers derive their membership
@@ -226,3 +229,4 @@ convert the consumer later — which is how `group` itself got there.
 | `client/views/editor/inline-edit/descriptors.js` | inline-edit descriptor (35 types) | A7.1 rollout PR 3 |
 | `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration) | A7.1 rollout PR 4 |
 | `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |
+| `slide-type-picker/data.js` + `slide-type-picker/index.js` | picker description + search aliases, 33 types (+ both on the wire) — data.js keeps only what is a curation decision about the surface | A7.1 rollout PR 6 |

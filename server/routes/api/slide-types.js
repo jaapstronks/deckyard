@@ -7,6 +7,8 @@ import {
 } from '../../../shared/slide-types/runtime.js';
 import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
 import {
+  slideTypeAliases,
+  slideTypeDescription,
   slideTypeSample,
   slideTypeSchematic,
 } from '../../../shared/slide-types/authoring-companions.js';
@@ -78,7 +80,7 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.layoutTextColumns && typeof def.layoutTextColumns === 'object'
             ? def.layoutTextColumns
             : undefined,
-        // The three authoring companions, resolved. This is the wire half of
+        // The authoring companions, resolved. This is the wire half of
         // the aggregator-seam rule: the editor does not hold the registry, it
         // holds this response, so a companion it looks up "on the definition
         // first" can only be found if the definition it holds carries it. Until
@@ -91,9 +93,16 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         // states the whole truth about a type. That costs ~8 KB across all
         // types on a request the editor makes once per deck, which is why the
         // rule needs no core exception.
+        //
+        // `description` and `aliases` joined them for the same reason with a
+        // different history: their maps lived in the picker's own data.js, so
+        // there was no dead fallback branch — a fork type simply had nowhere to
+        // put a description, and every tile it offered showed a bare label.
         group: slideTypeGroup(key, def) || undefined,
         schematic: slideTypeSchematic(key, def) || undefined,
         sampleContent: slideTypeSample(key, def),
+        description: slideTypeDescription(key, def) || undefined,
+        aliases: slideTypeAliases(key, def) || undefined,
       };
     }
 

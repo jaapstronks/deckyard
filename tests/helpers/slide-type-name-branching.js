@@ -212,13 +212,15 @@ export const INVENTORY = {
 
   // --- the companions proper: gated by the matrix ---------------------------
   'client/views/editor/slide-type-picker/data.js': {
-    kind: table,
-    companion: 'picker-description',
+    kind: sparse,
     why:
-      'SLIDE_TYPE_DESC and SLIDE_TYPE_ALIASES — two per-type tables in one ' +
-      'module, both gated by the companion matrix. The third used to be ' +
-      'PICKER_GROUPS; membership moved onto the types and what is left here ' +
-      '(PICKER_GROUP_ORDER) is an order hint, not a membership.',
+      'Nothing here is a fact about a type any more. SLIDE_TYPE_DESC and ' +
+      'SLIDE_TYPE_ALIASES moved onto the types (declared in their own ' +
+      'authoring.js), as PICKER_GROUPS did before them. What is left names ' +
+      'types for two curation decisions about this surface: PICKER_GROUP_ORDER ' +
+      '(who leads each shelf — a partial hint, where a missing name costs a ' +
+      'position and a stale one is ignored) and SLIDE_TYPE_PRESETS (which ' +
+      'types get extra variant tiles). Both are meant to be partial.',
   },
   'client/views/editor/editor-form/inspector-form.js': {
     kind: table,

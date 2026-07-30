@@ -33,6 +33,7 @@ globalThis.requestAnimationFrame = () => 0;
 
 const { h } = await import('../client/lib/dom.js');
 const data = await import('../client/views/editor/slide-type-picker/data.js');
+const companions = await import('../shared/slide-types/authoring-companions.js');
 const prefs = await import('../client/views/editor/slide-type-picker/preferences.js');
 const thumbs = await import('../client/views/editor/slide-type-picker/thumbnails.js');
 const { createSlideTypePicker } = await import(
@@ -45,13 +46,15 @@ test('data: view modes are exactly schematic + preview', () => {
 });
 
 test('data: every described / preset type has a search alias', () => {
-  // The three data maps key off the same slide types; a description or preset
-  // without an alias means it can never be found by an unofficial name.
-  for (const type of Object.keys(data.SLIDE_TYPE_DESC)) {
-    assert.ok(type in data.SLIDE_TYPE_ALIASES, `no alias for described type ${type}`);
+  // The description and the aliases now live on the type (authoring.js), while
+  // the presets stay a curation decision about this surface. The invariant is
+  // unchanged and spans both: a type the picker describes or offers a preset
+  // tile for, but has no aliases for, can never be found by an unofficial name.
+  for (const type of Object.keys(companions.SLIDE_TYPE_DESC)) {
+    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for described type ${type}`);
   }
   for (const type of Object.keys(data.SLIDE_TYPE_PRESETS)) {
-    assert.ok(type in data.SLIDE_TYPE_ALIASES, `no alias for preset type ${type}`);
+    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for preset type ${type}`);
   }
 });
 
@@ -157,6 +160,51 @@ function makePicker(overrides = {}) {
     ...overrides,
   });
 }
+
+test('index: a tile shows the description the type declares', () => {
+  // The seam end-to-end through the browser code path: the copy is no longer in
+  // the picker's own table, so a broken lookup would silently render bare
+  // labels — visible in the app, invisible to a data-shape assertion.
+  localStorage.clear();
+  const mount = h('div', {});
+  document.body.append(mount);
+  makePicker().renderSlideTypePicker(mount, {});
+
+  const wrap = mount.querySelector('[data-thumb-type-key="quote-slide"]');
+  assert.ok(wrap, 'the quote tile rendered');
+  assert.equal(
+    wrap.querySelector('.ps-type-desc')?.textContent,
+    'A pull quote with attribution'
+  );
+  mount.remove();
+});
+
+test('index: a fork type\'s own description and aliases win over core', () => {
+  // The point of the definition-first lookup: a type from custom/slide-types/
+  // arrives through /api/slide-types carrying its own copy. Core has an entry
+  // for quote-slide, so this also pins the precedence, not just the fallback.
+  localStorage.clear();
+  const mount = h('div', {});
+  document.body.append(mount);
+  makePicker({
+    SLIDE_TYPES: {
+      ...SLIDE_TYPES,
+      'quote-slide': {
+        ...SLIDE_TYPES['quote-slide'],
+        description: 'Een uitspraak met bronvermelding',
+        aliases: 'uitspraak bronvermelding',
+      },
+    },
+  }).renderSlideTypePicker(mount, {});
+
+  const wrap = mount.querySelector('[data-thumb-type-key="quote-slide"]');
+  assert.equal(
+    wrap.querySelector('.ps-type-desc')?.textContent,
+    'Een uitspraak met bronvermelding'
+  );
+  assert.match(wrap.getAttribute('data-search'), /uitspraak bronvermelding/);
+  mount.remove();
+});
 
 test('index: renders a grid of type cards in default schematic mode', () => {
   localStorage.clear();

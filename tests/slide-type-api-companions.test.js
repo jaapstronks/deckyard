@@ -1,8 +1,8 @@
 /**
  * The wire half of the aggregator-seam rule: `/api/slide-types` carries the
- * three authoring companions.
+ * authoring companions.
  *
- * Why this file exists at all. Two of the three lookups — `schematicFor()` and
+ * Why this file exists at all. Two of the first three lookups — `schematicFor()` and
  * `getSampleContent()` — have always checked the definition before the per-type
  * map, precisely so a type in `custom/slide-types/` could ship a glyph or an
  * example without owning a directory in `shared/`. That branch was dead where it
@@ -11,9 +11,14 @@
  * and no browser consumer would ever see it. The consumers were right; the wire
  * dropped the keys they read.
  *
+ * `description` and `aliases` joined later, with the same consequence and a
+ * different history: their maps lived in the picker's own `data.js`, so there
+ * was no dead fallback branch — a fork type simply had nowhere to put a
+ * description, and every tile it offered showed a bare label.
+ *
  * So the checks below are about the *route*, not about any one type: that the
- * three keys travel, that what travels is what the facet modules resolve, and
- * that a declaration on a non-core definition survives the trip.
+ * keys travel, that what travels is what the facet modules resolve, and that a
+ * declaration on a non-core definition survives the trip.
  *
  * Run with: node --test tests/slide-type-api-companions.test.js
  */
@@ -25,6 +30,8 @@ import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 import { slideTypeGroup } from '../shared/slide-types/authoring-groups.js';
 import {
+  slideTypeAliases,
+  slideTypeDescription,
   slideTypeSample,
   slideTypeSchematic,
 } from '../shared/slide-types/authoring-companions.js';
@@ -46,7 +53,7 @@ async function fetchMeta() {
 
 const META = await fetchMeta();
 
-describe('the three companions travel', () => {
+describe('the companions travel', () => {
   it('every offerable type is served a group', () => {
     const missing = Object.keys(SLIDE_TYPES)
       .filter((name) => !SLIDE_TYPES[name]?.deprecated)
@@ -76,7 +83,21 @@ describe('the three companions travel', () => {
         slideTypeSample(name, def),
         `${name}: sampleContent`
       );
+      assert.equal(m.description ?? '', slideTypeDescription(name, def), `${name}: description`);
+      assert.equal(m.aliases ?? '', slideTypeAliases(name, def), `${name}: aliases`);
     }
+  });
+
+  it('every offerable type is served picker copy', () => {
+    // Both degrade quietly — a missing description costs the tooltip, missing
+    // aliases cost every unofficial search term — so only a count catches it.
+    const missing = Object.keys(SLIDE_TYPES)
+      .filter((name) => !SLIDE_TYPES[name]?.deprecated)
+      .filter((name) => slideTypeDescription(name, SLIDE_TYPES[name]) && !META[name]?.description)
+      .sort();
+    assert.deepStrictEqual(missing, [], 'a type has a description the editor is not told');
+    const served = Object.values(META).filter((m) => m.description).length;
+    assert.ok(served > 30, `only ${served} types carry a description; the check would be vacuous`);
   });
 
   it('a deprecated type is served no shelf', () => {
@@ -97,7 +118,7 @@ describe('the three companions travel', () => {
     // Date or an undefined leaf would arrive at the editor changed or missing,
     // and the editor would fall back to core without anything saying so.
     for (const [name, m] of Object.entries(META)) {
-      for (const key of ['group', 'schematic', 'sampleContent']) {
+      for (const key of ['group', 'schematic', 'sampleContent', 'description', 'aliases']) {
         if (m[key] === undefined) continue;
         assert.deepStrictEqual(
           JSON.parse(JSON.stringify(m[key])),
@@ -120,18 +141,24 @@ describe('a non-core declaration reaches the editor', () => {
     group: 'media',
     schematic: { kind: 'image' },
     sampleContent: { title: 'Welcome' },
+    description: 'A full-bleed opener',
+    aliases: 'hero opener voorpagina',
   };
 
-  it('its group, glyph and example all resolve from the definition', () => {
+  it('its group, glyph, example and copy all resolve from the definition', () => {
     assert.equal(slideTypeGroup('acme-hero', forkDef), 'media');
     assert.deepStrictEqual(slideTypeSchematic('acme-hero', forkDef), { kind: 'image' });
     assert.deepStrictEqual(slideTypeSample('acme-hero', forkDef), { title: 'Welcome' });
+    assert.equal(slideTypeDescription('acme-hero', forkDef), 'A full-bleed opener');
+    assert.equal(slideTypeAliases('acme-hero', forkDef), 'hero opener voorpagina');
   });
 
   it('and each degrades to nothing rather than to a core type\'s answer', () => {
     assert.equal(slideTypeGroup('acme-hero', { label: 'Hero' }), '');
     assert.equal(slideTypeSchematic('acme-hero', { label: 'Hero' }), null);
     assert.equal(slideTypeSample('acme-hero', { label: 'Hero' }), undefined);
+    assert.equal(slideTypeDescription('acme-hero', { label: 'Hero' }), '');
+    assert.equal(slideTypeAliases('acme-hero', { label: 'Hero' }), '');
   });
 
   it('a definition may override core per companion, without touching the others', () => {
@@ -142,6 +169,18 @@ describe('a non-core declaration reaches the editor', () => {
       slideTypeSample('quote-slide', overridden),
       slideTypeSample('quote-slide')
     );
+    assert.equal(
+      slideTypeDescription('quote-slide', overridden),
+      slideTypeDescription('quote-slide')
+    );
+  });
+
+  it('a blank declaration falls through to core rather than blanking the tile', () => {
+    // '' and '   ' are what a half-filled fork declaration looks like. Treating
+    // them as an override would replace a good description with nothing.
+    const blank = { ...SLIDE_TYPES['quote-slide'], description: '  ', aliases: '' };
+    assert.equal(slideTypeDescription('quote-slide', blank), slideTypeDescription('quote-slide'));
+    assert.equal(slideTypeAliases('quote-slide', blank), slideTypeAliases('quote-slide'));
   });
 });
 

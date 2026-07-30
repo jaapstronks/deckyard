@@ -5,7 +5,7 @@
  * the mutable per-render state (view mode, preview surface, observers, the
  * single-open peek handle) and composes the concern modules beside it in this
  * folder:
- *   - data.js         — static aliases / curated presets / descriptions + tuning
+ *   - data.js         — curated presets / shelf order hints + tuning knobs
  *   - preferences.js  — every localStorage key (view mode, surface, usage, pins,
  *                       collapsed sections)
  *   - thumbnails.js   — pure thumbnail builders (video/embed mocks, schematic,
@@ -28,13 +28,15 @@ import {
   FREQUENT_MAX,
   FREQUENT_MIN_TOTAL,
   VIEW_MODES,
-  SLIDE_TYPE_ALIASES,
   SLIDE_TYPE_PRESETS,
-  SLIDE_TYPE_DESC,
   PICKER_GROUP_ORDER,
   PICKER_GROUP_KEYS,
 } from './data.js';
 import { slideTypeGroup, typesInGroup } from '../../../../shared/slide-types/authoring-groups.js';
+import {
+  slideTypeAliases,
+  slideTypeDescription,
+} from '../../../../shared/slide-types/authoring-companions.js';
 import {
   readViewMode,
   persistViewMode,
@@ -75,9 +77,12 @@ export function createSlideTypePicker({
   // Keep fallbacks in English.
   const tr = t;
 
-  // Tooltip/caption description for a type (falls back to '' when none).
+  // Tooltip/caption description for a type (falls back to '' when none). The
+  // English fallback is resolved against the definition first, so a type from
+  // custom/slide-types/ that declares its own `description` gets it — the same
+  // precedence the glyph and the sample content use.
   const descFor = (type) =>
-    tr(`editor.slideTypeDesc.${type}`, SLIDE_TYPE_DESC[type] || '');
+    tr(`editor.slideTypeDesc.${type}`, slideTypeDescription(type, SLIDE_TYPES?.[type]));
 
   // Search query persists across re-renders.
   let searchQuery = '';
@@ -199,7 +204,7 @@ export function createSlideTypePicker({
   // aliases, lowercased, so "big numbers" finds the KPI slide and
   // "smoelenboek" finds team cards.
   const searchHaystack = (type, label) =>
-    `${label} ${type} ${descFor(type)} ${SLIDE_TYPE_ALIASES[type] || ''}`.toLowerCase();
+    `${label} ${type} ${descFor(type)} ${slideTypeAliases(type, SLIDE_TYPES?.[type])}`.toLowerCase();
 
   // Safe attribute-selector value for a type key.
   const cssEsc = (s) =>

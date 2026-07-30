@@ -10,7 +10,8 @@
  * missing, which is exactly why the drift is silent: nothing breaks, the type
  * just gets quietly worse. `slide-type-schematics.js` even carries the comment
  * "Keep this aligned with SLIDE_TYPE_DESC / SLIDE_TYPE_PRESETS" — a human asked
- * to do a test's job.
+ * to do a test's job. (That comment is gone: the glyph and the description are
+ * both declared by the type now. The class of problem is not.)
  *
  * This module says, per companion: who owes it, whether it is present, and
  * which types are exempt and why. The test drives both directions off that, so
@@ -39,7 +40,7 @@ import { slideStructure } from '../../shared/slide-types/structure.js';
 import {
   SLIDE_TYPE_DESC,
   SLIDE_TYPE_ALIASES,
-} from '../../client/views/editor/slide-type-picker/data.js';
+} from '../../shared/slide-types/authoring-companions.js';
 import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js';
 import { SLIDE_TYPE_SCHEMATIC } from '../../client/views/editor/slide-type-schematics.js';
 import { INLINE_DESCRIPTORS } from '../../client/views/editor/inline-edit/descriptors.js';
@@ -183,22 +184,30 @@ export const COMPANIONS = [
   {
     id: 'picker-description',
     label: 'Picker description',
-    where: 'client/views/editor/slide-type-picker/data.js (SLIDE_TYPE_DESC)',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (description) — surfaced ' +
+      'as SLIDE_TYPE_DESC by shared/slide-types/authoring-companions.js',
     degradesTo: 'the picker tile shows the bare label with no "what is this" tooltip',
     appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => typeof SLIDE_TYPE_DESC[name] === 'string',
+    // A fork type may ship its own `description` on the definition
+    // (slideTypeDescription checks that first), so either source counts.
+    has: (name, def) =>
+      typeof SLIDE_TYPE_DESC[name] === 'string' || typeof def?.description === 'string',
     keys: () => Object.keys(SLIDE_TYPE_DESC),
     exempt: {},
   },
   {
     id: 'picker-search-aliases',
     label: 'Picker search aliases',
-    where: 'client/views/editor/slide-type-picker/data.js (SLIDE_TYPE_ALIASES)',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (aliases) — surfaced as ' +
+      'SLIDE_TYPE_ALIASES by shared/slide-types/authoring-companions.js',
     degradesTo:
       'the type is only findable by its exact label — searching "tabel" or ' +
       '"smoelenboek" will not surface it',
     appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => typeof SLIDE_TYPE_ALIASES[name] === 'string',
+    has: (name, def) =>
+      typeof SLIDE_TYPE_ALIASES[name] === 'string' || typeof def?.aliases === 'string',
     keys: () => Object.keys(SLIDE_TYPE_ALIASES),
     exempt: {},
   },

@@ -1,5 +1,5 @@
 /**
- * The other two authoring companions — the picker's glyph and its sample
+ * The remaining authoring companions — the picker's copy, glyph and sample
  * content — resolved by the same seam rule as `group`.
  *
  * ## Why these lookups moved out of the editor
@@ -11,11 +11,17 @@
  * `GET /api/slide-types`, and that route served neither key. A fork type could
  * declare `sampleContent` and no browser consumer would ever see it.
  *
- * Fixing the route means the server resolves the same three companions the
- * editor does, and a lookup that two sides perform is a lookup that belongs to
+ * Fixing the route means the server resolves the same companions the editor
+ * does, and a lookup that two sides perform is a lookup that belongs to
  * neither. So it lives here, next to `./authoring-groups.js`, and the editor
  * surfaces keep the parts that are genuinely theirs (merging `defaults`, the
  * preset-tile plumbing, the theme's `sampleEmbedUrl` override).
+ *
+ * The picker's `description` and `aliases` joined them later and had the same
+ * shape of problem for a different reason: their maps lived in the picker's own
+ * `data.js`, so there was no definition-first branch to be dead — a fork type
+ * simply had nowhere to put a description, and got its bare label. Both now
+ * resolve here and both travel on the route.
  *
  * ## The rule, in one line each
  *
@@ -23,7 +29,8 @@
  * 2. `SLIDE_TYPE_AUTHORING` — a build artifact over the *core* type directories
  *    — is core's answer, never the population.
  * 3. A miss is "fall back", never an error: the picker has a generic tile for a
- *    type with no glyph and an empty sample for one with no example.
+ *    type with no glyph, an empty sample for one with no example, and the bare
+ *    label for one with no description.
  *
  * @see docs/reference/slide-type-groups.md — the seam rule, written out.
  * @see docs/reference/slide-type-directory.md — what else a type's directory owns.
@@ -106,4 +113,64 @@ export function slideTypeSample(type, def = null) {
   const declared = def?.sampleContent;
   if (declared && typeof declared === 'object') return declared;
   return SLIDE_TYPE_SAMPLE_CONTENT[type];
+}
+
+/**
+ * Picker description per core slide type — the "what is this" line the tile
+ * shows as its tooltip. Exported as a map because the companion-coverage test
+ * reads it by name.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const SLIDE_TYPE_DESC = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SLIDE_TYPE_AUTHORING)
+      .filter(([, authoring]) => typeof authoring?.description === 'string')
+      .map(([type, authoring]) => [type, authoring.description])
+  )
+);
+
+/**
+ * Search aliases per core slide type — extra terms (incl. Dutch) folded into
+ * the picker's search haystack, never displayed.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const SLIDE_TYPE_ALIASES = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SLIDE_TYPE_AUTHORING)
+      .filter(([, authoring]) => typeof authoring?.aliases === 'string')
+      .map(([type, authoring]) => [type, authoring.aliases])
+  )
+);
+
+/**
+ * The picker's one-line description of a type, untranslated.
+ *
+ * The English string is the fallback the caller hands to `t()`; the translated
+ * copy lives under `editor.slideTypeDesc.<type>` in the i18n files, which is
+ * why this returns a plain string and does no localisation of its own.
+ *
+ * @param {string} type - registry type name
+ * @param {{description?: unknown}|null} [def] - the definition as it exists at runtime
+ * @returns {string} '' when neither side has one — the tile shows its bare label
+ */
+export function slideTypeDescription(type, def = null) {
+  const declared = def?.description;
+  if (typeof declared === 'string' && declared.trim()) return declared;
+  return SLIDE_TYPE_DESC[type] || '';
+}
+
+/**
+ * The extra search terms for a type, as one space-separated string.
+ *
+ * Folded into the picker's search haystack alongside the label, the raw type
+ * key and the description, so an unofficial or Dutch name still finds the tile.
+ *
+ * @param {string} type - registry type name
+ * @param {{aliases?: unknown}|null} [def] - the definition as it exists at runtime
+ * @returns {string} '' when neither side has any
+ */
+export function slideTypeAliases(type, def = null) {
+  const declared = def?.aliases;
+  if (typeof declared === 'string' && declared.trim()) return declared;
+  return SLIDE_TYPE_ALIASES[type] || '';
 }

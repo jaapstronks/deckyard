@@ -100,9 +100,10 @@ Then, in rough dependency order:
    `node --test tests/slide-type-companion-coverage.test.js` reports the ones you
    missed by name — see
    [`slide-type-companions.md`](./slide-type-companions.md) for the full list
-   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `SLIDE_TYPE_DESC`,
-   `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the type's own `group`, the AI
-   catalog entry and its examples).
+   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, the AI catalog entry and its
+   examples). The ones a type in the directory form owns — its `description`,
+   its `aliases`, its `schematic`, its `sample`, its `group` — go with the
+   directory in step 3 and need no separate visit.
    Not in the matrix, still by hand — each one branches on the type *name* and
    nothing checks that the set is complete (#451 hit all three):
    - the conversion map in `shared/slide-types/convert.js`, if the type was a

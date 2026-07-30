@@ -21,6 +21,20 @@ export default {
   group: 'basic',
 
   /**
+   * Short "what is this" line, shown as the picker tile's tooltip. English is
+   * the fallback; translations live under `editor.slideTypeDesc.<type>`.
+   */
+  description: 'A bulleted or numbered list',
+
+  /**
+   * Extra search terms (incl. Dutch) folded into the picker's search haystack.
+   * Never displayed.
+   * Carries the Dutch terms of the retired `lijstje-slide` alias too, so
+   * someone typing "lijstje" still lands on the one List type.
+   */
+  aliases: 'bullets numbered list styled items opsomming lijstje lijst genummerd',
+
+  /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */

@@ -46,8 +46,8 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | AI / MCP catalog **prose** (description, bestFor, notFor) | `server/utils/ai/slide-catalog/` (`SLIDE_TYPE_CATALOG`) | not `ai: false`, not deprecated | derived entry flagged `documented: false`; category falls back to `content` |
 | AI prompt examples | `server/utils/ai/slide-catalog/examples/` | sparse by design (reverse only) | prompt shows the schema without filled-in content |
 | v1 generator manual example | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`) | sparse by design (reverse only) | falls through to the catalog example, then to defaults |
-| Picker description | `client/views/editor/slide-type-picker/data.js` (`SLIDE_TYPE_DESC`) | every insertable type | tile shows the bare label, no tooltip |
-| Picker search aliases | same file (`SLIDE_TYPE_ALIASES`) | every insertable type | only findable by exact label |
+| Picker description | `shared/slide-types/types/<name>/authoring.js` (`description`) | every insertable type | tile shows the bare label, no tooltip |
+| Picker search aliases | same file (`aliases`) | every insertable type | only findable by exact label |
 | Picker schematic glyph | `client/views/editor/slide-type-schematics.js` | every insertable type | generic text-only diagram |
 | Curated group | `shared/slide-types/types/<name>/authoring.js` (`group`) | every insertable type | lands in the picker's computed "Other" group *and* the settings tab's "Other" heading |
 | Inline-edit descriptor | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type | no on-canvas editing; every field is side-form only |
@@ -55,11 +55,12 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Refine content schema | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`) | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content |
 | Structural validator | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`) | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated |
 
-A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
-inline companions from its own definition (`ai: {}`, `schematic: {}`,
-`inline: {}`) but cannot add rows to core's picker maps, so the matrix covers
-**core types only** — the same line `git ls-files` draws in
-`tests/removed-slide-types.test.js`.
+A fork-local type in `custom/slide-types/` satisfies most companions from its
+own definition — `ai: {}`, `schematic: {}`, `inline: {}`, and since the seam
+rollout also `description`, `aliases`, `group`, `sampleContent` and
+`inspectorKeeps`, all of which travel on `GET /api/slide-types`. It still cannot
+add rows to core's derived maps, so the matrix covers **core types only** — the
+same line `git ls-files` draws in `tests/removed-slide-types.test.js`.
 
 Four rows are marked *sparse by design*: the entry exists only where the default
 is wrong (an example the schema cannot convey, a picker group for the long tail,
