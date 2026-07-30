@@ -228,3 +228,55 @@ test('index: pin button pins the type and persists it', () => {
   assert.ok(mount.querySelector('.ps-type-group[data-group-key="pinned"]'), 'pinned strip rendered');
   mount.remove();
 });
+
+// --- the aggregator seam: which shelf a non-core type lands on --------------
+// A fork type used to be pinned to the "Custom" shelf whatever it declared: the
+// picker read membership from the generated authoring aggregator, which holds
+// core and only core. The shelves now resolve over the live SLIDE_TYPES map, so
+// a declared group wins and "Custom" becomes the shelf for a type that declares
+// nothing — which is also how an org keeps its own types together, by declaring
+// nothing.
+
+// `data` rather than `media`: the media glyphs draw an SVG, and jsdom cannot
+// set className on an SVGElement. The shelf is incidental to what is asserted.
+const SLIDE_TYPES_WITH_FORK = {
+  ...SLIDE_TYPES,
+  'acme-hero': { label: 'Acme hero', isCustom: true, group: 'data' },
+  'acme-widget': { label: 'Acme widget', isCustom: true },
+};
+
+const shelfOf = (mount, type) => {
+  const wrap = mount.querySelector(`.ps-type-card-wrap[data-thumb-type-key="${type}"]`);
+  return wrap?.closest('.ps-type-group')?.getAttribute('data-group-key') ?? null;
+};
+
+test('index: a custom type that declares a group is offered on that shelf', () => {
+  localStorage.clear();
+  const mount = h('div', {});
+  document.body.append(mount);
+  const { renderSlideTypePicker } = makePicker({ SLIDE_TYPES: SLIDE_TYPES_WITH_FORK });
+  renderSlideTypePicker(mount, {});
+
+  assert.equal(shelfOf(mount, 'acme-hero'), 'data', 'declared shelf ignored');
+  assert.equal(shelfOf(mount, 'chart-slide'), 'data', 'core neighbour moved');
+  assert.equal(
+    mount.querySelectorAll('.ps-type-card-wrap[data-thumb-type-key="acme-hero"]').length,
+    1,
+    'the type is offered twice — the Custom shelf kept a copy'
+  );
+  mount.remove();
+});
+
+test('index: a custom type that declares nothing stays on the Custom shelf', () => {
+  localStorage.clear();
+  const mount = h('div', {});
+  document.body.append(mount);
+  const { renderSlideTypePicker } = makePicker({ SLIDE_TYPES: SLIDE_TYPES_WITH_FORK });
+  renderSlideTypePicker(mount, {});
+
+  // A one-tile group folds into "Other", so the shelf is whichever of the two
+  // the fold rule produced — what matters is that it is not a curated shelf.
+  const shelf = shelfOf(mount, 'acme-widget');
+  assert.ok(['custom', 'other'].includes(shelf), `unexpected shelf ${shelf}`);
+  mount.remove();
+});

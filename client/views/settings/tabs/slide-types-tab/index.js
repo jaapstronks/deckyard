@@ -650,9 +650,10 @@ export function createSlideTypesTab({ user } = {}) {
     const isCuratable = type => Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
 
     // The shelves, with membership resolved from each type's own `group`
-    // declaration (see ./categories.js). Read once per render so a fork's types
-    // are picked up without a reload.
-    const categories = getCategories();
+    // declaration (see ./categories.js). Resolved against slideTypeMeta — the
+    // live map this tab loaded — so a fork type that declares a group is curated
+    // on that shelf rather than folded into "Other".
+    const categories = getCategories(slideTypeMeta);
 
     // Track all categorized types
     const categorized = new Set();
@@ -711,7 +712,7 @@ export function createSlideTypesTab({ user } = {}) {
   // Thumbnails render against the tab's currently-loaded theme; the builders
   // themselves live in ./slide-types-tab/curation-thumbnails.js.
   const renderThumbnail = (type, className) =>
-    createCurationThumbnail(type, className, currentTheme);
+    createCurationThumbnail(type, className, currentTheme, slideTypeMeta);
 
   // ============================================================
   // Curation Cards

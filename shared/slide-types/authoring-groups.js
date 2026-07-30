@@ -44,6 +44,16 @@
  * membership from here. A type missing from a hint sorts last; a hint naming a
  * retired type is ignored. Both are harmless, unlike a stale membership table.
  *
+ * ## The aggregator seam
+ *
+ * `SLIDE_TYPE_AUTHORING` is generated over the core type directories, so a
+ * lookup that reads it *first* answers a narrower question than it looks like:
+ * "what does core say", not "what does this type declare". A fork type in
+ * `custom/slide-types/` declaring `group: 'media'` would be dropped without a
+ * word. Both lookups below therefore follow the seam rule — definition first,
+ * aggregator as core's fallback, enumeration over the live map. Same rule and
+ * same order in `./authoring-companions.js` for the other two companions.
+ *
  * @see docs/reference/slide-type-groups.md
  */
 
@@ -84,14 +94,32 @@ export function isSlideTypeGroup(value) {
 }
 
 /**
- * A slide type's declared group, or `''` when it declares none (a deprecated
- * type, or a fork type without an authoring companion).
+ * A slide type's group: the definition's own declaration first, this build's
+ * authoring aggregator second.
+ *
+ * That order is the aggregator-seam rule (see the module header). The
+ * aggregator is generated over `shared/slide-types/types/<name>/authoring.js`,
+ * so it holds core and only core; reading it *first* would mean a type from
+ * `custom/slide-types/` could declare `group: 'media'` and be silently ignored.
+ * Reading the definition first makes the declaration the authority and the
+ * aggregator core's answer to it — the same precedence `slideTypeSchematic()`
+ * and `slideTypeSample()` use, and the same one `slideStructure(def)` gets for
+ * free by living on the definition.
+ *
+ * Passing only a name still works and still resolves core: that is the
+ * fallback, not the rule.
+ *
  * @param {string} type - registry type name
- * @returns {string}
+ * @param {{group?: unknown}|null} [def] - the slide-type definition as it
+ *   exists at runtime (registry entry, or the `/api/slide-types` metadata)
+ * @returns {string} a group from the vocabulary, or `''` (a deprecated type, a
+ *   type that declares none, or a declaration outside the vocabulary)
  */
-export function slideTypeGroup(type) {
-  const g = SLIDE_TYPE_AUTHORING[type]?.group;
-  return isSlideTypeGroup(g) ? g : '';
+export function slideTypeGroup(type, def = null) {
+  const declared = def?.group;
+  if (isSlideTypeGroup(declared)) return declared;
+  const core = SLIDE_TYPE_AUTHORING[type]?.group;
+  return isSlideTypeGroup(core) ? core : '';
 }
 
 /**
@@ -115,18 +143,27 @@ export const SLIDE_TYPE_GROUP = Object.freeze(
  * themselves), so forgetting to curate a new type costs its position and
  * nothing else.
  *
+ * **Enumerate the live map, not the build artifact.** A consumer holds the
+ * types the app actually has — the registry on the server, the
+ * `/api/slide-types` response in the editor — and that map is what `types`
+ * takes. Iterating SLIDE_TYPE_GROUP instead would answer "which *core* types
+ * are on this shelf", which is the same core-only trap `slideTypeGroup()`
+ * avoids one level down. Omitting `types` falls back to core, for callers (the
+ * guardrail test, mostly) that have no live map to offer.
+ *
  * @param {string} group - a key from SLIDE_TYPE_GROUPS
  * @param {string[]} [order] - preferred display order, may be partial or stale
+ * @param {Record<string, object>|null} [types] - the live type map to enumerate
  * @returns {string[]} type names
  */
-export function typesInGroup(group, order = []) {
+export function typesInGroup(group, order = [], types = null) {
   const rank = new Map(order.map((type, i) => [type, i]));
   const last = Number.MAX_SAFE_INTEGER;
-  return Object.entries(SLIDE_TYPE_GROUP)
-    .filter(([, g]) => g === group)
-    .map(([type]) => type)
-    .sort((a, b) => {
-      const diff = (rank.get(a) ?? last) - (rank.get(b) ?? last);
-      return diff || a.localeCompare(b);
-    });
+  const members = types
+    ? Object.keys(types).filter((type) => slideTypeGroup(type, types[type]) === group)
+    : Object.keys(SLIDE_TYPE_GROUP).filter((type) => SLIDE_TYPE_GROUP[type] === group);
+  return members.sort((a, b) => {
+    const diff = (rank.get(a) ?? last) - (rank.get(b) ?? last);
+    return diff || a.localeCompare(b);
+  });
 }

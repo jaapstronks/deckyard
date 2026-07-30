@@ -34,7 +34,7 @@ import {
   PICKER_GROUP_ORDER,
   PICKER_GROUP_KEYS,
 } from './data.js';
-import { typesInGroup } from '../../../../shared/slide-types/authoring-groups.js';
+import { slideTypeGroup, typesInGroup } from '../../../../shared/slide-types/authoring-groups.js';
 import {
   readViewMode,
   persistViewMode,
@@ -746,23 +746,40 @@ export function createSlideTypePicker({
     // only supplies the display order within a shelf. A group that still named a
     // retired type used to be caught only by someone noticing — now it cannot
     // happen, because the retired type simply stops declaring.
+    //
+    // SLIDE_TYPES is the live map (the /api/slide-types response), so the shelf
+    // is drawn from the types this app actually has. Handing typesInGroup() the
+    // core aggregator instead would let a fork type declare `media` and be
+    // dropped without a word.
     const groupDefs = (key) =>
-      typesInGroup(key, PICKER_GROUP_ORDER[key]).map((type) => ({ type }));
+      typesInGroup(key, PICKER_GROUP_ORDER[key], SLIDE_TYPES || {}).map((type) => ({ type }));
 
     // Themes can prepend their own types to "Basic" via basicSlideTypes.
     const themeBasicTypes = Array.isArray(theme?.basicSlideTypes)
       ? theme.basicSlideTypes
       : [];
+    // A theme type that also declares `group: 'basic'` would otherwise show up
+    // twice now that the shelves are drawn from the live map; the prepended
+    // position wins.
+    const themeBasic = themeBasicTypes.filter((type) => SLIDE_TYPES?.[type]);
     const basicDefs = [
-      ...themeBasicTypes.filter((type) => SLIDE_TYPES?.[type]).map((type) => ({ type })),
-      ...groupDefs('basic'),
+      ...themeBasic.map((type) => ({ type })),
+      ...groupDefs('basic').filter((d) => !themeBasic.includes(d.type)),
     ];
 
-    // Custom slide types (keys starting with 'custom-' or marked isCustom)
+    // Custom slide types (keys starting with 'custom-' or marked isCustom) that
+    // declare no shelf of their own.
+    //
+    // A declared group wins: a fork type that says `group: 'media'` is offered
+    // beside the other media types, because someone inserting a slide is asking
+    // what goes on it, not who wrote the type. "Custom" is then the shelf for a
+    // type that declares nothing — which is also how an org keeps its types
+    // together if it wants that: by declaring nothing.
     const customDefs = Object.keys(SLIDE_TYPES || {})
       .filter((key) => {
         const def = SLIDE_TYPES[key];
-        return (key.startsWith('custom-') || def?.isCustom) && allowed(key);
+        if (!(key.startsWith('custom-') || def?.isCustom) || !allowed(key)) return false;
+        return !slideTypeGroup(key, def);
       })
       .sort((a, b) => String(labelFor(a)).localeCompare(String(labelFor(b))))
       .map((key) => ({ type: key }));

@@ -29,6 +29,7 @@ import {
   SLIDE_TYPE_GROUPS,
   SLIDE_TYPE_GROUP,
   isSlideTypeGroup,
+  slideTypeGroup,
   typesInGroup,
 } from '../shared/slide-types/authoring-groups.js';
 import {
@@ -93,13 +94,102 @@ describe('the group axis', () => {
     }
   });
 
-  it('a type is on exactly one shelf', () => {
+  it('a live map partitions: no type lands on two shelves', () => {
+    // Over the core aggregator alone this assertion is vacuous — SLIDE_TYPE_GROUP
+    // maps a name to one string, so double placement cannot happen. It has
+    // content over a *live* map, which is what the consumers now enumerate:
+    // resolution runs per type through slideTypeGroup(), and a precedence bug
+    // there (say, returning the declared *and* the core answer) would show up
+    // as a type on two shelves.
+    const live = {
+      ...Object.fromEntries(Object.keys(SLIDE_TYPES).map((name) => [name, SLIDE_TYPES[name]])),
+      'acme-hero': { label: 'Hero', group: 'media' },
+      // Declares its shelf while core also has an answer for the name.
+      'quote-slide': { ...SLIDE_TYPES['quote-slide'], group: 'other' },
+    };
     const seen = new Map();
     for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
-      for (const type of typesInGroup(group)) {
+      for (const type of typesInGroup(group, [], live)) {
         assert.ok(!seen.has(type), `${type} is on both ${seen.get(type)} and ${group}`);
         seen.set(type, group);
       }
+    }
+    assert.equal(seen.get('acme-hero'), 'media', 'a non-core declarant is not on a shelf at all');
+    assert.equal(seen.get('quote-slide'), 'other', 'the declaration did not beat the aggregator');
+  });
+});
+
+describe('the aggregator seam', () => {
+  // `SLIDE_TYPE_AUTHORING` is generated over the *core* type directories, so a
+  // lookup that reads it first silently answers "what does core say". These pin
+  // the correction: the definition as it exists at runtime is asked first, the
+  // aggregator is core's fallback, and an unknown value degrades rather than
+  // inventing a shelf. Same rule for `schematic` and `sampleContent` — see
+  // tests/slide-type-api-companions.test.js, which covers the wire half.
+
+  it('a declaration on the definition wins over the aggregator', () => {
+    assert.equal(slideTypeGroup('quote-slide'), 'basic', 'core answer changed; fixture is stale');
+    assert.equal(slideTypeGroup('quote-slide', { group: 'other' }), 'other');
+  });
+
+  it('a non-core type can choose its shelf', () => {
+    // The defect this fixes: a type from custom/slide-types/ declaring
+    // `group: 'media'` used to be ignored, because the aggregator has no entry
+    // for it and the aggregator was the only thing consulted.
+    assert.equal(slideTypeGroup('acme-hero', { group: 'media' }), 'media');
+    assert.equal(slideTypeGroup('acme-hero'), '', 'no declaration, no shelf');
+    assert.equal(slideTypeGroup('acme-hero', {}), '');
+  });
+
+  it('an unknown declaration degrades to core, and never to a made-up shelf', () => {
+    assert.equal(slideTypeGroup('quote-slide', { group: 'sparkles' }), 'basic');
+    assert.equal(slideTypeGroup('acme-hero', { group: 'sparkles' }), '');
+    assert.equal(slideTypeGroup('acme-hero', { group: 42 }), '');
+    assert.equal(slideTypeGroup('acme-hero', null), '');
+  });
+
+  it('typesInGroup enumerates the live map, not the build artifact', () => {
+    const live = {
+      'quote-slide': SLIDE_TYPES['quote-slide'],
+      'acme-hero': { label: 'Hero', group: 'media' },
+      'acme-plain': { label: 'Plain' },
+    };
+    assert.deepStrictEqual(typesInGroup('media', [], live), ['acme-hero']);
+    assert.deepStrictEqual(typesInGroup('basic', [], live), ['quote-slide']);
+    // A type nobody declared for is on no shelf; the consumers fold it into
+    // their own "Other" (the picker computes it, the settings tab merges it).
+    for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
+      assert.ok(!typesInGroup(group, [], live).includes('acme-plain'));
+    }
+  });
+
+  it('the order hint still only reorders when a live map is passed', () => {
+    const live = {
+      'image-slide': SLIDE_TYPES['image-slide'],
+      'video-slide': SLIDE_TYPES['video-slide'],
+      'acme-hero': { label: 'Hero', group: 'media' },
+    };
+    const hint = ['video-slide', 'nonexistent-slide'];
+    assert.deepStrictEqual(typesInGroup('media', hint, live), [
+      'video-slide',
+      'acme-hero',
+      'image-slide',
+    ]);
+  });
+
+  it('omitting the live map still resolves core', () => {
+    // The fallback the guardrail itself relies on, and the shape every existing
+    // caller had before the seam fix. Compared against a core-only map, because
+    // a fork checkout's registry legitimately holds more than core.
+    const core = Object.fromEntries(
+      Object.entries(SLIDE_TYPES).filter(([name]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name))
+    );
+    for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
+      assert.deepStrictEqual(
+        typesInGroup(group, PICKER_GROUP_ORDER[group] || []),
+        typesInGroup(group, PICKER_GROUP_ORDER[group] || [], core),
+        `core-only resolution differs for "${group}"`
+      );
     }
   });
 });
@@ -135,6 +225,24 @@ describe('the consumers derive rather than restate', () => {
           'unless one of them grew its own membership again'
       );
     }
+  });
+
+  it('the settings tab curates a non-core declarant on its declared shelf', () => {
+    // The tab holds the /api/slide-types response, so this is the live-map path
+    // end to end: declare a shelf in custom/slide-types/, get curated there
+    // instead of falling through to the tab's "Other" merge.
+    const live = {
+      'quote-slide': SLIDE_TYPES['quote-slide'],
+      'acme-hero': { label: 'Hero', group: 'media' },
+      'acme-plain': { label: 'Plain' },
+    };
+    const shelves = Object.fromEntries(getCategories(live).map((c) => [c.key, c.types]));
+    assert.deepStrictEqual(shelves.media, ['acme-hero']);
+    assert.deepStrictEqual(shelves.basic, ['quote-slide']);
+    assert.ok(
+      !Object.values(shelves).some((types) => types.includes('acme-plain')),
+      'a type that declares nothing must reach the tab\'s uncategorized merge'
+    );
   });
 
   it('the order hints only reorder: they never add or remove a type', () => {

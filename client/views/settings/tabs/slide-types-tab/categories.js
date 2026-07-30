@@ -80,16 +80,21 @@ export const CATEGORY_ORDER = [
 /**
  * The curation shelves with their members resolved from the declarations.
  *
- * A registered type that declares no group (a fork type without an authoring
- * companion) is not lost: the tab folds it into "Other" — see the uncategorized
- * merge in ./index.js. Deprecated types declare no group and are filtered out
- * downstream by `isCuratable`.
+ * `slideTypes` is the live type map — the `/api/slide-types` response the tab
+ * already holds — so a type from `custom/slide-types/` that declares a group is
+ * curated on that shelf instead of falling through to "Other". Omit it and the
+ * shelves resolve over core alone, which is what the guardrail test does.
  *
+ * A registered type that declares no group is not lost either way: the tab
+ * folds it into "Other" — see the uncategorized merge in ./index.js. Deprecated
+ * types declare no group and are filtered out downstream by `isCuratable`.
+ *
+ * @param {Record<string, object>|null} [slideTypes] - the live type map
  * @returns {Array<{key: string, types: string[]}>}
  */
-export function getCategories() {
+export function getCategories(slideTypes = null) {
   return CATEGORY_ORDER.map(({ key, types }) => ({
     key,
-    types: typesInGroup(key, types),
+    types: typesInGroup(key, types, slideTypes),
   }));
 }
