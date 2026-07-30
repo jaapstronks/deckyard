@@ -1,45 +1,119 @@
 /**
- * AI Slide Type Definitions
+ * The AI slide-type catalog: which types an agent may author, and the
+ * hand-written editorial copy that tells it when to pick each one.
  *
- * This file re-exports slide type definitions from category-specific modules.
- * Edit the individual files to modify slide type definitions:
+ * The copy is no longer written here, and no longer filed into category
+ * modules. Every type declares it in its own
+ * `shared/slide-types/types/<name>/ai.js`, and `./type-ai.js` — generated over
+ * those directories — is the import list. Which "category module" a type's
+ * prose used to sit in (structural / basic-content / visual-content / card /
+ * diagram / people / interactive / media) was a filing decision nobody could
+ * derive from the type, and it disagreed with the `category` field inside the
+ * entries it held. The field survived; the filing did not.
  *
- * - structural-slides.js: title, chapter, quote, payoff
- * - content-slides.js: content, lijstje, timeline, cards, etc.
- * - people-slides.js: team cards, logo wall
- * - interactive-slides.js: poll, likert, feedback
- * - media-slides.js: video
- *
- * Key principles:
- * - A specialized slide type is ALWAYS better than content-slide when it fits
+ * Key principles the copy itself follows:
+ * - A specialized slide type is better than content-slide WHEN IT TRULY FITS
  * - Variety matters: avoid repetitive slide types in sequence
  * - Each slide type has specific strengths and anti-patterns
+ *
+ * ## Types deliberately without an `ai.js`
+ *
+ * Absence means "withheld from AI generation", and for a deprecated type that
+ * is the point rather than a gap — `isAgentOptOut()` already withholds it, and
+ * `tests/slide-type-companion-coverage.test.js` fails on an entry that outlives
+ * the type it describes. Two carry advice worth keeping:
+ *
+ * - **card-stack-slide** — existing slides still render. Use
+ *   `icon-card-grid-slide` for cards with icons, or `text-blocks-slide` for
+ *   rich content blocks.
+ * - **content-columns-slide** — existing slides still render, and the
+ *   image-text→content-columns convert seam still works. Use `list-slide` or
+ *   `content-slide` for plain enumerations, `comparison-slide` for A vs B,
+ *   `matrix-slide` for grids, or `icon-card-grid-slide` for iconned items.
  */
 
-// Re-export from category modules
-export { STRUCTURAL_SLIDES } from './structural-slides.js';
-export { CONTENT_SLIDES } from './content-slides.js';
-export { PEOPLE_SLIDES } from './people-slides.js';
-export { INTERACTIVE_SLIDES } from './interactive-slides.js';
-export { MEDIA_SLIDES } from './media-slides.js';
-
-// Import for combined catalog
-import { STRUCTURAL_SLIDES } from './structural-slides.js';
-import { CONTENT_SLIDES } from './content-slides.js';
-import { PEOPLE_SLIDES } from './people-slides.js';
-import { INTERACTIVE_SLIDES } from './interactive-slides.js';
-import { MEDIA_SLIDES } from './media-slides.js';
+import { SLIDE_TYPE_AI } from './type-ai.js';
 
 /**
- * Combined catalog of all core slide types
+ * The order the catalog is *presented* in — to a model, not to a person.
+ *
+ * This is the one thing the category modules carried that was not a fact about
+ * any type: three prompt surfaces iterate the catalog and emit one section per
+ * type in map order (`buildPhase2CatalogPrompt`, `analyze-presentation.js`,
+ * `refine-slides.js`), and an LLM does not read a list uniformly. So the order
+ * survives the move as an explicit hint, the same split `group` made when the
+ * picker's membership moved onto the types and `PICKER_GROUP_ORDER` stayed
+ * behind: **the fact belongs to the type, the ordering belongs to the surface.**
+ *
+ * It is a *hint*, and partial by design: a type this list does not name sorts
+ * after the ones it does (alphabetically among themselves), and a name here for
+ * a type that no longer exists is ignored. So forgetting to place a new type
+ * costs it a position in one prompt, never its presence.
+ *
+ * The sequence below is the one the category modules produced, preserved
+ * deliberately rather than by accident — deck skeleton first, then content
+ * types roughly by how often they fit, then people, interaction and media.
+ *
+ * @type {ReadonlyArray<string>}
  */
-const CORE_SLIDE_TYPE_CATALOG = {
-  ...STRUCTURAL_SLIDES,
-  ...CONTENT_SLIDES,
-  ...PEOPLE_SLIDES,
-  ...INTERACTIVE_SLIDES,
-  ...MEDIA_SLIDES,
-};
+export const CATALOG_ORDER = Object.freeze([
+  // The deck skeleton: opening, dividers, quote, closing.
+  'title-slide',
+  'chapter-title-slide',
+  'quote-slide',
+  'payoff-slide',
+  'end-slide',
+  // Content, plainest first — the prompt tells the model to prefer these.
+  'content-slide',
+  'list-slide',
+  'image-text-slide',
+  'image-slide',
+  'gallery-slide',
+  'table-slide',
+  'chart-slide',
+  'icon-card-grid-slide',
+  'text-blocks-slide',
+  'kpi-metrics-slide',
+  'comparison-slide',
+  'matrix-slide',
+  'pyramid-slide',
+  'funnel-slide',
+  'cycle-slide',
+  'process-slide',
+  'timeline-slide',
+  // People.
+  'team-cards-slide',
+  'logo-wall-slide',
+  // The audience answers, or the slide runs on a clock.
+  'poll-slide',
+  'likert-slide',
+  'likert-slider-slide',
+  'feedback-slide',
+  'countdown-slide',
+  // Embedded payloads.
+  'video-slide',
+  'embed-slide',
+]);
+
+/**
+ * Combined catalog of all core slide types, derived from the type directories
+ * and laid out in `CATALOG_ORDER`.
+ * @type {Readonly<Record<string, Object>>}
+ */
+const CORE_SLIDE_TYPE_CATALOG = Object.freeze(
+  Object.fromEntries(
+    Object.keys(SLIDE_TYPE_AI)
+      .sort((a, b) => {
+        const last = Number.MAX_SAFE_INTEGER;
+        const rank = (t) => {
+          const i = CATALOG_ORDER.indexOf(t);
+          return i === -1 ? last : i;
+        };
+        return rank(a) - rank(b) || a.localeCompare(b);
+      })
+      .map((type) => [type, SLIDE_TYPE_AI[type]])
+  )
+);
 
 /**
  * Combined catalog of all slide types (core + custom)

@@ -5,7 +5,8 @@
  * for AI-powered presentation generation.
  *
  * Module structure:
- * - definitions.js: Core slide type definitions and schemas
+ * - definitions.js: the core catalog, derived from type-ai.js
+ * - type-ai.js: generated import list over each type's own ai.js
  * - examples.js: Content examples for each slide type
  * - builders.js: Functions for building AI prompts
  * - custom-loader.js: Loads AI metadata from custom slide types
@@ -15,11 +16,6 @@
 // Re-export definitions
 export {
   SLIDE_TYPE_CATALOG,
-  STRUCTURAL_SLIDES,
-  CONTENT_SLIDES,
-  PEOPLE_SLIDES,
-  INTERACTIVE_SLIDES,
-  MEDIA_SLIDES,
   mergeCustomAiCatalog,
   getCoreSlideCatalog,
 } from './definitions.js';

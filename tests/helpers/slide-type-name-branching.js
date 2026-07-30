@@ -201,6 +201,24 @@ export const INVENTORY = {
       'schematic). Regenerating it is the only way to change it, so it cannot ' +
       'drift from the per-type sources it imports.',
   },
+  'server/utils/ai/slide-catalog/type-ai.js': {
+    kind: generated,
+    gate: 'scripts/generate-slide-ai-aggregator.js',
+    why:
+      'Generated aggregator over each type\'s own ai.js (the agent-facing ' +
+      'description, bestFor and notFor). It replaced five hand-filed category ' +
+      'modules whose grouping was not derivable from anything the type ' +
+      'declares. Regenerating it is the only way to change it.',
+  },
+  'server/utils/ai/slide-catalog/definitions.js': {
+    kind: sparse,
+    why:
+      'CATALOG_ORDER — the sequence the catalog is presented in to a model, ' +
+      'which three prompt surfaces iterate. Deliberately a partial hint, the ' +
+      'same split PICKER_GROUP_ORDER makes: membership comes from the type ' +
+      'directories, order stays with the surface. An unnamed type sorts after ' +
+      'the named ones and a stale name is ignored, so it cannot hide a type.',
+  },
   'shared/slide-types/inline-edit.js': {
     kind: generated,
     gate: 'scripts/generate-slide-inline-edit-aggregator.js',
@@ -232,44 +250,6 @@ export const INVENTORY = {
     kind: table,
     companion: 'v1-manual-examples',
     why: 'MANUAL_EXAMPLES, the worked example the v1 prompt shows per type.',
-  },
-  'server/utils/ai/slide-catalog/diagram-slides.js': {
-    kind: table,
-    companion: 'ai-catalog',
-    why:
-      'The SLIDE_TYPE_CATALOG slice for the diagram geometries — comparison, ' +
-      'matrix, pyramid, funnel, cycle, process, timeline. The agent-facing ' +
-      'description, bestFor and notFor per type.',
-  },
-  'server/utils/ai/slide-catalog/interactive-slides.js': {
-    kind: table,
-    companion: 'ai-catalog',
-    why:
-      'The SLIDE_TYPE_CATALOG slice for the live types (poll, likert, ' +
-      'likert-slider, feedback) plus countdown. A type with no entry is ' +
-      'invisible to every agent surface, which is what #386 had to repair by hand.',
-  },
-  'server/utils/ai/slide-catalog/structural-slides.js': {
-    kind: table,
-    companion: 'ai-catalog',
-    why:
-      'The SLIDE_TYPE_CATALOG slice for the deck skeleton — title, ' +
-      'chapter-title, quote, payoff, end. Same degradation: no entry, no agent ' +
-      'can reach the type.',
-  },
-  'server/utils/ai/slide-catalog/visual-content-slides.js': {
-    kind: table,
-    companion: 'ai-catalog',
-    why:
-      'The SLIDE_TYPE_CATALOG slice for the types that carry a payload — ' +
-      'image-text, image, gallery, table, chart.',
-  },
-  'server/utils/ai/slide-catalog/card-slides.js': {
-    kind: table,
-    companion: 'ai-catalog',
-    why:
-      'The SLIDE_TYPE_CATALOG slice for the card-shaped collections — ' +
-      'icon-card-grid, text-blocks, kpi-metrics.',
   },
   'server/utils/ai/slide-catalog/examples/diagram-slides.js': {
     kind: table,
