@@ -55,6 +55,7 @@ const {
   listOrganizationMembers,
   countOrganizationMembers,
   updateMemberRole,
+  transferOwnership,
 } = await import('../server/storage/user-organizations/index.js');
 
 test.before(() => {
@@ -275,6 +276,29 @@ test('ownership transfer promotes before it demotes', async () => {
   assert.equal(ownerCount(db), 1);
 });
 
+test('an owner handing the organization to themselves keeps it', async () => {
+  // The one case where the two statements of a transfer address the same row,
+  // and where promote-then-demote therefore ends on `admin`: the organization
+  // would come out of a no-op with no owner at all. The route lets this reach
+  // the storage layer — self is only refused for roles other than `owner` —
+  // and the UI never draws it, so the guard belongs where the writes are.
+  const db = seed();
+  const { status } = await callMembers('PATCH', 'owner', 'owner', { role: 'owner' });
+
+  assert.equal(status, 200);
+  assert.equal(roleOf(db, 'owner'), 'owner', 'still the owner afterwards');
+  assert.equal(ownerCount(db), 1);
+});
+
+test('transferring to yourself changes nothing, below the route too', async () => {
+  const db = seed();
+  const result = await transferOwnership(ORG, 'user-owner', 'user-owner');
+
+  assert.equal(result.ok, true);
+  assert.equal(roleOf(db, 'owner'), 'owner');
+  assert.equal(ownerCount(db), 1);
+});
+
 test('only the owner transfers ownership', async () => {
   const db = seed();
   const { status } = await callMembers('PATCH', 'admin', 'member', { role: 'owner' });
@@ -365,6 +389,62 @@ test('the route passes limit and offset through and reports the total', async ()
   assert.equal(body.members.length, 2);
   assert.equal(body.total, 4);
   assert.equal(body.offset, 2);
+});
+
+// ---------------------------------------------------------------------------
+// Reaching a member the first page does not hold
+// ---------------------------------------------------------------------------
+
+/**
+ * The owner plus `count` plain members, each joining a minute after the last —
+ * so the sort order is the seeding order and `m<count - 1>` really is the last
+ * row, well past any page the lookup could be reading.
+ */
+function crowd(count) {
+  const start = Date.UTC(2026, 4, 1);
+  return [
+    PEOPLE[0],
+    ...Array.from({ length: count }, (_, i) => ({
+      key: `m${i}`,
+      email: `m${String(i).padStart(3, '0')}@example.com`,
+      role: 'member',
+      joined: new Date(start + i * 60_000).toISOString(),
+    })),
+  ];
+}
+
+test('a member past the hundredth row can still be changed and removed', async () => {
+  // The mutating routes used to find their target by listing the organization
+  // and searching the result, and that list is a page: `limit` is clamped to
+  // 100 in the storage layer, so everyone below the hundredth row answered 404
+  // while sitting visibly on page five of the UI paging adds.
+  const people = crowd(120);
+  const db = seed({ people });
+
+  const promoted = await callMembers('PATCH', 'owner', 'm119', { role: 'admin' });
+  assert.equal(promoted.status, 200, 'the target is found, not just the first page of them');
+  assert.equal(roleOf(db, 'm119'), 'admin');
+
+  const removed = await callMembers('DELETE', 'owner', 'm118');
+  assert.equal(removed.status, 200);
+  assert.equal(roleOf(db, 'm118'), undefined);
+});
+
+test('a member id that belongs to another organization is not found', async () => {
+  // The lookup is scoped to the organization in the path; a real membership id
+  // from somewhere else must not become a target.
+  const db = seed();
+  db.__tables.user_organizations.push({
+    id: 'membership-outsider',
+    user_id: 'user-outsider',
+    organization_id: '00000000-0000-0000-0000-0000000000cc',
+    role: 'member',
+    is_designer: false,
+    joined_at: '2026-01-01T00:00:00.000Z',
+  });
+
+  const { status } = await callMembers('PATCH', 'owner', 'outsider', { role: 'admin' });
+  assert.equal(status, 404);
 });
 
 // ---------------------------------------------------------------------------

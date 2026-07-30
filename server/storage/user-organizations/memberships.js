@@ -248,6 +248,63 @@ export async function listOrganizationMembers(organizationId, options = {}) {
   });
 }
 
+/** Postgres' "invalid input syntax", raised when text meets a uuid column. */
+const INVALID_TEXT_REPRESENTATION = '22P02';
+
+/**
+ * Look one member up by membership id or by user id, in the same shape
+ * `listOrganizationMembers` returns.
+ *
+ * The mutating routes used to find their target by listing the organization and
+ * searching the result, but that list is a *page*: `limit` is clamped to 100, so
+ * in an organization with more members than that, everyone past the hundredth
+ * row was unreachable — a role change or removal there answered 404 while the
+ * member sat visibly on the screen. Paging made those rows reachable to look at,
+ * which is what turned a latent bound into a bug.
+ *
+ * @param {string} organizationId - Organization ID
+ * @param {string} identifier - Membership ID or user ID
+ * @returns {Promise<Object|null>}
+ */
+export async function getOrganizationMember(organizationId, identifier) {
+  if (!identifier) return null;
+
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('user_organizations')
+      .innerJoin('users', 'users.id', 'user_organizations.user_id')
+      .select([
+        'user_organizations.id as membership_id',
+        'user_organizations.role',
+        'user_organizations.is_designer',
+        'user_organizations.invited_at',
+        'user_organizations.joined_at',
+        'users.id',
+        'users.email',
+        'users.name',
+        'users.created_at',
+      ])
+      .where('user_organizations.organization_id', '=', organizationId)
+      .where((eb) =>
+        eb.or([
+          eb('user_organizations.id', '=', identifier),
+          eb('user_organizations.user_id', '=', identifier),
+        ])
+      )
+      .executeTakeFirst()
+      .catch((err) => {
+        // Both columns are `uuid`, so a path segment that is not one makes
+        // Postgres refuse the comparison. "No such member" is the honest answer
+        // to `/members/nonsense`, not a 500 — which is what the scan this
+        // replaced returned, because it compared in JavaScript.
+        if (err?.code === INVALID_TEXT_REPRESENTATION) return undefined;
+        throw err;
+      });
+
+    return row ? formatMemberWithUser(row) : null;
+  });
+}
+
 /**
  * Count members in an organization.
  * @param {string} organizationId - Organization ID
@@ -449,6 +506,14 @@ export async function transferOwnership(organizationId, currentOwnerUserId, newO
 
     if (!newOwnerMembership) {
       return { ok: false, reason: 'not_member' };
+    }
+
+    // Handing the organization to yourself is the one case where the two
+    // statements below address the same row, and then the order matters in the
+    // other direction: promote-then-demote would end on `admin` and leave the
+    // organization ownerless. Nothing changes hands here, so nothing runs.
+    if (newOwnerMembership.id === currentOwnership.id) {
+      return { ok: true };
     }
 
     // Promote first, demote second. If the second statement fails the

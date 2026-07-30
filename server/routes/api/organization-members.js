@@ -10,6 +10,7 @@ import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
   listOrganizationMembers,
+  getOrganizationMember,
   countOrganizationMembers,
   getMembership,
   getMembershipByEmail,
@@ -231,15 +232,9 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
         return badRequest(res, 'Valid role is required (member, admin, or owner)');
       }
 
-      // Get the target membership
-      // memberIdOrUserId could be a membership ID or user ID
-      let targetMembership = null;
-
-      // First try as membership ID
-      const members = await listOrganizationMembers(organizationId, { limit: 1000 });
-      targetMembership = members.find(
-        (m) => m.membershipId === memberIdOrUserId || m.user.id === memberIdOrUserId
-      );
+      // Get the target membership. `memberIdOrUserId` can be either a
+      // membership ID or a user ID, and the lookup accepts both.
+      const targetMembership = await getOrganizationMember(organizationId, memberIdOrUserId);
 
       if (!targetMembership) {
         return notFound(res);
@@ -320,11 +315,8 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
   // ============================================================
   if (memberIdOrUserId && req.method === 'DELETE') {
     try {
-      // Get the target membership
-      const members = await listOrganizationMembers(organizationId, { limit: 1000 });
-      const targetMembership = members.find(
-        (m) => m.membershipId === memberIdOrUserId || m.user.id === memberIdOrUserId
-      );
+      // Get the target membership (membership ID or user ID, either works).
+      const targetMembership = await getOrganizationMember(organizationId, memberIdOrUserId);
 
       if (!targetMembership) {
         return notFound(res);
