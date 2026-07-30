@@ -5,6 +5,7 @@
 
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
+import { getFeatures } from '../../lib/state/features.js';
 
 /**
  * Tab configuration for settings page.
@@ -24,7 +25,16 @@ const DESIGNER_TABS = [
 
 const ADMIN_TABS = [
   { key: 'admin', labelKey: 'settings.tabs.admin', labelDefault: 'Admin' },
-  { key: 'users', labelKey: 'settings.tabs.users', labelDefault: 'Users' },
+  {
+    key: 'users',
+    labelKey: 'settings.tabs.users',
+    labelDefault: 'Users',
+    // In multi-workspace mode this tab lists the members of the organization
+    // the session is in, not every user on the instance — so it says so. See
+    // tabs/users-tab.js.
+    multiWorkspaceLabelKey: 'settings.tabs.members',
+    multiWorkspaceLabelDefault: 'Members',
+  },
   { key: 'api-keys', labelKey: 'settings.tabs.apiKeys', labelDefault: 'API Keys' },
   { key: 'email', labelKey: 'settings.tabs.email', labelDefault: 'Email' },
   { key: 'integrations', labelKey: 'settings.tabs.integrations', labelDefault: 'Integrations' },
@@ -64,9 +74,12 @@ export function createSettingsSidebar({ isAdmin, isDesigner, activeTab, onTabCha
       },
     });
 
+    const renamed = tab.multiWorkspaceLabelKey && getFeatures()?.multiWorkspace;
     const label = h('span', {
       class: 'settings-sidebar-tab-label',
-      text: t(tab.labelKey, tab.labelDefault),
+      text: renamed
+        ? t(tab.multiWorkspaceLabelKey, tab.multiWorkspaceLabelDefault)
+        : t(tab.labelKey, tab.labelDefault),
     });
 
     btn.append(label);

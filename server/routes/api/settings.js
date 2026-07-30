@@ -8,6 +8,7 @@ import {
 import { getDefaultOrganizationId } from '../../config/database.js';
 import { getOrganizationById, updateOrganization } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
+import { canManage } from '../../utils/route-middleware.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('settings');
 
@@ -74,8 +75,18 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
 
       const hasDesignerKeys = 'disabledSlideTypes' in body;
       const hasAdminKeys = Object.keys(body).some(k => k !== 'disabledSlideTypes');
-      const isDesigner = authedUser?.isDesigner || authedUser?.isAdmin;
+      // Third copy of the designer gate, and it carried the same `|| isAdmin`
+      // that canManage() and canManageThemes() did — so scoping only those two
+      // left `disabledSlideTypes` on the *active* organization writable by an
+      // instance admin who is a plain member of it. Same function, same rule.
+      const isDesigner = canManage(authedUser);
 
+      // NOTE: the admin-key gate below still reads the instance-wide flag
+      // rather than the membership role, so an instance admin can write
+      // `adminsAreDesigners` / `rss` on an organization they are only a member
+      // of. That is the role-scoping question, not the designer one — it needs
+      // a decision about who owns organization settings, so it is left for
+      // slice 4 rather than changed silently here.
       if (hasAdminKeys && !authedUser?.isAdmin) return unauthorized(res);
       if (hasDesignerKeys && !isDesigner) return unauthorized(res);
 

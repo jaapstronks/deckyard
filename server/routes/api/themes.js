@@ -22,6 +22,7 @@ import {
 } from '../../utils/themes.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { createRouteContext } from '../../utils/context.js';
+import { canManage } from '../../utils/route-middleware.js';
 import {
   listThemes,
   getTheme,
@@ -38,11 +39,16 @@ import { getAppSettings, getDefaultThemeId } from '../../storage/settings.js';
 /**
  * Check if user can manage themes.
  * Requires designer capability (which includes admins and owners by default).
+ *
+ * The same rule as custom slide types and font families, so it is the same
+ * function: this was a hand-copied duplicate of `canManage()`, and a duplicate
+ * of an authorization check is a place for the two to drift apart.
+ *
  * @param {Object} authedUser - Authenticated user
  * @returns {boolean}
  */
 function canManageThemes(authedUser) {
-  return authedUser?.isDesigner === true || authedUser?.isAdmin === true;
+  return canManage(authedUser);
 }
 
 export async function handleThemes({ repoRoot, req, res, url, authedUser }) {
