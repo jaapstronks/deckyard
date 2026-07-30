@@ -16,7 +16,7 @@ A slide type is never deleted in one step. Three rungs:
    of AI generation and MCP (`isAgentOptOut`, since #386), still registered and
    still rendering stored decks. Reversible, non-destructive. Rung 1 also means
    dropping the type's **companions** (picker description, search aliases,
-   schematic, curation category, catalog entry, examples):
+   schematic, `group`, catalog entry, examples):
    `tests/slide-type-companion-coverage.test.js` fails on an entry that outlives
    the type it describes — see
    [`slide-type-companions.md`](./slide-type-companions.md). **Unless the type
@@ -100,9 +100,9 @@ Then, in rough dependency order:
    `node --test tests/slide-type-companion-coverage.test.js` reports the ones you
    missed by name — see
    [`slide-type-companions.md`](./slide-type-companions.md) for the full list
-   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `PICKER_GROUPS`, `SLIDE_TYPE_DESC`,
-   `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the AI catalog entry and its
-   examples, the settings categories).
+   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `SLIDE_TYPE_DESC`,
+   `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the type's own `group`, the AI
+   catalog entry and its examples).
    Not in the matrix, still by hand — each one branches on the type *name* and
    nothing checks that the set is complete (#451 hit all three):
    - the conversion map in `shared/slide-types/convert.js`, if the type was a
@@ -159,7 +159,7 @@ Grouped by *why* each file had to change:
 | Group | Files | What was in them |
 |---|---|---|
 | **Owned by the type** | 2 | the definition (`types/freeform-slide.js`, 328 lines) and its stylesheet (`80-freeform.css`, 320 lines) |
-| **Registration / wiring** | 5 | registry import + map entry, the CSS aggregator `@import`, `INSPECTOR_KEEPS`, `EXCLUDED_TYPES`, the curated picker group |
+| **Registration / wiring** | 5 | registry import + map entry, the CSS aggregator `@import`, `INSPECTOR_KEEPS`, `EXCLUDED_TYPES`, the curated picker group (now the type's own `group`, so this row is one file smaller for the next removal) |
 | **Duplicated knowledge** | 18 | 10 comments naming the type, 3 reference docs (per-type rows + a hand-written core-type count in 4 places), 5 tests enumerating types by hand |
 
 Two of twenty-five files were actually *about* freeform. The other 23 changed

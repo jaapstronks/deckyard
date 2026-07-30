@@ -27,7 +27,7 @@ globalThis.Event = dom.window.Event;
 globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 
-const { CATEGORIES, CATEGORY_LABELS } = await import(
+const { getCategories, CATEGORY_LABELS } = await import(
   '../client/views/settings/tabs/slide-types-tab/categories.js'
 );
 const { createCurationThumbnail, createVideoMockup } = await import(
@@ -38,8 +38,9 @@ const { openTypePreview } = await import(
 );
 
 test('categories: every category key resolves to a label and holds types', () => {
-  assert.ok(Array.isArray(CATEGORIES) && CATEGORIES.length > 0);
-  for (const cat of CATEGORIES) {
+  const categories = getCategories();
+  assert.ok(Array.isArray(categories) && categories.length > 0);
+  for (const cat of categories) {
     assert.equal(typeof CATEGORY_LABELS[cat.key], 'function', `label for ${cat.key}`);
     assert.equal(typeof CATEGORY_LABELS[cat.key](), 'string');
     assert.ok(Array.isArray(cat.types) && cat.types.length > 0, `types for ${cat.key}`);

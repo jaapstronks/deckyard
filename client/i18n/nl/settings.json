@@ -520,7 +520,6 @@
   "settings.slideTypes.group.layouts": "Lay-outs",
   "settings.slideTypes.group.media": "Media",
   "settings.slideTypes.group.other": "Overig",
-  "settings.slideTypes.group.process": "Proces",
   "settings.slideTypes.help.bgClass": "Zet een achtergrondkeuze om in de bijbehorende achtergrondklasse van de slide.",
   "settings.slideTypes.help.each": "Herhaalt het blok voor elk item van een items-veld.",
   "settings.slideTypes.help.esc": "De waarde van een veld, HTML-escaped.",

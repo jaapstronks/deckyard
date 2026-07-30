@@ -17,6 +17,14 @@
 
 export default {
   /**
+   * Which curated shelf offers this type: the editor's insert picker and the
+   * settings curation list both derive their membership from this key. Display
+   * order stays with each consumer. Vocabulary + rationale in
+   * shared/slide-types/authoring-groups.js.
+   */
+  group: 'layouts',
+
+  /**
    * Short "what is this" line, shown as the picker tile's tooltip. English is
    * the fallback; translations live under `editor.slideTypeDesc.<type>`.
    */
@@ -27,23 +35,6 @@ export default {
    * Never displayed.
    */
   aliases: 'cards features icons kaarten iconen',
-
-  /**
-   * Curated picker group. The group's *membership* is declared here; the order
-   * within the group is still the array order in
-   * client/views/editor/slide-type-picker/data.js, which
-   * tests/slide-type-directory-boundary.test.js holds to this declaration until
-   * that consumer is converted.
-   */
-  pickerGroup: 'layouts',
-
-  /**
-   * Group in the settings → slide types curation list. Same arrangement as
-   * `pickerGroup`: membership here, ordering still in
-   * client/views/settings/tabs/slide-types-tab/categories.js, gated by the same
-   * test.
-   */
-  curationCategory: 'layouts',
 
   /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by

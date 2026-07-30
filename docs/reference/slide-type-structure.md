@@ -168,9 +168,12 @@ replaced by a ceiling that forbids the pattern.
 
 ## What is not here yet
 
-- **Derivation.** `PICKER_GROUPS` and the settings `CATEGORIES` are still two
-  hand-written tables that disagree. They become derivations once the consumers
-  read from the registry — that is slide-type-seam work, not facet work.
+- ~~**Derivation.**~~ Done. The picker shelves and the settings curation
+  headings were two hand-written tables that disagreed about five types; both
+  are now derived from a `group` declared on the type. It is deliberately *not*
+  derived from `structure` — that was measured and it dismembers `media` and
+  drops `chart` and `table` out of view. See
+  [`slide-type-groups.md`](./slide-type-groups.md).
 - **The other facets.** `intent` (frame / enumerate / sequence / compare /
   quantify / ask) and `payload` are real and still without a consumer; built
   when there is one. `runtime` (static / live / timed) shipped as the second

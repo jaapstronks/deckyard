@@ -13,6 +13,14 @@
 
 export default {
   /**
+   * Which curated shelf offers this type: the editor's insert picker and the
+   * settings curation list both derive their membership from this key. Display
+   * order stays with each consumer. Vocabulary + rationale in
+   * shared/slide-types/authoring-groups.js.
+   */
+  group: 'basic',
+
+  /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */

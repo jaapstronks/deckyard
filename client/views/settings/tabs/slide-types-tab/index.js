@@ -17,7 +17,7 @@ import {
 } from '../../slide-type-editor/io.js';
 import { loadThemeById } from '../../../../lib/theme/theme.js';
 import { computeDrop, resolveMove } from '../../../editor/inline-edit/reorder-geometry.js';
-import { CATEGORIES, CATEGORY_LABELS } from './categories.js';
+import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
 
@@ -649,9 +649,14 @@ export function createSlideTypesTab({ user } = {}) {
     // (see isInsertableSlideType) while existing slides keep rendering.
     const isCuratable = type => Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
 
+    // The shelves, with membership resolved from each type's own `group`
+    // declaration (see ./categories.js). Read once per render so a fork's types
+    // are picked up without a reload.
+    const categories = getCategories();
+
     // Track all categorized types
     const categorized = new Set();
-    for (const cat of CATEGORIES) {
+    for (const cat of categories) {
       for (const type of cat.types) categorized.add(type);
     }
 
@@ -662,7 +667,7 @@ export function createSlideTypesTab({ user } = {}) {
 
     // Build categories including any uncategorized types.
     // Merge uncategorized into the existing 'other' group to avoid duplicate headings.
-    const allCategories = CATEGORIES.map(c => ({ ...c, types: [...c.types] }));
+    const allCategories = categories.map(c => ({ ...c, types: [...c.types] }));
     if (uncategorized.length) {
       const otherCat = allCategories.find(c => c.key === 'other');
       if (otherCat) {
@@ -689,7 +694,7 @@ export function createSlideTypesTab({ user } = {}) {
       const group = h('div', { class: 'slide-type-curation-group' });
       group.append(h('h3', {
         class: 'slide-type-curation-group-title',
-        text: CATEGORY_LABELS[cat.key]?.() ?? cat.label,
+        text: CATEGORY_LABELS[cat.key]?.() ?? cat.key,
       }));
 
       const grid = h('div', { class: 'slide-type-curation-grid' });

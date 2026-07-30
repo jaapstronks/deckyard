@@ -134,8 +134,8 @@ Your new slide type appears in the editor slide picker.
 ### 4. Its companions elsewhere
 
 A registered type works, but a few things do **not** follow automatically: the
-AI/MCP catalog entry, the picker's description, search aliases and schematic
-glyph, the settings curation category. Each degrades quietly rather than
+AI/MCP catalog entry, the picker's description, search aliases, schematic
+glyph and the shelf it is offered on ([`group`](../reference/slide-type-groups.md)). Each degrades quietly rather than
 breaking, so `tests/slide-type-companion-coverage.test.js` fails the build naming
 the type and the companion it is missing. Adding a **core** type means filling
 those in; the inventory (and what a fork-local type can supply from its own

@@ -520,7 +520,6 @@
   "settings.slideTypes.group.layouts": "Layouts",
   "settings.slideTypes.group.media": "Media",
   "settings.slideTypes.group.other": "Other",
-  "settings.slideTypes.group.process": "Process",
   "settings.slideTypes.help.bgClass": "Turns a background choice into the matching slide background class.",
   "settings.slideTypes.help.each": "Repeats the block for every entry of an items field.",
   "settings.slideTypes.help.esc": "The value of a field, HTML-escaped.",

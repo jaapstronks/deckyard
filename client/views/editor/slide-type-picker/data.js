@@ -33,18 +33,29 @@ export const SURFACE_CANDIDATES = ['lime', 'mist', 'dark'];
 export const FREQUENT_MAX = 6;
 export const FREQUENT_MIN_TOTAL = 3;
 
-// Curated picker groups, in display order, as type names. Anything registered,
-// insertable and absent here lands in the computed "Other" group — a deliberate
-// home for the long tail (payoff, end, custom-html), not a gap. Because absence
-// is legitimate, only the *reverse* direction is gated: a group must not name a
-// deprecated or unregistered type (see
-// tests/slide-type-companion-coverage.test.js). The picker's grouping is
-// intentionally coarser than the settings-tab curation list: process/timeline
-// live under Layouts here, and there is no explicit "other" group.
+// Display order within each curated group — a *hint*, not the membership.
+//
+// Which group a type belongs to is declared by the type itself, in
+// `shared/slide-types/types/<name>/authoring.js`, and read back through
+// typesInGroup() (see shared/slide-types/authoring-groups.js). This table only
+// says who comes first, because order is a curation decision about the insert
+// flow rather than a fact about any one type: the most-reached-for tiles sit at
+// the top of each shelf. A member this table does not name sorts after the ones
+// it does, and a name here that no longer exists is ignored — so a stale hint
+// costs a tile's position, never its visibility.
+//
+// The picker has no curated `other` shelf: a type declaring `group: 'other'`
+// lands in the computed "Other" group at the bottom, alongside anything else
+// uncurated. That is deliberate — "Other" is a real home for the long tail
+// (payoff, end, custom-html), not a gap.
+//
+// Layouts absorbs what the settings tab used to call "Process": process and
+// timeline are structured layouts, not different enough to warrant a section of
+// their own (which showed 2 tiles and a wall of whitespace).
 //
 // The theme's own `basicSlideTypes` are prepended to `basic` at render time, and
 // custom types get their own computed group — neither belongs in this table.
-export const PICKER_GROUPS = {
+export const PICKER_GROUP_ORDER = {
   basic: [
     'title-slide',
     'chapter-title-slide',
@@ -61,9 +72,6 @@ export const PICKER_GROUPS = {
     'team-cards-slide',
     'logo-wall-slide',
   ],
-  // Layouts also absorbs the old "Process" group: process/timeline are just
-  // structured layouts, not different enough to warrant a section of their own
-  // (which showed 2 tiles and a wall of whitespace).
   layouts: [
     'text-blocks-slide',
     'icon-card-grid-slide',
@@ -89,6 +97,10 @@ export const PICKER_GROUPS = {
     'countdown-slide',
   ],
 };
+
+// The curated shelves the picker renders, in display order. `other` is absent
+// on purpose (see above); `custom` is computed from the registry, not declared.
+export const PICKER_GROUP_KEYS = ['basic', 'media', 'layouts', 'data', 'interaction'];
 
 // Extra search terms per type so people find a slide by an unofficial name
 // (incl. Dutch), e.g. "smoelenboek"/"roster" -> team cards. Folded into the
