@@ -14,7 +14,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 ## Why Deckyard
 
-**For presenters:** 38 typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, bilingual support (Dutch/English), and an AI wizard that actually understands presentation design.
+**For presenters:** <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> typed slide types, live presenting with speaker notes, audience follow-along with polls and Q&A, a UI in 12 languages, and an AI wizard that actually understands presentation design.
 
 **For developers:** Self-hosted, BYO LLM (OpenAI, Claude, Mistral), fully themeable, embeddable via JS SDK, white-label ready. Fork it, theme it, extend it with custom slide types. Zero cloud dependencies.
 
@@ -24,7 +24,7 @@ Built with plain Node.js and vanilla ESM. No framework, no bundler, no vendor lo
 
 | | Gamma / Tome / Beautiful.ai | Google Slides + Gemini | Deckyard |
 |---|---|---|---|
-| AI generation | ✅ | ✅ | ✅ 39 typed slides |
+| AI generation | ✅ | ✅ | ✅ <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> typed slides |
 | MCP interface | ❌ | ❌ | ✅ 27 tools + 7 prompts |
 | Self-hosted | ❌ | ❌ | ✅ |
 | BYO LLM | ❌ | ❌ | ✅ |
@@ -132,7 +132,7 @@ An installable [OpenClaw skill](skills/openclaw-skill/) is included — drop it 
 
 Deckyard doesn't just dump text onto slides. The AI pipeline:
 
-1. **Outlines** the deck structure, picking from 39 typed slide layouts
+1. **Outlines** the deck structure, picking from <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> typed slide layouts
 2. **Refines** each slide with type-aware content (KPI metrics, timeline entries, process steps — not just bullet points)
 3. **Validates** the result: density checks, repetition detection, readability analysis
 4. Returns **reasoning** for each type selection and **alternative suggestions**

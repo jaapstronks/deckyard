@@ -1,6 +1,6 @@
 # The `structure` facet, and when something is a type
 
-Deckyard has 38 core slide types. Until the `structure` facet there was no
+Deckyard has <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
 statement anywhere about how any of them relate to any other: the registry is a
 flat `name -> definition` map, so every type is a sibling of every other type.
 
@@ -51,7 +51,7 @@ each type's definition; served out through `/api/slide-types`.
 | `dataset` | data points plus an encoding | chart |
 | `chrome` | no content fields at all | payoff, follow-invite |
 
-These six partition the current 38 completely. There is no "other" bucket, which
+These six partition the current <!--gen:slide-type-count-->37<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
 
 ## The rule: type or variant?

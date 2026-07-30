@@ -24,7 +24,7 @@ type's definition; served out through `/api/slide-types`.
 
 | `runtime` | Meaning | Types |
 |---|---|---|
-| `static` | the session does nothing for it | 33 types |
+| `static` | the session does nothing for it | every other type |
 | `timed` | a presenter-driven clock; the state lives in the presenting window | countdown |
 | `live` | the audience answers, and the session collects and aggregates | poll, likert, likert-slider, feedback |
 
