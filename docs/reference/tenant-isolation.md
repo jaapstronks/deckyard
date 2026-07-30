@@ -3,7 +3,7 @@
 How Deckyard keeps one customer's decks away from another's, and which
 deployment shapes are supported. Verified against HEAD on 2026-07-23; hosting
 shapes and roadmap updated 2026-07-25; the request-to-organization binding
-updated 2026-07-25.
+updated 2026-07-25; the organization-UI status updated 2026-07-30.
 
 ## The supported model: the tenant boundary is the infrastructure
 
@@ -290,9 +290,18 @@ External email leaks were closed separately (PR #214).
 
 ### What is not done yet
 
-- **There is no organization UI.** The switch endpoint exists, but no
-  organization switcher, no member management screen and no per-organization
-  invite flow.
+- **The organization UI is half built.** Landed: the switcher in the user menu,
+  admin screens gated on the membership role rather than the instance-wide admin
+  flag, and the Users tab showing the members of the *active* organization with
+  their actions — change a role, remove someone, leave, hand the organization
+  over — paged, and with the organization-settings keys gated on organization
+  admin as well as instance admin. Missing: the **invite flow** (the API accepts
+  an invitation; there is no screen for it), the **organization profile** screen,
+  and the last `getDefaultOrganizationId()` in `routes/api/admin-users.js`.
+- **A plain member cannot reach their own Leave button.** The Users tab sits
+  behind the admin gate, so the row a member would act on is drawn correctly but
+  shown to nobody below admin. It is the tab's visibility rule that has to move,
+  not the button.
 
 Until that is closed, shape 4 stays *in development*: usable to build against,
 not something to point two unrelated customers at.
