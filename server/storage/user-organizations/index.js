@@ -17,6 +17,7 @@ export {
   getMembershipByEmail,
   listUserOrganizations,
   listOrganizationMembers,
+  getOrganizationMember,
   countOrganizationMembers,
   addMember,
   updateMemberRole,

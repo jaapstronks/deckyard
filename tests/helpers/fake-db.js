@@ -25,8 +25,12 @@
  *      between that and an explicit `null` is the whole subject of the
  *      partial-write tests, so the double drops `undefined` too.
  *   4. `sql` template values (the storage layer writes `sql`revision + 1``) are
- *      evaluated for the one arithmetic shape that layer uses; anything else
- *      throws rather than storing a builder object as if it were a value.
+ *      evaluated for the two shapes that layer uses — `<column> ± <number>` in a
+ *      SET clause and a `CASE <column> WHEN … THEN <n> … END` rank in ORDER BY —
+ *      and anything else throws rather than being silently ignored or stored as
+ *      a builder object. An ORDER BY the double quietly dropped would make an
+ *      ordering test pass on insertion order, which is the failure mode that
+ *      matters most here.
  */
 
 import crypto from 'node:crypto';
@@ -137,6 +141,43 @@ function resolveWriteValues(input, row = {}) {
   return out;
 }
 
+/**
+ * Compile a `sql` CASE expression used as a sort key into a ranking function.
+ *
+ * Only `CASE <column> WHEN '<value>' THEN <n> … [ELSE <n>] END` is understood —
+ * the shape `listOrganizationMembers` uses to sort owner → admin → member,
+ * which plain `ORDER BY role DESC` cannot express. Anything else throws, so an
+ * unmodelled ORDER BY fails the test rather than silently leaving rows in
+ * insertion order and letting an ordering assertion pass by luck.
+ *
+ * @param {*} value - Raw expression handed to `orderBy`
+ * @returns {(row: Object) => number} Rank for a row context
+ */
+function compileCaseRank(value) {
+  const node = value.toOperationNode();
+  const fragments = Array.isArray(node?.sqlFragments) ? node.sqlFragments : [];
+  const text = fragments.join('').replace(/\s+/g, ' ').trim();
+
+  const shape = text.match(/^CASE\s+(\S+)\s+(.*?)\s*END$/i);
+  if (!shape || (node.parameters || []).length) {
+    throw new Error(`fake-db: unsupported sql expression in orderBy: ${text}`);
+  }
+
+  const [, column, arms] = shape;
+  const whens = [...arms.matchAll(/WHEN\s+'([^']*)'\s+THEN\s+(-?\d+)/gi)].map((m) => [m[1], Number(m[2])]);
+  const fallback = arms.match(/ELSE\s+(-?\d+)/i);
+  if (!whens.length) {
+    throw new Error(`fake-db: unsupported CASE arms in orderBy: ${text}`);
+  }
+
+  const table = new Map(whens);
+  const otherwise = fallback ? Number(fallback[1]) : Number.MAX_SAFE_INTEGER;
+  return (row) => {
+    const key = readColumn(row, column);
+    return table.has(key) ? table.get(key) : otherwise;
+  };
+}
+
 /** Error shaped like a pg unique violation, so callers can recognise it. */
 class UniqueViolationError extends Error {
   constructor(table, columns, value) {
@@ -209,12 +250,29 @@ function compare(left, op, right) {
   }
 }
 
-/** Build the expression-builder callbacks accept (`eb`, `eb.or`, `eb.and`). */
+/** Build the expression-builder callbacks accept (`eb`, `eb.or`, `eb.and`, `eb.fn`). */
 function makeExpressionBuilder() {
   const eb = (column, op, value) => ({ kind: 'cmp', column, op, value });
   eb.or = (predicates) => ({ kind: 'or', predicates });
   eb.and = (predicates) => ({ kind: 'and', predicates });
+  eb.fn = {
+    count: (column) => makeAggregate((list) =>
+      list.filter((context) => readColumn(context, column) !== undefined).length
+    ),
+    countAll: () => makeAggregate((list) => list.length),
+  };
   return eb;
+}
+
+/**
+ * An aggregate projection entry, `.as()`-able like Kysely's.
+ * @param {(list: Array<Object>) => *} compute - Reduce the matched rows
+ * @returns {Object}
+ */
+function makeAggregate(compute) {
+  const aggregate = { __aggregate: true, alias: 'count', compute };
+  aggregate.as = (alias) => ({ ...aggregate, alias });
+  return aggregate;
 }
 
 /**
@@ -337,9 +395,12 @@ export function createFakeDb(seed = {}) {
       );
 
       for (const { column, direction } of [...state.orderBy].reverse()) {
+        const read = isRawExpression(column)
+          ? compileCaseRank(column)
+          : (row) => readColumn(row, column);
         list.sort((a, b) => {
-          const left = readColumn(a, column);
-          const right = readColumn(b, column);
+          const left = read(a);
+          const right = read(b);
           if (left === right) return 0;
           const cmp = left > right ? 1 : -1;
           return direction === 'desc' ? -cmp : cmp;
@@ -378,7 +439,12 @@ export function createFakeDb(seed = {}) {
         return builder;
       },
       select(columns) {
-        const list = Array.isArray(columns) ? columns : [columns];
+        // `.select((eb) => eb.fn.countAll().as('count'))` — the callback form
+        // the counting queries use. Resolve it before treating entries as
+        // column references, or the function would be stringified into a
+        // nonsense projection and the count would silently come back as 0.
+        const resolved = typeof columns === 'function' ? columns(makeExpressionBuilder()) : columns;
+        const list = Array.isArray(resolved) ? resolved : [resolved];
         state.projection = state.projection || [];
         for (const entry of list) {
           if (entry && typeof entry === 'object' && entry.__aggregate) {
@@ -607,18 +673,7 @@ export function createFakeDb(seed = {}) {
       return builder;
     },
 
-    fn: {
-      count(column) {
-        const aggregate = {
-          __aggregate: true,
-          alias: 'count',
-          compute: (list) =>
-            list.filter((context) => readColumn(context, column) !== undefined).length,
-        };
-        aggregate.as = (alias) => ({ ...aggregate, alias });
-        return aggregate;
-      },
-    },
+    fn: makeExpressionBuilder().fn,
 
     /** Direct access to the backing rows, for arrange/assert in tests. */
     __tables: tables,

@@ -218,6 +218,29 @@
   background: hsl(var(--app-danger));
 }
 
+/* Organization member rows (multi-workspace): the role control sits in the
+   actions column next to the buttons, so it has to match their size. */
+.admin-user-role-select {
+  font-size: var(--ps-text-xs);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  max-width: 10rem;
+}
+
+/* Stands in for the Leave button on the owner's own row and explains why there
+   is none. Sized like the buttons it replaces so the row does not jump. */
+.admin-user-action-note {
+  max-width: 16rem;
+  text-align: right;
+  font-size: var(--ps-text-xs);
+}
+
+/* Range line + page buttons under the member list. */
+.admin-users-pager {
+  align-items: center;
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
 /* Responsive: stack actions below info on narrow screens */
 @media (max-width: 640px) {
   .admin-user-main {
@@ -231,5 +254,10 @@
     padding-top: var(--ps-space-2);
     border-top: 1px solid hsl(var(--app-border-subtle));
     margin-top: var(--ps-space-1);
+  }
+
+  .admin-user-action-note {
+    max-width: none;
+    text-align: left;
   }
 }
