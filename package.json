@@ -70,7 +70,7 @@
     "ioredis": "^5.4.1",
     "pdf-parse": "^2.4.5",
     "pptxgenjs": "^3.12.0",
-    "puppeteer-core": "^25.3.0"
+    "puppeteer-core": "^25.4.0"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
