@@ -1,6 +1,6 @@
 /**
  * The wire half of the aggregator-seam rule: `/api/slide-types` carries the
- * three authoring companions.
+ * three authoring companions, and the inspector keep-list beside them.
  *
  * Why this file exists at all. Two of the three lookups — `schematicFor()` and
  * `getSampleContent()` — have always checked the definition before the per-type
@@ -11,9 +11,14 @@
  * and no browser consumer would ever see it. The consumers were right; the wire
  * dropped the keys they read.
  *
+ * `inspectorKeeps` is here for the same reason and needed no bug to prove it:
+ * the keep-list lookup was core-map-only, so a fork type could not narrow its
+ * own settings pane at all. It got the definition-first branch and the wire in
+ * one go.
+ *
  * So the checks below are about the *route*, not about any one type: that the
- * three keys travel, that what travels is what the facet modules resolve, and
- * that a declaration on a non-core definition survives the trip.
+ * keys travel, that what travels is what the facet modules resolve, and that a
+ * declaration on a non-core definition survives the trip.
  *
  * Run with: node --test tests/slide-type-api-companions.test.js
  */
@@ -30,6 +35,7 @@ import {
   slideTypeSample,
   slideTypeSchematic,
 } from '../shared/slide-types/authoring-companions.js';
+import { slideTypeInspectorKeeps } from '../shared/slide-types/inline-edit-companions.js';
 import { handleSlideTypes } from '../server/routes/api/slide-types.js';
 
 /** Drive the route the way the server does and hand back the parsed body. */
@@ -48,7 +54,7 @@ async function fetchMeta() {
 
 const META = await fetchMeta();
 
-describe('the three companions travel', () => {
+describe('the companions travel', () => {
   it('every offerable type is served a group', () => {
     const missing = Object.keys(SLIDE_TYPES)
       .filter((name) => !SLIDE_TYPES[name]?.deprecated)
@@ -80,7 +86,25 @@ describe('the three companions travel', () => {
       );
       assert.equal(m.description ?? '', slideTypeDescription(name, def), `${name}: description`);
       assert.equal(m.aliases ?? '', slideTypeAliases(name, def), `${name}: aliases`);
+      assert.deepStrictEqual(
+        m.inspectorKeeps ?? null,
+        slideTypeInspectorKeeps(name, def),
+        `${name}: inspectorKeeps`
+      );
     }
+  });
+
+  it('every registered type is served its keep-list', () => {
+    // The one companion where an empty array is a real answer: `[]` means the
+    // canvas covers the whole slide, absent means nobody narrowed the type and
+    // the inspector falls back to everything. Serving `[]` for both would strip
+    // the settings pane of every fork type.
+    const missing = Object.keys(SLIDE_TYPES)
+      .filter((name) => slideTypeInspectorKeeps(name, SLIDE_TYPES[name]) && !META[name]?.inspectorKeeps)
+      .sort();
+    assert.deepStrictEqual(missing, [], 'a type has a keep-list the editor is not told');
+    const served = Object.values(META).filter((m) => m.inspectorKeeps).length;
+    assert.ok(served > 30, `only ${served} types carry a keep-list; the check would be vacuous`);
   });
 
   it('a deprecated type is served no shelf', () => {
@@ -101,7 +125,7 @@ describe('the three companions travel', () => {
     // Date or an undefined leaf would arrive at the editor changed or missing,
     // and the editor would fall back to core without anything saying so.
     for (const [name, m] of Object.entries(META)) {
-      for (const key of ['group', 'schematic', 'sampleContent']) {
+      for (const key of ['group', 'schematic', 'sampleContent', 'inspectorKeeps']) {
         if (m[key] === undefined) continue;
         assert.deepStrictEqual(
           JSON.parse(JSON.stringify(m[key])),
@@ -126,14 +150,16 @@ describe('a non-core declaration reaches the editor', () => {
     sampleContent: { title: 'Welcome' },
     description: 'A big hero header',
     aliases: 'banner splash hero',
+    inspectorKeeps: ['overlay'],
   };
 
-  it('its group, glyph and example all resolve from the definition', () => {
+  it('its group, glyph, example and keep-list all resolve from the definition', () => {
     assert.equal(slideTypeGroup('acme-hero', forkDef), 'media');
     assert.deepStrictEqual(slideTypeSchematic('acme-hero', forkDef), { kind: 'image' });
     assert.deepStrictEqual(slideTypeSample('acme-hero', forkDef), { title: 'Welcome' });
     assert.equal(slideTypeDescription('acme-hero', forkDef), 'A big hero header');
     assert.equal(slideTypeAliases('acme-hero', forkDef), 'banner splash hero');
+    assert.deepStrictEqual(slideTypeInspectorKeeps('acme-hero', forkDef), ['overlay']);
   });
 
   it('and each degrades to nothing rather than to a core type\'s answer', () => {
@@ -142,6 +168,15 @@ describe('a non-core declaration reaches the editor', () => {
     assert.equal(slideTypeSample('acme-hero', { label: 'Hero' }), undefined);
     assert.equal(slideTypeDescription('acme-hero', { label: 'Hero' }), '');
     assert.equal(slideTypeAliases('acme-hero', { label: 'Hero' }), '');
+    assert.equal(slideTypeInspectorKeeps('acme-hero', { label: 'Hero' }), null);
+  });
+
+  it('an empty keep-list is an answer, not an absence', () => {
+    // `[]` says "the canvas covers all of it"; null says "nobody narrowed this".
+    // The inspector's fallback branches on exactly that difference.
+    assert.deepStrictEqual(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [] }), []);
+    assert.equal(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: 'layout' }), null);
+    assert.equal(slideTypeInspectorKeeps('acme-hero', { inspectorKeeps: [1, 2] }), null);
   });
 
   it('a definition may override core per companion, without touching the others', () => {
