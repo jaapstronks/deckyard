@@ -36,3 +36,13 @@ export const inlineEdit = {
     // images stays: the per-image cards also carry focus-point controls.
     formText: HEADER_TEXT,
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Gallery keeps its layout enum: it was missing from the phase-3 audit's keeps
+ * column, and enums are inspector material by definition.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['layout'];

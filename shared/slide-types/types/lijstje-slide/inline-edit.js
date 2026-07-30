@@ -18,3 +18,10 @@ export const inlineEdit = {
     cards: { field: 'items', container: '.lijst', itemSelector: '.lijst-item' },
     formText: ['title', 'subheading', 'items'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['variant', 'layout', 'density'];

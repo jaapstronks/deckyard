@@ -2,41 +2,111 @@
 // Run `node scripts/generate-slide-inline-edit-aggregator.js` to regenerate.
 // Source of truth: the `inline-edit.js` in each shared/slide-types/types/<name>/.
 
-import { inlineEdit as cardStackSlideInlineEdit } from './types/card-stack-slide/inline-edit.js';
-import { inlineEdit as chapterTitleSlideInlineEdit } from './types/chapter-title-slide/inline-edit.js';
-import { inlineEdit as chartSlideInlineEdit } from './types/chart-slide/inline-edit.js';
-import { inlineEdit as comparisonSlideInlineEdit } from './types/comparison-slide/inline-edit.js';
-import { inlineEdit as contentColumnsSlideInlineEdit } from './types/content-columns-slide/inline-edit.js';
-import { inlineEdit as contentSlideInlineEdit } from './types/content-slide/inline-edit.js';
-import { inlineEdit as countdownSlideInlineEdit } from './types/countdown-slide/inline-edit.js';
-import { inlineEdit as cycleSlideInlineEdit } from './types/cycle-slide/inline-edit.js';
-import { inlineEdit as embedSlideInlineEdit } from './types/embed-slide/inline-edit.js';
-import { inlineEdit as endSlideInlineEdit } from './types/end-slide/inline-edit.js';
-import { inlineEdit as feedbackSlideInlineEdit } from './types/feedback-slide/inline-edit.js';
-import { inlineEdit as funnelSlideInlineEdit } from './types/funnel-slide/inline-edit.js';
-import { inlineEdit as gallerySlideInlineEdit } from './types/gallery-slide/inline-edit.js';
-import { inlineEdit as iconCardGridSlideInlineEdit } from './types/icon-card-grid-slide/inline-edit.js';
-import { inlineEdit as imageSlideInlineEdit } from './types/image-slide/inline-edit.js';
-import { inlineEdit as imageTextSlideInlineEdit } from './types/image-text-slide/inline-edit.js';
-import { inlineEdit as kpiMetricsSlideInlineEdit } from './types/kpi-metrics-slide/inline-edit.js';
-import { inlineEdit as leadCaptureSlideInlineEdit } from './types/lead-capture-slide/inline-edit.js';
-import { inlineEdit as lijstjeSlideInlineEdit } from './types/lijstje-slide/inline-edit.js';
-import { inlineEdit as likertSlideInlineEdit } from './types/likert-slide/inline-edit.js';
-import { inlineEdit as likertSliderSlideInlineEdit } from './types/likert-slider-slide/inline-edit.js';
-import { inlineEdit as listSlideInlineEdit } from './types/list-slide/inline-edit.js';
-import { inlineEdit as logoWallSlideInlineEdit } from './types/logo-wall-slide/inline-edit.js';
-import { inlineEdit as matrixSlideInlineEdit } from './types/matrix-slide/inline-edit.js';
-import { inlineEdit as pollSlideInlineEdit } from './types/poll-slide/inline-edit.js';
-import { inlineEdit as processSlideInlineEdit } from './types/process-slide/inline-edit.js';
-import { inlineEdit as pyramidSlideInlineEdit } from './types/pyramid-slide/inline-edit.js';
-import { inlineEdit as quoteSlideInlineEdit } from './types/quote-slide/inline-edit.js';
-import { inlineEdit as splitPartnerTitleSlideInlineEdit } from './types/split-partner-title-slide/inline-edit.js';
-import { inlineEdit as tableSlideInlineEdit } from './types/table-slide/inline-edit.js';
-import { inlineEdit as teamCardsSlideInlineEdit } from './types/team-cards-slide/inline-edit.js';
-import { inlineEdit as textBlocksSlideInlineEdit } from './types/text-blocks-slide/inline-edit.js';
-import { inlineEdit as timelineSlideInlineEdit } from './types/timeline-slide/inline-edit.js';
-import { inlineEdit as titleSlideInlineEdit } from './types/title-slide/inline-edit.js';
-import { inlineEdit as videoSlideInlineEdit } from './types/video-slide/inline-edit.js';
+import * as cardStackSlide from './types/card-stack-slide/inline-edit.js';
+import * as chapterTitleSlide from './types/chapter-title-slide/inline-edit.js';
+import * as chartSlide from './types/chart-slide/inline-edit.js';
+import * as comparisonSlide from './types/comparison-slide/inline-edit.js';
+import * as contentColumnsSlide from './types/content-columns-slide/inline-edit.js';
+import * as contentSlide from './types/content-slide/inline-edit.js';
+import * as countdownSlide from './types/countdown-slide/inline-edit.js';
+import * as customHtmlSlide from './types/custom-html-slide/inline-edit.js';
+import * as cycleSlide from './types/cycle-slide/inline-edit.js';
+import * as embedSlide from './types/embed-slide/inline-edit.js';
+import * as endSlide from './types/end-slide/inline-edit.js';
+import * as feedbackSlide from './types/feedback-slide/inline-edit.js';
+import * as followInviteSlide from './types/follow-invite-slide/inline-edit.js';
+import * as funnelSlide from './types/funnel-slide/inline-edit.js';
+import * as gallerySlide from './types/gallery-slide/inline-edit.js';
+import * as iconCardGridSlide from './types/icon-card-grid-slide/inline-edit.js';
+import * as imageSlide from './types/image-slide/inline-edit.js';
+import * as imageTextSlide from './types/image-text-slide/inline-edit.js';
+import * as kpiMetricsSlide from './types/kpi-metrics-slide/inline-edit.js';
+import * as leadCaptureSlide from './types/lead-capture-slide/inline-edit.js';
+import * as lijstjeSlide from './types/lijstje-slide/inline-edit.js';
+import * as likertSlide from './types/likert-slide/inline-edit.js';
+import * as likertSliderSlide from './types/likert-slider-slide/inline-edit.js';
+import * as listSlide from './types/list-slide/inline-edit.js';
+import * as logoWallSlide from './types/logo-wall-slide/inline-edit.js';
+import * as matrixSlide from './types/matrix-slide/inline-edit.js';
+import * as payoffSlide from './types/payoff-slide/inline-edit.js';
+import * as pollSlide from './types/poll-slide/inline-edit.js';
+import * as processSlide from './types/process-slide/inline-edit.js';
+import * as pyramidSlide from './types/pyramid-slide/inline-edit.js';
+import * as quoteSlide from './types/quote-slide/inline-edit.js';
+import * as splitPartnerTitleSlide from './types/split-partner-title-slide/inline-edit.js';
+import * as tableSlide from './types/table-slide/inline-edit.js';
+import * as teamCardsSlide from './types/team-cards-slide/inline-edit.js';
+import * as textBlocksSlide from './types/text-blocks-slide/inline-edit.js';
+import * as timelineSlide from './types/timeline-slide/inline-edit.js';
+import * as titleSlide from './types/title-slide/inline-edit.js';
+import * as videoSlide from './types/video-slide/inline-edit.js';
+
+/**
+ * Type name → the whole `inline-edit.js` module, so the maps below can be
+ * sliced out of it per facet. A type declares whichever of the named exports it
+ * has something to say about, and falls out of the maps for the rest — being
+ * absent is a legitimate answer everywhere here.
+ *
+ * @type {Readonly<Record<string, Record<string, unknown>>>}
+ */
+const MODULES = Object.freeze({
+  'card-stack-slide': cardStackSlide,
+  'chapter-title-slide': chapterTitleSlide,
+  'chart-slide': chartSlide,
+  'comparison-slide': comparisonSlide,
+  'content-columns-slide': contentColumnsSlide,
+  'content-slide': contentSlide,
+  'countdown-slide': countdownSlide,
+  'custom-html-slide': customHtmlSlide,
+  'cycle-slide': cycleSlide,
+  'embed-slide': embedSlide,
+  'end-slide': endSlide,
+  'feedback-slide': feedbackSlide,
+  'follow-invite-slide': followInviteSlide,
+  'funnel-slide': funnelSlide,
+  'gallery-slide': gallerySlide,
+  'icon-card-grid-slide': iconCardGridSlide,
+  'image-slide': imageSlide,
+  'image-text-slide': imageTextSlide,
+  'kpi-metrics-slide': kpiMetricsSlide,
+  'lead-capture-slide': leadCaptureSlide,
+  'lijstje-slide': lijstjeSlide,
+  'likert-slide': likertSlide,
+  'likert-slider-slide': likertSliderSlide,
+  'list-slide': listSlide,
+  'logo-wall-slide': logoWallSlide,
+  'matrix-slide': matrixSlide,
+  'payoff-slide': payoffSlide,
+  'poll-slide': pollSlide,
+  'process-slide': processSlide,
+  'pyramid-slide': pyramidSlide,
+  'quote-slide': quoteSlide,
+  'split-partner-title-slide': splitPartnerTitleSlide,
+  'table-slide': tableSlide,
+  'team-cards-slide': teamCardsSlide,
+  'text-blocks-slide': textBlocksSlide,
+  'timeline-slide': timelineSlide,
+  'title-slide': titleSlide,
+  'video-slide': videoSlide,
+});
+
+/**
+ * One named export across every type, with the types that do not declare it
+ * dropped rather than mapped to `undefined`. Consumers ask "does this type
+ * have one", and `in`/`Object.keys` should answer that honestly.
+ *
+ * @param {string} exportName
+ * @returns {Readonly<Record<string, unknown>>}
+ */
+function facet(exportName) {
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(MODULES)
+        .filter(([, mod]) => mod[exportName] !== undefined)
+        .map(([type, mod]) => [type, mod[exportName]])
+    )
+  );
+}
 
 /**
  * Inline-edit descriptor per slide type: what the editor lets someone change on
@@ -50,45 +120,24 @@ import { inlineEdit as videoSlideInlineEdit } from './types/video-slide/inline-e
  * `index.js`/`render.js`: the presenter renders slides without ever offering
  * one, and this is editor payload it must not pay for.
  *
- * @type {Record<string, Object>}
+ * @type {Readonly<Record<string, Object>>}
  */
-export const SLIDE_TYPE_INLINE_EDIT = {
-  'card-stack-slide': cardStackSlideInlineEdit,
-  'chapter-title-slide': chapterTitleSlideInlineEdit,
-  'chart-slide': chartSlideInlineEdit,
-  'comparison-slide': comparisonSlideInlineEdit,
-  'content-columns-slide': contentColumnsSlideInlineEdit,
-  'content-slide': contentSlideInlineEdit,
-  'countdown-slide': countdownSlideInlineEdit,
-  'cycle-slide': cycleSlideInlineEdit,
-  'embed-slide': embedSlideInlineEdit,
-  'end-slide': endSlideInlineEdit,
-  'feedback-slide': feedbackSlideInlineEdit,
-  'funnel-slide': funnelSlideInlineEdit,
-  'gallery-slide': gallerySlideInlineEdit,
-  'icon-card-grid-slide': iconCardGridSlideInlineEdit,
-  'image-slide': imageSlideInlineEdit,
-  'image-text-slide': imageTextSlideInlineEdit,
-  'kpi-metrics-slide': kpiMetricsSlideInlineEdit,
-  'lead-capture-slide': leadCaptureSlideInlineEdit,
-  'lijstje-slide': lijstjeSlideInlineEdit,
-  'likert-slide': likertSlideInlineEdit,
-  'likert-slider-slide': likertSliderSlideInlineEdit,
-  'list-slide': listSlideInlineEdit,
-  'logo-wall-slide': logoWallSlideInlineEdit,
-  'matrix-slide': matrixSlideInlineEdit,
-  'poll-slide': pollSlideInlineEdit,
-  'process-slide': processSlideInlineEdit,
-  'pyramid-slide': pyramidSlideInlineEdit,
-  'quote-slide': quoteSlideInlineEdit,
-  'split-partner-title-slide': splitPartnerTitleSlideInlineEdit,
-  'table-slide': tableSlideInlineEdit,
-  'team-cards-slide': teamCardsSlideInlineEdit,
-  'text-blocks-slide': textBlocksSlideInlineEdit,
-  'timeline-slide': timelineSlideInlineEdit,
-  'title-slide': titleSlideInlineEdit,
-  'video-slide': videoSlideInlineEdit,
-};
+export const SLIDE_TYPE_INLINE_EDIT = facet('inlineEdit');
+
+/**
+ * Inspector keep-list per slide type: the field keys the settings pane keeps
+ * rendering once the canvas covers the rest of the slide.
+ *
+ * Sparse by design, and a *narrowing* rather than a listing — a type without an
+ * entry gets the safe default (every field the inline layer does not cover), so
+ * only a stale entry is a problem. Resolve it through
+ * `slideTypeInspectorKeeps()` in ./inline-edit-companions.js rather than
+ * reading this map: a fork type declares its own on the definition, and this
+ * map is core's answer, never the population.
+ *
+ * @type {Readonly<Record<string, string[]>>}
+ */
+export const SLIDE_TYPE_INSPECTOR_KEEPS = facet('inspectorKeeps');
 
 /**
  * The inline-edit descriptor for a type, or null when it has none.

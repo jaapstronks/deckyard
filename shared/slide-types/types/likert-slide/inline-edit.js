@@ -18,3 +18,10 @@ export const inlineEdit = {
     })),
     formText: ['question', ...Array.from({ length: 10 }, (_, i) => `option${i + 1}`)],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['onClose', 'onCloseTarget'];

@@ -21,3 +21,10 @@ export const inlineEdit = {
     // metrics stays in the form: delta/note subfields have no inline path.
     formText: HEADER_TEXT,
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['accent', 'countUp'];

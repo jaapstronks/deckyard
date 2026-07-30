@@ -17,3 +17,22 @@ export const inlineEdit = {
     ],
     formText: ['label', 'title', 'subheading'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Partner logos manager + per-logo alts + the split-specific bg image: none
+ * had a canvas surface — were bulk-only (audit 2026-07-21).
+ * @type {string[]}
+ */
+export const inspectorKeeps = [
+  'logos',
+  'logo1Alt',
+  'logo2Alt',
+  'logo3Alt',
+  'logo4Alt',
+  'logo5Alt',
+  'bgImage',
+  'bgAlt',
+];

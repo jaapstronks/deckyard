@@ -23,3 +23,22 @@ export const inlineEdit = {
     // 'data' stays: the form's chart-data editor has type-aware extras.
     formText: HEADER_TEXT,
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Axis/series labels render on the chart but are not inline-editable — chart
+ * config, were bulk-only (audit 2026-07-21).
+ * @type {string[]}
+ */
+export const inspectorKeeps = [
+  'chartType',
+  'showLegend',
+  'showValues',
+  'pieLabelMode',
+  'xLabel',
+  'yLabel',
+  'series1Label',
+  'series2Label',
+];

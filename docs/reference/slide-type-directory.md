@@ -157,8 +157,9 @@ The catch that made this a rule rather than a bugfix: rules 1 and 2 were already
 not hold the registry, it holds the `GET /api/slide-types` response, and that
 route served neither key — so the fallback branch existed on both sides of a wire
 that dropped it. **A companion the browser needs travels on that route**, which is
-the sixth thing to check when adding one. Measured cost of carrying all three:
-+13 KB on an 800 KB response (+3 KB gzipped), once per deck opened.
+the sixth thing to check when adding one. Measured cost of carrying the first
+three: +13 KB on an 800 KB response (+3 KB gzipped), once per deck opened;
+`inspectorKeeps` added 1.7 KB raw (0.7 KB gzipped) on top.
 
 Pinned by `tests/slide-type-api-companions.test.js` (the wire) and
 `tests/slide-type-groups.test.js` (the precedence).
@@ -185,6 +186,18 @@ gated by `tests/slide-authoring-aggregator.test.js`, byte-for-byte.
 descriptor legitimately holds functions (`cropMode`, `addPlacement`, `ensure`),
 so it has no "plain data" gate. `descriptors.js` spreads it into
 `INLINE_DESCRIPTORS` and keeps only the grammar doc and the two lookup helpers.
+
+That file carries **two** facets — the descriptor and the inspector keep-list —
+and they do not cover the same types: `custom-html-slide`, `follow-invite-slide`
+and `payoff-slide` own a keep-list without being inline-editable at all. So it
+imports module *namespaces* (`import * as titleSlide from …`) and slices each
+facet out of them at runtime, dropping the types that do not declare it. That
+keeps the generator a pure directory scan — it never has to know which named
+exports a given file happens to have — and a third facet costs one line in the
+aggregator and none in the scan. The facet lookups live one file over, in
+`shared/slide-types/inline-edit-companions.js`, the same split as
+`authoring.js` → `authoring-companions.js`.
+
 There is no equivalent aggregator for `ai.js` yet; its consumers still import per
 type. When one is added it follows this shape.
 
@@ -228,3 +241,4 @@ convert the consumer later — which is how `group` itself got there.
 | `slide-type-picker/data.js` (`index.js`) | picker description + search aliases, 33 types (two hand-maintained tables retired) | A7.1 rollout PR 5 |
 | `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |
 | `server/routes/api/slide-types.js` | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response | A7.1 rollout PR 5 |
+| `client/views/editor/editor-form/inspector-form.js` | inspector keep-list, all 38 types (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane) | A7.1 rollout PR 6 |

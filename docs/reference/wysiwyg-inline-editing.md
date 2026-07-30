@@ -241,7 +241,7 @@ read from `SLIDE_TYPES[type].fields`.
 | `media` | Per-image popover on `data-inline-photo="<n>"` elements. **Array mode** (`list` set): `<n>` indexes into `list`, popover mutates the item (`imageField`/`altField`/`extraFields[].key` are item keys). **Flat mode** (no `list`): keys are content keys; a `{n}` token is replaced with `<n>` (`col{n}Image`); single-image types use plain keys, `<n>`=0. `extraFields` entries: `{key, type, label, i18nKey}`. |
 | `icons` | Per-icon affordance on `data-inline-icon="<path>"` elements: `{ selector, afterWrite? }`. `afterWrite(slide)` keeps a legacy mirror in sync (icon-card-grid re-syncs numbered fields in items-mode only); function-valued, so core-map-only. |
 | `convert` | Type-switch affordances for the "add/remove an image" intent. `addMedia: { toType, anchors }` shows a "+ Add image" chip on a type without an image side; clicking converts (content-slide → image-text-slide) and opens the media popover on the fresh placeholder. `removeMedia: { toType, selector }` shows a hover × on the EMPTY image placeholder; clicking converts back (image-text-slide → content-slide). Both only render when `canConvertSlideTo` approves, so custom types overriding a core name keep working. A filled image must first be cleared via the popover, so removal stays a deliberate two-step. |
-| `formText` | Field keys whose editing is FULLY covered by the inline layer (plain text, markdown-modal fields, items whose subfields are all inline). Consumed by the inspector's conservative fallback for types without an `INSPECTOR_KEEPS` entry (`getInlineFormTextKeys` in `editor-form/inspector-form.js`) and rendered by the bulk "Edit all text" modal. A field whose editor carries non-inline controls (icon pickers, KPI delta/note, table column ops) must NOT be listed. |
+| `formText` | Field keys whose editing is FULLY covered by the inline layer (plain text, markdown-modal fields, items whose subfields are all inline). Consumed by the inspector's conservative fallback for types with no `inspectorKeeps` declaration (`getInlineFormTextKeys` in `editor-form/inspector-form.js`) and rendered by the bulk "Edit all text" modal. A field whose editor carries non-inline controls (icon pickers, KPI delta/note, table column ops) must NOT be listed. |
 
 Note `formText` is narrower than inline coverage: content-columns and
 card-stack emit `data-inline-field` for their numbered text fields (inline
@@ -253,7 +253,7 @@ layer doesn't cover every operation on them.
 The Pass-6-era collapsed "Text" section in the side form no longer exists;
 it was superseded by the wysiwyg-first editor-UI overhaul. Where each field
 lives now - canvas / bulk modal / inspector rail - including the
-`INSPECTOR_KEEPS` map, the parity invariant, and the full per-type field
+keeps-model, the parity invariant, and the full per-type field
 audit, is documented in `docs/reference/editor-inspector.md`. This doc's
 coverage table below only summarizes what the *canvas* offers per type.
 

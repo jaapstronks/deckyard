@@ -17,3 +17,13 @@ export const inlineEdit = {
     // Thank-you / privacy fields render only post-submit → stay in the form.
     formText: ['title', 'description', 'nameLabel', 'emailLabel', 'submitLabel'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Thank-you state + privacy line are invisible on the canvas pre-submit —
+ * config texts, were bulk-only (audit 2026-07-21).
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['thankYouTitle', 'thankYouMessage', 'privacyText', 'privacyUrl'];

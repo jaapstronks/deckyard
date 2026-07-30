@@ -3,9 +3,8 @@ import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { renderChartConfigControls } from './slide-forms/chart.js';
-import {
-  inspectorKeeps as iconCardGridInspectorKeeps,
-} from '../../../../shared/slide-types/types/icon-card-grid-slide/inline-edit.js';
+import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
+import { slideTypeInspectorKeeps } from '../../../../shared/slide-types/inline-edit-companions.js';
 import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
 import {
   appendImageFocusPicker,
@@ -29,122 +28,49 @@ import { renderImageElementCard } from './image-element-card.js';
 /**
  * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
  *
- * This map mirrors the per-type coverage audit in
- * docs/reference/editor-inspector.md: the inspector renders
- * ONLY Background, Accessibility and these settings/design fields. Content
- * fields live on the slide itself (wysiwyg) and - all of them, by
- * construction - in the "Edit all text" bulk modal. A key may only be dropped
- * from this map when its replacement surface has shipped (parity invariant).
+ * The map itself is no longer written here. Every type declares its keep-list
+ * in `shared/slide-types/types/<name>/inline-edit.js`, next to the on-canvas
+ * descriptor it is the counterpart of — a field is kept in the inspector
+ * *because* the canvas does not cover it, so the two answers drift the moment
+ * they live in different files. What is left here is the rule that decides what
+ * belongs in a keep-list, and the resolution of a type's keys.
  *
- * Documented deviations from the audit table's shorthand (see the reference doc):
- * - table colCount, team-cards cardCount and logo-wall logoCount are derived
- *   mirrors managed by their editors/arrays and were never rendered as form
- *   controls; they are not resurrected here.
- * - gallery keeps its layout enum (missing from the audit's keeps column;
- *   enums are inspector material by definition).
+ * The rule mirrors the per-type coverage audit in
+ * docs/reference/editor-inspector.md: the inspector renders ONLY Background,
+ * Accessibility and these settings/design fields. Content fields live on the
+ * slide itself (wysiwyg) and — all of them, by construction — in the "Edit all
+ * text" bulk modal. A key may only be dropped from a keep-list when its
+ * replacement surface has shipped (parity invariant).
  *
- * Keys handled by the shared Background/Accessibility sections are not listed.
+ * Coverage-audit rule (editing-surfaces §"Status: per-type coverage audit",
+ * re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + bulk modal;
+ * SETTINGS/CONFIG/METADATA may never be bulk-only — a field the user cannot
+ * point at on the canvas (URLs, config texts, alt/bg images) must render in the
+ * inspector.
+ *
+ * Documented deviations from the audit table's shorthand (see the reference
+ * doc): table colCount, team-cards cardCount and logo-wall logoCount are
+ * derived mirrors managed by their editors/arrays and were never rendered as
+ * form controls, so they are not resurrected. Keys handled by the shared
+ * Background/Accessibility sections are not listed either.
+ *
+ * Re-exported for the companion matrix (tests/slide-type-companion-coverage.js),
+ * which catches a keep-list left behind for a type that no longer exists.
+ *
+ * @type {Readonly<Record<string, string[]>>}
  */
-// Coverage-audit rule (editing-surfaces §"Status: per-type coverage audit",
-// re-audited 2026-07-21): CONTENT TEXT may rely on the canvas + bulk modal;
-// SETTINGS/CONFIG/METADATA may never be bulk-only — a field the user cannot
-// point at on the canvas (URLs, config texts, alt/bg images) must render in
-// the inspector. The 2026-07-21 additions below restore exactly the fields
-// the 2026-07-16 audit had parked in its "Bulk modal (only home)" column.
-//
-// A per-type override, sparse by design: without an entry, every field the
-// inline layer does not cover renders in the inspector (the safe default), so
-// only a *stale* entry is a problem. Exported for the companion matrix
-// (tests/slide-type-companion-coverage.test.js), which catches one for a type
-// that no longer exists.
-export const INSPECTOR_KEEPS = {
-  // The title background is now the shared slideBgImage (rendered by the
-  // Background section); the type's own bgImage/bgAlt were removed
-  // (title-bg-unification). logoCorner is the only title-specific keep.
-  'title-slide': ['logoCorner'],
-  'chapter-title-slide': ['layout'],
-  // actions: CTA buttons (label/url/style) have no canvas surface — config.
-  'content-slide': ['layout', 'density', 'actions'],
-  'table-slide': ['headerRow', 'tableStyle', 'animateByCell', 'cornerCell'],
-  'list-slide': ['variant', 'layout', 'density'],
-  'lijstje-slide': ['variant', 'layout', 'density'],
-  'kpi-metrics-slide': ['accent', 'countUp'],
-  // Partner logos manager + per-logo alts + the split-specific bg image:
-  // none had a canvas surface — were bulk-only (audit 2026-07-21).
-  'split-partner-title-slide': ['logos', 'logo1Alt', 'logo2Alt', 'logo3Alt',
-    'logo4Alt', 'logo5Alt', 'bgImage', 'bgAlt'],
-  // `layout` (structural variant) is intentionally NOT kept: the toolbar
-  // "Layout" chip is its canonical control in the inspector. textColumns /
-  // imageSide stay as precise, distinctly-named sub-settings.
-  // `imageFit` is intentionally absent since datamodel step 2b: fit is a
-  // per-image ImageRef property (images manager / "This image"), no longer a
-  // writable slide-level setting.
-  'image-text-slide': ['imageRole', 'density', 'textColumns', 'imageSide', 'imageWidth', 'imageBackground', 'actions'],
-  // `source` and `bunnyLibraryId` were misclassified as content at the
-  // phase-3 audit: a video URL/ID is a discrete input you cannot edit on the
-  // canvas (the descriptor only inline-edits the title), so leaving them out
-  // orphaned them to the bulk modal — a parity-invariant violation. They are
-  // inspector material (editing-surfaces decision 2026-07-21).
-  // `watchUrl` is the same kind of field: export configuration with no canvas
-  // surface, so the parity invariant puts it here rather than the bulk modal.
-  'video-slide': ['source', 'autoplay', 'bunnyLibraryId', 'watchUrl'],
-  'team-cards-slide': ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'],
-  'logo-wall-slide': [],
-  // Card count is items[]-driven and managed by the side form's add/remove
-  // (like icon-card-grid), so the raw cardCount enum is no longer an inspector
-  // control.
-  'card-stack-slide': [],
-  // Owned by shared/slide-types/types/icon-card-grid-slide/inline-edit.js.
-  'icon-card-grid-slide': iconCardGridInspectorKeeps,
-  'payoff-slide': [],
-  'quote-slide': [],
-  // `layout` is intentionally absent since datamodel step 3: the conflated
-  // enum split into the ImageRef axes `fit` + `bleed` (rendered via
-  // appendImageSlideFitControls, not the generic keeps loop). Since the
-  // editing-surfaces tab split ALL of these render in the "This image"
-  // element tab only — the single image is the element; the slide form
-  // carries just Background/Accessibility.
-  'image-slide': ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'],
-  // `embedUrl`: same misclassification as video-slide's `source` — the embed
-  // URL had no surface besides the bulk modal.
-  'embed-slide': ['embedUrl', 'aspectRatio', 'sandbox'],
-  // zeroText: shown only when the timer hits zero — config, no canvas surface.
-  'countdown-slide': ['durationMinutes', 'durationSeconds', 'autoStart',
-    'flashOnZero', 'soundOnZero', 'zeroText'],
-  // onCloseTarget: companion of the kept onClose enum — was bulk-only.
-  'poll-slide': ['onClose', 'onCloseTarget'],
-  'likert-slide': ['onClose', 'onCloseTarget'],
-  'likert-slider-slide': [],
-  // placeholder: input placeholder — config, not canvas-editable text.
-  'feedback-slide': ['placeholder'],
-  // Thank-you state + privacy line are invisible on the canvas pre-submit —
-  // config texts, were bulk-only (audit 2026-07-21).
-  'lead-capture-slide': ['thankYouTitle', 'thankYouMessage', 'privacyText', 'privacyUrl'],
-  'follow-invite-slide': [],
-  // Axis/series labels render on the chart but are not inline-editable —
-  // chart config, were bulk-only (audit 2026-07-21).
-  'chart-slide': ['chartType', 'showLegend', 'showValues', 'pieLabelMode',
-    'xLabel', 'yLabel', 'series1Label', 'series2Label'],
-  'text-blocks-slide': [],
-  'content-columns-slide': ['columnCount'],
-  'comparison-slide': [],
-  'process-slide': ['direction'],
-  'timeline-slide': [],
-  'matrix-slide': [],
-  'funnel-slide': [],
-  'pyramid-slide': [],
-  'cycle-slide': [],
-  'gallery-slide': ['layout'],
-  'custom-html-slide': [],
-  // Contact/social URLs and labels have no canvas surface (the canvas
-  // inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).
-  'end-slide': ['contactUrl', 'social1Label', 'social1Url', 'social2Label', 'social2Url'],
-};
+export const INSPECTOR_KEEPS = SLIDE_TYPE_INSPECTOR_KEEPS;
 
 /**
  * Resolve the set of field keys the inspector may render for a slide type.
  *
- * Unknown (custom/fork) types are not in the audit, so they fall back
+ * The keep-list comes from slideTypeInspectorKeeps(): the definition's own
+ * declaration first, core's aggregator second (the seam rule — see
+ * shared/slide-types/inline-edit-companions.js). A fork type that ships an
+ * `inspectorKeeps` array on its definition therefore narrows its own settings
+ * pane, which the old core-map-only lookup made impossible.
+ *
+ * A type neither side narrows is not in the audit, so it falls back
  * conservatively: every schema field EXCEPT the ones with proven wysiwyg
  * coverage (getInlineFormTextKeys) stays in the inspector - dropping more
  * would risk orphaning a field the fork has no other surface for.
@@ -154,8 +80,8 @@ export const INSPECTOR_KEEPS = {
  * @returns {Set<string>} keys allowed in the inspector (excl. bg/a11y routing)
  */
 export function getInspectorKeepKeys(type, def) {
-  const keeps = INSPECTOR_KEEPS[type];
-  if (Array.isArray(keeps)) return new Set(keeps);
+  const keeps = slideTypeInspectorKeeps(type, def);
+  if (keeps) return new Set(keeps);
   const inlineCovered = new Set(getInlineFormTextKeys(type, def));
   const all = (def?.fields || []).map((f) => f.key).filter((k) => !inlineCovered.has(k));
   return new Set(all);

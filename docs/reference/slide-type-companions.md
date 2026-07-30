@@ -51,7 +51,7 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Picker schematic glyph | `client/views/editor/slide-type-schematics.js` | every insertable type | generic text-only diagram |
 | Curated group | `shared/slide-types/types/<name>/authoring.js` (`group`) | every insertable type | lands in the picker's computed "Other" group *and* the settings tab's "Other" heading |
 | Inline-edit descriptor | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type | no on-canvas editing; every field is side-form only |
-| Inspector keep-list | `client/views/editor/editor-form/inspector-form.js` (`INSPECTOR_KEEPS`) | sparse by design (reverse only) | inspector shows every field the inline layer misses (the safe default) |
+| Inspector keep-list | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`) | sparse by design (reverse only) | inspector shows every field the inline layer misses (the safe default) |
 | Refine content schema | `server/utils/ai/schemas/refined-slide.js` (`SLIDE_SCHEMAS`) | every agent-emittable type (not `ai: false`, not deprecated) | `validateSlideContent` hits its "unknown type" branch and skips validation — refine never notices malformed content |
 | Structural validator | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`) | every agent-emittable `collection` / `fixed-collection` type | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated |
 

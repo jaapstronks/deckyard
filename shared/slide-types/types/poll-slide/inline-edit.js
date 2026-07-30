@@ -18,3 +18,12 @@ export const inlineEdit = {
     })),
     formText: ['question', 'option1', 'option2', 'option3', 'option4'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `onCloseTarget`: companion of the kept onClose enum — was bulk-only.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['onClose', 'onCloseTarget'];

@@ -127,16 +127,28 @@ redo ≤820; avatar ≤600) so the pane switcher never falls off-screen.
 
 ## What the settings pane renders (the keeps-model)
 
-The pane renders Background, Accessibility, and per type only the keys in
-**`INSPECTOR_KEEPS`** in
-`client/views/editor/editor-form/inspector-form.js`. That map is the code
-mirror of the coverage audit table below - **change the table and the map
-together**.
+The pane renders Background, Accessibility, and per type only the keys in that
+type's **keep-list**, declared as `inspectorKeeps` in
+`shared/slide-types/types/<name>/inline-edit.js` — next to the on-canvas
+descriptor it is the counterpart of, since a field is kept in the inspector
+precisely because the canvas does not cover it. The keep-lists are the code
+mirror of the coverage audit table below - **change the table and the
+declarations together**.
 
-- **Unknown (custom/fork) types fall back conservatively**: every schema
-  field *except* the proven-wysiwyg-covered keys (`getInlineFormTextKeys`,
-  fed by the descriptor's `formText`) stays in the inspector. Dropping more
-  would risk orphaning a field the fork has no other surface for.
+`client/views/editor/editor-form/inspector-form.js` resolves them through
+`getInspectorKeepKeys()` and re-exports the whole set as `INSPECTOR_KEEPS` for
+the companion matrix; the map itself comes from the generated aggregator
+`shared/slide-types/inline-edit.js`.
+
+- **A fork type declares its own**: `inspectorKeeps` is read off the
+  definition first and travels on `GET /api/slide-types`, so a type in
+  `custom/slide-types/` narrows its own settings pane the same way it declares
+  `inline` or `schematic`. See `docs/reference/slide-type-directory.md`.
+- **Unknown (custom/fork) types fall back conservatively**: a type neither side
+  narrows keeps every schema field *except* the proven-wysiwyg-covered keys
+  (`getInlineFormTextKeys`, fed by the descriptor's `formText`). Dropping more
+  would risk orphaning a field the fork has no other surface for. An empty
+  keep-list (`[]`) is a real answer and is not the same as no keep-list.
 - Widgets a flat keeps-list can't express (chart data editor, focus
   pickers, icon-card-grid icon+link, per-column image settings) render via
   `renderInspectorExtrasByType` in the same module. Bulky widget blocks
@@ -400,8 +412,8 @@ homed. Not listed per row.
 | end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
 
 Documented deviations from the audit's original shorthand, all in the safe
-direction (already folded into the table above; repeated here because
-`INSPECTOR_KEEPS`'s JSDoc refers to them):
+direction (already folded into the table above; repeated here because the
+keeps-model JSDoc in `inspector-form.js` refers to them):
 
 - table `colCount`, team-cards `cardCount` and logo-wall `logoCount` are
   derived mirrors managed by their editors/arrays and were never rendered
