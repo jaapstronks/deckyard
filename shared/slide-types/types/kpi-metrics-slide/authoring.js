@@ -18,6 +18,18 @@ export default {
   group: 'data',
 
   /**
+   * Short "what is this" line, shown as the picker tile's tooltip. English is
+   * the fallback; translations live under `editor.slideTypeDesc.<type>`.
+   */
+  description: 'Big numbers with deltas',
+
+  /**
+   * Extra search terms (incl. Dutch) folded into the picker's search haystack.
+   * Never displayed.
+   */
+  aliases: 'numbers stats metrics figures cijfers kengetallen',
+
+  /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */

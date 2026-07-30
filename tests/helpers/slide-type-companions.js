@@ -36,15 +36,15 @@ import { isAgentOptOut } from '../../server/utils/ai/slide-catalog/agent-catalog
 import { SLIDE_SCHEMAS } from '../../server/utils/ai/schemas/refined-slide.js';
 import { STRUCTURE_VALIDATORS } from '../../server/utils/ai/validate-slide-structure.js';
 import { slideStructure } from '../../shared/slide-types/structure.js';
-import {
-  SLIDE_TYPE_DESC,
-  SLIDE_TYPE_ALIASES,
-} from '../../client/views/editor/slide-type-picker/data.js';
 import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js';
 import { SLIDE_TYPE_SCHEMATIC } from '../../client/views/editor/slide-type-schematics.js';
 import { INLINE_DESCRIPTORS } from '../../client/views/editor/inline-edit/descriptors.js';
 import { INSPECTOR_KEEPS } from '../../client/views/editor/editor-form/inspector-form.js';
 import { SLIDE_TYPE_GROUP } from '../../shared/slide-types/authoring-groups.js';
+import {
+  SLIDE_TYPE_DESCRIPTION,
+  SLIDE_TYPE_ALIASES,
+} from '../../shared/slide-types/authoring-companions.js';
 
 /** Registered type names, minus fork-local ones (see the scope note above). */
 export const CORE_SLIDE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
@@ -183,22 +183,33 @@ export const COMPANIONS = [
   {
     id: 'picker-description',
     label: 'Picker description',
-    where: 'client/views/editor/slide-type-picker/data.js (SLIDE_TYPE_DESC)',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (description) — surfaced as ' +
+      'SLIDE_TYPE_DESCRIPTION by shared/slide-types/authoring-companions.js',
     degradesTo: 'the picker tile shows the bare label with no "what is this" tooltip',
     appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => typeof SLIDE_TYPE_DESC[name] === 'string',
-    keys: () => Object.keys(SLIDE_TYPE_DESC),
+    // A fork type may declare its own `description` on the definition
+    // (slideTypeDescription checks that first), so either source counts.
+    has: (name, def) =>
+      typeof SLIDE_TYPE_DESCRIPTION[name] === 'string' ||
+      typeof def?.description === 'string',
+    keys: () => Object.keys(SLIDE_TYPE_DESCRIPTION),
     exempt: {},
   },
   {
     id: 'picker-search-aliases',
     label: 'Picker search aliases',
-    where: 'client/views/editor/slide-type-picker/data.js (SLIDE_TYPE_ALIASES)',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (aliases) — surfaced as ' +
+      'SLIDE_TYPE_ALIASES by shared/slide-types/authoring-companions.js',
     degradesTo:
       'the type is only findable by its exact label — searching "tabel" or ' +
       '"smoelenboek" will not surface it',
     appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => typeof SLIDE_TYPE_ALIASES[name] === 'string',
+    // A fork type may declare its own `aliases` on the definition too.
+    has: (name, def) =>
+      typeof SLIDE_TYPE_ALIASES[name] === 'string' ||
+      typeof def?.aliases === 'string',
     keys: () => Object.keys(SLIDE_TYPE_ALIASES),
     exempt: {},
   },

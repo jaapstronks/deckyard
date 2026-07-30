@@ -33,6 +33,7 @@ globalThis.requestAnimationFrame = () => 0;
 
 const { h } = await import('../client/lib/dom.js');
 const data = await import('../client/views/editor/slide-type-picker/data.js');
+const companions = await import('../shared/slide-types/authoring-companions.js');
 const prefs = await import('../client/views/editor/slide-type-picker/preferences.js');
 const thumbs = await import('../client/views/editor/slide-type-picker/thumbnails.js');
 const { createSlideTypePicker } = await import(
@@ -45,13 +46,15 @@ test('data: view modes are exactly schematic + preview', () => {
 });
 
 test('data: every described / preset type has a search alias', () => {
-  // The three data maps key off the same slide types; a description or preset
-  // without an alias means it can never be found by an unofficial name.
-  for (const type of Object.keys(data.SLIDE_TYPE_DESC)) {
-    assert.ok(type in data.SLIDE_TYPE_ALIASES, `no alias for described type ${type}`);
+  // Description and aliases now live on each type's authoring.js and are surfaced
+  // as maps by the facet module; the preset table still lives in data.js. A
+  // description or preset without an alias means it can never be found by an
+  // unofficial name.
+  for (const type of Object.keys(companions.SLIDE_TYPE_DESCRIPTION)) {
+    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for described type ${type}`);
   }
   for (const type of Object.keys(data.SLIDE_TYPE_PRESETS)) {
-    assert.ok(type in data.SLIDE_TYPE_ALIASES, `no alias for preset type ${type}`);
+    assert.ok(type in companions.SLIDE_TYPE_ALIASES, `no alias for preset type ${type}`);
   }
 });
 

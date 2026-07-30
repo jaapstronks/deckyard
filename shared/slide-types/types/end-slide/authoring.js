@@ -18,6 +18,18 @@ export default {
   group: 'other',
 
   /**
+   * Short "what is this" line, shown as the picker tile's tooltip. English is
+   * the fallback; translations live under `editor.slideTypeDesc.<type>`.
+   */
+  description: 'A closing slide with contact details',
+
+  /**
+   * Extra search terms (incl. Dutch) folded into the picker's search haystack.
+   * Never displayed.
+   */
+  aliases: 'contact details closing thanks afsluiter bedankt gegevens',
+
+  /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */

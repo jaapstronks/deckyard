@@ -7,6 +7,8 @@ import {
 } from '../../../shared/slide-types/runtime.js';
 import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
 import {
+  slideTypeAliases,
+  slideTypeDescription,
   slideTypeSample,
   slideTypeSchematic,
 } from '../../../shared/slide-types/authoring-companions.js';
@@ -94,6 +96,11 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         group: slideTypeGroup(key, def) || undefined,
         schematic: slideTypeSchematic(key, def) || undefined,
         sampleContent: slideTypeSample(key, def),
+        // The picker's tile tooltip and its search haystack. Same seam half as
+        // the three above: the editor reads them off this response, so a fork
+        // type's copy only reaches it if the resolved value travels here.
+        description: slideTypeDescription(key, def) || undefined,
+        aliases: slideTypeAliases(key, def) || undefined,
       };
     }
 

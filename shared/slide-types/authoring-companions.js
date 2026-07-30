@@ -1,6 +1,7 @@
 /**
- * The other two authoring companions — the picker's glyph and its sample
- * content — resolved by the same seam rule as `group`.
+ * The picker's authoring companions that are not the `group` axis — its glyph,
+ * its sample content, its tile description and its search aliases — each
+ * resolved by the same seam rule as `group`.
  *
  * ## Why these lookups moved out of the editor
  *
@@ -9,7 +10,10 @@
  * sample without owning a directory here. That branch was dead where it
  * mattered: the editor does not hold the registry, it holds the response of
  * `GET /api/slide-types`, and that route served neither key. A fork type could
- * declare `sampleContent` and no browser consumer would ever see it.
+ * declare `sampleContent` and no browser consumer would ever see it. The
+ * description and aliases moved here for the same reason: the picker reads them
+ * off the `/api/slide-types` response, so a fork type's copy only reaches it if
+ * the route carries the resolved value (see server/routes/api/slide-types.js).
  *
  * Fixing the route means the server resolves the same three companions the
  * editor does, and a lookup that two sides perform is a lookup that belongs to
@@ -106,4 +110,65 @@ export function slideTypeSample(type, def = null) {
   const declared = def?.sampleContent;
   if (declared && typeof declared === 'object') return declared;
   return SLIDE_TYPE_SAMPLE_CONTENT[type];
+}
+
+/**
+ * Picker tile description per core slide type, derived from each type's
+ * `authoring.js`. Exported as a map because the companion-coverage test reads
+ * it by name. English here is the fallback; the editor layers the translation
+ * (`editor.slideTypeDesc.<type>`) on top.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const SLIDE_TYPE_DESCRIPTION = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SLIDE_TYPE_AUTHORING)
+      .filter(([, authoring]) => typeof authoring?.description === 'string')
+      .map(([type, authoring]) => [type, authoring.description])
+  )
+);
+
+/**
+ * Picker search aliases per core slide type, derived from each type's
+ * `authoring.js`. Exported as a map because the companion-coverage test reads
+ * it by name. Extra search terms only (incl. Dutch); never displayed.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const SLIDE_TYPE_ALIASES = Object.freeze(
+  Object.fromEntries(
+    Object.entries(SLIDE_TYPE_AUTHORING)
+      .filter(([, authoring]) => typeof authoring?.aliases === 'string')
+      .map(([type, authoring]) => [type, authoring.aliases])
+  )
+);
+
+/**
+ * A type's picker description: the definition's own `description` first, this
+ * build's authoring aggregator second — the aggregator-seam rule (definition
+ * as it exists at runtime wins, core's answer is the fallback). The picker
+ * holds the `/api/slide-types` response, so a core type's `description` reaches
+ * this function already resolved on the wire; a fork type's declaration reaches
+ * it the same way.
+ *
+ * @param {string} type - registry type name
+ * @param {{description?: unknown}|null} [def] - the definition as it exists at runtime
+ * @returns {string} the description, or `''` when neither side has one
+ */
+export function slideTypeDescription(type, def = null) {
+  const declared = def?.description;
+  if (typeof declared === 'string') return declared;
+  return SLIDE_TYPE_DESCRIPTION[type] || '';
+}
+
+/**
+ * A type's picker search aliases, resolved by the same rule as
+ * {@link slideTypeDescription}. Folded into the picker's search haystack only.
+ *
+ * @param {string} type - registry type name
+ * @param {{aliases?: unknown}|null} [def] - the definition as it exists at runtime
+ * @returns {string} the alias string, or `''` when neither side has one
+ */
+export function slideTypeAliases(type, def = null) {
+  const declared = def?.aliases;
+  if (typeof declared === 'string') return declared;
+  return SLIDE_TYPE_ALIASES[type] || '';
 }
