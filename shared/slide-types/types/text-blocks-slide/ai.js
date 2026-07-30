@@ -1,27 +1,24 @@
 /**
- * Card-Based Slide Types
+ * text-blocks-slide — the agent-facing editorial layer. **SERVER-ONLY.**
  *
- * Structured card layouts for parallel concepts:
- * - icon-card-grid-slide: 1-6 cards with icons
- * - card-stack-slide: DEPRECATED — use icon-card-grid-slide instead
- * - text-blocks-slide: Multi-row blocks with arrows
- * - kpi-metrics-slide: Prominent numeric KPIs
+ * This is the hand-written half of the agent contract: when to pick this type
+ * and when not to. The other half — the field schema — is derived from the
+ * definition's `fields[]` by deriveAgentSchema() and is deliberately absent
+ * here (#407).
  *
- * Types in the directory form own their editorial copy in their own (server-only)
- * ai.js and are imported here — see docs/reference/slide-type-directory.md.
+ * ## Why this file is server-only, and enforced
+ *
+ * Deckyard has no bundler, so an `import` in a module the browser loads is a
+ * file the browser fetches. The AI catalog is ~168 KB of prose that the browser
+ * never executes; colocating it *and* importing it from `index.js` would add it
+ * to the 368 KB of type modules every presenter page already pulls down. So the
+ * rule is: a type's `index.js`/`render.js` import nothing from here, and the
+ * server catalog reaches in from its side.
+ * tests/slide-type-directory-boundary.test.js fails if that ever stops being
+ * true — the track's own point is that an agreement without a test drifts.
  */
 
-import { ai as iconCardGridAi } from '../../../../shared/slide-types/types/icon-card-grid-slide/ai.js';
-
-export const CARD_SLIDES = {
-  // Owned by shared/slide-types/types/icon-card-grid-slide/ai.js.
-  'icon-card-grid-slide': iconCardGridAi,
-
-  // card-stack-slide: DEPRECATED — removed from AI generation.
-  // Existing slides still render via shared/slide-types/types/card-stack-slide.js.
-  // Use icon-card-grid-slide for cards with icons, or text-blocks-slide for rich content blocks.
-
-  'text-blocks-slide': {
+export const ai = {
     category: 'content',
     resolveInPhase1: false,
     description: `
@@ -69,45 +66,4 @@ export const CARD_SLIDES = {
       'Sequential timelines with dates (use timeline-slide)',
       'Items that each need an icon (use icon-card-grid-slide)',
     ],
-  },
-
-  'kpi-metrics-slide': {
-    category: 'content',
-    resolveInPhase1: false,
-    description: `
-      Display 1-4 key metrics/KPIs PROMINENTLY with large, eye-catching numbers.
-      This slide type makes numbers the HERO of the slide!
-
-      WHEN TO USE THIS INSTEAD OF LIJSTJE-SLIDE:
-      PREFER kpi-metrics-slide when content has:
-      - Specific numeric targets or goals (e.g., "220 research trajectories")
-      - Output metrics with numbers (e.g., "12 communities", "30 modules", "10,000 professionals")
-      - Financial figures or budgets
-      - Statistics that should STAND OUT visually
-
-      DO NOT use list-slide for numeric highlights - the numbers will look small and buried!
-
-      Each metric has:
-      - value: The number itself (displayed LARGE)
-      - unit: Optional suffix (%, M, K, etc.)
-      - label: What the number represents
-      - note: Optional context — if it starts with +N or -N (e.g. "+12% vs last year"),
-              the leading number is auto-coloured green/red
-    `,
-    bestFor: [
-      'NUMERIC OUTPUT TARGETS: "220 research trajectories", "10,000 professionals"',
-      'Programme deliverables with specific numbers',
-      'Key performance indicators and goals',
-      'Budget figures or funding amounts',
-      'Statistics and metrics that should STAND OUT',
-      'Before/after comparisons with change indicators',
-      'Any 1-4 numbers that are the KEY POINT of the slide',
-    ],
-    notFor: [
-      'More than 4 metrics (split into multiple slides or use table/chart)',
-      'Qualitative descriptions without clear numeric values',
-      'Lists of activities or processes (use list-slide or text-blocks-slide)',
-    ],
-  },
-
 };

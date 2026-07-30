@@ -173,7 +173,7 @@ export default {
 Overridable fields: `description`, `bestFor`, `notFor`, `category`,
 `resolveInPhase1`. Keys must match a core type name (e.g. `content-slide`,
 `quote-slide`, `image-text-slide` — see
-`server/utils/ai/slide-catalog/definitions.js` for the full list); an unknown
+`server/utils/ai/slide-catalog/type-ai.js` for the full list); an unknown
 type name or a stray field is dropped with a warning. To *add* an entirely new
 slide type (rather than override a core one), define it in
 `custom/slide-types/*.js` with an `ai` block — that path adds to the catalog;

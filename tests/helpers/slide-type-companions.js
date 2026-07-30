@@ -145,7 +145,9 @@ export const COMPANIONS = [
   {
     id: 'ai-catalog',
     label: 'AI / MCP catalog entry',
-    where: 'server/utils/ai/slide-catalog/ (SLIDE_TYPE_CATALOG)',
+    where:
+      'shared/slide-types/types/<name>/ai.js — surfaced as SLIDE_TYPE_CATALOG ' +
+      'by server/utils/ai/slide-catalog/definitions.js',
     degradesTo:
       'a derived entry flagged documented:false — usable, but with no editorial ' +
       'guidance on when to pick the type, and category falls back to "content"',

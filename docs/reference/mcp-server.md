@@ -216,7 +216,7 @@ entry lands in exactly one of three states:
 
 | State | How it is expressed | What the agent gets |
 |---|---|---|
-| Documented | An entry in the AI catalog (`server/utils/ai/slide-catalog/`) | Full `description` / `bestFor` / `notFor`, `documented: true` |
+| Documented | An `ai.js` in the type's own directory (`shared/slide-types/types/<name>/ai.js`) | Full `description` / `bestFor` / `notFor`, `documented: true` |
 | Undocumented | Registered, no catalog entry | A generic description, `documented: false` |
 | Withheld | `deprecated: true` or `ai: false` on the definition | Not listed at all |
 
@@ -267,7 +267,7 @@ Four authoring surfaces, one field:
 
 | Where | How |
 |---|---|
-| Core type | `usage` on the catalog entry in `server/utils/ai/slide-catalog/` |
+| Core type | `usage` on the type's own `ai.js` (`shared/slide-types/types/<name>/ai.js`) |
 | Core type, fork override | `usage` in `custom/ai/catalog.js` (no OSS patch needed) |
 | Fork file-JS type | `ai.usage` in `custom/slide-types/<type>.js` |
 | Tier-2 DB type | the **Usage rules for AI** field in the slide-type builder |

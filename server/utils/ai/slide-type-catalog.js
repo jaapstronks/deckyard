@@ -3,7 +3,7 @@
  *
  * This file re-exports from the modular slide-catalog directory for backward compatibility.
  * The actual implementations are now split across:
- * - slide-catalog/definitions.js: Core slide type definitions and schemas
+ * - slide-catalog/definitions.js: the core catalog, derived from each type's ai.js
  * - slide-catalog/examples.js: Content examples for each slide type
  * - slide-catalog/builders.js: Functions for building AI prompts
  *
@@ -15,11 +15,6 @@
 
 export {
   SLIDE_TYPE_CATALOG,
-  STRUCTURAL_SLIDES,
-  CONTENT_SLIDES,
-  PEOPLE_SLIDES,
-  INTERACTIVE_SLIDES,
-  MEDIA_SLIDES,
   SLIDE_TYPE_EXAMPLES,
   getSlideTypeExamples,
   getSlideTypeExample,
