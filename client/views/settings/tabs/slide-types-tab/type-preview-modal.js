@@ -121,7 +121,9 @@ export function openTypePreview(type, allTypesList, ctx) {
     counterEl.textContent = `${currentIdx + 1} / ${allTypesList.length}`;
 
     stage.innerHTML = '';
-    stage.append(createCurationThumbnail(entry.type, 'slide-type-preview-thumb', theme));
+    stage.append(
+      createCurationThumbnail(entry.type, 'slide-type-preview-thumb', theme, slideTypeMeta)
+    );
 
     toggleCheckbox.checked = !disabledTypes.has(entry.type);
   }

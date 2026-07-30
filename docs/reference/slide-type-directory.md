@@ -127,12 +127,41 @@ export const SLIDE_TYPE_SCHEMATIC = Object.fromEntries(
 );
 ```
 
-Each consumer reads one field and filters on it. The picker's schematic view
-does this for `authoring.schematic` (`slide-type-schematics.js`), and the
-picker's preview thumbnails do the identical thing for `authoring.sample`
-(`slide-type-sample-content.js`) — a type with no `sample` key just falls out of
-the map and the caller takes its default branch, never an error. New consumers
-follow the same shape.
+Each facet reads one field and filters on it. The picker's glyph and its sample
+content both do this, in `shared/slide-types/authoring-companions.js`; the group
+does it one file over in `authoring-groups.js`. A type with no `sample` key just
+falls out of the map and the caller takes its default branch, never an error.
+New facets follow the same shape.
+
+## The aggregator seam rule
+
+**The aggregator is core's answer, never the population.** It is generated over
+`shared/slide-types/types/`, so a lookup that reads it *first* silently answers
+a narrower question than it looks like — and the types it leaves out are exactly
+the ones a fork owns. Five rules, and they apply to every companion derived this
+way:
+
+1. **Definition first, aggregator second.** A companion looked up at runtime is
+   looked up against the definition *as it exists at runtime*.
+2. **One lookup per facet, in the facet module.** Not in the consumer. Every
+   consumer that writes its own precedence rule is a place the next drift starts.
+3. **Enumerate the live map.** `typesInGroup(group, order, types)` takes the map
+   the consumer already holds, rather than iterating the build artifact.
+4. **Vocabulary closed, declarant open.** Anyone may declare; only the known
+   values count.
+5. **Unknown degrades, never breaks.** An unrecognised value falls back to the
+   existing default — no warning, no invented shelf.
+
+The catch that made this a rule rather than a bugfix: rules 1 and 2 were already
+*written* for `schematic` and `sampleContent`, and did not fire. The editor does
+not hold the registry, it holds the `GET /api/slide-types` response, and that
+route served neither key — so the fallback branch existed on both sides of a wire
+that dropped it. **A companion the browser needs travels on that route**, which is
+the sixth thing to check when adding one. Measured cost of carrying all three:
++13 KB on an 800 KB response (+3 KB gzipped), once per deck opened.
+
+Pinned by `tests/slide-type-api-companions.test.js` (the wire) and
+`tests/slide-type-groups.test.js` (the precedence).
 
 It is a **generated file** — `npm run gen:slide-authoring`, from
 `scripts/generate-slide-authoring-aggregator.js` — because a hand-maintained
@@ -196,3 +225,4 @@ convert the consumer later — which is how `group` itself got there.
 | `client/views/editor/slide-type-sample-content.js` | picker sample content | A7.1 rollout PR 2 |
 | `client/views/editor/inline-edit/descriptors.js` | inline-edit descriptor (35 types) | A7.1 rollout PR 3 |
 | `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration) | A7.1 rollout PR 4 |
+| `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |

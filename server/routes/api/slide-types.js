@@ -5,6 +5,11 @@ import {
   slideLiveInteraction,
   slideRuntime,
 } from '../../../shared/slide-types/runtime.js';
+import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
+import {
+  slideTypeSample,
+  slideTypeSchematic,
+} from '../../../shared/slide-types/authoring-companions.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { createRouteContext } from '../../utils/context.js';
 
@@ -73,10 +78,29 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           def.layoutTextColumns && typeof def.layoutTextColumns === 'object'
             ? def.layoutTextColumns
             : undefined,
+        // The three authoring companions, resolved. This is the wire half of
+        // the aggregator-seam rule: the editor does not hold the registry, it
+        // holds this response, so a companion it looks up "on the definition
+        // first" can only be found if the definition it holds carries it. Until
+        // this landed, a type in custom/slide-types/ could declare `schematic`
+        // or `sampleContent` and no browser consumer would ever see it — the
+        // fallback branch existed on both sides of a wire that dropped the key.
+        //
+        // Resolved rather than raw (core's answer comes from the authoring
+        // aggregator, which lives beside the type directories) so one response
+        // states the whole truth about a type. That costs ~8 KB across all
+        // types on a request the editor makes once per deck, which is why the
+        // rule needs no core exception.
+        group: slideTypeGroup(key, def) || undefined,
+        schematic: slideTypeSchematic(key, def) || undefined,
+        sampleContent: slideTypeSample(key, def),
       };
     }
 
-    // Tier 2: Published custom types from the database (per-org)
+    // Tier 2: Published custom types from the database (per-org). A builder-UI
+    // type has no `group` to declare yet (there is no column for it), so it
+    // lands on the picker's "Custom" shelf — the fallback for a type that
+    // declares nothing, not a rule about where custom types belong.
     try {
       const ctx = createRouteContext(authedUser);
       const customTypes = await listPublishedCustomSlideTypes(ctx);

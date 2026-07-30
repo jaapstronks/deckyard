@@ -27,14 +27,18 @@ export function createVideoMockup(className) {
  * @param {string} type - slide type key
  * @param {string} className - base class for the thumb wrapper
  * @param {object|null} theme - resolved theme for sample rendering
+ * @param {Record<string, object>|null} [slideTypes] - the live type map; the
+ *   bundled registry is browser-side core only (the custom loader sits behind
+ *   `isNode`), so a fork type's own `sampleContent` is only visible through the
+ *   map the tab loaded from /api/slide-types
  * @returns {HTMLElement}
  */
-export function createCurationThumbnail(type, className, theme) {
+export function createCurationThumbnail(type, className, theme, slideTypes = null) {
   if (type === 'video-slide') {
     return createVideoMockup(className);
   }
 
-  const sampleContent = getSampleContent(type, BUNDLED_SLIDE_TYPES, theme);
+  const sampleContent = getSampleContent(type, slideTypes || BUNDLED_SLIDE_TYPES, theme);
   const slide = {
     id: `curation-${type}`,
     type,

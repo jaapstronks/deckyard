@@ -83,7 +83,8 @@ A consumer's array encodes order as well as membership, and order is a curation
 decision about that surface — the picker puts the most-reached-for tiles first,
 which is not a fact about any one type. So:
 
-- **membership** comes from the declarations, via `typesInGroup(group, order)`;
+- **membership** comes from the declarations, via
+  `typesInGroup(group, order, types)`;
 - **order** stays with the consumer, as a *hint*: `PICKER_GROUP_ORDER` in
   `client/views/editor/slide-type-picker/data.js` and `CATEGORY_ORDER` in
   `client/views/settings/tabs/slide-types-tab/categories.js`.
@@ -92,6 +93,47 @@ A member the hint does not name sorts after the ones it does. A name in a hint
 that no longer declares that group is ignored. Both are harmless — which is the
 whole point, because a stale *membership* table was not.
 
+## Anyone may declare a shelf
+
+`SLIDE_TYPE_AUTHORING` is generated over `shared/slide-types/types/`, so it holds
+core and only core. The first version of this axis read it directly, which meant
+a type in `custom/slide-types/` could declare `group: 'media'` and be dropped
+without a word — not "forks are excluded" (they are offered, on a hardcoded
+*Custom* shelf), but the narrower and worse **a fork cannot choose its shelf**.
+Under the model Deckyard is aiming at, a fork is a peer implementation rather
+than a patch on ours, so "core declares, everyone else gets a fixed shelf" is the
+wrong asymmetry.
+
+The lookup therefore asks the definition first and treats the aggregator as
+core's answer to the same question:
+
+```js
+slideTypeGroup(type, def)   // def.group, else core's declaration, else ''
+typesInGroup(group, order, types)   // enumerates the live map, not the artifact
+```
+
+Three consequences worth stating outright:
+
+- **A declared group wins over the Custom shelf.** A fork type that declares
+  `media` is offered beside the other media types, because someone inserting a
+  slide is asking what goes on it, not who wrote the type. *Custom* is then the
+  shelf for a type that declares nothing — which is also how an org keeps its own
+  types together, if that is what it wants: by declaring nothing.
+- **The declaration travels.** The editor holds the `/api/slide-types` response,
+  not the registry, so the route serves `group` (along with `schematic` and
+  `sampleContent`, which had the same gap). A companion the browser needs and the
+  wire drops is a fallback branch that can never fire.
+- **Unknown degrades.** A value outside the vocabulary falls back to core's
+  answer, or to no shelf — never to a made-up heading.
+
+Tier-2 (builder-UI) types have no `group` column yet, so they declare nothing and
+land on *Custom*. That is the fallback doing its job, not a rule about where
+database-backed types belong.
+
+The general form of this — it applies to every companion derived from a generated
+aggregator — is written out as the five-rule seam rule in
+[`slide-type-directory.md`](./slide-type-directory.md).
+
 ## The guardrail, and its ceiling
 
 `tests/slide-type-groups.test.js`:
@@ -99,11 +141,18 @@ whole point, because a stale *membership* table was not.
 1. **Completeness** — every offerable core type declares a group.
 2. **Vocabulary** — no type declares a group outside the six.
 3. **Deprecated declares none.**
-4. **Every shelf is used, and a type is on exactly one.**
+4. **Every shelf is used, and a live map partitions** — resolution runs per type,
+   so nothing lands on two shelves. (Over core alone this is vacuous:
+   `SLIDE_TYPE_GROUP` maps a name to one string. It has content over a live map,
+   which is what the consumers enumerate.)
 5. **The consumers derive** — both surfaces resolve to the same membership, and
    each order hint only reorders: it can neither add a type nor drop one.
 6. **The ceiling** — no module outside the declaration and its two consumers has
    a type vocabulary that is *exactly* one shelf.
+7. **The seam** — the definition beats the aggregator, a non-core declarant gets
+   its shelf, and an unknown value degrades. Plus, in
+   `tests/slide-type-api-companions.test.js`, that the route serves what the
+   facet modules resolve.
 
 **There is no truthfulness assertion, and there cannot be one.** `structure` is
 checkable against the field schema and `runtime` against the modules that
@@ -122,7 +171,10 @@ guards nothing.
 
 ## See also
 
-- `shared/slide-types/authoring-groups.js` — the vocabulary and `typesInGroup()`.
+- `shared/slide-types/authoring-groups.js` — the vocabulary, `slideTypeGroup()`
+  and `typesInGroup()`.
+- `shared/slide-types/authoring-companions.js` — the same seam for the picker's
+  glyph and its sample content.
 - [`slide-type-structure.md`](./slide-type-structure.md) — the first facet, and
   why a facet beats a hierarchy.
 - [`slide-type-runtime.md`](./slide-type-runtime.md) — the second facet, and the
