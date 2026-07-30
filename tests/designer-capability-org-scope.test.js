@@ -151,6 +151,40 @@ test('a non-admin with no membership gets nothing', async () => {
   );
 });
 
+test('the organization settings route keeps letting the instance admin in', async () => {
+  // The mirror of the multi-workspace case: routing settings.js through
+  // canManage() must not take `disabledSlideTypes` away from the one admin a
+  // single-workspace instance has — including in the modes where capability
+  // resolution never ran and `isDesigner` is unset.
+  seed();
+  const { handleSettings } = await import('../server/routes/api/settings.js');
+  const chunks = [];
+  const res = {
+    statusCode: null,
+    writeHead(status) {
+      res.statusCode = status;
+    },
+    end(payload) {
+      if (payload) chunks.push(payload);
+    },
+  };
+  const req = {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(JSON.stringify({ disabledSlideTypes: ['title-slide'] }));
+    },
+  };
+  await handleSettings({
+    repoRoot: process.cwd(),
+    req,
+    res,
+    url: new URL('http://localhost/api/settings/organization'),
+    authedUser: { email: 'alice@example.com', isAdmin: true, organizationId: ORG },
+  });
+  assert.equal(res.statusCode, 200, 'isDesigner unset, isAdmin true — still allowed here');
+});
+
 test('canManage keeps its admin fallback here', () => {
   // Redundant in the ordinary case — `isDesigner` is already true for an admin
   // on a single-workspace instance — but it is what keeps the only admin in

@@ -192,6 +192,71 @@ test('no email, no capability', async () => {
 // The second bypass, at the route gate
 // ---------------------------------------------------------------------------
 
+/** Minimal req/res pair for driving a route handler directly. */
+function fakeExchange(method, body) {
+  const chunks = [];
+  const res = {
+    statusCode: null,
+    writeHead(status) {
+      res.statusCode = status;
+    },
+    end(payload) {
+      if (payload) chunks.push(payload);
+    },
+    body: () => chunks.join(''),
+  };
+  const req = {
+    method,
+    headers: { 'content-type': 'application/json' },
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(JSON.stringify(body));
+    },
+  };
+  return { req, res };
+}
+
+/** PATCH /api/settings/organization as `authedUser`, returning the status. */
+async function patchOrgSettings(authedUser, body) {
+  const { handleSettings } = await import('../server/routes/api/settings.js');
+  const { req, res } = fakeExchange('PATCH', body);
+  await handleSettings({
+    repoRoot: process.cwd(),
+    req,
+    res,
+    url: new URL('http://localhost/api/settings/organization'),
+    authedUser,
+  });
+  return res.statusCode;
+}
+
+test('the organization settings route does not carry a third copy of the bypass', async () => {
+  // `canManage()` and `canManageThemes()` were not the only places the designer
+  // gate had been hand-copied: settings.js had its own
+  // `isDesigner || isAdmin` for `disabledSlideTypes`, on the *active*
+  // organization. Scoping the other two would have left this one writable by an
+  // instance admin who is a plain member of the organization they are in.
+  seed({ roleInB: 'member' });
+  assert.equal(
+    await patchOrgSettings(
+      { email: 'alice@example.com', isAdmin: true, isDesigner: false, organizationId: ORG_B },
+      { disabledSlideTypes: ['title-slide'] }
+    ),
+    401,
+    'an instance admin who is a plain member cannot disable slide types there'
+  );
+});
+
+test('a real designer in the organization still writes that setting', async () => {
+  seed({ roleInB: 'member', designerInB: true });
+  assert.equal(
+    await patchOrgSettings(
+      { email: 'alice@example.com', isAdmin: false, isDesigner: true, organizationId: ORG_B },
+      { disabledSlideTypes: ['title-slide'] }
+    ),
+    200
+  );
+});
+
 test('canManage does not reopen what the capability resolution closed', () => {
   // Measured in the browser before this changed: signed in as an instance admin
   // who is a plain member of the active organization, `/api/auth/me` already
