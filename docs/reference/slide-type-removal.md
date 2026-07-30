@@ -128,13 +128,17 @@ Then, in rough dependency order:
    Replace the type's archival test with a removal test that asserts it is off
    the registry and that a stored slide still degrades to the unknown-type
    render rather than throwing.
-6. **Update the docs that carry per-type rows or a type count** —
-   `docs/reference/editor-inspector.md`, `docs/reference/wysiwyg-inline-editing.md`,
-   `docs/reference/ai-wizard-prompts.md`. The count is generated where a
-   `<!--gen:slide-type-count-->` marker sits (`README.md`,
-   `editor-inspector.md`), and **written by hand where it does not** —
-   `ROADMAP.md` line 8 is the one that keeps being missed, most recently by the
-   split-partner removal. Grep the old and the new number, not just the marker.
+6. **Update the docs that carry per-type rows.** The per-type tables in
+   `docs/reference/editor-inspector.md` and
+   `docs/reference/wysiwyg-inline-editing.md` are still hand-maintained — one row
+   per type — so delete the removed type's row from each.
+   **Type counts are no longer a manual step.** Every count in committed Markdown
+   lives inside a `<!--gen:slide-type-count-->` span that
+   `scripts/generate-slide-type-docs.js` rewrites — `ROADMAP.md` included since it
+   joined `COUNT_MARKER_FILES` (it was the line that kept being missed) — and
+   `tests/slide-type-count-prose-guard.test.js` fails on any bare count that sits
+   next to a "slide types" / "core types" phrase outside a span. Just run
+   `node scripts/generate-slide-type-docs.js`; do not grep the number by hand.
 7. **Record the removal and let the guardrail find the rest.** Add an entry to
    `REMOVED_SLIDE_TYPES` in `shared/slide-types/removed.js` (when it went, the
    successor or `null`, why, the migration if there was one), then run
@@ -158,9 +162,13 @@ Then, in rough dependency order:
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
   locales when it was removed. **Every removal touches the 12 locale files**:
-  delete the type's `slideType.<type>.*` keys, then `npm run i18n:validate`
-  (orphan keys are not an error, so nothing fails if you forget — they just ship
-  forever). (`client/i18n/en.json` is a stale build artifact — ignore it.)
+  delete the type's `slideType.<type>.*` keys, then `npm run i18n:validate`.
+  `i18n:validate` still treats orphans as non-fatal, but
+  `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) now **fails** the
+  moment a `slideType.<id>.*` namespace names a type that has left the registry,
+  reporting the locale and the id — so a forgotten prune is caught in the test
+  suite instead of shipping forever. (`client/i18n/en.json` is a stale build
+  artifact — ignore it.)
 - **Stored decks**: nothing rewrites deck JSON. Removal is a code-side operation;
   content already on disk keeps its `type` string.
 
@@ -234,10 +242,11 @@ and edited by hand. That tail is the worklist to actually close the gate:
    should live in (or derive from) the type's own directory.
 4. `scripts/i18n-audit-allowlist.json` — sample-content entries that follow from
    each type's `authoring.js` and could be derived.
-5. **Locale payloads** — nothing prunes `slideType.<type>.*` when a type leaves
-   the registry, and `i18n:validate` accepts orphans, so dead keys ship forever
-   unless someone remembers. A prune step in `i18n:sync` would make this
-   derivation too.
+5. **Locale payloads** — nothing *prunes* `slideType.<type>.*` when a type leaves
+   the registry, so the delete is still by hand — but it can no longer be
+   forgotten silently: `tests/slide-type-i18n-orphans.test.js` (2026-07-30) fails
+   on an orphaned namespace, naming the locale and id. A prune step in `i18n:sync`
+   would make the deletion itself derivation too.
 6. **Per-type CSS** — while a type's rules live in a shared section sheet, the
    only thing tying them to the type is the class name in `renderHtml`. Moving
    CSS into the type's directory would put it under the same guardrail as the
