@@ -25,6 +25,8 @@ import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 import { slideTypeGroup } from '../shared/slide-types/authoring-groups.js';
 import {
+  slideTypeAliases,
+  slideTypeDescription,
   slideTypeSample,
   slideTypeSchematic,
 } from '../shared/slide-types/authoring-companions.js';
@@ -76,6 +78,8 @@ describe('the three companions travel', () => {
         slideTypeSample(name, def),
         `${name}: sampleContent`
       );
+      assert.equal(m.description ?? '', slideTypeDescription(name, def), `${name}: description`);
+      assert.equal(m.aliases ?? '', slideTypeAliases(name, def), `${name}: aliases`);
     }
   });
 
@@ -120,18 +124,24 @@ describe('a non-core declaration reaches the editor', () => {
     group: 'media',
     schematic: { kind: 'image' },
     sampleContent: { title: 'Welcome' },
+    description: 'A big hero header',
+    aliases: 'banner splash hero',
   };
 
   it('its group, glyph and example all resolve from the definition', () => {
     assert.equal(slideTypeGroup('acme-hero', forkDef), 'media');
     assert.deepStrictEqual(slideTypeSchematic('acme-hero', forkDef), { kind: 'image' });
     assert.deepStrictEqual(slideTypeSample('acme-hero', forkDef), { title: 'Welcome' });
+    assert.equal(slideTypeDescription('acme-hero', forkDef), 'A big hero header');
+    assert.equal(slideTypeAliases('acme-hero', forkDef), 'banner splash hero');
   });
 
   it('and each degrades to nothing rather than to a core type\'s answer', () => {
     assert.equal(slideTypeGroup('acme-hero', { label: 'Hero' }), '');
     assert.equal(slideTypeSchematic('acme-hero', { label: 'Hero' }), null);
     assert.equal(slideTypeSample('acme-hero', { label: 'Hero' }), undefined);
+    assert.equal(slideTypeDescription('acme-hero', { label: 'Hero' }), '');
+    assert.equal(slideTypeAliases('acme-hero', { label: 'Hero' }), '');
   });
 
   it('a definition may override core per companion, without touching the others', () => {

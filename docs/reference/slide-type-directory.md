@@ -78,7 +78,7 @@ subject of the track this form came out of.
 |---|---|---|
 | label, `fields[]`, `defaults`, `defaultsByLang` | `index.js` | registry, editor form, validation, agent schema |
 | `renderHtml` | `render.js` | presenter, editor preview, export |
-| picker description, search aliases | `authoring.js` | `slide-type-picker/data.js` |
+| picker description, search aliases | `authoring.js` | the picker, via `authoring-companions.js` + `/api/slide-types` |
 | schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |
 | picker sample content | `authoring.js` | `slide-type-sample-content.js` |
 | curated group (`group`) | `authoring.js` | picker shelves + settings curation (derived) |
@@ -225,4 +225,6 @@ convert the consumer later — which is how `group` itself got there.
 | `client/views/editor/slide-type-sample-content.js` | picker sample content | A7.1 rollout PR 2 |
 | `client/views/editor/inline-edit/descriptors.js` | inline-edit descriptor (35 types) | A7.1 rollout PR 3 |
 | `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration) | A7.1 rollout PR 4 |
+| `slide-type-picker/data.js` (`index.js`) | picker description + search aliases, 33 types (two hand-maintained tables retired) | A7.1 rollout PR 5 |
 | `server/routes/api/slide-types.js` | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share | A7.1 seam fix |
+| `server/routes/api/slide-types.js` | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response | A7.1 rollout PR 5 |

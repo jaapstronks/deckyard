@@ -18,6 +18,18 @@ export default {
   group: 'media',
 
   /**
+   * Short "what is this" line, shown as the picker tile's tooltip. English is
+   * the fallback; translations live under `editor.slideTypeDesc.<type>`.
+   */
+  description: 'Image blocks in a grid',
+
+  /**
+   * Extra search terms (incl. Dutch) folded into the picker's search haystack.
+   * Never displayed.
+   */
+  aliases: 'roster faces headshots portraits people staff team smoelenboek gezichten medewerkers',
+
+  /**
    * Abstract glyph for the picker's schematic view mode. JSON-safe spec read by
    * renderSlideSchematic() — grammar in client/lib/slide-authoring/slide-schematic.js.
    */

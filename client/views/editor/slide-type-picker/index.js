@@ -28,13 +28,15 @@ import {
   FREQUENT_MAX,
   FREQUENT_MIN_TOTAL,
   VIEW_MODES,
-  SLIDE_TYPE_ALIASES,
   SLIDE_TYPE_PRESETS,
-  SLIDE_TYPE_DESC,
   PICKER_GROUP_ORDER,
   PICKER_GROUP_KEYS,
 } from './data.js';
 import { slideTypeGroup, typesInGroup } from '../../../../shared/slide-types/authoring-groups.js';
+import {
+  slideTypeAliases,
+  slideTypeDescription,
+} from '../../../../shared/slide-types/authoring-companions.js';
 import {
   readViewMode,
   persistViewMode,
@@ -75,9 +77,12 @@ export function createSlideTypePicker({
   // Keep fallbacks in English.
   const tr = t;
 
-  // Tooltip/caption description for a type (falls back to '' when none).
+  // Tooltip/caption description for a type (falls back to '' when none). The
+  // English fallback is resolved from the type's own declaration on the
+  // /api/slide-types response (SLIDE_TYPES), so a fork type's description shows
+  // too; the app-locale translation still layers on top.
   const descFor = (type) =>
-    tr(`editor.slideTypeDesc.${type}`, SLIDE_TYPE_DESC[type] || '');
+    tr(`editor.slideTypeDesc.${type}`, slideTypeDescription(type, SLIDE_TYPES?.[type]) || '');
 
   // Search query persists across re-renders.
   let searchQuery = '';
@@ -199,7 +204,7 @@ export function createSlideTypePicker({
   // aliases, lowercased, so "big numbers" finds the KPI slide and
   // "smoelenboek" finds team cards.
   const searchHaystack = (type, label) =>
-    `${label} ${type} ${descFor(type)} ${SLIDE_TYPE_ALIASES[type] || ''}`.toLowerCase();
+    `${label} ${type} ${descFor(type)} ${slideTypeAliases(type, SLIDE_TYPES?.[type]) || ''}`.toLowerCase();
 
   // Safe attribute-selector value for a type key.
   const cssEsc = (s) =>
