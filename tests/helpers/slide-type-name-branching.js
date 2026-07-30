@@ -215,13 +215,10 @@ export const INVENTORY = {
     kind: table,
     companion: 'picker-description',
     why:
-      'SLIDE_TYPE_DESC, SLIDE_TYPE_ALIASES and PICKER_GROUPS — three per-type ' +
-      'tables in one module, all three gated by the companion matrix.',
-  },
-  'client/views/settings/tabs/slide-types-tab/categories.js': {
-    kind: table,
-    companion: 'settings-curation-category',
-    why: 'CATEGORIES, the settings curation grouping. One row per curated type.',
+      'SLIDE_TYPE_DESC and SLIDE_TYPE_ALIASES — two per-type tables in one ' +
+      'module, both gated by the companion matrix. The third used to be ' +
+      'PICKER_GROUPS; membership moved onto the types and what is left here ' +
+      '(PICKER_GROUP_ORDER) is an order hint, not a membership.',
   },
   'client/views/editor/editor-form/inspector-form.js': {
     kind: table,
@@ -318,6 +315,17 @@ export const INVENTORY = {
       'STRUCTURE_VALIDATORS — the per-type structural check for agent output. ' +
       'Owed by every non-opt-out collection / fixed-collection type; a missing ' +
       'entry accepts a malformed collection unvalidated. Promoted from `promote`.',
+  },
+
+  // --- display-order hint: membership is derived, order is curated ---------
+  'client/views/settings/tabs/slide-types-tab/categories.js': {
+    kind: sparse,
+    gate: 'tests/slide-type-groups.test.js',
+    why:
+      'CATEGORY_ORDER — heading order plus, per heading, which types lead. It ' +
+      'used to be CATEGORIES, a second hand-written membership that disagreed ' +
+      'with the picker about five types; membership now lives on the types and ' +
+      'this is an order hint, so staleness is the only defect left.',
   },
 
   // --- sparse tables: absence is normal, staleness is the defect ------------

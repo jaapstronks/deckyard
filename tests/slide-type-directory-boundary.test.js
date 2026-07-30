@@ -33,8 +33,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PICKER_GROUPS } from '../client/views/editor/slide-type-picker/data.js';
-import { CATEGORIES } from '../client/views/settings/tabs/slide-types-tab/categories.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TYPES_DIR = path.join(repoRoot, 'shared', 'slide-types', 'types');
@@ -283,49 +281,5 @@ describe('the client render path stays clear of the server-only layer', () => {
         'weight the client must never pay.'
     );
     assert.ok(importers.length > 0, 'nothing imports ai.js; the check is vacuous');
-  });
-});
-
-describe('declarations a consumer has not been converted to read yet', () => {
-  // The transitional gate the rollout inherits. Picker group and curation
-  // category are *positional* facts: the arrays in the consumer encode order as
-  // well as membership, and order is a cross-type decision that belongs to that
-  // consumer's own rollout PR. Until then the type directory holds the
-  // authoritative membership and this test holds the consumer's copy to it, so
-  // there is one authority rather than two sources.
-  const authoringOf = async (name) => {
-    const file = path.join(TYPES_DIR, name, 'authoring.js');
-    if (!fs.existsSync(file)) return null;
-    return (await import(file)).default;
-  };
-
-  it('the picker group matches the declared pickerGroup', async () => {
-    for (const name of TYPE_NAMES) {
-      const authoring = await authoringOf(name);
-      if (!authoring?.pickerGroup) continue;
-      const actual = Object.entries(PICKER_GROUPS)
-        .filter(([, types]) => types.includes(name))
-        .map(([group]) => group);
-      assert.deepStrictEqual(
-        actual,
-        [authoring.pickerGroup],
-        `${name} declares pickerGroup "${authoring.pickerGroup}" but the picker ` +
-          `puts it in [${actual.join(', ')}]`
-      );
-    }
-  });
-
-  it('the curation category matches the declared curationCategory', async () => {
-    for (const name of TYPE_NAMES) {
-      const authoring = await authoringOf(name);
-      if (!authoring?.curationCategory) continue;
-      const actual = CATEGORIES.filter((c) => c.types.includes(name)).map((c) => c.key);
-      assert.deepStrictEqual(
-        actual,
-        [authoring.curationCategory],
-        `${name} declares curationCategory "${authoring.curationCategory}" but the ` +
-          `settings tab puts it in [${actual.join(', ')}]`
-      );
-    }
   });
 });

@@ -31,8 +31,10 @@ import {
   SLIDE_TYPE_ALIASES,
   SLIDE_TYPE_PRESETS,
   SLIDE_TYPE_DESC,
-  PICKER_GROUPS,
+  PICKER_GROUP_ORDER,
+  PICKER_GROUP_KEYS,
 } from './data.js';
+import { typesInGroup } from '../../../../shared/slide-types/authoring-groups.js';
 import {
   readViewMode,
   persistViewMode,
@@ -740,10 +742,12 @@ export function createSlideTypePicker({
       }
     });
 
-    // Curated group membership lives in ./data.js (PICKER_GROUPS) so the
-    // companion-coverage test can see it; a group that still named a retired
-    // type used to be caught only by someone noticing.
-    const groupDefs = (key) => PICKER_GROUPS[key].map((type) => ({ type }));
+    // Membership is derived from each type's own `group` declaration; ./data.js
+    // only supplies the display order within a shelf. A group that still named a
+    // retired type used to be caught only by someone noticing — now it cannot
+    // happen, because the retired type simply stops declaring.
+    const groupDefs = (key) =>
+      typesInGroup(key, PICKER_GROUP_ORDER[key]).map((type) => ({ type }));
 
     // Themes can prepend their own types to "Basic" via basicSlideTypes.
     const themeBasicTypes = Array.isArray(theme?.basicSlideTypes)
@@ -753,10 +757,6 @@ export function createSlideTypePicker({
       ...themeBasicTypes.filter((type) => SLIDE_TYPES?.[type]).map((type) => ({ type })),
       ...groupDefs('basic'),
     ];
-    const mediaDefs = groupDefs('media');
-    const layoutDefs = groupDefs('layouts');
-    const dataDefs = groupDefs('data');
-    const interactionDefs = groupDefs('interaction');
 
     // Custom slide types (keys starting with 'custom-' or marked isCustom)
     const customDefs = Object.keys(SLIDE_TYPES || {})
@@ -767,13 +767,22 @@ export function createSlideTypePicker({
       .sort((a, b) => String(labelFor(a)).localeCompare(String(labelFor(b))))
       .map((key) => ({ type: key }));
 
-    // Curated groups in display order.
+    // Curated groups in display order. `basic` is special-cased because the
+    // theme may prepend its own types to it; every other shelf is purely the
+    // declarations, ordered by the hint in ./data.js.
+    const GROUP_TITLES = {
+      basic: ['editor.slideTypeGroup.basic', 'Basic'],
+      media: ['editor.slideTypeGroup.media', 'Media'],
+      layouts: ['editor.slideTypeGroup.layouts', 'Layouts'],
+      data: ['editor.slideTypeGroup.data', 'Data'],
+      interaction: ['editor.slideTypeGroup.interaction', 'Interaction'],
+    };
     const curatedGroups = [
-      { key: 'basic', title: tr('editor.slideTypeGroup.basic', 'Basic'), defs: basicDefs.filter((d) => allowed(d.type)) },
-      { key: 'media', title: tr('editor.slideTypeGroup.media', 'Media'), defs: mediaDefs.filter((d) => allowed(d.type)) },
-      { key: 'layouts', title: tr('editor.slideTypeGroup.layouts', 'Layouts'), defs: layoutDefs.filter((d) => allowed(d.type)) },
-      { key: 'data', title: tr('editor.slideTypeGroup.data', 'Data'), defs: dataDefs.filter((d) => allowed(d.type)) },
-      { key: 'interaction', title: tr('editor.slideTypeGroup.interaction', 'Interaction'), defs: interactionDefs.filter((d) => allowed(d.type)) },
+      ...PICKER_GROUP_KEYS.map((key) => ({
+        key,
+        title: tr(...GROUP_TITLES[key]),
+        defs: (key === 'basic' ? basicDefs : groupDefs(key)).filter((d) => allowed(d.type)),
+      })),
       { key: 'custom', title: tr('editor.slideTypeGroup.custom', 'Custom'), defs: customDefs },
     ];
 

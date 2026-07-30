@@ -39,13 +39,12 @@ import { slideStructure } from '../../shared/slide-types/structure.js';
 import {
   SLIDE_TYPE_DESC,
   SLIDE_TYPE_ALIASES,
-  PICKER_GROUPS,
 } from '../../client/views/editor/slide-type-picker/data.js';
 import { MANUAL_EXAMPLES } from '../../server/utils/openai/slide-types-prompt.js';
 import { SLIDE_TYPE_SCHEMATIC } from '../../client/views/editor/slide-type-schematics.js';
 import { INLINE_DESCRIPTORS } from '../../client/views/editor/inline-edit/descriptors.js';
 import { INSPECTOR_KEEPS } from '../../client/views/editor/editor-form/inspector-form.js';
-import { CATEGORIES } from '../../client/views/settings/tabs/slide-types-tab/categories.js';
+import { SLIDE_TYPE_GROUP } from '../../shared/slide-types/authoring-groups.js';
 
 /** Registered type names, minus fork-local ones (see the scope note above). */
 export const CORE_SLIDE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
@@ -76,8 +75,8 @@ const isAuthorable = (def) => def?.deprecated !== true;
  */
 const isEditable = () => true;
 
-/** Every type named by the settings curation categories, flattened. */
-const curatedCategoryTypes = () => CATEGORIES.flatMap((c) => c.types);
+/** Every type that declares a curation/picker group. */
+const groupedTypes = () => Object.keys(SLIDE_TYPE_GROUP);
 
 /**
  * Types whose primary content is a repeated-item collection — the only shape a
@@ -221,15 +220,16 @@ export const COMPANIONS = [
   },
   {
     id: 'picker-group',
-    label: 'curated picker group',
-    where: 'client/views/editor/slide-type-picker/data.js (PICKER_GROUPS)',
-    degradesTo: 'the tile lands in the picker\'s computed "Other" group',
-    // Absence is a legitimate home here — the long tail (payoff, end,
-    // custom-html) is *meant* to fall into "Other", so only staleness is a gate.
-    optional: true,
+    label: 'curated group',
+    where:
+      'shared/slide-types/types/<name>/authoring.js (group) — surfaced as ' +
+      'SLIDE_TYPE_GROUP by shared/slide-types/authoring-groups.js',
+    degradesTo:
+      'the picker drops the tile into its computed "Other" group and the ' +
+      'settings curation list into its "Other" heading',
     appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => Object.values(PICKER_GROUPS).some((g) => g.includes(name)),
-    keys: () => Object.values(PICKER_GROUPS).flat(),
+    has: (name) => Boolean(SLIDE_TYPE_GROUP[name]),
+    keys: groupedTypes,
     exempt: {},
   },
   {
@@ -268,19 +268,6 @@ export const COMPANIONS = [
     appliesTo: isEditable,
     has: (name) => Array.isArray(INSPECTOR_KEEPS[name]),
     keys: () => Object.keys(INSPECTOR_KEEPS),
-    exempt: {},
-  },
-  {
-    id: 'settings-curation-category',
-    label: 'Settings curation category',
-    where:
-      'client/views/settings/tabs/slide-types-tab/categories.js (CATEGORIES)',
-    degradesTo:
-      'the type lands in the unnamed "Other" group of the org curation list ' +
-      'instead of next to its siblings',
-    appliesTo: (name, def) => isAuthorable(def),
-    has: (name) => curatedCategoryTypes().includes(name),
-    keys: curatedCategoryTypes,
     exempt: {},
   },
   {

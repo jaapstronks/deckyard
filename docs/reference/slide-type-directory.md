@@ -81,7 +81,7 @@ subject of the track this form came out of.
 | picker description, search aliases | `authoring.js` | `slide-type-picker/data.js` |
 | schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |
 | picker sample content | `authoring.js` | `slide-type-sample-content.js` |
-| picker group, curation category | `authoring.js` | picker + settings curation |
+| curated group (`group`) | `authoring.js` | picker shelves + settings curation (derived) |
 | inline-edit descriptor | `inline-edit.js` | `inline-edit/descriptors.js` |
 | inspector keep-list | `inline-edit.js` | `editor-form/inspector-form.js` |
 | agent description / bestFor / notFor | `ai.js` | `ai/slide-catalog/` |
@@ -176,13 +176,17 @@ export const SLIDE_TYPE_DESC = {
 };
 ```
 
-Two facts resist that, because the consumer's data structure encodes **order** as
-well as membership: the picker group and the settings curation category. Those
-are declared in `authoring.js` as the authority, while the consumer keeps its
-ordered array — and `tests/slide-type-directory-boundary.test.js` asserts the two
-agree. That keeps a single authority during the transition instead of two sources
-that can drift, and it is the pattern to reuse for any other ordered companion:
-**declare the fact, gate the copy, convert the consumer later.**
+One fact needed a variation on that, because the consumer's data structure
+encodes **order** as well as membership: which shelf a type is offered on. It is
+declared as `group` in `authoring.js`, both consumers derive their membership
+from it, and each keeps its own *order hint* — a partial list saying which types
+lead, where a missing name costs a position and a stale name is ignored. See
+[`slide-type-groups.md`](./slide-type-groups.md).
+
+That is the pattern to reuse for any other ordered companion: **the fact belongs
+to the type, the ordering belongs to the surface.** During the transition the
+weaker form is fine too — declare the fact, gate the consumer's copy against it,
+convert the consumer later — which is how `group` itself got there.
 
 ### Consumers converted so far
 
@@ -191,3 +195,4 @@ that can drift, and it is the pattern to reuse for any other ordered companion:
 | `client/views/editor/slide-type-schematics.js` | schematic glyph + per-preset overrides | A7.1 rollout PR 1 |
 | `client/views/editor/slide-type-sample-content.js` | picker sample content | A7.1 rollout PR 2 |
 | `client/views/editor/inline-edit/descriptors.js` | inline-edit descriptor (35 types) | A7.1 rollout PR 3 |
+| `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration) | A7.1 rollout PR 4 |
