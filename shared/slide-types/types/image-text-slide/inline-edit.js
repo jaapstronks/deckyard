@@ -65,3 +65,25 @@ export const inlineEdit = {
       },
     },
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `layout` (structural variant) is intentionally NOT kept: the toolbar
+ * "Layout" chip is its canonical control in the inspector. textColumns /
+ * imageSide stay as precise, distinctly-named sub-settings. `imageFit` is
+ * intentionally absent since datamodel step 2b: fit is a per-image ImageRef
+ * property (images manager / "This image"), no longer a writable slide-level
+ * setting.
+ * @type {string[]}
+ */
+export const inspectorKeeps = [
+  'imageRole',
+  'density',
+  'textColumns',
+  'imageSide',
+  'imageWidth',
+  'imageBackground',
+  'actions',
+];

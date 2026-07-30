@@ -20,3 +20,10 @@ export const inlineEdit = {
     cards: { field: 'levels', container: '.pyramid-container', itemSelector: '.pyramid-level' },
     formText: [...HEADER_TEXT, 'levels'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = [];

@@ -14,3 +14,13 @@ export const inlineEdit = {
     ghosts: [{ field: 'title', anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }] }],
     formText: ['title'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `embedUrl`: same misclassification as video-slide's `source` — the embed URL
+ * had no surface besides the bulk modal.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['embedUrl', 'aspectRatio', 'sandbox'];

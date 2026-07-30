@@ -51,3 +51,17 @@ export const inlineEdit = {
     },
     formText: [...HEADER_TEXT, 'caption'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * `layout` is intentionally absent since datamodel step 3: the conflated enum
+ * split into the ImageRef axes `fit` + `bleed` (rendered via
+ * appendImageSlideFitControls, not the generic keeps loop). Since the
+ * editing-surfaces tab split ALL of these render in the "This image" element
+ * tab only — the single image is the element; the slide form carries just
+ * Background/Accessibility.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['imageRole', 'fit', 'bleed', 'zoomSteps', 'zoomLevel', 'zoomPositions'];

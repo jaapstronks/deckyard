@@ -20,3 +20,10 @@ export const inlineEdit = {
     // rows stays: column add/remove only exists in the form's grid editor.
     formText: ['title', 'caption'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['headerRow', 'tableStyle', 'animateByCell', 'cornerCell'];

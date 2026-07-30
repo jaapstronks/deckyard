@@ -100,9 +100,10 @@ Then, in rough dependency order:
    `node --test tests/slide-type-companion-coverage.test.js` reports the ones you
    missed by name — see
    [`slide-type-companions.md`](./slide-type-companions.md) for the full list
-   (`INLINE_DESCRIPTORS`, `INSPECTOR_KEEPS`, `SLIDE_TYPE_DESC`,
-   `SLIDE_TYPE_ALIASES`, `SLIDE_TYPE_SCHEMATIC`, the type's own `group`, the AI
-   catalog entry and its examples).
+   (`SLIDE_TYPE_DESC`, `SLIDE_TYPE_ALIASES`, the AI catalog entry and its
+   examples). The ones a type in the directory form owns — its descriptor, its
+   `inspectorKeeps`, its `schematic`, its `sample`, its `group` — go with the
+   directory in step 3 and need no separate visit.
    Not in the matrix, still by hand — each one branches on the type *name* and
    nothing checks that the set is complete (#451 hit all three):
    - the conversion map in `shared/slide-types/convert.js`, if the type was a
@@ -236,9 +237,10 @@ actually used.
 - ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
   `tests/removed-slide-types.test.js` (step 7 above).
 - **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
-  `EXCLUDED_TYPES` both had to have an entry *removed*; neither is derived from
-  anything the type declares. They are the clearest candidates for being owned
-  by the type definition.
+  `EXCLUDED_TYPES` both had to have an entry *removed*; neither was derived from
+  anything the type declares. `INSPECTOR_KEEPS` has since become exactly that —
+  a type declares `inspectorKeeps` in its own `inline-edit.js` and the map is
+  derived — so the next removal only has `EXCLUDED_TYPES` left in this row.
 
 ## See also
 

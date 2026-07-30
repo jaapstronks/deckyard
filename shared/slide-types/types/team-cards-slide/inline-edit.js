@@ -76,3 +76,10 @@ export const inlineEdit = {
     // Member cards stay in the side form too: they carry focus points.
     formText: [...HEADER_TEXT, 'subheading2'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['textPosition', 'imageShape', 'imageAspect', 'showPhotoFrame', 'columnSplit'];

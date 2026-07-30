@@ -38,3 +38,13 @@ export const inlineEdit = {
     // contactUrl / social links are URLs → stay in the form.
     formText: ['title', 'body', 'contactName', 'contactEmail', 'contactPhone'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * Contact/social URLs and labels have no canvas surface (the canvas
+ * inline-edits name/email/phone only) — were bulk-only (audit 2026-07-21).
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['contactUrl', 'social1Label', 'social1Url', 'social2Label', 'social2Url'];

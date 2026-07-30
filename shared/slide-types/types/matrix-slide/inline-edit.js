@@ -19,3 +19,10 @@ export const inlineEdit = {
     cards: { field: 'cells', container: '.matrix-grid', itemSelector: '.matrix-cell' },
     formText: [...HEADER_TEXT, 'cells'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ * @type {string[]}
+ */
+export const inspectorKeeps = [];

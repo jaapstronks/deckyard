@@ -17,3 +17,14 @@ export const inlineEdit = {
     ],
     formText: ['title', 'subheading', 'meta'],
   };
+
+/**
+ * Fields the inspector keeps rendering even though the inline layer covers the
+ * rest of the slide.
+ *
+ * The title background is now the shared slideBgImage (rendered by the
+ * Background section); the type's own bgImage/bgAlt were removed
+ * (title-bg-unification). logoCorner is the only title-specific keep.
+ * @type {string[]}
+ */
+export const inspectorKeeps = ['logoCorner'];
