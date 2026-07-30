@@ -3,6 +3,7 @@
  * Handles multi-workspace user membership and role operations.
  */
 
+import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 
@@ -195,7 +196,22 @@ export async function listUserOrganizations(userId) {
 }
 
 /**
- * List all members of an organization.
+ * Rank a membership role for ordering: owner first, then admin, then member.
+ *
+ * `ORDER BY role DESC` used to stand in for this and is not the same thing —
+ * it sorts the *strings*, which alphabetically gives owner → member → admin.
+ * The bug was invisible while the list had no second page and no actions; with
+ * paging, a wrong order silently decides who lands on page 2.
+ */
+const ROLE_RANK = sql`CASE user_organizations.role
+  WHEN 'owner' THEN 0
+  WHEN 'admin' THEN 1
+  ELSE 2
+END`;
+
+/**
+ * List all members of an organization, owner first, then admins, then members,
+ * each group oldest membership first.
  * @param {string} organizationId - Organization ID
  * @param {Object} options - Query options
  * @param {number} [options.limit=50] - Max results
@@ -222,13 +238,70 @@ export async function listOrganizationMembers(organizationId, options = {}) {
         'users.created_at',
       ])
       .where('user_organizations.organization_id', '=', organizationId)
-      .orderBy('user_organizations.role', 'desc') // owner first, then admin, then member
+      .orderBy(ROLE_RANK, 'asc')
       .orderBy('user_organizations.joined_at', 'asc')
       .limit(limit)
       .offset(offset)
       .execute();
 
     return rows.map(formatMemberWithUser);
+  });
+}
+
+/** Postgres' "invalid input syntax", raised when text meets a uuid column. */
+const INVALID_TEXT_REPRESENTATION = '22P02';
+
+/**
+ * Look one member up by membership id or by user id, in the same shape
+ * `listOrganizationMembers` returns.
+ *
+ * The mutating routes used to find their target by listing the organization and
+ * searching the result, but that list is a *page*: `limit` is clamped to 100, so
+ * in an organization with more members than that, everyone past the hundredth
+ * row was unreachable — a role change or removal there answered 404 while the
+ * member sat visibly on the screen. Paging made those rows reachable to look at,
+ * which is what turned a latent bound into a bug.
+ *
+ * @param {string} organizationId - Organization ID
+ * @param {string} identifier - Membership ID or user ID
+ * @returns {Promise<Object|null>}
+ */
+export async function getOrganizationMember(organizationId, identifier) {
+  if (!identifier) return null;
+
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('user_organizations')
+      .innerJoin('users', 'users.id', 'user_organizations.user_id')
+      .select([
+        'user_organizations.id as membership_id',
+        'user_organizations.role',
+        'user_organizations.is_designer',
+        'user_organizations.invited_at',
+        'user_organizations.joined_at',
+        'users.id',
+        'users.email',
+        'users.name',
+        'users.created_at',
+      ])
+      .where('user_organizations.organization_id', '=', organizationId)
+      .where((eb) =>
+        eb.or([
+          eb('user_organizations.id', '=', identifier),
+          eb('user_organizations.user_id', '=', identifier),
+        ])
+      )
+      .executeTakeFirst()
+      .catch((err) => {
+        // Both columns are `uuid`, so a path segment that is not one makes
+        // Postgres refuse the comparison. "No such member" is the honest answer
+        // to `/members/nonsense`, not a 500 — which is what the scan this
+        // replaced returned, because it compared in JavaScript.
+        if (err?.code === INVALID_TEXT_REPRESENTATION) return undefined;
+        throw err;
+      });
+
+    return row ? formatMemberWithUser(row) : null;
   });
 }
 
@@ -310,6 +383,33 @@ export async function updateMemberRole(membershipId, newRole) {
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const now = nowIso();
+
+    // Same invariant `removeMember` holds: an organization never loses its last
+    // owner. Demotion is the other way to reach that state, and ownership
+    // transfer is the supported path out of it (it promotes before it demotes).
+    const current = await db
+      .selectFrom('user_organizations')
+      .select(['id', 'role', 'organization_id'])
+      .where('id', '=', membershipId)
+      .executeTakeFirst();
+
+    if (!current) {
+      return { ok: false, reason: 'not_found' };
+    }
+
+    if (current.role === 'owner' && newRole !== 'owner') {
+      const ownerCount = await db
+        .selectFrom('user_organizations')
+        .select((eb) => eb.fn.countAll().as('count'))
+        .where('organization_id', '=', current.organization_id)
+        .where('role', '=', 'owner')
+        .executeTakeFirst();
+
+      if (Number(ownerCount?.count || 0) <= 1) {
+        return { ok: false, reason: 'last_owner' };
+      }
+    }
+
     const row = await db
       .updateTable('user_organizations')
       .set({
@@ -408,18 +508,27 @@ export async function transferOwnership(organizationId, currentOwnerUserId, newO
       return { ok: false, reason: 'not_member' };
     }
 
-    // Demote current owner to admin
-    await db
-      .updateTable('user_organizations')
-      .set({ role: 'admin', updated_at: now })
-      .where('id', '=', currentOwnership.id)
-      .execute();
+    // Handing the organization to yourself is the one case where the two
+    // statements below address the same row, and then the order matters in the
+    // other direction: promote-then-demote would end on `admin` and leave the
+    // organization ownerless. Nothing changes hands here, so nothing runs.
+    if (newOwnerMembership.id === currentOwnership.id) {
+      return { ok: true };
+    }
 
-    // Promote new owner
+    // Promote first, demote second. If the second statement fails the
+    // organization is left with two owners, which is recoverable; the other
+    // order leaves it with none, which is not.
     await db
       .updateTable('user_organizations')
       .set({ role: 'owner', updated_at: now })
       .where('id', '=', newOwnerMembership.id)
+      .execute();
+
+    await db
+      .updateTable('user_organizations')
+      .set({ role: 'admin', updated_at: now })
+      .where('id', '=', currentOwnership.id)
       .execute();
 
     return { ok: true };
