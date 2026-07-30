@@ -6,11 +6,39 @@ import {
   writeUserSettings,
 } from '../../storage/settings.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
-import { getOrganizationById, updateOrganization } from '../../storage/user-organizations/index.js';
+import {
+  getOrganizationById,
+  updateOrganization,
+  getMembershipByEmail,
+  hasWorkspaceRole,
+} from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
+import { isMultiWorkspaceEnabled } from '../../config/features.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('settings');
+
+/**
+ * Whether this user may write the organization-level admin settings keys.
+ *
+ * Instance admin is necessary in both modes. In multi-workspace mode being
+ * admin or owner of the organization being written is necessary too, so the
+ * instance role can only ever be narrowed by the membership, never widened by
+ * it — the same shape as `isWorkspaceAdmin()` on the client and `canManage()`
+ * for the designer capability.
+ *
+ * @param {Object} [authedUser] - Authenticated user
+ * @param {string} organizationId - Organization the settings belong to
+ * @returns {Promise<boolean>}
+ */
+async function canWriteOrgAdminKeys(authedUser, organizationId) {
+  if (!authedUser?.isAdmin) return false;
+  if (!isMultiWorkspaceEnabled()) return true;
+  if (!authedUser?.email || !organizationId) return false;
+
+  const membership = await getMembershipByEmail(authedUser.email, organizationId);
+  return hasWorkspaceRole(membership?.role, 'admin');
+}
 
 export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
   // Global (app-wide) settings:
@@ -81,13 +109,16 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
       // instance admin who is a plain member of it. Same function, same rule.
       const isDesigner = canManage(authedUser);
 
-      // NOTE: the admin-key gate below still reads the instance-wide flag
-      // rather than the membership role, so an instance admin can write
-      // `adminsAreDesigners` / `rss` on an organization they are only a member
-      // of. That is the role-scoping question, not the designer one — it needs
-      // a decision about who owns organization settings, so it is left for
-      // slice 4 rather than changed silently here.
-      if (hasAdminKeys && !authedUser?.isAdmin) return unauthorized(res);
+      // The admin keys (`adminsAreDesigners`, `rss`) used to hang on the
+      // instance-wide flag alone, so an instance admin who is a plain member of
+      // the organization they had switched into could still write its settings.
+      // The rule is the conjunction the UI already applies through
+      // `isWorkspaceAdmin()`: instance admin *and*, in multi-workspace mode,
+      // admin or owner of the active organization. Single-workspace is
+      // unchanged — there is no membership to read and none is asked for.
+      if (hasAdminKeys && !(await canWriteOrgAdminKeys(authedUser, orgId))) {
+        return unauthorized(res);
+      }
       if (hasDesignerKeys && !isDesigner) return unauthorized(res);
 
       try {

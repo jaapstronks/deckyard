@@ -16,9 +16,10 @@
  * must keep hitting `/api/admin/users` and must never touch the organization
  * surface, which is behind the feature flag on the server and answers 403.
  *
- * The list is read-only on purpose. Role changes, removal, leaving and
- * ownership transfer are slice 4; an affordance that 403s is worse than none,
- * so the cards carry no buttons yet and the test pins that.
+ * The actions on those rows — role changes, removal, leaving, ownership
+ * transfer — landed in slice 4 and are pinned in
+ * tests/organization-members-actions.test.js. What stays here is the question
+ * this slice answers: which endpoint each mode asks, and what a row shows.
  *
  * Run with: node --test tests/organization-members-panel.test.js
  */
@@ -141,7 +142,7 @@ test('multi-workspace asks the active organization for its members', async () =>
   await settle();
 
   assert.deepEqual(requested, [
-    `GET /api/organizations/${ORG_B}/members?limit=100`,
+    `GET /api/organizations/${ORG_B}/members?limit=25&offset=0`,
   ]);
   assert.equal(
     requested.filter((r) => r.includes('/api/admin/users')).length,
@@ -160,7 +161,9 @@ test('the organization on the request is the session’s, not the default one', 
   });
   await panel.ready;
 
-  assert.deepEqual(requested, ['GET /api/organizations/org-switched-into/members?limit=100']);
+  assert.deepEqual(requested, [
+    'GET /api/organizations/org-switched-into/members?limit=25&offset=0',
+  ]);
 });
 
 test('a session with no active organization asks nothing and says so', async () => {
@@ -191,9 +194,9 @@ test('a failed load leaves a message, not a permanently loading list', async () 
 // ---------------------------------------------------------------------------
 
 /** Render the member list standalone and hand back its container. */
-function renderList(members, currentUser = USER, total = undefined) {
+function renderList(members, currentUser = USER, options = {}) {
   const container = dom.window.document.createElement('div');
-  renderMembersList(container, members, currentUser, total);
+  renderMembersList(container, members, currentUser, options);
   return container;
 }
 
@@ -231,25 +234,12 @@ test('the signed-in person is marked in the list', async () => {
   assert.equal(youOn(cards[0]), false);
 });
 
-test('the list is read-only until slice 4', async () => {
+test('a list rendered without handlers carries no affordances', async () => {
+  // The read-only shape slice 3 shipped is still reachable and still empty of
+  // controls: the buttons come from the handlers the panel passes down, not
+  // from the row itself.
   const container = renderList(MEMBERS);
-  assert.equal(
-    container.querySelectorAll('button').length,
-    0,
-    'no management affordances yet — the actions land with their 403 handling in slice 4'
-  );
-});
-
-test('a truncated page says it is truncated', async () => {
-  const complete = renderList(MEMBERS, USER, MEMBERS.length);
-  assert.doesNotMatch(complete.textContent, /Showing/);
-
-  const truncated = renderList(MEMBERS, USER, 140);
-  assert.match(
-    truncated.textContent,
-    /Showing 3 of 140 members/,
-    'a page that does not hold the organization must not read as one that does'
-  );
+  assert.equal(container.querySelectorAll('button, select').length, 0);
 });
 
 test('an empty organization is not an error', async () => {

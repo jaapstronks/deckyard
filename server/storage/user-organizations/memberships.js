@@ -3,6 +3,7 @@
  * Handles multi-workspace user membership and role operations.
  */
 
+import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
 
@@ -195,7 +196,22 @@ export async function listUserOrganizations(userId) {
 }
 
 /**
- * List all members of an organization.
+ * Rank a membership role for ordering: owner first, then admin, then member.
+ *
+ * `ORDER BY role DESC` used to stand in for this and is not the same thing —
+ * it sorts the *strings*, which alphabetically gives owner → member → admin.
+ * The bug was invisible while the list had no second page and no actions; with
+ * paging, a wrong order silently decides who lands on page 2.
+ */
+const ROLE_RANK = sql`CASE user_organizations.role
+  WHEN 'owner' THEN 0
+  WHEN 'admin' THEN 1
+  ELSE 2
+END`;
+
+/**
+ * List all members of an organization, owner first, then admins, then members,
+ * each group oldest membership first.
  * @param {string} organizationId - Organization ID
  * @param {Object} options - Query options
  * @param {number} [options.limit=50] - Max results
@@ -222,7 +238,7 @@ export async function listOrganizationMembers(organizationId, options = {}) {
         'users.created_at',
       ])
       .where('user_organizations.organization_id', '=', organizationId)
-      .orderBy('user_organizations.role', 'desc') // owner first, then admin, then member
+      .orderBy(ROLE_RANK, 'asc')
       .orderBy('user_organizations.joined_at', 'asc')
       .limit(limit)
       .offset(offset)
@@ -310,6 +326,33 @@ export async function updateMemberRole(membershipId, newRole) {
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const now = nowIso();
+
+    // Same invariant `removeMember` holds: an organization never loses its last
+    // owner. Demotion is the other way to reach that state, and ownership
+    // transfer is the supported path out of it (it promotes before it demotes).
+    const current = await db
+      .selectFrom('user_organizations')
+      .select(['id', 'role', 'organization_id'])
+      .where('id', '=', membershipId)
+      .executeTakeFirst();
+
+    if (!current) {
+      return { ok: false, reason: 'not_found' };
+    }
+
+    if (current.role === 'owner' && newRole !== 'owner') {
+      const ownerCount = await db
+        .selectFrom('user_organizations')
+        .select((eb) => eb.fn.countAll().as('count'))
+        .where('organization_id', '=', current.organization_id)
+        .where('role', '=', 'owner')
+        .executeTakeFirst();
+
+      if (Number(ownerCount?.count || 0) <= 1) {
+        return { ok: false, reason: 'last_owner' };
+      }
+    }
+
     const row = await db
       .updateTable('user_organizations')
       .set({
@@ -408,18 +451,19 @@ export async function transferOwnership(organizationId, currentOwnerUserId, newO
       return { ok: false, reason: 'not_member' };
     }
 
-    // Demote current owner to admin
-    await db
-      .updateTable('user_organizations')
-      .set({ role: 'admin', updated_at: now })
-      .where('id', '=', currentOwnership.id)
-      .execute();
-
-    // Promote new owner
+    // Promote first, demote second. If the second statement fails the
+    // organization is left with two owners, which is recoverable; the other
+    // order leaves it with none, which is not.
     await db
       .updateTable('user_organizations')
       .set({ role: 'owner', updated_at: now })
       .where('id', '=', newOwnerMembership.id)
+      .execute();
+
+    await db
+      .updateTable('user_organizations')
+      .set({ role: 'admin', updated_at: now })
+      .where('id', '=', currentOwnership.id)
       .execute();
 
     return { ok: true };
