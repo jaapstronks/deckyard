@@ -77,6 +77,7 @@ subject of the track this form came out of.
 | Fact | Slot | Read by |
 |---|---|---|
 | label, `fields[]`, `defaults`, `defaultsByLang` | `index.js` | registry, editor form, validation, agent schema |
+| `structure` / `runtime` / `fallback` facets | `index.js` | the facet module for each (`structure.js`, `runtime.js`, [`tiers.js`](./slide-type-tiers.md)) + `/api/slide-types` |
 | `renderHtml` | `render.js` | presenter, editor preview, export |
 | picker description, search aliases | `authoring.js` | the picker, via `authoring-companions.js` + `/api/slide-types` |
 | schematic glyph, per-preset glyph overrides | `authoring.js` | `slide-type-schematics.js` (derived) |

@@ -39,6 +39,9 @@ function cellHtml(cell, idx) {
 
 export default {
   structure: 'fixed-collection',
+  // Quadrants are rows and columns; the count carrying meaning is exactly what
+  // a table preserves and a list does not.
+  fallback: 'table-slide',
   runtime: 'static',
   label: 'Matrix',
   fields: [

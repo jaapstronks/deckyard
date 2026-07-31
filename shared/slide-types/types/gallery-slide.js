@@ -53,6 +53,10 @@ function imageHtml(image, idx, copy) {
 
 export default {
   structure: 'collection',
+  // A collection of images maps onto the image contract, not the list one. The
+  // fallback names a contract rather than a one-for-one slide swap, so a reader
+  // is free to emit one image slide per item.
+  fallback: 'image-slide',
   runtime: 'static',
   label: 'Gallery',
   fields: [

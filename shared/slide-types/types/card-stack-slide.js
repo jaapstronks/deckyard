@@ -167,6 +167,7 @@ export function ensureCardStack(content) {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   deprecated: true, // Hidden from editor + AI. Kept for rendering existing slides. Migrate to icon-card-grid-slide.
   label: 'Card stack',

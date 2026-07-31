@@ -42,6 +42,7 @@ function isOn(v, fallback) {
 
 export default {
   structure: 'singleton',
+  fallback: 'content-slide',
   // `timed`, not `live`: a presenter-driven clock with no audience and no
   // session state. The timer runs entirely in the presenting window (see
   // client/lib/slide-runtime/countdown-runtime.js).

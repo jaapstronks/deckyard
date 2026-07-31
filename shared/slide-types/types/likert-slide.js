@@ -17,6 +17,7 @@ function optionsFromContent(content) {
 
 export default {
   structure: 'fixed-collection',
+  fallback: 'list-slide',
   runtime: 'live',
   interaction: 'likert',
   label: 'Likert (agree/disagree)',
