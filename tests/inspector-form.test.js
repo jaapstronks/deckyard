@@ -183,27 +183,65 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
   assert.ok(!labels.some((l) => l === 'title'), 'no title field');
 });
 
-test('no config field is bulk-modal-only (coverage audit 2026-07-21)', () => {
-  // Settings/config/metadata may never rely on the bulk modal as their only
-  // surface (content text may). One distinctive pin per restored field group.
-  const pins = [
-    // title-slide: bgImage/bgAlt were removed (title-bg-unification) — the
-    // background is now the shared slideBgImage in the Background section.
-    ['content-slide', 'action buttons'],
-    ['countdown-slide', 'text at zero'],
-    ['poll-slide', 'target slide id'],
-    ['likert-slide', 'target slide id'],
-    ['feedback-slide', 'placeholder'],
-    ['lead-capture-slide', 'thank you title'],
-    ['chart-slide', 'x label'],
-    ['end-slide', 'website'],
-  ];
-  for (const [type, label] of pins) {
-    const labels = fieldLabels(renderForm({ type }));
-    assert.ok(
-      labels.some((l) => l.includes(label)),
-      `${type}: "${label}" renders in the inspector`
-    );
+// Coverage audit (2026-07-21), now DERIVED from the registry instead of a
+// hand-picked sample of eight (type, label) pins. The invariant is unchanged —
+// SETTINGS/CONFIG/METADATA may never rely on the bulk modal as their only
+// surface (content text may) — but it is asserted for every field of every
+// type, not one representative per group.
+//
+// The set of fields the inspector is supposed to keep is itself derived:
+// getInspectorKeepKeys returns exactly the settings/config/metadata keys for a
+// type (schema minus the inline-covered content fields). Each of those must
+// render somewhere in the inspector DOM. Iterating SLIDE_TYPES means adding or
+// removing a slide type never touches this test — removing split-partner-title
+// used to require deleting a hand-listed pin (#480). Fork/custom DB types
+// (Tier 2) are not in the static registry at test time; the "unknown custom
+// types fall back" test below covers that path, so "just iterate the core
+// registry" is the deliberate choice here.
+//
+// A few keep-fields render only once their enabling content exists: image-slide
+// zoom needs zoomSteps, and chart legend/pie/series labels are gated on
+// chartType. Those preconditions live in RENDER_PRECONDITIONS. It is NOT a
+// per-type coverage list — a type with no entry is still fully checked, and a
+// stale entry for a removed type is simply never looked up (so removal stays
+// zero-touch). A new type that ships a conditionally-rendered config field fails
+// here until it either renders unconditionally or documents its precondition —
+// the invariant doing its job, not maintenance churn.
+const RENDER_PRECONDITIONS = {
+  // Zoom level/positions only render with a selected image and zoom enabled;
+  // 'custom' is the value that also surfaces zoomPositions.
+  'image-slide': [
+    {
+      content: { image: '/a.jpg', alt: 'a', zoomSteps: 'custom' },
+      selectedElement: { kind: 'image', idx: 0 },
+    },
+  ],
+  // No single chart type shows all config: pie carries pieLabelMode + legend,
+  // line carries the series labels. Two states cover the eight chart keeps.
+  'chart-slide': [{ content: { chartType: 'pie' } }, { content: { chartType: 'line' } }],
+};
+
+test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
+  for (const [type, def] of Object.entries(SLIDE_TYPES)) {
+    const keepKeys = getInspectorKeepKeys(type, def);
+    if (!keepKeys.size) continue;
+    const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
+    // A keep-field may surface in the no-selection view, the selected-image
+    // element tab, or the selected-card element tab; gather labels from all.
+    const states = [
+      { type },
+      { type, selectedElement: { kind: 'image', idx: 0 } },
+      { type, selectedElement: { kind: 'card', idx: 0 } },
+      ...(RENDER_PRECONDITIONS[type] || []).map((s) => ({ type, ...s })),
+    ];
+    const rendered = new Set(states.flatMap((s) => fieldLabels(renderForm(s))));
+    for (const key of keepKeys) {
+      const label = (fieldByKey.get(key)?.label || key).toLowerCase();
+      assert.ok(
+        [...rendered].some((l) => l.includes(label)),
+        `${type}: keep-field "${key}" (label "${label}") must render in the inspector, not only in the bulk modal`
+      );
+    }
   }
 });
 
