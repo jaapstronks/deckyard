@@ -3,7 +3,7 @@
 How Deckyard keeps one customer's decks away from another's, and which
 deployment shapes are supported. Verified against HEAD on 2026-07-23; hosting
 shapes and roadmap updated 2026-07-25; the request-to-organization binding
-updated 2026-07-25; the organization-UI status updated 2026-07-30.
+updated 2026-07-25; the organization UI completed and written up 2026-07-31.
 
 ## The supported model: the tenant boundary is the infrastructure
 
@@ -125,8 +125,8 @@ said the identity and org-filtering work belonged to a future SaaS track. That i
 no longer true: the work is active, and it is not for a SaaS.)*
 
 Two pieces had to be built before one managed instance could serve several
-organizations. Both are in place; what is still missing is listed under
-*What is not done yet* below.
+organizations, and a UI on top of them. All three are in place; what is still
+missing is listed under *What is not done yet* below.
 
 - **Organisation-independent identity — done.** Authentication resolves a person
   by their globally unique `users.email`, with no organization filter, through
@@ -288,20 +288,63 @@ None of these affects shapes 1-3, and none is a prerequisite for them: a
 dedicated instance stays safe because its tenant boundary is the deploy itself.
 External email leaks were closed separately (PR #214).
 
+### The organization UI — done
+
+There is a screen for every organization-level thing a person can do, and each
+one draws the rule its route enforces rather than a wider or narrower one:
+
+- **Switching** — the organizations you belong to sit in the user menu, with the
+  active one marked. Switching writes the session cookie and reloads the page in
+  full, because a cache that survives the switch is a cross-organization leak in
+  the UI rather than a performance win. The section hides itself entirely below
+  two organizations, and in single-workspace mode it issues no request at all.
+- **Who may see an admin screen** follows the role held in the *active*
+  organization (`organizationRole` on `GET /api/auth/me`), not the instance-wide
+  `isAdmin`. An admin in one organization who switches into another where they
+  are a plain member loses the admin surfaces with the switch. The designer
+  capability works the same way: the instance-admin short-circuit in
+  `server/utils/designer.js` and `canManage()` applies only when multi-workspace
+  is off, so in multi-workspace mode the membership decides.
+- **Members** — the Users tab lists the members of the active organization with
+  role, designer flag and join date, paged, and carries the mutations: change a
+  role, remove someone, leave, hand the organization over. It is open to every
+  member, read-only below admin — a plain member's own *Leave* button lives
+  there, and gating the tab on admin put it out of reach of exactly the people
+  who need it.
+- **Inviting** — a modal above that list. The role choice exists only for the
+  owner, because the route caps an admin at `member`; the report distinguishes
+  *added* (the account existed) from *invited* (a setup link went out) from
+  *created* (the account was made but no mail could be sent).
+- **The organization profile** — name, display name, description and logo, with
+  deletion for the owner. Readable by every member, writable by admin and owner,
+  and deletion asks the owner to type the organization's name: `organizations`
+  is the parent of nearly every table with `ON DELETE CASCADE`, so that one
+  click takes the whole workspace with it for everyone in it.
+
+The admin Users routes act in the session's organization as well
+(`routes/api/admin-users.js`); the last `getDefaultOrganizationId()` there, which
+listed and wrote against the instance default no matter which organization the
+admin had switched into, is gone. Pinned by
+`tests/admin-users-organization-scope.test.js`.
+
 ### What is not done yet
 
-- **The organization UI is half built.** Landed: the switcher in the user menu,
-  admin screens gated on the membership role rather than the instance-wide admin
-  flag, and the Users tab showing the members of the *active* organization with
-  their actions — change a role, remove someone, leave, hand the organization
-  over — paged, and with the organization-settings keys gated on organization
-  admin as well as instance admin. Missing: the **invite flow** (the API accepts
-  an invitation; there is no screen for it), the **organization profile** screen,
-  and the last `getDefaultOrganizationId()` in `routes/api/admin-users.js`.
-- **A plain member cannot reach their own Leave button.** The Users tab sits
-  behind the admin gate, so the row a member would act on is drawn correctly but
-  shown to nobody below admin. It is the tab's visibility rule that has to move,
-  not the button.
+- **Ownership and access control still key on email strings**, not on
+  `users.id`. Every authorization decision in
+  `server/utils/presentation-authz/` compares `pres.ownerEmail` / `pres.createdBy`
+  against the session's email, and the collaborator, comment and lock tables do
+  the same. That is a decoupling epic of its own, not organization work, and it
+  is what stands between the current state and pointing two *unrelated*
+  customers at one instance. The narrow leaks it started from were closed
+  separately (PR #214).
+- **`AUTH_DEV_BYPASS` and multi-workspace do not mix.** The bypass pins
+  `organizationId` on the default organization and ignores the session cookie
+  (`server/auth/auth.js`), so there is no membership to read a role or a designer
+  flag from. Every organization-dependent flow therefore needs a real login to
+  verify locally; a bypass session in multi-workspace mode sees the designer tabs
+  disappear.
 
-Until that is closed, shape 4 stays *in development*: usable to build against,
-not something to point two unrelated customers at.
+Shape 4 stays *in development* on those grounds, not on missing UI: the
+isolation it offers is code-enforced, and the identity epic above is the
+remaining structural gap. Shapes 1-3 are unaffected — their tenant boundary is
+the deploy itself.
