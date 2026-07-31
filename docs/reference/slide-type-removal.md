@@ -100,6 +100,15 @@ Where the type has a successor with the same field schema, the honest answer is
 step 0 below; where it has none, the tombstone plus the archived-slide render is
 what stored decks fall back on.
 
+The `lijstje-slide` rename is the hard number behind that rule. Upstream's own
+stores were clean and the alias was assumed to be barely used; the fork ran the
+rename against its production Postgres on 2026-07-31 and found **45 of 118
+decks / 565 slides** still carrying the old name, plus 28 version snapshots /
+127 slides. Shipping rung 3 without the migration would have turned those 565
+slides into *archived* placeholders in a live deployment. The scan that said
+"clean" was not wrong — it was answering about a store that had never seen those
+decks.
+
 Then, in rough dependency order:
 
 0. **If the type has a successor, ship a numbered DB migration** in
@@ -231,8 +240,13 @@ it reports a meaningless clean scan — the #464 trap. Scanning the DB directly
 / 7 slides** still carrying the type, all dev/test decks ("Split check", "SP
 deckyard", "SP before", "SP sandbox-sage"). So the "probably zero decks"
 assumption was wrong for this store; the render contract (`unresolved.js`)
-degrades them to archived slides, and any **production** store must still be
-scanned before this ships.
+degrades them to archived slides.
+
+The **production** scan this removal owed ran on slides.ciiic.nl on 2026-07-31:
+**2 presentations / 1 slide each**, both throwaway test decks ("test",
+"welkokm"), and nothing in `presentation_versions` or `slide_library`. So no
+real deck degrades and the removal ships without a conversion migration —
+unlike `lijstje-slide`, where the same production store held 565 slides.
 
 **28 files, 472 deletions.** Grouped by *why*:
 

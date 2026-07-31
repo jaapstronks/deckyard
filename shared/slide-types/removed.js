@@ -82,6 +82,11 @@ export const REMOVED_SLIDE_TYPES = {
       'definition and stood beside each other in the picker. Rung 3 drops the ' +
       'Dutch alias; every stored deck is renamed to `list-slide` (a lossless ' +
       'rename — same field schema, only the `type` string changes).',
+    // Production scan, slides.ciiic.nl, 2026-07-31 (Postgres): 45 of 118
+    // presentations / 565 slides still carried the old name, plus 28 version
+    // snapshots / 127 slides; slide_library and comments were clean. Without
+    // the rename those 565 slides would have rendered as *archived*. A second
+    // dry-run after the real run reported 0 everywhere (idempotent).
     migration:
       'server/db/migrations/056_rename_lijstje_slide_to_list_slide.js',
     allowedReferences: {
@@ -105,8 +110,10 @@ export const REMOVED_SLIDE_TYPES = {
       'reusable editorial components rather than a bespoke type.',
     // No conversion migration: the render contract (unresolved.js) degrades
     // stored decks to an archived slide with content visible. The Postgres scan
-    // on 2026-07-30 found 4 dev decks / 7 slides still carrying it; production
-    // stores must be scanned before this ships (see removal PR).
+    // on 2026-07-30 found 4 dev decks / 7 slides still carrying it. The
+    // production scan the removal PR owed (slides.ciiic.nl, 2026-07-31) found
+    // 2 presentations / 1 slide each, both throwaway test decks, and nothing in
+    // presentation_versions or slide_library — so no real deck degrades.
     migration: null,
     allowedReferences: {
       'server/db/migrations/020_rename_subtitle_to_subheading.js':
