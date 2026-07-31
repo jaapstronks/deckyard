@@ -80,11 +80,23 @@ export function showAddModal(onSuccess) {
     status.textContent = t('admin.users.addModal.adding', 'Adding...');
 
     try {
-      await api('/api/admin/users', {
+      const created = await api('/api/admin/users', {
         method: 'POST',
         body: { email, name, role, sendInvitation },
       });
-      toast.success(t('admin.users.addModal.success', 'User added successfully.'));
+      // The account exists either way; the mail is a separate outcome the
+      // route now reports honestly. Saying "added" and nothing else would
+      // leave the admin waiting for a person who never got a setup link.
+      if (sendInvitation && !created?.invitationSent) {
+        toast.error(
+          t(
+            'admin.users.addModal.successNoEmail',
+            'User added, but the invitation email could not be sent. Check the email configuration.'
+          )
+        );
+      } else {
+        toast.success(t('admin.users.addModal.success', 'User added successfully.'));
+      }
       overlay.remove();
       onSuccess();
     } catch (e) {

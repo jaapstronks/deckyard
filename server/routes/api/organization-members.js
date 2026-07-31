@@ -180,12 +180,21 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
         return badRequest(res, 'Failed to add member');
       }
 
-      // Send invitation email if this is a new user
+      // Send invitation email if this is a new user.
+      //
+      // Awaited, and the flag comes from the result. The inviter reads
+      // `invitationSent` as "this person has a setup link in their inbox" and
+      // acts on it by not following up, so it may only be true once the mail
+      // actually went out. A missing Brevo key does not throw — sendEmail()
+      // resolves with { ok: false } — so a fire-and-forget call with a
+      // .catch() cannot see the most common failure at all, and reported a
+      // mail that no instance without email configuration ever sent.
+      let invitationSent = false;
       if (sendInvitation && invitationToken) {
         const setupUrl = buildSetupUrl(req, invitationToken);
         const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
 
-        sendUserInvitationEmail({
+        const sendResult = await sendUserInvitationEmail({
           recipientEmail: email,
           recipientName: body?.name || null,
           invitedBy: user.name || user.email,
@@ -195,7 +204,20 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
           repoRoot,
         }).catch((err) => {
           log.error('[organization-members] Failed to send invitation email:', err);
+          return { ok: false, error: String(err?.message || err) };
         });
+
+        invitationSent = sendResult?.ok === true;
+        if (!invitationSent) {
+          // The membership stands either way; only the mail is missing, and
+          // the response says so. Logged so an operator can tell a broken
+          // email configuration from a bounced address.
+          log.warn(
+            '[organization-members] Invitation email not sent to %s: %s',
+            email,
+            sendResult?.error || 'unknown error'
+          );
+        }
       }
 
       serveJson(res, 201, {
@@ -204,7 +226,7 @@ export async function handleOrganizationMembers({ repoRoot, req, res, url, authe
           user: targetUser,
           role,
           isNewUser: !!invitationToken,
-          invitationSent: sendInvitation && !!invitationToken,
+          invitationSent,
         },
       });
       return true;

@@ -6,7 +6,7 @@
 import { getUserFromRequestAsync } from '../../auth/auth.js';
 import { json, serveJson, badRequest, unauthorized, notFound, serverError, rateLimited } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
-import { createRouteContext, getClientIp } from '../../utils/context.js';
+import { createRouteContext, getClientIp, getOrgId } from '../../utils/context.js';
 import { sendUserInvitationEmail, sendActivationReminderEmail } from '../../integrations/brevo.js';
 import {
   listUsers,
@@ -26,7 +26,6 @@ import {
   addMember,
 } from '../../storage/user-organizations/index.js';
 import { getOrganizationById } from '../../storage/user-organizations/index.js';
-import { getDefaultOrganizationId } from '../../config/database.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('admin-users');
 
@@ -85,26 +84,32 @@ function buildSetupUrl(req, token) {
 }
 
 export async function handleAdminUsers({ repoRoot, req, res, url }) {
-  const ctx = createRouteContext(null);
-  ctx.repoRoot = repoRoot;
-
   // Only handle /api/admin/users routes
   if (!url.pathname.startsWith('/api/admin/users')) {
     return false;
   }
 
   // All admin routes require authentication
-  const user = await getUserFromRequestAsync(req, ctx);
+  const user = await getUserFromRequestAsync(req, { repoRoot });
   if (!user) {
     return unauthorized(res, 'Authentication required');
   }
 
-  // All admin routes require admin role
+  // All admin routes require admin role. This is the instance-wide flag on
+  // purpose: these routes create and delete accounts on the instance, which is
+  // not a per-organization power.
   if (!user.isAdmin) {
     return unauthorized(res, 'Admin access required');
   }
 
-  ctx.actorEmail = user.email;
+  // Which organization those accounts belong to *is* per-organization, so the
+  // context comes from the session rather than from the instance default.
+  // Built from `user` rather than from `null`: an admin who switched
+  // workspaces used to list, create and enrich users against the default
+  // organization no matter which one they were looking at. Single-workspace
+  // installations are unaffected — there the session's organization is the
+  // default one.
+  const ctx = createRouteContext(user, { repoRoot });
 
   // ============================================================
   // GET /api/admin/users - List all users
@@ -114,7 +119,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       const users = await listUsers(ctx);
 
       // Enrich users with designer status from their org membership
-      const orgId = getDefaultOrganizationId();
+      const orgId = getOrgId(ctx);
       const org = await getOrganizationById(orgId).catch(() => null);
       const orgSettings = org?.settings && typeof org.settings === 'object' ? org.settings : {};
 
@@ -178,14 +183,19 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
         metadata: { createdBy: user.email, role },
       });
 
-      // Send invitation email if requested
+      // Send invitation email if requested. Awaited, and the flag follows the
+      // result: sendEmail() reports a missing Brevo key by resolving with
+      // { ok: false } rather than throwing, so reporting the *request* to send
+      // promised a mail that an instance without email configuration never
+      // sent. See the same correction in routes/api/organization-members.js.
+      let invitationSent = false;
       if (sendInvitation && result.invitationToken) {
         const setupUrl = buildSetupUrl(req, result.invitationToken);
 
         // Get default locale for invitations
         const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
 
-        sendUserInvitationEmail({
+        const sendResult = await sendUserInvitationEmail({
           recipientEmail: email,
           recipientName: name,
           invitedBy: user.name || user.email,
@@ -195,13 +205,23 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
           repoRoot,
         }).catch((err) => {
           log.error('[admin-users] Failed to send invitation email:', err);
+          return { ok: false, error: String(err?.message || err) };
         });
+
+        invitationSent = sendResult?.ok === true;
+        if (!invitationSent) {
+          log.warn(
+            '[admin-users] Invitation email not sent to %s: %s',
+            email,
+            sendResult?.error || 'unknown error'
+          );
+        }
       }
 
       serveJson(res, 201, {
         ok: true,
         user: result.user,
-        invitationSent: sendInvitation,
+        invitationSent,
       });
       return true;
     } catch (err) {
@@ -273,7 +293,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
           return notFound(res);
         }
 
-        const orgId = getDefaultOrganizationId();
+        const orgId = getOrgId(ctx);
         let membership = await getMembershipByEmail(targetUser.email, orgId);
 
         // Auto-create membership if user doesn't have one yet
@@ -364,6 +384,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
       }
 
       const targetUser = await getUserById(userId, ctx);
+      let invitationSent = false;
       if (targetUser && result.invitationToken) {
         const setupUrl = buildSetupUrl(req, result.invitationToken);
 
@@ -371,7 +392,7 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
         const locale = await getEmailDefaultLocale(repoRoot).catch(() => 'en');
 
         // Use activation reminder template since this is a resend
-        sendActivationReminderEmail({
+        const sendResult = await sendActivationReminderEmail({
           recipientEmail: targetUser.email,
           recipientName: targetUser.name,
           invitedBy: user.name || user.email,
@@ -380,10 +401,24 @@ export async function handleAdminUsers({ repoRoot, req, res, url }) {
           repoRoot,
         }).catch((err) => {
           log.error('[admin-users] Failed to send activation reminder email:', err);
+          return { ok: false, error: String(err?.message || err) };
         });
+
+        invitationSent = sendResult?.ok === true;
+        if (!invitationSent) {
+          log.warn(
+            '[admin-users] Activation reminder not sent to %s: %s',
+            targetUser.email,
+            sendResult?.error || 'unknown error'
+          );
+        }
       }
 
-      serveJson(res, 200, { ok: true, invitationSent: true });
+      // The token was rotated whatever happened to the mail, so this is a
+      // success with a caveat rather than a failure — the caller decides what
+      // to say about it. "Resent" without the caveat is what sent an admin
+      // away believing a link was on its way.
+      serveJson(res, 200, { ok: true, invitationSent });
       return true;
     } catch (err) {
       log.error('[admin-users] Failed to resend invitation:', err);

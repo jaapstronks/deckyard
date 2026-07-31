@@ -64,8 +64,20 @@ export async function resendInvitation(targetUser, btn) {
   btn.textContent = t('admin.users.invitationSending', 'Sending…');
 
   try {
-    await api(`/api/admin/users/${targetUser.id}/resend-invitation`, { method: 'POST' });
-    toast.success(t('admin.users.invitationSent', 'Invitation sent.'));
+    const res = await api(`/api/admin/users/${targetUser.id}/resend-invitation`, { method: 'POST' });
+    // A resend rotates the setup token whether or not the mail leaves the
+    // instance, so a 200 is not the same as "it arrived". The route reports
+    // the send itself, and only that may be called sent.
+    if (res?.invitationSent) {
+      toast.success(t('admin.users.invitationSent', 'Invitation sent.'));
+    } else {
+      toast.error(
+        t(
+          'admin.users.invitationNotSent',
+          'A new setup link was created, but the email could not be sent. Check the email configuration.'
+        )
+      );
+    }
   } catch (e) {
     toast.error(e.message || t('admin.users.invitationError', 'Failed to send invitation.'));
   } finally {

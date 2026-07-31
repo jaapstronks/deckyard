@@ -18,15 +18,19 @@ validation/iteration, and an MCP server with 27 tools + SSE transport.
   `docs/reference/`.
 - This is a direction, not a contract — priorities shift as the project learns.
 
-## Now — organizations on one instance
+## Now
 
-- **Organizations** — several organizations can share one instance, with
-  identity resolved independently of any single organization and every
-  presentation query, authorization branch and route context scoped to the
-  organization the session actually works in. The backend has landed; the
-  management UI (organization switcher, member management, invitations) is what
-  remains. How isolation works is documented in
-  [`docs/reference/tenant-isolation.md`](docs/reference/tenant-isolation.md).
+_Nothing is in active development at the moment. The next project starts from
+**Next** below._
+
+_The organizations project that stood here has shipped: several organizations
+can share one instance, with identity resolved independently of any single
+organization, every presentation query, authorization branch and route context
+scoped to the organization the session actually works in, and a management UI on
+top of it — an organization switcher, member management with invitations, and an
+organization profile. What that leaves open, and why the shape is still marked
+in development, is documented in
+[`docs/reference/tenant-isolation.md`](docs/reference/tenant-isolation.md)._
 
 _The UX improvement track that stood here (from the 2026-07-10 UX research) has
 shipped its bulk: i18n & copy cleanup, onboarding & discoverability, the
