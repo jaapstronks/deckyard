@@ -1,5 +1,6 @@
 /**
- * Tests for the slide-type identity model (`namespace/name[@version]`).
+ * Tests for the slide-type identity model: the canonical reverse-DNS id, and
+ * the `namespace/name[@version]` and bare-name spellings that stay valid.
  *
  * Run with: node --test tests/slide-type-id.test.js
  */
@@ -9,9 +10,12 @@ import assert from 'node:assert';
 
 import {
   CORE_NAMESPACE,
+  CORE_AUTHORITY,
   parseTypeId,
   tryParseTypeId,
   formatTypeId,
+  formatCanonicalId,
+  canonicalTypeName,
   isCoreNamespace,
   toStorageType,
   sameType,
@@ -62,6 +66,96 @@ describe('parseTypeId', () => {
     assert.throws(() => parseTypeId('/hero'));
     assert.throws(() => parseTypeId('acme/hero@')); // empty version
     assert.throws(() => parseTypeId('-bad/name')); // leading hyphen
+  });
+
+  it('parses a reverse-DNS id, folding the core authority back to core', () => {
+    assert.deepEqual(parseTypeId(`${CORE_AUTHORITY}.title`), {
+      namespace: CORE_NAMESPACE,
+      name: 'title',
+      version: null,
+    });
+    assert.deepEqual(parseTypeId(`${CORE_AUTHORITY}.title@2`), {
+      namespace: CORE_NAMESPACE,
+      name: 'title',
+      version: '2',
+    });
+    assert.deepEqual(parseTypeId(`${CORE_AUTHORITY}/title`), {
+      namespace: CORE_NAMESPACE,
+      name: 'title',
+      version: null,
+    });
+  });
+
+  it('parses a third-party reverse-DNS id, authority intact', () => {
+    assert.deepEqual(parseTypeId('nl.ciiic.slide.hero'), {
+      namespace: 'nl.ciiic.slide',
+      name: 'hero',
+      version: null,
+    });
+    assert.deepEqual(parseTypeId('nl.ciiic.slide/hero'), {
+      namespace: 'nl.ciiic.slide',
+      name: 'hero',
+      version: null,
+    });
+  });
+
+  it('refuses a two-label dotted id — an authority needs two labels', () => {
+    // Otherwise `a.b` is ambiguous: authority `a` plus name `b`, or a
+    // one-label authority that is really just a name with a dot in it.
+    assert.throws(() => parseTypeId('a.b'));
+    assert.throws(() => parseTypeId('eu.deckyard'));
+    assert.throws(() => parseTypeId('a..b'));
+    assert.throws(() => parseTypeId('.a.b'));
+    assert.throws(() => parseTypeId('a.b.'));
+  });
+});
+
+describe('canonicalTypeName', () => {
+  it('drops the historical -slide suffix, and is idempotent', () => {
+    assert.equal(canonicalTypeName('title-slide'), 'title');
+    assert.equal(canonicalTypeName('custom-html-slide'), 'custom-html');
+    assert.equal(canonicalTypeName('title'), 'title');
+    assert.equal(canonicalTypeName(canonicalTypeName('end-slide')), 'end');
+  });
+  it('leaves a name that is only the suffix alone', () => {
+    assert.equal(canonicalTypeName('-slide'), '-slide');
+    assert.equal(canonicalTypeName(''), '');
+  });
+});
+
+describe('formatCanonicalId', () => {
+  it('gives a core type the core authority, suffix dropped', () => {
+    assert.equal(
+      formatCanonicalId({ namespace: CORE_NAMESPACE, name: 'title-slide' }),
+      'eu.deckyard.slide.title'
+    );
+    assert.equal(formatCanonicalId({ name: 'end-slide' }), 'eu.deckyard.slide.end');
+    assert.equal(
+      formatCanonicalId({ namespace: CORE_NAMESPACE, name: 'title-slide', version: '2' }),
+      'eu.deckyard.slide.title@2'
+    );
+  });
+  it('keeps a declared authority and leaves its names alone', () => {
+    // The suffix rule is a fact about core's own key history, not a rule we
+    // impose on anyone else's naming.
+    assert.equal(
+      formatCanonicalId({ namespace: 'nl.ciiic.slide', name: 'hero-slide' }),
+      'nl.ciiic.slide.hero-slide'
+    );
+  });
+  it('falls back to the slash form without an authority to build on', () => {
+    assert.equal(formatCanonicalId({ namespace: 'acme', name: 'hero' }), 'acme/hero');
+    assert.equal(formatCanonicalId({ namespace: 'custom', name: 'x', version: '3' }), 'custom/x@3');
+  });
+  it('round-trips through parseTypeId', () => {
+    for (const ref of [
+      'eu.deckyard.slide.title',
+      'eu.deckyard.slide.title@2.1',
+      'nl.ciiic.slide.hero',
+      'acme/hero',
+    ]) {
+      assert.equal(formatCanonicalId(parseTypeId(ref)), ref);
+    }
   });
 });
 
@@ -121,6 +215,15 @@ describe('sameType', () => {
   it('ignores version when comparing identity', () => {
     assert.equal(sameType('acme/hero@1', 'acme/hero@2'), true);
     assert.equal(sameType('title-slide', 'core/title-slide'), true);
+  });
+  it('treats all three core spellings as one type', () => {
+    assert.equal(sameType('title-slide', 'eu.deckyard.slide.title'), true);
+    assert.equal(sameType('eu.deckyard.slide.title', 'core/title'), true);
+    assert.equal(sameType('title', 'title-slide'), true);
+    assert.equal(sameType('title-slide', 'eu.deckyard.slide.quote'), false);
+  });
+  it('does not apply the suffix rule outside core', () => {
+    assert.equal(sameType('acme/hero', 'acme/hero-slide'), false);
   });
   it('distinguishes namespace and name', () => {
     assert.equal(sameType('acme/hero', 'other/hero'), false);

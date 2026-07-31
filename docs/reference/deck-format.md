@@ -21,7 +21,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "version": 1,
   "title": "My deck",
   "theme": "default",
-  "slideTypes": { "title-slide": "core/title-slide" },
+  "slideTypes": { "title-slide": "eu.deckyard.slide.title" },
   "slides": [
     { "type": "title-slide", "content": { "title": "Hello", "background": "lime" } }
   ]
@@ -34,7 +34,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 | `version`    | integer  | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)). |
 | `title`      | string   | Human title of the deck. |
 | `theme`      | string   | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected. |
-| `slideTypes` | object   | Identity manifest: bare type key → `namespace/name[@version]` (see below). |
+| `slideTypes` | object   | Identity manifest: stored type key → canonical reverse-DNS id (see below). |
 | `slides`     | array    | Ordered list of slides, each `{ type, content }`. |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
@@ -44,27 +44,36 @@ an older reader simply skips.
 ## `slideTypes` — the identity manifest
 
 `slideTypes` records which slide-type **definitions** a deck was written against,
-as a map of the bare type key to its qualified identity:
+as a map of the stored type key to its canonical identity:
 
 ```json
 "slideTypes": {
-  "title-slide": "core/title-slide",
-  "quote-slide": "core/quote-slide"
+  "title-slide": "eu.deckyard.slide.title",
+  "quote-slide": "eu.deckyard.slide.quote"
 }
 ```
 
-- The value is `namespace/name[@version]`. Core types resolve to the `core/`
-  namespace; a custom type carries its own namespace (e.g. `acme/hero`).
+- The value is the **canonical reverse-DNS id**, `<authority>.<name>[@version]`.
+  Core types are published under `eu.deckyard.slide`; a fork that declares its
+  own authority gets its own (`nl.ciiic.slide.hero`), and one that declares only
+  a bare namespace keeps the older slash form (`acme/hero`).
+- Two older spellings — `core/title-slide` and the bare `title-slide` — remain
+  valid **forever** and name the same type. A reader must treat them as one
+  identity; see
+  [type ids](./deck-conformance.md#type-ids-one-identity-three-spellings).
+- The `-slide` suffix is dropped from the canonical name: `slide` is already in
+  the authority, so carrying it again is redundancy paid per type.
 - It is **recomputed from the registry on every export** (never hand-maintained),
   so it cannot drift from the slides it describes. The CI fixture test asserts
   the committed example's manifest equals the recomputed one.
-- `slides[].type` stays the **bare key** for back-compat; the manifest is the
-  place a reader learns which definition/version each key needs. A qualified ref
-  in `slides[].type` (e.g. `core/title-slide`) also imports — it resolves by
-  identity, and storage keeps the bare local name.
+- `slides[].type` stays the **bare key** for back-compat — the canonical name is
+  a publishing decision, not a migration — and the manifest is where a reader
+  learns which published id and which definition/version each stored key needs.
+  Any spelling in `slides[].type` also imports: it resolves by identity, and
+  storage keeps the registry key.
 
-See [slide-type identity](../developer/slide-types.md) for the namespace/version
-model.
+See [slide-type identity](../developer/slide-types.md) for the
+namespace/authority/version model.
 
 ## Slides
 
@@ -74,7 +83,9 @@ Each slide is:
 { "type": "content-slide", "content": { "title": "Why", "body": "..." } }
 ```
 
-- **`type`** — the slide-type key (bare, or a qualified `namespace/name` ref).
+- **`type`** — the slide-type reference: the stored bare key, a qualified
+  `namespace/name` ref, or the canonical reverse-DNS id. All three resolve to
+  the same type; writers keep using the bare key.
 - **`content`** — an object whose shape is defined by that slide type's field
   registry. Absent or `""` fields mean "unset"; the importer fills type defaults
   and never blanks a required field.
@@ -102,14 +113,17 @@ the portable envelope here is the interchange projection of that model.)
 
 The same leniency applies to the two fields that used to close the schema:
 
-- **`type` is constrained by shape, not by a list.** It matches
-  `name`, `namespace/name` or `namespace/name@version` — the grammar in
-  `shared/slide-types/type-id.js`, exported as the schema's `pattern` so there
-  is one copy. A fork type, an org type or a third-party type is therefore
+- **`type` is constrained by shape, not by a list.** It matches the canonical
+  reverse-DNS id, `name`, `namespace/name` or either qualified form with
+  `@version` — the grammar in `shared/slide-types/type-id.js`, exported as the
+  schema's `pattern` so there is one copy. A fork type, an org type or a
+  third-party type is therefore
   *valid*, which is the whole point of publishing an open format; enumerating
   this install's registry keys made every such deck invalid against our own
-  spec. The per-type discrimination is unaffected: an unknown type matches no
-  `if` branch, so no content contract is demanded of it.
+  spec. The per-type discrimination is unaffected: a known type is discriminated
+  in *every* spelling of its id (so writing the canonical form never costs a
+  slide its content contract), and an unknown type matches no `if` branch, so no
+  content contract is demanded of it.
 - **`lang` is any well-formed BCP 47 tag**, not `nl` or `en-GB`. Which languages
   a given implementation *authors* in is its own product choice — Deckyard's
   editor still normalizes to two — but the format has no business deciding it.
@@ -147,6 +161,48 @@ Deliberate lossy edges (they degrade, they do not crash):
 - A **missing local asset** keeps its `/uploads/…` ref and imports as a dangling
   reference.
 
+## Evolution rule
+
+> **Within a name, only additions. A change of meaning is a change of name.**
+
+This is normative, and it applies to every published name: a slide type, a
+content key, an envelope key, an enum value.
+
+**What a producer owes.**
+
+1. A published name **MUST** keep its meaning for as long as it exists. If the
+   meaning has to change, the name changes and the old one walks the
+   [removal ladder](./slide-type-removal.md).
+2. Optional keys **MAY** be added at any time. A new **required** key **MUST
+   NOT** be added to a published type — that turns every existing deck invalid
+   retroactively, which is a rename wearing a compatible-looking hat.
+3. Widening a value space is additive (a new enum value, a new spelling of a type
+   id). **Narrowing it is not** and needs a new name.
+4. Nothing published is removed silently: a name that goes away is deprecated
+   first, and tier 1 is covered by the standing stability promise
+   ([`slide-type-tiers.md`](./slide-type-tiers.md)).
+
+**What a reader owes.**
+
+5. A reader **MUST** ignore keys it does not know, at every level (envelope,
+   slide, content, item), and **MUST NOT** reject a deck for carrying them.
+6. A reader **MUST** accept a `type` it does not know and render it per the
+   [unknown-type contract](./deck-conformance.md#the-unknown-type-contract).
+
+**Why the rule replaces migration freedom.** Deckyard has `SCHEMA_MIGRATIONS`
+(`shared/slide-types/schema-version.js`) because it owns both ends of the line:
+an old deck is read, migrated forward in memory, and written back in the current
+shape. That freedom stops at our own storage. **A reader we do not own does not
+run our migration chain** — so for anything *published*, a migration is not a
+fix, it is a break that we happen to survive. The rule is what we trade the
+freedom for, and it is worth more: it is why a reader written today still works
+in three years without tracking our releases.
+
+The form is borrowed from atproto's Lexicon, deliberately: same problem (records
+crossing a boundary between implementations that upgrade on their own schedules),
+same answer, and no reason to invent a second dialect of it. It sharpens
+`deck-format-spec-decisions.md` decision 4 rather than contradicting it.
+
 ## Versioning
 
 - `version` is the **envelope** version, bumped only for a breaking change to the
@@ -156,6 +212,10 @@ Deliberate lossy edges (they degrade, they do not crash):
   [schema versioning](../developer/slide-types.md)). A reader validates content
   against the schema version it understands; the lenient contract lets it tolerate
   newer keys.
+- A **type id's** `@version` is neither of those two: it is a hint about which
+  *definition* a deck was written against, recorded in the `slideTypes` manifest.
+  It never makes a type a different type (see the evolution rule: a real change
+  of meaning would have taken a new name).
 
 ## Legacy sentinel
 

@@ -16,6 +16,11 @@ import assert from 'node:assert/strict';
 
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import {
+  TYPE_ID_PATTERN,
+  formatCanonicalId,
+  parseTypeId,
+} from '../shared/slide-types/type-id.js';
+import {
   isAgentOptOut,
   deriveAgentSchema,
   resolveAgentSlideTypes,
@@ -206,11 +211,17 @@ test('category filter splits structural from content', () => {
 });
 
 test('every offered entry carries a canonical type id', () => {
+  // Matched against the grammar's own pattern rather than a hand-copied regex:
+  // a second copy is a second thing to forget when the grammar widens (it did,
+  // for reverse-DNS ids). Canonical means reverse-DNS, so re-formatting the
+  // parsed id has to give the same string back.
+  const re = new RegExp(TYPE_ID_PATTERN);
   for (const [name, entry] of Object.entries(resolveAgentSlideTypes({}))) {
-    assert.match(
+    assert.match(entry.typeId, re, `${name} must expose a well-formed type id`);
+    assert.equal(
+      formatCanonicalId(parseTypeId(entry.typeId)),
       entry.typeId,
-      /^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*(@[0-9A-Za-z][0-9A-Za-z.-]*)?$/,
-      `${name} must expose a namespace/name id`
+      `${name} must expose the CANONICAL id, not an older spelling`
     );
   }
 });

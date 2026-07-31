@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import { SLIDE_TYPES, getSlideTypeId } from '../shared/slide-types/registry.js';
 import { CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 import {
   fieldToJsonSchema,
@@ -162,10 +162,45 @@ test('the deck schema is self-contained and discriminates content by type', () =
   const branches = schema.$defs.slide.allOf;
   assert.equal(branches.length, names.length);
   for (const branch of branches) {
-    const constName = branch.if.properties.type.const;
+    const spellings = branch.if.properties.type.enum;
     const ref = branch.then.properties.content.$ref;
     assert.ok(schema.$defs[ref.replace('#/$defs/', '')], `dangling ref ${ref}`);
-    assert.ok(names.includes(constName));
+    // A branch fires on every spelling of one type: the stored key is always
+    // among them, and each spelling belongs to exactly one branch (otherwise
+    // two content contracts would apply to the same slide).
+    assert.ok(Array.isArray(spellings) && spellings.length, `no spellings on ${ref}`);
+    assert.equal(spellings.filter((s) => names.includes(s)).length, 1, spellings.join(','));
+  }
+  const allSpellings = branches.flatMap((b) => b.if.properties.type.enum);
+  assert.equal(
+    new Set(allSpellings).size,
+    allSpellings.length,
+    'a spelling may select only one content contract'
+  );
+});
+
+test('a canonical reverse-DNS type keeps its content contract', () => {
+  // The spelling must not decide whether the schema says anything: writing
+  // `eu.deckyard.slide.title` instead of `title-slide` is the same type, so the
+  // same content shape is demanded of it.
+  const schema = deckJsonSchema(SLIDE_TYPES);
+  const id = getSlideTypeId('title-slide');
+  assert.equal(id, 'eu.deckyard.slide.title');
+
+  for (const type of [id, 'core/title-slide', 'title', 'title-slide']) {
+    const good = deckWith({
+      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+      type,
+      content: SLIDE_TYPES['title-slide'].defaults || {},
+    });
+    assert.deepEqual(validate(schema, good, 'deck', []), [], `${type} validates`);
+
+    const bad = deckWith({
+      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+      type,
+      content: { title: 123 },
+    });
+    assert.ok(validate(schema, bad, 'deck', []).length, `${type} keeps its shape`);
   }
 });
 
@@ -231,11 +266,23 @@ test('the type pattern is the parser grammar, not a second copy of it', () => {
   assert.equal(pattern, TYPE_ID_PATTERN);
   // Whatever the parser accepts, the published schema accepts, and vice versa.
   const re = new RegExp(pattern);
-  for (const ref of ['title-slide', 'acme/hero', 'acme/hero@2.1', 'custom-x9']) {
+  for (const ref of [
+    'title-slide',
+    'acme/hero',
+    'acme/hero@2.1',
+    'custom-x9',
+    // The canonical form, and a third party's. Widening the grammar without
+    // widening the published pattern would leave every canonical id invalid
+    // against our own schema — the exact failure A8.2 removed for fork types.
+    'eu.deckyard.slide.title',
+    'eu.deckyard.slide.title@2',
+    'nl.ciiic.slide.hero',
+    'nl.ciiic.slide/hero',
+  ]) {
     assert.ok(tryParseTypeId(ref), `${ref} parses`);
     assert.ok(re.test(ref), `${ref} matches the published pattern`);
   }
-  for (const ref of ['Title', 'a b', 'a/b/c', '/x', 'x@']) {
+  for (const ref of ['Title', 'a b', 'a/b/c', '/x', 'x@', 'a.b', 'a..b', '.a.b', 'a.b.']) {
     assert.equal(tryParseTypeId(ref), null, `${ref} does not parse`);
     assert.ok(!re.test(ref), `${ref} does not match the published pattern`);
   }
