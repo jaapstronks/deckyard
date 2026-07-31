@@ -276,6 +276,25 @@ export function mergeSlideTypes(core, custom) {
   return merged;
 }
 
+/**
+ * The core names a custom map overrides (`override: true` on a name that also
+ * exists in core). A shadow without the flag is refused by mergeSlideTypes(), so
+ * it is NOT an override and is excluded here — the two functions read the same
+ * rule. Pure and order-preserving (core order), so it is unit-testable with
+ * synthetic maps the way mergeSlideTypes() is.
+ *
+ * @param {Record<string, object>} core
+ * @param {Record<string, object>} custom
+ * @returns {string[]}
+ */
+export function overriddenCoreNames(core, custom) {
+  const c = custom && typeof custom === 'object' ? custom : {};
+  return Object.keys(core).filter(
+    (name) =>
+      Object.prototype.hasOwnProperty.call(c, name) && Boolean(c[name]?.override)
+  );
+}
+
 // Merge core and custom types. Custom types are additive; a core-name collision
 // is only honoured with an explicit override flag (see mergeSlideTypes).
 const RAW_SLIDE_TYPES = mergeSlideTypes(CORE_SLIDE_TYPES, customTypes);
@@ -301,6 +320,24 @@ export const SLIDE_TYPES = Object.fromEntries(
 // not). Tooling that produces tracked artifacts (e.g. i18n extraction) skips
 // these so a locally-installed fork customization can't leak into upstream files.
 export const CUSTOM_SLIDE_TYPE_NAMES = APPLIED_CUSTOM_NAMES;
+
+/**
+ * Applied custom types whose name shadows a core type (`override: true`).
+ *
+ * These are the types with a split renderer between server and browser: the
+ * server registry holds the fork's `renderHtml`, but the browser bundles core's
+ * under the same name (`custom/slide-types/` is behind `isNode` and is not on
+ * the static allowlist), so the client would draw core's markup for a slide the
+ * server renders as the fork's. The client uses this list to route such a name
+ * through server-side rendering instead — see `overriddenCoreNames()` for the
+ * pure derivation and the render path's `needsServerRender()` for the consumer.
+ * Empty in the OSS registry; non-empty only when a fork overrides a core name.
+ * @type {string[]}
+ */
+export const OVERRIDDEN_CORE_SLIDE_TYPE_NAMES = overriddenCoreNames(
+  CORE_SLIDE_TYPES,
+  customTypes
+);
 
 // The bare core type names, in registration order. This is the fork-stable
 // count of built-in types: unlike `Object.keys(SLIDE_TYPES)`, it excludes any

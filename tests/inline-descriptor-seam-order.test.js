@@ -1,28 +1,20 @@
 /**
- * `getInlineDescriptor()` resolves core-map-first on purpose.
+ * `getInlineDescriptor()` resolves definition-first, like every companion.
  *
- * Every other companion in this family resolves definition-first — the
- * aggregator-seam rule in docs/reference/slide-type-directory.md. This lookup
- * is the one documented exception, and it has been logged as drift twice, so
- * the reasoning is pinned here rather than left to a comment.
+ * This lookup read the core map FIRST until mid-2026 — the aggregator-seam
+ * rule's one documented exception — because a fork override of a CORE NAME
+ * rendered core's markup in the browser: `custom/slide-types/` is loaded behind
+ * `isNode` and was not on the static allowlist, so `isBundledSlideType()` found
+ * core's entry and drew core's DOM. A descriptor describes the DOM, so it had to
+ * follow the renderer, and the renderer was core's.
  *
- * A descriptor is a description of the DOM, not a fact about the type: it names
- * selectors and `data-inline-field` paths that some renderer emitted. So it has
- * to follow the renderer, and in the browser the renderer for a fork type that
- * overrides a CORE NAME is still core's — `custom/slide-types/` is loaded
- * behind `isNode` and is not on the static allowlist, so `isBundledSlideType()`
- * in client/lib/slide-runtime/slide-render.js finds core's entry and renders
- * core's markup. Measured: with the fork's descriptor, 0 of 2 ghost anchors
- * resolve against that DOM; with core's, 2 of 2.
- *
- * A fork type with a NEW name is not bundled, is server-rendered from the
- * fork's own markup, and has no core entry — so the fallback fires and the seam
- * works exactly where the fork's renderer is the one that drew the slide.
- *
- * The premise test at the bottom is the one that matters: core-map-first is
- * only the same thing as renderer-first as long as every type in the core
- * descriptor map is bundled client-side. If that ever stops holding, the
- * exception loses its justification and this test says so.
+ * That split is closed (docs/plans/briefs/fork-override-renderer-reach.md): the
+ * server names its overrides in `window.__DECK_SERVER_RENDERED_TYPES__` and the
+ * client routes them through server-side rendering, so an override now draws the
+ * fork's markup in the browser too — the markup `def.inline` describes. The
+ * lookup is now definition-first, and the premise test at the bottom is the one
+ * that matters: it fails if that routing ever stops, which is the only thing
+ * that made the flip safe.
  *
  * Run with: node --test tests/inline-descriptor-seam-order.test.js
  */
@@ -35,7 +27,10 @@ import {
   getInlineDescriptor,
   getInlineFormTextKeys,
 } from '../client/views/editor/inline-edit/descriptors.js';
-import { SLIDE_TYPES } from '../shared/slide-types.js';
+import {
+  needsServerRender,
+  isServerOverriddenType,
+} from '../client/lib/slide-runtime/slide-render.js';
 
 /** A descriptor shaped like one a fork would declare on its definition. */
 const FORK_DESCRIPTOR = {
@@ -43,26 +38,34 @@ const FORK_DESCRIPTOR = {
   formText: ['headline', 'kicker', 'sponsor'],
 };
 
-test('a fork override of a core name does NOT displace the core descriptor', () => {
+test('a fork override of a core name gets its OWN descriptor (definition-first)', () => {
   const type = 'title-slide';
   const core = INLINE_DESCRIPTORS[type];
   assert.ok(core, 'fixture assumes title-slide has a core descriptor');
 
   // The definition the editor holds is the /api/slide-types entry, which for an
-  // override type carries the fork's `inline` verbatim.
+  // override type carries the fork's `inline` verbatim. In the browser that
+  // slide is now server-rendered from the fork's markup, so the fork's
+  // descriptor is the one that matches the DOM.
   const def = { inline: FORK_DESCRIPTOR };
 
   assert.equal(
     getInlineDescriptor(type, def),
-    core,
-    'core wins: the browser renders core markup for a bundled name, so the ' +
-      'descriptor must describe core markup'
+    FORK_DESCRIPTOR,
+    'the fork markup is what the browser draws for an override, so the fork ' +
+      'descriptor must win over core'
   );
-  assert.deepEqual(
-    getInlineFormTextKeys(type, def),
-    core.formText,
-    'the inspector must be told what the canvas can actually edit'
-  );
+  assert.deepEqual(getInlineFormTextKeys(type, def), FORK_DESCRIPTOR.formText);
+});
+
+test('a core type with no override falls through to the core descriptor', () => {
+  // Core defs carry no `inline`, so definition-first resolves to the aggregator
+  // entry — core's own markup, drawn by core's bundled renderer.
+  const type = 'title-slide';
+  const core = INLINE_DESCRIPTORS[type];
+  assert.equal(getInlineDescriptor(type, { inline: undefined }), core);
+  assert.equal(getInlineDescriptor(type, {}), core);
+  assert.deepEqual(getInlineFormTextKeys(type, {}), core.formText);
 });
 
 test('a fork type with a new name still gets its own descriptor', () => {
@@ -82,18 +85,38 @@ test('a type nobody describes resolves to null, not a throw', () => {
   assert.deepEqual(getInlineFormTextKeys('acme-hero', {}), []);
 });
 
-test('the premise: every core descriptor belongs to a type the client bundles', () => {
-  // If a descriptor ever lands on a type the browser cannot render itself, that
-  // type is server-rendered — and then core-map-first stops meaning
-  // renderer-first, which is the entire justification for the exception.
-  const unbundled = Object.keys(INLINE_DESCRIPTORS).filter(
-    (type) => typeof SLIDE_TYPES[type]?.renderHtml !== 'function'
-  );
-  assert.deepEqual(
-    unbundled,
-    [],
-    'these types have a core descriptor but no client-side renderer, so the ' +
-      'core-first exception no longer holds for them — see ' +
-      'docs/reference/slide-type-directory.md, "The one exception"'
-  );
+test('the premise: a fork override of a core name is routed to server rendering', () => {
+  // Definition-first is only correct as long as an override's renderer reaches
+  // the browser. The server signals that per name in a head global; the render
+  // path reads it and forces server rendering even though the name is bundled.
+  // If that ever stops, the browser draws core's markup again and def.inline
+  // stops describing the DOM — so this is the load-bearing invariant.
+  const hadWindow = typeof globalThis.window !== 'undefined';
+  const prevWindow = globalThis.window;
+  try {
+    globalThis.window = {
+      ...(hadWindow ? prevWindow : {}),
+      __DECK_SERVER_RENDERED_TYPES__: ['title-slide'],
+    };
+
+    assert.equal(
+      isServerOverriddenType('title-slide'),
+      true,
+      'the head global names title-slide as a fork override'
+    );
+    assert.equal(
+      needsServerRender('title-slide'),
+      true,
+      'a bundled core name the server overrides must still be server-rendered, ' +
+        'so the browser draws the fork markup def.inline describes'
+    );
+    assert.equal(
+      needsServerRender('content-slide'),
+      false,
+      'a core name the fork did NOT override stays client-rendered'
+    );
+  } finally {
+    if (hadWindow) globalThis.window = prevWindow;
+    else delete globalThis.window;
+  }
 });

@@ -10,6 +10,25 @@ import { isRssFeedEnabled } from '../../config/features.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
 import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
+import { OVERRIDDEN_CORE_SLIDE_TYPE_NAMES } from '../../../shared/slide-types.js';
+
+/**
+ * Inline-script fragment naming the core slide types a fork has overridden by
+ * name (`override: true`). The browser bundles core's renderer under those
+ * names, so without this it would draw core's markup for a slide the server
+ * renders as the fork's; the client render path reads this global and routes
+ * those names through server-side rendering instead. Empty in the OSS build —
+ * returns `''` so no script and no global appear unless a fork actually
+ * overrides something. Names are registry keys (kebab-case), safe to inline.
+ * @returns {string}
+ */
+function serverRenderedTypesHeadHtml() {
+  const names = OVERRIDDEN_CORE_SLIDE_TYPE_NAMES;
+  if (!Array.isArray(names) || names.length === 0) return '';
+  return `<script>window.__DECK_SERVER_RENDERED_TYPES__=${JSON.stringify(
+    names
+  )};</script>`;
+}
 
 /** Read the SPA shell (client/index.html). */
 export async function readIndexHtml(clientDir) {
@@ -36,6 +55,14 @@ export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
       '</head>',
       `  <script>window.__DEBUG_LOG__=true;</script>\n</head>`
     );
+  }
+  // Fork override → server render. Present only when a fork overrides a core
+  // name; injected here so every SPA render context (editor, presenter, notes,
+  // follow) and the share-link viewer — both go through this helper — see it
+  // before the app JS runs, with no per-view wiring and no extra fetch.
+  const serverRenderedTypes = serverRenderedTypesHeadHtml();
+  if (serverRenderedTypes) {
+    html = html.replace('</head>', `  ${serverRenderedTypes}\n</head>`);
   }
   const appSettings = await getAppSettings(repoRoot);
   const analytics = analyticsHeadHtml({
