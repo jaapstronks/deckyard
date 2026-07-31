@@ -55,10 +55,36 @@ test('newSlide without a theme creates a title slide with no background', () => 
   assert.ok(!slide.content.bgImage);
 });
 
-test('newSlide still works for every type without a theme', () => {
-  // Guards the `theme` parameter default — this used to take no theme at all.
-  for (const type of ['title-slide', 'content-slide', 'quote-slide']) {
-    assert.doesNotThrow(() => newSlide({ type }));
+test('newSlide works for every registered type without a theme, and none seed a background', () => {
+  // Two invariants over the whole registry, replacing a three-type sample:
+  //  1. the `theme` parameter default holds — newSlide never throws without a
+  //     theme (it used to take no theme at all);
+  //  2. no type hands ITSELF a background without a theme asking for it. This
+  //     generalises the split-partner regression: that type had a hardcoded
+  //     Deckyard demo photo as both its field default and render fallback, so a
+  //     new slide always wore stock imagery. #480 removed the per-type assertion
+  //     with the type; here it becomes one registry-wide guard, so any future
+  //     type reintroducing a hardcoded background — demo photo or otherwise —
+  //     fails without anyone hand-listing it.
+  //
+  // Background is bgImage (legacy) / slideBgImage (canonical). This does NOT
+  // forbid demo photos outright: gallery-slide seeds the four demo photos as
+  // sample *content* images (its images[] array), which is intentional and is
+  // not a background — hence the check targets the background keys, not a blanket
+  // scan of content. Types declaring autoBackgroundPreset still pass: without a
+  // theme pickBackgroundPreset() returns '' (see the presets tests above).
+  //
+  // Iterating SLIDE_TYPES keeps this zero-touch when a type is added or removed;
+  // fork/custom DB types (Tier 2) are not in the static registry at test time
+  // and are out of scope here by the same choice as the rest of this suite.
+  const { SLIDE_TYPES } = SlideTypes;
+  for (const type of Object.keys(SLIDE_TYPES)) {
+    let slide;
+    assert.doesNotThrow(() => {
+      slide = newSlide({ type });
+    }, `${type}: newSlide throws without a theme`);
+    assert.ok(!slide.content.slideBgImage, `${type}: no slideBgImage seeded without a theme`);
+    assert.ok(!slide.content.bgImage, `${type}: no bgImage seeded without a theme`);
   }
 });
 
