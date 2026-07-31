@@ -227,6 +227,17 @@ export const INVENTORY = {
       'editing descriptor). Regenerating it is the only way to change it, so it ' +
       'cannot drift from the per-type sources it imports.',
   },
+  'shared/slide-types/tiers.js': {
+    kind: specific,
+    gate: 'tests/slide-type-tiers.test.js',
+    why:
+      'CORE_PROFILE — the nine tier-1 names. Deliberately a closed set, and the ' +
+      'one list here a new type must never join by default: adding a type adds ' +
+      'a tier-2 name, and widening the normative profile is a spec decision the ' +
+      'gate pins by value. The obligation a new type does carry — declaring a ' +
+      '`fallback` into the profile — lives on its own definition, so this module ' +
+      'reads the declaration rather than tabulating it and cannot go stale.',
+  },
 
   // --- the companions proper: gated by the matrix ---------------------------
   'client/views/editor/slide-type-picker/data.js': {
