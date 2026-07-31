@@ -161,42 +161,40 @@ import { SLIDE_TYPE_INLINE_EDIT } from '../../../../shared/slide-types/inline-ed
 export const INLINE_DESCRIPTORS = { ...SLIDE_TYPE_INLINE_EDIT };
 
 /**
- * Resolve the inline descriptor for a slide type. The core map wins; a type
- * without a core entry falls back to an `inline` descriptor declared on the
- * slide-type definition itself. That is the extension seam for custom slide
- * types (custom/slide-types/*.js in forks): declare `inline: { ghosts, cards,
- * formText, ... }` on the definition and it arrives here via /api/slide-types
- * - no core file needs editing. Same seam philosophy as the MCP custom-tools
- * hook. Note a definition-declared descriptor is JSON, so function-valued
- * options (addPlacement as a function) are core-map-only.
+ * Resolve the inline descriptor for a slide type. Definition first, core
+ * aggregator second — like every other companion in this family
+ * (slideTypeInspectorKeeps, slideTypeGroup, …), and per rule 1 of the
+ * aggregator-seam rule in docs/reference/slide-type-directory.md.
  *
- * ## Why core first, against the aggregator-seam rule
+ * The definition's own `inline` descriptor is the extension seam for custom
+ * slide types (custom/slide-types/*.js in forks): declare `inline: { ghosts,
+ * cards, formText, ... }` on the definition and it arrives here via
+ * /api/slide-types — no core file needs editing. Same seam philosophy as the
+ * MCP custom-tools hook. A definition-declared descriptor is JSON, so
+ * function-valued options (addPlacement as a function) stay core-map-only.
  *
- * Every other companion resolves definition-first (slideTypeInspectorKeeps,
- * slideTypeGroup, …): the definition as it exists at runtime is asked before
- * core's generated aggregator. This one is deliberately the other way round,
- * and it is the seam rule's one documented exception - see
- * docs/reference/slide-type-directory.md, "The one exception: the inline
- * descriptor".
+ * ## Why definition-first is now correct
  *
  * A descriptor is not a fact about the type, it is a description of the DOM the
  * type's renderer emits: `.title`, `.tsu-content`, `data-inline-field="meta"`.
- * So it has to agree with whichever renderer actually drew the slide, and in
- * the browser that is not always the fork's. `custom/slide-types/` is loaded by
- * node only (registry.js gates on `isNode`) and is not on the static allowlist
- * (server/config/paths.js serves `custom/assets/` and `custom/themes/`, not
- * `custom/slide-types/`), so a fork type that overrides a CORE NAME is still
- * bundled under that name client-side - `isBundledSlideType()` in
- * client/lib/slide-runtime/slide-render.js finds core's entry and renders
- * core's markup. Reading `def.inline` first would then point every ghost anchor
- * and every formText key at elements that are not in the document.
+ * So it has to agree with whichever renderer actually drew the slide. This
+ * lookup used to read core first, as the seam rule's one documented exception,
+ * because a fork override of a CORE NAME rendered core's markup in the browser
+ * (`custom/slide-types/` was server-only), so `def.inline` would have pointed
+ * every anchor at elements that were not in the document.
  *
- * A fork type with a NEW name is not bundled, gets server-rendered (the fork's
- * own markup), and has no core entry - so the fallback below fires and the seam
- * works exactly where the fork's renderer is the one that drew the slide.
- * Net: this lookup is renderer-first, and in the browser the renderer
- * precedence happens to be core-first. Flip it the day an override type's
- * renderer reaches the browser, not before.
+ * That gap is closed: the server now names its overrides in a head global and
+ * the client routes them through server-side rendering (see
+ * `needsServerRender()` in client/lib/slide-runtime/slide-render.js and
+ * docs/plans/briefs/fork-override-renderer-reach.md), so the browser draws the
+ * fork's markup for an override — the markup `def.inline` describes. Every
+ * population now agrees:
+ *   - core type, not overridden → core markup; core defs carry no `inline`, so
+ *     this falls through to the aggregator (core's descriptor). ✓
+ *   - fork override of a core name → the fork's server-rendered markup, and
+ *     `def.inline` is the fork's descriptor for it. ✓
+ *   - fork type with a NEW name → server-rendered fork markup, `def.inline`,
+ *     no core entry. ✓ (already true before)
  *
  * @param {string} type
  * @param {Object} [def] - slide-type definition (SLIDE_TYPES[type] / API meta)
@@ -205,8 +203,9 @@ export const INLINE_DESCRIPTORS = { ...SLIDE_TYPE_INLINE_EDIT };
 export function getInlineDescriptor(type, def) {
   const custom = def?.inline;
   return (
+    (custom && typeof custom === 'object' ? custom : null) ||
     INLINE_DESCRIPTORS[type] ||
-    (custom && typeof custom === 'object' ? custom : null)
+    null
   );
 }
 

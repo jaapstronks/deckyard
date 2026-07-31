@@ -86,17 +86,39 @@ function isBundledSlideType(type) {
 }
 
 /**
- * Whether an unbundled type should be fetched from the server.
+ * Whether a fork has overridden this core name server-side (`override: true`).
  *
- * A type that is not bundled is normally a fork's custom type, which only the
- * server can render. A type on the tombstone record is different: it is gone
- * everywhere, so the round-trip can only come back with the same archived-slide
- * placeholder the client can render itself. Asking anyway would leave the slide
- * stuck on the bare "loading" box whenever there is no presentation id (a
- * thumbnail, a preview, an offline render).
+ * The client bundles core's renderer under such a name (`custom/slide-types/` is
+ * server-only and off the static allowlist), so `isBundledSlideType()` would say
+ * "bundled" and the client would draw core's markup for a slide the server
+ * renders as the fork's. The server names these overrides in a synchronous head
+ * global (`window.__DECK_SERVER_RENDERED_TYPES__`, injected by
+ * server/routes/static/app-shell.js) that is present before any slide renders —
+ * no fetch, no per-view wiring. Absent in the OSS build, so this is a no-op
+ * there. See docs/plans/briefs/fork-override-renderer-reach.md.
+ */
+function isServerOverriddenType(type) {
+  if (typeof window === 'undefined') return false;
+  const names = window.__DECK_SERVER_RENDERED_TYPES__;
+  return Array.isArray(names) && names.includes(type);
+}
+
+/**
+ * Whether a type should be fetched from the server instead of rendered here.
+ *
+ * A type that is not bundled is normally a fork's custom type under a NEW name,
+ * which only the server can render. A fork override of a CORE name is bundled
+ * under that name yet renders the fork's markup only server-side, so it needs
+ * the same treatment even though it is "bundled" — hence the override check. A
+ * type on the tombstone record is different: it is gone everywhere, so the
+ * round-trip can only come back with the same archived-slide placeholder the
+ * client can render itself. Asking anyway would leave the slide stuck on the
+ * bare "loading" box whenever there is no presentation id (a thumbnail, a
+ * preview, an offline render).
  */
 function needsServerRender(type) {
-  return !!type && !isBundledSlideType(type) && !getRemovedSlideType(type);
+  if (!type || getRemovedSlideType(type)) return false;
+  return isServerOverriddenType(type) || !isBundledSlideType(type);
 }
 
 /**
@@ -498,3 +520,7 @@ export async function renderSlideElementAsync(
 
 // Export for use in export functionality and other areas
 export { initCodeAndMath, highlightCodeBlocks, renderMathFormulas };
+// Exported for the seam-order / fork-override guardrails: the render-path
+// decision that a fork override of a core name is drawn by the server, which is
+// what makes the inline descriptor safe to resolve definition-first.
+export { needsServerRender, isServerOverriddenType };

@@ -23,7 +23,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
+import {
+  SLIDE_TYPES,
+  CUSTOM_SLIDE_TYPE_NAMES,
+  OVERRIDDEN_CORE_SLIDE_TYPE_NAMES,
+} from '../shared/slide-types/registry.js';
 import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 import {
   SLIDE_TYPE_GROUPS,
@@ -180,9 +184,17 @@ describe('the aggregator seam', () => {
   it('omitting the live map still resolves core', () => {
     // The fallback the guardrail itself relies on, and the shape every existing
     // caller had before the seam fix. Compared against a core-only map, because
-    // a fork checkout's registry legitimately holds more than core.
+    // a fork checkout's registry legitimately holds more than core — but only
+    // ADDITIVE fork types are dropped. A fork override of a core NAME keeps that
+    // core name in the registry, so dropping it here while the no-arg side (full
+    // SLIDE_TYPES) keeps it would be a false mismatch; the override still
+    // resolves its group by name through the aggregator.
     const core = Object.fromEntries(
-      Object.entries(SLIDE_TYPES).filter(([name]) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name))
+      Object.entries(SLIDE_TYPES).filter(
+        ([name]) =>
+          !CUSTOM_SLIDE_TYPE_NAMES.includes(name) ||
+          OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name)
+      )
     );
     for (const group of Object.keys(SLIDE_TYPE_GROUPS)) {
       assert.deepStrictEqual(
