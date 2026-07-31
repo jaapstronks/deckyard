@@ -8,6 +8,7 @@ import {
   slideTypeContentSchema,
   deckJsonSchema,
 } from '../shared/slide-types/json-schema.js';
+import { TYPE_ID_PATTERN, tryParseTypeId } from '../shared/slide-types/type-id.js';
 import { validate } from './helpers/json-schema-validate.js';
 
 /**
@@ -166,6 +167,110 @@ test('the deck schema is self-contained and discriminates content by type', () =
     assert.ok(schema.$defs[ref.replace('#/$defs/', '')], `dangling ref ${ref}`);
     assert.ok(names.includes(constName));
   }
+});
+
+// --- the schema is open, not a list of our own names -----------------------
+
+/** A deck as the schema describes it (the stored model), with one slide. */
+function deckWith(slide, extra = {}) {
+  return {
+    id: '3f1b6a52-0f2a-4a1e-9c3e-2b7a4f5d6e70',
+    title: 'Open',
+    slides: [slide],
+    ...extra,
+  };
+}
+
+test('a deck carrying an unknown slide type validates', () => {
+  // The rule this replaces: `type` was `enum: <this install's registry keys>`,
+  // so a deck with a fork type, an org type or any third-party type was invalid
+  // against our own published schema while the same spec promises leniency and
+  // leaves additionalProperties open everywhere else.
+  const schema = deckJsonSchema(SLIDE_TYPES);
+  assert.equal(schema.$defs.slide.properties.type.enum, undefined, 'no enum of our names');
+  assert.ok(schema.$defs.slide.properties.type.pattern, 'a shape instead');
+
+  for (const type of ['acme-hero', 'acme/hero', 'acme/hero@2', 'custom-org-thing']) {
+    const deck = deckWith({
+      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+      type,
+      // Deliberately nothing like any core type's shape: an unknown type
+      // matches no `if` branch, so no content contract applies to it.
+      content: { whateverTheDeclarantWanted: 42 },
+    });
+    assert.deepEqual(validate(schema, deck, 'deck', []), [], `${type} should validate`);
+  }
+});
+
+test('a known type still gets its content contract, and a malformed id is still rejected', () => {
+  // Opening the enum must not open the discriminator: the `allOf` branches are
+  // what make the schema say anything at all about content.
+  const schema = deckJsonSchema(SLIDE_TYPES);
+  const good = deckWith({
+    id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+    type: 'table-slide',
+    content: SLIDE_TYPES['table-slide'].defaults || {},
+  });
+  assert.deepEqual(validate(schema, good, 'deck', []), []);
+
+  const bad = deckWith({
+    id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+    type: 'title-slide',
+    content: { title: 123 },
+  });
+  assert.ok(validate(schema, bad, 'deck', []).length, 'a known type keeps its shape');
+
+  for (const type of ['Title-Slide', 'a//b', 'acme/hero@', '-leading', '']) {
+    const deck = deckWith({ id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d', type, content: {} });
+    assert.ok(validate(schema, deck, 'deck', []).length, `${JSON.stringify(type)} is not a type id`);
+  }
+});
+
+test('the type pattern is the parser grammar, not a second copy of it', () => {
+  const { pattern } = deckJsonSchema(SLIDE_TYPES).$defs.slide.properties.type;
+  assert.equal(pattern, TYPE_ID_PATTERN);
+  // Whatever the parser accepts, the published schema accepts, and vice versa.
+  const re = new RegExp(pattern);
+  for (const ref of ['title-slide', 'acme/hero', 'acme/hero@2.1', 'custom-x9']) {
+    assert.ok(tryParseTypeId(ref), `${ref} parses`);
+    assert.ok(re.test(ref), `${ref} matches the published pattern`);
+  }
+  for (const ref of ['Title', 'a b', 'a/b/c', '/x', 'x@']) {
+    assert.equal(tryParseTypeId(ref), null, `${ref} does not parse`);
+    assert.ok(!re.test(ref), `${ref} does not match the published pattern`);
+  }
+});
+
+test('every registered type name matches the published pattern', () => {
+  // Including whatever a fork dropped in custom/slide-types/: a name the schema
+  // cannot express is a name no consumer can validate.
+  const re = new RegExp(TYPE_ID_PATTERN);
+  const unexpressible = Object.keys(SLIDE_TYPES).filter((n) => !re.test(n));
+  assert.deepEqual(unexpressible, []);
+});
+
+test('lang accepts any BCP 47 tag, not just the two the editor authors in', () => {
+  // The app may stay limited to its editor languages (normalizeLang); the
+  // published format has no business being. Same CIIIC heritage as the type set.
+  const schema = deckJsonSchema(SLIDE_TYPES);
+  const lang = schema.properties.lang;
+  assert.equal(lang.enum, undefined, 'no two-language enum');
+  const re = new RegExp(lang.pattern);
+  for (const tag of ['nl', 'en-GB', 'en', 'pt-BR', 'zh-Hant-TW', 'de-CH-1901', 'es-419', 'ja']) {
+    assert.ok(re.test(tag), `${tag} is a well-formed language tag`);
+  }
+  for (const tag of ['', 'english', 'e', 'nl_NL', 'nl-']) {
+    assert.ok(!re.test(tag), `${tag} is not a language tag`);
+  }
+  const deck = deckWith(
+    {
+      id: '9a0b1c2d-3e4f-4a5b-8c9d-0e1f2a3b4c5d',
+      type: 'end-slide',
+      content: SLIDE_TYPES['end-slide'].defaults || {},
+    },
+    { lang: 'pt-BR' }
+  );
+  assert.deepEqual(validate(schema, deck, 'deck', []), []);
 });
 
 // --- a small, test-only JSON Schema validator -----------------------------

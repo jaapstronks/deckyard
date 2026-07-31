@@ -19,8 +19,31 @@
 
 import { FIELD_TYPES, enumOptionValues } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
+import { TYPE_ID_PATTERN } from './type-id.js';
 
 const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
+
+/**
+ * A BCP 47 language tag, as the `langtag` production of RFC 5646 minus the
+ * grandfathered forms: language, optional extended-language, script, region,
+ * variants, singleton extensions and private use.
+ *
+ * The published schema used to carry `enum: ['nl', 'en-GB']` here. That is the
+ * same origin story as the type set — Deckyard was abstracted out of a Dutch
+ * organisation's fork — and a universal presentation format that admits only
+ * Dutch and British English is not a universal presentation format.
+ *
+ * The distinction that keeps this from being a product change: the **app** may
+ * stay limited to the languages its editor supports (`normalizeLang()` in
+ * `shared/i18n-utils.js` and `SUPPORTED_LANGS` in the storage layer still take
+ * `nl` and `en-GB` only, and nothing reads this schema to decide), but the
+ * **format** has no business being.
+ */
+const BCP47_PATTERN =
+  '^[a-zA-Z]{2,3}(-[a-zA-Z]{3}){0,3}(-[a-zA-Z]{4})?(-([a-zA-Z]{2}|[0-9]{3}))?' +
+  '(-([a-zA-Z0-9]{5,8}|[0-9][a-zA-Z0-9]{3}))*' +
+  '(-[a-wy-zA-WY-Z0-9](-[a-zA-Z0-9]{2,8})+)*' +
+  '(-[xX](-[a-zA-Z0-9]{1,8})+)?$';
 
 /**
  * Canonical publish base for `$id`s. The schemas are (to be) served statically
@@ -196,7 +219,19 @@ export function deckJsonSchema(slideTypes) {
     type: 'object',
     properties: {
       id: { type: 'string', format: 'uuid' },
-      type: { type: 'string', enum: names },
+      // Open by shape, not by list: a fork type, an org type or a third-party
+      // type is a valid slide type, and enumerating this install's registry
+      // keys made every such deck invalid against our own published schema.
+      // The `allOf` below already does the right thing for a name it has never
+      // seen — no `if` matches, so no `content` shape is demanded.
+      type: {
+        type: 'string',
+        pattern: TYPE_ID_PATTERN,
+        description:
+          'Slide-type reference: `name`, `namespace/name`, or ' +
+          '`namespace/name@version`. Known types are discriminated below; an ' +
+          'unknown type is valid and its content is unconstrained.',
+      },
       parentId: { type: ['string', 'null'], format: 'uuid' },
       content: { type: 'object' },
       notes: { type: 'string' },
@@ -228,7 +263,14 @@ export function deckJsonSchema(slideTypes) {
       created: { type: 'string' },
       modified: { type: 'string' },
       theme: { type: 'string' },
-      lang: { type: 'string', enum: ['nl', 'en-GB'] },
+      lang: {
+        type: 'string',
+        pattern: BCP47_PATTERN,
+        description:
+          'BCP 47 language tag (e.g. `nl`, `en-GB`, `pt-BR`). The format ' +
+          'places no restriction beyond well-formedness; which tags a given ' +
+          'implementation authors in is its own choice.',
+      },
       settings: { type: 'object' },
       slides: { type: 'array', items: { $ref: '#/$defs/slide' } },
     },

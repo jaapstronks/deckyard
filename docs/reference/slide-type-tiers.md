@@ -136,9 +136,18 @@ the facet module (`coreProfileContract()`), definition first so a fork type's ow
 declaration is heard, and an unrecognised value degrades to "no declaration"
 rather than throwing.
 
+## Where the tiers meet conformance
+
+A tier says what we promise; it does not by itself say what an implementation
+owes. That is [`deck-conformance.md`](./deck-conformance.md), and the two halves
+fit together: **level 1** needs no tier at all (it reads every type through its
+`structure`), and **level 2** is exactly "the nine, plus honour `fallback` for
+the rest". Tier 2 is deliberately not a conformance surface.
+
 ## What is still open
 
 The tiers are declared and enforced in code; publishing them as normative text on
-`/spec/`, in both languages, belongs to the same track (A8.2/A8.3) as opening the
-JSON Schema and the reverse-DNS type ids. Until that lands, this page and the
+`/spec/`, in both languages, is the tail of this track (A8.2/A8.3) and lands as
+one hand-off together with the item contract, the evolution rule and the
+reverse-DNS type ids. Until that lands, this page, the conformance page and the
 generated inventory are where the boundary is written down.

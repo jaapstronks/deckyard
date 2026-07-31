@@ -100,6 +100,23 @@ shape; they do not reject history. (Note the generated `deck.schema.json`
 describes the *stored* deck, which additionally carries `id`/`schemaVersion`;
 the portable envelope here is the interchange projection of that model.)
 
+The same leniency applies to the two fields that used to close the schema:
+
+- **`type` is constrained by shape, not by a list.** It matches
+  `name`, `namespace/name` or `namespace/name@version` — the grammar in
+  `shared/slide-types/type-id.js`, exported as the schema's `pattern` so there
+  is one copy. A fork type, an org type or a third-party type is therefore
+  *valid*, which is the whole point of publishing an open format; enumerating
+  this install's registry keys made every such deck invalid against our own
+  spec. The per-type discrimination is unaffected: an unknown type matches no
+  `if` branch, so no content contract is demanded of it.
+- **`lang` is any well-formed BCP 47 tag**, not `nl` or `en-GB`. Which languages
+  a given implementation *authors* in is its own product choice — Deckyard's
+  editor still normalizes to two — but the format has no business deciding it.
+
+What a reader owes for an unknown type, and what it may claim once it does,
+is [`deck-conformance.md`](./deck-conformance.md).
+
 ## Asset references
 
 Images are referenced by string:
