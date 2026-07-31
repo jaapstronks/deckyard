@@ -19,25 +19,38 @@ every place a type name is currently duplicated).
 
 ### Type identity, namespaces & overriding core
 
-Every slide type has a canonical identity of the form `namespace/name[@version]`
+Every slide type has a canonical identity, published as a **reverse-DNS id**
 (see `shared/slide-types/type-id.js`):
 
-- **Core** types live in the `core` namespace (`core/title-slide`).
+- **Core** types live under the `eu.deckyard.slide` authority, with the
+  historical `-slide` suffix dropped: `title-slide` publishes as
+  `eu.deckyard.slide.title`. Whoever owns the domain defines the type, so
+  collisions are structurally impossible rather than socially managed.
 - **Custom** types default to the `custom` namespace (`custom/acme-hero`). A fork
   can declare its own namespace/version on the definition:
 
   ```javascript
   export default {
     label: 'Acme Hero',
-    namespace: 'acme',   // optional; must be kebab-case. Defaults to "custom".
+    namespace: 'acme',   // optional; kebab-case label OR a reverse-DNS
+                         // authority ('nl.ciiic.slide'). Defaults to "custom".
     version: '2',        // optional; free-form label recorded in the identity.
     // ...fields, render, etc.
   };
   ```
 
+  Declaring an **authority** (a dotted namespace) is what earns a fork type a
+  canonical reverse-DNS id of its own — `nl.ciiic.slide.hero` instead of
+  `acme/hero`. A single-label namespace keeps the slash form: we cannot invent a
+  domain on a fork's behalf.
 - The registry **key** and a slide's stored `type` stay the bare name
-  (`acme-hero`), so existing decks and lookups keep working; the namespace is an
-  added identity layer, not a change to storage.
+  (`acme-hero`, `title-slide`), so existing decks and lookups keep working; the
+  identity is an added layer, not a change to storage.
+- Three spellings therefore name one type — `title-slide`, `core/title-slide`
+  and `eu.deckyard.slide.title`. `resolveSlideTypeName()` (registry) maps any of
+  them to the registry key, `getSlideType()` to the definition, and `sameType()`
+  compares two refs as identities. **Never compare type refs as strings**, and
+  never re-derive the suffix rule at a call site — that is what these are for.
 
 **Overriding a core type is no longer silent.** If a custom type's filename
 matches a core type name, it is **refused** (the core type is kept) and a
@@ -52,8 +65,9 @@ export default {
 ```
 
 The portable deck export records which definitions a deck was written against in
-a top-level `slideTypes` map (`{ "title-slide": "core/title-slide" }`),
-recomputed on every export so it never drifts.
+a top-level `slideTypes` map (`{ "title-slide": "eu.deckyard.slide.title" }`),
+recomputed on every export so it never drifts. That map is also where a reader
+learns the canonical published id for the legacy key a slide stores.
 
 ---
 

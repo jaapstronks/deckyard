@@ -242,8 +242,11 @@ The response is resolved **per organization**:
 - Types the organization **disabled** in its settings are filtered out, so an
   agent never offers what the editor forbids.
 
-Each entry carries its canonical `typeId` (`core/title-slide`,
-`acme/hero@2`, `custom/<slug>`) so an agent can talk about versions.
+Each entry carries its canonical `typeId` — reverse-DNS for core
+(`eu.deckyard.slide.title`, `…title@2`), the fork's own authority when it
+declares one, otherwise `custom/<slug>` — so an agent can talk about versions.
+An agent may keep writing the bare key in `slides[].type`; the spellings resolve
+to the same type.
 
 A stdio session has no organization and resolves against the default one; an
 SSE session resolves against the organization its API key belongs to.

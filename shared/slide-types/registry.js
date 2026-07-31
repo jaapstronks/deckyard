@@ -38,14 +38,18 @@ import { addUiI18nKeysToSlideType } from '../ui-i18n-keys.js';
 import { DEFAULT_THEME_ID } from '../constants/themes.js';
 import {
   CORE_NAMESPACE,
-  formatTypeId,
+  SLIDE_NAME_SUFFIX,
+  canonicalTypeName,
+  formatCanonicalId,
   tryParseTypeId,
 } from './type-id.js';
 
-// A fork namespace segment must be kebab-safe; anything else falls back to
-// the generic `custom` namespace so a malformed declaration can't produce an
-// invalid type id.
-const NAMESPACE_SEGMENT_RE = /^[a-z0-9][a-z0-9-]*$/;
+// A fork namespace is either a kebab-safe label (`acme`) or a reverse-DNS
+// authority (`nl.ciiic.slide`); anything else falls back to the generic
+// `custom` namespace so a malformed declaration can't produce an invalid type
+// id. Declaring an authority is what earns a fork a canonical reverse-DNS id
+// instead of the slash form — see formatCanonicalId().
+const NAMESPACE_SEGMENT_RE = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 const DEFAULT_CUSTOM_NAMESPACE = 'custom';
 
 // Detect if we're running in Node.js (has process.versions.node)
@@ -343,7 +347,7 @@ export const OVERRIDDEN_CORE_SLIDE_TYPE_NAMES = overriddenCoreNames(
 export const CORE_SLIDE_TYPE_NAMES = Object.keys(CORE_SLIDE_TYPES);
 
 // ---------------------------------------------------------------------------
-// Slide-type identity (namespace/name[@version]) — see ./type-id.js.
+// Slide-type identity (canonical reverse-DNS id) — see ./type-id.js.
 //
 // The registry key stays the bare local name so every existing
 // `SLIDE_TYPES[slide.type]` lookup and stored `slide.type` keep working. The
@@ -382,13 +386,14 @@ function slideTypeIdentityFor(name) {
 }
 
 /**
- * Canonical `namespace/name[@version]` id per registered type name.
+ * Canonical id per registered type name — reverse-DNS
+ * (`eu.deckyard.slide.title`), the form the format publishes.
  * @type {Record<string, string>}
  */
 export const SLIDE_TYPE_IDS = Object.fromEntries(
   Object.keys(SLIDE_TYPES).map((name) => [
     name,
-    formatTypeId(slideTypeIdentityFor(name)),
+    formatCanonicalId(slideTypeIdentityFor(name)),
   ])
 );
 
@@ -402,11 +407,58 @@ export function getSlideTypeId(name) {
 }
 
 /**
- * Resolve a slide-type reference to its definition. Accepts the bare local key
- * (`"title-slide"`), or a qualified id (`"core/title-slide"`, `"title-slide@2"`,
- * `"acme/hero"`). Namespace/version are advisory at resolution time — the
- * registry key is the local name and collision detection at load guarantees one
- * definition per name — so a qualified ref resolves by its `name` segment.
+ * The names a reference may be spelled as, most specific first: the name as
+ * given, then the same name with the `-slide` suffix added or removed.
+ *
+ * One rule covers both directions because the suffix is exactly what separates
+ * the canonical published name from the historical registry key, and a
+ * reference may legitimately arrive in either spelling.
+ *
+ * @param {string} name
+ * @returns {string[]}
+ */
+function typeNameCandidates(name) {
+  const canonical = canonicalTypeName(name);
+  if (canonical !== name) return [name, canonical];
+  return [name, `${name}${SLIDE_NAME_SUFFIX}`];
+}
+
+/**
+ * Resolve a slide-type reference to the REGISTRY KEY it names, or `''`.
+ *
+ * This is the one place that knows the three spellings are one type, and the
+ * only place allowed to turn a canonical name back into a storage key:
+ *
+ * - `title-slide` — the bare key, and what `slides[].type` stores.
+ * - `core/title-slide`, `title-slide@2`, `acme/hero` — qualified.
+ * - `eu.deckyard.slide.title` — canonical reverse-DNS, suffix dropped.
+ *
+ * An exact registry hit always wins, so a fork that registers a literal `title`
+ * keeps it even though core's `title-slide` also answers to that name.
+ * Namespace and version stay advisory at resolution time — the registry key is
+ * the local name, and load-time collision detection guarantees one definition
+ * per name — so a qualified ref resolves by its `name` segment.
+ *
+ * @param {string} ref
+ * @param {Record<string, object>} [slideTypes] - registry to resolve against.
+ * @returns {string} the registry key, or `''` when nothing matches.
+ */
+export function resolveSlideTypeName(ref, slideTypes = SLIDE_TYPES) {
+  if (typeof ref !== 'string' || !ref) return '';
+  if (Object.prototype.hasOwnProperty.call(slideTypes, ref)) return ref;
+  const id = tryParseTypeId(ref);
+  if (!id) return '';
+  for (const candidate of typeNameCandidates(id.name)) {
+    if (Object.prototype.hasOwnProperty.call(slideTypes, candidate)) {
+      return candidate;
+    }
+  }
+  return '';
+}
+
+/**
+ * Resolve a slide-type reference to its definition, in any of the spellings
+ * {@link resolveSlideTypeName} accepts.
  *
  * @param {string} ref
  * @param {Record<string, object>} [slideTypes] - registry to resolve against
@@ -414,20 +466,21 @@ export function getSlideTypeId(name) {
  * @returns {object|undefined}
  */
 export function getSlideType(ref, slideTypes = SLIDE_TYPES) {
-  if (typeof ref !== 'string' || !ref) return undefined;
-  if (Object.prototype.hasOwnProperty.call(slideTypes, ref)) {
-    return slideTypes[ref];
-  }
-  const id = tryParseTypeId(ref);
-  if (!id) return undefined;
-  return slideTypes[id.name];
+  const name = resolveSlideTypeName(ref, slideTypes);
+  return name ? slideTypes[name] : undefined;
 }
 
 /**
  * Build the deck-level manifest of slide-type identities a set of slides uses:
- * `{ [bareTypeName]: "namespace/name[@version]" }`. Recomputed from the current
- * registry so it never drifts. Stamped onto the portable deck export so a deck
- * records which type definitions it was written against.
+ * `{ [storageKey]: "<canonical id>" }`. Recomputed from the current registry so
+ * it never drifts. Stamped onto the portable deck export so a deck records which
+ * type definitions it was written against — and, since the canonical id is
+ * reverse-DNS, it is also where a reader learns the published name for the
+ * legacy key a slide stores.
+ *
+ * A type this install does not have is still reported (informationally) under
+ * the core authority: the manifest states what the deck references, not what we
+ * happen to be able to render.
  *
  * @param {Array<{type?: string}>} slides
  * @returns {Record<string, string>}
@@ -437,9 +490,10 @@ export function collectSlideTypeManifest(slides) {
   for (const slide of Array.isArray(slides) ? slides : []) {
     const name = slide?.type;
     if (typeof name !== 'string' || !name || manifest[name]) continue;
+    const key = resolveSlideTypeName(name);
     manifest[name] =
-      SLIDE_TYPE_IDS[name] ||
-      formatTypeId({ namespace: CORE_NAMESPACE, name, version: null });
+      (key && SLIDE_TYPE_IDS[key]) ||
+      formatCanonicalId({ namespace: CORE_NAMESPACE, name, version: null });
   }
   return manifest;
 }

@@ -14,10 +14,19 @@ import assert from 'node:assert';
 import {
   SLIDE_TYPES,
   SLIDE_TYPE_IDS,
+  CORE_SLIDE_TYPE_NAMES,
   getSlideType,
   getSlideTypeId,
+  resolveSlideTypeName,
   collectSlideTypeManifest,
 } from '../shared/slide-types/registry.js';
+import {
+  CORE_AUTHORITY,
+  canonicalTypeName,
+  formatCanonicalId,
+  parseTypeId,
+  sameType,
+} from '../shared/slide-types/type-id.js';
 
 describe('getSlideType resolver', () => {
   it('resolves a bare registered key', () => {
@@ -43,16 +52,103 @@ describe('getSlideType resolver', () => {
   });
 });
 
-describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
-  it('gives every registered type a core-namespaced id by default', () => {
-    for (const name of Object.keys(SLIDE_TYPES)) {
-      const id = SLIDE_TYPE_IDS[name];
-      assert.ok(typeof id === 'string' && id.includes('/'), `${name} -> ${id}`);
+describe('the three spellings are one type', () => {
+  // The point of A8.3: a reverse-DNS id and the historical bare key name the
+  // same definition, so publishing the canonical form costs no deck a rewrite.
+  it('resolves the canonical reverse-DNS id to the same def as the bare key', () => {
+    for (const ref of [
+      `${CORE_AUTHORITY}.title`,
+      `${CORE_AUTHORITY}.title@2`,
+      `${CORE_AUTHORITY}/title`,
+      'core/title',
+      'title',
+      'title-slide',
+    ]) {
+      assert.equal(
+        getSlideType(ref),
+        SLIDE_TYPES['title-slide'],
+        `${ref} must resolve to the title-slide definition`
+      );
+      assert.equal(resolveSlideTypeName(ref), 'title-slide', ref);
     }
   });
-  it('core types resolve to core/<name>', () => {
-    assert.equal(getSlideTypeId('title-slide'), 'core/title-slide');
-    assert.equal(getSlideTypeId('content-slide'), 'core/content-slide');
+
+  it('holds for every registered type, in both spellings', () => {
+    // Every type, fork types included: whatever id we publish for it has to
+    // resolve back to the key it was published for.
+    for (const name of Object.keys(SLIDE_TYPES)) {
+      assert.equal(
+        resolveSlideTypeName(SLIDE_TYPE_IDS[name]),
+        name,
+        `${SLIDE_TYPE_IDS[name]} must resolve back to ${name}`
+      );
+      assert.equal(
+        resolveSlideTypeName(canonicalTypeName(name)),
+        name,
+        `the suffix-free name of ${name} must resolve back to it`
+      );
+    }
+    // sameType() compares identities, and a bare name is a CORE identity — so
+    // it is core names that must equal their own canonical id. A fork type's
+    // bare name and its `custom/…` id are deliberately different identities.
+    for (const name of CORE_SLIDE_TYPE_NAMES) {
+      assert.ok(
+        sameType(name, SLIDE_TYPE_IDS[name]),
+        `${name} and its canonical id must compare equal`
+      );
+    }
+  });
+
+  it('keeps canonical names unambiguous', () => {
+    // Dropping `-slide` is only safe while no two core types differ by just
+    // that suffix. A core type literally named `title` beside `title-slide`
+    // would make `eu.deckyard.slide.title` mean two things — catch it at the
+    // moment the name is added, not at the moment a reader misrenders.
+    const byCanonical = new Map();
+    for (const name of CORE_SLIDE_TYPE_NAMES) {
+      const canonical = canonicalTypeName(name);
+      const clash = byCanonical.get(canonical);
+      assert.equal(
+        clash,
+        undefined,
+        `${name} and ${clash} share the canonical name "${canonical}"`
+      );
+      byCanonical.set(canonical, name);
+    }
+  });
+
+  it('lets an exact registry key win over a canonical alias', () => {
+    // A fork registering a literal `title` keeps it; core's `title-slide` only
+    // answers to `title` when nothing is registered under that key.
+    const fake = { title: { label: 'Fork title' }, 'title-slide': { label: 'Core' } };
+    assert.deepEqual(getSlideType('title', fake), { label: 'Fork title' });
+    assert.deepEqual(getSlideType('title-slide', fake), { label: 'Core' });
+  });
+});
+
+describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
+  it('gives every registered type an id that is already canonical', () => {
+    for (const name of Object.keys(SLIDE_TYPES)) {
+      const id = SLIDE_TYPE_IDS[name];
+      assert.equal(
+        formatCanonicalId(parseTypeId(id)),
+        id,
+        `${name} -> ${id} is not the canonical spelling`
+      );
+    }
+  });
+  it('gives every CORE type a reverse-DNS id', () => {
+    // A fork type is only reverse-DNS if the fork declares an authority; one
+    // that declares a single-label namespace (or none) keeps the slash form,
+    // because we cannot invent a domain on its behalf.
+    for (const name of CORE_SLIDE_TYPE_NAMES) {
+      const id = SLIDE_TYPE_IDS[name];
+      assert.ok(id.startsWith(`${CORE_AUTHORITY}.`), `${name} -> ${id}`);
+    }
+  });
+  it('core types resolve to <core authority>.<name>, suffix dropped', () => {
+    assert.equal(getSlideTypeId('title-slide'), 'eu.deckyard.slide.title');
+    assert.equal(getSlideTypeId('content-slide'), 'eu.deckyard.slide.content');
   });
   it('returns undefined for an unknown name', () => {
     assert.equal(getSlideTypeId('no-such-slide'), undefined);
@@ -60,26 +156,26 @@ describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
 });
 
 describe('collectSlideTypeManifest', () => {
-  it('maps each used bare type to its identity, de-duplicated', () => {
+  it('maps each stored key to its canonical id, de-duplicated', () => {
     const slides = [
       { type: 'title-slide' },
       { type: 'content-slide' },
       { type: 'content-slide' },
     ];
     assert.deepEqual(collectSlideTypeManifest(slides), {
-      'title-slide': 'core/title-slide',
-      'content-slide': 'core/content-slide',
+      'title-slide': 'eu.deckyard.slide.title',
+      'content-slide': 'eu.deckyard.slide.content',
     });
   });
   it('ignores slides without a usable type', () => {
     assert.deepEqual(collectSlideTypeManifest([{}, { type: '' }, { type: 5 }]), {});
     assert.deepEqual(collectSlideTypeManifest(null), {});
   });
-  it('still records an unknown type under the core namespace (informational)', () => {
+  it('still records an unknown type under the core authority (informational)', () => {
     // A manifest should faithfully report what a deck references even if the
     // current registry lacks the definition.
     assert.deepEqual(collectSlideTypeManifest([{ type: 'ghost-slide' }]), {
-      'ghost-slide': 'core/ghost-slide',
+      'ghost-slide': 'eu.deckyard.slide.ghost',
     });
   });
 });

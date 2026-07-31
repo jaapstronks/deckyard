@@ -39,19 +39,98 @@ To reach level 1:
 1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slideTypes`,
    `slides` — see [`deck-format.md`](./deck-format.md). Unknown top-level keys
    are ignored, never rejected.
-2. **Accept any well-formed type id.** `slides[].type` is `name`,
-   `namespace/name` or `namespace/name@version`. The published JSON Schema
-   constrains it by that shape and not by a list of names, precisely so a fork
-   type, an org type or a third-party type stays valid.
+2. **Accept any well-formed type id.** `slides[].type` is the canonical
+   reverse-DNS id (`eu.deckyard.slide.title`) or one of its equivalent
+   spellings — `name`, `namespace/name`, either with `@version`. The published
+   JSON Schema constrains it by that shape and not by a list of names, precisely
+   so a fork type, an org type or a third-party type stays valid. All spellings
+   of one id name one type: see [type ids](#type-ids-one-identity-three-spellings).
 3. **Honour the item contract** for the slide type's declared `structure`
    (below). `structure` travels on `GET /api/slide-types` and is part of the
    published type description.
-4. **Render an unknown type from its structure plus its text.** A type you have
-   never seen still has a structure and still has string-valued content; render
-   those and show the type name rather than dropping the slide.
+4. **Render an unknown type from its structure plus its text**, per the
+   [unknown-type contract](#the-unknown-type-contract). A type you have never
+   seen still has a structure and still has string-valued content; render those
+   and show the type name rather than dropping the slide.
 
-Step 4's exact normative wording is A8.3 work and is not final on this page yet;
-the behaviour it describes is what steps 1 to 3 already imply.
+### Type ids: one identity, three spellings
+
+The canonical id is **reverse-DNS**: `eu.deckyard.slide.title`. Whoever owns the
+domain may define the type, which makes collisions structurally impossible
+instead of socially managed — `acme/hero` and `nl.ciiic.slide.hero` are both
+plain strings until a second fork exists, and after that only the first is a
+problem. The `-slide` suffix is gone from the canonical name because `slide` is
+already in the authority.
+
+Two older spellings stay valid **forever**, and a reader MUST accept all three:
+
+| Spelling | Example | Where it appears |
+|---|---|---|
+| Canonical reverse-DNS | `eu.deckyard.slide.title` | the `slideTypes` manifest, `GET /api/slide-types`, anything newly published |
+| Qualified | `core/title-slide` | decks written against the earlier identity model |
+| Bare key | `title-slide` | `slides[].type` in every deck, past and present |
+
+**Storage did not move.** `slides[].type` still holds the bare key, so the
+rename cost no deck a rewrite and a reader that only ever sees bare keys is not
+behind. A reader MUST treat the three as one identity: the published JSON
+Schema applies the same content contract to each spelling, and comparing ids
+means comparing identities, not strings (`shared/slide-types/type-id.js`,
+`sameType()`).
+
+The `@version` suffix is a **compatibility hint about a definition, not a
+different type**. A reader that does not have the named version renders the
+version it has; it MUST NOT treat `title-slide@2` as an unknown type.
+
+### The unknown-type contract
+
+This is what "nothing is dropped" means when a reader meets a `type` it has no
+declaration for at all — a fork type, an org type, a type published after the
+reader shipped. It is the floor under level 1, and it is normative.
+
+A reader that does not recognise `slides[].type`:
+
+1. **MUST render the slide.** Dropping it silently changes the slide count, the
+   numbering and the argument the deck is making. A reader MUST NOT reject the
+   deck either: one unknown type is not a malformed deck.
+2. **MUST render every string-valued entry of `content` as text**, in the order
+   the keys appear in `content` — a producer writes them in the type's declared
+   field order, so that order is the author's. A reader whose parser does not
+   preserve member order MUST pick a stable order (lexicographic will do) rather
+   than an arbitrary one. Non-string scalars render as their text form; the
+   empty string means *unset* and MAY be skipped.
+3. **MUST render each element of an array-valued entry as a repeated item**, in
+   array order, applying rule 2 within each element. This is the `collection`
+   contract, which is the honest reading of an array whose meaning is unknown:
+   it may be reflowed, it may not be reordered or truncated.
+4. **MUST show the type reference**, as written in `type`, on or beside the
+   slide. A viewer has to be able to tell a generic rendering from an authored
+   one — silently pretty output is how "we support Deckyard" becomes untrue
+   without anyone noticing.
+5. **MUST honour the global slide keys it already knows** — `notes`,
+   `duration`, `visibility`, and the `a11y*` / `slideBg*` / `slideLogo` content
+   keys. Those are envelope-level and their meaning does not depend on the type.
+6. **SHOULD render it in the deck's theme**, so an unknown type reads as a plain
+   slide rather than as breakage.
+7. **MUST NOT invent content.** No synthesized headings, no filled-in blanks, no
+   reordering. Rendering less faithfully than the author wrote is a degradation;
+   rendering something the author did not write is a bug.
+
+A value that is neither a scalar nor an array or object of scalars (a nested
+payload a reader cannot interpret) MAY be omitted — rule 7 outranks
+completeness, and a reader must not guess at a shape it does not know.
+
+**This contract is the last resort, not the first.** Three cases, in order:
+
+| The reader has | It does |
+|---|---|
+| the type, implemented | renders it natively |
+| the type's declaration but no implementation | uses `structure` + the item contract, or the declared `fallback` (level 2) |
+| nothing but the slide | the unknown-type contract above |
+
+A reader that reaches case 3 for a *Deckyard* type is a reader that has not read
+`GET /api/slide-types` or the deck's `slideTypes` manifest; both carry the
+declaration. Case 3 is for types that are genuinely nobody's business but their
+declarant's — which is exactly the case a format has to survive to be open.
 
 ### The item contract
 
@@ -110,8 +189,8 @@ a second implementation is a weekend of work. Full argument in
   someone against them. Today the closest thing is
   `tests/fixtures/example-deck.json` plus `tests/deck-format-spec.test.js` — the
   fixture a second implementation can round-trip. Turning that into a kit that
-  exercises both levels (including the `fallback` expectations per type) is open
-  work.
+  exercises both levels (including the `fallback` expectations per type and the
+  unknown-type contract) is open work.
 - **The normative text on `/spec/`.** This page is the reference; publishing the
   claim in both languages on `deckyard.eu` lands together with the tiers and the
   evolution rule, as one hand-off rather than three rewrites of the same page.
@@ -119,7 +198,9 @@ a second implementation is a weekend of work. Full argument in
 ## See also
 
 - [`deck-format.md`](./deck-format.md) — the envelope, the identity manifest,
-  the round-trip guarantee.
+  the round-trip guarantee, and the [evolution
+  rule](./deck-format.md#evolution-rule) this page's leniency requirements are
+  the reader half of.
 - [`slide-type-structure.md`](./slide-type-structure.md) — where `structure`
   came from, and the type-versus-variant rule it answers.
 - [`slide-type-tiers.md`](./slide-type-tiers.md) — the three tiers and the

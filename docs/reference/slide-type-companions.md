@@ -103,7 +103,7 @@ Rules and limits: `shared/slide-types/usage.js`.
 | Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written until T7-slice 3; see below |
 | i18n key scaffolding | `addUiI18nKeysToSlideType()` at registry build |
 | Agent-visible type list (MCP `get_slide_types`) | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
-| Canonical type id (`core/title-slide`) | `SLIDE_TYPE_IDS` |
+| Canonical type id (`eu.deckyard.slide.title`) | `SLIDE_TYPE_IDS` |
 | Deck type manifest | `collectSlideTypeManifest()` |
 
 ### The agent-facing schema, and how a field opts out

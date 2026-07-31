@@ -19,7 +19,13 @@
 
 import { FIELD_TYPES, enumOptionValues } from './field-types.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
-import { TYPE_ID_PATTERN } from './type-id.js';
+import {
+  CORE_NAMESPACE,
+  TYPE_ID_PATTERN,
+  canonicalTypeName,
+  formatCanonicalId,
+  formatTypeId,
+} from './type-id.js';
 
 const JSON_SCHEMA_DIALECT = 'https://json-schema.org/draft/2020-12/schema';
 
@@ -202,6 +208,33 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
 }
 
 /**
+ * Every spelling of a registered type that must select the same content schema.
+ *
+ * A type has one identity and (for core) three spellings: the stored key
+ * (`title-slide`), the qualified form (`core/title-slide`) and the canonical
+ * reverse-DNS id (`eu.deckyard.slide.title`). All three are valid in
+ * `slides[].type`, so all three have to hit the same `if` branch — otherwise
+ * writing the canonical id silently costs a deck its content contract, which is
+ * the opposite of what publishing a canonical name is for.
+ *
+ * Versioned refs (`title-slide@2`) are deliberately not enumerated: a version is
+ * a compatibility hint about a definition we do not have, so demanding the
+ * current shape of it would be a claim we cannot back.
+ *
+ * @param {string} name - the registry key
+ * @param {any} def - its definition (read only for a declared `namespace`)
+ * @returns {string[]}
+ */
+function typeSpellings(name, def) {
+  const namespace =
+    typeof def?.namespace === 'string' && def.namespace ? def.namespace : CORE_NAMESPACE;
+  const id = { namespace, name, version: null };
+  const spellings = [name, formatTypeId(id), formatCanonicalId(id)];
+  if (namespace === CORE_NAMESPACE) spellings.push(canonicalTypeName(name));
+  return Array.from(new Set(spellings));
+}
+
+/**
  * The full, self-contained deck JSON Schema for the given set of slide types.
  * Every type's content schema lives under `$defs`; a discriminated `slide`
  * selects the right one by `type`.
@@ -228,9 +261,11 @@ export function deckJsonSchema(slideTypes) {
         type: 'string',
         pattern: TYPE_ID_PATTERN,
         description:
-          'Slide-type reference: `name`, `namespace/name`, or ' +
-          '`namespace/name@version`. Known types are discriminated below; an ' +
-          'unknown type is valid and its content is unconstrained.',
+          'Slide-type reference: the canonical reverse-DNS id ' +
+          '(`eu.deckyard.slide.title`), or the equivalent `name`, ' +
+          '`namespace/name` or `…@version` spelling. Known types are ' +
+          'discriminated below in every spelling; an unknown type is valid and ' +
+          'its content is unconstrained.',
       },
       parentId: { type: ['string', 'null'], format: 'uuid' },
       content: { type: 'object' },
@@ -240,9 +275,10 @@ export function deckJsonSchema(slideTypes) {
     },
     required: ['id', 'type', 'content'],
     additionalProperties: true,
-    // Discriminate content by slide type: if type === X, content matches X.
+    // Discriminate content by slide type: if type names X (in any of its
+    // spellings), content matches X.
     allOf: names.map((name) => ({
-      if: { properties: { type: { const: name } } },
+      if: { properties: { type: { enum: typeSpellings(name, slideTypes[name]) } } },
       then: { properties: { content: { $ref: `#/$defs/${contentDefKey(name)}` } } },
     })),
   };

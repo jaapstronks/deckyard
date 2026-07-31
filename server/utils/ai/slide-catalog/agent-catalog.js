@@ -41,6 +41,7 @@ import {
   SLIDE_TYPE_IDS,
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
+import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 
@@ -220,7 +221,7 @@ function tier1Entry(name, def, catalogEntry, lang) {
   const label = typeof def?.label === 'string' ? def.label : name;
 
   return {
-    typeId: SLIDE_TYPE_IDS[name] || `core/${name}`,
+    typeId: SLIDE_TYPE_IDS[name] || formatCanonicalId({ name }),
     label,
     // The catalog entry states the category directly; `resolveInPhase1` carries
     // the same split for entries written before the field existed. An
