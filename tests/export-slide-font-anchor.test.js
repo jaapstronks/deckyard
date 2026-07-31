@@ -6,6 +6,7 @@ import {
   loadExportCssBundle,
   buildExportStyleContent,
 } from '../server/export/css-bundle.js';
+import { stripFontFacesFromCss } from '../server/utils/embed-fonts.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -38,13 +39,30 @@ test('the export bundle anchors .slide to the theme body font', async () => {
 test('the slide font anchor is ordered after the stripped slide CSS', async () => {
   const bundle = await loadExportCssBundle(repoRoot, null, null);
   const style = buildExportStyleContent(bundle);
+
   const anchorAt = style.indexOf('.slide { font-family: var(--font-body); }');
-  // The chrome body rule that leaks --ps-font-sans lives in export.css (chromeCss),
-  // emitted before the anchor. The anchor must exist and sit in the slide layer,
-  // after the slides CSS block, so nothing generic re-inherits the chrome font.
   assert.ok(anchorAt !== -1, 'slide font anchor missing from export bundle');
+
+  // The chrome body rule that leaks --ps-font-sans lives in export.css
+  // (chromeCss), emitted before the anchor.
+  const chromeFontAt = style.indexOf('var(--ps-font-sans)');
   assert.ok(
-    style.includes('var(--ps-font-sans)'),
+    chromeFontAt !== -1,
     'sanity: the chrome body font token should still be present in the bundle',
+  );
+  assert.ok(
+    chromeFontAt < anchorAt,
+    'the anchor must come after the chrome body font rule it overrides',
+  );
+
+  // Derive the slide block's span from the bundle itself rather than a hand-picked
+  // marker selector: the anchor has to sit after the WHOLE slides layer, so a
+  // future single-class `.slide` rule in slides.css cannot outrank it on order.
+  const strippedSlides = stripFontFacesFromCss(bundle.slidesCss);
+  const slidesAt = style.indexOf(strippedSlides);
+  assert.ok(slidesAt !== -1, 'stripped slides CSS missing from export bundle');
+  assert.ok(
+    anchorAt >= slidesAt + strippedSlides.length,
+    'the anchor must be emitted after the entire slides CSS block, not inside it',
   );
 });
