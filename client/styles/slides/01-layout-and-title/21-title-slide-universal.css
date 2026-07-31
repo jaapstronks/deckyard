@@ -258,10 +258,12 @@
   margin-inline: auto;
 }
 
-/* Left-aligned variant: reduce left gutter so content sits closer to the edge. */
-.slide-title-universal.is-logo-left {
-  --tsu-pad-left: 72px;
-}
+/* `is-logo-left` positions the corner logo (see `.tsu-logo` above); it must NOT
+   move the title block. It used to also set `--tsu-pad-left: 72px` here — dragged
+   in by name similarity with the alignment rules — which shifted the whole
+   content block 24px left, because `--tsu-pad-left` feeds both `.tsu-content`'s
+   width cap and its `margin-inline`. The gutter now stays at the 96px default
+   regardless of logo corner. */
 
 /* Background-image variant: switch to light text for contrast */
 .slide-title-universal.has-bg .title {
