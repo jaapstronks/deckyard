@@ -12,12 +12,18 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types.js';
+import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const I18N_DIR = path.join(__dirname, '..', 'client', 'i18n');
 const LANGUAGES = ['nl', 'de', 'fr', 'es', 'pt', 'da', 'sv', 'no'];
 const MODULES = ['common', 'auth', 'editor', 'list', 'share', 'settings', 'presenter', 'slide-types'];
+// Every locale on disk, not just the fill targets: it/pl/fi ship translations
+// but never sat in LANGUAGES, so their orphaned slideType keys went unpruned too.
+const ALL_LOCALES = ['en', 'nl', 'de', 'fr', 'es', 'pt', 'it', 'pl', 'fi', 'da', 'sv', 'no'];
 
 function loadJson(filePath) {
   try {
@@ -39,8 +45,60 @@ function sortKeys(obj) {
   return sorted;
 }
 
+/**
+ * Remove `slideType.*` keys the registry no longer produces.
+ *
+ * Nothing else deletes them: `i18n-extract` only ever adds, `i18n-validate` only
+ * flags keys *missing* from English, and the audit's orphan check skips the whole
+ * `slideType.` family as runtime-built. So a field, option or type that leaves
+ * the registry strands its translations in every locale forever. The registry is
+ * the authority on which keys are real; anything under `slideType.` that it does
+ * not generate is dead and pruned here — including from English, which drifts the
+ * same way (extract merges into the existing file rather than replacing it).
+ *
+ * Scoped to the `slideType.` namespace on purpose: keys like
+ * `editor.slideTypeDesc.<type>` are runtime-built fallbacks a locale may hold
+ * without English (the picker resolves them against the authoring default), so a
+ * blanket "not in English" prune would delete live translations.
+ *
+ * @returns {number} total keys removed across all locales
+ */
+export function pruneOrphanedSlideTypeKeys() {
+  const valid = slideTypeUiKeys(SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES);
+  let totalPruned = 0;
+
+  for (const lang of ALL_LOCALES) {
+    for (const moduleName of MODULES) {
+      const modulePath = path.join(I18N_DIR, lang, `${moduleName}.json`);
+      const data = loadJson(modulePath);
+      if (!data) continue;
+
+      const dead = Object.keys(data).filter((k) => k.startsWith('slideType.') && !valid.has(k));
+      if (dead.length === 0) continue;
+
+      // Delete in place and keep the file's existing order: a prune should be a
+      // clean set of removed lines, not a whole-file re-sort (en/it/pl/fi are not
+      // stored in this script's sort order, and re-sorting them here would bury
+      // the deletions under hundreds of moved lines).
+      for (const k of dead) delete data[k];
+      saveJson(modulePath, data);
+      console.log(`${lang}/${moduleName}.json: -${dead.length} orphaned slideType key(s)`);
+      totalPruned += dead.length;
+    }
+  }
+
+  console.log(`\nTotal orphaned slideType keys pruned: ${totalPruned}`);
+  return totalPruned;
+}
+
 function main() {
-  console.log('i18n Sync - Fill missing keys with English\n');
+  console.log('i18n Sync - Prune orphaned slide-type keys, then fill missing keys with English\n');
+
+  // Prune first: filling copies English into each locale, so a dead key left in
+  // English would be handed straight back to every locale we just cleaned.
+  pruneOrphanedSlideTypeKeys();
+
+  console.log('\nFilling missing keys with English\n');
 
   let totalAdded = 0;
 
@@ -103,4 +161,8 @@ function main() {
   console.log('\nDone!');
 }
 
-main();
+// Run the full sync only when invoked directly, not when imported for the prune
+// helper (importing must not rewrite every locale file).
+if (process.argv[1] === __filename) {
+  main();
+}

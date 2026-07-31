@@ -34,9 +34,11 @@ import {
   collectKeyLiteralRefs,
   isRuntimeBuiltKey,
 } from './i18n-keys.js';
+import { SLIDE_TYPE_AUTHORING } from '../shared/slide-types/authoring.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const clientDir = path.join(repoRoot, 'client');
+const slideTypesTypesDir = path.join(repoRoot, 'shared', 'slide-types', 'types');
 const i18nDir = path.join(clientDir, 'i18n');
 const ALLOWLIST_PATH = path.join(repoRoot, 'scripts', 'i18n-audit-allowlist.json');
 
@@ -211,6 +213,67 @@ export function hardcodedId(hit) {
   return `${hit.file} :: ${hit.value}`;
 }
 
+/** Collect every string leaf under a value (a type's `sample` object). */
+function collectStrings(value, out) {
+  if (typeof value === 'string') out.add(value);
+  else if (Array.isArray(value)) for (const v of value) collectStrings(v, out);
+  else if (value && typeof value === 'object') for (const v of Object.values(value)) collectStrings(v, out);
+  return out;
+}
+
+// Sample strings per type, memoised. Derived from the registry so the audit needs
+// no hand-kept list of them (docs/reference/slide-type-directory.md).
+const sampleStringCache = new Map();
+function sampleStringsForType(type) {
+  if (!sampleStringCache.has(type)) {
+    const sample = SLIDE_TYPE_AUTHORING[type]?.sample;
+    sampleStringCache.set(type, collectStrings(sample, new Set()));
+  }
+  return sampleStringCache.get(type);
+}
+
+const AUTHORING_TYPE_RE = /(?:^|\/)shared\/slide-types\/types\/([^/]+)\/authoring\.js$/;
+
+/**
+ * True when a hit is a slide type's sample content — the deck-language copy a
+ * type declares in its `authoring.js` to fill the picker's preview thumbnail.
+ *
+ * This is the derived replacement for ~75 hand-written allowlist lines: since
+ * rollout-PR 2 the sample lives in `authoring.js`, so the exemption is read from
+ * there rather than restated. A hit counts only if its literal is genuinely a
+ * string in that type's `sample`, so a stray hardcoded label elsewhere in the
+ * file is still reported. (The picker `description`/`aliases` never reach the
+ * scanner — a JSDoc comment sits between them and the preceding `,`, which the
+ * `[{,]`-anchored PROP_RE cannot cross.)
+ * @param {{file: string, value: string}} hit
+ * @returns {boolean}
+ */
+export function isSampleContentException(hit) {
+  const m = AUTHORING_TYPE_RE.exec(hit.file.replaceAll('\\', '/'));
+  if (!m) return false;
+  return sampleStringsForType(m[1]).has(hit.value);
+}
+
+/**
+ * All hardcoded-copy hits the gate cares about: everything under `client/`, plus
+ * the picker copy each directory-form slide type carries in its own
+ * `authoring.js` (outside `client/`). Only `authoring.js` is scanned under a type
+ * dir — a definition's field labels are localised through the derived
+ * `slideType.*` keys, so scanning `index.js` would demand exemptions for copy
+ * that *is* translated.
+ * @returns {Promise<Array<{file: string, line: number, prop: string, value: string}>>}
+ */
+export async function collectHardcodedHits() {
+  const [clientHits, typeHits] = await Promise.all([
+    findHardcodedCopy(clientDir),
+    findHardcodedCopy(slideTypesTypesDir),
+  ]);
+  return [
+    ...clientHits,
+    ...typeHits.filter((h) => h.file.endsWith(`${path.sep}authoring.js`)),
+  ];
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const asJson = args.includes('--json');
@@ -219,8 +282,10 @@ async function main() {
   const allow = await readAllowlist();
   const allowed = allow.hardcoded || {};
   const allowedOrphans = allow.orphans || {};
-  const hits = await findHardcodedCopy(clientDir);
-  const unexpected = hits.filter((h) => !(hardcodedId(h) in allowed));
+  const hits = await collectHardcodedHits();
+  const unexpected = hits.filter(
+    (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h)
+  );
   const orphans = await findOrphanKeys('en');
   const newOrphans = orphans.filter((k) => !(k in allowedOrphans));
   const failed = unexpected.length || newOrphans.length;
