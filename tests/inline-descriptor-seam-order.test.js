@@ -8,7 +8,7 @@
  * core's entry and drew core's DOM. A descriptor describes the DOM, so it had to
  * follow the renderer, and the renderer was core's.
  *
- * That split is closed (docs/plans/briefs/fork-override-renderer-reach.md): the
+ * That split is closed (docs/reference/slide-type-directory.md): the
  * server names its overrides in `window.__DECK_SERVER_RENDERED_TYPES__` and the
  * client routes them through server-side rendering, so an override now draws the
  * fork's markup in the browser too — the markup `def.inline` describes. The

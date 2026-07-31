@@ -10,7 +10,7 @@
  *  - Pure claim -> identity mapping ({@link mapClaimsToIdentity}) has no I/O and
  *    is unit-tested directly.
  *
- * @see docs/plans/briefs/sso-integration.md (Track 1, "Claim -> identity mapping")
+ * @see docs/reference/sso-oidc.md ("Claim -> identity mapping")
  */
 
 import * as client from 'openid-client';

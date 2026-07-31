@@ -15,7 +15,7 @@
  * `users.organization_id` is retained as the home organization a person lands
  * in when their session carries no workspace, and as the organization new rows
  * are created in. It is no longer the authority on where a person may work;
- * membership is. See docs/plans/briefs/finish-organizations.md (phase 0).
+ * membership is. See docs/reference/tenant-isolation.md.
  */
 
 import { normalizeEmail } from '../utils/normalize.js';

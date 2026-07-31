@@ -95,7 +95,7 @@ function isBundledSlideType(type) {
  * global (`window.__DECK_SERVER_RENDERED_TYPES__`, injected by
  * server/routes/static/app-shell.js) that is present before any slide renders —
  * no fetch, no per-view wiring. Absent in the OSS build, so this is a no-op
- * there. See docs/plans/briefs/fork-override-renderer-reach.md.
+ * there. See docs/reference/slide-type-directory.md ("The inline descriptor").
  */
 function isServerOverriddenType(type) {
   if (typeof window === 'undefined') return false;

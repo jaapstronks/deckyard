@@ -39,7 +39,7 @@ const LADDER = {
  * the ladder, so this list is empty and the guard now enforces the ladder with
  * no exceptions. It may only ever shrink — never add an entry to work around a
  * layout that wants an off-ladder width; change the layout instead.
- * See docs/plans/briefs/breakpoint-scale.md for the migration history.
+ * See docs/reference/css-breakpoints.md for the ladder and its rationale.
  */
 const ALLOWLIST = [];
 

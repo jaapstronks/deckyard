@@ -186,7 +186,7 @@ export const INLINE_DESCRIPTORS = { ...SLIDE_TYPE_INLINE_EDIT };
  * That gap is closed: the server now names its overrides in a head global and
  * the client routes them through server-side rendering (see
  * `needsServerRender()` in client/lib/slide-runtime/slide-render.js and
- * docs/plans/briefs/fork-override-renderer-reach.md), so the browser draws the
+ * docs/reference/slide-type-directory.md), so the browser draws the
  * fork's markup for an override — the markup `def.inline` describes. Every
  * population now agrees:
  *   - core type, not overridden → core markup; core defs carry no `inline`, so

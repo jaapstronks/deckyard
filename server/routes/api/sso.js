@@ -11,7 +11,7 @@
  * and checked at the callback.
  *
  * @see server/auth/providers/oidc.js
- * @see docs/plans/briefs/sso-integration.md (Track 1)
+ * @see docs/reference/sso-oidc.md
  */
 
 import crypto from 'node:crypto';
