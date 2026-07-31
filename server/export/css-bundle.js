@@ -61,6 +61,18 @@ export function buildExportStyleContent(bundle) {
     bundle.themeVarsCss,
     bundle.themeCss,
     stripFontFacesFromCss(bundle.slidesCss),
+    // Anchor the slide's base font to the theme, not the export chrome. The
+    // export <body> carries `font-family: var(--ps-font-sans)` (an app-chrome
+    // token → 'Inter', …); slide text that sets no family of its own would
+    // otherwise inherit it. But `stripFontFacesFromCss` removes Inter's
+    // @font-face here (theme fonts are embedded separately), so that inherited
+    // stack falls through to the system font — which Skia can only embed as
+    // Type 3 (glyph-as-procedure). `--font-body` is defined on `.slide` itself
+    // (theme.css, hard default `Arial, sans-serif`), so this keeps unstyled
+    // slide text on an embeddable font and stops the chrome token leaking into
+    // the slide layer. Slide-type rules that set `--font-heading`/-body/-mono
+    // outrank this (higher specificity), so headings etc. are unchanged.
+    '.slide { font-family: var(--font-body); }',
     bundle.wmCss,
   ].join('\n');
 }
