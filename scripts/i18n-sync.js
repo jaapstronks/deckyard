@@ -12,7 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types.js';
+import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { slideTypeUiKeys } from './lib/slide-type-i18n-keys.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,10 +61,18 @@ function sortKeys(obj) {
  * without English (the picker resolves them against the authoring default), so a
  * blanket "not in English" prune would delete live translations.
  *
+ * Custom types are deliberately NOT skipped here, unlike in `i18n-extract`.
+ * Extract skips them so a fork's strings can't leak into the shared extraction
+ * template; the prune has the opposite duty. A fork type's keys are as live as a
+ * core type's — `tests/slide-type-i18n-orphans.test.js` counts them as legitimate
+ * — so excluding them would make this script silently delete a fork's own
+ * translations, and delete the shadowed core type's keys outright for a type
+ * registered with `override: true`.
+ *
  * @returns {number} total keys removed across all locales
  */
 export function pruneOrphanedSlideTypeKeys() {
-  const valid = slideTypeUiKeys(SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES);
+  const valid = slideTypeUiKeys(SLIDE_TYPES);
   let totalPruned = 0;
 
   for (const lang of ALL_LOCALES) {
