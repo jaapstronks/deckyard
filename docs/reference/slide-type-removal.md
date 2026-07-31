@@ -70,16 +70,22 @@ Two things to carry into the next one:
   `shared/slide-types/convert.js`, the form router and the field special-cases
   in `render-field.js` are outside it. `grep -rn "'<old-name>'"` is the actual
   worklist, and every hit is a *move*.
-- **Pin the parity while both names exist.** `tests/list-slide-name-parity.test.js`
-  asserts that no module branches on one name without the other. It is the
-  cheap guardrail an alias needs between rung 1 and rung 3, and it deletes
-  itself when rung 3 lands. (A general version — assertion 5 in
-  `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
+- **Pin the parity while both names exist.** For the list consolidation a
+  dedicated test asserted that no module branched on one name without the other
+  — the cheap guardrail an alias needs between rung 1 and rung 3. It was written
+  to delete itself when rung 3 lands, and did. (A general version — assertion 5
+  in `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
   name-branching modules instead of enumerating them.)
 
-Rungs 2 and 3 are unchanged: the alias still needs a clean deck scan before its
-name can leave the registry, and the surviving name is its `successor` in
-`shared/slide-types/removed.js`.
+Rung 3 landed for this alias in #485, and it changed what rung 2 means. The
+surviving name is still the `successor` in `shared/slide-types/removed.js`, but
+**a clean deck scan is not what clears the way** — a scan reads the store it is
+pointed at, and on a fresh file-store install that store is empty, so it reports
+"clean" about decks it has never seen (the trap #464 walked into). What actually
+clears the way is a **numbered migration**: `056_rename_lijstje_slide_to_list_slide.js`
+renames the type across every stored surface on every install, as part of the
+normal upgrade, whether or not anyone ran a script. See the migration step in the
+checklist below.
 
 ## The removal checklist
 
@@ -87,7 +93,24 @@ Run the scan first — `node scripts/scan-slide-type.js <type>` — and stop if 
 reports hits. On a Postgres-backed install, point `--dir` at an export of the
 decks, and scan every deployment, not just the dev machine.
 
+**A "clean" scan is only as wide as the store you pointed it at.** It says
+nothing about the installs you do not have on disk — every fork, every
+self-host — so treat it as a check on *your* deployment, not as permission.
+Where the type has a successor with the same field schema, the honest answer is
+step 0 below; where it has none, the tombstone plus the archived-slide render is
+what stored decks fall back on.
+
 Then, in rough dependency order:
+
+0. **If the type has a successor, ship a numbered DB migration** in
+   `server/db/migrations/` that rewrites the stored name. This is what makes the
+   removal safe on installs you will never see: the migration runner applies it
+   on every upgrade, while a `scripts/` one-off only ever runs where someone
+   remembers to run it. Keep it **self-contained SQL** — `056_rename_lijstje_slide_to_list_slide.js`
+   walks the jsonb columns with a recursive `pg_temp` function rather than
+   importing the equivalent script, because a migration is a historical record
+   and the script it mirrors is free to move. Keep the script too: file-store
+   installs have no migration runner, and exports still need converting.
 
 1. **Delete the definition** — `shared/slide-types/types/<type>.js`.
 2. **Delete the stylesheet** — `client/styles/slides/**/<n>-<type>.css`, and

@@ -65,7 +65,7 @@ export const TYPE_CSS = {
   'table-slide': { tier: '01-layout-and-title', file: '35-table-slide.css' },
   'image-slide': { tier: '01-layout-and-title', file: '40-image-slide.css' },
   'image-text-slide': { tier: '01-layout-and-title', file: '50-image-text-slide.css' },
-  'lijstje-slide': { tier: '01-layout-and-title', file: '60-lijstje-slide.css' },
+  'list-slide': { tier: '01-layout-and-title', file: '60-list-slide.css' },
   'kpi-metrics-slide': { tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' },
   'comparison-slide': { tier: '01-layout-and-title', file: '82-comparison-slide.css' },
   'process-slide': { tier: '01-layout-and-title', file: '84-process-slide.css' },

@@ -30,8 +30,7 @@ export function renderContentSlideForm({
 }
 
 /**
- * Render form fields for the List type (`list-slide`, and its retired alias
- * `lijstje-slide` — one definition, one form).
+ * Render form fields for the List type (`list-slide`).
  */
 export function renderListSlideForm({
   form,

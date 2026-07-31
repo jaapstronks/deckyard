@@ -9,7 +9,6 @@
 // Slide types with item minimums
 export const SLIDE_ITEM_REQUIREMENTS = {
   'list-slide': { field: 'items', min: 2, max: 8 },
-  'lijstje-slide': { field: 'items', min: 2, max: 8 }, // Back-compat alias
   'timeline-slide': { field: 'items', min: 2, max: 10 },
   'kpi-metrics-slide': { field: 'metrics', min: 1, max: 4 },
 };

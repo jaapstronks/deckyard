@@ -25,7 +25,7 @@ export {
   quoteSlideSchema,
   payoffSlideSchema,
   contentSlideSchema,
-  lijstjeSlideSchema,
+  listSlideSchema,
   timelineSlideSchema,
   kpiMetricsSlideSchema,
   iconCardGridSlideSchema,

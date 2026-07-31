@@ -162,9 +162,8 @@ export function renderSlideFormByType(ctx) {
       });
       return true;
 
-    // One curated form for the one List type, under both its names.
+    // One curated form for the List type.
     case 'list-slide':
-    case 'lijstje-slide':
       renderListSlideForm({
         form,
         add,

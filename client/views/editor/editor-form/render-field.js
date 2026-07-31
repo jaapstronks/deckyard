@@ -59,7 +59,6 @@ function affectsLabelForSlide({ slideType, fieldKey }) {
     (slideType === 'chapter-title-slide' && fieldKey === 'title') ||
     (slideType === 'content-slide' && fieldKey === 'title') ||
     (slideType === 'list-slide' && fieldKey === 'title') ||
-    (slideType === 'lijstje-slide' && fieldKey === 'title') ||
     (slideType === 'chart-slide' && fieldKey === 'title') ||
     (slideType === 'image-text-slide' && fieldKey === 'title') ||
     (slideType === 'quote-slide' && fieldKey === 'quote') ||
@@ -423,11 +422,8 @@ export function createRenderField({
 
       const list = h('div', { class: 'stack is-gap-lg items-reorder-list' });
       // Per-field override wins; otherwise the List type stays single-column
-      // (under either of its two names) and everything else defaults to the
-      // compact two-column grid.
-      const isListItems =
-        (slide.type === 'list-slide' || slide.type === 'lijstje-slide') &&
-        field.key === 'items';
+      // and everything else defaults to the compact two-column grid.
+      const isListItems = slide.type === 'list-slide' && field.key === 'items';
       const cols = Number.isInteger(field?.itemColumns)
         ? Math.max(1, field.itemColumns)
         : isListItems

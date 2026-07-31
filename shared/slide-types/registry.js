@@ -4,7 +4,6 @@ import contentSlide from './types/content-slide.js';
 import iconCardGridSlide from './types/icon-card-grid-slide/index.js';
 import imageSlide from './types/image-slide.js';
 import imageTextSlide from './types/image-text-slide.js';
-import lijstjeSlide from './types/lijstje-slide.js';
 import listSlide from './types/list-slide.js';
 import endSlide from './types/end-slide.js';
 import payoffSlide from './types/payoff-slide.js';
@@ -195,7 +194,6 @@ const CORE_SLIDE_TYPES = {
   'content-slide': contentSlide,
   'table-slide': tableSlide,
   'list-slide': listSlide,
-  'lijstje-slide': lijstjeSlide, // Back-compat alias (same definition as list-slide)
   'kpi-metrics-slide': kpiMetricsSlide,
   'image-text-slide': imageTextSlide,
   'video-slide': videoSlide,

@@ -71,7 +71,7 @@ Rendered above the categories, both local-only:
 `SLIDE_TYPE_PRESETS` (keyed by type) surfaces meaningful layout variants as
 their own tiles that insert pre-configured — a picker-level concern, **not** a
 schema change. Curated set: image-text left/right, content one/two-column,
-lijstje bullets/numbers.
+list bullets/numbers.
 
 - A preset is `{ id, labelKey, label, content, previewContent? }`. `content` is
   the override applied on insert (threaded through `insertSlide` via a

@@ -113,7 +113,7 @@ export function fixTableSlideContent(content) {
  * Fix list-slide layout based on item count
  * Auto-switch to two-column when 5+ items to prevent overflow
  */
-export function fixLijstjeSlideLayout(content) {
+export function fixListSlideLayout(content) {
   if (!content) return content;
 
   const items = content.items;
@@ -191,7 +191,7 @@ export function getIconCardGridOptimization(content) {
 }
 
 /**
- * Build markdown body from lijstje items
+ * Build markdown body from list items
  */
 export function buildBodyFromItems(items, content) {
   if (!items || items.length === 0) {

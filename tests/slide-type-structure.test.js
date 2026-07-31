@@ -212,11 +212,9 @@ function fieldSignature(def) {
  * entry to go. Same discipline as the structure burndown above.
  */
 const SIGNATURE_BURNDOWN = {
-  'lijstje-slide == list-slide':
-    'One definition behind two names: lijstje-slide is `{ ...listSlide, ai: ' +
-    'false }`. This is the pair the assertion exists for — it stood beside ' +
-    'itself in the picker for months, twice labelled "List". Already on rung 1 ' +
-    'of the removal ladder; the entry dies with rung 3 (brief A step 4).',
+  // Empty: the one entry (the List type under a Dutch alias and `list-slide`)
+  // was retired at rung 3 of the list consolidation, so no two core types share
+  // a field signature any more.
 };
 
 test('no two slide types offer the same field signature', () => {

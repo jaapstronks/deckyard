@@ -14,7 +14,7 @@ import { checkForUnknownFields } from './fields.js';
 import { truncateContentFields } from './truncate.js';
 import {
   fixTableSlideContent,
-  fixLijstjeSlideLayout,
+  fixListSlideLayout,
   fixTextBlocksSlideDefaults,
   getIconCardGridOptimization,
   buildBodyFromItems,
@@ -37,8 +37,8 @@ export function validateAndFixSlide(slide) {
   }
 
   // Auto-fix list-slide layout based on item count
-  if (type === 'list-slide' || type === 'lijstje-slide') {
-    content = fixLijstjeSlideLayout(content);
+  if (type === 'list-slide') {
+    content = fixListSlideLayout(content);
   }
 
   // Apply smart defaults to text-blocks-slide (alternating colors, arrows)
@@ -125,7 +125,7 @@ export function validateAndFixSlide(slide) {
     });
 
     // Option 1: Convert to content-slide if there's only 1 item or 0 items
-    if (arr.length <= 1 && (type === 'list-slide' || type === 'lijstje-slide')) {
+    if (arr.length <= 1 && type === 'list-slide') {
       logValidation('convert-slide-type', {
         from: type,
         to: 'content-slide',
@@ -240,7 +240,7 @@ function getContentWarnings(slide, prevSlide = null) {
   }
 
   // Readability: list items with long text
-  if ((type === 'list-slide' || type === 'lijstje-slide') && content.items?.length) {
+  if (type === 'list-slide' && content.items?.length) {
     const longItems = content.items.filter(item => item?.text && item.text.length > 100);
     if (longItems.length >= 2) {
       warnings.push('Several list items have long descriptions — consider trimming for slide readability.');
@@ -272,7 +272,7 @@ function getContentWarnings(slide, prevSlide = null) {
   if (prevSlide && prevSlide.type === type) {
     // Only warn for content-heavy types that might feel repetitive
     const repetitiveTypes = new Set([
-      'list-slide', 'lijstje-slide', 'icon-card-grid-slide', 'text-blocks-slide', 'content-slide',
+      'list-slide', 'icon-card-grid-slide', 'text-blocks-slide', 'content-slide',
     ]);
     if (repetitiveTypes.has(type)) {
       warnings.push(`Same slide type as previous slide (${type}) — consider varying the layout for visual interest.`);
@@ -309,7 +309,7 @@ export function validateAndFixRefinedSlides(refinedSlides) {
   // Deck-level balance check: warn if too many content-slides
   const contentSlideTypes = new Set(['content-slide']);
   const specializedTypes = new Set([
-    'list-slide', 'lijstje-slide', 'icon-card-grid-slide', 'text-blocks-slide',
+    'list-slide', 'icon-card-grid-slide', 'text-blocks-slide',
     'timeline-slide', 'kpi-metrics-slide', 'team-cards-slide', 'process-slide',
     'comparison-slide', 'matrix-slide',
   ]);

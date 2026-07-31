@@ -18,9 +18,9 @@ Those two tables disagreed. Of the 33 offerable types they agreed on 28:
 The disagreement is not the interesting part; the reason it survived is. Both
 surfaces fold a type they have never heard of into an "Other" bucket without
 complaining, so a type could be missing from a table, or in the wrong one, and
-nothing anywhere would say so. That is the same failure mode that let
-`lijstje-slide` stand beside `list-slide` in the picker for months under two
-tiles both labelled "List".
+nothing anywhere would say so. That is the same failure mode that let the List
+type stand beside itself in the picker for months — registered under both
+`list-slide` and a Dutch alias, two tiles both labelled "List".
 
 ## The declaration
 

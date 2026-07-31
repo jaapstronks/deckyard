@@ -269,7 +269,7 @@ fallbacks).
 | --- | --- | --- | --- | --- | --- |
 | title-slide | title, subheading, byline, attribution | subheading, byline, attribution | – | – | – |
 | content-slide | title | subheading | – | body | convert: + Add image → image-text |
-| list-slide / lijstje-slide | title, items | subheading + item text | ✅ | – | – |
+| list-slide | title, items | subheading + item text | ✅ | – | – |
 | quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`); empty slot clickable in edit mode (first portrait inline) |
 | chapter-title-slide | title | subheading | – | – | – |
 | image-text-slide | title | caption | – | body | media: `images[]` per cell; convert: × on sole empty placeholder → content-slide |
