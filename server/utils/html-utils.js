@@ -105,9 +105,10 @@ function resolveContainedPath(repoRoot, s, isUpload) {
  * @param {string} urlOrPath - URL or path to convert
  * @param {Object} options - Options
  * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
- * @param {(buf: Buffer, ext: string, mime: string) => Promise<{buf: Buffer, mime: string}>} [options.transform]
+ * @param {(buf: Buffer, ext: string, mime: string, url?: string) => Promise<{buf: Buffer, mime: string}>} [options.transform]
  *   Optional async transform applied to the image bytes before base64-encoding
- *   (e.g. downsample/recompress for PDF). Must resolve to `{ buf, mime }`.
+ *   (e.g. downsample/recompress for PDF). Receives the source URL/path so a
+ *   transform can size per image (see image-measure.js). Must resolve to `{ buf, mime }`.
  * @param {boolean} [options.embedRemote] When true, remote http(s) image URLs
  *   are fetched through the SSRF guard and inlined as data URLs; a blocked or
  *   failed fetch returns '' (stripped) so the URL never reaches headless Chrome.
@@ -163,7 +164,7 @@ async function computeDataUrlIfLocal(
       let mime = fetched.contentType || 'application/octet-stream';
       const ext = mime.startsWith('image/') ? mime.slice(6) : '';
       if (typeof transform === 'function') {
-        const r = await transform(buf, ext, mime);
+        const r = await transform(buf, ext, mime, s);
         if (r && Buffer.isBuffer(r.buf)) {
           buf = r.buf;
           if (r.mime) mime = r.mime;
@@ -187,7 +188,7 @@ async function computeDataUrlIfLocal(
     const ext = path.extname(abs).slice(1).toLowerCase();
     let mime = mimeFromExt(ext);
     if (typeof transform === 'function') {
-      const r = await transform(buf, ext, mime);
+      const r = await transform(buf, ext, mime, s);
       if (r && Buffer.isBuffer(r.buf)) {
         buf = r.buf;
         if (r.mime) mime = r.mime;
