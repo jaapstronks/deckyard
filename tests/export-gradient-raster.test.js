@@ -33,7 +33,9 @@ import {
   resolveChromeExecutablePath,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
-import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
+import { buildSlidesPdfHtml, buildStyleContent } from '../server/export/pdf-slides.js';
+import { loadExportCssBundle } from '../server/export/css-bundle.js';
+import { renderSlideHtml } from '../server/utils/render-slide.js';
 import { loadTheme } from '../server/utils/themes.js';
 import {
   findGradientBgVars,
@@ -304,12 +306,14 @@ test(
   'a pseudo-element layer whose gradient never resolves is left alone',
   { skip },
   async () => {
-    // The upstream reality this module documents: `--t-slide-gradient-bg` is
-    // declared on `.ps-theme` but references a custom property that only exists
-    // on the slide root. Substitution happens where the property is *computed* —
-    // on `.ps-theme` — so it is guaranteed-invalid and the layer paints nothing,
-    // even though its computed opacity is 1. Resolving `--gx` by hand here would
-    // add a gradient the live export does not draw.
+    // `--t-slide-gradient-bg` here is declared on `.ps-theme` but references a
+    // custom property that only exists on the slide root. Substitution happens
+    // where the property is *computed* — on `.ps-theme` — so it is
+    // guaranteed-invalid and the layer paints nothing, even though its computed
+    // opacity is 1. Resolving `--gx` by hand here would add a gradient the live
+    // export does not draw. (This was the shipped shape until `themeVarsCssText()`
+    // moved that one var to the slide root; a theme can still land in it by
+    // declaring its own value that reads a slide-root property.)
     const unresolvable =
       'radial-gradient(circle at var(--gx) 50%, rgba(219,255,0,0.9) 0%, rgba(219,255,0,0) 70%)';
     const out = await rasterizeGradientBackgrounds({
@@ -361,18 +365,24 @@ test('a document that cannot show the layer never starts a browser', () => {
   );
 });
 
-test('the shipped PDF export carries no pseudo-element bitmaps', { skip }, async () => {
-  // End-to-end guard on the safety property: with upstream's gate in place, this
-  // whole feature is a no-op. If a change ever makes `--t-gradient-enabled`
-  // stop reaching those layers, this fails instead of silently growing the PDF.
+test('the pseudo-element raster follows what actually paints', { skip }, async () => {
+  // The property worth guarding is causal — *a layer is rasterized exactly when
+  // it paints* — and it needs both directions to mean anything. Asserting only
+  // "the shipped export has no bitmaps" pins upstream **policy**
+  // (`--t-gradient-enabled: 0` in every export path), which a fork legitimately
+  // inverts, and it passes just as happily when the feature is broken and nothing
+  // could ever be rasterized. That is not hypothetical: this assertion was green
+  // for exactly that wrong reason until `themeVarsCssText()` started declaring
+  // `--t-slide-gradient-bg` on the slide root, because before that `midnight`'s
+  // generated gradient was guaranteed-invalid and painted nothing at all.
   const theme = await loadTheme(repoRoot, 'deckyard');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
   assert.equal(/grad-px-\d+/.test(html), false, 'no pseudo-element raster upstream');
 
   // `deckyard` has `gradient.enabled: false`, so the pre-check short-circuits and
-  // the probe never runs — which makes the assertion above true for the wrong
-  // reason. `midnight` is the shipped theme that switches the layers on, so it is
-  // the one that actually walks the probe and lands on the opacity test.
+  // the probe never runs. `midnight` is the shipped theme that switches the layers
+  // on, so it is the one that actually walks the probe and lands on the opacity
+  // test.
   const gradientTheme = await loadTheme(repoRoot, 'midnight');
   const layerDeck = {
     title: 'Pseudo-element layers',
@@ -387,6 +397,28 @@ test('the shipped PDF export carries no pseudo-element bitmaps', { skip }, async
     /grad-px-\d+/.test(layerHtml),
     false,
     'the export gate still reaches the layers, so none of them is rasterized',
+  );
+
+  // Now the other direction, on the same real cascade with only the knob moved:
+  // a later, equal-specificity declaration re-opens the gate, the way a fork that
+  // wants its gradient in the PDF does. Those layers must now become bitmaps —
+  // and one bitmap *per slide*, because `gradientVarsForSlide()` puts each slide's
+  // blobs somewhere else and #491 dedupes on the resolved value, not the declared
+  // one. A single shared bitmap here would mean the per-slide jitter is dead again.
+  const css = await loadExportCssBundle(repoRoot, gradientTheme, null);
+  const slidesHtml = layerDeck.slides.map((s) =>
+    renderSlideHtml(s, { theme: gradientTheme, stripEditorAttrs: true }),
+  );
+  const out = await rasterizeGradientBackgrounds({
+    themeVarsCss: css.themeVarsCss,
+    slidesHtml,
+    styleContent: `${buildStyleContent(css)}\n.ps-theme { --t-gradient-enabled: 1; }`,
+  });
+  assert.equal(out.rasterCount, 2, 'two slides, two distinct gradient positions, two bitmaps');
+  assert.notEqual(
+    out.stageClasses[0],
+    out.stageClasses[1],
+    'and they must not be pointed at the same rule',
   );
 });
 
