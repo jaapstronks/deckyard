@@ -6,11 +6,16 @@
  * 4000px photo shown at 1600px therefore drags its full original pixels into
  * the PDF, which is why exports occasionally balloon to hundreds of MB.
  *
- * This module provides a transform that shrinks each raster image to a retina
- * margin over its display size and re-encodes it (JPEG for opaque images,
- * PNG when transparency must be preserved) before it is base64-encoded. SVGs
- * and animated GIFs are left untouched, and the transform never returns a
- * larger buffer than it was given.
+ * This module provides a transform that shrinks each raster image to a
+ * longest-edge cap and re-encodes it (JPEG for opaque images, PNG when
+ * transparency must be preserved) before it is base64-encoded. SVGs and
+ * animated GIFs are left untouched, and the transform never returns a larger
+ * buffer than it was given.
+ *
+ * The cap here is a flat ceiling (`maxPx`); sizing it to how big each image is
+ * actually drawn — a retina margin over its *display* size, so a grid thumbnail
+ * no longer embeds at full-bleed resolution — lives in `image-measure.js`, which
+ * builds a per-image config on top of this transform.
  */
 
 import sharp from 'sharp';
