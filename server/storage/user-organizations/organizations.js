@@ -5,6 +5,7 @@
 
 import { nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/db-guard.js';
+import { getDefaultOrganizationId } from '../../config/database.js';
 
 // ============================================================
 // ORGANIZATION CRUD
@@ -133,6 +134,22 @@ export async function updateOrganization(organizationId, updates) {
 }
 
 /**
+ * Whether this is the organization every single-workspace path falls back to.
+ *
+ * It is the one organization that may not be deleted, and it is configurable
+ * (`DEFAULT_ORGANIZATION_ID`), so the check has to ask for it rather than
+ * repeat the seed UUID: on an instance that sets the variable, hard-coding the
+ * seed value protects an organization that may not even exist and leaves the
+ * real fallback deletable.
+ *
+ * @param {string} organizationId - Organization ID
+ * @returns {boolean}
+ */
+export function isDefaultOrganization(organizationId) {
+  return Boolean(organizationId) && organizationId === getDefaultOrganizationId();
+}
+
+/**
  * Delete an organization.
  * This will cascade delete all related data.
  * @param {string} organizationId - Organization ID
@@ -141,7 +158,7 @@ export async function updateOrganization(organizationId, updates) {
 export async function deleteOrganization(organizationId) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     // Prevent deletion of default organization
-    if (organizationId === '00000000-0000-0000-0000-000000000001') {
+    if (isDefaultOrganization(organizationId)) {
       return { ok: false, reason: 'cannot_delete_default' };
     }
 

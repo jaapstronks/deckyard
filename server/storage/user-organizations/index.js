@@ -30,4 +30,5 @@ export {
   createOrganization,
   updateOrganization,
   deleteOrganization,
+  isDefaultOrganization,
 } from './organizations.js';

@@ -6,6 +6,7 @@ export { createAccountTab } from './account-tab.js';
 export { createPreferencesTab } from './preferences-tab.js';
 export { createAdminTab } from './admin-tab.js';
 export { createUsersTab } from './users-tab.js';
+export { createOrganizationTab } from './organization-tab.js';
 export { createEmailTab } from './email-tab.js';
 export { createIntegrationsTab } from './integrations-tab.js';
 export { createFontsTab } from './fonts-tab.js';

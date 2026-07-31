@@ -12,7 +12,7 @@
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
  *   where / orderBy / limit / offset / execute / executeTakeFirst,
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
- *   updateTable / set, deleteFrom, and `db.fn.count()`.
+ *   updateTable / set, deleteFrom / returning, and `db.fn.count()`.
  *
  * Four behaviours are modelled on purpose because tests depend on them:
  *   1. UNIQUE constraints (notably the globally unique `users.email`) throw the
@@ -648,6 +648,7 @@ export function createFakeDb(seed = {}) {
     deleteFrom(table) {
       queryLog.push({ op: 'delete', table });
       const predicates = [];
+      let returningColumns = null;
 
       const builder = {
         where(columnOrCallback, op, value) {
@@ -658,12 +659,25 @@ export function createFakeDb(seed = {}) {
           }
           return builder;
         },
+        // `deleteFrom(...).returning('id').executeTakeFirst()` is how the
+        // storage layer tells "deleted a row" from "matched nothing"
+        // (organizations.js). Without it the double answered with the
+        // delete-count shape and the caller read `undefined` as not_found.
+        returning(columns) {
+          returningColumns = Array.isArray(columns) ? columns : [columns];
+          return builder;
+        },
         async execute() {
           const rows = rowsOf(table);
+          const gone = rows.filter((row) => predicates.every((p) => matches(row, p)));
           const keep = rows.filter((row) => !predicates.every((p) => matches(row, p)));
-          const removed = rows.length - keep.length;
           tables[table] = keep;
-          return [{ numDeletedRows: BigInt(removed) }];
+          if (returningColumns) {
+            return gone.map((row) =>
+              Object.fromEntries(returningColumns.map((column) => [column, row[column]]))
+            );
+          }
+          return [{ numDeletedRows: BigInt(rows.length - keep.length) }];
         },
         async executeTakeFirst() {
           const [first] = await builder.execute();
