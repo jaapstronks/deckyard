@@ -211,12 +211,24 @@ seam is the source of truth, the shell CSS classes are presentation only.
 ## Descriptor reference
 
 `INLINE_DESCRIPTORS` in `inline-edit/descriptors.js` maps slide type →
-descriptor. The core map wins; a type without a core entry falls back to an
-`inline` descriptor declared on the slide-type definition itself - the
-extension seam for custom types (arrives via `/api/slide-types`; JSON-only,
-so function-valued options are core-map-only). Everything beyond the
-descriptor (field type, required, maxLength, item schema, min/max counts) is
-read from `SLIDE_TYPES[type].fields`.
+descriptor. `getInlineDescriptor()` resolves **definition first, core map
+second**: an `inline` descriptor declared on the slide-type definition itself
+wins, and core's aggregator entry is the fallback. That is the extension seam
+for custom types (arrives via `/api/slide-types`; JSON-only, so function-valued
+options are core-map-only), and it matches every other companion in the family.
+Core definitions carry no `inline` of their own, so a core type still lands on
+core's entry. Everything beyond the descriptor (field type, required, maxLength,
+item schema, min/max counts) is read from `SLIDE_TYPES[type].fields`.
+
+> This lookup read **core-first** until 2026-07-31 ([#507](https://github.com/jaapstronks/deckyard/pull/507)),
+> as the aggregator-seam rule's one documented exception. The reason was narrow:
+> a descriptor describes the DOM a renderer emits, and a fork that overrode a
+> *core name* got core's markup in the browser (`custom/slide-types/` is
+> server-only), so reading `def.inline` would have aimed every anchor at
+> elements that were not in the document. Once the server started routing those
+> overrides through server-side rendering, the browser drew the fork's markup and
+> the exception lost its premise. Full reasoning in
+> [`slide-type-directory.md`](slide-type-directory.md#the-aggregator-seam-rule).
 
 | Knob | Semantics |
 | --- | --- |

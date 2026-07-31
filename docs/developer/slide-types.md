@@ -458,8 +458,8 @@ For image fields, `presetSource` controls which presets appear:
 
 Core slide types opt into click-to-edit on the editor canvas via a descriptor
 registry (`client/views/editor/inline-edit/descriptors.js`). A custom type
-cannot edit that core file, so the registry falls back to an `inline`
-descriptor declared on the slide-type definition itself:
+cannot edit that core file, so it declares an `inline` descriptor on the
+slide-type definition itself, and that is what the lookup reads first:
 
 ```javascript
 export default {
@@ -490,8 +490,17 @@ Two requirements, same as for core types:
 
 The descriptor travels to the client via `/api/slide-types`, so it must be
 plain JSON: function-valued options (like a dynamic `addPlacement`) only work
-in the core registry. A core entry for the same type name wins over the
-definition's `inline`.
+in the core registry.
+
+**The definition wins.** `getInlineDescriptor()` reads `def.inline` first and
+falls back to the core map — the same definition-first order as every other
+companion. So if you override a core type *by name* (`override: true`), your
+descriptor replaces core's rather than being shadowed by it, which is what you
+want: the server renders your markup for that name, and a descriptor only makes
+sense against the markup that was actually drawn. This order flipped on
+2026-07-31 ([#507](https://github.com/jaapstronks/deckyard/pull/507)); before
+that the core map won, because an override's markup never reached the browser.
+See [`../reference/slide-type-directory.md`](../reference/slide-type-directory.md#the-aggregator-seam-rule).
 
 ---
 

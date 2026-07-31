@@ -1935,6 +1935,17 @@ components:
 
     SlideType:
       type: object
+      description: |
+        Resolved metadata for one slide type, keyed in the response by its
+        registry key (`title-slide`). Every optional key below is omitted rather
+        than nulled when it does not apply — a consumer must treat "absent" and
+        "empty" as different answers, because several facets (`inspectorKeeps`
+        in particular) use that distinction deliberately.
+
+        The response is the wire half of the aggregator-seam rule: the editor
+        holds this payload, not the registry, so companions are resolved here.
+        A fork type that declares its own facets is only heard because the
+        resolved values travel.
       properties:
         label:
           type: string
@@ -1942,6 +1953,87 @@ components:
           type: object
         defaults:
           type: object
+        tier:
+          type: integer
+          enum: [1, 2, 3]
+          description: >-
+            Spec ladder: 1 = the normative core profile, 2 = the rest of what
+            Deckyard ships, 3 = fork/org extension. Derived from the name, so a
+            fork type under a new name reads as 3 without declaring anything.
+        fallback:
+          type: string
+          description: >-
+            The tier-1 type a core-profile-only reader should render this as.
+            Absent on tier-1 types, which are their own contract.
+        structure:
+          type: string
+          description: >-
+            Content shape (singleton / collection / tabular / …). Normative
+            since the schema opened; see deck-conformance.md.
+        runtime:
+          type: string
+          description: >-
+            What the presenting session must do beyond serving the slide
+            (static / timed / live).
+        interaction:
+          type: string
+          description: >-
+            The sub-contract `runtime: live` implies — which kind of answer the
+            audience sends. Absent on everything else.
+        deprecated:
+          type: boolean
+          description: >-
+            Still rendered for existing decks, but hidden from the picker and
+            withheld from agents. Absent when false.
+        themeId:
+          type: string
+          description: Restricts the type to a single theme.
+        defaultsByLang:
+          type: object
+          description: Per-language overrides of `defaults`.
+        inline:
+          type: object
+          description: >-
+            Inline (WYSIWYG) edit descriptor declared on the definition. Read
+            *before* the client's core map, so an override of a core name
+            supplies its own. JSON-only — function-valued options are
+            core-map-only.
+        inspectorKeeps:
+          type: array
+          items:
+            type: string
+          description: >-
+            Fields the settings inspector keeps rendering once the canvas covers
+            the rest. Absent (not `[]`) when nobody narrows the type — the
+            inspector's conservative fallback depends on that difference.
+        layoutVariants:
+          type: array
+          items:
+            type: object
+          description: Layout catalogue for the editor's layout switcher. Absent = no switcher.
+        layoutMirror:
+          type: object
+          description: Which enum field mirrors the layout (image left/right).
+        layoutTextColumns:
+          type: object
+          description: Which enum field sets the text-column count, and for which layout values.
+        group:
+          type: string
+          description: Curated picker/settings group (resolved authoring companion).
+        schematic:
+          type: object
+          description: Picker glyph (resolved authoring companion).
+        sampleContent:
+          type: object
+          description: Sample content used by the picker preview (resolved authoring companion).
+        description:
+          type: string
+          description: Picker tile tooltip.
+        aliases:
+          type: array
+          items:
+            type: string
+          description: Extra search terms for the picker's haystack.
 
     SlideLibraryItem:
       type: object

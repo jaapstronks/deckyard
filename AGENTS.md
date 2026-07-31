@@ -137,6 +137,27 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - `fields`: schema describing editable fields (drives editor UI + validation + translation)
   - `defaults`: default content object for new slides
   - `renderHtml(content, slide, ctx)`: returns the `.slide` markup string
+- **Companions**: every type also has a `shared/slide-types/types/<type>/`
+  directory holding the per-type facets other subsystems read (`authoring.js`,
+  `inline-edit.js`, …). A definition is *not* complete without the companions
+  its features need — a missing one fails open and silently, which is why they
+  have their own map. Read
+  [`docs/reference/slide-type-directory.md`](docs/reference/slide-type-directory.md)
+  (layout + the aggregator-seam rule) and
+  [`docs/reference/slide-type-companions.md`](docs/reference/slide-type-companions.md)
+  (what each companion is and what breaks without it) before adding or moving a
+  type.
+- **Two shapes coexist.** The A7.1 rollout is converting definitions from the
+  flat `types/<type>.js` into `types/<type>/index.js`, one type at a time, so
+  both forms are live and the registry imports both. Anything that counts or
+  globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
+  `grep '\.js$'` over that directory counts companions as types.
+- **Identity**: the registry key (`title-slide`) is what `slides[].type` stores
+  and stays that forever, but the *published* id is reverse-DNS
+  (`eu.deckyard.slide.title`, suffix dropped). `resolveSlideTypeName()` in
+  `registry.js` is the single place that knows the spellings are one type — do
+  not re-derive that mapping anywhere else. See
+  [`docs/reference/deck-format.md`](docs/reference/deck-format.md).
 
 ### Rendering
 
@@ -188,8 +209,13 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
 
 ### 1) Add the shared slide type module (canonical)
 
-- Create `shared/slide-types/types/<your-slide>.js`
+- Create `shared/slide-types/types/<your-slide>.js` (or `<your-slide>/index.js` —
+  both shapes are live, see *Where slide types live*)
 - Export `default { label, fields, defaults, renderHtml }`
+- **Add the companions too**, in `shared/slide-types/types/<your-slide>/`. The
+  checklist of which ones a type needs, and what silently degrades when one is
+  missing, is [`docs/reference/slide-type-companions.md`](docs/reference/slide-type-companions.md).
+  Skipping this is the single most common way a new type ships half-wired.
 - Requirements:
   - `renderHtml()` must return a single root `.slide` element with a `.slide-inner` child.
   - Use `esc()` for string fields; use `markdownToSafeHtml()` for markdown fields.
