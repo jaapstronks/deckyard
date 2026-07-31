@@ -93,7 +93,8 @@ export class LocalProvider extends MediaProvider {
   async confirmUpload(key) {
     // Resolve + confine the key under uploadsDir so a traversal key like
     // '../auth/auth.js' can't be used as an existence/size oracle for
-    // arbitrary files. See docs/plans/security-hardening.md item 5b.
+    // arbitrary files. See docs/reference/security-posture.md
+    // § Upload path-traversal containment.
     const absolutePath = this._resolveKeyPath(key);
     if (!absolutePath) return { exists: false, publicUrl: '' };
     try {

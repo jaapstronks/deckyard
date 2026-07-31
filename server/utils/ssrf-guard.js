@@ -6,7 +6,8 @@
  * user-controlled image URL in a slide can't make the server (or headless
  * Chrome, via inlined images) reach internal services.
  *
- * See docs/plans/security-hardening.md item 2.
+ * See docs/reference/security-posture.md § SSRF guard on server-side image
+ * fetches.
  *
  * NOTE on DNS rebinding: we resolve the hostname and validate every returned
  * address before fetching, then fetch by hostname (which re-resolves). A

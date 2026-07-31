@@ -21,7 +21,8 @@ const MIME = {
  * Maximum accepted request-body size in bytes. Bounds memory use so an
  * authenticated client can't OOM the server with an unbounded body. Generous
  * default (25 MB) covers large decks with inline data-URL images; override with
- * MAX_REQUEST_BODY_BYTES. See docs/plans/security-hardening.md item 5a.
+ * MAX_REQUEST_BODY_BYTES. See docs/reference/security-posture.md
+ * § Request-body size cap.
  */
 const DEFAULT_MAX_BODY_BYTES = 25 * 1024 * 1024;
 
@@ -261,7 +262,8 @@ export function methodNotAllowed(res, allowed) {
  * @param {boolean} [opts.userUpload] When true the file is user-uploaded
  *   content: risky types (SVG) are served inert (CSP sandbox +
  *   Content-Disposition: attachment) so a stored <script> can't execute in the
- *   app origin on navigation. See docs/plans/security-hardening.md item 4.
+ *   app origin on navigation. See docs/reference/security-posture.md
+ *   § User-uploaded content is served inert.
  */
 export async function serveFile(res, absolutePath, { userUpload = false } = {}) {
   try {

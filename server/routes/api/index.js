@@ -68,7 +68,8 @@ import { handleDataSources } from './data-sources.js';
 export async function handleApi({ repoRoot, req, res, url }) {
   // CSRF defense: reject cookie-authenticated, cross-origin state-changing
   // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
-  // same-origin requests. See docs/plans/security-hardening.md item 5c.
+  // same-origin requests. See docs/reference/security-posture.md
+  // § CSRF: origin/referer check on cookie-authenticated writes.
   if (!isCsrfSafe(req)) {
     return forbidden(res, 'Cross-site request blocked (CSRF)');
   }
