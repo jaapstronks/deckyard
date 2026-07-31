@@ -99,7 +99,8 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
       throw err;
     }
 
-    // Sandbox posture (see docs/plans/security-hardening.md item 1).
+    // Sandbox posture. See docs/reference/security-posture.md
+    // § Headless-browser sandbox posture.
     //
     // The container image runs Chromium as a non-root user, so the old
     // "renderer escape == root in the container" risk is gone. Chromium's own

@@ -322,7 +322,8 @@ export async function buildSlidesPdfHtml(
 
   // Embed uploads referenced as field values. embedRemote inlines remote
   // http(s) images through the SSRF guard (or strips them) so no user-supplied
-  // URL reaches headless Chrome at setContent time. See security-hardening 2.
+  // URL reaches headless Chrome at setContent time. See
+  // docs/reference/security-posture.md § SSRF guard on server-side image fetches.
   const slides = await embedSlideImages(repoRoot, pres.slides, {
     transform: imageTransform,
     embedRemote: true,

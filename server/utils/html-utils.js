@@ -112,7 +112,8 @@ function resolveContainedPath(repoRoot, s, isUpload) {
  * @param {boolean} [options.embedRemote] When true, remote http(s) image URLs
  *   are fetched through the SSRF guard and inlined as data URLs; a blocked or
  *   failed fetch returns '' (stripped) so the URL never reaches headless Chrome.
- *   Only enable on server-side export/render paths. See security-hardening 2.
+ *   Only enable on server-side export/render paths. See
+ *   docs/reference/security-posture.md § SSRF guard on server-side image fetches.
  * @param {Map<string, Promise<string>>} [options.cache] Optional per-export-run
  *   cache keyed by source URL/path. When supplied, the same source is fetched +
  *   recompressed at most once across every embed pass in the run (the in-flight
@@ -261,7 +262,8 @@ export async function embedImgSrcDataUrls(
   // embed pass and the <img src> net above both miss. Left intact it reaches
   // headless Chrome at setContent → server-side fetch (SSRF). Inline remote
   // url() through the same guard, or blank it so nothing is fetched. Only runs
-  // on the export/render path (embedRemote). See security-hardening 2.
+  // on the export/render path (embedRemote). See
+  // docs/reference/security-posture.md § SSRF guard on server-side image fetches.
   if (embedRemote) {
     out = await embedRemoteCssUrls(repoRoot, out, { transform, cache });
   }

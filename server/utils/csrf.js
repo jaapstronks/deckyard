@@ -15,7 +15,8 @@
  * cannot be abused via a victim's browser cookie, so they are exempt — no
  * client changes required.
  *
- * See docs/plans/security-hardening.md item 5c.
+ * See docs/reference/security-posture.md
+ * § CSRF: origin/referer check on cookie-authenticated writes.
  */
 
 import { parseCookies } from './cookies.js';

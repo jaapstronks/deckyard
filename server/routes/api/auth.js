@@ -50,7 +50,8 @@ export async function handleAuth({ repoRoot, req, res, url }) {
     const password = getString(body, 'password');
 
     // Brute-force throttle (per-IP + per-email) before the expensive password
-    // verification, so login can't be hammered. See security-hardening 3c.
+    // verification, so login can't be hammered. See
+    // docs/reference/security-posture.md § Login brute-force throttle.
     const ip = getClientIp(req);
     const allowed = await allowLoginAttempt({
       ip,

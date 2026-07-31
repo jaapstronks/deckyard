@@ -178,6 +178,7 @@ nothing is discoverable only by `ls`.
 | [`../ops/agent-install.md`](ops/agent-install.md) | Install Deckyard with an AI agent |
 | [`fork-setup.md`](reference/fork-setup.md) | Setting up a fork |
 | [`tenant-isolation.md`](reference/tenant-isolation.md) | Organizations and isolation shapes |
+| [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |
