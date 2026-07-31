@@ -39,3 +39,41 @@ jobs:
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - run: npm run lint
       - run: npm test
+
+  # Second run of the SAME suite, with a fork slide type dropped into
+  # custom/slide-types/ before it starts. That tree is gitignored, so upstream CI
+  # otherwise only ever sees the core registry — and a derivation that takes one
+  # branch fewer for a type that does NOT declare something (an inspectorKeeps
+  # list, its own i18n keys) is invisible until a fork installs one. It bit twice
+  # in two days, both caught only at review: #499 (i18n prune wiped fork
+  # translations) and #501 (inspector audit demanded the injected bg/a11y fields
+  # of a keepless type). This job makes that branch a first-class citizen of CI.
+  #
+  # A separate job, not a matrix arm of `test`, on purpose: a red mark here reads
+  # as "the fork branch broke", not "a test broke", without opening the run.
+  # Fixtures live tracked under tests/fixtures/fork-slide-types/ and are copied
+  # in, so a local `npm test` (no copy) still runs the pure core suite.
+  test-fork:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Same Chrome provisioning as `test`: the fork run is the whole suite, and
+      # the export smoke test refuses to skip under CI (see
+      # tests/export-chrome-smoke.test.js). Kept in step with the block above.
+      - name: Install Chrome for the export smoke test
+        run: |
+          set -euo pipefail
+          CHROME_VERSION="$(node -e "import('puppeteer-core').then(m => console.log(m.PUPPETEER_REVISIONS.chrome))")"
+          echo "Installing Chrome $CHROME_VERSION (pinned by puppeteer-core)"
+          INSTALL_LOG="$(npx --no-install @puppeteer/browsers install "chrome@$CHROME_VERSION" --path "$RUNNER_TEMP/chrome")"
+          CHROME_PATH="$(printf '%s\n' "$INSTALL_LOG" | tail -n1 | cut -d' ' -f2-)"
+          test -x "$CHROME_PATH"
+          echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
+      - name: Load fork slide types into custom/slide-types/
+        run: cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+      - run: npm test

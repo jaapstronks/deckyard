@@ -46,6 +46,30 @@ function sortKeys(obj) {
 }
 
 /**
+ * The set of `slideType.*` keys the live registry currently produces — the
+ * authority the prune below measures every locale against.
+ *
+ * Derived from the whole of `SLIDE_TYPES`, fork types **included**: the prune
+ * passes no skip-set, unlike `i18n-extract` (which excludes
+ * `CUSTOM_SLIDE_TYPE_NAMES` so a fork's strings can't leak into the shared
+ * extraction template). The prune has the opposite duty — a fork type's keys are
+ * as live as a core type's, so narrowing this set to core would make the prune
+ * silently delete a fork's own translations, and delete a core type's keys
+ * outright once a fork registers over its name with `override: true`. That
+ * asymmetry is the #499 regression; `tests/fork-slide-type-derivations.test.js`
+ * pins it against a file-based fork type loaded from `custom/slide-types/`, which
+ * is the only place it is observable.
+ *
+ * Kept as its own export (not inlined into the prune) so that test can assert on
+ * the exact set the prune uses, rather than a re-derivation that could drift.
+ *
+ * @returns {Set<string>} every valid `slideType.*` key, core and fork alike
+ */
+export function liveSlideTypeI18nKeys() {
+  return slideTypeUiKeys(SLIDE_TYPES);
+}
+
+/**
  * Remove `slideType.*` keys the registry no longer produces.
  *
  * Nothing else deletes them: `i18n-extract` only ever adds, `i18n-validate` only
@@ -61,18 +85,13 @@ function sortKeys(obj) {
  * without English (the picker resolves them against the authoring default), so a
  * blanket "not in English" prune would delete live translations.
  *
- * Custom types are deliberately NOT skipped here, unlike in `i18n-extract`.
- * Extract skips them so a fork's strings can't leak into the shared extraction
- * template; the prune has the opposite duty. A fork type's keys are as live as a
- * core type's — `tests/slide-type-i18n-orphans.test.js` counts them as legitimate
- * — so excluding them would make this script silently delete a fork's own
- * translations, and delete the shadowed core type's keys outright for a type
- * registered with `override: true`.
+ * The valid set is `liveSlideTypeI18nKeys()`, which keeps fork types — see there
+ * for why excluding them would silently delete a fork's translations (#499).
  *
  * @returns {number} total keys removed across all locales
  */
 export function pruneOrphanedSlideTypeKeys() {
-  const valid = slideTypeUiKeys(SLIDE_TYPES);
+  const valid = liveSlideTypeI18nKeys();
   let totalPruned = 0;
 
   for (const lang of ALL_LOCALES) {
