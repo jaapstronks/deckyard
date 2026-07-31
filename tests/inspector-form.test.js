@@ -40,6 +40,7 @@ const { getInspectorKeepKeys } = await import(
   '../client/views/editor/editor-form/inspector-form.js'
 );
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { GLOBAL_SLIDE_FIELD_KEYS } = await import('../shared/slide-types/registry.js');
 
 function renderForm({
   type,
@@ -194,10 +195,11 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
 // type (schema minus the inline-covered content fields). Each of those must
 // render somewhere in the inspector DOM. Iterating SLIDE_TYPES means adding or
 // removing a slide type never touches this test — removing split-partner-title
-// used to require deleting a hand-listed pin (#480). Fork/custom DB types
-// (Tier 2) are not in the static registry at test time; the "unknown custom
-// types fall back" test below covers that path, so "just iterate the core
-// registry" is the deliberate choice here.
+// used to require deleting a hand-listed pin (#480). Org types from the builder
+// UI live in the database and are not in SLIDE_TYPES at test time; the "unknown
+// custom types fall back" test below covers that path. File-based fork types in
+// custom/slide-types/ ARE loaded into SLIDE_TYPES, so a fork audits its own
+// types here too, which is the point and also the trap below.
 //
 // A few keep-fields render only once their enabling content exists: image-slide
 // zoom needs zoomSteps, and chart legend/pie/series labels are gated on
@@ -207,6 +209,18 @@ test('chart inspector keeps the data editor but drops text and axis labels', () 
 // zero-touch). A new type that ships a conditionally-rendered config field fails
 // here until it either renders unconditionally or documents its precondition —
 // the invariant doing its job, not maintenance churn.
+// GLOBAL_SLIDE_FIELD_KEYS are excluded, because they are not per-type keeps at
+// all: withGlobalSlideFields() injects them into every schema and the shared
+// Background / Accessibility sections render them, on their own conditions (the
+// background tail only appears once an image is set). getInspectorKeepKeys()
+// documents its result as "excl. bg/a11y routing" and the hand-written
+// keep-lists honour that, but its fallback branch (every schema field minus the
+// inline-covered ones) cannot, so the injected keys arrive here for any type
+// that declares no keeps. Every core type declares one; a file-based fork type
+// in custom/slide-types/ typically does not, which is why this audit was green
+// upstream and red in the CIIIC fork on its very first run (#501).
+const GLOBAL_KEYS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
+
 const RENDER_PRECONDITIONS = {
   // Zoom level/positions only render with a selected image and zoom enabled;
   // 'custom' is the value that also surfaces zoomPositions.
@@ -222,9 +236,12 @@ const RENDER_PRECONDITIONS = {
 };
 
 test('every inspector-keep field renders (no config field is bulk-modal-only)', () => {
+  // Collected rather than asserted per key: the first failure used to hide the
+  // rest, and a fork running this wants the whole list in one go.
+  const orphaned = [];
   for (const [type, def] of Object.entries(SLIDE_TYPES)) {
-    const keepKeys = getInspectorKeepKeys(type, def);
-    if (!keepKeys.size) continue;
+    const keepKeys = [...getInspectorKeepKeys(type, def)].filter((k) => !GLOBAL_KEYS.has(k));
+    if (!keepKeys.length) continue;
     const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
     // A keep-field may surface in the no-selection view, the selected-image
     // element tab, or the selected-card element tab; gather labels from all.
@@ -237,12 +254,18 @@ test('every inspector-keep field renders (no config field is bulk-modal-only)', 
     const rendered = new Set(states.flatMap((s) => fieldLabels(renderForm(s))));
     for (const key of keepKeys) {
       const label = (fieldByKey.get(key)?.label || key).toLowerCase();
-      assert.ok(
-        [...rendered].some((l) => l.includes(label)),
-        `${type}: keep-field "${key}" (label "${label}") must render in the inspector, not only in the bulk modal`
-      );
+      if (![...rendered].some((l) => l.includes(label))) {
+        orphaned.push(`${type}: keep-field "${key}" (label "${label}")`);
+      }
     }
   }
+  assert.deepEqual(
+    orphaned,
+    [],
+    'these settings/config/metadata fields render nowhere but the bulk modal, so ' +
+      'the user cannot reach them from the inspector:\n' +
+      orphaned.join('\n')
+  );
 });
 
 test('video/embed source fields render in the inspector (no orphaned fields)', () => {
