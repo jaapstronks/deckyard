@@ -31,6 +31,22 @@
   --timeline-marker-ring: rgba(255, 255, 255, 0.85);
 }
 
+/* Print/PDF: drop the raw card shadow the same way the slide-shadow tokens are
+   flattened in 00-tokens.css. The light variant above inherits that flattening
+   for free (it uses var(--slide-shadow-card)); this dark variant sets its own
+   value — a heavier elevation, because 10%-black is invisible on a dark
+   background — and so slipped past the guard. Chrome turns a blurred box-shadow
+   into a transparency group behind an /SMask << /S /Luminosity >>, which
+   Ghostscript composites correctly but CoreGraphics (Preview, Quick Look, all of
+   PDFKit) renders as a filled bounding box: a hard dark rectangle around every
+   card. Same selector as the definition above → wins in print. */
+@media print {
+  .slide-timeline.slide-bg-calm,
+  .slide-timeline.slide-bg-dark {
+    --timeline-card-shadow: none;
+  }
+}
+
 .slide-timeline .slide-inner {
   justify-content: flex-start;
 }
