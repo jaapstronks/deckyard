@@ -26,6 +26,10 @@ const COPY = {
 
 export default {
   structure: 'chrome',
+  // Chrome, so nothing authored to preserve; unlike the payoff this one sits
+  // anywhere in the deck rather than at the end, so the neutral prose slide is
+  // the tier-1 contract that keeps its place without claiming a closing beat.
+  fallback: 'content-slide',
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',

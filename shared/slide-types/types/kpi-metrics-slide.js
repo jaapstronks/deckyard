@@ -46,6 +46,7 @@ function parseNoteTone(noteRaw) {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,

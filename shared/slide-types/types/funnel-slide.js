@@ -44,6 +44,7 @@ function stageHtml(stage, idx, total, colKey = 'items') {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   label: 'Funnel',
   fields: [

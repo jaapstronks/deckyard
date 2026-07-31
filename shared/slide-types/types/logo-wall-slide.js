@@ -103,6 +103,9 @@ export function ensureLogos(content) {
 
 export default {
   structure: 'collection',
+  // Same as gallery: the items are images, so the image contract holds them.
+  // The grid is the loss, not the logos.
+  fallback: 'image-slide',
   runtime: 'static',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,

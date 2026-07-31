@@ -135,6 +135,7 @@ const DEFAULT_CSS = `.ch-center {
 
 export default {
   structure: 'singleton',
+  fallback: 'content-slide',
   runtime: 'static',
   label: 'Custom HTML',
   // Deliberately not offered to agents (see server/utils/ai/slide-catalog/

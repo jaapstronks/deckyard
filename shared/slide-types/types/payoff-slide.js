@@ -2,6 +2,10 @@ import { esc } from '../helpers.js';
 
 export default {
   structure: 'chrome',
+  // Chrome carries no authored content, so the fallback cannot be about
+  // preserving fields — it is about which tier-1 slide keeps the beat this one
+  // occupies in the sequence. For a payoff that is the closing slide.
+  fallback: 'end-slide',
   runtime: 'static',
   label: 'Payoff',
   fields: [],

@@ -15,6 +15,7 @@ import renderHtml from './render.js';
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   label: 'Icon cards',
   fields: [

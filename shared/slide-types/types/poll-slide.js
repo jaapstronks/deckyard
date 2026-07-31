@@ -19,6 +19,7 @@ function letterForIdx(i) {
 
 export default {
   structure: 'fixed-collection',
+  fallback: 'list-slide',
   runtime: 'live',
   interaction: 'poll',
   label: 'Poll',

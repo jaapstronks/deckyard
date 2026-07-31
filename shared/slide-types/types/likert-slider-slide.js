@@ -3,6 +3,7 @@ import { getSlideCopy } from '../slide-copy.js';
 
 export default {
   structure: 'singleton',
+  fallback: 'content-slide',
   runtime: 'live',
   // Same protocol kind as likert-slide: the audience sends a point on a
   // scale. The slider is how it is drawn, not what it collects.

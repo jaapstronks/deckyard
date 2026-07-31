@@ -35,6 +35,10 @@ import {
 
 export default {
   structure: 'dataset',
+  // The payload already is rows (a CSV in `data`), so a table renders all of
+  // it and only the encoding is lost. This is also why chart is not in the core
+  // profile: the picture needs a charting library, the data does not.
+  fallback: 'table-slide',
   runtime: 'static',
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,

@@ -42,6 +42,7 @@ function stepHtml(step, idx, total, direction, colKey = 'items') {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   label: 'Process',
   fields: [

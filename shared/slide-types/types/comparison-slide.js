@@ -10,6 +10,10 @@ import { markdownToSafeHtml } from '../../markdown.js';
 
 export default {
   structure: 'singleton',
+  // Two labelled columns with a body each is two-dimensional content, even
+  // though the fields are scalars. A table keeps the pairing that is the whole
+  // point of a comparison; content-slide would flatten it into one body.
+  fallback: 'table-slide',
   runtime: 'static',
   label: 'Comparison',
   fields: [
