@@ -277,10 +277,14 @@ const PDF_DOC_CSS = `
  * may have had its rasterized gradient declarations reduced to a plain colour.
  * The overrides are appended after this block, so they win any specificity tie.
  *
+ * Exported so a test can assemble the same cascade and flip the gate below,
+ * which is the only way to assert that a layer is rasterized *because* it paints
+ * rather than that this export happens to keep them all switched off.
+ *
  * @param {Object} bundle - CSS bundle from `loadExportCssBundle`.
  * @returns {string}
  */
-function buildStyleContent(bundle) {
+export function buildStyleContent(bundle) {
   return `${buildExportStyleContent(bundle)}
 
       /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
