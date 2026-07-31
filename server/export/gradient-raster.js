@@ -248,9 +248,16 @@ async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WID
   if (!values.length) return [];
   const height = Math.max(1, Math.round(width * SLIDE_ASPECT));
 
-  let browser;
+  // Opening the page belongs in the same guard as launching the browser.
+  // `getPuppeteerBrowser` caches its launch promise for the process lifetime, so
+  // a Chrome that dies after the first export leaves a resolved-but-dead Browser
+  // whose `newPage()` rejects. Letting that escape would fail the whole export —
+  // and worse, the `/export/pdf-slides` HTML preview route, which reaches this
+  // module without otherwise needing a browser at all.
+  let page;
   try {
-    browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
+    const browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
+    page = await browser.newPage();
   } catch (err) {
     // No Chrome (or no puppeteer-core) is a normal state for some installs and
     // for the HTML preview route. The live gradient still renders.
@@ -258,7 +265,6 @@ async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WID
     return values.map(() => null);
   }
 
-  const page = await browser.newPage();
   try {
     await page.setViewport({ width, height: height * values.length });
     // Every value in one document: N screenshots, one setContent. The divs are
