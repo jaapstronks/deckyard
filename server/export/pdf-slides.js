@@ -10,6 +10,7 @@ import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
 import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
+import { measureImageDisplayPx, displayAwareEmbedTransform } from './image-measure.js';
 import { rasterizeGradientBackgrounds } from './gradient-raster.js';
 
 /**
@@ -308,6 +309,9 @@ export async function buildSlidesPdfHtml(
 
   // Downsample + recompress images as they are inlined so a full-res photo
   // doesn't drag its original pixels into the PDF (null = compression disabled).
+  // This flat-cap transform stays on the field-value pass below (top-level images
+  // are near full-bleed, so the flat cap already fits) and on video posters; the
+  // <img src> pass gets a display-aware transform once the layout is measured.
   const imageTransform = pdfImageEmbedTransform();
 
   // One embed cache for the whole export run: an image referenced both as a
@@ -359,6 +363,17 @@ export async function buildSlidesPdfHtml(
   });
   css.themeVarsCss = gradients.themeVarsCss;
 
+  // Measure how big each <img src> is actually drawn, so it can be capped at a
+  // retina margin over its display size instead of a flat pixel ceiling — the
+  // grid/gallery thumbnails that hold most of the image bytes are drawn tiny but
+  // otherwise embed at the same 2600px cap as a full-bleed photo. Only the local
+  // <img src> images the pass below inlines are measured; skipped entirely when
+  // compression is off or there is nothing local to embed. See image-measure.js.
+  const displayPx = imageTransform
+    ? await measureImageDisplayPx({ slidesHtml, styleContent: buildStyleContent(css) })
+    : new Map();
+  const imgSrcTransform = displayAwareEmbedTransform(process.env, displayPx) ?? imageTransform;
+
   let pagesHtml = slidesHtml
     .map((slideHtml, i) => {
       const stageClass = gradients.stageClasses[i]
@@ -369,7 +384,7 @@ export async function buildSlidesPdfHtml(
     .join('\n');
   pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
     includeClient: true,
-    transform: imageTransform,
+    transform: imgSrcTransform,
     embedRemote: true,
     cache: embedCache,
   });
