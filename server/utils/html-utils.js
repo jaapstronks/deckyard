@@ -9,6 +9,13 @@ import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
 import { mapLimit, exportEmbedConcurrency } from './map-limit.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('html-utils');
+
+/** 1x1 fully transparent PNG — what an unembeddable image becomes. */
+const TRANSPARENT_PIXEL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
 // Re-export from shared helpers
 export { escapeHtml } from '../../shared/slide-types/helpers.js';
@@ -232,7 +239,16 @@ export async function embedImgSrcDataUrls(
     );
     for (let i = 0; i < srcs.length; i++) {
       const src = srcs[i];
-      const data = datas[i];
+      let data = datas[i];
+      if (data === '') {
+        // A remote image that could not be fetched (gone, blocked, timed out).
+        // An *empty* src is not "no image": the browser resolves it against the
+        // document, fails, and draws its broken-image glyph plus the alt text —
+        // which then bakes into the PDF. A transparent pixel leaves a blank
+        // space instead, which is what a missing decorative image should be.
+        log.debug(`[export] image could not be embedded, blanked: ${src}`);
+        data = TRANSPARENT_PIXEL;
+      }
       if (data !== src) {
         out = out.split(`src="${src}"`).join(`src="${data}"`);
       }
@@ -248,12 +264,75 @@ export async function embedImgSrcDataUrls(
   if (embedRemote) {
     out = await embedRemoteCssUrls(repoRoot, out, { transform, cache });
   }
+
+  // Local `url(...)` — a CSS mask or background pointing at an asset of this
+  // install. Runs on the same paths as the <img src> pass above, because it has
+  // the same reason to exist: the document has no base URL once it reaches
+  // headless Chrome.
+  out = await embedLocalCssUrls(repoRoot, out, { includeClient, transform, cache });
+
   return out;
 }
 
 /** Match a CSS `url(...)` whose target is a remote http(s) URL, capturing the
  *  optional matching quote and the URL. */
 const REMOTE_CSS_URL_RE = /url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi;
+
+/** Match a CSS `url(...)` pointing at one of the local asset roots. */
+const LOCAL_CSS_URL_RE =
+  /url\(\s*(['"]?)(\/(?:uploads|assets|client|custom\/assets|custom\/themes)\/[^)'"]+)\1\s*\)/gi;
+
+/**
+ * Inline local `url(...)` targets — in a stylesheet or in a `style` attribute —
+ * as data URLs.
+ *
+ * The export HTML reaches headless Chrome through `setContent()`, so the
+ * document has no base URL and a root-relative path resolves to nothing. For
+ * `<img src>` that has always been handled; a `url()` was not, and the gap was
+ * invisible until a slide type started drawing with one. `icon-card-grid-slide`
+ * does: it passes its icon as `style="--icg-icon-url:url(/client/vendor/…svg)"`
+ * and the stylesheet turns that into a `mask`. The mask silently failed to load
+ * and the chip rendered as the bare `background-color` — a solid dark square
+ * where the icon should be, in every PDF and PNG export.
+ *
+ * Same allow-list and containment check as the `<img src>` pass, so this widens
+ * *where* a local asset may be referenced from, not *which* files can be read.
+ *
+ * @param {string} repoRoot
+ * @param {string} html
+ * @param {Object} [opts]
+ * @param {boolean} [opts.includeClient] - Also inline `/client/` paths.
+ * @param {Function} [opts.transform] - Optional image-bytes transform.
+ * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
+ * @returns {Promise<string>}
+ */
+export async function embedLocalCssUrls(
+  repoRoot,
+  html,
+  { includeClient = false, transform = null, cache = null } = {},
+) {
+  const s = String(html || '');
+  const uniq = new Set();
+  for (const m of s.matchAll(LOCAL_CSS_URL_RE)) {
+    if (!includeClient && m[2].startsWith('/client/')) continue;
+    uniq.add(m[2]);
+  }
+  if (!uniq.size) return s;
+
+  const urls = [...uniq];
+  const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
+    toDataUrlIfLocal(repoRoot, url, { includeClient, transform, cache }),
+  );
+  const map = new Map(urls.map((u, i) => [u, datas[i]]));
+
+  return s.replace(LOCAL_CSS_URL_RE, (whole, _q, url) => {
+    const data = map.get(url);
+    // An asset that could not be read keeps its original url(): unresolvable is
+    // better than silently rewritten, and it shows up in the export as the same
+    // missing-asset it already was.
+    return data && data !== url ? `url('${data}')` : whole;
+  });
+}
 
 /**
  * Inline (or blank) remote `url(...)` targets in a CSS/HTML string through the
