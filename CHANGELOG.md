@@ -4,6 +4,51 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.10.0](https://github.com/jaapstronks/deckyard/compare/v1.9.0...v1.10.0) (2026-07-30)
+
+
+### Added
+
+* **capture:** bilingual lemonade-stand sample deck for the marketing shots ([#454](https://github.com/jaapstronks/deckyard/issues/454)) ([1bdbacc](https://github.com/jaapstronks/deckyard/commit/1bdbacc331be53daf05068d28995abb653354684))
+* **capture:** the tranche-1 marketing recipes, and three fixes they surfaced ([#456](https://github.com/jaapstronks/deckyard/issues/456)) ([1fc63d5](https://github.com/jaapstronks/deckyard/commit/1fc63d5a2c0ceb5fe53bdd954bbd65c6aa590c71))
+* **deck-format:** point schema $id at deckyard.eu and license the spec under CC0 ([#441](https://github.com/jaapstronks/deckyard/issues/441)) ([cddf708](https://github.com/jaapstronks/deckyard/commit/cddf708dca698ab833562140adb8d62ca34d8473))
+* **kpi-slide:** let a theme colour the KPI tiles through tokens ([#438](https://github.com/jaapstronks/deckyard/issues/438)) ([ed14676](https://github.com/jaapstronks/deckyard/commit/ed146762fc7de36b477f53ade45521ad6ad48737))
+* **ops:** add maintenance mode so a deploy stops failing saves silently ([#447](https://github.com/jaapstronks/deckyard/issues/447)) ([23bf94f](https://github.com/jaapstronks/deckyard/commit/23bf94f8edee93ffb28f97505e027bc1781ad2fc))
+* **organizations:** add an organization switcher to the user menu ([#446](https://github.com/jaapstronks/deckyard/issues/446)) ([33f231d](https://github.com/jaapstronks/deckyard/commit/33f231dc9318bfdbe42a67057a3b78d9320ddd7e))
+* **organizations:** gate admin UI on the membership role of the active org ([#449](https://github.com/jaapstronks/deckyard/issues/449)) ([6be2c55](https://github.com/jaapstronks/deckyard/commit/6be2c5516f5bc260a44cce7bc1b00d3bc452c77d))
+* **organizations:** manage the member list from the Users tab ([#486](https://github.com/jaapstronks/deckyard/issues/486)) ([3dcd05e](https://github.com/jaapstronks/deckyard/commit/3dcd05e62b28863f99fc0de1798d5230dc9c5678))
+* **organizations:** the Users tab becomes the member list in multi-org ([#484](https://github.com/jaapstronks/deckyard/issues/484)) ([0503117](https://github.com/jaapstronks/deckyard/commit/0503117e72207428731e693e2a105daf1840846d))
+* **scripts:** rename migration lijstje-slide → list-slide, on both stores ([#464](https://github.com/jaapstronks/deckyard/issues/464)) ([4e6f999](https://github.com/jaapstronks/deckyard/commit/4e6f999151c216a0de5fe40b065a4237f1ef6557))
+* **slide-types:** assert no duplicate types and no lossy layout variants ([#457](https://github.com/jaapstronks/deckyard/issues/457)) ([5d56ae2](https://github.com/jaapstronks/deckyard/commit/5d56ae233eab370140cb98d52d56c54559f3a4fc))
+* **slide-types:** declare the `runtime` facet so nine modules stop guessing ([#460](https://github.com/jaapstronks/deckyard/issues/460)) ([3cbfb32](https://github.com/jaapstronks/deckyard/commit/3cbfb32a323f8d5b99b596b2024b985eb715a6f1))
+* **slide-types:** declare the `structure` facet and guard it in CI ([#453](https://github.com/jaapstronks/deckyard/issues/453)) ([dd42f93](https://github.com/jaapstronks/deckyard/commit/dd42f9376b81763f8fd1e83a1af78769a3266584))
+* **slide-types:** derive the name-branching inventory so the matrix has no hole ([#458](https://github.com/jaapstronks/deckyard/issues/458)) ([e36b96e](https://github.com/jaapstronks/deckyard/commit/e36b96eddf9290dbba2494781ee824f42578f83e))
+* **themes:** a green/brass brand theme, and it becomes the default ([#455](https://github.com/jaapstronks/deckyard/issues/455)) ([f239adf](https://github.com/jaapstronks/deckyard/commit/f239adfd82197ac250db4edc9be1b0c7fa282840))
+* **video-slide:** let the author set the watch link shown in exports ([#434](https://github.com/jaapstronks/deckyard/issues/434)) ([67e55b2](https://github.com/jaapstronks/deckyard/commit/67e55b26008c2bc1be3297f1edf91588cbb6bd02))
+
+
+### Fixed
+
+* **comments:** recognise AI suggestions by the effective author identity ([#442](https://github.com/jaapstronks/deckyard/issues/442)) ([95da202](https://github.com/jaapstronks/deckyard/commit/95da202e251f9332c370a0531e1159dadf99af35))
+* **deps:** reflect the optional dependency story in the manifest (B6-C4) ([#431](https://github.com/jaapstronks/deckyard/issues/431)) ([9184d21](https://github.com/jaapstronks/deckyard/commit/9184d2132921c2f64fb9ef0f90110765b7fd7f76))
+* drop a stray node_modules symlink that rode along in [#460](https://github.com/jaapstronks/deckyard/issues/460) ([#461](https://github.com/jaapstronks/deckyard/issues/461)) ([09a9c63](https://github.com/jaapstronks/deckyard/commit/09a9c63e3c171bb78d5694efcf2457df4a3c057d))
+* **editor:** stop redundant slide-list rebuilds from lock/comment SSE echoes ([#435](https://github.com/jaapstronks/deckyard/issues/435)) ([8f466a1](https://github.com/jaapstronks/deckyard/commit/8f466a12e71a590490adeb1fa07249fcc4f81284))
+* **export:** render the video poster in PDF/PNG placeholders ([#433](https://github.com/jaapstronks/deckyard/issues/433)) ([a14922d](https://github.com/jaapstronks/deckyard/commit/a14922dbd38aeacb619780b30c8c63145ca6717f))
+* **i18n:** detect duplicate keys in i18n:validate over raw lines ([#439](https://github.com/jaapstronks/deckyard/issues/439)) ([a1dfa9b](https://github.com/jaapstronks/deckyard/commit/a1dfa9bdcb6114e7bc0d53a1f666aa01108bd1cf))
+* **slide-types:** make the aggregator seam registry-first, and put the companions on the wire ([#473](https://github.com/jaapstronks/deckyard/issues/473)) ([a83927e](https://github.com/jaapstronks/deckyard/commit/a83927ef0ae3e8162428cd06e1870535451a7e43))
+* **slides:** three lemonade-stand defects — list alignment, nested-surface contrast, slide-copy language ([#463](https://github.com/jaapstronks/deckyard/issues/463)) ([fcf7a3a](https://github.com/jaapstronks/deckyard/commit/fcf7a3a7fd510107e7492efd7e86eae1b39a8994))
+* **spec:** stop publishing legacy fields in the JSON Schema ([#452](https://github.com/jaapstronks/deckyard/issues/452)) ([3a2334b](https://github.com/jaapstronks/deckyard/commit/3a2334ba52e94237ace2c579f59cafc4167a6ed4))
+* **storage:** stop partial writes from erasing deck columns ([#440](https://github.com/jaapstronks/deckyard/issues/440)) ([71f9a16](https://github.com/jaapstronks/deckyard/commit/71f9a16cd882c344237fa4803a8d47b3bbf5ada3))
+
+
+### Changed
+
+* **editor:** debounce the slide-search rerender ([#437](https://github.com/jaapstronks/deckyard/issues/437)) ([a5a8f3f](https://github.com/jaapstronks/deckyard/commit/a5a8f3f7429439be006848e46d61972271ae1589))
+* **editor:** patch slide-list lock indicators in place instead of rebuilding ([#436](https://github.com/jaapstronks/deckyard/issues/436)) ([410986c](https://github.com/jaapstronks/deckyard/commit/410986c8f3b0e46277887c415077603e478cb688))
+* **export:** ship viewer CSS, not the 630 KB editor bundle ([#462](https://github.com/jaapstronks/deckyard/issues/462)) ([b9dd8a2](https://github.com/jaapstronks/deckyard/commit/b9dd8a23ea650da0f46b1a575276df313fbf0000))
+* **thumbnails:** warm the deck raster on save, debounced per deck ([#426](https://github.com/jaapstronks/deckyard/issues/426)) ([5bbc8a2](https://github.com/jaapstronks/deckyard/commit/5bbc8a2781aa6dc60376cb47c644eb8376c26717))
+* **slide-types:** retire the `lijstje-slide` alias; built-in types go from 37 to 36. It was a second name for `list-slide`, never a second type. Stored decks are renamed automatically on upgrade by database migration `056`; file-store installs run `node scripts/migrate-lijstje-slide.js`. Anything missed renders as an archived slide pointing at `list-slide`, not as a broken one ([#485](https://github.com/jaapstronks/deckyard/issues/485)) ([0fb97b7](https://github.com/jaapstronks/deckyard/commit/0fb97b791eb80a944e77dd31c98e44c725f198e9))
+
 ## [1.9.0](https://github.com/jaapstronks/deckyard/compare/v1.8.0...v1.9.0) (2026-07-27)
 
 
