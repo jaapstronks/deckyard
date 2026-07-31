@@ -49,6 +49,38 @@ export function getWorkspaceRole(user) {
 }
 
 /**
+ * Whether the session is bound to a membership at all — that is, whether
+ * "the organization you are in" is a thing this instance can talk about.
+ *
+ * True only in multi-workspace mode: single-workspace instances (and the dev
+ * bypass and the sandbox, which have no membership row) get `null` for the
+ * role and are unchanged by anything gated on this.
+ *
+ * @param {Object} [user] - User from `/api/auth/me`
+ * @returns {boolean}
+ */
+export function isWorkspaceMember(user) {
+  return getWorkspaceRole(user) !== null;
+}
+
+/**
+ * Whether the member list should be reachable for this user.
+ *
+ * Gating it on `isWorkspaceAdmin()` alone (slice 2) left a plain member unable
+ * to reach the one screen carrying their own *Leave* button — the API allows
+ * any member to read the list and to remove themselves, so the gate was
+ * stricter than the rule it was mirroring. The row-level controls stay where
+ * they were: `organization-members/permissions.js` gives a plain member a
+ * read-only list plus their own way out, and nothing else.
+ *
+ * @param {Object} [user] - User from `/api/auth/me`
+ * @returns {boolean}
+ */
+export function canSeeMemberList(user) {
+  return isWorkspaceAdmin(user) || isWorkspaceMember(user);
+}
+
+/**
  * Whether the admin surfaces should be shown to this user.
  *
  * Instance admin is necessary; in multi-workspace mode being `admin` or

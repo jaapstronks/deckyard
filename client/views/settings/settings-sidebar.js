@@ -23,18 +23,27 @@ const DESIGNER_TABS = [
   { key: 'slide-types', labelKey: 'settings.tabs.slideTypes', labelDefault: 'Slide Types' },
 ];
 
+/**
+ * The people tab. It sits inside the Admin group for an admin — where it has
+ * always been — but a plain member in multi-workspace mode reaches it too
+ * (slice 5), and drawing an "Admin" divider for someone who is not one would
+ * be a lie about what they are looking at. So for them it is appended to the
+ * personal tabs instead, and the same entry is used either way.
+ */
+const MEMBERS_TAB = {
+  key: 'users',
+  labelKey: 'settings.tabs.users',
+  labelDefault: 'Users',
+  // In multi-workspace mode this tab lists the members of the organization
+  // the session is in, not every user on the instance — so it says so. See
+  // tabs/users-tab.js.
+  multiWorkspaceLabelKey: 'settings.tabs.members',
+  multiWorkspaceLabelDefault: 'Members',
+};
+
 const ADMIN_TABS = [
   { key: 'admin', labelKey: 'settings.tabs.admin', labelDefault: 'Admin' },
-  {
-    key: 'users',
-    labelKey: 'settings.tabs.users',
-    labelDefault: 'Users',
-    // In multi-workspace mode this tab lists the members of the organization
-    // the session is in, not every user on the instance — so it says so. See
-    // tabs/users-tab.js.
-    multiWorkspaceLabelKey: 'settings.tabs.members',
-    multiWorkspaceLabelDefault: 'Members',
-  },
+  MEMBERS_TAB,
   { key: 'api-keys', labelKey: 'settings.tabs.apiKeys', labelDefault: 'API Keys' },
   { key: 'email', labelKey: 'settings.tabs.email', labelDefault: 'Email' },
   { key: 'integrations', labelKey: 'settings.tabs.integrations', labelDefault: 'Integrations' },
@@ -46,11 +55,18 @@ const ADMIN_TABS = [
  * @param {Object} options
  * @param {boolean} options.isAdmin - Whether user is admin
  * @param {boolean} options.isDesigner - Whether user has designer capability
+ * @param {boolean} [options.canSeeMembers] - Whether the members tab is reachable
  * @param {string} options.activeTab - Currently active tab key
  * @param {Function} options.onTabChange - Callback when tab changes
  * @returns {Object} { el, setActiveTab }
  */
-export function createSettingsSidebar({ isAdmin, isDesigner, activeTab, onTabChange }) {
+export function createSettingsSidebar({
+  isAdmin,
+  isDesigner,
+  canSeeMembers = isAdmin,
+  activeTab,
+  onTabChange,
+}) {
   const sidebar = h('nav', {
     class: 'settings-sidebar',
     role: 'tablist',
@@ -90,6 +106,13 @@ export function createSettingsSidebar({ isAdmin, isDesigner, activeTab, onTabCha
   // Add user tabs
   for (const tab of USER_TABS) {
     sidebar.append(createTabButton(tab));
+  }
+
+  // A member who is not an admin gets the members tab here, with the personal
+  // tabs. Admins get it below, in the Admin group, exactly where it was.
+  const membersTabIsPersonal = canSeeMembers && !isAdmin;
+  if (membersTabIsPersonal) {
+    sidebar.append(createTabButton(MEMBERS_TAB));
   }
 
   // Add designer section if user has designer capability
@@ -133,6 +156,7 @@ export function createSettingsSidebar({ isAdmin, isDesigner, activeTab, onTabCha
   // Build list of visible tabs for external reference
   const visibleTabs = [
     ...USER_TABS,
+    ...(membersTabIsPersonal ? [MEMBERS_TAB] : []),
     ...(isDesigner ? DESIGNER_TABS : []),
     ...(isAdmin ? ADMIN_TABS : []),
   ];

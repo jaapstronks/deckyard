@@ -31,6 +31,36 @@ export function isSelf(member, currentUser) {
 }
 
 /**
+ * Whether the viewer may bring someone new into the organization.
+ *
+ * Admin or owner, mirroring the route's own guard. A plain member sees the
+ * list without the button rather than a button that 403s.
+ *
+ * @param {Object} [currentUser] - User from `/api/auth/me`
+ * @returns {boolean}
+ */
+export function canInvite(currentUser) {
+  return hasWorkspaceRole(getWorkspaceRole(currentUser), 'admin');
+}
+
+/**
+ * Which roles the viewer may hand out in an invitation.
+ *
+ * The server caps an admin at `member` ("Admins can only invite members"), so
+ * offering them a choice would be offering a refusal. An owner picks between
+ * member and admin; `owner` is not on the list because handing the
+ * organization to someone who is not in it yet is the transfer path, not the
+ * invite path.
+ *
+ * @param {Object} [currentUser] - User from `/api/auth/me`
+ * @returns {Array<string>} Roles, weakest first; empty when the viewer may not invite.
+ */
+export function invitableRoles(currentUser) {
+  if (!canInvite(currentUser)) return [];
+  return getWorkspaceRole(currentUser) === 'owner' ? ['member', 'admin'] : ['member'];
+}
+
+/**
  * Whether the viewer may change this member's role between member and admin.
  *
  * Owners only. An admin's role writes are capped at "set to member" *and*

@@ -40,6 +40,40 @@ export async function fetchMembers(organizationId, options = {}) {
 }
 
 /**
+ * Invite someone into the organization, or add them if they already have an
+ * account on this instance.
+ *
+ * Deliberately *not* routed through `mutateMember()`: this one is driven from
+ * a modal that stays open on failure, so the caller wants the error in the
+ * form next to the field that caused it, not a toast over a dialog. And the
+ * success is not one sentence but two — see `outcome`.
+ *
+ * @param {Object} options
+ * @param {string} options.organizationId - Organization ID.
+ * @param {string} options.email - Who to invite.
+ * @param {string} [options.name] - Optional display name for a new account.
+ * @param {string} [options.role='member'] - Membership role to grant.
+ * @returns {Promise<{ outcome: 'invited'|'added'|'created', email: string }>}
+ *   Which of the two things happened, so the report can be honest about it.
+ */
+export async function inviteMember({ organizationId, email, name, role = 'member' }) {
+  const res = await api(`/api/organizations/${encodeURIComponent(organizationId)}/members`, {
+    method: 'POST',
+    body: { email, name: name || null, role },
+  });
+
+  // The route reports both facts and they are not the same event: an existing
+  // account is *added* and hears nothing, a new one is *invited* and gets a
+  // setup link. Claiming "invitation sent" for the first would be a lie the
+  // reader only discovers when the person says they never got a mail.
+  const member = res?.member || {};
+  const outcome = member.isNewUser
+    ? (member.invitationSent ? 'invited' : 'created')
+    : 'added';
+  return { outcome, email };
+}
+
+/**
  * Run a member mutation and report it, refusals included.
  *
  * @param {Object} options

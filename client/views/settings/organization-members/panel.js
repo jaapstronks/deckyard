@@ -15,11 +15,20 @@
  * in a full reload for the same reason switching organizations does
  * (briefing decision 4): every in-memory cache in the view, the admin gates
  * included, was computed for a role the viewer no longer holds.
+ *
+ * Slice 5 adds the way in (invite-modal.js) and, with it, the first viewers
+ * who are not admins: the tab now opens to every member of the organization.
+ * Nothing here gates on that. Which controls a row carries has been
+ * `permissions.js`'s answer since slice 4, and for a plain member it already
+ * comes out as "read the list, leave if you want to" — so the limited view is
+ * the same panel, asked the same question, about a weaker role.
  */
 
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { renderMembersList } from './member-list.js';
+import { canInvite } from './permissions.js';
+import { showInviteModal } from './invite-modal.js';
 import {
   fetchMembers,
   changeMemberRole,
@@ -35,12 +44,14 @@ import {
  * @param {Object} options.user - Current user, from `/api/auth/me`.
  * @param {Function} [options.load] - Override for the members fetch (tests).
  * @param {Function} [options.reload] - Override for the full page reload (tests).
+ * @param {Function} [options.openInvite] - Override for the invite dialog (tests).
  * @returns {{ el: HTMLElement, ready: Promise<void> }} The panel and its load.
  */
 export function renderOrganizationMembersPanel({
   user,
   load = fetchMembers,
   reload = () => location.reload(),
+  openInvite = showInviteModal,
 } = {}) {
   const card = h('div', { class: 'stack editor-card admin-users-card' });
 
@@ -87,6 +98,24 @@ export function renderOrganizationMembersPanel({
   let offset = 0;
   let total = 0;
   let busy = false;
+
+  if (canInvite(user)) {
+    const inviteBtn = h('button', {
+      class: 'btn btn-primary btn-sm',
+      type: 'button',
+      text: t('organization.members.invite.open', 'Invite'),
+    });
+    inviteBtn.onclick = () =>
+      openInvite({
+        organizationId,
+        user,
+        // Reload the page the reader is on rather than jumping to where the
+        // new member sorted: the toast already said what happened, and moving
+        // the list under them would lose their place in a long organization.
+        onInvited: () => show(offset),
+      });
+    header.append(inviteBtn);
+  }
 
   const handlers = {
     onChangeRole: async (member, role) => {
