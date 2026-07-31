@@ -4,6 +4,7 @@ import { resolveTitleSlideBackground } from './title-slide-background.js';
 import {
   collectSlideTypeManifest,
   getSlideType,
+  resolveSlideTypeName,
 } from './registry.js';
 import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
@@ -22,18 +23,19 @@ import { DECK_FORMAT_ID } from './deck-format-id.js';
 //   "version": 1,
 //   "title": "My deck",
 //   "theme": "default",
-//   "slideTypes": { "title-slide": "core/title-slide" },
+//   "slideTypes": { "title-slide": "eu.deckyard.slide.title" },
 //   "slides": [
 //     { "type": "title-slide", "content": { "title": "...", "subtitle": "", "background": "lime" } }
 //   ]
 // }
 //
 // `slideTypes` records which slide-type DEFINITIONS this deck was written
-// against, as a map of the bare type key -> its `namespace/name[@version]`
-// identity. It is recomputed from the registry on every export (never
-// hand-maintained, so it can't drift) and lets a second implementation see
-// which type definitions/versions a deck needs. `slides[].type` stays the bare
-// key for back-compat.
+// against, as a map of the stored type key -> its canonical reverse-DNS
+// identity (`eu.deckyard.slide.title[@version]`). It is recomputed from the
+// registry on every export (never hand-maintained, so it can't drift) and lets a
+// second implementation see which type definitions/versions a deck needs — and
+// which published name each stored key answers to. `slides[].type` stays the
+// bare key for back-compat.
 //
 // The `format` sentinel and the bundle mimetype both live in
 // ./deck-format-id.js — one place to change them, and the place that records
@@ -95,10 +97,13 @@ function enumOptionValues(field) {
 
 function normalizeDeckSlide(raw, theme = null) {
   const type = typeof raw?.type === 'string' ? raw.type : '';
-  // Resolve by identity so a qualified ref (core/title-slide, acme/hero) imports;
-  // storage keeps the bare local name so downstream bare lookups keep working.
+  // Resolve by identity so any spelling imports — a qualified ref
+  // (core/title-slide, acme/hero) or the canonical reverse-DNS id
+  // (eu.deckyard.slide.title). Storage keeps the registry key, so downstream
+  // bare lookups keep working and no deck is rewritten by the rename.
   const def = getSlideType(type);
-  const localName = tryParseTypeId(type)?.name || type;
+  const localName =
+    resolveSlideTypeName(type) || tryParseTypeId(type)?.name || type;
   if (!def) {
     // Unknown types become a real content-slide so the imported deck stays
     // editable and saveable (an unregistered type would be neither). The
