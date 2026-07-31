@@ -252,6 +252,15 @@ const PDF_DOC_CSS = `
           margin: 0;
           box-shadow: none;
         }
+        /* Same reason .pdf-page drops its shadow here: Chrome turns a blurred
+           box-shadow into a transparency group behind an /SMask << /S /Luminosity >>,
+           and CoreGraphics (Preview, Quick Look, all of PDFKit) paints that group's
+           bounding box solid instead of compositing it. On screen - the
+           /export/pdf-slides preview - the shadows are fine and stay. */
+        .vpdf-screen,
+        .vpdf-base {
+          box-shadow: none;
+        }
         @page {
           /* Native slide size; no scaling transform involved. */
           size: 1600px 900px;
