@@ -47,6 +47,7 @@ entries are grouped per release rather than exhaustively listed.
 * **editor:** patch slide-list lock indicators in place instead of rebuilding ([#436](https://github.com/jaapstronks/deckyard/issues/436)) ([410986c](https://github.com/jaapstronks/deckyard/commit/410986c8f3b0e46277887c415077603e478cb688))
 * **export:** ship viewer CSS, not the 630 KB editor bundle ([#462](https://github.com/jaapstronks/deckyard/issues/462)) ([b9dd8a2](https://github.com/jaapstronks/deckyard/commit/b9dd8a23ea650da0f46b1a575276df313fbf0000))
 * **thumbnails:** warm the deck raster on save, debounced per deck ([#426](https://github.com/jaapstronks/deckyard/issues/426)) ([5bbc8a2](https://github.com/jaapstronks/deckyard/commit/5bbc8a2781aa6dc60376cb47c644eb8376c26717))
+* **slide-types:** retire the `lijstje-slide` alias; built-in types go from 37 to 36. It was a second name for `list-slide`, never a second type. Stored decks are renamed automatically on upgrade by database migration `056`; file-store installs run `node scripts/migrate-lijstje-slide.js`. Anything missed renders as an archived slide pointing at `list-slide`, not as a broken one ([#485](https://github.com/jaapstronks/deckyard/issues/485)) ([0fb97b7](https://github.com/jaapstronks/deckyard/commit/0fb97b791eb80a944e77dd31c98e44c725f198e9))
 
 ## [1.9.0](https://github.com/jaapstronks/deckyard/compare/v1.8.0...v1.9.0) (2026-07-27)
 
