@@ -26,6 +26,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -367,6 +368,61 @@ test('the shipped PDF export carries no pseudo-element bitmaps', { skip }, async
   const theme = await loadTheme(repoRoot, 'deckyard');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
   assert.equal(/grad-px-\d+/.test(html), false, 'no pseudo-element raster upstream');
+
+  // `deckyard` has `gradient.enabled: false`, so the pre-check short-circuits and
+  // the probe never runs — which makes the assertion above true for the wrong
+  // reason. `midnight` is the shipped theme that switches the layers on, so it is
+  // the one that actually walks the probe and lands on the opacity test.
+  const gradientTheme = await loadTheme(repoRoot, 'midnight');
+  const layerDeck = {
+    title: 'Pseudo-element layers',
+    theme: 'midnight',
+    slides: [
+      { id: 's0', type: 'quote-slide', content: { quote: 'Zo dan.', author: 'Iemand' } },
+      { id: 's1', type: 'chapter-title-slide', content: { title: 'Hoofdstuk' } },
+    ],
+  };
+  const layerHtml = await buildSlidesPdfHtml(repoRoot, layerDeck, { theme: gradientTheme });
+  assert.equal(
+    /grad-px-\d+/.test(layerHtml),
+    false,
+    'the export gate still reaches the layers, so none of them is rasterized',
+  );
+});
+
+test('the pseudo-element probe never fetches a subresource', { skip }, async () => {
+  // The probe loads real slide HTML in Chrome, and it does so *before*
+  // `embedImgSrcDataUrls` has inlined remote images through the SSRF guard. So
+  // the markup it hands to Chrome can still carry an attacker-chosen
+  // `<img src="http://…">` — a theme's `assets.logo`, custom HTML — and without
+  // request interception Chrome fetches it: no guard, no allow-list, straight
+  // out of the deck. Pinned with a real listener rather than an assertion about
+  // the code, because only the socket proves it.
+  const hits = [];
+  const srv = http.createServer((req, res) => {
+    hits.push(req.url);
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.end(Buffer.from('89504e470d0a1a0a', 'hex'));
+  });
+  await new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve));
+  try {
+    const url = `http://127.0.0.1:${srv.address().port}/should-never-be-fetched.png`;
+    // The theme switches the layer on, so the pre-check lets the probe run.
+    const themeVarsCss = THEME_ON(SELF_CONTAINED_GRADIENT);
+    await rasterizeGradientBackgrounds({
+      themeVarsCss,
+      slidesHtml: [
+        `<div class="slide slide-demo"><img src="${url}" alt="Logo" /></div>`,
+      ],
+      styleContent: themeVarsCss + STAGE_CSS,
+    });
+    // Chrome dispatches subresource requests as it parses, so give an
+    // un-intercepted fetch every chance to arrive before we conclude it did not.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    assert.deepEqual(hits, [], 'the probe must not reach the network');
+  } finally {
+    srv.close();
+  }
 });
 
 after(async () => {

@@ -278,12 +278,31 @@ export function slideRootVars(slideHtml) {
  * and worse, the `/export/pdf-slides` HTML preview route, which reaches this
  * module without otherwise needing a browser at all.
  *
+ * @param {Object} [opts]
+ * @param {boolean} [opts.offline] - Abort every non-`data:` subresource request.
  * @returns {Promise<import('puppeteer-core').Page|null>}
  */
-async function openRasterPage() {
+async function openRasterPage({ offline = false } = {}) {
   try {
     const browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
-    return await browser.newPage();
+    const page = await browser.newPage();
+    if (offline) {
+      // Enforced, not assumed. The export inlines every user-supplied image
+      // through the SSRF guard, but that pass runs *after* this module, so any
+      // page we open here would otherwise let Chrome fetch a raw remote
+      // `<img src>` (a theme's `assets.logo`, custom HTML) straight from the
+      // deck — no guard, no allow-list. Nothing measured or rendered here
+      // depends on a subresource, so the safe answer is to fetch none.
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        const url = req.url();
+        const allowed = url.startsWith('data:') || url === 'about:blank';
+        Promise.resolve(allowed ? req.continue() : req.abort()).catch(() => {
+          // The page can close mid-flight; a dangling request is not an error.
+        });
+      });
+    }
+    return page;
   } catch (err) {
     // No Chrome (or no puppeteer-core) is a normal state for some installs and
     // for the HTML preview route. The live gradient still renders.
@@ -463,7 +482,10 @@ async function probePseudoLayers({ styleContent, slidesHtml }) {
   // of them would be a real regression on the HTML preview route.
   if (!styleContent || !mayHaveVisibleGradientLayer(styleContent)) return empty;
 
-  const page = await openRasterPage();
+  // `offline`: the slide HTML reaching this point has *not* been through
+  // `embedImgSrcDataUrls` yet, so it can still carry a raw remote `<img src>`.
+  // See the note in `openRasterPage`.
+  const page = await openRasterPage({ offline: true });
   if (!page) return empty;
 
   try {
