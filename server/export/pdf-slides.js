@@ -10,6 +10,7 @@ import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
 import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
 import { loadExportCssBundle, buildExportStyleContent, embedSlideImages } from './css-bundle.js';
 import { pdfImageEmbedTransform } from './image-compress.js';
+import { rasterizeGradientBackgrounds } from './gradient-raster.js';
 
 /**
  * Render a video slide as a static "watch online" placeholder for PDF export.
@@ -129,24 +130,44 @@ export async function buildSlidesPdfHtml(
     cache: embedCache,
   });
 
-  let pagesHtml = (
-    await Promise.all(
-      slides.map(async (s, i) => {
-        const slideHtml =
-          s?.type === 'video-slide'
-            ? await renderVideoSlidePdfHtml(s, {
-                pres,
-                slideIndex: i,
-                baseUrl,
-                docLang,
-                transform: imageTransform,
-                cache: embedCache,
-              })
-            : renderSlideHtml(s, { theme, slideTypes, stripEditorAttrs: true, lang: resolveDeckLang(pres) });
-        return `<div class="pdf-page"><div class="pdf-stage ps-theme">${css.wmHtml}${slideHtml}</div></div>`;
-      })
+  const slidesHtml = await Promise.all(
+    slides.map(async (s, i) =>
+      s?.type === 'video-slide'
+        ? renderVideoSlidePdfHtml(s, {
+            pres,
+            slideIndex: i,
+            baseUrl,
+            docLang,
+            transform: imageTransform,
+            cache: embedCache,
+          })
+        : renderSlideHtml(s, {
+            theme,
+            slideTypes,
+            stripEditorAttrs: true,
+            lang: resolveDeckLang(pres),
+          })
     )
-  ).join('\n');
+  );
+
+  // A themed slide background built from alpha gradients leaves Chrome as a
+  // per-pixel PostScript shading, which costs seconds per page in a PDF reader.
+  // Render it once to a bitmap instead; see server/export/gradient-raster.js for
+  // the measurements and for why precomposing to opaque stops is not an option.
+  const gradients = await rasterizeGradientBackgrounds({
+    themeVarsCss: css.themeVarsCss,
+    slidesHtml,
+  });
+  css.themeVarsCss = gradients.themeVarsCss;
+
+  let pagesHtml = slidesHtml
+    .map((slideHtml, i) => {
+      const stageClass = gradients.stageClasses[i]
+        ? ` ${gradients.stageClasses[i]}`
+        : '';
+      return `<div class="pdf-page"><div class="pdf-stage ps-theme${stageClass}">${css.wmHtml}${slideHtml}</div></div>`;
+    })
+    .join('\n');
   pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
     includeClient: true,
     transform: imageTransform,
@@ -170,6 +191,8 @@ ${buildExportStyleContent(css)}
 
       /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
       .ps-theme { --t-gradient-enabled: 0; }
+
+${gradients.extraCss}
 
       /*
        * Video-slide "watch online" placeholder. A video can't play in a PDF, so
