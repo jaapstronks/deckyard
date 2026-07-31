@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES, CUSTOM_SLIDE_TYPE_NAMES } from '../shared/slide-types.js';
+import { slideTypeUiStrings } from './lib/slide-type-i18n-keys.js';
 
 const REPO_ROOT = process.cwd();
 
@@ -196,18 +197,6 @@ function findTCalls(src) {
   return calls;
 }
 
-function normalizeOption(opt) {
-  if (typeof opt === 'string') return { value: opt, label: opt, title: opt, ariaLabel: opt };
-  if (opt && typeof opt === 'object') {
-    const value = String(opt.value ?? '');
-    const label = String(opt.label ?? opt.title ?? value);
-    const title = String(opt.title ?? opt.label ?? value);
-    const ariaLabel = String(opt.ariaLabel ?? opt.label ?? title ?? value);
-    return { ...opt, value, label, title, ariaLabel };
-  }
-  return { value: '', label: '', title: '', ariaLabel: '' };
-}
-
 function addKey(strings, key, def, ref) {
   const k = String(key || '').trim();
   if (!k) return;
@@ -221,43 +210,16 @@ function addKey(strings, key, def, ref) {
 
 function extractSlideTypeUiStrings(strings) {
   const customNames = new Set(CUSTOM_SLIDE_TYPE_NAMES || []);
+  // Delegate the "which keys does a type own?" walk to the shared generator, so
+  // this extractor and i18n-sync's prune can never disagree on the key shape.
+  // One type at a time keeps the per-type ref that the template records.
   for (const [type, def] of Object.entries(SLIDE_TYPES || {})) {
     // Skip fork-specific custom types: template.pot.json must only contain
     // upstream strings (it is a local, gitignored extraction artifact).
     if (customNames.has(type)) continue;
     const typeRef = `shared/slide-types:${type}`;
-    const labelKey = def?.labelKey || `slideType.${type}.label`;
-    addKey(strings, labelKey, def?.label || type, typeRef);
-
-    for (const f of Array.isArray(def?.fields) ? def.fields : []) {
-      const fk = String(f?.key || '').trim();
-      if (!fk) continue;
-      addKey(strings, f.labelKey || `slideType.${type}.field.${fk}.label`, f?.label || fk, typeRef);
-      if (typeof f?.placeholder === 'string')
-        addKey(strings, f.placeholderKey || `slideType.${type}.field.${fk}.placeholder`, f.placeholder, typeRef);
-      if (typeof f?.helpText === 'string')
-        addKey(strings, f.helpTextKey || `slideType.${type}.field.${fk}.help`, f.helpText, typeRef);
-
-      const itemFields = Array.isArray(f?.itemFields) ? f.itemFields : [];
-      for (const it of itemFields) {
-        const ik = String(it?.key || '').trim();
-        if (!ik) continue;
-        addKey(strings, it.labelKey || `slideType.${type}.field.${fk}.item.${ik}.label`, it?.label || ik, typeRef);
-        if (typeof it?.placeholder === 'string')
-          addKey(strings, it.placeholderKey || `slideType.${type}.field.${fk}.item.${ik}.placeholder`, it.placeholder, typeRef);
-        if (typeof it?.helpText === 'string')
-          addKey(strings, it.helpTextKey || `slideType.${type}.field.${fk}.item.${ik}.help`, it.helpText, typeRef);
-      }
-
-      const opts = Array.isArray(f?.options) ? f.options : [];
-      for (const raw of opts) {
-        const opt = normalizeOption(raw);
-        const ok = opt?.labelKey || opt?.titleKey || opt?.ariaLabelKey;
-        if (!ok) continue;
-        if (opt.labelKey) addKey(strings, opt.labelKey, opt.label, typeRef);
-        if (opt.titleKey) addKey(strings, opt.titleKey, opt.title, typeRef);
-        if (opt.ariaLabelKey) addKey(strings, opt.ariaLabelKey, opt.ariaLabel, typeRef);
-      }
+    for (const [key, def0] of slideTypeUiStrings({ [type]: def })) {
+      addKey(strings, key, def0, typeRef);
     }
   }
 }

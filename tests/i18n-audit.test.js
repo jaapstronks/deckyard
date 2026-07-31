@@ -28,35 +28,30 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { findHardcodedCopy, findOrphanKeys, hardcodedId } from '../scripts/i18n-audit.js';
+import {
+  collectHardcodedHits,
+  findOrphanKeys,
+  hardcodedId,
+  isSampleContentException,
+} from '../scripts/i18n-audit.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const clientDir = path.join(repoRoot, 'client');
-const slideTypesDir = path.join(repoRoot, 'shared', 'slide-types', 'types');
 const allowlistPath = path.join(repoRoot, 'scripts', 'i18n-audit-allowlist.json');
 
 const allowlist = JSON.parse(await fs.readFile(allowlistPath, 'utf8'));
 const allowed = allowlist.hardcoded || {};
 const allowedOrphans = allowlist.orphans || {};
-const hits = [
-  ...(await findHardcodedCopy(clientDir)),
-  // Slide types in the directory form carry their picker copy (description,
-  // sample content) in their own `authoring.js`, which is outside client/ —
-  // scanning it here keeps that copy inside the gate as types migrate
-  // (docs/reference/slide-type-directory.md).
-  //
-  // Only `authoring.js`, deliberately. A definition's field labels and defaults
-  // are localised through the derived `slideType.*` keys rather than t(), so
-  // scanning `index.js` would demand exemptions for copy that *is* translated.
-  ...(await findHardcodedCopy(slideTypesDir)).filter((h) =>
-    h.file.endsWith(`${path.sep}authoring.js`)
-  ),
-];
+// client/ copy plus each directory-form slide type's authoring.js picker copy.
+// Slide-type *sample* content is exempted by provenance rather than by a hand-kept
+// allowlist line — see isSampleContentException / docs/reference/slide-type-directory.md.
+const hits = await collectHardcodedHits();
 const orphans = await findOrphanKeys('en');
 
 describe('i18n hardcoded copy', () => {
   it('no user-facing string bypasses t() without an allowlist entry', () => {
-    const unexpected = hits.filter((h) => !(hardcodedId(h) in allowed));
+    const unexpected = hits.filter(
+      (h) => !(hardcodedId(h) in allowed) && !isSampleContentException(h)
+    );
     assert.deepStrictEqual(
       unexpected.map((h) => `${h.file}:${h.line} [${h.prop}] ${JSON.stringify(h.value)}`),
       [],
