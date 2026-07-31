@@ -6,7 +6,7 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
-import { isWorkspaceAdmin } from '../../lib/user/workspace-role.js';
+import { isWorkspaceAdmin, canSeeMemberList } from '../../lib/user/workspace-role.js';
 import {
   createAccountTab,
   createPreferencesTab,
@@ -24,15 +24,22 @@ import {
 
 const DEFAULT_TAB = 'account';
 const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
-const ADMIN_TABS = ['admin', 'users', 'api-keys', 'email', 'integrations', 'analytics'];
+// The members tab is no longer one of these. It sits in the Admin group for an
+// admin, but in multi-workspace mode it is also the only screen where a plain
+// member finds their own way out of an organization, so it carries its own,
+// weaker gate — see MEMBERS_TAB below and lib/user/workspace-role.js.
+const ADMIN_TABS = ['admin', 'api-keys', 'email', 'integrations', 'analytics'];
+const MEMBERS_TAB = 'users';
 
 /**
  * Get the active tab from the URL hash.
- * @param {boolean} isAdmin - Whether user is admin
- * @param {boolean} isDesigner - Whether user has designer capability
+ * @param {Object} gates - What this viewer may reach
+ * @param {boolean} gates.isAdmin - Whether user is admin
+ * @param {boolean} gates.isDesigner - Whether user has designer capability
+ * @param {boolean} gates.canSeeMembers - Whether the members tab is reachable
  * @returns {string} Tab key
  */
-function getTabFromHash(isAdmin, isDesigner) {
+function getTabFromHash({ isAdmin, isDesigner, canSeeMembers }) {
   const hash = location.hash.slice(1); // Remove #
   if (!hash) return DEFAULT_TAB;
 
@@ -46,9 +53,14 @@ function getTabFromHash(isAdmin, isDesigner) {
     return DEFAULT_TAB;
   }
 
+  if (hash === MEMBERS_TAB && !canSeeMembers) {
+    return DEFAULT_TAB;
+  }
+
   const validTabs = [
     'account', 'preferences', 'export',
     ...(isDesigner ? DESIGNER_TABS : []),
+    ...(canSeeMembers ? [MEMBERS_TAB] : []),
     ...(isAdmin ? ADMIN_TABS : []),
   ];
 
@@ -80,7 +92,11 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // member must take the admin surfaces with it. See lib/user/workspace-role.js.
   const isAdmin = isWorkspaceAdmin(user);
   const isDesigner = Boolean(user?.isDesigner);
-  const initialTab = getTabFromHash(isAdmin, isDesigner);
+  // Wider than `isAdmin` on purpose: in multi-workspace mode every member may
+  // see who else is in the organization and may leave it, and this is the tab
+  // where both live.
+  const canSeeMembers = canSeeMemberList(user);
+  const initialTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers });
 
   const shell = h('div', { class: 'app-shell settings-page' });
 
@@ -137,10 +153,14 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     addTab('slide-types', createSlideTypesTab({ user }));
   }
 
+  // Members: admins in either mode, plus every member in multi-workspace mode
+  if (canSeeMembers) {
+    addTab(MEMBERS_TAB, createUsersTab({ user }));
+  }
+
   // Admin tabs
   if (isAdmin) {
     addTab('admin', createAdminTab({ user }));
-    addTab('users', createUsersTab({ user }));
     addTab('api-keys', createApiKeysTab({ user }));
     addTab('email', createEmailTab({ user }));
     addTab('integrations', createIntegrationsTab({ user }));
@@ -158,6 +178,10 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     }
     // Guard admin tabs
     if (ADMIN_TABS.includes(tabKey) && !isAdmin) {
+      tabKey = DEFAULT_TAB;
+    }
+    // Guard the members tab
+    if (tabKey === MEMBERS_TAB && !canSeeMembers) {
       tabKey = DEFAULT_TAB;
     }
 
@@ -179,6 +203,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   const sidebar = createSettingsSidebar({
     isAdmin,
     isDesigner,
+    canSeeMembers,
     activeTab: initialTab,
     onTabChange: setActiveTab,
   });
@@ -204,7 +229,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
 
   // Handle hash changes
   const handleHashChange = () => {
-    const newTab = getTabFromHash(isAdmin, isDesigner);
+    const newTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers });
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }
