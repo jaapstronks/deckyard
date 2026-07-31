@@ -15,6 +15,7 @@ import {
   SLIDE_TYPES,
   SLIDE_TYPE_IDS,
   CORE_SLIDE_TYPE_NAMES,
+  OVERRIDDEN_CORE_SLIDE_TYPE_NAMES,
   getSlideType,
   getSlideTypeId,
   resolveSlideTypeName,
@@ -27,6 +28,25 @@ import {
   parseTypeId,
   sameType,
 } from '../shared/slide-types/type-id.js';
+
+/**
+ * The core names whose definition is still CORE's.
+ *
+ * `CORE_SLIDE_TYPE_NAMES` lists the names core ships, not the names core still
+ * serves: a fork `override: true` keeps the core name in the registry while
+ * replacing the definition behind it, so that name's published id is the fork's
+ * (`custom/payoff-slide`), not core's. Every spelling still resolves to the same
+ * registry key — `eu.deckyard.slide.payoff`, `custom/payoff-slide` and
+ * `payoff-slide` all land on `payoff-slide` — so nothing about back-compat
+ * changes; what changes is whose identity the manifest reports, and reporting
+ * the fork's is the point (a reader learns the deck needs the fork's
+ * definition). The assertions below are about core's OWN identity scheme, so
+ * they run over the names core actually still owns. Empty-op in the OSS lane,
+ * where no name is overridden.
+ */
+const CORE_NAMES_SERVED_BY_CORE = CORE_SLIDE_TYPE_NAMES.filter(
+  (name) => !OVERRIDDEN_CORE_SLIDE_TYPE_NAMES.includes(name)
+);
 
 describe('getSlideType resolver', () => {
   it('resolves a bare registered key', () => {
@@ -90,8 +110,9 @@ describe('the three spellings are one type', () => {
     }
     // sameType() compares identities, and a bare name is a CORE identity — so
     // it is core names that must equal their own canonical id. A fork type's
-    // bare name and its `custom/…` id are deliberately different identities.
-    for (const name of CORE_SLIDE_TYPE_NAMES) {
+    // bare name and its `custom/…` id are deliberately different identities,
+    // and an overridden core name is exactly that case wearing a core name.
+    for (const name of CORE_NAMES_SERVED_BY_CORE) {
       assert.ok(
         sameType(name, SLIDE_TYPE_IDS[name]),
         `${name} and its canonical id must compare equal`
@@ -114,6 +135,25 @@ describe('the three spellings are one type', () => {
         `${name} and ${clash} share the canonical name "${canonical}"`
       );
       byCanonical.set(canonical, name);
+    }
+  });
+
+  it('keeps every spelling of an overridden core name resolvable', () => {
+    // The positive half of CORE_NAMES_SERVED_BY_CORE: an override changes whose
+    // identity the name publishes, and must change nothing about resolution.
+    // A deck written against core still stores the bare key and still finds a
+    // definition; the canonical core id a foreign reader may hand us still
+    // lands on the same key. Only runs in the fork lane, where the fixture in
+    // tests/fixtures/fork-slide-types/payoff-slide.js supplies an override.
+    for (const name of OVERRIDDEN_CORE_SLIDE_TYPE_NAMES) {
+      const coreId = `${CORE_AUTHORITY}.${canonicalTypeName(name)}`;
+      for (const ref of [name, coreId, `core/${name}`, SLIDE_TYPE_IDS[name]]) {
+        assert.equal(resolveSlideTypeName(ref), name, `${ref} -> ${name}`);
+      }
+      // The published id is the fork's, which is what tells a reader the deck
+      // needs the fork's definition rather than core's.
+      assert.equal(SLIDE_TYPE_IDS[name], formatCanonicalId(parseTypeId(SLIDE_TYPE_IDS[name])));
+      assert.ok(!SLIDE_TYPE_IDS[name].startsWith(`${CORE_AUTHORITY}.`), SLIDE_TYPE_IDS[name]);
     }
   });
 
@@ -140,8 +180,9 @@ describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
   it('gives every CORE type a reverse-DNS id', () => {
     // A fork type is only reverse-DNS if the fork declares an authority; one
     // that declares a single-label namespace (or none) keeps the slash form,
-    // because we cannot invent a domain on its behalf.
-    for (const name of CORE_SLIDE_TYPE_NAMES) {
+    // because we cannot invent a domain on its behalf. That applies to a fork
+    // override of a core NAME too, hence the served-by-core filter.
+    for (const name of CORE_NAMES_SERVED_BY_CORE) {
       const id = SLIDE_TYPE_IDS[name];
       assert.ok(id.startsWith(`${CORE_AUTHORITY}.`), `${name} -> ${id}`);
     }
