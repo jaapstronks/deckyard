@@ -97,103 +97,16 @@ async function renderVideoSlidePdfHtml(
   `;
 }
 
-export async function buildSlidesPdfHtml(
-  repoRoot,
-  pres,
-  { theme = null, watermark = null, slideTypes = null } = {}
-) {
-  pres = filterForExport(pres);
-  const docLang = resolveDocLangFromPresentation(pres);
-  // Public base URL for the video-slide "watch online" deep-link (empty when no
-  // APP_URL/DOMAIN is configured; the resolver then falls back to provider URLs).
-  const baseUrl = getAppBaseUrl();
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
-
-  const title = escapeHtml(pres.title || 'Presentation');
-
-  // Downsample + recompress images as they are inlined so a full-res photo
-  // doesn't drag its original pixels into the PDF (null = compression disabled).
-  const imageTransform = pdfImageEmbedTransform();
-
-  // One embed cache for the whole export run: an image referenced both as a
-  // field value (pass 1 below) and in the rendered <img src> (pass 2) is
-  // fetched + recompressed only once. Also dedupes in-flight fetches.
-  const embedCache = new Map();
-  const embedStartedAt = Date.now();
-
-  // Embed uploads referenced as field values. embedRemote inlines remote
-  // http(s) images through the SSRF guard (or strips them) so no user-supplied
-  // URL reaches headless Chrome at setContent time. See security-hardening 2.
-  const slides = await embedSlideImages(repoRoot, pres.slides, {
-    transform: imageTransform,
-    embedRemote: true,
-    cache: embedCache,
-  });
-
-  const slidesHtml = await Promise.all(
-    slides.map(async (s, i) =>
-      s?.type === 'video-slide'
-        ? renderVideoSlidePdfHtml(s, {
-            pres,
-            slideIndex: i,
-            baseUrl,
-            docLang,
-            transform: imageTransform,
-            cache: embedCache,
-          })
-        : renderSlideHtml(s, {
-            theme,
-            slideTypes,
-            stripEditorAttrs: true,
-            lang: resolveDeckLang(pres),
-          })
-    )
-  );
-
-  // A themed slide background built from alpha gradients leaves Chrome as a
-  // per-pixel PostScript shading, which costs seconds per page in a PDF reader.
-  // Render it once to a bitmap instead; see server/export/gradient-raster.js for
-  // the measurements and for why precomposing to opaque stops is not an option.
-  const gradients = await rasterizeGradientBackgrounds({
-    themeVarsCss: css.themeVarsCss,
-    slidesHtml,
-  });
-  css.themeVarsCss = gradients.themeVarsCss;
-
-  let pagesHtml = slidesHtml
-    .map((slideHtml, i) => {
-      const stageClass = gradients.stageClasses[i]
-        ? ` ${gradients.stageClasses[i]}`
-        : '';
-      return `<div class="pdf-page"><div class="pdf-stage ps-theme${stageClass}">${css.wmHtml}${slideHtml}</div></div>`;
-    })
-    .join('\n');
-  pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
-    includeClient: true,
-    transform: imageTransform,
-    embedRemote: true,
-    cache: embedCache,
-  });
-  debugLog(
-    `[pdf-export] embedded ${embedCache.size} unique image(s) in ${Date.now() - embedStartedAt}ms`,
-  );
-
-  // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
-  return `<!doctype html>
-<html lang="${escapeHtml(docLang)}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title} (PDF Slides)</title>
-    ${buildPrismKatexCdnTags()}
-    <style>
-${buildExportStyleContent(css)}
-
-      /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
-      .ps-theme { --t-gradient-enabled: 0; }
-
-${gradients.extraCss}
-
+/**
+ * Document CSS that never varies with the deck: the video-slide placeholder,
+ * the native-size page/stage boxes and the print rules.
+ *
+ * Hoisted out of the document template so the gradient raster can probe the
+ * *real* cascade before the document exists. A pseudo-element layer only paints
+ * if `.pdf-stage`/`.pdf-stage .slide` have given it a box, so a probe built from
+ * the theme CSS alone would measure a layer that is not laid out yet.
+ */
+const PDF_DOC_CSS = `
       /*
        * Video-slide "watch online" placeholder. A video can't play in a PDF, so
        * we render a laptop-framed still on the left and deck-language copy + a
@@ -345,6 +258,124 @@ ${gradients.extraCss}
           margin: 0;
         }
       }
+`;
+
+/**
+ * The document's full `<style>` content, minus the gradient-raster overrides.
+ *
+ * Built twice per export on purpose: once to probe the real cascade before any
+ * bitmap exists, and once for the finished document — by then `css.themeVarsCss`
+ * may have had its rasterized gradient declarations reduced to a plain colour.
+ * The overrides are appended after this block, so they win any specificity tie.
+ *
+ * @param {Object} bundle - CSS bundle from `loadExportCssBundle`.
+ * @returns {string}
+ */
+function buildStyleContent(bundle) {
+  return `${buildExportStyleContent(bundle)}
+
+      /* Export/print is a static medium; disable animated gradients to avoid flaky print engines. */
+      .ps-theme { --t-gradient-enabled: 0; }
+${PDF_DOC_CSS}`;
+}
+
+export async function buildSlidesPdfHtml(
+  repoRoot,
+  pres,
+  { theme = null, watermark = null, slideTypes = null } = {}
+) {
+  pres = filterForExport(pres);
+  const docLang = resolveDocLangFromPresentation(pres);
+  // Public base URL for the video-slide "watch online" deep-link (empty when no
+  // APP_URL/DOMAIN is configured; the resolver then falls back to provider URLs).
+  const baseUrl = getAppBaseUrl();
+  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+
+  const title = escapeHtml(pres.title || 'Presentation');
+
+  // Downsample + recompress images as they are inlined so a full-res photo
+  // doesn't drag its original pixels into the PDF (null = compression disabled).
+  const imageTransform = pdfImageEmbedTransform();
+
+  // One embed cache for the whole export run: an image referenced both as a
+  // field value (pass 1 below) and in the rendered <img src> (pass 2) is
+  // fetched + recompressed only once. Also dedupes in-flight fetches.
+  const embedCache = new Map();
+  const embedStartedAt = Date.now();
+
+  // Embed uploads referenced as field values. embedRemote inlines remote
+  // http(s) images through the SSRF guard (or strips them) so no user-supplied
+  // URL reaches headless Chrome at setContent time. See security-hardening 2.
+  const slides = await embedSlideImages(repoRoot, pres.slides, {
+    transform: imageTransform,
+    embedRemote: true,
+    cache: embedCache,
+  });
+
+  const slidesHtml = await Promise.all(
+    slides.map(async (s, i) =>
+      s?.type === 'video-slide'
+        ? renderVideoSlidePdfHtml(s, {
+            pres,
+            slideIndex: i,
+            baseUrl,
+            docLang,
+            transform: imageTransform,
+            cache: embedCache,
+          })
+        : renderSlideHtml(s, {
+            theme,
+            slideTypes,
+            stripEditorAttrs: true,
+            lang: resolveDeckLang(pres),
+          })
+    )
+  );
+
+  // A themed slide background built from alpha gradients leaves Chrome as a
+  // per-pixel PostScript shading, which costs seconds per page in a PDF reader.
+  // Render it once to a bitmap instead; see server/export/gradient-raster.js for
+  // the measurements and for why precomposing to opaque stops is not an option.
+  // `styleContent` is the pre-raster cascade: the pass loads it in Chrome to ask
+  // which pseudo-element layers actually paint, which no amount of CSS-text
+  // reading can answer (a fork changes the answer by changing the gate).
+  const gradients = await rasterizeGradientBackgrounds({
+    themeVarsCss: css.themeVarsCss,
+    slidesHtml,
+    styleContent: buildStyleContent(css),
+  });
+  css.themeVarsCss = gradients.themeVarsCss;
+
+  let pagesHtml = slidesHtml
+    .map((slideHtml, i) => {
+      const stageClass = gradients.stageClasses[i]
+        ? ` ${gradients.stageClasses[i]}`
+        : '';
+      return `<div class="pdf-page"><div class="pdf-stage ps-theme${stageClass}">${css.wmHtml}${slideHtml}</div></div>`;
+    })
+    .join('\n');
+  pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
+    includeClient: true,
+    transform: imageTransform,
+    embedRemote: true,
+    cache: embedCache,
+  });
+  debugLog(
+    `[pdf-export] embedded ${embedCache.size} unique image(s) in ${Date.now() - embedStartedAt}ms`,
+  );
+
+  // A4 landscape in CSS pixels varies by browser DPI; we use JS to scale the 1600x900 slide canvas per page.
+  return `<!doctype html>
+<html lang="${escapeHtml(docLang)}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title} (PDF Slides)</title>
+    ${buildPrismKatexCdnTags()}
+    <style>
+${buildStyleContent(css)}
+
+${gradients.extraCss}
     </style>
   </head>
   <body>

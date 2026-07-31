@@ -1,3 +1,4 @@
+/* global document, getComputedStyle */ // The page.evaluate() callback below runs in the browser context.
 /**
  * Turn decorative gradient slide backgrounds into a bitmap for export.
  *
@@ -42,15 +43,50 @@
  * see `gradientVarsForSlide()`) still gets one bitmap per distinct position —
  * never one shared bitmap that puts every blob in the wrong place.
  *
- * ## What this deliberately leaves alone
+ * ## Pseudo-element layers (`::before` / `::after`)
  *
- * The animated `::before` gradient layer (`--t-slide-gradient-bg` on quote,
- * chapter-title and icon-card-grid slides) is already switched off in every
- * export path by `--t-gradient-enabled: 0` — computed `opacity: 0`, never
- * painted, measured at 0.047 s per page for a deck made only of those three
- * types. Rasterizing it would make gradients *appear* where the export
- * currently has none, which is a design change and not a performance fix. Only
- * `--t-slide-bg-*` is touched.
+ * Slide types also stack decorative gradients on pseudo-elements, and those cost
+ * the same. They cannot be handled by reading CSS text, because whether they
+ * paint at all depends on the assembled document's cascade — which a fork can
+ * and does change. So they are measured instead: the export document is loaded
+ * once in Chrome and every `.slide` is asked for its `::before`/`::after`
+ * computed style. A layer is rasterized **only** when its computed `opacity` is
+ * not 0 and its computed `background-image` actually holds a gradient.
+ *
+ * That test is what makes this safe rather than a design change. Upstream sets
+ * `--t-gradient-enabled: 0` in every export path, so those layers compute to
+ * `opacity: 0`, no spec is produced, and nothing about the output moves. A fork
+ * that deliberately keeps the layer visible (ciiic-slides replaced the gate with
+ * an `animation: none` rule in 2026-01) gets the layer rasterized instead of
+ * re-shaded per pixel.
+ *
+ * Measured on the `ciiic` theme with that fork's override, 6 pages of
+ * `icon-card-grid-slide` under Ghostscript at 110 dpi: **1.225 s → 0.046 s per
+ * page**, the same number as the untouched upstream export. All of that cost is
+ * `.slide-icon-card-grid::after`, an alpha `linear-gradient`. Its `::before`
+ * sibling — the layer the fork's briefing asked us to rasterize — is *not*
+ * touched here, because it paints nothing to rasterize: see the note below.
+ *
+ * ## The `::before` gradient layer paints nothing, in any export
+ *
+ * `--t-slide-gradient-bg` is declared on `.ps-theme` (the stage) by
+ * `themeVarsCssText()`, and its value references `var(--g1x)` … `var(--g3y)`,
+ * which `gradientVarsForSlide()` sets on the **slide root** — a descendant. A
+ * custom property's `var()` references are substituted where that property is
+ * *computed*, i.e. on `.ps-theme`, where `--g1x` does not exist. The result is
+ * guaranteed-invalid, inherits down as invalid, and
+ * `background: var(--t-slide-gradient-bg, transparent)` falls back to nothing.
+ * Measured on both `midnight` and `ciiic` with the gate forced open: computed
+ * `opacity: 1` and computed `background-image: none`. Setting `--g1x` on
+ * `.ps-theme` itself makes it paint immediately — that is the proof of the
+ * mechanism.
+ *
+ * So the opacity test above is not the only reason those layers are skipped;
+ * there is literally no image to copy. Resolving the vars from the slide root by
+ * hand (as the `--t-slide-bg-*` path does) would *add* a gradient the live export
+ * does not draw, which is a visual change disguised as a performance fix.
+ * Reported back to ciiic-slides; whether the layer should paint at all is a
+ * theme/renderer decision, not an export one.
  *
  * Rasterizing is best-effort throughout: any failure (no Chrome, a screenshot
  * that throws, a value we cannot resolve) leaves that background as the live
@@ -233,47 +269,90 @@ export function slideRootVars(slideHtml) {
 }
 
 /**
- * Render CSS `background` values to image data URLs in one headless-Chrome page.
+ * Open a page on the shared browser, or `null` when no browser is available.
  *
- * JPEG when the stack ends in an opaque colour (a soft wash is the best case
- * JPEG has, and it is several times smaller than PNG); PNG when it does not,
- * because JPEG has no alpha and would flatten the transparent part to black.
+ * Opening the page belongs in the same guard as launching the browser.
+ * `getPuppeteerBrowser` caches its launch promise for the process lifetime, so a
+ * Chrome that dies after the first export leaves a resolved-but-dead Browser
+ * whose `newPage()` rejects. Letting that escape would fail the whole export —
+ * and worse, the `/export/pdf-slides` HTML preview route, which reaches this
+ * module without otherwise needing a browser at all.
  *
- * @param {string[]} values - Resolved CSS `background` values.
  * @param {Object} [opts]
- * @param {number} [opts.width] - Bitmap width in CSS pixels.
- * @returns {Promise<Array<string|null>>} A data URL per value, `null` on failure.
+ * @param {boolean} [opts.offline] - Abort every non-`data:` subresource request.
+ * @returns {Promise<import('puppeteer-core').Page|null>}
  */
-async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WIDTH } = {}) {
-  if (!values.length) return [];
-  const height = Math.max(1, Math.round(width * SLIDE_ASPECT));
-
-  // Opening the page belongs in the same guard as launching the browser.
-  // `getPuppeteerBrowser` caches its launch promise for the process lifetime, so
-  // a Chrome that dies after the first export leaves a resolved-but-dead Browser
-  // whose `newPage()` rejects. Letting that escape would fail the whole export —
-  // and worse, the `/export/pdf-slides` HTML preview route, which reaches this
-  // module without otherwise needing a browser at all.
-  let page;
+async function openRasterPage({ offline = false } = {}) {
   try {
     const browser = await getPuppeteerBrowser({ featureName: 'PDF export' });
-    page = await browser.newPage();
+    const page = await browser.newPage();
+    if (offline) {
+      // Enforced, not assumed. The export inlines every user-supplied image
+      // through the SSRF guard, but that pass runs *after* this module, so any
+      // page we open here would otherwise let Chrome fetch a raw remote
+      // `<img src>` (a theme's `assets.logo`, custom HTML) straight from the
+      // deck — no guard, no allow-list. Nothing measured or rendered here
+      // depends on a subresource, so the safe answer is to fetch none.
+      await page.setRequestInterception(true);
+      page.on('request', (req) => {
+        const url = req.url();
+        const allowed = url.startsWith('data:') || url === 'about:blank';
+        Promise.resolve(allowed ? req.continue() : req.abort()).catch(() => {
+          // The page can close mid-flight; a dangling request is not an error.
+        });
+      });
+    }
+    return page;
   } catch (err) {
     // No Chrome (or no puppeteer-core) is a normal state for some installs and
     // for the HTML preview route. The live gradient still renders.
     debugLog(`[pdf-export] gradient raster skipped: ${err?.message || err}`);
-    return values.map(() => null);
+    return null;
   }
+}
+
+/**
+ * A single bitmap to render.
+ *
+ * @typedef {Object} LayerSpec
+ * @property {string} style - CSS declarations painting the layer (no trailing `;`).
+ * @property {number} width - Bitmap width in CSS pixels.
+ * @property {number} height - Bitmap height in CSS pixels.
+ * @property {boolean} opaque - Whether the layer is fully opaque (JPEG vs PNG).
+ */
+
+/**
+ * Render layer specs to image data URLs in one headless-Chrome page.
+ *
+ * JPEG when the layer is fully opaque (a soft wash is the best case JPEG has, and
+ * it is several times smaller than PNG); PNG when it is not, because JPEG has no
+ * alpha and would flatten the transparent part to black.
+ *
+ * The viewport is the largest single spec, not the sum: element screenshots
+ * scroll their target into view, so a deck with many distinct backgrounds no
+ * longer asks Chrome for a viewport tens of thousands of pixels tall.
+ *
+ * @param {LayerSpec[]} specs
+ * @returns {Promise<Array<string|null>>} A data URL per spec, `null` on failure.
+ */
+async function renderLayersToDataUrls(specs) {
+  if (!specs.length) return [];
+
+  const page = await openRasterPage();
+  if (!page) return specs.map(() => null);
 
   try {
-    await page.setViewport({ width, height: height * values.length });
-    // Every value in one document: N screenshots, one setContent. The divs are
-    // stacked, each exactly the bitmap's size, so a percentage stop resolves
-    // against the same box shape it will have on the slide.
-    const divs = values
+    await page.setViewport({
+      width: Math.max(...specs.map((s) => s.width)),
+      height: Math.max(...specs.map((s) => s.height)),
+    });
+    // Every spec in one document: N screenshots, one setContent. Each div is
+    // exactly the bitmap's size, so a percentage stop or a percentage
+    // `background-size` resolves against the same box shape it has on the slide.
+    const divs = specs
       .map(
-        (v, i) =>
-          `<div id="g${i}" style="width:${width}px;height:${height}px;background:${v.replace(
+        (s, i) =>
+          `<div id="g${i}" style="width:${s.width}px;height:${s.height}px;${s.style.replace(
             /"/g,
             '&quot;',
           )}"></div>`,
@@ -287,9 +366,9 @@ async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WID
 
     /** @type {Array<string|null>} */
     const out = [];
-    for (let i = 0; i < values.length; i++) {
+    for (let i = 0; i < specs.length; i++) {
       try {
-        const opaque = isOpaqueColor(TRAILING_COLOR_RE.exec(values[i])?.[1]);
+        const { opaque } = specs[i];
         const el = await page.$(`#g${i}`);
         const shot = toNodeBuffer(
           opaque
@@ -306,7 +385,177 @@ async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WID
     return out;
   } catch (err) {
     debugLog(`[pdf-export] gradient raster page failed: ${err?.message || err}`);
-    return values.map(() => null);
+    return specs.map(() => null);
+  } finally {
+    try {
+      await page.close();
+    } catch {
+      // ignore
+    }
+  }
+}
+
+/** Pseudo-elements that may carry a decorative gradient layer. */
+const PSEUDO_ELEMENTS = ['::before', '::after'];
+
+/** Any `--t-gradient-enabled: <value>` declaration in a stylesheet. */
+const GRADIENT_ENABLED_RE = /--t-gradient-enabled\s*:\s*([^;}]+)/g;
+
+/**
+ * Whether the document could have a visible gradient pseudo-layer at all.
+ *
+ * Launching Chrome to measure is only worth it when the answer might be yes, and
+ * an export whose every `--t-gradient-enabled` declaration is `0` has no way to
+ * produce one: each of those layers reads that property as its `opacity`. This
+ * is a **fast path, not the decision** — it can only skip work, never approve
+ * rasterizing something. The opacity test in the probe still has the last word.
+ *
+ * Deliberately conservative in both directions. A single non-zero declaration
+ * anywhere is enough to probe (upstream's `midnight` theme declares `1` and the
+ * export path then overrides it to `0`; that costs one probe that finds
+ * nothing). Anything unparseable — a `var()`, a fork's own expression — also
+ * counts as "might paint".
+ *
+ * The limitation worth knowing: a fork that re-enables the layer *without* the
+ * property, by overriding `opacity` on the pseudo-element directly, is skipped
+ * here. Re-enable it through the theme (`gradient.enabled`) or through this
+ * property, which is what the ciiic-slides fork does.
+ *
+ * @param {string} styleContent - Everything that goes in the document's `<style>`.
+ * @returns {boolean}
+ */
+export function mayHaveVisibleGradientLayer(styleContent) {
+  for (const m of String(styleContent || '').matchAll(GRADIENT_ENABLED_RE)) {
+    if (parseFloat(m[1].trim()) !== 0) return true;
+  }
+  // Every declaration is 0 — or there is none at all, which means no theme
+  // contributed one and the layers fall back to
+  // `var(--t-slide-gradient-bg, transparent)` with nothing to paint.
+  return false;
+}
+
+/**
+ * Dedupe key for a measured pseudo-element layer.
+ *
+ * Every property that changes a pixel is in the key, including the box size: two
+ * slides whose layer differs only in `--g1x` are two bitmaps, exactly as on the
+ * `--t-slide-bg-*` path. The rounding keeps sub-pixel layout noise from splitting
+ * one bitmap into two identical ones.
+ *
+ * @param {Object} layer
+ * @returns {string}
+ */
+function pseudoLayerKey(layer) {
+  return JSON.stringify([
+    layer.pseudo,
+    layer.backgroundImage,
+    layer.backgroundColor,
+    layer.backgroundSize,
+    layer.backgroundPosition,
+    layer.backgroundRepeat,
+    Math.round(layer.width),
+    Math.round(layer.height),
+  ]);
+}
+
+/**
+ * Ask the real export document which pseudo-element layers actually paint a
+ * gradient.
+ *
+ * This has to be a measurement rather than a read of the CSS text. Whether a
+ * layer paints depends on the assembled cascade — the export path's own
+ * `--t-gradient-enabled: 0`, the theme's `gradient.enabled`, and whatever a fork
+ * has done to either — and on whether the custom property holding the gradient
+ * could resolve its own `var()` references at all (see the module comment: on
+ * upstream it cannot, so `background-image` computes to `none`).
+ *
+ * @param {Object} opts
+ * @param {string} opts.styleContent - Everything that goes in the document's `<style>`.
+ * @param {string[]} opts.slidesHtml - Rendered slide HTML, in page order.
+ * @returns {Promise<Array<Array<{pseudo: string, style: string, width: number, height: number, opaque: boolean}>>>}
+ *   Per slide, the layers worth rasterizing (usually empty).
+ */
+async function probePseudoLayers({ styleContent, slidesHtml }) {
+  const empty = slidesHtml.map(() => []);
+  // Never start a browser on a document that cannot have one of these layers.
+  // Most exports are in that case, and paying a Chrome page-load for every one
+  // of them would be a real regression on the HTML preview route.
+  if (!styleContent || !mayHaveVisibleGradientLayer(styleContent)) return empty;
+
+  // `offline`: the slide HTML reaching this point has *not* been through
+  // `embedImgSrcDataUrls` yet, so it can still carry a raw remote `<img src>`.
+  // See the note in `openRasterPage`.
+  const page = await openRasterPage({ offline: true });
+  if (!page) return empty;
+
+  try {
+    // The same wrappers the real document uses, so `.pdf-stage`/`.ps-theme`
+    // selectors and the 1600x900 stage box resolve identically. Deliberately
+    // without the CDN <script>/<link> tags: this probe must not reach the
+    // network, and nothing it measures depends on them.
+    const body = slidesHtml
+      .map((s) => `<div class="pdf-page"><div class="pdf-stage ps-theme">${s}</div></div>`)
+      .join('\n');
+    await page.setViewport({ width: 1600, height: 900 });
+    await page.setContent(
+      `<!doctype html><meta charset="utf-8"><style>${styleContent}</style>${body}`,
+      // Local <img src> paths cannot resolve under setContent (no base URL), so
+      // waiting for `load` would only wait for them to fail. Nothing measured
+      // here depends on an image having loaded.
+      { waitUntil: 'domcontentloaded' },
+    );
+
+    return await page.evaluate((pseudos) => {
+      // Iterate the stages, not the slides: one entry per page, in page order,
+      // even if a page's markup has no `.slide` root. The caller indexes the
+      // result against `slidesHtml`, so a length mismatch would silently move
+      // every bitmap one slide over.
+      const stages = Array.from(document.querySelectorAll('.pdf-stage'));
+      return stages.map((stage) => {
+        const el = stage.querySelector(':scope > .slide');
+        const out = [];
+        if (!el) return out;
+        const rect = el.getBoundingClientRect();
+        for (const pseudo of pseudos) {
+          const cs = getComputedStyle(el, pseudo);
+          if (!cs || cs.content === 'none') continue;
+          // The two tests that keep this from changing what the export looks
+          // like: an invisible layer stays invisible, and a layer with no
+          // gradient has nothing to win.
+          if (!(parseFloat(cs.opacity) > 0)) continue;
+          const image = cs.backgroundImage || 'none';
+          if (image === 'none' || !/gradient\(/i.test(image)) continue;
+          // A layer that also pulls in an external image cannot be reproduced in
+          // the isolated render page, so leave it live.
+          if (/\burl\(/i.test(image)) continue;
+
+          // The pseudo-element's own box. It is positioned against the slide, so
+          // its computed insets are px against that box — `inset: -12%` on a
+          // 1600x900 stage gives 1984x1116, and the bitmap has to match or the
+          // percentage `background-size` lands somewhere else.
+          const px = (v) => (v.endsWith('px') ? parseFloat(v) : NaN);
+          const w = rect.width - px(cs.left) - px(cs.right);
+          const h = rect.height - px(cs.top) - px(cs.bottom);
+          if (!(w > 0) || !(h > 0)) continue;
+
+          out.push({
+            pseudo,
+            slideWidth: rect.width,
+            backgroundColor: cs.backgroundColor,
+            backgroundImage: image,
+            backgroundSize: cs.backgroundSize,
+            backgroundPosition: cs.backgroundPosition,
+            backgroundRepeat: cs.backgroundRepeat,
+            width: w,
+            height: h,
+          });
+        }
+        return out;
+      });
+    }, PSEUDO_ELEMENTS);
+  } catch (err) {
+    debugLog(`[pdf-export] pseudo-layer probe failed: ${err?.message || err}`);
+    return empty;
   } finally {
     try {
       await page.close();
@@ -331,12 +580,16 @@ async function renderBackgroundsToDataUrls(values, { width = GRADIENT_RASTER_WID
  * @param {Object} opts
  * @param {string} opts.themeVarsCss - The generated `.ps-theme { … }` block.
  * @param {string[]} opts.slidesHtml - Rendered slide HTML, in page order.
+ * @param {string} [opts.styleContent] - Everything that goes in the document's
+ *   `<style>`. Without it the pseudo-element pass is skipped: it can only be
+ *   decided by measuring the real cascade.
  * @param {number} [opts.width] - Bitmap width in CSS pixels.
  * @returns {Promise<{themeVarsCss: string, extraCss: string, stageClasses: string[], rasterCount: number}>}
  */
 export async function rasterizeGradientBackgrounds({
   themeVarsCss,
   slidesHtml,
+  styleContent = '',
   width = gradientRasterWidth(),
 }) {
   const slides = Array.isArray(slidesHtml) ? slidesHtml : [];
@@ -346,10 +599,9 @@ export async function rasterizeGradientBackgrounds({
     stageClasses: slides.map(() => ''),
     rasterCount: 0,
   };
-  if (!width) return none;
+  if (!width || !slides.length) return none;
 
   const gradientVars = findGradientBgVars(themeVarsCss);
-  if (!gradientVars.size || !slides.length) return none;
 
   // Which slide wants which background, resolved against its own custom
   // properties. `signature` is the dedupe key: identical resolved CSS means
@@ -371,17 +623,96 @@ export async function rasterizeGradientBackgrounds({
     if (!hit || bySignature.has(hit.signature)) continue;
     bySignature.set(hit.signature, { index: bySignature.size, varName: hit.varName });
   }
-  if (!bySignature.size) return none;
 
+  // The pseudo-element pass is a measurement of the assembled document, so it
+  // runs even when no `--t-slide-bg-*` gradient exists — the two are unrelated.
+  const perSlidePseudo = await probePseudoLayers({ styleContent, slidesHtml: slides });
+
+  /** @type {Map<string, {index: number, layer: Object}>} */
+  const byPseudo = new Map();
+  for (const layers of perSlidePseudo) {
+    for (const layer of layers) {
+      const key = pseudoLayerKey(layer);
+      if (byPseudo.has(key)) continue;
+      byPseudo.set(key, { index: byPseudo.size, layer });
+    }
+  }
+
+  if (!bySignature.size && !byPseudo.size) return none;
+
+  // Both kinds of bitmap in one render page.
   const signatures = [...bySignature.keys()];
+  const bgSpecs = signatures.map((value) => ({
+    style: `background:${value}`,
+    width,
+    height: Math.max(1, Math.round(width * SLIDE_ASPECT)),
+    opaque: isOpaqueColor(TRAILING_COLOR_RE.exec(value)?.[1]),
+  }));
+  const pseudoEntries = [...byPseudo.values()];
+  const pseudoSpecs = pseudoEntries.map(({ layer }) => {
+    // Scale on the layer's own box, not the slide's: `inset: -12%` makes the box
+    // 124% of the slide, and 512px across the slide would only be 413px across
+    // the bitmap that has to cover it.
+    const w = Math.max(1, Math.round((width * layer.width) / (layer.slideWidth || layer.width)));
+    return {
+      style:
+        `background-color:${layer.backgroundColor};` +
+        `background-image:${layer.backgroundImage};` +
+        `background-size:${layer.backgroundSize};` +
+        `background-position:${layer.backgroundPosition};` +
+        `background-repeat:${layer.backgroundRepeat}`,
+      width: w,
+      height: Math.max(1, Math.round((w * layer.height) / layer.width)),
+      opaque: isOpaqueColor(layer.backgroundColor),
+    };
+  });
+
   const startedAt = Date.now();
-  const dataUrls = await renderBackgroundsToDataUrls(signatures, { width });
-  const rasterCount = dataUrls.filter(Boolean).length;
+  const allUrls = await renderLayersToDataUrls([...bgSpecs, ...pseudoSpecs]);
+  const dataUrls = allUrls.slice(0, bgSpecs.length);
+  const pseudoUrls = allUrls.slice(bgSpecs.length);
+  const rasterCount = allUrls.filter(Boolean).length;
   debugLog(
-    `[pdf-export] rasterized ${rasterCount}/${signatures.length} gradient background(s) ` +
-      `at ${width}px in ${Date.now() - startedAt}ms`,
+    `[pdf-export] rasterized ${rasterCount}/${allUrls.length} gradient layer(s) ` +
+      `(${dataUrls.filter(Boolean).length} slide background, ` +
+      `${pseudoUrls.filter(Boolean).length} pseudo-element) at ${width}px ` +
+      `in ${Date.now() - startedAt}ms`,
   );
   if (!rasterCount) return none;
+
+  // One rule per distinct pseudo-element layer. Same shape as the slide-background
+  // rule below: override the paint, never the custom property behind it.
+  const pseudoRules = [];
+  pseudoEntries.forEach(({ layer }, i) => {
+    const dataUrl = pseudoUrls[i];
+    if (!dataUrl) return;
+    pseudoRules.push(
+      `.pdf-stage.grad-px-${i} > .slide${layer.pseudo} {\n` +
+        `  background-image: url("${dataUrl}");\n` +
+        `  background-size: 100% 100%;\n` +
+        `  background-position: 0 0;\n` +
+        `  background-repeat: no-repeat;\n` +
+        `}`,
+    );
+  });
+
+  const pseudoClasses = perSlidePseudo.map((layers) =>
+    layers
+      .map((layer) => byPseudo.get(pseudoLayerKey(layer)))
+      .filter((entry) => entry && pseudoUrls[entry.index])
+      .map((entry) => `grad-px-${entry.index}`)
+      .join(' '),
+  );
+
+  if (!dataUrls.filter(Boolean).length) {
+    // Nothing to say about the slide backgrounds; ship the pseudo layers alone.
+    return {
+      themeVarsCss: String(themeVarsCss || ''),
+      extraCss: pseudoRules.join('\n'),
+      stageClasses: pseudoClasses,
+      rasterCount,
+    };
+  }
 
   // One rule per bitmap, overriding **only** `background-image` and its sizing.
   //
@@ -412,11 +743,15 @@ export async function rasterizeGradientBackgrounds({
     );
   });
 
-  const stageClasses = perSlide.map((hit) => {
+  const bgClasses = perSlide.map((hit) => {
     if (!hit) return '';
     const entry = bySignature.get(hit.signature);
     return dataUrls[entry.index] ? `grad-bg-${entry.index}` : '';
   });
+  // A slide can need both kinds of bitmap; the stage carries one class per layer.
+  const stageClasses = bgClasses.map((bg, i) =>
+    [bg, pseudoClasses[i]].filter(Boolean).join(' '),
+  );
 
   // Reduce the token to the stack's own trailing colour, so the gradient stops
   // reaching the renderer at all and the token's non-background consumers
@@ -424,9 +759,12 @@ export async function rasterizeGradientBackgrounds({
   // user got a bitmap; anything else keeps the live gradient as its fallback.
   const fullyRastered = new Set(
     [...gradientVars.keys()].filter((varName) =>
+      // `bgClasses`, not `stageClasses`: a slide can carry a pseudo-element class
+      // while its own background raster failed, and that must not read as "this
+      // var is fully handled" — the token would lose a gradient still in use.
       perSlide.every((hit, i) => {
         if (!hit || hit.varName !== varName) return true;
-        return Boolean(stageClasses[i]);
+        return Boolean(bgClasses[i]);
       }),
     ),
   );
@@ -446,7 +784,7 @@ export async function rasterizeGradientBackgrounds({
 
   return {
     themeVarsCss: rewrittenCss,
-    extraCss: rules.join('\n'),
+    extraCss: [...rules, ...pseudoRules].join('\n'),
     stageClasses,
     rasterCount,
   };
