@@ -7,9 +7,11 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../shared/slide-types/registry.js';
 import {
+  SLIDE_STRUCTURE_CONTRACTS,
   SLIDE_STRUCTURE_NAMES,
   isSlideStructure,
   slideStructure,
+  structureContractViolation,
 } from '../shared/slide-types/structure.js';
 import { getLayoutVariants } from '../shared/slide-types/layout-variants.js';
 
@@ -108,55 +110,55 @@ test('every core slide type declares a structure from the vocabulary', () => {
   );
 });
 
+test('every structure in the vocabulary states an item contract', () => {
+  // The vocabulary is what a type declares; the contract is what a reader may
+  // rely on. A structure with no contract is a bucket name promising nothing,
+  // which is the state this facet was made normative to leave.
+  assert.deepEqual(Object.keys(SLIDE_STRUCTURE_CONTRACTS).sort(), [...SLIDE_STRUCTURE_NAMES].sort());
+  for (const [name, contract] of Object.entries(SLIDE_STRUCTURE_CONTRACTS)) {
+    assert.ok(contract.reader.length > 40, `${name}: the reader rule must say something`);
+    assert.ok(contract.itemsPhrase, `${name}: missing itemsPhrase`);
+    assert.ok(
+      contract.itemArrays === null || Number.isInteger(contract.itemArrays),
+      `${name}: itemArrays must be a count or null (not derivable)`
+    );
+  }
+});
+
+test('the contract rejects the shapes it describes', () => {
+  // The checker is now load-bearing for assertion 2, so it gets its own floor:
+  // a shape that violates each contract must be caught, and the honouring shape
+  // must pass. Otherwise a checker that returned '' unconditionally would make
+  // the whole facet vacuously green.
+  const one = [{ key: 'items', minItems: 1, maxItems: 9 }];
+  const fixed = [{ key: 'options', minItems: 4, maxItems: 4 }];
+  assert.equal(structureContractViolation('singleton', { itemArrays: [], contentFieldKeys: ['title'] }), '');
+  assert.match(structureContractViolation('singleton', { itemArrays: one }), /must carry no items\[\]/);
+  assert.equal(structureContractViolation('collection', { itemArrays: one }), '');
+  assert.match(structureContractViolation('collection', { itemArrays: [] }), /exactly one items\[\]/);
+  assert.equal(structureContractViolation('fixed-collection', { itemArrays: fixed }), '');
+  assert.match(structureContractViolation('fixed-collection', { itemArrays: one }), /minItems === maxItems/);
+  assert.equal(structureContractViolation('chrome', { itemArrays: [], contentFieldKeys: [] }), '');
+  assert.match(structureContractViolation('chrome', { contentFieldKeys: ['title'] }), /no content fields/);
+  // A dataset's payload is an encoded blob (chart-slide's CSV `data`), not a
+  // field shape the registry can count — the contract says so with a null.
+  assert.equal(structureContractViolation('dataset', { itemArrays: one }), '');
+  assert.match(structureContractViolation('nonsense', {}), /unknown structure/);
+});
+
 // --- assertion 2: truthfulness --------------------------------------------
 
 test('the declared structure matches what the field schema actually says', () => {
+  // Derived from SLIDE_STRUCTURE_CONTRACTS rather than restating it: the item
+  // contract is the normative half of the facet (docs/reference/deck-conformance.md),
+  // and a promise enforced by a private copy of itself is how the two drift.
   const lies = [];
   for (const name of CORE_SLIDE_TYPE_NAMES) {
     const def = SLIDE_TYPES[name];
-    const structure = slideStructure(def);
-    const collections = collectionFields(def);
-    const n = collections.length;
-    const keys = collections.map((f) => f.key).join(', ') || 'none';
-
-    let problem = '';
-    switch (structure) {
-      case 'singleton':
-        if (n !== 0) problem = `singleton must carry no items[] field, has ${n} (${keys})`;
-        break;
-      case 'collection':
-        if (n !== 1) problem = `collection must carry exactly one items[] field, has ${n} (${keys})`;
-        break;
-      case 'fixed-collection': {
-        if (n !== 1) {
-          problem = `fixed-collection must carry exactly one items[] field, has ${n} (${keys})`;
-        } else {
-          const f = collections[0];
-          if (!(Number(f.minItems) > 0 && Number(f.minItems) === Number(f.maxItems))) {
-            problem =
-              `fixed-collection means the count is part of the meaning, so ` +
-              `${f.key} must pin minItems === maxItems (got ${f.minItems}..${f.maxItems})`;
-          }
-        }
-        break;
-      }
-      case 'tabular':
-        if (n !== 1) problem = `tabular must carry exactly one items[] field (the rows), has ${n} (${keys})`;
-        break;
-      case 'chrome': {
-        const content = contentFields(def);
-        if (content.length) {
-          problem = `chrome carries no content at all, has ${content.length} (${content.map((f) => f.key).join(', ')})`;
-        }
-        break;
-      }
-      case 'dataset':
-        // A dataset's payload is an encoded blob (chart-slide's CSV `data`),
-        // not a field shape the registry can check. Nothing derivable to assert.
-        break;
-      default:
-        problem = `unknown structure '${structure}'`;
-    }
+    const problem = structureContractViolation(slideStructure(def), {
+      itemArrays: collectionFields(def),
+      contentFieldKeys: contentFields(def).map((f) => f.key),
+    });
     if (problem) lies.push(`${name}: ${problem}`);
   }
 

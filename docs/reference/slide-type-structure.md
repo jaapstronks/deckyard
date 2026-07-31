@@ -55,6 +55,37 @@ each type's definition; served out through `/api/slide-types`.
 These six partition the current <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
 
+## The item contract (normative)
+
+`structure` began as an internal design tool. It is now also the normative half
+of the format's conformance claim, and that asks more of it than naming six
+buckets: it has to say **what a reader may rely on** for each one.
+
+`SLIDE_STRUCTURE_CONTRACTS` in `shared/slide-types/structure.js` is that
+statement, and it is why conformance is two-level rather than 36-or-nothing —
+see [`deck-conformance.md`](./deck-conformance.md), which holds the full table
+and the reader rules.
+
+| `structure` | The content carries | The count means |
+|---|---|---|
+| `singleton` | no repeated-item array | nothing to count |
+| `collection` | exactly one item array | the author's choice |
+| `fixed-collection` | exactly one item array, `minItems === maxItems` | part of the type's meaning |
+| `tabular` | exactly one item array (the rows) | the author's choice |
+| `dataset` | an encoded payload plus its encoding | inside the payload |
+| `chrome` | no content fields at all | nothing to count |
+
+The reason this is worth writing down at all: **it is the only part of the
+format that does not scale with the number of types.** A reader that implements
+nine type contracts knows nine things and is stale the day a tenth is published;
+a reader that implements six structure contracts can render a type that did not
+exist when it shipped.
+
+The contract is declared beside the vocabulary rather than only asserted in the
+test, and assertion 2 below *derives* from it. A promise and its enforcement
+keeping separate copies of the same rule is the drift this facet exists to
+prevent.
+
 ## The rule: type or variant?
 
 > **A variant is a render choice that every valid instance of the content
@@ -84,11 +115,12 @@ contract* under the same id.
 
 1. **Completeness** — every registered type declares a `structure` from the
    vocabulary.
-2. **Truthfulness** — the declaration matches the schema. `singleton` carries no
+2. **Truthfulness** — the declaration matches the schema, checked against the
+   item contract above via `structureContractViolation()`: `singleton` carries no
    `items[]` field; `collection` carries exactly one; `fixed-collection` carries
    one whose `minItems === maxItems`; `chrome` carries no content field at all.
    `dataset`'s payload is an encoded blob, so there is nothing derivable to
-   check and the test says so rather than pretending.
+   check and the contract says so with a `null` rather than pretending.
 3. **No duplicates** — no two types offer the same **field signature** (every
    content field as `key:type`, sorted, with repeated-item fields carrying their
    item shape). This is the assertion that would have caught the List type's
@@ -180,7 +212,11 @@ replaced by a ceiling that forbids the pattern.
 
 ## See also
 
-- `shared/slide-types/structure.js` — the vocabulary.
+- `shared/slide-types/structure.js` — the vocabulary and the item contract.
+- [`deck-conformance.md`](./deck-conformance.md) — the two conformance levels
+  this facet's contract makes possible.
+- [`slide-type-tiers.md`](./slide-type-tiers.md) — the tier ladder and the
+  `fallback` facet, the other half of the conformance claim.
 - `tests/slide-type-structure.test.js` — the guardrail and the burndown.
 - [`slide-type-runtime.md`](./slide-type-runtime.md) — the second facet: what
   the presenting session has to do for a type.

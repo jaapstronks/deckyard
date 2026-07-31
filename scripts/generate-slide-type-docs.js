@@ -46,6 +46,7 @@ export const COUNT_MARKER_FILES = [
   'ROADMAP.md',
   'docs/reference/editor-inspector.md',
   'docs/reference/slide-type-structure.md',
+  'docs/reference/deck-conformance.md',
   'docs/reference/ai-wizard-prompts.md',
 ];
 

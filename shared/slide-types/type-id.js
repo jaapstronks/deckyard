@@ -26,8 +26,30 @@
 /** The namespace every bare / core slide-type name resolves to. */
 export const CORE_NAMESPACE = 'core';
 
-const SEGMENT_RE = /^[a-z0-9][a-z0-9-]*$/;
-const VERSION_RE = /^[0-9A-Za-z][0-9A-Za-z.-]*$/;
+/** The grammar's productions as pattern sources, so there is one copy of each. */
+const SEGMENT_SRC = '[a-z0-9][a-z0-9-]*';
+const VERSION_SRC = '[0-9A-Za-z][0-9A-Za-z.-]*';
+
+const SEGMENT_RE = new RegExp(`^${SEGMENT_SRC}$`);
+const VERSION_RE = new RegExp(`^${VERSION_SRC}$`);
+
+/**
+ * The whole grammar as a single JSON-Schema-compatible `pattern`, for the
+ * published deck schema's `slide.type`.
+ *
+ * It exists so the schema can describe the *shape* of a type reference instead
+ * of enumerating the names this install happens to have. An `enum` of registry
+ * keys made every deck carrying a fork type or an org type invalid against our
+ * own published schema, while the same spec promises leniency and leaves
+ * `additionalProperties` open everywhere else — the most closed rule in an
+ * otherwise open format. Deriving the pattern here rather than writing a second
+ * regex in `json-schema.js` keeps the published contract and the parser that
+ * enforces it on one source.
+ *
+ * @type {string}
+ */
+export const TYPE_ID_PATTERN =
+  `^(?:${SEGMENT_SRC}/)?${SEGMENT_SRC}(?:@${VERSION_SRC})?$`;
 
 /**
  * @typedef {object} TypeId

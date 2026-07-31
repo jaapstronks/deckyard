@@ -55,6 +55,7 @@ ships:
 | Adding custom slide types | `docs/developer/slide-types.md` |
 | The full list of built-in slide types | `docs/reference/slide-type-inventory.md` (generated) |
 | Whether something is a new type or a variant | `docs/reference/slide-type-structure.md` |
+| Which types we promise, and what a second implementation owes | `docs/reference/slide-type-tiers.md`, `docs/reference/deck-conformance.md` |
 | What a new slide type owes elsewhere | `docs/reference/slide-type-companions.md` |
 | Removing a slide type | `docs/reference/slide-type-removal.md` |
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
@@ -95,6 +96,7 @@ nothing is discoverable only by `ls`.
 | [`slide-type-structure.md`](reference/slide-type-structure.md) | The `structure` facet, and type vs variant |
 | [`slide-type-runtime.md`](reference/slide-type-runtime.md) | The `runtime` facet — what the presenting session does for a type |
 | [`slide-type-groups.md`](reference/slide-type-groups.md) | The `group` axis — which shelf a type is offered on |
+| [`slide-type-tiers.md`](reference/slide-type-tiers.md) | The three tiers and the `fallback` facet — which types we promise |
 | [`slide-type-companions.md`](reference/slide-type-companions.md) | What a new type owes elsewhere |
 | [`slide-type-removal.md`](reference/slide-type-removal.md) | Retiring a type without leaving rot |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor |
@@ -148,6 +150,7 @@ nothing is discoverable only by `ls`.
 | Doc | What it covers |
 |-----|----------------|
 | [`deck-format.md`](reference/deck-format.md) | The `deckyard.deck` interchange format |
+| [`deck-conformance.md`](reference/deck-conformance.md) | The two conformance levels a second implementation can claim |
 | [`deck-bundle-format.md`](reference/deck-bundle-format.md) | The `.deck` bundle |
 | [`standalone-html-export.md`](reference/standalone-html-export.md) | Standalone HTML export |
 | [`reflowable-html-export.md`](reference/reflowable-html-export.md) | Reflowable "reader" export |
