@@ -6,12 +6,17 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
-import { isWorkspaceAdmin, canSeeMemberList } from '../../lib/user/workspace-role.js';
+import {
+  isWorkspaceAdmin,
+  canSeeMemberList,
+  isWorkspaceMember,
+} from '../../lib/user/workspace-role.js';
 import {
   createAccountTab,
   createPreferencesTab,
   createAdminTab,
   createUsersTab,
+  createOrganizationTab,
   createEmailTab,
   createIntegrationsTab,
   createFontsTab,
@@ -30,6 +35,12 @@ const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
 // weaker gate — see MEMBERS_TAB below and lib/user/workspace-role.js.
 const ADMIN_TABS = ['admin', 'api-keys', 'email', 'integrations', 'analytics'];
 const MEMBERS_TAB = 'users';
+// The organization's own profile. Like the members tab it is not an admin
+// surface: `GET /api/organizations/:id` answers to any member, so anyone in the
+// organization may read who they are working under — writing it stays behind
+// the role, inside the panel. Multi-workspace only; there is no second
+// organization to describe otherwise.
+const ORGANIZATION_TAB = 'organization';
 
 /**
  * Get the active tab from the URL hash.
@@ -37,9 +48,10 @@ const MEMBERS_TAB = 'users';
  * @param {boolean} gates.isAdmin - Whether user is admin
  * @param {boolean} gates.isDesigner - Whether user has designer capability
  * @param {boolean} gates.canSeeMembers - Whether the members tab is reachable
+ * @param {boolean} gates.canSeeOrganization - Whether the organization tab is reachable
  * @returns {string} Tab key
  */
-function getTabFromHash({ isAdmin, isDesigner, canSeeMembers }) {
+function getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization }) {
   const hash = location.hash.slice(1); // Remove #
   if (!hash) return DEFAULT_TAB;
 
@@ -57,9 +69,14 @@ function getTabFromHash({ isAdmin, isDesigner, canSeeMembers }) {
     return DEFAULT_TAB;
   }
 
+  if (hash === ORGANIZATION_TAB && !canSeeOrganization) {
+    return DEFAULT_TAB;
+  }
+
   const validTabs = [
     'account', 'preferences', 'export',
     ...(isDesigner ? DESIGNER_TABS : []),
+    ...(canSeeOrganization ? [ORGANIZATION_TAB] : []),
     ...(canSeeMembers ? [MEMBERS_TAB] : []),
     ...(isAdmin ? ADMIN_TABS : []),
   ];
@@ -96,7 +113,11 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
   // see who else is in the organization and may leave it, and this is the tab
   // where both live.
   const canSeeMembers = canSeeMemberList(user);
-  const initialTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers });
+  // Multi-workspace only, and then for everyone in the organization: the
+  // profile is readable by any member on the route, and what may be changed on
+  // it is decided inside the panel.
+  const canSeeOrganization = isWorkspaceMember(user);
+  const initialTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization });
 
   const shell = h('div', { class: 'app-shell settings-page' });
 
@@ -153,6 +174,11 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     addTab('slide-types', createSlideTypesTab({ user }));
   }
 
+  // The organization itself: multi-workspace only, every member
+  if (canSeeOrganization) {
+    addTab(ORGANIZATION_TAB, createOrganizationTab({ user }));
+  }
+
   // Members: admins in either mode, plus every member in multi-workspace mode
   if (canSeeMembers) {
     addTab(MEMBERS_TAB, createUsersTab({ user }));
@@ -184,6 +210,10 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     if (tabKey === MEMBERS_TAB && !canSeeMembers) {
       tabKey = DEFAULT_TAB;
     }
+    // Guard the organization tab
+    if (tabKey === ORGANIZATION_TAB && !canSeeOrganization) {
+      tabKey = DEFAULT_TAB;
+    }
 
     activeTab = tabKey;
     setTabHash(tabKey);
@@ -204,6 +234,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
     isAdmin,
     isDesigner,
     canSeeMembers,
+    canSeeOrganization,
     activeTab: initialTab,
     onTabChange: setActiveTab,
   });
@@ -229,7 +260,7 @@ export async function renderSettingsPage(root, { nav, user } = {}) {
 
   // Handle hash changes
   const handleHashChange = () => {
-    const newTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers });
+    const newTab = getTabFromHash({ isAdmin, isDesigner, canSeeMembers, canSeeOrganization });
     if (newTab !== activeTab) {
       setActiveTab(newTab);
     }

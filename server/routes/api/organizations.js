@@ -16,6 +16,7 @@ import {
   deleteOrganization,
   getMembership,
   hasWorkspaceRole,
+  isDefaultOrganization,
 } from '../../storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { createLogger } from '../../utils/logger.js';
@@ -149,7 +150,12 @@ export async function handleOrganizations({ repoRoot, req, res, url, authedUser 
       }
 
       serveJson(res, 200, {
-        organization,
+        // `isDefault` is the one rule about this organization that DELETE
+        // enforces and nothing else on the wire reveals: the default workspace
+        // is what every single-workspace path falls back to and may not be
+        // removed. Without it the profile screen can only offer its owner a
+        // Delete button that is certain to be refused.
+        organization: { ...organization, isDefault: isDefaultOrganization(organization.id) },
         membership: {
           role: membership.role,
           joinedAt: membership.joinedAt,
