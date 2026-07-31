@@ -13,6 +13,10 @@ import {
 
 export default {
   structure: 'singleton',
+  // Content, not image: this type carries a title and a URL and no image field
+  // at all, so image-slide's contract would hold none of it. The fallback is
+  // chosen on what holds the content, not on family resemblance.
+  fallback: 'content-slide',
   runtime: 'static',
   label: 'Video',
   fields: [

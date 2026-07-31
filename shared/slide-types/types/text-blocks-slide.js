@@ -132,6 +132,7 @@ function generateDefaultRows(lang) {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   label: 'Text blocks',
   fields: [

@@ -7,6 +7,11 @@ import {
 } from '../../../shared/slide-types/runtime.js';
 import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
 import {
+  SLIDE_TIER,
+  slideFallback,
+  slideTypeTier,
+} from '../../../shared/slide-types/tiers.js';
+import {
   slideTypeAliases,
   slideTypeDescription,
   slideTypeSample,
@@ -18,11 +23,13 @@ import { createRouteContext } from '../../utils/context.js';
 
 export async function handleSlideTypes({ req, res, url, authedUser }) {
   // Slide type metadata (for editor UI). Keeps client/server in sync.
-  // Merges core types (Tier 1) with published custom types (Tier 2).
+  // Merges registered types (core + file-based) with published custom types.
+  // NB: the `tier` key below is the spec ladder from shared/slide-types/tiers.js
+  // (core profile / Deckyard set / extension), not this merge order.
   if (url.pathname === '/api/slide-types' && req.method === 'GET') {
     const meta = {};
 
-    // Tier 1: Core + file-based types
+    // Registered types: core, plus whatever a fork put in custom/slide-types/.
     for (const [key, def] of Object.entries(SLIDE_TYPES)) {
       meta[key] = {
         label: def.label,
@@ -46,6 +53,16 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         // See shared/slide-types/runtime.js.
         runtime: slideRuntime(def) || undefined,
         interaction: slideLiveInteraction(def) || undefined,
+        // The tier ladder and the `fallback` facet. `tier` is derived from the
+        // name (1 = core profile, 2 = Deckyard set, 3 = extension), so a fork
+        // type under a new name reads as 3 here without declaring anything.
+        // `fallback` is the tier-1 contract a reader that implements only the
+        // core profile should use for this type — on the wire for the same seam
+        // reason the authoring companions are: a fork type declaring its own
+        // fallback is only heard if the value travels. See
+        // shared/slide-types/tiers.js.
+        tier: slideTypeTier(key),
+        fallback: slideFallback(def) || undefined,
         themeId:
           typeof def.themeId === 'string' && def.themeId.trim()
             ? def.themeId.trim()
@@ -113,7 +130,7 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
       };
     }
 
-    // Tier 2: Published custom types from the database (per-org). A builder-UI
+    // Published custom types from the database (per-org). A builder-UI
     // type has no `group` to declare yet (there is no column for it), so it
     // lands on the picker's "Custom" shelf — the fallback for a type that
     // declares nothing, not a rule about where custom types belong.
@@ -131,6 +148,10 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
           baseType: ct.baseType || undefined,
           isCustom: true,
           customId: ct.id,
+          // Always tier 3: an org type is declared by the org, and we promise
+          // nothing about it. It carries no `fallback` because there is no
+          // column for one yet — the unknown-type render contract covers it.
+          tier: SLIDE_TIER.EXTENSION,
           css: ct.css || undefined,
           hasTemplate: Boolean(ct.template),
         };

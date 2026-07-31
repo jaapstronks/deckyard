@@ -14,6 +14,7 @@ import {
   coreCount,
   buildAllDocs,
 } from '../scripts/generate-slide-type-docs.js';
+import { DECLARED_SLIDE_TYPE_NAMES } from '../shared/slide-types/tiers.js';
 
 /**
  * The slide-type inventory doc and the type counts in prose are generated from
@@ -34,14 +35,39 @@ test('every generated doc is byte-identical to the committed file', () => {
   }
 });
 
+/**
+ * The doc holds two tables: the registry inventory, and the "declared, not
+ * built" names that are part of the published format with nothing rendering them
+ * yet. Only the first one is the registry, so the split is on the heading rather
+ * than on the row shape — scraping every row would silently fold reserved names
+ * into the registry assertion.
+ */
+function inventoryTable(doc) {
+  return doc.split('\n## Declared, not built')[0];
+}
+
 test('the inventory lists exactly the core registry, in registration order', () => {
   const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
-  const listed = [...doc.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  const listed = [...inventoryTable(doc).matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
   assert.deepEqual(
     listed,
     CORE_SLIDE_TYPE_NAMES,
     'the inventory table must match CORE_SLIDE_TYPE_NAMES exactly'
   );
+});
+
+test('the declared-not-built table lists exactly the reserved names', () => {
+  const doc = fs.readFileSync(path.join(REPO_ROOT, INVENTORY_DOC), 'utf8');
+  const section = doc.split('\n## Declared, not built')[1] || '';
+  const listed = [...section.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+  assert.deepEqual(listed, DECLARED_SLIDE_TYPE_NAMES);
+  for (const name of listed) {
+    assert.equal(
+      CORE_SLIDE_TYPE_NAMES.includes(name),
+      false,
+      `${name} is registered — it belongs in the inventory table, not here`
+    );
+  }
 });
 
 test('the stated count equals the real core type count (fork-stable)', () => {

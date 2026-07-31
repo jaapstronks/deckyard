@@ -102,6 +102,7 @@ export function ensureMembers(content) {
 
 export default {
   structure: 'collection',
+  fallback: 'list-slide',
   runtime: 'static',
   label: 'Image blocks',
   fields: [

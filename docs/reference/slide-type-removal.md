@@ -109,6 +109,16 @@ slides into *archived* placeholders in a live deployment. The scan that said
 "clean" was not wrong — it was answering about a store that had never seen those
 decks.
 
+**Two things the tier ladder settles before you start**
+([`slide-type-tiers.md`](./slide-type-tiers.md)). A **tier-1 type is not
+removable** — the nine in the core profile are normative, and the fact that
+everything else never was is exactly why everything else may go. And a tier-2
+type already declares a `fallback`, which is the first candidate for the
+`successor` field: it names the tier-1 contract that holds the type's content
+without dropping any. It is a candidate rather than the answer, because a
+successor also has to carry the *fields*, which a degradation target does not
+promise.
+
 Then, in rough dependency order:
 
 0. **If the type has a successor, ship a numbered DB migration** in
