@@ -9,7 +9,6 @@
  * and boot-time validation can ask "is SSO configured?" without pulling in the
  * `openid-client` dependency or doing any network I/O.
  *
- * @see docs/plans/briefs/sso-integration.md (Track 1)
  * @see docs/reference/sso-oidc.md
  */
 

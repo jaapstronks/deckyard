@@ -6,8 +6,8 @@
  * — server-side, but the browser never saw it: `registry.js` loads the custom
  * loader behind `isNode`, and `custom/slide-types/` was not on the static
  * allowlist. So the same slide showed core's markup in the editor and presenter
- * and the fork's markup only in server-side exports (measured 2026-07-30, see
- * docs/plans/briefs/fork-override-renderer-reach.md).
+ * and the fork's markup only in server-side exports (measured 2026-07-30; the
+ * seam and its rule are documented in docs/reference/slide-type-directory.md).
  *
  * The fix routes such names through server-side rendering: the server names its
  * overrides (`OVERRIDDEN_CORE_SLIDE_TYPE_NAMES`) in a synchronous head global

@@ -3,7 +3,7 @@
  *
  * `lijstje-slide` was never a second type: since the drift fix it was literally
  * `{ ...listSlide, ai: false }`, so the two names shared one field schema. Rung 3
- * of the list consolidation (docs/plans/briefs/list-slide-consolidation.md)
+ * of the list consolidation (docs/reference/slide-type-removal.md)
  * removes the alias from the registry, so a stored slide that still carries the
  * Dutch name would render as an *archived* slide (shared/slide-types/unresolved.js)
  * instead of a real list. This migration rewrites the name everywhere it is

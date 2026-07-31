@@ -20,7 +20,7 @@ import { rasterizeGradientBackgrounds } from './gradient-raster.js';
  * laptop-framed still (with a play badge) on the left and, on the right, copy
  * in the deck language pointing the reader at a live URL. The URL is resolved
  * server-side by {@link resolveVideoWatchUrl} (published deck deep-link →
- * provider URL → none). See docs/plans/video-slide-pdf-export.md.
+ * provider URL → none). See docs/reference/video-slide-pdf-export.md.
  *
  * @param {object} slide - The video slide.
  * @param {object} opts

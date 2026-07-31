@@ -7,7 +7,8 @@
  * `{ ...listSlide, ai: false }`, so the two share one field schema. That makes
  * this a **lossless rename**: only `type` is rewritten, `content` is left byte
  * for byte alone. No conversion, no field mapping, nothing to lose. It is the
- * migration step 3 of `docs/plans/briefs/list-slide-consolidation.md` asks for,
+ * migration step 3 of the list consolidation asks for (the rename ladder is
+ * documented in `docs/reference/slide-type-removal.md`),
  * and running it is what lets rung 2 of the deprecation ladder be signed off.
  *
  * ## Both stores, on purpose
