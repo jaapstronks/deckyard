@@ -39,12 +39,13 @@ To reach level 1:
 1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slideTypes`,
    `slides` — see [`deck-format.md`](./deck-format.md). Unknown top-level keys
    are ignored, never rejected.
-2. **Accept any well-formed type id.** `slides[].type` is the canonical
-   reverse-DNS id (`eu.deckyard.slide.title`) or one of its equivalent
-   spellings — `name`, `namespace/name`, either with `@version`. The published
-   JSON Schema constrains it by that shape and not by a list of names, precisely
-   so a fork type, an org type or a third-party type stays valid. All spellings
-   of one id name one type: see [type ids](#type-ids-one-identity-three-spellings).
+2. **Accept any well-formed type id.** `slides[].type` is the type's canonical
+   id — reverse-DNS for a declarant with an authority
+   (`eu.deckyard.slide.title`), `namespace/name` for one without — optionally
+   with `@version`. The published JSON Schema constrains it by that shape and
+   not by a list of names, precisely so a fork type, an org type or a
+   third-party type stays valid. One type has one id: see
+   [type ids](#type-ids-one-identity-one-spelling).
 3. **Honour the item contract** for the slide type's declared `structure`
    (below). `structure` travels on `GET /api/slide-types` and is part of the
    published type description.
@@ -53,29 +54,35 @@ To reach level 1:
    seen still has a structure and still has string-valued content; render those
    and show the type name rather than dropping the slide.
 
-### Type ids: one identity, three spellings
+### Type ids: one identity, one spelling
 
-The canonical id is **reverse-DNS**: `eu.deckyard.slide.title`. Whoever owns the
+The id is **reverse-DNS**: `eu.deckyard.slide.title`. Whoever owns the
 domain may define the type, which makes collisions structurally impossible
 instead of socially managed — `acme/hero` and `nl.ciiic.slide.hero` are both
 plain strings until a second fork exists, and after that only the first is a
 problem. The `-slide` suffix is gone from the canonical name because `slide` is
-already in the authority.
+already in the authority. A declarant without a domain keeps the
+`namespace/name` form; that is its canonical id, not a second spelling of
+someone else's.
 
-Two older spellings stay valid **forever**, and a reader MUST accept all three:
+**One type has one id, and comparing ids is comparing strings** (after
+stripping an `@version` suffix). There is no alias table a reader must learn.
 
-| Spelling | Example | Where it appears |
-|---|---|---|
-| Canonical reverse-DNS | `eu.deckyard.slide.title` | the `slideTypes` manifest, `GET /api/slide-types`, anything newly published |
-| Qualified | `core/title-slide` | decks written against the earlier identity model |
-| Bare key | `title-slide` | `slides[].type` in every deck, past and present |
+Two older spellings exist as **pre-convergence residue, not as part of the
+format**: the bare internal registry key (`title-slide`) and the qualified form
+(`core/title-slide`), both from before the identity model settled. Deckyard
+still accepts them on every ingest path and normalizes them to one form, and
+its own export still emits the bare key until the convergence work lands
+(tracked on `ROADMAP.md`). A second implementation owes these spellings
+nothing: it MAY treat them as unknown types, which the
+[unknown-type contract](#the-unknown-type-contract) already renders without
+loss.
 
-**Storage did not move.** `slides[].type` still holds the bare key, so the
-rename cost no deck a rewrite and a reader that only ever sees bare keys is not
-behind. A reader MUST treat the three as one identity: the published JSON
-Schema applies the same content contract to each spelling, and comparing ids
-means comparing identities, not strings (`shared/slide-types/type-id.js`,
-`sameType()`).
+An earlier revision of this page promised the older spellings would "stay valid
+forever". That promise is withdrawn, deliberately: it was written while the
+installed base was zero, and carrying three spellings of every id for the life
+of the format is exactly the kind of drift the beta window exists to remove —
+see the [beta stance](./versioning.md#the-beta-stance-purity-over-compatibility).
 
 The `@version` suffix is a **compatibility hint about a definition, not a
 different type**. A reader that does not have the named version renders the
@@ -163,7 +170,9 @@ Two consequences worth stating outright:
 Level 2 adds the nine tier-1 types and their field contracts:
 
 `title-slide`, `chapter-title-slide`, `content-slide`, `list-slide`,
-`quote-slide`, `image-slide`, `image-text-slide`, `table-slide`, `end-slide`.
+`quote-slide`, `image-slide`, `image-text-slide`, `table-slide`, `end-slide` —
+named here by their registry keys for readability; their published ids live
+under `eu.deckyard.slide.*` (suffix dropped).
 
 Their per-type content schemas are published at
 `https://deckyard.eu/schema/v<N>/slide-types/<type>.schema.json` and generated

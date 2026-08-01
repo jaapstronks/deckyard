@@ -29,6 +29,29 @@ Three planning horizons, three files:
 > sibling and run its `setup-symlink.sh`. Repo:
 > `github.com/jaapstronks/deckyard-planning` (private).
 
+## The course: beta doctrine (apply at every ritual)
+
+Deckyard is in beta with a near-zero installed base (one fork, ours). The
+standing direction of the current work is **tightening**: one canonical form
+per concept, drift reduced, a spec/API/slide-type system that is consistent,
+understandable and elegant. The canonical statement is
+`docs/reference/versioning.md` § *The beta stance: purity over compatibility*.
+Apply it at the recurring moments:
+
+- **Picking up work** ("check TODO.md", "geef een prompt om verder te gaan"):
+  frame the item against the course — prefer the structural fix over the
+  tolerant patch, and say so in the prompt or plan you produce.
+- **Reviewing a PR**: tolerance-creep is a *blocking* finding, not a style
+  nit — a second accepted shape/spelling for one meaning, an "accepts both"
+  without a normalize-and-remove story, a "valid forever" promise while the
+  beta badge is up. Breaking-but-clean beats compatible-but-cluttered during
+  beta.
+- **Writing docs**: state the normative target plus an honest
+  implementation-status note; never promise eternal compatibility during beta.
+- **Weighing a design**: "the code already accepts X" is never an argument —
+  current behaviour describes the codebase, it does not justify the contract.
+  When surfaces disagree, the inconsistency is the defect, not the precedent.
+
 ## Docs discipline (maintain this in every session)
 
 - **New docs go in the right folder, never loose in `docs/`**:

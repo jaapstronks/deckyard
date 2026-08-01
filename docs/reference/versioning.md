@@ -41,6 +41,46 @@ MINOR before merging (see [Correcting a version](#correcting-a-version)). A
 `1.x` release carrying a `⚠ BREAKING CHANGES` section is the intended shape
 while the badge is up, not a mistake.
 
+### The beta stance: purity over compatibility
+
+The no-MAJOR rule above is about the *number*; this is about the policy the
+number serves. Deckyard went public weeks ago, with essentially no marketing:
+the installed base is deliberately near zero (one fork, run by the maintainer,
+upgrading in lockstep). While the beta badge is up, the priority order is
+explicit — and it is the standing lens for planning, refactoring, PR review
+and docs alike:
+
+1. **A clean, consistent spec and API beat backward compatibility.** Every
+   month of public life raises the price of tightening; right now that price is
+   as low as it will ever be. Structural corrections — one canonical spelling,
+   one write path, one meaning per name — ship *now*, as documented breaking
+   changes, rather than surviving as permanent caveats. Being open source with
+   a published spec must not breed fear of refactoring; that fear is how a
+   codebase clouds over.
+2. **A breaking change is announced, not feared.** It ships as MINOR with a
+   `⚠ BREAKING CHANGES` note (the beta rule above) and a migration for stored
+   data where one applies. Forks sync on tags and should expect breaking
+   releases while the badge is up — the beta badge *is* that warning.
+3. **Tolerance is not compatibility.** Accepting several shapes or spellings
+   for one meaning, without normalizing to a single canonical form, is drift
+   wearing a friendly face. The rule at every boundary: accept what you must,
+   normalize immediately, persist and emit only the canonical form. A second
+   accepted shape without a normalize-and-remove story is a blocking review
+   finding, not a style nit.
+4. **"It already accepts X" is never a design argument.** Current behaviour
+   describes the codebase; it does not justify the contract. When most
+   surfaces are inconsistent, the inconsistency is the defect to fix, not the
+   precedent to follow.
+5. **The promises start when the badge comes off.** From that moment the
+   [evolution rule](./deck-format.md#evolution-rule) binds absolutely and
+   MAJOR means MAJOR. The beta window is the one chance to correct structure
+   cheaply, and it is spent deliberately.
+
+Adopted 2026-08-01, triggered by the type-id one-spelling decision (an early
+draft argued for keeping three spellings because most write paths already
+tolerated them — the exact reasoning rule 4 forbids). This section is the
+anchor other docs, `CLAUDE.md` rituals and review checklists point at.
+
 ## Merges are not releases
 
 Merging to `main` is **continuous integration** — internal, may happen dozens of

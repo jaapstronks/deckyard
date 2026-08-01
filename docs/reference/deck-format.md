@@ -57,20 +57,24 @@ as a map of the stored type key to its canonical identity:
   Core types are published under `eu.deckyard.slide`; a fork that declares its
   own authority gets its own (`nl.ciiic.slide.hero`), and one that declares only
   a bare namespace keeps the older slash form (`acme/hero`).
-- Two older spellings — `core/title-slide` and the bare `title-slide` — remain
-  valid **forever** and name the same type. A reader must treat them as one
-  identity; see
-  [type ids](./deck-conformance.md#type-ids-one-identity-three-spellings).
+- **One type has one id.** The older spellings — `core/title-slide` and the
+  bare `title-slide` — are pre-convergence residue, not part of the format.
+  Deckyard's importer still accepts them and normalizes on ingest, but a second
+  implementation owes them nothing; see
+  [type ids](./deck-conformance.md#type-ids-one-identity-one-spelling).
 - The `-slide` suffix is dropped from the canonical name: `slide` is already in
   the authority, so carrying it again is redundancy paid per type.
 - It is **recomputed from the registry on every export** (never hand-maintained),
   so it cannot drift from the slides it describes. The CI fixture test asserts
   the committed example's manifest equals the recomputed one.
-- `slides[].type` stays the **bare key** for back-compat — the canonical name is
-  a publishing decision, not a migration — and the manifest is where a reader
-  learns which published id and which definition/version each stored key needs.
-  Any spelling in `slides[].type` also imports: it resolves by identity, and
-  storage keeps the registry key.
+- `slides[].type` carries the type's id. **Beta residue, being removed:** the
+  engine today still writes the internal registry key (`title-slide`) there,
+  and this manifest is the translation table from that stored key to the
+  published id. The convergence work (see `ROADMAP.md`) moves the wire format
+  to the canonical id itself, after which the manifest's remaining job is the
+  definition/`@version` record. Until it lands, any spelling still imports —
+  it resolves by identity and storage keeps the registry key — and the example
+  above shows what the engine actually emits today.
 
 See [slide-type identity](../developer/slide-types.md) for the
 namespace/authority/version model.
@@ -83,9 +87,11 @@ Each slide is:
 { "type": "content-slide", "content": { "title": "Why", "body": "..." } }
 ```
 
-- **`type`** — the slide-type reference: the stored bare key, a qualified
-  `namespace/name` ref, or the canonical reverse-DNS id. All three resolve to
-  the same type; writers keep using the bare key.
+- **`type`** — the slide-type id: canonical reverse-DNS
+  (`eu.deckyard.slide.content`) or `namespace/name` for a declarant without an
+  authority. The engine's own export still emits the legacy bare key until the
+  one-spelling convergence lands (see the identity manifest above); the
+  importer accepts and normalizes every historical spelling.
 - **`content`** — an object whose shape is defined by that slide type's field
   registry. Absent or `""` fields mean "unset"; the importer fills type defaults
   and never blanks a required field.
@@ -176,8 +182,8 @@ content key, an envelope key, an enum value.
 2. Optional keys **MAY** be added at any time. A new **required** key **MUST
    NOT** be added to a published type — that turns every existing deck invalid
    retroactively, which is a rename wearing a compatible-looking hat.
-3. Widening a value space is additive (a new enum value, a new spelling of a type
-   id). **Narrowing it is not** and needs a new name.
+3. Widening a value space is additive (a new enum value, a new optional key).
+   **Narrowing it is not** and needs a new name.
 4. Nothing published is removed silently: a name that goes away is deprecated
    first, and tier 1 is covered by the standing stability promise
    ([`slide-type-tiers.md`](./slide-type-tiers.md)).
@@ -203,6 +209,23 @@ crossing a boundary between implementations that upgrade on their own schedules)
 same answer, and no reason to invent a second dialect of it. It sharpens
 `deck-format-spec-decisions.md` decision 4 rather than contradicting it.
 
+### Scope: beta is the correction window
+
+The rule above is the contract for a format with readers we do not own. While
+Deckyard carries the **beta badge**, that population is deliberately near zero
+(one fork, run by the maintainer, upgrading in lockstep), and the priority is
+inverted: **getting the format right beats preserving its early shapes.**
+During beta a narrowing or a rename that makes the format cleaner is allowed —
+shipped as a documented breaking change with a migration for stored decks, per
+the [beta stance](./versioning.md#the-beta-stance-purity-over-compatibility).
+The one-spelling convergence on this page is exactly such a change.
+
+What the window does *not* license: undocumented breaks, silent narrowing, or
+drift into several accepted shapes for one meaning. Tolerance without
+normalization is not compatibility; it is entropy with a friendly face.
+
+When the badge comes off, the window closes and the rule binds absolutely.
+
 ## Versioning
 
 - `version` is the **envelope** version, bumped only for a breaking change to the
@@ -225,9 +248,10 @@ Before the format took its publisher's name it was written as
 invented in the commit that first added JSON export, when the package was still
 called `presentation-system`.
 
-Decks and bundles carrying the old sentinel exist in the wild, so **a reader
-accepts it forever**; only writers moved. Re-exporting a legacy deck stamps it
-with the current sentinel.
+Decks and bundles carrying the old sentinel exist only in pre-release history,
+so **Deckyard's own importer keeps accepting it**; a second implementation only
+ever needs the current sentinel. Re-exporting a legacy deck stamps it with the
+current one.
 
 Both values, current and historical, live in
 `shared/slide-types/deck-format-id.js` (`DECK_FORMAT_ID`, `DECK_MIMETYPE`,
