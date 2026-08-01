@@ -308,11 +308,43 @@ const APPLIED_CUSTOM_NAMES = Object.keys(customTypes).filter(
     customTypes[name]?.override
 );
 
+/**
+ * The composition every registry entry goes through: the global slide fields
+ * (background, a11y, theme logo) appended to the type's own schema, then the
+ * i18n key annotations. Factored out so the core-only view below is composed
+ * exactly like the merged one — two spellings of "a registry entry" is how a
+ * consumer ends up reading a differently-shaped def than the editor does.
+ *
+ * @param {string} type
+ * @param {Object} def
+ * @returns {Object}
+ */
+function composeSlideType(type, def) {
+  return addUiI18nKeysToSlideType(type, withGlobalSlideFields(def));
+}
+
 export const SLIDE_TYPES = Object.fromEntries(
-  Object.entries(RAW_SLIDE_TYPES).map(([type, def]) => [
-    type,
-    addUiI18nKeysToSlideType(type, withGlobalSlideFields(def)),
-  ])
+  Object.entries(RAW_SLIDE_TYPES).map(([type, def]) => [type, composeSlideType(type, def)])
+);
+
+/**
+ * The core definitions by name — `SLIDE_TYPES` without the custom merge.
+ *
+ * The fork-stable counterpart of `CORE_SLIDE_TYPE_NAMES`, for tooling that
+ * writes **tracked artifacts** from a definition: generated reference docs read
+ * schemas here rather than from `SLIDE_TYPES`, so a fork that overrides a core
+ * name (`override: true`) cannot make upstream's committed output depend on the
+ * checkout — the same reason i18n extraction skips `CUSTOM_SLIDE_TYPE_NAMES`.
+ *
+ * Runtime consumers want `SLIDE_TYPES`: an override exists precisely to be
+ * rendered, and reading core's def instead would ignore it.
+ *
+ * @type {Readonly<Record<string, Object>>}
+ */
+export const CORE_SLIDE_TYPE_DEFS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(CORE_SLIDE_TYPES).map(([type, def]) => [type, composeSlideType(type, def)])
+  )
 );
 
 // Names of types that came from custom/slide-types/ AND actually entered the

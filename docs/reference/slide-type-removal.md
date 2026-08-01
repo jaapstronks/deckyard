@@ -170,11 +170,13 @@ Then, in rough dependency order:
    Replace the type's archival test with a removal test that asserts it is off
    the registry and that a stored slide still degrades to the unknown-type
    render rather than throwing.
-6. **Update the docs that carry per-type rows.** The per-type tables in
+6. **Regenerate the docs; do not edit rows by hand.** The per-type tables in
    `docs/reference/editor-inspector.md` and
-   `docs/reference/wysiwyg-inline-editing.md` are still hand-maintained — one row
-   per type — so delete the removed type's row from each.
-   **Type counts are no longer a manual step.** Every count in committed Markdown
+   `docs/reference/wysiwyg-inline-editing.md` are derived from the registry and
+   the type's companions, inside `<!--gen:…-->` regions, so a removed type loses
+   its row by running `node scripts/generate-slide-type-docs.js` —
+   `tests/slide-type-docs.test.js` fails if you forget.
+   **Type counts are no longer a manual step either.** Every count in committed Markdown
    lives inside a `<!--gen:slide-type-count-->` span that
    `scripts/generate-slide-type-docs.js` rewrites — `ROADMAP.md` included since it
    joined `COUNT_MARKER_FILES` (it was the line that kept being missed) — and
@@ -281,8 +283,13 @@ touch is the long tail — the CSS block, the two doc tables, the two per-type t
 lists, the allowlist entry and twelve locale payloads all still had to be found
 and edited by hand. That tail is the worklist to actually close the gate:
 
-1. `docs/reference/editor-inspector.md` + `docs/reference/wysiwyg-inline-editing.md`
-   — per-type tables that should be generated like `slide-type-inventory.md`.
+1. ~~`docs/reference/editor-inspector.md` + `docs/reference/wysiwyg-inline-editing.md`
+   — per-type tables that should be generated like `slide-type-inventory.md`.~~
+   **Done:** both tables are now `<!--gen:…-->` regions filled from the schema,
+   the inline-edit descriptor, the keep-list and the `layoutVariants`/
+   `fieldGroups` declarations (`scripts/lib/slide-type-doc-tables.js`). Removing
+   a type drops both rows with no hand edit, and the regeneration surfaced the
+   drift the hand tables had accumulated in the meantime.
 2. `tests/inspector-form.test.js` — a per-type pin in a hand list that could
    iterate the registry.
 3. `tests/theme-background-presets.test.js` — per-type render assertions that
@@ -402,5 +409,6 @@ actually used.
 - `shared/slide-types/removed.js` — the removal record.
 - `shared/slide-types/unresolved.js` — the render contract for a type that is gone.
 - `tests/removed-slide-types.test.js` — the guardrail that enforces it.
-- `docs/reference/editor-inspector.md` — the per-type inspector table.
-- `docs/reference/wysiwyg-inline-editing.md` — the per-type inline-edit table.
+- `docs/reference/editor-inspector.md` — the per-type inspector table (generated).
+- `docs/reference/wysiwyg-inline-editing.md` — the per-type inline-edit table (generated).
+- `scripts/lib/slide-type-doc-tables.js` — what those two tables derive from.
