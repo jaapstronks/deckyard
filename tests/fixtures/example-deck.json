@@ -3,16 +3,9 @@
   "version": 1,
   "title": "The deckyard.deck format",
   "theme": "default",
-  "slideTypes": {
-    "title-slide": "eu.deckyard.slide.title",
-    "content-slide": "eu.deckyard.slide.content",
-    "image-slide": "eu.deckyard.slide.image",
-    "quote-slide": "eu.deckyard.slide.quote",
-    "end-slide": "eu.deckyard.slide.end"
-  },
   "slides": [
     {
-      "type": "title-slide",
+      "type": "eu.deckyard.slide.title",
       "content": {
         "title": "The deckyard.deck format",
         "subheading": "A portable, versioned deck interchange format",
@@ -20,7 +13,7 @@
       }
     },
     {
-      "type": "content-slide",
+      "type": "eu.deckyard.slide.content",
       "content": {
         "title": "Why a format",
         "layout": "one-column",
@@ -29,16 +22,16 @@
       }
     },
     {
-      "type": "image-slide",
+      "type": "eu.deckyard.slide.image",
       "content": {
         "image": "/uploads/diagram.png",
-        "alt": "Envelope, slideTypes manifest, and slides array",
+        "alt": "The deckyard.deck envelope and its slides array",
         "caption": "Local assets are referenced by upload URL; a .deck bundle embeds their bytes.",
         "fit": "contain"
       }
     },
     {
-      "type": "quote-slide",
+      "type": "eu.deckyard.slide.quote",
       "content": {
         "quote": "The format is the product.",
         "authorName": "data-model purity track",
@@ -46,7 +39,7 @@
       }
     },
     {
-      "type": "end-slide",
+      "type": "eu.deckyard.slide.end",
       "content": {
         "title": "Thanks"
       }

@@ -2,7 +2,7 @@ import { cryptoUuid } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { resolveTitleSlideBackground } from './title-slide-background.js';
 import {
-  collectSlideTypeManifest,
+  canonicalSlideType,
   getSlideType,
   resolveSlideTypeName,
 } from './registry.js';
@@ -23,19 +23,19 @@ import { DECK_FORMAT_ID } from './deck-format-id.js';
 //   "version": 1,
 //   "title": "My deck",
 //   "theme": "default",
-//   "slideTypes": { "title-slide": "eu.deckyard.slide.title" },
 //   "slides": [
-//     { "type": "title-slide", "content": { "title": "...", "subtitle": "", "background": "lime" } }
+//     { "type": "eu.deckyard.slide.title", "content": { "title": "...", "subtitle": "", "background": "lime" } }
 //   ]
 // }
 //
-// `slideTypes` records which slide-type DEFINITIONS this deck was written
-// against, as a map of the stored type key -> its canonical reverse-DNS
-// identity (`eu.deckyard.slide.title[@version]`). It is recomputed from the
-// registry on every export (never hand-maintained, so it can't drift) and lets a
-// second implementation see which type definitions/versions a deck needs — and
-// which published name each stored key answers to. `slides[].type` stays the
-// bare key for back-compat.
+// `slides[].type` carries the type's ONE published spelling: the canonical
+// reverse-DNS id (`eu.deckyard.slide.title[@version]`), `namespace/name` for a
+// declarant without an authority. Storage keeps the bare registry key
+// internally; export projects it to the canonical id via `canonicalSlideType`,
+// and import folds any spelling back to the key — round-trip stable by
+// construction. There is no separate slide-type manifest: the id on each slide
+// already names the definition (and MAY pin an `@version`), so a second map
+// would only duplicate what the id carries.
 //
 // The `format` sentinel and the bundle mimetype both live in
 // ./deck-format-id.js — one place to change them, and the place that records
@@ -44,7 +44,7 @@ import { DECK_FORMAT_ID } from './deck-format-id.js';
 
 export function presentationToDeck(pres) {
   const slides = (pres?.slides || []).map((s) => ({
-    type: s?.type,
+    type: canonicalSlideType(s?.type),
     content: s?.content || {},
   }));
   return {
@@ -52,7 +52,6 @@ export function presentationToDeck(pres) {
     version: 1,
     title: pres?.title || 'Untitled presentation',
     theme: pres?.theme || 'default',
-    slideTypes: collectSlideTypeManifest(slides),
     slides,
   };
 }

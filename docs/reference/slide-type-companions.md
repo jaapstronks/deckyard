@@ -104,7 +104,7 @@ Rules and limits: `shared/slide-types/usage.js`.
 | i18n key scaffolding | `addUiI18nKeysToSlideType()` at registry build |
 | Agent-visible type list (MCP `get_slide_types`) | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
 | Canonical type id (`eu.deckyard.slide.title`) | `SLIDE_TYPE_IDS` |
-| Deck type manifest | `collectSlideTypeManifest()` |
+| Wire spelling of `slides[].type` (export/read) | `canonicalSlideType()` |
 
 ### The agent-facing schema, and how a field opts out
 

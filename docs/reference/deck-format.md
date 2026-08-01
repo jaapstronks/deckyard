@@ -21,9 +21,8 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "version": 1,
   "title": "My deck",
   "theme": "default",
-  "slideTypes": { "title-slide": "eu.deckyard.slide.title" },
   "slides": [
-    { "type": "title-slide", "content": { "title": "Hello", "background": "lime" } }
+    { "type": "eu.deckyard.slide.title", "content": { "title": "Hello", "background": "lime" } }
   ]
 }
 ```
@@ -34,49 +33,42 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 | `version`    | integer  | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)). |
 | `title`      | string   | Human title of the deck. |
 | `theme`      | string   | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected. |
-| `slideTypes` | object   | Identity manifest: stored type key → canonical reverse-DNS id (see below). |
 | `slides`     | array    | Ordered list of slides, each `{ type, content }`. |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
 not rejected. This keeps forward-compatibility — a newer producer can add fields
 an older reader simply skips.
 
-## `slideTypes` — the identity manifest
+## Type identity: one spelling on `slides[].type`
 
-`slideTypes` records which slide-type **definitions** a deck was written against,
-as a map of the stored type key to its canonical identity:
+Each slide names its type once, on `slides[].type`, in the **canonical
+reverse-DNS id** — `<authority>.<name>[@version]`:
 
 ```json
-"slideTypes": {
-  "title-slide": "eu.deckyard.slide.title",
-  "quote-slide": "eu.deckyard.slide.quote"
-}
+{ "type": "eu.deckyard.slide.quote", "content": { "quote": "…" } }
 ```
 
-- The value is the **canonical reverse-DNS id**, `<authority>.<name>[@version]`.
-  Core types are published under `eu.deckyard.slide`; a fork that declares its
+- Core types are published under `eu.deckyard.slide`; a fork that declares its
   own authority gets its own (`nl.ciiic.slide.hero`), and one that declares only
-  a bare namespace keeps the older slash form (`acme/hero`).
+  a bare namespace keeps the slash form (`acme/hero`) — that slash form *is* its
+  canonical id, not a lesser spelling.
 - **One type has one id.** The older spellings — `core/title-slide` and the
-  bare `title-slide` — are pre-convergence residue, not part of the format.
-  Deckyard's importer still accepts them and normalizes on ingest, but a second
-  implementation owes them nothing; see
+  bare registry key `title-slide` — are pre-convergence residue, not part of the
+  format. Deckyard's importer still accepts them and normalizes on ingest, but a
+  second implementation owes them nothing; see
   [type ids](./deck-conformance.md#type-ids-one-identity-one-spelling).
 - The `-slide` suffix is dropped from the canonical name: `slide` is already in
   the authority, so carrying it again is redundancy paid per type.
-- It is **recomputed from the registry on every export** (never hand-maintained),
-  so it cannot drift from the slides it describes. The CI fixture test asserts
-  the committed example's manifest equals the recomputed one.
-- `slides[].type` carries the type's id. **Beta residue, being removed:** the
-  engine today still writes the internal registry key (`title-slide`) there,
-  and this manifest is the translation table from that stored key to the
-  published id. The convergence work (see `ROADMAP.md`) moves the wire format
-  to the canonical id itself, after which the manifest's remaining job is the
-  definition/`@version` record. Until it lands, any spelling still imports —
-  it resolves by identity and storage keeps the registry key — and the example
-  above shows what the engine actually emits today.
+- The id already names the definition a deck was written against, and MAY pin an
+  `@version` (`eu.deckyard.slide.title@2`). There is **no separate slide-type
+  manifest** — a second map keyed on the same ids would only duplicate what each
+  slide already carries.
 
-See [slide-type identity](../developer/slide-types.md) for the
+Deckyard keeps the bare registry key internally as its lookup key
+(`title-slide`); export and the read APIs project it to the canonical id, and
+import folds any spelling back to the key, so the wire is canonical and the
+[round-trip](#round-trip-guarantee) is stable by construction. See
+[slide-type identity](../developer/slide-types.md) for the
 namespace/authority/version model.
 
 ## Slides
@@ -89,9 +81,9 @@ Each slide is:
 
 - **`type`** — the slide-type id: canonical reverse-DNS
   (`eu.deckyard.slide.content`) or `namespace/name` for a declarant without an
-  authority. The engine's own export still emits the legacy bare key until the
-  one-spelling convergence lands (see the identity manifest above); the
-  importer accepts and normalizes every historical spelling.
+  authority. Export and the read APIs emit this canonical id; the importer
+  accepts and normalizes every historical spelling (see
+  [Type identity](#type-identity-one-spelling-on-slidestype) above).
 - **`content`** — an object whose shape is defined by that slide type's field
   registry. Absent or `""` fields mean "unset"; the importer fills type defaults
   and never blanks a required field.
@@ -236,9 +228,10 @@ When the badge comes off, the window closes and the rule binds absolutely.
   against the schema version it understands; the lenient contract lets it tolerate
   newer keys.
 - A **type id's** `@version` is neither of those two: it is a hint about which
-  *definition* a deck was written against, recorded in the `slideTypes` manifest.
-  It never makes a type a different type (see the evolution rule: a real change
-  of meaning would have taken a new name).
+  *definition* a deck was written against, carried inline on the slide's own
+  `type` (`eu.deckyard.slide.title@2`; a producer MAY pin it). It never makes a
+  type a different type (see the evolution rule: a real change of meaning would
+  have taken a new name).
 
 ## Legacy sentinel
 
@@ -272,7 +265,8 @@ before the dot, never in the filename.
 
 - Envelope build/parse: `shared/slide-types/deck.js`
   (`presentationToDeck`, `deckToPresentationParts`).
-- Identity manifest: `collectSlideTypeManifest` (`shared/slide-types/registry.js`).
+- Type-id projection: `canonicalSlideType` (export/read) and
+  `resolveSlideTypeName` (import) in `shared/slide-types/registry.js`.
 - Content schema generation: `shared/slide-types/json-schema.js`.
 - Asset ref layer: `shared/slide-types/deck-assets.js`.
 - Spec fixture + CI gate: `tests/fixtures/example-deck.json`,

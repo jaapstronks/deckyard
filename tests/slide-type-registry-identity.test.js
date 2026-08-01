@@ -1,9 +1,9 @@
 /**
  * Tests for the slide-type identity layer on the registry (PR 6, move 4):
  * the getSlideType resolver, SLIDE_TYPE_IDS, getSlideTypeId, and the
- * collectSlideTypeManifest deck stamp. Collision detection between core and
- * custom types is exercised in tests/slide-type-collision.test.js (which loads
- * the merge helper in isolation, since custom types are filesystem-loaded).
+ * canonicalSlideType read/export projection. Collision detection between core
+ * and custom types is exercised in tests/slide-type-collision.test.js (which
+ * loads the merge helper in isolation, since custom types are filesystem-loaded).
  *
  * Run with: node --test tests/slide-type-registry-identity.test.js
  */
@@ -19,7 +19,7 @@ import {
   getSlideType,
   getSlideTypeId,
   resolveSlideTypeName,
-  collectSlideTypeManifest,
+  canonicalSlideType,
 } from '../shared/slide-types/registry.js';
 import {
   CORE_AUTHORITY,
@@ -196,27 +196,20 @@ describe('SLIDE_TYPE_IDS / getSlideTypeId', () => {
   });
 });
 
-describe('collectSlideTypeManifest', () => {
-  it('maps each stored key to its canonical id, de-duplicated', () => {
-    const slides = [
-      { type: 'title-slide' },
-      { type: 'content-slide' },
-      { type: 'content-slide' },
-    ];
-    assert.deepEqual(collectSlideTypeManifest(slides), {
-      'title-slide': 'eu.deckyard.slide.title',
-      'content-slide': 'eu.deckyard.slide.content',
-    });
+describe('canonicalSlideType', () => {
+  it('projects the stored registry key to its one published id', () => {
+    assert.equal(canonicalSlideType('title-slide'), 'eu.deckyard.slide.title');
+    assert.equal(canonicalSlideType('content-slide'), 'eu.deckyard.slide.content');
   });
-  it('ignores slides without a usable type', () => {
-    assert.deepEqual(collectSlideTypeManifest([{}, { type: '' }, { type: 5 }]), {});
-    assert.deepEqual(collectSlideTypeManifest(null), {});
+  it('folds any accepted spelling to the same canonical id', () => {
+    assert.equal(canonicalSlideType('core/title-slide'), 'eu.deckyard.slide.title');
+    assert.equal(canonicalSlideType('eu.deckyard.slide.title'), 'eu.deckyard.slide.title');
   });
-  it('still records an unknown type under the core authority (informational)', () => {
-    // A manifest should faithfully report what a deck references even if the
-    // current registry lacks the definition.
-    assert.deepEqual(collectSlideTypeManifest([{ type: 'ghost-slide' }]), {
-      'ghost-slide': 'eu.deckyard.slide.ghost',
-    });
+  it('returns an unresolvable value unchanged (unknown/foreign type)', () => {
+    // An unknown type still crosses the boundary intact rather than dropping.
+    assert.equal(canonicalSlideType('acme/hero'), 'acme/hero');
+    assert.equal(canonicalSlideType('ghost-slide'), 'ghost-slide');
+    assert.equal(canonicalSlideType(''), '');
+    assert.equal(canonicalSlideType(5), 5);
   });
 });

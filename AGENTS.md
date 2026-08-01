@@ -154,11 +154,14 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   `grep '\.js$'` over that directory counts companions as types.
 - **Identity**: the registry key (`title-slide`) is the internal lookup key;
   the *published* id is reverse-DNS (`eu.deckyard.slide.title`, suffix dropped)
-  and is the format's **only** spelling — legacy spellings (`core/title-slide`,
-  the bare key on the wire) are being converged away during beta.
-  `resolveSlideTypeName()` in `registry.js` is the single place that knows the
-  legacy mapping — do not re-derive it anywhere else, and never add a surface
-  that accepts a non-canonical spelling without normalizing through it. See
+  and is the format's **only** spelling. Export and the read APIs emit it via
+  `canonicalSlideType()`; imports and every write path fold any spelling back to
+  the key via `resolveSlideTypeName()` — both live in `registry.js` and are the
+  single place that knows the legacy mapping. Do not re-derive it anywhere else,
+  and never add a surface that accepts a non-canonical spelling without
+  normalizing through it, nor one that emits the bare key across the boundary.
+  Stored `slides[].type` still holds the bare key until the v3→v4 migration
+  lands (see `docs/plans/briefs/one-spelling.md`). See
   [`docs/reference/deck-format.md`](docs/reference/deck-format.md) and the beta
   stance in [`docs/reference/versioning.md`](docs/reference/versioning.md).
 

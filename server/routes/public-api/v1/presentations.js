@@ -14,6 +14,7 @@ import {
 import { getTagsForPresentations, getTagsForPresentation } from '../../../storage/tags/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
+import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import { requireScope, canAccessPresentation, getPresentationWithAccess, parseJsonBody, parsePaginationParams, apiSuccess, apiCreated, apiError } from './middleware.js';
 
 // ============================================================
@@ -58,7 +59,13 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     themeId: pres.themeId || null,
     language: pres.language || 'en-GB',
     slideCount: Array.isArray(pres.slides) ? pres.slides.length : 0,
-    slides: pres.slides || [],
+    // Project each stored bare registry key to its one published spelling (the
+    // canonical id). Storage keeps the key; nothing non-canonical crosses the
+    // API boundary. Spread so we never mutate the stored slide.
+    slides: (pres.slides || []).map((s) => ({
+      ...s,
+      type: canonicalSlideType(s?.type),
+    })),
     i18n: pres.i18n || null,
     revision: pres.revision || 0,
     createdAt: pres.createdAt || null,

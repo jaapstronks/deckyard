@@ -477,31 +477,22 @@ export function getSlideType(ref, slideTypes = SLIDE_TYPES) {
 }
 
 /**
- * Build the deck-level manifest of slide-type identities a set of slides uses:
- * `{ [storageKey]: "<canonical id>" }`. Recomputed from the current registry so
- * it never drifts. Stamped onto the portable deck export so a deck records which
- * type definitions it was written against — and, since the canonical id is
- * reverse-DNS, it is also where a reader learns the published name for the
- * legacy key a slide stores.
+ * The canonical reverse-DNS id a stored slide-type value publishes as, in any
+ * accepted spelling. This is the read/export counterpart to
+ * {@link resolveSlideTypeName}: writes fold every spelling down to the registry
+ * key, reads and exports project that key back up to the one published id. The
+ * pair is what makes the round-trip stable by construction — nothing
+ * non-canonical leaves the boundary, and every accepted spelling folds back in.
  *
- * A type this install does not have is still reported (informationally) under
- * the core authority: the manifest states what the deck references, not what we
- * happen to be able to render.
+ * A value that names no registered type is returned unchanged, so an unknown or
+ * foreign type still crosses the boundary intact rather than being dropped.
  *
- * @param {Array<{type?: string}>} slides
- * @returns {Record<string, string>}
+ * @param {string} type
+ * @returns {string} the canonical id, or the input verbatim when unresolvable.
  */
-export function collectSlideTypeManifest(slides) {
-  const manifest = {};
-  for (const slide of Array.isArray(slides) ? slides : []) {
-    const name = slide?.type;
-    if (typeof name !== 'string' || !name || manifest[name]) continue;
-    const key = resolveSlideTypeName(name);
-    manifest[name] =
-      (key && SLIDE_TYPE_IDS[key]) ||
-      formatCanonicalId({ namespace: CORE_NAMESPACE, name, version: null });
-  }
-  return manifest;
+export function canonicalSlideType(type) {
+  const key = resolveSlideTypeName(type);
+  return (key && SLIDE_TYPE_IDS[key]) || type;
 }
 
 // Core themes included with the OSS version.

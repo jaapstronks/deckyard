@@ -5,8 +5,8 @@
  * `docs/reference/deck-format.md`. This test is the CI gate behind that spec:
  *
  *   1. the example conforms to the documented envelope;
- *   2. its `slideTypes` identity manifest matches what the registry recomputes
- *      (a hand-written manifest can't silently drift);
+ *   2. export emits each `slides[].type` as its one published spelling (the
+ *      canonical reverse-DNS id) and carries no separate slide-type manifest;
  *   3. it round-trips (import → export → import → export is content-stable);
  *   4. every slide's content validates against its generated per-type schema —
  *      the single source shared with the JSON-schema contract.
@@ -28,8 +28,11 @@ import {
   LEGACY_DECK_FORMAT_IDS,
   isDeckFormatId,
 } from '../shared/slide-types/deck-format-id.js';
-import { collectSlideTypeManifest, getSlideType } from '../shared/slide-types/registry.js';
-import { tryParseTypeId } from '../shared/slide-types/type-id.js';
+import {
+  getSlideType,
+  resolveSlideTypeName,
+  canonicalSlideType,
+} from '../shared/slide-types/registry.js';
 import { slideTypeContentSchema } from '../shared/slide-types/json-schema.js';
 import { validate } from './helpers/json-schema-validate.js';
 
@@ -46,7 +49,7 @@ test('the example conforms to the documented deck envelope', () => {
   assert.equal(example.version, 1, 'format version');
   assert.equal(typeof example.title, 'string');
   assert.equal(typeof example.theme, 'string');
-  assert.ok(example.slideTypes && typeof example.slideTypes === 'object');
+  assert.equal(example.slideTypes, undefined, 'no separate slide-type manifest');
   assert.ok(Array.isArray(example.slides) && example.slides.length > 0);
   for (const s of example.slides) {
     assert.equal(typeof s.type, 'string', 'slide.type is a string');
@@ -55,13 +58,15 @@ test('the example conforms to the documented deck envelope', () => {
   }
 });
 
-test('the slideTypes manifest matches what the registry recomputes (no drift)', () => {
-  const recomputed = collectSlideTypeManifest(example.slides);
-  assert.deepEqual(
-    example.slideTypes,
-    recomputed,
-    'hand-written slideTypes manifest is out of sync with the registry'
-  );
+test('the example spells every type as its one published (canonical) id', () => {
+  // The fixture is the spec: it must show the ONE spelling a producer writes.
+  for (const s of example.slides) {
+    assert.equal(
+      s.type,
+      canonicalSlideType(s.type),
+      `slide.type must be canonical, not a legacy spelling: ${s.type}`
+    );
+  }
 });
 
 test('the example round-trips: import → export → import → export is content-stable', () => {
@@ -76,14 +81,23 @@ test('the example round-trips: import → export → import → export is conten
   // The envelope is reproduced verbatim by the exporter.
   assert.equal(deck2.format, DECK_FORMAT_ID);
   assert.equal(deck2.version, 1);
-  assert.deepEqual(deck2.slideTypes, example.slideTypes);
+  assert.equal(deck2.slideTypes, undefined, 'exporter emits no slide-type manifest');
+  // Export projects the internal registry key back to the one published id, so
+  // a re-exported deck spells its types exactly as the fixture does.
+  assert.deepEqual(
+    deck2.slides.map((s) => s.type),
+    example.slides.map((s) => s.type),
+    'export emits canonical type ids'
+  );
 });
 
 test('every example slide validates against its generated per-type schema', () => {
   const normalized = presentationToDeck(deckToPresentationParts(example));
   const failures = [];
   for (const slide of normalized.slides) {
-    const localName = tryParseTypeId(slide.type)?.name || slide.type;
+    // slide.type is the canonical id now; resolve it to the registry key the
+    // per-type schema is generated under.
+    const localName = resolveSlideTypeName(slide.type) || slide.type;
     const def = getSlideType(slide.type);
     assert.ok(def, `example uses a known slide type: ${slide.type}`);
     const schema = slideTypeContentSchema(localName, def);
