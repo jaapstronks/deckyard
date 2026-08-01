@@ -23,6 +23,7 @@ export default {
   runtime: 'live',
   interaction: 'poll',
   label: 'Poll',
+  labelField: 'question',
   fields: [
     {
       key: 'question',
