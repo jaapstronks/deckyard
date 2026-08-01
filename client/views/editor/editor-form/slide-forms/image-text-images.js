@@ -30,7 +30,7 @@ import {
   IMAGE_TEXT_MAX_IMAGES,
   ensureImageTextImages,
   imageTextCellCount,
-} from '../../../../../shared/slide-types/image-text-images.js';
+} from '../../../../../shared/slide-types/types/image-text-slide/images.js';
 
 /**
  * Reorder/add/remove wiring for the images collection.

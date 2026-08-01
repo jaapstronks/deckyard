@@ -1,6 +1,6 @@
 import { cryptoUuid } from './helpers.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
-import { resolveTitleSlideBackground } from './title-slide-background.js';
+import { resolveTitleSlideBackground } from './types/title-slide/background.js';
 import {
   canonicalSlideType,
   getSlideType,

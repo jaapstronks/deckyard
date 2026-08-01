@@ -5,7 +5,7 @@ import {
   resolveContentColumnImage,
   ensureContentColumnsImages,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
-} from '../shared/slide-types/content-columns-images.js';
+} from '../shared/slide-types/types/content-columns-slide/images.js';
 import { convertSlideToType } from '../shared/slide-types/convert.js';
 
 /**

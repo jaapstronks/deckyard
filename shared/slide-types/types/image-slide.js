@@ -14,7 +14,7 @@ import {
   resolveImageSlideImage,
   ensureImageSlideImage,
   IMAGE_SLIDE_IMAGE_DEFAULTS,
-} from '../image-slide-image.js';
+} from './image-slide/image.js';
 
 export default {
   structure: 'singleton',

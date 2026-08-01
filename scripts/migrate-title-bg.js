@@ -22,7 +22,7 @@
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { ensureTitleSlideBackground } from '../shared/slide-types/title-slide-background.js';
+import { ensureTitleSlideBackground } from '../shared/slide-types/types/title-slide/background.js';
 
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');

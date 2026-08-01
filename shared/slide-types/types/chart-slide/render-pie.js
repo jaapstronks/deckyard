@@ -1,4 +1,4 @@
-import { esc } from '../helpers.js';
+import { esc } from '../../helpers.js';
 import { svgText } from './svg.js';
 import { pieLabelInvertClass } from './palette.js';
 

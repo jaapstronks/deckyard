@@ -10,7 +10,7 @@
  */
 
 import { HEADER_TEXT } from '../../inline-edit-common.js';
-import { resolveImageSlideImage } from '../../image-slide-image.js';
+import { resolveImageSlideImage } from './image.js';
 
 /** @type {Object} InlineDescriptor for image-slide. */
 export const inlineEdit = {

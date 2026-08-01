@@ -14,7 +14,7 @@ import {
   resolveImageTextCell,
   ensureImageTextImages,
   IMAGE_TEXT_IMAGE_DEFAULTS,
-} from '../image-text-images.js';
+} from './image-text-slide/images.js';
 
 export default {
   structure: 'singleton',

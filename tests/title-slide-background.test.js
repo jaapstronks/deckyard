@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import {
   resolveTitleSlideBackground,
   ensureTitleSlideBackground,
-} from '../shared/slide-types/title-slide-background.js';
+} from '../shared/slide-types/types/title-slide/background.js';
 import { renderSlideHtml, SLIDE_TYPES } from '../shared/slide-types.js';
 
 // ---- resolveTitleSlideBackground: canonical wins → legacy → none ----

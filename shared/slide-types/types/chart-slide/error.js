@@ -1,4 +1,4 @@
-import { esc } from '../helpers.js';
+import { esc } from '../../helpers.js';
 
 export function chartErrorHtml(errors) {
   const items = (errors || []).map((e) => `<li>${esc(e)}</li>`).join('');
