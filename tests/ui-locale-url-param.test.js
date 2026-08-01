@@ -2,7 +2,7 @@
  * Tests for the UI-locale URL-param seam.
  *
  * `readUiLocaleParam()` lets an external origin (deckyard.eu) deep-link into the
- * app or the sandbox in a chosen language via `?lang=en` / `?locale=en`. It is a
+ * app or the sandbox in a chosen language via `?lang=en` (the only spelling). It is a
  * pure query-string parser (no localStorage/fetch), so it's exercised here with
  * explicit search strings.
  *
@@ -46,11 +46,8 @@ test('reads a well-formed ?lang= value', () => {
   assert.equal(readUiLocaleParam('lang=nl'), 'nl');
 });
 
-test('falls back to ?locale= when ?lang= is absent', () => {
-  assert.equal(readUiLocaleParam('?locale=de'), 'de');
-});
-
-test('lang takes precedence over locale', () => {
+test('?locale= is not read: alone it yields null, alongside ?lang= it is ignored', () => {
+  assert.equal(readUiLocaleParam('?locale=de'), null);
   assert.equal(readUiLocaleParam('?locale=de&lang=en'), 'en');
 });
 

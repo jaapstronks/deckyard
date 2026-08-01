@@ -422,7 +422,7 @@ export function createPreferencesTab({ user, nav }) {
     try {
       const [my, app] = await Promise.all([fetchMySettings(), fetchAppSettings()]);
       if (typeof my?.uiLang === 'string') langMode = my.uiLang;
-      // A `?lang=`/`?locale=` URL param overrides the saved preference for the
+      // A `?lang=` URL param overrides the saved preference for the
       // session, so the picker must show the language actually in effect — not
       // the stored `uiLocale` it outranks.
       const myUiLocale =
