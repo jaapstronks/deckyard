@@ -20,12 +20,16 @@ validation/iteration, and an MCP server with 27 tools + SSE transport.
 
 ## Now
 
-- **One spelling per type id** — converge API, MCP, export and storage on the
-  canonical reverse-DNS slide-type id decided in the spec work: one shared
-  write seam that validates and normalizes every ingest path, canonical ids on
-  the wire, a storage migration folding historical spellings, before the spec
-  page ships. Part of the beta-window tightening described in
+- **Slide types as self-describing declarations** — every slide type declares
+  its structure, editor behaviour and per-language defaults in one place, and
+  the editor derives its forms from those declarations instead of hand-built
+  per-type code. Part of the beta-window tightening described in
   [`docs/reference/versioning.md`](docs/reference/versioning.md).
+
+_The one-spelling project that stood here has shipped (v1.11.0): every write
+path validates and normalizes slide-type ids against the registry, export and
+the API emit the canonical reverse-DNS id, and a storage migration folded the
+historical spellings._
 
 _The organizations project that stood here has shipped: several organizations
 can share one instance, with identity resolved independently of any single
@@ -49,9 +53,10 @@ documented under `docs/reference/` and `docs/developer/`._
 - **Live-session robustness** — survive presenter refresh, companion
   auto-recovery, persistent join QR, unified follow codes, linked Q&A
   moderation, poll-open affordance.
-- **Share unification** — a unified 3-tab Share dialog (live audience / link /
-  workspace). PR 1 shipped (guarded presenter-control link, inline share link,
-  reconciled permission model); the 3-tab dialog is what remains.
+- **Share unification** — the tabbed Share dialog has shipped (workspace /
+  link / publish); what remains is a Live tab that brings the
+  presenter/audience companion links into the same dialog, plus routing the
+  presenter Tools menu there.
 - **Concurrent-editing hardening, part 2** — follow-ups to the stale-tab merge
   guard: order-preserving merges, client refresh on focus/online so a tab never
   grows stale, and a merge audit log with pre-merge snapshots.
