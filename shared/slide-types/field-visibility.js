@@ -29,6 +29,28 @@
  */
 
 /**
+ * The keys that some other field's `visibleWhen` reads — the fields whose value
+ * decides what the form shows.
+ *
+ * The editor needs this because a visibility change is a form REBUILD, not a
+ * repaint: editing a driver makes other controls appear or disappear. Deriving
+ * the set from the declarations is what keeps that honest — the alternative,
+ * naming the driver keys in the renderer, is the per-type branching this whole
+ * vocabulary exists to remove (it started life as `if (key === 'chartType')`).
+ *
+ * @param {Array<Object>} fields - a type's `fields[]`
+ * @returns {Set<string>} keys that drive at least one `visibleWhen`
+ */
+export function visibilityDriverKeys(fields) {
+  const out = new Set();
+  for (const f of Array.isArray(fields) ? fields : []) {
+    const key = typeof f?.visibleWhen?.field === 'string' ? f.visibleWhen.field.trim() : '';
+    if (key) out.add(key);
+  }
+  return out;
+}
+
+/**
  * Whether a field is currently visible, per its `visibleWhen` declaration.
  *
  * @param {Object} field - one entry of a type's `fields[]`

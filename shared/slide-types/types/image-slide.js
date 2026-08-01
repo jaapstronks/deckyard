@@ -12,6 +12,7 @@ import {
 import { getSlideCopy } from '../slide-copy.js';
 import {
   resolveImageSlideImage,
+  ensureImageSlideImage,
   IMAGE_SLIDE_IMAGE_DEFAULTS,
 } from '../image-slide-image.js';
 
@@ -50,13 +51,6 @@ export default {
       required: false,
     },
     {
-      key: 'alt',
-      label: 'Alt text',
-      type: 'string',
-      required: false,
-      maxLength: 180,
-    },
-    {
       key: 'imageRole',
       label: 'Image role',
       type: 'enum',
@@ -77,6 +71,16 @@ export default {
       ],
     },
     {
+      key: 'alt',
+      label: 'Alt text',
+      type: 'string',
+      required: false,
+      maxLength: 180,
+      // A decorative image is hidden from screen readers, so its alt text is
+      // dead UI. Was a show/hide branch in the hand-built form.
+      visibleWhen: { field: 'imageRole', in: ['content'] },
+    },
+    {
       key: 'caption',
       label: 'Caption',
       type: 'string',
@@ -84,9 +88,14 @@ export default {
       maxLength: 160,
     },
     {
+      // Carried data, never a form control: the crop point is an ImageRef
+      // property of the image ELEMENT, declared on the inline descriptor and
+      // edited by the canvas focal-point drag and the "This image" card. Same
+      // arrangement gallery already had.
       key: 'focusX',
       label: 'Focus X',
       type: 'number',
+      hidden: true,
       required: false,
       min: 0,
       max: 100,
@@ -98,6 +107,7 @@ export default {
       key: 'focusY',
       label: 'Focus Y',
       type: 'number',
+      hidden: true,
       required: false,
       min: 0,
       max: 100,
@@ -110,9 +120,17 @@ export default {
       // type default (imageDefaults.fit).
       key: 'fit',
       label: 'Image fit',
+      // The ImageRef axes share one wording across every image type and every
+      // surface, so they name the shared key rather than accept the per-type
+      // one the registry would stamp (slideType.image-slide.field.fit.label).
+      labelKey: 'editor.imageText.imageFit',
       type: 'enum',
       required: false,
       options: ['cover', 'contain'],
+      // The silent-default widget: an extra empty option labelled with the
+      // value imageDefaults.fit resolves to, which doubles as back-to-default.
+      editor: 'image-fit',
+      formLayout: 'pair',
     },
     {
       // Canonical frame axis (ImageRef): edge-to-edge, orthogonal to fit -
@@ -121,8 +139,10 @@ export default {
       // follow the type default (imageDefaults.bleed).
       key: 'bleed',
       label: 'Edge-to-edge',
+      labelKey: 'editor.imageSlide.bleed',
       type: 'boolean',
       required: false,
+      formLayout: 'pair',
     },
     {
       // LEGACY conflated fit+frame enum. Since datamodel step 3 the canonical
@@ -133,6 +153,7 @@ export default {
       key: 'layout',
       label: 'Layout',
       type: 'enum',
+      hidden: true,
       required: false,
       options: ['full', 'bleed', 'centered'],
     },
@@ -187,6 +208,12 @@ export default {
       label: 'Zoom level',
       type: 'number',
       required: false,
+      // Meaningless while zoom is off. Enumerating the enabled modes keeps
+      // field-visibility.js at its single `in` operator.
+      visibleWhen: {
+        field: 'zoomSteps',
+        in: ['corners', 'horizontal', 'vertical', 'quadrants', 'custom'],
+      },
       min: 1.2,
       max: 5,
       step: 0.1,
@@ -197,6 +224,7 @@ export default {
       label: 'Custom zoom positions',
       type: 'string',
       required: false,
+      visibleWhen: { field: 'zoomSteps', in: ['custom'] },
       maxLength: 500,
       helpText: 'Custom positions as JSON array. X/Y are percentages (0-100).',
       helpCopyExample: '[{"x":25,"y":25},{"x":75,"y":25},{"x":25,"y":75},{"x":75,"y":75}]',
@@ -206,6 +234,10 @@ export default {
   // slide): an image without its own fit/bleed follows these. See
   // IMAGE_SLIDE_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: IMAGE_SLIDE_IMAGE_DEFAULTS,
+  // Legacy-to-canonical fold, run by the editor on open
+  // (shared/slide-types/normalize-content.js): the conflated `layout` enum
+  // becomes the ImageRef axes fit + bleed.
+  normalizeContent: ensureImageSlideImage,
   defaults: {
     title: '',
     subheading: '',

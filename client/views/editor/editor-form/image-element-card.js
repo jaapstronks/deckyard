@@ -6,18 +6,24 @@
  * image selects it and opens this card in the "This image" tab; the canvas keeps
  * only direct manipulation (the draggable focal point) and the empty-slot add.
  *
- * The card is driven by the type's inline descriptor (media / focus / fit), so
- * it writes the SAME keys the canvas focal-point drag writes - one value, two
- * representations. It covers: replace / delete (via the shared fieldImage
- * picker), alt text, any extra per-item metadata (e.g. a LinkedIn URL), the fit
- * choice (where the type has one), and the 3x3 focus grid as the precise,
- * keyboard-reachable fallback to the canvas drag.
+ * The card is driven by the type's inline descriptor (media / focus / fit /
+ * bleed), so it writes the SAME keys the canvas focal-point drag writes - one
+ * value, two representations. It covers: replace / delete (via the shared
+ * fieldImage picker), alt text, any extra per-item metadata (e.g. a LinkedIn
+ * URL), the ImageRef axes the type declares (fit, bleed), and the focus
+ * control in whichever form the effective fit calls for - the 3x3 crop grid in
+ * cover mode, the alignment picker in contain mode.
  *
- * image-text is the one image type NOT rendered here: it already has a
- * per-image manager (image-text-images.js) with add/remove/reorder that this
- * card would duplicate.
+ * EVERY image type renders through this card, image-slide and image-text
+ * included (editor-behaviour-abstraction step 5): what used to be per-type
+ * "this image" forms was the same card with different hand-written spellings.
+ * image-text keeps a separate slide-level collection section for
+ * add/reorder/remove (image-text-images.js) - that is collection chrome, not
+ * per-image settings, and deliberately carries none.
  */
 import { renderFocusGridField } from './focus-picker.js';
+import { renderImagePositionPicker } from './image-position-picker.js';
+import { imageFitOptions } from '../fields/image-fit.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
 import { t } from '../../../lib/ui-i18n.js';
 
@@ -29,8 +35,10 @@ import { t } from '../../../lib/ui-i18n.js';
  * @returns {null | {
  *   member: Object, imageField: string, altField: string,
  *   extraFields: Array<{key:string,type?:string,label?:string,i18nKey?:string}>,
- *   focus: null | {xKey:string, yKey:string, cropMode:'cover'|'contain'},
+ *   focus: null | {xKey:string, yKey:string, cropMode:'cover'|'contain',
+ *                  containSelector:string},
  *   fit: null | {key:string, hasDefault:boolean},
+ *   bleed: null | {key:string},
  * }}
  */
 function resolveImageElement(slide, def, idx) {
@@ -69,6 +77,13 @@ function resolveImageElement(slide, def, idx) {
       xKey: sub(descriptor.focus.xField),
       yKey: sub(descriptor.focus.yField),
       cropMode: cropMode === 'contain' ? 'contain' : 'cover',
+      // Where the image sits on screen, so the contain-mode control can
+      // measure the box and disable the axis that has no letterbox to move
+      // along. A CSS selector like media.photoSelector: the type owns it.
+      containSelector:
+        typeof descriptor.focus.containSelector === 'string'
+          ? descriptor.focus.containSelector
+          : '',
     };
   }
 
@@ -80,7 +95,11 @@ function resolveImageElement(slide, def, idx) {
     };
   }
 
-  return { member, imageField, altField, extraFields, focus, fit };
+  // The third ImageRef axis: edge-to-edge frame, orthogonal to fit. Only the
+  // types whose renderer honours it declare it.
+  const bleed = descriptor.bleed ? { key: sub(descriptor.bleed.field) } : null;
+
+  return { member, imageField, altField, extraFields, focus, fit, bleed };
 }
 
 /**
@@ -113,7 +132,7 @@ export function renderImageElementCard({
 } = {}) {
   const resolved = resolveImageElement(slide, def, idx);
   if (!resolved) return false;
-  const { member, imageField, altField, extraFields, focus, fit } = resolved;
+  const { member, imageField, altField, extraFields, focus, fit, bleed } = resolved;
   const { fieldImage, fieldText, fieldEnum } = fieldRenderers;
 
   const hasImage = !!String(member[imageField] || '').trim();
@@ -182,32 +201,20 @@ export function renderImageElementCard({
   // config, never hard-coded here - and doubles as back-to-default by
   // emptying the field. Types with a plain per-image fit get just Fill / Fit.
   if (hasImage && fit && typeof fieldEnum === 'function') {
-    const coverLabel = t('editor.imageText.fitCover', 'Fill (crop)');
-    const containLabel = t('editor.imageText.fitContain', 'Fit (no crop)');
-    const typeDefaultFit = def?.imageDefaults?.fit === 'contain' ? 'contain' : 'cover';
-    const options = fit.hasDefault
-      ? [
-          {
-            value: '',
-            label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
-              fit: typeDefaultFit === 'contain' ? containLabel : coverLabel,
-            }),
-            title: t(
-              'editor.imageText.fitDefaultTypeTitle',
-              'Follow the slide type default'
-            ),
-          },
-          { value: 'cover', label: coverLabel },
-          { value: 'contain', label: containLabel },
-        ]
-      : [
-          { value: 'cover', label: coverLabel },
-          { value: 'contain', label: containLabel },
-        ];
-    const current = typeof member[fit.key] === 'string' ? member[fit.key] : fit.hasDefault ? '' : 'cover';
+    const typeDefaultFit = fit.hasDefault
+      ? def?.imageDefaults?.fit === 'contain'
+        ? 'contain'
+        : 'cover'
+      : '';
+    const current =
+      typeof member[fit.key] === 'string' ? member[fit.key] : fit.hasDefault ? '' : 'cover';
     container.append(
       fieldEnum(
-        { key: fit.key, label: t('editor.imageText.imageFit', 'Image fit'), options },
+        {
+          key: fit.key,
+          label: t('editor.imageText.imageFit', 'Image fit'),
+          options: imageFitOptions({ typeDefault: typeDefaultFit }),
+        },
         current,
         (v) => {
           member[fit.key] = v;
@@ -221,8 +228,40 @@ export function renderImageElementCard({
     );
   }
 
-  // Focus grid (the precise, keyboard-reachable fallback to the canvas drag;
-  // both write the same focusX/Y). Only in cover mode, where the crop bites.
+  // Edge-to-edge (the ImageRef frame axis), for the types that render it. Off
+  // clears the key when false is the type default, so "follow the type" stays
+  // an unwritten value — the same rule the fit control's empty option follows.
+  if (hasImage && bleed && typeof fieldEnum === 'function') {
+    const typeDefaultBleed = def?.imageDefaults?.bleed === true;
+    const currentBleed =
+      typeof member[bleed.key] === 'boolean' ? member[bleed.key] : typeDefaultBleed;
+    container.append(
+      fieldEnum(
+        {
+          key: bleed.key,
+          label: t('editor.imageSlide.bleed', 'Edge-to-edge'),
+          options: [
+            { value: 'off', label: t('common.off', 'Off') },
+            { value: 'on', label: t('common.on', 'On') },
+          ],
+        },
+        currentBleed ? 'on' : 'off',
+        (v) => {
+          const next = v === 'on';
+          member[bleed.key] = next === typeDefaultBleed ? '' : next;
+          markDirty?.();
+          rerenderPreview?.();
+          scheduleUiRefresh?.();
+        }
+      )
+    );
+  }
+
+  // Focus control, by mode. Cover (the crop bites): the 3x3 grid, the precise
+  // keyboard-reachable fallback to the canvas focal-point drag — both write the
+  // same focusX/Y. Contain (letterboxed): the alignment picker, which measures
+  // the frame and offers only the axis that actually has slack. The two used to
+  // be per-type helpers; every image type gets both here.
   if (hasImage && focus && focus.cropMode === 'cover') {
     container.append(
       renderFocusGridField({
@@ -243,6 +282,23 @@ export function renderImageElementCard({
         },
       })
     );
+  } else if (hasImage && focus && focus.containSelector) {
+    const posEl = renderImagePositionPicker({
+      h,
+      mode: 'contain',
+      imageUrl: member[imageField],
+      containerSelector: focus.containSelector,
+      focusX: member[focus.xKey],
+      focusY: member[focus.yKey],
+      onChange: ({ focusX, focusY } = {}) => {
+        member[focus.xKey] = focusX;
+        member[focus.yKey] = focusY;
+        markDirty?.();
+        rerenderPreview?.();
+        scheduleUiRefresh?.();
+      },
+    });
+    if (posEl) container.append(posEl);
   }
 
   return true;

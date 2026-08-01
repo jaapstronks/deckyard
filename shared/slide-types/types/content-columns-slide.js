@@ -11,6 +11,7 @@ import { getSlideCopy } from '../slide-copy.js';
 import { markdownToSafeHtml } from '../../markdown.js';
 import {
   resolveContentColumnImage,
+  ensureContentColumnsImages,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
 } from '../content-columns-images.js';
 
@@ -190,6 +191,10 @@ export default {
   // slide): a column image without its own fit/focus follows these. See
   // CONTENT_COLUMNS_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: CONTENT_COLUMNS_IMAGE_DEFAULTS,
+  // Legacy-to-canonical fold, run by the editor on open
+  // (shared/slide-types/normalize-content.js): stamped default-equal column
+  // image values drop back to empty = follow the type.
+  normalizeContent: ensureContentColumnsImages,
 
   defaultsByLang: {
     nl: {

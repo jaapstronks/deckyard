@@ -628,9 +628,23 @@ renderHtml: (content, slide, ctx) => {
 Slide types get their form generated from `fields[]`: definition order, one
 field per line, `formLayout: 'pair'` where two controls share a row. Reach for
 a hand-written form only when the type needs something a declaration cannot
-express — a bespoke widget, a derived control, a toggle that is not a field.
-Field order and pairing alone are not reasons; that is what the four forms
-retired in the behaviour-abstraction track were doing.
+express — and by now that is almost never true. Before writing one, check
+whether the thing you want is already a declaration:
+
+| You want | Declare |
+|---|---|
+| Field order, or two controls on one row | `fields[]` order, `formLayout: 'pair'` |
+| A richer widget than the field's type implies | `editor: '<name>'` (`shared/slide-types/field-editors.js`) |
+| A control that only matters in some states | `visibleWhen: { field, in: [...] }` |
+| Data the form must carry but never edit | `hidden: true` |
+| Add/remove/reorder over a list | `type: 'items'` with `itemFields` |
+| Anything settable on an image element | the inline descriptor's `media`/`focus`/`fit`/`bleed` |
+| A legacy shape to migrate on open | `normalizeContent` on the definition |
+
+The behaviour-abstraction track retired sixteen forms this way; the two that
+remain (`follow-invite`, the deprecated `content-columns`) each carry a written
+reason in the router. If yours does not fit the table above, put the reason in
+the router comment too.
 
 ### 1. Create a custom form component
 

@@ -4,6 +4,7 @@ import { attachPointerSortable } from '../../../lib/dom/pointer-sortable.js';
 import { createCollapsedState } from '../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
+import { renderImageFitField } from '../fields/image-fit.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
 import {
@@ -31,11 +32,11 @@ import {
  * - `hidden: true` on an item field — carried in the data, not rendered
  *   (e.g. gallery focus coordinates, which the canvas focus handle and the
  *   inspector's image card already edit).
- * - `editor: 'icon-picker' | 'card-link'` on an item field — widgets from the
- *   closed field-editor vocabulary (shared/slide-types/field-editors.js).
- *   This per-item loop implements the two item-sized ones; any other name —
- *   unknown or simply not item-sized (table-grid) — degrades to the base
- *   widget for the field's type.
+ * - `editor: 'icon-picker' | 'card-link' | 'image-fit'` on an item field —
+ *   widgets from the closed field-editor vocabulary
+ *   (shared/slide-types/field-editors.js). This per-item loop implements the
+ *   item-sized ones; any other name — unknown or simply not item-sized
+ *   (table-grid) — degrades to the base widget for the field's type.
  * - `formLayout: 'pair'` on item fields (shared/slide-types/form-layout.js) —
  *   when any item field declares it, the item body renders in declared rows
  *   (a run of consecutive `pair` fields shares one) instead of the default
@@ -343,6 +344,19 @@ export function createCollectionEditor({
             })
           );
           continue;
+        }
+        if (editor === 'image-fit') {
+          const fitEl = renderImageFitField({
+            fieldEnum,
+            field: { ...f, key: k },
+            target: item,
+            typeDefault: def?.imageDefaults?.fit,
+            onChange: (v) => setItemKey(k, v),
+          });
+          if (fitEl) {
+            pushWidget(k, fitEl);
+            continue;
+          }
         }
 
         if (f.type === 'image' && fieldImage) {

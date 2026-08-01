@@ -187,8 +187,6 @@
   "editor.share.private.done": "Spostato in privato.",
   "editor.slide.accessibility": "Accessibilità",
   "editor.slide.accessibility.title": "Campi opzionali per migliorare l'output degli screen reader e le esportazioni.",
-  "editor.slide.layoutSettings": "Impostazioni layout",
-  "editor.slide.animationSettings": "Impostazioni animazione",
   "editor.slide.delete": "Elimina",
   "editor.slide.deleteConfirm": "Eliminare questa slide?",
   "editor.slide.duplicate": "Duplica",

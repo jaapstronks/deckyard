@@ -187,8 +187,6 @@
   "editor.share.private.done": "Siirretty yksityiseen.",
   "editor.slide.accessibility": "Saavutettavuus",
   "editor.slide.accessibility.title": "Valinnaiset kentät ruudunlukijatulosteen ja vientien parantamiseksi.",
-  "editor.slide.layoutSettings": "Asetteluasetukset",
-  "editor.slide.animationSettings": "Animaatioasetukset",
   "editor.slide.delete": "Poista",
   "editor.slide.deleteConfirm": "Poistetaanko tämä dia?",
   "editor.slide.duplicate": "Kopioi",

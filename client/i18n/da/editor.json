@@ -150,8 +150,6 @@
   "editor.share.workspace.viewOnly": "Se & kommentere",
   "editor.slide.accessibility": "Tilgængelighed",
   "editor.slide.accessibility.title": "Valgfrie felter til at forbedre skærmlæseroutput og eksport.",
-  "editor.slide.layoutSettings": "Layoutindstillinger",
-  "editor.slide.animationSettings": "Animationsindstillinger",
   "editor.slide.delete": "Slet",
   "editor.slide.deleteConfirm": "Slet denne slide?",
   "editor.slide.duplicate": "Duplikér",

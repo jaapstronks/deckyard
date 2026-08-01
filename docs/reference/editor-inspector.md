@@ -386,7 +386,7 @@ homed. Not listed per row.
 | icon-card-grid | title, subheading, bottomSubheading; items add/remove/reorder | items[] title/body | icon (picker), link, layout | icon picker + link keep the form |
 | payoff | - | - | - | zero content fields (theme-driven logo) |
 | quote | quote, authorName, authorTitle; author images via popover | - | - | |
-| image | title, subheading, bottomSubheading, caption; image+alt via popover | - | imageRole, layout, focusX/Y, zoomSteps, zoomLevel, zoomPositions | zoom config is settings |
+| image | title, subheading, bottomSubheading, caption; image+alt via popover | - | imageRole, zoomSteps, zoomLevel, zoomPositions | zoom config is slide-level settings; fit/bleed/focus are ImageRef axes on the "This image" element card, `layout` is folded legacy |
 | embed | title | - | embedUrl, aspectRatio, sandbox | embedUrl → inspector (PR #191) |
 | countdown | title | - | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero, zeroText | |
 | poll | question, option1-4 (ghosts) | - | onClose, onCloseTarget | |

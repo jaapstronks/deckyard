@@ -150,8 +150,6 @@
   "editor.share.workspace.viewOnly": "Visa & kommentera",
   "editor.slide.accessibility": "Tillgänglighet",
   "editor.slide.accessibility.title": "Valfria fält för att förbättra skärmläsarutdata och export.",
-  "editor.slide.layoutSettings": "Layoutinställningar",
-  "editor.slide.animationSettings": "Animationsinställningar",
   "editor.slide.delete": "Radera",
   "editor.slide.deleteConfirm": "Radera denna slide?",
   "editor.slide.duplicate": "Duplicera",

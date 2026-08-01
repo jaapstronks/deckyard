@@ -12,6 +12,7 @@ import { ACTIONS_FIELD, renderActionsHtml } from '../actions-field.js';
 import {
   imageTextCellCount,
   resolveImageTextCell,
+  ensureImageTextImages,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from '../image-text-images.js';
 
@@ -20,6 +21,23 @@ export default {
   runtime: 'static',
   label: 'Image + text',
   fields: [
+    // Text first: `fields[]` order IS the form order on both surfaces (the
+    // bulk "Edit all text" modal and the inspector's keeps pass), and the bulk
+    // modal is a text-editing surface. The image machinery follows below.
+    {
+      key: 'title',
+      label: 'Title',
+      type: 'string',
+      required: true,
+      maxLength: 120,
+    },
+    {
+      key: 'body',
+      label: 'Body (Markdown)',
+      type: 'markdown',
+      required: true,
+      maxLength: 3000,
+    },
     {
       // LEGACY single-image field. Since the phase-2 layout catalogue the
       // canonical field is `images` below; this one stays declared so old
@@ -29,6 +47,7 @@ export default {
       key: 'image',
       label: 'Image',
       type: 'image',
+      hidden: true,
       required: false,
     },
     {
@@ -50,17 +69,24 @@ export default {
         },
         {
           // Per-image fit (canonical since step 2b); empty = follow the
-          // type default (imageDefaults.fit).
+          // type default (imageDefaults.fit), which is what the `image-fit`
+          // widget's derived empty option says out loud.
           key: 'fit',
           label: 'Image fit',
+          labelKey: 'editor.imageText.imageFit',
           type: 'enum',
           required: false,
           options: ['cover', 'contain'],
+          editor: 'image-fit',
         },
         {
+          // Carried data, not a form control: the crop point is edited by the
+          // canvas focal-point drag and the "This image" card, both of which
+          // resolve it through the inline descriptor. Same as gallery.
           key: 'focusX',
           label: 'Focus X',
           type: 'number',
+          hidden: true,
           required: false,
           min: 0,
           max: 100,
@@ -70,6 +96,7 @@ export default {
           key: 'focusY',
           label: 'Focus Y',
           type: 'number',
+          hidden: true,
           required: false,
           min: 0,
           max: 100,
@@ -85,9 +112,12 @@ export default {
       maxLength: 160,
     },
     {
+      // LEGACY slide-level alt. normalizeContent folds it into images[0]; the
+      // per-image alt is the edited one, so this never renders as a control.
       key: 'alt',
       label: 'Alt text',
       type: 'string',
+      hidden: true,
       required: false,
       maxLength: 180,
     },
@@ -117,12 +147,14 @@ export default {
       type: 'enum',
       required: false,
       options: ['left', 'right'],
+      formLayout: 'pair',
     },
     {
       key: 'imageWidth',
       label: 'Image width',
       type: 'enum',
       required: false,
+      formLayout: 'pair',
       // narrow/half/wide double as the catalogue's 1/3, 1/2 and 2/3 splits
       // (37/63 mirrors 63/37, so no fourth value is needed).
       options: [
@@ -182,6 +214,7 @@ export default {
       key: 'imageFit',
       label: 'Image fit',
       type: 'enum',
+      hidden: true,
       required: false,
       options: ['cover', 'contain'],
     },
@@ -196,9 +229,12 @@ export default {
       ],
     },
     {
+      // LEGACY slide-level crop point, folded into images[0] by
+      // normalizeContent. Carried data, never a control.
       key: 'focusX',
       label: 'Focus X',
       type: 'number',
+      hidden: true,
       required: false,
       min: 0,
       max: 100,
@@ -210,26 +246,13 @@ export default {
       key: 'focusY',
       label: 'Focus Y',
       type: 'number',
+      hidden: true,
       required: false,
       min: 0,
       max: 100,
       step: 1,
       helpText:
         'Only used when Image fit is “cover” (cropped). 0 = top, 50 = center, 100 = bottom.',
-    },
-    {
-      key: 'title',
-      label: 'Title',
-      type: 'string',
-      required: true,
-      maxLength: 120,
-    },
-    {
-      key: 'body',
-      label: 'Body (Markdown)',
-      type: 'markdown',
-      required: true,
-      maxLength: 3000,
     },
     {
       key: 'density',
@@ -351,6 +374,10 @@ export default {
   // slide): an item without its own fit/focus follows these. See
   // IMAGE_TEXT_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: IMAGE_TEXT_IMAGE_DEFAULTS,
+  // Legacy-to-canonical fold, run by the editor on open
+  // (shared/slide-types/normalize-content.js): the flat `image` migrates into
+  // images[0] and the slide-level alt/focus/imageFit fold into the items.
+  normalizeContent: ensureImageTextImages,
   defaultsByLang: {
     nl: {
       image: '',

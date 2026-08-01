@@ -6,9 +6,13 @@ import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { createTableGridEditor } from '../fields/table-grid.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
+import { renderImageFitField } from '../fields/image-fit.js';
 import { createCollectionEditor } from './collection-editor.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
-import { isFieldVisible } from '../../../../shared/slide-types/field-visibility.js';
+import {
+  isFieldVisible,
+  visibilityDriverKeys,
+} from '../../../../shared/slide-types/field-visibility.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -105,6 +109,12 @@ export function createRenderField({
     fieldIconPicker,
   } = fieldRenderers || {};
 
+  // Editing one of these changes WHICH controls the form shows (some other
+  // field declares `visibleWhen` on it), so its change handler rebuilds the
+  // form instead of only repainting the preview. Derived from the schema, so a
+  // fork type's own declarations are honoured without a line here.
+  const visibilityDrivers = visibilityDriverKeys(def?.fields);
+
   /**
    * The csv-grid widget (field-editors.js vocabulary; also the base widget of
    * the `csv` field TYPE). Inline grid by default; with `onEditData` (the
@@ -193,6 +203,22 @@ export function createRenderField({
           'editor.cards.linkHelp2',
           'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
         ),
+      });
+    }
+    if (editor === 'image-fit') {
+      return renderImageFitField({
+        fieldEnum,
+        field,
+        target: slide.content,
+        typeDefault: def?.imageDefaults?.fit,
+        onChange: (v) => {
+          slide.content[field.key] = v;
+          markDirty?.();
+          // The focus control switches between crop grid and alignment with
+          // the effective fit, so the form is rebuilt, not just repainted.
+          rerenderEditor?.();
+          scheduleUiRefresh?.();
+        },
       });
     }
 
@@ -349,11 +375,42 @@ export function createRenderField({
       return renderer(field, val, (v) => {
         slide.content[field.key] = v;
         markDirty?.();
-        // Chart type drives which fields are shown (pie vs bar vs line), so a
-        // change must rebuild the form, not just refresh the preview.
-        if (field.key === 'chartType') rerenderEditor?.();
+        // A driver of some other field's `visibleWhen` (chart type, image role,
+        // zoom steps, …) changes which controls exist, so the form is rebuilt
+        // rather than repainted.
+        if (visibilityDrivers.has(field.key)) rerenderEditor?.();
         scheduleUiRefresh?.();
       });
+    }
+
+    if (field.type === 'boolean') {
+      // On/off pair rendered by the enum control. Storage follows the
+      // empty-means-follow-the-type rule the ImageRef axes are built on: the
+      // choice that equals the type default (`defaults[key]`, absent = false)
+      // clears the field, only a deviating choice is written. So a later
+      // change to the default still reaches decks that never overrode it.
+      const typeDefault = def?.defaults?.[field.key] === true;
+      const current = typeof slide.content[field.key] === 'boolean'
+        ? slide.content[field.key]
+        : typeDefault;
+      return fieldEnum(
+        {
+          key: field.key,
+          label: t(field.labelKey || field.key, field.label || field.key),
+          options: [
+            { value: 'off', label: t('common.off', 'Off') },
+            { value: 'on', label: t('common.on', 'On') },
+          ],
+        },
+        current ? 'on' : 'off',
+        (v) => {
+          const next = v === 'on';
+          slide.content[field.key] = next === typeDefault ? '' : next;
+          markDirty?.();
+          if (visibilityDrivers.has(field.key)) rerenderEditor?.();
+          scheduleUiRefresh?.();
+        }
+      );
     }
 
     if (field.type === 'image') {

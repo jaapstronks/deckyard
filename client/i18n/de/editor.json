@@ -150,8 +150,6 @@
   "editor.share.workspace.viewOnly": "Ansehen & kommentieren",
   "editor.slide.accessibility": "Barrierefreiheit",
   "editor.slide.accessibility.title": "Optionale Felder zur Verbesserung der Screenreader-Ausgabe und Exporte.",
-  "editor.slide.layoutSettings": "Layout-Einstellungen",
-  "editor.slide.animationSettings": "Animationseinstellungen",
   "editor.slide.delete": "Löschen",
   "editor.slide.deleteConfirm": "Diese Folie löschen?",
   "editor.slide.duplicate": "Duplizieren",

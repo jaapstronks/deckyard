@@ -93,6 +93,17 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         layoutVariants: Array.isArray(def.layoutVariants)
           ? def.layoutVariants
           : undefined,
+        // The ImageRef config anchor: what an image WITHOUT its own fit/bleed
+        // follows. Same seam half as `inspectorKeeps` — the editor holds this
+        // response, not the registry, so the `image-fit` widget's derived
+        // "Default · …" label can only name the right value if the anchor
+        // travels. Until this landed the widget silently assumed `cover`, which
+        // was right for every core type and would have been wrong for the first
+        // fork type that said otherwise.
+        imageDefaults:
+          def.imageDefaults && typeof def.imageDefaults === 'object'
+            ? def.imageDefaults
+            : undefined,
         // Which enum field mirrors the layout (image left/right); drives the
         // switcher's mirror toggle. Same fork story as layoutVariants.
         layoutMirror:

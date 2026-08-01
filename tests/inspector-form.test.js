@@ -350,20 +350,33 @@ test('image-text: element tab shows only the selected cell, slide form only slid
   assert.ok(!sLabels.some((l) => l.includes('image fit')), 'no per-image fit on the Slide tab');
   assert.ok(!sLabels.some((l) => l.includes('image focus')), 'no per-image focus on the Slide tab');
   assert.ok(sLabels.some((l) => l === 'images'), 'slim collection section on the Slide tab');
-  assert.ok(sLabels.some((l) => l.includes('layout')), 'layout options on the Slide tab');
+  // The layout settings render as plain keep fields since step 5 (the "Layout
+  // options" wrapper is gone); `layout` itself is absent because the toolbar
+  // chip owns it — which is what image-text's inspectorKeeps has always said.
+  assert.ok(sLabels.some((l) => l.includes('image position')), 'image side on the Slide tab');
+  assert.ok(sLabels.some((l) => l.includes('image width')), 'image width on the Slide tab');
+  assert.ok(!sLabels.some((l) => l === 'layout'), 'layout variant belongs to the toolbar chip');
 });
 
-test('image-text: layout options render flat on the Slide tab (no collapsed toggle)', () => {
+test('image-text: layout settings render as plain fields, behind no collapsible', () => {
   const mount = renderForm({ type: 'image-text-slide', content: structuredClone(DUO_CONTENT) });
   const form = slideForm(mount);
-  const layoutLabel = [...form.querySelectorAll('.field-label')].find((el) =>
-    el.textContent.toLowerCase().includes('layout')
+  const sideLabel = [...form.querySelectorAll('.field-label')].find((el) =>
+    el.textContent.toLowerCase().includes('image position')
   );
-  assert.ok(layoutLabel, 'layout options header renders');
+  assert.ok(sideLabel, 'image side renders on the Slide tab');
   assert.equal(
-    layoutLabel.closest('details'),
+    sideLabel.closest('details'),
     null,
-    'layout options are not tucked behind a collapsible'
+    'layout settings are not tucked behind a collapsible'
+  );
+  // Side and width declare `formLayout: 'pair'`, so the generic loop puts them
+  // on one row — the declaration replacing the helper's hand-built fieldGrid.
+  const grid = sideLabel.closest('.field-grid');
+  assert.ok(grid, 'image side sits in a paired row');
+  assert.ok(
+    grid.textContent.toLowerCase().includes('image width'),
+    'image width shares that row'
   );
 });
 
