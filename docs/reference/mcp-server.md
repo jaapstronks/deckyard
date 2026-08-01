@@ -245,8 +245,9 @@ The response is resolved **per organization**:
 Each entry carries its canonical `typeId` — reverse-DNS for core
 (`eu.deckyard.slide.title`, `…title@2`), the fork's own authority when it
 declares one, otherwise `custom/<slug>` — so an agent can talk about versions.
-An agent may keep writing the bare key in `slides[].type`; the spellings resolve
-to the same type.
+The canonical id is the one spelling `slides[].type` publishes; an agent may
+still write the bare key, which the write boundary accepts and normalizes to it
+during the beta convergence.
 
 A stdio session has no organization and resolves against the default one; an
 SSE session resolves against the organization its API key belongs to.

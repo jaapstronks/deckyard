@@ -1,12 +1,14 @@
 /**
- * Slide-type identity: a reverse-DNS id, with `namespace/name` and the bare
- * name as the older spellings that stay valid forever.
+ * Slide-type identity: a reverse-DNS id is the one canonical spelling of a slide
+ * type; the `namespace/name` and bare forms are accepted as input during the
+ * beta convergence, not as format spellings promised forever.
  *
  * Historically a slide type was a bare string (`"title-slide"`) used both as
  * the registry key and as `slide.type` on stored decks. That leaves no room to
  * tell a fork's `title-slide` apart from core's, and a custom type could
  * silently shadow a core one. This module carries a structured identity WITHOUT
- * breaking the bare-string storage format. Three spellings name the same type:
+ * breaking the bare-string storage format. The grammar parses three forms for
+ * the same type, one of them canonical:
  *
  * - A **bare name** (`"title-slide"`) parses to the CORE namespace. Existing
  *   decks and every `SLIDE_TYPES[slide.type]` lookup keep working untouched.
@@ -15,6 +17,11 @@
  *   fork can declare its own types without colliding with core.
  * - A **reverse-DNS id** (`"eu.deckyard.slide.title"`) is the CANONICAL form,
  *   and the one {@link formatCanonicalId} emits.
+ *
+ * Only the reverse-DNS id is a format spelling. The bare key and `core/…` form
+ * are pre-convergence residue the boundary still accepts as input normalization
+ * during beta, not shapes the format promises forever — see
+ * `docs/reference/versioning.md` § The beta stance.
  *
  * ## Why reverse-DNS is canonical
  *
@@ -61,7 +68,8 @@ export const CORE_NAMESPACE = 'core';
 /**
  * The reverse-DNS authority core types are published under. Parsing normalizes
  * it to {@link CORE_NAMESPACE}, so `eu.deckyard.slide.title`, `core/title` and
- * `title-slide` are one identity with three spellings.
+ * `title-slide` all resolve to one identity — the reverse-DNS id is the one it
+ * publishes; the other two are accepted input during the beta convergence.
  */
 export const CORE_AUTHORITY = 'eu.deckyard.slide';
 

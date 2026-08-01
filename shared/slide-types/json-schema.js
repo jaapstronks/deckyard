@@ -210,12 +210,12 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
 /**
  * Every spelling of a registered type that must select the same content schema.
  *
- * A type has one identity and (for core) three spellings: the stored key
- * (`title-slide`), the qualified form (`core/title-slide`) and the canonical
- * reverse-DNS id (`eu.deckyard.slide.title`). All three are valid in
- * `slides[].type`, so all three have to hit the same `if` branch — otherwise
- * writing the canonical id silently costs a deck its content contract, which is
- * the opposite of what publishing a canonical name is for.
+ * A type has one identity and one canonical spelling — the reverse-DNS id
+ * (`eu.deckyard.slide.title`) — but the write boundary still accepts the stored
+ * key (`title-slide`) and the qualified form (`core/title-slide`) as
+ * pre-convergence input. Every accepted spelling has to hit the same `if` branch,
+ * otherwise writing one of them silently costs a deck its content contract, which
+ * is the opposite of what publishing a canonical name is for.
  *
  * Versioned refs (`title-slide@2`) are deliberately not enumerated: a version is
  * a compatibility hint about a definition we do not have, so demanding the
