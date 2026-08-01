@@ -9,6 +9,12 @@
  * registry key (`title-slide`) — one canonical form persisted, whatever spelling
  * came in. See docs/plans/briefs/one-spelling.md.
  *
+ * These are the Postgres half of the one-spelling round-trip for the public
+ * write paths (whole-deck PUT + per-slide POST): a canonical id in is stored as
+ * the key AND comes back out canonical on the GET (`canonicalSlideType` at the
+ * v1 boundary). The file-backend facade / MCP / import paths round-trip in
+ * tests/slide-type-roundtrip-per-path.test.js.
+ *
  * Postgres-only gap, so these run against the in-memory database double
  * (tests/helpers/fake-db.js), the same harness as public-api-partial-write.
  *
@@ -147,4 +153,45 @@ test('per-slide POST with an unknown type is rejected with 400', async () => {
 
   assert.equal(ctx.res.statusCode, 400, `expected 400, got ${ctx.res.statusCode}: ${JSON.stringify(ctx.res.body)}`);
   assert.equal(storedDeck(db).slides.length, 1, 'nothing was added');
+});
+
+const CANONICAL = 'eu.deckyard.slide.title';
+
+test('round-trip: whole-deck PUT with a canonical id → key stored → GET emits canonical', async () => {
+  const db = await installDb();
+
+  const putCtx = makeCtx('PUT', `/api/v1/presentations/${DECK_ID}`, {
+    slides: [{ id: 'slide-1', type: CANONICAL, content: { title: 'x' } }],
+  });
+  await handlePresentations(putCtx);
+  assert.equal(putCtx.res.statusCode, 200, `PUT: ${JSON.stringify(putCtx.res.body)}`);
+  assert.equal(storedDeck(db).slides[0].type, 'title-slide', 'stored as the bare key');
+
+  const getCtx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}`);
+  await handlePresentations(getCtx);
+  assert.equal(getCtx.res.statusCode, 200, `GET: ${JSON.stringify(getCtx.res.body)}`);
+  assert.equal(
+    getCtx.res.body.presentation.slides[0].type,
+    CANONICAL,
+    'the whole-deck GET emits the canonical id'
+  );
+});
+
+test('round-trip: per-slide POST with a canonical id → key stored → POST/GET emit canonical', async () => {
+  const db = await installDb();
+
+  const postCtx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/slides`, {
+    type: CANONICAL,
+    content: { title: 'Nieuwe slide' },
+  });
+  await handleSlides(postCtx);
+  assert.equal(postCtx.res.statusCode, 201, `POST: ${JSON.stringify(postCtx.res.body)}`);
+  assert.equal(postCtx.res.body.slide.type, CANONICAL, 'the POST response emits the canonical id');
+  const newId = postCtx.res.body.slide.id;
+  assert.equal(storedDeck(db).slides[1].type, 'title-slide', 'stored as the bare key');
+
+  const getCtx = makeCtx('GET', `/api/v1/presentations/${DECK_ID}/slides/${newId}`);
+  await handleSlides(getCtx);
+  assert.equal(getCtx.res.statusCode, 200, `GET: ${JSON.stringify(getCtx.res.body)}`);
+  assert.equal(getCtx.res.body.slide.type, CANONICAL, 'the single-slide GET emits the canonical id');
 });
