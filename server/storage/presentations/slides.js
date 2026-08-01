@@ -1,13 +1,49 @@
 import crypto from 'node:crypto';
 
+import {
+  resolveSlideTypeName,
+  getSlideTypeId,
+} from '../../../shared/slide-types/registry.js';
+import { ValidationError } from '../../utils/errors.js';
+
+// An example canonical id for the error message, read from the registry so it
+// can never drift from the spelling the format actually publishes.
+const EXAMPLE_CANONICAL_ID = getSlideTypeId('title-slide') || 'eu.deckyard.slide.title';
+
+/**
+ * The one write-seam every stored slide passes through: it validates the slide
+ * type and normalizes it to the registry key.
+ *
+ * `slides[].type` has a single canonical spelling in the format — the
+ * reverse-DNS id (`eu.deckyard.slide.title`). The legacy spellings (the bare
+ * registry key, the `core/…` qualified form) are accepted here as beta-window
+ * input normalization, not as format features: each is resolved to the registry
+ * key before storage, so nothing non-canonical is ever persisted
+ * (docs/reference/versioning.md § The beta stance). A type no registry key
+ * answers to is a 400 — which is what finally closes the whole-deck PUT that,
+ * in Postgres mode, let arbitrary strings reach storage unvalidated.
+ *
+ * @param {Array<object>} slides
+ * @returns {Array<object>}
+ * @throws {ValidationError} 400 when a slide names an unresolvable type.
+ */
 export function normalizeSlides(slides) {
   if (!Array.isArray(slides)) return [];
-  return slides.map((s) => {
+  return slides.map((s, index) => {
+    const type = resolveSlideTypeName(s?.type);
+    if (!type) {
+      throw new ValidationError(
+        `Unknown slide type ${JSON.stringify(s?.type ?? null)} at slide ${index}: ` +
+          `use a canonical type id such as ${EXAMPLE_CANONICAL_ID}`,
+        { slideIndex: index, type: s?.type ?? null }
+      );
+    }
     const normalized = {
       ...s,
+      type,
       id: typeof s?.id === 'string' && s.id ? s.id : crypto.randomUUID(),
       content:
-        s?.type === 'poll-slide'
+        type === 'poll-slide'
           ? {
               ...(s?.content && typeof s.content === 'object' ? s.content : {}),
               pollId:

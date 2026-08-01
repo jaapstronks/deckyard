@@ -5,7 +5,7 @@
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
-import { newSlide, validateSlide, SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { newSlide, validateSlide, resolveSlideTypeName } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { requireScope, getPresentationWithAccess, parseJsonBody, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
@@ -77,10 +77,11 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
 
   const existingSlide = slides[index];
 
-  // Validate slide type
-  const slideType = body.type || existingSlide.type;
-  if (!SLIDE_TYPES[slideType]) {
-    await apiError(ctx, 400, `Unknown slide type: ${slideType}`);
+  // Validate slide type, and store the canonical registry key regardless of the
+  // spelling the caller sent (title-slide / core/title-slide / eu.deckyard.slide.title).
+  const slideType = resolveSlideTypeName(body.type || existingSlide.type);
+  if (!slideType) {
+    await apiError(ctx, 400, `Unknown slide type: ${body.type || existingSlide.type}`);
     return true;
   }
 
@@ -159,10 +160,10 @@ async function handleCreateSlide(ctx, presentationId) {
   const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, { access: 'write' });
   if (!ok) return true;
 
-  // Validate slide type
-  const slideType = body.type;
-  if (!slideType || !SLIDE_TYPES[slideType]) {
-    await apiError(ctx, 400, `Unknown or missing slide type: ${slideType}`);
+  // Validate slide type, resolving any accepted spelling to the registry key.
+  const slideType = body.type ? resolveSlideTypeName(body.type) : '';
+  if (!slideType) {
+    await apiError(ctx, 400, `Unknown or missing slide type: ${body.type}`);
     return true;
   }
 

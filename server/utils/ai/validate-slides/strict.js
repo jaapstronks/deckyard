@@ -8,7 +8,7 @@
  */
 
 import { validateSlideContent } from '../schemas/index.js';
-import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 import {
   SLIDE_ITEM_REQUIREMENTS,
   STRICT_TEXT_LIMITS,
@@ -46,28 +46,31 @@ export class RawSlideValidationError extends Error {
  * @param {number} index - Slide index in the raw input array (for error reporting)
  */
 function validateSlideStrict(slide, index) {
-  const type = slide?.type;
+  const rawType = slide?.type;
   const content = slide?.content;
 
-  if (!type || typeof type !== 'string') {
+  if (!rawType || typeof rawType !== 'string') {
     throw new RawSlideValidationError({
       slideIndex: index,
       slideType: null,
       field: 'type',
       expected: 'non-empty string',
-      got: type,
+      got: rawType,
       message: `Slide ${index}: missing or invalid "type"`,
     });
   }
 
-  if (!SLIDE_TYPES[type]) {
+  // Accept any spelling of a known type (bare key, core/…, canonical id) and
+  // validate against the resolved registry key from here on.
+  const type = resolveSlideTypeName(rawType);
+  if (!type) {
     throw new RawSlideValidationError({
       slideIndex: index,
-      slideType: type,
+      slideType: rawType,
       field: 'type',
       expected: 'known slide type (see get_slide_types)',
-      got: type,
-      message: `Slide ${index}: unknown slide type "${type}"`,
+      got: rawType,
+      message: `Slide ${index}: unknown slide type "${rawType}"`,
     });
   }
 
