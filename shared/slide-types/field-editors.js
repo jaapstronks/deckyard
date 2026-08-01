@@ -50,6 +50,13 @@
  *                   holding an icon name.
  * - `card-link`   — the slide-or-URL link picker for a `string` field
  *                   holding a card link.
+ * - `image-fit`   — the cover/contain choice for an ImageRef `fit` field, with
+ *                   the silent-default option: an extra empty choice labelled
+ *                   with the value derived from the type's `imageDefaults.fit`,
+ *                   which doubles as back-to-default by emptying the field.
+ *                   The derived label is why this cannot be a plain `enum`:
+ *                   the option text is a function of the declaring type's
+ *                   config, not of the field.
  *
  * @type {readonly string[]}
  */
@@ -58,6 +65,7 @@ export const FIELD_EDITOR_VALUES = Object.freeze([
   'table-grid',
   'icon-picker',
   'card-link',
+  'image-fit',
 ]);
 
 /**

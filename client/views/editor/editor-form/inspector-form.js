@@ -5,23 +5,13 @@ import { fieldCardLink } from '../fields/card-link-field.js';
 import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
 import { slideTypeInspectorKeeps } from '../../../../shared/slide-types/inline-edit-companions.js';
 import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
-import {
-  appendImageFocusPicker,
-  appendImageSlideFitControls,
-  appendImageZoomSettings,
-  appendImageTextLayoutOptions,
-} from './slide-forms/image-slide.js';
-import { ensureImageSlideImage } from '../../../../shared/slide-types/image-slide-image.js';
 import { resolveListLayout } from '../../../../shared/slide-types/types/list-slide.js';
 import {
   ensureContentColumnsImages,
   resolveContentColumnImage,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
 } from '../../../../shared/slide-types/content-columns-images.js';
-import {
-  renderImageTextCellCard,
-  renderImageTextCollectionSection,
-} from './slide-forms/image-text-images.js';
+import { renderImageTextCollectionSection } from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
 /**
@@ -106,10 +96,10 @@ function collapsibleGroup(h, title, { open = false } = {}) {
 }
 
 /**
- * Per-type inspector widgets that a flat keeps-list cannot express: the chart
- * data editor, per-card icon/link controls, focus pickers, per-column image
- * settings. Runs BEFORE the generic keeps loop; anything rendered here marks
- * its keys used so the loop skips them.
+ * Per-type inspector widgets that a flat keeps-list cannot express: the shared
+ * "This image" element card, per-card icon/link controls, the image-text
+ * collection chrome, per-column image settings. Runs BEFORE the generic keeps
+ * loop; anything rendered here marks its keys used so the loop skips them.
  *
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
@@ -117,11 +107,10 @@ export function renderInspectorExtrasByType(ctx) {
   const { h, form, elementForm, selectedElement, slide, def, add, used, fieldByKey,
     renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
     rerenderPreview, scheduleUiRefresh } = ctx;
-  const { fieldGrid } = fieldRenderers || {};
 
-  // The shared "This image" card for a selected image element (all image types
-  // except image-text, which has its own per-image manager). Renders into the
-  // element tab; returns whether it produced anything.
+  // The shared "This image" card for a selected image element — every image
+  // type, image-slide and image-text included. Renders into the element tab;
+  // returns whether it produced anything.
   const renderSelectedImageCard = (container) =>
     renderImageElementCard({
       h,
@@ -136,17 +125,6 @@ export function renderInspectorExtrasByType(ctx) {
       scheduleUiRefresh,
     });
 
-  // Render a keep field directly into a chosen container (element or slide
-  // panel), marking it used so the main keeps loop skips it. `add()` always
-  // targets the slide form, so element-scoped keeps use this instead.
-  const renderKeyInto = (container, key) => {
-    used.add(key);
-    const f = fieldByKey.get(key);
-    if (!f) return;
-    const node = renderField(f);
-    if (node) container.append(node);
-  };
-
   switch (slide.type) {
     // chart-slide no longer has a case here: its config (chartType, display
     // toggles, axis/series labels, the "Edit data…" entry point) renders via
@@ -154,71 +132,22 @@ export function renderInspectorExtrasByType(ctx) {
     // declaration on the fields and the data entry point is the csv-grid
     // widget's inspector rendering (render-field.js, `onEditData`).
 
-    case 'image-slide': {
-      // The single image IS the element (editing-surfaces tab split): ALL of
-      // its controls (replace/alt, role, fit/bleed, focus, zoom) live in the
-      // "This image" element tab, reached by clicking the image. The slide
-      // form — the no-selection view AND the Slide tab, identical by
-      // construction — carries only slide-wide settings (Background,
-      // Accessibility). Rendering also folds the legacy `layout` into
-      // fit + bleed (datamodel step 3).
-      ensureImageSlideImage(slide?.content);
-      if (selectedElement?.kind === 'image') {
-        // Replace / alt / focus grid (cover) at the top of the element tab.
-        renderSelectedImageCard(elementForm);
-        renderKeyInto(elementForm, 'imageRole');
-        appendImageSlideFitControls({
-          h, form: elementForm, slide, used,
-          fieldEnum: fieldRenderers?.fieldEnum, fieldGrid,
-          markDirty, scheduleUiRefresh,
-        });
-        const imgSection = h('div', { class: 'stack', 'data-inspector-section': 'image' });
-        // Contain-mode (centered) alignment stays here; the cover focus grid
-        // is rendered by the shared card above, so this is a no-op in cover
-        // mode.
-        appendImageFocusPicker({ h, form: imgSection, slide, used, fieldByKey, markDirty, scheduleUiRefresh });
-        appendImageZoomSettings({ h, form: imgSection, slide, used, fieldByKey, renderField });
-        elementForm.append(imgSection);
-      } else {
-        // No selection: the element-only keys must not leak into the slide
-        // form via the generic keeps loop.
-        for (const key of ['imageRole', 'fit', 'bleed', 'layout', 'focusX', 'focusY',
-          'zoomSteps', 'zoomLevel', 'zoomPositions']) {
-          used.add(key);
-        }
-      }
-      return;
-    }
+    // image-slide no longer has a case here: the single image IS the element,
+    // and everything settable on it (replace/alt, fit, bleed, focus) is
+    // declared on the inline descriptor and rendered by the shared card below.
+    // Its slide-wide settings — the a11y role and the zoom chain, the latter
+    // with a `visibleWhen` chain instead of imperative show/hide — render via
+    // the generic keeps loop.
 
     case 'image-text-slide': {
       // Editing-surfaces tab split: the "This image" tab carries ONLY the
-      // selected cell's card (picker/alt/fit/focus); the slide form — the
-      // no-selection view AND the Slide tab, identical by construction —
-      // carries the slide-wide settings: role (applies to all cells),
-      // density, the slim image collection (add/reorder — no per-image
-      // settings) and the layout options, flat.
-      const { fieldText, fieldEnum, fieldImage } = fieldRenderers || {};
-      if (selectedElement?.kind === 'image') {
-        const cellCard = renderImageTextCellCard({
-          h,
-          slide,
-          used,
-          idx: selectedElement.idx,
-          fieldGrid,
-          fieldText,
-          fieldEnum,
-          fieldImage,
-          markDirty,
-          rerenderEditor,
-          scheduleUiRefresh,
-        });
-        if (cellCard) elementForm.append(cellCard);
-      }
-      renderKeyInto(form, 'imageRole');
-      add('density');
-      // Slide-level collection management (option a of the tab-split plan):
-      // thumbnails + add/reorder/remove, per-image settings deliberately
-      // excluded (they live in the element tab — one home per setting).
+      // selected cell's card — the same shared, descriptor-driven card every
+      // other image type uses (the hand-written per-cell copy is gone). The
+      // slide form — the no-selection view AND the Slide tab, identical by
+      // construction — carries the slide-wide settings via the keeps loop,
+      // plus the one thing no declaration expresses: the slim image
+      // collection (add/reorder/remove, no per-image settings).
+      if (selectedElement?.kind === 'image') renderSelectedImageCard(elementForm);
       const collectionSection = renderImageTextCollectionSection({
         h,
         slide,
@@ -231,12 +160,6 @@ export function renderInspectorExtrasByType(ctx) {
         collectionSection.setAttribute('data-inspector-section', 'image');
         form.append(collectionSection);
       }
-      appendImageTextLayoutOptions({
-        h, form, slide, used, fieldByKey, renderField, fieldGrid, markDirty, scheduleUiRefresh,
-        // Inspector: the toolbar "Layout" chip owns the structural variant.
-        hideLayoutField: true,
-        flat: true,
-      });
       return;
     }
 
@@ -449,8 +372,9 @@ export function renderInspectorExtrasByType(ctx) {
     }
 
     // Image types whose only per-element settings are the shared card
-    // (replace/alt/fit/focus/extras). Their slide-wide settings render via the
-    // generic keeps loop; add/remove/reorder lives on the canvas.
+    // (replace/alt/fit/bleed/focus/extras). Their slide-wide settings render
+    // via the generic keeps loop; add/remove/reorder lives on the canvas.
+    case 'image-slide':
     case 'gallery-slide':
     case 'team-cards-slide':
     case 'logo-wall-slide':

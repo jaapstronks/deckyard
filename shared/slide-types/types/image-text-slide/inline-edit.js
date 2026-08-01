@@ -42,6 +42,8 @@ export const inlineEdit = {
         const { focusSource } = resolveImageTextCell(slide?.content, idx);
         return { x: focusSource.focusX, y: focusSource.focusY };
       },
+      containSelector:
+        '.preview-panel .thumb.is-clickable-preview .slide-image-text .frame.is-fit-contain',
     },
     // Cover/Contain toggle on each filled image. Writes the item's own `fit`
     // (canonical since step 2b), so a toggle localizes to that cell. The

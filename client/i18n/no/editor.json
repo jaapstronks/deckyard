@@ -150,8 +150,6 @@
   "editor.share.workspace.viewOnly": "Se & kommentere",
   "editor.slide.accessibility": "Tilgjengelighet",
   "editor.slide.accessibility.title": "Valgfrie felt for å forbedre skjermleserutdata og eksport.",
-  "editor.slide.layoutSettings": "Layoutinnstillinger",
-  "editor.slide.animationSettings": "Animasjonsinnstillinger",
   "editor.slide.delete": "Slett",
   "editor.slide.deleteConfirm": "Slett dette lysbildet?",
   "editor.slide.duplicate": "Dupliser",

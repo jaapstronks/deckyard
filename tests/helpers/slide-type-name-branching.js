@@ -342,18 +342,11 @@ export const INVENTORY = {
       'missed** — the alias kept its entries while every insertion path moved, so ' +
       'new lists had no Convert submenu at all.',
   },
-  'client/views/editor/editor-form/slide-form-router.js': {
-    kind: sparse,
-    why:
-      'Which types get a curated editor form instead of the generic field order. ' +
-      'Shrinking on purpose (editor-behaviour-abstraction brief): step 2 took ' +
-      'out the layout-only forms (`formLayout` declaration), step 3 the seven ' +
-      'collection forms (generic collection editor), step 4 chart and table ' +
-      '(`editor` + `visibleWhen` declarations). Each remaining row is a ' +
-      'documented exception — see the module comment. Historical ' +
-      'note: **the second module PR #451 missed** — the alias kept its case while ' +
-      'new lists fell back to the generic form; today that fallback is the answer.',
-  },
+  // slide-form-router.js is deliberately ABSENT since editor-behaviour-
+  // abstraction step 5: the table that once listed sixteen types is down to
+  // two documented exceptions (follow-invite, the deprecated content-columns),
+  // below the three-name threshold. That is the good outcome this gate exists
+  // to surface — the per-type knowledge was derived away, not moved.
   'client/views/editor/editor-form/render-field.js': {
     kind: sparse,
     why:

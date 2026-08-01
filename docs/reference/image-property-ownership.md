@@ -46,8 +46,8 @@ inspector write path that disagrees with the render read path.
 
 | Type | Level | Field(s) | Render reads | Inspector writes | Default |
 |---|---|---|---|---|---|
-| image-slide | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3) | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit | fit/bleed controls (`appendImageSlideFitControls`, silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live) |
-| image-text | **I** (was S+I) ✅ | item `fit` canonical | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | images manager only (silent-default UX) | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live) |
+| image-slide | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3) | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit | fit/bleed on the shared "This image" element card, declared via the inline descriptor's `fit`/`bleed` axes (silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live) |
+| image-text | **I** (was S+I) ✅ | item `fit` canonical | every `.frame` carries its effective `is-fit-*` class (one mechanism); legacy `imageFit` is a read-only fallback, folded on edit (step 2b) | element card (inspector) + the `editor: 'image-fit'` item widget in the bulk modal's collection editor | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live) |
 | content-columns | N (resolved to ImageRef) ✅ | `col{n}ImageFit` | `resolveContentColumnImage` (own value → type default, step 4) | silent-default fit controls (form + inspector + element card) | `cover` (`CONTENT_COLUMNS_IMAGE_DEFAULTS.fit`, live — no longer stamped into defaults) |
 | gallery / team-cards / logo-wall / quote | — | no `fit` (cover fixed, or derived from `imageShape`/`imageAspect`) | — | — | — |
 

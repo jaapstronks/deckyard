@@ -128,18 +128,25 @@
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, fieldAliases?:string[], container:string, itemSelector:string}} [cards]
  * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
- * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain')}} [focus]
+ * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain'), containSelector?:string}} [focus]
  *   Draggable focal-point handle on filled images. Resolves the write target
  *   the same way `media` does (item in list mode, `slide.content` in flat mode
  *   with `{n}` substitution), then writes `xField`/`yField` (0..100). The
  *   handle only renders when `cropMode` returns `'cover'`. Function-valued, so
- *   core-map only.
+ *   core-map only. `containSelector` is the CSS selector for the rendered
+ *   frame (like `media.photoSelector`): the inspector's contain-mode alignment
+ *   control measures it to offer only the axis that has letterbox slack.
  * @property {{field:string, fallback?:(slide:Object)=>string}} [fit]
- *   Cover/Contain toggle on filled images. Resolves the write target like
+ *   The image's fit (cover/contain) key. Resolves the write target like
  *   `media` (item in list mode, `{n}`-substituted content key in flat mode) and
- *   writes `field` = 'cover'|'contain'. `fallback` seeds the initial mode from a
- *   slide-level default when the per-image field is empty. Function-valued
- *   fallback, so core-map only.
+ *   writes `field` = 'cover'|'contain'; empty means "follow the type", which is
+ *   what `fallback` resolves. Rendered by the inspector's "This image" card
+ *   (image-element-card.js) — the on-canvas toggle this once drove is retired.
+ *   Function-valued fallback, so core-map only.
+ * @property {{field:string}} [bleed]
+ *   The image's edge-to-edge frame key, the ImageRef axis orthogonal to `fit`.
+ *   Same target resolution; boolean, empty means "follow the type". Declared
+ *   only by types whose renderer honours it.
  * @property {string[]} [formText]
  * @property {{selector:string, afterWrite?:(slide:Object)=>void}} [icons]
  * @property {{addMedia?:{toType:string, anchors:Array<Object>}, removeMedia?:{toType:string, selector:string}}} [convert]

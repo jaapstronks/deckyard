@@ -1,5 +1,4 @@
 import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
-import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 
 /**
@@ -28,22 +27,27 @@ import { renderContentColumnsForm } from './slide-forms/content-columns.js';
  * `visibleWhen` condition (shared/slide-types/field-visibility.js) resolved by
  * the generic field renderer.
  *
+ * Step 5 took out image-slide and image-text-slide, the last two real forms.
+ * Their split, in one line each: the ImageRef axes (fit, bleed, focus) are
+ * properties of the image ELEMENT and were already declared on the inline
+ * descriptor, so they render through the shared "This image" card and their
+ * schema fields became `hidden` carried data; the fit control's derived
+ * default label became `editor: 'image-fit'`; the show/hide chains (alt on
+ * imageRole, the zoom fields) became `visibleWhen`; the `<details>` groups and
+ * the two imperative surface flags (`hideLayoutField`, `flat`) were dropped —
+ * `layout` was already absent from image-text's `inspectorKeeps`, and the
+ * helper only needed a flag because it bypassed that gate.
+ *
  * What remains, each a documented exception:
  * - follow-invite-slide: `fields: []` BY DESIGN (the translation layer only
  *   touches declared fields, and this slide must never flip language), so its
  *   enabled-toggle and custom-copy inputs cannot be schema-driven.
- * - image-slide / image-text-slide: the ImageRef surfaces (fit/bleed with
- *   derived default labels, focus picker, zoom chain, the multi-image
- *   manager) — the remaining candidates for the vocabulary, entangled with
- *   the inspector's element tabs; step-4 follow-up.
  * - content-columns-slide: DEPRECATED type on the flat numbered `col{n}*`
  *   storage model — see the DOCUMENTED EXCEPTION note in
  *   slide-forms/content-columns.js.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
-  ['image-slide', renderImageSlideForm],
-  ['image-text-slide', renderImageTextSlideForm],
   ['content-columns-slide', renderContentColumnsForm],
 ]);
 

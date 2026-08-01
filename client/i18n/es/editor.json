@@ -150,8 +150,6 @@
   "editor.share.workspace.viewOnly": "Ver y comentar",
   "editor.slide.accessibility": "Accesibilidad",
   "editor.slide.accessibility.title": "Campos opcionales para mejorar la salida del lector de pantalla y exportaciones.",
-  "editor.slide.layoutSettings": "Configuración de diseño",
-  "editor.slide.animationSettings": "Configuración de animación",
   "editor.slide.delete": "Eliminar",
   "editor.slide.deleteConfirm": "¿Eliminar esta diapositiva?",
   "editor.slide.duplicate": "Duplicar",
