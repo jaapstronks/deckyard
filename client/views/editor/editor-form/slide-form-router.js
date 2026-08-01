@@ -1,20 +1,8 @@
 import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
-import { renderCardStackForm } from './slide-forms/card-stack.js';
-import { renderIconCardGridForm } from './slide-forms/icon-card-grid.js';
 import { renderChartSlideForm } from './slide-forms/chart.js';
 import { renderTableSlideForm } from './slide-forms/table.js';
-import { renderTeamCardsForm } from './slide-forms/team-cards.js';
-import { renderLogoWallForm } from './slide-forms/logo-wall.js';
 import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
-import { renderTextBlocksForm } from './slide-forms/text-blocks.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
-import { renderGallerySlideForm } from './slide-forms/gallery-slide.js';
-import {
-  removeCardAtIndex,
-  removeIconGridCardAtIndex,
-  removeTeamCardAtIndex,
-  removeLogoWallItemAtIndex,
-} from './cards.js';
 
 /**
  * The types that get a curated side form instead of the generic
@@ -25,29 +13,31 @@ import {
  * including every custom/fork type — renders all of its `fields[]` in
  * definition order via the generic branch below. Custom slide types with image
  * fields using `presetSource: 'backgrounds'` automatically get the background
- * image picker through the generic renderField logic.
+ * image picker through the generic renderField logic. Collection fields
+ * (`type: 'items'`) get the full generic collection editor
+ * (collection-editor.js): add/remove, pointer-based reorder, and — when the
+ * field declares `collapsible: true` — per-item collapse.
  *
- * Four rows left this table in step 2 of the editor-behaviour-abstraction
- * brief: title, content, list and kpi-metrics carried ~127 lines whose entire
- * content was field order plus "put these two side by side". Order is what
- * `fields[]` already is, and the pairing is now a `formLayout: 'pair'`
- * declaration on the field (shared/slide-types/form-layout.js) that the generic
- * branch reads. A form belongs here only when it does something a declaration
- * cannot — a widget, a derived control, a non-field toggle.
+ * This table shrinks on purpose (editor-behaviour-abstraction brief). Step 2
+ * took out the four rows (title, content, list, kpi-metrics) whose forms only
+ * said field order plus "put these two side by side" — order is what `fields[]`
+ * already is, and the pairing is a `formLayout: 'pair'` declaration on the
+ * field (shared/slide-types/form-layout.js) read by the generic branch. Step 3
+ * took out the seven hand-built collection forms (card-stack, icon-card-grid,
+ * team-cards, logo-wall, text-blocks, content-columns, gallery); those types
+ * run on the generic collection editor. content-columns keeps a thin entry
+ * because its storage is the flat numbered `col{n}*` model — see the
+ * DOCUMENTED EXCEPTION note in slide-forms/content-columns.js. A form belongs
+ * here only when it does something a declaration cannot — a widget, a derived
+ * control, a non-field toggle.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
-  ['card-stack-slide', renderCardStackForm], // DEPRECATED — kept for editing existing slides
-  ['icon-card-grid-slide', renderIconCardGridForm],
-  ['team-cards-slide', renderTeamCardsForm],
-  ['logo-wall-slide', renderLogoWallForm],
   ['chart-slide', renderChartSlideForm],
   ['table-slide', renderTableSlideForm],
   ['image-slide', renderImageSlideForm],
   ['image-text-slide', renderImageTextSlideForm],
-  ['text-blocks-slide', renderTextBlocksForm],
-  ['content-columns-slide', renderContentColumnsForm], // DEPRECATED — kept for editing existing slides
-  ['gallery-slide', renderGallerySlideForm],
+  ['content-columns-slide', renderContentColumnsForm], // DEPRECATED type — numbered-model exception
 ]);
 
 /**
@@ -59,16 +49,12 @@ export function renderSlideFormByType(ctx) {
   const renderForm = SLIDE_FORMS.get(ctx.slide.type);
 
   if (renderForm) {
-    // Hand every renderer the same flattened context: the ctx itself, the
-    // field renderers unpacked beside it, and the card-removal helpers. Each
-    // renderer destructures the subset it uses.
+    // Hand every renderer the same flattened context: the ctx itself and the
+    // field renderers unpacked beside it. Each renderer destructures the
+    // subset it uses.
     renderForm({
       ...ctx,
       ...ctx.fieldRenderers,
-      removeCardAtIndex,
-      removeIconGridCardAtIndex,
-      removeTeamCardAtIndex,
-      removeLogoWallItemAtIndex,
     });
     return true;
   }

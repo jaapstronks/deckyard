@@ -192,6 +192,7 @@ export default {
       type: 'enum',
       required: false,
       options: ['1', '2', '3', '4', '5', '6'],
+      deprecated: true, // stale mirror of items[].length; the editor skips it
     },
 
     // Canonical items[] format. Card order is incidental → unordered list in the
@@ -206,6 +207,7 @@ export default {
       minItems: 1,
       maxItems: 6,
       ordered: false,
+      collapsible: true, // item-rich: per-card collapse in the editor
       itemDefaults: { title: 'Card', body: '- First point\n- Second point' },
       itemFields: [
         { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 40 },

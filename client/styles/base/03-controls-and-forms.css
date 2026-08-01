@@ -92,7 +92,8 @@
   border-color: hsl(var(--app-danger) / 0.4);
 }
 
-/* Drag handle for reorderable items */
+/* Drag handle for reorderable items. `touch-action: none` hands vertical
+   drags to the pointer-sortable instead of scrolling the pane (touch). */
 .item-drag-handle {
   display: flex;
   align-items: center;
@@ -107,6 +108,7 @@
   border-radius: var(--ps-radius-sm);
   color: hsl(var(--app-text-tertiary));
   cursor: grab;
+  touch-action: none;
   transition: color var(--ps-transition-fast), background var(--ps-transition-fast);
   flex-shrink: 0;
 }
@@ -165,36 +167,22 @@
   font-weight: 400;
 }
 
-/* Draggable card-group states */
+/* Pointer-sortable states (lib/dom/pointer-sortable.js): while sorting, the
+   neighbours animate to their made-room offsets; the dragged item itself
+   follows the pointer untransitioned and floats above the list. */
 .items-reorder-list .card-group {
-  transition: opacity var(--ps-transition-fast), transform var(--ps-transition-fast);
   position: relative;
 }
 
-.items-reorder-list .card-group.is-dragging {
-  opacity: 0.5;
+.items-reorder-list.is-sorting .card-group {
+  transition: transform 0.15s ease;
 }
 
-/* Drop indicators */
-.items-reorder-list .card-group.is-drop-before::before,
-.items-reorder-list .card-group.is-drop-after::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: hsl(var(--app-accent-primary));
-  border-radius: 2px;
-  pointer-events: none;
+.items-reorder-list.is-sorting .card-group.is-sort-dragging {
+  transition: none;
   z-index: 10;
-}
-
-.items-reorder-list .card-group.is-drop-before::before {
-  top: -10px;
-}
-
-.items-reorder-list .card-group.is-drop-after::after {
-  bottom: -10px;
+  box-shadow: var(--ps-shadow-lg, 0 8px 24px rgb(0 0 0 / 0.18));
+  opacity: 0.95;
 }
 
 /* Segmented control */
