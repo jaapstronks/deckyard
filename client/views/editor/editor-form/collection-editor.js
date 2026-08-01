@@ -6,6 +6,7 @@ import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
 import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
+import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import {
   fieldFormLayout,
   fieldFormRows,
@@ -74,6 +75,8 @@ const collapsedState = createCollapsedState('collection');
  *   Default reads/writes `slide.content[field.key]`.
  * @param {Object} [o.labels] - { addLabelKey, addLabel } overrides (used by the
  *   nested level, resolved from the descriptor's `cards.child`)
+ * @param {string|null} [o.lang] - deck language (`resolveDeckLang(pres)`);
+ *   picks the new-item skeleton from `itemDefaultsByLang`
  * @param {number} [o.depth] - nesting depth (internal; one nested level max)
  * @returns {HTMLElement}
  */
@@ -88,6 +91,7 @@ export function createCollectionEditor({
   scheduleUiRefresh,
   model = null,
   labels = null,
+  lang = null,
   depth = 0,
 } = {}) {
   const { fieldImage, fieldIconPicker, fieldEnum, fieldGrid, fieldNumber } =
@@ -99,10 +103,7 @@ export function createCollectionEditor({
   // empty slide with no affordance to find the add button again. A nested
   // collection (a row's blocks) may honestly go down to its declared minimum.
   const removeFloor = depth > 0 ? minItems : Math.max(1, minItems);
-  const itemDefaults =
-    field?.itemDefaults && typeof field.itemDefaults === 'object'
-      ? field.itemDefaults
-      : {};
+  const itemDefaults = resolveItemDefaults(field, lang);
   const itemFields = (Array.isArray(field?.itemFields) ? field.itemFields : []).filter(
     (f) => f && !f.hidden
   );
@@ -397,6 +398,7 @@ export function createCollectionEditor({
               markDirty,
               scheduleUiRefresh,
               labels: childLabels,
+              lang,
               depth: depth + 1,
               model: {
                 read: () => {

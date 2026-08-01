@@ -101,6 +101,12 @@ export default {
         label: 'Stage',
         text: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          label: 'Fase',
+          text: '',
+        },
+      },
       itemFields: [
         {
           key: 'label',

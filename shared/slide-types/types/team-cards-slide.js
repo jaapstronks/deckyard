@@ -158,6 +158,17 @@ export default {
         byline: 'Caption',
         linkedin: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          image: '',
+          alt: '',
+          imageFocusX: 50,
+          imageFocusY: 50,
+          name: 'Titel',
+          byline: 'Bijschrift',
+          linkedin: '',
+        },
+      },
       itemFields: [
         // Labels match the "Image blocks" framing (and the side form): the
         // photo's name is the block Title, the byline is its Caption. These
