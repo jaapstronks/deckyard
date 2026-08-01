@@ -18,6 +18,25 @@ let dict = Object.create(null);
 let dictLoadedFor = null;
 let manifestCache = null;
 
+// A `?lang=`/`?locale=` URL param names an explicit, per-session UI locale. When
+// present and valid it takes priority over the stored/server preference for the
+// whole SPA session. Set once by resolveInitialUiLocale() at bootstrap; its
+// consumers (app.js render, settings preferences tab) read it back to keep the
+// URL's choice winning over a saved preference for the session.
+let sessionParamLocale = null;
+
+/**
+ * The per-session UI-locale override from a `?lang=`/`?locale=` URL param, or
+ * null when the session was not deep-linked with a valid locale. Lets callers
+ * give the URL param priority over a stored server preference — chiefly the
+ * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
+ * `?lang=nl`.
+ * @returns {string|null}
+ */
+export function getSessionLocaleOverride() {
+  return sessionParamLocale;
+}
+
 // Component files that make up the full translation dictionary
 const I18N_COMPONENTS = ['auth', 'common', 'editor', 'list', 'presenter', 'settings', 'share', 'slide-types'];
 
@@ -85,16 +104,19 @@ export function readUiLocaleParam(search) {
  * wins over the stored preference *only* when it names a locale the manifest
  * knows (same bar as the settings picker), so a bogus tag can't blank the
  * dictionary. A valid param is persisted so it survives a reload within the
- * session. Otherwise the stored/default locale is used. Precedence:
- * URL param (known) > localStorage > default.
+ * session, and recorded as the session override (see getSessionLocaleOverride)
+ * so it also outranks the server-side `uiLocale` once settings load. Otherwise
+ * the stored/default locale is used. Precedence:
+ * URL param (known) > server preference > localStorage > default.
  *
- * For a logged-in user this is only the initial value: `app.js` still overrides
- * it with `mySettings.uiLocale` once settings load. The param therefore matters
- * chiefly for the anonymous sandbox session, which has no saved preference.
+ * The URL param therefore takes priority for the whole session — chiefly the
+ * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
+ * a deep-linked `?lang=nl`. An unknown/malformed value is silently ignored.
  * @param {string} [search]
  * @returns {Promise<string>}
  */
 export async function resolveInitialUiLocale(search) {
+  sessionParamLocale = null;
   const param = readUiLocaleParam(search);
   if (param) {
     const manifest = await fetchUiLocaleManifest();
@@ -104,6 +126,7 @@ export async function resolveInitialUiLocale(search) {
     );
     if (match) {
       const id = String(match.id).trim();
+      sessionParamLocale = id;
       writeUiLocale(id);
       return id;
     }
