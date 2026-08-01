@@ -303,9 +303,26 @@
   font-size: var(--ps-text-xs);
 }
 
-.sb-segmented-btn:hover:not(.is-active) {
+.sb-segmented-btn:hover:not(:disabled):not(.is-active) {
   color: hsl(var(--app-text-primary));
   background: hsl(var(--app-bg-hover));
+}
+
+/* Disabled segmented control: a stand-in for a setting that lives elsewhere,
+   not a broken one. The inspector's "This text" tab draws the real control and
+   disables it when the field's alignment belongs to its field group (see
+   client/views/editor/editor-form/text-element-card.js), on the principle that
+   a greyed control plus a line saying where the setting moved to beats a
+   silently missing one. Without these rules the disabled control rendered
+   pixel-identical to a live one — full opacity, pointer cursor, an active pill
+   — so it read as dead rather than as delegated. */
+.sb-segmented-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.stack.is-field.is-disabled .field-label {
+  opacity: 0.7;
 }
 
 .sb-segmented-btn.is-active {
