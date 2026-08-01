@@ -83,6 +83,13 @@ export default {
         value: '',
         text: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          label: 'Fase',
+          value: '',
+          text: '',
+        },
+      },
       itemFields: [
         {
           key: 'label',

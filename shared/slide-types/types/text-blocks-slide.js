@@ -193,6 +193,18 @@ export default {
           { title: 'Block 3', body: '' },
         ],
       },
+      itemDefaultsByLang: {
+        nl: {
+          title: '',
+          color: 'yellow',
+          arrow: 'none',
+          blocks: [
+            { title: 'Blok 1', body: '' },
+            { title: 'Blok 2', body: '' },
+            { title: 'Blok 3', body: '' },
+          ],
+        },
+      },
       itemFields: [
         // `.text-blocks-row-title` is centred (04-columns.css).
         {
@@ -213,6 +225,9 @@ export default {
           minItems: 1,
           maxItems: 6,
           itemDefaults: { title: 'Block', body: 'Text here' },
+          itemDefaultsByLang: {
+            nl: { title: 'Blok', body: 'Tekst hier' },
+          },
           itemFields: [
             { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 80 },
             { key: 'body', label: 'Body', type: 'markdown', required: false, maxLength: 500 },

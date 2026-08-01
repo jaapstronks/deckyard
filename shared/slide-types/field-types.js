@@ -313,7 +313,8 @@ export const FIELD_TYPES = {
     label: 'Repeating items',
     description:
       'Repeating list of structured objects, each shaped by `itemFields`',
-    docExtra: '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `required`',
+    docExtra:
+      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`',
     valueKind: 'objectArray',
     validate: validateItems,
   },

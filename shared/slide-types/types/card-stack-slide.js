@@ -209,6 +209,9 @@ export default {
       ordered: false,
       collapsible: true, // item-rich: per-card collapse in the editor
       itemDefaults: { title: 'Card', body: '- First point\n- Second point' },
+      itemDefaultsByLang: {
+        nl: { title: 'Kaart', body: '- Eerste punt\n- Tweede punt' },
+      },
       itemFields: [
         { key: 'title', label: 'Title', type: 'string', required: false, maxLength: 40 },
         { key: 'body', label: 'Body', type: 'markdown', required: false, maxLength: 900 },

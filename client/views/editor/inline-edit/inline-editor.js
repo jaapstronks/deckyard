@@ -35,6 +35,8 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { getCollectionKey } from '../../../../shared/slide-types/helpers.js';
+import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { markdownToSafeHtml } from '../../../../shared/markdown.js';
 import {
   serializeMarkdownDom,
@@ -839,7 +841,9 @@ export function createInlineEditor({
         onclick: (e) => {
           e.preventDefault();
           e.stopPropagation();
-          addCard(path, meta?.itemDefaults || {});
+          // Deck language, not UI locale: placeholder copy in a new item is
+          // deck content (shared/slide-types/item-defaults.js).
+          addCard(path, resolveItemDefaults(meta, resolveDeckLang(pres)));
         },
       }, [
         h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),

@@ -78,6 +78,13 @@ export default {
         body: '- Item 1\n- Item 2',
         tone: 'default',
       },
+      itemDefaultsByLang: {
+        nl: {
+          title: 'Cel',
+          body: '- Punt 1\n- Punt 2',
+          tone: 'default',
+        },
+      },
       itemFields: [
         {
           key: 'title',
