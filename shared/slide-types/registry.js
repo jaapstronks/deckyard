@@ -426,12 +426,18 @@ function typeNameCandidates(name) {
 /**
  * Resolve a slide-type reference to the REGISTRY KEY it names, or `''`.
  *
- * This is the one place that knows the three spellings are one type, and the
- * only place allowed to turn a canonical name back into a storage key:
+ * The format has one canonical spelling of `slides[].type` — the reverse-DNS id
+ * (`eu.deckyard.slide.title`). This is the one place that folds every accepted
+ * spelling back to a storage key, and the storage write-seam
+ * (`normalizeSlides`) leans on it so nothing non-canonical is persisted:
  *
- * - `title-slide` — the bare key, and what `slides[].type` stores.
- * - `core/title-slide`, `title-slide@2`, `acme/hero` — qualified.
- * - `eu.deckyard.slide.title` — canonical reverse-DNS, suffix dropped.
+ * - `eu.deckyard.slide.title` — the canonical reverse-DNS id (suffix dropped).
+ * - `title-slide` — the bare registry key, still what `slides[].type` stores.
+ * - `core/title-slide`, `title-slide@2`, `acme/hero` — qualified forms.
+ *
+ * The bare key and the `core/…` form are pre-convergence residue, accepted as
+ * beta-window input normalization rather than as format features — see
+ * docs/reference/versioning.md § The beta stance.
  *
  * An exact registry hit always wins, so a fork that registers a literal `title`
  * keeps it even though core's `title-slide` also answers to that name.
