@@ -35,7 +35,7 @@ export function setupShareDropdown({
   let dialog = null;
 
   const button = h('button', {
-    class: 'btn btn-secondary',
+    class: 'btn btn-secondary editor-share-btn',
     type: 'button',
     text: t('editor.share.button', 'Share'),
     title: t('editor.share.title', 'Share and publish options'),

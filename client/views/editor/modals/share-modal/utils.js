@@ -2,6 +2,8 @@
  * Utility functions for the share modal.
  */
 
+import { t } from '../../../../lib/ui-i18n.js';
+
 /**
  * Calculate expiration date from a duration value.
  * @param {string} value - Duration string (e.g., '1h', '24h', '7d', '30d')
@@ -23,15 +25,17 @@ export function getExpiresAt(value) {
  * Get human-readable label for a share-link permission level.
  * Share links are only issued as 'view' or 'comment' (there is no
  * guest-editing flow), so 'edit' is intentionally not represented here.
+ *
+ * The same two keys the create form's permission select uses: one permission
+ * has one name, whether it is being chosen or being reported.
+ *
  * @param {string} permission - Permission level (view, comment)
  * @returns {string} Human-readable label
  */
 export function getPermissionLabel(permission) {
-  const labels = {
-    view: 'View',
-    comment: 'Comment',
-  };
-  return labels[permission] || permission;
+  if (permission === 'view') return t('share.permission.view', 'View only');
+  if (permission === 'comment') return t('share.permission.comment', 'Can comment');
+  return permission;
 }
 
 /**

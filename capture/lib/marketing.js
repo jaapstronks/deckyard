@@ -209,6 +209,64 @@ export async function dismissPresenterStartGate(page) {
 const START_CURTAIN = '.presenter-start-curtain';
 
 /**
+ * Target time seeded on the presenter console, in seconds.
+ *
+ * The console reads this from localStorage on start-up, so it renders as a
+ * "Target 20:00" hint beside a stopped clock. Twenty minutes is a plausible
+ * slot for the sample deck; the number matters only in that it is fixed.
+ */
+export const PRESENTER_CONSOLE_TARGET_SECONDS = 20 * 60;
+
+/**
+ * Answer the slide-translation call with the deck's own other-language text,
+ * without reaching a model.
+ *
+ * The fill-from-translation preview is a network-driven surface: the modal
+ * posts the source fields to `/api/presentations/:id/translate/fields` and only
+ * renders once the response is in hand. A capture cannot let that call through
+ * — it needs a provider key, it costs money, and it comes back slightly
+ * different every run, which is three ways to fail the determinism rules at
+ * once.
+ *
+ * So the request is intercepted and answered from the deck itself: the deck is
+ * already bilingual, and the other version of the slide *is* the translation of
+ * this one. Nothing on screen is invented; the model is simply not asked a
+ * question the deck already answers.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @param {Record<string, unknown>} targetContent The slide's content in the
+ *   language being filled — the field values the response should carry.
+ * @returns {Promise<void>}
+ */
+export async function stubTranslateFields(page, targetContent) {
+  await page.setRequestInterception(true);
+  page.on('request', (request) => {
+    if (!/\/api\/presentations\/[^/]+\/translate\/fields$/.test(request.url())) {
+      request.continue().catch(() => {});
+      return;
+    }
+    let requested = {};
+    try {
+      requested = JSON.parse(request.postData() || '{}')?.fields || {};
+    } catch {
+      requested = {};
+    }
+    const translations = {};
+    for (const key of Object.keys(requested)) {
+      const value = targetContent?.[key];
+      if (typeof value === 'string') translations[key] = value;
+    }
+    request
+      .respond({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ translations }),
+      })
+      .catch(() => {});
+  });
+}
+
+/**
  * The public origin a join screen should advertise. Overridable for a fork.
  */
 export const MARKETING_PUBLIC_ORIGIN =

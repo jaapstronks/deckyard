@@ -56,7 +56,7 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
     type: 'button',
   });
   const resetBtn = h('button', {
-    class: 'btn btn-secondary',
+    class: 'btn btn-secondary presenter-console-timer-reset',
     text: t('presenter.console.reset', 'Reset'),
     type: 'button',
   });
