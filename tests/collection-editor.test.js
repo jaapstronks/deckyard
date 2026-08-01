@@ -243,6 +243,14 @@ test('kpi-metrics: generic items path keeps the metric field pairing', () => {
       `missing metric field ${want}`
     );
   }
+  // The pairing is a formLayout declaration on the item fields, rendered as
+  // declared rows: value+unit share one .field-grid, label gets its own.
+  const firstItem = editorMount.querySelector('.items-reorder-list .card-group');
+  const rows = Array.from(firstItem.querySelectorAll('.field-grid')).map((g) =>
+    labelsOf(g)
+  );
+  assert.deepEqual(rows[0], ['Value', 'Unit'], 'value and unit share the first row');
+  assert.deepEqual(rows[1], ['Label'], 'label stands on its own row');
 });
 
 test('team-cards and logo-wall run generic: collection renders from schema', () => {

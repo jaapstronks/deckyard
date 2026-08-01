@@ -1,8 +1,24 @@
-import { parseMarkdownTable } from '../../../../../shared/markdown.js';
-import { MAX_COLS, MAX_ROWS } from '../../../../../shared/slide-types/types/table-slide.js';
-import { t } from '../../../../lib/ui-i18n.js';
-import { toast } from '../../../../lib/dom/toast.js';
-import { createModal, createTextArea } from '../../../../lib/dom/modal.js';
+import { parseMarkdownTable } from '../../../../shared/markdown.js';
+import { MAX_COLS, MAX_ROWS } from '../../../../shared/slide-types/types/table-slide.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { createModal, createTextArea } from '../../../lib/dom/modal.js';
+
+/**
+ * The `table-grid` widget of the field-editor vocabulary
+ * (shared/slide-types/field-editors.js): a full table editor — editable cell
+ * grid, contextual add/remove for rows and columns, a roomy modal, and
+ * markdown import/export — for an `items` field whose items are the flat
+ * `c1…cN` cell shape.
+ *
+ * The widget owns more than the declared field: the cell rows live in the
+ * field's array, but the column count (`colCount`) and the header toggle
+ * (`headerRow`) are sibling content keys the grid reads and writes as one
+ * unit. A type declaring `editor: 'table-grid'` therefore carries those
+ * siblings too, with `colCount` marked `hidden: true` (managed here, never a
+ * form control of its own). Extracted from the retired table-slide side form
+ * (editor-behaviour-abstraction step 4).
+ */
 
 function clampInt(n, min, max) {
   const x = Number(n);
@@ -125,8 +141,6 @@ function deleteColumn(slide, cIdx) {
  * @param {Object} deps
  * @param {'compact'|'roomy'} [deps.variant]
  * @param {Function} deps.onStructure - called after any row/column add/delete
- * @param {Function} [deps.onCellFocus] - receives (rIdx, cIdx) on focus, used
- *   by callers that rebuild the grid to restore focus
  * @param {{r: number, c: number}|null} [deps.focusCell] - cell to focus after build
  */
 function buildTableGrid({
@@ -331,59 +345,29 @@ function openTableEditorModal({
   modal.show(document.body);
 }
 
-// ─── form ────────────────────────────────────────────────────────────────────
+// ─── widget ──────────────────────────────────────────────────────────────────
 
-export function renderTableSlideForm({
+/**
+ * The complete table-grid widget: label row with the "Edit table" modal
+ * button, the compact grid, the row/column count pill, and the markdown
+ * import/export block.
+ *
+ * @param {Object} deps
+ * @param {Function} deps.h
+ * @param {Object} deps.slide - the slide being edited (content is mutated)
+ * @param {Function} [deps.markDirty]
+ * @param {Function} [deps.rerenderEditor] - structure changes rebuild the form
+ * @param {Function} [deps.scheduleUiRefresh]
+ * @returns {HTMLElement}
+ */
+export function createTableGridEditor({
   h,
-  form,
   slide,
-  add,
-  used,
-  fieldByKey,
-  renderField,
-  fieldGrid,
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
 } = {}) {
   ensureTableContent(slide);
-
-  add('title');
-  add('caption');
-
-  // Compact appearance row: header + table style together (background colour
-  // moved to the unified Background section, editor-form.js).
-  const headerField = fieldByKey.get('headerRow');
-  const styleField = fieldByKey.get('tableStyle');
-  const cornerField = fieldByKey.get('cornerCell');
-  const animateByCellField = fieldByKey.get('animateByCell');
-  if (headerField || styleField) {
-    used.add('headerRow');
-    used.add('tableStyle');
-    const hEl = headerField ? renderField(headerField) : null;
-    const styleEl = styleField ? renderField(styleField) : null;
-    const row = fieldGrid([hEl, styleEl], 2);
-    if (row) form.append(row);
-  }
-
-  // Corner-cell toggle sits with the style controls: it's a style-orthogonal
-  // choice about the top-left cell, not table content.
-  if (cornerField) {
-    used.add('cornerCell');
-    const cornerEl = renderField(cornerField);
-    if (cornerEl) form.append(cornerEl);
-  }
-
-  // Animate by cell toggle (for step-by-step builds)
-  if (animateByCellField) {
-    used.add('animateByCell');
-    const animateEl = renderField(animateByCellField);
-    if (animateEl) form.append(animateEl);
-  }
-
-  // Custom table editor UI (rows + cols).
-  used.add('rows');
-  used.add('colCount');
 
   const colCount = clampInt(slide.content.colCount || 4, 1, MAX_COLS);
   const rows = normalizeRows(slide, colCount);
@@ -532,5 +516,5 @@ export function renderTableSlideForm({
   );
   wrap.append(importWrap);
 
-  form.append(wrap);
+  return wrap;
 }

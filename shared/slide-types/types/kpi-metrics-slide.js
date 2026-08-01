@@ -107,6 +107,9 @@ export default {
         label: 'New KPI',
         note: '',
       },
+      // Value and unit read as one number, so they share a row in the item
+      // editor (formLayout, read by the generic collection editor); label and
+      // note each get their own line.
       itemFields: [
         {
           key: 'value',
@@ -114,6 +117,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 30,
+          formLayout: 'pair',
         },
         {
           key: 'unit',
@@ -121,6 +125,7 @@ export default {
           type: 'string',
           required: false,
           maxLength: 12,
+          formLayout: 'pair',
         },
         {
           key: 'label',

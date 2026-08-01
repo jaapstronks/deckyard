@@ -9,10 +9,10 @@
  *
  * The grid serialises to exactly the CSV string the shared parser
  * (`shared/slide-types/chart/parse.js`) already eats, so nothing downstream
- * changes: this is purely an editing-UX layer. Used from three call sites (one
- * implementation): the side form (`slide-forms/chart.js`), the generic field
- * dispatcher (`render-field.js` `csv` branch) and the inline-edit modal
- * (`inline-editor.js` `openCsvModal`).
+ * changes: this is purely an editing-UX layer. Used from two call sites (one
+ * implementation): the generic field renderer (`render-field.js`, as the
+ * csv-grid widget of the `editor` vocabulary and the base editor of the `csv`
+ * field type) and the wide data surface (`chart-data-modal.js`).
  */
 
 import { h as defaultH } from '../../../lib/dom.js';

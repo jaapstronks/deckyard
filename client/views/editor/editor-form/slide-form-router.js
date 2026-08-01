@@ -1,6 +1,4 @@
 import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
-import { renderChartSlideForm } from './slide-forms/chart.js';
-import { renderTableSlideForm } from './slide-forms/table.js';
 import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 
@@ -23,21 +21,30 @@ import { renderContentColumnsForm } from './slide-forms/content-columns.js';
  * said field order plus "put these two side by side" — order is what `fields[]`
  * already is, and the pairing is a `formLayout: 'pair'` declaration on the
  * field (shared/slide-types/form-layout.js) read by the generic branch. Step 3
- * took out the seven hand-built collection forms (card-stack, icon-card-grid,
- * team-cards, logo-wall, text-blocks, content-columns, gallery); those types
- * run on the generic collection editor. content-columns keeps a thin entry
- * because its storage is the flat numbered `col{n}*` model — see the
- * DOCUMENTED EXCEPTION note in slide-forms/content-columns.js. A form belongs
- * here only when it does something a declaration cannot — a widget, a derived
- * control, a non-field toggle.
+ * took out the seven hand-built collection forms; those types run on the
+ * generic collection editor. Step 4 took out chart and table: their "forms"
+ * were one rich widget plus show/hide branches, now a declared `editor`
+ * (shared/slide-types/field-editors.js — csv-grid, table-grid) and a declared
+ * `visibleWhen` condition (shared/slide-types/field-visibility.js) resolved by
+ * the generic field renderer.
+ *
+ * What remains, each a documented exception:
+ * - follow-invite-slide: `fields: []` BY DESIGN (the translation layer only
+ *   touches declared fields, and this slide must never flip language), so its
+ *   enabled-toggle and custom-copy inputs cannot be schema-driven.
+ * - image-slide / image-text-slide: the ImageRef surfaces (fit/bleed with
+ *   derived default labels, focus picker, zoom chain, the multi-image
+ *   manager) — the remaining candidates for the vocabulary, entangled with
+ *   the inspector's element tabs; step-4 follow-up.
+ * - content-columns-slide: DEPRECATED type on the flat numbered `col{n}*`
+ *   storage model — see the DOCUMENTED EXCEPTION note in
+ *   slide-forms/content-columns.js.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
-  ['chart-slide', renderChartSlideForm],
-  ['table-slide', renderTableSlideForm],
   ['image-slide', renderImageSlideForm],
   ['image-text-slide', renderImageTextSlideForm],
-  ['content-columns-slide', renderContentColumnsForm], // DEPRECATED type — numbered-model exception
+  ['content-columns-slide', renderContentColumnsForm],
 ]);
 
 /**

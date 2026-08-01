@@ -62,42 +62,17 @@ export default {
       required: false,
       maxLength: 240,
     },
+    // Header toggle and table style are two compact enums that read as one
+    // appearance choice, so they share a form row (see form-layout.js).
     {
       key: 'headerRow',
       label: 'Header row',
       type: 'enum',
       required: false,
       options: ['on', 'off'],
+      formLayout: 'pair',
     },
-    {
-      key: 'animateByCell',
-      label: 'Animate by cell',
-      type: 'enum',
-      required: false,
-      options: ['off', 'on'],
-    },
-    {
-      key: 'colCount',
-      label: 'Columns',
-      type: 'enum',
-      required: false,
-      options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
-    },
-    {
-      key: 'rows',
-      label: 'Rows',
-      type: 'items',
-      required: false,
-      maxItems: MAX_ROWS,
-      itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
-        key: `c${idx + 1}`,
-        label: `C${idx + 1}`,
-        type: 'string',
-        required: false,
-        maxLength: 400,
-      })),
-    },
-    TABLE_STYLE_FIELD,
+    { ...TABLE_STYLE_FIELD, formLayout: 'pair' },
     {
       key: 'cornerCell',
       label: 'Top-left cell',
@@ -113,6 +88,42 @@ export default {
         'first column (the historical look). "header" gives it the header-row ' +
         'colour instead, so the entire top row is one colour. Orthogonal to ' +
         'Table style — works with every style.',
+    },
+    {
+      key: 'animateByCell',
+      label: 'Animate by cell',
+      type: 'enum',
+      required: false,
+      options: ['off', 'on'],
+    },
+    {
+      // The cell rows. `editor: 'table-grid'` (field-editors.js) swaps the
+      // generic collection editor for the full table widget — cell grid,
+      // row/column add/remove, markdown import — which also manages the
+      // sibling `colCount` and `headerRow` keys.
+      key: 'rows',
+      label: 'Rows',
+      type: 'items',
+      required: false,
+      maxItems: MAX_ROWS,
+      editor: 'table-grid',
+      itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
+        key: `c${idx + 1}`,
+        label: `C${idx + 1}`,
+        type: 'string',
+        required: false,
+        maxLength: 400,
+      })),
+    },
+    {
+      // Managed by the table-grid widget (add/remove column); never a form
+      // control of its own.
+      key: 'colCount',
+      label: 'Columns',
+      type: 'enum',
+      required: false,
+      options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      hidden: true,
     },
     BACKGROUND_FIELD,
   ],

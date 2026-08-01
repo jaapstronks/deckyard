@@ -435,6 +435,10 @@ export function createRerenderEditor({
       updateSelectedSlideListItem,
       onTranslateField,
       canEditCustomHtml,
+      // Inspector only: the csv-grid widget renders an "Edit data…" entry
+      // point into the bottom-panel Data tab; the bulk modal (contentOnly)
+      // has no bottom panel and keeps the inline grid.
+      onEditData: contentOnly ? null : onEditChartData,
     });
 
     const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';

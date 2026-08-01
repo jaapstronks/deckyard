@@ -29,11 +29,14 @@ export const inlineEdit = {
  * rest of the slide.
  *
  * Axis/series labels render on the chart but are not inline-editable — chart
- * config, were bulk-only (audit 2026-07-21).
+ * config, were bulk-only (audit 2026-07-21). `data` is kept for its entry
+ * point: the csv-grid widget renders an "Edit data…" button in the inspector
+ * (the grid itself lives on the bottom-panel Data tab, editing-surfaces §4.3).
  * @type {string[]}
  */
 export const inspectorKeeps = [
   'chartType',
+  'data',
   'showLegend',
   'showValues',
   'pieLabelMode',
