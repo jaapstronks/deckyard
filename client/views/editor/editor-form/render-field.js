@@ -63,18 +63,11 @@ function translateLabelRightEl({ h, pres, onTranslateField, slideId, key }) {
   });
 }
 
-function affectsLabelForSlide({ slideType, fieldKey }) {
-  return (
-    (slideType === 'title-slide' && fieldKey === 'title') ||
-    (slideType === 'chapter-title-slide' && fieldKey === 'title') ||
-    (slideType === 'content-slide' && fieldKey === 'title') ||
-    (slideType === 'list-slide' && fieldKey === 'title') ||
-    (slideType === 'chart-slide' && fieldKey === 'title') ||
-    (slideType === 'image-text-slide' && fieldKey === 'title') ||
-    (slideType === 'quote-slide' && fieldKey === 'quote') ||
-    (slideType === 'image-slide' &&
-      (fieldKey === 'caption' || fieldKey === 'title'))
-  );
+// The slide-list label reads the type's declared labelField, then falls back
+// to `title` (see editor-utils.js slideLabel) — so exactly those two keys can
+// change it, whatever the type.
+function affectsLabelForSlide({ def, fieldKey }) {
+  return fieldKey === 'title' || (!!def?.labelField && fieldKey === def.labelField);
 }
 
 export function createRenderField({
@@ -225,7 +218,7 @@ export function createRenderField({
 
     if (field.type === 'string') {
       const affectsLabel = affectsLabelForSlide({
-        slideType: slide.type,
+        def,
         fieldKey: field.key,
       });
       const isAltField =

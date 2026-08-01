@@ -20,6 +20,7 @@ export default {
   structure: 'singleton',
   runtime: 'static',
   label: 'Image slide',
+  labelField: 'caption',
   fields: [
     {
       key: 'title',

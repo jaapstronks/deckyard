@@ -93,6 +93,14 @@ export async function handleSlideTypes({ req, res, url, authedUser }) {
         layoutVariants: Array.isArray(def.layoutVariants)
           ? def.layoutVariants
           : undefined,
+        // Which content field names the slide in the slide list. Same seam
+        // half as `inspectorKeeps` — the editor holds this response, not the
+        // registry, so a fork type declaring its own labelField is only heard
+        // if the value travels.
+        labelField:
+          typeof def.labelField === 'string' && def.labelField.trim()
+            ? def.labelField.trim()
+            : undefined,
         // The ImageRef config anchor: what an image WITHOUT its own fit/bleed
         // follows. Same seam half as `inspectorKeeps` — the editor holds this
         // response, not the registry, so the `image-fit` widget's derived

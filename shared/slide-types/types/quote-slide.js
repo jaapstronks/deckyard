@@ -211,6 +211,7 @@ export default {
   structure: 'singleton',
   runtime: 'static',
   label: 'Quote',
+  labelField: 'quote',
   fieldGroups: [QUOTE_BLOCK.group],
   layoutVariants: QUOTE_BLOCK.variants,
   fields: [

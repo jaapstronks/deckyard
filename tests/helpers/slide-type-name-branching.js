@@ -350,9 +350,10 @@ export const INVENTORY = {
   'client/views/editor/editor-form/render-field.js': {
     kind: sparse,
     why:
-      'Field-level special cases (which field drives the slide-list label, ' +
-      'which types auto-fit a freshly picked image). **The third module PR ' +
-      '#451 missed**, in two places at once.',
+      'Field-level special cases: which types auto-fit a freshly picked image, ' +
+      'and which get the heading toolbar button. **The third module PR #451 ' +
+      'missed.** The slide-list-label table it also carried is gone — ' +
+      'affectsLabelForSlide now reads the labelField declaration.',
   },
   'client/views/editor/editor-form/header-actions.js': {
     kind: sparse,
@@ -367,13 +368,11 @@ export const INVENTORY = {
       'Which sub-element kinds (image, card, member, column) the element tab ' +
       'offers per type. Absence means the tab shows the slide-level fields only.',
   },
-  'client/views/editor/editor-utils.js': {
-    kind: sparse,
-    why:
-      'Per-type label extraction for the slide list. The generic fallback covers ' +
-      'most types; PR #451 removed one special case here because the fallback ' +
-      'already did exactly the same thing.',
-  },
+  // editor-utils.js left the inventory with the A7.13 done-gate pass: its
+  // per-type label extraction ("backwards compatibility" branches shadowing
+  // the labelField declaration that already existed) collapsed into
+  // labelField + the generic title fallback. The knowledge moved onto the
+  // types — quote-slide, poll-slide and image-slide declare their driver.
   'server/utils/ai/validate-slides/fix.js': {
     kind: sparse,
     why:

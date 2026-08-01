@@ -36,33 +36,12 @@ export function slideLabel(slide, slideTypes) {
   );
   const content = slide?.content || {};
 
-  // Check for labelField in slide type definition (for custom slide types)
+  // The type's declared label driver (quote, question, caption, …), then the
+  // shared title fallback. No per-type branches: the declaration is the table.
   if (def?.labelField && content[def.labelField]) {
     return content[def.labelField];
   }
 
-  // Core slide type special cases (for backwards compatibility)
-  if (slide?.type === 'title-slide')
-    return content.title || defLabel || 'Title slide';
-  if (slide?.type === 'chapter-title-slide')
-    return content.title || defLabel || 'Section title';
-  if (slide?.type === 'content-slide')
-    return content.title || defLabel || 'Content slide';
-  if (slide?.type === 'chart-slide')
-    return content.title || defLabel || 'Chart';
-  // No List case here on purpose: `content.title || defLabel` is exactly what
-  // the generic fallback below already does, so both names of the List type
-  // resolve identically without a special case that only names one of them.
-  if (slide?.type === 'image-text-slide')
-    return content.title || defLabel || 'Image + text (split)';
-  if (slide?.type === 'quote-slide')
-    return content.quote || defLabel || 'Quote slide';
-  if (slide?.type === 'poll-slide')
-    return content.question || defLabel || 'Poll';
-  if (slide?.type === 'image-slide')
-    return content.caption || defLabel || 'Image slide';
-
-  // Fallback: check for title field, then use definition label
   const title = String(content.title || '').trim();
   if (title) return title;
   return defLabel || slide?.type || 'Slide';
@@ -81,36 +60,7 @@ export function truncate(s, max = 64) {
 }
 
 export function slidePrimaryLabel(slide, slideTypes) {
-  const def = slideTypes?.[slide.type];
-  const defLabel = t(
-    def?.labelKey || `slideType.${slide?.type}.label`,
-    def?.label || slide?.type || ''
-  );
-  const content = slide?.content || {};
-
-  // Check for labelField in slide type definition (for custom slide types)
-  if (def?.labelField && content[def.labelField]) {
-    return truncate(content[def.labelField], 52);
-  }
-
-  // Core slide type special cases (for backwards compatibility)
-  if (slide?.type === 'quote-slide')
-    return truncate(content.quote || defLabel || 'Quote', 52);
-  if (slide?.type === 'poll-slide')
-    return truncate(content.question || defLabel || 'Poll', 52);
-  if (slide?.type === 'image-slide') {
-    const caption = String(content.caption || '').trim();
-    if (caption) return truncate(caption, 52);
-    const title = String(content.title || '').trim();
-    if (title) return truncate(title, 52);
-    return defLabel || 'Image slide';
-  }
-
-  // Fallback: check for title field, then use definition label
-  const title = String(content.title || '').trim();
-  if (title) return truncate(title, 52);
-
-  return truncate(defLabel || slide?.type || 'Slide', 52);
+  return truncate(slideLabel(slide, slideTypes), 52);
 }
 
 export function deepClone(v) {
