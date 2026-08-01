@@ -182,7 +182,6 @@ export default {
   layoutVariants: HEADER_BLOCK.variants,
   label: 'List',
   fields: [
-    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
@@ -199,6 +198,10 @@ export default {
       maxLength: 160,
       group: 'header-block',
     },
+    // Style (bullets/numbers) and Layout (auto/one/two columns) are two small
+    // enum selects that read as one choice, so they share a form row (see
+    // form-layout.js) — the column choice stays visible next to the style
+    // instead of dropping to the bottom of the form.
     {
       key: 'variant',
       label: 'Style',
@@ -208,6 +211,7 @@ export default {
         { value: 'bullets', label: 'Bullets' },
         { value: 'numbers', label: 'Numbers' },
       ],
+      formLayout: 'pair',
     },
     {
       key: 'layout',
@@ -219,6 +223,7 @@ export default {
         { value: 'one-column', label: 'One column' },
         { value: 'two-column', label: 'Two columns' },
       ],
+      formLayout: 'pair',
     },
     {
       key: 'density',
@@ -264,6 +269,10 @@ export default {
         },
       ],
     },
+    // Last, because it has no primary home in the form: the toolbar "Layout"
+    // chip owns the header block's alignment (see field-groups.js), so the raw
+    // enum is a fallback surface, not the control.
+    HEADER_BLOCK.field,
   ],
   defaultsByLang: {
     nl: {

@@ -441,6 +441,29 @@ For image fields, `presetSource` controls which presets appear:
 }
 ```
 
+### Form layout (`formLayout`)
+
+The editor renders `fields[]` in declaration order, one field per line. A field
+may declare `formLayout: 'pair'` to say it belongs on the same row as its
+neighbours: a run of consecutive `pair` fields becomes one `.field-grid` row.
+
+```javascript
+fields: [
+  { key: 'variant', type: 'enum', formLayout: 'pair', options: [...] },
+  { key: 'layout',  type: 'enum', formLayout: 'pair', options: [...] },
+]
+```
+
+The vocabulary is closed (`shared/slide-types/form-layout.js`) and unknown
+values degrade to the default, so a fork cannot land a hint the editor has no
+rendering for. Both editing surfaces — the inspector and the bulk "Edit all
+text" modal — read the same declaration.
+
+**Width is deliberately not declarable.** A field's natural minimum width is a
+property of its widget, not of the type, and the field renderers already stamp
+it (`is-field-narrow|wide|full`). Rows are flex-wrap, so a pair that no longer
+fits the dragged form column stacks by itself.
+
 ---
 
 ## Extension Properties Reference
@@ -558,29 +581,36 @@ renderHtml: (content, slide, ctx) => {
 
 ## Custom Editor Forms (Advanced)
 
-Most slide types use automatic form generation based on `fields[]`. For complex layouts:
+Slide types get their form generated from `fields[]`: definition order, one
+field per line, `formLayout: 'pair'` where two controls share a row. Reach for
+a hand-written form only when the type needs something a declaration cannot
+express — a bespoke widget, a derived control, a toggle that is not a field.
+Field order and pairing alone are not reasons; that is what the four forms
+retired in the behaviour-abstraction track were doing.
 
 ### 1. Create a custom form component
 
 `client/views/editor/editor-form/slide-forms/my-slide.js`:
 
 ```javascript
-export function renderMySlideForm({ slide, onUpdate, theme }) {
-  // Custom form rendering logic
+export function renderMySlideForm({ form, slide, add, used, fieldByKey, renderField }) {
+  // Custom form rendering logic. Every renderer receives the same flattened
+  // context and destructures the subset it uses.
 }
 ```
 
 ### 2. Register in the router
 
-`client/views/editor/editor-form/slide-form-router.js`:
+`client/views/editor/editor-form/slide-form-router.js` — one row per type in
+the `SLIDE_FORMS` table:
 
 ```javascript
 import { renderMySlideForm } from './slide-forms/my-slide.js';
 
-// In the switch statement:
-case 'my-slide':
-  renderMySlideForm({ slide, onUpdate, theme });
-  return true;
+const SLIDE_FORMS = new Map([
+  // …
+  ['my-slide', renderMySlideForm],
+]);
 ```
 
 ---

@@ -5,10 +5,7 @@ import { renderChartSlideForm } from './slide-forms/chart.js';
 import { renderTableSlideForm } from './slide-forms/table.js';
 import { renderTeamCardsForm } from './slide-forms/team-cards.js';
 import { renderLogoWallForm } from './slide-forms/logo-wall.js';
-import { renderTitleSlideForm } from './slide-forms/title-slide.js';
-import { renderContentSlideForm, renderListSlideForm } from './slide-forms/content-slide.js';
 import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
-import { renderKpiMetricsSlideForm } from './slide-forms/kpi-metrics.js';
 import { renderTextBlocksForm } from './slide-forms/text-blocks.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 import { renderGallerySlideForm } from './slide-forms/gallery-slide.js';
@@ -29,6 +26,14 @@ import {
  * definition order via the generic branch below. Custom slide types with image
  * fields using `presetSource: 'backgrounds'` automatically get the background
  * image picker through the generic renderField logic.
+ *
+ * Four rows left this table in step 2 of the editor-behaviour-abstraction
+ * brief: title, content, list and kpi-metrics carried ~127 lines whose entire
+ * content was field order plus "put these two side by side". Order is what
+ * `fields[]` already is, and the pairing is now a `formLayout: 'pair'`
+ * declaration on the field (shared/slide-types/form-layout.js) that the generic
+ * branch reads. A form belongs here only when it does something a declaration
+ * cannot — a widget, a derived control, a non-field toggle.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
@@ -36,14 +41,10 @@ const SLIDE_FORMS = new Map([
   ['icon-card-grid-slide', renderIconCardGridForm],
   ['team-cards-slide', renderTeamCardsForm],
   ['logo-wall-slide', renderLogoWallForm],
-  ['title-slide', renderTitleSlideForm],
-  ['content-slide', renderContentSlideForm],
-  ['list-slide', renderListSlideForm],
   ['chart-slide', renderChartSlideForm],
   ['table-slide', renderTableSlideForm],
   ['image-slide', renderImageSlideForm],
   ['image-text-slide', renderImageTextSlideForm],
-  ['kpi-metrics-slide', renderKpiMetricsSlideForm],
   ['text-blocks-slide', renderTextBlocksForm],
   ['content-columns-slide', renderContentColumnsForm], // DEPRECATED — kept for editing existing slides
   ['gallery-slide', renderGallerySlideForm],
@@ -72,7 +73,11 @@ export function renderSlideFormByType(ctx) {
     return true;
   }
 
-  // Default: render all fields in definition order
-  for (const f of ctx.def.fields || []) ctx.add(f.key);
+  // Default: every field in definition order, with a run of consecutive
+  // `formLayout: 'pair'` fields on one row. The loop itself lives in
+  // editor-form.js because the inspector's remaining-keeps pass renders through
+  // exactly the same one — a type declares its form layout once and both
+  // surfaces obey it.
+  ctx.renderFieldRows(ctx.def?.fields || []);
   return true;
 }
