@@ -18,7 +18,7 @@ let dict = Object.create(null);
 let dictLoadedFor = null;
 let manifestCache = null;
 
-// A `?lang=`/`?locale=` URL param names an explicit, per-session UI locale. When
+// A `?lang=` URL param names an explicit, per-session UI locale. When
 // present and valid it takes priority over the stored/server preference for the
 // whole SPA session. Set once by resolveInitialUiLocale() at bootstrap; its
 // consumers (app.js render, settings preferences tab) read it back to keep the
@@ -26,7 +26,7 @@ let manifestCache = null;
 let sessionParamLocale = null;
 
 /**
- * The per-session UI-locale override from a `?lang=`/`?locale=` URL param, or
+ * The per-session UI-locale override from a `?lang=` URL param, or
  * null when the session was not deep-linked with a valid locale. Lets callers
  * give the URL param priority over a stored server preference — chiefly the
  * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
@@ -74,14 +74,14 @@ export function writeUiLocale(locale) {
   storage.set(LS_UI_LOCALE, l);
 }
 
-// Query-string keys that carry a UI-locale hint, in precedence order. Lets an
-// external origin (e.g. deckyard.eu) deep-link into the app or the sandbox in a
-// chosen language: `sandbox.deckyard.eu/?lang=en`.
-const UI_LOCALE_PARAM_KEYS = ['lang', 'locale'];
+// The query-string key that carries a UI-locale hint. Lets an external origin
+// (e.g. deckyard.eu) deep-link into the app or the sandbox in a chosen
+// language: `sandbox.deckyard.eu/?lang=en`. `lang` is the only spelling.
+const UI_LOCALE_PARAM_KEY = 'lang';
 
 /**
- * Read a normalized UI-locale hint from a URL query string. Returns the first
- * well-formed value among the recognized keys, or null when absent/malformed.
+ * Read a normalized UI-locale hint from a URL query string. Returns the
+ * well-formed `?lang=` value, or null when absent/malformed.
  * `search` defaults to the current `window.location.search`; pass it explicitly
  * (e.g. in tests) to parse an arbitrary query string.
  * @param {string} [search]
@@ -102,15 +102,11 @@ export function readUiLocaleParam(search) {
   } catch {
     return null;
   }
-  for (const key of UI_LOCALE_PARAM_KEYS) {
-    const norm = normalizeUiLocale(params.get(key));
-    if (norm) return norm;
-  }
-  return null;
+  return normalizeUiLocale(params.get(UI_LOCALE_PARAM_KEY));
 }
 
 /**
- * Resolve which locale to apply at first paint. A `?lang=`/`?locale=` URL param
+ * Resolve which locale to apply at first paint. A `?lang=` URL param
  * wins over the stored preference *only* when it names a locale the manifest
  * knows (same bar as the settings picker), so a bogus tag can't blank the
  * dictionary. A valid param is persisted so it survives a reload within the
