@@ -3,7 +3,7 @@ import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createCommentsApi } from '../editor/comments-api.js';
-import { getPermissionLabel } from './error-display.js';
+import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { renderGuestJoinPrompt } from './guest-join.js';
 import { createShareViewerCommentsSection } from './viewer-comments.js';
 

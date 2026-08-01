@@ -5,12 +5,7 @@
 
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { t } from '../../lib/ui-i18n.js';
-
-function getPermissionLabel(permission) {
-  if (permission === 'view') return t('viewer.permission.view', 'View only');
-  if (permission === 'comment') return t('viewer.permission.comment', 'Can comment');
-  return t('viewer.permission.edit', 'Edit');
-}
+import { getPermissionLabel } from '../../lib/permission-labels.js';
 
 export function createViewerTopbar({
   h,
@@ -39,7 +34,9 @@ export function createViewerTopbar({
     title: pres?.title || 'Presentation',
   });
 
-  // Permission badge
+  // Permission badge. render-editor.js only mounts this viewer for 'view' and
+  // 'comment' — 'edit' gets the editor — so those are the only two labels that
+  // can appear here.
   const permissionBadge = h('div', {
     class: `viewer-permission-badge viewer-permission-badge--${permission}`,
     text: getPermissionLabel(permission),
