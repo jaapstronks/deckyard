@@ -104,6 +104,38 @@ Two things that are *not* in the directory today:
   field factories, collapsed-state); importing that from `shared/` would invert
   the layering. Its *data* half moves, though — see `cards.js`.
 
+## Behaviour stays in its layer (decided 2026-08-01)
+
+> **The type directory carries facts; code that imports a layer stays in that
+> layer.** A companion may read from `shared/` — never from `client/` or
+> `server/`. Per-type *behaviour* lives with the machinery it drives: the side
+> form in the editor, the print branches in the exporter, the validation
+> membership sets in the AI pipeline.
+
+This closes the question the seam-collapse rollout left open ("where does
+client-only behaviour of a type live?"). The alternatives — a parallel per-type
+directory under the editor, or a top-level `slide-types/` carrying all three
+layers — were considered and rejected: the first gives one type two homes, the
+second buys a rename of every import for a directory whose "companions are
+data" property (and the cheap boundary test that pins it) no longer holds.
+
+Two consequences worth spelling out:
+
+- **A behaviour list is a judgement, not coverage.** A type absent from
+  `NON_CONTENT_SLIDE_TYPES` or from the side-form table takes the default
+  branch, which is usually the right answer. Asserting registry-wide coverage
+  on these would force a judgement those lists never made. Where such a list
+  carries *numbers* the definition already declares (item limits), the numbers
+  are derived from `fields[]` and only the membership stays hand-written —
+  see `server/utils/ai/validate-slides/constants.js`.
+- **The long-term direction is less per-type behaviour, not better-housed
+  per-type behaviour.** Most of the side forms turned out to be undeclared
+  layout or seven variants of one collection editor; the plan to fold those
+  into declarations on the definition is tracked separately (the editor
+  behaviour abstraction brief in the planning repo). This rule is what makes
+  that plan cheap: behaviour that never leaves its layer never has to be
+  moved back out of the shared directory.
+
 ## Author-facing copy and i18n
 
 `authoring.js` is scanned by the i18n hardcoded-copy gate

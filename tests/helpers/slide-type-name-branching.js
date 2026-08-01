@@ -442,12 +442,9 @@ export const INVENTORY = {
       'Fallback candidates per editorial role (a title role falls back to ' +
       'title-slide). A short closed list, not a per-type row.',
   },
-  'server/utils/convert-file/helpers.js': {
-    kind: specific,
-    why:
-      'Which types count as headings when splitting an imported document. Closed ' +
-      'set: title, chapter-title, payoff.',
-  },
+  // server/utils/convert-file/helpers.js left the inventory 2026-08-01: its
+  // only 3+-name branch was a dead exclusion list behind a content-slide
+  // check (the includes() could never fire) and was removed outright.
   'scripts/migrate-slides.js': {
     kind: specific,
     why:

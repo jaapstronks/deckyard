@@ -6,12 +6,30 @@
  * them here avoids the two validators drifting apart.
  */
 
-// Slide types with item minimums
-export const SLIDE_ITEM_REQUIREMENTS = {
-  'list-slide': { field: 'items', min: 2, max: 8 },
-  'timeline-slide': { field: 'items', min: 2, max: 10 },
-  'kpi-metrics-slide': { field: 'metrics', min: 1, max: 4 },
-};
+import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+
+// Slide types whose item count the AI validators enforce strictly. This is a
+// behavioural judgement, not coverage: a type that is absent takes the default
+// branch (no strict item check), which is usually the right answer — 19 other
+// types also declare minItems/maxItems and are deliberately not listed here.
+// The *numbers* are no judgement at all, so they are read off the definition
+// (`fields[].minItems`/`maxItems`) instead of being written out a second time.
+const ITEM_REQUIREMENT_TYPES = ['list-slide', 'timeline-slide', 'kpi-metrics-slide'];
+
+export const SLIDE_ITEM_REQUIREMENTS = Object.fromEntries(
+  ITEM_REQUIREMENT_TYPES.map((type) => {
+    const field = (SLIDE_TYPES[type]?.fields || []).find(
+      (f) => f.minItems != null || f.maxItems != null
+    );
+    if (!field) {
+      throw new Error(
+        `SLIDE_ITEM_REQUIREMENTS: "${type}" has no field with minItems/maxItems — ` +
+          'remove it from ITEM_REQUIREMENT_TYPES or restore the constraint on its definition'
+      );
+    }
+    return [type, { field: field.key, min: field.minItems, max: field.maxItems }];
+  })
+);
 
 // Global accessibility fields that are added to all slide types
 export const GLOBAL_A11Y_FIELDS = ['a11yTitle', 'a11ySummary'];
