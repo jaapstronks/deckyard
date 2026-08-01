@@ -15,7 +15,7 @@
  * recipe in a `--all` run left behind is what this one would have started with.
  */
 
-import { setUiLocale } from '../lib/api.js';
+import { CAPTURE_ACCOUNT_NAME, setDisplayName, setUiLocale } from '../lib/api.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
 export default {
@@ -26,6 +26,10 @@ export default {
 
   async state(api) {
     await setUiLocale(api, 'en');
+    // Pinned for the same reason as the locale: both are account settings that
+    // survive from one recipe to the next, so an unset name would leave the
+    // dev bypass's "Dev" in the chrome of whichever shot ran first.
+    await setDisplayName(api, CAPTURE_ACCOUNT_NAME);
     return {};
   },
 

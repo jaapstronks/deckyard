@@ -103,6 +103,36 @@ export async function setUiLocale(api, locale) {
 }
 
 /**
+ * Display name every capture run puts on the account it signs in as.
+ *
+ * A fictional person, deliberately not one of the commenters in
+ * `recipes/_marketing-deck.js`: the deck's owner is not someone leaving
+ * feedback on it.
+ */
+export const CAPTURE_ACCOUNT_NAME = 'Milan de Groot';
+
+/**
+ * Set the signed-in user's display name.
+ *
+ * The editor chrome names whoever owns the deck — the author chip beside the
+ * title, the avatar in the corner, the initials on a presence dot — and falls
+ * back to the local part of the address when no profile name is stored. On a
+ * capture run that address is the dev bypass's `dev@local`, so an unset name
+ * puts "Dev" in the frame of every shot that shows the app around a deck.
+ *
+ * This is the account's own profile field, the same one the settings screen
+ * writes, so the shot shows a demo account with a name rather than a debug
+ * identity dressed up afterwards.
+ *
+ * @param {ApiClient} api
+ * @param {string} name
+ * @returns {Promise<void>}
+ */
+export async function setDisplayName(api, name) {
+  await api.put('/api/settings/me', { profile: { name } });
+}
+
+/**
  * Delete every presentation whose title starts with the given prefix. Recipes
  * seed decks under a reserved title prefix so re-runs stay idempotent without
  * touching a user's real decks.
@@ -133,6 +163,43 @@ export async function deleteDecksByPrefix(api, prefix) {
     }
   }
   return removed;
+}
+
+/**
+ * Issue a share link for a deck.
+ *
+ * The rules a link carries (password, expiry, permission, registration mode)
+ * are what the `share-link-rules` shot is about, and they are set at creation:
+ * a link created here is a real record the dialog then lists, rather than a
+ * row the recipe drew.
+ *
+ * @param {ApiClient} api
+ * @param {string} deckId
+ * @param {object} spec
+ * @param {'view'|'comment'} spec.permission
+ * @param {string} [spec.label] Shown as the link's name in the list.
+ * @param {string} [spec.password] Sets `hasPassword`, which draws the lock.
+ * @param {string} [spec.expiresAt] ISO timestamp.
+ * @param {'invite_only'|'open'} [spec.registrationMode]
+ * @returns {Promise<any>} the created share link
+ */
+export async function createShareLink(
+  api,
+  deckId,
+  { permission = 'view', label, password, expiresAt, registrationMode } = {}
+) {
+  const created = await api.post(`/api/presentations/${deckId}/share-links`, {
+    permission,
+    ...(label ? { label } : {}),
+    ...(password ? { password } : {}),
+    ...(expiresAt ? { expiresAt } : {}),
+    ...(registrationMode ? { registrationMode } : {}),
+  });
+  const link = created?.shareLink || created;
+  if (!link?.id) {
+    throw new Error(`No share link returned for deck ${deckId}`);
+  }
+  return link;
 }
 
 /**

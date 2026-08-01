@@ -84,6 +84,10 @@ export function createSegmented({
       ...(seg.label != null && seg.content == null ? { text: seg.label } : {}),
       ...(seg.title ? { title: seg.title } : {}),
       ...(seg.ariaLabel ? { 'aria-label': seg.ariaLabel } : {}),
+      // The segment's identity as an attribute, so a caller (or a capture
+      // recipe, or a test) can address one segment without matching its
+      // label — labels are translated, `value` is not. `attrs` still wins.
+      ...(seg.value != null ? { 'data-value': String(seg.value) } : {}),
       ...(seg.attrs || {}),
       onclick: (ev) => {
         if (selectOnClick) setValue(seg.value);

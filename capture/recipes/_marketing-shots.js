@@ -1,10 +1,11 @@
 /**
- * The three marketing shot shapes, each a factory over the language pair.
+ * The three home-page marketing shot shapes, each a factory over the language
+ * pair. The four `/features` shapes live in `_features-shots.js`.
  *
- * The six recipe modules in this folder are thin: they name a language and a
- * shape, and the body lives here. That keeps the `-nl` and `-en` halves of a
- * pair provably identical apart from the two language codes — the failure mode
- * a copy-pasted pair invites is one half drifting silently.
+ * The six recipe modules for these are thin: they name a language and a shape,
+ * and the body lives here. That keeps the `-nl` and `-en` halves of a pair
+ * provably identical apart from the two language codes — the failure mode a
+ * copy-pasted pair invites is one half drifting silently.
  *
  * **Hash caveat.** `hashRecipeFile()` hashes only the recipe module itself, so
  * a change *in this file* does not flag the six shots as stale the way a change
@@ -13,7 +14,7 @@
  * re-running `npm run capture -- --all` by hand.
  */
 
-import { deleteDecksByPrefix, seedDeck, setUiLocale } from '../lib/api.js';
+import { seedDeck, setUiLocale } from '../lib/api.js';
 import {
   MARKETING_LANGS,
   MARKETING_PUBLIC_ORIGIN,
@@ -21,52 +22,16 @@ import {
   MARKETING_VIEWPORT,
   PRESENTER_SLIDE,
   dismissPresenterStartGate,
-  seedBilingualDeck,
   rewriteJoinOrigin,
   seedPollVotes,
   startLiveSession,
 } from '../lib/marketing.js';
 import {
-  MARKETING_DECK_TITLE,
-  MARKETING_DECK_TITLE_EN,
   MARKETING_POLL_VOTES,
+  clearMarketingDecks,
   marketingDeckVersions,
+  seedMarketingDeck,
 } from './_marketing-deck.js';
-
-/**
- * Remove any previously seeded marketing deck, in **either** language.
- *
- * Deleting only the Dutch title would leave every English run's deck behind:
- * the single-language English deck is titled "Sunnyside Lemonade Stand", which
- * the Dutch prefix never matches.
- *
- * @param {import('../lib/api.js').ApiClient} api
- * @returns {Promise<void>}
- */
-async function clearMarketingDecks(api) {
-  await deleteDecksByPrefix(api, MARKETING_DECK_TITLE);
-  await deleteDecksByPrefix(api, MARKETING_DECK_TITLE_EN);
-}
-
-/**
- * Seed the bilingual sample deck, idempotently.
- * @param {import('../lib/api.js').ApiClient} api
- * @param {'nl'|'en'} lang
- * @returns {Promise<{deckId: string, deck: ReturnType<typeof marketingDeckVersions>}>}
- */
-async function seedMarketingDeck(api, lang) {
-  await clearMarketingDecks(api);
-  await setUiLocale(api, MARKETING_LANGS[lang].uiLocale);
-  const deck = marketingDeckVersions();
-  const deckId = await seedBilingualDeck(api, {
-    title: MARKETING_DECK_TITLE,
-    theme: MARKETING_THEME,
-    dominant: deck.dominant,
-    titles: deck.titles,
-    versions: deck.versions,
-  });
-  return { deckId, deck };
-}
 
 /**
  * `editor-form-{nl,en}` — the editor's bulk-edit view on a typed slide: named
@@ -220,19 +185,11 @@ export function joinScreenShot(lang) {
     clip: PRESENTER_SLIDE,
 
     async state(api) {
-      await clearMarketingDecks(api);
-      await setUiLocale(api, MARKETING_LANGS[lang].uiLocale);
-      const deck = marketingDeckVersions();
       // The invite renders in the dominant language, so the dominant *is* the
-      // shot's language here — unlike every other marketing recipe, where the
-      // deck keeps its natural dominant and `?lang=` does the switching.
-      const dominant = deckLang;
-      const deckId = await seedBilingualDeck(api, {
-        title: MARKETING_DECK_TITLE,
-        theme: MARKETING_THEME,
-        dominant,
-        titles: deck.titles,
-        versions: deck.versions,
+      // shot's language here — unlike the other two shapes in this file, where
+      // the deck keeps its natural dominant and `?lang=` does the switching.
+      const { deckId, deck } = await seedMarketingDeck(api, lang, {
+        dominant: deckLang,
       });
       const slideId = deck.slideIds.followInvite;
       const slideIndex = deck.slideIds.all.indexOf(slideId);

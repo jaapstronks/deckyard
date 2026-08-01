@@ -115,29 +115,41 @@ flagged for review — the same drift mechanism the registry uses for source dep
   are deleted-by-title before each seed, so re-runs stay clean. The title reads
   as a normal deck name (it shows in the editor title bar) rather than a
   debug marker. Only run captures against a throwaway dev instance.
-- **The UI language is set, never inherited.** `uiLocale` is an *account*
-  setting, so it survives from one recipe to the next inside a `--all` run —
-  a shot that contains UI text and doesn't call `setUiLocale()` comes out in
-  whatever language the previous recipe happened to leave behind. Every recipe
-  with visible chrome now pins it. Note `?lang=` cannot do this job: that is the
-  *deck* language, and its English code is `en-GB` where the UI locale's is `en`.
+- **Account settings are set, never inherited.** `uiLocale` and the profile's
+  display name are *account* settings, so they survive from one recipe to the
+  next inside a `--all` run — a shot that contains UI text and doesn't call
+  `setUiLocale()` comes out in whatever language the previous recipe happened
+  to leave behind. Every recipe with visible chrome pins both:
+  - `setUiLocale()` for the chrome's language. Note `?lang=` cannot do this
+    job: that is the *deck* language, and its English code is `en-GB` where the
+    UI locale's is `en`.
+  - `setDisplayName(api, CAPTURE_ACCOUNT_NAME)` for who the account is. The
+    editor names the deck's owner beside the title, falling back to the local
+    part of the address — which under `AUTH_DEV_BYPASS` is `dev@local`, so an
+    unpinned run puts "Dev" in the frame.
 
 ## Marketing shots
 
 `public/images/marketing/` is the second destination, driven by the shot list in
-deckyard-website `planning/marketing-beeld.md`. Six recipes, three shots × two
-languages: `editor-form`, `poll-live`, `join-screen`. They share the docs
-harness but differ in four ways, each for a stated reason:
+deckyard-website `planning/marketing-beeld.md`. Fourteen recipes, seven shots ×
+two languages, in two groups:
+
+| group | shots | shapes live in |
+|---|---|---|
+| home page | `editor-form`, `poll-live`, `join-screen` | `recipes/_marketing-shots.js` |
+| `/features` | `presenter-view`, `comments`, `share-link-rules`, `ai-fills-fields` | `recipes/_features-shots.js` |
+
+They share the docs harness but differ in four ways, each for a stated reason:
 
 | | docs shots | marketing shots |
 |---|---|---|
-| viewport | 1440×900 @2x | **1280×800 @2x** → 2560×1600, the size the site's layout is built around |
+| viewport | 1440×900 @2x | **1280×800 @2x** → 2560×1600, the size the site's layout is built around. `share-link-rules` is 1280×1200 because the dialog is capped at 80vh and would otherwise be cut in half |
 | theme | whatever `DEFAULT_THEME_ID` is | **pinned to `brand`** — a marketing image must not change colour the day the default does |
 | content | `_sample-content.js` | `_marketing-deck.js` — typed slides with something to photograph |
-| frame | whole viewport | `poll-live` / `join-screen` are **clipped** to the slide (`clip:`), because the presenter toolbar around them is a different shot |
+| frame | whole viewport | four of the seven are **clipped** (`clip:`): `poll-live` / `join-screen` to the slide, because the presenter toolbar around them is a different shot; `share-link-rules` / `ai-fills-fields` to their dialog, because the editor behind it is not the subject |
 
-Three mechanisms live in `lib/marketing.js` because a docs screenshot never
-needs them:
+Five mechanisms live in `lib/marketing.js` (and one in `lib/comments-seed.js`)
+because a docs screenshot never needs them:
 
 - **`seedBilingualDeck()`** writes the `i18n.versions` envelope, so `?lang=nl`
   and `?lang=en-GB` are two versions of one deck rather than two decks.
@@ -153,15 +165,39 @@ needs them:
   instance, because a scannable code pointing at a deck nobody hosts would be
   worse than a decorative one. A genuinely scannable join shot has to be taken
   on a real deckyard.eu instance.
+- **`stubTranslateFields()`** answers the slide-translation call from the deck
+  instead of from a model. The fill-from-translation preview only renders once
+  `/api/presentations/:id/translate/fields` responds, and a live call would need
+  a provider key, cost money and return different words every run. The deck is
+  already bilingual, so the other version of the slide *is* the translation:
+  the request is intercepted and answered with it. Nothing on screen is
+  invented; the model is simply not asked a question the deck already answers.
+- **`seedCommentThreads()`** (in `lib/comments-seed.js`) is the one seeder that
+  writes through storage rather than REST, and the reason is identity. The
+  comments route takes its author from the *session* — as it should; a comments
+  API that let the caller name someone else would be an impersonation hole —
+  and the capture run has exactly one session, the dev bypass's. Over REST every
+  comment in the shot is therefore by the same "Dev", which is not a picture of
+  people working together. `createComment()` one layer down does take an author,
+  so the recipe calls it the way `scripts/create-api-key.js` calls storage: load
+  `.env`, initialize storage, write. It opens a second pool against the same
+  database, so `closeCommentSeedStorage()` runs in the recipe's `cleanup` — an
+  idle pool would keep the runner from exiting.
 
-Two known limits, both worth knowing before trusting a re-run:
+Three known limits, all worth knowing before trusting a re-run:
 
-- **The recipe hash does not cover `_marketing-shots.js`.** `hashRecipeFile()`
-  hashes the recipe module only, and the six marketing modules are thin wrappers
-  over shared factories. Change a factory and the registry will *not* flag the
-  shots as stale — re-run them by hand. (`_sample-content.js` has the same gap.)
+- **The recipe hash does not cover the shared factories.** `hashRecipeFile()`
+  hashes the recipe module only, and the fourteen marketing modules are thin
+  wrappers over `_marketing-shots.js` / `_features-shots.js` / `_marketing-deck.js`.
+  Change a factory or the sample deck and the registry will *not* flag the shots
+  as stale — re-run them by hand. (`_sample-content.js` has the same gap.)
 - **The join screen's access code is per-session**, so it differs on every run.
-  Everything else in these shots is deterministic.
+  Everything else in these shots is deterministic — deliberately, including the
+  presenter console's stopwatch, which the recipe stops and zeroes because a
+  running clock would read differently in every capture.
+- **`comments` needs the database, not just the dev server.** It is the only
+  recipe that connects to Postgres itself (see `seedCommentThreads()` above), so
+  it fails where the others would merely produce a thinner shot.
 
 ## Adding the next screenshot
 

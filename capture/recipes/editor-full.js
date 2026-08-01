@@ -4,7 +4,13 @@
  * Doc page: docs/editing/index.md
  */
 
-import { deleteDecksByPrefix, seedDeck, setUiLocale } from '../lib/api.js';
+import {
+  CAPTURE_ACCOUNT_NAME,
+  deleteDecksByPrefix,
+  seedDeck,
+  setDisplayName,
+  setUiLocale,
+} from '../lib/api.js';
 import { sampleDeckSlides, SAMPLE_DECK_TITLE } from './_sample-content.js';
 
 /** @type {import('../lib/recipe.js').Recipe} */
@@ -22,6 +28,10 @@ export default {
     // setting — inheriting it would make the shot's language depend on which
     // recipe ran before it.
     await setUiLocale(api, 'en');
+    // Pinned for the same reason as the locale: both are account settings that
+    // survive from one recipe to the next, so an unset name would leave the
+    // dev bypass's "Dev" in the chrome of whichever shot ran first.
+    await setDisplayName(api, CAPTURE_ACCOUNT_NAME);
     await deleteDecksByPrefix(api, SAMPLE_DECK_TITLE);
     const slides = sampleDeckSlides();
     const deckId = await seedDeck(api, {

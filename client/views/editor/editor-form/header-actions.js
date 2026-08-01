@@ -94,11 +94,11 @@ export function buildHeaderActions({
   // close that also collapses the Convert / AI Convert submenus.
   const { details: actionsDetails, menu: actionsMenu } = createDropdown({
     h,
-    triggerClass: 'ghost-icon-btn',
+    triggerClass: 'ghost-icon-btn slide-actions-btn',
     triggerContent: [moreIcon({ size: 16 })],
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
-    menuClass: 'dropdown-menu-right',
+    menuClass: 'dropdown-menu-right slide-actions-menu',
     dismissOnOutside: false,
   });
 
@@ -258,7 +258,7 @@ export function buildHeaderActions({
   // Assemble menu items (filter out null entries to avoid "null" text in DOM)
   const menuItems = [
     h('button', {
-      class: 'dropdown-item',
+      class: 'dropdown-item slide-fill-translation-item',
       type: 'button',
       text: t('editor.slide.fillTranslation', 'Fill slide…'),
       title: t('editor.slide.fillTranslation.title', 'Fill this slide from the other language (with preview).'),

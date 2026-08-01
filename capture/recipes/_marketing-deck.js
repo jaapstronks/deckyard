@@ -25,6 +25,18 @@
 
 import { randomUUID } from 'node:crypto';
 
+import {
+  CAPTURE_ACCOUNT_NAME,
+  deleteDecksByPrefix,
+  setDisplayName,
+  setUiLocale,
+} from '../lib/api.js';
+import {
+  MARKETING_LANGS,
+  MARKETING_THEME,
+  seedBilingualDeck,
+} from '../lib/marketing.js';
+
 /**
  * Title prefix for the marketing sample deck, in the dominant (Dutch)
  * language. Recipes delete any deck whose title starts with this before
@@ -39,11 +51,25 @@ export const MARKETING_DECK_TITLE_EN = 'Sunnyside Lemonade Stand';
  * One entry per slide, with the content of both language versions side by
  * side. Ids are attached in {@link marketingDeckVersions} so the two versions
  * stay paired.
- * @type {Array<{type: string, nl: object, 'en-GB': object}>}
+ *
+ * `notes` is the speaker note, per language, and it is what the presenter
+ * console shot photographs — a console whose notes pane says "No notes for
+ * this slide" illustrates nothing. The follow-invite slide has none on
+ * purpose: nobody talks over a QR code.
+ *
+ * @type {Array<{type: string, nl: object, 'en-GB': object, notes?: {nl: string, 'en-GB': string}}>}
  */
 const SLIDE_SPECS = [
   {
     type: 'title-slide',
+    notes: {
+      nl:
+        'Even wachten tot iedereen zit. Zeggen dat het kwartaaloverleg is en dat ' +
+        'er aan het eind één besluit valt.',
+      'en-GB':
+        'Wait until everyone is seated. Say that this is the quarterly review and ' +
+        'that one decision gets made at the end.',
+    },
     nl: {
       title: 'Limonadekraam Zonnehoek',
       subheading: 'Groeiplan voor de zomer, plus een klein verzoek aan onze investeerders',
@@ -74,6 +100,10 @@ const SLIDE_SPECS = [
   },
   {
     type: 'kpi-metrics-slide',
+    notes: {
+      nl: 'Drie zaterdagen, verder niets. Niet verdedigen, gewoon voorlezen.',
+      'en-GB': 'Three Saturdays, nothing else. Do not defend it, just read it out.',
+    },
     nl: {
       headerAlign: 'left',
       title: 'Waar we nu staan',
@@ -109,6 +139,14 @@ const SLIDE_SPECS = [
     // The shot for `editor-form-{en,nl}`: a typed slide whose form is a set of
     // named fields (label / value / description per stage), not a text box.
     type: 'funnel-slide',
+    notes: {
+      nl:
+        'De cijfers komen van de streepjeslijst, dus ze kloppen. Blijf hangen bij ' +
+        'de stap van kopen naar opdrinken; daar zit het gesprek.',
+      'en-GB':
+        'The numbers come off the tally sheet, so they are right. Linger on the ' +
+        'step from buying to finishing; that is where the conversation is.',
+    },
     nl: {
       title: 'Van voorbijganger tot vaste klant',
       subheading: 'Geteld over drie zaterdagen',
@@ -138,6 +176,14 @@ const SLIDE_SPECS = [
   },
   {
     type: 'comparison-slide',
+    notes: {
+      nl:
+        'Links eerst helemaal voorlezen, dan pas rechts laten zien. Het tekort ' +
+        'zelf noemen voordat iemand anders het doet.',
+      'en-GB':
+        'Read the left column out in full before showing the right one. Name the ' +
+        'shortfall yourself before anyone else does.',
+    },
     nl: {
       title: 'Het plan voor de zomer',
       subheading: 'Wat we willen uitgeven, en wat er in de pot zit',
@@ -176,7 +222,20 @@ const SLIDE_SPECS = [
     },
   },
   {
+    // The slide the presenter-console shot is taken on: its notes are what the
+    // console's notes pane renders, and the list slide after it is the "Next"
+    // thumbnail.
     type: 'timeline-slide',
+    notes: {
+      nl:
+        'Dit is de ambitie, niet de belofte. Augustus hangt op wie er kan fietsen ' +
+        'met een volle kan - dat er meteen bij zeggen.\n\n' +
+        'Daarna doorstappen naar het testpanel; niet blijven hangen in volgend jaar.',
+      'en-GB':
+        'This is the ambition, not the promise. August depends on who can cycle ' +
+        'with a full jug - say that straight away.\n\n' +
+        'Then move on to the test panel; do not get stuck on next year.',
+    },
     nl: {
       title: 'Onze routekaart',
       subheading: 'Ambitieus, maar dat mag in een groeiplan',
@@ -220,6 +279,12 @@ const SLIDE_SPECS = [
   },
   {
     type: 'list-slide',
+    notes: {
+      nl: 'Citaten voorlezen, de lezing eronder alleen laten staan. Werkt beter droog.',
+      'en-GB':
+        'Read the quotes out, leave the reading underneath on the slide. It lands ' +
+        'better deadpan.',
+    },
     nl: {
       headerAlign: 'left',
       title: 'Wat het testpanel zei',
@@ -255,6 +320,11 @@ const SLIDE_SPECS = [
     // The shot for `poll-live-{en,nl}`. The options are deliberately uneven:
     // one of them quietly wins, which is the point the deck is making.
     type: 'poll-slide',
+    notes: {
+      nl: 'Stemmen openzetten en stil zijn. Pas sluiten als de balken stilstaan.',
+      'en-GB':
+        'Open the vote and then be quiet. Only close it once the bars stop moving.',
+    },
     nl: {
       pollId: '',
       question: 'Waar zetten we de investering van papa en mama op in?',
@@ -280,6 +350,10 @@ const SLIDE_SPECS = [
   },
   {
     type: 'end-slide',
+    notes: {
+      nl: 'Het besluit hardop herhalen en dan pas naar de proeverij.',
+      'en-GB': 'Repeat the decision out loud, and only then move to the tasting.',
+    },
     nl: {
       title: 'Dank, en tot zaterdag',
       body:
@@ -325,7 +399,8 @@ const POLL_INDEX = SLIDE_SPECS.findIndex((s) => s.type === 'poll-slide');
  *   dominant: 'nl',
  *   titles: {nl: string, 'en-GB': string},
  *   versions: {nl: Array<object>, 'en-GB': Array<object>},
- *   slideIds: {all: string[], title: string, followInvite: string, funnel: string, poll: string},
+ *   slideIds: {all: string[], title: string, followInvite: string, funnel: string,
+ *     timeline: string, poll: string},
  * }}
  */
 export function marketingDeckVersions() {
@@ -341,7 +416,7 @@ export function marketingDeckVersions() {
         id: ids[i],
         type: spec.type,
         content,
-        notes: '',
+        notes: spec.notes?.[lang] || '',
         visibility: {},
       };
     });
@@ -357,9 +432,147 @@ export function marketingDeckVersions() {
       title: ids[indexOfType('title-slide')],
       followInvite: ids[indexOfType('follow-invite-slide')],
       funnel: ids[indexOfType('funnel-slide')],
+      timeline: ids[indexOfType('timeline-slide')],
       poll: ids[POLL_INDEX],
     },
   };
+}
+
+/**
+ * Remove any previously seeded marketing deck, in **either** language.
+ *
+ * Deleting only the Dutch title would leave every English run's deck behind:
+ * the single-language English deck is titled "Sunnyside Lemonade Stand", which
+ * the Dutch prefix never matches.
+ *
+ * @param {import('../lib/api.js').ApiClient} api
+ * @returns {Promise<void>}
+ */
+export async function clearMarketingDecks(api) {
+  await deleteDecksByPrefix(api, MARKETING_DECK_TITLE);
+  await deleteDecksByPrefix(api, MARKETING_DECK_TITLE_EN);
+}
+
+/**
+ * Seed the bilingual sample deck, idempotently, with the UI locale set for the
+ * shot's language.
+ *
+ * The deck keeps its natural dominant language (`nl`) unless a shot needs
+ * otherwise. Two do: the follow-invite copy and the fill-from-translation
+ * direction both follow the *dominant* language rather than the viewed one, so
+ * their English halves seed a deck whose dominant is `en-GB`.
+ *
+ * @param {import('../lib/api.js').ApiClient} api
+ * @param {'nl'|'en'} lang
+ * @param {{dominant?: 'nl'|'en-GB'}} [opts]
+ * @returns {Promise<{deckId: string, deck: ReturnType<typeof marketingDeckVersions>}>}
+ */
+export async function seedMarketingDeck(api, lang, { dominant } = {}) {
+  await clearMarketingDecks(api);
+  await setUiLocale(api, MARKETING_LANGS[lang].uiLocale);
+  await setDisplayName(api, CAPTURE_ACCOUNT_NAME);
+  const deck = marketingDeckVersions();
+  const deckId = await seedBilingualDeck(api, {
+    title: MARKETING_DECK_TITLE,
+    theme: MARKETING_THEME,
+    dominant: dominant || deck.dominant,
+    titles: deck.titles,
+    versions: deck.versions,
+  });
+  return { deckId, deck };
+}
+
+/**
+ * The two comment threads the `comments` shot photographs: one already
+ * resolved, one still open, both on the funnel slide.
+ *
+ * Fictional colleagues on a reserved example domain (RFC 2606), so no address
+ * in the shot can reach anyone. The names never appear as e-mail in the panel —
+ * the renderer shows `authorName` and only falls back to the address for a
+ * nameless comment — but they are what "is this mine?" is decided on, and
+ * being someone else is what keeps the owner-only controls off the cards.
+ *
+ * @type {Record<'nl'|'en', import('../lib/comments-seed.js').SeedThread[]>}
+ */
+export const MARKETING_COMMENT_THREADS = {
+  nl: [
+    {
+      author: { name: 'Ruben Willems', email: 'ruben@example.org' },
+      body: 'De aantallen kloppen met de streepjeslijst, ik heb ze nageteld.',
+      resolved: true,
+      replies: [
+        {
+          author: { name: 'Sanne Bakker', email: 'sanne@example.org' },
+          body: 'Top, dan laten we deze zo staan.',
+        },
+      ],
+    },
+    {
+      author: { name: 'Sanne Bakker', email: 'sanne@example.org' },
+      body: 'Kunnen we bij de stap van kopen naar opdrinken zeggen waarom het verschil zo groot is?',
+      replies: [
+        {
+          author: { name: 'Ruben Willems', email: 'ruben@example.org' },
+          body: 'Ik zet er een regel onder de trechter bij.',
+        },
+      ],
+    },
+  ],
+  en: [
+    {
+      author: { name: 'Ruben Willems', email: 'ruben@example.org' },
+      body: 'The counts match the tally sheet, I checked them again.',
+      resolved: true,
+      replies: [
+        {
+          author: { name: 'Sanne Bakker', email: 'sanne@example.org' },
+          body: 'Good, then this one can stay as it is.',
+        },
+      ],
+    },
+    {
+      author: { name: 'Sanne Bakker', email: 'sanne@example.org' },
+      body: 'Can we say why the gap between buying and finishing is this big?',
+      replies: [
+        {
+          author: { name: 'Ruben Willems', email: 'ruben@example.org' },
+          body: 'I will add a line underneath the funnel.',
+        },
+      ],
+    },
+  ],
+};
+
+/**
+ * The share link the `share-link-rules` shot lists, per language.
+ *
+ * The expiry is thirty days plus an hour, not thirty days flat: the dialog
+ * renders `Math.floor(remaining / one day)`, so an exact thirty days is a few
+ * milliseconds short by the time the page reads it and shows "29d". The extra
+ * hour makes every run read "30d".
+ */
+export const MARKETING_SHARE_LINK = {
+  nl: {
+    label: 'Voor de klantreview',
+    password: 'limonade2026',
+    expiresAt: () => expiresInDays(30),
+  },
+  en: {
+    label: 'For the client review',
+    password: 'lemonade2026',
+    expiresAt: () => expiresInDays(30),
+  },
+};
+
+/**
+ * ISO timestamp `days` days out, with an hour of slack so the dialog's
+ * floor-to-whole-days arithmetic reports the round number.
+ * @param {number} days
+ * @returns {string}
+ */
+function expiresInDays(days) {
+  const ms = days * 24 * 60 * 60 * 1000 + 60 * 60 * 1000;
+  return new Date(Date.now() + ms).toISOString();
 }
 
 /**
