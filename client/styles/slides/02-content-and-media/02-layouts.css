@@ -100,9 +100,10 @@
 }
 
 /* ---- Centre-aligned single quote ----
-   Choosing "center" on the quote's "This text" tab centres the whole block in
+   Choosing "Centred" under the toolbar's Layout chip centres the whole block in
    the slide (both axes), not just the text inside a left-hung column. The
-   renderer adds .is-align-center from content.textStyles.quote.align. */
+   renderer adds .is-align-center from the quote-block field group's `quoteAlign`
+   (legacy decks fall back to content.textStyles.quote.align). */
 .slide-quote.is-align-center .slide-inner {
   justify-content: center;
   align-items: center;
@@ -121,16 +122,14 @@
   justify-content: center;
 }
 
-/* Edit-mode reflow guard: while a quote field is being typed into, its font
-   scale is frozen at the last render (the scale only recomputes on commit), so
-   a growing quote would otherwise shove the bottom-anchored byline off the
-   slide. Centre the block during the active edit so it grows symmetrically and
-   the byline stays put; on commit it re-renders back to the hero layout. */
-.thumb.is-inline-edit
-  .slide-quote:has([data-inline-field].ie-editing)
-  .slide-inner {
-  justify-content: center;
-}
+/* NOTE: there is deliberately no edit-mode layout override here. #208 centred
+   the block while a quote field had focus, to stop a growing quote from
+   shoving the bottom-anchored byline off the slide. That premise does not
+   hold: the blockquote is a flex item with the default flex-shrink, so it
+   absorbs the growth itself and the byline never moves (measured constant from
+   60 to 400 characters at a frozen --quote-scale). All the rule bought was a
+   ~14%-of-slide-height jump the moment the field took focus, i.e. an editor
+   canvas that stops rendering what present mode renders. */
 
 /* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
 .slide-quote.is-multi .slide-inner {
