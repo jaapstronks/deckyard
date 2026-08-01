@@ -7,16 +7,13 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createUserAutocomplete } from '../../../../lib/user/user-autocomplete.js';
 import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.js';
 import { confirmModal, promptModal } from '../../../../lib/dom/modal.js';
+import {
+  getPermissionLabel,
+  getPermissionDescription,
+} from '../../../../lib/permission-labels.js';
 
-/**
- * Permission descriptions for tooltips
- */
-const PERMISSION_DESCRIPTIONS = {
-  view: 'share.permission.viewDescription',
-  comment: 'share.permission.commentDescription',
-  edit: 'share.permission.editDescription',
-  admin: 'share.permission.adminDescription',
-};
+/** The four levels a workspace collaborator can hold, in ascending order. */
+const COLLABORATOR_PERMISSIONS = ['view', 'comment', 'edit', 'admin'];
 
 /**
  * Create the collaborators section component.
@@ -64,10 +61,9 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
 
   const permissionSelect = h('select', { class: 'form-input share-collaborator-permission' });
   permissionSelect.append(
-    h('option', { value: 'view', text: t('share.permission.view', 'Can view') }),
-    h('option', { value: 'comment', text: t('share.permission.comment', 'Can comment') }),
-    h('option', { value: 'edit', text: t('share.permission.edit', 'Can edit') }),
-    h('option', { value: 'admin', text: t('share.permission.admin', 'Admin') })
+    ...COLLABORATOR_PERMISSIONS.map((value) =>
+      h('option', { value, text: getPermissionLabel(value) })
+    )
   );
 
   const addBtn = h('button', {
@@ -249,7 +245,7 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
       // Permission selector with tooltip
       const permSelect = h('select', {
         class: 'form-input share-collaborator-perm-select',
-        title: t(PERMISSION_DESCRIPTIONS[collab.permission] || '', ''),
+        title: getPermissionDescription(collab.permission),
         onchange: async () => {
           try {
             permSelect.disabled = true;
@@ -268,30 +264,14 @@ export function createCollaboratorsSection({ h, api, presentationId, pres, curre
         },
       });
       permSelect.append(
-        h('option', {
-          value: 'view',
-          text: t('share.permission.view', 'Can view'),
-          selected: collab.permission === 'view',
-          title: t('share.permission.viewDescription', 'Can only view the presentation'),
-        }),
-        h('option', {
-          value: 'comment',
-          text: t('share.permission.comment', 'Can comment'),
-          selected: collab.permission === 'comment',
-          title: t('share.permission.commentDescription', 'Can view and add comments'),
-        }),
-        h('option', {
-          value: 'edit',
-          text: t('share.permission.edit', 'Can edit'),
-          selected: collab.permission === 'edit',
-          title: t('share.permission.editDescription', 'Can edit the presentation'),
-        }),
-        h('option', {
-          value: 'admin',
-          text: t('share.permission.admin', 'Admin'),
-          selected: collab.permission === 'admin',
-          title: t('share.permission.adminDescription', 'Can edit and manage collaborators'),
-        })
+        ...COLLABORATOR_PERMISSIONS.map((value) =>
+          h('option', {
+            value,
+            text: getPermissionLabel(value),
+            selected: collab.permission === value,
+            title: getPermissionDescription(value),
+          })
+        )
       );
 
       const removeBtn = h('button', {

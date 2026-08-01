@@ -76,18 +76,3 @@ export function renderError(h, shell, errorCode, errorData = {}) {
 
   shell.append(card);
 }
-
-/**
- * Get human-readable permission label.
- * @param {string} permission - Permission level
- * @returns {string} Human-readable label
- */
-export function getPermissionLabel(permission) {
-  // Share-link tokens are only ever 'view' or 'comment' — there is no
-  // guest-editing flow, so 'edit' is intentionally not a share-link permission.
-  const labels = {
-    view: t('share.permission.view', 'View only'),
-    comment: t('share.permission.comment', 'Can comment'),
-  };
-  return labels[permission] || permission;
-}

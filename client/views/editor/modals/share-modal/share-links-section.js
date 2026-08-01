@@ -6,7 +6,8 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../../shared/icon-names.js';
 import { createGuestManagementSection } from './guest-management.js';
-import { getExpiresAt, getPermissionLabel, formatExpiration } from './utils.js';
+import { getExpiresAt, formatExpiration } from './utils.js';
+import { getPermissionLabel } from '../../../../lib/permission-labels.js';
 import { openRevokeMessageModal, REVOKE_CONTEXT } from '../revoke-message-modal.js';
 
 /**
@@ -51,9 +52,12 @@ export function createShareLinksSection({ h, api, presentationId, copyToClipboar
   });
 
   const permissionSelect = h('select', { class: 'form-input share-permission-select' });
+  // Share links are only ever issued as 'view' or 'comment' — there is no
+  // guest-editing flow. Labels come from the shared helper so a link's badge
+  // below reads exactly like the option that created it.
   permissionSelect.append(
-    h('option', { value: 'view', text: t('share.permission.view', 'View only') }),
-    h('option', { value: 'comment', text: t('share.permission.comment', 'Can comment') })
+    h('option', { value: 'view', text: getPermissionLabel('view') }),
+    h('option', { value: 'comment', text: getPermissionLabel('comment') })
   );
 
   const expirationSelect = h('select', { class: 'form-input share-expiration-select' });
