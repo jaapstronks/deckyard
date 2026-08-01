@@ -25,6 +25,7 @@ import {
   PRESENTER_CONSOLE_TARGET_SECONDS,
   dismissPresenterStartGate,
   rewriteJoinOrigin,
+  seedPollVotes,
   stubTranslateFields,
   startLiveSession,
 } from '../lib/marketing.js';
@@ -34,12 +35,22 @@ import {
 } from '../lib/comments-seed.js';
 import {
   MARKETING_COMMENT_THREADS,
+  MARKETING_POLL_VOTES,
   MARKETING_SHARE_LINK,
   seedMarketingDeck,
 } from './_marketing-deck.js';
 
 /** Suppresses the inline-edit coach mark, which otherwise sits over the preview. */
 const EDITOR_LOCAL_STORAGE = { 'editor.inline.coachSeen': '1' };
+
+/**
+ * The presenter shot's own viewport, wider than {@link MARKETING_VIEWPORT}.
+ * On a poll slide the topbar gains the poll controls (state pill, Download,
+ * Open/Close/Reset) and measures 1492px in English and 1614px in Dutch, so at
+ * 1280 it overflows and any click on the console scrolls the page sideways.
+ * Same 16:10 as the others.
+ */
+const PRESENTER_VIEWPORT = { width: 1760, height: 1100, deviceScaleFactor: 2 };
 
 /**
  * Wait until the editor has finished its first render.
@@ -83,7 +94,7 @@ export function presenterViewShot(lang) {
     id: `presenter-view-${suffix}`,
     output: `presenter-view-${suffix}.png`,
     registryPath: `public/images/marketing/presenter-view-${suffix}.png`,
-    viewport: MARKETING_VIEWPORT,
+    viewport: PRESENTER_VIEWPORT,
     localStorage: {
       'deckyard:presenterConsole': '1',
       'deckyard:presenterConsoleTargetSeconds': String(PRESENTER_CONSOLE_TARGET_SECONDS),
@@ -91,15 +102,22 @@ export function presenterViewShot(lang) {
 
     async state(api) {
       const { deckId, deck } = await seedMarketingDeck(api, lang);
-      // The timeline slide: it has notes worth reading, and the slide after it
-      // (the quotes list) makes a legible "Next" thumbnail.
-      const slideId = deck.slideIds.timeline;
+      // The poll slide: /features hangs this shot on "the audience answers on
+      // the slide itself", so the slide that is up has to be one being
+      // answered — with a real, uneven tally on the bars. Its notes are worth
+      // reading, and the end slide after it makes a legible "Next" thumbnail.
+      const slideId = deck.slideIds.poll;
       const slideIndex = deck.slideIds.all.indexOf(slideId);
       await startLiveSession(api, {
         deckId,
         slideId,
-        slideType: 'timeline-slide',
+        slideType: 'poll-slide',
         slideIndex,
+      });
+      await seedPollVotes(api.base, {
+        deckId,
+        slideId,
+        votes: MARKETING_POLL_VOTES,
       });
       return { deckId, slideId };
     },
@@ -123,6 +141,19 @@ export function presenterViewShot(lang) {
         },
         { timeout: 20_000 }
       );
+      // The tally arrives over the interaction poll after the stage renders,
+      // so wait for the seeded total on the stage itself: shooting early gets
+      // the zero state, and a poll at zero is the timeline slide with bars.
+      await page.waitForFunction(
+        (expected) => {
+          const el = document.querySelector('.deck-stage-inner [data-poll-total]');
+          if (!el) return false;
+          const n = Number((el.textContent || '').replace(/\D+/g, ''));
+          return n === expected;
+        },
+        { timeout: 20_000 },
+        MARKETING_POLL_VOTES.reduce((a, b) => a + b, 0)
+      );
       // Stop the stopwatch the presentation started, then zero it: reset alone
       // restarts a running timer (see console-timer.js), and a running clock
       // makes the shot a race against its own settle time.
@@ -134,6 +165,9 @@ export function presenterViewShot(lang) {
           '0:00',
         { timeout: 5_000 }
       );
+      // page.click scrolls its target into view; if anything overflowed after
+      // all, that scroll would crop the frame. Pin the origin before the shot.
+      await page.evaluate(() => window.scrollTo(0, 0));
     },
   };
 }

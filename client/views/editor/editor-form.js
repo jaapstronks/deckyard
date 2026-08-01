@@ -15,6 +15,7 @@ import {
 } from './editor-form/inspector-form.js';
 import { renderTextElementCard } from './editor-form/text-element-card.js';
 import { getCollectionKey } from '../../../shared/slide-types/helpers.js';
+import { fieldFormRows } from '../../../shared/slide-types/form-layout.js';
 import {
   describeUnresolvedType,
   unresolvedNotes,
@@ -438,7 +439,20 @@ export function createRerenderEditor({
 
     const isA11yFieldKey = (key) => key === 'a11yTitle' || key === 'a11ySummary';
 
-    const add = (key) => {
+    /**
+     * Render one schema field into the form.
+     *
+     * `target` is an optional sink — anything with `append()` — used by the
+     * row grouping in renderFieldRows() to collect a declared `formLayout`
+     * pair before wrapping it. It only redirects the *default* destination:
+     * a key that is gated out renders nowhere, and an a11y key still goes to
+     * the Accessibility section, because those routings are about what the
+     * field is, not about who asked for it.
+     *
+     * @param {string} key
+     * @param {{ append: (el: Node) => void }} [target]
+     */
+    const add = (key, target) => {
       const f = fieldByKey.get(key);
       if (!f) return;
       // Hidden fields are carried data, not editor surface; deprecated fields
@@ -477,7 +491,35 @@ export function createRerenderEditor({
         a11yBody.append(el);
         return;
       }
-      form.append(el);
+      (target || form).append(el);
+    };
+
+    /**
+     * Render a run of schema fields in definition order, honouring the
+     * `formLayout: 'pair'` declaration: a run of consecutive paired fields
+     * lands in one `.field-grid` row, everything else gets its own line.
+     *
+     * The single generic form loop, shared by the bulk modal (via
+     * renderSlideFormByType) and the inspector's remaining-keeps pass — so one
+     * declaration on the type means one thing on both surfaces.
+     *
+     * @param {Array<Object>} fields - schema fields, in the order to render
+     */
+    const renderFieldRows = (fields) => {
+      for (const row of fieldFormRows(fields)) {
+        if (!row.pair) {
+          for (const key of row.keys) add(key);
+          continue;
+        }
+        // Collect first, wrap after: a paired key can be gated out (background,
+        // a non-keep in the inspector), and a row of nothing must not leave an
+        // empty grid behind.
+        const nodes = [];
+        const sink = { append: (el) => nodes.push(el) };
+        for (const key of row.keys) add(key, sink);
+        const grid = fieldGrid(nodes);
+        if (grid) form.append(grid);
+      }
     };
 
     // Background, split by how often you reach for it: the colour is a plain
@@ -508,6 +550,10 @@ export function createRerenderEditor({
       slide,
       def,
       add,
+      // The generic branch of the router renders through this, so the bulk
+      // modal and the inspector share one form loop and one reading of the
+      // type's `formLayout` declarations.
+      renderFieldRows,
       used,
       fieldByKey,
       renderField,
@@ -560,9 +606,7 @@ export function createRerenderEditor({
     // `def?.` because a stored slide can outlive its type: a removed core type
     // or a fork's type this install doesn't have resolves to nothing, and the
     // inspector has to degrade rather than take the whole editor down with it.
-    for (const f of def?.fields || []) {
-      if (!used.has(f.key)) add(f.key);
-    }
+    renderFieldRows((def?.fields || []).filter((f) => !used.has(f.key)));
 
     // Rail order, settled 2026-07-26: the type's own settings lead, then the
     // background colour (a frequent one-click choice), then the two collapsed

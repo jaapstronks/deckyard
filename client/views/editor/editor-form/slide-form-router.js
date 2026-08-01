@@ -1,10 +1,7 @@
 import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
 import { renderChartSlideForm } from './slide-forms/chart.js';
 import { renderTableSlideForm } from './slide-forms/table.js';
-import { renderTitleSlideForm } from './slide-forms/title-slide.js';
-import { renderContentSlideForm, renderListSlideForm } from './slide-forms/content-slide.js';
 import { renderImageSlideForm, renderImageTextSlideForm } from './slide-forms/image-slide.js';
-import { renderKpiMetricsSlideForm } from './slide-forms/kpi-metrics.js';
 import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 
 /**
@@ -21,23 +18,25 @@ import { renderContentColumnsForm } from './slide-forms/content-columns.js';
  * (collection-editor.js): add/remove, pointer-based reorder, and — when the
  * field declares `collapsible: true` — per-item collapse.
  *
- * The seven hand-built collection forms (card-stack, icon-card-grid,
- * team-cards, logo-wall, text-blocks, content-columns, gallery) are gone
- * (editor-behaviour-abstraction step 3); those types run on the generic
- * collection editor. content-columns keeps a thin entry because its storage
- * is the flat numbered `col{n}*` model — see the DOCUMENTED EXCEPTION note in
- * slide-forms/content-columns.js.
+ * This table shrinks on purpose (editor-behaviour-abstraction brief). Step 2
+ * took out the four rows (title, content, list, kpi-metrics) whose forms only
+ * said field order plus "put these two side by side" — order is what `fields[]`
+ * already is, and the pairing is a `formLayout: 'pair'` declaration on the
+ * field (shared/slide-types/form-layout.js) read by the generic branch. Step 3
+ * took out the seven hand-built collection forms (card-stack, icon-card-grid,
+ * team-cards, logo-wall, text-blocks, content-columns, gallery); those types
+ * run on the generic collection editor. content-columns keeps a thin entry
+ * because its storage is the flat numbered `col{n}*` model — see the
+ * DOCUMENTED EXCEPTION note in slide-forms/content-columns.js. A form belongs
+ * here only when it does something a declaration cannot — a widget, a derived
+ * control, a non-field toggle.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
-  ['title-slide', renderTitleSlideForm],
-  ['content-slide', renderContentSlideForm],
-  ['list-slide', renderListSlideForm],
   ['chart-slide', renderChartSlideForm],
   ['table-slide', renderTableSlideForm],
   ['image-slide', renderImageSlideForm],
   ['image-text-slide', renderImageTextSlideForm],
-  ['kpi-metrics-slide', renderKpiMetricsSlideForm],
   ['content-columns-slide', renderContentColumnsForm], // DEPRECATED type — numbered-model exception
 ]);
 
@@ -60,7 +59,11 @@ export function renderSlideFormByType(ctx) {
     return true;
   }
 
-  // Default: render all fields in definition order
-  for (const f of ctx.def.fields || []) ctx.add(f.key);
+  // Default: every field in definition order, with a run of consecutive
+  // `formLayout: 'pair'` fields on one row. The loop itself lives in
+  // editor-form.js because the inspector's remaining-keeps pass renders through
+  // exactly the same one — a type declares its form layout once and both
+  // surfaces obey it.
+  ctx.renderFieldRows(ctx.def?.fields || []);
   return true;
 }
