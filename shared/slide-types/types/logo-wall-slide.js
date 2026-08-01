@@ -146,13 +146,18 @@ export default {
       required: false,
       minItems: 0,
       maxItems: MAX_LOGOS,
+      collapsible: true, // item-rich: per-logo collapse in the editor
       itemDefaults: { image: '', name: '', alt: '', link: '' },
       itemFields: [
         { key: 'image', type: 'image', label: 'Logo image' },
         { key: 'name', type: 'string', label: 'Name', maxLength: 80 },
+        // Declared because the renderer reads it and itemDefaults seeds it —
+        // it was only ever missing here (team-cards/gallery declare theirs).
+        { key: 'alt', type: 'string', label: 'Alt text', maxLength: 180 },
         // Optional: makes the whole logo clickable. `#N` jumps to slide N in the
         // deck (presenter only); an http(s)/mailto URL opens in a new tab.
-        { key: 'link', type: 'string', label: 'Link URL', maxLength: 500 },
+        // `editor:` marks the widget exception (step-4 vocabulary seed).
+        { key: 'link', type: 'string', label: 'Link URL', maxLength: 500, editor: 'card-link' },
       ],
     },
 

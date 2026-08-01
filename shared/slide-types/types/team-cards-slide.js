@@ -128,6 +128,52 @@ export default {
       maxLength: 200,
     },
     {
+      key: 'subheading2',
+      label: 'Right group subheading',
+      type: 'string',
+      required: false,
+      maxLength: 220,
+    },
+
+    // New format: members[] array (preferred for AI generation). Declared
+    // before the layout enums so the editor's definition-order form leads
+    // with content (the blocks), settings after.
+    {
+      key: 'members',
+      label: 'Members',
+      type: 'items',
+      required: false,
+      minItems: 0,
+      maxItems: MAX_CARDS,
+      collapsible: true, // item-rich: per-block collapse in the editor
+      // Seed placeholder title/caption so a newly added block renders immediately
+      // (an all-empty member is skipped by the renderer). Matches the side form's
+      // "+ Add block" behaviour.
+      itemDefaults: {
+        image: '',
+        alt: '',
+        imageFocusX: 50,
+        imageFocusY: 50,
+        name: 'Title',
+        byline: 'Caption',
+        linkedin: '',
+      },
+      itemFields: [
+        // Labels match the "Image blocks" framing (and the side form): the
+        // photo's name is the block Title, the byline is its Caption. These
+        // labels also drive the in-slide inline "+ …" ghost chips.
+        { key: 'image', type: 'image', label: 'Photo' },
+        // Declared because the renderer reads it (see resolveMembers) and
+        // itemDefaults seeds it — it was only ever missing here, which made the
+        // definition an incomplete description of the block. gallery-slide's
+        // images[] declares its `alt` the same way.
+        { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
+        { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
+        { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
+        { key: 'linkedin', type: 'string', label: 'LinkedIn URL', maxLength: 300 },
+      ],
+    },
+    {
       key: 'background',
       label: 'Background',
       type: 'enum',
@@ -170,55 +216,12 @@ export default {
       options: ['', '1', '2', '3', '4', '5'],
     },
     {
-      key: 'subheading2',
-      label: 'Right group subheading',
-      type: 'string',
-      required: false,
-      maxLength: 220,
-    },
-    {
       key: 'cardCount',
       label: 'Number of cards',
       type: 'enum',
       required: false,
       options: Array.from({ length: MAX_CARDS }, (_v, i) => String(i + 1)),
       deprecated: true,
-    },
-
-    // New format: members[] array (preferred for AI generation)
-    {
-      key: 'members',
-      label: 'Members',
-      type: 'items',
-      required: false,
-      minItems: 0,
-      maxItems: MAX_CARDS,
-      // Seed placeholder title/caption so a newly added block renders immediately
-      // (an all-empty member is skipped by the renderer). Matches the side form's
-      // "+ Add block" behaviour.
-      itemDefaults: {
-        image: '',
-        alt: '',
-        imageFocusX: 50,
-        imageFocusY: 50,
-        name: 'Title',
-        byline: 'Caption',
-        linkedin: '',
-      },
-      itemFields: [
-        // Labels match the "Image blocks" framing (and the side form): the
-        // photo's name is the block Title, the byline is its Caption. These
-        // labels also drive the in-slide inline "+ …" ghost chips.
-        { key: 'image', type: 'image', label: 'Photo' },
-        // Declared because the renderer reads it (see resolveMembers) and
-        // itemDefaults seeds it — it was only ever missing here, which made the
-        // definition an incomplete description of the block. gallery-slide's
-        // images[] declares its `alt` the same way.
-        { key: 'alt', type: 'string', label: 'Photo alt text', maxLength: 180 },
-        { key: 'name', type: 'string', label: 'Title', maxLength: 80 },
-        { key: 'byline', type: 'string', label: 'Caption', maxLength: 120 },
-        { key: 'linkedin', type: 'string', label: 'LinkedIn URL', maxLength: 300 },
-      ],
     },
 
     // Legacy 1..12 cards: image + name + byline + optional explicit alt (author intent) + focus.

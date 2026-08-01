@@ -4,6 +4,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
+import { createCollectionEditor } from './collection-editor.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -74,6 +75,8 @@ export function createRenderField({
   def,
   PARTNER_LOGOS,
   fieldRenderers,
+  // Deck slides (minus the current one) for in-collection card-link widgets.
+  deckSlides = [],
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
@@ -87,7 +90,6 @@ export function createRenderField({
     fieldMarkdown,
     fieldCode,
     fieldEnum,
-    fieldGrid,
     fieldBackground,
     fieldImage,
     fieldTitleBgImage,
@@ -377,291 +379,18 @@ export function createRenderField({
     }
 
     if (field.type === 'items') {
-      const arr = Array.isArray(slide.content?.[field.key])
-        ? slide.content[field.key]
-        : structuredClone(def?.defaults?.[field.key] || []);
-      const minItems = Math.max(0, Number(field?.minItems || 0) || 0);
-      const maxItems = Math.max(minItems, Number(field?.maxItems || 99) || 99);
-      const itemDefaults =
-        field?.itemDefaults && typeof field.itemDefaults === 'object'
-          ? field.itemDefaults
-          : {};
-      const itemFields = Array.isArray(field?.itemFields) ? field.itemFields : [];
-
-      const wrap = h('div', { class: 'stack is-field' });
-      wrap.append(
-        h('div', {
-          class: 'field-label',
-          text: t(field.labelKey || field.key, field.label || field.key),
-        })
-      );
-
-      const getCurrentArr = () =>
-        Array.isArray(slide.content?.[field.key])
-          ? slide.content[field.key]
-          : arr;
-
-      const setArr = (next) => {
-        slide.content[field.key] = next;
-        markDirty?.();
-        scheduleUiRefresh?.();
-      };
-
-      const makeInput = (label, value, { maxLength, multiline } = {}, onChange) => {
-        const input = multiline
-          ? h('textarea', { class: 'form-input form-textarea-sm', rows: '2' })
-          : h('input', { class: 'form-input' });
-        input.value = value ?? '';
-        if (Number(maxLength) > 0) input.maxLength = Number(maxLength);
-        input.addEventListener('input', () => onChange(input.value));
-        return h('div', { class: 'stack is-field' }, [
-          h('div', { class: 'field-label', text: label }),
-          input,
-        ]);
-      };
-
-      const list = h('div', { class: 'stack is-gap-lg items-reorder-list' });
-      // Per-field override wins; otherwise the List type stays single-column
-      // and everything else defaults to the compact two-column grid.
-      const isListItems = slide.type === 'list-slide' && field.key === 'items';
-      const cols = Number.isInteger(field?.itemColumns)
-        ? Math.max(1, field.itemColumns)
-        : isListItems
-        ? 1
-        : 2;
-      const isKpiMetrics =
-        slide.type === 'kpi-metrics-slide' && field.key === 'metrics';
-
-      const btnAdd = h('button', {
-        class: 'btn btn-secondary',
-        text: t('editor.items.add', '+ Add item'),
+      // The one generic collection editor (add/remove/reorder/collapse),
+      // driven by this field's schema. See collection-editor.js.
+      return createCollectionEditor({
+        h,
+        slide,
+        def,
+        field,
+        fieldRenderers,
+        deckSlides,
+        markDirty,
+        scheduleUiRefresh,
       });
-
-      // Drag state
-      let draggingIndex = null;
-      let dropTargetIndex = null;
-
-      const clearDropIndicators = () => {
-        for (const el of list.querySelectorAll('.card-group.is-drop-before, .card-group.is-drop-after')) {
-          el.classList.remove('is-drop-before', 'is-drop-after');
-        }
-        dropTargetIndex = null;
-      };
-
-      const setDropIndicator = (groupEl, pos, targetIdx) => {
-        clearDropIndicators();
-        dropTargetIndex = targetIdx;
-        groupEl.classList.add(pos === 'before' ? 'is-drop-before' : 'is-drop-after');
-      };
-
-      const moveItem = (fromIdx, toIdx) => {
-        if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
-        const current = getCurrentArr();
-        if (fromIdx >= current.length) return;
-        const next = current.slice();
-        const [moved] = next.splice(fromIdx, 1);
-        // Adjust target index after removal
-        const insertIdx = toIdx > fromIdx ? toIdx - 1 : toIdx;
-        next.splice(insertIdx, 0, moved);
-        setArr(next);
-        renderList();
-      };
-
-      const createDragHandle = () => {
-        const handle = h('button', {
-          class: 'item-drag-handle',
-          type: 'button',
-          title: t('editor.slideList.dragToReorder', 'Drag to reorder'),
-          draggable: 'false',
-        });
-        // Grip icon (6 dots)
-        handle.innerHTML = `<svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-          <circle cx="3" cy="3" r="1.5"/>
-          <circle cx="9" cy="3" r="1.5"/>
-          <circle cx="3" cy="8" r="1.5"/>
-          <circle cx="9" cy="8" r="1.5"/>
-          <circle cx="3" cy="13" r="1.5"/>
-          <circle cx="9" cy="13" r="1.5"/>
-        </svg>`;
-        return handle;
-      };
-
-      const renderList = () => {
-        const current = getCurrentArr();
-        list.innerHTML = '';
-
-        for (let i = 0; i < current.length; i += 1) {
-          const item =
-            current[i] && typeof current[i] === 'object' ? current[i] : {};
-          const group = h('div', { class: 'stack card-group' });
-          group.dataset.itemIndex = String(i);
-          group.setAttribute('draggable', 'true');
-
-          const header = h('div', {
-            class: 'row spread card-group-header',
-          });
-
-          // Left side: drag handle + title
-          const headerLeft = h('div', { class: 'row card-group-header-left' });
-          headerLeft.append(createDragHandle());
-          headerLeft.append(
-            h('div', {
-              class: 'card-group-title',
-              text: t('editor.items.itemN', 'Item {n}', { n: i + 1 }),
-            })
-          );
-          header.append(headerLeft);
-
-          header.append(
-            h('button', {
-              class: 'btn btn-secondary btn-icon card-remove-btn',
-              type: 'button',
-              text: '×',
-              title: t('editor.items.remove', 'Remove item'),
-              'aria-label': t('editor.items.removeN', 'Remove item {n}', { n: i + 1 }),
-              disabled: current.length <= minItems,
-              onclick: () => {
-                const now = getCurrentArr();
-                if (now.length <= minItems) return;
-                const next = now.slice();
-                next.splice(i, 1);
-                setArr(next);
-                renderList();
-              },
-            })
-          );
-          group.append(header);
-
-          // Drag events
-          group.addEventListener('dragstart', (e) => {
-            draggingIndex = i;
-            group.classList.add('is-dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', String(i));
-          });
-
-          group.addEventListener('dragend', () => {
-            draggingIndex = null;
-            group.classList.remove('is-dragging');
-            clearDropIndicators();
-          });
-
-          group.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (draggingIndex === null || draggingIndex === i) {
-              clearDropIndicators();
-              return;
-            }
-            const rect = group.getBoundingClientRect();
-            const midY = rect.top + rect.height / 2;
-            const pos = e.clientY < midY ? 'before' : 'after';
-            const targetIdx = pos === 'before' ? i : i + 1;
-            setDropIndicator(group, pos, targetIdx);
-          });
-
-          group.addEventListener('dragleave', (e) => {
-            if (e.currentTarget?.contains?.(e.relatedTarget)) return;
-            if (group.classList.contains('is-drop-before') || group.classList.contains('is-drop-after')) {
-              clearDropIndicators();
-            }
-          });
-
-          group.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const fromIdx = draggingIndex;
-            const toIdx = dropTargetIndex;
-            clearDropIndicators();
-            draggingIndex = null;
-            if (fromIdx !== null && toIdx !== null && fromIdx !== toIdx) {
-              moveItem(fromIdx, toIdx);
-            }
-          });
-
-          const setItemKey = (key, v) => {
-            const now = getCurrentArr();
-            const next = now.slice();
-            const nextItem =
-              next[i] && typeof next[i] === 'object' ? { ...next[i] } : {};
-            nextItem[key] = v;
-            next[i] = nextItem;
-            slide.content[field.key] = next;
-            markDirty?.();
-            scheduleUiRefresh?.();
-          };
-
-          const fieldByItemKey = new Map(
-            itemFields
-              .filter((f) => f && (f.type === 'string' || f.type === 'image'))
-              .map((f) => [String(f.key || ''), f])
-          );
-
-          const makeByKey = (key) => {
-            const f = fieldByItemKey.get(key);
-            if (!f) return null;
-            if (f.type === 'image' && fieldImage) {
-              // Use fieldImage with a proxy slide object that maps to this item
-              const proxySlide = {
-                type: slide.type,
-                id: slide.id,
-                content: new Proxy(item, {
-                  get(target, prop) {
-                    return target[prop];
-                  },
-                  set(target, prop, value) {
-                    target[prop] = value;
-                    return true;
-                  },
-                }),
-              };
-              const imageField = { ...f, key, hideHelp: true };
-              return fieldImage(proxySlide, imageField, (url) => {
-                setItemKey(key, url);
-                renderList();
-              });
-            }
-            return makeInput(
-              t(f.labelKey || key, f.label || key),
-              item?.[key] || '',
-              { maxLength: f.maxLength, multiline: !!f.multiline },
-              (v) => setItemKey(key, v)
-            );
-          };
-
-          if (isKpiMetrics) {
-            // KPI metrics UX: label on its own line; delta + note side-by-side.
-            const row1 = fieldGrid([makeByKey('value'), makeByKey('unit')], 2);
-            const row2 = fieldGrid([makeByKey('label')], 1);
-            const row3 = fieldGrid([makeByKey('delta'), makeByKey('note')], 2);
-            if (row1) group.append(row1);
-            if (row2) group.append(row2);
-            if (row3) group.append(row3);
-          } else {
-            const rowFields = [];
-            for (const f of itemFields) {
-              if (!f || (f.type !== 'string' && f.type !== 'image')) continue;
-              const key = String(f.key || '');
-              rowFields.push(makeByKey(key));
-            }
-            group.append(fieldGrid(rowFields, cols));
-          }
-          list.append(group);
-        }
-
-        btnAdd.disabled = current.length >= maxItems;
-      };
-
-      btnAdd.addEventListener('click', () => {
-        const current = getCurrentArr();
-        if (current.length >= maxItems) return;
-        setArr([...current, structuredClone(itemDefaults)]);
-        renderList();
-      });
-
-      wrap.append(list, btnAdd);
-      renderList();
-
-      return wrap;
     }
 
     return null;

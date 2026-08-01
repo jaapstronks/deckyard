@@ -173,6 +173,7 @@ export default {
       // AI validation without a numbered counterpart, while legacy ≤3-row decks
       // render byte-for-byte unchanged. See A0.4 in docs/plans.
       maxItems: 4,
+      collapsible: true, // per-row collapse in the editor (blocks stay flat)
       // The per-row `arrow` is a typed relation to the NEXT row, not content:
       // "down" ≈ leads-to, "up" ≈ follows-from. In the reader/reflow projection
       // this turns the rows into an ordered causal sequence (<ol>) with a small

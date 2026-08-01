@@ -402,12 +402,17 @@ export function createRerenderEditor({
       ensureTitleSlideBackground(slide.content);
     }
 
+    // Deck slides (minus the current one) for in-deck card-link pickers, in
+    // both the per-type forms and the generic collection editor.
+    const deckSlides = buildDeckSlideOptions(pres, slide?.id);
+
     const renderField = createRenderField({
       h,
       pres,
       slide,
       def,
       PARTNER_LOGOS,
+      deckSlides,
       fieldRenderers: {
         fieldText,
         fieldNumber,
@@ -436,6 +441,13 @@ export function createRerenderEditor({
     const add = (key) => {
       const f = fieldByKey.get(key);
       if (!f) return;
+      // Hidden fields are carried data, not editor surface; deprecated fields
+      // are legacy mirrors (numbered card1Title…, count enums) kept for old
+      // decks — the canonical array is the edited shape. Neither renders.
+      if (f.hidden || f.deprecated) {
+        used.add(key);
+        return;
+      }
       // Slide-wide background fields have their own surfaces (colour group +
       // image section), built below.
       if (isBackgroundFieldKey(key)) {
@@ -499,8 +511,7 @@ export function createRerenderEditor({
       used,
       fieldByKey,
       renderField,
-      // Deck slides (minus the current one) for in-deck card-link pickers.
-      deckSlides: buildDeckSlideOptions(pres, slide?.id),
+      deckSlides,
       fieldRenderers: {
         fieldGrid,
         fieldText,

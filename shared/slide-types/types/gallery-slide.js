@@ -99,6 +99,7 @@ export default {
       required: true,
       minItems: 2,
       maxItems: 6,
+      collapsible: true, // item-rich: per-image collapse in the editor
       itemDefaults: {
         src: '',
         caption: '',
@@ -111,6 +112,8 @@ export default {
           type: 'image',
           required: true,
         },
+        // Focus is carried data here, not editor surface (`hidden`): the
+        // canvas focus handle and the inspector's image card own it.
         {
           key: 'focusX',
           label: 'Focus X',
@@ -119,6 +122,7 @@ export default {
           min: 0,
           max: 100,
           step: 1,
+          hidden: true,
         },
         {
           key: 'focusY',
@@ -128,6 +132,7 @@ export default {
           min: 0,
           max: 100,
           step: 1,
+          hidden: true,
         },
         {
           key: 'caption',
