@@ -13,7 +13,9 @@ import {
   writeLangMode,
 } from '../../../lib/format/i18n.js';
 import {
+  clearSessionLocaleOverride,
   fetchUiLocaleManifest,
+  getSessionLocaleOverride,
   getUiLocale,
   setUiLocale,
 } from '../../../lib/ui-i18n.js';
@@ -420,8 +422,12 @@ export function createPreferencesTab({ user, nav }) {
     try {
       const [my, app] = await Promise.all([fetchMySettings(), fetchAppSettings()]);
       if (typeof my?.uiLang === 'string') langMode = my.uiLang;
+      // A `?lang=`/`?locale=` URL param overrides the saved preference for the
+      // session, so the picker must show the language actually in effect — not
+      // the stored `uiLocale` it outranks.
       const myUiLocale =
-        typeof my?.uiLocale === 'string' ? my.uiLocale : getUiLocale();
+        getSessionLocaleOverride() ||
+        (typeof my?.uiLocale === 'string' ? my.uiLocale : getUiLocale());
 
       const supportedSlideLangs = Array.isArray(app?.supportedSlideLangs)
         ? app.supportedSlideLangs
@@ -524,6 +530,9 @@ export function createPreferencesTab({ user, nav }) {
 
       // Apply locale immediately - use the saved value from server or fallback to what user selected
       const finalLocale = typeof updatedMe?.uiLocale === 'string' ? updatedMe.uiLocale : uiLocale;
+      // An explicit save supersedes a `?lang=` session override — clear it
+      // before applying, so the re-rendered picker shows the saved choice.
+      clearSessionLocaleOverride();
       await setUiLocale(finalLocale);
 
       // Re-render current route (important if UI locale changed).

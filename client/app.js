@@ -42,6 +42,7 @@ import { initUiMode } from './lib/theme/ui-mode.js';
 import { fetchAppSettings, fetchMySettings } from './lib/net/settings.js';
 import { setSupportedLangs, writeLangMode } from './lib/format/i18n.js';
 import {
+  getSessionLocaleOverride,
   getUiLocale,
   resolveInitialUiLocale,
   setUiLocale,
@@ -221,7 +222,12 @@ async function render() {
       if (Array.isArray(appSettings?.supportedSlideLangs))
         setSupportedLangs(appSettings.supportedSlideLangs);
       const mySettings = await fetchMySettings();
+      // A `?lang=`/`?locale=` URL param is an explicit per-session choice and
+      // takes priority over the saved server preference for the whole session,
+      // so we don't clobber it here (chiefly the sandbox guest, whose default
+      // uiLocale is 'en' and would otherwise override a deep-linked ?lang=nl).
       if (
+        !getSessionLocaleOverride() &&
         typeof mySettings?.uiLocale === 'string' &&
         mySettings.uiLocale !== getUiLocale()
       )
