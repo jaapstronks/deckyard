@@ -148,7 +148,7 @@ test('route serves a cached webp to the owner', async () => {
     title: 'Owned deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
-    slides: [{ id: 's1', type: 'text-slide', content: { title: 'Hi' } }],
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
   const pres = await getPresentation(testScope(repoRoot), created.id);
   const theme = await loadTheme(repoRoot, pres.theme);
@@ -180,7 +180,7 @@ test('route denies a non-owner on a private deck', async () => {
     title: 'Private deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
-    slides: [{ id: 's1', type: 'text-slide', content: { title: 'Hi' } }],
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
 
   const res = mockRes();

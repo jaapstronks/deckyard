@@ -43,7 +43,7 @@ test('list payload reports hasSlides instead of shipping slide content', async (
   await createPresentation(testScope(tmp), {
     title: 'Has a slide',
     ownerEmail: 'owner@example.com',
-    slides: [{ id: 's1', type: 'text-slide', content: { title: 'Hi' } }],
+    slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
   const list = await listPresentations(testScope(tmp));
   const item = list.find((p) => p.title === 'Has a slide');

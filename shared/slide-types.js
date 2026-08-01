@@ -11,6 +11,7 @@ export {
   GLOBAL_SLIDE_FIELD_KEYS,
   CUSTOM_SLIDE_TYPE_NAMES,
   OVERRIDDEN_CORE_SLIDE_TYPE_NAMES,
+  resolveSlideTypeName,
 } from './slide-types/registry.js';
 
 export {
