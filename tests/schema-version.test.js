@@ -123,6 +123,50 @@ test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () =
   assert.deepEqual(migrated.slides[0].content.rows, rows);
 });
 
+test('v3->v4 folds a canonical reverse-DNS type down to the registry key', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 3,
+    title: 'Canon',
+    slides: [
+      { id: randomUUID(), type: 'eu.deckyard.slide.title', content: { title: 'Hi' } },
+      { id: randomUUID(), type: 'core/title-slide', content: { title: 'Bye' } },
+    ],
+  };
+  const migrated = migratePresentation(deck);
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(migrated.slides[0].type, 'title-slide');
+  assert.equal(migrated.slides[1].type, 'title-slide');
+});
+
+test('v3->v4 leaves a bare key untouched and never drops an unknown type', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 3,
+    title: 'Mixed',
+    slides: [
+      { id: randomUUID(), type: 'title-slide', content: { title: 'Known' } },
+      { id: randomUUID(), type: 'acme/hero', content: { title: 'Foreign' } },
+    ],
+  };
+  const migrated = migratePresentation(deck);
+  // A bare key resolves to itself; a type naming no registered type is kept verbatim.
+  assert.equal(migrated.slides[0].type, 'title-slide');
+  assert.equal(migrated.slides[1].type, 'acme/hero');
+});
+
+test('v3->v4 is idempotent — a second run rewrites nothing', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 3,
+    title: 'Canon',
+    slides: [{ id: randomUUID(), type: 'eu.deckyard.slide.title', content: { title: 'Hi' } }],
+  };
+  const once = migratePresentation(deck);
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice, once);
+});
+
 test('a deck from a newer build is never downgraded', () => {
   const future = { id: randomUUID(), schemaVersion: 99, title: 'Future' };
   const out = migratePresentation(future);

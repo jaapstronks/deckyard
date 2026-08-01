@@ -17,9 +17,10 @@
 
 import { resolveRows } from './types/text-blocks-slide.js';
 import { resolveCardStackItems } from './types/card-stack-slide.js';
+import { resolveSlideTypeName } from './registry.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
@@ -81,6 +82,25 @@ export const SCHEMA_MIGRATIONS = [
       if (Array.isArray(content.items) && content.items.length > 0) continue;
       const items = resolveCardStackItems(content);
       if (Array.isArray(items) && items.length > 0) content.items = items;
+    }
+    return pres;
+  },
+
+  // v3 -> v4: fold stored `slides[].type` down to the bare registry key. Before
+  // the shared write-seam (`normalizeSlides`, PR #511) some write paths persisted
+  // whatever spelling arrived — the canonical reverse-DNS id
+  // (`eu.deckyard.slide.title`), a `core/…` qualified form, or the bare key. Now
+  // that storage holds one spelling, this step brings decks written before the
+  // seam into line so nothing on disk stays non-canonical. It rewrites the `type`
+  // string to the key it already resolves to; a value that names no registered
+  // type is left verbatim (a foreign/unknown type is never dropped). Idempotent:
+  // a bare key resolves to itself, so a second run is a no-op.
+  (pres) => {
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || typeof slide.type !== 'string') continue;
+      const key = resolveSlideTypeName(slide.type);
+      if (key && key !== slide.type) slide.type = key;
     }
     return pres;
   },

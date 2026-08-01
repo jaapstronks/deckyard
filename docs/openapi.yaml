@@ -496,7 +496,11 @@ paths:
               properties:
                 type:
                   type: string
-                  description: Slide type (e.g., content-slide, title-slide)
+                  description: >-
+                    Slide type as its canonical reverse-DNS id (e.g.
+                    `eu.deckyard.slide.content`). The bare registry key
+                    (`content-slide`) is also accepted and normalized on write
+                    during the beta convergence.
                 content:
                   type: object
                   description: Slide content
@@ -608,7 +612,10 @@ paths:
               properties:
                 type:
                   type: string
-                  description: Slide type
+                  description: >-
+                    Slide type as its canonical reverse-DNS id (e.g.
+                    `eu.deckyard.slide.title`); the bare registry key is also
+                    accepted and normalized on write during the beta convergence.
                 content:
                   type: object
                   description: New slide content
@@ -1805,7 +1812,9 @@ components:
           format: uuid
         type:
           type: string
-          description: Slide type (e.g., title-slide, bullet-slide)
+          description: >-
+            Slide type as its canonical reverse-DNS id (e.g.
+            `eu.deckyard.slide.title`) — the one spelling reads and exports emit.
         content:
           type: object
           description: >-

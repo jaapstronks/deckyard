@@ -4,6 +4,41 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.11.0](https://github.com/jaapstronks/deckyard/compare/v1.10.0...v1.11.0) (2026-08-01)
+
+
+### Added
+
+* **api:** canonicalize slides[].type on export/read; drop slideTypes manifest ([#514](https://github.com/jaapstronks/deckyard/issues/514)) ([2dffe2b](https://github.com/jaapstronks/deckyard/commit/2dffe2b157f1825f9d331ba08c169a73a9d2ed41))
+* **api:** one write-seam validates and normalizes slides[].type ([#511](https://github.com/jaapstronks/deckyard/issues/511)) ([0e2973d](https://github.com/jaapstronks/deckyard/commit/0e2973d5e7db51bd324433ea799c947278f71034))
+* **capture:** tranche-2 marketing recipes for the /features page ([#512](https://github.com/jaapstronks/deckyard/issues/512)) ([e723f42](https://github.com/jaapstronks/deckyard/commit/e723f42709466a08af32608f6e49197c2340f037))
+* **organizations:** invite people, and let members reach the member list ([94442eb](https://github.com/jaapstronks/deckyard/commit/94442ebb5b2ac9dc5bf8b5584fd68bd111098684))
+* **organizations:** organization profile screen, with delete for the owner ([#498](https://github.com/jaapstronks/deckyard/issues/498)) ([2773f6c](https://github.com/jaapstronks/deckyard/commit/2773f6cecfb18e161297bdca694abb712854b26d))
+* **slide-types:** three tiers and a `fallback` facet that enforces them ([#502](https://github.com/jaapstronks/deckyard/issues/502)) ([eba33ec](https://github.com/jaapstronks/deckyard/commit/eba33ec0b8743f2971d55815148e07d220b9d14c))
+* **slide-types:** v3-&gt;v4 migration folds stored type spellings to the registry key ([#515](https://github.com/jaapstronks/deckyard/issues/515)) ([8db6bff](https://github.com/jaapstronks/deckyard/commit/8db6bffbee5472afa47da8115acca7b524cb0f8c))
+* **spec:** open the published schema and make `structure` normative ([#504](https://github.com/jaapstronks/deckyard/issues/504)) ([fea73f0](https://github.com/jaapstronks/deckyard/commit/fea73f00106cfffd24acbcfd61c651cf31870aad))
+* **spec:** reverse-DNS type ids, `-slide` dropped, and the evolution rule ([#506](https://github.com/jaapstronks/deckyard/issues/506)) ([dfe1f0b](https://github.com/jaapstronks/deckyard/commit/dfe1f0bdda696c0c5d407980b8514bcb6beac22f))
+
+
+### Fixed
+
+* **export:** anchor slide base font to theme, stop app-chrome font leaking into PDF ([37afb40](https://github.com/jaapstronks/deckyard/commit/37afb406b3313660f29a9366dc1990a0ba605cb3))
+* **export:** inline local url() assets and blank unfetchable images ([#488](https://github.com/jaapstronks/deckyard/issues/488)) ([e3b43e1](https://github.com/jaapstronks/deckyard/commit/e3b43e1e5557df1877c4d2b5a8ccbc463c433728))
+* **export:** stop blurred shadows reaching the PDF as luminosity masks ([#492](https://github.com/jaapstronks/deckyard/issues/492)) ([6e04a5c](https://github.com/jaapstronks/deckyard/commit/6e04a5c61ad62d67dd334f921de1e420be51f725))
+* **i18n:** Dutch field labels for countdown/custom-html/embed/lead-capture/matrix/process slides ([#518](https://github.com/jaapstronks/deckyard/issues/518)) ([4d27091](https://github.com/jaapstronks/deckyard/commit/4d270919fdfb5eec20ea277375b741145059348e))
+* **i18n:** one permission-label helper, Dutch comparison/timeline field labels ([#513](https://github.com/jaapstronks/deckyard/issues/513)) ([70c9eb8](https://github.com/jaapstronks/deckyard/commit/70c9eb84b4fcbb7fb246589f9a3e4bf00eb6f2e7))
+* **organizations:** report invitations that were sent, administer the organization you are in ([#500](https://github.com/jaapstronks/deckyard/issues/500)) ([084601b](https://github.com/jaapstronks/deckyard/commit/084601bc89fd79879661803fa563009f096840ed))
+* **slide-types:** a fork override of a core name reaches the browser ([#507](https://github.com/jaapstronks/deckyard/issues/507)) ([a77958c](https://github.com/jaapstronks/deckyard/commit/a77958cafa05735aff496a910c039aabd27a5abc))
+* **theme:** declare the generated slide gradient where its coordinates live ([#493](https://github.com/jaapstronks/deckyard/issues/493)) ([8ba7a2e](https://github.com/jaapstronks/deckyard/commit/8ba7a2e3b973f5cad42690a957944b22032163e6))
+* **title-slide:** stop left logo corner from shifting the title block ([eac3aeb](https://github.com/jaapstronks/deckyard/commit/eac3aeb602db83778bbdbdc629676c917baca48c))
+
+
+### Changed
+
+* **export:** cap PDF images at their display size, not source resolution ([#497](https://github.com/jaapstronks/deckyard/issues/497)) ([d83216f](https://github.com/jaapstronks/deckyard/commit/d83216f08a20a337b4c3c5677f29daca2a52e8f1))
+* **export:** rasterize gradient slide backgrounds in the PDF export ([1181d7f](https://github.com/jaapstronks/deckyard/commit/1181d7f6880a4438e576cfb66d2f7f535e59ad03))
+* **export:** rasterize visible gradient pseudo-element layers too ([#491](https://github.com/jaapstronks/deckyard/issues/491)) ([017c058](https://github.com/jaapstronks/deckyard/commit/017c05815664aea8d6d15d8eea7e16f436abca3a))
+
 ## [1.10.0](https://github.com/jaapstronks/deckyard/compare/v1.9.0...v1.10.0) (2026-07-30)
 
 
