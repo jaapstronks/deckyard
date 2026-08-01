@@ -5,7 +5,7 @@
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { methodNotAllowed } from '../../../utils/http.js';
-import { newSlide, validateSlide, resolveSlideTypeName } from '../../../../shared/slide-types.js';
+import { newSlide, validateSlide, resolveSlideTypeName, canonicalSlideType } from '../../../../shared/slide-types.js';
 import { loadTheme, resolveThemeId } from '../../../utils/themes.js';
 import { requireScope, getPresentationWithAccess, parseJsonBody, apiSuccess, apiCreated, apiError } from './middleware.js';
 import { emailCanEditCustomHtml, customHtmlEditViolation } from '../../../utils/route-middleware.js';
@@ -17,7 +17,8 @@ function sanitizeSlide(slide) {
   if (!slide) return null;
   return {
     id: slide.id,
-    type: slide.type,
+    // Published spelling (canonical id) on the wire; storage keeps the key.
+    type: canonicalSlideType(slide.type),
     content: slide.content || {},
     notes: slide.notes || '',
     parentId: slide.parentId || null,
@@ -378,7 +379,7 @@ async function handleReorderSlides(ctx, presentationId) {
   // Return summary of new order
   const slidesSummary = reorderedSlides.map((s, idx) => ({
     id: s.id,
-    type: s.type,
+    type: canonicalSlideType(s.type),
     index: idx,
   }));
 

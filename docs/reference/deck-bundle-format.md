@@ -63,8 +63,8 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ## `deck.json`
 
 The portable deck (`presentationToDeck` output: `format`, `version`, `title`,
-`theme`, the `slideTypes` identity manifest, and `slides`). Asset refs in slide
-content are rewritten from `/uploads/x.png` to the bundle ref
+`theme`, and `slides`, each slide's `type` in its canonical id). Asset refs in
+slide content are rewritten from `/uploads/x.png` to the bundle ref
 `assets/<hash>.<ext>`. External (`http(s)://`) image URLs are left untouched —
 they are already portable and are not fetched into the bundle.
 

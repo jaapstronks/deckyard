@@ -68,10 +68,12 @@ export default {
 };
 ```
 
-The portable deck export records which definitions a deck was written against in
-a top-level `slideTypes` map (`{ "title-slide": "eu.deckyard.slide.title" }`),
-recomputed on every export so it never drifts. That map is also where a reader
-learns the canonical published id for the legacy key a slide stores.
+The portable deck export names each slide's type by its canonical id on
+`slides[].type` (`eu.deckyard.slide.title`), which already records the definition
+a deck was written against and MAY pin an `@version`. There is no separate
+`slideTypes` manifest — `canonicalSlideType` projects the internal registry key
+to the published id on export/read, and `resolveSlideTypeName` folds any spelling
+back on import.
 
 ---
 

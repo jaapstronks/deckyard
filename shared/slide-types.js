@@ -12,6 +12,7 @@ export {
   CUSTOM_SLIDE_TYPE_NAMES,
   OVERRIDDEN_CORE_SLIDE_TYPE_NAMES,
   resolveSlideTypeName,
+  canonicalSlideType,
 } from './slide-types/registry.js';
 
 export {

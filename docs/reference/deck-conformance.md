@@ -36,9 +36,9 @@ shipped.
 
 To reach level 1:
 
-1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slideTypes`,
-   `slides` — see [`deck-format.md`](./deck-format.md). Unknown top-level keys
-   are ignored, never rejected.
+1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slides` — see
+   [`deck-format.md`](./deck-format.md). Unknown top-level keys are ignored,
+   never rejected.
 2. **Accept any well-formed type id.** `slides[].type` is the type's canonical
    id — reverse-DNS for a declarant with an authority
    (`eu.deckyard.slide.title`), `namespace/name` for one without — optionally
@@ -71,12 +71,12 @@ stripping an `@version` suffix). There is no alias table a reader must learn.
 Two older spellings exist as **pre-convergence residue, not as part of the
 format**: the bare internal registry key (`title-slide`) and the qualified form
 (`core/title-slide`), both from before the identity model settled. Deckyard
-still accepts them on every ingest path and normalizes them to one form, and
-its own export still emits the bare key until the convergence work lands
-(tracked on `ROADMAP.md`). A second implementation owes these spellings
-nothing: it MAY treat them as unknown types, which the
-[unknown-type contract](#the-unknown-type-contract) already renders without
-loss.
+still accepts them on every ingest path and normalizes them to one form, but its
+own export and read APIs now emit the canonical id — the bare key survives only
+as an internal storage key, folded away at every boundary. A second
+implementation owes these spellings nothing: it MAY treat them as unknown types,
+which the [unknown-type contract](#the-unknown-type-contract) already renders
+without loss.
 
 An earlier revision of this page promised the older spellings would "stay valid
 forever". That promise is withdrawn, deliberately: it was written while the
@@ -135,9 +135,9 @@ completeness, and a reader must not guess at a shape it does not know.
 | nothing but the slide | the unknown-type contract above |
 
 A reader that reaches case 3 for a *Deckyard* type is a reader that has not read
-`GET /api/slide-types` or the deck's `slideTypes` manifest; both carry the
-declaration. Case 3 is for types that are genuinely nobody's business but their
-declarant's — which is exactly the case a format has to survive to be open.
+`GET /api/slide-types`, which carries the declaration. Case 3 is for types that
+are genuinely nobody's business but their declarant's — which is exactly the
+case a format has to survive to be open.
 
 ### The item contract
 
@@ -206,8 +206,8 @@ a second implementation is a weekend of work. Full argument in
 
 ## See also
 
-- [`deck-format.md`](./deck-format.md) — the envelope, the identity manifest,
-  the round-trip guarantee, and the [evolution
+- [`deck-format.md`](./deck-format.md) — the envelope, the one-spelling type
+  identity, the round-trip guarantee, and the [evolution
   rule](./deck-format.md#evolution-rule) this page's leniency requirements are
   the reader half of.
 - [`slide-type-structure.md`](./slide-type-structure.md) — where `structure`
