@@ -177,7 +177,6 @@
   "editor.changeTheme.success": "Thema succesvol gewijzigd",
   "editor.changeTheme.warningHint": "Deze slides gebruiken functies die anders werken in het nieuwe thema.",
   "editor.changeTheme.warningTitle": "{count} slides kunnen beinvloed worden",
-  "editor.chart.dataLabel": "Data (CSV/TSV)",
   "editor.chart.discardConfirm": "Wijzigingen aan de chart-data weggooien?",
   "editor.chart.editData": "Data bewerken…",
   "editor.chart.editDataHelp": "Opent de data-editor met een live chart-preview.",

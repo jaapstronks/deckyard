@@ -421,7 +421,7 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 
 | Type | Description | Extra Properties |
 |------|-------------|------------------|
-| `items` | Repeating list of structured objects, each shaped by `itemFields` | `minItems`, `maxItems`, `itemFields`, `itemDefaults` |
+| `items` | Repeating list of structured objects, each shaped by `itemFields`. Edited by the generic collection editor (add/remove, pointer reorder; `collapsible: true` adds per-item collapse, `relationField` names an enum item field describing the relation to the *next* item). Item fields may declare `formLayout`, `editor` and `hidden` like top-level fields. | `minItems`, `maxItems`, `itemFields`, `itemDefaults`, `collapsible`, `relationField` |
 
 ### Preset Sources
 
@@ -459,10 +459,54 @@ values degrade to the default, so a fork cannot land a hint the editor has no
 rendering for. Both editing surfaces — the inspector and the bulk "Edit all
 text" modal — read the same declaration.
 
+`formLayout` also works on `itemFields`: when any item field declares it, the
+generic collection editor renders the item body in declared rows (kpi-metrics
+pairs `value` + `unit` this way) instead of the default flex grid.
+
 **Width is deliberately not declarable.** A field's natural minimum width is a
 property of its widget, not of the type, and the field renderers already stamp
 it (`is-field-narrow|wide|full`). Rows are flex-wrap, so a pair that no longer
 fits the dragged form column stacks by itself.
+
+### Field editors (`editor`)
+
+A field whose base widget (the one its `type` implies) is not the right tool
+declares a richer one from the closed field-editor vocabulary
+(`shared/slide-types/field-editors.js`), resolved by the generic field
+renderer:
+
+| Name | Widget | Declared on |
+|------|--------|-------------|
+| `csv-grid` | Spreadsheet-style data grid (also the base widget of the `csv` type) | chart `data` |
+| `table-grid` | Full table editor: cell grid, row/column add/remove, markdown import/export. Also manages the sibling `colCount`/`headerRow` keys | table `rows` |
+| `icon-picker` | Icon search/picker modal | icon-card-grid item `icon` |
+| `card-link` | Slide-or-URL link picker | icon-card-grid / logo-wall item `link` |
+
+```javascript
+{ key: 'rows', type: 'items', editor: 'table-grid', … }
+```
+
+An unknown name — or a name the rendering surface has no widget for (the
+per-item collection loop implements only the item-sized `icon-picker` and
+`card-link`) — degrades to the base widget for the field's `type`; it never
+breaks. Fields the editor manages wholesale but never shows as a control of
+their own (table `colCount`) are declared `hidden: true`.
+
+### Field visibility (`visibleWhen`)
+
+A field that only means something while a sibling field holds certain values
+declares the condition instead of relying on a hand-built form to hide it:
+
+```javascript
+{ key: 'showValues', type: 'enum', options: ['yes', 'no'],
+  visibleWhen: { field: 'chartType', in: ['bar'] } }
+```
+
+Read by the generic field renderer on both surfaces
+(`shared/slide-types/field-visibility.js`); the driving value falls back to
+the type's default when unset. A malformed declaration degrades to *visible* —
+hiding a field on a parse error would orphan its data. The chart type's
+display toggles and axis/series labels are the canonical use.
 
 ---
 

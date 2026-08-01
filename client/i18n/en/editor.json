@@ -185,7 +185,6 @@
   "editor.changeTheme.success": "Theme changed successfully",
   "editor.changeTheme.warningHint": "These slides use features that work differently in the new theme.",
   "editor.changeTheme.warningTitle": "{count} slides may be affected",
-  "editor.chart.dataLabel": "Data (CSV/TSV)",
   "editor.chart.discardConfirm": "Discard your changes to the chart data?",
   "editor.chart.editData": "Edit data…",
   "editor.chart.editDataHelp": "Opens the data editor with a live chart preview.",

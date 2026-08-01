@@ -4,7 +4,11 @@ import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
+import { createTableGridEditor } from '../fields/table-grid.js';
+import { fieldCardLink } from '../fields/card-link-field.js';
 import { createCollectionEditor } from './collection-editor.js';
+import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
+import { isFieldVisible } from '../../../../shared/slide-types/field-visibility.js';
 
 const LANG_SHORT = { nl: 'NL', 'en-GB': 'EN' };
 
@@ -83,6 +87,10 @@ export function createRenderField({
   updateSelectedSlideListItem,
   onTranslateField,
   canEditCustomHtml = false,
+  // Inspector only: opens the bottom-panel Data tab for the csv-grid widget.
+  // When set, the widget renders an "Edit data…" entry point instead of the
+  // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
+  onEditData = null,
 } = {}) {
   const {
     fieldText,
@@ -94,10 +102,99 @@ export function createRenderField({
     fieldImage,
     fieldTitleBgImage,
     fieldImages,
+    fieldIconPicker,
   } = fieldRenderers || {};
+
+  /**
+   * The csv-grid widget (field-editors.js vocabulary; also the base widget of
+   * the `csv` field TYPE). Inline grid by default; with `onEditData` (the
+   * inspector) an entry-point button into the wide data surface instead.
+   */
+  const renderCsvGrid = (field) => {
+    const label = t(field.labelKey || field.key, field.label || field.key);
+    if (typeof onEditData === 'function') {
+      return h('div', { class: 'field chart-data-entry' }, [
+        h('label', { class: 'field-label', text: label }),
+        h('button', {
+          class: 'btn btn-secondary chart-data-edit-btn',
+          type: 'button',
+          text: t('editor.chart.editData', 'Edit data…'),
+          onclick: () => onEditData(),
+        }),
+        h('p', {
+          class: 'help',
+          text: t(
+            'editor.chart.editDataHelp',
+            'Opens the data editor with a live chart preview.'
+          ),
+        }),
+      ]);
+    }
+    const dataEditor = createCsvGridEditor({
+      h,
+      chartType: String(slide.content?.chartType || 'bar'),
+      value: slide.content[field.key] || '',
+      label,
+      onChange: (csv) => {
+        slide.content[field.key] = csv;
+        markDirty?.();
+        scheduleUiRefresh?.();
+      },
+    });
+    return dataEditor.el;
+  };
 
   const renderFieldInner = function renderField(field) {
     if (!field) return null;
+
+    // `visibleWhen` (field-visibility.js): a field whose declared condition
+    // does not hold right now renders nothing — the declarative form of the
+    // old per-type show/hide branches (axis labels on a pie chart).
+    if (!isFieldVisible(field, slide.content, def?.defaults)) return null;
+
+    // The closed `editor` vocabulary (field-editors.js): a declared widget
+    // outranks the base widget the field's type implies; an unknown or
+    // unimplemented name falls through to the type dispatch below.
+    const editor = fieldEditor(field);
+    if (editor === 'table-grid') {
+      return createTableGridEditor({
+        h,
+        slide,
+        markDirty,
+        rerenderEditor,
+        scheduleUiRefresh,
+      });
+    }
+    if (editor === 'csv-grid') {
+      return renderCsvGrid(field);
+    }
+    if (editor === 'icon-picker' && typeof fieldIconPicker === 'function') {
+      return fieldIconPicker(
+        t(field.labelKey || field.key, field.label || field.key),
+        slide.content[field.key] || '',
+        (v) => {
+          slide.content[field.key] = v;
+          markDirty?.();
+          scheduleUiRefresh?.();
+        },
+        {}
+      );
+    }
+    if (editor === 'card-link') {
+      return fieldCardLink({
+        value: slide.content[field.key] || '',
+        slides: deckSlides,
+        onChange: (v) => {
+          slide.content[field.key] = v;
+          markDirty?.();
+          scheduleUiRefresh?.();
+        },
+        help: t(
+          'editor.cards.linkHelp2',
+          'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).'
+        ),
+      });
+    }
 
     if (field.type === 'string') {
       const affectsLabel = affectsLabelForSlide({
@@ -180,20 +277,9 @@ export function createRenderField({
     }
 
     if (field.type === 'csv') {
-      // Data-grid editor (currently the chart `data` field). The chart side form
-      // renders its own instance; this branch covers the generic dispatch path.
-      const dataEditor = createCsvGridEditor({
-        h,
-        chartType: String(slide.content?.chartType || 'bar'),
-        value: slide.content[field.key] || '',
-        label: t(field.labelKey || field.key, field.label || field.key),
-        onChange: (csv) => {
-          slide.content[field.key] = csv;
-          markDirty?.();
-          scheduleUiRefresh?.();
-        },
-      });
-      return dataEditor.el;
+      // The csv-grid widget is the base editor of the `csv` type (currently
+      // the chart `data` field).
+      return renderCsvGrid(field);
     }
 
     if (field.type === 'code') {

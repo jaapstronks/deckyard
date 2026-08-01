@@ -2,7 +2,6 @@ import { t } from '../../../lib/ui-i18n.js';
 import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
-import { renderChartConfigControls } from './slide-forms/chart.js';
 import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
 import { slideTypeInspectorKeeps } from '../../../../shared/slide-types/inline-edit-companions.js';
 import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
@@ -117,7 +116,7 @@ function collapsibleGroup(h, title, { open = false } = {}) {
 export function renderInspectorExtrasByType(ctx) {
   const { h, form, elementForm, selectedElement, slide, def, add, used, fieldByKey,
     renderField, deckSlides, fieldRenderers, markDirty, rerenderEditor,
-    rerenderPreview, scheduleUiRefresh, onEditChartData } = ctx;
+    rerenderPreview, scheduleUiRefresh } = ctx;
   const { fieldGrid } = fieldRenderers || {};
 
   // The shared "This image" card for a selected image element (all image types
@@ -149,16 +148,11 @@ export function renderInspectorExtrasByType(ctx) {
   };
 
   switch (slide.type) {
-    case 'chart-slide':
-      // chartType + per-type display toggles + axis/series labels, exactly like
-      // the form's config half (one shared code path). The data grid itself
-      // lives on the bottom-panel Data tab; onEditData opens it (§4.3).
-      renderChartConfigControls({
-        h, form, slide, add, used, fieldByKey, renderField, fieldGrid,
-        markDirty, rerenderEditor, scheduleUiRefresh,
-        onEditData: onEditChartData,
-      });
-      return;
+    // chart-slide no longer has a case here: its config (chartType, display
+    // toggles, axis/series labels, the "Edit data…" entry point) renders via
+    // the generic keeps loop — visibility per chart type is a `visibleWhen`
+    // declaration on the fields and the data entry point is the csv-grid
+    // widget's inspector rendering (render-field.js, `onEditData`).
 
     case 'image-slide': {
       // The single image IS the element (editing-surfaces tab split): ALL of

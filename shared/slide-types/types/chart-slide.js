@@ -43,8 +43,12 @@ export default {
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Chart',
+  // Field order is the form order (both surfaces render the generic loop).
+  // The display toggles and axis/series labels only mean something on the
+  // chart types that draw them, so each declares the types it belongs to
+  // (`visibleWhen`, field-visibility.js) instead of a hand-built form
+  // branching on chartType.
   fields: [
-    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
@@ -78,37 +82,20 @@ export default {
     {
       key: 'data',
       label: 'Data (CSV/TSV)',
-      type: 'csv', // grid/raw editor in the UI; validation treats as string
+      type: 'csv', // the csv-grid widget (field-editors.js) is this type's base editor
       required: true,
       maxLength: 20000,
     },
+    // The per-type display toggles, two-up where a chart type has two (see
+    // form-layout.js).
     {
-      key: 'xLabel',
-      label: 'X label',
-      type: 'string',
+      key: 'pieLabelMode',
+      label: 'Pie labels',
+      type: 'enum',
       required: false,
-      maxLength: 80,
-    },
-    {
-      key: 'yLabel',
-      label: 'Y label',
-      type: 'string',
-      required: false,
-      maxLength: 80,
-    },
-    {
-      key: 'series1Label',
-      label: 'Series 1 label (legend)',
-      type: 'string',
-      required: false,
-      maxLength: 80,
-    },
-    {
-      key: 'series2Label',
-      label: 'Series 2 label (legend)',
-      type: 'string',
-      required: false,
-      maxLength: 80,
+      options: ['none', 'value', '%', 'both'],
+      formLayout: 'pair',
+      visibleWhen: { field: 'chartType', in: ['pie'] },
     },
     {
       key: 'showLegend',
@@ -116,6 +103,8 @@ export default {
       type: 'enum',
       required: false,
       options: ['yes', 'no'],
+      formLayout: 'pair',
+      visibleWhen: { field: 'chartType', in: ['pie', 'line'] },
     },
     {
       key: 'showValues',
@@ -123,15 +112,46 @@ export default {
       type: 'enum',
       required: false,
       options: ['yes', 'no'],
+      formLayout: 'pair',
+      visibleWhen: { field: 'chartType', in: ['bar'] },
     },
     {
-      key: 'pieLabelMode',
-      label: 'Pie labels',
-      type: 'enum',
+      key: 'xLabel',
+      label: 'X label',
+      type: 'string',
       required: false,
-      options: ['none', 'value', '%', 'both'],
+      maxLength: 80,
+      visibleWhen: { field: 'chartType', in: ['bar', 'line'] },
+    },
+    {
+      key: 'yLabel',
+      label: 'Y label',
+      type: 'string',
+      required: false,
+      maxLength: 80,
+      visibleWhen: { field: 'chartType', in: ['bar', 'line'] },
+    },
+    {
+      key: 'series1Label',
+      label: 'Series 1 label (legend)',
+      type: 'string',
+      required: false,
+      maxLength: 80,
+      visibleWhen: { field: 'chartType', in: ['line'] },
+    },
+    {
+      key: 'series2Label',
+      label: 'Series 2 label (legend)',
+      type: 'string',
+      required: false,
+      maxLength: 80,
+      visibleWhen: { field: 'chartType', in: ['line'] },
     },
     BACKGROUND_FIELD,
+    // Last, because it has no primary home in the form: the toolbar "Layout"
+    // chip owns the header block's alignment (see field-groups.js), so the raw
+    // enum is a fallback surface, not the control.
+    HEADER_BLOCK.field,
   ],
   defaultsByLang: {
     nl: {

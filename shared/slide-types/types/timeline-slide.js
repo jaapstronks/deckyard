@@ -97,9 +97,6 @@ export default {
       required: true,
       minItems: 2,
       maxItems: 10,
-      // Full-width, stacked item fields: date/title/description each on their
-      // own row (the narrow sidebar makes the 2-column grid unreadable here).
-      itemColumns: 1,
       itemDefaults: {
         date: '2024',
         title: 'New milestone',

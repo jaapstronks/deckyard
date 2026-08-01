@@ -12,6 +12,7 @@
   "slideType.logo-wall-slide.field.logos.item.image.label": "Logo afbeelding",
   "slideType.logo-wall-slide.field.logos.item.name.label": "Naam",
   "slideType.logo-wall-slide.field.logos.item.alt.label": "Alt-tekst (optioneel)",
+  "slideType.text-blocks-slide.field.rows.label": "Rijen",
   "slideType.text-blocks-slide.field.rows.item.title.label": "Rij koptekst",
   "slideType.text-blocks-slide.field.rows.item.color.label": "Kleur",
   "slideType.text-blocks-slide.field.rows.item.color.option.yellow.label": "Geel",

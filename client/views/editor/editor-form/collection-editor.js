@@ -5,6 +5,11 @@ import { createCollapsedState } from '../../../lib/slide-authoring/collapsed-sta
 import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
+import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
+import {
+  fieldFormLayout,
+  fieldFormRows,
+} from '../../../../shared/slide-types/form-layout.js';
 
 /**
  * The generic collection editor: ONE add/remove/reorder/collapse machine for
@@ -26,10 +31,15 @@ import { getInlineDescriptor } from '../inline-edit/descriptors.js';
  * - `hidden: true` on an item field — carried in the data, not rendered
  *   (e.g. gallery focus coordinates, which the canvas focus handle and the
  *   inspector's image card already edit).
- * - `editor: 'icon-picker' | 'card-link'` on an item field — the explicitly
- *   marked exceptions beyond string/image (brief: editor-behaviour-abstraction
- *   step 3). This is the seed of the step-4 closed widget vocabulary; an
- *   unknown `editor` value degrades to the base widget for the field's type.
+ * - `editor: 'icon-picker' | 'card-link'` on an item field — widgets from the
+ *   closed field-editor vocabulary (shared/slide-types/field-editors.js).
+ *   This per-item loop implements the two item-sized ones; any other name —
+ *   unknown or simply not item-sized (table-grid) — degrades to the base
+ *   widget for the field's type.
+ * - `formLayout: 'pair'` on item fields (shared/slide-types/form-layout.js) —
+ *   when any item field declares it, the item body renders in declared rows
+ *   (a run of consecutive `pair` fields shares one) instead of the default
+ *   single flex grid. Same vocabulary the top-level form loop reads.
  * - nested `type: 'items'` item fields (text-blocks rows → blocks) render one
  *   level of inner collection, with its own add/remove/reorder.
  *
@@ -159,16 +169,10 @@ export function createCollectionEditor({
   const list = h('div', { class: 'stack is-gap-lg items-reorder-list' });
   wrap.append(list);
 
-  // Column intent for the per-item field grid. Per-field override wins;
-  // otherwise the List type stays single-column and everything else defaults
-  // to the compact two-column grid.
-  const isListItems = slide.type === 'list-slide' && field.key === 'items';
-  const cols = Number.isInteger(field?.itemColumns)
-    ? Math.max(1, field.itemColumns)
-    : isListItems
-      ? 1
-      : 2;
-  const isKpiMetrics = slide.type === 'kpi-metrics-slide' && field.key === 'metrics';
+  // Row intent for the per-item field body: a type that declares `formLayout`
+  // on item fields gets declared rows; everything else gets the single
+  // flex-wrap grid, where each widget's own size intent drives the layout.
+  const hasItemFormLayout = itemFields.some((f) => fieldFormLayout(f));
 
   const moveItem = (from, to) => {
     const current = readArr();
@@ -316,14 +320,16 @@ export function createCollectionEditor({
           continue;
         }
 
-        // Explicitly marked widget exceptions beyond string/image (the seed of
-        // the step-4 `editor` vocabulary). Unknown values fall through to the
-        // base widget for the declared type.
-        if (f.editor === 'icon-picker' && typeof fieldIconPicker === 'function') {
+        // Widgets from the closed field-editor vocabulary
+        // (shared/slide-types/field-editors.js). This loop implements the two
+        // item-sized ones; any other name falls through to the base widget
+        // for the declared type.
+        const editor = fieldEditor(f);
+        if (editor === 'icon-picker' && typeof fieldIconPicker === 'function') {
           pushWidget(k, fieldIconPicker(label, item?.[k] || '', (v) => setItemKey(k, v), {}));
           continue;
         }
-        if (f.editor === 'card-link') {
+        if (editor === 'card-link') {
           pushWidget(
             k,
             fieldCardLink({
@@ -429,18 +435,18 @@ export function createCollectionEditor({
 
       const gridWidgets = widgets.filter((w) => !(w && w.fullWidth));
       const fullWidgets = widgets.filter((w) => w && w.fullWidth).map((w) => w.fullWidth);
-      if (isKpiMetrics && typeof fieldGrid === 'function') {
-        // KPI metrics UX: value+unit side-by-side; label its own line;
-        // delta + note side-by-side. A hand pairing the step-2/step-4 layout
-        // declaration will absorb.
-        const rows = [
-          fieldGrid([widgetByKey.get('value'), widgetByKey.get('unit')].filter(Boolean), 2),
-          fieldGrid([widgetByKey.get('label')].filter(Boolean), 1),
-          fieldGrid([widgetByKey.get('delta'), widgetByKey.get('note')].filter(Boolean), 2),
-        ];
-        for (const r of rows) if (r) body.append(r);
+      if (hasItemFormLayout && typeof fieldGrid === 'function') {
+        // Declared rows (formLayout on item fields): a run of consecutive
+        // `pair` fields shares one grid row, every other field gets its own.
+        for (const row of fieldFormRows(itemFields)) {
+          const nodes = row.keys
+            .map((k2) => widgetByKey.get(k2))
+            .filter((w) => w && !w.fullWidth);
+          const grid = fieldGrid(nodes);
+          if (grid) body.append(grid);
+        }
       } else if (gridWidgets.length && typeof fieldGrid === 'function') {
-        const grid = fieldGrid(gridWidgets, cols);
+        const grid = fieldGrid(gridWidgets);
         if (grid) body.append(grid);
       }
       for (const el of fullWidgets) body.append(el);

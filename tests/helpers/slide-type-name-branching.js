@@ -346,19 +346,20 @@ export const INVENTORY = {
     kind: sparse,
     why:
       'Which types get a curated editor form instead of the generic field order. ' +
-      'Shrinking on purpose: step 2 of the editor-behaviour-abstraction brief ' +
-      'took out the four rows (title, content, list, kpi-metrics) whose forms only ' +
-      'said field order plus "pair these two", now a `formLayout` declaration on ' +
-      'the field. A row left here does something a declaration cannot. Historical ' +
+      'Shrinking on purpose (editor-behaviour-abstraction brief): step 2 took ' +
+      'out the layout-only forms (`formLayout` declaration), step 3 the seven ' +
+      'collection forms (generic collection editor), step 4 chart and table ' +
+      '(`editor` + `visibleWhen` declarations). Each remaining row is a ' +
+      'documented exception — see the module comment. Historical ' +
       'note: **the second module PR #451 missed** — the alias kept its case while ' +
       'new lists fell back to the generic form; today that fallback is the answer.',
   },
   'client/views/editor/editor-form/render-field.js': {
     kind: sparse,
     why:
-      'Field-level special cases (which field drives the slide-list label, which ' +
-      'items editor uses one column). **The third module PR #451 missed**, in ' +
-      'two places at once.',
+      'Field-level special cases (which field drives the slide-list label, ' +
+      'which types auto-fit a freshly picked image). **The third module PR ' +
+      '#451 missed**, in two places at once.',
   },
   'client/views/editor/editor-form/header-actions.js': {
     kind: sparse,
