@@ -102,6 +102,13 @@ export default {
         title: 'New milestone',
         text: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          date: '2024',
+          title: 'Nieuwe mijlpaal',
+          text: '',
+        },
+      },
       itemFields: [
         // Each item sits in a row aligned to the timeline rail/dot marker;
         // block alignment would detach the text from the marker. See text-roles.js.

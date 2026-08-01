@@ -74,6 +74,9 @@ export default {
       maxItems: 6,
       collapsible: true, // item-rich: per-card collapse in the editor
       itemDefaults: { icon: 'lightbulb', title: 'Title', body: 'Description.', link: '' },
+      itemDefaultsByLang: {
+        nl: { icon: 'lightbulb', title: 'Titel', body: 'Omschrijving.', link: '' },
+      },
       itemFields: [
         // `editor:` marks the widget exception beyond string/image (icon
         // picker); the closed vocabulary lands in editor-behaviour step 4.

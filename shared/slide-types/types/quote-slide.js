@@ -296,6 +296,17 @@ export default {
         authorImage2: '',
         authorImage2Alt: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          quote: 'Een sterke quote komt hier.',
+          authorName: 'Voornaam Achternaam',
+          authorTitle: 'Functie / titel',
+          authorImage: '',
+          authorImageAlt: '',
+          authorImage2: '',
+          authorImage2Alt: '',
+        },
+      },
       itemFields: [
         {
           key: 'quote',

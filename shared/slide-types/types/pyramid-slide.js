@@ -80,6 +80,12 @@ export default {
         label: 'Level',
         text: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          label: 'Niveau',
+          text: '',
+        },
+      },
       itemFields: [
         {
           key: 'label',

@@ -90,6 +90,12 @@ export default {
         title: 'New step',
         text: '',
       },
+      itemDefaultsByLang: {
+        nl: {
+          title: 'Nieuwe stap',
+          text: '',
+        },
+      },
       itemFields: [
         {
           key: 'title',

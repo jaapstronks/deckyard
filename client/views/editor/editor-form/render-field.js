@@ -2,6 +2,7 @@ import { debugLog } from '../../../lib/util/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang, otherLang } from '../../../lib/format/i18n.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { getRecommendedImageFit } from '../image-library/utils.js';
 import { createCsvGridEditor } from '../fields/csv-grid.js';
 import { createTableGridEditor } from '../fields/table-grid.js';
@@ -533,6 +534,10 @@ export function createRenderField({
         deckSlides,
         markDirty,
         scheduleUiRefresh,
+        // Deck language, not UI locale: a new item's placeholder copy is deck
+        // content, so it follows the deck — same rule as makeNewSlide's
+        // defaultsByLang resolution.
+        lang: resolveDeckLang(pres),
       });
     }
 

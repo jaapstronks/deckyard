@@ -421,7 +421,17 @@ enforces the same rule on write). Used by the built-in Custom HTML slide.
 
 | Type | Description | Extra Properties |
 |------|-------------|------------------|
-| `items` | Repeating list of structured objects, each shaped by `itemFields`. Edited by the generic collection editor (add/remove, pointer reorder; `collapsible: true` adds per-item collapse, `relationField` names an enum item field describing the relation to the *next* item). Item fields may declare `formLayout`, `editor` and `hidden` like top-level fields. | `minItems`, `maxItems`, `itemFields`, `itemDefaults`, `collapsible`, `relationField` |
+| `items` | Repeating list of structured objects, each shaped by `itemFields`. Edited by the generic collection editor (add/remove, pointer reorder; `collapsible: true` adds per-item collapse, `relationField` names an enum item field describing the relation to the *next* item). Item fields may declare `formLayout`, `editor` and `hidden` like top-level fields. | `minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `collapsible`, `relationField` |
+
+`itemDefaults` is the skeleton a newly added item starts from — neutral
+(English) placeholder copy. `itemDefaultsByLang` holds complete per-language
+variants keyed like the type-level `defaultsByLang` (`nl`, `'en-GB'`); declare
+only languages whose skeleton differs from the neutral one — anything else
+falls back to `itemDefaults`. Both add-item surfaces (the collection editor
+and the canvas inline editor) resolve through
+`shared/slide-types/item-defaults.js` against the **deck** language
+(`resolveDeckLang`), not the UI locale: placeholder copy in a new item is deck
+content.
 
 ### Preset Sources
 
