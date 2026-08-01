@@ -13,6 +13,7 @@ import {
   writeLangMode,
 } from '../../../lib/format/i18n.js';
 import {
+  clearSessionLocaleOverride,
   fetchUiLocaleManifest,
   getSessionLocaleOverride,
   getUiLocale,
@@ -529,6 +530,9 @@ export function createPreferencesTab({ user, nav }) {
 
       // Apply locale immediately - use the saved value from server or fallback to what user selected
       const finalLocale = typeof updatedMe?.uiLocale === 'string' ? updatedMe.uiLocale : uiLocale;
+      // An explicit save supersedes a `?lang=` session override — clear it
+      // before applying, so the re-rendered picker shows the saved choice.
+      clearSessionLocaleOverride();
       await setUiLocale(finalLocale);
 
       // Re-render current route (important if UI locale changed).

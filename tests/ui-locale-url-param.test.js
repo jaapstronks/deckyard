@@ -22,6 +22,7 @@ import {
   normalizeUiLocale,
   resolveInitialUiLocale,
   getSessionLocaleOverride,
+  clearSessionLocaleOverride,
 } from '../client/lib/ui-i18n.js';
 
 /** Run `fn` with `fetch` stubbed to serve a locale manifest of `ids`. */
@@ -97,6 +98,17 @@ test('resolveInitialUiLocale silently ignores an unknown locale (no override)', 
     const locale = await resolveInitialUiLocale('?lang=zz');
     // Unknown tag can't blank the dictionary: falls back, no session override.
     assert.notEqual(locale, 'zz');
+    assert.equal(getSessionLocaleOverride(), null);
+  });
+});
+
+test('clearSessionLocaleOverride drops the override (explicit save supersedes ?lang)', async () => {
+  await withManifest(['en', 'nl'], async () => {
+    await resolveInitialUiLocale('?lang=nl');
+    assert.equal(getSessionLocaleOverride(), 'nl');
+    // The settings save flow calls this so the saved preference regains
+    // authority (and the re-rendered picker shows the saved choice).
+    clearSessionLocaleOverride();
     assert.equal(getSessionLocaleOverride(), null);
   });
 });

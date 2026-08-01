@@ -37,6 +37,16 @@ export function getSessionLocaleOverride() {
   return sessionParamLocale;
 }
 
+/**
+ * Drop the per-session URL-param override. An explicit in-session locale save
+ * supersedes the deep-link param, so the stored preference regains authority
+ * for the rest of the session (a reload with the param still in the URL
+ * re-establishes it via resolveInitialUiLocale).
+ */
+export function clearSessionLocaleOverride() {
+  sessionParamLocale = null;
+}
+
 // Component files that make up the full translation dictionary
 const I18N_COMPONENTS = ['auth', 'common', 'editor', 'list', 'presenter', 'settings', 'share', 'slide-types'];
 
