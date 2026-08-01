@@ -346,8 +346,12 @@ export const INVENTORY = {
     kind: sparse,
     why:
       'Which types get a curated editor form instead of the generic field order. ' +
-      '**The second module PR #451 missed**: no case, so new lists fell back to ' +
-      'the generic form.',
+      'Shrinking on purpose: step 2 of the editor-behaviour-abstraction brief ' +
+      'took out the four rows (title, content, list, kpi-metrics) whose forms only ' +
+      'said field order plus "pair these two", now a `formLayout` declaration on ' +
+      'the field. A row left here does something a declaration cannot. Historical ' +
+      'note: **the second module PR #451 missed** — the alias kept its case while ' +
+      'new lists fell back to the generic form; today that fallback is the answer.',
   },
   'client/views/editor/editor-form/render-field.js': {
     kind: sparse,

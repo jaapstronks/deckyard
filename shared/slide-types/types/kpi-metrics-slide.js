@@ -52,7 +52,6 @@ export default {
   layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',
   fields: [
-    HEADER_BLOCK.field,
     {
       key: 'title',
       label: 'Title',
@@ -77,12 +76,15 @@ export default {
       maxLength: 200,
     },
     BACKGROUND_FIELD,
+    // Accent and count-up are two compact enums that read as one "how do the
+    // numbers behave" choice, so they share a form row (see form-layout.js).
     {
       key: 'accent',
       label: 'Accent',
       type: 'enum',
       required: false,
       options: ['none', 'highlight-best', 'highlight-risk'],
+      formLayout: 'pair',
     },
     {
       key: 'countUp',
@@ -90,6 +92,7 @@ export default {
       type: 'enum',
       required: false,
       options: ['off', 'on'],
+      formLayout: 'pair',
     },
     {
       key: 'metrics',
@@ -137,6 +140,10 @@ export default {
         // in renderHtml for existing slides. See migration script.
       ],
     },
+    // Last, because it has no primary home in the form: the toolbar "Layout"
+    // chip owns the header block's alignment (see field-groups.js), so the raw
+    // enum is a fallback surface, not the control.
+    HEADER_BLOCK.field,
   ],
   defaultsByLang: {
     nl: {

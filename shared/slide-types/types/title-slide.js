@@ -57,20 +57,29 @@ export default {
       maxLength: 160,
       group: 'title-block',
     },
-    TITLE_BLOCK.field,
     // Background image is the generic, type-agnostic `slideBgImage` field
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
     // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
     // render fallback for un-migrated decks, folded into `slideBgImage` on edit
     // (see title-slide-background.js).
-    BACKGROUND_FIELD,
+    //
+    // Background colour and logo corner are two compact controls that read as
+    // one "chrome" choice, so they share a form row (see form-layout.js). The
+    // colour itself renders in the shared Background section, which is why the
+    // row usually carries the corner alone.
+    { ...BACKGROUND_FIELD, formLayout: 'pair' },
     {
       key: 'logoCorner',
       label: 'Logo corner',
       type: 'enum',
       required: false,
       options: ['left', 'right'],
+      formLayout: 'pair',
     },
+    // Last, because it has no primary home in the form: the toolbar "Layout"
+    // chip owns the title block's alignment (see field-groups.js), so the raw
+    // enum is a fallback surface, not the control.
+    TITLE_BLOCK.field,
   ],
   // Layout catalogue for the editor's layout switcher: the horizontal
   // placement of the title block. Declared on the definition (JSON-safe) so a
