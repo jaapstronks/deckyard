@@ -157,12 +157,10 @@ export function slideNeedsReview(slide) {
   // Check for placeholder content
   if (title.includes('[image slide') || title.includes('[visual')) return true;
 
-  // Check for very short content that might be incomplete
-  if (
-    slide.type === 'content-slide' &&
-    body.length < 20 &&
-    !['title-slide', 'chapter-title-slide', 'payoff-slide'].includes(slide.type)
-  ) {
+  // Check for very short content that might be incomplete. (This used to also
+  // exclude title/chapter/payoff types, but that clause could never fire behind
+  // the content-slide check — removed 2026-08-01, behaviour unchanged.)
+  if (slide.type === 'content-slide' && body.length < 20) {
     return true;
   }
 
