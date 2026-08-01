@@ -20,8 +20,12 @@ validation/iteration, and an MCP server with 27 tools + SSE transport.
 
 ## Now
 
-_Nothing is in active development at the moment. The next project starts from
-**Next** below._
+- **One spelling per type id** — converge API, MCP, export and storage on the
+  canonical reverse-DNS slide-type id decided in the spec work: one shared
+  write seam that validates and normalizes every ingest path, canonical ids on
+  the wire, a storage migration folding historical spellings, before the spec
+  page ships. Part of the beta-window tightening described in
+  [`docs/reference/versioning.md`](docs/reference/versioning.md).
 
 _The organizations project that stood here has shipped: several organizations
 can share one instance, with identity resolved independently of any single

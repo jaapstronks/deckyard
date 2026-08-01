@@ -152,12 +152,15 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   both forms are live and the registry imports both. Anything that counts or
   globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
   `grep '\.js$'` over that directory counts companions as types.
-- **Identity**: the registry key (`title-slide`) is what `slides[].type` stores
-  and stays that forever, but the *published* id is reverse-DNS
-  (`eu.deckyard.slide.title`, suffix dropped). `resolveSlideTypeName()` in
-  `registry.js` is the single place that knows the spellings are one type — do
-  not re-derive that mapping anywhere else. See
-  [`docs/reference/deck-format.md`](docs/reference/deck-format.md).
+- **Identity**: the registry key (`title-slide`) is the internal lookup key;
+  the *published* id is reverse-DNS (`eu.deckyard.slide.title`, suffix dropped)
+  and is the format's **only** spelling — legacy spellings (`core/title-slide`,
+  the bare key on the wire) are being converged away during beta.
+  `resolveSlideTypeName()` in `registry.js` is the single place that knows the
+  legacy mapping — do not re-derive it anywhere else, and never add a surface
+  that accepts a non-canonical spelling without normalizing through it. See
+  [`docs/reference/deck-format.md`](docs/reference/deck-format.md) and the beta
+  stance in [`docs/reference/versioning.md`](docs/reference/versioning.md).
 
 ### Rendering
 

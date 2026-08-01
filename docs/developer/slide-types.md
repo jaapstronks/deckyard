@@ -46,11 +46,15 @@ Every slide type has a canonical identity, published as a **reverse-DNS id**
 - The registry **key** and a slide's stored `type` stay the bare name
   (`acme-hero`, `title-slide`), so existing decks and lookups keep working; the
   identity is an added layer, not a change to storage.
-- Three spellings therefore name one type — `title-slide`, `core/title-slide`
-  and `eu.deckyard.slide.title`. `resolveSlideTypeName()` (registry) maps any of
-  them to the registry key, `getSlideType()` to the definition, and `sameType()`
-  compares two refs as identities. **Never compare type refs as strings**, and
-  never re-derive the suffix rule at a call site — that is what these are for.
+- The published format knows **one spelling** per type — the canonical id.
+  The older spellings (`title-slide` bare on the wire, `core/title-slide`)
+  still resolve during the beta convergence that folds them away
+  (`ROADMAP.md`; beta stance in `docs/reference/versioning.md`).
+  `resolveSlideTypeName()` (registry) maps any spelling to the registry key,
+  `getSlideType()` to the definition, and `sameType()` compares two refs as
+  identities. **Never compare type refs as strings** in engine code, never
+  re-derive the suffix rule at a call site, and never add a surface that
+  accepts a non-canonical spelling without normalizing through the resolver.
 
 **Overriding a core type is no longer silent.** If a custom type's filename
 matches a core type name, it is **refused** (the core type is kept) and a
