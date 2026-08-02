@@ -25,7 +25,7 @@ import { pickTextColorForBg } from '../../shared/color-utils.js';
  * @param {string} hex - Hex color string
  * @returns {Object|null} - RGB object or null
  */
-export function hexToRgb(hex) {
+function hexToRgb(hex) {
   const s = String(hex || '').trim();
   const m = s.match(/^#?([0-9a-f]{6})$/i);
   if (!m) {
@@ -140,7 +140,7 @@ function hslToHex(h, s, l) {
  * @param {string} primary - Primary hex color
  * @returns {string[]} - Array of hex colors
  */
-export function deriveColorPalette(primary) {
+function deriveColorPalette(primary) {
   const hsl = hexToHsl(primary);
   if (!hsl) return [primary, primary, primary, primary];
 

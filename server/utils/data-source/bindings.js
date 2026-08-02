@@ -33,27 +33,6 @@ function parsePath(path) {
 }
 
 /**
- * Get a value from an object using a parsed path.
- *
- * @param {Object} obj - Source object
- * @param {Array} segments - Parsed path segments
- * @returns {*} Value at path, or undefined
- */
-export function getByPath(obj, segments) {
-  let current = obj;
-  for (const seg of segments) {
-    if (current == null) return undefined;
-    if ('key' in seg) {
-      current = current[seg.key];
-    } else if ('index' in seg) {
-      if (!Array.isArray(current)) return undefined;
-      current = current[seg.index];
-    }
-  }
-  return current;
-}
-
-/**
  * Set a value on an object using a parsed path, creating intermediate
  * objects/arrays as needed.
  *
@@ -61,7 +40,7 @@ export function getByPath(obj, segments) {
  * @param {Array} segments - Parsed path segments
  * @param {*} value - Value to set
  */
-export function setByPath(obj, segments, value) {
+function setByPath(obj, segments, value) {
   if (!segments.length) return;
 
   let current = obj;

@@ -1,6 +1,6 @@
-import { normalizeLang, normalizeTranslationLang, ALL_TRANSLATION_LANGS } from '../../../shared/i18n-utils.js';
+import { normalizeLang, normalizeTranslationLang } from '../../../shared/i18n-utils.js';
 
-export { normalizeLang, normalizeTranslationLang, ALL_TRANSLATION_LANGS };
+export { normalizeLang, normalizeTranslationLang };
 
 /**
  * Language labels for LLM translation prompts.
