@@ -196,3 +196,13 @@
     animation: none !important;
   }
 }
+
+/* Semantic element defaults: the blockquote the quote-slide renders. Moved out
+   of 03-components/60-accessibility.css, which is shared presenter/export
+   chrome — these two rules are quote-slide's own. */
+.slide-quote blockquote.quote-text {
+  margin: 0;
+}
+.slide-quote blockquote.quote-text p {
+  margin: 0;
+}

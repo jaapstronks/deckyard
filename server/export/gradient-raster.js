@@ -716,8 +716,9 @@ export async function rasterizeGradientBackgrounds({
   //
   // Not the `--t-slide-bg-*` token, and this is the whole reason the rule looks
   // like this: that token feeds `--slide-bg`, which `00-base.css` also reads as
-  // a `background-color` and `30-content-and-tables.css` reads as a `color`
-  // (lines 275 and 281). A `url()` there is invalid at computed-value time, so
+  // a `background-color` and `32-markdown-and-actions.css` reads as a `color`
+  // (the two `.slide-action--outline` hover/active rules). A `url()` there is
+  // invalid at computed-value time, so
   // the declaration falls back to `unset` — which is how an image-text slide
   // loses its backdrop and prints white on white. The token is instead reduced
   // to the stack's own trailing colour further down, which leaves both of those

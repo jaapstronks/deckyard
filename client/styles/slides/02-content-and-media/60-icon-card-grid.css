@@ -72,6 +72,15 @@
   );
   max-width: 75ch;
 }
+/* Adjust subheading color on dark backgrounds. Moved out of
+   01-layout-and-title/00-base.css: it is a type-owned override of the shared
+   `.slide .subheading`, not part of the base slide vocabulary. */
+.slide-icon-card-grid .subheading {
+  color: var(
+    --t-icon-card-grid-subtitle-color,
+    var(--slide-text-light-muted)
+  );
+}
 /* When the subheading is empty it is not rendered, which makes the header
    shorter — the top card creeps up toward the title and align-content spreads
    the rows further apart. Reserve the space a one-line subheading would take so

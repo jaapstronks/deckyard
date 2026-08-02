@@ -139,12 +139,20 @@ Then, in rough dependency order:
    for an unregistered type fails, and an unclaimed file on disk fails — so
    the 118 lines of `.slide-partner-split` that outlived
    `split-partner-title-slide` inside a shared sheet can no longer happen for
-   claimed CSS. **A residue of per-type rules still lives in shared sheets**
-   (`30-content-and-tables.css`, `00-base.css`, `60-accessibility.css`,
-   `70-step-reveal.css` — inventory in the seam-collapse brief), so still read
-   the class off the definition's `renderHtml` and grep *that* before calling
-   the CSS gone: the removal guardrail matches the type **id** and a CSS class
-   is not derived from it.
+   claimed CSS. **Two deliberate residues are left in shared sheets** and a
+   removal still has to visit them by hand:
+   - `03-components/70-step-reveal.css` — per-type step blocks for
+     `card-stack`, `image`, `kpi-metrics`, `lijstje`, `table` and `timeline`.
+     That is styling *of the step machinery*, so it stays with the machinery
+     (same rule as [_Behaviour stays in its layer_](./slide-type-directory.md#behaviour-stays-in-its-layer-decided-2026-08-01)).
+   - `01-layout-and-title/00-base.css` — `.slide-unresolved`, the fallback
+     rendered for a type that is *not* registered. It cannot be claimed in
+     `TYPE_CSS`, which only accepts registered types.
+
+   Everywhere else, a `.slide-<x>` selector now lives in a sheet that type
+   claims. Still read the class off the definition's `renderHtml` and grep
+   *that* before calling the CSS gone: the removal guardrail matches the type
+   **id**, and a CSS class is not derived from it.
 3. **Deregister** — the import and the `CORE_SLIDE_TYPES` entry in
    `shared/slide-types/registry.js`.
 4. **Remove the per-type entries in the hand-maintained tables that live outside

@@ -103,7 +103,7 @@ test('a gradient slide background leaves the PDF export as a bitmap', { skip }, 
 test('the bitmap never lands in the --t-slide-bg-* token itself', { skip }, async () => {
   // `--t-slide-bg-<id>` feeds `--slide-bg`, which client/styles also reads as a
   // `background-color` (00-base.css) and as a `color`
-  // (30-content-and-tables.css). A `url()` in there is invalid at
+  // (32-markdown-and-actions.css). A `url()` in there is invalid at
   // computed-value time, and an image-text slide then prints white on white.
   const theme = await loadTheme(repoRoot, 'deckyard');
   const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
