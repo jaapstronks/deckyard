@@ -91,7 +91,7 @@
   },
   "client/styles/base/02-lists-and-thumbs/73-slide-schematic.css": {
     "tokenisable-spacing": {
-      "count": 14
+      "count": 2
     }
   },
   "client/styles/base/02-lists-and-thumbs/80-tags.css": {
@@ -229,11 +229,6 @@
       "count": 30
     }
   },
-  "client/styles/base/04-editor-and-misc/70-follow.css": {
-    "tokenisable-spacing": {
-      "count": 53
-    }
-  },
   "client/styles/base/04-editor-and-misc/72-video-layer.css": {
     "tokenisable-spacing": {
       "count": 3
@@ -241,7 +236,7 @@
   },
   "client/styles/base/04-editor-and-misc/75-share-viewer.css": {
     "tokenisable-spacing": {
-      "count": 57
+      "count": 1
     }
   },
   "client/styles/base/04-editor-and-misc/80-notes-join.css": {
@@ -291,7 +286,7 @@
   },
   "client/styles/base/04-editor-and-misc/92-comments-panel.css": {
     "tokenisable-spacing": {
-      "count": 27
+      "count": 4
     }
   },
   "client/styles/base/04-editor-and-misc/93-read-only-mode.css": {
