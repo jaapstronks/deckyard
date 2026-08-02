@@ -7,15 +7,16 @@
 //     { "id": "calm", "label": "Calm",
 //       "value": "radial-gradient(...), #140a26",
 //       "textColor": "#ffffff",
-//       "textColorMuted": "rgba(255, 255, 255, 0.72)" }
+//       "textColorMuted": "rgba(255, 255, 255, 0.72)",
+//       "linkColor": "#8fd0ff" }
 //   ]
 //
 // Normalization (client `client/lib/theme.js` + server `server/utils/themes.js`)
-// turns each entry into `--t-slide-bg-<id>[-text[-muted]]` cssVars, and the
-// generated CSS rules below map the `slide-bg-<id>` class (emitted by
+// turns each entry into `--t-slide-bg-<id>[-text[-muted]][-link]` cssVars, and
+// the generated CSS rules below map the `slide-bg-<id>` class (emitted by
 // `bgClass()` in shared/slide-types/helpers.js) onto those vars. The rules
-// redirect `--color-text` / `--color-text-muted` the same way the
-// background-image contrast classes do (see
+// redirect `--color-text` / `--color-text-muted` / `--color-link` the same way
+// the background-image contrast classes do (see
 // client/styles/slides/01-layout-and-title/00-base.css), so per-variant
 // contrast reaches every component without per-slide-type CSS.
 //
@@ -54,11 +55,13 @@ function cleanCssValue(raw) {
 /**
  * Normalize a theme's raw `slideBackgrounds` array. Drops entries with
  * missing/unsafe ids or values, reserved ids, and duplicates. `textColorMuted`
- * only applies when `textColor` is set (a muted override without a base text
- * colour has nothing to be muted *from*).
+ * and `linkColor` only apply when `textColor` is set — both hang off the
+ * contrast-redirect block that only exists once the variant flips its text
+ * colour (a muted/link override without a base text colour has no rule to
+ * attach to, same reasoning as `textColorMuted`).
  *
  * @param {unknown} raw - `theme.slideBackgrounds` as authored
- * @returns {Array<{id: string, label: string, value: string, textColor?: string, textColorMuted?: string}>}
+ * @returns {Array<{id: string, label: string, value: string, textColor?: string, textColorMuted?: string, linkColor?: string}>}
  */
 export function normalizeSlideBackgrounds(raw) {
   const list = Array.isArray(raw) ? raw : [];
@@ -83,6 +86,8 @@ export function normalizeSlideBackgrounds(raw) {
       entry.textColor = textColor;
       const muted = cleanCssValue(e.textColorMuted);
       if (muted) entry.textColorMuted = muted;
+      const link = cleanCssValue(e.linkColor);
+      if (link) entry.linkColor = link;
     }
     out.push(entry);
   }
@@ -104,6 +109,7 @@ export function slideBackgroundCssVars(entries) {
     if (e.textColor) vars[`--t-slide-bg-${e.id}-text`] = e.textColor;
     if (e.textColorMuted)
       vars[`--t-slide-bg-${e.id}-text-muted`] = e.textColorMuted;
+    if (e.linkColor) vars[`--t-slide-bg-${e.id}-link`] = e.linkColor;
   }
   return vars;
 }
@@ -141,6 +147,14 @@ export function slideBackgroundsCssText(entries) {
         // follow. Same treatment the background-image classes get in
         // 00-base.css; see the marker note there.
         '  --slide-marker-color: color-mix(in srgb, var(--color-accent) 35%, var(--slide-bg-text));',
+        // The brand accent is tuned for the default background, so a link that
+        // keeps the raw accent can go near-invisible once the variant flips the
+        // ground — the #222 defect, one layer up. Mirror that fix: mix the
+        // accent toward the variant's own text colour, which lightens on a dark
+        // variant and darkens on a light one, so it adapts without needing to
+        // know which it is. `--t-slide-bg-<id>-link` (from `linkColor`) is the
+        // theme author's explicit override on top.
+        `  --color-link: var(--t-slide-bg-${e.id}-link, color-mix(in srgb, var(--color-accent) 42%, var(--slide-bg-text)));`,
         '  color: var(--slide-bg-text);'
       );
     }

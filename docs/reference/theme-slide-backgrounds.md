@@ -14,7 +14,8 @@ per-slide-type code.
     "label": "Calm",
     "value": "radial-gradient(circle at 62% 18%, ...), #140a26",
     "textColor": "#ffffff",
-    "textColorMuted": "rgba(255, 255, 255, 0.72)"
+    "textColorMuted": "rgba(255, 255, 255, 0.72)",
+    "linkColor": "#8fd0ff"
   }
 ]
 ```
@@ -30,6 +31,12 @@ per-slide-type code.
   `slide-background-contrast.md`).
 - `textColorMuted` (optional, needs `textColor`) — explicit muted colour;
   defaults to a 70% `color-mix` of `textColor`.
+- `linkColor` (optional, needs `textColor`) — explicit `--color-link` for the
+  variant. When omitted the link colour is **derived** the same way the
+  background-image contrast classes derive theirs: the brand accent mixed 42%
+  toward the variant's `textColor`, which lightens the accent on a dark variant
+  and darkens it on a light one. So a variant that flips its text colour gets a
+  readable link for free — set `linkColor` only to override that answer.
 
 The default `brand` theme (and the older `deckyard` one) ships a `calm` variant
 as a living example.
@@ -41,7 +48,7 @@ normalizers use it:
 
 1. **Normalization** (`client/lib/theme/theme.js` + `server/utils/themes.js`)
    validates entries into `theme.slideBackgrounds` and merges
-   `--t-slide-bg-<id>[-text[-muted]]` into `theme.cssVars`, which flow through
+   `--t-slide-bg-<id>[-text[-muted]][-link]` into `theme.cssVars`, which flow through
    the existing per-slide var application and export CSS emission untouched.
 2. **Generated CSS** — one rule per variant:
    `.slide.slide-bg-<id> { --slide-bg: ...; background: ...; }` plus the
