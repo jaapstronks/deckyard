@@ -10,12 +10,8 @@ import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
 
-// Import default AI identity from shared constants (used as fallback)
-import { DEFAULT_AI_EMAIL, DEFAULT_AI_NAME, DREAMBOT_EMAIL, DREAMBOT_NAME } from '../../../shared/constants/ai.js';
-// Re-export for backward compatibility
-export { DREAMBOT_EMAIL, DREAMBOT_NAME };
-// Also export the defaults for use with getAiIdentity()
-export { DEFAULT_AI_EMAIL, DEFAULT_AI_NAME };
+// Default AI identity fallback (used when no explicit identity is configured)
+import { DREAMBOT_EMAIL, DREAMBOT_NAME } from '../../../shared/constants/ai.js';
 
 // Suggestion categories
 const SUGGESTION_CATEGORIES = [

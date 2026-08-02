@@ -12,9 +12,6 @@ import {
 import { createRouteContext } from '../utils/context.js';
 import { stripMentionMarkup } from '../../shared/comment-mentions.js';
 
-// Re-export constants for convenience
-export { EVENT_TYPES, ENTITY_TYPES, ACTOR_TYPES };
-
 /**
  * Record a presentation created event.
  */
