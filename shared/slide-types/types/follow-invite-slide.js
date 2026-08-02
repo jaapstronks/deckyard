@@ -44,18 +44,23 @@ export default {
   // - Our translation feature only translates fields declared as string/markdown in the slide schema;
   //   leaving `fields` empty ensures it won't "flip" the invite language.
   fields: [],
+  // No `sourceLang`/`targetLang`: the invite's language is the language of the
+  // version it is rendered in, and the render context already knows that
+  // (`ctx.lang`, supplied by `resolveDeckLang()` at every call site). Storing it
+  // per version made it possible for the stored value and the version to
+  // disagree — divergence with no authority behind it. See
+  // docs/plans/briefs/collab-codec-per-language-fields.md.
   defaults: {
     presentationId: '',
-    sourceLang: 'nl',
   },
   // Signature must be (content, slide, ctx) – see `shared/slide-types/presentation.js`.
   renderHtml: (content, slide, ctx = {}) => {
     const presId = String(
       content?.presentationId || ''
     ).trim();
-    const sourceLang =
-      normalizeLang(content?.sourceLang) || 'nl';
-    const base = COPY[sourceLang] || COPY.nl;
+    // Derived, never read from the slide: this is the invite for *this* version.
+    const lang = normalizeLang(ctx?.lang) || 'nl';
+    const base = COPY[lang] || COPY.nl;
     const customTitle =
       typeof content?.customTitle === 'string'
         ? content.customTitle.trim()
@@ -72,13 +77,13 @@ export default {
     const relFollow = presId
       ? `/follow/${encodeURIComponent(
           presId
-        )}?lang=${encodeURIComponent(sourceLang)}`
+        )}?lang=${encodeURIComponent(lang)}`
       : '';
 
     // Get follow codes from context (when available during presentations)
     const followCodes = ctx?.followCodes || {};
     const code =
-      sourceLang === 'nl' ? followCodes.nl : followCodes.en;
+      lang === 'nl' ? followCodes.nl : followCodes.en;
 
     const goHref = '/go';
 

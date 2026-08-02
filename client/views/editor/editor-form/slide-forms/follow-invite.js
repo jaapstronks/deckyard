@@ -1,8 +1,10 @@
 import { t } from '../../../../lib/ui-i18n.js';
+import { normalizeLang } from '../../../../../shared/i18n-utils.js';
 
 export function renderFollowInviteForm({
   h,
   form,
+  pres,
   slide,
   fieldText,
   fieldTextarea,
@@ -13,9 +15,12 @@ export function renderFollowInviteForm({
 } = {}) {
   if (!slide.content || typeof slide.content !== 'object') slide.content = {};
 
-  const targetLangRaw = String(slide.content?.targetLang || '').trim();
-  const targetLang = targetLangRaw === 'en-GB' ? 'en-GB' : 'nl';
-  const targetLabel = targetLang === 'en-GB' ? 'Engels' : 'Nederlands';
+  // The copy below is what this version's invite renders, so it is labelled
+  // with the version's own language. It used to read `content.targetLang`,
+  // which was the *other* language — the fields said "(Engels)" while editing
+  // the Dutch invite. Those keys are gone; the active version is the answer.
+  const copyLang = normalizeLang(pres?.i18n?.active) || 'nl';
+  const copyLangLabel = copyLang === 'en-GB' ? 'Engels' : 'Nederlands';
 
   const expl = h('div', {
     class: 'help editor-callout',
@@ -48,7 +53,7 @@ export function renderFollowInviteForm({
   form.append(toggleRow);
 
   form.append(
-    fieldText(`Titel (${targetLabel})`, slide.content.customTitle || '', (v) => {
+    fieldText(`Titel (${copyLangLabel})`, slide.content.customTitle || '', (v) => {
       slide.content.customTitle = v;
       markDirty?.();
       scheduleUiRefresh?.();
@@ -56,7 +61,7 @@ export function renderFollowInviteForm({
   );
   form.append(
     fieldTextarea(
-      `Tekst (${targetLabel})`,
+      `Tekst (${copyLangLabel})`,
       slide.content.customBody || '',
       'Leeg laten = standaardtekst.',
       (v) => {
