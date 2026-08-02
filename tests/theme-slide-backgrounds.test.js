@@ -43,12 +43,20 @@ test('normalizeSlideBackgrounds drops reserved, unsafe, duplicate and empty entr
   assert.deepEqual(out[0], { id: 'calm', label: 'calm', value: '#111' });
 });
 
-test('normalizeSlideBackgrounds ignores textColorMuted without textColor', () => {
+test('normalizeSlideBackgrounds ignores textColorMuted and linkColor without textColor', () => {
   const out = normalizeSlideBackgrounds([
-    { id: 'calm', value: '#111', textColorMuted: 'rgba(0,0,0,0.5)' },
+    { id: 'calm', value: '#111', textColorMuted: 'rgba(0,0,0,0.5)', linkColor: '#8fd0ff' },
   ]);
   assert.equal(out[0].textColor, undefined);
   assert.equal(out[0].textColorMuted, undefined);
+  assert.equal(out[0].linkColor, undefined);
+});
+
+test('normalizeSlideBackgrounds keeps linkColor alongside textColor', () => {
+  const out = normalizeSlideBackgrounds([
+    { id: 'calm', value: '#140a26', textColor: '#fff', linkColor: '#8fd0ff' },
+  ]);
+  assert.equal(out[0].linkColor, '#8fd0ff');
 });
 
 test('slideBackgroundCssVars emits --t-slide-bg-<id>* vars', () => {
@@ -64,6 +72,15 @@ test('slideBackgroundCssVars emits --t-slide-bg-<id>* vars', () => {
   });
 });
 
+test('slideBackgroundCssVars emits --t-slide-bg-<id>-link when linkColor is set', () => {
+  const vars = slideBackgroundCssVars(
+    normalizeSlideBackgrounds([
+      { id: 'calm', value: '#140a26', textColor: '#fff', linkColor: '#8fd0ff' },
+    ])
+  );
+  assert.equal(vars['--t-slide-bg-calm-link'], '#8fd0ff');
+});
+
 test('slideBackgroundsCssText generates guarded rules; contrast block only with textColor', () => {
   const entries = normalizeSlideBackgrounds([
     { id: 'calm', value: '#140a26', textColor: '#fff' },
@@ -73,10 +90,17 @@ test('slideBackgroundsCssText generates guarded rules; contrast block only with 
   assert.match(css, /\.slide\.slide-bg-calm \{/);
   assert.match(css, /--slide-bg: var\(--t-slide-bg-calm, var\(--color-background\)\);/);
   assert.match(css, /--color-text: var\(--slide-bg-text\);/);
+  // A text-flipping variant also redirects --color-link, derived from the
+  // accent mixed toward the variant's own text colour (no author declaration).
+  assert.match(
+    css,
+    /--color-link: var\(--t-slide-bg-calm-link, color-mix\(in srgb, var\(--color-accent\) 42%, var\(--slide-bg-text\)\)\);/
+  );
   assert.match(css, /\.slide\.slide-bg-tint \{/);
   // No contrast redirect for the textColor-less variant
   const tintRule = css.slice(css.indexOf('.slide.slide-bg-tint'));
   assert.doesNotMatch(tintRule, /--color-text:/);
+  assert.doesNotMatch(tintRule, /--color-link:/);
   assert.equal(slideBackgroundsCssText([]), '');
 });
 
