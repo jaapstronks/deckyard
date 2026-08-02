@@ -66,6 +66,3 @@ export const PostgresAdapter = withSlideLibraryUsage(
     )
   )
 );
-
-// Re-export helpers for external use
-export { jsonb, now, normalizePagination, applyPagination } from './helpers.js';

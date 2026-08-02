@@ -4,7 +4,7 @@
  */
 
 // Client exports
-export { notionEnabled, notionFetchJson, fetchAllBlockChildren } from './client.js';
+export { notionEnabled } from './client.js';
 
 // Parser exports
 export {
