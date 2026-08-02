@@ -33,13 +33,42 @@ antialiasing alone. A byte-length check would not catch a white page.
 ## What it deliberately does not assert
 
 It does not catch a *silent visual* regression — a webfont failing to load and
-falling back to a system font, a gradient quietly disappearing. Catching that
-needs pixel comparison against recorded baselines, which is a separate decision
-(form 2 of the B14 planning item). Pixel comparison is notoriously brittle
-across platforms: the ubuntu CI runner rasterises differently from a Mac, so
-the baselines would have to be produced in CI or the test is red by
-construction. Form 1 — "Chrome starts and produces a real, non-empty
-PDF/PNG" — is far more coverage per line, and it is what ships here.
+falling back to a system font, a gradient quietly disappearing. Form 1 is
+"Chrome starts and produces a real, non-empty PDF/PNG", which is far more
+coverage per line than anything visual, and it is what this file ships.
+
+The visual half lives next door in
+[`tests/export-structural-metrics.test.js`](#structural-metrics-form-2).
+
+## Structural metrics (form 2)
+
+`tests/export-structural-metrics.test.js` records **structural metrics**, not
+pixels, against committed JSON baselines in `tests/fixtures/export-metrics/`:
+page count and page geometry, the bounding boxes of title / subheading / body
+within ±3% (2px floor), `document.fonts` plus **the family Chrome actually
+painted with**, the dominant frame colour against the theme's own
+`--t-slide-bg-*` token, and the absence of any element outside the 1600×900
+frame. Fixtures are one calibration slide per built-in theme plus one deck
+covering every field kind in the registry.
+
+That last-but-one item is the point: `getComputedStyle().fontFamily` reports
+the stack that was *requested* and stays cheerfully identical when a webfont
+falls back, so the test reads the resolved face via
+`CSS.getPlatformFontsForNode` instead.
+
+What it deliberately does **not** guard is exact rendering: no pixel baselines.
+37 types × 6 themes is 222 binary files nobody reviews, the expected flake is
+10-25%, and the ubuntu runner rasterises differently from a Mac. That was
+weighed and rejected — `docs/plans/briefs/export-structural-metrics.md`.
+
+After an intentional layout or theme change, regenerate:
+
+```sh
+UPDATE_EXPORT_METRICS=1 node --test tests/export-structural-metrics.test.js
+```
+
+The tolerance lives in the test file, never in a baseline: a baseline records
+what was measured, and how strictly it is read is a property of the test.
 
 ## How Chrome gets into CI
 

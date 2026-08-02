@@ -1,0 +1,240 @@
+{
+  "slides": [
+    {
+      "type": "title-slide",
+      "fieldKinds": [
+        "string",
+        "enum",
+        "number"
+      ],
+      "titleSelector": ".slide .title",
+      "title": {
+        "rect": {
+          "x": 96,
+          "y": 640.4,
+          "width": 1040,
+          "height": 67.8
+        },
+        "fontSize": "64px",
+        "fontWeight": "700",
+        "requestedFamily": "Bricolage Grotesque",
+        "paintedFamilies": [
+          {
+            "family": "Bricolage Grotesque 96pt ExtraBold",
+            "glyphs": 15
+          }
+        ],
+        "text": "All field types"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Bricolage Grotesque 700",
+        "Inter 400",
+        "Inter 700"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.509
+      }
+    },
+    {
+      "type": "content-slide",
+      "fieldKinds": [
+        "markdown",
+        "items"
+      ],
+      "titleSelector": ".slide .heading",
+      "title": {
+        "rect": {
+          "x": 64,
+          "y": 64,
+          "width": 1472,
+          "height": 55
+        },
+        "fontSize": "50px",
+        "fontWeight": "700",
+        "requestedFamily": "Bricolage Grotesque",
+        "paintedFamilies": [
+          {
+            "family": "Bricolage Grotesque 96pt ExtraBold",
+            "glyphs": 18
+          }
+        ],
+        "text": "Markdown and items"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Bricolage Grotesque 700",
+        "Inter 400",
+        "Inter 500",
+        "Inter 700"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.981
+      }
+    },
+    {
+      "type": "table-slide",
+      "fieldKinds": [
+        "items"
+      ],
+      "titleSelector": ".slide .heading",
+      "title": {
+        "rect": {
+          "x": 64,
+          "y": 64,
+          "width": 1472,
+          "height": 55
+        },
+        "fontSize": "50px",
+        "fontWeight": "700",
+        "requestedFamily": "Bricolage Grotesque",
+        "paintedFamilies": [
+          {
+            "family": "Bricolage Grotesque 96pt ExtraBold",
+            "glyphs": 10
+          }
+        ],
+        "text": "Table rows"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Bricolage Grotesque 700",
+        "Inter 400",
+        "Inter 500",
+        "Inter 700"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.994
+      }
+    },
+    {
+      "type": "chart-slide",
+      "fieldKinds": [
+        "csv"
+      ],
+      "titleSelector": ".slide .chart-title",
+      "title": {
+        "rect": {
+          "x": 64,
+          "y": 64,
+          "width": 247.9,
+          "height": 56.2
+        },
+        "fontSize": "52px",
+        "fontWeight": "400",
+        "requestedFamily": "Bricolage Grotesque",
+        "paintedFamilies": [
+          {
+            "family": "Bricolage Grotesque 96pt ExtraBold",
+            "glyphs": 10
+          }
+        ],
+        "text": "Chart data"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Bricolage Grotesque 400",
+        "Inter 400"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.882
+      }
+    },
+    {
+      "type": "custom-html-slide",
+      "fieldKinds": [
+        "code"
+      ],
+      "titleSelector": ".slide .probe",
+      "title": {
+        "rect": {
+          "x": 64,
+          "y": 64,
+          "width": 1472,
+          "height": 139
+        },
+        "fontSize": "48px",
+        "fontWeight": "400",
+        "requestedFamily": "Inter",
+        "paintedFamilies": [
+          {
+            "family": "Inter",
+            "glyphs": 11
+          }
+        ],
+        "text": "Custom HTML"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Inter 400"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.997
+      }
+    },
+    {
+      "type": "image-slide",
+      "fieldKinds": [
+        "image",
+        "boolean"
+      ],
+      "titleSelector": ".slide .img-title",
+      "title": {
+        "rect": {
+          "x": 64,
+          "y": 64,
+          "width": 1472,
+          "height": 47.5
+        },
+        "fontSize": "44px",
+        "fontWeight": "400",
+        "requestedFamily": "Bricolage Grotesque",
+        "paintedFamilies": [
+          {
+            "family": "Bricolage Grotesque 96pt ExtraBold",
+            "glyphs": 14
+          }
+        ],
+        "text": "Image and flag"
+      },
+      "overflowing": [],
+      "loadedFonts": [
+        "Bricolage Grotesque 400",
+        "Inter 400"
+      ],
+      "dominantColor": {
+        "rgb": [
+          255,
+          255,
+          255
+        ],
+        "share": 0.979
+      }
+    }
+  ]
+}

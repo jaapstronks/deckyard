@@ -1,0 +1,77 @@
+{
+  "frame": {
+    "width": 1600,
+    "height": 900
+  },
+  "elements": {
+    ".slide .heading": {
+      "rect": {
+        "x": 64,
+        "y": 64,
+        "width": 1472,
+        "height": 55
+      },
+      "fontSize": "50px",
+      "fontWeight": "600",
+      "requestedFamily": "Fraunces",
+      "paintedFamilies": [
+        {
+          "family": "Fraunces",
+          "glyphs": 18
+        }
+      ],
+      "text": "Structural metrics"
+    },
+    ".slide .subheading": {
+      "rect": {
+        "x": 64,
+        "y": 127,
+        "width": 1472,
+        "height": 45.6
+      },
+      "fontSize": "38px",
+      "fontWeight": "400",
+      "requestedFamily": "Work Sans",
+      "paintedFamilies": [
+        {
+          "family": "Work Sans",
+          "glyphs": 21
+        }
+      ],
+      "text": "One calibration slide"
+    },
+    ".slide .body": {
+      "rect": {
+        "x": 64,
+        "y": 190.6,
+        "width": 1472,
+        "height": 645.4
+      },
+      "fontSize": "28px",
+      "fontWeight": "400",
+      "requestedFamily": "Work Sans",
+      "paintedFamilies": [
+        {
+          "family": "Work Sans",
+          "glyphs": 34
+        }
+      ],
+      "text": "Short body line. Second short line."
+    }
+  },
+  "overflowing": [],
+  "slideBackground": "rgb(255, 253, 247)",
+  "loadedFonts": [
+    "Fraunces 600",
+    "Work Sans 400"
+  ],
+  "documentFontsStatus": "loaded",
+  "dominantColor": {
+    "rgb": [
+      255,
+      253,
+      247
+    ],
+    "share": 0.99
+  }
+}
