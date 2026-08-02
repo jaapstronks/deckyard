@@ -16,8 +16,8 @@
 .viewer-topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   background: hsl(var(--app-bg-elevated) / 0.95);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -40,12 +40,12 @@
 .viewer-topbar-controls {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 
 /* Permission badge */
 .viewer-permission-badge {
-  padding: 4px 10px;
+  padding: var(--ps-space-1) var(--ps-space-2-5);
   border-radius: 999px;
   font-size: var(--ps-text-xs);
   font-weight: 600;
@@ -73,8 +73,8 @@
 .viewer-comments-btn--prominent {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: var(--ps-space-1-5);
+  padding: var(--ps-space-2) var(--ps-space-3-5);
   background: hsl(210 70% 50% / 0.12);
   border: 1px solid hsl(210 70% 50% / 0.3);
   color: hsl(210 70% 45%);
@@ -117,7 +117,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 2px;
+  margin-left: var(--ps-space-0-5);
 }
 
 .viewer-comments-btn .comments-badge[hidden] {
@@ -156,13 +156,13 @@
 }
 
 .viewer-slides-panel .slides-panel-header {
-  padding: 10px 8px;
+  padding: var(--ps-space-2-5) var(--ps-space-2);
   border-bottom: 1px solid hsl(var(--app-border-default) / 0.5);
 }
 
 .viewer-slides-panel .list {
-  padding: 8px;
-  gap: 4px;
+  padding: var(--ps-space-2);
+  gap: var(--ps-space-1);
 }
 
 .viewer-slides-panel .slides-panel-header h2 {
@@ -225,9 +225,9 @@
 .viewer-nav {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: var(--ps-space-4);
   align-items: center;
-  padding: 12px 0;
+  padding: var(--ps-space-3) 0;
   flex-shrink: 0;
 }
 
@@ -259,7 +259,7 @@
 @media (max-width: 768px) {
   .viewer-slides-panel {
     width: 120px;
-    padding: 6px;
+    padding: var(--ps-space-1-5);
   }
 
   .viewer-slide-num {
@@ -322,14 +322,14 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 20px;
+  padding: var(--ps-space-5);
   background: hsl(var(--app-bg-base));
 }
 
 .access-error-card {
   width: 100%;
   max-width: 480px;
-  padding: 48px 40px;
+  padding: var(--ps-space-12) var(--ps-space-10);
   border-radius: 24px;
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
@@ -340,18 +340,18 @@
 .access-error-icon {
   width: 64px;
   height: 64px;
-  margin-bottom: 20px;
+  margin-bottom: var(--ps-space-5);
 }
 
 .access-error-title {
-  margin: 0 0 16px;
+  margin: 0 0 var(--ps-space-4);
   font-size: 24px;
   font-weight: 700;
   color: hsl(var(--app-text-primary));
 }
 
 .access-error-message {
-  margin: 0 0 32px;
+  margin: 0 0 var(--ps-space-8);
   font-size: 15px;
   line-height: 1.6;
   color: hsl(var(--app-text-secondary));
@@ -360,7 +360,7 @@
 .access-error-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ps-space-3);
   align-items: center;
 }
 
@@ -370,7 +370,7 @@
 
 @media (max-width: 480px) {
   .access-error-card {
-    padding: 36px 24px;
+    padding: var(--ps-space-9) var(--ps-space-6);
     border-radius: 20px;
   }
 

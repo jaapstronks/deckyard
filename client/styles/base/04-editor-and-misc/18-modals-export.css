@@ -10,8 +10,8 @@
 .export-lang-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: var(--ps-space-2-5);
+  margin-bottom: var(--ps-space-3-5);
 }
 
 .export-format-list {
@@ -25,7 +25,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: hsl(var(--app-text-muted));
-  margin: 14px 0 6px;
+  margin: var(--ps-space-3-5) 0 var(--ps-space-1-5);
 }
 
 .export-format-group:first-child {
@@ -39,14 +39,14 @@
 
 .export-format-list > .export-format-row,
 .export-format-list > .export-format-rowwrap {
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
 }
 
 .export-format-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md, 8px);
   background: transparent;
@@ -125,14 +125,14 @@
 .export-format-actions {
   flex: 0 0 auto;
   display: flex;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
 }
 
 /* Browser-print fallback, revealed only when the server PDF render fails. */
 .export-format-fallback {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   padding: 2px 4px 10px 58px;
 }
 
