@@ -62,6 +62,28 @@ When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a m
 
 **Curated fonts** (`shared/theme-fonts.js`): 40 pre-selected Google Fonts with known weights. Downloaded to `/assets/fonts/google/` for local serving. Available to all orgs without configuration.
 
+The download is **pinned**. `scripts/google-fonts.lock.json` records, for every
+family × weight × subset, the exact `fonts.gstatic.com` URL, its SHA-256 and its
+byte size; `postinstall` downloads only what the lock names and refuses to
+install bytes that do not match. Refreshing the fonts is a deliberate step:
+
+```sh
+node scripts/download-google-fonts.js --update-lock   # re-resolve, rewrite the lock
+```
+
+Without the pin, `assets/fonts/google/` was a function of Google's release
+schedule rather than of this repository, and no rendering baseline could mean
+anything (`docs/plans/briefs/export-structural-metrics.md`).
+
+Each weight ships as **two files**, Google's disjoint `latin` and `latin-ext`
+subsets, named `<slug>-<weight>-<subset>.woff2`. Both are needed: `latin` holds
+ASCII and Latin-1, `latin-ext` holds the Polish/Czech/Turkish/Hungarian letters.
+Every `@font-face` the app generates therefore carries a `unicode-range`, taken
+from `FONT_SUBSETS` in `shared/theme-fonts.js`; without it the second rule would
+simply override the first. Paths come from `curatedFontPath()` /
+`curatedFontFaces()` — never hand-built — so writer and readers cannot drift.
+`tests/google-fonts-lock.test.js` gates all of this.
+
 **Managed fonts**: org-scoped custom fonts created through the font editor. Stored in the database with source-specific resolution.
 
 The font picker dropdown shows both: curated fonts grouped by category, and managed fonts in a separate "Custom Fonts" optgroup.

@@ -207,8 +207,12 @@ export function injectThemeFontFaces(theme, key = null) {
       continue;
     }
 
+    // Curated fonts ship as Google's disjoint latin / latin-ext splits, one
+    // entry per weight × subset; the range is what keeps the second entry from
+    // simply overriding the first.
+    const range = f.unicodeRange ? ` unicode-range: ${f.unicodeRange};` : '';
     rules.push(
-      `@font-face { font-family: '${family}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap; }`
+      `@font-face { font-family: '${family}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap;${range} }`
     );
   }
 

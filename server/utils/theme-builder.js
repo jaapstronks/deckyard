@@ -4,11 +4,7 @@
  * used by the existing presentation rendering system.
  */
 
-import {
-  getFontByFamily,
-  getFontFamilyCSS,
-  fontFamilyToSlug,
-} from '../../shared/theme-fonts.js';
+import { getFontFamilyCSS, curatedFontFaces } from '../../shared/theme-fonts.js';
 import {
   validateThemeConfig,
   RADIUS_SCALES,
@@ -427,18 +423,16 @@ function buildEmbedFontsArray(fonts, { headingManaged, bodyManaged } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    const fontInfo = getFontByFamily(family);
-    if (!fontInfo) return;
-
-    const slug = fontFamilyToSlug(family);
-
-    // Add each weight
-    for (const weight of fontInfo.weights) {
+    // One entry per weight × subset: the self-hosted files are Google's
+    // disjoint `latin` / `latin-ext` splits, so each carries the unicode-range
+    // that tells the browser which of the two holds the glyph it wants.
+    for (const face of curatedFontFaces(family)) {
       embedFonts.push({
         family,
-        path: `assets/fonts/google/${slug}/${slug}-${weight}.woff2`,
-        weight,
+        path: face.path,
+        weight: face.weight,
         style: 'normal',
+        unicodeRange: face.unicodeRange,
       });
     }
   };
@@ -581,18 +575,14 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    const fontInfo = getFontByFamily(family);
-    if (!fontInfo) return;
-
-    const slug = fontFamilyToSlug(family);
-
-    for (const weight of fontInfo.weights) {
+    for (const face of curatedFontFaces(family)) {
       lines.push(`@font-face {
   font-family: '${family}';
   font-style: normal;
-  font-weight: ${weight};
+  font-weight: ${face.weight};
   font-display: swap;
-  src: url('/assets/fonts/google/${slug}/${slug}-${weight}.woff2') format('woff2');
+  src: url('/${face.path}') format('woff2');
+  unicode-range: ${face.unicodeRange};
 }`);
     }
   };

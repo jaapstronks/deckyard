@@ -91,6 +91,10 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
     const weight = Number(f?.weight || 400) || 400;
     const style = String(f?.style || 'normal');
     const format = String(f?.format || 'woff2');
+    // Curated fonts arrive as one entry per weight × Google subset; without the
+    // range the second entry would simply override the first and half the
+    // glyphs would fall back. Uploaded fonts carry no range and need none.
+    const unicodeRange = String(f?.unicodeRange || '').trim();
 
     let dataUrl;
 
@@ -122,7 +126,7 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   src: url('${dataUrl}') format('${format}');
   font-weight: ${weight};
   font-style: ${style};
-  font-display: swap;
+  font-display: swap;${unicodeRange ? `\n  unicode-range: ${unicodeRange};` : ''}
 }`.trim());
   }
   return blocks.join('\n');

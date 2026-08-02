@@ -126,3 +126,81 @@ export function fontFamilyToSlug(family) {
   return family.toLowerCase().replace(/\s+/g, '-');
 }
 
+/**
+ * The Google Fonts subsets we self-host, with their unicode ranges.
+ *
+ * Google splits every family into disjoint per-script subsets and expects the
+ * browser to pick between them via `unicode-range`. They are *not* cumulative:
+ * the `latin-ext` file contains only the extended block, so a page that ships
+ * one subset and omits `unicode-range` renders every glyph outside that block
+ * in a fallback font. Both subsets are required — `latin` carries ASCII and
+ * Latin-1, `latin-ext` carries the Polish/Czech/Turkish/Hungarian letters our
+ * `pl` locale and European deck content need.
+ *
+ * The ranges are Google's own, identical across every curated family (verified
+ * against Inter, Lato, Playfair Display and JetBrains Mono). The downloader
+ * records the ranges Google actually served in `scripts/google-fonts.lock.json`
+ * and fails the refresh if they ever drift from these constants.
+ */
+export const FONT_SUBSETS = [
+  {
+    name: 'latin',
+    unicodeRange:
+      'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, ' +
+      'U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, ' +
+      'U+2212, U+2215, U+FEFF, U+FFFD',
+  },
+  {
+    name: 'latin-ext',
+    unicodeRange:
+      'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, ' +
+      'U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, ' +
+      'U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF',
+  },
+];
+
+/** Subset names in load order, for the downloader and its lockfile. */
+export const FONT_SUBSET_NAMES = FONT_SUBSETS.map((s) => s.name);
+
+/**
+ * Repo-relative path of one self-hosted curated font file.
+ *
+ * The single place that knows the layout of `assets/fonts/google/`. Every
+ * consumer (downloader, theme builder, embed/export CSS) derives its paths from
+ * here so the naming scheme can never drift between writer and readers.
+ *
+ * @param {string} slug - Font slug from {@link fontFamilyToSlug}
+ * @param {number} weight - Font weight
+ * @param {string} subset - Subset name from {@link FONT_SUBSET_NAMES}
+ * @returns {string} - Path relative to the repository root
+ */
+export function curatedFontPath(slug, weight, subset) {
+  return `assets/fonts/google/${slug}/${slug}-${weight}-${subset}.woff2`;
+}
+
+/**
+ * Every @font-face descriptor a curated family needs: one per weight × subset.
+ *
+ * @param {string} family - Font family name
+ * @returns {Array<{family: string, weight: number, subset: string, path: string, unicodeRange: string}>}
+ */
+export function curatedFontFaces(family) {
+  const font = getFontByFamily(family);
+  if (!font) return [];
+  const slug = fontFamilyToSlug(family);
+
+  const faces = [];
+  for (const weight of font.weights) {
+    for (const { name, unicodeRange } of FONT_SUBSETS) {
+      faces.push({
+        family: font.family,
+        weight,
+        subset: name,
+        path: curatedFontPath(slug, weight, name),
+        unicodeRange,
+      });
+    }
+  }
+  return faces;
+}
+
