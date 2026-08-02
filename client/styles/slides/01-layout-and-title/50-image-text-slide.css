@@ -105,7 +105,7 @@
 }
 /* Rows don't mirror, but a row slide can carry imageSide: right (remembered
    from a split, or via the mirror toggle). The generic split mirror rule
-   (01-basic-media.css, loaded later) would then push .media into an implicit
+   (02-content-and-media/10-image-text.css, loaded later) would then push .media into an implicit
    second column; these is-right repeats out-specificity it, same trick as
    the corner rules above. */
 .slide-image-text.is-layout-row-top .split.is-right .media {

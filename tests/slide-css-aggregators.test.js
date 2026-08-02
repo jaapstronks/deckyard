@@ -97,5 +97,5 @@ test('poll keeps its documented out-of-cascade position after countdown', () => 
   const idx = (file) => order.findIndex((e) => e.file === file);
   assert.ok(idx('10-poll.css') > idx('18-countdown.css'), 'poll loads after countdown');
   assert.ok(idx('10-poll.css') < idx('20-chart.css'), 'poll loads before chart');
-  assert.equal(cascadeOrder(TYPE_CSS['poll-slide']), 19);
+  assert.equal(cascadeOrder(TYPE_CSS['poll-slide'][0]), 19);
 });

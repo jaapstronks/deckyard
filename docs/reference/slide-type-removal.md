@@ -267,7 +267,7 @@ unlike `lijstje-slide`, where the same production store held 565 slides.
 
 | Group | Files | What was in them |
 |---|---|---|
-| **Owned by the type** | 4 | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the shared `02-content-and-media/02-layouts.css`, not a file of its own |
+| **Owned by the type** | 4 | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the then-shared `02-content-and-media/02-layouts.css` (that sheet has since been renamed to `40-quote.css` and claimed by quote-slide), not a file of its own |
 | **Registration / wiring** | 3 | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited) |
 | **Removal mechanism** | 2 | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design |
 | **Derived docs** | 2 | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now *derived* rather than hand-restated |

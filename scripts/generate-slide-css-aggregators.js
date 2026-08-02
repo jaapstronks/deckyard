@@ -54,44 +54,43 @@ export const TIERS = [
 ];
 
 /**
- * Per-type stylesheet(s), keyed by the registry type name. A type may claim
- * more than one sheet: its rules can live at several cascade positions (e.g.
- * image-text in tier 01 and tier 02), and extraction never moves a rule's
- * cascade position — only file boundaries and ownership change. `order` is
- * optional and only present where the cascade position must diverge from the
- * filename prefix.
- * @type {Record<string, { tier: string, file: string, order?: number }
- *   | Array<{ tier: string, file: string, order?: number }>>}
+ * Per-type stylesheets, keyed by the registry type name. Always a list — a
+ * type may claim more than one sheet: its rules can live at several cascade
+ * positions (e.g. image-text in tier 01 and tier 02), and extraction never
+ * moves a rule's cascade position — only file boundaries and ownership
+ * change. `order` is optional and only present where the cascade position
+ * must diverge from the filename prefix.
+ * @type {Record<string, Array<{ tier: string, file: string, order?: number }>>}
  */
 export const TYPE_CSS = {
   // Tier 01 — layout and title
-  'payoff-slide': { tier: '01-layout-and-title', file: '10-payoff.css' },
-  'end-slide': { tier: '01-layout-and-title', file: '11-end-slide.css' },
-  'title-slide': { tier: '01-layout-and-title', file: '21-title-slide-universal.css' },
-  'table-slide': { tier: '01-layout-and-title', file: '35-table-slide.css' },
-  'image-slide': { tier: '01-layout-and-title', file: '40-image-slide.css' },
+  'payoff-slide': [{ tier: '01-layout-and-title', file: '10-payoff.css' }],
+  'end-slide': [{ tier: '01-layout-and-title', file: '11-end-slide.css' }],
+  'title-slide': [{ tier: '01-layout-and-title', file: '21-title-slide-universal.css' }],
+  'table-slide': [{ tier: '01-layout-and-title', file: '35-table-slide.css' }],
+  'image-slide': [{ tier: '01-layout-and-title', file: '40-image-slide.css' }],
   'image-text-slide': [
     { tier: '01-layout-and-title', file: '50-image-text-slide.css' },
     { tier: '02-content-and-media', file: '10-image-text.css' },
   ],
-  'list-slide': { tier: '01-layout-and-title', file: '60-list-slide.css' },
-  'kpi-metrics-slide': { tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' },
-  'comparison-slide': { tier: '01-layout-and-title', file: '82-comparison-slide.css' },
-  'process-slide': { tier: '01-layout-and-title', file: '84-process-slide.css' },
-  'timeline-slide': { tier: '01-layout-and-title', file: '86-timeline-slide.css' },
-  'matrix-slide': { tier: '01-layout-and-title', file: '88-matrix-slide.css' },
-  'funnel-slide': { tier: '01-layout-and-title', file: '90-funnel-slide.css' },
-  'pyramid-slide': { tier: '01-layout-and-title', file: '91-pyramid-slide.css' },
-  'cycle-slide': { tier: '01-layout-and-title', file: '92-cycle-slide.css' },
-  'gallery-slide': { tier: '01-layout-and-title', file: '93-gallery-slide.css' },
+  'list-slide': [{ tier: '01-layout-and-title', file: '60-list-slide.css' }],
+  'kpi-metrics-slide': [{ tier: '01-layout-and-title', file: '80-kpi-metrics-slide.css' }],
+  'comparison-slide': [{ tier: '01-layout-and-title', file: '82-comparison-slide.css' }],
+  'process-slide': [{ tier: '01-layout-and-title', file: '84-process-slide.css' }],
+  'timeline-slide': [{ tier: '01-layout-and-title', file: '86-timeline-slide.css' }],
+  'matrix-slide': [{ tier: '01-layout-and-title', file: '88-matrix-slide.css' }],
+  'funnel-slide': [{ tier: '01-layout-and-title', file: '90-funnel-slide.css' }],
+  'pyramid-slide': [{ tier: '01-layout-and-title', file: '91-pyramid-slide.css' }],
+  'cycle-slide': [{ tier: '01-layout-and-title', file: '92-cycle-slide.css' }],
+  'gallery-slide': [{ tier: '01-layout-and-title', file: '93-gallery-slide.css' }],
 
   // Tier 02 — content and media
-  'video-slide': { tier: '02-content-and-media', file: '20-video.css' },
-  'embed-slide': { tier: '02-content-and-media', file: '30-embed.css' },
-  'quote-slide': { tier: '02-content-and-media', file: '40-quote.css' },
-  'card-stack-slide': { tier: '02-content-and-media', file: '50-card-stack.css' },
-  'text-blocks-slide': { tier: '02-content-and-media', file: '80-text-blocks.css' },
-  'content-columns-slide': { tier: '02-content-and-media', file: '90-content-columns.css' },
+  'video-slide': [{ tier: '02-content-and-media', file: '20-video.css' }],
+  'embed-slide': [{ tier: '02-content-and-media', file: '30-embed.css' }],
+  'quote-slide': [{ tier: '02-content-and-media', file: '40-quote.css' }],
+  'card-stack-slide': [{ tier: '02-content-and-media', file: '50-card-stack.css' }],
+  'text-blocks-slide': [{ tier: '02-content-and-media', file: '80-text-blocks.css' }],
+  'content-columns-slide': [{ tier: '02-content-and-media', file: '90-content-columns.css' }],
 
   // Tier 03 — components
   'icon-card-grid-slide': [
@@ -99,18 +98,18 @@ export const TYPE_CSS = {
     { tier: '02-content-and-media', file: '75-icon-card-grid-variants.css' },
     { tier: '03-components', file: '00-icon-card-grid.css' },
   ],
-  'follow-invite-slide': { tier: '03-components', file: '15-follow-invite.css' },
-  'feedback-slide': { tier: '03-components', file: '16-feedback.css' },
-  'lead-capture-slide': { tier: '03-components', file: '17-lead-capture.css' },
-  'countdown-slide': { tier: '03-components', file: '18-countdown.css' },
+  'follow-invite-slide': [{ tier: '03-components', file: '15-follow-invite.css' }],
+  'feedback-slide': [{ tier: '03-components', file: '16-feedback.css' }],
+  'lead-capture-slide': [{ tier: '03-components', file: '17-lead-capture.css' }],
+  'countdown-slide': [{ tier: '03-components', file: '18-countdown.css' }],
   // Filename says 10, but this has always loaded after 18-countdown.css.
   // The cascade position is 19; the filename is not touched (that would be a
   // move, out of scope for this brief).
-  'poll-slide': { tier: '03-components', file: '10-poll.css', order: 19 },
-  'chart-slide': { tier: '03-components', file: '20-chart.css' },
-  'custom-html-slide': { tier: '03-components', file: '26-custom-html.css' },
-  'chapter-title-slide': { tier: '03-components', file: '30-chapter-title.css' },
-  'team-cards-slide': { tier: '03-components', file: '45-team-cards.css' },
+  'poll-slide': [{ tier: '03-components', file: '10-poll.css', order: 19 }],
+  'chart-slide': [{ tier: '03-components', file: '20-chart.css' }],
+  'custom-html-slide': [{ tier: '03-components', file: '26-custom-html.css' }],
+  'chapter-title-slide': [{ tier: '03-components', file: '30-chapter-title.css' }],
+  'team-cards-slide': [{ tier: '03-components', file: '45-team-cards.css' }],
   'logo-wall-slide': [
     { tier: '02-content-and-media', file: '72-logo-wall-links.css' },
     { tier: '03-components', file: '46-logo-wall.css' },
@@ -118,12 +117,12 @@ export const TYPE_CSS = {
 };
 
 /**
- * All (type, entry) pairs with the entry-or-list shape flattened.
+ * All (type, entry) pairs, flattened.
  * @returns {Array<{ type: string, tier: string, file: string, order?: number }>}
  */
 export function typeCssEntries() {
-  return Object.entries(TYPE_CSS).flatMap(([type, v]) =>
-    (Array.isArray(v) ? v : [v]).map((e) => ({ type, ...e }))
+  return Object.entries(TYPE_CSS).flatMap(([type, list]) =>
+    list.map((e) => ({ type, ...e }))
   );
 }
 
