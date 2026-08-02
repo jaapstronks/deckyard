@@ -310,10 +310,10 @@ describe('css spacing tokens', () => {
     for (const px of [2, 6, 10, 14, 18]) {
       assert.ok(scale.has(px), `the fine band should carry ${px}px`);
     }
-    // 28/36/60/64 are the gaps the old 4px scale left that in-scope CSS
-    // actually uses. 44, 52 and 56 have no user, so the scale does not carry
-    // them — see docs/reference/css-tokens.md.
-    for (const px of [28, 36, 60, 64]) {
+    // 28/36/60 are the gaps the old 4px scale left that in-scope CSS
+    // actually uses. 44, 52, 56 and 64 have no user, so the scale does not
+    // carry them — see docs/reference/css-tokens.md.
+    for (const px of [28, 36, 60]) {
       assert.ok(scale.has(px), `the upper scale should carry ${px}px`);
     }
   });
