@@ -18,6 +18,14 @@
  * is what makes that statement checkable. It also protects upstream from its own
  * dead classes, which is how the thirteen entries in {@link UNSTYLED} got found.
  *
+ * **It reads `CORE_SLIDE_TYPE_DEFS`, never `SLIDE_TYPES`.** A fork may override a
+ * core name with `override: true`, and that type's classes are styled by the
+ * fork's own CSS, which upstream does not have — asserting against them would
+ * make this the very thing the briefing warns about: an upstream test that
+ * assumes something a fork replaces by definition. `ctx.slideTypes` is how the
+ * core definition is rendered even when an override is installed. A fork wanting
+ * this check on its own types writes its own, over its own stylesheets.
+ *
  * See `docs/reference/slide-type-css-contract.md`.
  */
 
@@ -27,7 +35,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CORE_SLIDE_TYPE_NAMES, SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import { CORE_SLIDE_TYPE_DEFS, CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { extractCssClasses } from '../scripts/lint-dead-css.js';
 
@@ -173,11 +181,11 @@ const EMITTED = new Map();
 const SELF_STYLED = new Set();
 
 for (const type of CORE_SLIDE_TYPE_NAMES) {
-  const def = SLIDE_TYPES[type];
+  const def = CORE_SLIDE_TYPE_DEFS[type];
   for (const content of contentVariants(def)) {
     let html;
     try {
-      html = renderSlideHtml({ type, content }, { lang: 'nl' });
+      html = renderSlideHtml({ type, content }, { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS });
     } catch {
       // A variant a type rejects is not this test's business; the defaults
       // render is asserted separately below.
@@ -197,8 +205,8 @@ test('the scan actually renders the registry', () => {
   assert.ok(CORE_SLIDE_TYPE_NAMES.length > 20, 'expected a populated registry');
   for (const type of CORE_SLIDE_TYPE_NAMES) {
     const html = renderSlideHtml(
-      { type, content: structuredClone(SLIDE_TYPES[type].defaults || {}) },
-      { lang: 'nl' }
+      { type, content: structuredClone(CORE_SLIDE_TYPE_DEFS[type].defaults || {}) },
+      { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS }
     );
     assert.match(html, /class="/, `${type} rendered no classes at all`);
   }
