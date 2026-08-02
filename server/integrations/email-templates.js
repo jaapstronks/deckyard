@@ -19,7 +19,6 @@ export {
   emailButton,
   emailWrapper,
   troubleClickingFooter,
-  formatBytes,
   // Auth templates
   buildPasswordResetEmail,
   buildUserInvitationEmail,

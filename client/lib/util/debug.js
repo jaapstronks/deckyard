@@ -3,7 +3,7 @@ function truthyEnv(v) {
   return s === '1' || s === 'true' || s === 'yes' || s === 'on';
 }
 
-export function isDebugLogEnabled() {
+function isDebugLogEnabled() {
   try {
     // Injected by server when DEBUG_LOG_CLIENT is enabled.
     if (globalThis.__DEBUG_LOG__ === true) return true;
@@ -36,16 +36,6 @@ export function debugLog(...args) {
   try {
     // eslint-disable-next-line no-console
     console.log(...args);
-  } catch {
-    // ignore
-  }
-}
-
-export function debugError(...args) {
-  if (!isDebugLogEnabled()) return;
-  try {
-    // eslint-disable-next-line no-console
-    console.error(...args);
   } catch {
     // ignore
   }

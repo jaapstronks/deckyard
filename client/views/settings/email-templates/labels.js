@@ -4,14 +4,10 @@
  */
 
 import { t } from '../../../lib/ui-i18n.js';
-import {
-  TEMPLATE_TYPES,
-  SUPPORTED_LOCALES,
-  TEMPLATE_FIELDS,
-} from '../../../../shared/constants/email-templates.js';
+import { TEMPLATE_TYPES } from '../../../../shared/constants/email-templates.js';
 
 // Re-export constants for convenience
-export { TEMPLATE_TYPES, SUPPORTED_LOCALES, TEMPLATE_FIELDS };
+export { TEMPLATE_TYPES };
 
 /**
  * Get template type label with i18n support.

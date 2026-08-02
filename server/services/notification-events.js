@@ -43,16 +43,6 @@ export function removeClient(userEmail, res) {
 }
 
 /**
- * Get the count of connected clients for a user.
- * @param {string} userEmail - The user's email
- * @returns {number} Number of connected clients
- */
-export function getClientCount(userEmail) {
-  const email = normalizeEmail(userEmail);
-  return clients.get(email)?.size || 0;
-}
-
-/**
  * Broadcast an event to all clients connected for a user.
  * @param {string} userEmail - The user's email
  * @param {string} eventType - Event type (e.g., 'notification:new', 'notification:counts')
@@ -81,7 +71,7 @@ export function broadcastToUser(userEmail, eventType, data) {
  * Helps keep connections alive through proxies.
  * @param {string} userEmail - The user's email
  */
-export function sendHeartbeat(userEmail) {
+function sendHeartbeat(userEmail) {
   const email = normalizeEmail(userEmail);
   if (!email) return;
 
@@ -102,7 +92,7 @@ export function sendHeartbeat(userEmail) {
  * Send heartbeats to all connected users.
  * Call this periodically (e.g., every 30 seconds).
  */
-export function sendAllHeartbeats() {
+function sendAllHeartbeats() {
   for (const userEmail of clients.keys()) {
     sendHeartbeat(userEmail);
   }
@@ -127,14 +117,4 @@ let heartbeatIntervalId = null;
 export function startHeartbeat() {
   if (heartbeatIntervalId) return; // Already running
   heartbeatIntervalId = setInterval(sendAllHeartbeats, HEARTBEAT_INTERVAL_MS);
-}
-
-/**
- * Stop the global heartbeat interval.
- */
-export function stopHeartbeat() {
-  if (heartbeatIntervalId) {
-    clearInterval(heartbeatIntervalId);
-    heartbeatIntervalId = null;
-  }
 }

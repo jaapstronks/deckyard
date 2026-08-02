@@ -8,7 +8,7 @@
  * Based on client/i18n/manifest.json locales.
  * Note: 'en' is normalized to 'en-GB' for backwards compatibility.
  */
-export const ALL_TRANSLATION_LANGS = new Set([
+const ALL_TRANSLATION_LANGS = new Set([
   'nl',     // Dutch
   'en-GB',  // British English (canonical)
   'en',     // English (alias for en-GB)
@@ -28,7 +28,7 @@ export const ALL_TRANSLATION_LANGS = new Set([
  * Legacy two-language set for presentation dominant/active language.
  * Used for backwards compatibility with existing presentations.
  */
-export const KNOWN_LANGS = new Set(['nl', 'en-GB']);
+const KNOWN_LANGS = new Set(['nl', 'en-GB']);
 
 /**
  * Normalize a language code to a known presentation language or null.

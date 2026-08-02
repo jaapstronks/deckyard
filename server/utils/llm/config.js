@@ -2,7 +2,7 @@ import { optionalEnv, requireEnv } from './env.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { KNOWN_VENDORS } from '../../../shared/llm-vendors.js';
 
-export function normalizeLlmVendor(vendor) {
+function normalizeLlmVendor(vendor) {
   if (typeof vendor !== 'string') return null;
   const v = vendor.trim().toLowerCase();
   if (!v) return null;

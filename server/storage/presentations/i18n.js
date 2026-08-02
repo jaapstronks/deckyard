@@ -5,11 +5,9 @@ import {
   normalizeTranslationLang,
   otherLang,
   isNonEmptyString,
-  ALL_TRANSLATION_LANGS,
-  KNOWN_LANGS,
 } from '../../../shared/i18n-utils.js';
 
-export { normalizeLang, normalizeTranslationLang, otherLang, isNonEmptyString, ALL_TRANSLATION_LANGS, KNOWN_LANGS };
+export { normalizeLang, normalizeTranslationLang, otherLang };
 
 /**
  * Presentation dominant/active languages (legacy two-language system).

@@ -36,15 +36,6 @@ export function removeClient(presentationId, res) {
 }
 
 /**
- * Get the count of connected clients for a presentation.
- * @param {string} presentationId - The presentation ID
- * @returns {number} Number of connected clients
- */
-export function getClientCount(presentationId) {
-  return clients.get(presentationId)?.size || 0;
-}
-
-/**
  * Broadcast an event to all clients connected to a presentation.
  * @param {string} presentationId - The presentation ID
  * @param {string} eventType - Event type (e.g., 'comment:created', 'comment:resolved')
@@ -101,7 +92,7 @@ export function broadcastToAll(eventType, data) {
  * Helps keep connections alive through proxies.
  * @param {string} presentationId - The presentation ID
  */
-export function sendHeartbeat(presentationId) {
+function sendHeartbeat(presentationId) {
   const presClients = clients.get(presentationId);
   if (!presClients) return;
 
@@ -119,7 +110,7 @@ export function sendHeartbeat(presentationId) {
  * Send heartbeats to all connected presentations.
  * Call this periodically (e.g., every 30 seconds).
  */
-export function sendAllHeartbeats() {
+function sendAllHeartbeats() {
   for (const presentationId of clients.keys()) {
     sendHeartbeat(presentationId);
   }

@@ -91,8 +91,3 @@ export function createEditorCleanupRegistry() {
   };
 }
 
-/**
- * Attach editor lifecycle handlers (beforeunload, visibility change)
- * This is a re-export for backwards compatibility
- */
-export { attachEditorLifecycle } from './editor-lifecycle.js';

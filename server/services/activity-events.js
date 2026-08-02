@@ -5,16 +5,12 @@
 
 import {
   createActivityEvent,
-  queueNotification,
   EVENT_TYPES,
   ENTITY_TYPES,
   ACTOR_TYPES,
 } from '../storage/activity-events.js';
 import { createRouteContext } from '../utils/context.js';
 import { stripMentionMarkup } from '../../shared/comment-mentions.js';
-
-// Re-export constants for convenience
-export { EVENT_TYPES, ENTITY_TYPES, ACTOR_TYPES };
 
 /**
  * Record a presentation created event.
@@ -275,75 +271,3 @@ export async function recordCommentReopened({
   }, context);
 }
 
-/**
- * Record a share link accessed event.
- */
-export async function recordShareAccessed({
-  shareLink,
-  presentation,
-  guest,
-  ctx,
-}) {
-  const context = ctx || createRouteContext(null);
-
-  return createActivityEvent({
-    eventType: EVENT_TYPES.SHARE_ACCESSED,
-    entityType: ENTITY_TYPES.SHARE_LINK,
-    entityId: shareLink.id,
-    presentationId: presentation.id,
-    actorEmail: guest?.email || 'anonymous',
-    actorName: guest?.name || 'Anonymous',
-    actorType: ACTOR_TYPES.GUEST,
-    data: {
-      presentationTitle: presentation.title,
-      shareLinkName: shareLink.name,
-    },
-  }, context);
-}
-
-/**
- * Queue notifications for comment recipients.
- * Determines who should be notified based on comment context.
- */
-export async function queueCommentNotifications({
-  comment,
-  presentation,
-  parentComment,
-  actor,
-  eventId,
-  ctx,
-}) {
-  const context = ctx || createRouteContext(actor);
-  const actorEmail = actor?.email?.toLowerCase();
-
-  // Build recipient list
-  const recipients = new Set();
-
-  // Always notify owner
-  if (presentation.ownerEmail) {
-    recipients.add(presentation.ownerEmail.toLowerCase());
-  }
-
-  // If reply, notify parent comment author
-  if (parentComment?.authorEmail) {
-    recipients.add(parentComment.authorEmail.toLowerCase());
-  }
-
-  // Don't notify yourself
-  if (actorEmail) {
-    recipients.delete(actorEmail);
-  }
-
-  // Queue email notifications for each recipient
-  const results = [];
-  for (const recipientEmail of recipients) {
-    const result = await queueNotification({
-      recipientEmail,
-      eventId,
-      channel: 'email',
-    }, context);
-    results.push(result);
-  }
-
-  return results;
-}

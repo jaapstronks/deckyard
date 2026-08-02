@@ -132,7 +132,7 @@ export function getConvertParams(body) {
  * @param {string} permission - The permission to validate
  * @returns {boolean} - True if valid
  */
-export const isValidPermission = _isValidPermission;
+const isValidPermission = _isValidPermission;
 
 /**
  * Validate permission and send badRequest if invalid.
