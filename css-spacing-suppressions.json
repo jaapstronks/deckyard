@@ -1,0 +1,317 @@
+{
+  "client/styles/app/components.css": {
+    "tokenisable-spacing": {
+      "count": 21
+    }
+  },
+  "client/styles/base/01-core/10-shell-topbar-dropdown.css": {
+    "tokenisable-spacing": {
+      "count": 8
+    }
+  },
+  "client/styles/base/01-core/20-editor-layout.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/01-core/21-editor-skeleton.css": {
+    "tokenisable-spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/base/01-core/30-auth.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/01-core/31-list-layout.css": {
+    "tokenisable-spacing": {
+      "count": 12
+    }
+  },
+  "client/styles/base/01-core/32-list-cards.css": {
+    "tokenisable-spacing": {
+      "count": 15
+    }
+  },
+  "client/styles/base/01-core/40-sidebar.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/20-drag-ghost.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/30-slide-items.css": {
+    "tokenisable-spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/32-slide-search.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/33-slide-metadata.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/34-slide-nesting.css": {
+    "tokenisable-spacing": {
+      "count": 7
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/35-slide-visibility.css": {
+    "tokenisable-spacing": {
+      "count": 15
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/40-insert-and-collapsed.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/70-slide-type-picker.css": {
+    "tokenisable-spacing": {
+      "count": 13
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/71-slide-library.css": {
+    "tokenisable-spacing": {
+      "count": 14
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/72-slide-collections.css": {
+    "tokenisable-spacing": {
+      "count": 10
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/73-slide-schematic.css": {
+    "tokenisable-spacing": {
+      "count": 14
+    }
+  },
+  "client/styles/base/02-lists-and-thumbs/80-tags.css": {
+    "tokenisable-spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/base/03-controls-and-forms.css": {
+    "tokenisable-spacing": {
+      "count": 27
+    }
+  },
+  "client/styles/base/04-editor-and-misc/10-modals-base.css": {
+    "tokenisable-spacing": {
+      "count": 10
+    }
+  },
+  "client/styles/base/04-editor-and-misc/100-analytics.css": {
+    "tokenisable-spacing": {
+      "count": 23
+    }
+  },
+  "client/styles/base/04-editor-and-misc/103-data-source.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/04-editor-and-misc/104-font-manager.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  },
+  "client/styles/base/04-editor-and-misc/105-inline-edit.css": {
+    "tokenisable-spacing": {
+      "count": 14
+    }
+  },
+  "client/styles/base/04-editor-and-misc/106-shortcuts-overlay.css": {
+    "tokenisable-spacing": {
+      "count": 8
+    }
+  },
+  "client/styles/base/04-editor-and-misc/107-collab-presence.css": {
+    "tokenisable-spacing": {
+      "count": 8
+    }
+  },
+  "client/styles/base/04-editor-and-misc/108-bulk-edit.css": {
+    "tokenisable-spacing": {
+      "count": 7
+    }
+  },
+  "client/styles/base/04-editor-and-misc/109-layout-switcher.css": {
+    "tokenisable-spacing": {
+      "count": 8
+    }
+  },
+  "client/styles/base/04-editor-and-misc/110-sandbox-banner.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/111-maintenance-banner.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/12-modals-share.css": {
+    "tokenisable-spacing": {
+      "count": 11
+    }
+  },
+  "client/styles/base/04-editor-and-misc/13-modals-misc.css": {
+    "tokenisable-spacing": {
+      "count": 32
+    }
+  },
+  "client/styles/base/04-editor-and-misc/14-modals-json-debug.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/17-deck-grid.css": {
+    "tokenisable-spacing": {
+      "count": 9
+    }
+  },
+  "client/styles/base/04-editor-and-misc/18-modals-export.css": {
+    "tokenisable-spacing": {
+      "count": 16
+    }
+  },
+  "client/styles/base/04-editor-and-misc/20-preview.css": {
+    "tokenisable-spacing": {
+      "count": 12
+    }
+  },
+  "client/styles/base/04-editor-and-misc/30-publish.css": {
+    "tokenisable-spacing": {
+      "count": 20
+    }
+  },
+  "client/styles/base/04-editor-and-misc/35-image-library.css": {
+    "tokenisable-spacing": {
+      "count": 39
+    }
+  },
+  "client/styles/base/04-editor-and-misc/36-imagekit-picker.css": {
+    "tokenisable-spacing": {
+      "count": 16
+    }
+  },
+  "client/styles/base/04-editor-and-misc/40-thumb.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/04-editor-and-misc/50-editor-responsive.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/04-editor-and-misc/60-notes.css": {
+    "tokenisable-spacing": {
+      "count": 30
+    }
+  },
+  "client/styles/base/04-editor-and-misc/70-follow.css": {
+    "tokenisable-spacing": {
+      "count": 53
+    }
+  },
+  "client/styles/base/04-editor-and-misc/72-video-layer.css": {
+    "tokenisable-spacing": {
+      "count": 3
+    }
+  },
+  "client/styles/base/04-editor-and-misc/75-share-viewer.css": {
+    "tokenisable-spacing": {
+      "count": 57
+    }
+  },
+  "client/styles/base/04-editor-and-misc/80-notes-join.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  },
+  "client/styles/base/04-editor-and-misc/85-settings.css": {
+    "tokenisable-spacing": {
+      "count": 10
+    }
+  },
+  "client/styles/base/04-editor-and-misc/86-admin-users.css": {
+    "tokenisable-spacing": {
+      "count": 6
+    }
+  },
+  "client/styles/base/04-editor-and-misc/86-settings-api-keys.css": {
+    "tokenisable-spacing": {
+      "count": 13
+    }
+  },
+  "client/styles/base/04-editor-and-misc/87-settings-analytics.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/04-editor-and-misc/87-slide-type-curation.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/88-theme-editor.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/89-slide-type-editor.css": {
+    "tokenisable-spacing": {
+      "count": 10
+    }
+  },
+  "client/styles/base/04-editor-and-misc/90-public-poll.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/04-editor-and-misc/92-comments-panel.css": {
+    "tokenisable-spacing": {
+      "count": 27
+    }
+  },
+  "client/styles/base/04-editor-and-misc/93-read-only-mode.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  },
+  "client/styles/base/04-editor-and-misc/95-toast.css": {
+    "tokenisable-spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/base/04-editor-and-misc/95-viewer-mode.css": {
+    "tokenisable-spacing": {
+      "count": 27
+    }
+  },
+  "client/styles/base/04-editor-and-misc/97-theme-picker.css": {
+    "tokenisable-spacing": {
+      "count": 2
+    }
+  },
+  "client/styles/base/04-editor-and-misc/video-player.css": {
+    "tokenisable-spacing": {
+      "count": 25
+    }
+  },
+  "client/styles/embed.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  }
+}

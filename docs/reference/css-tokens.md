@@ -33,26 +33,53 @@ agent's preview — none of which share the app's chrome.
 > need to, fix the bundle first (import `ui-tokens.css` from `slides.css`, or add
 > it to the preview bundle), then migrate. One fix unblocks both scales.
 
-## Spacing — a 4px scale
+## Spacing — two resolutions
 
-Nine steps, named after their multiple of 4. The root element sets no
+Tokens are named after their multiple of 4px, so `-3` is 12px and the
+half-steps land between two ticks: `-2-5` is 10px. The root element sets no
 `font-size`, so `1rem = 16px` and each token is exactly the pixel value in its
 name.
 
-| Token | Value | px |
-|---|---|---|
-| `--ps-space-1` | 0.25rem | 4 |
-| `--ps-space-2` | 0.5rem | 8 |
-| `--ps-space-3` | 0.75rem | 12 |
-| `--ps-space-4` | 1rem | 16 |
-| `--ps-space-5` | 1.25rem | 20 |
-| `--ps-space-6` | 1.5rem | 24 |
-| `--ps-space-8` | 2rem | 32 |
-| `--ps-space-10` | 2.5rem | 40 |
-| `--ps-space-12` | 3rem | 48 |
+**Up to 20px the scale ticks every 2px. Above 20px it ticks every 4px.**
 
-Note the gaps: there is no `-7`, `-9` or `-11`. The scale thins out as it grows,
-because large spacing does not need 4px resolution.
+| Token | Value | px | | Token | Value | px |
+|---|---|---|---|---|---|---|
+| `--ps-space-0-5` | 0.125rem | 2 | | `--ps-space-6` | 1.5rem | 24 |
+| `--ps-space-1` | 0.25rem | 4 | | `--ps-space-7` | 1.75rem | 28 |
+| `--ps-space-1-5` | 0.375rem | 6 | | `--ps-space-8` | 2rem | 32 |
+| `--ps-space-2` | 0.5rem | 8 | | `--ps-space-9` | 2.25rem | 36 |
+| `--ps-space-2-5` | 0.625rem | 10 | | `--ps-space-10` | 2.5rem | 40 |
+| `--ps-space-3` | 0.75rem | 12 | | `--ps-space-11` | 2.75rem | 44 |
+| `--ps-space-3-5` | 0.875rem | 14 | | `--ps-space-12` | 3rem | 48 |
+| `--ps-space-4` | 1rem | 16 | | `--ps-space-14` | 3.5rem | 56 |
+| `--ps-space-4-5` | 1.125rem | 18 | | `--ps-space-15` | 3.75rem | 60 |
+| `--ps-space-5` | 1.25rem | 20 | | `--ps-space-16` | 4rem | 64 |
+
+There is still no `-13`: 52px has no use in the app today, and the scale should
+carry what exists rather than what might.
+
+### Why the fine band exists
+
+The scale was 4px-only until 2026-08-02, and the app did not obey it. A census
+of `client/styles/**` found **683 loose px values** beside the tokens, of which
+**587 (86%) were even but not multiples of 4** — 2, 6, 10, 14, 18 — and **27 of
+57 substantial sheets sat ≥60% off-scale**.
+
+That is not drift in a few files. The dense UI was drawn on a **2px rhythm**,
+and the 4px scale simply did not describe it. Both alternatives were weighed and
+rejected:
+
+- **Rounding the 587 values to the 4px grid** needs a visual judgement per case.
+  That is a redesign of the dense surfaces, not a conversion, and it cannot be
+  reviewed by reading a diff.
+- **Declaring them permanently off-scale** is a second spacing regime over half
+  the app, forever.
+
+So the scale was refined to match the rhythm that exists. Above 20px the
+resolution genuinely is not needed, which is why the fine band stops there — the
+handful of 22/26/30px values up there do get rounded during conversion.
+
+Decision: `docs/plans/briefs/css-tokens-beyond-color.md` § *as (a)*.
 
 Use the no-fallback form — `var(--ps-space-3)`, not
 `var(--ps-space-3, 12px)`. A fallback would let the trap above pass silently.
@@ -79,12 +106,39 @@ Two consequences worth knowing before you start:
   pads back in belong together; tokenising only one half means a later change to
   the scale breaks the pairing.
 - **A high skip-rate is a finding, not leftover work.** When a file's spacing was
-  never designed against a grid, most declarations will fail the rule. In
-  `100-analytics.css` 76 of 92 declarations converted; in `75-share-viewer.css`
-  and `92-comments-panel.css` only 84 of 148, because those files are built on a
-  6/10/14px rhythm that has no place on a 4px scale. That is a signal about the
-  files, and the honest response is a design decision (refine the scale, or
-  declare those values deliberately off-scale) — not a looser conversion rule.
+  never designed against a grid, most declarations will fail the rule. That
+  signal is what produced the fine band: the 6/10/14px rhythm in
+  `75-share-viewer.css` and `92-comments-panel.css` turned out to be the app's
+  rhythm, not those files' quirk, so the honest response was a design decision
+  about the scale — not a looser conversion rule. Values the scale still does
+  not carry (13, 22, 30px) stay literal.
+
+### The gate
+
+`tests/css-spacing-tokens.test.js` enforces exactly one thing:
+
+> **A spacing length that exactly equals a token must be written as that token.**
+
+Not "every value must be on the scale" — an off-scale value is a design signal
+and is not counted. Only the value-identical case is caught, so a failure is
+always something a reviewer can fix by reading.
+
+Scope is `client/styles/**` minus `slides/**` (the trap above) and
+`cookie-consent.css` (parked). It looks at the `margin` / `padding` / `gap`
+families only; `!important` declarations, negatives and `0` are skipped, per the
+rule above.
+
+The 728 values that already existed when the gate landed are recorded as
+per-file counts in **`css-spacing-suppressions.json`**, mirroring
+`eslint-suppressions.json`. A count may only go **down**: a file with a budget
+still fails if it grows a new violation, and a file that converts some of its
+values fails until the number is lowered. After a conversion batch:
+
+```sh
+UPDATE_CSS_SPACING_SUPPRESSIONS=1 node --test tests/css-spacing-tokens.test.js
+```
+
+Never raise a budget to make the gate pass.
 
 ## Z-index — named stacking tiers
 
