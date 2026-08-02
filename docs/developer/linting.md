@@ -29,6 +29,33 @@ codebase that was never linted before. Environments are split by path:
 Vendored bundles (`client/vendor/`), generated assets, data dirs, and
 gitignored drop-ins (`custom/`) are ignored.
 
+### `import-x/no-unresolved` — the one rule that is not about style
+
+Every relative import must resolve to a file that exists.
+
+This repo has no bundler, so a moved module is **not a build error**. ESM fails
+at runtime, on the import that never loads — which means a behaviour-preserving
+reorganisation passes `npm test` while the app no longer boots. Splitting
+`client/lib/` into sub-folders did exactly that to a fork: `client/app.js` still
+imported `./lib/branding.js`, the suite was green, and the breakage was found by
+a hand-written scan afterwards.
+
+It rides this gate rather than being its own test because
+`eslint-plugin-import-x` was already a devDependency (the advisory pass uses
+it), so the rule costs no extra CI minutes and adds no new mechanism.
+
+Two boundaries worth knowing:
+
+- **`custom/` cannot be covered here** — it is in `ignores`, being a fork's
+  gitignored drop-in tree. `tests/custom-imports-resolvable.test.js` covers it
+  instead, and that is the half a fork actually needs.
+- **One suppression exists, in `server/utils/openai/translate.js`**:
+  `ciiic-translation-rules` is fork-only and deliberately undeclared in
+  `package.json` (see `AGENTS.md` § Optional dependencies), loaded through a
+  gated `await import()` whose `catch` is the contract. It is the one import in
+  the tree that is *supposed* not to resolve upstream, and the disable carries
+  that reason inline.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**

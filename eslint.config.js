@@ -13,6 +13,7 @@
 
 import js from '@eslint/js';
 import globals from 'globals';
+import importX from 'eslint-plugin-import-x';
 
 export default [
   {
@@ -116,6 +117,49 @@ export default [
         ...globals.browser,
         ...globals.node,
       },
+    },
+  },
+
+  // Every relative import must resolve to a file that exists.
+  //
+  // There is no bundler here, so a moved module is not a build error — ESM only
+  // fails at *runtime*, on the import that never loads. A behaviour-preserving
+  // reorganisation therefore passes `npm test` while the app no longer boots.
+  // That is not hypothetical: splitting `client/lib/` into sub-folders left a
+  // fork's `client/app.js` importing `./lib/branding.js`, green suite and all,
+  // and it was found by a hand-written scan after the fact (fork-upgrade
+  // finding B1; the same lesson as #425 on our own side).
+  //
+  // It rides the existing lint gate rather than being its own test:
+  // `eslint-plugin-import-x` is already a devDependency (the dead-code pass uses
+  // it), so this costs no extra CI minutes and adds no new mechanism.
+  //
+  // `custom/` is in `ignores` above — a fork's drop-in tree, absent upstream —
+  // so it cannot be covered here. `tests/custom-imports-resolvable.test.js`
+  // covers it instead, and is the half a fork actually needs.
+  {
+    files: [
+      'client/**/*.js',
+      'server/**/*.js',
+      'shared/**/*.js',
+      'scripts/**/*.js',
+      'capture/**/*.js',
+      'tests/**/*.js',
+    ],
+    plugins: {
+      'import-x': importX,
+    },
+    settings: {
+      'import-x/resolver': {
+        node: {
+          extensions: ['.js', '.mjs'],
+        },
+      },
+    },
+    rules: {
+      // Bare specifiers are packages — `commonjs: false` keeps the rule off
+      // `require()`, which this repo does not use.
+      'import-x/no-unresolved': ['error', { commonjs: false }],
     },
   },
 
