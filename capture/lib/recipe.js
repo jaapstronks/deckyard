@@ -1,6 +1,7 @@
 /**
- * Recipe helpers: defaults, validation, and a content hash so the registry can
- * detect when a recipe itself has drifted (not just its source dependencies).
+ * Recipe helpers: defaults, validation, and a content hash over the recipe's
+ * module graph so the registry can detect when a recipe — or a factory it
+ * builds on — has drifted.
  *
  * A recipe is a plain object describing how to deterministically reproduce one
  * screenshot. The SAME shape is intended to drive the later video factory — a
@@ -34,6 +35,16 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { init as initLexer, parse as parseModule } from 'es-module-lexer';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, '..', '..');
+
+/** Directory the graph walk stays inside, repo-relative. */
+export const DEFAULT_RECIPE_SCOPE = 'capture';
 
 /**
  * Resolve the navigate target for a recipe given its seed context.
@@ -73,12 +84,105 @@ export function validateRecipe(recipe) {
 }
 
 /**
- * Content hash of the recipe's own source file. Stored in the registry as part
- * of the `recipe` reference so a changed recipe body shows up as drift.
- * @param {string} moduleFsPath absolute path to the recipe .js file
- * @returns {string} short hex hash
+ * Resolve one import specifier to a file inside the graph, or null when it
+ * does not belong there.
+ *
+ * Only path-like specifiers are followed: a bare specifier is a package and a
+ * `node:` specifier is the runtime, and neither is source we hash. Missing
+ * extensions and directory imports are resolved the way Node would, so a
+ * future `./helpers` or `./helpers/` still lands on a real file.
+ *
+ * @param {string} specifier
+ * @param {string} fromDir directory of the importing module
+ * @returns {string | null} absolute path, or null if not a walkable module
  */
-export function hashRecipeFile(moduleFsPath) {
-  const src = fs.readFileSync(moduleFsPath, 'utf8');
-  return crypto.createHash('sha256').update(src).digest('hex').slice(0, 16);
+function resolveImport(specifier, fromDir) {
+  if (!specifier.startsWith('.') && !specifier.startsWith('/')) return null;
+  const base = path.resolve(fromDir, specifier);
+  for (const candidate of [base, `${base}.js`, path.join(base, 'index.js')]) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Collect every module reachable from `entry` that lives inside `scopeDir`.
+ *
+ * Imports are read with a real ES module lexer rather than a regex: a regex for
+ * `import(...)` also matches the `import('./x.js')` inside a JSDoc type
+ * annotation, which pulls the whole server into the graph. The lexer sees
+ * comments for what they are.
+ *
+ * @param {string} entryFsPath absolute path to the entry module
+ * @param {string} scopeDir absolute directory the walk stays inside
+ * @returns {Promise<string[]>} absolute paths, unsorted, deduplicated
+ */
+async function collectGraph(entryFsPath, scopeDir) {
+  await initLexer;
+  const seen = new Set();
+  const queue = [entryFsPath];
+  while (queue.length) {
+    const fsPath = queue.pop();
+    if (seen.has(fsPath)) continue;
+    seen.add(fsPath);
+    const src = fs.readFileSync(fsPath, 'utf8');
+    const [imports] = parseModule(src, fsPath);
+    for (const imp of imports) {
+      // `n` is undefined for a dynamic import with a computed specifier —
+      // nothing static to follow.
+      if (!imp.n) continue;
+      const resolved = resolveImport(imp.n, path.dirname(fsPath));
+      if (!resolved) continue;
+      // Out of scope: not hashed, and not walked either. Following it would
+      // drag in `shared/` and `server/`, whose churn would mark every recipe
+      // stale almost daily — a gate that is always red gets ignored.
+      if (!isInside(resolved, scopeDir)) continue;
+      queue.push(resolved);
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * @param {string} fsPath
+ * @param {string} dir
+ * @returns {boolean}
+ */
+function isInside(fsPath, dir) {
+  const rel = path.relative(dir, fsPath);
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+}
+
+/**
+ * Content hash of a recipe's whole module graph within `scope`. Stored in the
+ * registry as part of the `recipe` reference, so a changed recipe body *or* a
+ * changed shared factory shows up as drift.
+ *
+ * The scope boundary is the point: sixteen of the seventeen recipes import a
+ * shared factory, so hashing the entry module alone guards almost nothing —
+ * but walking past `capture/` reaches ~122 modules whose churn has nothing to
+ * do with the screenshot. See `capture/README.md` § Known limits.
+ *
+ * @param {string} moduleFsPath absolute path to the recipe .js file
+ * @param {{ scope?: string }} [opts] `scope` is repo-relative, default `capture`
+ * @returns {Promise<string>} short hex hash, 16 chars (same format as before)
+ */
+export async function hashRecipeGraph(moduleFsPath, { scope = DEFAULT_RECIPE_SCOPE } = {}) {
+  const scopeDir = path.resolve(REPO_ROOT, scope);
+  const files = await collectGraph(moduleFsPath, scopeDir);
+  // Sort by repo-relative path so the hash is independent of traversal order.
+  const entries = files
+    .map((fsPath) => ({
+      rel: path.relative(REPO_ROOT, fsPath).split(path.sep).join('/'),
+      src: fs.readFileSync(fsPath, 'utf8'),
+    }))
+    .sort((a, b) => (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0));
+  const hash = crypto.createHash('sha256');
+  for (const { rel, src } of entries) {
+    hash.update(rel);
+    hash.update('\0');
+    hash.update(src);
+    hash.update('\0');
+  }
+  return hash.digest('hex').slice(0, 16);
 }

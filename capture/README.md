@@ -184,13 +184,25 @@ because a docs screenshot never needs them:
   database, so `closeCommentSeedStorage()` runs in the recipe's `cleanup` — an
   idle pool would keep the runner from exiting.
 
-Three known limits, all worth knowing before trusting a re-run:
+### Known limits
 
-- **The recipe hash does not cover the shared factories.** `hashRecipeFile()`
-  hashes the recipe module only, and the fourteen marketing modules are thin
-  wrappers over `_marketing-shots.js` / `_features-shots.js` / `_marketing-deck.js`.
-  Change a factory or the sample deck and the registry will *not* flag the shots
-  as stale — re-run them by hand. (`_sample-content.js` has the same gap.)
+**The recipe hash covers the module graph, scoped to `capture/`.**
+`hashRecipeGraph()` walks a recipe's imports with an ES module lexer and hashes
+the sorted set of `{repo-relative path, contents}` it reaches — so a change in
+`_marketing-shots.js`, `_features-shots.js`, `_marketing-deck.js` or
+`_sample-content.js` moves the hash of every shot built on it, and the registry
+flags them as stale.
+
+The walk stops at the `capture/` boundary: an import of `shared/` or `server/`
+is neither hashed nor followed. That boundary is the whole design. Unscoped, the
+graph runs to ~122 modules through `lib/comments-seed.js`, and those directories
+took 308 commits in the same 60 days `capture/` took 6 — every recipe would read
+as stale nearly every day, and a gate that is always red gets ignored. The cost
+is the one thing the boundary hides: change how a recipe *seeds* through
+`server/storage/`, and the hash will not tell you.
+
+Two further limits, both worth knowing before trusting a re-run:
+
 - **The join screen's access code is per-session**, so it differs on every run.
   Everything else in these shots is deterministic — deliberately, including the
   presenter console's stopwatch, which the recipe stops and zeroes because a

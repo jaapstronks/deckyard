@@ -33,7 +33,7 @@ import { openPage, gotoStable, settle, closeBrowser } from './lib/browser.js';
 import {
   resolveNavigate,
   validateRecipe,
-  hashRecipeFile,
+  hashRecipeGraph,
 } from './lib/recipe.js';
 import { RECIPES, recipeFsPath } from './recipes/index.js';
 
@@ -124,7 +124,7 @@ async function main() {
 
   if (opts.list) {
     for (const r of RECIPES) {
-      const hash = hashRecipeFile(recipeFsPath(r.id));
+      const hash = await hashRecipeGraph(recipeFsPath(r.id));
       // eslint-disable-next-line no-console
       console.log(`${r.id.padEnd(24)} → ${r.registryPath}  [recipe ${hash}]`);
     }
@@ -150,7 +150,7 @@ async function main() {
       process.stdout.write(`• ${recipe.id} … `);
       try {
         const outPath = await captureOne(recipe, api, opts.out);
-        const hash = hashRecipeFile(recipeFsPath(recipe.id));
+        const hash = await hashRecipeGraph(recipeFsPath(recipe.id));
         // eslint-disable-next-line no-console
         console.log(`ok → ${path.relative(process.cwd(), outPath)}`);
         results.push({ id: recipe.id, registryPath: recipe.registryPath, recipeHash: hash });
