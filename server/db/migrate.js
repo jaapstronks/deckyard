@@ -16,6 +16,7 @@
  */
 
 import fs from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Kysely, PostgresDialect, sql } from 'kysely';
@@ -206,9 +207,35 @@ async function main() {
   }
 }
 
+/**
+ * True when this file is the process entry point.
+ *
+ * `import.meta.url` is always the *real* path: Node resolves the main module
+ * through symlinks before loading it. `process.argv[1]` is the path as typed.
+ * Comparing them directly therefore fails on any symlinked deploy layout (a
+ * `current -> releases/<sha>` symlink, a linked `node_modules/.bin` entry),
+ * which would turn `npm run db:migrate` into a silent exit-0 no-op. Resolve
+ * argv[1] the same way Node did before comparing.
+ * @returns {boolean}
+ */
+function isEntryPoint() {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+
+  let resolved = argv1;
+  try {
+    resolved = realpathSync(argv1);
+  } catch {
+    // Path is gone or unreadable — compare against the raw argument instead of
+    // throwing out of module evaluation.
+  }
+
+  return import.meta.url === pathToFileURL(resolved).href;
+}
+
 // CLI half. Guarded so `import`ing this module for its runners does not also
 // run a migration command.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isEntryPoint()) {
   main().catch((err) => {
     console.error('Migration failed:', err);
     process.exit(1);

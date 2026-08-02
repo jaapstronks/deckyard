@@ -22,16 +22,25 @@ and nothing anywhere would have said so.
 
 | Phase | Check |
 | --- | --- |
-| precondition | the target database has no tables — the script is destructive and refuses to guess |
+| precondition | there is at least one migration on disk, and the target database has no tables — the script is destructive and refuses to guess |
 | up | every migration applies, and the count matches the files on disk |
-| down | every migration rolls back, and `_migrations` ends empty |
+| down | every migration rolls back, `_migrations` ends empty, and the only table left standing is `_migrations` itself |
 | up again | every migration re-applies from the rolled-back state |
 | round trip | the set of tables after the second `up` equals the set after the first |
 
-The round trip is the real assertion. A `down()` that quietly drops something
-its `up()` no longer recreates fails on the second pass, and a `down()` that
-does nothing at all fails when the second `up()` hits an object that is still
-there.
+Two of those carry the weight. The **down-to-empty** assertion is what catches a
+`down()` that forgets to drop something: bookkeeping being empty says only that
+the runner *ran* each `down()`, not that any of them did anything, so the
+surviving tables are compared against the single expected survivor.
+
+The **round trip** then catches the other direction — a `down()` that drops
+something its `up()` no longer recreates comes back short on the second pass.
+
+What the round trip does *not* catch on its own: 32 of the 57 migrations create
+with `IF NOT EXISTS`, so a leftover object does not make the second `up()`
+fail. For those, the down-to-empty check is the only thing that notices. The
+second `up()` failing on a still-present object is real, but only for the
+non-idempotent migrations — it is a bonus, not the guarantee.
 
 Table names are compared, not columns. A column-level comparison would mean
 writing the expected schema into this file, and that copy would rot the moment a

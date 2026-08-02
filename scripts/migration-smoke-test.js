@@ -11,8 +11,11 @@
  *
  * What it proves, precisely:
  *  - every `up()` applies against a schema built by its predecessors;
- *  - every `down()` exists and undoes its `up()` far enough that the next
- *    `up()` succeeds — the round trip is the assertion, not a schema diff;
+ *  - rolling everything back leaves an empty schema — `_migrations` and nothing
+ *    else. Most migrations create with IF NOT EXISTS, so a `down()` that forgets
+ *    a table would sail through a second `up()`; the leftover table is the tell;
+ *  - every `down()` undoes its `up()` far enough that the next `up()` succeeds,
+ *    and the round trip lands on the same tables — not a schema diff;
  *  - the runner's own bookkeeping (`_migrations`) stays consistent.
  *
  * What it does NOT prove: that the resulting schema is *correct*, or that any
@@ -26,6 +29,8 @@
  * the usual DATABASE_* env vars (server/config/database.js).
  */
 
+import { fileURLToPath } from 'node:url';
+
 import { sql } from 'kysely';
 
 import {
@@ -37,7 +42,10 @@ import {
 } from '../server/db/migrate.js';
 import { loadDotEnv } from '../server/config/env.js';
 
-const REPO_ROOT = new URL('..', import.meta.url).pathname;
+// `fileURLToPath`, not `.pathname`: a URL percent-encodes, so a checkout under
+// a directory with a space would hand `loadDotEnv` a path containing `%20` and
+// the `.env` would silently not load. Same reason `server/db/migrate.js` uses it.
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /** Swallow the per-migration chatter; the phase summaries below are the signal. */
 const quiet = () => {};
@@ -59,6 +67,15 @@ async function main() {
 
   try {
     const files = await listMigrationFiles();
+    if (!files.length) {
+      // Every count check below compares against `files.length`, so zero
+      // migrations would make the whole run pass without asserting anything —
+      // the failure mode of a broken glob or a moved migrations directory.
+      throw new Error(
+        'Found no migrations on disk. Expected server/db/migrations/ to hold ' +
+          'numbered `NNN_*.js` files; a smoke test over zero migrations proves nothing.'
+      );
+    }
     console.log(`Migration smoke test: ${files.length} migration(s) on disk.\n`);
 
     const before = await publicTables(db);
@@ -88,7 +105,24 @@ async function main() {
     if (stillApplied.length) {
       throw new Error(`down left ${stillApplied.length} migration(s) applied.`);
     }
-    console.log(`  ${files.length} rolled back.\n`);
+
+    // Bookkeeping being empty is not the same as the schema being empty. Most
+    // migrations create with IF NOT EXISTS, so a `down()` that forgets to drop
+    // a table survives the second `up()` unnoticed; only the leftover object
+    // itself gives it away. `_migrations` is the runner's own table and is
+    // never dropped by a migration, so it is the one expected survivor.
+    const tablesAfterDown = await publicTables(db);
+    const leftovers = tablesAfterDown.filter((t) => t !== '_migrations');
+    if (leftovers.length || !tablesAfterDown.includes('_migrations')) {
+      throw new Error(
+        'down did not leave the schema empty.\n' +
+          `  expected only _migrations, found: ${tablesAfterDown.join(', ') || '(nothing)'}\n` +
+          (leftovers.length
+            ? `  a down() is not dropping: ${leftovers.join(', ')}\n`
+            : '  the _migrations bookkeeping table is gone\n')
+      );
+    }
+    console.log(`  ${files.length} rolled back, schema back to _migrations only.\n`);
 
     console.log('→ up (second pass)');
     const appliedSecond = await runUp(db, { log: quiet });
