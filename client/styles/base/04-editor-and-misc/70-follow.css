@@ -16,16 +16,16 @@
   z-index: 5;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--ps-space-3);
   align-items: center;
-  padding: 10px 14px;
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   background: hsl(var(--app-bg-elevated) / 0.95);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
 }
 .follow-actions {
   display: inline-flex;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   align-items: center;
   min-width: 0;
 }
@@ -51,7 +51,7 @@
      clientHeight, which include padding, so padding here would size the slide
      to the padding box and push it out past its own gutters. Margin sits
      outside the measurement and gives the same clearance. */
-  margin: 12px 14px;
+  margin: var(--ps-space-3) var(--ps-space-3-5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +85,7 @@
 }
 .follow-interaction-card {
   width: min(720px, 100%);
-  padding: 16px 16px;
+  padding: var(--ps-space-4) var(--ps-space-4);
   border-radius: 16px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated));
@@ -93,22 +93,22 @@
 }
 .follow-interaction-title {
   font-weight: 800;
-  margin-bottom: 8px;
+  margin-bottom: var(--ps-space-2);
 }
 .follow-interaction-question {
   font-size: var(--ps-text-xl);
   line-height: 1.3;
-  margin-bottom: 10px;
+  margin-bottom: var(--ps-space-2-5);
 }
 .follow-interaction-options {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   display: grid;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .follow-interaction-option {
   width: 100%;
   text-align: left;
-  padding: 12px 12px;
+  padding: var(--ps-space-3) var(--ps-space-3);
   border-radius: 14px;
 }
 .follow-interaction-option.is-active {
@@ -118,7 +118,7 @@
 .follow-interaction-option-likert {
   display: grid;
   grid-template-columns: 34px 1fr;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   align-items: center;
 }
 .follow-interaction-likert-num {
@@ -139,14 +139,14 @@
   white-space: nowrap;
 }
 .follow-interaction-thanks {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
 }
 
 /* Feedback (textarea) */
 .follow-interaction-feedback-wrap {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   display: grid;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .follow-interaction-feedback-input {
   width: 100%;
@@ -160,9 +160,9 @@
 
 /* Likert slider (1–10) */
 .follow-interaction-slider-wrap {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   display: grid;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .follow-interaction-slider-value {
   font-weight: 700;
@@ -175,12 +175,12 @@
 .follow-interaction-slider-labels {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--ps-space-3);
   align-items: baseline;
 }
 .follow-interaction-slider-label {
   display: inline-flex;
-  gap: 8px;
+  gap: var(--ps-space-2);
   min-width: 0;
   align-items: baseline;
 }
@@ -215,12 +215,12 @@
   justify-content: center;
   align-items: center;
   height: 100%;
-  padding: 16px;
+  padding: var(--ps-space-4);
 }
 .follow-message-box {
   max-width: 90%;
   text-align: center;
-  padding: 20px 24px;
+  padding: var(--ps-space-5) var(--ps-space-6);
   border-radius: 16px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
@@ -230,11 +230,11 @@
 }
 .follow-lang {
   display: flex;
-  gap: 8px;
+  gap: var(--ps-space-2);
   align-items: center;
 }
 .follow-lang .btn {
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   font-size: var(--ps-text-sm);
   border-radius: 999px;
 }
@@ -264,7 +264,7 @@
   border-top: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated) / 0.92);
   backdrop-filter: blur(10px);
-  padding: 12px 14px;
+  padding: var(--ps-space-3) var(--ps-space-3-5);
 }
 /* Folded away: hide the list + ask box, keep the header (with the toggle). The
    two classes out-specify the portrait `flex: 1` below, so a collapsed strip
@@ -285,7 +285,7 @@
 }
 
 .follow-qa-name-btn {
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   border-radius: 999px;
   font-size: var(--ps-text-sm);
   max-width: 44vw;
@@ -294,10 +294,10 @@
   white-space: nowrap;
 }
 .follow-qa-form {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   align-items: start;
 }
 .follow-qa-input {
@@ -307,16 +307,16 @@
   resize: vertical;
 }
 .follow-qa-list {
-  margin-top: 12px;
+  margin-top: var(--ps-space-3);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   max-height: min(46vh, 520px);
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 .follow-qa-item {
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-base));
@@ -324,7 +324,7 @@
 .follow-qa-item-top {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   align-items: start;
 }
 .follow-qa-text {
@@ -333,24 +333,24 @@
 }
 .follow-qa-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--ps-space-2);
   align-items: center;
   flex: 0 0 auto;
 }
 .follow-qa-actions .btn {
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   border-radius: 999px;
 }
 .follow-qa-promoted {
-  margin-top: 8px;
-  padding: 6px 10px;
+  margin-top: var(--ps-space-2);
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   border-radius: 999px;
   display: inline-block;
   background: hsl(var(--app-accent-soft));
   border: 1px solid hsl(var(--app-accent-primary) / 0.28);
 }
 .follow-qa-author {
-  margin-top: 8px;
+  margin-top: var(--ps-space-2);
   opacity: 0.85;
 }
 .follow-qa-votes {
@@ -431,18 +431,18 @@
     max-height: 38vh;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 8px 14px;
+    padding: var(--ps-space-2) var(--ps-space-3-5);
   }
   .follow-qa-list {
     max-height: none;
   }
   .follow-topbar {
-    padding: 4px 14px;
+    padding: var(--ps-space-1) var(--ps-space-3-5);
   }
   /* Margin, not padding — see the base rule: padding would be measured into
      the slide's fitted box. */
   .follow-stage {
-    margin: 6px 14px;
+    margin: var(--ps-space-1-5) var(--ps-space-3-5);
   }
 }
 
@@ -456,7 +456,7 @@
     flex: 1;
   }
   .follow-topbar {
-    gap: 8px;
+    gap: var(--ps-space-2);
   }
   /* Connection status is a nice-to-have; the controls are not. */
   .follow-status {
