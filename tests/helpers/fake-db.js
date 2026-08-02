@@ -39,8 +39,12 @@ import crypto from 'node:crypto';
  * UNIQUE constraints enforced by the double, mirroring the migrations.
  * `users.email` is globally unique since 001_initial_schema.js:28; the
  * membership pair comes from 031_user_organizations.js.
+ *
+ * Exported so `scripts/check-test-double-schema.js` can hold it against the
+ * schema the migrations actually produce. "Mirroring the migrations" was a
+ * promise nothing checked until then — and #423 was a case of it being wrong.
  */
-const UNIQUE_CONSTRAINTS = {
+export const UNIQUE_CONSTRAINTS = {
   users: [['email']],
   user_organizations: [['user_id', 'organization_id']],
   organizations: [['slug']],
@@ -55,11 +59,19 @@ const UNIQUE_CONSTRAINTS = {
  * hands the driver a JSON string; PostgreSQL stores it as jsonb and reads it
  * back as a parsed value. The double reproduces that round-trip so tests see
  * objects on read, exactly like production.
+ *
+ * Exported for the same reason as {@link UNIQUE_CONSTRAINTS}: a column listed
+ * here that is not jsonb in the real schema makes the double parse something
+ * PostgreSQL never serialized.
  */
-const JSONB_COLUMNS = {
+export const JSONB_COLUMNS = {
   users: ['settings'],
   organizations: ['settings'],
-  app_settings: ['supported_slide_langs', 'webhooks'],
+  // `supported_slide_langs` is NOT here: it is `TEXT[]`, written with an
+  // explicit `::text[]` cast (server/storage/adapters/postgres/settings.js:64),
+  // and it sat in this list claiming to be jsonb until the schema conformance
+  // check called it.
+  app_settings: ['webhooks'],
   auth_audit_log: ['metadata'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],
