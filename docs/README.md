@@ -86,6 +86,7 @@ nothing is discoverable only by `ls`.
 | [`api.md`](developer/api.md) | Public API developer guide |
 | [`linting.md`](developer/linting.md) | Lint setup and the suppressions burndown |
 | [`export-smoke-test.md`](developer/export-smoke-test.md) | Export smoke test |
+| [`migration-smoke-test.md`](developer/migration-smoke-test.md) | Migration smoke test — every migration up/down/up against a real PostgreSQL |
 | [`live-data-sources-testing.md`](developer/live-data-sources-testing.md) | Live data sources testing checklist |
 
 **Slide types**
