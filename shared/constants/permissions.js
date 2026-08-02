@@ -26,22 +26,22 @@ export const ALL_PERMISSIONS = Object.values(PERMISSIONS);
 /**
  * Permissions that allow reading (all of them).
  */
-export const READ_PERMISSIONS = [PERMISSIONS.VIEW, PERMISSIONS.COMMENT, PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
+const READ_PERMISSIONS = [PERMISSIONS.VIEW, PERMISSIONS.COMMENT, PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
 
 /**
  * Permissions that allow commenting.
  */
-export const COMMENT_PERMISSIONS = [PERMISSIONS.COMMENT, PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
+const COMMENT_PERMISSIONS = [PERMISSIONS.COMMENT, PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
 
 /**
  * Permissions that allow editing/writing.
  */
-export const WRITE_PERMISSIONS = [PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
+const WRITE_PERMISSIONS = [PERMISSIONS.EDIT, PERMISSIONS.ADMIN];
 
 /**
  * Permissions that allow managing collaborators.
  */
-export const MANAGE_PERMISSIONS = [PERMISSIONS.ADMIN];
+const MANAGE_PERMISSIONS = [PERMISSIONS.ADMIN];
 
 /**
  * Check if a permission is valid.

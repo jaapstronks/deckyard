@@ -18,7 +18,7 @@ export { DREAMBOT_EMAIL, DREAMBOT_NAME };
 export { DEFAULT_AI_EMAIL, DEFAULT_AI_NAME };
 
 // Suggestion categories
-export const SUGGESTION_CATEGORIES = [
+const SUGGESTION_CATEGORIES = [
   'language',      // Improved wording, clarity, grammar
   'slide-type',    // Better slide type recommendation
   'visual-balance', // Too text-heavy, suggest images

@@ -64,25 +64,6 @@ export function validateDataSource(ds) {
 }
 
 /**
- * Create a frozen snapshot of a data source (for inserting live slides into decks).
- */
-export function freezeDataSource(ds) {
-  if (!ds) return null;
-  return {
-    ...ds,
-    refresh: { mode: 'frozen' },
-    lastSync: ds.lastSync || new Date().toISOString(),
-  };
-}
-
-/**
- * Check whether a data source is actively fetching data.
- */
-export function isLiveDataSource(ds) {
-  return ds && ds.refresh && ds.refresh.mode !== 'frozen';
-}
-
-/**
  * Slide types that support data source bindings and their bindable fields.
  */
 export const BINDABLE_SLIDE_TYPES = {

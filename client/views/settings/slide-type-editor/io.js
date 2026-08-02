@@ -11,7 +11,7 @@
 
 /** Envelope marker written to every exported file. */
 export const SLIDE_TYPE_ENVELOPE = 'deckyard-custom-slide-type';
-export const SLIDE_TYPE_ENVELOPE_VERSION = 1;
+const SLIDE_TYPE_ENVELOPE_VERSION = 1;
 
 /** The fields that make up a portable definition, in a stable order. */
 const PORTABLE_KEYS = [

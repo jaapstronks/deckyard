@@ -10,7 +10,6 @@ import {
   getCachedPermission,
   setCachedPermission,
   invalidatePermission,
-  invalidatePresentationPermissions,
 } from './cache/permission-cache.js';
 
 // ============================================================
@@ -163,41 +162,6 @@ export async function removeCollaborator(presentationId, userEmail, revokedBy, o
     await invalidatePermission(pid, email, orgId);
 
     return { ok: true };
-  });
-}
-
-/**
- * Get revoked collaborator info (for showing revocation message).
- * @param {string} presentationId - The presentation ID
- * @param {string} userEmail - The user's email
- * @param {Object} ctx - Context object
- * @returns {Promise<Object|null>} - Revoked collaborator info or null
- */
-export async function getRevokedCollaboratorInfo(presentationId, userEmail, ctx) {
-  const pid = norm(presentationId);
-  const email = normalizeEmail(userEmail);
-  if (!pid || !email) return null;
-
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('presentation_collaborators')
-      .select(['revoked_at', 'revoked_by', 'revocation_message'])
-      .where('presentation_id', '=', pid)
-      .where('user_email', '=', email)
-      .where('organization_id', '=', orgId)
-      .where('revoked_at', 'is not', null)
-      .orderBy('revoked_at', 'desc')
-      .executeTakeFirst();
-
-    if (!row) return null;
-
-    return {
-      revokedAt: row.revoked_at,
-      revokedBy: row.revoked_by,
-      revocationMessage: row.revocation_message || null,
-    };
   });
 }
 
@@ -372,56 +336,6 @@ export async function getCollaboratorPermission(presentationId, userEmail, ctx) 
   await setCachedPermission(pid, email, orgId, permission);
 
   return permission;
-}
-
-/**
- * Check if a user is a collaborator on a presentation.
- * @param {string} presentationId - The presentation ID
- * @param {string} userEmail - The user's email
- * @param {Object} ctx - Context object
- * @returns {Promise<boolean>}
- */
-export async function isCollaborator(presentationId, userEmail, ctx) {
-  const permission = await getCollaboratorPermission(presentationId, userEmail, ctx);
-  return !!permission;
-}
-
-/**
- * Remove all collaborators from a presentation.
- * Used when deleting a presentation (though CASCADE should handle it).
- * @param {string} presentationId - The presentation ID
- * @param {string} [revokedBy] - Email of the person revoking
- * @param {Object} ctx - Context object
- * @returns {Promise<Object>} - Result with count
- */
-export async function removeAllCollaborators(presentationId, revokedBy, ctx) {
-  const pid = norm(presentationId);
-  if (!pid) {
-    return { ok: false, reason: 'invalid' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const result = await db
-      .updateTable('presentation_collaborators')
-      .set({
-        revoked_at: nowIso(),
-        revoked_by: revokedBy || null,
-      })
-      .where('presentation_id', '=', pid)
-      .where('organization_id', '=', orgId)
-      .where('revoked_at', 'is', null)
-      .executeTakeFirst();
-
-    // Invalidate all cached permissions for this presentation
-    await invalidatePresentationPermissions(pid, orgId);
-
-    return {
-      ok: true,
-      count: Number(result.numUpdatedRows) || 0,
-    };
-  });
 }
 
 // ============================================================

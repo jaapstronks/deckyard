@@ -14,7 +14,7 @@ export { escapeHtml };
  * @param {string} errorCode - Error code
  * @returns {string} Human-readable message
  */
-export function getGuestErrorMessage(errorCode) {
+function getGuestErrorMessage(errorCode) {
   const messages = {
     rate_limited: t('share.guest.error.rateLimited', 'Too many requests. Please try again later.'),
     invalid_email: t('share.guest.error.invalidEmail', 'Please enter a valid email address.'),

@@ -75,9 +75,3 @@ export async function handleRealtime(ctx, presentationId) {
   return true;
 }
 
-/**
- * Get the number of active SSE connections.
- */
-export function getActiveConnectionCount() {
-  return activeConnections.size;
-}

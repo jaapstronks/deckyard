@@ -89,7 +89,7 @@ export function computeSlideDiff(currentSlides, snapshotSlides) {
  * @param {Object} diff - Diff result from computeSlideDiff
  * @returns {string} Category: 'added', 'removed', 'modified', or 'unchanged'
  */
-export function getSlideCategory(slideId, diff) {
+function getSlideCategory(slideId, diff) {
   if (diff.added.some((d) => d.slide.id === slideId)) return 'added';
   if (diff.removed.some((d) => d.slide.id === slideId)) return 'removed';
   if (diff.modified.some((d) => d.current.id === slideId || d.snapshot.id === slideId))

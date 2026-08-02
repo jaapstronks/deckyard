@@ -294,8 +294,8 @@ export function mountSlideInto(
 
 /**
  * Render a slide element synchronously.
- * Falls back to "Unknown slide type" for custom types not bundled in client.
- * Use renderSlideElementAsync for custom slide type support.
+ * Falls back to "Unknown slide type" for custom types not bundled in client;
+ * `triggerServerRender` swaps in the server-rendered HTML afterwards.
  *
  * `lang` is the deck's language (`resolveDeckLang(pres)`), and it is what the
  * interactive types read for their built-in copy. Leaving it out is not
@@ -436,90 +436,6 @@ async function triggerServerRender(el, slide, { mode, theme, presentationId, api
   }
 }
 
-/**
- * Async version of renderSlideElement that supports custom slide types.
- * Use this when you can await the result.
- */
-export async function renderSlideElementAsync(
-  slide,
-  { mode, theme, followCodes, presentationId, api, lang } = {}
-) {
-  let html;
-
-  // Check if this is a custom slide type that needs server-side rendering
-  if (needsServerRender(slide?.type) && presentationId) {
-    html = await serverRenderSlide({ slide, presentationId, mode, api });
-  } else {
-    html = renderSlideHtml(slide, {
-      mode,
-      theme,
-      followCodes,
-      presentationId,
-      lang,
-    }).trim();
-  }
-
-  const wrap = document.createElement('div');
-  wrap.innerHTML = html;
-  const el = wrap.firstElementChild;
-  if (!el)
-    throw new Error(
-      'renderSlideHtml returned empty markup'
-    );
-
-  // Set up cleanups
-  const cleanups = [];
-  el.__sbCleanup = () => {
-    for (const fn of cleanups) {
-      try {
-        fn?.();
-      } catch {
-        // ignore
-      }
-    }
-    cleanups.length = 0;
-  };
-
-  if (theme) applyThemeVarsToElement(el, theme);
-  if (mode !== 'thumb') initVideoEmbeds(el);
-  // Initialize code highlighting and math rendering
-  initCodeAndMath(el);
-  if (mode === 'present' || mode === 'follow')
-    cleanups.push(initKpiMetricsSlides(el));
-  cleanups.push(initTimelineSlides(el));
-  if (mode !== 'thumb') cleanups.push(initContentSlideAutoFit(el));
-  if (mode !== 'thumb') cleanups.push(initTeamCardsAutoFit(el));
-  if (slide?.type === 'follow-invite-slide') {
-    if (mode === 'thumb')
-      cleanups.push(
-        initFollowInviteSlides(el, {
-          enableResize: false,
-          interactive: false,
-        })
-      );
-    else cleanups.push(initFollowInviteSlides(el));
-  } else if (mode !== 'thumb') {
-    cleanups.push(initFollowInviteSlides(el));
-  }
-  // Initialize lead capture slides - interactive in all modes
-  if (slide?.type === 'lead-capture-slide') {
-    cleanups.push(initLeadCaptureSlides(el, { interactive: true }));
-  }
-
-  // Countdown timer: presenter-driven in present/follow, static in thumbnails.
-  if (slide?.type === 'countdown-slide') {
-    cleanups.push(
-      initCountdownSlides(el, {
-        interactive: mode === 'present' || mode === 'follow',
-      })
-    );
-  }
-
-  return el;
-}
-
-// Export for use in export functionality and other areas
-export { initCodeAndMath, highlightCodeBlocks, renderMathFormulas };
 // Exported for the seam-order / fork-override guardrails: the render-path
 // decision that a fork override of a core name is drawn by the server, which is
 // what makes the inline descriptor safe to resolve definition-first.

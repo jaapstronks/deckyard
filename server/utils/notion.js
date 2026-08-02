@@ -8,13 +8,7 @@
 export {
   // Client
   notionEnabled,
-  notionFetchJson,
-  fetchAllBlockChildren,
   // Parser
-  richTextToPlain,
-  pageTitleFromProperties,
-  blockTextLine,
-  extractImageFromBlock,
   extractPageId,
   // Pages
   searchRecentPages,
@@ -25,11 +19,5 @@ export {
   getPlainTextPreviewFromPage,
   fetchNotionPage,
   // Blocks
-  appendBlocksToPage,
-  createDividerBlock,
-  createHeadingBlock,
-  createParagraphBlock,
-  createEmbedBlock,
-  createCalloutBlock,
   publishEmbedToNotionPage,
 } from './notion/index.js';

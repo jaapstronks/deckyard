@@ -86,7 +86,7 @@ export async function updateMySettings(next) {
 let cachedEmailTemplates = null;
 let cachedEmailTemplatesAt = 0;
 
-export function invalidateEmailTemplatesCache() {
+function invalidateEmailTemplatesCache() {
   cachedEmailTemplates = null;
   cachedEmailTemplatesAt = 0;
 }

@@ -75,7 +75,7 @@ const SECTION_CONFIG = {
  * @param {Array} items - Image library items
  * @returns {Map<string, number>} Tag to count map
  */
-export function getTagFrequency(items) {
+function getTagFrequency(items) {
   const freq = new Map();
   for (const item of items) {
     const tags = Array.isArray(item?.tags) ? item.tags : [];
@@ -95,7 +95,7 @@ export function getTagFrequency(items) {
  * @param {number} limit - Maximum tags to return
  * @returns {Array<{tag: string, count: number}>} Top tags with counts
  */
-export function getTopTags(items, limit = 10) {
+function getTopTags(items, limit = 10) {
   const freq = getTagFrequency(items);
   return Array.from(freq.entries())
     .sort((a, b) => b[1] - a[1])

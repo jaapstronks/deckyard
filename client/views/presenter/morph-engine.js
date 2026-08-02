@@ -7,7 +7,7 @@
 
 import { prefersReducedMotion } from '../../lib/dom/motion.js';
 
-export const MORPH_DURATION = 560;
+const MORPH_DURATION = 560;
 
 const MORPH_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
 const FADE_DURATION = Math.round(MORPH_DURATION * 0.6);

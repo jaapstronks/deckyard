@@ -25,12 +25,3 @@ export { handleNotionSubjects, handleNotionCompose } from './subjects.js';
 
 // Suggest handler (feature-gated)
 export { handleNotionSuggest } from './suggest.js';
-
-// Utility functions
-export {
-  normName,
-  extractKeywordsFromTitle,
-  pickKeywordForPage,
-  looksLikeUsableDoc,
-  handleNotionError,
-} from './utils.js';

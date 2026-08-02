@@ -41,9 +41,6 @@ export const IMAGE_TEXT_IMAGE_DEFAULTS = Object.freeze({
 
 export const IMAGE_TEXT_MAX_IMAGES = 3;
 
-/** Layouts that show more than one image cell. */
-const MULTI_CELL_LAYOUTS = new Set(['duo', 'row-top', 'row-bottom']);
-
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -101,15 +98,6 @@ export function imageTextCellCount(content) {
     return clamp(imageTextImageItems(content).length, 2, IMAGE_TEXT_MAX_IMAGES);
   }
   return 1;
-}
-
-/**
- * Whether the layout renders multiple image cells.
- * @param {Object} content
- * @returns {boolean}
- */
-export function isMultiImageLayout(content) {
-  return MULTI_CELL_LAYOUTS.has(String(content?.layout || 'split'));
 }
 
 /**

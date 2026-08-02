@@ -113,7 +113,7 @@ function codeList(keys) {
  * @param {Object} def - composed slide-type definition
  * @returns {string[]} field keys, in schema order
  */
-export function surfacedFieldKeys(def) {
+function surfacedFieldKeys(def) {
   return (def?.fields || [])
     .filter((f) => f && !f.hidden && !f.deprecated)
     .map((f) => String(f.key))
@@ -126,7 +126,7 @@ export function surfacedFieldKeys(def) {
  * @param {Object} def
  * @returns {string[]}
  */
-export function markdownFieldKeys(def) {
+function markdownFieldKeys(def) {
   const out = [];
   const walk = (fields, prefix) => {
     for (const f of fields || []) {

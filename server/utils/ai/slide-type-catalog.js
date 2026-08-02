@@ -15,12 +15,8 @@
 
 export {
   SLIDE_TYPE_CATALOG,
-  SLIDE_TYPE_EXAMPLES,
-  getSlideTypeExamples,
   getPhase1SlideTypes,
   getPhase2SlideTypes,
-  buildSlideTypeDescription,
   buildPhase2CatalogPrompt,
   GLOBAL_SLIDE_OPTIONS,
-  buildGlobalOptionsPromptSection,
 } from './slide-catalog/index.js';

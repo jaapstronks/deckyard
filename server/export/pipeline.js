@@ -25,7 +25,7 @@ export function getLangSuffix(exportLang) {
  * @param {Object} options - Header options
  * @returns {Object} Headers object
  */
-export function buildExportHeaders({ contentType, filename, langSuffix = '', extension }) {
+function buildExportHeaders({ contentType, filename, langSuffix = '', extension }) {
   const fullFilename = `${safeFilename(filename + langSuffix)}${extension}`;
   return {
     'Content-Type': contentType,
@@ -115,7 +115,7 @@ export function sendExportResponse(res, { contentType, filename, langSuffix, ext
  * @param {Object} res - Response object
  * @param {string} html - HTML content
  */
-export function sendHtmlPreviewResponse(res, html) {
+function sendHtmlPreviewResponse(res, html) {
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'no-store',

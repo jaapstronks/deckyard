@@ -10,7 +10,7 @@ export function normalizeLlmVendor(vendor) {
   return null;
 }
 
-export function listConfiguredVendors() {
+function listConfiguredVendors() {
   const out = [];
   if (optionalEnv('OPENAI_API')) out.push('openai');
   if (optionalEnv('CLAUDE_API')) out.push('claude');

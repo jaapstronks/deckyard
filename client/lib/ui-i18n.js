@@ -63,12 +63,12 @@ export function getUiLocale() {
   return currentLocale;
 }
 
-export function readUiLocale() {
+function readUiLocale() {
   const raw = storage.get(LS_UI_LOCALE, null);
   return normalizeUiLocale(raw) || DEFAULT_LOCALE;
 }
 
-export function writeUiLocale(locale) {
+function writeUiLocale(locale) {
   const l = normalizeUiLocale(locale);
   if (!l) return;
   storage.set(LS_UI_LOCALE, l);

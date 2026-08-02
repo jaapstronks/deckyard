@@ -27,40 +27,13 @@ let currentLocale = DEFAULT_LOCALE;
  * @param {string} locale - Locale string
  * @returns {string|null} Normalized locale or null if invalid
  */
-export function normalizeLocale(locale) {
+function normalizeLocale(locale) {
   const s = String(locale || '').trim().toLowerCase();
   if (!s) return null;
   // Handle full locale codes like 'en-GB' -> 'en'
   const base = s.split('-')[0];
   if (SUPPORTED_LOCALES.includes(base)) return base;
   return null;
-}
-
-/**
- * Get the current locale.
- * @returns {string} Current locale
- */
-export function getLocale() {
-  return currentLocale;
-}
-
-/**
- * Set the current locale.
- * @param {string} locale - Locale to set
- * @returns {string} The actual locale that was set
- */
-export function setLocale(locale) {
-  const normalized = normalizeLocale(locale);
-  currentLocale = normalized || DEFAULT_LOCALE;
-  return currentLocale;
-}
-
-/**
- * Get supported locales.
- * @returns {string[]} Array of supported locale codes
- */
-export function getSupportedLocales() {
-  return [...SUPPORTED_LOCALES];
 }
 
 /**
@@ -137,10 +110,3 @@ export function createTranslator(locale) {
   return (key, fallback, vars) => t(key, fallback, vars, boundLocale);
 }
 
-/**
- * Clear the translation cache.
- * Useful for testing or hot-reloading.
- */
-export function clearCache() {
-  translationCache.clear();
-}

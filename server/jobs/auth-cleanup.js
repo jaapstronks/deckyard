@@ -30,7 +30,7 @@ const DEFAULT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
  *
  * @returns {Promise<{magicLinkTokens: number, passwordResetTokens: number, auditLogs: number}>}
  */
-export async function runAuthCleanup() {
+async function runAuthCleanup() {
   console.log('[auth-cleanup] Starting cleanup');
 
   // Clean up expired magic link tokens

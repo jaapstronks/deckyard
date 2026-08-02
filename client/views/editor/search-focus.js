@@ -6,7 +6,7 @@
  * closed group is a no-op on display:none content.
  * @param {Element|null} el
  */
-export function openAncestorDetails(el) {
+function openAncestorDetails(el) {
   let node = el?.parentElement;
   while (node) {
     if (node.tagName === 'DETAILS' && !node.open) node.open = true;

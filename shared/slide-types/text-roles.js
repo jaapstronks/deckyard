@@ -83,7 +83,7 @@ export const ROLE_AFFORDANCES = {
  * @param {string} [role]
  * @returns {{align: string[], color: boolean, size: boolean}}
  */
-export function roleAffordances(role) {
+function roleAffordances(role) {
   return ROLE_AFFORDANCES[role] || ROLE_AFFORDANCES[DEFAULT_TEXT_ROLE];
 }
 

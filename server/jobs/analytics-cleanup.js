@@ -18,7 +18,7 @@ import { ANALYTICS_CONFIG } from '../analytics/helpers.js';
  * @param {number} [options.ipAnonymizationDays] - Number of days before IP anonymization
  * @returns {Promise<{deletedSessions: number, deletedSlideViews: number, anonymizedIps: number, anonymizedLeads: number, anonymizedLeadIps: number}>}
  */
-export async function runAnalyticsCleanup({
+async function runAnalyticsCleanup({
   retentionDays = ANALYTICS_CONFIG.RETENTION_DAYS,
   ipAnonymizationDays = ANALYTICS_CONFIG.IP_ANONYMIZATION_DAYS,
 } = {}) {

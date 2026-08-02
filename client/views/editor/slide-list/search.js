@@ -8,7 +8,7 @@ export function normalizeQuery(q) {
   return String(q || '').trim();
 }
 
-export function findFirstMatchInText(text, query) {
+function findFirstMatchInText(text, query) {
   const q = normalizeQuery(query);
   if (!q) return null;
   const t = String(text || '');
@@ -17,7 +17,7 @@ export function findFirstMatchInText(text, query) {
   return { index: idx, length: q.length };
 }
 
-export function makeSnippet(text, query, { radius = 28 } = {}) {
+function makeSnippet(text, query, { radius = 28 } = {}) {
   const t = oneLine(text);
   const m = findFirstMatchInText(t, query);
   if (!m) return null;

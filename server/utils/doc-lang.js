@@ -14,7 +14,7 @@ const RTL_LANGS = new Set(['ar', 'he', 'fa', 'ur']);
  * @param {string} v - Language code to validate
  * @returns {string|null} Normalized language code or null
  */
-export function normalizeDocLang(v) {
+function normalizeDocLang(v) {
   if (v === 'nl' || v === 'en-GB') return v;
   if (RTL_LANGS.has(v)) return v;
   return null;

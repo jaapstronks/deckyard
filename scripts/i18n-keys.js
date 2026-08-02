@@ -23,7 +23,7 @@ const IGNORE_DIRS = new Set(['vendor', 'styles', 'i18n']);
  * verified statically. Keys under these prefixes are exempt from the
  * "unused key" side of the drift check.
  */
-export const DYNAMIC_KEY_PREFIXES = ['slideType.'];
+const DYNAMIC_KEY_PREFIXES = ['slideType.'];
 
 /**
  * Every runtime-built key family, as anchored patterns. Used by the *orphan*

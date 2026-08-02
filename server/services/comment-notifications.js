@@ -515,39 +515,3 @@ async function sendCommentEmails({
   }
 }
 
-/**
- * Build notification data for a comment.
- * Useful for getting standardized notification payload.
- *
- * @param {Object} options
- * @param {Object} options.comment - The comment
- * @param {Object} options.presentation - The presentation
- * @param {Object} options.actor - The actor who performed the action
- * @returns {Object} Notification data
- */
-export function buildCommentNotificationData({
-  comment,
-  presentation,
-  actor,
-}) {
-  return {
-    comment: {
-      id: comment?.id,
-      body: comment?.body,
-      slideId: comment?.slideId,
-      parentId: comment?.parentId,
-      authorEmail: comment?.authorEmail,
-      authorName: comment?.authorName,
-      status: comment?.status,
-    },
-    presentation: {
-      id: presentation?.id,
-      title: presentation?.title,
-      ownerEmail: presentation?.ownerEmail,
-    },
-    actor: {
-      email: actor?.email,
-      name: actor?.name,
-    },
-  };
-}

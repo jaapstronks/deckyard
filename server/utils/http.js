@@ -353,18 +353,3 @@ export function withErrorHandler(moduleName, handler) {
   };
 }
 
-/**
- * Create an error handler for a specific module.
- * Returns a function that wraps handlers with that module's error logging.
- *
- * @param {string} moduleName - Module name for logging
- * @returns {Function} Handler wrapper function
- *
- * @example
- * const handle = createErrorHandler('collaborators');
- * export const listShared = handle(async (ctx) => { ... });
- * export const addCollab = handle(async (ctx) => { ... });
- */
-export function createErrorHandler(moduleName) {
-  return (handler) => withErrorHandler(moduleName, handler);
-}

@@ -57,7 +57,7 @@ const BCP47_PATTERN =
  * `CURRENT_SCHEMA_VERSION` (the content-schema version), not the envelope
  * `version` — see `schema-version.js`.
  */
-export const SCHEMA_BASE_URI = 'https://deckyard.eu/schema';
+const SCHEMA_BASE_URI = 'https://deckyard.eu/schema';
 
 /** `$defs` key for a slide type's content schema. */
 function contentDefKey(typeName) {

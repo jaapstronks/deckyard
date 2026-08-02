@@ -1,7 +1,9 @@
 /**
  * AI Schema Validation Module
  *
- * Re-exports all Zod schemas for AI response validation.
+ * Re-exports the schema validators consumers actually import via this barrel.
+ * Import sibling modules (`refined-slide.js`, `outline.js`) directly for the
+ * individual Zod schemas.
  *
  * Usage:
  * ```js
@@ -16,30 +18,7 @@
  */
 
 // Phase 2: Refined slide content schemas
-export {
-  validateSlideContent,
-  safeParseSlideContent,
-  SLIDE_SCHEMAS,
-  titleSlideSchema,
-  chapterTitleSlideSchema,
-  quoteSlideSchema,
-  payoffSlideSchema,
-  contentSlideSchema,
-  listSlideSchema,
-  timelineSlideSchema,
-  kpiMetricsSlideSchema,
-  iconCardGridSlideSchema,
-  textBlocksSlideSchema,
-  tableSlideSchema,
-  chartSlideSchema,
-} from './refined-slide.js';
+export { validateSlideContent } from './refined-slide.js';
 
 // Phase 1: Outline response schemas
-export {
-  validateOutlineResponse,
-  validateOutlineSlide,
-  outlineSlideSchema,
-  outlineResponseSchema,
-  KNOWN_HINTS,
-  getUnknownHints,
-} from './outline.js';
+export { validateOutlineResponse } from './outline.js';

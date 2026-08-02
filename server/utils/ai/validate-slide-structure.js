@@ -261,9 +261,6 @@ export const STRUCTURE_VALIDATORS = {
   },
 };
 
-/** The type names that carry a structural validator, for the coverage gate. */
-export const STRUCTURE_VALIDATED_TYPES = Object.keys(STRUCTURE_VALIDATORS);
-
 /**
  * Validate that slide content has the expected structure for its type.
  * @param {string} type - The slide type

@@ -71,7 +71,7 @@ import { SLIDE_TYPES } from './registry.js';
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const SLIDE_RUNTIMES = Object.freeze({
+const SLIDE_RUNTIMES = Object.freeze({
   /** The session does nothing for it beyond serving the slide. */
   static: 'The session does nothing for it.',
   /** A presenter-driven clock; state is local to the presenting window. */
@@ -90,7 +90,7 @@ export const SLIDE_RUNTIME_NAMES = Object.freeze(Object.keys(SLIDE_RUNTIMES));
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const LIVE_INTERACTIONS = Object.freeze({
+const LIVE_INTERACTIONS = Object.freeze({
   /** One choice out of a short option list. */
   poll: 'One choice out of a short option list.',
   /** A point on a scale, whether drawn as buttons or as a slider. */
@@ -116,7 +116,7 @@ export function isSlideRuntime(value) {
  * @param {unknown} value
  * @returns {boolean}
  */
-export function isLiveInteraction(value) {
+function isLiveInteraction(value) {
   return typeof value === 'string' && Object.hasOwn(LIVE_INTERACTIONS, value);
 }
 

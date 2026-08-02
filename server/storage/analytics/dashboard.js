@@ -16,7 +16,7 @@ import { applyDateFilters } from '../../analytics/helpers.js';
  * @param {string} period - '7d' | '30d' | '90d' | '12m'
  * @returns {{ since: string, until: string }}
  */
-export function getPeriodDateRange(period) {
+function getPeriodDateRange(period) {
   const now = new Date();
   const until = now.toISOString();
   let since;
@@ -46,7 +46,7 @@ export function getPeriodDateRange(period) {
  * @param {string} period - '7d' | '30d' | '90d' | '12m'
  * @returns {{ since: string, until: string }}
  */
-export function getPreviousPeriodDateRange(period) {
+function getPreviousPeriodDateRange(period) {
   const current = getPeriodDateRange(period);
   const currentStart = new Date(current.since);
   const currentEnd = new Date(current.until);

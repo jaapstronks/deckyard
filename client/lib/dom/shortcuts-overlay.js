@@ -26,7 +26,7 @@ import { openModal } from './modal.js';
  * @param {ShortcutGroup[]} groups
  * @returns {HTMLElement[]}
  */
-export function renderShortcutGroups(groups = []) {
+function renderShortcutGroups(groups = []) {
   return groups.map((group) =>
     h('section', { class: 'shortcuts-group' }, [
       h('h3', { class: 'shortcuts-group-title', text: group.title }),

@@ -39,14 +39,6 @@ export function getClipboardSlides() {
 }
 
 /**
- * Check if clipboard has slides
- * @returns {boolean}
- */
-export function hasClipboardSlides() {
-  return getClipboardSlides() !== null;
-}
-
-/**
  * Get number of slides in clipboard
  * @returns {number}
  */
@@ -58,6 +50,6 @@ export function getClipboardCount() {
 /**
  * Clear the clipboard
  */
-export function clearClipboard() {
+function clearClipboard() {
   storage.remove(STORAGE_KEY);
 }

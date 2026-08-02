@@ -6,7 +6,7 @@
  */
 
 /** Default interval between message rotations (ms) */
-export const MESSAGE_INTERVAL = 6500;
+const MESSAGE_INTERVAL = 6500;
 
 /**
  * Create a message rotator that cycles through status messages.

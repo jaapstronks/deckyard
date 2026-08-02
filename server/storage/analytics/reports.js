@@ -11,12 +11,6 @@ import { getOrgId } from '../../utils/context.js';
 // CONSTANTS
 // ============================================================
 
-export const REPORT_TYPES = {
-  SUMMARY: 'summary',
-  DETAILED: 'detailed',
-  ENGAGEMENT: 'engagement',
-};
-
 // ============================================================
 // REPORT CRUD
 // ============================================================

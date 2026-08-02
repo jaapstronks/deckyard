@@ -467,12 +467,3 @@ export async function resetLikertInteraction(repoRoot, sessionId, opts = {}) {
   return resetInteraction(repoRoot, sessionId, opts);
 }
 
-export async function hasAnyInteractionResults(repoRoot, sessionId) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return false;
-  for (const st of s.slides.values()) {
-    // votesByDevice is the source of truth - check if any votes exist
-    if (st?.votesByDevice?.size > 0) return true;
-  }
-  return false;
-}

@@ -29,7 +29,7 @@ import { getAppSettings } from '../storage/settings.js';
  * @param {number} [options.dayOfWeek] - Override day of week (0-6, 0=Sunday)
  * @returns {Promise<{sent: number, skipped: number, errors: number}>}
  */
-export async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
+async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   const today = dayOfWeek ?? new Date().getDay();
   const results = { sent: 0, skipped: 0, errors: 0 };
 

@@ -85,7 +85,7 @@ const TOAST_RE = /\btoast(?:\.\w+)?\(\s*(['"])((?:[^'"\\\n]|\\.)*)\1/g;
  * @param {string} s
  * @returns {boolean}
  */
-export function looksLikeCopy(s) {
+function looksLikeCopy(s) {
   const v = String(s).trim();
   if (v.length < 2) return false;
   if (!/[A-Za-z]/.test(v)) return false;
@@ -159,7 +159,7 @@ async function* walkJs(dir) {
  * @param {string} dir - absolute path to client/
  * @returns {Promise<Array<{file: string, line: number, prop: string, value: string}>>}
  */
-export async function findHardcodedCopy(dir) {
+async function findHardcodedCopy(dir) {
   const hits = [];
   for await (const file of walkJs(dir)) {
     const src = await fs.readFile(file, 'utf8');

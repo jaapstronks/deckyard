@@ -49,9 +49,6 @@ export const WCAG_THRESHOLDS = {
  */
 export const APCA_THRESHOLDS = { large: 60, body: 75 };
 
-/** Text-size buckets both threshold tables are keyed by. */
-export const TEXT_SIZES = /** @type {const} */ (['body', 'large']);
-
 // --- APCA (APCA-W3 0.1.9, the "0.98G-4g" constant set) ----------------------
 // Vendored rather than taken as a dependency: it is a closed formula with fixed
 // constants, and pulling a package for ~40 lines would be the larger liability.

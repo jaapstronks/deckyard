@@ -101,7 +101,7 @@ import { debugLog } from '../utils/debug-log.js';
  * the dithering magnifies into a visible coarse quilt, and at 512 it does not.
  * 1024 costs three times the bytes for nothing the eye can find.
  */
-export const GRADIENT_RASTER_WIDTH = 512;
+const GRADIENT_RASTER_WIDTH = 512;
 
 /**
  * Operator override, mostly an escape hatch: `PDF_GRADIENT_RASTER_WIDTH=0`
@@ -110,7 +110,7 @@ export const GRADIENT_RASTER_WIDTH = 512;
  *
  * @returns {number} Bitmap width, or `0` to disable.
  */
-export function gradientRasterWidth() {
+function gradientRasterWidth() {
   const raw = process.env.PDF_GRADIENT_RASTER_WIDTH;
   if (raw == null || raw === '') return GRADIENT_RASTER_WIDTH;
   const n = Number(raw);

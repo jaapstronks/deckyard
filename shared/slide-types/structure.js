@@ -74,7 +74,7 @@
  *
  * @type {Readonly<Record<string, string>>}
  */
-export const SLIDE_STRUCTURES = Object.freeze({
+const SLIDE_STRUCTURES = Object.freeze({
   /** A fixed set of scalar slots (title + body + image). */
   singleton: 'A fixed set of scalar slots.',
   /** *n* items of one repeated shape; *n* is the author's choice. */
@@ -204,7 +204,7 @@ export const SLIDE_STRUCTURE_CONTRACTS = Object.freeze({
  * @param {unknown} structure
  * @returns {StructureContract|null}
  */
-export function structureContract(structure) {
+function structureContract(structure) {
   return isSlideStructure(structure) ? SLIDE_STRUCTURE_CONTRACTS[String(structure)] : null;
 }
 

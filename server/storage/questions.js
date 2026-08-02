@@ -269,7 +269,7 @@ export async function ensureQuestionsSession(repoRoot, sessionId, { presentation
   return s;
 }
 
-export async function touchQuestionsSession(repoRoot, sessionId) {
+async function touchQuestionsSession(repoRoot, sessionId) {
   const s = await getQuestionsSession(repoRoot, sessionId);
   if (!s) return null;
   s.lastActivityAt = now();
@@ -457,7 +457,7 @@ export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
   return detach;
 }
 
-export function closeQuestionsSession(sessionId, reason = 'closed') {
+function closeQuestionsSession(sessionId, reason = 'closed') {
   const s = sessions.get(String(sessionId || '')) || null;
   if (!s) return false;
   for (const res of Array.from(s.clients)) {

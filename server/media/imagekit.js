@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { cleanStr } from '../../shared/string-utils.js';
 
 function cleanFolder(v) {
@@ -70,7 +69,7 @@ async function fetchJsonOrThrow(url, opts = {}) {
   return body;
 }
 
-export function toImageKitSearchQuery({ q, searchQuery }) {
+function toImageKitSearchQuery({ q, searchQuery }) {
   const sq = cleanStr(searchQuery);
   if (sq) return sq;
   const term = cleanStr(q);
@@ -223,71 +222,6 @@ export async function patchImageKitFileDetails(fileId, patch = {}) {
       'Content-Type': 'application/json; charset=utf-8',
     },
     body: JSON.stringify(patch || {}),
-  });
-}
-
-export function createImageKitUploadAuth({ ttlSeconds = 45 * 60 } = {}) {
-  const cfg = getImageKitConfigFromEnv();
-  if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const token = crypto.randomBytes(24).toString('hex');
-  const now = Math.floor(Date.now() / 1000);
-  const expire = now + Math.max(60, Math.min(55 * 60, Number(ttlSeconds) || 45 * 60));
-
-  // ImageKit: signature = HMAC-SHA1(token + expire, privateKey) in lowercase hex
-  const signature = crypto
-    .createHmac('sha1', cfg.privateKey)
-    .update(`${token}${expire}`)
-    .digest('hex')
-    .toLowerCase();
-
-  return {
-    publicKey: cfg.publicKey,
-    token,
-    expire,
-    signature,
-    uploadFolder: cfg.uploadFolder,
-  };
-}
-
-export async function ingestImageKitRemoteUrl({
-  url,
-  fileName = '',
-  folder = '',
-  tags = null,
-  customMetadata = null,
-} = {}) {
-  const cfg = getImageKitConfigFromEnv();
-  if (!cfg.configured) {
-    const err = new Error('ImageKit is not configured');
-    err.statusCode = 400;
-    throw err;
-  }
-  const remoteUrl = cleanStr(url);
-  if (!remoteUrl) {
-    const err = new Error('url is required');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  const form = new FormData();
-  form.append('file', remoteUrl);
-  if (cleanStr(fileName)) form.append('fileName', cleanStr(fileName));
-  if (cleanStr(folder)) form.append('folder', cleanFolder(folder));
-  if (Array.isArray(tags)) form.append('tags', tags.filter((t) => cleanStr(t)).join(','));
-  if (customMetadata && typeof customMetadata === 'object')
-    form.append('customMetadata', JSON.stringify(customMetadata));
-
-  return await fetchJsonOrThrow('https://upload.imagekit.io/api/v1/files/upload', {
-    method: 'POST',
-    headers: {
-      Authorization: basicAuthHeader(cfg.privateKey),
-    },
-    body: form,
   });
 }
 

@@ -164,25 +164,6 @@ export async function listActivityEvents(ctx, opts = {}) {
 }
 
 /**
- * Get a single activity event by ID.
- */
-export async function getActivityEvent(eventId, ctx) {
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('activity_events')
-      .selectAll()
-      .where('id', '=', eventId)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-
-    if (!row) return null;
-    return rowToEvent(row);
-  });
-}
-
-/**
  * Delete old activity events (cleanup job).
  */
 export async function deleteOldActivityEvents(olderThan, ctx) {
@@ -206,7 +187,7 @@ export async function deleteOldActivityEvents(olderThan, ctx) {
 /**
  * Get the user's last read position.
  */
-export async function getUserEventRead(userEmail, ctx) {
+async function getUserEventRead(userEmail, ctx) {
   const email = norm(userEmail)?.toLowerCase();
   if (!email) return null;
 

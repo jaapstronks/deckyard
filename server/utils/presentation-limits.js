@@ -16,7 +16,7 @@
  * Get the current limit configuration from environment variables.
  * @returns {Object} Limits configuration
  */
-export function getLimits() {
+function getLimits() {
   return {
     softSlideLimit: Number(process.env.PRESENTATION_SOFT_SLIDE_LIMIT) || 100,
     hardSlideLimit: Number(process.env.PRESENTATION_HARD_SLIDE_LIMIT) || 500,
@@ -28,7 +28,7 @@ export function getLimits() {
 /**
  * Validation error/warning codes.
  */
-export const LimitCodes = {
+const LimitCodes = {
   SLIDE_LIMIT_EXCEEDED: 'SLIDE_LIMIT_EXCEEDED',
   SLIDE_LIMIT_WARNING: 'SLIDE_LIMIT_WARNING',
   SIZE_LIMIT_EXCEEDED: 'SIZE_LIMIT_EXCEEDED',
@@ -41,7 +41,7 @@ export const LimitCodes = {
  * @param {Object} presentation - The presentation object
  * @returns {number} Size in bytes
  */
-export function estimatePresentationSize(presentation) {
+function estimatePresentationSize(presentation) {
   if (!presentation) return 0;
   try {
     // Estimate based on JSON size (actual storage may differ slightly)
@@ -143,67 +143,3 @@ export function validatePresentationSize(presentation, options = {}) {
   };
 }
 
-/**
- * Check if adding slides would exceed limits.
- * Useful for validating before a paste or import operation.
- * @param {Object} presentation - The current presentation
- * @param {number} additionalSlides - Number of slides to add
- * @returns {Object} Validation result
- */
-export function validateSlideAddition(presentation, additionalSlides) {
-  const limits = getLimits();
-  const currentSlides = Array.isArray(presentation?.slides) ? presentation.slides.length : 0;
-  const newTotal = currentSlides + additionalSlides;
-
-  const errors = [];
-  const warnings = [];
-
-  if (newTotal > limits.hardSlideLimit) {
-    errors.push({
-      code: LimitCodes.SLIDE_LIMIT_EXCEEDED,
-      message: `Adding ${additionalSlides} slides would exceed the maximum limit (${newTotal}/${limits.hardSlideLimit} slides).`,
-      current: currentSlides,
-      adding: additionalSlides,
-      total: newTotal,
-      limit: limits.hardSlideLimit,
-    });
-  } else if (newTotal > limits.softSlideLimit) {
-    warnings.push({
-      code: LimitCodes.SLIDE_LIMIT_WARNING,
-      message: `Adding ${additionalSlides} slides will approach the limit (${newTotal}/${limits.hardSlideLimit} slides).`,
-      current: currentSlides,
-      adding: additionalSlides,
-      total: newTotal,
-      softLimit: limits.softSlideLimit,
-      hardLimit: limits.hardSlideLimit,
-    });
-  }
-
-  return {
-    ok: errors.length === 0,
-    errors: errors.length > 0 ? errors : undefined,
-    warnings: warnings.length > 0 ? warnings : undefined,
-    newTotal,
-  };
-}
-
-/**
- * Get a human-readable summary of current limits.
- * Useful for displaying in UI or documentation.
- * @returns {Object} Limits summary
- */
-export function getLimitsSummary() {
-  const limits = getLimits();
-  return {
-    slides: {
-      soft: limits.softSlideLimit,
-      hard: limits.hardSlideLimit,
-      description: `Soft warning at ${limits.softSlideLimit} slides, hard limit at ${limits.hardSlideLimit} slides.`,
-    },
-    size: {
-      softMb: limits.softSizeMb,
-      hardMb: limits.hardSizeMb,
-      description: `Soft warning at ${limits.softSizeMb}MB, hard limit at ${limits.hardSizeMb}MB.`,
-    },
-  };
-}

@@ -37,7 +37,7 @@ function clampInt(n, min, max) {
  * Resolve logos from either the new `logos[]` array or legacy numbered fields.
  * Returns an array of { image, name, alt } objects.
  */
-export function resolveLogos(content) {
+function resolveLogos(content) {
   // New format: logos[]
   if (Array.isArray(content?.logos) && content.logos.length > 0) {
     return content.logos.slice(0, MAX_LOGOS).map((l) => ({

@@ -10,7 +10,7 @@ import { t } from '../ui-i18n.js';
  * Language display names mapping.
  * Maps language codes to their display labels.
  */
-export const LANG_DISPLAY_NAMES = {
+const LANG_DISPLAY_NAMES = {
   nl: 'Nederlands',
   'en-GB': 'English',
   en: 'English',

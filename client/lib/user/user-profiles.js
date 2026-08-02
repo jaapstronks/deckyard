@@ -150,46 +150,6 @@ export async function getUserProfileAsync(email) {
 }
 
 /**
- * Get multiple user profiles, fetching any not in cache.
- *
- * @param {string[]} emails - Array of email addresses
- * @returns {Promise<Object>} Map of email -> profile
- */
-export async function getUserProfiles(emails) {
-  if (!Array.isArray(emails) || !emails.length) return {};
-
-  const normalizedEmails = emails
-    .map((e) => String(e || '').toLowerCase().trim())
-    .filter(Boolean);
-
-  // Separate cached and uncached
-  const result = {};
-  const toFetch = [];
-
-  for (const email of normalizedEmails) {
-    const cached = getFromCache(email);
-    if (cached) {
-      result[email] = cached;
-    } else {
-      toFetch.push(email);
-    }
-  }
-
-  // Fetch uncached profiles
-  if (toFetch.length) {
-    const fetched = await fetchProfilesFromServer(toFetch);
-
-    for (const email of toFetch) {
-      const profile = fetched[email] || { name: '', imageUrl: '' };
-      setInCache(email, profile);
-      result[email] = profile;
-    }
-  }
-
-  return result;
-}
-
-/**
  * Prefetch profiles for a list of emails.
  * Useful for warming the cache before rendering.
  *
@@ -215,17 +175,5 @@ export function invalidateProfile(email) {
   const key = String(email || '').toLowerCase().trim();
   if (key) {
     profileCache.delete(key);
-  }
-}
-
-/**
- * Clear all cached profiles.
- */
-export function clearProfileCache() {
-  profileCache.clear();
-  pendingEmails.clear();
-  if (batchTimer) {
-    clearTimeout(batchTimer);
-    batchTimer = null;
   }
 }

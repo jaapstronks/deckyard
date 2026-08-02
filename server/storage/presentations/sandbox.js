@@ -19,7 +19,7 @@ function versionsDir(repoRoot, presentationId) {
   );
 }
 
-export function isSandboxEphemeralPresentation(pres) {
+function isSandboxEphemeralPresentation(pres) {
   if (!sandboxEnabled()) return false;
   if (!pres || typeof pres !== 'object') return false;
   // Treat workspace-scope decks as curated seed decks that should not expire.

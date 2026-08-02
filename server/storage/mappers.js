@@ -154,20 +154,3 @@ export function mapPresentationRow(row) {
   };
 }
 
-/**
- * Map a follow code database row to an API object.
- * @param {object} row - Database row
- * @returns {object}
- */
-export function mapFollowCodeRow(row) {
-  return {
-    id: row.id,
-    code: row.code,
-    presentationId: row.presentation_id,
-    createdAt: row.created_at,
-    expiresAt: row.expires_at,
-    maxFollowers: row.max_followers,
-    activeFollowers: row.active_followers,
-    disabled: row.disabled,
-  };
-}

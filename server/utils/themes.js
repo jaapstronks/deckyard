@@ -319,10 +319,3 @@ export function themeVarsCssText(theme, { selector = '.ps-theme' } = {}) {
   return blocks.join('\n');
 }
 
-export function safeInlineJson(obj) {
-  // Prevent `</script>` breakouts and keep it deterministic.
-  return JSON.stringify(obj)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
-}

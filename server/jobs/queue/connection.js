@@ -30,7 +30,7 @@ export const QUEUE_NAMES = {
 /**
  * Default job options per queue.
  */
-export const DEFAULT_JOB_OPTIONS = {
+const DEFAULT_JOB_OPTIONS = {
   export: {
     attempts: 2,
     backoff: { type: 'exponential', delay: 5000 },
@@ -56,14 +56,6 @@ export const DEFAULT_JOB_OPTIONS = {
  */
 export function isQueueAvailable() {
   return isInitialized && queues !== null;
-}
-
-/**
- * Check if the queue might be available.
- * @returns {boolean}
- */
-export function mightQueueBeAvailable() {
-  return isRedisConfigured();
 }
 
 /**
@@ -139,7 +131,7 @@ export async function initializeQueues() {
  * @param {string} name - Queue name
  * @returns {Object|null} Queue instance or null
  */
-export function getQueue(name) {
+function getQueue(name) {
   if (!queues) return null;
   return queues[name] || null;
 }

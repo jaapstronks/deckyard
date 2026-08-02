@@ -19,7 +19,7 @@
  * criterion "every default is lookupable in the type definition").
  */
 
-export const CONTENT_COLUMNS_MAX = 7;
+const CONTENT_COLUMNS_MAX = 7;
 
 /**
  * Type-level image config for content-columns (looked up, never stored per

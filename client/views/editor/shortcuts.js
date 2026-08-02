@@ -67,7 +67,7 @@ function getEditorShortcutGroups() {
  * @param {() => void} [opts.onClose]
  * @returns {{ close: () => void }}
  */
-export function openEditorShortcuts({ onClose } = {}) {
+function openEditorShortcuts({ onClose } = {}) {
   return openShortcutsOverlay({
     title: t('editor.shortcuts.title', 'Keyboard shortcuts'),
     groups: getEditorShortcutGroups(),

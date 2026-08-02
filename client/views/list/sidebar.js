@@ -9,7 +9,7 @@ import { iconUrl } from '../../../shared/icon-names.js';
 /**
  * Sidebar view configuration.
  */
-export const SIDEBAR_VIEWS = [
+const SIDEBAR_VIEWS = [
   { key: 'home', icon: 'house', label: () => t('list.nav.home', 'Home') },
   { key: 'presentations', icon: 'files', label: () => t('list.nav.presentations', 'Presentations') },
   { key: 'slideLibrary', icon: 'library', label: () => t('list.nav.library', 'Library') },

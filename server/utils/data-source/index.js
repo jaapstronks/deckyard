@@ -20,7 +20,7 @@ const providers = {
  * @param {string} providerName
  * @returns {Object} Provider instance
  */
-export function getProvider(providerName) {
+function getProvider(providerName) {
   const provider = providers[providerName];
   if (!provider) {
     const err = new Error(`Unknown data source provider: ${providerName}`);

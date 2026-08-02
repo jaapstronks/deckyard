@@ -113,22 +113,6 @@ async function deleteFromRedis(key) {
 }
 
 /**
- * Delete all cached permissions for a presentation (wildcard delete).
- * @param {string} presentationId - Presentation ID
- * @param {string} orgId - Organization ID
- * @returns {Promise<void>}
- */
-async function deleteByPresentationRedis(presentationId, orgId) {
-  return withRedis(async (redis) => {
-    const pattern = `${CACHE_PREFIX}${orgId}:${presentationId}:*`;
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(...keys);
-    }
-  }, undefined);
-}
-
-/**
  * Get cached permission.
  * Tries Redis first, then falls back to memory cache.
  * @param {string} presentationId - Presentation ID
@@ -213,62 +197,3 @@ export async function invalidatePermission(presentationId, userEmail, orgId) {
   }
 }
 
-/**
- * Invalidate all cached permissions for a presentation.
- * Call this when presentation permissions are bulk-changed.
- * @param {string} presentationId - Presentation ID
- * @param {string} orgId - Organization ID
- * @returns {Promise<void>}
- */
-export async function invalidatePresentationPermissions(presentationId, orgId) {
-  // Invalidate in Redis
-  if (isRedisAvailable()) {
-    await deleteByPresentationRedis(presentationId, orgId);
-  }
-
-  // Invalidate in memory cache (scan for matching keys)
-  const prefix = `${orgId}:${presentationId}:`;
-  for (const key of memoryCache.keys()) {
-    if (key.startsWith(prefix)) {
-      memoryCache.delete(key);
-      const idx = cacheAccessOrder.indexOf(key);
-      if (idx !== -1) {
-        cacheAccessOrder.splice(idx, 1);
-      }
-    }
-  }
-}
-
-/**
- * Clear all cached permissions.
- * Useful for testing or when cache becomes stale.
- * @returns {Promise<void>}
- */
-export async function clearAllPermissionCache() {
-  // Clear Redis
-  if (isRedisAvailable()) {
-    await withRedis(async (redis) => {
-      const keys = await redis.keys(`${CACHE_PREFIX}*`);
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
-    }, undefined);
-  }
-
-  // Clear memory cache
-  memoryCache.clear();
-  cacheAccessOrder.length = 0;
-}
-
-/**
- * Get cache statistics.
- * @returns {Object} Cache stats
- */
-export function getCacheStats() {
-  return {
-    memorySize: memoryCache.size,
-    maxSize: getConfig().maxSize,
-    ttlSeconds: getConfig().ttlSeconds,
-    redisAvailable: isRedisAvailable(),
-  };
-}

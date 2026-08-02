@@ -30,7 +30,7 @@ function normalizeLinkedinUrl(raw) {
  * Resolve members from either the new `members[]` array or legacy numbered fields.
  * Returns an array of { image, alt, imageFocusX, imageFocusY, name, byline } objects.
  */
-export function resolveMembers(content) {
+function resolveMembers(content) {
   // New format: members[]
   if (Array.isArray(content?.members) && content.members.length > 0) {
     return content.members.map((m) => ({

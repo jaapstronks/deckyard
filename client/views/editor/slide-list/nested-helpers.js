@@ -31,7 +31,7 @@ export function buildChildrenMap(slides) {
  * @param {Array} slides - All slides
  * @returns {Array} Array of child slides
  */
-export function getChildSlides(parentId, slides) {
+function getChildSlides(parentId, slides) {
   return slides.filter((s) => s.parentId === parentId);
 }
 
