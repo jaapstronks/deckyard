@@ -271,49 +271,78 @@ coverage table below only summarizes what the *canvas* offers per type.
 
 ## Per-type coverage
 
-Every core type has a descriptor except `payoff-slide`, `follow-invite-slide`
-and `custom-html-slide` — the table below is the complete set, so a type missing
-from it has no canvas editing. Legend: "header set" = the shared
-`HEADER_GHOSTS` trio (title / subheading / bottomSubheading with anchor
-fallbacks).
+**Generated, not hand-kept.** Every cell below is a projection of the type's
+descriptor and its `fields[]` schema, written by
+`scripts/generate-slide-type-docs.js` and gated by
+`tests/slide-type-docs.test.js`. Add a ghost or a card level, regenerate, and
+the row follows; the table cannot describe a descriptor that no longer exists.
+All core types are listed, in registration order, so "no descriptor" is a
+visible answer rather than an absence a reader has to notice.
 
-| Type | Inline text | Ghosts | Cards | Markdown modal | Media / other |
-| --- | --- | --- | --- | --- | --- |
-| title-slide | title, subheading, byline, attribution | subheading, byline, attribution | – | – | – |
-| content-slide | title | subheading | – | body | convert: + Add image → image-text |
-| list-slide | title, items | subheading + item text | ✅ | – | – |
-| quote-slide | quote, name, title | – | – | – | media: author portraits (flat `authorImage{n}`); empty slot clickable in edit mode (first portrait inline) |
-| chapter-title-slide | title | subheading | – | – | – |
-| image-text-slide | title | caption | – | body | media: `images[]` per cell; convert: × on sole empty placeholder → content-slide |
-| timeline-slide | header + item date/title/text | header set + item text (chip on card) | ✅ (add right-center, × on card) | – | – |
-| process-slide | header + step title/text | header set + step text | ✅ (alias `steps`, direction-aware add) | – | – |
-| funnel-slide | header + stage label/value/text | header set + value/text | ✅ (alias `stages`) | – | – |
-| pyramid-slide | header + level label/text | header set + level text | ✅ (`levels`) | – | – |
-| cycle-slide | header, centerLabel + stage label/text | header set, centerLabel, stage text | ✅ (alias `stages`) | – | – |
-| matrix-slide | header + cell titles | header set | fixed 4/4 (no add/remove) | cell bodies | – |
-| kpi-metrics-slide | header + value/unit/label | header set + unit | ✅ (`metrics`) | – | – |
-| comparison-slide | header, side titles, verdict | header set, sides, verdict | – | left/right body | – |
-| end-slide | title, contact name/email/phone | body, contact fields | – | body | – |
-| image-slide | title, subheading, caption, bottom | all four | – | – | media: flat image + alt |
-| video-slide / embed-slide / countdown-slide | title | title | – | – | – |
-| chart-slide | title, subheading, bottom | subheading, bottom | – | chart data (click the chart) | – |
-| poll-slide | question, options | next empty option 1–4 (grouped) | – | – | – |
-| likert-slide | question, options | next empty option 1–10 (grouped) | – | – | – |
-| likert-slider-slide | question, min/max labels | min/max labels | – | – | – |
-| feedback-slide | question | – | – | – | – |
-| lead-capture-slide | title, field labels, submit label | description | – | description | – |
-| table-slide | title, caption, every cell | caption | ✅ rows | – | – |
-| gallery-slide | header + captions | header set + per-image caption | ✅ (`images`) | – | media: `images[]` |
-| icon-card-grid-slide | header + card title/body | header set | ✅ items-mode only | card bodies | icons: in-slide icon picker (+ numbered re-sync) |
-| card-stack-slide | header + card label/body | header set | – (count enum in inspector) | card bodies | – |
-| team-cards-slide | header, subheading2, name/byline | header set + member name/byline | ✅ (`ensure` members[]; first block inline) | – | media: photo + alt + LinkedIn (incl. first photo) |
-| logo-wall-slide | title, subheading | both | ✅ (`ensure` logos[]; add/remove/reorder; first logo inline) | – | media: `logos[]` incl. empty-slot add (names stay off-canvas: aria-only) |
-| text-blocks-slide | header, row titles, block title/body | header set + row title (rows 2+) | ✅ two-level rows → blocks | block bodies | – |
-| content-columns-slide | header, col titles, block title/body | header set | – | col text, block bodies | media: flat `col{n}Image` incl. empty-slot add |
+Column semantics:
 
-Not inline (intentional, no descriptor): `payoff-slide` and
-`follow-invite-slide` (no editable content), `custom-html-slide` (escape
-hatch, out of scope).
+- **Inline text**: the descriptor's `formText` - keys whose editing the canvas
+  covers *fully*. Narrower than what emits `data-inline-field` (see the note
+  under the descriptor reference).
+- **Ghosts**: chips for empty optional fields. A `list.field` entry is an
+  `itemGhosts` chip on a repeatable item; grouped sequential ghosts (poll
+  options) condense to one family.
+- **Cards**: the array the add/remove/reorder affordances write to, with the
+  qualifiers that change what renders — a legacy `alias`, a nested
+  `two-level` child, a `fixed N` collection (no add/remove when
+  `minItems === maxItems`), and `array decks only` for the `skipWhenEmpty`
+  dual-model guard.
+- **Markdown**: markdown-typed schema keys, edited in place when the content
+  round-trips through the serializer and in the modal when it does not.
+- **Media / other**: the non-text affordances - media popover (array vs flat
+  keys), icon picker, focal-point drag, cover/contain toggle, the
+  legacy→array `ensure` canonicalizer, and type-converting add/remove-image
+  chips.
+
+<!--gen:slide-type-canvas-->
+| Type | Inline text | Ghosts | Cards | Markdown | Media / other |
+|---|---|---|---|---|---|
+| `title-slide` | `title`, `subheading`, `meta` | `subheading`, `meta` | – | – | – |
+| `chapter-title-slide` | `title`, `subheading` | `subheading` | – | – | – |
+| `content-slide` | `title`, `subheading`, `body` | `subheading` | – | `body` | convert +image → `image-text-slide` |
+| `table-slide` | `title`, `caption` | `caption` | `rows` | – | – |
+| `list-slide` | `title`, `subheading`, `items` | `subheading`, `items.text` | `items` | – | – |
+| `kpi-metrics-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading`, `metrics.unit` | `metrics` | – | – |
+| `image-text-slide` | `title`, `caption`, `body` | `caption` | – | `body` | media `images[]`; focus drag; fit toggle; convert −image → `content-slide` |
+| `video-slide` | `title` | `title` | – | – | – |
+| `team-cards-slide` | `title`, `subheading`, `bottomSubheading`, `subheading2` | `title`, `subheading`, `bottomSubheading`, `subheading2`, `members.name`, `members.byline` | `members` | – | media `members[]`; focus drag; ensure (legacy → array) |
+| `logo-wall-slide` | `title`, `subheading` | `title`, `subheading`, `bottomSubheading` | `logos` | – | media `logos[]`; ensure (legacy → array) |
+| `card-stack-slide` | `title`, `subheading` | `title`, `subheading`, `bottomSubheading` | – | `items.body` | ensure (legacy → array) |
+| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading` | `items` | `items.body` | icons; ensure (legacy → array) |
+| `payoff-slide` | *no descriptor* | – | – | – | – |
+| `quote-slide` | `quote`, `authorName`, `authorTitle` | – | `quotes` (no reorder) | – | media (flat keys) |
+| `image-slide` | `title`, `subheading`, `bottomSubheading`, `caption` | `title`, `subheading`, `caption`, `bottomSubheading` | – | – | media (flat keys); focus drag; fit toggle |
+| `embed-slide` | `title` | `title` | – | – | – |
+| `countdown-slide` | `title` | `title` | – | – | – |
+| `poll-slide` | `question`, `option{n}` | `option{n}` | – | – | – |
+| `likert-slide` | `question`, `option{n}` | `option{n}` | – | – | – |
+| `likert-slider-slide` | `question`, `minLabel`, `maxLabel` | `minLabel`, `maxLabel` | – | – | – |
+| `feedback-slide` | `question` | – | – | – | – |
+| `lead-capture-slide` | `title`, `description`, `nameLabel`, `emailLabel`, `submitLabel` | `description` | – | `description`, `thankYouMessage` | – |
+| `follow-invite-slide` | *no descriptor* | – | – | – | – |
+| `chart-slide` | `title`, `subheading`, `bottomSubheading` | `subheading`, `bottomSubheading` | – | – | – |
+| `text-blocks-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading`, `rows.title` | `rows` (two-level → `blocks`; array decks only) | `rows.blocks.body` | – |
+| `content-columns-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading` | – | `col{n}Text`, `col{n}Block{m}Body` | media (flat keys); focus drag; fit toggle |
+| `comparison-slide` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | – | `leftBody`, `rightBody` | – |
+| `process-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `steps` | `title`, `subheading`, `bottomSubheading`, `items.text` | `items` (alias `steps`) | – | – |
+| `timeline-slide` | `title`, `subheading`, `bottomSubheading`, `items` | `title`, `subheading`, `bottomSubheading`, `items.text` | `items` | – | – |
+| `matrix-slide` | `title`, `subheading`, `bottomSubheading`, `cells` | `title`, `subheading`, `bottomSubheading` | `cells` (fixed 4) | `cells.body` | – |
+| `funnel-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `stages` | `title`, `subheading`, `bottomSubheading`, `items.value`, `items.text` | `items` (alias `stages`) | – | – |
+| `pyramid-slide` | `title`, `subheading`, `bottomSubheading`, `levels` | `title`, `subheading`, `bottomSubheading`, `levels.text` | `levels` | – | – |
+| `cycle-slide` | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`, `stages` | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items.text` | `items` (alias `stages`) | – | – |
+| `gallery-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading`, `images.caption` | `images` | – | media `images[]`; focus drag |
+| `custom-html-slide` | *no descriptor* | – | – | – | – |
+| `end-slide` | `title`, `body`, `contactName`, `contactEmail`, `contactPhone` | `body`, `contactName`, `contactEmail`, `contactPhone` | – | `body` | – |
+<!--/gen:slide-type-canvas-->
+
+Not inline, intentionally: `payoff-slide` and `follow-invite-slide` (no
+editable content), `custom-html-slide` (escape hatch, out of scope - its
+`html`/`css` are code editors in the bulk modal).
 
 Deliberately not inline within covered types: layout/variant/background/
 density enums (inspector; the canvas layout switcher uses the separate

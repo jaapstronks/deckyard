@@ -2,8 +2,8 @@
 
 How the editor's editing surfaces are organized since the wysiwyg-first
 editor-UI overhaul (shipped 2026-07-16): what lives where, the parity
-invariant that keeps it safe to maintain, and the per-type coverage audit
-that the inspector's keeps-model mirrors.
+invariant that keeps it safe to maintain, and the per-type coverage table
+the keeps-model generates.
 
 ## The three surfaces
 
@@ -45,7 +45,9 @@ the bulk modal only counts as coverage for **content text**. For
 the canvas: URLs, IDs, config texts, alt text, background images - the
 bulk modal is never a sufficient home; those must render in the inspector.
 Trigger: the video-slide's `source` had ended up bulk-only (fixed in
-PR #191); the re-audit below restored every field in the same class.
+PR #191); the re-audit that followed restored every field in the same
+class, and the generated table below is now what shows whether the
+invariant still holds.
 
 Conversely, double coverage is harmless: enums deliberately
 render in the bulk modal too (it mounts the whole content half by
@@ -131,9 +133,10 @@ The pane renders Background, Accessibility, and per type only the keys in that
 type's **keep-list**, declared as `inspectorKeeps` in
 `shared/slide-types/types/<name>/inline-edit.js` — next to the on-canvas
 descriptor it is the counterpart of, since a field is kept in the inspector
-precisely because the canvas does not cover it. The keep-lists are the code
-mirror of the coverage audit table below - **change the table and the
-declarations together**.
+precisely because the canvas does not cover it. The keep-lists are the
+**source** of the coverage audit table below, not its mirror: change a
+declaration, run `node scripts/generate-slide-type-docs.js`, and the table
+follows.
 
 `client/views/editor/editor-form/inspector-form.js` resolves them through
 `getInspectorKeepKeys()` and re-exports the whole set as `INSPECTOR_KEEPS` for
@@ -316,102 +319,106 @@ title + text, all density steps), **quote** (quote text), **chapter-title**
 (title). Other types/fields store the value cleanly but do not yet scale — add
 the `calc()` to their primary text element to enable it.
 
-## Per-type coverage audit (executed 2026-07-16, re-audited 2026-07-21)
+## Per-type coverage audit
 
-**Re-audit 2026-07-21** (scripted schema-vs-surfaces walk + hand review,
-under the tightened invariant above): every field the 2026-07-16 table had
-parked in its "Bulk modal (only home)" column was reclassified. Config/
-metadata fields moved to the inspector keeps (the table below reflects the
-new state): content + image-text `actions`; video
-`source`/`bunnyLibraryId` (PR #191); embed `embedUrl` (PR #191); countdown
-`zeroText`; poll/likert `onCloseTarget`; feedback `placeholder`;
-lead-capture `thankYouTitle`/`thankYouMessage`/`privacyText`/`privacyUrl`;
-chart `xLabel`/`yLabel`/`series1Label`/`series2Label` (rendered inside the
-chart-config block, per chart type, in inspector AND bulk); end
-`contactUrl`/`social1/2Label`/`social1/2Url`. **Content text** that relies
-on the bulk modal stays accepted: kpi metric subfields (delta/note), table
-row cell ops (column add/remove), content-columns numbered texts,
-text-blocks rows editor, quote extra `quotes[]`, custom-html `html`/`css`
-(code editors are the bulk surface by design). Deprecated/hidden fields
-(card-stack `card{n}Label`) need
-no surface.
+**Generated, not audited by hand.** The table below is derived from the
+declarations each type already carries - its `fields[]` schema, its inline-edit
+descriptor, its `inspectorKeeps` list, and its `layoutVariants`/`fieldGroups` -
+by `scripts/generate-slide-type-docs.js`. `tests/slide-type-docs.test.js` fails
+when the committed table and the registry disagree, so change a declaration and
+regenerate; do not edit the rows.
 
-Method: scripted walk of all core types' `SLIDE_TYPES[type].fields`
-against `INLINE_DESCRIPTORS` + `getInlineFormTextKeys` (+ `media`/`cards`
-descriptors), then hand-reviewed. Every schema field of every type is
-classified below; **no orphans found**.
+It replaces a table hand-written during the 2026-07-16 audit and re-audited on
+2026-07-21, which had drifted by the time it was regenerated: it still gave
+card-stack a `cardCount` keep and image-text `imageFit`/`focusX/Y` keeps long
+after those left the keep-lists, listed four per-column keeps for
+content-columns where only `columnCount` remains, and still called the title
+slide's `meta` field "byline, attribution". The *rationale* for a keep-list is
+deliberately not restated here - it lives as JSDoc beside the declaration in
+`shared/slide-types/types/<name>/inline-edit.js`, which is what someone
+changing the list reads.
 
 Column semantics:
 
-- **Wysiwyg**: fully editable on the slide surface (in-place text, ghosts
-  for optional fields, cards add/remove/reorder, images set/replaced via the
-  picker - double-click a filled image or click an empty slot; alt/fit/focus
-  live in the "This image" inspector tab). Where a row below says "via
-  popover" it predates the editing-surfaces track; read it as "via the canvas
-  image picker + the This-image tab".
-- **Bulk modal**: fields whose *only* non-inspector text home is the "Edit
-  all text" modal. The modal renders *every* non-Background/non-a11y field
-  by construction, so wysiwyg-covered fields are also there; this column
-  lists what *relies* on it.
-- **Inspector keeps**: settings/design fields the inspector retains (enums,
-  icons, URLs-as-config, focus points, chart config, code, Background,
-  Accessibility).
+- **Canvas (wysiwyg)**: the descriptor's `formText` - the keys whose editing
+  is *fully* covered on the slide surface. A field the canvas edits only
+  partly (an icon picker, a KPI delta) is deliberately absent, so this column
+  is a coverage claim rather than a list of what is clickable.
+- **Bulk modal (only home)**: the fields that *rely* on the "Edit all text"
+  modal - surfaced by the schema and claimed by nothing else. Four claimants
+  are subtracted, each from a declaration: `formText`, the keep-list, the
+  descriptor's element knobs (`media` in flat mode, `focus`, `fit`, `bleed` -
+  the ImageRef axes the "This image" card renders), and the **Layout chip**
+  (every key a `layoutVariants` entry writes, plus a field group's `alignKey`).
+  **A settings/config/metadata key appearing in this column is a parity
+  violation** (see the invariant above) - as generated, the column holds only
+  content collections, which is the invariant holding rather than being
+  asserted.
+- **Inspector keeps**: the `inspectorKeeps` declaration - the settings/design
+  fields the rail retains (enums, icons, URLs-as-config, chart config). An
+  empty list is a real answer: the canvas covers everything.
 
-Shared by **all <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> types**, not repeated per row: `slideBgImage`,
-`slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`,
-`slideLogo` (Background image section) and `a11yTitle`, `a11ySummary`
-(Accessibility) → **inspector keeps**. The per-type `background` enum renders
-as the flat colour field → **inspector keeps**.
+One limit worth knowing: the per-type widgets in `renderInspectorExtrasByType`
+(the image-text "Images" section, per-column image settings, icon-card icon +
+link) route imperatively rather than through a declaration, so a collection they
+render can still show up in the bulk-modal column. That is a property of the
+routing, not of this table - the widgets are the open half of the same
+consolidation.
 
-Legacy numbered aliases (team-cards `card{n}*`, logo-wall `logo{n}*`,
-icon-card-grid `card{n}*`, text-blocks `row{n}*`, process `steps`, funnel
-`stages`, cycle `stages`): inactive when the array field is in use - the
-form renders only the active collection (`inactiveCollectionKeys`), so
-they follow the array field's classification and are not separately
-homed. Not listed per row.
+Not repeated per row, because they are the same for all
+<!--gen:slide-type-count-->36<!--/gen:slide-type-count--> types: `slideBgImage`,
+`slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
+(Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
+per-type `background`/`bgCustomColor` colour field - all **inspector**
+surfaces. `hidden` and `deprecated` schema fields are omitted too: they are
+carried data and legacy mirrors, and `editor-form.js` renders neither.
+Numbered legacy aliases are condensed to their family (`col{n}Block{m}Body`),
+and an inactive alias collection (`steps`, `stages`) follows its array field
+rather than getting a home of its own.
 
-| Type | Wysiwyg | Bulk modal (only home) | Inspector keeps | Notes |
-|---|---|---|---|---|
-| title | title, subheading, byline, attribution | - | logoCorner | background image unified onto the shared `slideBgImage` (Background image section) — the type's own `bgImage`/`bgAlt` were removed (title-bg-unification) |
-| chapter-title | title, subheading | - | layout | |
-| content | title, subheading, body | - | layout (labelled "Text columns"), density, actions | the `layout` enum here only toggles 1/2 text columns, so it's shown as "Text columns"; the chip owns structural variants. actions = CTA config → inspector (re-audit 2026-07-21) |
-| table | title, caption; rows add/remove inline | rows[] cell texts (+ "Edit table" modal) | headerRow, animateByCell, tableStyle, cornerCell | slide-view entry points for the table modal are an open follow-up. `cornerCell` (label\|header) is style-orthogonal: it decides whether the top-left cell reads with the label column or the header row |
-| list | title, subheading, items[] (title/text, full) | - | variant, layout, density | |
-| kpi-metrics | title, subheading, bottomSubheading; metrics add/remove/reorder | metrics[] value/unit/label/note | accent, countUp | metric subfields not inline (delta/note controls) |
-| image-text | title, body, caption; images[] src+alt via popover (per cell) | - | imageRole, imageSide, imageWidth, imageFit, imageBackground, focusX/Y, density | `layout` (structural variant) is chip-only in the inspector; also carries an "Images" section: per-image alt/fit/focus, reorder, row's third image (phase-2 catalogue) |
-| video | title | - | source, autoplay, bunnyLibraryId, watchUrl | source is a URL/ID → inspector (PR #191); watchUrl is export config with no canvas surface |
-| team-cards | title, subheading(s), bottomSubheading; members[] incl. photo popover (image/name/byline/linkedin) + add/remove/reorder | - | textPosition, imageShape, imageAspect, showPhotoFrame, columnSplit | |
-| logo-wall | title, subheading; logos[] photo popover (image/name/link) | - | - | logos add/remove is form-only (known residue) |
-| card-stack | title, subheading; card{n}Title/Body in-place | - | cardCount | card{n}Title/Body are canvas-inline; card{n}Label is deprecated+hidden (no surface needed); no array migration yet |
-| icon-card-grid | title, subheading, bottomSubheading; items add/remove/reorder | items[] title/body | icon (picker), link, layout | icon picker + link keep the form |
-| payoff | - | - | - | zero content fields (theme-driven logo) |
-| quote | quote, authorName, authorTitle; author images via popover | - | - | |
-| image | title, subheading, bottomSubheading, caption; image+alt via popover | - | imageRole, zoomSteps, zoomLevel, zoomPositions | zoom config is slide-level settings; fit/bleed/focus are ImageRef axes on the "This image" element card, `layout` is folded legacy |
-| embed | title | - | embedUrl, aspectRatio, sandbox | embedUrl → inspector (PR #191) |
-| countdown | title | - | durationMinutes/Seconds, autoStart, flashOnZero, soundOnZero, zeroText | |
-| poll | question, option1-4 (ghosts) | - | onClose, onCloseTarget | |
-| likert | question, option1-10 (ghosts) | - | onClose, onCloseTarget | |
-| likert-slider | question, minLabel, maxLabel | - | - | |
-| feedback | question | - | placeholder | |
-| lead-capture | title, description, nameLabel, emailLabel, submitLabel | - | thankYouTitle, thankYouMessage, privacyText, privacyUrl | thank-you state not visible on canvas → inspector (re-audit 2026-07-21) |
-| follow-invite | - | - | - | zero content fields (content auto-managed) |
-| chart | title, subheading, bottomSubheading | - | chartType, data (own markdown modal), showLegend, showValues, pieLabelMode, xLabel, yLabel, series1/2Label (per chart type) | chart data keeps its dedicated modal (known residue); axis/series labels render inside the config block, inspector AND bulk |
-| text-blocks | title, subheading, bottomSubheading; rows[]+blocks two-level add/remove/reorder + texts | rows[] editor (incl. per-row color/arrow enums) | - | array-canonical; texts also inline |
-| content-columns | title, subheading, bottomSubheading; col{n}Image/Alt via popover incl. empty-slot add | col{n}Title/Text, col{n}Block{m}Title/Body (active numbered schema) | columnCount, col{n}ImageFit, col{n}ImageFocusX/Y, col{n}BlockCount | array migration is a parked follow-up |
-| comparison | title, subheading, bottomSubheading, leftTitle/Body, rightTitle/Body, verdict | - | - | fully inline |
-| process | title, subheading, bottomSubheading; items[] (title/text, full) | - | direction | |
-| timeline | title, subheading, bottomSubheading; items[] (date/title/text, full) | - | - | |
-| matrix | title, subheading, bottomSubheading; cells[] (title/body, full) | - | - | cell tone enum edits via the cells[] items editor (bulk) |
-| funnel | title, subheading, bottomSubheading; items[] (label/value/text, full) | - | - | |
-| pyramid | title, subheading, bottomSubheading; levels[] (label/text, full) | - | - | |
-| cycle | title, subheading, bottomSubheading, centerLabel; items[] (label/text, full) | - | - | |
-| gallery | title, subheading, bottomSubheading; images[] popover (src/alt) + caption inline + add/remove/reorder | images[] cards (per-image focusX/Y) | layout | |
-| custom-html | - | html, css (code editors, capability-gated) | - | |
-| end | title, body, contactName, contactEmail, contactPhone | - | contactUrl, social1/2Label, social1/2Url | URLs/labels → inspector (re-audit 2026-07-21) |
+<!--gen:slide-type-coverage-->
+| Type | Canvas (wysiwyg) | Bulk modal (only home) | Inspector keeps |
+|---|---|---|---|
+| `title-slide` | `title`, `subheading`, `meta` | – | `logoCorner` |
+| `chapter-title-slide` | `title`, `subheading` | – | `layout` |
+| `content-slide` | `title`, `subheading`, `body` | – | `layout`, `density`, `actions` |
+| `table-slide` | `title`, `caption` | `rows` | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell` |
+| `list-slide` | `title`, `subheading`, `items` | – | `variant`, `layout`, `density` |
+| `kpi-metrics-slide` | `title`, `subheading`, `bottomSubheading` | `metrics` | `accent`, `countUp` |
+| `image-text-slide` | `title`, `caption`, `body` | `images` | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions` |
+| `video-slide` | `title` | – | `source`, `autoplay`, `bunnyLibraryId`, `watchUrl` |
+| `team-cards-slide` | `title`, `subheading`, `bottomSubheading`, `subheading2` | `members` | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit` |
+| `logo-wall-slide` | `title`, `subheading` | `logos` | – |
+| `card-stack-slide` | `title`, `subheading` | `items` | – |
+| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading` | `items` | `layout` |
+| `payoff-slide` | – | – | – |
+| `quote-slide` | `quote`, `authorName`, `authorTitle` | `quotes` | – |
+| `image-slide` | `title`, `subheading`, `bottomSubheading`, `caption` | – | `imageRole`, `zoomSteps`, `zoomLevel`, `zoomPositions` |
+| `embed-slide` | `title` | – | `embedUrl`, `aspectRatio`, `sandbox` |
+| `countdown-slide` | `title` | – | `durationMinutes`, `durationSeconds`, `autoStart`, `flashOnZero`, `soundOnZero`, `zeroText` |
+| `poll-slide` | `question`, `option{n}` | – | `onClose`, `onCloseTarget` |
+| `likert-slide` | `question`, `option{n}` | – | `onClose`, `onCloseTarget` |
+| `likert-slider-slide` | `question`, `minLabel`, `maxLabel` | – | – |
+| `feedback-slide` | `question` | – | `placeholder` |
+| `lead-capture-slide` | `title`, `description`, `nameLabel`, `emailLabel`, `submitLabel` | – | `thankYouTitle`, `thankYouMessage`, `privacyText`, `privacyUrl` |
+| `follow-invite-slide` | – | – | – |
+| `chart-slide` | `title`, `subheading`, `bottomSubheading` | – | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label` |
+| `text-blocks-slide` | `title`, `subheading`, `bottomSubheading` | `rows` | – |
+| `content-columns-slide` | `title`, `subheading`, `bottomSubheading` | `col{n}Title`, `col{n}Text`, `col{n}BlockCount`, `col{n}Block{m}Title`, `col{n}Block{m}Body` | `columnCount` |
+| `comparison-slide` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | – | – |
+| `process-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `steps` | – | `direction` |
+| `timeline-slide` | `title`, `subheading`, `bottomSubheading`, `items` | – | – |
+| `matrix-slide` | `title`, `subheading`, `bottomSubheading`, `cells` | – | – |
+| `funnel-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `stages` | – | – |
+| `pyramid-slide` | `title`, `subheading`, `bottomSubheading`, `levels` | – | – |
+| `cycle-slide` | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`, `stages` | – | – |
+| `gallery-slide` | `title`, `subheading`, `bottomSubheading` | `images` | `layout` |
+| `custom-html-slide` | – | `html`, `css` | – |
+| `end-slide` | `title`, `body`, `contactName`, `contactEmail`, `contactPhone` | – | `contactUrl`, `social{n}Label`, `social{n}Url` |
+<!--/gen:slide-type-coverage-->
 
-Documented deviations from the audit's original shorthand, all in the safe
-direction (already folded into the table above; repeated here because the
-keeps-model JSDoc in `inspector-form.js` refers to them):
+Two shorthands the keeps-model JSDoc in `inspector-form.js` still refers to,
+both in the safe direction:
 
 - table `colCount`, team-cards `cardCount` and logo-wall `logoCount` are
   derived mirrors managed by their editors/arrays and were never rendered
