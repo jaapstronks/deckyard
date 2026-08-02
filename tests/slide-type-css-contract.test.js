@@ -37,6 +37,7 @@ import { fileURLToPath } from 'node:url';
 
 import { CORE_SLIDE_TYPE_DEFS, CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
+import { resolveItemDefaults } from '../shared/slide-types/item-defaults.js';
 import { extractCssClasses } from '../scripts/lint-dead-css.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -128,14 +129,84 @@ function definedClasses() {
 }
 
 /**
+ * The values worth rendering a single scalar field with.
+ *
+ * Two kinds of field carry a modifier class: an `enum` (one class per declared
+ * option) and a `boolean` (a class on one of the two states — `bleed` on
+ * image-slide emits `is-bleed` only when true, and a sweep that never sets it
+ * would call that class unrendered).
+ *
+ * @param {object} field
+ * @returns {unknown[]}
+ */
+function fieldValueVariants(field) {
+  if (field.type === 'boolean') return [true, false];
+  const options = Array.isArray(field.options) ? field.options : null;
+  if (!options) return [];
+  const out = [];
+  for (const option of options) {
+    const value =
+      option && typeof option === 'object' ? (option.value ?? option.id ?? option.key) : option;
+    if (value === undefined) continue;
+    out.push(value);
+  }
+  return out;
+}
+
+/**
+ * Variant arrays for an `items` field: the field's own value, with one item
+ * carrying one swept value of one of its `itemFields`.
+ *
+ * Per-item enums are a real source of modifier classes — `rows[].color` on
+ * text-blocks emits `is-black`, `images[].fit` on image-text emits
+ * `is-fit-contain` — and they live one level below `def.fields`, so a sweep
+ * that only walks the top level never reaches them. The mutation lands on the
+ * first item of whatever the defaults already hold; a type whose defaults carry
+ * no items gets the field's declared new-item skeleton instead, so the array
+ * shape is the one the editor would have produced.
+ *
+ * @param {object} field - a field declaring `itemFields`
+ * @param {unknown} current - the value the defaults hold for it, if any
+ * @returns {unknown[][]}
+ */
+function itemsValueVariants(field, current) {
+  const seed =
+    Array.isArray(current) && current.length ? current : [resolveItemDefaults(field, 'nl')];
+  const out = [];
+  for (const itemField of field.itemFields || []) {
+    for (const value of fieldValueVariants(itemField)) {
+      const items = structuredClone(seed);
+      items[0] = { ...items[0], [itemField.key]: value };
+      out.push(items);
+    }
+    if (Array.isArray(itemField.itemFields)) {
+      for (const nested of itemsValueVariants(itemField, seed[0]?.[itemField.key])) {
+        const items = structuredClone(seed);
+        items[0] = { ...items[0], [itemField.key]: nested };
+        out.push(items);
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * The content objects to render a type with: its defaults, plus one variant per
- * option of every enum-ish field.
+ * declared option of every enum field, both states of every boolean field, and
+ * the same for the fields of a collection field's items (recursively).
  *
  * Rendering defaults alone misses the whole `is-*` family — the layout,
  * alignment and background modifiers that only appear on a non-default value,
- * and those are exactly the names a restyle renames. Enumerating the declared
- * options costs 758 renders across the registry and finds four classes the
- * defaults never emit.
+ * and those are exactly the names a restyle renames. Enumerating those values
+ * costs 777 renders across the registry.
+ *
+ * The two extensions beyond the top-level enums each buy something concrete.
+ * Booleans: `is-bleed` was reached only through image-slide's *legacy* hidden
+ * `layout` enum, so retiring that compatibility field would have silently
+ * dropped the class out of the sweep; the `bleed` toggle now covers it on the
+ * canonical path. Item fields: `is-black` (text-blocks `rows[].color`) was not
+ * reached at all, and `is-fit-contain` is now attributed to image-text through
+ * its own `images[].fit` rather than borrowed from image-slide.
  *
  * @param {object} def
  * @returns {object[]}
@@ -144,13 +215,13 @@ function contentVariants(def) {
   const base = structuredClone(def.defaults || {});
   const out = [base];
   for (const field of def.fields || []) {
-    const options = Array.isArray(field.options) ? field.options : null;
-    if (!options) continue;
-    for (const option of options) {
-      const value =
-        option && typeof option === 'object' ? (option.value ?? option.id ?? option.key) : option;
-      if (value === undefined) continue;
+    for (const value of fieldValueVariants(field)) {
       out.push({ ...base, [field.key]: value });
+    }
+    if (Array.isArray(field.itemFields)) {
+      for (const items of itemsValueVariants(field, base[field.key])) {
+        out.push({ ...base, [field.key]: items });
+      }
     }
   }
   return out;

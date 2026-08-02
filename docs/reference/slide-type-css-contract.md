@@ -29,13 +29,29 @@ was purely visual and a human found it hours after deploy.
 ## What the test does
 
 For every registered core type it renders the defaults, plus one variant per
-declared option of every enum field, and collects the class names.
+value that can carry a modifier class, and collects the class names. Three kinds
+of value are swept:
+
+- every declared option of every enum field;
+- both states of every boolean field;
+- the same two, one level down, for the fields of a collection field's items
+  (`itemFields`, recursively) — the variant mutates one item of the type's own
+  default content, or of the field's declared new-item skeleton when the
+  defaults carry no items.
 
 The variants matter: rendering defaults alone never emits the `is-*` family — the
 layout, alignment and background modifiers that only appear on a non-default
 value — and those are precisely the names a restyle renames. Enumerating the
-declared options costs 758 renders across the registry and surfaces four classes
-the defaults never produce.
+values costs 777 renders across the registry and reaches 59 class names the
+defaults alone never produce, four of them entries in the `UNSTYLED` list below.
+
+Sweeping past the top-level enums is what makes that coverage stable rather than
+accidental. `is-bleed` was reached only through image-slide's *legacy* hidden
+`layout` enum, so retiring that compatibility field would have quietly dropped
+the class from the sweep; the canonical `bleed` toggle now covers it. `is-black`
+(text-blocks `rows[].color`) was emitted but never swept at all, and
+`is-fit-contain` is now attributed to image-text through its own `images[].fit`
+instead of being borrowed from image-slide.
 
 A class passes if it has a rule in `client/styles/**`, or if the rendered markup
 styles it in its own inline `<style>` block (the likely shape for a fork type
@@ -90,7 +106,8 @@ assertion is "this name is known to the stylesheets", not "this slide looks
 right". Visual regression is a separate question (see the pixel-comparison
 discussion in `docs/developer/export-smoke-test.md`).
 
-**Content-dependent classes beyond enum options.** A class emitted only for, say,
-a particular item count or a specific string value is not reached. The enum sweep
-is the cheap 80%; a class that only appears under bespoke content stays
-uncovered.
+**Content-dependent classes beyond the swept values.** A class emitted only for,
+say, a particular item count, a combination of two options, or a specific string
+value is not reached — the sweep varies one field at a time, and inside a
+collection it varies one item. The declared-value sweep is the cheap 80%; a class
+that only appears under bespoke content stays uncovered.
