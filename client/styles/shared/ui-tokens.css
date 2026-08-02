@@ -17,16 +17,41 @@
   --ps-text-xl: 1.125rem;
   --ps-text-2xl: 1.375rem;
 
-  /* Spacing scale (4px base) */
-  --ps-space-1: 0.25rem;
-  --ps-space-2: 0.5rem;
-  --ps-space-3: 0.75rem;
-  --ps-space-4: 1rem;
-  --ps-space-5: 1.25rem;
-  --ps-space-6: 1.5rem;
-  --ps-space-8: 2rem;
-  --ps-space-10: 2.5rem;
-  --ps-space-12: 3rem;
+  /* Spacing scale. Named after the multiple of 4px, so `-3` is 12px and the
+     half-steps land between two ticks: `-2-5` is 10px.
+
+     Two resolutions on purpose. **Up to 20px the scale ticks every 2px**,
+     because that is the rhythm the dense UI was actually drawn on — a census of
+     `client/styles/**` (2026-08-02) found 683 loose px values beside the tokens,
+     of which 587 (86%) were even but not multiples of 4: 2, 6, 10, 14, 18.
+     Rounding those to a 4px grid would be a redesign of the dense surfaces, not
+     a conversion, and declaring them permanently off-scale would be a second
+     spacing regime over half the app. **Above 20px it stays coarse at 4px**,
+     because large spacing does not need the resolution.
+
+     Decision: docs/plans/briefs/css-tokens-beyond-color.md § as (a).
+     Conversion rule and the gate: docs/reference/css-tokens.md. */
+  --ps-space-0-5: 0.125rem;  /* 2px  */
+  --ps-space-1: 0.25rem;     /* 4px  */
+  --ps-space-1-5: 0.375rem;  /* 6px  */
+  --ps-space-2: 0.5rem;      /* 8px  */
+  --ps-space-2-5: 0.625rem;  /* 10px */
+  --ps-space-3: 0.75rem;     /* 12px */
+  --ps-space-3-5: 0.875rem;  /* 14px */
+  --ps-space-4: 1rem;        /* 16px */
+  --ps-space-4-5: 1.125rem;  /* 18px */
+  --ps-space-5: 1.25rem;     /* 20px */
+  /* 4px ticks from here up. `-7`, `-9` and `-15` close gaps the old scale left
+     where in-scope CSS actually spends values: 28px (×6), 36px (×2), 60px (×1).
+     There is deliberately no `-11` (44px), `-13` (52px) or `-14` (56px) — none
+     of those is used by a margin/padding/gap anywhere in scope. */
+  --ps-space-6: 1.5rem;      /* 24px */
+  --ps-space-7: 1.75rem;     /* 28px */
+  --ps-space-8: 2rem;        /* 32px */
+  --ps-space-9: 2.25rem;     /* 36px */
+  --ps-space-10: 2.5rem;     /* 40px */
+  --ps-space-12: 3rem;       /* 48px */
+  --ps-space-15: 3.75rem;    /* 60px */
 
   --ps-radius-sm: 0.25rem;
   --ps-radius-md: 0.375rem;
