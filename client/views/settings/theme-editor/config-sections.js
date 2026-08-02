@@ -94,7 +94,7 @@ function choiceRow({ label, options, value, onChange }) {
  * Both are named scales over the slide design system rather than raw values, so
  * a theme adjusts the feel while the design system keeps the proportions.
  */
-export function createSurfacesSection({ config, onChange }) {
+function createSurfacesSection({ config, onChange }) {
   const el = card(
     t('settings.themes.config.surfaces', 'Surfaces'),
     t(
@@ -137,7 +137,7 @@ const HEADING_TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'];
 const HEADING_WEIGHTS = ['300', '400', '500', '600', '700', '800'];
 
 /** Typography treatment: how headings are cased and weighted. */
-export function createTypographySection({ config, onChange }) {
+function createTypographySection({ config, onChange }) {
   const el = card(
     t('settings.themes.config.typography', 'Heading treatment'),
     t(
@@ -185,7 +185,7 @@ const LOCK_LABELS = {
  * question is genuinely binary ("may a slide change this?"), so a two-state
  * control with a "default" option would be three ways of saying two things.
  */
-export function createLocksSection({ config, onChange }) {
+function createLocksSection({ config, onChange }) {
   const el = card(
     t('settings.themes.config.locks', 'Locked by the theme'),
     t(

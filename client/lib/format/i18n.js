@@ -54,7 +54,7 @@ export function hasLangVersion(pres, lang) {
   );
 }
 
-export const LS_LANG_MODE = 'app.langMode';
+const LS_LANG_MODE = 'app.langMode';
 
 /**
  * The stored deck-language preference, or null when the user has never made

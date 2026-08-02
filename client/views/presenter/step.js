@@ -32,7 +32,7 @@ const ZOOM_PRESETS = {
 /**
  * Get the zoom positions for an image slide based on its configuration.
  */
-export const getImageZoomConfig = (section) => {
+const getImageZoomConfig = (section) => {
   const slide = section?.querySelector?.('.slide-image[data-zoom-steps]');
   if (!slide) return null;
 

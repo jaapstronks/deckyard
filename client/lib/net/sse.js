@@ -16,7 +16,7 @@
  * @param {string} chunk - Raw text chunk from SSE stream
  * @returns {Array<{event: string, data: object}>} Parsed events
  */
-export function parseSSEChunk(chunk) {
+function parseSSEChunk(chunk) {
   const events = [];
   const lines = chunk.split('\n');
   let currentEvent = null;

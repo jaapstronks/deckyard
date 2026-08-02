@@ -81,7 +81,7 @@ function storeBgImageSectionOpen(open) {
  * @param {object} pres
  * @param {{ markDirty?: Function, scheduleUiRefresh?: Function }} cbs
  */
-export async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh } = {}) {
+async function runBgContrastDetection(slide, pres, { markDirty, scheduleUiRefresh } = {}) {
   const url = String(slide?.content?.slideBgImage || '').trim();
   if (!url) return;
   if (slide.content.slideBgAutoFor === url) return; // already detected for this image

@@ -9,7 +9,7 @@ import { storage } from '../../lib/storage.js';
 
 export const LOCAL_STORAGE_KEY_VIEW = 'ps:presentation-list-view';
 const SESSION_KEY_FRESH_LOGIN = 'ps:fresh-login-pending';
-export const VALID_VIEWS = ['home', 'presentations', 'slideLibrary', 'activity', 'trash'];
+const VALID_VIEWS = ['home', 'presentations', 'slideLibrary', 'activity', 'trash'];
 
 // Legacy per-source view keys now fold into the unified "presentations" view.
 // Redirect stale persisted values (and any old deep link) so returning users

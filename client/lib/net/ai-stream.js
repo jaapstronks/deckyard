@@ -94,37 +94,6 @@ export async function generatePresentationStreaming({
 }
 
 /**
- * Simple status message rotator for non-streaming fallback
- * Rotates through messages at a fixed interval
- *
- * @param {Array<string>} messages - Status messages to rotate through
- * @param {Function} onMessage - Callback for each message
- * @param {number} interval - Milliseconds between messages (default 6500)
- * @returns {Function} Stop function to cancel the rotation
- */
-export function rotateStatusMessages(messages, onMessage, interval = 6500) {
-  if (!messages?.length) return () => {};
-
-  let index = 0;
-  let stopped = false;
-
-  const tick = () => {
-    if (stopped || index >= messages.length) return;
-    onMessage(messages[index], index, messages.length);
-    index++;
-    if (index < messages.length) {
-      setTimeout(tick, interval);
-    }
-  };
-
-  tick();
-
-  return () => {
-    stopped = true;
-  };
-}
-
-/**
  * Generate presentation using V2 (non-streaming) with simulated status messages
  *
  * @param {Object} options

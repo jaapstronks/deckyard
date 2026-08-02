@@ -10,7 +10,7 @@ const ASPECT_MISMATCH_THRESHOLD = 0.35;
  * @param {string} url - Image URL
  * @returns {Promise<{width: number, height: number}>} Image dimensions
  */
-export function loadImageDimensions(url) {
+function loadImageDimensions(url) {
   return new Promise((resolve, reject) => {
     if (!url || typeof url !== 'string') {
       reject(new Error('Invalid image URL'));
@@ -21,27 +21,6 @@ export function loadImageDimensions(url) {
     img.onerror = () => reject(new Error('Failed to load image'));
     img.src = url;
   });
-}
-
-/**
- * Calculate whether an image should use "contain" (fit/no-crop) mode
- * based on aspect ratio mismatch with the slide.
- *
- * If the image aspect ratio differs significantly from 16:9 (the slide ratio),
- * cropping would lose important content, so we recommend contain mode.
- *
- * @param {number} imageWidth - Image width in pixels
- * @param {number} imageHeight - Image height in pixels
- * @param {number} [threshold=0.35] - Mismatch threshold (0-1), default 35%
- * @returns {boolean} True if contain mode is recommended
- */
-export function shouldUseContainMode(imageWidth, imageHeight, threshold = ASPECT_MISMATCH_THRESHOLD) {
-  if (!imageWidth || !imageHeight || imageWidth <= 0 || imageHeight <= 0) {
-    return false;
-  }
-  const imageAspect = imageWidth / imageHeight;
-  const mismatch = Math.abs(SLIDE_ASPECT_RATIO - imageAspect) / SLIDE_ASPECT_RATIO;
-  return mismatch > threshold;
 }
 
 /**

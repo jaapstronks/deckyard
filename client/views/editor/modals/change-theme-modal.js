@@ -27,7 +27,7 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {Function} [options.onThemeChanged] - Called after theme is successfully changed
  * @returns {Promise<{ ok: boolean }>}
  */
-export function openChangeThemeModal({
+function openChangeThemeModal({
   h,
   root,
   api,

@@ -107,10 +107,6 @@ export function getUiModePreference() {
   return currentPref;
 }
 
-export function getResolvedUiMode() {
-  return currentResolved;
-}
-
 export function setUiModePreference(nextPref) {
   const next = normalizePref(nextPref);
   currentPref = next;

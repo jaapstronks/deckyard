@@ -18,7 +18,7 @@ import { loadThemeById } from './theme.js';
  * @param {string} [options.className] - Additional CSS class for wrapper
  * @returns {Object} { wrap, select, getTheme, setTheme }
  */
-export function createThemeSelect({
+function createThemeSelect({
   h,
   initialTheme = DEFAULT_THEME_ID,
   onChange,
@@ -66,7 +66,7 @@ export function createThemeSelect({
  * @param {Function} [options.onPopulated] - Called with final theme ID after population
  * @returns {Promise<string>} The resolved theme ID
  */
-export async function populateThemes({
+async function populateThemes({
   api,
   h,
   select,

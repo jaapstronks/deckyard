@@ -1,14 +1,4 @@
-import { newId } from '../util/id.js';
 import { storage } from '../storage.js';
-
-export function getOrCreateQaUserId() {
-  const KEY = 'qa.userId';
-  const existing = storage.get(KEY, '').trim();
-  if (existing) return existing;
-  const v = newId();
-  storage.set(KEY, v);
-  return v;
-}
 
 export function getQaName() {
   const KEY = 'qa.name';

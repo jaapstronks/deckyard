@@ -44,7 +44,7 @@ export function sortByTrashedThenName(items) {
  * @param {string[]} [texts]
  * @returns {string[]}
  */
-export function extractAllText(obj, texts = []) {
+function extractAllText(obj, texts = []) {
   if (!obj) return texts;
   if (typeof obj === 'string') {
     texts.push(obj);
@@ -69,7 +69,7 @@ export function extractAllText(obj, texts = []) {
  * @param {Object} item
  * @returns {string}
  */
-export function getSearchableText(item) {
+function getSearchableText(item) {
   const texts = [];
   // Name/title
   if (item?.name) texts.push(item.name);
