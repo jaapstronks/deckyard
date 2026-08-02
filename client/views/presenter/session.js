@@ -1,4 +1,10 @@
 // Presenter session helpers (notes companion + optional remote control via SSE).
+//
+// The `controlEnabled` SSE event is deliberately not listened for here. The
+// only writer is the checkbox in this same tab, so the event would be the
+// presenter hearing their own click come back off the server. The notes
+// companion does subscribe (`client/views/notes/session-sse.js`) — there it is
+// a different tab, so it carries information.
 
 export async function startPresenterSession({
   api,
@@ -6,7 +12,6 @@ export async function startPresenterSession({
   onNext,
   onPrev,
   onGoto,
-  onControlEnabled,
   onDeckUpdated,
   onInteractionState,
   onBranch,
@@ -27,14 +32,6 @@ export async function startPresenterSession({
         if (action === 'next') onNext?.();
         else if (action === 'prev') onPrev?.();
         else if (action === 'goto') onGoto?.(Number(data?.slideIndex));
-      } catch {
-        // ignore
-      }
-    });
-    es.addEventListener('controlEnabled', (ev) => {
-      try {
-        const data = JSON.parse(ev.data || '{}');
-        onControlEnabled?.(!!data?.controlEnabled);
       } catch {
         // ignore
       }
