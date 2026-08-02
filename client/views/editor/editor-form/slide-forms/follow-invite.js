@@ -1,5 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
-import { normalizeLang } from '../../../../../shared/i18n-utils.js';
+import { resolveDeckLang } from '../../../../../shared/i18n-utils.js';
 
 export function renderFollowInviteForm({
   h,
@@ -18,8 +18,9 @@ export function renderFollowInviteForm({
   // The copy below is what this version's invite renders, so it is labelled
   // with the version's own language. It used to read `content.targetLang`,
   // which was the *other* language — the fields said "(Engels)" while editing
-  // the Dutch invite. Those keys are gone; the active version is the answer.
-  const copyLang = normalizeLang(pres?.i18n?.active) || 'nl';
+  // the Dutch invite. Those keys are gone; the renderer's own resolution
+  // (resolveDeckLang, active version first) is the answer.
+  const copyLang = resolveDeckLang(pres) || 'nl';
   const copyLangLabel = copyLang === 'en-GB' ? 'Engels' : 'Nederlands';
 
   const expl = h('div', {
