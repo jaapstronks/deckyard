@@ -51,7 +51,7 @@ name.
 | `--ps-space-2-5` | 0.625rem | 10 | | `--ps-space-10` | 2.5rem | 40 |
 | `--ps-space-3` | 0.75rem | 12 | | `--ps-space-12` | 3rem | 48 |
 | `--ps-space-3-5` | 0.875rem | 14 | | `--ps-space-15` | 3.75rem | 60 |
-| `--ps-space-4` | 1rem | 16 | | `--ps-space-16` | 4rem | 64 |
+| `--ps-space-4` | 1rem | 16 | | | | |
 | `--ps-space-4-5` | 1.125rem | 18 | | | | |
 | `--ps-space-5` | 1.25rem | 20 | | | | |
 
