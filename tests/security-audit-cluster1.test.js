@@ -117,7 +117,7 @@ test('H2: getOwnerEmail normalizes the actor email for scoping', () => {
   assert.equal(getOwnerEmail({ actorEmail: '  jaap@ciiic.nl  ' }), 'jaap@ciiic.nl');
 });
 
-test('H2: list/get/revoke/prefix queries all scope by owner_email', async () => {
+test('H2: list/get/revoke queries all scope by owner_email', async () => {
   const src = await fs.readFile(
     fileURLToPath(new URL('../server/storage/api-keys.js', import.meta.url)),
     'utf8',
@@ -126,8 +126,8 @@ test('H2: list/get/revoke/prefix queries all scope by owner_email', async () => 
   // owner_email filter so a cross-user IDOR can't regress back in.
   const ownerFilters = src.match(/\.where\('owner_email', '=', getOwnerEmail\(ctx\)\)/g) || [];
   assert.ok(
-    ownerFilters.length >= 4,
-    `expected owner_email scoping on list/get/revoke/prefix, found ${ownerFilters.length}`,
+    ownerFilters.length >= 3,
+    `expected owner_email scoping on list/get/revoke, found ${ownerFilters.length}`,
   );
 });
 

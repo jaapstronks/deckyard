@@ -80,7 +80,6 @@ export {
   updateShareLink,
   revokeShareLink,
   revokeAllShareLinks,
-  formatShareLink,
 } from './crud.js';
 
 // Access logging
@@ -94,12 +93,8 @@ export {
   requestGuestVerification,
   verifyGuestEmail,
   getGuestBySessionToken,
-  getGuestByEmail,
-  extendGuestSession,
-  invalidateGuestSessions,
   preRegisterGuest,
   listGuestsForShareLink,
   removeGuest,
   markInvitationSent,
-  formatGuest,
 } from './guests.js';

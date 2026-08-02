@@ -8,24 +8,6 @@
  * - presentation-authz/guests.js: Guest permissions
  */
 
-// Re-export permission constants for convenience
-export {
-  PERMISSIONS,
-  canRead,
-  canComment,
-  canWrite,
-  canManage,
-  isValidPermission,
-} from '../../shared/constants/permissions.js';
-
-// Share link permissions
-export {
-  canReadWithShareLink,
-  canCommentWithShareLink,
-  canWriteWithShareLink,
-  getShareLinkPermission,
-} from './presentation-authz/share-links.js';
-
 // Core presentation permissions
 export {
   normalizePresentationScope,

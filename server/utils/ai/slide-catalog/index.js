@@ -14,11 +14,7 @@
  */
 
 // Re-export definitions
-export {
-  SLIDE_TYPE_CATALOG,
-  mergeCustomAiCatalog,
-  getCoreSlideCatalog,
-} from './definitions.js';
+export { SLIDE_TYPE_CATALOG } from './definitions.js';
 
 // Re-export examples
 export {
@@ -33,24 +29,6 @@ export {
   buildSlideTypeDescription,
   buildPhase2CatalogPrompt,
 } from './builders.js';
-
-// Re-export the agent-facing contract (registry coverage + editorial overlay)
-export {
-  isAgentOptOut,
-  deriveAgentSchema,
-  resolveAgentSlideTypes,
-} from './agent-catalog.js';
-
-// Re-export custom loader functions
-export {
-  loadCustomAiCatalog,
-  loadCustomAiExamples,
-  clearCustomAiCatalogCache,
-  getCustomAiCatalogForTheme,
-} from './custom-loader.js';
-
-// Re-export the core-type override loader (custom/ai/catalog.js)
-export { loadCustomCatalogOverrides } from './custom-catalog-loader.js';
 
 // Re-export global per-slide options (background image, logo, text colour)
 export {
@@ -83,34 +61,6 @@ async function loadCombinedCustomCatalog() {
   return { combined: { ...customCatalog, ...overrides }, added: customCatalog, overrides };
 }
 
-/**
- * Initialize the AI catalog with custom slide type definitions
- * Call this during server startup to load custom AI metadata
- */
-export async function initializeAiCatalog() {
-  try {
-    const { combined, added, overrides } = await loadCombinedCustomCatalog();
-    const customExamples = await loadCustomAiExamples();
-
-    if (Object.keys(combined).length > 0) {
-      mergeCustomAiCatalog(combined);
-      const parts = [];
-      if (Object.keys(added).length > 0) parts.push(`${Object.keys(added).length} custom slide type(s)`);
-      if (Object.keys(overrides).length > 0) parts.push(`${Object.keys(overrides).length} core-type override(s)`);
-      console.log(`[ai-catalog] Merged ${parts.join(' + ')} into AI catalog`);
-    }
-
-    if (Object.keys(customExamples).length > 0) {
-      mergeCustomExamples(customExamples);
-      console.log(
-        `[ai-catalog] Merged ${Object.keys(customExamples).length} custom example set(s) into AI catalog`
-      );
-    }
-  } catch (err) {
-    console.error('[ai-catalog] Error initializing custom AI catalog:', err.message);
-  }
-}
-
 // Auto-initialize on module load (server-side only)
 // This ensures custom AI metadata is available as soon as the module is imported
 try {
@@ -124,6 +74,6 @@ try {
   if (Object.keys(customExamples).length > 0) {
     mergeCustomExamples(customExamples);
   }
-} catch (err) {
-  // Silently fail on load - will be logged if initializeAiCatalog() is called explicitly
+} catch {
+  // Silently fail on load — the server can run without custom AI metadata.
 }
