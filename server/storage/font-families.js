@@ -46,46 +46,6 @@ const VARIANT_COLUMNS = [
 // ============================================================
 
 /**
- * List all font families for an organization.
- * Returns families with variant counts, ordered by sort_order.
- */
-export async function listFontFamilies(ctx) {
-  return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const rows = await db
-      .selectFrom('font_families')
-      .select(FAMILY_COLUMNS)
-      .where('organization_id', '=', orgId)
-      .orderBy('sort_order', 'asc')
-      .orderBy('name', 'asc')
-      .execute();
-
-    if (!rows.length) return [];
-
-    // Fetch variant counts
-    const familyIds = rows.map((r) => r.id);
-    const variantCounts = await db
-      .selectFrom('font_variants')
-      .select(['font_family_id'])
-      .select(db.fn.count('id').as('count'))
-      .where('font_family_id', 'in', familyIds)
-      .groupBy('font_family_id')
-      .execute();
-
-    const countMap = {};
-    for (const vc of variantCounts) {
-      countMap[vc.font_family_id] = Number(vc.count);
-    }
-
-    return rows.map((r) => ({
-      ...formatFamily(r),
-      variantCount: countMap[r.id] || 0,
-    }));
-  });
-}
-
-/**
  * Get a single font family by ID, with eagerly-loaded variants.
  */
 export async function getFontFamily(familyId, ctx) {
@@ -108,39 +68,6 @@ export async function getFontFamily(familyId, ctx) {
       .selectFrom('font_variants')
       .select(VARIANT_COLUMNS)
       .where('font_family_id', '=', familyId)
-      .orderBy('weight', 'asc')
-      .orderBy('style', 'asc')
-      .execute();
-
-    return {
-      ...formatFamily(row),
-      variants: variants.map(formatVariant),
-    };
-  });
-}
-
-/**
- * Get a font family by slug.
- */
-export async function getFontFamilyBySlug(slug, ctx) {
-  if (!slug || typeof slug !== 'string') return null;
-
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('font_families')
-      .select(FAMILY_COLUMNS)
-      .where('slug', '=', slug)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-
-    if (!row) return null;
-
-    const variants = await db
-      .selectFrom('font_variants')
-      .select(VARIANT_COLUMNS)
-      .where('font_family_id', '=', row.id)
       .orderBy('weight', 'asc')
       .orderBy('style', 'asc')
       .execute();

@@ -300,58 +300,6 @@ export async function listApiKeys(options = {}, ctx) {
 }
 
 /**
- * Get an API key by its prefix (for display purposes).
- * @param {string} prefix - The key prefix
- * @param {Object} ctx - Context object
- * @returns {Promise<Object>} - Result with key data
- */
-export async function getApiKeyByPrefix(prefix, ctx) {
-  if (!prefix) {
-    return { ok: false, reason: 'prefix_required' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('api_keys')
-      .selectAll()
-      .where('key_prefix', '=', prefix)
-      .where('organization_id', '=', orgId)
-      .where('owner_email', '=', getOwnerEmail(ctx))
-      .executeTakeFirst();
-
-    if (!row) {
-      return { ok: false, reason: 'not_found' };
-    }
-
-    let scopes = ['read', 'write'];
-    try {
-      if (row.scopes) {
-        scopes = typeof row.scopes === 'string'
-          ? JSON.parse(row.scopes)
-          : row.scopes;
-      }
-    } catch {
-      // Use default scopes on parse error
-    }
-
-    return {
-      ok: true,
-      id: row.id,
-      ownerEmail: row.owner_email,
-      name: row.name,
-      prefix: row.key_prefix,
-      tier: row.tier || 'free',
-      scopes,
-      lastUsedAt: row.last_used_at,
-      revokedAt: row.revoked_at,
-      createdAt: row.created_at,
-    };
-  });
-}
-
-/**
  * Get an API key by ID.
  * @param {string} keyId - The key ID
  * @param {Object} ctx - Context object
@@ -400,42 +348,6 @@ export async function getApiKeyById(keyId, ctx) {
       revokedAt: row.revoked_at,
       createdAt: row.created_at,
     };
-  });
-}
-
-/**
- * Update an API key's tier.
- * @param {string} keyId - The key ID
- * @param {string} tier - The new tier (free, pro, enterprise)
- * @param {Object} ctx - Context object
- * @returns {Promise<Object>} - Result
- */
-export async function updateApiKeyTier(keyId, tier, ctx) {
-  if (!keyId) {
-    return { ok: false, reason: 'key_id_required' };
-  }
-
-  if (!TIER_LIMITS[tier]) {
-    return { ok: false, reason: 'invalid_tier' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .updateTable('api_keys')
-      .set({ tier })
-      .where('id', '=', keyId)
-      .where('organization_id', '=', orgId)
-      .where('revoked_at', 'is', null)
-      .returningAll()
-      .executeTakeFirst();
-
-    if (!row) {
-      return { ok: false, reason: 'not_found_or_revoked' };
-    }
-
-    return { ok: true, tier };
   });
 }
 

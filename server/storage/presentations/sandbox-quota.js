@@ -39,12 +39,12 @@ function positiveIntFromEnv(name, fallback) {
 }
 
 /** @returns {number} Max decks per sandbox guest. */
-export function sandboxMaxDecksPerGuest() {
+function sandboxMaxDecksPerGuest() {
   return positiveIntFromEnv('SANDBOX_MAX_DECKS_PER_GUEST', DEFAULT_MAX_DECKS_PER_GUEST);
 }
 
 /** @returns {number} Max total stored bytes per sandbox guest. */
-export function sandboxMaxBytesPerGuest() {
+function sandboxMaxBytesPerGuest() {
   return positiveIntFromEnv('SANDBOX_MAX_BYTES_PER_GUEST', DEFAULT_MAX_BYTES_PER_GUEST);
 }
 

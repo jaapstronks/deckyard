@@ -145,32 +145,6 @@ export async function getUnreadCount(userEmail, ctx) {
   });
 }
 
-/**
- * Get a notification by ID.
- * @param {string} notificationId - Notification ID
- * @param {string} userEmail - User's email (for authorization)
- * @param {Object} ctx - Context object
- * @returns {Promise<Object|null>} - Notification or null
- */
-export async function getNotification(notificationId, userEmail, ctx) {
-  const email = normalizeEmail(userEmail);
-  if (!email || !notificationId) return null;
-
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('user_notifications')
-      .selectAll()
-      .where('id', '=', notificationId)
-      .where('user_email', '=', email)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-
-    return row ? formatNotification(row) : null;
-  });
-}
-
 // ============================================================
 // UPDATE
 // ============================================================

@@ -113,7 +113,7 @@ export function computeMissingCount({ source, target } = {}) {
  * Normalize existing follow-invite slides (update presentationId/sourceLang).
  * Does NOT auto-insert a slide if missing – users add it manually.
  */
-export function normalizeFollowInviteSlides(slides, { presentationId, sourceLang } = {}) {
+function normalizeFollowInviteSlides(slides, { presentationId, sourceLang } = {}) {
   const arr = Array.isArray(slides) ? slides : [];
   const presId = String(presentationId || '').trim();
   const src = normalizeLang(sourceLang) || 'nl';
@@ -131,7 +131,7 @@ export function normalizeFollowInviteSlides(slides, { presentationId, sourceLang
   return arr;
 }
 
-export function missingTranslationCount(fromVer, toVer) {
+function missingTranslationCount(fromVer, toVer) {
   const srcTitle = typeof fromVer?.title === 'string' ? fromVer.title : '';
   const tgtTitle = typeof toVer?.title === 'string' ? toVer.title : '';
   let missing = 0;

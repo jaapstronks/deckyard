@@ -26,61 +26,6 @@ const EXT_TO_MIMES = {
   svg: ['image/svg+xml'],
 };
 
-export async function writeUploadFromDataUrl(repoRoot, dataUrl, originalName) {
-  const { mime, base64 } = parseDataUrl(dataUrl);
-  const ext = MIME_TO_EXT[mime];
-  if (!ext) {
-    const err = new Error(`Unsupported image type: ${mime}`);
-    err.statusCode = 400;
-    throw err;
-  }
-
-  let buf = Buffer.from(base64, 'base64');
-  const maxBytes = 10 * 1024 * 1024;
-  if (buf.length > maxBytes) {
-    const err = new Error('Image too large (max 10MB)');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  // Optimize + downscale uploads to keep disk use predictable.
-  // - no cropping
-  // - no distortion
-  // - never upscale
-  // Note: best-effort; if the optimizer isn't available, we keep the original.
-  if (
-    mime === 'image/png' ||
-    mime === 'image/jpeg' ||
-    mime === 'image/jpg' ||
-    mime === 'image/webp'
-  ) {
-    buf = await optimizeRasterUpload(buf, mime);
-  }
-
-  const dir = uploadsDir(repoRoot);
-  await fs.mkdir(dir, { recursive: true });
-
-  const safeBase =
-    (typeof originalName === 'string' ? originalName : '')
-      .split('/')
-      .pop()
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^\w\- ]+/g, '')
-      .trim()
-      .slice(0, 40) || 'image';
-
-  const filename = `${safeBase}-${crypto.randomUUID()}.${ext}`;
-  const absolutePath = path.join(dir, filename);
-  await fs.writeFile(absolutePath, buf);
-
-  return {
-    filename,
-    url: `/uploads/${filename}`,
-    mime,
-    bytes: buf.length,
-  };
-}
-
 /**
  * Save a buffer directly as an uploaded file.
  * Used for downloading external media (e.g., Unsplash, Giphy).

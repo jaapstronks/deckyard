@@ -127,38 +127,6 @@ export async function markAuthorNotified(attemptId, ctx) {
 }
 
 /**
- * List recent access attempts for a presentation.
- * @param {string} presentationId - Presentation ID
- * @param {Object} options - Options
- * @param {number} [options.limit=50] - Max results
- * @param {number} [options.offset=0] - Offset
- * @param {Object} ctx - Context object
- * @returns {Promise<Array>} - List of access attempts
- */
-export async function listAccessAttempts(presentationId, options = {}, ctx) {
-  const pid = norm(presentationId);
-  if (!pid) return [];
-
-  return withDbGuard([], async (db) => {
-    const orgId = getOrgId(ctx);
-    const limit = Math.min(Math.max(1, options.limit || 50), 100);
-    const offset = Math.max(0, options.offset || 0);
-
-    const rows = await db
-      .selectFrom('access_attempt_log')
-      .selectAll()
-      .where('presentation_id', '=', pid)
-      .where('organization_id', '=', orgId)
-      .orderBy('attempted_at', 'desc')
-      .limit(limit)
-      .offset(offset)
-      .execute();
-
-    return rows.map(formatAccessAttempt);
-  });
-}
-
-/**
  * Format a database row into an access attempt object.
  * @param {Object} row - Database row
  * @returns {Object} - Formatted access attempt

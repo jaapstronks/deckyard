@@ -106,29 +106,6 @@ export async function getCustomSlideType(typeId, ctx) {
 }
 
 /**
- * Get a custom slide type by slug.
- * @param {string} slug
- * @param {Object} ctx - Context with organizationId
- * @returns {Promise<Object|null>}
- */
-export async function getCustomSlideTypeBySlug(slug, ctx) {
-  if (!slug || typeof slug !== 'string') return null;
-
-  return withDbGuard(null, async (db) => {
-    const orgId = getOrgId(ctx);
-
-    const row = await db
-      .selectFrom('custom_slide_types')
-      .select(SELECT_COLUMNS)
-      .where('slug', '=', slug)
-      .where('organization_id', '=', orgId)
-      .executeTakeFirst();
-
-    return row ? formatRow(row) : null;
-  });
-}
-
-/**
  * Create a custom slide type.
  * @param {Object} data
  * @param {Object} ctx - Context with organizationId and actorEmail

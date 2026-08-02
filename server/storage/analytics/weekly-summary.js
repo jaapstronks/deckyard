@@ -15,7 +15,7 @@ import { applyDateFilters } from '../../analytics/helpers.js';
  * Get the date range for the past week (Mon-Sun or last 7 days).
  * @returns {{ since: string, until: string, weekStart: string, weekEnd: string }}
  */
-export function getWeekDateRange() {
+function getWeekDateRange() {
   const now = new Date();
   const until = now.toISOString();
   const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -37,7 +37,7 @@ export function getWeekDateRange() {
  * Get the date range for the previous week (for comparison).
  * @returns {{ since: string, until: string }}
  */
-export function getPreviousWeekDateRange() {
+function getPreviousWeekDateRange() {
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);

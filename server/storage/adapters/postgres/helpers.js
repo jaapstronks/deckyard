@@ -30,8 +30,8 @@ export function now() {
 /**
  * Default pagination options.
  */
-export const DEFAULT_LIMIT = 100;
-export const MAX_LIMIT = 1000;
+const DEFAULT_LIMIT = 100;
+const MAX_LIMIT = 1000;
 
 /**
  * Normalize pagination options.
