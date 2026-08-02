@@ -1,6 +1,7 @@
 /**
  * Activity events storage for tracking workspace activity.
- * Powers the activity feed and notification system.
+ * Powers the activity feed. (Live comment notifications go through
+ * services/comment-notifications.js — email + in-app + SSE — not through here.)
  */
 
 import { getOrgId } from '../utils/context.js';
@@ -22,6 +23,9 @@ export const EVENT_TYPES = {
   COMMENT_CREATED: 'comment.created',
   COMMENT_RESOLVED: 'comment.resolved',
   COMMENT_REOPENED: 'comment.reopened',
+  // Historical-only: no emitter records this anymore, but the activity feed
+  // still renders stored 'share.accessed' events (client overview-activity.js),
+  // so the type and its SHARE_LINK entity below stay as a rendering contract.
   SHARE_ACCESSED: 'share.accessed',
   SLIDE_ADDED: 'slide.added',
 };
@@ -276,157 +280,6 @@ export async function getUnreadEventCountsByPresentation(userEmail, ctx) {
       count: Number(row.count) || 0,
     }));
   });
-}
-
-// ============================================================
-// NOTIFICATION QUEUE
-// ============================================================
-
-/**
- * Add a notification to the queue.
- */
-export async function queueNotification(data, ctx) {
-  const recipientEmail = norm(data?.recipientEmail)?.toLowerCase();
-  const eventId = norm(data?.eventId);
-  const channel = norm(data?.channel);
-
-  if (!recipientEmail || !eventId || !channel) {
-    return { ok: false, reason: 'invalid' };
-  }
-
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
-    const now = nowIso();
-
-    const row = await db
-      .insertInto('notification_queue')
-      .values({
-        organization_id: orgId,
-        recipient_email: recipientEmail,
-        event_id: eventId,
-        channel: channel,
-        status: 'pending',
-        created_at: now,
-      })
-      .returningAll()
-      .executeTakeFirst();
-
-    return {
-      ok: true,
-      notification: {
-        id: row.id,
-        recipientEmail: row.recipient_email,
-        eventId: row.event_id,
-        channel: row.channel,
-        status: row.status,
-        createdAt: row.created_at,
-      },
-    };
-  });
-}
-
-/**
- * Get pending notifications for processing.
- */
-export async function getPendingNotifications(opts = {}) {
-  return withDbGuard([], async (db) => {
-    const limit = opts?.limit || 100;
-
-    const rows = await db
-      .selectFrom('notification_queue')
-      .innerJoin('activity_events', 'activity_events.id', 'notification_queue.event_id')
-      .select([
-        'notification_queue.id',
-        'notification_queue.recipient_email',
-        'notification_queue.event_id',
-        'notification_queue.channel',
-        'notification_queue.organization_id',
-        'notification_queue.created_at',
-        'activity_events.event_type',
-        'activity_events.entity_type',
-        'activity_events.entity_id',
-        'activity_events.presentation_id',
-        'activity_events.actor_email',
-        'activity_events.actor_name',
-        'activity_events.data as event_data',
-      ])
-      .where('notification_queue.status', '=', 'pending')
-      .orderBy('notification_queue.created_at', 'asc')
-      .limit(limit)
-      .execute();
-
-    return rows.map((row) => ({
-      id: row.id,
-      recipientEmail: row.recipient_email,
-      eventId: row.event_id,
-      channel: row.channel,
-      organizationId: row.organization_id,
-      createdAt: row.created_at,
-      event: {
-        type: row.event_type,
-        entityType: row.entity_type,
-        entityId: row.entity_id,
-        presentationId: row.presentation_id,
-        actorEmail: row.actor_email,
-        actorName: row.actor_name,
-        data: row.event_data,
-      },
-    }));
-  });
-}
-
-/**
- * Mark a notification as sent.
- */
-export async function markNotificationSent(notificationId) {
-  return withDbGuard({ ok: false }, async (db) => {
-    const now = nowIso();
-
-    await db
-      .updateTable('notification_queue')
-      .set({
-        status: 'sent',
-        processed_at: now,
-      })
-      .where('id', '=', notificationId)
-      .execute();
-
-    return { ok: true };
-  });
-}
-
-/**
- * Suppress a notification (e.g., already seen in app).
- */
-export async function suppressNotification(notificationId, reason) {
-  return withDbGuard({ ok: false }, async (db) => {
-    const now = nowIso();
-
-    await db
-      .updateTable('notification_queue')
-      .set({
-        status: 'suppressed',
-        suppression_reason: reason || 'unknown',
-        processed_at: now,
-      })
-      .where('id', '=', notificationId)
-      .execute();
-
-    return { ok: true };
-  });
-}
-
-/**
- * Check if user has seen an event (for notification suppression).
- */
-export async function hasUserSeenEvent(userEmail, eventCreatedAt, ctx) {
-  const email = norm(userEmail)?.toLowerCase();
-  if (!email) return false;
-
-  const readMarker = await getUserEventRead(email, ctx);
-  if (!readMarker?.lastReadAt) return false;
-
-  return new Date(readMarker.lastReadAt) >= new Date(eventCreatedAt);
 }
 
 // ============================================================
