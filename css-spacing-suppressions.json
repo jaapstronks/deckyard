@@ -6,7 +6,7 @@
   },
   "client/styles/base/01-core/10-shell-topbar-dropdown.css": {
     "tokenisable-spacing": {
-      "count": 8
+      "count": 10
     }
   },
   "client/styles/base/01-core/20-editor-layout.css": {
@@ -96,7 +96,7 @@
   },
   "client/styles/base/02-lists-and-thumbs/80-tags.css": {
     "tokenisable-spacing": {
-      "count": 1
+      "count": 4
     }
   },
   "client/styles/base/03-controls-and-forms.css": {
@@ -169,6 +169,16 @@
       "count": 5
     }
   },
+  "client/styles/base/04-editor-and-misc/15-ai-reasoning.css": {
+    "tokenisable-spacing": {
+      "count": 5
+    }
+  },
+  "client/styles/base/04-editor-and-misc/16-ai-iterate.css": {
+    "tokenisable-spacing": {
+      "count": 4
+    }
+  },
   "client/styles/base/04-editor-and-misc/17-deck-grid.css": {
     "tokenisable-spacing": {
       "count": 9
@@ -221,7 +231,7 @@
   },
   "client/styles/base/04-editor-and-misc/85-settings.css": {
     "tokenisable-spacing": {
-      "count": 10
+      "count": 16
     }
   },
   "client/styles/base/04-editor-and-misc/86-admin-users.css": {
@@ -236,7 +246,7 @@
   },
   "client/styles/base/04-editor-and-misc/87-settings-analytics.css": {
     "tokenisable-spacing": {
-      "count": 2
+      "count": 8
     }
   },
   "client/styles/base/04-editor-and-misc/87-slide-type-curation.css": {
@@ -271,7 +281,7 @@
   },
   "client/styles/base/04-editor-and-misc/95-toast.css": {
     "tokenisable-spacing": {
-      "count": 1
+      "count": 2
     }
   },
   "client/styles/base/04-editor-and-misc/95-viewer-mode.css": {
@@ -282,6 +292,16 @@
   "client/styles/base/04-editor-and-misc/97-theme-picker.css": {
     "tokenisable-spacing": {
       "count": 2
+    }
+  },
+  "client/styles/base/04-editor-and-misc/98-user-autocomplete.css": {
+    "tokenisable-spacing": {
+      "count": 12
+    }
+  },
+  "client/styles/base/04-editor-and-misc/99-notification-bell.css": {
+    "tokenisable-spacing": {
+      "count": 1
     }
   },
   "client/styles/base/04-editor-and-misc/video-player.css": {

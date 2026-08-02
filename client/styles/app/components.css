@@ -110,7 +110,7 @@
 }
 
 .btn.is-compact-sm {
-  padding: 2px var(--ps-space-2);
+  padding: var(--ps-space-0-5) var(--ps-space-2);
   font-size: var(--ps-text-xs);
   line-height: 1.1;
 }

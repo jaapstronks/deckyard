@@ -188,8 +188,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--space-4, 16px);
-  gap: var(--space-3, 12px);
+  padding: var(--ps-space-4);
+  gap: var(--ps-space-3);
   min-width: 0;
   overflow: hidden;
 }

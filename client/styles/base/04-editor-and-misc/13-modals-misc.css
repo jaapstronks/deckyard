@@ -75,7 +75,7 @@
   flex-basis: 100%;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
-  padding-left: calc(16px + var(--ps-space-2)); /* align with title after radio */
+  padding-left: calc(var(--ps-space-4) + var(--ps-space-2)); /* align with title after radio */
   margin-top: calc(-1 * var(--ps-space-1));
 }
 
