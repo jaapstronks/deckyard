@@ -55,7 +55,7 @@ export const REMOVED_SLIDE_TYPES = {
     },
   },
   'card-stack-slide': {
-    removed: '2026-08-02, finishing the deprecated-layer removal (A7.8)',
+    removed: '2026-08-02, PR #543 (finishing the deprecated-layer removal, A7.8)',
     successor: 'icon-card-grid-slide',
     reason:
       'a coloured "stack of cards" list, archived (deprecated: true) and ' +
@@ -81,7 +81,7 @@ export const REMOVED_SLIDE_TYPES = {
     },
   },
   'content-columns-slide': {
-    removed: '2026-08-02, finishing the deprecated-layer removal (A7.8)',
+    removed: '2026-08-02, PR #543 (finishing the deprecated-layer removal, A7.8)',
     successor: null,
     reason:
       'a rich nested multi-column layout (heading + image + several sub-blocks ' +
