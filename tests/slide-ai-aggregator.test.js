@@ -20,6 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   AGGREGATOR_PATH,
@@ -86,6 +87,23 @@ test('every ai.js that exports aiExamples is in the examples map, and only those
   // silently. The map staying sparse is equally deliberate — absence means the
   // type has no examples, not that one should be invented.
   assert.deepEqual(Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort(), typesWithAiExamples());
+});
+
+test('the aiExamples detector agrees with the real module namespace', async () => {
+  // typesWithAiExamples() detects by source text (`export const aiExamples`).
+  // A renamed export — `const EX = […]; export { EX as aiExamples };` — would
+  // slip past that regex and ship a type whose examples never reach the
+  // prompt, silently. Import every ai.js and pin the detector to what the
+  // module actually exports, in both directions.
+  const detected = new Set(typesWithAiExamples());
+  for (const name of typesWithAi()) {
+    const mod = await import(pathToFileURL(path.join(TYPES_DIR, name, 'ai.js')));
+    assert.equal(
+      'aiExamples' in mod,
+      detected.has(name),
+      `types/${name}/ai.js: the aiExamples export and the source-text detector disagree`
+    );
+  }
 });
 
 test('the examples surface is the aggregator', () => {

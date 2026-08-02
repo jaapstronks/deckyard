@@ -17,7 +17,6 @@ export {
   SLIDE_TYPE_CATALOG,
   SLIDE_TYPE_EXAMPLES,
   getSlideTypeExamples,
-  getSlideTypeExample,
   getPhase1SlideTypes,
   getPhase2SlideTypes,
   buildSlideTypeDescription,

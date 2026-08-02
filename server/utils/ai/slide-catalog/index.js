@@ -24,7 +24,6 @@ export {
 export {
   SLIDE_TYPE_EXAMPLES,
   getSlideTypeExamples,
-  getSlideTypeExample,
 } from './examples.js';
 
 // Re-export builders

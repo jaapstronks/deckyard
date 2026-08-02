@@ -51,14 +51,3 @@ export function mergeCustomExamples(customExamples) {
 export function getSlideTypeExamples(type) {
   return SLIDE_TYPE_EXAMPLES[type] || null;
 }
-
-/**
- * Get the first example for a slide type (backward compatibility)
- * @param {string} type - Slide type name
- * @returns {Object|null} First example or null if not found
- */
-export function getSlideTypeExample(type) {
-  const examples = getSlideTypeExamples(type);
-  if (!examples) return null;
-  return examples[0];
-}
