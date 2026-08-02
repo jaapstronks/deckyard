@@ -253,6 +253,12 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   the MCP preview bundles it alone — so the token resolves in the browser but
   silently resolves to nothing there. Details and the spacing/z-index scales:
   `docs/reference/css-tokens.md`.
+- **The class names a type emits are a public contract.** Every one must resolve
+  to a CSS rule (`tests/slide-type-css-contract.test.js`), and a *rename* goes in
+  the release notes under the breaking-changes heading — a fork styling its own
+  slide types against core CSS has no other way to learn a name moved. This is
+  the breakage that reached production in v1.8.0 with 2151 green tests behind it.
+  `docs/reference/slide-type-css-contract.md`.
 
 ### 4) Ensure the editor UX fits the patterns
 

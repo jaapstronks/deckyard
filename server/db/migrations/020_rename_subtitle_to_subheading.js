@@ -108,7 +108,7 @@ export const down = async (db) => {
   await sql`
     UPDATE slide_library
     SET content = (content - 'subheading') || jsonb_build_object('subtitle', content->'subheading')
-    WHERE type IN ('title-slide', 'ciiic-title-slide', 'logo-wall-slide', 'split-partner-title-slide')
+    WHERE slide_type IN ('title-slide', 'ciiic-title-slide', 'logo-wall-slide', 'split-partner-title-slide')
       AND content ? 'subheading'
       AND NOT (content ? 'subtitle')
   `.execute(db);
