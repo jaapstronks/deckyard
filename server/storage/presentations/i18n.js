@@ -108,22 +108,34 @@ export function computeMissingCount({ source, target } = {}) {
 }
 
 /**
- * Normalize existing follow-invite slides (update presentationId/sourceLang).
+ * Normalize existing follow-invite slides (set presentationId, strip the
+ * per-version language keys).
+ *
+ * `sourceLang`/`targetLang` used to be written here, once per language version.
+ * They were never authored: the value was always the language of the version
+ * being written, which the render context already knows (`ctx.lang`). Storing a
+ * copy only created a second place the truth could live, and therefore a way
+ * for the two to disagree — the codec treats them as plain fields and would
+ * happily let one version claim another's language.
+ *
+ * So they are derived at render now and **stripped** here. No migration script
+ * is needed: this function runs on every save, so existing decks shed the keys
+ * the first time they are written. See
+ * docs/plans/briefs/collab-codec-per-language-fields.md.
+ *
  * Does NOT auto-insert a slide if missing – users add it manually.
  */
-function normalizeFollowInviteSlides(slides, { presentationId, sourceLang } = {}) {
+function normalizeFollowInviteSlides(slides, { presentationId } = {}) {
   const arr = Array.isArray(slides) ? slides : [];
   const presId = String(presentationId || '').trim();
-  const src = normalizeLang(sourceLang) || 'nl';
-  const target = otherLang(src);
 
   // Find all follow-invite slides and ensure their content is correct.
   for (const s of arr) {
     if (s?.type !== 'follow-invite-slide') continue;
     s.content = s.content && typeof s.content === 'object' ? s.content : {};
     s.content.presentationId = presId;
-    s.content.sourceLang = src;
-    s.content.targetLang = target;
+    delete s.content.sourceLang;
+    delete s.content.targetLang;
     if (typeof s.content.enabled !== 'boolean') s.content.enabled = true;
   }
   return arr;
@@ -222,11 +234,9 @@ export function normalizeI18n(pres) {
     if (!v || typeof v !== 'object') continue;
     v.title = typeof v.title === 'string' ? v.title : '';
     v.slides = normalizeSlides(v.slides);
-    // Normalize any existing follow-invite slides (update presentationId/sourceLang).
-    v.slides = normalizeFollowInviteSlides(v.slides, {
-      presentationId: pres.id,
-      sourceLang: lang,
-    });
+    // Normalize any existing follow-invite slides (set presentationId, strip
+    // the stored language keys — the version's own language is the answer).
+    v.slides = normalizeFollowInviteSlides(v.slides, { presentationId: pres.id });
   }
 
   // Track missing translation fields (computed, lightweight).
