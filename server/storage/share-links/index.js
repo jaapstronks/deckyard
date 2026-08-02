@@ -43,11 +43,10 @@ export function generateGuestToken() {
 
 /**
  * Cleanup expired share links (background task).
- * Marks expired links as revoked.
- * @param {Object} ctx - Context object
+ * Marks expired links as revoked, instance-wide.
  * @returns {Promise<number>} - Number of links cleaned up
  */
-export async function cleanupExpiredShareLinks(ctx) {
+export async function cleanupExpiredShareLinks() {
   return withDbGuard(0, async (db) => {
     const now = nowIso();
 

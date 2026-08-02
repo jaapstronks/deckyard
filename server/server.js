@@ -27,6 +27,7 @@ import { announceMaintenance } from './services/maintenance.js';
 import { scheduleAuthCleanup } from './jobs/auth-cleanup.js';
 import { scheduleDigestEmailJob } from './jobs/digest-email.js';
 import { scheduleAnalyticsCleanup } from './jobs/analytics-cleanup.js';
+import { scheduleRetentionCleanup } from './jobs/retention-cleanup.js';
 import { initSanitizer } from '../shared/sanitize.js';
 import { closeRedis } from './utils/redis-client.js';
 import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
@@ -222,6 +223,7 @@ startHeartbeat(); // SSE heartbeat for real-time comment updates
 const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
 const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails
 const analyticsCleanupJob = scheduleAnalyticsCleanup(); // Clean old analytics daily
+const retentionCleanupJob = scheduleRetentionCleanup(); // Trim usage/share-links/activity daily
 
 // Initialize background job queue (Redis-based, with fallback)
 await initializeQueues();
@@ -266,6 +268,7 @@ async function shutdown(signal) {
   authCleanupJob.stop(); // Stop auth cleanup job
   digestEmailJob.stop(); // Stop digest email job
   analyticsCleanupJob.stop(); // Stop analytics cleanup job
+  retentionCleanupJob.stop(); // Stop retention cleanup job
   server.close(async () => {
     await closeQueues(); // Close job queues and workers
     await closeStorage();

@@ -165,14 +165,16 @@ export async function listActivityEvents(ctx, opts = {}) {
 
 /**
  * Delete old activity events (cleanup job).
+ *
+ * Instance-wide: a scheduled retention job has no organization context, so this
+ * deletes across every organization, the same model as the analytics cleanup.
+ * @param {string} olderThan - ISO timestamp; events created before it are removed
+ * @returns {Promise<{deleted: number}>}
  */
-export async function deleteOldActivityEvents(olderThan, ctx) {
+export async function deleteOldActivityEvents(olderThan) {
   return withDbGuard({ deleted: 0 }, async (db) => {
-    const orgId = getOrgId(ctx);
-
     const result = await db
       .deleteFrom('activity_events')
-      .where('organization_id', '=', orgId)
       .where('created_at', '<', olderThan)
       .executeTakeFirst();
 
