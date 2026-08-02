@@ -1,6 +1,6 @@
 # The `structure` facet, and when something is a type
 
-Deckyard has <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
+Deckyard has <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> core slide types. Until the `structure` facet there was no
 statement anywhere about how any of them relate to any other: the registry is a
 flat `name -> definition` map, so every type is a sibling of every other type.
 
@@ -52,7 +52,7 @@ each type's definition; served out through `/api/slide-types`.
 | `dataset` | data points plus an encoding | chart |
 | `chrome` | no content fields at all | payoff, follow-invite |
 
-These six partition the current <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
+These six partition the current <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> completely. There is no "other" bucket, which
 is the best evidence available that the axis is the right one.
 
 ## The item contract (normative)
@@ -159,7 +159,6 @@ point: this is what the facet was built to make visible.
 |---|---|---|
 | `image-text-slide` | declared `singleton`, carries `images[0-3]` | the `duo` tile is a second contract; the cut (image-text strictly one image, plural cases to the image collection) is a product decision |
 | `quote-slide` | declared `singleton`, carries `quotes[0-2]` beside scalar `quote`/`authorName` | one type, two representations — the legacy-mirror disease; fix by retiring one side |
-| `content-columns-slide` | declared `collection`, has no `items[]` at all (130 numbered `col{N}*` scalars) | deprecated with `text-blocks-slide` as successor, so the entry dies with rung 3 |
 | `poll-slide` | declared `fixed-collection`, carries `option1..option4` as scalars | never got the `items[]` migration the other collections did |
 | `likert-slide` | same, `option1..option10` | as poll-slide |
 

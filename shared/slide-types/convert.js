@@ -1,14 +1,8 @@
 import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
 import { pickBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
-import {
-  imageTextImageItems,
-  resolveImageTextCell,
-  IMAGE_TEXT_IMAGE_DEFAULTS,
-} from './types/image-text-slide/images.js';
+import { IMAGE_TEXT_IMAGE_DEFAULTS } from './types/image-text-slide/images.js';
 import { resolveImageSlideImage } from './types/image-slide/image.js';
-import { resolveCardStack } from './types/card-stack-slide.js';
-import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './types/content-columns-slide/images.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'
@@ -51,26 +45,6 @@ function preserveGlobalFields({ fromContent, toContent }) {
   }
 }
 
-/**
- * Parse a markdown body as a flat bullet/numbered list: every non-empty line
- * must be a top-level list item. Returns the item texts (markers stripped),
- * or null when the body is anything else (nested lists, prose, headings) -
- * callers then treat the body as one block instead of distributing it.
- * @param {*} body
- * @returns {string[]|null}
- */
-function parseFlatMarkdownList(body) {
-  if (typeof body !== 'string' || !body.trim()) return null;
-  const lines = body.split('\n').filter((l) => l.trim().length);
-  const items = [];
-  for (const line of lines) {
-    const m = /^(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
-    if (!m || !m[1].trim()) return null;
-    items.push(m[1].trim());
-  }
-  return items.length >= 2 ? items : null;
-}
-
 function hasMeaningfulValue(v) {
   if (v == null) return false;
   if (typeof v === 'string') return v.trim().length > 0;
@@ -107,53 +81,9 @@ const CONSUMED_SOURCE_KEYS = {
       'focusX',
       'focusY',
     ],
-    // "Own text per column": images/alt/fit/focus move into the columns and
-    // the body is distributed over the column texts; the layout enums and the
-    // background have no columns equivalent (deliberate drops, defaults would
-    // otherwise always warn - content-columns has a fixed background).
-    // caption and actions have no target field and still warn when filled.
-    'content-columns-slide': [
-      'image',
-      'images',
-      'alt',
-      'body',
-      'imageRole',
-      'imageSide',
-      'imageWidth',
-      'layout',
-      'textColumns',
-      'imageFit',
-      'imageBackground',
-      'focusX',
-      'focusY',
-      'density',
-      'background',
-    ],
   },
   'list-slide': {
     'content-slide': ['subtitle', 'variant', 'items'],
-    'content-columns-slide': ['variant', 'layout', 'items'],
-  },
-  'card-stack-slide': {
-    'icon-card-grid-slide': [
-      'card1Title',
-      'card2Title',
-      'card3Title',
-      'card4Title',
-      // DEPRECATED: Remove after April 2026
-      'card1Label',
-      'card2Label',
-      'card3Label',
-      'card4Label',
-    ],
-  },
-  'icon-card-grid-slide': {
-    'card-stack-slide': [
-      'card1Title',
-      'card2Title',
-      'card3Title',
-      'card4Title',
-    ],
   },
 };
 
@@ -163,17 +93,11 @@ export function getConvertibleSlideTypes(slide, { slideTypes = SLIDE_TYPES } = {
   if (type === 'content-slide') {
     return ['image-text-slide'];
   }
-  // content-columns-slide is archived (deprecated) but, like card-stack, stays a
-  // convert *target* (converting into it is a deliberate per-slide action, not
-  // the picker/AI insertion path that `deprecated` gates). New authoring goes
-  // through the picker, where it no longer appears.
-  if (type === 'image-text-slide') return ['content-slide', 'content-columns-slide'];
+  if (type === 'image-text-slide') return ['content-slide'];
   if (type === 'image-slide') return ['image-text-slide'];
   if (type === 'list-slide') {
-    return ['content-slide', 'content-columns-slide'];
+    return ['content-slide'];
   }
-  if (type === 'card-stack-slide') return ['icon-card-grid-slide'];
-  if (type === 'icon-card-grid-slide') return ['card-stack-slide'];
   if (type === 'title-slide') return ['chapter-title-slide'];
   if (type === 'chapter-title-slide') return ['title-slide'];
   return [];
@@ -252,65 +176,6 @@ export function convertSlideToType(
     if (typeof from.body === 'string') to.body = from.body;
   }
 
-  // image-text -> content-columns ("own text per column"): each image becomes
-  // a column; a flat-list body is distributed one item per column (extras
-  // append to the last column), any other body lands in column 1.
-  if (fromType === 'image-text-slide' && targetType === 'content-columns-slide') {
-    // Keep each filled image's original cell index so the canonical per-cell
-    // resolution (item -> legacy slide fallback -> type default) applies to the
-    // right cell - only cell 0 inherits the slide-level alt/focus.
-    const filled = imageTextImageItems(from)
-      .map((it, i) => ({ it, i }))
-      .filter((x) => x.it.src);
-    const listItems = parseFlatMarkdownList(from?.body);
-    const columnCount = Math.max(
-      2,
-      Math.min(3, Math.max(filled.length, listItems ? listItems.length : 0))
-    );
-    to.columnCount = String(columnCount);
-
-    const perCol = Array.from({ length: columnCount }, () => []);
-    if (listItems) {
-      listItems.forEach((item, i) => perCol[Math.min(i, columnCount - 1)].push(item));
-    } else if (nonEmptyString(from?.body)) {
-      perCol[0].push(from.body);
-    }
-    // A column that collected multiple items becomes a list again.
-    const texts = perCol.map((arr) =>
-      arr.length > 1 ? arr.map((s) => `- ${s}`).join('\n') : arr[0] || ''
-    );
-
-    for (let col = 1; col <= columnCount; col += 1) {
-      const entry = filled[col - 1] || null;
-      // The defaults ship placeholder titles/blocks; converted columns start
-      // with just their image and text.
-      to[`col${col}Title`] = '';
-      to[`col${col}Text`] = texts[col - 1] || '';
-      to[`col${col}BlockCount`] = '0';
-      to[`col${col}Block1Title`] = '';
-      to[`col${col}Block1Body`] = '';
-      if (!entry) {
-        to[`col${col}Image`] = '';
-        to[`col${col}Alt`] = '';
-        continue;
-      }
-      // Read fit/focus/alt through the single per-cell authority so both the
-      // canonical items[] shape and un-migrated legacy decks convert
-      // identically. A fit equal to the content-columns type default is not
-      // written (empty = follow the type, step 4).
-      const r = resolveImageTextCell(from, entry.i);
-      to[`col${col}Image`] = entry.it.src;
-      to[`col${col}Alt`] = r.altExplicit;
-      if (r.fit !== CONTENT_COLUMNS_IMAGE_DEFAULTS.fit) {
-        to[`col${col}ImageFit`] = r.fit;
-      }
-      const fx = Number(r.focusSource?.focusX);
-      const fy = Number(r.focusSource?.focusY);
-      if (Number.isFinite(fx)) to[`col${col}ImageFocusX`] = fx;
-      if (Number.isFinite(fy)) to[`col${col}ImageFocusY`] = fy;
-    }
-  }
-
   // image -> image-text (one-way; reverse isn't offered)
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
     // alt + focus + fit + bleed are canonical on images[0] (the ImageRef).
@@ -375,98 +240,6 @@ export function convertSlideToType(
     const body = lines.join('\n');
     if (typeof to.body === 'string') to.body = body;
     if (typeof to.layout === 'string') to.layout = 'one-column';
-  }
-
-  // list -> content-columns (either name of the List type)
-  if (isListType(fromType) && targetType === 'content-columns-slide') {
-    // Copy subheading
-    if (nonEmptyString(from?.subheading) && typeof to.subheading === 'string') {
-      to.subheading = from.subheading;
-    }
-
-    const items = Array.isArray(from?.items) ? from.items : [];
-    // content-columns supports up to 7 columns
-    const columnCount = Math.max(1, Math.min(7, items.length));
-    to.columnCount = String(columnCount);
-
-    for (let i = 0; i < columnCount; i += 1) {
-      const colNum = i + 1;
-      const it = items[i];
-      const itemTitle =
-        typeof it?.title === 'string' ? it.title.trim() : '';
-      const itemText =
-        typeof it?.text === 'string'
-          ? it.text.replace(/\s*\n+\s*/g, ' ').trim()
-          : '';
-
-      // List item title -> Column title block title
-      to[`col${colNum}Title`] = itemTitle;
-      to[`col${colNum}Text`] = '';
-      to[`col${colNum}Image`] = '';
-      to[`col${colNum}ImageFit`] = 'cover';
-      to[`col${colNum}Alt`] = '';
-
-      // List item text -> Block 1 title
-      if (itemText) {
-        to[`col${colNum}BlockCount`] = '1';
-        to[`col${colNum}Block1Title`] = itemText;
-        to[`col${colNum}Block1Body`] = '';
-      } else {
-        to[`col${colNum}BlockCount`] = '0';
-      }
-    }
-  }
-
-  // card-stack <-> icon-card-grid. Both are items[]-canonical, so read the
-  // source's resolved card view and write items[] on the target (writing only
-  // the numbered mirror would be masked by the target's items[] defaults).
-  if (fromType === 'card-stack-slide' && targetType === 'icon-card-grid-slide') {
-    if (typeof from.subtitle === 'string' && typeof to.subtitle === 'string')
-      to.subtitle = from.subtitle;
-    const srcCards = resolveCardStack(from).cards.slice(0, 6);
-    const items = srcCards.map((c) => ({
-      icon: '', // No icon in card-stack; leave empty.
-      title: String(c?.title || '').trim().slice(0, 80),
-      body: String(c?.body || '').trim(),
-      link: '',
-    }));
-    to.items = items;
-    to.cardCount = String(Math.max(1, items.length));
-    for (let i = 1; i <= 6; i += 1) {
-      const item = items[i - 1] || {};
-      to[`card${i}Icon`] = item.icon || '';
-      to[`card${i}Title`] = item.title || '';
-      to[`card${i}Body`] = item.body || '';
-    }
-  }
-  if (fromType === 'icon-card-grid-slide' && targetType === 'card-stack-slide') {
-    if (typeof from.subtitle === 'string' && typeof to.subtitle === 'string')
-      to.subtitle = from.subtitle;
-    // Read icon-card-grid's canonical source (items[] when present, else its
-    // numbered mirror), then write card-stack's items[].
-    const useItems = Array.isArray(from?.items) && from.items.length > 0;
-    const count = Math.max(
-      1,
-      Math.min(6, useItems ? from.items.length : Number(from?.cardCount || 4) || 4)
-    );
-    const items = [];
-    for (let i = 1; i <= count; i += 1) {
-      const src = useItems ? from.items[i - 1] || {} : {};
-      const title = String(
-        (useItems ? src.title : from?.[`card${i}Title`]) || ''
-      ).trim();
-      const body = String(
-        (useItems ? src.body : from?.[`card${i}Body`]) || ''
-      ).trim();
-      items.push({ title: title.slice(0, 40), body });
-    }
-    to.items = items;
-    to.cardCount = String(items.length);
-    for (let i = 1; i <= 6; i += 1) {
-      const item = items[i - 1] || {};
-      to[`card${i}Title`] = item.title || '';
-      to[`card${i}Body`] = item.body || '';
-    }
   }
 
   // title <-> chapter-title. Both share `title` + `subheading`, so those carry

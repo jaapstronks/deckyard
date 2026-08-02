@@ -89,9 +89,7 @@ export const TYPE_CSS = {
   'video-slide': [{ tier: '02-content-and-media', file: '20-video.css' }],
   'embed-slide': [{ tier: '02-content-and-media', file: '30-embed.css' }],
   'quote-slide': [{ tier: '02-content-and-media', file: '40-quote.css' }],
-  'card-stack-slide': [{ tier: '02-content-and-media', file: '50-card-stack.css' }],
   'text-blocks-slide': [{ tier: '02-content-and-media', file: '80-text-blocks.css' }],
-  'content-columns-slide': [{ tier: '02-content-and-media', file: '90-content-columns.css' }],
 
   // Tier 03 — components
   'icon-card-grid-slide': [

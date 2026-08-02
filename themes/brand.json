@@ -39,16 +39,6 @@
       "textColorMuted": "rgba(255, 255, 255, 0.72)"
     }
   ],
-  "slides": {
-    "card-stack-slide": {
-      "colors": [
-        "#254d38",
-        "#8a6209",
-        "#4f8f6b",
-        "#c9931a"
-      ]
-    }
-  },
   "cssVars": {
     "--t-slide-bg-lime": "#f5f3ef",
     "--t-slide-bg-mist": "#e6efe8",

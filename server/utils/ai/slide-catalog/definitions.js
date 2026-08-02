@@ -21,15 +21,7 @@
  * Absence means "withheld from AI generation", and for a deprecated type that
  * is the point rather than a gap — `isAgentOptOut()` already withholds it, and
  * `tests/slide-type-companion-coverage.test.js` fails on an entry that outlives
- * the type it describes. Two carry advice worth keeping:
- *
- * - **card-stack-slide** — existing slides still render. Use
- *   `icon-card-grid-slide` for cards with icons, or `text-blocks-slide` for
- *   rich content blocks.
- * - **content-columns-slide** — existing slides still render, and the
- *   image-text→content-columns convert seam still works. Use `list-slide` or
- *   `content-slide` for plain enumerations, `comparison-slide` for A vs B,
- *   `matrix-slide` for grids, or `icon-card-grid-slide` for iconned items.
+ * the type it describes.
  */
 
 import { SLIDE_TYPE_AI } from './type-ai.js';

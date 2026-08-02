@@ -342,11 +342,6 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     textColorDark: textDark,
     brandColors,
     gradient: { enabled: false },
-    slides: {
-      'card-stack-slide': {
-        colors: brandColors,
-      },
-    },
     cssVars,
     embedFonts,
     externalFontLinks,

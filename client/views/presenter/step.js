@@ -115,12 +115,6 @@ export const applyImageZoomStep = (section, stepIndex) => {
 
 export const collectCardsForSlide = (section) => {
   if (!section?.querySelectorAll) return [];
-  const stack = Array.from(
-    section.querySelectorAll(
-      '.slide-card-stack .card-stack-row'
-    )
-  );
-  if (stack.length) return stack;
   const kpis = Array.from(
     section.querySelectorAll(
       '.slide-kpi-metrics .kpi-metric:not(.is-empty)'
@@ -134,7 +128,7 @@ export const collectCardsForSlide = (section) => {
   );
   if (iconCards.length) return iconCards;
   // Treat the “Lijstje” slide items as step-able cards so they use the same
-  // presenter/follow stepping system as card-stack and icon-card slides.
+  // presenter/follow stepping system as the icon-card slides.
   const lijstItems = Array.from(
     section.querySelectorAll('.slide-lijstje .lijst-item')
   );

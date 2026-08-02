@@ -1,5 +1,4 @@
 import { renderFollowInviteForm } from './slide-forms/follow-invite.js';
-import { renderContentColumnsForm } from './slide-forms/content-columns.js';
 
 /**
  * The types that get a curated side form instead of the generic
@@ -42,13 +41,9 @@ import { renderContentColumnsForm } from './slide-forms/content-columns.js';
  * - follow-invite-slide: `fields: []` BY DESIGN (the translation layer only
  *   touches declared fields, and this slide must never flip language), so its
  *   enabled-toggle and custom-copy inputs cannot be schema-driven.
- * - content-columns-slide: DEPRECATED type on the flat numbered `col{n}*`
- *   storage model — see the DOCUMENTED EXCEPTION note in
- *   slide-forms/content-columns.js.
  */
 const SLIDE_FORMS = new Map([
   ['follow-invite-slide', renderFollowInviteForm],
-  ['content-columns-slide', renderContentColumnsForm],
 ]);
 
 /**

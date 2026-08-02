@@ -4,7 +4,6 @@
   transform: translateY(10px);
   pointer-events: none;
 }
-.slide-card-stack .card-stack-row,
 .slide-kpi-metrics .kpi-metric,
 .slide-icon-card-grid .icon-card,
 .slide-lijstje .lijst-item,
@@ -20,7 +19,6 @@
  * hide step-able content by default UNTIL JS has initialized stepping.
  * The .sb-steps-ready class is added after JS applies initial step visibility.
  */
-.deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-card-stack .card-stack-row,
 .deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-kpi-metrics .kpi-metric,
 .deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-icon-card-grid .icon-card,
 .deck-stage[data-step-mode="on"][data-slide-transition="none"] .deck-slide:not(.sb-steps-ready) .slide-lijstje .lijst-item,
@@ -54,7 +52,6 @@
   border-top: 0;
 }
 @media (prefers-reduced-motion: reduce) {
-  .slide-card-stack .card-stack-row,
   .slide-kpi-metrics .kpi-metric,
   .slide-icon-card-grid .icon-card,
   .slide-lijstje .lijst-item,

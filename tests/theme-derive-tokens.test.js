@@ -77,5 +77,4 @@ test('buildThemeConfig still returns the full theme shape', () => {
   assert.equal(built.assets.titleLogo, '/uploads/acme-small.svg');
   assert.equal(built.textColorLight, '#ffffff');
   assert.equal(built.gradient.enabled, false);
-  assert.deepEqual(built.slides['card-stack-slide'].colors, built.brandColors);
 });

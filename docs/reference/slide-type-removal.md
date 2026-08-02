@@ -141,10 +141,12 @@ Then, in rough dependency order:
    `split-partner-title-slide` inside a shared sheet can no longer happen for
    claimed CSS. **Two deliberate residues are left in shared sheets** and a
    removal still has to visit them by hand:
-   - `03-components/70-step-reveal.css` — per-type step blocks for
-     `card-stack`, `image`, `kpi-metrics`, `lijstje`, `table` and `timeline`.
-     That is styling *of the step machinery*, so it stays with the machinery
-     (same rule as [_Behaviour stays in its layer_](./slide-type-directory.md#behaviour-stays-in-its-layer-decided-2026-08-01)).
+   - `03-components/70-step-reveal.css` — per-type step blocks for `image`,
+     `kpi-metrics`, `lijstje`, `table` and `timeline`. That is styling *of the
+     step machinery*, so it stays with the machinery (same rule as
+     [_Behaviour stays in its layer_](./slide-type-directory.md#behaviour-stays-in-its-layer-decided-2026-08-01)).
+     A removed type's own selector still has to be pruned from these lists by
+     hand — `.slide-card-stack .card-stack-row` went with `card-stack-slide`.
    - `01-layout-and-title/00-base.css` — `.slide-unresolved`, the fallback
      rendered for a type that is *not* registered. It cannot be claimed in
      `TYPE_CSS`, which only accepts registered types.
@@ -397,11 +399,15 @@ Per surface:
 The contract is pinned by `tests/unresolved-slide-render.test.js`, which asserts
 the promise rather than one surface's markup.
 
-**Why this matters for the next removal.** `freeform-slide` could go without it
-(zero decks). `content-columns-slide` and `card-stack-slide` cannot: those were
-in real use, so "the content is still in the JSON somewhere" is not an answer an
-author can act on. The contract is the prerequisite for rung 3 on any type decks
-actually used.
+**Why this mattered for the deprecated-layer removal.** `freeform-slide` could
+go without it (zero decks). `content-columns-slide` and `card-stack-slide` (both
+removed 2026-08-02, finishing the deprecated layer, taking the count from 36 to
+34) could not: those were in real use, so "the content is still in the JSON
+somewhere" is not an answer an author can act on. The contract is what let them
+go — `card-stack-slide` degrades to an archived slide that names its successor
+(`icon-card-grid-slide`); `content-columns-slide` has no core successor, so it
+degrades to an archived slide with every stored field visible. The contract is
+the prerequisite for rung 3 on any type decks actually used.
 
 ## Known gaps this removal exposed
 

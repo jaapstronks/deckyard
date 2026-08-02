@@ -6,7 +6,7 @@ This document contains a prompt template for instructing an LLM to generate a pr
 > use. It is not wired into the app; the real generation prompts live in
 > `server/utils/ai/` and evolve independently. The slide-type catalog below
 > is a curated subset (the codebase has
-> <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> core types) and may lag behind.
+> <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> core types) and may lag behind.
 
 ---
 
@@ -261,34 +261,6 @@ gear, shield-check, check-circle, warning-circle, calendar, globe, heart, star
 
 Best for: 4-6 parallel categories, focus areas, values, features, benefits
 NOT for: Time-based sequences, items needing long descriptions, cause-effect
-
---- card-stack-slide ---
-Vertical stack of 1-4 cards with rich bullet content.
-
-{
-  "type": "card-stack-slide",
-  "content": {
-    "title": "Implementation Phases",
-    "subtitle": "Detailed breakdown",
-    "cardCount": "3",
-    "card1Label": "Phase 1: Discovery",
-    "card1Body": "- Stakeholder interviews\n- Requirements gathering\n- Technical assessment",
-    "card2Label": "Phase 2: Design",
-    "card2Body": "- Architecture planning\n- Prototype development\n- User testing",
-    "card3Label": "Phase 3: Delivery",
-    "card3Body": "- Implementation\n- Training and rollout\n- Support setup"
-  }
-}
-
-Fields:
-- title: Required, max 120 chars
-- subtitle: Optional, max 200 chars
-- cardCount: "1" to "4"
-- card{N}Label: Short label (MAX 40 CHARS!)
-- card{N}Body: Rich text with bullets
-
-Best for: 2-4 categories with detailed bullet lists, comparing options (pros/cons)
-NOT for: Causal relationships (use text-blocks-slide), brief items (use icon-card-grid)
 
 --- text-blocks-slide ---
 1-3 rows of colored blocks with optional arrows. Most versatile for causality!

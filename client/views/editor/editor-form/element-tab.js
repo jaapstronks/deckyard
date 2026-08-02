@@ -39,10 +39,6 @@ export function elementAppliesToSlide(slide, sel) {
         return inList('members');
       case 'logo-wall-slide':
         return inList('logos');
-      case 'content-columns-slide': {
-        const count = Math.max(1, Math.min(7, Number(c.columnCount || 3) || 3));
-        return sel.idx >= 1 && sel.idx <= count; // 1-based column number
-      }
       case 'quote-slide':
         return sel.idx >= 1 && sel.idx <= 3; // up to three author portraits
       default:

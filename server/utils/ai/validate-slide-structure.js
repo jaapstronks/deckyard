@@ -59,7 +59,7 @@ export const STRUCTURE_VALIDATORS = {
     const issues = [];
     // Array-canonical rows[] is the source of truth (and the only shape that
     // carries a 4th row — the numbered mirror below is frozen at 3). Validate
-    // it directly when present, mirroring card-stack's items[] branch.
+    // it directly when present, mirroring icon-card-grid's items[] branch.
     if (Array.isArray(content.rows) && content.rows.length > 0) {
       content.rows.forEach((row, i) => {
         if (!Array.isArray(row?.blocks) || row.blocks.length < 1) {

@@ -1060,13 +1060,6 @@
   gap: var(--ps-space-3);
 }
 
-/* Content columns list container */
-.content-columns-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ps-space-3);
-}
-
 /* Color picker field */
 .color-field-inputs {
   display: flex;

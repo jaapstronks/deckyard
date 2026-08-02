@@ -72,7 +72,7 @@ const collapsedState = createCollapsedState('collection');
  * @param {Function} [o.markDirty]
  * @param {Function} [o.scheduleUiRefresh]
  * @param {Object} [o.model] - storage override for types whose renderer reads
- *   another shape (content-columns): { read: () => Array, write: (arr) => void }.
+ *   another shape: { read: () => Array, write: (arr) => void }.
  *   Default reads/writes `slide.content[field.key]`.
  * @param {Object} [o.labels] - { addLabelKey, addLabel } overrides (used by the
  *   nested level, resolved from the descriptor's `cards.child`)
@@ -110,8 +110,8 @@ export function createCollectionEditor({
   );
   const collapsible = !!field?.collapsible && depth === 0;
 
-  // Canonicalize once on mount: dual-model types (card-stack, icon-card-grid,
-  // team-cards, logo-wall) declare an `ensure` on their inline-edit descriptor
+  // Canonicalize once on mount: dual-model types (icon-card-grid, team-cards,
+  // logo-wall) declare an `ensure` on their inline-edit descriptor
   // that folds the legacy numbered fields into the canonical array. Same hook
   // the canvas editor runs; idempotent.
   const descriptor = depth === 0 ? getInlineDescriptor(slide.type, def) : null;

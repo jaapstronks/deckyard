@@ -30,16 +30,6 @@
   "gradient": {
     "enabled": false
   },
-  "slides": {
-    "card-stack-slide": {
-      "colors": [
-        "#9f1239",
-        "#b45309",
-        "#1c1917",
-        "#78716c"
-      ]
-    }
-  },
   "cssVars": {
     "--t-slide-bg-lime": "#fffdf7",
     "--t-slide-bg-mist": "#f5efe4",

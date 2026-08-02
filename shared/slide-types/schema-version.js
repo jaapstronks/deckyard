@@ -16,7 +16,6 @@
  */
 
 import { resolveRows } from './types/text-blocks-slide.js';
-import { resolveCardStackItems } from './types/card-stack-slide.js';
 import { resolveSlideTypeName } from './registry.js';
 
 /** The schema version every freshly written deck is stamped with. */
@@ -65,26 +64,15 @@ export const SCHEMA_MIGRATIONS = [
     return pres;
   },
 
-  // v2 -> v3: fold card-stack legacy numbered fields (cardCount, card{n}Title /
-  // card{n}Label / card{n}Body) into the canonical `items[]` model, so the
-  // semantic projection reads it as a real collection instead of via the flat
-  // `repeatingGroups` bridge (now removed from the type def). Non-destructive:
-  // it only *adds* `content.items` when it is missing or empty, and leaves the
-  // legacy keys in place — they are now `hidden` in the type def (ignored by the
-  // projection) and get removed in a later deprecation-window cleanup.
-  // Idempotent: a slide that already has a populated `items[]` is untouched.
-  (pres) => {
-    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-    for (const slide of slides) {
-      if (!slide || slide.type !== 'card-stack-slide') continue;
-      const content = slide.content;
-      if (!content || typeof content !== 'object') continue;
-      if (Array.isArray(content.items) && content.items.length > 0) continue;
-      const items = resolveCardStackItems(content);
-      if (Array.isArray(items) && items.length > 0) content.items = items;
-    }
-    return pres;
-  },
+  // v2 -> v3: historically folded card-stack's legacy numbered fields into a
+  // canonical `items[]` so the semantic projection read one shape. card-stack
+  // was removed (PR removing the deprecated layer); a stored card-stack slide
+  // now renders via the unresolved/archived contract, which reads every stored
+  // field directly, so synthesizing `items[]` serves nothing. The step stays as
+  // a no-op to keep the migration chain contiguous (SCHEMA_MIGRATIONS.length ===
+  // CURRENT_SCHEMA_VERSION) and the version numbers stable — no stored deck is
+  // rewritten, and no data is lost.
+  (pres) => pres,
 
   // v3 -> v4: fold stored `slides[].type` down to the bare registry key. Before
   // the shared write-seam (`normalizeSlides`, PR #511) some write paths persisted

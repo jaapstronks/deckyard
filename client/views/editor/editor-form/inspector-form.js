@@ -1,16 +1,10 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { getInlineFormTextKeys } from '../inline-edit/descriptors.js';
-import { renderImagePositionPicker } from './image-position-picker.js';
 import { fieldCardLink } from '../fields/card-link-field.js';
 import { SLIDE_TYPE_INSPECTOR_KEEPS } from '../../../../shared/slide-types/inline-edit.js';
 import { slideTypeInspectorKeeps } from '../../../../shared/slide-types/inline-edit-companions.js';
 import { syncIconCardsToNumbered } from '../../../../shared/slide-types/types/icon-card-grid-slide/cards.js';
 import { resolveListLayout } from '../../../../shared/slide-types/types/list-slide.js';
-import {
-  ensureContentColumnsImages,
-  resolveContentColumnImage,
-  CONTENT_COLUMNS_IMAGE_DEFAULTS,
-} from '../../../../shared/slide-types/types/content-columns-slide/images.js';
 import { renderImageTextCollectionSection } from './slide-forms/image-text-images.js';
 import { renderImageElementCard } from './image-element-card.js';
 
@@ -226,115 +220,6 @@ export function renderInspectorExtrasByType(ctx) {
         items.forEach((item, idx) => renderCard(item, idx, section.body));
         form.append(section.el);
       }
-      return;
-    }
-
-    case 'content-columns-slide': {
-      // Rendering also canonicalizes: stamped default-equal image values (the
-      // old defaults wrote cover + focus 50/50 onto every column) drop back to
-      // empty = follow the type (datamodel step 4).
-      ensureContentColumnsImages(slide?.content);
-      add('columnCount');
-      const count = Math.max(1, Math.min(7, Number(slide.content?.columnCount || 3) || 3));
-      // A selected column image routes to the element tab: the shared card
-      // (replace/alt/fit/focus grid) plus that column's block count. `idx` is the
-      // 1-based column number (data-inline-photo), matching the col{n} schema.
-      if (selectedElement?.kind === 'image' && renderSelectedImageCard(elementForm)) {
-        const n = selectedElement.idx;
-        const blockCountField = fieldByKey.get(`col${n}BlockCount`);
-        if (blockCountField) {
-          used.add(`col${n}BlockCount`);
-          const bcEl = renderField(blockCountField);
-          if (bcEl) elementForm.append(bcEl);
-        }
-        // Mark every column's numbered image keys used so the generic keeps loop
-        // never leaks a raw col{n}* field into the slide form.
-        for (let n2 = 1; n2 <= count; n2 += 1) {
-          used.add(`col${n2}Image`);
-          used.add(`col${n2}Alt`);
-          used.add(`col${n2}ImageFit`);
-          used.add(`col${n2}ImageFocusX`);
-          used.add(`col${n2}ImageFocusY`);
-          used.add(`col${n2}BlockCount`);
-        }
-        return;
-      }
-      // Nothing selected: all active columns render in one slide-tab collapsible
-      // (fit + contain-alignment + block count per column). Numbered schema, so
-      // these are plain fields; the column texts live in the bulk modal.
-      const renderColumn = (n, container) => {
-        const imgUrl = String(slide.content?.[`col${n}Image`] || '').trim();
-        const blockCountField = fieldByKey.get(`col${n}BlockCount`);
-        if (!imgUrl && !blockCountField) return;
-        const group = h('div', { class: 'stack' });
-        group.append(h('div', {
-          class: 'field-label',
-          text: t('editor.inspector.column', 'Column {n}', { n: String(n) }),
-        }));
-        if (imgUrl) {
-          used.add(`col${n}ImageFocusX`);
-          used.add(`col${n}ImageFocusY`);
-          used.add(`col${n}ImageFit`);
-          const resolved = resolveContentColumnImage(slide.content, n);
-          // Fit with the silent-default UX (step 4): the empty option shows
-          // the derived type default and empties the field when chosen.
-          const fitEl = fieldRenderers?.fieldEnum?.(
-            {
-              key: `col${n}ImageFit`,
-              label: t('editor.contentColumns.imageFit', 'Image fit'),
-              options: [
-                {
-                  value: '',
-                  label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
-                    fit:
-                      CONTENT_COLUMNS_IMAGE_DEFAULTS.fit === 'contain'
-                        ? t('editor.contentColumns.fitContain', 'Fixed height')
-                        : t('editor.contentColumns.fitCover', 'Cropped (16:9)'),
-                  }),
-                },
-                { value: 'cover', label: t('editor.contentColumns.fitCover', 'Cropped (16:9)') },
-                { value: 'contain', label: t('editor.contentColumns.fitContain', 'Fixed height') },
-              ],
-            },
-            resolved.fitExplicit ? resolved.fit : '',
-            (v) => {
-              slide.content[`col${n}ImageFit`] = v;
-              markDirty?.();
-              rerenderEditor?.();
-              scheduleUiRefresh?.();
-            }
-          );
-          if (fitEl) group.append(fitEl);
-          // Cover focus is on the canvas; a contain column still gets alignment.
-          const picker = renderImagePositionPicker({
-            h,
-            mode: resolved.fit === 'contain' ? 'contain' : 'cover',
-            imageUrl: imgUrl,
-            containerSelector: '.preview-panel .thumb.is-clickable-preview .cc-image',
-            focusX: resolved.focusX !== '' ? resolved.focusX : 50,
-            focusY: resolved.focusY !== '' ? resolved.focusY : 50,
-            onChange: ({ focusX, focusY } = {}) => {
-              slide.content[`col${n}ImageFocusX`] = focusX;
-              slide.content[`col${n}ImageFocusY`] = focusY;
-              markDirty?.();
-              scheduleUiRefresh?.();
-            },
-          });
-          if (picker) group.append(picker);
-        }
-        if (blockCountField) {
-          used.add(`col${n}BlockCount`);
-          const bcEl = renderField(blockCountField);
-          if (bcEl) group.append(bcEl);
-        }
-        if (group.childNodes.length > 1) container.append(group);
-      };
-      const colSection = collapsibleGroup(
-        h,
-        t('editor.inspector.columnsConfig', 'Column images & blocks')
-      );
-      for (let n = 1; n <= count; n += 1) renderColumn(n, colSection.body);
-      if (colSection.body.childNodes.length) form.append(colSection.el);
       return;
     }
 

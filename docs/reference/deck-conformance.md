@@ -4,7 +4,7 @@ Deckyard publishes its deck format, and a published format has to be able to
 answer one question: **what does an implementation have to do to say it reads
 Deckyard decks?**
 
-Until this page, the only available answer was "all of it" — <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> slide types,
+Until this page, the only available answer was "all of it" — <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> slide types,
 each with its own field contract. That is not a threshold anyone clears, so in
 practice it meant every implementation was incomplete and none could say what it
 did support. A format whose only conformance claim is unreachable has no
@@ -18,7 +18,7 @@ one does not scale with the number of types.
 | **1 — Structure** | the envelope, the six `structure` contracts, and the unknown-type behaviour | *reads Deckyard decks* — every deck renders, nothing is dropped |
 | **2 — Core profile** | level 1, plus the nine tier-1 types' own field contracts, plus `fallback` | *renders the Deckyard core profile* — every deck renders the way it was authored, up to declared degradation |
 
-Neither level requires all <!--gen:slide-type-count-->36<!--/gen:slide-type-count--> types. Tier 2 is not a conformance surface: we
+Neither level requires all <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types. Tier 2 is not a conformance surface: we
 ship those types and version them with the app
 ([`slide-type-tiers.md`](./slide-type-tiers.md)), and a reader meets them
 through the level-1 structure contract or their declared `fallback`.
