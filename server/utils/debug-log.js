@@ -21,13 +21,3 @@ export function debugLog(...args) {
     // ignore
   }
 }
-
-export function debugError(...args) {
-  if (!isDebugLogEnabled()) return;
-  try {
-    // eslint-disable-next-line no-console
-    console.error(...args);
-  } catch {
-    // ignore
-  }
-}

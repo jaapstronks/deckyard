@@ -11,7 +11,7 @@ import { logValidation } from './logging.js';
 /**
  * Truncate a string to max length, adding ellipsis if needed
  */
-export function truncate(str, maxLen, fieldName = 'unknown') {
+function truncate(str, maxLen, fieldName = 'unknown') {
   if (typeof str !== 'string') return str;
   if (str.length <= maxLen) return str;
   // Cut at a word boundary. A hard slice leaves a visible half-word on the

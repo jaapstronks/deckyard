@@ -12,7 +12,7 @@
  */
 
 // Shared utilities
-export { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter, formatBytes } from './helpers.js';
+export { EMAIL_STYLES, emailButton, emailWrapper, troubleClickingFooter } from './helpers.js';
 
 // Auth templates
 export { buildPasswordResetEmail, buildUserInvitationEmail, buildActivationReminderEmail, buildMagicLinkEmail } from './auth.js';

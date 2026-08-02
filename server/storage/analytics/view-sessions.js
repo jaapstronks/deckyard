@@ -19,9 +19,6 @@ export {
 // CONSTANTS
 // ============================================================
 
-// Re-export source types from analytics-helpers for backwards compatibility
-export { SOURCE_TYPES } from '../../analytics/helpers.js';
-
 export const VIEWER_TYPES = {
   GUEST: 'guest',
   AUTHENTICATED: 'authenticated',

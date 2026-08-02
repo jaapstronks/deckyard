@@ -69,5 +69,3 @@ export async function fetchProviderData(providerName, config) {
   const provider = getProvider(providerName);
   return provider.fetch(config);
 }
-
-export { applyBindings } from './bindings.js';

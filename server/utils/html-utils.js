@@ -380,62 +380,6 @@ export function imageFieldKeysForType(type) {
     .map((f) => f.key);
 }
 
-/**
- * Image-typed keys inside a type's items arrays: [{ listKey, itemKeys }].
- * @param {string} type - Slide type
- * @returns {Array<{listKey: string, itemKeys: string[]}>}
- */
-function itemsImageFieldKeysForType(type) {
-  const def = SLIDE_TYPES?.[type];
-  if (!def?.fields) return [];
-  const out = [];
-  for (const f of def.fields) {
-    if (f?.type !== 'items' || !Array.isArray(f?.itemFields)) continue;
-    const itemKeys = f.itemFields
-      .filter((it) => it?.type === 'image' && typeof it?.key === 'string')
-      .map((it) => it.key);
-    if (itemKeys.length && typeof f?.key === 'string') {
-      out.push({ listKey: f.key, itemKeys });
-    }
-  }
-  return out;
-}
-
-/**
- * Embed all image field values as data URLs, including image-typed keys
- * inside items arrays (gallery images[], image-text images[], ...).
- * @param {string} repoRoot - Repository root path
- * @param {Object} slide - Slide object (will be mutated)
- * @param {Object} [options]
- * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
- * @returns {Promise<Object>} The slide with embedded images
- */
-export async function embedSlideImages(repoRoot, slide, { cache = null } = {}) {
-  // Collect every embed target as a {get, set} cell, then resolve them
-  // concurrently. Order does not matter — each cell writes its own field.
-  const cells = [];
-  const imgKeys = imageFieldKeysForType(slide?.type);
-  for (const k of imgKeys) {
-    if (slide?.content?.[k]) {
-      cells.push({ src: slide.content[k], set: (v) => { slide.content[k] = v; } });
-    }
-  }
-  for (const { listKey, itemKeys } of itemsImageFieldKeysForType(slide?.type)) {
-    const arr = slide?.content?.[listKey];
-    if (!Array.isArray(arr)) continue;
-    for (const item of arr) {
-      for (const k of itemKeys) {
-        if (item && typeof item === 'object' && item[k]) {
-          cells.push({ src: item[k], set: (v) => { item[k] = v; } });
-        }
-      }
-    }
-  }
-  await mapLimit(cells, exportEmbedConcurrency(), async (cell) => {
-    cell.set(await toDataUrlIfLocal(repoRoot, cell.src, { includeClient: true, cache }));
-  });
-  return slide;
-}
 
 /**
  * Check if a string looks like a URL

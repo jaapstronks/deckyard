@@ -6,9 +6,6 @@
 import { nonEmpty } from '../../shared/slide-types/helpers.js';
 import { liveInteractionKind } from '../../shared/slide-types/runtime.js';
 
-// Re-export for backwards compatibility
-export { nonEmpty };
-
 // `isInteractiveSlideType()` used to live here as a hard-coded list of four
 // type names — one of nine copies. It is now `isLiveSlideType()` in
 // shared/slide-types/runtime.js, which asks the type instead of recognising it.

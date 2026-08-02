@@ -1,7 +1,7 @@
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { normalizeLang, otherLang, isNonEmptyString } from '../../shared/i18n-utils.js';
 
-export { normalizeLang, otherLang, isNonEmptyString };
+export { normalizeLang, otherLang };
 
 function translateKeysForSlideType(type) {
   const def = SLIDE_TYPES?.[type];
