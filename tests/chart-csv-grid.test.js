@@ -15,7 +15,7 @@ const {
   parseCsvToGrid,
   detectHeaderRow,
   parseChartData,
-} = await import('../shared/slide-types/chart/parse.js');
+} = await import('../shared/slide-types/types/chart-slide/parse.js');
 
 const { applyHeaderPaste } = await import(
   '../client/views/editor/fields/csv-grid.js'

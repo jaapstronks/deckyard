@@ -163,7 +163,7 @@ import {
   imageTextImageItems,
   imageTextCellCount,
   ensureImageTextImages,
-} from '../shared/slide-types/image-text-images.js';
+} from '../shared/slide-types/types/image-text-slide/images.js';
 import { convertSlideToType, getConversionLossyKeys } from '../shared/slide-types/convert.js';
 
 test('imageTextImageItems: legacy flat image folds into item 0; images[] wins', () => {

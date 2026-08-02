@@ -118,7 +118,7 @@ target model says the flat/numbered/array duality should dissolve.
 Until PR #182 there was no single authority for "item vs slide wins": each
 `renderHtml` re-derived the rule inline, and the canvas focal drag and inspector
 each re-derived their own copy. **Step 1 (#182) centralized the read** into
-`resolveImageTextCell(content, idx)` in `shared/slide-types/image-text-images.js`
+`resolveImageTextCell(content, idx)` in `shared/slide-types/types/image-text-slide/images.js`
 — render, the canvas focal-point drag and the inspector's effective-fit all read
 through it, so the three can no longer drift.
 
@@ -180,7 +180,7 @@ freezes the deck against a future default change and erases the empty/explicit
 signal).
 
 Each image-bearing type therefore declares an `imageDefaults` bundle, e.g.
-image-text (`IMAGE_TEXT_IMAGE_DEFAULTS` in `shared/slide-types/image-text-images.js`):
+image-text (`IMAGE_TEXT_IMAGE_DEFAULTS` in `shared/slide-types/types/image-text-slide/images.js`):
 
 ```js
 imageDefaults = { fit: 'cover', focus: { x: 50, y: 50 }, aspectRatio: null, allowUpscale: true }

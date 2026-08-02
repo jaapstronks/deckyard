@@ -1,5 +1,5 @@
 import { bgClass, esc, BACKGROUND_FIELD } from '../helpers.js';
-import { resolveTitleSlideBackground } from '../title-slide-background.js';
+import { resolveTitleSlideBackground } from './title-slide/background.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from '../../theme-config-schema.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
@@ -61,7 +61,7 @@ export default {
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The
     // title type used to carry its own `bgImage`/`bgAlt` pair — now a read-only
     // render fallback for un-migrated decks, folded into `slideBgImage` on edit
-    // (see title-slide-background.js).
+    // (see title-slide/background.js).
     //
     // Background colour and logo corner are two compact controls that read as
     // one "chrome" choice, so they share a form row (see form-layout.js). The

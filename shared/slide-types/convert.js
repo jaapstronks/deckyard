@@ -5,10 +5,10 @@ import {
   imageTextImageItems,
   resolveImageTextCell,
   IMAGE_TEXT_IMAGE_DEFAULTS,
-} from './image-text-images.js';
-import { resolveImageSlideImage } from './image-slide-image.js';
+} from './types/image-text-slide/images.js';
+import { resolveImageSlideImage } from './types/image-slide/image.js';
 import { resolveCardStack } from './types/card-stack-slide.js';
-import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './content-columns-images.js';
+import { CONTENT_COLUMNS_IMAGE_DEFAULTS } from './types/content-columns-slide/images.js';
 
 function deepClone(v) {
   return typeof structuredClone === 'function'

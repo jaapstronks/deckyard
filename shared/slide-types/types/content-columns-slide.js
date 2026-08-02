@@ -13,7 +13,7 @@ import {
   resolveContentColumnImage,
   ensureContentColumnsImages,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
-} from '../content-columns-images.js';
+} from './content-columns-slide/images.js';
 
 export const MAX_COLUMNS = 7;
 export const MAX_TEXT_BLOCKS = 5;

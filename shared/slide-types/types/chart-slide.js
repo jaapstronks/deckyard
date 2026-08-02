@@ -21,17 +21,17 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 import { getSlideCopy } from '../slide-copy.js';
 
-import { parseChartData } from '../chart/parse.js';
-import { themeChartPalette } from '../chart/palette.js';
-import { truncateLabel } from '../chart/strings.js';
-import { chartErrorHtml } from '../chart/error.js';
-import { chartSummary } from '../chart/summary.js';
-import { renderBarSvg } from '../chart/render-bar.js';
-import { renderLineSvg } from '../chart/render-line.js';
+import { parseChartData } from './chart-slide/parse.js';
+import { themeChartPalette } from './chart-slide/palette.js';
+import { truncateLabel } from './chart-slide/strings.js';
+import { chartErrorHtml } from './chart-slide/error.js';
+import { chartSummary } from './chart-slide/summary.js';
+import { renderBarSvg } from './chart-slide/render-bar.js';
+import { renderLineSvg } from './chart-slide/render-line.js';
 import {
   renderPieSvg,
   pieEntriesFromDataset,
-} from '../chart/render-pie.js';
+} from './chart-slide/render-pie.js';
 
 export default {
   structure: 'dataset',
