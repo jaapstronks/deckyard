@@ -137,6 +137,12 @@ Primary keys are excluded from the unique comparison: they are unique, but the
 double models them as identity rather than as a collision rule, and every
 `*_pkey` in the list would drown the constraints that matter.
 
+Partial unique indexes (`UNIQUE … WHERE`) are excluded for the opposite reason:
+counting one would *satisfy* a declared unique the schema does not actually
+enforce on every row. The double collides unconditionally, so a partial index is
+not the constraint it claims to have — accepting it would be a false green of
+the #423 kind, which is the thing this check exists to prevent.
+
 It found one drift on its first run: `app_settings.supported_slide_langs` was
 listed as jsonb, but it is `TEXT[]`, written with an explicit `::text[]` cast in
 `server/storage/adapters/postgres/settings.js`.

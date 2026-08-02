@@ -22,13 +22,18 @@
  *   DATABASE_NAME=deckyard_migration_smoke node scripts/check-test-double-schema.js
  */
 
+import { fileURLToPath } from 'node:url';
+
 import { sql } from 'kysely';
 
 import { createMigrationDb } from '../server/db/migrate.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { JSONB_COLUMNS, UNIQUE_CONSTRAINTS } from '../tests/helpers/fake-db.js';
 
-const REPO_ROOT = new URL('..', import.meta.url).pathname;
+// `fileURLToPath`, not `.pathname`: a URL percent-encodes, so a checkout under
+// a directory with a space would hand `loadDotEnv` a path containing `%20` and
+// the `.env` would silently not load. Same reason `server/db/migrate.js` uses it.
+const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 /**
  * Unique constraints and unique indexes in the public schema, as
@@ -39,6 +44,12 @@ const REPO_ROOT = new URL('..', import.meta.url).pathname;
  * Primary keys are excluded. They are unique, but the double models them as
  * identity rather than as a collision rule, and listing every `*_pkey` here
  * would drown the real constraints.
+ *
+ * Partial indexes are excluded too (`indpred IS NULL`). A `UNIQUE ... WHERE`
+ * only collides on the rows its predicate selects, while the double enforces
+ * its rules unconditionally — counting one as satisfying the other would be a
+ * false green of exactly the #423 kind: the check passes, and the tests keep
+ * agreeing with a collision rule the database does not apply to every row.
  *
  * The `::text` cast on `attname` is load-bearing: the column is of PostgreSQL's
  * `name` type, and the driver hands a `name[]` back as the raw literal
@@ -61,7 +72,10 @@ async function realUniques(db) {
     JOIN pg_class i ON i.oid = ix.indexrelid
     JOIN pg_class t ON t.oid = ix.indrelid
     JOIN pg_namespace n ON n.oid = t.relnamespace
-    WHERE n.nspname = 'public' AND ix.indisunique AND NOT ix.indisprimary
+    WHERE n.nspname = 'public'
+      AND ix.indisunique
+      AND NOT ix.indisprimary
+      AND ix.indpred IS NULL
   `.execute(db);
 
   const out = new Map();
