@@ -55,6 +55,17 @@ bootstrap.
 Unknown slide types fall back to all-plain (LWW) with no data loss on
 round-trip.
 
+**There is no third kind of field.** The one concrete case that raised the
+question — `follow-invite-slide` writing `sourceLang`/`targetLang` per language
+version while the codec saw them as plain, so they diverged silently — was
+resolved by removing the stored copy, not by annotating it. The invite's
+language is the language of the version it renders in, which the render context
+already knows (`ctx.lang`); `normalizeFollowInviteSlides()` strips the keys on
+save. A per-language annotation will be added when a field turns up that
+legitimately differs per language, with the case in hand. Decision:
+`docs/plans/briefs/collab-codec-per-language-fields.md`; locked by
+`tests/follow-invite-lang-derivation.test.js`.
+
 ## Bootstrap policy (JSON → doc)
 
 Matches the editor's existing language-sync semantics:

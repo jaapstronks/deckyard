@@ -241,6 +241,36 @@ Merging `upstream/main` directly still works if you want the bleeding edge,
 but you're then integrating unreleased work at whatever state it happens to
 be in — releases are the supported sync points.
 
+### After the merge, run the suite
+
+Two checks in the suite exist specifically for this moment, because the
+expensive breakages in a fork upgrade are the silent ones — nothing throws at
+merge time:
+
+- **`npm test` → `tests/custom-imports-resolvable.test.js`** — every relative
+  import in your `custom/` tree still resolves. There is no bundler, so a core
+  module that moved upstream does not fail the build; it fails at runtime, on
+  the import that never loads. A green suite without this check proves nothing.
+- **`npm run lint`** — the same check (`import-x/no-unresolved`) across the core
+  trees, in case your merge left one half-applied.
+
+### If the doc gate fails on your own docs
+
+`tests/docs-paths-resolvable.test.js` reads every doc that ships with the repo
+and requires each cited path to resolve and each doc to be linked. A fork with
+its own private doc tree (`docs/<your-tree>/`) will fail on every item in it.
+
+Add the tree to one constant at the top of that test, rather than patching the
+test's logic:
+
+```js
+const EXCLUDED_DOC_TREES = ['docs/plans/', 'docs/<your-tree>/'];
+```
+
+Upstream's own `docs/plans/` is already in that list. One line, and it survives
+the next merge as an ordinary conflict on a data line instead of a patch you
+re-defend every time.
+
 ## Deployment
 
 Your fork deploys exactly like the OSS version:

@@ -29,6 +29,69 @@ codebase that was never linted before. Environments are split by path:
 Vendored bundles (`client/vendor/`), generated assets, data dirs, and
 gitignored drop-ins (`custom/`) are ignored.
 
+### `import-x/no-unresolved` + `import-x/extensions` — the rules that are not about style
+
+Every import must point at something that exists, and every relative import must
+say so the way Node's ESM loader demands: with its extension.
+
+This repo has no bundler, so a moved module is **not a build error**. ESM fails
+at runtime, on the import that never loads — which means a behaviour-preserving
+reorganisation passes `npm test` while the app no longer boots. Splitting
+`client/lib/` into sub-folders did exactly that to a fork: `client/app.js` still
+imported `./lib/branding.js`, the suite was green, and the breakage was found by
+a hand-written scan afterwards.
+
+They ride this gate rather than being their own test because
+`eslint-plugin-import-x` was already a devDependency (the advisory pass uses
+it), so the rules cost no extra CI minutes and add no new mechanism.
+
+**Why both rules and not just `no-unresolved`.** The resolver ESLint uses is
+Node's *CommonJS* one: it tries extensions and directory `index.js` files. So
+`import './foo'` (for `foo.js`) and `import './bar'` (for `bar/index.js`) both
+resolve to the linter and both throw `ERR_MODULE_NOT_FOUND` in the app. That is
+a green gate certifying a broken import, so `import-x/extensions` is set to
+`ignorePackages`: relative specifiers must carry the extension, bare package
+specifiers (`node:fs`, `es-module-lexer`) keep their normal form.
+
+Covered trees: `client/`, `server/`, `shared/`, `scripts/`, `capture/`,
+`tests/`, `test-suite/`, and the root `*.config.js` files.
+
+`npm run lint` therefore needs a **complete install**. Bare specifiers are
+checked against what is on disk in `node_modules`, so a skipped optional
+dependency or a partial `npm install` turns the gate red on imports that are
+perfectly correct. Run `npm ci` before believing a resolution failure.
+
+What is *not* covered — the honest boundaries:
+
+- **`custom/` cannot be covered here** — it is in `ignores`, being a fork's
+  gitignored drop-in tree. `tests/custom-imports-resolvable.test.js` covers it
+  instead, and that is the half a fork actually needs.
+- **JSDoc type imports** — `@param {import('../x.js').Thing}` is a comment to
+  ESLint. `import-x` can check these (`checkTypeImports`), but only for real
+  `import type` syntax, which this repo does not have. A moved module still rots
+  every JSDoc reference to it silently; that was part of the #425 lesson and it
+  is still open.
+- **Computed dynamic imports** — `await import(someVariable)`, and the same with
+  a template literal built from a name, have no static specifier to resolve.
+  The slide-type registry, the route dispatcher and the migration runner all
+  load this way, so the trees that most want the check get the least of it.
+- **Paths inside strings** — a module path in a config value, a template, a
+  `fs.readFile` argument or a doc is not an import. Docs are covered separately
+  by `tests/docs-paths-resolvable.test.js`; the rest is not covered at all.
+
+Two suppressions exist, both with their reason inline:
+
+- **`server/utils/openai/translate.js`** — `ciiic-translation-rules` is fork-only
+  and deliberately undeclared in `package.json` (see `AGENTS.md` § Optional
+  dependencies), loaded through a gated `await import()` whose `catch` is the
+  contract. It is the one import in the tree that is *supposed* not to resolve
+  upstream.
+- **`tests/fixtures/fork-slide-types/payoff-slide.js`** — a fork fixture whose
+  specifier is written for its *runtime* home (`custom/slide-types/`, one level
+  shallower than where it is tracked). The `test-fork` CI job copies it into
+  place, and `tests/custom-imports-resolvable.test.js` resolves it for real
+  there.
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**

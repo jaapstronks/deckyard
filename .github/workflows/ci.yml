@@ -77,3 +77,77 @@ jobs:
       - name: Load fork slide types into custom/slide-types/
         run: cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
       - run: npm test
+
+  # The migrations, against a real PostgreSQL. Until this job existed, none of
+  # them ran anywhere in CI: one is exercised individually against the in-memory
+  # double (tests/helpers/fake-db.js) and the rest ran for the first time on
+  # staging or production — a deploy was the first place a broken migration
+  # could be found. It ran once here and immediately found one (020's `down`
+  # named a column that has never existed).
+  #
+  # Deliberately narrow: up → down-all → up against an empty database, and
+  # nothing else. No test directory, no fixtures, no storage-layer queries. That
+  # is option D in docs/plans/briefs/postgres-test-infra.md; the full
+  # `services: postgres` test job (option A) is the follow-up.
+  #
+  # A separate job, like `test-fork`, so it costs ~0 wall-clock on the critical
+  # path — GitHub runs it beside `test`, not behind it — and so a red mark reads
+  # as "a migration broke" without opening the run.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: deckyard
+          POSTGRES_PASSWORD: deckyard
+          POSTGRES_DB: deckyard_migration_smoke
+        ports:
+          - 5432:5432
+        # The runner starts the step as soon as the container is up, which is
+        # earlier than the server accepting connections. Without the healthcheck
+        # the first migration loses a race it will never lose twice.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run every migration up, all the way down, and up again
+        run: node scripts/migration-smoke-test.js
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: deckyard_migration_smoke
+          DATABASE_USER: deckyard
+          DATABASE_PASSWORD: deckyard
+          DATABASE_SSL: 'false'
+      # Second, on the schema the step above just left behind: the in-memory
+      # test double claims to mirror the database's unique constraints and jsonb
+      # columns, and until now nothing held it to that. #423 is what the gap
+      # costs — an ON CONFLICT path that could only be tested after the same PR
+      # taught the double what the constraint was.
+      #
+      # This runs here rather than in `npm test` on purpose. The brief's option C
+      # proposed deriving the schema from the migration *files*, to keep the
+      # suite database-free — but that means a second hand-written model of the
+      # schema, checked against the first. With a real PostgreSQL already in this
+      # job, asking the database is both cheaper and the only answer that cannot
+      # itself be wrong.
+      - name: Check the test double against the schema the migrations produce
+        run: node scripts/check-test-double-schema.js
+        # Repeated rather than shared: GitHub Actions does not resolve YAML
+        # anchors in workflow files.
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: deckyard_migration_smoke
+          DATABASE_USER: deckyard
+          DATABASE_PASSWORD: deckyard
+          DATABASE_SSL: 'false'
