@@ -18,6 +18,12 @@
  * gate only catches the case where the conversion is value-identical by
  * construction, so a reviewer can verify it by reading the diff.
  *
+ * "Written as that token" is spelling-agnostic and position-agnostic: `0.5rem`
+ * is the same 8px as `8px` and counts the same, and a raw length sitting beside
+ * a token in one declaration (`padding: 2px var(--ps-space-2)`) counts too. A
+ * gate that saw only bare px, only outside `var()`, would leave two legal ways
+ * to write a token value — which is the drift it exists to stop.
+ *
  * The existing violations live in `css-spacing-suppressions.json` as per-file
  * counts, mirroring `eslint-suppressions.json`. A count can only ever go down:
  * a file that already has a budget still fails if it grows a new one, and a
@@ -118,6 +124,21 @@ function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
 }
 
+/** The root element sets no `font-size`, so `1rem` is exactly 16px. */
+const REM_IN_PX = 16;
+
+/**
+ * Normalise a px amount to a stable map key. `rem`→px conversion can land a
+ * hair off an integer in binary floating point, and a token lookup that misses
+ * by 1e-15 would silently under-report.
+ *
+ * @param {number} px
+ * @returns {number}
+ */
+function pxKey(px) {
+  return Math.round(px * 1000) / 1000;
+}
+
 /**
  * Read the spacing scale out of `ui-tokens.css`, so the gate cannot drift from
  * the tokens it enforces. Values are `rem` against a 16px root (the root sets
@@ -132,9 +153,46 @@ function readSpacingScale(source) {
   for (const m of stripComments(source).matchAll(
     /(--ps-space-[\w-]+)\s*:\s*([\d.]+)rem\s*;/g
   )) {
-    scale.set(Number(m[2]) * 16, m[1]);
+    scale.set(pxKey(Number(m[2]) * REM_IN_PX), m[1]);
   }
   return scale;
+}
+
+/**
+ * Remove every `var(…)` expression from a declaration value, parens balanced so
+ * `var(--x, calc(1px + 2px))` goes in one piece.
+ *
+ * The point is that what remains is exactly the *raw* part of the value. A
+ * declaration like `padding: 2px var(--ps-space-2)` is half-converted, and that
+ * raw `2px` is precisely what the gate exists to catch — skipping the whole
+ * declaration because it mentions a token would hide it.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function stripVarExpressions(value) {
+  let out = '';
+  for (let i = 0; i < value.length; ) {
+    if (value.startsWith('var(', i)) {
+      let depth = 0;
+      let j = i + 3; // at the '('
+      for (; j < value.length; j += 1) {
+        if (value[j] === '(') depth += 1;
+        else if (value[j] === ')') {
+          depth -= 1;
+          if (depth === 0) {
+            j += 1;
+            break;
+          }
+        }
+      }
+      i = j; // unterminated var( swallows the rest, which is fine: it is broken CSS
+      continue;
+    }
+    out += value[i];
+    i += 1;
+  }
+  return out;
 }
 
 /**
@@ -148,17 +206,33 @@ function readSpacingScale(source) {
  */
 
 /**
- * Find spacing lengths that exactly equal a token but are written as raw px.
+ * Any absolute length the gate understands, in either spelling. `rem` counts:
+ * `gap: 0.125rem` is the same rendered value as `gap: 2px` and the same
+ * conversion, so seeing only the px spelling would leave a second legal way to
+ * write a token value — exactly the drift the gate exists to stop.
+ */
+const LENGTH_RE = /(-?)(\d*\.?\d+)(px|rem)\b/g;
+
+/**
+ * Find spacing lengths that exactly equal a token but are written literally.
  *
- * Two exclusions come straight from the conversion rule in
- * docs/reference/css-tokens.md, and both are about keeping the change
+ * The exclusions come straight from the conversion rule in
+ * docs/reference/css-tokens.md, and all of them are about keeping the change
  * verifiable by reading:
  *
  *  - `!important` declarations stay literal (they are cascade patches, tracked
  *    separately in docs/reference/css-important.md).
- *  - negative values and `0` stay literal: the scale has no negative members,
- *    and a negative margin usually pairs with a positive padding that would
- *    then be tokenised out of step with it.
+ *  - a declaration carrying a **negative** length stays literal *as a whole*: a
+ *    negative margin usually pairs with a positive padding, and tokenising only
+ *    the positive half puts the pair out of step. The trade-off is that a
+ *    tokenisable length sharing a declaration with a negative one is invisible
+ *    to the gate, by design — the doc and the gate agree on that rather than
+ *    the gate demanding a conversion the doc forbids.
+ *  - `0` stays literal; the scale has no zero member.
+ *
+ * `var(…)` expressions are stripped rather than skipped: a half-converted
+ * `padding: 2px var(--ps-space-2)` is the case worth catching, not the case
+ * worth excusing.
  *
  * @param {string} source
  * @param {string} label repo-relative path
@@ -176,16 +250,17 @@ function findViolations(source, label, scale) {
     const prop = decl[2].toLowerCase();
     const value = decl[3];
     if (/!important/i.test(value)) continue;
-    // A declaration that already reaches for a token is mid-conversion at worst;
-    // the "never mix a raw px and a token" rule is what keeps that from
-    // happening, and it is enforced by review, not here.
-    if (/var\(/.test(value)) continue;
 
-    const line = clean.slice(0, decl.index).split('\n').length;
+    const raw = stripVarExpressions(value);
+    if ([...raw.matchAll(LENGTH_RE)].some((len) => len[1] === '-')) continue;
 
-    for (const len of value.matchAll(/(-?)(\d+(?:\.\d+)?)px/g)) {
-      if (len[1] === '-') continue; // negatives stay literal
-      const px = Number(len[2]);
+    // `decl.index` sits on the `;`/`{` *before* the declaration, so measure to
+    // the property name itself or every report is one line early.
+    const propOffset = decl.index + decl[0].toLowerCase().indexOf(prop);
+    const line = clean.slice(0, propOffset).split('\n').length;
+
+    for (const len of raw.matchAll(LENGTH_RE)) {
+      const px = pxKey(Number(len[2]) * (len[3] === 'rem' ? REM_IN_PX : 1));
       if (px === 0) continue; // 0 stays literal
       const token = scale.get(px);
       if (!token) continue; // off-scale: a design signal, not a conversion
@@ -235,7 +310,10 @@ describe('css spacing tokens', () => {
     for (const px of [2, 6, 10, 14, 18]) {
       assert.ok(scale.has(px), `the fine band should carry ${px}px`);
     }
-    for (const px of [28, 36, 44, 56, 60, 64]) {
+    // 28/36/60/64 are the gaps the old 4px scale left that in-scope CSS
+    // actually uses. 44, 52 and 56 have no user, so the scale does not carry
+    // them — see docs/reference/css-tokens.md.
+    for (const px of [28, 36, 60, 64]) {
       assert.ok(scale.has(px), `the upper scale should carry ${px}px`);
     }
   });
@@ -254,7 +332,7 @@ describe('css spacing tokens', () => {
         .slice(0, 4)
         .map((v) => `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`);
       over.push(
-        `${file}: ${count} tokenisable px value(s), budget ${budget}\n${examples.join('\n')}`
+        `${file}: ${count} tokenisable length(s), budget ${budget}\n${examples.join('\n')}`
       );
     }
 
@@ -262,9 +340,10 @@ describe('css spacing tokens', () => {
       over,
       [],
       `${over.length} file(s) exceed their spacing burndown budget.\n\n` +
-        'A px length that exactly equals a --ps-space-* token must be written as\n' +
-        'that token. Off-scale values (13px, 22px, 30px…) are fine and are not\n' +
-        'counted — see docs/reference/css-tokens.md.\n\n' +
+        'A length that exactly equals a --ps-space-* token must be written as that\n' +
+        'token, in either spelling (8px and 0.5rem are the same violation).\n' +
+        'Off-scale values (13px, 22px, 30px…) are fine and are not counted —\n' +
+        'see docs/reference/css-tokens.md.\n\n' +
         'Do NOT raise a budget in css-spacing-suppressions.json to make this pass.\n' +
         'The list may only shrink.'
     );
