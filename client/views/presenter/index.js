@@ -84,11 +84,6 @@ export async function renderPresenter(
   let sessionId = null;
   let sessionPresId = null;
   let sessionFollowCodes = null;
-  // Remote-control status the presenter receives but does not yet act on. Kept
-  // write-only on purpose pending the "wire it up or rip it out" feature call
-  // (TODO spoor A6); `_`-prefixed so the linter treats it as deliberately unused
-  // rather than dead. The notes view keeps its own copy that does drive its UI.
-  let _controlEnabled = false;
   const lastInteractionBySlideId = new Map();
   let postSessionState = () => {};
   // Presenter console (opt-in notes/next/timer rail); wired after the deck exists.
@@ -252,9 +247,6 @@ export async function renderPresenter(
     drawBtn,
     consoleToggle,
     getSessionId: () => sessionId,
-    setControlEnabled: (enabled) => {
-      _controlEnabled = !!enabled;
-    },
     onOpenProjector: () => openProjectorWindow(),
     onEdit: () => goToEditor(),
     onToggleFullscreen: () => toggleFullscreen(),
@@ -647,9 +639,6 @@ export async function renderPresenter(
         if (isStrictNav()) return;
         const cur = deckCtl?.getState?.()?.idx ?? 0;
         deckCtl?.show?.(Number(slideIndex ?? cur));
-      },
-      onControlEnabled: (enabled) => {
-        _controlEnabled = !!enabled;
       },
       onDeckUpdated: (data) => {
         // Live-update deck when a question is promoted into the presentation.
