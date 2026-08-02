@@ -7,7 +7,7 @@ import {
 import {
   ensureContentColumnsImages,
   CONTENT_COLUMNS_IMAGE_DEFAULTS,
-} from '../../../../../shared/slide-types/content-columns-images.js';
+} from '../../../../../shared/slide-types/types/content-columns-slide/images.js';
 
 /**
  * DOCUMENTED EXCEPTION (archived type, numbered storage model).

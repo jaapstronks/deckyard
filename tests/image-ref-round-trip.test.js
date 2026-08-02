@@ -5,7 +5,7 @@ import {
   resolveImageTextCell,
   ensureImageTextImages,
   IMAGE_TEXT_IMAGE_DEFAULTS,
-} from '../shared/slide-types/image-text-images.js';
+} from '../shared/slide-types/types/image-text-slide/images.js';
 
 /**
  * Datamodel-normalisation step 2: the write -> render -> re-read round-trip

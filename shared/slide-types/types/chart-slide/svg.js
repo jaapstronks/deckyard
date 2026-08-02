@@ -1,4 +1,4 @@
-import { esc } from '../helpers.js';
+import { esc } from '../../helpers.js';
 
 export function svgText(
   x,

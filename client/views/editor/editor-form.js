@@ -21,7 +21,7 @@ import {
   describeUnresolvedType,
   unresolvedNotes,
 } from '../../../shared/slide-types/unresolved.js';
-import { ensureTitleSlideBackground } from '../../../shared/slide-types/title-slide-background.js';
+import { ensureTitleSlideBackground } from '../../../shared/slide-types/types/title-slide/background.js';
 import { elementAppliesToSlide, elementTabLabel } from './editor-form/element-tab.js';
 import {
   buildBackgroundControls,

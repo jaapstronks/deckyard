@@ -9,7 +9,7 @@
  * Descriptor grammar: client/views/editor/inline-edit/descriptors.js.
  */
 
-import { resolveImageTextCell, IMAGE_TEXT_IMAGE_DEFAULTS } from '../../image-text-images.js';
+import { resolveImageTextCell, IMAGE_TEXT_IMAGE_DEFAULTS } from './images.js';
 
 /** @type {Object} InlineDescriptor for image-text-slide. */
 export const inlineEdit = {

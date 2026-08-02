@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveImageTextCell } from '../shared/slide-types/image-text-images.js';
+import { resolveImageTextCell } from '../shared/slide-types/types/image-text-slide/images.js';
 
 /**
  * resolveImageTextCell is the single authority for image-text's per-cell

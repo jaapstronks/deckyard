@@ -8,7 +8,7 @@
  * a "Raw CSV" toggle for power users who want to paste or hand-edit the string.
  *
  * The grid serialises to exactly the CSV string the shared parser
- * (`shared/slide-types/chart/parse.js`) already eats, so nothing downstream
+ * (`shared/slide-types/types/chart-slide/parse.js`) already eats, so nothing downstream
  * changes: this is purely an editing-UX layer. Used from two call sites (one
  * implementation): the generic field renderer (`render-field.js`, as the
  * csv-grid widget of the `editor` vocabulary and the base editor of the `csv`
@@ -22,7 +22,7 @@ import {
   detectHeaderRow,
   parseCsvToGrid,
   serializeCsv,
-} from '../../../../shared/slide-types/chart/parse.js';
+} from '../../../../shared/slide-types/types/chart-slide/parse.js';
 
 /**
  * Column shape per chart type. bar/pie are a fixed Label,Value pair; line is

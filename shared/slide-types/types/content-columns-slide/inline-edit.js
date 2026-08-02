@@ -10,7 +10,7 @@
  */
 
 import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
-import { resolveContentColumnImage, CONTENT_COLUMNS_IMAGE_DEFAULTS } from '../../content-columns-images.js';
+import { resolveContentColumnImage, CONTENT_COLUMNS_IMAGE_DEFAULTS } from './images.js';
 
 /** @type {Object} InlineDescriptor for content-columns-slide. */
 export const inlineEdit = {

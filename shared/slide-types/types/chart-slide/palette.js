@@ -1,4 +1,4 @@
-import { hexToRgb, getRelativeLuminance } from '../../color-utils.js';
+import { hexToRgb, getRelativeLuminance } from '../../../color-utils.js';
 
 function shouldUseLightText(bg) {
   const rgb = hexToRgb(bg);

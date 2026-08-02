@@ -5,12 +5,12 @@ import {
   resolveImageSlideImage,
   ensureImageSlideImage,
   IMAGE_SLIDE_IMAGE_DEFAULTS,
-} from '../shared/slide-types/image-slide-image.js';
+} from '../shared/slide-types/types/image-slide/image.js';
 import { convertSlideToType } from '../shared/slide-types/convert.js';
 import {
   ensureImageTextImages,
   imageTextImageItems,
-} from '../shared/slide-types/image-text-images.js';
+} from '../shared/slide-types/types/image-text-slide/images.js';
 import { validateSlide } from '../shared/slide-types/presentation.js';
 
 /**
