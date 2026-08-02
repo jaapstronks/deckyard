@@ -206,7 +206,7 @@ export default {
         },
       },
       itemFields: [
-        // `.text-blocks-row-title` is centred (04-columns.css).
+        // `.text-blocks-row-title` is centred (80-text-blocks.css).
         {
           key: 'title',
           label: 'Row heading',

@@ -132,16 +132,19 @@ Then, in rough dependency order:
    installs have no migration runner, and exports still need converting.
 
 1. **Delete the definition** — `shared/slide-types/types/<type>.js`.
-2. **Delete the stylesheet** — `client/styles/slides/**/<n>-<type>.css`, and
-   remove its `@import` from the section aggregator
-   (`client/styles/slides/0*-<section>.css`). **Not every type owns a file**:
-   older types carry their rules as a block inside a shared section sheet
-   (split-partner's 118 lines sat at the top of
-   `02-content-and-media/02-layouts.css`), so read the class off the
-   definition's `renderHtml` and grep *that* before deleting anything. The
-   removal guardrail matches the type **id** and a CSS class is not derived from
-   it — nothing will tell you `.slide-partner-split` outlived
-   `split-partner-title-slide`.
+2. **Delete the stylesheet(s)** — every sheet the type claims in `TYPE_CSS`
+   (`scripts/generate-slide-css-aggregators.js`; a type may claim more than
+   one), then remove the `TYPE_CSS` entry and regenerate the aggregators.
+   `tests/slide-css-aggregators.test.js` enforces both directions: an entry
+   for an unregistered type fails, and an unclaimed file on disk fails — so
+   the 118 lines of `.slide-partner-split` that outlived
+   `split-partner-title-slide` inside a shared sheet can no longer happen for
+   claimed CSS. **A residue of per-type rules still lives in shared sheets**
+   (`30-content-and-tables.css`, `00-base.css`, `60-accessibility.css`,
+   `70-step-reveal.css` — inventory in the seam-collapse brief), so still read
+   the class off the definition's `renderHtml` and grep *that* before calling
+   the CSS gone: the removal guardrail matches the type **id** and a CSS class
+   is not derived from it.
 3. **Deregister** — the import and the `CORE_SLIDE_TYPES` entry in
    `shared/slide-types/registry.js`.
 4. **Remove the per-type entries in the hand-maintained tables that live outside

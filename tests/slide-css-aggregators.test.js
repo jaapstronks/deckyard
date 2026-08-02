@@ -8,6 +8,7 @@ import {
   TIERS,
   TYPE_CSS,
   SHARED_CSS,
+  typeCssEntries,
   cascadeOrder,
   tierEntries,
   buildAllAggregators,
@@ -79,7 +80,7 @@ test('cascade order is unique within each tier (no ambiguous winner)', () => {
 test('no CSS file is declared twice (type and shared, or across tiers)', () => {
   const seen = new Map();
   const all = [
-    ...Object.values(TYPE_CSS).map((e) => ({ tier: e.tier, file: e.file })),
+    ...typeCssEntries().map((e) => ({ tier: e.tier, file: e.file })),
     ...SHARED_CSS.map((e) => ({ tier: e.tier, file: e.file })),
   ];
   for (const { tier, file } of all) {

@@ -1,0 +1,18 @@
+/* Optional per-card link: a full-card overlay anchor (shared `cardLinkOverlayHtml`
+   helper, used by icon-card-grid, logo-wall, …). Only rendered outside the
+   editor, so it never blocks inline editing. Kept visually invisible; the
+   pointer cursor signals it's clickable. */
+.slide .has-link {
+  cursor: pointer;
+}
+.slide .card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  text-decoration: none;
+}
+.slide .card-link:focus-visible {
+  outline: 3px solid var(--color-accent, #4c8bf5);
+  outline-offset: -3px;
+}
