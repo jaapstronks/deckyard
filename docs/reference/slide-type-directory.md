@@ -106,6 +106,25 @@ Two things that are *not* in the directory today:
   is deliberately not done: it is entangled with the separate question of what
   a slide type is even allowed to style (the CSS role-vocabulary track), and
   it would add nothing to the guardrail.
+
+  **What counts as a type's CSS is selector-rooted**: a rule belongs to a type
+  when its selector roots on that type's root class (`.slide-<x> …`). A type
+  class appearing *inside* a shared machinery selector does not transfer
+  ownership — the step-reveal blocks name six types and stay in
+  `70-step-reveal.css`, because they style the step machinery, not the slide.
+  The mirror image also holds: output of a shared pipeline keeps its own sheet
+  even when only one type renders it today. `.md-table`, `.md-code-*` and
+  `.md-math-*` come from `shared/markdown.js`, and `.slide-action*` from the
+  shared CTA helper, so both live in
+  `01-layout-and-title/32-markdown-and-actions.css` rather than in
+  content-slide's `30-content.css`.
+
+  Moving a rule between sheets **never changes its cascade position** — only
+  file boundaries and ownership. Where a split does reorder rules (grouping
+  three non-contiguous content-slide blocks into one sheet, say), the reorder
+  is only safe when every pair of rules that swaps either cannot match the
+  same element or differs in specificity, so the winning declaration is
+  unchanged.
 - **The side-form renderer** (`client/views/editor/editor-form/slide-forms/`).
   It is behaviour, not data, and it depends on editor infrastructure (`h()`,
   field factories, collapsed-state); importing that from `shared/` would invert

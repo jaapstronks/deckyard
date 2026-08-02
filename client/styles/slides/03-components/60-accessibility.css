@@ -45,14 +45,6 @@
   outline-offset: 3px;
 }
 
-/* Semantic element defaults inside slides */
-.slide-quote blockquote.quote-text {
-  margin: 0;
-}
-.slide-quote blockquote.quote-text p {
-  margin: 0;
-}
-
 
 
 

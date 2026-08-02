@@ -179,14 +179,6 @@
   max-width: 90ch;
 }
 
-/* Adjust subheading color on dark backgrounds */
-.slide-icon-card-grid .subheading {
-  color: var(
-    --t-icon-card-grid-subtitle-color,
-    var(--slide-text-light-muted)
-  );
-}
-
 /* When bottom subheading is present, shrink the main content area */
 .slide.has-bottom-subheading .slide-inner {
   justify-content: flex-start;

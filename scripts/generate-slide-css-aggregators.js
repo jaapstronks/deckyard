@@ -67,6 +67,7 @@ export const TYPE_CSS = {
   'payoff-slide': [{ tier: '01-layout-and-title', file: '10-payoff.css' }],
   'end-slide': [{ tier: '01-layout-and-title', file: '11-end-slide.css' }],
   'title-slide': [{ tier: '01-layout-and-title', file: '21-title-slide-universal.css' }],
+  'content-slide': [{ tier: '01-layout-and-title', file: '30-content.css' }],
   'table-slide': [{ tier: '01-layout-and-title', file: '35-table-slide.css' }],
   'image-slide': [{ tier: '01-layout-and-title', file: '40-image-slide.css' }],
   'image-text-slide': [
@@ -135,7 +136,10 @@ export function typeCssEntries() {
 export const SHARED_CSS = [
   // Tier 01
   { tier: '01-layout-and-title', file: '00-base.css' },
-  { tier: '01-layout-and-title', file: '30-content-and-tables.css' },
+  // The markdown pipeline's output (`.md-table`, `.md-code-*`, `.md-math-*`,
+  // emitted by shared/markdown.js) plus the shared CTA buttons. Split out of the
+  // former 30-content-and-tables.css, whose content-slide half is now 30-content.css.
+  { tier: '01-layout-and-title', file: '32-markdown-and-actions.css' },
   // Tier 02 — the card-link overlay is a genuinely shared component
   // (cardLinkOverlayHtml helper; icon-card-grid and logo-wall both render it)
   { tier: '02-content-and-media', file: '70-card-links.css' },
