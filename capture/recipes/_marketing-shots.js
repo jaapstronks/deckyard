@@ -7,11 +7,9 @@
  * provably identical apart from the two language codes — the failure mode a
  * copy-pasted pair invites is one half drifting silently.
  *
- * **Hash caveat.** `hashRecipeFile()` hashes only the recipe module itself, so
- * a change *in this file* does not flag the six shots as stale the way a change
- * in `editor-full.js` flags that one. Same limitation `_sample-content.js`
- * already has. Until the hash covers the module graph, a change here means
- * re-running `npm run capture -- --all` by hand.
+ * A change *in this file* moves the registry hash of all six shots:
+ * `hashRecipeGraph()` walks each recipe's imports within `capture/`, so the
+ * factory is part of what they hash. See `capture/README.md` § Known limits.
  */
 
 import { seedDeck, setUiLocale } from '../lib/api.js';
