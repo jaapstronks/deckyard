@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.12.1](https://github.com/jaapstronks/deckyard/compare/v1.12.0...v1.12.1) (2026-08-02)
+
+
+### Fixed
+
+* derive readable link colour for theme slide-background variants ([#540](https://github.com/jaapstronks/deckyard/issues/540)) ([52d61c9](https://github.com/jaapstronks/deckyard/commit/52d61c90be5c7d4c0900b1786ef679d54f12fe9f))
+
+
+### Changed
+
+* lazy-load Bunny Player.js in the live app ([#542](https://github.com/jaapstronks/deckyard/issues/542)) ([6385c82](https://github.com/jaapstronks/deckyard/commit/6385c8225df4b61d5ca048324f43e4cead5d9ac4))
+
 ## [1.12.0](https://github.com/jaapstronks/deckyard/compare/v1.11.0...v1.12.0) (2026-08-02)
 
 
