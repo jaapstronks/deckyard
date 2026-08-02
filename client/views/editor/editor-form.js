@@ -553,6 +553,9 @@ export function createRerenderEditor({
     const formTypeCtx = {
       h,
       form,
+      // The deck, for forms that need the active language version rather than
+      // anything stored on the slide (follow-invite's copy labels).
+      pres,
       // Selection-aware inspector: element-scoped widgets render into
       // elementForm for the selected element; slide-wide stays in form.
       elementForm,
