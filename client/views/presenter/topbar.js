@@ -23,7 +23,6 @@ import { createPresenterControlToggle } from './control-toggle.js';
  * @param {HTMLElement} opts.drawBtn
  * @param {HTMLElement} opts.consoleToggle
  * @param {() => (string|null)} opts.getSessionId - for the control toggle.
- * @param {(enabled: boolean) => void} opts.setControlEnabled
  * @param {() => void} opts.onOpenProjector
  * @param {() => void} opts.onEdit
  * @param {() => void} opts.onToggleFullscreen
@@ -40,7 +39,6 @@ export function buildPresenterTopbar({
   drawBtn,
   consoleToggle,
   getSessionId,
-  setControlEnabled,
   onOpenProjector,
   onEdit,
   onToggleFullscreen,
@@ -54,12 +52,7 @@ export function buildPresenterTopbar({
     translatePill,
     interactionPill,
     toolsWrap,
-    createPresenterControlToggle({
-      h,
-      api,
-      getSessionId,
-      setControlEnabled,
-    }).el,
+    createPresenterControlToggle({ h, api, getSessionId }).el,
     laserBtn,
     drawBtn,
     consoleToggle,

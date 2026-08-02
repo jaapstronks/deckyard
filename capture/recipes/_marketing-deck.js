@@ -88,15 +88,14 @@ const SLIDE_SPECS = [
     },
   },
   {
-    // Managed by the server (presentationId / sourceLang / enabled are filled
-    // in by normalizeFollowInviteSlides on save); it has no translatable
-    // fields, so both versions are identical. Note for the join-screen shots:
-    // the invite copy follows the deck's *dominant* language, not the viewing
-    // one, so both versions render Dutch here. An English join-screen shot
-    // needs a deck whose dominant language is en-GB.
+    // Managed by the server (presentationId / enabled are filled in by
+    // normalizeFollowInviteSlides on save); it has no translatable fields, so
+    // both versions are identical. The invite's language is not stored at all:
+    // it is derived at render time from the deck's resolved language
+    // (resolveDeckLang: active version first, then dominant).
     type: 'follow-invite-slide',
-    nl: { presentationId: '', sourceLang: 'nl', enabled: true },
-    'en-GB': { presentationId: '', sourceLang: 'nl', enabled: true },
+    nl: { presentationId: '', enabled: true },
+    'en-GB': { presentationId: '', enabled: true },
   },
   {
     type: 'kpi-metrics-slide',
