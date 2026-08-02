@@ -128,7 +128,3 @@ function loadImage(url) {
     img.src = url;
   });
 }
-
-// Re-export the luminance helper for callers that want a quick check without
-// pulling color-utils directly.
-export { getRelativeLuminance };

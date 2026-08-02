@@ -370,7 +370,7 @@ function mulberry32(seed) {
   };
 }
 
-export function clamp(n, min, max) {
+function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 

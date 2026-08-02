@@ -6,9 +6,6 @@ import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
-// Re-export for backwards compatibility
-export { escapeHtml };
-
 /**
  * Get human-readable guest error message.
  * @param {string} errorCode - Error code

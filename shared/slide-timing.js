@@ -48,7 +48,7 @@ export function calculateDeckTime(slides, deckDefaultSeconds) {
  * @param {number} totalSeconds
  * @returns {string} e.g. "6m 40s" or "1h 10m"
  */
-export function formatDuration(totalSeconds) {
+function formatDuration(totalSeconds) {
   const s = Math.max(0, Math.round(Number(totalSeconds) || 0));
   if (s === 0) return '0s';
   const h = Math.floor(s / 3600);

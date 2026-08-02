@@ -188,7 +188,7 @@ export function tierEntries(tierDir) {
 }
 
 /** The exact bytes the aggregator file for one tier should contain. */
-export function buildAggregator(tier) {
+function buildAggregator(tier) {
   const lines = tierEntries(tier.dir).map(
     (e) => `@import url('./${tier.dir}/${e.file}');`
   );

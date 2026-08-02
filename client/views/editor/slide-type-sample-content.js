@@ -18,17 +18,7 @@
  * was an incidental collision, not a semantic link; both keep the exact URL.
  */
 
-import {
-  SLIDE_TYPE_SAMPLE_CONTENT,
-  slideTypeSample,
-} from '../../../shared/slide-types/authoring-companions.js';
-
-/**
- * Sample content per slide type, derived from each type's `authoring.js`.
- * Re-exported because the companion-coverage test reads it by type name.
- * @type {Readonly<Record<string, Object>>}
- */
-export { SLIDE_TYPE_SAMPLE_CONTENT };
+import { slideTypeSample } from '../../../shared/slide-types/authoring-companions.js';
 
 /**
  * Get sample content for a slide type, merging with defaults if needed.
