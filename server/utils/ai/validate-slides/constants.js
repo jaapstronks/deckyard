@@ -42,7 +42,7 @@ export const MAX_LENGTHS = {
   // list-slide items
   'items.title': 80,
   'items.text': 120,
-  // card-stack-slide
+  // card types (icon-card-grid, team-cards)
   cardLabel: 40,
   cardBody: 800,
   // text-blocks-slide

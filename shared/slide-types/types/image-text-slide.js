@@ -360,15 +360,6 @@ export default {
       set: { layout: 'corner' },
       schematic: { corner: 45 },
     },
-    {
-      // Cross-type exit for "I want my own text per image": the convert seam
-      // maps title/body/images onto content-columns columns.
-      id: 'columns',
-      labelKey: 'editor.layoutVariant.columns',
-      label: 'Own text per column',
-      convertTo: 'content-columns-slide',
-      schematic: { cols: 3 },
-    },
   ],
   // The ImageRef config anchor for this type (looked up, never stored per
   // slide): an item without its own fit/focus follows these. See

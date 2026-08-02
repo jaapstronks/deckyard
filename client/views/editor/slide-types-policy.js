@@ -27,9 +27,9 @@ export function isInsertableSlideType({ type, def, theme, disabledSlideTypes, ca
   if (!t) return false;
   if (!def || typeof def !== 'object') return false;
 
-  // Deprecated types (e.g. card-stack-slide, superseded by icon-card-grid) are
-  // hidden from every insertion path — picker and AI — but existing slides keep
-  // rendering, since rendering doesn't go through this gate.
+  // Deprecated types (e.g. lead-capture-slide, parked pending cookie-consent)
+  // are hidden from every insertion path — picker and AI — but existing slides
+  // keep rendering, since rendering doesn't go through this gate.
   if (def.deprecated) return false;
 
   // The raw-HTML escape-hatch slide is only insertable by capability holders.

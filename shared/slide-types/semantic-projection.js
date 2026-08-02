@@ -318,7 +318,7 @@ function projectRepeatingGroup(group, content, fields) {
   const itemFields = slotFields.map((suffix) => {
     const decl = fieldByKey.get(`${prefix}1${suffix}`);
     // Carry the declared `hidden` flag so a deprecated/hidden slot field (e.g.
-    // card-stack's card{n}Label) is skipped by renderItemBlock rather than
+    // a legacy numbered mirror field) is skipped by renderItemBlock rather than
     // surfacing in the reader.
     return { key: suffix, type: decl?.type || 'string', hidden: decl?.hidden };
   });
@@ -371,8 +371,8 @@ export function renderSlideBodySemanticHtml(slide, def, { headingKey = null, hea
     }
   }
 
-  // Flat repeating groups (card-stack etc.): project the whole group at its
-  // count-field position and consume the count + every numbered slot field, so
+  // Flat repeating groups (numbered card/row groups): project the whole group
+  // at its count-field position and consume the count + every numbered slot field, so
   // they don't also render as a loose enum / duplicate paragraphs.
   const groups = Array.isArray(def?.repeatingGroups) ? def.repeatingGroups : [];
   const groupHtmlByAnchor = new Map();

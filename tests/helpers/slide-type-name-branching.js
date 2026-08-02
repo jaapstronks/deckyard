@@ -315,10 +315,10 @@ export const INVENTORY = {
       'new lists had no Convert submenu at all.',
   },
   // slide-form-router.js is deliberately ABSENT since editor-behaviour-
-  // abstraction step 5: the table that once listed sixteen types is down to
-  // two documented exceptions (follow-invite, the deprecated content-columns),
-  // below the three-name threshold. That is the good outcome this gate exists
-  // to surface — the per-type knowledge was derived away, not moved.
+  // abstraction step 5: the table that once listed sixteen types is down to a
+  // single documented exception (follow-invite), below the three-name
+  // threshold. That is the good outcome this gate exists to surface — the
+  // per-type knowledge was derived away, not moved.
   'client/views/editor/editor-form/render-field.js': {
     kind: sparse,
     why:

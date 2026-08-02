@@ -402,7 +402,7 @@
    Kept for the elements that have not been converted to an `on-surface-*`
    class yet; the ones that have are gone from this list, because the class
    covers background VARIANTS too and this block never did. */
-.slide.has-slide-bg-light-text :is(.icon-card-body, .card-stack-body, .matrix-cell) {
+.slide.has-slide-bg-light-text :is(.icon-card-body, .matrix-cell) {
   --color-text: rgba(11, 11, 11, 0.92);
   --color-text-muted: rgba(11, 11, 11, 0.7);
   /* These cards are light surfaces sitting on the dark background, so the

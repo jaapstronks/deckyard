@@ -14,9 +14,9 @@ export default {
   // the cookie-consent banner that grants that consent was never wired in, so a
   // freshly inserted form can never be submitted. Rather than ship a broken card
   // we hide it from every insertion path (picker + AI) via `deprecated` — the
-  // established "not authorable, still renders stored decks" contract, same as
-  // the archived content-columns type. Existing lead-capture slides
-  // keep rendering. Re-enable = drop this flag AND wire the consent banner (both
+  // established "not authorable, still renders stored decks" contract. Existing
+  // lead-capture slides keep rendering. Re-enable = drop this flag AND wire the
+  // consent banner (both
   // together): full revive checklist in briefs/cookie-consent-decision.md.
   deprecated: true,
   fields: [

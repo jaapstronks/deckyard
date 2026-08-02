@@ -1,4 +1,3 @@
-import cardStackSlide from './types/card-stack-slide.js';
 import chapterTitleSlide from './types/chapter-title-slide.js';
 import contentSlide from './types/content-slide.js';
 import iconCardGridSlide from './types/icon-card-grid-slide/index.js';
@@ -24,7 +23,6 @@ import leadCaptureSlide from './types/lead-capture-slide.js';
 import tableSlide from './types/table-slide.js';
 import kpiMetricsSlide from './types/kpi-metrics-slide.js';
 import textBlocksSlide from './types/text-blocks-slide.js';
-import contentColumnsSlide from './types/content-columns-slide.js';
 import comparisonSlide from './types/comparison-slide.js';
 import processSlide from './types/process-slide.js';
 import timelineSlide from './types/timeline-slide.js';
@@ -203,7 +201,6 @@ const CORE_SLIDE_TYPES = {
   'video-slide': videoSlide,
   'team-cards-slide': teamCardsSlide,
   'logo-wall-slide': logoWallSlide,
-  'card-stack-slide': cardStackSlide,
   'icon-card-grid-slide': iconCardGridSlide,
   'payoff-slide': payoffSlide,
   'quote-slide': quoteSlide,
@@ -218,7 +215,6 @@ const CORE_SLIDE_TYPES = {
   'follow-invite-slide': followInviteSlide,
   'chart-slide': chartSlide,
   'text-blocks-slide': textBlocksSlide,
-  'content-columns-slide': contentColumnsSlide,
   'comparison-slide': comparisonSlide,
   'process-slide': processSlide,
   'timeline-slide': timelineSlide,

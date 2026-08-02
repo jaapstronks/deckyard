@@ -82,10 +82,6 @@ const BURNDOWN = {
     'The same legacy-mirror disease as team-cards: one type, two ' +
     'representations. Resolve by retiring one side, not by calling it a ' +
     'collection.',
-  'content-columns-slide':
-    'Declared collection, has no items[] field at all — 130 numbered col{N}* ' +
-    'scalars instead. Deprecated with `text-blocks-slide` as successor, so the ' +
-    'entry dies with rung 3 rather than being fixed.',
   'poll-slide':
     'Declared fixed-collection, carries option1..option4 as scalars. Never got ' +
     'the items[] migration the other collections did.',

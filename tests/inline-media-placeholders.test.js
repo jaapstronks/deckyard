@@ -10,31 +10,6 @@ import { ensureMembers } from '../shared/slide-types/types/team-cards-slide.js';
  * the slide, without leaking editor placeholders into present/export renders.
  */
 
-test('content-columns: empty column renders a clickable placeholder in edit mode only', () => {
-  const def = SLIDE_TYPES['content-columns-slide'];
-  const content = { title: 'T', columnCount: 2 };
-
-  const editHtml = def.renderHtml(content, {}, { mode: 'edit' });
-  const editPlaceholders = editHtml.match(/cc-image-placeholder/g) || [];
-  assert.ok(editPlaceholders.length >= 2, 'each empty column gets a placeholder in edit mode');
-  assert.match(editHtml, /cc-image-placeholder[^>]*data-inline-photo="1"/s);
-
-  for (const ctx of [undefined, {}, { mode: 'present' }, { mode: 'thumb' }]) {
-    const html = def.renderHtml(content, {}, ctx);
-    assert.ok(!html.includes('cc-image-placeholder'), `no placeholder in mode ${ctx?.mode}`);
-  }
-});
-
-test('content-columns: a filled column renders the image, not the placeholder', () => {
-  const def = SLIDE_TYPES['content-columns-slide'];
-  const content = { title: 'T', columnCount: 2, col1Image: '/x.png', col1Alt: 'x' };
-  const html = def.renderHtml(content, {}, { mode: 'edit' });
-  assert.match(html, /<img src="\/x\.png"/);
-  // column 1 filled: its cc-image is not a placeholder; column 2 still empty
-  assert.ok(!/cc-image-placeholder[^>]*data-inline-photo="1"/s.test(html));
-  assert.match(html, /cc-image-placeholder[^>]*data-inline-photo="2"/s);
-});
-
 test('image-text: empty placeholder and filled image both carry data-inline-photo', () => {
   const def = SLIDE_TYPES['image-text-slide'];
 
@@ -163,7 +138,6 @@ const ALL_PLACEHOLDER_TYPES = [
   ['image-slide', {}],
   ['image-text-slide', {}],
   ['gallery-slide', { images: [{}] }],
-  ['content-columns-slide', { columnCount: 2 }],
   ['logo-wall-slide', {}],
   ['quote-slide', { quote: 'Hi' }],
   ['team-cards-slide', { members: [{ name: 'A' }] }],
@@ -254,7 +228,6 @@ test('every slide type with an image slot renders the shared placeholder box', (
 test('each type keeps its own modifier class for sizing and colour', () => {
   const modifiers = {
     'gallery-slide': 'gallery-image-placeholder',
-    'content-columns-slide': 'cc-image-placeholder',
     'logo-wall-slide': 'logo-wall-placeholder',
     'quote-slide': 'quote-portrait',
     'team-cards-slide': 'team-card-photo',
@@ -285,13 +258,6 @@ test('the logo-wall label is localised, not hardcoded', () => {
   const def = SLIDE_TYPES['logo-wall-slide'];
   assert.match(def.renderHtml({}, {}, { mode: 'edit', lang: 'nl' }), /image-placeholder-text">Logo/);
   assert.match(def.renderHtml({}, {}, { mode: 'edit', lang: 'en-GB' }), /image-placeholder-text">Logo/);
-});
-
-test('content-columns placeholders are labelled and follow the language', () => {
-  const def = SLIDE_TYPES['content-columns-slide'];
-  const content = { columnCount: 2 };
-  assert.match(def.renderHtml(content, {}, { mode: 'edit', lang: 'nl' }), /image-placeholder-text">Afbeelding/);
-  assert.match(def.renderHtml(content, {}, { mode: 'edit', lang: 'en-GB' }), /image-placeholder-text">Image/);
 });
 
 test('the placeholder glyph is defined in exactly one place', () => {

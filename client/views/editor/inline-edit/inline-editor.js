@@ -1103,8 +1103,9 @@ export function createInlineEditor({
    *
    * Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
    * mutate slide.content directly, substituting `{n}` -> idx in the field keys
-   * (single-image types use plain keys with idx 0; content-columns templates
-   * col{n}Image / col{n}Alt off the 1-based column number).
+   * (single-image types use plain keys with idx 0; a flat `{n}` template
+   * substitutes the 1-based index into keyed fields like foo{n}Image /
+   * foo{n}Alt).
    *
    * @returns {{slide, media, idx, member, imageField, altField, extraFields}|null}
    */

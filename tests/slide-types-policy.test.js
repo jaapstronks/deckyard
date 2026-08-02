@@ -13,8 +13,8 @@ test('a normal type is insertable', () => {
 test('deprecated types are never insertable (hidden from picker + AI)', () => {
   assert.equal(
     isInsertableSlideType({
-      type: 'card-stack-slide',
-      def: { label: 'Card stack', deprecated: true },
+      type: 'lead-capture-slide',
+      def: { label: 'Lead capture', deprecated: true },
     }),
     false
   );
@@ -55,22 +55,36 @@ test('freeform-slide is removed: off the registry, and a stored slide degrades s
   assert.match(html, /Old canvas/);
 });
 
-test('content-columns-slide is archived: deprecated + not insertable, still renders', () => {
-  const def = SLIDE_TYPES['content-columns-slide'];
-  assert.ok(def, 'type stays registered so existing decks keep rendering');
-  assert.equal(def.deprecated, true, 'marked deprecated (archive convention)');
-  assert.equal(
-    isInsertableSlideType({ type: 'content-columns-slide', def }),
-    false,
-    'hidden from every insertion path (picker + AI)'
-  );
-  // A stored content-columns slide still renders via the kept render-only path.
-  const html = def.renderHtml(
-    { title: 'Cols', columnCount: '2', col1Title: 'A', col2Title: 'B' },
-    { type: 'content-columns-slide' },
-    {}
-  );
+test('card-stack-slide is removed: off the registry, and a stored slide degrades to its successor', () => {
+  // Last rung of the deprecation ladder: superseded by icon-card-grid-slide,
+  // which carries the same items[] card shape. No lossless rename migration
+  // (icon-card-grid adds icon/link), so a stored deck degrades to the archived
+  // slide, which names the type and points at the rebuild target.
+  assert.equal(SLIDE_TYPES['card-stack-slide'], undefined, 'no longer registered');
+  const html = renderSlideHtml({
+    type: 'card-stack-slide',
+    content: { title: 'Old cards', card1Title: 'Insight' },
+  });
   assert.match(html, /class="slide/);
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /card-stack-slide/);
+  assert.match(html, /Old cards/);
+});
+
+test('content-columns-slide is removed: off the registry, and a stored slide degrades safely', () => {
+  // Removed as the deprecated-layer cleanup (A7.8): archived on 2026-07-22, no
+  // core successor for the nested column shape. A stored deck degrades to the
+  // archived-slide placeholder, which names the type and keeps its content
+  // visible rather than throwing.
+  assert.equal(SLIDE_TYPES['content-columns-slide'], undefined, 'no longer registered');
+  const html = renderSlideHtml({
+    type: 'content-columns-slide',
+    content: { title: 'Cols', columnCount: '2', col1Title: 'A', col2Title: 'B' },
+  });
+  assert.match(html, /class="slide/);
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /content-columns-slide/);
+  assert.match(html, /Cols/);
 });
 
 test('lead-capture-slide is parked: deprecated + not insertable, still renders', () => {

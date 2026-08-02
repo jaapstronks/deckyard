@@ -258,7 +258,7 @@
    (shared/slide-types/helpers.js): same base class, same glyph, same
    `is-empty` hook the inline editor keys off.
 
-   Used by: image, image-text, gallery, content-columns, logo-wall, quote,
+   Used by: image, image-text, gallery, logo-wall, quote,
    team-cards.
 
    The base only centres the inner content. Each type keeps a *modifier*

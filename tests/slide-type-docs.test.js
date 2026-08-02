@@ -179,11 +179,7 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
    * the invariant. Keep it SHORT: an entry here is a standing argument for
    * making the widget's coverage declarative.
    */
-  const WIDGET_RENDERED = new Set([
-    // "Column images & blocks": the per-column block count is edited by the
-    // widget's add/remove, never as a standalone enum control.
-    'content-columns-slide.col{n}BlockCount',
-  ]);
+  const WIDGET_RENDERED = new Set([]);
   const offenders = [];
   for (const type of CORE_SLIDE_TYPE_NAMES) {
     const row = coverageFor(type);
@@ -205,7 +201,7 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
 });
 
 /**
- * Condensing is what keeps a 100-key numbered schema (content-columns) readable
+ * Condensing is what keeps a large numbered `col{n}*`-style schema readable
  * in one cell. The load-bearing half is the refusal: a lone key that merely
  * contains a digit must survive verbatim, or `a11yTitle` would print as
  * `a{n}yTitle`.

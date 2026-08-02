@@ -14,7 +14,7 @@
  * Usage:
  *   node scripts/scan-slide-type.js [slide-type] [--dir <path>] [--json]
  *
- *   slide-type   defaults to `content-columns-slide`
+ *   slide-type   defaults to `lead-capture-slide`
  *   --dir        deck directory (default: server/data/presentations)
  *   --json       machine-readable output instead of the human report
  *
@@ -31,7 +31,7 @@ import path from 'node:path';
 
 function parseArgs(argv) {
   const args = argv.slice(2);
-  let type = 'content-columns-slide';
+  let type = 'lead-capture-slide';
   let dir = path.join('server', 'data', 'presentations');
   let json = false;
   for (let i = 0; i < args.length; i += 1) {

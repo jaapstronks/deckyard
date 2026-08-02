@@ -4,8 +4,8 @@
  * hand-built per-type collection forms. These tests drive the bulk-modal
  * (contentOnly) render path for the migrated types and assert the editor is
  * driven by the collection field's schema: item widgets, collapse
- * declarations, min/max enforcement, the legacy-mirror skip, nested
- * collections, and the content-columns numbered-model exception.
+ * declarations, min/max enforcement, the legacy-mirror skip, and nested
+ * collections.
  *
  * Run with: node --test tests/collection-editor.test.js
  */
@@ -113,34 +113,6 @@ test('gallery: add respects maxItems, remove respects minItems', () => {
   assert.equal(slide.content.images.length, 6);
 });
 
-test('card-stack: legacy numbered deck folds to items[]; mirror stays unsynced', () => {
-  const { editorMount, slide } = renderForm({
-    type: 'card-stack-slide',
-    content: {
-      title: 'T',
-      cardCount: '2',
-      card1Title: 'Een',
-      card1Body: 'b1',
-      card2Title: 'Twee',
-      card2Body: 'b2',
-    },
-  });
-  // ensure (descriptor) materialized items[] from the numbered mirror
-  assert.equal(slide.content.items.length, 2);
-  assert.equal(slide.content.items[0].title, 'Een');
-  const groups = editorMount.querySelectorAll('.items-reorder-list .card-group');
-  assert.equal(groups.length, 2);
-  // editing the first item's title writes items[], NOT the numbered mirror
-  const input = groups[0].querySelector('input.form-input');
-  input.value = 'Nieuw';
-  input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-  assert.equal(slide.content.items[0].title, 'Nieuw');
-  assert.equal(slide.content.card1Title, 'Een');
-  // deprecated cardCount enum and hidden numbered fields don't render
-  const labels = labelsOf(editorMount);
-  assert.ok(!labels.some((l) => /Card 1 title|Card 1 body/i.test(l)));
-});
-
 test('icon-card-grid: editor-marked exceptions render icon picker and card link', () => {
   const content = structuredClone(SLIDE_TYPES['icon-card-grid-slide'].defaults);
   const { editorMount } = renderForm({ type: 'icon-card-grid-slide', content });
@@ -198,39 +170,6 @@ test('text-blocks: nested blocks collection, relation field skipped on last row'
   );
   nestedAdd.click();
   assert.equal(slide.content.rows[1].blocks.length, 2);
-});
-
-test('content-columns: numbered-model exception reads and writes col{n}*', () => {
-  const { editorMount, slide } = renderForm({
-    type: 'content-columns-slide',
-    content: {
-      title: 'T',
-      columnCount: '2',
-      col1Title: 'Links',
-      col1Text: 'tekst',
-      col2Title: 'Rechts',
-      col2BlockCount: '1',
-      col2Block1Title: 'Blok',
-      col2Block1Body: 'inhoud',
-    },
-  });
-  const outer = editorMount.querySelector('.items-reorder-list');
-  const groups = Array.from(outer.children).filter((c) => c.classList.contains('card-group'));
-  assert.equal(groups.length, 2);
-  // editing a column title folds straight back into the numbered fields
-  const input = groups[0].querySelector('input.form-input');
-  assert.equal(input.value, 'Links');
-  input.value = 'Nieuw links';
-  input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
-  assert.equal(slide.content.col1Title, 'Nieuw links');
-  // no stored array shape appears
-  assert.ok(!('columns' in slide.content));
-  // adding a column bumps columnCount
-  const addBtn = Array.from(editorMount.querySelectorAll('button')).find(
-    (b) => b.textContent.startsWith('+') && !b.closest('.card-group')
-  );
-  addBtn.click();
-  assert.equal(slide.content.columnCount, '3');
 });
 
 test('kpi-metrics: generic items path keeps the metric field pairing', () => {
