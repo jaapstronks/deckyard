@@ -315,7 +315,7 @@ export function specialTypeUsage(deck, expected = []) {
   // What the deck reached for instead. When a specialised type is missed, the
   // content nearly always ends up in one of these, and naming it makes the
   // failure mode legible rather than just "type absent".
-  const GENERIC = new Set(['list-slide', 'content-slide', 'content-columns-slide']);
+  const GENERIC = new Set(['list-slide', 'content-slide']);
   const substitutes = missing.length
     ? [...used].filter((type) => GENERIC.has(type))
     : [];

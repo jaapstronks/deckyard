@@ -54,6 +54,53 @@ export const REMOVED_SLIDE_TYPES = {
         'the render contract needs a removal WITH a successor to pin the "rebuild it as X" promise',
     },
   },
+  'card-stack-slide': {
+    removed: '2026-08-02, finishing the deprecated-layer removal (A7.8)',
+    successor: 'icon-card-grid-slide',
+    reason:
+      'a coloured "stack of cards" list, archived (deprecated: true) and ' +
+      'superseded by icon-card-grid-slide, which carries the same items[] ' +
+      'card shape and adds icons. Removed as the last rung of the deprecation ' +
+      'ladder; the render contract degrades stored decks to an archived slide ' +
+      'that names icon-card-grid as the rebuild target.',
+    // No numbered conversion migration: card-stack and icon-card-grid do not
+    // share a lossless field schema (icon-card-grid adds icon/link), so the
+    // move is a manual rebuild, not a rename. scripts/migrate-slides.js offers
+    // the conversion for anyone who wants it; the archived-slide render keeps
+    // every stored field visible for decks left on the type.
+    migration: null,
+    allowedReferences: {
+      'server/db/migrations/021_terminology_standardization.js':
+        'a past migration that copied cardNLabel→cardNTitle on this type; it must keep naming it to stay a faithful record of what it did',
+      'scripts/migrate-slides.js':
+        'the standalone card-stack→icon-card-grid conversion for file-store installs and exports; it names both types by design',
+      'tests/slide-types-policy.test.js':
+        'asserts the type is off the registry and a stored slide degrades safely',
+      'docs/reference/slide-type-removal.md':
+        'the render contract section uses this type as its worked example of an archived removal WITH a successor',
+    },
+  },
+  'content-columns-slide': {
+    removed: '2026-08-02, finishing the deprecated-layer removal (A7.8)',
+    successor: null,
+    reason:
+      'a rich nested multi-column layout (heading + image + several sub-blocks ' +
+      'per column), archived (deprecated: true) on 2026-07-22 as a near-copy of ' +
+      'a one-off custom slide that barely earned its keep. No core successor ' +
+      'holds the nested shape; the convert seams into it (image-text→columns, ' +
+      'list→columns) went with it. The layout may return later as a custom ' +
+      'slide or an explicit rich-nested type.',
+    // No conversion migration: no core type carries the nested structure, so
+    // the render contract (unresolved.js) degrades stored decks to an archived
+    // slide with every field visible rather than converting them.
+    migration: null,
+    allowedReferences: {
+      'tests/slide-types-policy.test.js':
+        'asserts the type is off the registry and a stored slide degrades safely',
+      'docs/reference/slide-type-removal.md':
+        'records this removal alongside card-stack as the deprecated-layer cleanup',
+    },
+  },
   'freeform-slide': {
     removed: '2026-07-26, PR #377',
     successor: null,

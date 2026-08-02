@@ -366,7 +366,7 @@ routing, not of this table - the widgets are the open half of the same
 consolidation.
 
 Not repeated per row, because they are the same for all
-<!--gen:slide-type-count-->36<!--/gen:slide-type-count--> types: `slideBgImage`,
+<!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
 per-type `background`/`bgCustomColor` colour field - all **inspector**
@@ -389,7 +389,6 @@ rather than getting a home of its own.
 | `video-slide` | `title` | – | `source`, `autoplay`, `bunnyLibraryId`, `watchUrl` |
 | `team-cards-slide` | `title`, `subheading`, `bottomSubheading`, `subheading2` | `members` | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit` |
 | `logo-wall-slide` | `title`, `subheading` | `logos` | – |
-| `card-stack-slide` | `title`, `subheading` | `items` | – |
 | `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading` | `items` | `layout` |
 | `payoff-slide` | – | – | – |
 | `quote-slide` | `quote`, `authorName`, `authorTitle` | `quotes` | – |
@@ -404,7 +403,6 @@ rather than getting a home of its own.
 | `follow-invite-slide` | – | – | – |
 | `chart-slide` | `title`, `subheading`, `bottomSubheading` | – | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label` |
 | `text-blocks-slide` | `title`, `subheading`, `bottomSubheading` | `rows` | – |
-| `content-columns-slide` | `title`, `subheading`, `bottomSubheading` | `col{n}Title`, `col{n}Text`, `col{n}BlockCount`, `col{n}Block{m}Title`, `col{n}Block{m}Body` | `columnCount` |
 | `comparison-slide` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | – | – |
 | `process-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `steps` | – | `direction` |
 | `timeline-slide` | `title`, `subheading`, `bottomSubheading`, `items` | – | – |

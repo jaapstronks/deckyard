@@ -4,7 +4,7 @@
 
 # Slide-type inventory
 
-Deckyard ships **36** built-in slide types (33 active, 3 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
+Deckyard ships **34** built-in slide types (33 active, 1 deprecated but still rendered for existing decks). A fork may add more under `custom/slide-types/`; those are not counted here.
 
 This table is generated from the registry so the count and the list cannot
 drift from the code. To change it, add or remove a type in
@@ -28,7 +28,6 @@ See [`slide-type-tiers.md`](./slide-type-tiers.md).
 | `video-slide` | Video | Active | 2 | `content-slide` |
 | `team-cards-slide` | Image blocks | Active | 2 | `list-slide` |
 | `logo-wall-slide` | Logo wall | Active | 2 | `image-slide` |
-| `card-stack-slide` | Card stack | Deprecated | 2 | `list-slide` |
 | `icon-card-grid-slide` | Icon cards | Active | 2 | `list-slide` |
 | `payoff-slide` | Payoff | Active | 2 | `end-slide` |
 | `quote-slide` | Quote | Active | 1 | — |
@@ -43,7 +42,6 @@ See [`slide-type-tiers.md`](./slide-type-tiers.md).
 | `follow-invite-slide` | Follow-along invite | Active | 2 | `content-slide` |
 | `chart-slide` | Chart | Active | 2 | `table-slide` |
 | `text-blocks-slide` | Text blocks | Active | 2 | `list-slide` |
-| `content-columns-slide` | Content columns | Deprecated | 2 | `content-slide` |
 | `comparison-slide` | Comparison | Active | 2 | `table-slide` |
 | `process-slide` | Process | Active | 2 | `list-slide` |
 | `timeline-slide` | Timeline | Active | 2 | `list-slide` |

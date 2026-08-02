@@ -2,11 +2,9 @@
 // Run `node scripts/generate-slide-inline-edit-aggregator.js` to regenerate.
 // Source of truth: the `inline-edit.js` in each shared/slide-types/types/<name>/.
 
-import * as cardStackSlide from './types/card-stack-slide/inline-edit.js';
 import * as chapterTitleSlide from './types/chapter-title-slide/inline-edit.js';
 import * as chartSlide from './types/chart-slide/inline-edit.js';
 import * as comparisonSlide from './types/comparison-slide/inline-edit.js';
-import * as contentColumnsSlide from './types/content-columns-slide/inline-edit.js';
 import * as contentSlide from './types/content-slide/inline-edit.js';
 import * as countdownSlide from './types/countdown-slide/inline-edit.js';
 import * as customHtmlSlide from './types/custom-html-slide/inline-edit.js';
@@ -48,11 +46,9 @@ import * as videoSlide from './types/video-slide/inline-edit.js';
  * @type {Readonly<Record<string, Record<string, unknown>>>}
  */
 const MODULES = Object.freeze({
-  'card-stack-slide': cardStackSlide,
   'chapter-title-slide': chapterTitleSlide,
   'chart-slide': chartSlide,
   'comparison-slide': comparisonSlide,
-  'content-columns-slide': contentColumnsSlide,
   'content-slide': contentSlide,
   'countdown-slide': countdownSlide,
   'custom-html-slide': customHtmlSlide,

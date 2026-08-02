@@ -122,8 +122,7 @@ export const SLIDE_TYPE_PRESETS = {
   // reads as "one column" in an empty new slide and confused people who picked
   // it expecting two separate fields. That layout stays reachable in the editor
   // via the layout switcher (content-slide's layoutVariants), which is where the
-  // "I explicitly want two columns" use case lives now that content-columns-slide
-  // is archived.
+  // "I explicitly want two columns" use case lives.
   'list-slide': [
     { id: 'bullets', labelKey: 'editor.slideTypePreset.list.bullets', label: 'Bullet list', content: { variant: 'bullets' } },
     { id: 'numbers', labelKey: 'editor.slideTypePreset.list.numbers', label: 'Numbered list', content: { variant: 'numbers' } },

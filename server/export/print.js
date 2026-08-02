@@ -2,7 +2,6 @@ import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { markdownToSafeHtml } from '../utils/markdown.js';
 import { iconUrl } from '../../shared/icon-names.js';
-import { resolveCardStack } from '../../shared/slide-types/types/card-stack-slide.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { sandboxWatermarkText } from '../config/sandbox.js';
@@ -58,32 +57,6 @@ function renderQuoteSlide(slide) {
     )}&rdquo;</p>
     ${footer}
   </blockquote>`;
-}
-
-function renderCardStackSlide(slide, lang) {
-  const t = getPrintTranslations(lang);
-  const c =
-    slide && typeof slide === 'object' ? slide.content : {};
-  // Read the canonical view (items[] when present, else legacy numbered fields).
-  const cards = [];
-  for (const card of resolveCardStack(c).cards) {
-    const label = String(card?.title || '').trim();
-    const body = String(card?.body || '').trim();
-    if (!label && !body) continue;
-    cards.push(`<section class="print-card">
-      ${label ? `<h3>${escapeHtml(label)}</h3>` : ''}
-      ${
-        body
-          ? `<div class="md">${markdownToSafeHtml(
-              body
-            )}</div>`
-          : ''
-      }
-    </section>`);
-  }
-  return cards.length
-    ? `<div class="print-cards">${cards.join('')}</div>`
-    : `<p class="print-muted">${escapeHtml(t.noCardContent)}</p>`;
 }
 
 function renderIconCardGridSlide(slide, lang) {
@@ -149,8 +122,6 @@ function renderSlideReadableHtml(slide, lang) {
 
   if (type === 'quote-slide')
     return renderQuoteSlide(slide);
-  if (type === 'card-stack-slide')
-    return renderCardStackSlide(slide, lang);
   if (type === 'icon-card-grid-slide')
     return renderIconCardGridSlide(slide, lang);
 

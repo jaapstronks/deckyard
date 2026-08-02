@@ -312,7 +312,6 @@ Column semantics:
 | `video-slide` | `title` | `title` | – | – | – |
 | `team-cards-slide` | `title`, `subheading`, `bottomSubheading`, `subheading2` | `title`, `subheading`, `bottomSubheading`, `subheading2`, `members.name`, `members.byline` | `members` | – | media `members[]`; focus drag; ensure (legacy → array) |
 | `logo-wall-slide` | `title`, `subheading` | `title`, `subheading`, `bottomSubheading` | `logos` | – | media `logos[]`; ensure (legacy → array) |
-| `card-stack-slide` | `title`, `subheading` | `title`, `subheading`, `bottomSubheading` | – | `items.body` | ensure (legacy → array) |
 | `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading` | `items` | `items.body` | icons; ensure (legacy → array) |
 | `payoff-slide` | *no descriptor* | – | – | – | – |
 | `quote-slide` | `quote`, `authorName`, `authorTitle` | – | `quotes` (no reorder) | – | media (flat keys) |
@@ -327,7 +326,6 @@ Column semantics:
 | `follow-invite-slide` | *no descriptor* | – | – | – | – |
 | `chart-slide` | `title`, `subheading`, `bottomSubheading` | `subheading`, `bottomSubheading` | – | – | – |
 | `text-blocks-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading`, `rows.title` | `rows` (two-level → `blocks`; array decks only) | `rows.blocks.body` | – |
-| `content-columns-slide` | `title`, `subheading`, `bottomSubheading` | `title`, `subheading`, `bottomSubheading` | – | `col{n}Text`, `col{n}Block{m}Body` | media (flat keys); focus drag; fit toggle |
 | `comparison-slide` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | – | `leftBody`, `rightBody` | – |
 | `process-slide` | `title`, `subheading`, `bottomSubheading`, `items`, `steps` | `title`, `subheading`, `bottomSubheading`, `items.text` | `items` (alias `steps`) | – | – |
 | `timeline-slide` | `title`, `subheading`, `bottomSubheading`, `items` | `title`, `subheading`, `bottomSubheading`, `items.text` | `items` | – | – |

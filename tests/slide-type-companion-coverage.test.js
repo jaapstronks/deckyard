@@ -7,9 +7,8 @@
  * schematic glyph, settings curation category — do not come along, and every
  * one of them degrades gracefully when it is absent. Nothing breaks; the type
  * just gets quietly worse. #323 removed one such drift by hand (a deprecated
- * `content-columns-slide` still sitting in the AI catalog) and #386 removed
- * another (three live types the MCP layer could not see) — both symptoms of the
- * same missing gate.
+ * type still sitting in the AI catalog) and #386 removed another (three live
+ * types the MCP layer could not see) — both symptoms of the same missing gate.
  *
  * This is that gate. It runs both directions, so it fails on the two failure
  * modes that actually happen:

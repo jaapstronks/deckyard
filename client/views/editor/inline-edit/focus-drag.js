@@ -98,9 +98,9 @@ export function createFocusDrag({
   function wireFocusDrag(pt, photo, ft) {
     let dragging = false;
     // object-position lives on the <img>. Some types tag the wrapper as the
-    // photo element (content-columns' .cc-image div holds the img inside), so
-    // resolve the actual image for the live style; the wrapper still gives the
-    // rect for pointer mapping (the img fills it).
+    // photo element (a wrapper div holds the img inside), so resolve the actual
+    // image for the live style; the wrapper still gives the rect for pointer
+    // mapping (the img fills it).
     const styleTarget =
       photo.tagName === 'IMG' ? photo : photo.querySelector('img') || photo;
     const toPct = (e) => {

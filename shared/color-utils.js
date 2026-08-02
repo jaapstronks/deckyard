@@ -4,7 +4,7 @@
  *
  * Client and server both import this so one definition backs every contrast
  * decision: theme building (server), token derivation (shared), slide render
- * (card-stack, charts) and the theme editor (client). The formula
+ * (charts) and the theme editor (client). The formula
  * `0.2126R + 0.7152G + 0.0722B` used to live in six near-identical copies, and
  * three `pickTextColorForBg` variants that disagreed on the default dark pole —
  * so the same background could resolve to different text colours depending on

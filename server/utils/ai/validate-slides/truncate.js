@@ -93,7 +93,7 @@ export function truncateContentFields(type, content) {
     });
   }
 
-  // Card fields (card-stack, icon-card-grid, team-cards)
+  // Card fields (icon-card-grid, team-cards)
   for (let i = 1; i <= 6; i++) {
     const labelKey = `card${i}Label`;
     const bodyKey = `card${i}Body`;
