@@ -117,6 +117,30 @@ Two things this list deliberately does *not* make breaking:
   patched a specific file has to reconcile — that is what forking costs, and it is
   not a version signal.
 
+### Renamed slide-type classes go in the release notes
+
+The class names a slide type renders are a **public contract**, on the same
+footing as the four surfaces above for the purpose of *announcing* a change —
+though not for the version number, since during beta nothing bumps MAJOR.
+
+Renaming one is the quietest breakage Deckyard has shipped. v1.8.0 replaced the
+title slide's `.slide-title` / `.title-*` / `.logo-*` family with
+`.slide-title-universal` and `tsu-*`, and only the new names carried CSS. A
+fork's own title slide still emitted the old ones and fell back to bare document
+flow — a full-bleed title became an inline image with the heading underneath.
+Nothing that CI or an agent watches broke: no import failed, the HTML was valid,
+the suite was green, the site returned 200. A human found it hours after deploy.
+
+So: **when a slide type's emitted classes are renamed or removed, say so in the
+release notes, under the same heading as breaking changes.** One line per rename.
+A fork styling its own slide types against core CSS is relying on those names,
+and the release notes are the only place it can learn they moved.
+
+`tests/slide-type-css-contract.test.js` enforces the upstream half — every class
+a core type emits must resolve to a CSS rule — so a rename cannot silently leave
+one side behind. It cannot see a fork's types, which is why the release-notes
+line matters. Details: `docs/reference/slide-type-css-contract.md`.
+
 ## Commit conventions
 
 Releases are computed from [Conventional Commits](https://www.conventionalcommits.org/).

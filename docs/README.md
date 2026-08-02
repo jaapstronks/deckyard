@@ -61,6 +61,7 @@ ships:
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
 | CSS breakpoints | `docs/reference/css-breakpoints.md` |
 | Which `!important` are by design | `docs/reference/css-important.md` |
+| Renaming a class a slide type emits | `docs/reference/slide-type-css-contract.md` |
 | Internationalization | `docs/developer/i18n.md` |
 | REST API | `docs/developer/api.md` + `docs/openapi.yaml` |
 | MCP server | `docs/reference/mcp-server.md` |
@@ -132,6 +133,7 @@ nothing is discoverable only by `ls`.
 | [`css-tokens.md`](reference/css-tokens.md) | CSS design tokens (app chrome) |
 | [`css-breakpoints.md`](reference/css-breakpoints.md) | The shared breakpoint ladder |
 | [`css-important.md`](reference/css-important.md) | Every `!important`, by-design vs cascade-patch |
+| [`slide-type-css-contract.md`](reference/slide-type-css-contract.md) | The class names a slide type emits are a public contract |
 | [`font-management.md`](reference/font-management.md) | Font management |
 
 **Agents, AI & API**
