@@ -6,11 +6,19 @@
  *   node server/db/migrate.js up     # Run pending migrations
  *   node server/db/migrate.js down   # Rollback last migration
  *   node server/db/migrate.js status # Show migration status
+ *
+ * The runner is also a module: `createMigrationDb`, `runUp`, `runDown`,
+ * `listMigrationFiles` and `listAppliedMigrations` are exported so a caller can
+ * drive migrations without spawning the CLI — which is what
+ * `scripts/migration-smoke-test.js` needs to roll the whole stack back and
+ * forward in one connection. The CLI half only runs when this file *is* the
+ * entry point, so importing it has no side effects.
  */
 
 import fs from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import pg from 'pg';
 import { getDatabaseConfig } from '../config/database.js';
@@ -22,7 +30,12 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
 
 const { Pool } = pg;
 
-async function createDb() {
+/**
+ * Open a Kysely instance for migration work. The caller owns it and must
+ * `destroy()` it, or the pool keeps the process alive.
+ * @returns {Promise<import('kysely').Kysely<any>>}
+ */
+export async function createMigrationDb() {
   const config = getDatabaseConfig();
   const pool = new Pool({
     host: config.host,
@@ -48,7 +61,12 @@ async function ensureMigrationsTable(db) {
     .execute();
 }
 
-async function getAppliedMigrations(db) {
+/**
+ * Names of the migrations recorded as applied, in execution order.
+ * @param {import('kysely').Kysely<any>} db
+ * @returns {Promise<string[]>}
+ */
+export async function listAppliedMigrations(db) {
   const rows = await db
     .selectFrom('_migrations')
     .select(['name', 'executed_at'])
@@ -57,28 +75,38 @@ async function getAppliedMigrations(db) {
   return rows.map((r) => r.name);
 }
 
-async function getMigrationFiles() {
+/**
+ * Migration filenames on disk, sorted — the numeric prefix is the order.
+ * @returns {Promise<string[]>}
+ */
+export async function listMigrationFiles() {
   const files = await fs.readdir(MIGRATIONS_DIR);
   return files
     .filter((f) => f.endsWith('.js') && /^\d{3}_/.test(f))
     .sort();
 }
 
-async function runUp(db) {
+/**
+ * Apply every migration that is not yet recorded as applied.
+ * @param {import('kysely').Kysely<any>} db
+ * @param {{ log?: (msg: string) => void }} [opts]
+ * @returns {Promise<string[]>} the migrations applied by this call
+ */
+export async function runUp(db, { log = console.log } = {}) {
   await ensureMigrationsTable(db);
 
-  const applied = await getAppliedMigrations(db);
-  const files = await getMigrationFiles();
+  const applied = await listAppliedMigrations(db);
+  const files = await listMigrationFiles();
 
   const pending = files.filter((f) => !applied.includes(f));
 
   if (pending.length === 0) {
-    console.log('No pending migrations.');
-    return;
+    log('No pending migrations.');
+    return [];
   }
 
   for (const file of pending) {
-    console.log(`Running migration: ${file}`);
+    log(`Running migration: ${file}`);
     const migration = await import(path.join(MIGRATIONS_DIR, file));
 
     await db.transaction().execute(async (trx) => {
@@ -89,24 +117,31 @@ async function runUp(db) {
         .execute();
     });
 
-    console.log(`Completed: ${file}`);
+    log(`Completed: ${file}`);
   }
 
-  console.log(`Applied ${pending.length} migration(s).`);
+  log(`Applied ${pending.length} migration(s).`);
+  return pending;
 }
 
-async function runDown(db) {
+/**
+ * Roll back the most recently applied migration.
+ * @param {import('kysely').Kysely<any>} db
+ * @param {{ log?: (msg: string) => void }} [opts]
+ * @returns {Promise<string | null>} the migration rolled back, or null if none
+ */
+export async function runDown(db, { log = console.log } = {}) {
   await ensureMigrationsTable(db);
 
-  const applied = await getAppliedMigrations(db);
+  const applied = await listAppliedMigrations(db);
 
   if (applied.length === 0) {
-    console.log('No migrations to rollback.');
-    return;
+    log('No migrations to rollback.');
+    return null;
   }
 
   const lastMigration = applied[applied.length - 1];
-  console.log(`Rolling back: ${lastMigration}`);
+  log(`Rolling back: ${lastMigration}`);
 
   const migration = await import(path.join(MIGRATIONS_DIR, lastMigration));
 
@@ -118,14 +153,15 @@ async function runDown(db) {
       .execute();
   });
 
-  console.log(`Rolled back: ${lastMigration}`);
+  log(`Rolled back: ${lastMigration}`);
+  return lastMigration;
 }
 
 async function showStatus(db) {
   await ensureMigrationsTable(db);
 
-  const applied = await getAppliedMigrations(db);
-  const files = await getMigrationFiles();
+  const applied = await listAppliedMigrations(db);
+  const files = await listMigrationFiles();
 
   console.log('\nMigration Status:');
   console.log('─'.repeat(50));
@@ -148,7 +184,7 @@ async function main() {
   console.log(`\nDatabase Migration Tool`);
   console.log(`Command: ${command}\n`);
 
-  const db = await createDb();
+  const db = await createMigrationDb();
 
   try {
     switch (command) {
@@ -171,7 +207,37 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Migration failed:', err);
-  process.exit(1);
-});
+/**
+ * True when this file is the process entry point.
+ *
+ * `import.meta.url` is always the *real* path: Node resolves the main module
+ * through symlinks before loading it. `process.argv[1]` is the path as typed.
+ * Comparing them directly therefore fails on any symlinked deploy layout (a
+ * `current -> releases/<sha>` symlink, a linked `node_modules/.bin` entry),
+ * which would turn `npm run db:migrate` into a silent exit-0 no-op. Resolve
+ * argv[1] the same way Node did before comparing.
+ * @returns {boolean}
+ */
+function isEntryPoint() {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+
+  let resolved = argv1;
+  try {
+    resolved = realpathSync(argv1);
+  } catch {
+    // Path is gone or unreadable — compare against the raw argument instead of
+    // throwing out of module evaluation.
+  }
+
+  return import.meta.url === pathToFileURL(resolved).href;
+}
+
+// CLI half. Guarded so `import`ing this module for its runners does not also
+// run a migration command.
+if (isEntryPoint()) {
+  main().catch((err) => {
+    console.error('Migration failed:', err);
+    process.exit(1);
+  });
+}

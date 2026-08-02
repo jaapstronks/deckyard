@@ -9,6 +9,7 @@ This section is for developers working on the codebase.
 - **Contributing guide**: `docs/developer/contributing.md`
 - **Linting**: `docs/developer/linting.md` - the CI gate, the suppressions burndown, and the dead-code discovery pass
 - **Export smoke test**: `docs/developer/export-smoke-test.md` - the one test that starts real Chrome, and how CI gets a browser
+- **Migration smoke test**: `docs/developer/migration-smoke-test.md` - every migration up/down/up against a real PostgreSQL, and how CI gets a database
 
 - **Internationalization**: `docs/developer/i18n.md` - locales, `t()`, and the translation files
 - **Live data sources**: `docs/developer/live-data-sources-testing.md` - testing checklist
