@@ -71,4 +71,9 @@
   grid-column: 1;
   grid-row: 1;
 }
+/* Image-text slide specific positioning of the shared CTA row
+   (`.slide-actions` lives in 01-layout-and-title/32-markdown-and-actions.css). */
+.slide-image-text .slide-actions {
+  margin-top: 20px;
+}
 
