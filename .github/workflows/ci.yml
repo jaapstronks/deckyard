@@ -128,3 +128,26 @@ jobs:
           DATABASE_USER: deckyard
           DATABASE_PASSWORD: deckyard
           DATABASE_SSL: 'false'
+      # Second, on the schema the step above just left behind: the in-memory
+      # test double claims to mirror the database's unique constraints and jsonb
+      # columns, and until now nothing held it to that. #423 is what the gap
+      # costs — an ON CONFLICT path that could only be tested after the same PR
+      # taught the double what the constraint was.
+      #
+      # This runs here rather than in `npm test` on purpose. The brief's option C
+      # proposed deriving the schema from the migration *files*, to keep the
+      # suite database-free — but that means a second hand-written model of the
+      # schema, checked against the first. With a real PostgreSQL already in this
+      # job, asking the database is both cheaper and the only answer that cannot
+      # itself be wrong.
+      - name: Check the test double against the schema the migrations produce
+        run: node scripts/check-test-double-schema.js
+        # Repeated rather than shared: GitHub Actions does not resolve YAML
+        # anchors in workflow files.
+        env:
+          DATABASE_HOST: localhost
+          DATABASE_PORT: 5432
+          DATABASE_NAME: deckyard_migration_smoke
+          DATABASE_USER: deckyard
+          DATABASE_PASSWORD: deckyard
+          DATABASE_SSL: 'false'
