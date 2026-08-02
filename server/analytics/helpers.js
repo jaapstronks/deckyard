@@ -77,12 +77,12 @@ export const AUTH_RATE_LIMITS = {
 /**
  * Device ID validation regex (32 hex chars).
  */
-export const DEVICE_ID_REGEX = /^[a-f0-9]{32}$/i;
+const DEVICE_ID_REGEX = /^[a-f0-9]{32}$/i;
 
 /**
  * Session token validation regex (64 hex chars).
  */
-export const SESSION_TOKEN_REGEX = /^[a-f0-9]{64}$/i;
+const SESSION_TOKEN_REGEX = /^[a-f0-9]{64}$/i;
 
 /**
  * Validate device ID format.

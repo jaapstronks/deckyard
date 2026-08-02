@@ -54,7 +54,7 @@ export function isHttpsRequest(req) {
  * @param {Object} req - HTTP request object
  * @returns {string} Host header value or 'localhost' as fallback
  */
-export function getRequestHost(req) {
+function getRequestHost(req) {
   const forwarded = req?.headers?.['x-forwarded-host'];
   if (forwarded) {
     return String(forwarded).split(',')[0].trim();
@@ -69,7 +69,7 @@ export function getRequestHost(req) {
  * @param {Object} req - HTTP request object
  * @returns {boolean} True if the host is allowed
  */
-export function isHostAllowed(req) {
+function isHostAllowed(req) {
   const host = getRequestHost(req);
   const allowedHosts = getAllowedHosts();
 

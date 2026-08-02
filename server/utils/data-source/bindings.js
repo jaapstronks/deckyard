@@ -15,7 +15,7 @@
  * @param {string} path - Dot-notation path with optional array indices
  * @returns {Array<{key?: string, index?: number}>}
  */
-export function parsePath(path) {
+function parsePath(path) {
   const segments = [];
   const parts = String(path || '').split('.');
 

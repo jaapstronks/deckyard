@@ -164,7 +164,7 @@ export function interpolatePlaceholders(str, vars, escapeValues = true) {
  * @param {string} locale - Locale code
  * @returns {string} Default value from i18n
  */
-export function getCodeDefault(type, field, locale) {
+function getCodeDefault(type, field, locale) {
   const map = TEMPLATE_I18N_MAP[type];
   if (!map || !map[field]) return '';
 
@@ -182,7 +182,7 @@ export function getCodeDefault(type, field, locale) {
  * @param {string} locale - Requested locale
  * @returns {Promise<string>} Resolved field value
  */
-export async function resolveTemplateField(repoRoot, type, field, locale) {
+async function resolveTemplateField(repoRoot, type, field, locale) {
   // Try custom override for requested locale
   const override = await getEmailTemplateOverride(repoRoot, type, locale);
   if (override && override[field]) {

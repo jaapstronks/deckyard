@@ -84,24 +84,6 @@ export function logError(module, ...args) {
 }
 
 /**
- * Simple warning log with module prefix.
- * @param {string} module - Module name
- * @param {...any} args - Message arguments
- */
-export function logWarn(module, ...args) {
-  console.warn(`[${module}]`, ...args);
-}
-
-/**
- * Simple info log with module prefix.
- * @param {string} module - Module name
- * @param {...any} args - Message arguments
- */
-export function logInfo(module, ...args) {
-  console.log(`[${module}]`, ...args);
-}
-
-/**
  * Simple debug log with module prefix (only when DEBUG_LOG=true).
  * @param {string} module - Module name
  * @param {...any} args - Message arguments

@@ -27,23 +27,6 @@ const MAX_SLIDE_WIDTH = 1120; // 40px padding on each side
 const MAX_SLIDE_HEIGHT = 630; // Full height
 
 /**
- * Generate a preview image for a slide at native 16:9 resolution.
- *
- * @param {string} repoRoot - Repository root path
- * @param {object} slide - Slide object with type and content
- * @param {object} theme - Theme object
- * @returns {Promise<Buffer>} PNG buffer at 1600x900
- */
-export async function generateSlidePreview(repoRoot, slide, theme, { slideTypes = null } = {}) {
-  const buffer = await renderSlideToPngBuffer(repoRoot, slide, {
-    scale: 1, // 1x scale = 1600x900
-    theme,
-    slideTypes,
-  });
-  return buffer;
-}
-
-/**
  * Generate an OG-optimized preview image (1200x630) with the slide
  * letterboxed and centered on a dark canvas.
  *
@@ -55,7 +38,7 @@ export async function generateSlidePreview(repoRoot, slide, theme, { slideTypes 
  * @param {object} [options.authorInfo] - Author info { name, imageUrl }
  * @returns {Promise<Buffer>} PNG buffer at 1200x630
  */
-export async function generateOgPreview(repoRoot, slide, theme, options = {}) {
+async function generateOgPreview(repoRoot, slide, theme, options = {}) {
   const { showAuthor = false, authorInfo, slideTypes = null } = options;
 
   // Render the slide at native resolution
@@ -154,7 +137,7 @@ export async function generateOgPreview(repoRoot, slide, theme, options = {}) {
  * @param {string} prefix - Filename prefix (e.g., 'og-abc123' or 'lib-xyz456')
  * @returns {Promise<string>} Public URL of the saved image
  */
-export async function savePreviewToMedia(repoRoot, buffer, prefix) {
+async function savePreviewToMedia(repoRoot, buffer, prefix) {
   if (!isMediaProviderInitialized()) {
     throw new Error('Media provider not initialized');
   }

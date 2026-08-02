@@ -4,7 +4,7 @@ export function sandboxEnabled() {
   return truthy(process.env.SANDBOX_MODE);
 }
 
-export function sandboxTtlHours() {
+function sandboxTtlHours() {
   const raw = process.env.SANDBOX_TTL_HOURS;
   const n = Number(raw);
   if (Number.isFinite(n) && n > 0) return Math.floor(n);

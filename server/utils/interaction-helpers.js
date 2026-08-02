@@ -42,7 +42,7 @@ export function pollOptionsFromSlide(slide) {
  * @param {Object} slide - Poll slide object
  * @returns {number} Number of non-empty options
  */
-export function pollOptionCountFromSlide(slide) {
+function pollOptionCountFromSlide(slide) {
   return pollOptionsFromSlide(slide).length;
 }
 
@@ -76,7 +76,7 @@ export function likertOptionsFromSlide(slide) {
  * @param {Object} slide - Likert slide object
  * @returns {number} Number of non-empty options
  */
-export function likertOptionCountFromSlide(slide) {
+function likertOptionCountFromSlide(slide) {
   return likertOptionsFromSlide(slide).length;
 }
 
@@ -95,7 +95,7 @@ export function likertQuestionFromSlide(slide) {
  * @param {Object} _slide - Likert slider slide object (unused)
  * @returns {number} Always returns 10
  */
-export function likertSliderOptionCountFromSlide(_slide) {
+function likertSliderOptionCountFromSlide(_slide) {
   return 10;
 }
 

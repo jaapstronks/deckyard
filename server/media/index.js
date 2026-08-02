@@ -67,19 +67,3 @@ export function getMediaStatus() {
   };
 }
 
-/**
- * Create a media provider for a specific request context.
- * Useful when you need provider without the global singleton.
- * @param {string} repoRoot
- * @returns {Promise<import('./interface.js').MediaProvider>}
- */
-export async function createMediaProvider(repoRoot) {
-  const providerType = getEffectiveMediaProvider();
-
-  if (providerType === 'scaleway') {
-    const { ScalewayProvider } = await import('./scaleway.js');
-    return new ScalewayProvider();
-  }
-
-  return new LocalProvider(repoRoot);
-}

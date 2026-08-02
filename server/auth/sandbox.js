@@ -18,7 +18,7 @@ function normalizeId(raw) {
   return s;
 }
 
-export function getSandboxUserFromRequest(req) {
+function getSandboxUserFromRequest(req) {
   if (!sandboxEnabled()) return null;
   const cookies = parseCookies(req.headers?.cookie);
   const token = normalizeId(cookies[COOKIE_NAME]);

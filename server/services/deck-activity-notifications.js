@@ -122,7 +122,7 @@ export function buildDeckActivityNotificationInput({ presentation, actor, count 
  * @param {Object} [options.ctx]
  * @returns {Promise<string[]>} Recipient emails.
  */
-export async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ctx }) {
+async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ctx }) {
   let collaborators = [];
   try {
     collaborators = (await listCollaborators(presentation?.id, ctx))

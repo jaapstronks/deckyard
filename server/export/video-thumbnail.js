@@ -134,7 +134,7 @@ async function fetchPlayPageHtml(url) {
  * @param {string} videoId
  * @returns {Promise<string|null>}
  */
-export async function resolveBunnyPullZone(libraryId, videoId) {
+async function resolveBunnyPullZone(libraryId, videoId) {
   const { pullZone } = getBunnyConfig();
   if (pullZone) return pullZone;
 

@@ -50,11 +50,3 @@ export async function handleMcpSse(ctx) {
   return handler(ctx);
 }
 
-/**
- * Re-export for the server.js import.
- */
-export function initMcpSse() {
-  // No-op on import — initialization is lazy.
-  // This function exists so server.js can import the module at startup
-  // without triggering initialization.
-}

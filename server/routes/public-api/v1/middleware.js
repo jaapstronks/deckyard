@@ -337,28 +337,13 @@ export async function trackExportRequest(ctx) {
 // ============================================================
 
 /**
- * Add rate limit headers to response.
- * @param {Object} ctx - Request context with apiKey
- * @param {Object} res - Response object
- * @param {string} [limitType] - Type of limit for headers
- */
-export async function addRateLimitHeaders(ctx, res, limitType = 'requests') {
-  if (!ctx.apiKey) return;
-
-  const headers = await getRateLimitHeaders(ctx.apiKey.id, ctx.apiKey.tier, limitType);
-  for (const [key, value] of Object.entries(headers)) {
-    res.setHeader(key, value);
-  }
-}
-
-/**
  * Send a standardized API response with rate limit headers.
  * @param {Object} ctx - Request context
  * @param {number} status - HTTP status code
  * @param {Object} data - Response data
  * @param {string} [limitType] - Type of limit for headers
  */
-export async function apiResponse(ctx, status, data, limitType = 'requests') {
+async function apiResponse(ctx, status, data, limitType = 'requests') {
   const { res, apiKey } = ctx;
 
   const headers = {};

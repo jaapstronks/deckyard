@@ -26,7 +26,7 @@ const DEFAULT_WINDOW_SECONDS = 60;
  * @param {number} [options.windowSeconds] - Window size in seconds (default: 60)
  * @returns {Promise<{allowed: boolean, remaining: number, resetAt: number}>}
  */
-export async function checkRateLimitRedis(key, { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS }) {
+async function checkRateLimitRedis(key, { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS }) {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const windowStart = now - windowMs;
@@ -96,49 +96,3 @@ export async function allowRequestRedis(key, { capacity, refillPerSec }) {
   return result.allowed;
 }
 
-/**
- * Get current rate limit status without consuming a request.
- * Useful for displaying remaining quota to users.
- *
- * @param {string} key - Rate limit key
- * @param {Object} options - Rate limit options
- * @param {number} options.capacity - Maximum requests in window
- * @param {number} [options.windowSeconds] - Window size in seconds
- * @returns {Promise<{remaining: number, resetAt: number}|null>}
- */
-export async function getRateLimitStatus(key, { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS }) {
-  const now = Date.now();
-  const windowMs = windowSeconds * 1000;
-  const windowStart = now - windowMs;
-  const redisKey = `${KEY_PREFIX}${key}`;
-
-  return withRedis(async (redis) => {
-    // Clean up and count without adding
-    await redis.zremrangebyscore(redisKey, 0, windowStart);
-    const count = await redis.zcard(redisKey);
-
-    return {
-      remaining: Math.max(0, capacity - count),
-      resetAt: now + windowMs,
-      used: count,
-    };
-  }, null);
-}
-
-/**
- * Reset rate limit for a specific key.
- * Useful for admin operations or testing.
- *
- * @param {string} key - Rate limit key
- * @returns {Promise<boolean>} True if reset successful
- */
-export async function resetRateLimit(key) {
-  const redisKey = `${KEY_PREFIX}${key}`;
-
-  const result = await withRedis(async (redis) => {
-    await redis.del(redisKey);
-    return true;
-  }, false);
-
-  return result;
-}

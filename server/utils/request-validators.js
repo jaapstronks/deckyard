@@ -5,7 +5,7 @@
 
 import { validateDateRange } from './normalize.js';
 import { badRequest } from './http.js';
-import { ALL_PERMISSIONS, isValidPermission as _isValidPermission } from '../../shared/constants/permissions.js';
+import { isValidPermission as _isValidPermission } from '../../shared/constants/permissions.js';
 
 /**
  * Extract a required string field from the request body.
@@ -127,12 +127,6 @@ export function getConvertParams(body) {
 // ============================================================
 
 /**
- * Valid permission levels for collaborators and share links.
- * Re-exported from shared/constants/permissions.js for backwards compatibility.
- */
-export const VALID_PERMISSIONS = ALL_PERMISSIONS;
-
-/**
  * Validate a permission string.
  * Re-exported from shared/constants/permissions.js for backwards compatibility.
  * @param {string} permission - The permission to validate
@@ -198,7 +192,7 @@ export function parsePaginationParams(searchParams, options = {}) {
  * @param {Object} [options] - Validation options (passed to validateDateRange)
  * @returns {{valid: boolean, since: string|null, until: string|null, error?: string}}
  */
-export function extractDateRange(searchParams, options = {}) {
+function extractDateRange(searchParams, options = {}) {
   const since = searchParams.get('since') ?? null;
   const until = searchParams.get('until') ?? null;
 

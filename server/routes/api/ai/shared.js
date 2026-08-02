@@ -38,7 +38,7 @@ export async function loadSlideTypeContext(authedUser) {
  * Extract theme context for AI generation.
  * Provides the AI with theme-specific information to make better content decisions.
  */
-export function extractThemeContext(theme) {
+function extractThemeContext(theme) {
   if (!theme) return null;
 
   const ctx = {};

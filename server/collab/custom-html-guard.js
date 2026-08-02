@@ -25,7 +25,7 @@
  */
 
 /** Transaction origin for guard-driven reverts (not a connection/local). */
-export const CUSTOM_HTML_GUARD_ORIGIN = { source: 'custom-html-guard' };
+const CUSTOM_HTML_GUARD_ORIGIN = { source: 'custom-html-guard' };
 
 /** Read a plain/Y.Text field as a string; null for an unexpected shape. */
 function readStringField(value, Y) {

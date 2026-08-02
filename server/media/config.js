@@ -10,7 +10,7 @@
  * - 'local' - Force local /uploads storage
  * @returns {'auto' | 'scaleway' | 'local'}
  */
-export function getMediaStorageMode() {
+function getMediaStorageMode() {
   const mode = (process.env.MEDIA_STORAGE_MODE || '').toLowerCase().trim();
   if (mode === 'scaleway') return 'scaleway';
   if (mode === 'local') return 'local';
@@ -47,29 +47,6 @@ export function getScalewayConfig() {
     // Optional CDN URL for public access (if using Scaleway Edge Services or custom domain)
     cdnUrl: process.env.SCW_CDN_URL || null,
   };
-}
-
-/**
- * Get the local uploads directory path.
- * @param {string} repoRoot
- * @returns {string}
- */
-export function getLocalUploadsDir(repoRoot) {
-  if (process.env.UPLOADS_DIR) {
-    // If absolute path, use as-is; otherwise resolve relative to repo root
-    const dir = process.env.UPLOADS_DIR;
-    if (dir.startsWith('/')) return dir;
-    return `${repoRoot}/${dir}`;
-  }
-  return `${repoRoot}/server/uploads`;
-}
-
-/**
- * Get the public URL prefix for local uploads.
- * @returns {string}
- */
-export function getLocalUploadsUrlPrefix() {
-  return process.env.UPLOADS_URL_PREFIX || '/uploads';
 }
 
 /**
