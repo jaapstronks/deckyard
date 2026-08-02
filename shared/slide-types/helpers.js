@@ -580,7 +580,7 @@ export function getCollectionKey(content, primaryKey = 'items', fallbackKeys = [
  * @param {string} [mode] render mode from ctx ('present' | 'follow' | 'thumb' | 'edit' | undefined)
  * @returns {{ kind: 'nav', index: number } | { kind: 'nav-id', id: string } | { kind: 'external', href: string } | null}
  */
-export function resolveCardLink(raw, mode) {
+function resolveCardLink(raw, mode) {
   const link = String(raw || '').trim();
   if (!link) return null;
   const navId = /^#slide:(.+)$/.exec(link);

@@ -90,7 +90,7 @@ export function liveSlideTypeI18nKeys() {
  *
  * @returns {number} total keys removed across all locales
  */
-export function pruneOrphanedSlideTypeKeys() {
+function pruneOrphanedSlideTypeKeys() {
   const valid = liveSlideTypeI18nKeys();
   let totalPruned = 0;
 

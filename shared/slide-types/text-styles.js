@@ -54,7 +54,7 @@ export const TEXT_COLOR_SWATCH_SLOTS = ['brand-1', 'brand-2', 'brand-3'];
  * Colour vocabulary (theme tokens); `default` means no override. The three
  * base tokens are always available; the brand slots are theme-declared.
  */
-export const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SWATCH_SLOTS];
+const TEXT_COLOR_VALUES = ['default', 'muted', 'accent', ...TEXT_COLOR_SWATCH_SLOTS];
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 

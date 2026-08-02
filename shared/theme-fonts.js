@@ -126,12 +126,3 @@ export function fontFamilyToSlug(family) {
   return family.toLowerCase().replace(/\s+/g, '-');
 }
 
-/**
- * Convert URL-safe name back to font family.
- * @param {string} slug - URL-safe name
- * @returns {string|null} - Font family name or null
- */
-export function slugToFontFamily(slug) {
-  const font = CURATED_FONTS.find((f) => fontFamilyToSlug(f.family) === slug);
-  return font ? font.family : null;
-}

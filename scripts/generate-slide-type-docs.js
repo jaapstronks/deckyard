@@ -94,7 +94,7 @@ export function coreCount() {
  * The generated inventory markdown. Rows are in registration order (the order of
  * shared/slide-types/registry.js), so the doc reads the way the registry does.
  */
-export function renderInventoryDoc() {
+function renderInventoryDoc() {
   const rows = CORE_SLIDE_TYPE_NAMES.map((name) => {
     const def = SLIDE_TYPES[name] || {};
     const label = def.label || '';
@@ -149,7 +149,7 @@ export function renderInventoryDoc() {
 }
 
 /** Replace the number inside every count-marker span in `text`. */
-export function applyCountMarkers(text, count = coreCount()) {
+function applyCountMarkers(text, count = coreCount()) {
   const re = new RegExp(
     `${escapeRe(MARKER_OPEN)}[\\s\\S]*?${escapeRe(MARKER_CLOSE)}`,
     'g'

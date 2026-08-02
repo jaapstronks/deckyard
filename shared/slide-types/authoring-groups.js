@@ -81,9 +81,6 @@ export const SLIDE_TYPE_GROUPS = Object.freeze({
   other: 'The long tail — closing slides and the escape hatch.',
 });
 
-/** @type {ReadonlyArray<string>} */
-export const SLIDE_TYPE_GROUP_NAMES = Object.freeze(Object.keys(SLIDE_TYPE_GROUPS));
-
 /**
  * Whether a value is a declared group.
  * @param {unknown} value
