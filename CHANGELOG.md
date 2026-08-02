@@ -4,6 +4,26 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.12.0](https://github.com/jaapstronks/deckyard/compare/v1.11.0...v1.12.0) (2026-08-02)
+
+
+### Added
+
+* **editor:** closed per-field editor vocabulary replaces the chart and table forms ([#526](https://github.com/jaapstronks/deckyard/issues/526)) ([d728ae4](https://github.com/jaapstronks/deckyard/commit/d728ae49f4ef57dd8508a8ead3d8874b3a175d32))
+* **editor:** one generic collection editor replaces the seven hand-built forms ([#524](https://github.com/jaapstronks/deckyard/issues/524)) ([7e465ef](https://github.com/jaapstronks/deckyard/commit/7e465ef11a7c9775460fbd9518fb5d5f105193d5))
+* **editor:** resolve itemDefaults per deck language via itemDefaultsByLang ([#527](https://github.com/jaapstronks/deckyard/issues/527)) ([1289c6b](https://github.com/jaapstronks/deckyard/commit/1289c6bb45820dd7334e2f62f8a609625875dd72))
+* **editor:** the image forms become declarations and the shared element card ([#528](https://github.com/jaapstronks/deckyard/issues/528)) ([abfd48d](https://github.com/jaapstronks/deckyard/commit/abfd48d649260fbd4c16f655e7a6de2df82c587c))
+* **editor:** the slide-list label reads the labelField declaration ([#530](https://github.com/jaapstronks/deckyard/issues/530)) ([ac406c0](https://github.com/jaapstronks/deckyard/commit/ac406c0e0b5d21e4989177c262bfba8181cfb49c))
+* **jobs:** schedule the three unwired retention cleanups ([#537](https://github.com/jaapstronks/deckyard/issues/537)) ([ff2d96f](https://github.com/jaapstronks/deckyard/commit/ff2d96f2c1e04b53f38e41390dcc42967738c717))
+* **slide-types:** per-type CSS claimed in the TYPE_CSS manifest (seam-collapse gate point 6, PR 1) ([#534](https://github.com/jaapstronks/deckyard/issues/534)) ([06e3253](https://github.com/jaapstronks/deckyard/commit/06e32534e02e267915d32b225a794e88e64587f3))
+
+
+### Fixed
+
+* **i18n:** ?lang= is the only UI-locale URL param, the ?locale= alias is removed ([#529](https://github.com/jaapstronks/deckyard/issues/529)) ([12c4646](https://github.com/jaapstronks/deckyard/commit/12c46467ed4d25581af52c72535baa77e9769944))
+* **i18n:** let ?lang= URL param outrank the saved uiLocale for the session ([#520](https://github.com/jaapstronks/deckyard/issues/520)) ([95ee83f](https://github.com/jaapstronks/deckyard/commit/95ee83fc54592aa6e6488a7aa212b9e7cb2b2992))
+* **quote-slide:** the editor canvas stops reflowing on focus, and a delegated control stops looking broken ([#525](https://github.com/jaapstronks/deckyard/issues/525)) ([c9337e0](https://github.com/jaapstronks/deckyard/commit/c9337e00de84be629d41c4043afdb818a024cb6b))
+
 ## [1.11.0](https://github.com/jaapstronks/deckyard/compare/v1.10.0...v1.11.0) (2026-08-01)
 
 
