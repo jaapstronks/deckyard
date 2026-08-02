@@ -55,3 +55,18 @@ export const ai = {
       'Many images without text (use gallery-slide)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    title: 'Our Approach',
+    body: '- User-centered design process\n- Iterative development cycles\n- Continuous feedback integration',
+    image: '',
+    imageSide: 'right',
+    background: 'lime',
+  },
+];

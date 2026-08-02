@@ -37,3 +37,30 @@ export const ai = {
       '2x2 matrices like SWOT (use matrix-slide)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    _variation: 'Pros and cons comparison',
+    title: 'Build vs Buy Decision',
+    leftTitle: 'Build In-House',
+    leftBody: '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
+    rightTitle: 'Buy Solution',
+    rightBody: '- Faster deployment\n- Lower initial cost\n- Proven reliability\n- Vendor dependency\n- Limited customization',
+    verdict: 'Recommended: Buy for MVP, build later',
+    background: 'lime',
+  },
+  {
+    _variation: 'Before and after transformation',
+    title: 'Digital Transformation Impact',
+    leftTitle: 'Before',
+    leftBody: '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
+    rightTitle: 'After',
+    rightBody: '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
+    background: 'mist',
+  },
+];

@@ -86,7 +86,7 @@ subject of the track this form came out of.
 | inline-edit descriptor | `inline-edit.js` | `inline-edit/descriptors.js` |
 | inspector keep-list | `inline-edit.js` | `editor-form/inspector-form.js` |
 | agent description / bestFor / notFor | `ai.js` | `ai/slide-catalog/` (derived) |
-| agent examples | `ai.js` *(not moved yet — still in `ai/slide-catalog/examples/`)* | `ai/slide-catalog/examples/` |
+| agent examples (`aiExamples`, sparse) | `ai.js` | `ai/slide-catalog/examples.js` (derived) |
 
 The agent-facing **schema** is deliberately absent from `ai.js`: it is derived
 from `index.js`'s `fields[]` by `deriveAgentSchema()`. A hand-written second copy
@@ -306,6 +306,13 @@ produced: three prompt surfaces emit one section per type in catalog order, and
 an LLM does not read a list uniformly. That sequence is now `CATALOG_ORDER` in
 `definitions.js` — the same *fact belongs to the type, ordering belongs to the
 surface* split `group` and `PICKER_GROUP_ORDER` made.
+
+The prompt **examples** made the same move: each type's `aiExamples` export in
+its `ai.js` replaced five hand-filed modules under `ai/slide-catalog/examples/`
+(where `timeline-slide` sat in two of them, one silently dead). The aggregator
+carries them as a second, sparse map (`SLIDE_TYPE_AI_EXAMPLES`), and
+`ai/slide-catalog/examples.js` layers the fork overlay on top — sparse by
+design: a type without examples owes none.
 
 ## Migrating a consumer
 

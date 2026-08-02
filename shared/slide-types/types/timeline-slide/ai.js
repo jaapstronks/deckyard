@@ -63,3 +63,52 @@ export const ai = {
       'Undated summary/total lines as items (put them in bottomSubheading)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    _variation: 'Company history',
+    title: 'Our Journey',
+    items: [
+      { date: '2015', title: 'Founded', text: 'Started in a small garage' },
+      { date: '2017', title: 'Series A', text: 'Raised €5M funding' },
+      { date: '2019', title: 'Global Launch', text: 'Expanded to 20 countries' },
+      { date: '2021', title: 'IPO', text: 'Listed on stock exchange' },
+      { date: '2023', title: 'Acquisition', text: 'Merged with industry leader' },
+    ],
+    background: 'lime',
+  },
+  {
+    _variation: 'Project milestones',
+    title: 'Project Milestones',
+    items: [
+      { date: 'Jan 2024', title: 'Kickoff', text: 'Project initiated' },
+      { date: 'Mar 2024', title: 'Alpha Release', text: 'Internal testing began' },
+      { date: 'Jun 2024', title: 'Beta Launch', text: 'Public beta with 100 users' },
+      { date: 'Sep 2024', title: 'v1.0 Release', text: 'General availability' },
+    ],
+    background: 'mist',
+  },
+  {
+    // Shows the key rule: only dated events are items; the source text's
+    // closing summary ("42 partners across 5 consortia") is undated, so it
+    // goes in bottomSubheading — NOT as an extra dateless timeline item. Note
+    // the concise slide title, too.
+    _variation: 'Programme process with a summary line',
+    title: 'ADRIE activities — round 1',
+    items: [
+      { date: 'Q1 2025', title: 'Final scheme drafted', text: 'Prepared for the open call.' },
+      { date: 'Apr 2025', title: 'Call opens', text: 'Submission window starts.' },
+      { date: '23 May 2025', title: 'Call closes', text: '36 proposals; 26 assessed.' },
+      { date: 'Jul–Oct 2025', title: 'Research phase', text: '5 proposals funded.' },
+      { date: 'Nov–Dec 2025', title: 'Phase 2 selected', text: 'Grant decisions issued.' },
+      { date: 'Jan 2026', title: 'Phase 2 starts', text: 'Two-year programmes begin.' },
+    ],
+    bottomSubheading: '42 partners involved across the 5 consortia.',
+    background: 'lime',
+  },
+];

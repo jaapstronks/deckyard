@@ -206,9 +206,11 @@ export const INVENTORY = {
     gate: 'scripts/generate-slide-ai-aggregator.js',
     why:
       'Generated aggregator over each type\'s own ai.js (the agent-facing ' +
-      'description, bestFor and notFor). It replaced five hand-filed category ' +
-      'modules whose grouping was not derivable from anything the type ' +
-      'declares. Regenerating it is the only way to change it.',
+      'description, bestFor and notFor, plus the sparse aiExamples the prompt ' +
+      'shows as worked content). It replaced five hand-filed category modules ' +
+      'whose grouping was not derivable from anything the type declares — and, ' +
+      'for the examples, four more of the same. Regenerating it is the only ' +
+      'way to change it.',
   },
   'server/utils/ai/slide-catalog/definitions.js': {
     kind: sparse,
@@ -265,36 +267,6 @@ export const INVENTORY = {
     kind: table,
     companion: 'v1-manual-examples',
     why: 'MANUAL_EXAMPLES, the worked example the v1 prompt shows per type.',
-  },
-  'server/utils/ai/slide-catalog/examples/diagram-slides.js': {
-    kind: table,
-    companion: 'ai-examples',
-    why:
-      'The SLIDE_TYPE_EXAMPLES slice for the diagram geometries — the worked ' +
-      'example an agent copies the field shape from.',
-  },
-  'server/utils/ai/slide-catalog/examples/basic-slides.js': {
-    kind: table,
-    companion: 'ai-examples',
-    why:
-      'The SLIDE_TYPE_EXAMPLES slice for the everyday types — content, list, ' +
-      'quote, image-text, gallery, timeline. Without an example a model gets the ' +
-      'field shape from the schema alone and fills it badly.',
-  },
-  'server/utils/ai/slide-catalog/examples/card-slides.js': {
-    kind: table,
-    companion: 'ai-examples',
-    why:
-      'The SLIDE_TYPE_EXAMPLES slice for the card collections — icon-card-grid, ' +
-      'team-cards, logo-wall.',
-  },
-  'server/utils/ai/slide-catalog/examples/data-slides.js': {
-    kind: table,
-    companion: 'ai-examples',
-    why:
-      'The SLIDE_TYPE_EXAMPLES slice for the data types — kpi-metrics, table, ' +
-      'chart, where a worked example carries the most weight because the field ' +
-      'shape is the least guessable.',
   },
   'server/utils/ai/schemas/refined-slide.js': {
     kind: table,

@@ -62,6 +62,22 @@ export function typesWithAi() {
 }
 
 /**
+ * The subset of `typesWithAi()` whose `ai.js` also exports `aiExamples` — the
+ * filled-in prompt examples. Sparse by design: examples exist for the types
+ * whose shape is hard to infer from a schema alone, and a type without the
+ * export simply has none (tests/helpers/slide-type-companions.js tracks the
+ * `ai-examples` companion as optional for the same reason).
+ * @returns {string[]}
+ */
+export function typesWithAiExamples() {
+  return typesWithAi().filter((name) =>
+    /^export const aiExamples\b/m.test(
+      fs.readFileSync(path.join(TYPES_DIR, name, 'ai.js'), 'utf8')
+    )
+  );
+}
+
+/**
  * `icon-card-grid-slide` → `iconCardGridSlideAi`.
  * @param {string} name
  * @returns {string}
@@ -71,13 +87,32 @@ export function identifierFor(name) {
   return `${camel}Ai`;
 }
 
+/**
+ * `icon-card-grid-slide` → `iconCardGridSlideAiExamples`.
+ * @param {string} name
+ * @returns {string}
+ */
+export function examplesIdentifierFor(name) {
+  return `${identifierFor(name)}Examples`;
+}
+
 /** The exact bytes the aggregator should contain. */
 export function buildAggregator() {
   const names = typesWithAi();
+  const withExamples = new Set(typesWithAiExamples());
   const imports = names
-    .map((n) => `import { ai as ${identifierFor(n)} } from '${REL}/${n}/ai.js';`)
+    .map((n) => {
+      const specifiers = withExamples.has(n)
+        ? `ai as ${identifierFor(n)}, aiExamples as ${examplesIdentifierFor(n)}`
+        : `ai as ${identifierFor(n)}`;
+      return `import { ${specifiers} } from '${REL}/${n}/ai.js';`;
+    })
     .join('\n');
   const entries = names.map((n) => `  '${n}': ${identifierFor(n)},`).join('\n');
+  const exampleEntries = names
+    .filter((n) => withExamples.has(n))
+    .map((n) => `  '${n}': ${examplesIdentifierFor(n)},`)
+    .join('\n');
 
   return `// GENERATED FILE — do not edit by hand.
 // Run \`node scripts/generate-slide-ai-aggregator.js\` to regenerate.
@@ -113,6 +148,18 @@ ${entries}
 export function aiFor(type) {
   return SLIDE_TYPE_AI[type] || null;
 }
+
+/**
+ * The filled-in prompt examples per slide type — each type's \`aiExamples\`
+ * export. **Sparse by design**: examples exist for the types whose shape is
+ * hard to infer from a schema alone; a type without an entry shows the model
+ * its schema without worked content, which is fine (the \`ai-examples\`
+ * companion is optional in tests/helpers/slide-type-companions.js).
+ * @type {Readonly<Record<string, Array<Object>>>}
+ */
+export const SLIDE_TYPE_AI_EXAMPLES = Object.freeze({
+${exampleEntries}
+});
 `;
 }
 

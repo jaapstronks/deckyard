@@ -49,3 +49,21 @@ export const ai = {
       'Screenshots or photos that want captions (use team-cards-slide or gallery-slide)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    title: 'Our Partners',
+    subheading: 'Trusted collaborators',
+    logos: [
+      { image: '', name: 'Acme Corporation' },
+      { image: '', name: 'Globex Industries' },
+      { image: '', name: 'Initech' },
+      { image: '', name: 'Umbrella Corp' },
+    ],
+  },
+];

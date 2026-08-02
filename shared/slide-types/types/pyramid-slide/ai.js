@@ -38,3 +38,34 @@ export const ai = {
       'Circular processes (use cycle-slide)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    _variation: 'Maslow hierarchy style',
+    title: 'Customer Needs Hierarchy',
+    levels: [
+      { label: 'Delight', text: 'Unexpected positive experiences' },
+      { label: 'Satisfaction', text: 'Meeting all expectations' },
+      { label: 'Functionality', text: 'Product works as intended' },
+      { label: 'Reliability', text: 'Consistent performance' },
+      { label: 'Basic Needs', text: 'Core requirements met' },
+    ],
+    background: 'lime',
+  },
+  {
+    _variation: 'Priority levels',
+    title: 'Issue Priority Levels',
+    levels: [
+      { label: 'Critical', text: 'System down, immediate action' },
+      { label: 'High', text: 'Major impact, urgent response' },
+      { label: 'Medium', text: 'Moderate impact, planned fix' },
+      { label: 'Low', text: 'Minor issue, backlog' },
+    ],
+    background: 'mist',
+  },
+];
