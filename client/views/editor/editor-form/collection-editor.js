@@ -71,9 +71,12 @@ const collapsedState = createCollapsedState('collection');
  * @param {Array<Object>} [o.deckSlides] - options for card-link item fields
  * @param {Function} [o.markDirty]
  * @param {Function} [o.scheduleUiRefresh]
- * @param {Object} [o.model] - storage override for types whose renderer reads
- *   another shape: { read: () => Array, write: (arr) => void }.
- *   Default reads/writes `slide.content[field.key]`.
+ * @param {Object} [o.model] - storage override:
+ *   { read: () => Array, write: (arr) => void }.
+ *   Default reads/writes `slide.content[field.key]`. Only passed by this
+ *   module's own recursion for a nested `items` field (text-blocks rows →
+ *   blocks), which reads/writes through the parent item; no external caller
+ *   uses it.
  * @param {Object} [o.labels] - { addLabelKey, addLabel } overrides (used by the
  *   nested level, resolved from the descriptor's `cards.child`)
  * @param {string|null} [o.lang] - deck language (`resolveDeckLang(pres)`);
