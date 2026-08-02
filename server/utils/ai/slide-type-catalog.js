@@ -4,7 +4,7 @@
  * This file re-exports from the modular slide-catalog directory for backward compatibility.
  * The actual implementations are now split across:
  * - slide-catalog/definitions.js: the core catalog, derived from each type's ai.js
- * - slide-catalog/examples.js: Content examples for each slide type
+ * - slide-catalog/examples.js: prompt examples, derived from each type's aiExamples
  * - slide-catalog/builders.js: Functions for building AI prompts
  *
  * Key principles:

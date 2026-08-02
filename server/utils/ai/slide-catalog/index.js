@@ -7,7 +7,7 @@
  * Module structure:
  * - definitions.js: the core catalog, derived from type-ai.js
  * - type-ai.js: generated import list over each type's own ai.js
- * - examples.js: Content examples for each slide type
+ * - examples.js: prompt examples, derived from type-ai.js (each type's aiExamples)
  * - builders.js: Functions for building AI prompts
  * - custom-loader.js: Loads AI metadata from custom slide types
  * - agent-catalog.js: The registry→agent derivation behind MCP get_slide_types

@@ -26,10 +26,16 @@ import {
   REPO_ROOT,
   TYPES_DIR,
   buildAggregator,
+  examplesIdentifierFor,
   identifierFor,
   typesWithAi,
+  typesWithAiExamples,
 } from '../scripts/generate-slide-ai-aggregator.js';
-import { SLIDE_TYPE_AI } from '../server/utils/ai/slide-catalog/type-ai.js';
+import {
+  SLIDE_TYPE_AI,
+  SLIDE_TYPE_AI_EXAMPLES,
+} from '../server/utils/ai/slide-catalog/type-ai.js';
+import { SLIDE_TYPE_EXAMPLES } from '../server/utils/ai/slide-catalog/examples.js';
 import {
   CATALOG_ORDER,
   getCoreSlideCatalog,
@@ -67,8 +73,38 @@ test('every aggregator entry names a real core type', () => {
 });
 
 test('a directory name maps to exactly one import identifier', () => {
-  const ids = typesWithAi().map(identifierFor);
+  const ids = [
+    ...typesWithAi().map(identifierFor),
+    ...typesWithAiExamples().map(examplesIdentifierFor),
+  ];
   assert.equal(new Set(ids).size, ids.length, `duplicate import identifiers: ${ids}`);
+});
+
+test('every ai.js that exports aiExamples is in the examples map, and only those', () => {
+  // The forward direction for the sparse companion: a type that writes
+  // examples but never reaches the aggregator shows the model a bare schema,
+  // silently. The map staying sparse is equally deliberate — absence means the
+  // type has no examples, not that one should be invented.
+  assert.deepEqual(Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort(), typesWithAiExamples());
+});
+
+test('the examples surface is the aggregator', () => {
+  // examples.js no longer holds any content; it overlays fork examples onto
+  // what the aggregator gives it. If that wiring is dropped, two prompt
+  // surfaces lose their worked content and the companion matrix goes quietly
+  // empty. (Entry identity holds before any custom merge; custom/ types are
+  // absent in the test environment.)
+  assert.deepEqual(
+    Object.keys(SLIDE_TYPE_EXAMPLES).sort(),
+    Object.keys(SLIDE_TYPE_AI_EXAMPLES).sort()
+  );
+  for (const name of Object.keys(SLIDE_TYPE_AI_EXAMPLES)) {
+    assert.equal(
+      SLIDE_TYPE_EXAMPLES[name],
+      SLIDE_TYPE_AI_EXAMPLES[name],
+      `${name} is not the aggregator's entry`
+    );
+  }
 });
 
 test('the catalog is the aggregator, laid out in CATALOG_ORDER', () => {

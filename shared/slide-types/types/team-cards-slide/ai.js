@@ -62,3 +62,20 @@ export const ai = {
       'More than 25 blocks (split into multiple slides)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    title: 'Leadership Team',
+    subheading: 'Meet our experts',
+    members: [
+      { image: '', name: 'Jane Smith', byline: 'CEO' },
+      { image: '', name: 'John Doe', byline: 'CTO' },
+      { image: '', name: 'Alice Johnson', byline: 'COO' },
+    ],
+  },
+];

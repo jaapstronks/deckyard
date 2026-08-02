@@ -53,3 +53,56 @@ export const ai = {
       'More than 10 columns (simplify or split)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from. Critical: a table uses a `rows` array with
+ * c1, c2, c3… keys, NOT a TSV string.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    _variation: '4-column comparison table with header',
+    title: 'Regional Performance Comparison',
+    caption: 'Q4 2024 results across regions',
+    colCount: '4',
+    headerRow: 'on',
+    rows: [
+      { c1: 'Region', c2: 'Revenue', c3: 'Growth', c4: 'Status' },
+      { c1: 'North', c2: '2.4M', c3: '+15%', c4: 'On target' },
+      { c1: 'South', c2: '1.8M', c3: '+8%', c4: 'Growing' },
+      { c1: 'East', c2: '1.2M', c3: '+22%', c4: 'Exceeding' },
+      { c1: 'West', c2: '2.1M', c3: '+11%', c4: 'On target' },
+    ],
+    background: 'lime',
+  },
+  {
+    _variation: '3-column feature matrix',
+    title: 'Feature Comparison',
+    caption: 'What each plan includes',
+    colCount: '3',
+    headerRow: 'on',
+    rows: [
+      { c1: 'Feature', c2: 'Basic', c3: 'Pro' },
+      { c1: 'Users', c2: '5', c3: 'Unlimited' },
+      { c1: 'Storage', c2: '10 GB', c3: '100 GB' },
+      { c1: 'Support', c2: 'Email', c3: '24/7 Priority' },
+      { c1: 'Analytics', c2: 'Basic', c3: 'Advanced' },
+    ],
+    background: 'lime',
+  },
+  {
+    _variation: '5-column benchmark table',
+    title: 'International Benchmark',
+    caption: 'Comparing key metrics across countries',
+    colCount: '5',
+    headerRow: 'on',
+    rows: [
+      { c1: 'Country', c2: 'Companies', c3: 'Employees', c4: 'Revenue (B)', c5: 'Growth' },
+      { c1: 'Germany', c2: '~600', c3: '12,000', c4: '4.2', c5: '+8%' },
+      { c1: 'Netherlands', c2: '~280', c3: '5,500', c4: '1.8', c5: '+12%' },
+      { c1: 'Belgium', c2: '~150', c3: '3,200', c4: '0.9', c5: '+6%' },
+    ],
+    background: 'lime',
+  },
+];

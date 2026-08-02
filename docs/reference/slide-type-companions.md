@@ -44,7 +44,7 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Companion | Source of truth | Owed by | Silent degradation |
 |---|---|---|---|
 | AI / MCP catalog **prose** (description, bestFor, notFor) | `shared/slide-types/types/<name>/ai.js` | not `ai: false`, not deprecated | derived entry flagged `documented: false`; category falls back to `content` |
-| AI prompt examples | `server/utils/ai/slide-catalog/examples/` | sparse by design (reverse only) | prompt shows the schema without filled-in content |
+| AI prompt examples | `shared/slide-types/types/<name>/ai.js` (`aiExamples`) | sparse by design (reverse only) | prompt shows the schema without filled-in content |
 | v1 generator manual example | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`) | sparse by design (reverse only) | falls through to the catalog example, then to defaults |
 | Picker description | `shared/slide-types/types/<name>/authoring.js` (`description`) | every insertable type | tile shows the bare label, no tooltip |
 | Picker search aliases | same file (`aliases`) | every insertable type | only findable by exact label |

@@ -50,3 +50,22 @@ export const ai = {
       'Partner/sponsor logos (use logo-wall-slide)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    title: 'Product Screenshots',
+    subheading: 'The dashboard at a glance',
+    layout: 'masonry',
+    images: [
+      { src: '', caption: 'Overview dashboard', alt: 'Dashboard overview screen' },
+      { src: '', caption: 'Report builder', alt: 'Report builder screen' },
+      { src: '', caption: 'Team settings', alt: 'Team settings screen' },
+    ],
+    background: 'mist',
+  },
+];

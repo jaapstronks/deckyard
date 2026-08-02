@@ -159,7 +159,9 @@ export const COMPANIONS = [
   {
     id: 'ai-examples',
     label: 'AI prompt examples',
-    where: 'server/utils/ai/slide-catalog/examples/ (SLIDE_TYPE_EXAMPLES)',
+    where:
+      'shared/slide-types/types/<name>/ai.js (aiExamples) — surfaced as ' +
+      'SLIDE_TYPE_EXAMPLES by server/utils/ai/slide-catalog/examples.js',
     degradesTo: 'the prompt describes the schema without showing filled-in content',
     // Sparse on purpose: examples exist for the types whose shape is hard to
     // infer from a schema alone. Forward coverage is a quality goal, not a gate.

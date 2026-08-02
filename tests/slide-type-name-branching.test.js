@@ -43,8 +43,12 @@ test('the derivation actually sees the codebase', () => {
     CORE_TYPE_NAMES.length > 30,
     `expected the core registry, got ${CORE_TYPE_NAMES.length} names`
   );
+  // A floor against a broken scan, not a coverage target: the count goes DOWN
+  // as facts move into the type directories (the point of A7.1), so keep it
+  // low enough to survive the next consolidation while still catching a scan
+  // that silently returns (near-)nothing.
   assert.ok(
-    derived.size > 30,
+    derived.size > 20,
     `expected dozens of name-branching modules, got ${derived.size}`
   );
   for (const [file, names] of derived) {

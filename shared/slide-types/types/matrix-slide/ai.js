@@ -37,3 +37,33 @@ export const ai = {
       'More than 4 categories (use text-blocks or table)',
     ],
 };
+
+/**
+ * Filled-in examples for the generation prompt — the worked content an agent
+ * copies the field shape from.
+ * @type {Array<Object>}
+ */
+export const aiExamples = [
+  {
+    _variation: 'SWOT analysis',
+    title: 'SWOT Analysis',
+    cells: [
+      { title: 'Strengths', body: '- Strong brand recognition\n- Experienced team\n- Proprietary technology', tone: 'positive' },
+      { title: 'Weaknesses', body: '- Limited market presence\n- High operating costs\n- Legacy systems', tone: 'negative' },
+      { title: 'Opportunities', body: '- Emerging markets\n- New partnerships\n- Digital expansion', tone: 'positive' },
+      { title: 'Threats', body: '- Increasing competition\n- Regulatory changes\n- Economic uncertainty', tone: 'negative' },
+    ],
+    background: 'lime',
+  },
+  {
+    _variation: 'Eisenhower priority matrix',
+    title: 'Priority Matrix',
+    cells: [
+      { title: 'Urgent + Important', body: '- Crisis management\n- Deadline-driven projects\n- Critical issues', tone: 'negative' },
+      { title: 'Not Urgent + Important', body: '- Strategic planning\n- Relationship building\n- Personal development', tone: 'positive' },
+      { title: 'Urgent + Not Important', body: '- Most interruptions\n- Some meetings\n- Some emails', tone: 'neutral' },
+      { title: 'Not Urgent + Not Important', body: '- Time wasters\n- Busy work\n- Escapism activities', tone: 'default' },
+    ],
+    background: 'mist',
+  },
+];
