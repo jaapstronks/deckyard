@@ -1,0 +1,4 @@
+/* Card containers need a positioning context for the overlay anchor. */
+.slide-logo-wall .logo-wall-item {
+  position: relative;
+}

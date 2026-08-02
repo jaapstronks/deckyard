@@ -95,10 +95,17 @@ of a field list can only ever be right by accident, and was not
 
 Two things that are *not* in the directory today:
 
-- **The stylesheet.** `client/styles/slides/**` stays where it is; only the
-  `@import` aggregators are derived, from the manifest in
-  `scripts/generate-slide-css-aggregators.js`. Moving CSS is entangled with the
-  separate question of what a slide type is even allowed to style.
+- **The stylesheet.** `client/styles/slides/**` stays where it is; ownership
+  lives in the `TYPE_CSS` manifest in
+  `scripts/generate-slide-css-aggregators.js`, from which the `@import`
+  aggregators are derived. A type claims its sheet(s) there — possibly several,
+  because rules keep their cascade position and a type may have rules in more
+  than one tier — and `tests/slide-css-aggregators.test.js` fails on a claim
+  without a registered type or a sheet without a claim, so removing a type
+  forces its CSS out with it. Physically *moving* CSS into the type directory
+  is deliberately not done: it is entangled with the separate question of what
+  a slide type is even allowed to style (the CSS role-vocabulary track), and
+  it would add nothing to the guardrail.
 - **The side-form renderer** (`client/views/editor/editor-form/slide-forms/`).
   It is behaviour, not data, and it depends on editor infrastructure (`h()`,
   field factories, collapsed-state); importing that from `shared/` would invert

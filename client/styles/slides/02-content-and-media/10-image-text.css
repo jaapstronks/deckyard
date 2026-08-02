@@ -1,0 +1,74 @@
+/* Image-text slide
+   Comfortable defaults size the body for the text column's width:
+   - 50% image (half): text gets a wider column → 28px
+   - 37% image (narrow): text gets even more room → 32px
+   The is-compact variant (forced via the density field, or set by the
+   auto-fit runtime when the copy overflows) drops back to a denser size. */
+/* Each width/density step multiplies by --tf-size-scale (per-field S/M/L,
+   default 1) so the field scale composes on top of the active base size. */
+.slide-image-text .copy .body {
+  font-family: var(--font-body);
+  font-size: calc(28px * var(--tf-size-scale, 1));
+  line-height: var(--line-height-body);
+}
+.slide-image-text.is-image-narrow .copy .body {
+  font-size: calc(32px * var(--tf-size-scale, 1));
+}
+.slide-image-text.is-compact .copy .body {
+  font-size: calc(22px * var(--tf-size-scale, 1));
+}
+.slide-image-text.is-image-narrow.is-compact .copy .body {
+  font-size: calc(24px * var(--tf-size-scale, 1));
+}
+.slide-image-text .copy .body p {
+  margin: 0 0 14px;
+}
+/* Markdown subheading: ## renders as h3 (since slide title is h2) */
+.slide-image-text .copy .body .md-subheading {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: var(--heading-weight, 400);
+  text-transform: var(--heading-transform, none);
+  font-synthesis: none;
+  margin: 24px 0 12px;
+  color: var(--color-text);
+}
+.slide-image-text.is-compact .copy .body .md-subheading {
+  font-size: 22px;
+  margin: 18px 0 10px;
+}
+.slide-image-text .copy .body .md-subheading:first-child {
+  margin-top: 0;
+}
+.slide-image-text .copy .body ul,
+.slide-image-text .copy .body ol {
+  margin: 0 0 14px 1.2em;
+  padding: 0;
+}
+.slide-image-text .copy .body li {
+  margin: 10px 0;
+}
+.slide-image-text .copy .body ul li::marker {
+  color: var(--color-accent);
+}
+.slide-image-text .copy .body a {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-link);
+  transition: text-decoration-color 0.15s ease;
+}
+.slide-image-text .copy .body a:hover {
+  text-decoration-color: transparent;
+}
+.slide-image-text .split.is-right .media {
+  grid-column: 2;
+  grid-row: 1;
+}
+.slide-image-text .split.is-right .copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+
