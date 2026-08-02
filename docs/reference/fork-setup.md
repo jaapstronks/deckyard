@@ -258,13 +258,13 @@ merge time:
 
 `tests/docs-paths-resolvable.test.js` reads every doc that ships with the repo
 and requires each cited path to resolve and each doc to be linked. A fork with
-its own private doc tree (`docs/internal/`, say) will fail on every item in it.
+its own private doc tree (`docs/<your-tree>/`) will fail on every item in it.
 
 Add the tree to one constant at the top of that test, rather than patching the
 test's logic:
 
 ```js
-const EXCLUDED_DOC_TREES = ['docs/plans/', 'docs/internal/'];
+const EXCLUDED_DOC_TREES = ['docs/plans/', 'docs/<your-tree>/'];
 ```
 
 Upstream's own `docs/plans/` is already in that list. One line, and it survives

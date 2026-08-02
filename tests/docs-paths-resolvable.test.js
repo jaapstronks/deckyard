@@ -55,6 +55,14 @@ const GITIGNORED_RUNTIME_ROOTS = ['server/data/', 'server/uploads/', 'assets/fon
  * A prefix here means three things at once, and they belong together: the tree is
  * not scanned for citations, citations *into* it are skipped, and its docs are
  * not required to be linked from elsewhere.
+ *
+ * That third consequence has a sharp edge worth knowing before you document an
+ * example: because citations into an excluded tree are skipped, a *literal*
+ * example path like `docs/internal/` disappears from {@link citedPaths} the
+ * moment a fork excludes that tree — and an allowlist entry for it would then
+ * fail the "cannot rot" test as uncited. So docs name an excluded tree as a
+ * placeholder pattern (`docs/<your-tree>/`), which is filtered as a pattern in
+ * either state and needs no allowlist entry at all.
  */
 const EXCLUDED_DOC_TREES = ['docs/plans/'];
 
@@ -90,8 +98,6 @@ const isDocFile = (rel) =>
 const TUTORIAL_PLACEHOLDERS = {
   'client/lib/slide-runtime/my-slide.js':
     'slide-types.md walks the reader through creating this runtime module',
-  'docs/internal/':
-    "fork-setup.md's example of a fork's own private doc tree, added to EXCLUDED_DOC_TREES",
   'client/styles/slides/my-slide.css':
     'contributing.md example CSS for a slide type the reader is adding',
   'client/styles/slides/custom/my-title-slide.css':
