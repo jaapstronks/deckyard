@@ -144,7 +144,9 @@ export default [
       'shared/**/*.js',
       'scripts/**/*.js',
       'capture/**/*.js',
+      'test-suite/**/*.js',
       'tests/**/*.js',
+      '*.config.js',
     ],
     plugins: {
       'import-x': importX,
@@ -157,9 +159,18 @@ export default [
       },
     },
     rules: {
-      // Bare specifiers are packages — `commonjs: false` keeps the rule off
-      // `require()`, which this repo does not use.
-      'import-x/no-unresolved': ['error', { commonjs: false }],
+      // Relative imports must point at a file that exists; bare specifiers are
+      // checked against what is actually installed, which is why `npm run lint`
+      // needs a complete `npm ci` (a missing dependency turns the gate red).
+      'import-x/no-unresolved': 'error',
+      // `no-unresolved` alone is not enough, because the node resolver is more
+      // forgiving than the ESM loader: it does extension and index resolution,
+      // so `import './foo'` (for `foo.js`) and `import './bar'` (for
+      // `bar/index.js`) both resolve here and both throw ERR_MODULE_NOT_FOUND at
+      // runtime. Requiring the extension closes that gap — the resolver's
+      // leniency can no longer certify an import Node will refuse. Packages keep
+      // their bare, extensionless form (`node:fs`, `es-module-lexer`).
+      'import-x/extensions': ['error', 'ignorePackages'],
     },
   },
 

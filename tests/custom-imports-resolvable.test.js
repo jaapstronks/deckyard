@@ -14,10 +14,20 @@
  * when `client/lib/` was split into sub-folders and a fork's `client/app.js`
  * still imported `./lib/branding.js` (fork-upgrade finding B1).
  *
- * Upstream this test is near-vacuous by construction, and that is fine: it costs
- * nothing and it is live the moment a fork drops a module in. The "the scan
- * would notice files" assertion below keeps a silently-empty scan from reading
- * as a pass.
+ * Upstream `custom/` is empty, so the real scan finds nothing to reject. Two
+ * things keep that from reading as a pass:
+ *
+ * 1. The "the scan would notice files" assertion — the walk works and the
+ *    drop-in directories are where they should be.
+ * 2. The **self-test** at the bottom, which runs `brokenImportsIn()` over a
+ *    throwaway temp tree holding one import that resolves and one that does not,
+ *    and asserts it names exactly the broken one. That is what makes this file a
+ *    gate rather than a promise: the resolution logic executes on every run,
+ *    upstream included, on input designed to make it fail.
+ *
+ * The fork lane exercises the real path too: `tests/fixtures/fork-slide-types/`
+ * is copied into `custom/slide-types/` by the `test-fork` CI job, and one of
+ * those fixtures imports into `shared/` on purpose.
  *
  * Run with: node --test tests/custom-imports-resolvable.test.js
  */
@@ -25,6 +35,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -78,6 +89,24 @@ async function relativeImportsOf(file) {
     .filter((n) => n && (n.startsWith('.') || n.startsWith('/')));
 }
 
+/**
+ * The whole check, over an arbitrary tree — so the real scan and the self-test
+ * run the same code and neither can drift away from the other.
+ * @param {string[]} files absolute paths
+ * @param {string} root what the report paths are relative to
+ * @returns {Promise<string[]>} `file → specifier` for each import that resolves to nothing
+ */
+async function brokenImportsIn(files, root) {
+  const broken = [];
+  for (const file of files) {
+    for (const specifier of await relativeImportsOf(file)) {
+      if (resolveRelative(specifier, path.dirname(file))) continue;
+      broken.push(`${path.relative(root, file)} → ${specifier}`);
+    }
+  }
+  return broken;
+}
+
 await initLexer;
 const FILES = jsFilesUnder(CUSTOM_DIR);
 
@@ -97,13 +126,7 @@ test('the scan would notice files if a fork dropped some in', () => {
 });
 
 test('every relative import in custom/ resolves to a file that exists', async () => {
-  const broken = [];
-  for (const file of FILES) {
-    for (const specifier of await relativeImportsOf(file)) {
-      if (resolveRelative(specifier, path.dirname(file))) continue;
-      broken.push(`${path.relative(REPO_ROOT, file)} → ${specifier}`);
-    }
-  }
+  const broken = await brokenImportsIn(FILES, REPO_ROOT);
   assert.deepEqual(
     broken,
     [],
@@ -112,4 +135,47 @@ test('every relative import in custom/ resolves to a file that exists', async ()
       'A core module probably moved. Check the release notes for the version ' +
       'you are upgrading to.'
   );
+});
+
+test('the resolver rejects what it should — a hermetic self-test on a temp tree', async () => {
+  // Without this, upstream runs the assertion above over zero files and learns
+  // nothing: a `resolveRelative` that returned a truthy value for everything
+  // would pass CI forever and only fail in a fork. So build a tree that a
+  // working checker MUST report on, and check it reports exactly that.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-custom-imports-'));
+  try {
+    fs.mkdirSync(path.join(tmp, 'nested'));
+    fs.writeFileSync(path.join(tmp, 'target.js'), 'export const ok = true;\n');
+    fs.writeFileSync(
+      path.join(tmp, 'nested', 'good.js'),
+      "import { ok } from '../target.js';\nexport default ok;\n"
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'nested', 'broken.js'),
+      "import { gone } from '../moved-away.js';\nexport default gone;\n"
+    );
+
+    // The walk finds every .js at every depth, and nothing else.
+    assert.deepEqual(
+      jsFilesUnder(tmp)
+        .map((f) => path.relative(tmp, f).split(path.sep).join('/'))
+        .sort(),
+      ['nested/broken.js', 'nested/good.js', 'target.js']
+    );
+
+    // The whole check, over that tree: one name, the right one.
+    assert.deepEqual(await brokenImportsIn(jsFilesUnder(tmp), tmp), [
+      'nested/broken.js → ../moved-away.js',
+    ]);
+
+    // And the leniency this resolver deliberately does not have, because the ESM
+    // loader does not have it either: no extension resolution, no index
+    // resolution. Both of these throw ERR_MODULE_NOT_FOUND at runtime.
+    const fromNested = path.join(tmp, 'nested');
+    assert.ok(resolveRelative('../target.js', fromNested), 'the literal path resolves');
+    assert.equal(resolveRelative('../target', fromNested), null, 'no extension resolution');
+    assert.equal(resolveRelative('../nested', fromNested), null, 'no index/directory resolution');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
 });
