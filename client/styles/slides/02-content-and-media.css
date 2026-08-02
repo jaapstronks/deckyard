@@ -1,5 +1,12 @@
 /* Content and media slide styles (split for maintainability) */
-@import url('./02-content-and-media/01-basic-media.css');
-@import url('./02-content-and-media/02-layouts.css');
-@import url('./02-content-and-media/03-cards.css');
-@import url('./02-content-and-media/04-columns.css');
+@import url('./02-content-and-media/10-image-text.css');
+@import url('./02-content-and-media/20-video.css');
+@import url('./02-content-and-media/30-embed.css');
+@import url('./02-content-and-media/40-quote.css');
+@import url('./02-content-and-media/50-card-stack.css');
+@import url('./02-content-and-media/60-icon-card-grid.css');
+@import url('./02-content-and-media/70-card-links.css');
+@import url('./02-content-and-media/72-logo-wall-links.css');
+@import url('./02-content-and-media/75-icon-card-grid-variants.css');
+@import url('./02-content-and-media/80-text-blocks.css');
+@import url('./02-content-and-media/90-content-columns.css');
