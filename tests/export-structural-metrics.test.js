@@ -8,7 +8,7 @@
  *
  * What it asserts per fixture, against a committed JSON baseline:
  *
- *   1. page count and page geometry of the PDF
+ *   1. page count, page geometry and page text of the PDF
  *   2. the bounding boxes of title / subheading / body, within tolerance
  *   3. `document.fonts` **and the family Chrome actually painted with** — the
  *      one check that catches a webfont silently falling back to a system face
@@ -118,6 +118,36 @@ const COLOR_TOLERANCE = 2;
 
 function boxAllowance(baselineValue) {
   return Math.max(Math.abs(baselineValue) * BOX_TOLERANCE_RATIO, BOX_TOLERANCE_FLOOR_PX);
+}
+
+/**
+ * Compare extracted PDF text ignoring whitespace entirely.
+ *
+ * Where pdf.js breaks a glyph run is a function of font metrics, so the same
+ * word can extract as `Your` on one platform and `Y our` on another — the CI
+ * runner did exactly that on the logo placeholder's "Your logo here". That is a
+ * kerning artefact of the extractor, not a rendering difference, and the
+ * neighbouring smoke test already collapses whitespace for the same reason.
+ *
+ * Whitespace is dropped rather than collapsed, because the split can land
+ * *inside* a word where there was no space to collapse. Word boundaries are not
+ * what this assertion is for — "the right text reached the page" is.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function textKey(text) {
+  return String(text).replace(/\s+/g, '');
+}
+
+/**
+ * Assert two page-text arrays carry the same characters, reporting the readable
+ * strings when they do not.
+ */
+function assertSamePageText(actual, expected, message) {
+  assert.deepEqual(actual.map(textKey), expected.map(textKey), `${message}\n` +
+    `  actual:   ${JSON.stringify(actual)}\n` +
+    `  baseline: ${JSON.stringify(expected)}`);
 }
 
 /**
@@ -272,7 +302,7 @@ for (const themeName of BUILTIN_THEMES) {
     assert.deepEqual(metrics.parseErrors, [], 'the PDF should parse without errors');
     assert.equal(metrics.pageCount, baseline.pageCount, 'one slide in → one page out');
     assert.deepEqual(metrics.pages, baseline.pages, 'PDF page geometry changed');
-    assert.deepEqual(metrics.pageText, baseline.pageText, 'PDF page text changed');
+    assertSamePageText(metrics.pageText, baseline.pageText, 'PDF page text changed');
   });
 }
 
@@ -295,7 +325,7 @@ test('the all-field-types deck exports one page per slide, unchanged', { skip },
   );
   assert.equal(metrics.pageCount, baseline.pageCount);
   assert.deepEqual(metrics.pages, baseline.pages, 'PDF page geometry changed');
-  assert.deepEqual(metrics.pageText, baseline.pageText, 'PDF page text changed');
+  assertSamePageText(metrics.pageText, baseline.pageText, 'PDF page text changed');
 });
 
 test('every all-field-types slide stays inside the frame with real fonts', { skip }, async () => {
