@@ -88,9 +88,13 @@ export function validateRecipe(recipe) {
  * does not belong there.
  *
  * Only path-like specifiers are followed: a bare specifier is a package and a
- * `node:` specifier is the runtime, and neither is source we hash. Missing
- * extensions and directory imports are resolved the way Node would, so a
- * future `./helpers` or `./helpers/` still lands on a real file.
+ * `node:` specifier is the runtime, and neither is source we hash.
+ *
+ * Resolution is exact-specifier, matching Node ESM. `./helpers` and
+ * `./helpers/` are bundler and CJS spellings that Node refuses to load, so
+ * guessing an extension or an `index.js` for them would hash a graph the
+ * runtime cannot actually run — quietly hiding the breakage instead of it
+ * surfacing on the next capture run.
  *
  * @param {string} specifier
  * @param {string} fromDir directory of the importing module
@@ -98,10 +102,8 @@ export function validateRecipe(recipe) {
  */
 function resolveImport(specifier, fromDir) {
   if (!specifier.startsWith('.') && !specifier.startsWith('/')) return null;
-  const base = path.resolve(fromDir, specifier);
-  for (const candidate of [base, `${base}.js`, path.join(base, 'index.js')]) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
-  }
+  const candidate = path.resolve(fromDir, specifier);
+  if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
   return null;
 }
 

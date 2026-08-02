@@ -197,9 +197,22 @@ The walk stops at the `capture/` boundary: an import of `shared/` or `server/`
 is neither hashed nor followed. That boundary is the whole design. Unscoped, the
 graph runs to ~122 modules through `lib/comments-seed.js`, and those directories
 took 308 commits in the same 60 days `capture/` took 6 — every recipe would read
-as stale nearly every day, and a gate that is always red gets ignored. The cost
-is the one thing the boundary hides: change how a recipe *seeds* through
-`server/storage/`, and the hash will not tell you.
+as stale nearly every day, and a gate that is always red gets ignored.
+
+Two things the hash therefore cannot see. Both can change every screenshot
+without moving a single hash:
+
+- **What a recipe seeds and renders *through*.** Change `server/storage/` under
+  `seedCommentThreads()`, or any app code the shot photographs, and the hash
+  stays put. That is the boundary doing its job, but it is still a blind spot.
+- **The harness that takes the shot.** `run.js`, `lib/browser.js` and
+  `lib/recipe.js` itself — `openPage()`, `gotoStable()`, `settle()`, the clip
+  and full-page logic — live *inside* `capture/`, yet no recipe imports them.
+  The dependency runs the other way: the runner imports the recipe. Rewrite
+  `settle()` and every PNG changes while every hash holds.
+
+So read the hash for what it is: "has this recipe, or a factory it is built on,
+drifted?" — not "would a re-run produce the same image?".
 
 Two further limits, both worth knowing before trusting a re-run:
 
