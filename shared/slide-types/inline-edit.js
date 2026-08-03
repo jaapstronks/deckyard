@@ -130,12 +130,3 @@ export const SLIDE_TYPE_INLINE_EDIT = facet('inlineEdit');
  * @type {Readonly<Record<string, string[]>>}
  */
 export const SLIDE_TYPE_INSPECTOR_KEEPS = facet('inspectorKeeps');
-
-/**
- * The inline-edit descriptor for a type, or null when it has none.
- * @param {string} type - registry type name
- * @returns {Object|null}
- */
-export function inlineEditFor(type) {
-  return SLIDE_TYPE_INLINE_EDIT[type] || null;
-}
