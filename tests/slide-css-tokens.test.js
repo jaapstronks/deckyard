@@ -103,6 +103,7 @@ const CATEGORIES = {
  */
 const EXCLUDED = [
   /\/00-tokens\.css$/, // defines the scale; checking it against itself is circular
+  /\/60-accessibility\.css$/, // page chrome (.sr-only, .skip-link) outside the .slide token scope
   /\/50-presenter-layout\.css$/,
   /\/51-presenter-console\.css$/,
   /\/53-present-window\.css$/,

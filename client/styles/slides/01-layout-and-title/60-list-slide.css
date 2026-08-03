@@ -6,21 +6,21 @@
 .slide-lijstje .heading {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  line-height: 1.1;
-  margin: 0 0 12px;
+  line-height: var(--slide-leading-tight);
+  margin: 0 0 var(--slide-space-3);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
 }
 .slide-lijstje .subheading {
-  margin: 0 0 48px;
+  margin: 0 0 var(--slide-space-12);
   /* This is an intro/lead sentence (hero-description style), not a second
      title: use the body font, kept a touch larger than body text - like a
      lead paragraph on a web page. No heading transform/weight so an uppercase
      theme doesn't shout a full sentence. */
   font-family: var(--font-body);
   font-size: var(--font-size-subtitle);
-  line-height: 1.35;
+  line-height: var(--slide-leading-normal);
   color: var(--color-text);
   font-weight: 400;
   text-transform: none;
@@ -44,10 +44,10 @@
   line-height: var(--line-height-body);
 }
 /* When there's no subheading the list follows the heading directly; the
-   heading's 12px bottom margin alone crowds the first item against the title.
-   The subheading (when present) supplies its own 48px gap, so only pad here. */
+   heading's small bottom margin alone crowds the first item against the title.
+   The subheading (when present) supplies its own larger gap, so only pad here. */
 .slide-lijstje .heading + .lijst {
-  margin-top: 24px;
+  margin-top: var(--slide-space-6);
 }
 .slide-lijstje .lijst-item {
   display: flex;
@@ -61,7 +61,7 @@
   flex-shrink: 0;
 }
 .slide-lijstje .lijst-item:first-child {
-  padding-top: 12px; /* more room above the first item */
+  padding-top: var(--slide-space-3); /* more room above the first item */
 }
 .slide-lijstje .lijst-item + .lijst-item {
   border-top: 2px solid rgba(0, 0, 0, 0.18);
@@ -72,7 +72,7 @@
 .slide-lijstje.is-numbers .marker {
   width: 46px;
   height: 46px;
-  border-radius: 999px;
+  border-radius: var(--slide-radius-full);
   background: var(--color-accent);
   color: var(--t-color-accent-contrast, #ffffff);
   display: grid;
@@ -90,9 +90,9 @@
 .slide-lijstje.is-bullets .marker {
   width: 12px;
   height: 12px;
-  border-radius: 999px;
+  border-radius: var(--slide-radius-full);
   background: var(--slide-marker-color, var(--color-accent));
-  margin-top: 16px; /* align with first line of text */
+  margin-top: var(--slide-space-4); /* align with first line of text */
 }
 .slide-lijstje .lijst-item-body {
   min-width: 0;
@@ -126,7 +126,7 @@
 }
 .slide-lijstje.is-comfortable .item-title {
   font-size: calc(1.18em * var(--tf-size-scale, 1)); /* bigger titles are the main win for sparse slides */
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
 }
 .slide-lijstje.is-comfortable .item-text {
   font-size: calc(1em * var(--tf-size-scale, 1));
@@ -135,7 +135,7 @@
   padding: 30px 0;
 }
 .slide-lijstje.is-comfortable.is-bullets .marker {
-  margin-top: 20px; /* keep bullet aligned with the taller title line */
+  margin-top: var(--slide-space-5); /* keep bullet aligned with the taller title line */
 }
 
 .slide-lijstje.is-compact .lijst {
@@ -148,10 +148,10 @@
   font-size: calc(0.9em * var(--tf-size-scale, 1));
 }
 .slide-lijstje.is-compact .lijst-item {
-  padding: 16px 0;
+  padding: var(--slide-space-4) 0;
 }
 .slide-lijstje.is-compact.is-bullets .marker {
-  margin-top: 12px;
+  margin-top: var(--slide-space-3);
 }
 
 /* Fill: share the leftover height between the rows.
@@ -187,7 +187,7 @@
   max-width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 64px;
+  column-gap: var(--slide-space-16);
   row-gap: 0;
 }
 .slide-lijstje.is-two-col .lijst-col {
@@ -204,7 +204,7 @@
 }
 .slide-lijstje.is-two-col .lijst-col .lijst-item:first-child {
   border-top: none;
-  padding-top: 12px;
+  padding-top: var(--slide-space-3);
 }
 
 

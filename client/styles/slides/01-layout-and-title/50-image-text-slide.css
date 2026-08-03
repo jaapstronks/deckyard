@@ -281,7 +281,7 @@
    auto-fit runtime detects via scrollWidth; clip it at the box edge. */
 .slide-image-text.is-text-cols-2 .copy .body {
   columns: 2;
-  column-gap: 64px;
+  column-gap: var(--slide-space-16);
   column-fill: balance;
   flex: 1;
   min-height: 0;
@@ -289,7 +289,7 @@
 }
 /* The duo copy is only ~half the slide wide; tighten the gutter there. */
 .slide-image-text.is-layout-duo.is-text-cols-2 .copy .body {
-  column-gap: 40px;
+  column-gap: var(--slide-space-10);
 }
 /* List items carry symmetric vertical margins; at a column start the top
    margin is trimmed, which made the second column sit a few px higher.
@@ -300,7 +300,7 @@
 .slide-image-text .copy .heading {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);

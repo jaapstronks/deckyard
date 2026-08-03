@@ -10,7 +10,7 @@
 .slide-funnel .heading {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -18,7 +18,7 @@
 }
 
 .slide-funnel .subheading {
-  margin-top: 8px;
+  margin-top: var(--slide-space-2);
   margin-bottom: 0;
 }
 
@@ -32,8 +32,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 0;
+  gap: var(--slide-space-2);
+  padding: var(--slide-space-4) 0;
 }
 
 /* ===========================================
@@ -46,7 +46,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--slide-space-1);
 }
 
 /* The colored bar that creates the funnel effect */
@@ -59,7 +59,7 @@
   /* Use lime as primary funnel color */
   background: var(--slide-bg-lime, #e2fe52);
   border-radius: var(--t-radius-sm, 10px);
-  padding: 12px 24px;
+  padding: var(--slide-space-3) var(--slide-space-6);
   transition: width 0.3s ease;
 }
 
@@ -79,14 +79,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: var(--slide-space-6);
   flex-wrap: wrap;
 }
 
 .slide-funnel .stage-label {
   font-family: var(--font-heading);
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -95,8 +95,8 @@
 
 .slide-funnel .stage-value {
   font-family: var(--font-body);
-  font-size: 28px;
-  line-height: 1.2;
+  font-size: var(--slide-text-lg);
+  line-height: var(--slide-leading-snug);
   font-weight: 600;
   color: var(--color-text, #0b0b0b);
 }
@@ -117,24 +117,24 @@
 
 /* 3 stages: larger elements */
 .slide-funnel .funnel-container[data-count='3'] {
-  gap: 16px;
+  gap: var(--slide-space-4);
 }
 
 .slide-funnel .funnel-container[data-count='3'] .stage-bar {
   min-height: 72px;
-  padding: 16px 32px;
+  padding: var(--slide-space-4) var(--slide-space-8);
 }
 
 .slide-funnel .funnel-container[data-count='3'] .stage-label {
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
 }
 
 .slide-funnel .funnel-container[data-count='3'] .stage-value {
-  font-size: 34px;
+  font-size: var(--slide-text-xl);
 }
 
 .slide-funnel .funnel-container[data-count='3'] .stage-text {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
 }
 
 /* 4 stages: default sizing (defined above) */
@@ -158,21 +158,21 @@
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-text {
-  font-size: 16px;
+  font-size: var(--slide-text-sm);
 }
 
 /* 6 stages: smallest */
 .slide-funnel .funnel-container[data-count='6'] {
-  gap: 4px;
+  gap: var(--slide-space-1);
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-bar {
   min-height: 40px;
-  padding: 8px 16px;
+  padding: var(--slide-space-2) var(--slide-space-4);
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-label {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-value {
@@ -180,7 +180,7 @@
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-text {
-  font-size: 14px;
+  font-size: var(--slide-text-xs);
 }
 
 /* ===========================================
@@ -219,11 +219,11 @@
   }
 
   .slide-funnel .stage-text {
-    font-size: 14px;
+    font-size: var(--slide-text-xs);
   }
 
   .slide-funnel .stage-content {
-    gap: 12px;
+    gap: var(--slide-space-3);
   }
 }
 
