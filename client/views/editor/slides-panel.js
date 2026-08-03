@@ -258,10 +258,9 @@ export function createSlidesPanel({
   // Helper to insert a follow-invite slide at a specific position
   const insertFollowInviteSlide = (afterSlideId) => {
     const s = makeNewSlide('follow-invite-slide', SLIDE_TYPES, { lang: pres?.i18n?.active });
-    if (pres?.id) {
-      s.content.presentationId = pres.id;
-      s.content.sourceLang = pres?.i18n?.active || 'nl';
-    }
+    // No language on the content: the invite renders in the language of the
+    // version it sits in, derived from the render context.
+    if (pres?.id) s.content.presentationId = pres.id;
     insertSlideObject(s, { afterSlideId });
   };
 
@@ -295,7 +294,6 @@ export function createSlidesPanel({
     // Inject presentationId for follow-invite-slide so the QR code works
     if (type === 'follow-invite-slide' && pres?.id) {
       s.content.presentationId = pres.id;
-      s.content.sourceLang = pres?.i18n?.active || 'nl';
     }
     maybeAssignRandomBg(s);
 
@@ -439,7 +437,6 @@ export function createSlidesPanel({
         ...s.content,
         ...nextContent,
         presentationId: pres?.id || '',
-        sourceLang: pres?.i18n?.active || 'nl',
       };
     } else {
       s.content = { ...s.content, ...nextContent };

@@ -40,7 +40,7 @@
 .analytics-title {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ps-space-0-5);
 }
 
 .analytics-title > span:first-child {
@@ -239,7 +239,7 @@
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   font-size: 12px;
   pointer-events: none;
   transform: translateX(-50%);
@@ -350,7 +350,7 @@
 .analytics-heatmap-dropoff {
   display: inline-block;
   margin-top: var(--ps-space-1);
-  padding: 2px 6px;
+  padding: var(--ps-space-0-5) var(--ps-space-1-5);
   background: hsl(var(--app-danger) / 0.15);
   color: hsl(var(--app-danger));
   border-radius: 4px;
@@ -384,7 +384,7 @@
   display: grid;
   grid-template-columns: 2fr 1fr 100px 100px 120px;
   gap: var(--ps-space-3);
-  padding: 10px 0;
+  padding: var(--ps-space-2-5) 0;
   border-bottom: 1px solid hsl(var(--app-border-default));
   align-items: center;
 }
@@ -408,7 +408,7 @@
 .analytics-viewer-name {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
 }
 
 .analytics-viewer-badge {
@@ -451,7 +451,7 @@ img.analytics-viewer-badge {
 
 .analytics-source-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: var(--ps-space-0-5) var(--ps-space-2);
   border-radius: 4px;
   font-size: var(--ps-text-xs);
   font-weight: 500;
@@ -591,7 +591,7 @@ img.analytics-viewer-badge {
 .analytics-report-error {
   color: hsl(var(--app-danger));
   font-size: var(--ps-text-sm);
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   background: hsl(var(--app-danger) / 0.1);
   border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-danger) / 0.2);
@@ -673,7 +673,7 @@ img.analytics-viewer-badge {
 
 .shared-report-error {
   text-align: center;
-  padding: 60px 20px;
+  padding: var(--ps-space-15) var(--ps-space-5);
 }
 
 .shared-report-error h1 {
@@ -778,7 +778,7 @@ img.analytics-viewer-badge {
 
 .shared-report-table th,
 .shared-report-table td {
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   text-align: left;
   border-bottom: 1px solid hsl(var(--app-border-default));
 }
@@ -800,7 +800,7 @@ img.analytics-viewer-badge {
 .shared-report-source {
   display: flex;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   background: hsl(var(--app-bg-base));
   border-radius: 4px;
 }
@@ -856,7 +856,7 @@ img.analytics-viewer-badge {
   display: grid;
   grid-template-columns: 1.5fr 2fr 140px 80px;
   gap: var(--ps-space-3);
-  padding: 10px 0;
+  padding: var(--ps-space-2-5) 0;
   border-bottom: 1px solid hsl(var(--app-border-default));
   align-items: center;
 }
@@ -1178,7 +1178,7 @@ img.analytics-viewer-badge {
   .analytics-viewer-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--ps-space-1-5);
     padding: var(--ps-space-3) 0;
     border-bottom: 1px solid hsl(var(--app-border-default));
   }
@@ -1219,7 +1219,7 @@ img.analytics-viewer-badge {
   .analytics-lead-row {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--ps-space-1-5);
     padding: var(--ps-space-3) 0;
   }
 
@@ -1277,7 +1277,7 @@ img.analytics-viewer-badge {
 @media (max-width: 480px) {
   .analytics-overview-cards {
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: var(--ps-space-1-5);
   }
 
   .analytics-card {
@@ -1292,7 +1292,7 @@ img.analytics-viewer-badge {
   }
 
   .analytics-topbar > .btn {
-    padding: 6px 10px;
+    padding: var(--ps-space-1-5) var(--ps-space-2-5);
     font-size: 12px;
   }
 }

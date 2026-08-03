@@ -346,8 +346,8 @@
    bolder, smaller-text button. */
 .sb-segmented.is-outlined {
   align-items: stretch;
-  gap: 2px;
-  padding: 2px;
+  gap: var(--ps-space-0-5);
+  padding: var(--ps-space-0-5);
   background: hsl(var(--app-bg-base));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
@@ -356,7 +356,7 @@
 
 .sb-segmented.is-outlined .sb-segmented-btn {
   display: inline-flex;
-  padding: 4px 10px;
+  padding: var(--ps-space-1) var(--ps-space-2-5);
   border-radius: calc(var(--ps-radius-md) - 2px);
   font-size: var(--ps-text-xs);
   font-weight: 600;
@@ -373,7 +373,7 @@
 /* UI mode switcher: icon buttons (system/light/dark) */
 .ui-mode-switcher .sb-segmented-btn {
   width: 34px;
-  padding: 6px 0;
+  padding: var(--ps-space-1-5) 0;
 }
 
 .ui-mode-switcher .ui-mode-icon {
@@ -407,7 +407,7 @@
 .sb-segmented.tf-color-swatches .sb-segmented-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
   flex: 0 0 auto;
 }
 .sb-swatch-label {
@@ -552,7 +552,7 @@
    has been visited and left empty (see `editor/fields/required.js`) — never
    before anyone has typed, so a new slide is not a wall of red. */
 .field-required-mark {
-  margin-left: 2px;
+  margin-left: var(--ps-space-0-5);
   color: hsl(var(--app-danger));
   font-weight: 700;
 }
@@ -626,14 +626,14 @@
 }
 
 .editor-advanced {
-  margin-top: 2px;
+  margin-top: var(--ps-space-0-5);
 }
 .editor-advanced-summary {
   cursor: pointer;
   user-select: none;
   font-weight: 700;
   color: hsl(var(--app-text-primary));
-  padding: 8px 10px 8px 28px;
+  padding: var(--ps-space-2) var(--ps-space-2-5) var(--ps-space-2) var(--ps-space-7);
   border-radius: 10px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
@@ -664,10 +664,10 @@
 }
 .editor-advanced-body {
   margin-top: 0;
-  padding: 12px;
+  padding: var(--ps-space-3);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--ps-space-3);
   border: 1px solid hsl(var(--app-border-default));
   border-top: none;
   border-radius: 0 0 10px 10px;
@@ -685,7 +685,7 @@
 .editor-a11y-status {
   font-weight: 500;
   font-size: 12px;
-  margin-left: 8px;
+  margin-left: var(--ps-space-2);
   padding: 1px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -698,7 +698,7 @@
 .editor-bg-status {
   font-weight: 500;
   font-size: 12px;
-  margin-left: 8px;
+  margin-left: var(--ps-space-2);
   padding: 1px 8px;
   border-radius: 999px;
   white-space: nowrap;
@@ -708,7 +708,7 @@
 .editor-bg-summary-thumb {
   width: 34px;
   height: 20px;
-  margin-left: 8px;
+  margin-left: var(--ps-space-2);
   vertical-align: middle;
   object-fit: cover;
   border-radius: 3px;
@@ -820,7 +820,7 @@
 }
 
 .editor-callout {
-  padding: 10px;
+  padding: var(--ps-space-2-5);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
@@ -833,7 +833,7 @@
   object-fit: contain;
   flex-shrink: 0;
   vertical-align: middle;
-  margin-right: 4px;
+  margin-right: var(--ps-space-1);
 }
 
 .btn-lock-icon {
@@ -844,18 +844,18 @@
 }
 
 .editor-card {
-  padding: 12px;
+  padding: var(--ps-space-3);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
 }
 
 .help.is-mt-8 {
-  margin-top: 8px;
+  margin-top: var(--ps-space-2);
 }
 
 .help.is-mb-16 {
-  margin-bottom: 16px;
+  margin-bottom: var(--ps-space-4);
 }
 
 .editor-img-preview {
@@ -922,7 +922,7 @@
 }
 
 .editor-toggle-row {
-  padding-top: 4px;
+  padding-top: var(--ps-space-1);
 }
 
 /* Avoid extra top margin; rely on `.editor-form` spacing instead. */
@@ -971,7 +971,7 @@
 .collapse-all-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--ps-space-1);
 }
 .collapse-all-toggle svg {
   transition: transform var(--ps-transition-fast);
@@ -1079,7 +1079,7 @@
 }
 
 .color-picker-native::-webkit-color-swatch-wrapper {
-  padding: 2px;
+  padding: var(--ps-space-0-5);
 }
 
 .color-picker-native::-webkit-color-swatch {

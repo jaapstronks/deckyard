@@ -11,10 +11,9 @@
  * commenting, a link with rules on it, a translation), and the interesting
  * part of every recipe below is how that state is produced honestly.
  *
- * **Hash caveat, same as the home-page shapes.** `hashRecipeFile()` hashes only
- * the recipe module, and the eight modules that use these factories are thin
- * wrappers. A change *in this file* leaves their hashes untouched, so the
- * registry will not flag the shots as stale — re-run them by hand.
+ * A change *in this file* moves the registry hash of the eight shots built on
+ * it, same as the home-page shapes: `hashRecipeGraph()` walks each recipe's
+ * imports within `capture/`. See `capture/README.md` § Known limits.
  */
 
 import { createShareLink } from '../lib/api.js';

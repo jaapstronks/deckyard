@@ -47,7 +47,7 @@
 .share-links-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .share-links-empty,
 .share-links-error {
@@ -61,7 +61,7 @@
   justify-content: space-between;
   gap: var(--ps-space-3);
   align-items: center;
-  padding: 12px 14px;
+  padding: var(--ps-space-3) var(--ps-space-3-5);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated));
@@ -86,7 +86,7 @@
   opacity: 0.85;
 }
 .share-link-permission {
-  padding: 2px 8px;
+  padding: var(--ps-space-0-5) var(--ps-space-2);
   border-radius: 999px;
   font-weight: 600;
   text-transform: uppercase;
@@ -126,14 +126,14 @@ img.share-link-badge {
   flex-shrink: 0;
 }
 .share-link-actions .btn-sm {
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   font-size: 12px;
 }
 
 @media (max-width: 480px) {
   .share-form-row {
     grid-template-columns: 1fr;
-    gap: 6px;
+    gap: var(--ps-space-1-5);
   }
   .share-link-item {
     flex-direction: column;
@@ -187,7 +187,7 @@ img.share-link-badge {
 .share-viewer-card {
   max-width: 420px;
   margin: 80px auto;
-  padding: 28px 28px;
+  padding: var(--ps-space-7) var(--ps-space-7);
   border-radius: 20px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated));
@@ -223,7 +223,7 @@ img.share-link-badge {
 /* Revocation message */
 .share-viewer-revocation-message {
   margin: var(--ps-space-4) 0 0;
-  padding: 14px 18px;
+  padding: var(--ps-space-3-5) var(--ps-space-4-5);
   border-radius: 12px;
   background: hsl(var(--app-bg-sunken));
   border-left: 4px solid hsl(var(--app-border-default));
@@ -241,14 +241,14 @@ img.share-link-badge {
 .share-viewer-password-form {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .share-viewer-password-form .form-input {
   min-width: 0;
 }
 .share-viewer-error {
   margin-top: var(--ps-space-3);
-  padding: 10px 14px;
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   border-radius: 10px;
   background: hsl(var(--app-danger) / 0.12);
   color: hsl(var(--app-danger));
@@ -264,7 +264,7 @@ img.share-link-badge {
   justify-content: space-between;
   gap: var(--ps-space-3);
   align-items: center;
-  padding: 10px 14px;
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   background: hsl(var(--app-bg-elevated) / 0.95);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -279,7 +279,7 @@ img.share-link-badge {
 }
 
 .share-viewer-permission {
-  padding: 4px 10px;
+  padding: var(--ps-space-1) var(--ps-space-2-5);
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -303,14 +303,14 @@ img.share-link-badge {
 
 .share-viewer-controls {
   display: inline-flex;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
   align-items: center;
 }
 
 .share-viewer-stage {
   flex: 1;
   min-height: 0;
-  padding: 12px 14px;
+  padding: var(--ps-space-3) var(--ps-space-3-5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -337,7 +337,7 @@ img.share-link-badge {
   justify-content: center;
   gap: var(--ps-space-4);
   align-items: center;
-  padding: 14px 14px 18px;
+  padding: var(--ps-space-3-5) var(--ps-space-3-5) var(--ps-space-4-5);
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-top: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -388,14 +388,14 @@ img.share-link-badge {
 
 .share-viewer-join-btn {
   font-size: var(--ps-text-sm);
-  padding: 6px 12px;
+  padding: var(--ps-space-1-5) var(--ps-space-3);
 }
 
 .share-viewer-guest-info {
   display: flex;
   align-items: center;
   gap: var(--ps-space-2);
-  padding: 4px 10px 4px 6px;
+  padding: var(--ps-space-1) var(--ps-space-2-5) var(--ps-space-1) var(--ps-space-1-5);
   border-radius: 999px;
   background: hsl(var(--app-accent-soft));
   border: 1px solid hsl(var(--app-accent-primary) / 0.2);
@@ -445,7 +445,7 @@ img.share-link-badge {
   position: relative;
   width: 100%;
   max-width: 400px;
-  padding: 28px;
+  padding: var(--ps-space-7);
   border-radius: 20px;
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
@@ -522,7 +522,7 @@ img.share-link-badge {
 /* Success state */
 .share-viewer-success {
   text-align: center;
-  padding: 10px 0;
+  padding: var(--ps-space-2-5) 0;
 }
 
 .share-viewer-success-icon {
@@ -539,7 +539,7 @@ img.share-link-badge {
 }
 
 .share-viewer-success h3 {
-  margin: 0 0 10px;
+  margin: 0 0 var(--ps-space-2-5);
   font-size: var(--ps-text-xl);
   font-weight: 700;
 }
@@ -567,7 +567,7 @@ img.share-link-badge {
 /* --- Share viewer comments section --- */
 .share-viewer-comments-toggle {
   font-size: var(--ps-text-sm);
-  padding: 6px 12px;
+  padding: var(--ps-space-1-5) var(--ps-space-3);
 }
 .share-viewer-comments-toggle.is-active {
   background: hsl(var(--app-accent-primary));
@@ -587,7 +587,7 @@ img.share-link-badge {
   display: flex;
   align-items: center;
   gap: var(--ps-space-3);
-  margin-bottom: 14px;
+  margin-bottom: var(--ps-space-3-5);
 }
 .share-viewer-comments-header h3 {
   margin: 0;
@@ -597,11 +597,11 @@ img.share-link-badge {
 
 .share-viewer-comments-filter {
   display: flex;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
   flex: 1;
 }
 .share-viewer-comments-filter .btn-sm {
-  padding: 4px 10px;
+  padding: var(--ps-space-1) var(--ps-space-2-5);
   font-size: 12px;
 }
 
@@ -625,7 +625,7 @@ img.share-link-badge {
 .share-viewer-comments-list {
   max-height: 300px;
   overflow-y: auto;
-  margin-bottom: 14px;
+  margin-bottom: var(--ps-space-3-5);
   padding-right: var(--ps-space-1);
 }
 
@@ -653,7 +653,7 @@ img.share-link-badge {
 }
 
 .share-viewer-comment {
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   border-radius: 10px;
   background: hsl(var(--app-bg-sunken));
 }
@@ -675,7 +675,7 @@ img.share-link-badge {
   display: flex;
   align-items: baseline;
   gap: var(--ps-space-2);
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
 }
 .share-viewer-comment-author {
   font-weight: 600;
@@ -695,7 +695,7 @@ img.share-link-badge {
 
 .share-viewer-comment-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
   margin-top: var(--ps-space-2);
 }
 .share-viewer-comment-actions .btn-xs {
@@ -706,7 +706,7 @@ img.share-link-badge {
 .share-viewer-comment-reply-input {
   display: flex;
   gap: var(--ps-space-2);
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   margin-left: var(--ps-space-5);
   align-items: flex-start;
 }
@@ -714,19 +714,19 @@ img.share-link-badge {
   flex: 1;
   min-height: 32px;
   font-size: var(--ps-text-sm);
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
 }
 
 .share-viewer-comments-input {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 .share-viewer-comments-input .comment-rich-input {
   width: 100%;
   min-height: 48px;
   font-size: var(--ps-text-base);
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
 }
 .share-viewer-comments-input-controls {
   display: flex;
@@ -735,7 +735,7 @@ img.share-link-badge {
 
 @media (max-width: 640px) {
   .share-viewer-comments-section {
-    padding: 12px 14px 16px;
+    padding: var(--ps-space-3) var(--ps-space-3-5) var(--ps-space-4);
   }
   .share-viewer-comments-header {
     flex-wrap: wrap;
@@ -776,7 +776,7 @@ img.share-link-badge {
 }
 .revoke-modal-message-expanded .form-label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
   font-size: var(--ps-text-sm);
   font-weight: 600;
 }
@@ -797,5 +797,5 @@ img.share-link-badge {
 }
 
 .revoke-modal-buttons {
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }

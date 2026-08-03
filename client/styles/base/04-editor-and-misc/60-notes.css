@@ -16,9 +16,9 @@
   z-index: 5;
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--ps-space-3);
   align-items: center;
-  padding: 10px 14px;
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   background: hsl(var(--app-bg-elevated) / 0.95);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -35,9 +35,9 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px 0;
-  margin-bottom: 6px;
+  gap: var(--ps-space-2-5);
+  padding: var(--ps-space-2-5) var(--ps-space-3-5) 0;
+  margin-bottom: var(--ps-space-1-5);
 }
 .notes-preview-meta {
   justify-self: center;
@@ -70,22 +70,22 @@
   }
 }
 .notes-hint {
-  padding: 8px 14px;
+  padding: var(--ps-space-2) var(--ps-space-3-5);
   background: hsl(var(--app-accent-soft));
   border-bottom: 1px solid hsl(var(--app-border-default));
   color: hsl(var(--app-text-primary));
   font-size: var(--ps-text-sm);
 }
 .notes-preview {
-  padding: 12px 14px;
+  padding: var(--ps-space-3) var(--ps-space-3-5);
 }
 
 /* "Up next" preview: secondary, smaller than the current-slide preview. */
 .notes-next {
-  padding: 0 14px 12px;
+  padding: 0 var(--ps-space-3-5) var(--ps-space-3);
 }
 .notes-next-label {
-  margin: 0 0 6px;
+  margin: 0 0 var(--ps-space-1-5);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -112,31 +112,31 @@
 .notes-panel {
   flex: 1;
   min-height: 0;
-  padding: 12px 14px 20px;
+  padding: var(--ps-space-3) var(--ps-space-3-5) var(--ps-space-5);
   overflow: auto;
   border-top: 1px solid hsl(var(--app-border-default));
 }
 .notes-panel-title {
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: var(--ps-space-2-5);
 }
 
 .notes-qa-panel {
-  margin-top: 12px;
+  margin-top: var(--ps-space-3);
 }
 
 .notes-goto-input {
   width: 110px;
 }
 .notes-controls {
-  margin-bottom: 12px;
-  padding: 10px;
+  margin-bottom: var(--ps-space-3);
+  padding: var(--ps-space-2-5);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
 }
 .notes-controls > .help {
-  margin-bottom: 8px;
+  margin-bottom: var(--ps-space-2);
 }
 .notes-body {
   line-height: 1.45;
@@ -153,12 +153,12 @@
 .notes-body .md-table th,
 .notes-body .md-table td {
   border: 1px solid hsl(var(--app-border-default));
-  padding: 8px 10px;
+  padding: var(--ps-space-2) var(--ps-space-2-5);
 }
 
 /* Notes: Q&A list (moderation) */
 .notes-qa-item {
-  padding: 10px 12px;
+  padding: var(--ps-space-2-5) var(--ps-space-3);
   border-radius: 12px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
@@ -187,7 +187,7 @@
 }
 
 .notes-qa-body {
-  margin-top: 8px;
+  margin-top: var(--ps-space-2);
   line-height: 1.35;
   white-space: pre-wrap;
 }
@@ -200,12 +200,12 @@
 }
 
 .notes-qa-footer {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   flex-wrap: wrap;
 }
 
 .notes-qa-pill {
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   border-radius: 999px;
   background: hsl(var(--app-accent-soft));
   border: 1px solid hsl(var(--app-accent-primary) / 0.28);

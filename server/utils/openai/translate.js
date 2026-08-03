@@ -4,10 +4,19 @@ import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from './json.js';
 import { labelForLang, normalizeTranslationLang } from './lang.js';
 
-// Optional: load ciiic-translation-rules if available (CIIIC fork only)
+// Optional: load ciiic-translation-rules if available (CIIIC fork only).
+//
+// The package is deliberately NOT declared in package.json — it ships only in
+// the CIIIC fork, and declaring it would break `npm install` for the OSS repo
+// (AGENTS.md § Optional dependencies match how the code loads them). The
+// `catch` below is the contract: absent is the normal case, and the fallbacks
+// are empty rules. So `no-unresolved` is right about the file and wrong about
+// the intent — this is the one import in the tree that is *supposed* not to
+// resolve upstream.
 let generateTerminologyPrompt = () => '';
 let getGuidelines = () => '';
 try {
+  // eslint-disable-next-line import-x/no-unresolved -- fork-only, see above
   const rules = await import('ciiic-translation-rules');
   generateTerminologyPrompt = rules.generateTerminologyPrompt || generateTerminologyPrompt;
   getGuidelines = rules.getGuidelines || getGuidelines;
