@@ -33,6 +33,7 @@ import {
   FONT_SUBSET_NAMES,
   curatedFontFaces,
   curatedFontPath,
+  cssStringEscape,
   fontFamilyToSlug,
   mergeFontFaces,
 } from '../shared/theme-fonts.js';
@@ -439,7 +440,7 @@ function generateFontFaceCSS(lock) {
 
     for (const face of mergeFontFaces(faces)) {
       css += `@font-face {
-  font-family: '${font.family}';
+  font-family: '${cssStringEscape(font.family)}';
   font-style: normal;
   font-weight: ${face.weight};
   font-display: swap;

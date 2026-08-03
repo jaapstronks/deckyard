@@ -205,6 +205,27 @@ export function curatedFontFaces(family) {
 }
 
 /**
+ * Escape a value for use inside a single-quoted CSS string.
+ *
+ * Both characters matter and they must be handled in this order. Escaping only
+ * the quote — as the export embedder used to — leaves a trailing backslash in a
+ * family name able to escape the closing quote itself and run the rest of the
+ * declaration as CSS. Backslashes therefore double first, quotes second, and
+ * newlines (illegal inside a CSS string) are dropped along with the other C0
+ * control characters.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+export function cssStringEscape(value) {
+  return String(value ?? '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'");
+}
+
+/**
  * Collapse @font-face descriptors that resolve to the same physical file.
  *
  * Google serves one *variable* woff2 per family × subset and hands back the
