@@ -1,13 +1,19 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import crypto from 'node:crypto';
-import sharp from 'sharp';
 import { uploadsDir as uploadsBaseDir } from '../config/storage-paths.js';
+import {
+  LocalProvider,
+  parseDataUrl,
+  optimizeRasterImage,
+} from '../media/local.js';
 
 function uploadsDir(repoRoot) {
   return uploadsBaseDir(repoRoot);
 }
 
+// Image types accepted by these disk-upload helpers. This is a policy allowlist
+// (image-only — fonts and other provider-supported types are intentionally
+// rejected here), kept separate from the LocalProvider's wider MIME table.
 const MIME_TO_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -26,9 +32,16 @@ const EXT_TO_MIMES = {
   svg: ['image/svg+xml'],
 };
 
+const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be large)
+
 /**
  * Save a buffer directly as an uploaded file.
- * Used for downloading external media (e.g., Unsplash, Giphy).
+ * Used for downloading external media (e.g., Unsplash, Giphy) and re-hydrating
+ * deck-bundle assets. Routes the write through the LocalProvider so the actual
+ * byte handling (sharp optimization, filename sanitization, UUID keying) has a
+ * single implementation shared with the rest of the media pipeline. Stays on
+ * local disk by design — object storage is a separate track — hence the explicit
+ * LocalProvider rather than the configured media provider.
  * @param {string} repoRoot - Repository root path
  * @param {Buffer} buffer - File contents
  * @param {string} filename - Suggested filename (will be sanitized)
@@ -36,48 +49,26 @@ const EXT_TO_MIMES = {
  * @returns {Promise<string>} Local URL path
  */
 export async function writeUploadedFile(repoRoot, buffer, filename, contentType) {
-  const ext = MIME_TO_EXT[contentType];
-  if (!ext) {
+  if (!MIME_TO_EXT[contentType]) {
     const err = new Error(`Unsupported image type: ${contentType}`);
     err.statusCode = 400;
     throw err;
   }
 
-  let buf = buffer;
-  const maxBytes = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be large)
-  if (buf.length > maxBytes) {
+  if (buffer.length > STOCK_MAX_BYTES) {
     const err = new Error('Image too large (max 20MB)');
     err.statusCode = 400;
     throw err;
   }
 
-  // Optimize raster images (but not GIFs to preserve animation)
-  if (
-    contentType === 'image/png' ||
-    contentType === 'image/jpeg' ||
-    contentType === 'image/jpg' ||
-    contentType === 'image/webp'
-  ) {
-    buf = await optimizeRasterUpload(buf, contentType);
-  }
-
-  const dir = uploadsDir(repoRoot);
-  await fs.mkdir(dir, { recursive: true });
-
-  const safeBase =
-    (typeof filename === 'string' ? filename : '')
-      .split('/')
-      .pop()
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^\w\- ]+/g, '')
-      .trim()
-      .slice(0, 40) || 'image';
-
-  const finalFilename = `${safeBase}-${crypto.randomUUID()}.${ext}`;
-  const absolutePath = path.join(dir, finalFilename);
-  await fs.writeFile(absolutePath, buf);
-
-  return `/uploads/${finalFilename}`;
+  const provider = new LocalProvider(repoRoot);
+  const { publicUrl } = await provider.uploadBuffer({
+    buffer,
+    filename,
+    contentType,
+    maxBytes: STOCK_MAX_BYTES,
+  });
+  return publicUrl;
 }
 
 export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
@@ -130,7 +121,7 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
     mime === 'image/jpg' ||
     mime === 'image/webp'
   ) {
-    buf = await optimizeRasterUpload(buf, mime);
+    buf = await optimizeRasterImage(buf, mime);
   }
 
   const dir = uploadsDir(repoRoot);
@@ -152,48 +143,4 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
     mime,
     bytes: buf.length,
   };
-}
-
-async function optimizeRasterUpload(buf, mime) {
-  try {
-    let img = sharp(buf);
-    const meta = await img.metadata();
-    const w = Number(meta?.width || 0) || 0;
-    const h = Number(meta?.height || 0) || 0;
-    const maxW = 3840;
-    const maxH = 2160;
-
-    if (w > maxW || h > maxH) {
-      img = img.resize({
-        width: maxW,
-        height: maxH,
-        fit: 'inside',
-        withoutEnlargement: true,
-      });
-    }
-
-    if (mime === 'image/jpeg' || mime === 'image/jpg') {
-      img = img.jpeg({ quality: 82, mozjpeg: true });
-    } else if (mime === 'image/webp') {
-      img = img.webp({ quality: 80 });
-    } else if (mime === 'image/png') {
-      img = img.png({ compressionLevel: 9, adaptiveFiltering: true });
-    }
-
-    return await img.toBuffer();
-  } catch {
-    // If anything goes wrong, fall back to the original buffer.
-    return buf;
-  }
-}
-
-function parseDataUrl(dataUrl) {
-  // data:<mime>;base64,<...>
-  const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
-  if (!m) {
-    const err = new Error('Invalid data URL (expected data:<mime>;base64,...)');
-    err.statusCode = 400;
-    throw err;
-  }
-  return { mime: m[1], base64: m[2] };
 }

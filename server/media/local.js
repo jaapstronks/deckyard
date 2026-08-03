@@ -44,7 +44,7 @@ export class LocalProvider extends MediaProvider {
     throw new Error('LocalProvider does not support presigned uploads');
   }
 
-  async uploadBuffer({ buffer, filename, contentType }) {
+  async uploadBuffer({ buffer, filename, contentType, maxBytes = MAX_FILE_SIZE }) {
     const ext = MIME_TO_EXT[contentType];
     if (!ext) {
       const err = new Error(`Unsupported content type: ${contentType}`);
@@ -52,8 +52,9 @@ export class LocalProvider extends MediaProvider {
       throw err;
     }
 
-    if (buffer.length > MAX_FILE_SIZE) {
-      const err = new Error('File too large (max 10MB)');
+    if (buffer.length > maxBytes) {
+      const mb = Math.round(maxBytes / (1024 * 1024));
+      const err = new Error(`File too large (max ${mb}MB)`);
       err.statusCode = 400;
       throw err;
     }
@@ -61,7 +62,7 @@ export class LocalProvider extends MediaProvider {
     // Optimize raster images
     let finalBuffer = buffer;
     if (['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(contentType)) {
-      finalBuffer = await this._optimizeImage(buffer, contentType);
+      finalBuffer = await optimizeRasterImage(buffer, contentType);
     }
 
     await fs.mkdir(this.uploadsDir, { recursive: true });
@@ -161,44 +162,68 @@ export class LocalProvider extends MediaProvider {
   }
 
   _parseDataUrl(dataUrl) {
-    const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
-    if (!m) {
-      const err = new Error('Invalid data URL (expected data:<mime>;base64,...)');
-      err.statusCode = 400;
-      throw err;
-    }
-    return { mime: m[1], base64: m[2] };
+    return parseDataUrl(dataUrl);
   }
 
   async _optimizeImage(buffer, mime) {
-    try {
-      let img = sharp(buffer);
-      const meta = await img.metadata();
-      const w = Number(meta?.width || 0) || 0;
-      const h = Number(meta?.height || 0) || 0;
-      const maxW = 3840;
-      const maxH = 2160;
+    return optimizeRasterImage(buffer, mime);
+  }
+}
 
-      if (w > maxW || h > maxH) {
-        img = img.resize({
-          width: maxW,
-          height: maxH,
-          fit: 'inside',
-          withoutEnlargement: true,
-        });
-      }
+/**
+ * Parse a `data:<mime>;base64,<...>` URL into its mime and base64 payload.
+ * Shared by the LocalProvider and the legacy `storage/uploads.js` helpers so
+ * there is one implementation of the data-URL contract for binary media.
+ * @param {string} dataUrl
+ * @returns {{ mime: string, base64: string }}
+ */
+export function parseDataUrl(dataUrl) {
+  const m = String(dataUrl).match(/^data:([^;]+);base64,(.*)$/);
+  if (!m) {
+    const err = new Error('Invalid data URL (expected data:<mime>;base64,...)');
+    err.statusCode = 400;
+    throw err;
+  }
+  return { mime: m[1], base64: m[2] };
+}
 
-      if (mime === 'image/jpeg' || mime === 'image/jpg') {
-        img = img.jpeg({ quality: 82, mozjpeg: true });
-      } else if (mime === 'image/webp') {
-        img = img.webp({ quality: 80 });
-      } else if (mime === 'image/png') {
-        img = img.png({ compressionLevel: 9, adaptiveFiltering: true });
-      }
+/**
+ * Downscale (max 3840×2160) and re-encode a raster image with sharp. Falls back
+ * to the original buffer if sharp throws. Shared by the LocalProvider and the
+ * legacy `storage/uploads.js` helpers — the single raster-optimization path for
+ * local binary media.
+ * @param {Buffer} buffer
+ * @param {string} mime
+ * @returns {Promise<Buffer>}
+ */
+export async function optimizeRasterImage(buffer, mime) {
+  try {
+    let img = sharp(buffer);
+    const meta = await img.metadata();
+    const w = Number(meta?.width || 0) || 0;
+    const h = Number(meta?.height || 0) || 0;
+    const maxW = 3840;
+    const maxH = 2160;
 
-      return await img.toBuffer();
-    } catch {
-      return buffer;
+    if (w > maxW || h > maxH) {
+      img = img.resize({
+        width: maxW,
+        height: maxH,
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
     }
+
+    if (mime === 'image/jpeg' || mime === 'image/jpg') {
+      img = img.jpeg({ quality: 82, mozjpeg: true });
+    } else if (mime === 'image/webp') {
+      img = img.webp({ quality: 80 });
+    } else if (mime === 'image/png') {
+      img = img.png({ compressionLevel: 9, adaptiveFiltering: true });
+    }
+
+    return await img.toBuffer();
+  } catch {
+    return buffer;
   }
 }

@@ -23,7 +23,9 @@ export class MediaProvider {
 
   /**
    * Upload a file from a Buffer (server-side upload).
-   * @param {{ buffer: Buffer, filename: string, contentType: string }} opts
+   * @param {{ buffer: Buffer, filename: string, contentType: string, maxBytes?: number }} opts
+   *   `maxBytes` optionally overrides the provider's default size ceiling
+   *   (used by the stock-media / deck-import path, which allows larger GIFs).
    * @returns {Promise<{ key: string, publicUrl: string }>}
    */
   async uploadBuffer(opts) {
