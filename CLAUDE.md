@@ -100,13 +100,13 @@ Apply it at the recurring moments:
 - **Docs-only changes** (`docs/`, `ROADMAP.md`, `README.md`, `CLAUDE.md`,
   `AGENTS.md`, `.gitignore`) may be committed and pushed **directly on
   `main`** — no branch or PR needed.
-- **Code changes** go via a feature branch and a **PR** — and there Claude
-  stops. Open the PR, hand it off with `claude-notify-pr`, and let Jaap review
-  it (himself or via a Fable agent) and merge. **Do not self-merge code to
-  `main`**, even when it's green and tested. The only exception is an explicit
-  "review en merge" hand-off from Jaap (then merge and run `merge-housekeeping`
-  as the tail — see below). Note: the global "afmaken zonder te vragen /
-  merge-to-main" rule is scoped to `wings-monorepo` ops work, **not** deckyard.
+- **Code changes** go via a feature branch and a **PR** — and there the
+  work-agent stops. Open the PR, hand it off with `claude-notify-pr`, and let a
+  *different* actor review and merge (Jaap, or a Fable agent Jaap points at it).
+  **Do not self-merge code to `main`**, even when it's green and tested. The
+  only exception is an explicit "review en merge" hand-off — then you're in the
+  reviewing role, so merge and run `merge-housekeeping` as the tail (see below).
+  This is the global rule (author ≠ merger), not a deckyard-specific one.
 - **Long-running feature tracks** use an integration branch: sub-PRs target
   that branch (not `main`), which gets one umbrella PR to `main` when the
   whole track is accepted. **No integration branch is active right now** —
