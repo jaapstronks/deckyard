@@ -4,6 +4,30 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.13.0](https://github.com/jaapstronks/deckyard/compare/v1.12.1...v1.13.0) (2026-08-03)
+
+
+### Added
+
+* bundled gradients as a licence-free image source ([#560](https://github.com/jaapstronks/deckyard/issues/560)) ([bc4a88f](https://github.com/jaapstronks/deckyard/commit/bc4a88f051a24a34ffc1ebc9496bca06a0dbb812))
+* **capture:** hash the recipe module graph instead of the entry file ([#545](https://github.com/jaapstronks/deckyard/issues/545)) ([abe8d69](https://github.com/jaapstronks/deckyard/commit/abe8d69364d00b0ad46b30575316cacc425ca9c1))
+* **ci:** resolve every relative import, and make the doc gate fork-configurable ([#550](https://github.com/jaapstronks/deckyard/issues/550)) ([05f3cc1](https://github.com/jaapstronks/deckyard/commit/05f3cc11c3d837f24979408af819259c3a318c59))
+* **css:** refine the spacing scale to 2px and gate its use ([#553](https://github.com/jaapstronks/deckyard/issues/553)) ([ad0c404](https://github.com/jaapstronks/deckyard/commit/ad0c4045dcb5ec2e172e6efbc980525cea337337))
+* **test:** the classes a slide type emits must resolve to a CSS rule ([#554](https://github.com/jaapstronks/deckyard/issues/554)) ([397955b](https://github.com/jaapstronks/deckyard/commit/397955b5ee6065072fbeee882cd9d133ebddaa57))
+
+
+### Fixed
+
+* **fonts:** pin self-hosted Google Fonts and ship the Latin subsets ([#546](https://github.com/jaapstronks/deckyard/issues/546)) ([6fb558e](https://github.com/jaapstronks/deckyard/commit/6fb558e02af5ea3cb34cf1e14c446e164bbec658))
+* **slide-types:** re-export SCHEMA_BASE_URI for the website generator ([#564](https://github.com/jaapstronks/deckyard/issues/564)) ([71de779](https://github.com/jaapstronks/deckyard/commit/71de779013f5319ace5c9b4caf956fd7e60ef949))
+* **slide-types:** re-export SLIDE_STRUCTURES for the website generator ([#558](https://github.com/jaapstronks/deckyard/issues/558)) ([97d5e7b](https://github.com/jaapstronks/deckyard/commit/97d5e7bbf95841e4a8bf41443cb95822ef7606d3))
+* **slide-types:** re-export the runtime and interaction vocabularies ([#559](https://github.com/jaapstronks/deckyard/issues/559)) ([f0df831](https://github.com/jaapstronks/deckyard/commit/f0df8316b5b2298863629c11646fbb3c39121cc6))
+
+
+### Security
+
+* self-host DOMPurify instead of loading it from a CDN ([#563](https://github.com/jaapstronks/deckyard/issues/563)) ([f200ec7](https://github.com/jaapstronks/deckyard/commit/f200ec7306f517a80644337443dbac156577c15d))
+
 ## [1.12.1](https://github.com/jaapstronks/deckyard/compare/v1.12.0...v1.12.1) (2026-08-02)
 
 
