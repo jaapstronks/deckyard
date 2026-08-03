@@ -8,7 +8,6 @@ import { normalizeSlides } from '../slides.js';
 import { normalizeI18n } from '../i18n.js';
 import { writePresentation } from '../io.js';
 import { attachSandboxMeta } from '../sandbox.js';
-import { assertSandboxQuotaForCreate } from '../sandbox-quota.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemeIds } from '../../../utils/themes.js';
 import { normalizeEmail, nowIso } from '../../../utils/normalize.js';
@@ -78,9 +77,8 @@ export async function duplicatePresentation(repoRoot, id, opts = {}) {
 
   const actorEmail = normalizeEmail(opts?.actorEmail);
 
-  // Sandbox: a duplicate mints a new deck, so it counts against the guest's
-  // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
-  await assertSandboxQuotaForCreate(repoRoot, actorEmail);
+  // The sandbox storage quota for duplicates is enforced in the presentations
+  // facade (server/storage/presentations/index.js), before dispatch.
 
   const dominant =
     existing?.i18n?.dominant === 'nl' || existing?.i18n?.dominant === 'en-GB'

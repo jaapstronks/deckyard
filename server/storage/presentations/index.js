@@ -19,6 +19,7 @@ import { isCollabLiveEditsEnabled } from '../../config/features.js';
 import { deleteYDocState } from '../presentation-ydocs.js';
 import { normalizeSlides } from './slides.js';
 import { normalizeI18n } from './i18n.js';
+import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { invalidatePresentationCache } from '../presentation-cache.js';
@@ -92,6 +93,10 @@ export async function createPresentation(scope, body) {
   // here, not after preparing a deck it has nowhere to put.
   const ctx = toStorageContext(scope, 'createPresentation', { actorEmail: body?.ownerEmail });
   const repoRoot = repoRootOf(scope);
+  // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
+  // quota, before preparing anything. Enforced here in the facade so it covers
+  // every backend; no-op outside sandbox mode.
+  await assertSandboxQuotaForCreate(ctx, body?.ownerEmail);
   if (isStorageInitialized()) {
     // Prepare the full presentation object (with slides, i18n, etc.) before storing
     const mod = await import('./crud/index.js');
@@ -368,6 +373,9 @@ export async function duplicatePresentation(scope, id, opts) {
   const ctx = toStorageContext(scope, 'duplicatePresentation', {
     actorEmail: opts?.actorEmail,
   });
+  // A duplicate mints a new deck, so it counts against the guest's sandbox
+  // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
+  await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
   return withCrud(
     scope,
     'duplicatePresentation',
