@@ -39,7 +39,7 @@ if [ "$storage_mode" = "postgres" ] || [ "$storage_mode" = "postgresql" ]; then
      [ -n "$(ls -A "${APP_DIR}/server/data/presentations" 2>/dev/null || true)" ]; then
     echo "entrypoint: WARNING — STORAGE_MODE=postgres, but server/data/presentations is not empty." >&2
     echo "entrypoint: that file-storage data is NOT served in Postgres mode. Either import it" >&2
-    echo "entrypoint: (docker compose exec app npm run db:migrate:data) or set STORAGE_MODE=file" >&2
+    echo "entrypoint: (docker compose exec app npm run db:import) or set STORAGE_MODE=file" >&2
     echo "entrypoint: in .env to keep using file storage." >&2
   fi
 fi
