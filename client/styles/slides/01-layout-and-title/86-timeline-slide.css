@@ -223,7 +223,7 @@
   max-width: min(var(--card-max-w), calc(100% + var(--card-spill)));
   background: var(--timeline-card-surface);
   border: 2px solid var(--timeline-card-border);
-  border-radius: 16px; /* TODO: close to --slide-radius-md (18px) */
+  border-radius: var(--slide-radius-md);
   padding: 14px var(--slide-space-4) var(--slide-space-4);
   box-shadow: var(--timeline-card-shadow);
 }
@@ -236,7 +236,11 @@
   top: 0;
   right: 0;
   height: 6px;
-  border-radius: 14px 14px 8px 8px;
+  /* Top corners follow the card's; the bottom pair stays a step lower so the
+     bar meets the card body flat. At 6px tall the browser scales all four down
+     proportionally anyway — the ratio is what survives, not the values. */
+  border-radius: var(--slide-radius-md) var(--slide-radius-md) var(--slide-radius-sm)
+    var(--slide-radius-sm);
   background: var(--timeline-accent);
   opacity: 0.9;
 }

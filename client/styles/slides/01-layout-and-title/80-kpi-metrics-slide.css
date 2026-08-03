@@ -80,7 +80,7 @@
      pushed to the foot of the tile below. */
   justify-content: flex-start;
   gap: var(--slide-space-3);
-  border-radius: 26px;
+  border-radius: var(--slide-radius-lg);
   padding: 32px 34px;
   background: var(--kpi-tile-bg);
   color: var(--kpi-tile-fg);
