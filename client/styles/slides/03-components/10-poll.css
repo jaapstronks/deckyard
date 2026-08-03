@@ -249,7 +249,7 @@
 .slide-poll .poll-scan .help {
   font-size: calc(var(--slide-font-size-body) - 6px);
   color: var(--color-text-muted);
-  line-height: 1.4;
+  line-height: var(--slide-leading-normal);
 }
 
 /* Optional QR inside poll-scan (legacy / future) */
@@ -273,7 +273,7 @@
   font-family: var(--font-heading);
   /* Bigger, title-like question for Likert (requested) */
   font-size: calc(var(--slide-font-size-heading) + 10px);
-  line-height: 1.08;
+  line-height: var(--slide-leading-tight);
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -348,7 +348,7 @@
 
 .slide-likert .likert-text {
   font-size: var(--slide-text-lg);
-  line-height: 1.3;
+  line-height: var(--slide-leading-compact);
   color: var(--color-text);
   min-width: 0;
 }
@@ -466,7 +466,7 @@
 
 .slide-likert-slider .likert-slider-help {
   font-size: 26px;
-  line-height: 1.3;
+  line-height: var(--slide-leading-compact);
   font-weight: 600;
   margin-top: var(--slide-space-3);
 }

@@ -114,6 +114,7 @@
   font-family: var(--font-heading);
   font-size: var(--slide-step-font);
   font-weight: var(--heading-weight, 400);
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
   border-radius: var(--slide-radius-full);
   box-shadow: var(--slide-shadow-md);

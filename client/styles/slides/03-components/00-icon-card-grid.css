@@ -48,7 +48,7 @@
 .slide-icon-card-grid .icon-card-text {
   font-family: var(--font-body);
   font-size: 22px;
-  line-height: 1.3;
+  line-height: var(--slide-leading-compact);
 }
 .slide-icon-card-grid .icon-card-text ul,
 .slide-icon-card-grid .icon-card-text ol {

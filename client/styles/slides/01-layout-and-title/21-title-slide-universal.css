@@ -179,7 +179,7 @@
 .slide-title-universal .title {
   font-family: var(--font-heading);
   font-size: var(--slide-text-4xl);
-  line-height: 1.06;
+  line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);

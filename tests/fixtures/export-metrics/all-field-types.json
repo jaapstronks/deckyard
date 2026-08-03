@@ -5,9 +5,9 @@
       "title": {
         "rect": {
           "x": 96,
-          "y": 640.4,
+          "y": 637.8,
           "width": 1040,
-          "height": 67.8
+          "height": 70.4
         },
         "fontSize": "64px",
         "fontWeight": "700",
@@ -85,7 +85,7 @@
           "x": 64,
           "y": 64,
           "width": 247.9,
-          "height": 56.2
+          "height": 57.2
         },
         "fontSize": "52px",
         "fontWeight": "400",
@@ -136,7 +136,7 @@
           "x": 64,
           "y": 64,
           "width": 1472,
-          "height": 47.5
+          "height": 48.4
         },
         "fontSize": "44px",
         "fontWeight": "400",
