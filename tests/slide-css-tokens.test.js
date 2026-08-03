@@ -1,0 +1,426 @@
+/**
+ * Slide design-token guard — fase 0 of the role-vocabulary track (A7.9 + A7.2).
+ *
+ * `client/styles/slides/00-tokens.css` defines a complete typography, leading
+ * and spacing scale for slide CSS, and until now **nothing** checked whether
+ * slide stylesheets used it. The 2026-08-03 census found 603 literal
+ * declarations on the axes the scale covers, at 16-23% token adoption —
+ * 74 unique font sizes where the scale has 10 steps. This gate is the same
+ * medicine as `tests/css-spacing-tokens.test.js` (the app-chrome spacing
+ * gate), pointed at the slide layer.
+ *
+ * What it asserts is narrow on purpose:
+ *
+ *   **A value that exactly equals a slide token must be written as that
+ *   token.**
+ *
+ * Not "every value must be on the scale". An off-scale value (26px, 1.25) is a
+ * design signal for the role-vocabulary sweep, not a conversion, and is not
+ * counted. Only the value-identical case is caught, so a violation is always
+ * fixable by reading the diff. `border-radius` is deliberately absent: its
+ * tokens are theme-following (`var(--t-radius, 18px)`), so converting a
+ * literal changes behaviour under a theme — that belongs to the sweep, not to
+ * this gate.
+ *
+ * "Written as that token" is spelling-agnostic and position-agnostic: `1rem`
+ * is the same 16px as `16px`, and a raw length beside a token in one
+ * declaration (`padding: 4px var(--slide-space-4)`) counts too.
+ *
+ * Existing violations live in `slide-css-suppressions.json` as per-file,
+ * per-category counts. A count can only ever go down: a file with a budget
+ * still fails if it grows a new violation, and a file that converts some of
+ * its values fails until the number is lowered. Regenerate after a batch:
+ *
+ *     UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js
+ *
+ * Plan and phasing: docs/plans/briefs/css-role-vocabulary.md (private sibling).
+ *
+ * Run with: node --test tests/slide-css-tokens.test.js
+ */
+
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const slidesDir = path.join(repoRoot, 'client', 'styles', 'slides');
+const tokensFile = path.join(slidesDir, '00-tokens.css');
+const suppressionsFile = path.join(repoRoot, 'slide-css-suppressions.json');
+
+const updating = /^(1|true|yes)$/i.test(
+  String(process.env.UPDATE_SLIDE_CSS_SUPPRESSIONS || '').trim()
+);
+
+/**
+ * The three checked categories and the properties they cover.
+ *
+ * Spacing deliberately includes the margin family: a slide margin and a slide
+ * padding draw from the same scale. `border-radius` is excluded (see header),
+ * and so are `width`/`height`/`inset` — sizing is not spacing.
+ */
+const CATEGORIES = {
+  'font-size': ['font-size'],
+  'line-height': ['line-height'],
+  spacing: [
+    'margin',
+    'margin-top',
+    'margin-right',
+    'margin-bottom',
+    'margin-left',
+    'margin-block',
+    'margin-block-start',
+    'margin-block-end',
+    'margin-inline',
+    'margin-inline-start',
+    'margin-inline-end',
+    'padding',
+    'padding-top',
+    'padding-right',
+    'padding-bottom',
+    'padding-left',
+    'padding-block',
+    'padding-block-start',
+    'padding-block-end',
+    'padding-inline',
+    'padding-inline-start',
+    'padding-inline-end',
+    'gap',
+    'row-gap',
+    'column-gap',
+  ],
+};
+
+/**
+ * Sheets in the slide bundle that are not slide rendering, each with a reason
+ * that is not "too much work".
+ *
+ * The presenter surfaces are app chrome that happens to live in the slide
+ * bundle (they style the present window around the deck, use `--app-*` tokens,
+ * and never render in an export or the MCP preview). They are outside the
+ * slide token vocabulary on purpose.
+ */
+const EXCLUDED = [
+  /\/00-tokens\.css$/, // defines the scale; checking it against itself is circular
+  /\/50-presenter-layout\.css$/,
+  /\/51-presenter-console\.css$/,
+  /\/53-present-window\.css$/,
+  /\/80-presenter-progress\.css$/,
+  /\/82-auto-advance\.css$/,
+  /\/85-presenter-start\.css$/,
+  /\/90-presenter-edge-hint\.css$/,
+];
+
+/** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */
+async function cssFiles(dir) {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const out = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await cssFiles(full)));
+    else if (entry.name.endsWith('.css')) out.push(full);
+  }
+  return out.sort();
+}
+
+/**
+ * Blank out comments, keeping newlines so line numbers stay right. Without this
+ * a commented-out declaration counts as live.
+ *
+ * @param {string} source
+ * @returns {string}
+ */
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '));
+}
+
+/** The root element sets no `font-size`, so `1rem` is exactly 16px. */
+const REM_IN_PX = 16;
+
+/**
+ * Normalise a numeric amount to a stable map key, so a `rem`→px conversion
+ * that lands a hair off an integer in floating point cannot silently miss a
+ * token.
+ *
+ * @param {number} n
+ * @returns {number}
+ */
+function numKey(n) {
+  return Math.round(n * 1000) / 1000;
+}
+
+/**
+ * Read the slide scales out of `00-tokens.css`, so the gate cannot drift from
+ * the tokens it enforces. Only tokens whose value is a bare `px` length (the
+ * text and space scales) or a bare number (the leading scale) participate —
+ * theme-following tokens like `--slide-radius-md: var(--t-radius, 18px)` are
+ * skipped by construction, which is exactly the border-radius exclusion above.
+ *
+ * @param {string} source
+ * @returns {{px: Map<number, string>, leading: Map<number, string>}}
+ */
+function readScales(source) {
+  const px = new Map();
+  const leading = new Map();
+  for (const m of stripComments(source).matchAll(
+    /(--slide-(?:text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g
+  )) {
+    const key = numKey(Number(m[2]));
+    if (!px.has(key)) px.set(key, m[1]);
+  }
+  for (const m of stripComments(source).matchAll(
+    /(--slide-leading-[\w-]+)\s*:\s*([\d.]+)\s*;/g
+  )) {
+    leading.set(numKey(Number(m[2])), m[1]);
+  }
+  return { px, leading };
+}
+
+/**
+ * Remove every `var(…)` expression from a declaration value, parens balanced
+ * so `var(--x, calc(1px + 2px))` goes in one piece. What remains is exactly
+ * the *raw* part of the value: a half-converted
+ * `padding: 4px var(--slide-space-4)` is the case worth catching, not the case
+ * worth excusing.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function stripVarExpressions(value) {
+  let out = '';
+  for (let i = 0; i < value.length; ) {
+    if (value.startsWith('var(', i)) {
+      let depth = 0;
+      let j = i + 3; // at the '('
+      for (; j < value.length; j += 1) {
+        if (value[j] === '(') depth += 1;
+        else if (value[j] === ')') {
+          depth -= 1;
+          if (depth === 0) {
+            j += 1;
+            break;
+          }
+        }
+      }
+      i = j; // unterminated var( swallows the rest, which is fine: it is broken CSS
+      continue;
+    }
+    out += value[i];
+    i += 1;
+  }
+  return out;
+}
+
+/**
+ * @typedef {object} Violation
+ * @property {string} file  repo-relative path
+ * @property {number} line  1-indexed
+ * @property {string} category
+ * @property {string} prop
+ * @property {string} value the whole declaration value
+ * @property {string} token the token this value should be written as
+ */
+
+/**
+ * Any absolute length in either spelling. `rem` counts: `gap: 0.25rem` is the
+ * same rendered value as `gap: 4px` and the same conversion.
+ */
+const LENGTH_RE = /(-?)(\d*\.?\d+)(px|rem)\b/g;
+
+/** A bare unitless number, for the leading scale. */
+const NUMBER_RE = /^-?\d*\.?\d+$/;
+
+/**
+ * Find values that exactly equal a slide token but are written literally.
+ *
+ * The exclusions keep every reported violation fixable by reading:
+ *
+ *  - `!important` declarations stay literal (cascade patches, tracked in
+ *    docs/reference/css-important.md);
+ *  - a declaration carrying a **negative** length stays literal as a whole
+ *    (a negative margin usually pairs with a positive padding; tokenising
+ *    only the positive half puts the pair out of step);
+ *  - `0` stays literal; the scales have no zero member;
+ *  - `em`/`%`/unitless lengths are relative and never value-identical to a
+ *    px token, so they are invisible here (design signals for the sweep);
+ *  - `calc(…)` and other function expressions are skipped — a length inside
+ *    an expression is not the same declaration shape as a bare token.
+ *
+ * @param {string} source
+ * @param {string} label repo-relative path
+ * @param {{px: Map<number, string>, leading: Map<number, string>}} scales
+ * @returns {Violation[]}
+ */
+function findViolations(source, label, scales) {
+  const clean = stripComments(source);
+  const out = [];
+
+  for (const [category, props] of Object.entries(CATEGORIES)) {
+    const declRe = new RegExp(`(^|[;{])\\s*(${props.join('|')})\\s*:([^;{}]*)`, 'gi');
+
+    for (const decl of clean.matchAll(declRe)) {
+      const prop = decl[2].toLowerCase();
+      const value = decl[3];
+      if (/!important/i.test(value)) continue;
+
+      const raw = stripVarExpressions(value);
+      if (/(?:calc|min|max|clamp)\(/i.test(raw)) continue;
+      if ([...raw.matchAll(LENGTH_RE)].some((len) => len[1] === '-')) continue;
+
+      // `decl.index` sits on the `;`/`{` *before* the declaration, so measure
+      // to the property name itself or every report is one line early.
+      const propOffset = decl.index + decl[0].toLowerCase().indexOf(prop);
+      const line = clean.slice(0, propOffset).split('\n').length;
+
+      if (category === 'line-height') {
+        const trimmed = raw.trim();
+        if (!NUMBER_RE.test(trimmed)) continue; // px/em leading: sweep material
+        const token = scales.leading.get(numKey(Number(trimmed)));
+        if (!token) continue;
+        out.push({ file: label, line, category, prop, value: value.trim(), token });
+        continue;
+      }
+
+      for (const len of raw.matchAll(LENGTH_RE)) {
+        const px = numKey(Number(len[2]) * (len[3] === 'rem' ? REM_IN_PX : 1));
+        if (px === 0) continue; // 0 stays literal
+        const token = scales.px.get(px);
+        if (!token) continue; // off-scale: a design signal, not a conversion
+        if (category === 'font-size' && !token.startsWith('--slide-text-')) continue;
+        if (category === 'spacing' && !token.startsWith('--slide-space-')) continue;
+        out.push({ file: label, line, category, prop, value: value.trim(), token });
+      }
+    }
+  }
+
+  return out;
+}
+
+const tokensSource = await fs.readFile(tokensFile, 'utf8');
+const scales = readScales(tokensSource);
+
+const files = (await cssFiles(slidesDir))
+  .map((f) => path.relative(repoRoot, f))
+  .filter((rel) => !EXCLUDED.some((re) => re.test(rel)));
+
+const violations = (
+  await Promise.all(
+    files.map(async (rel) =>
+      findViolations(await fs.readFile(path.join(repoRoot, rel), 'utf8'), rel, scales)
+    )
+  )
+).flat();
+
+/** file → category → count, as the suppressions file records them. */
+const counts = new Map();
+for (const v of violations) {
+  const perFile = counts.get(v.file) || new Map();
+  perFile.set(v.category, (perFile.get(v.category) || 0) + 1);
+  counts.set(v.file, perFile);
+}
+
+if (updating) {
+  const next = Object.fromEntries(
+    [...counts.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([file, perFile]) => [
+        file,
+        Object.fromEntries(
+          [...perFile.entries()]
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([category, count]) => [category, { count }])
+        ),
+      ])
+  );
+  await fs.writeFile(suppressionsFile, `${JSON.stringify(next, null, 2)}\n`);
+}
+
+const suppressions = JSON.parse(await fs.readFile(suppressionsFile, 'utf8'));
+const budgetFor = (file, category) => suppressions[file]?.[category]?.count ?? 0;
+
+describe('slide css tokens', () => {
+  it('reads the scales out of 00-tokens.css', () => {
+    // If this ever comes back empty the gate would pass vacuously, which is
+    // the one failure mode a guard must not have.
+    assert.ok(
+      scales.px.size >= 15,
+      `expected the text + space scales, parsed ${scales.px.size} px tokens`
+    );
+    for (const px of [14, 20, 44, 80]) {
+      assert.ok(scales.px.has(px), `the text scale should carry ${px}px`);
+    }
+    for (const px of [4, 8, 16, 24, 64]) {
+      assert.ok(scales.px.has(px), `the space scale should carry ${px}px`);
+    }
+    assert.ok(scales.leading.size >= 4, 'expected the leading scale');
+    for (const n of [1.1, 1.2, 1.35, 1.5]) {
+      assert.ok(scales.leading.has(n), `the leading scale should carry ${n}`);
+    }
+  });
+
+  it('finds slide stylesheets to check', () => {
+    assert.ok(files.length > 0, `no stylesheets found under ${slidesDir}`);
+  });
+
+  it('adds no tokenisable value beyond each file’s burndown budget', () => {
+    const over = [];
+    for (const [file, perFile] of [...counts.entries()].sort()) {
+      for (const [category, count] of [...perFile.entries()].sort()) {
+        const budget = budgetFor(file, category);
+        if (count <= budget) continue;
+        const examples = violations
+          .filter((v) => v.file === file && v.category === category)
+          .slice(0, 4)
+          .map((v) => `      ${v.file}:${v.line}  ${v.prop}: ${v.value}  → ${v.token}`);
+        over.push(
+          `${file} [${category}]: ${count} tokenisable value(s), budget ${budget}\n${examples.join('\n')}`
+        );
+      }
+    }
+
+    assert.deepStrictEqual(
+      over,
+      [],
+      `${over.length} file/category pair(s) exceed their burndown budget.\n\n` +
+        'A value that exactly equals a --slide-text-*, --slide-space-* or\n' +
+        '--slide-leading-* token must be written as that token, in either\n' +
+        'spelling (16px and 1rem are the same violation). Off-scale values are\n' +
+        'fine and are not counted — they are input for the role-vocabulary\n' +
+        'sweep, not violations.\n\n' +
+        'Do NOT raise a budget in slide-css-suppressions.json to make this\n' +
+        'pass. The list may only shrink.'
+    );
+  });
+
+  it('has no stale burndown entries', () => {
+    const stale = [];
+    for (const [file, entry] of Object.entries(suppressions)) {
+      for (const [category, meta] of Object.entries(entry)) {
+        const budget = meta?.count ?? 0;
+        const actual = counts.get(file)?.get(category) || 0;
+        if (actual < budget) {
+          stale.push(`${file} [${category}]: budget ${budget}, actual ${actual}`);
+        }
+      }
+    }
+    assert.deepStrictEqual(
+      stale.sort(),
+      [],
+      `${stale.length} burndown budget(s) are now too generous.\n` +
+        'Lower them (or delete the entry) — the conversion is that much done:\n' +
+        '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js'
+    );
+  });
+
+  it('lists no file that is out of scope', () => {
+    // A suppressions entry for an excluded or deleted sheet would be dead
+    // weight the gate never re-checks.
+    const outOfScope = Object.keys(suppressions).filter((file) => !files.includes(file));
+    assert.deepStrictEqual(
+      outOfScope.sort(),
+      [],
+      'burndown entries for files the gate does not scan; delete them'
+    );
+  });
+});
