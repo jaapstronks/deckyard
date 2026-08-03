@@ -3,6 +3,13 @@
   "source": "dompurify",
   "version": "3.4.12",
   "files": [
-    "purify.min.js"
+    {
+      "path": "purify.min.js",
+      "sha256": "c45ba939765574f96cbf35ee9b6d89f73756a17921814425e74b82f7c54603ce"
+    },
+    {
+      "path": "purify.min.js.map",
+      "sha256": "d4b5342b053f94cc25f609271e866aeeaacc261943fba9365b392099e38b48ff"
+    }
   ]
 }

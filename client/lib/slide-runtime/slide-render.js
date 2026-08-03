@@ -10,6 +10,7 @@ import { initContentSlideAutoFit } from './content-slide-autofit.js';
 import { initTeamCardsAutoFit } from './team-cards-autofit.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
+import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 
 /**
  * Trigger Prism.js syntax highlighting on code blocks within an element.
@@ -67,11 +68,41 @@ function renderMathFormulas(rootEl) {
 
 /**
  * Initialize code highlighting and math rendering on a slide element.
+ *
+ * Prism and KaTeX are self-hosted and lazy: nothing loads until a slide
+ * actually contains code or math (the export head makes the same call
+ * server-side via detectPrismKatexNeeds). Highlighting therefore lands a tick
+ * after first paint on the first such slide; once loaded it is synchronous.
  */
 function initCodeAndMath(rootEl) {
-  if (!rootEl) return;
-  highlightCodeBlocks(rootEl);
-  renderMathFormulas(rootEl);
+  if (!rootEl || !rootEl.querySelectorAll) return;
+
+  const codeBlocks = rootEl.querySelectorAll('.md-code-block code');
+  if (codeBlocks.length) {
+    const languages = [];
+    for (const block of codeBlocks) {
+      for (const cls of block.classList) {
+        if (!cls.startsWith('language-')) continue;
+        const lang = cls.slice('language-'.length).toLowerCase();
+        if (!languages.includes(lang)) languages.push(lang);
+      }
+    }
+    ensurePrism(languages)
+      .then(() => highlightCodeBlocks(rootEl))
+      .catch(() => {
+        // Prism failed to load; code blocks stay unhighlighted.
+      });
+  }
+
+  if (
+    rootEl.querySelector('.md-math-block[data-math], .md-math-inline[data-math]')
+  ) {
+    ensureKatex()
+      .then(() => renderMathFormulas(rootEl))
+      .catch(() => {
+        // KaTeX failed to load; math stays as raw LaTeX.
+      });
+  }
 }
 
 // Cache for server-rendered slide HTML
