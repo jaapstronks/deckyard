@@ -1,36 +1,32 @@
-import path from 'node:path';
-import { safeSlug } from '../utils/slug.js';
-import { readJsonIfExists, writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
+/**
+ * Instance and per-user settings storage layer.
+ *
+ * Both persist in PostgreSQL (see migration 059): the whole instance settings
+ * object lives as one jsonb bag in the singleton `app_settings` row, and each
+ * user's preferences as one jsonb bag in `user_settings`, keyed on the e-mail
+ * in its own column. The facade is unchanged from the file-backed version —
+ * every function still takes `repoRoot` first for call-site stability — but
+ * that argument is now unused: persistence no longer touches disk. Storage is
+ * store-raw / normalize-on-read, so all the normalization below is the single
+ * source of truth for shape regardless of what a migrate-imported row holds.
+ */
+
+import { sql } from 'kysely';
+import { withDbGuard } from './utils/db-guard.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../shared/constants/ai.js';
 import { getAppName } from '../config/branding.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { SUBSCRIPTION_LEVELS } from './presentation-subscriptions.js';
 
-function settingsPath(repoRoot) {
-  return path.join(dataDir(repoRoot), 'settings.json');
-}
-
-function userSettingsDir(repoRoot) {
-  return path.join(dataDir(repoRoot), 'user-settings');
-}
-
-function safeEmailSlug(email) {
-  const e = String(email || '').trim().toLowerCase();
-  if (!e) return 'anonymous';
-  // Preserve some uniqueness beyond the local part by mapping separators first.
-  const mapped = e
-    .replaceAll('@', ' at ')
-    .replaceAll('.', ' dot ')
-    .replaceAll('+', ' plus ');
-  return safeSlug(mapped);
-}
-
-function userSettingsPath(repoRoot, email) {
-  return path.join(
-    userSettingsDir(repoRoot),
-    `${safeEmailSlug(email)}.json`
-  );
+/**
+ * Normalize an e-mail to its stored `user_settings.email` key: trimmed,
+ * lowercased, with the empty case mapping to a single shared bucket (mirrors
+ * the old file backend's `anonymous.json`).
+ * @param {string} email
+ * @returns {string}
+ */
+function userEmailKey(email) {
+  return String(email || '').trim().toLowerCase() || 'anonymous';
 }
 
 export function normalizeSupportedLang(v) {
@@ -245,7 +241,11 @@ function normalizeDayOfWeek(v) {
 }
 
 export async function getAppSettings(repoRoot) {
-  const raw = await readJsonIfExists(settingsPath(repoRoot));
+  const raw = await withDbGuard(null, async (db) => {
+    const row = await db.selectFrom('app_settings').select('settings').executeTakeFirst();
+    // jsonb reads back parsed; guard against a null column.
+    return row?.settings ?? null;
+  });
   const obj = raw && typeof raw === 'object' ? raw : {};
   const defaults = defaultAppSettings();
   const supportedSlideLangs =
@@ -534,7 +534,15 @@ export async function writeAppSettings(repoRoot, next) {
     ...(stockMedia ? { stockMedia } : null),
     ...(leads ? { leads } : null),
   };
-  await writeJsonAtomic(settingsPath(repoRoot), merged);
+  await withDbGuard(null, async (db) => {
+    await db
+      .insertInto('app_settings')
+      .values({ id: true, settings: JSON.stringify(merged), updated_at: sql`now()` })
+      .onConflict((oc) =>
+        oc.column('id').doUpdateSet({ settings: JSON.stringify(merged), updated_at: sql`now()` })
+      )
+      .execute();
+  });
   return merged;
 }
 
@@ -613,9 +621,15 @@ function normalizeThickness(v, fallback = 4) {
 }
 
 export async function getUserSettings(repoRoot, email) {
-  const raw = await readJsonIfExists(
-    userSettingsPath(repoRoot, email)
-  );
+  const key = userEmailKey(email);
+  const raw = await withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('user_settings')
+      .select('settings')
+      .where('email', '=', key)
+      .executeTakeFirst();
+    return row?.settings ?? null;
+  });
   const obj = raw && typeof raw === 'object' ? raw : {};
   const defaults = defaultUserSettings();
   const profile =
@@ -675,6 +689,7 @@ export async function getUserSettings(repoRoot, email) {
 }
 
 export async function writeUserSettings(repoRoot, email, next) {
+  const key = userEmailKey(email);
   const prev = await getUserSettings(repoRoot, email);
   const nextProfile =
     next?.profile && typeof next.profile === 'object'
@@ -763,7 +778,15 @@ export async function writeUserSettings(repoRoot, email, next) {
     digest,
     highlighter,
   };
-  await writeJsonAtomic(userSettingsPath(repoRoot, email), merged);
+  await withDbGuard(null, async (db) => {
+    await db
+      .insertInto('user_settings')
+      .values({ email: key, settings: JSON.stringify(merged), updated_at: sql`now()` })
+      .onConflict((oc) =>
+        oc.column('email').doUpdateSet({ settings: JSON.stringify(merged), updated_at: sql`now()` })
+      )
+      .execute();
+  });
   return merged;
 }
 
