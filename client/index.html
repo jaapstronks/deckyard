@@ -54,8 +54,11 @@
   <!-- Bunny Stream Player.js is loaded lazily by slide-render.js only when a
        video slide is present, so pages without video make zero third-party
        requests to assets.mediadelivery.net (mirrors the export/embed behaviour). -->
-  <!-- DOMPurify for defense-in-depth HTML sanitization -->
-  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.2/dist/purify.min.js"></script>
+  <!-- DOMPurify for defense-in-depth HTML sanitization. Self-hosted: the file is
+       copied from the pinned npm dependency by `npm run vendor:dompurify`
+       (postinstall), so the browser and the server-side sanitizer run the same
+       version and the app boots without reaching a third-party CDN. -->
+  <script src="/client/vendor/dompurify/purify.min.js"></script>
 
   <!-- Prism.js for code syntax highlighting -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
