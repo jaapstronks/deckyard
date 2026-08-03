@@ -37,7 +37,7 @@
 .slide-follow-invite .sfi-card {
   background: rgba(255, 255, 255, 0.92);
   border: 2px solid rgba(0, 0, 0, 0.10);
-  border-radius: 20px;
+  border-radius: var(--slide-radius-md);
   padding: 22px;
   display: grid;
   grid-template-rows: auto 1fr;

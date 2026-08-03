@@ -56,21 +56,28 @@
   overflow: hidden;
 }
 
-/* Position-based border-radius (rounded corners on outer edges) */
+/* Position-based border-radius: the corner on the grid's outer edge is rounded
+   a step further than the three inner ones, so the four cells read as one
+   quadrant block. The asymmetry is the shape; each corner is still a scale
+   step (--slide-radius-md outside, -sm inside). */
 .slide-matrix .matrix-cell[data-position='tl'] {
-  border-radius: 20px 8px 8px 8px;
+  border-radius: var(--slide-radius-md) var(--slide-radius-sm) var(--slide-radius-sm)
+    var(--slide-radius-sm);
 }
 
 .slide-matrix .matrix-cell[data-position='tr'] {
-  border-radius: 8px 20px 8px 8px;
+  border-radius: var(--slide-radius-sm) var(--slide-radius-md) var(--slide-radius-sm)
+    var(--slide-radius-sm);
 }
 
 .slide-matrix .matrix-cell[data-position='bl'] {
-  border-radius: 8px 8px 8px 20px;
+  border-radius: var(--slide-radius-sm) var(--slide-radius-sm) var(--slide-radius-sm)
+    var(--slide-radius-md);
 }
 
 .slide-matrix .matrix-cell[data-position='br'] {
-  border-radius: 8px 8px 20px 8px;
+  border-radius: var(--slide-radius-sm) var(--slide-radius-sm) var(--slide-radius-md)
+    var(--slide-radius-sm);
 }
 
 /* Tone-based color coding using theme colors */

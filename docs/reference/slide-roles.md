@@ -114,6 +114,12 @@ Already on the model: `--slide-radius-*` → `--t-radius*`, `--slide-shadow-*` �
 `--t-shadow-scale`, and the opacity scale is slide-internal. Slide CSS goes
 through the `--slide-*` role, never `var(--t-…)` directly.
 
+The four radius steps are `sm` 10px · `md` 18px · `lg` 24px · `full` 999px, and
+the axis is **complete**: every `border-radius` in the slide bundle is either
+one of those roles or an allowlisted shape. `sm` is the smallest *corner*, not
+the smallest value — anything finer is the micro-chip case below, where the
+radius describes the outline of the box rather than its corners.
+
 ## The theme seam
 
 What a theme may set — the full contract, ~30–35 tokens, zero type names:
@@ -166,8 +172,20 @@ double.
 Values outside the scales are allowed **per category with a reason**, not per
 occurrence:
 
-- `50%` and corner composites on `border-radius` (circles and asymmetric
-  corners are shapes, not scale steps);
+- `50%`, `0` and `inherit` on `border-radius` — a circle, a deliberately square
+  edge and "take the parent's shape" are shapes, not scale steps. **Asymmetric
+  corners are not on this list**: the asymmetry is the shape, but each corner
+  is still a step, so a corner composite writes all four as tokens
+  (`var(--slide-radius-md) var(--slide-radius-sm) …`) — the same
+  every-length-a-token rule as spacing composites;
+- **micro-chip rounding** — a box small enough that the smallest step
+  (`--slide-radius-sm`, 10px) clamps toward a circle or a pill instead of
+  rounding a corner: the 14px chart legend swatch, the inline-code chip. Below
+  roughly 24px the browser scales the radius down to half the box anyway, so
+  the step stops describing a corner and starts describing the outline. Marked
+  in place with an `allowlist:` comment. Self-evident shapes (`50%`, `0`) are
+  not marked — the comment exists where a bare length would otherwise read as
+  an unconverted literal;
 - `line-height: 1` and below on **single-line display glyphs** — a numeral in
   a circle badge, a KPI figure, an arrow, the countdown digits. There the line
   box *is* the layout: raising it to `tight` decentres the badge. The leading

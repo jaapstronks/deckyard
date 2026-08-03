@@ -151,7 +151,7 @@
 .slide-logo-wall .logo-wall-frame {
   width: var(--lw-cell);
   height: calc(var(--lw-cell) * 0.62);
-  border-radius: 12px;
+  border-radius: var(--slide-radius-sm);
   overflow: hidden;
   background: transparent; /* no backdrop */
   border: 0; /* no frame */
