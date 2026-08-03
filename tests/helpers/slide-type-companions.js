@@ -26,6 +26,10 @@
  * tests/removed-slide-types.test.js.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import {
   SLIDE_TYPES,
   CUSTOM_SLIDE_TYPE_NAMES,
@@ -50,6 +54,26 @@ import {
 export const CORE_SLIDE_TYPE_NAMES = Object.keys(SLIDE_TYPES).filter(
   (name) => !CUSTOM_SLIDE_TYPE_NAMES.includes(name)
 );
+
+/**
+ * The Dutch picker descriptions, read from `client/i18n/nl/editor.json`. Keyed
+ * `editor.slideTypeDesc.<type>`; stripped to bare type names here. Read off disk
+ * (not imported) because it is a translation payload, not a module — the same
+ * file the picker resolves `tr('editor.slideTypeDesc.<type>', …)` against.
+ * @type {Record<string, string>}
+ */
+const NL_SLIDE_TYPE_DESC = (() => {
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+  const raw = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, 'client', 'i18n', 'nl', 'editor.json'), 'utf8')
+  );
+  const prefix = 'editor.slideTypeDesc.';
+  return Object.fromEntries(
+    Object.entries(raw)
+      .filter(([k, v]) => k.startsWith(prefix) && typeof v === 'string')
+      .map(([k, v]) => [k.slice(prefix.length), v])
+  );
+})();
 
 /**
  * Types an author can still reach from the picker. `deprecated: true` is the
@@ -198,6 +222,28 @@ export const COMPANIONS = [
       typeof SLIDE_TYPE_DESCRIPTION[name] === 'string' ||
       typeof def?.description === 'string',
     keys: () => Object.keys(SLIDE_TYPE_DESCRIPTION),
+    exempt: {},
+  },
+  {
+    id: 'picker-description-nl',
+    label: 'Dutch picker description',
+    where: 'client/i18n/nl/editor.json (editor.slideTypeDesc.<name>)',
+    // The English `description` is a Tier-1 surface, and so is its Dutch pair:
+    // the picker does `tr('editor.slideTypeDesc.<type>', <English fallback>)`, so
+    // a core type with an English description but no Dutch key shows an English
+    // tile among Dutch neighbours — with every test green. That happened twice
+    // at #388 and was patched by hand each time; this is the gate for it. The
+    // other ten locales fall back to English like any Tier-2 string and are not
+    // gated (docs/reference/i18n-locale-tiers.md).
+    degradesTo:
+      'the picker tile shows the English description to Dutch users — an ' +
+      'English tile among Dutch neighbours, with the suite still green',
+    // A fork type carries no core Dutch key (nl/editor.json is core's), and
+    // CORE_SLIDE_TYPE_NAMES already excludes fork types, so this only ever asks
+    // about core — exactly the scope the Dutch translation covers.
+    appliesTo: (name, def) => isAuthorable(def),
+    has: (name) => typeof NL_SLIDE_TYPE_DESC[name] === 'string',
+    keys: () => Object.keys(NL_SLIDE_TYPE_DESC),
     exempt: {},
   },
   {

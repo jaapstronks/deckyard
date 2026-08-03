@@ -475,12 +475,36 @@ export function createPreferencesTab({ user, nav }) {
           h('option', { value: 'nl', text: 'Nederlands', selected: myUiLocale === 'nl' })
         );
       } else {
-        for (const l of locales) {
+        const makeOption = (l) => {
           const id = String(l?.id || '').trim();
           const label = String(l?.label || '').trim();
-          if (!id || !label) continue;
-          const isSelected = id === myUiLocale;
-          uiLocaleSelect.append(h('option', { value: id, text: label, selected: isSelected }));
+          if (!id || !label) return null;
+          return h('option', { value: id, text: label, selected: id === myUiLocale });
+        };
+        const tier1 = locales.filter((l) => Number(l?.tier) === 1);
+        const tier2 = locales.filter((l) => Number(l?.tier) === 2);
+        // Group by tier so "best effort" is honest in the picker itself
+        // (docs/reference/i18n-locale-tiers.md): Tier 1 is complete and gated,
+        // Tier 2 falls back to English. Fall back to a flat list if an older
+        // manifest carries no tier metadata.
+        if (tier1.length && tier2.length) {
+          uiLocaleSelect.append(
+            h(
+              'optgroup',
+              { label: t('settings.uiLocale.tier1', 'Fully supported') },
+              tier1.map(makeOption).filter(Boolean)
+            ),
+            h(
+              'optgroup',
+              { label: t('settings.uiLocale.tier2', 'Best effort — falls back to English') },
+              tier2.map(makeOption).filter(Boolean)
+            )
+          );
+        } else {
+          for (const l of locales) {
+            const opt = makeOption(l);
+            if (opt) uiLocaleSelect.append(opt);
+          }
         }
       }
       // Also set via property for browser compatibility

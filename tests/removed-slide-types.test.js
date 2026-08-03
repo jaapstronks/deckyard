@@ -45,9 +45,9 @@ const SCAN_ROOTS = [
 /**
  * Not scanned, and why:
  * - `node_modules`, `vendor`, `.git` — not ours.
- * - `client/i18n`, `server/i18n` — generated translation payloads;
- *   `client/i18n/en.json` is a stale build artifact that still carries keys for
- *   long-gone types.
+ * - `client/i18n`, `server/i18n` — generated translation payloads; a locale
+ *   file legitimately keeps a key naming a long-gone type until the orphan-key
+ *   audit prunes it.
  * - `custom` — fork-local slide types, gitignored; a fork may legitimately
  *   revive a name core dropped.
  * - `docs/plans` — a gitignored symlink to the private planning repo, and the

@@ -7,7 +7,6 @@ const REPO_ROOT = process.cwd();
 
 const CLIENT_DIR = path.join(REPO_ROOT, 'client');
 const OUT_TEMPLATE = path.join(CLIENT_DIR, 'i18n', 'template.pot.json');
-const OUT_EN = path.join(CLIENT_DIR, 'i18n', 'en.json');
 
 const IGNORE_DIRS = new Set([
   'node_modules',
@@ -241,16 +240,6 @@ async function* walk(dir) {
   }
 }
 
-async function readJsonIfExists(p) {
-  try {
-    const raw = await fs.readFile(p, 'utf8');
-    const data = JSON.parse(raw);
-    return data && typeof data === 'object' ? data : null;
-  } catch {
-    return null;
-  }
-}
-
 async function writeJsonPretty(p, obj) {
   await fs.mkdir(path.dirname(p), { recursive: true });
   const text = JSON.stringify(obj, null, 2) + '\n';
@@ -305,12 +294,6 @@ async function main() {
     strings: sortObjectByKey(strings),
   };
   await writeJsonPretty(OUT_TEMPLATE, template);
-
-  // Keep en.json in sync (translator-friendly)
-  const existingEn = (await readJsonIfExists(OUT_EN)) || {};
-  const nextEn = { ...(existingEn && typeof existingEn === 'object' ? existingEn : {}) };
-  for (const [k, v] of Object.entries(strings)) nextEn[k] = v.default;
-  await writeJsonPretty(OUT_EN, sortObjectByKey(nextEn));
 
   if (warnings.length) {
     // eslint-disable-next-line no-console

@@ -51,12 +51,31 @@ export default [
   // Browser-side source.
   {
     files: ['client/**/*.js'],
+    ignores: ['client/vendor/**'],
     languageOptions: {
       ecmaVersion: 2024,
       sourceType: 'module',
       globals: {
         ...globals.browser,
       },
+    },
+    rules: {
+      // Every `t()` call must carry its English fallback: `t(key, fallback)`.
+      // The fallback is what Tier-2 locales degrade to when a key is missing
+      // (client/lib/ui-i18n.js) — the whole reason tiering is safe. Written as
+      // `t(key)` alone, a missing key renders the raw key string instead of
+      // English, which is the one way that safety net breaks. See
+      // docs/reference/i18n-locale-tiers.md.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.name='t'][arguments.length<2]",
+          message:
+            't() needs an English fallback: t(key, fallback). Without it a ' +
+            'missing key renders the raw key, defeating Tier-2 fallback ' +
+            '(docs/reference/i18n-locale-tiers.md).',
+        },
+      ],
     },
   },
 

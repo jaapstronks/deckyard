@@ -47,6 +47,7 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | AI prompt examples | `shared/slide-types/types/<name>/ai.js` (`aiExamples`) | sparse by design (reverse only) | prompt shows the schema without filled-in content |
 | v1 generator manual example | `server/utils/openai/slide-types-prompt.js` (`MANUAL_EXAMPLES`) | sparse by design (reverse only) | falls through to the catalog example, then to defaults |
 | Picker description | `shared/slide-types/types/<name>/authoring.js` (`description`) | every insertable type | tile shows the bare label, no tooltip |
+| Dutch picker description | `client/i18n/nl/editor.json` (`editor.slideTypeDesc.<name>`) | every insertable type (Tier-1 pair) | tile shows the English description to Dutch users — English tile among Dutch neighbours, suite still green |
 | Picker search aliases | same file (`aliases`) | every insertable type | only findable by exact label |
 | Picker schematic glyph | `client/views/editor/slide-type-schematics.js` | every insertable type | generic text-only diagram |
 | Curated group | `shared/slide-types/types/<name>/authoring.js` (`group`) | every insertable type | lands in the picker's computed "Other" group *and* the settings tab's "Other" heading |
