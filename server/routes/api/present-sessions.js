@@ -158,7 +158,6 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
           const slide = pres ? findSlideById(pres, slideId) : null;
           if (kind === 'feedback') {
             await ensureFeedbackForSlide(repoRoot, sessionId, {
-              presentationId,
               slideId,
             });
           } else {
@@ -166,13 +165,11 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
             if (optionCount > 0) {
               if (kind === 'likert') {
                 await ensureLikertInteractionForSlide(repoRoot, sessionId, {
-                  presentationId,
                   slideId,
                   optionCount,
                 });
               } else {
                 await ensurePollInteractionForSlide(repoRoot, sessionId, {
-                  presentationId,
                   slideId,
                   optionCount,
                 });
@@ -224,18 +221,15 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     // Ensure interaction exists first.
     if (kind === 'feedback') {
       await ensureFeedbackForSlide(repoRoot, sessionId, {
-        presentationId: s.presentationId,
         slideId,
       });
     } else if (kind === 'likert') {
       await ensureLikertInteractionForSlide(repoRoot, sessionId, {
-        presentationId: s.presentationId,
         slideId,
         optionCount,
       });
     } else {
       await ensurePollInteractionForSlide(repoRoot, sessionId, {
-        presentationId: s.presentationId,
         slideId,
         optionCount,
       });

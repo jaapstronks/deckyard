@@ -1,189 +1,150 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
-import { writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
-import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
-
 /**
- * Follow-native interactions storage (session-scoped).
+ * Follow-native interactions storage (session-scoped), on PostgreSQL.
  *
- * Authoritative key: { sessionId, slideId } (NOT pollId).
- * Stores per-device votes so we can enforce "one vote per device" and allow changes.
+ * Authoritative key: `{ sessionId, slideId }` (NOT pollId). One vote per device
+ * per interaction, changeable — which is `interaction_votes`' primary key
+ * `(interaction_id, device_id)`, so the "one vote per device" rule is enforced
+ * by the database rather than by a Map in one process.
+ *
+ * This replaces a JSON file per session under `dataDir()/interactions/`. That
+ * file was written regardless of `STORAGE_MODE`, was only visible to the process
+ * that held the session in its `sessions` map, and — because expired sessions
+ * were explicitly "left on disk for now" — was never collected. All three are
+ * gone: the rows are shared, and `present_sessions` cascades them away when the
+ * session ends or the sweep collects it.
+ *
+ * The per-slide lifecycle (kind, open/closed, option count) is not here; it is
+ * `storage/interaction-slides.js`, shared with feedback. What is here is the
+ * answers and the aggregate built from them.
+ *
+ * Totals are never stored. They are `count(*) GROUP BY option_index` over the
+ * votes, which is the same "votes are the single source of truth" rule the file
+ * version enforced in JavaScript — now enforced by not having anywhere else to
+ * put the number.
  */
 
-const TTL_MS = 24 * 60 * 60 * 1000; // ~1 day (matches present-sessions)
+import { sql } from 'kysely';
 
-/** @type {Map<string, any>} */
-const sessions = new Map();
+import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
+import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { withDbGuard } from './utils/db-guard.js';
+import {
+  MAX_OPTIONS,
+  clampInt,
+  ensureInteractionSlide,
+  getInteractionSlide,
+  updateInteractionSlide,
+} from './interaction-slides.js';
 
-function interactionsDir(repoRoot) {
-  return path.join(dataDir(repoRoot), 'interactions');
-}
-
-function sessionFile(repoRoot, sessionId) {
-  return path.join(interactionsDir(repoRoot), `${sessionId}.json`);
-}
+/**
+ * Device ids come from a cookie the client controls, so they are clamped to the
+ * column width rather than trusted. `varchar(100)` comfortably holds the uuid
+ * the server mints; a longer value is a forged cookie, not a device.
+ */
+const MAX_DEVICE_ID_LENGTH = 100;
 
 function now() {
   return Date.now();
 }
 
-function clampInt(n, min, max) {
-  const v = Number(n);
-  if (!Number.isFinite(v)) return min;
-  return Math.max(min, Math.min(max, Math.trunc(v)));
-}
-
-function safeObject(v) {
-  return v && typeof v === 'object' ? v : {};
-}
-
-function safeString(v) {
-  return typeof v === 'string' ? v : '';
-}
-
-function serializeSession(s) {
-  const slides = {};
-  for (const [slideId, st] of s.slides.entries()) {
-    const votesByDevice = {};
-    for (const [deviceId, idx] of st.votesByDevice.entries()) {
-      votesByDevice[deviceId] = idx;
-    }
-    // Compute totals from votesByDevice for storage (single source of truth)
-    const totals = computeTotalsFromVotes(st.votesByDevice, st.optionCount);
-    slides[slideId] = {
-      type: st.type,
-      status: st.status,
-      optionCount: st.optionCount,
-      totals,
-      votesByDevice,
-      updatedAt: Number(st.updatedAt || 0) || now(),
-      createdAt: Number(st.createdAt || 0) || now(),
-    };
-  }
-  return {
-    sessionId: s.sessionId,
-    presentationId: s.presentationId,
-    slides,
-    createdAt: Number(s.createdAt || 0) || now(),
-    lastActivityAt: Number(s.lastActivityAt || 0) || now(),
-  };
-}
-
-async function writeSessionToDisk(s) {
-  const repoRoot = s?.repoRoot;
-  if (!repoRoot || !s?.sessionId) return;
-  await writeJsonAtomic(sessionFile(repoRoot, s.sessionId), serializeSession(s));
-}
-
-function schedulePersist(s) {
-  if (!s) return;
-  s.lastActivityAt = now();
-  if (s.persistTimer) clearTimeout(s.persistTimer);
-  s.persistTimer = setTimeout(() => {
-    s.persistTimer = null;
-    writeSessionToDisk(s).catch(() => {});
-  }, 600);
-  s.persistTimer.unref?.();
-}
-
-async function loadSessionFromDisk(repoRoot, sessionId) {
-  const root = String(repoRoot || '');
-  const sid = String(sessionId || '').trim();
-  if (!root || !sid) return null;
-  if (sessions.has(sid)) return sessions.get(sid);
-
-  const s = {
-    sessionId: sid,
-    presentationId: '',
-    repoRoot: root,
-    slides: new Map(),
-    createdAt: now(),
-    lastActivityAt: now(),
-    persistTimer: null,
-  };
-
-  const f = sessionFile(root, sid);
-  try {
-    const raw = await fs.readFile(f, 'utf8');
-    const data = JSON.parse(raw);
-    s.presentationId = safeString(data?.presentationId);
-    s.createdAt = Number(data?.createdAt || 0) || s.createdAt;
-    s.lastActivityAt = Number(data?.lastActivityAt || 0) || s.lastActivityAt;
-    const slides = safeObject(data?.slides);
-    for (const [slideId, st0] of Object.entries(slides)) {
-      const st = safeObject(st0);
-      const votes = new Map();
-      const votesObj = safeObject(st.votesByDevice);
-      for (const [deviceId, idx] of Object.entries(votesObj)) {
-        const di = safeString(deviceId);
-        if (!di) continue;
-        votes.set(di, clampInt(idx, 0, 100));
-      }
-      const optionCount = clampInt(st.optionCount, 0, 10);
-      // Note: totals is not stored in memory - it's computed on-the-fly from votesByDevice
-      s.slides.set(String(slideId), {
-        type: safeString(st.type) || 'poll',
-        status: safeString(st.status) === 'closed' ? 'closed' : 'open',
-        optionCount,
-        votesByDevice: votes,
-        updatedAt: Number(st.updatedAt || 0) || now(),
-        createdAt: Number(st.createdAt || 0) || now(),
-      });
-    }
-  } catch {
-    // New session; ignore missing/bad files.
-  }
-
-  // Expired sessions are left on disk for now; present-sessions TTL already governs liveness.
-  sessions.set(sid, s);
-  return s;
+/**
+ * @param {*} v
+ * @returns {string}
+ */
+function normalizeDeviceId(v) {
+  return String(v || '').trim().slice(0, MAX_DEVICE_ID_LENGTH);
 }
 
 /**
- * Compute totals array from votesByDevice (single source of truth).
- * This ensures totals always accurately reflect the actual votes.
+ * @param {*} type
+ * @returns {'poll'|'likert'}
  */
-function computeTotalsFromVotes(votesByDevice, optionCount) {
-  const n = clampInt(optionCount, 0, 10);
-  const totals = Array.from({ length: n }, () => 0);
-  for (const idx of votesByDevice.values()) {
-    const i = clampInt(idx, 0, n - 1);
-    if (i >= 0 && i < n) {
-      totals[i] += 1;
+function normalizeInteractionType(type) {
+  const t = String(type || '').trim();
+  if (t === 'poll' || t === 'likert') return t;
+  return 'poll';
+}
+
+/**
+ * Vote counts per option, plus this device's own choice, in one round trip.
+ *
+ * The `FILTER` picks the caller's vote out of the same scan that counts the
+ * rest, so an aggregate read is one query however large the audience is.
+ *
+ * @param {string} interactionId
+ * @param {number} optionCount
+ * @param {string|null} deviceId
+ * @returns {Promise<{ totals: number[], myVote: number|null }>}
+ */
+async function readVotes(interactionId, optionCount, deviceId) {
+  const n = clampInt(optionCount, 0, MAX_OPTIONS);
+  const empty = { totals: Array.from({ length: n }, () => 0), myVote: null };
+  const did = normalizeDeviceId(deviceId);
+
+  return withDbGuard(empty, async (db) => {
+    const { rows } = await sql`
+      SELECT
+        option_index,
+        count(*)::int AS n,
+        bool_or(device_id = ${did || null}) AS mine
+      FROM interaction_votes
+      WHERE interaction_id = ${interactionId}
+      GROUP BY option_index
+    `.execute(db);
+
+    const totals = Array.from({ length: n }, () => 0);
+    let myVote = null;
+    for (const row of rows || []) {
+      const idx = clampInt(row.option_index, -1, MAX_OPTIONS);
+      if (idx >= 0 && idx < n) totals[idx] += Number(row.n || 0);
+      if (did && row.mine) myVote = idx;
     }
-  }
-  return totals;
+    return { totals, myVote };
+  });
 }
 
-function ensureOptionCount(st, optionCount) {
-  const n = clampInt(optionCount, 0, 10);
-  st.optionCount = n;
-  // If option count shrank, drop any votes pointing outside the range.
-  for (const [deviceId, idx] of Array.from(st.votesByDevice.entries())) {
-    if (idx < 0 || idx >= n) st.votesByDevice.delete(deviceId);
-  }
+/**
+ * Drop votes that point outside the current option range.
+ *
+ * Shrinking a poll's options in the editor mid-session would otherwise leave
+ * votes for options that no longer exist — the file version pruned them in
+ * `ensureOptionCount`, this is the same rule as a DELETE.
+ *
+ * @param {string} interactionId
+ * @param {number} optionCount
+ * @returns {Promise<void>}
+ */
+async function pruneOutOfRangeVotes(interactionId, optionCount) {
+  const n = clampInt(optionCount, 0, MAX_OPTIONS);
+  await withDbGuard(undefined, async (db) => {
+    await db
+      .deleteFrom('interaction_votes')
+      .where('interaction_id', '=', interactionId)
+      .where('option_index', '>=', n)
+      .execute();
+  });
 }
 
-function aggregateForDevice(st, deviceId) {
-  // Always compute totals from votesByDevice - single source of truth
-  const totals = computeTotalsFromVotes(st.votesByDevice, st.optionCount);
+/**
+ * Build the payload the presenter and the follow client both render.
+ *
+ * @param {import('./interaction-slides.js').InteractionSlide} slide
+ * @param {string|null} deviceId
+ * @returns {Promise<object>}
+ */
+async function aggregateForDevice(slide, deviceId) {
+  const { totals, myVote } = await readVotes(slide.id, slide.optionCount, deviceId);
   const total = totals.reduce((a, b) => a + b, 0);
-  const myVote =
-    deviceId && st.votesByDevice.has(deviceId)
-      ? clampInt(st.votesByDevice.get(deviceId), 0, 100)
-      : null;
   return {
-    slideId: st.slideId,
-    type: st.type,
-    status: st.status,
-    open: st.status !== 'closed',
-    optionCount: st.optionCount,
+    slideId: slide.slideId,
+    type: slide.type,
+    status: slide.status,
+    open: slide.status !== 'closed',
+    optionCount: slide.optionCount,
     totals,
     total,
     myVote: myVote ?? undefined,
-    updatedAt: Number(st.updatedAt || 0) || now(),
+    updatedAt: slide.updatedAt || now(),
   };
 }
 
@@ -203,7 +164,9 @@ const broadcastStates = new Map();
 
 function sweepBroadcastStates() {
   if (broadcastStates.size <= 500) return;
-  const cutoff = now() - TTL_MS;
+  // Anything idle for a full coalesce window has nothing pending; the entry is
+  // only a rate-limit memory.
+  const cutoff = now() - 60_000;
   for (const [key, b] of broadcastStates) {
     if (!b.timer && b.lastSentAt < cutoff) broadcastStates.delete(key);
   }
@@ -216,9 +179,19 @@ function sweepBroadcastStates() {
  * fan-out to all clients (O(N²) SSE writes during a vote burst).
  * Pass immediate=true for status changes/resets so open/close gating on
  * clients is never delayed.
+ *
+ * The aggregate is re-read at send time, so a coalesced broadcast always
+ * carries the latest totals — including votes cast by another process.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {string} slideId
+ * @param {object} [opts]
+ * @param {boolean} [opts.immediate]
+ * @returns {void}
  */
-function scheduleInteractionBroadcast(repoRoot, sessionId, st, { immediate = false } = {}) {
-  const key = `${sessionId}\n${st.slideId}`;
+function scheduleInteractionBroadcast(repoRoot, sessionId, slideId, { immediate = false } = {}) {
+  const key = `${sessionId}\n${slideId}`;
   let b = broadcastStates.get(key);
   if (!b) {
     b = { timer: null, lastSentAt: 0 };
@@ -227,9 +200,11 @@ function scheduleInteractionBroadcast(repoRoot, sessionId, st, { immediate = fal
   }
   const send = () => {
     b.lastSentAt = now();
-    // Aggregate is computed at send time so a coalesced broadcast always
-    // carries the latest totals.
-    maybeBroadcast(repoRoot, sessionId, aggregateForDevice(st, null)).catch(() => {});
+    (async () => {
+      const slide = await getInteractionSlide({ sessionId, slideId });
+      if (!slide) return;
+      await maybeBroadcast(repoRoot, sessionId, await aggregateForDevice(slide, null));
+    })().catch(() => {});
   };
   if (immediate) {
     if (b.timer) {
@@ -252,148 +227,153 @@ function scheduleInteractionBroadcast(repoRoot, sessionId, st, { immediate = fal
   b.timer.unref?.();
 }
 
-function normalizeInteractionType(type) {
-  const t = String(type || '').trim();
-  if (t === 'poll' || t === 'likert') return t;
-  return 'poll';
-}
-
+/**
+ * Create the interaction for a slide if it has none, and bring its kind and
+ * option count up to date.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {'poll'|'likert'} [opts.type]
+ * @param {string} [opts.slideId]
+ * @param {number} [opts.optionCount]
+ * @param {'open'|'closed'} [opts.defaultStatus]
+ * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
+ */
 async function ensureInteractionForSlide(
   repoRoot,
   sessionId,
-  {
-    type = 'poll',
-    presentationId = '',
-    slideId = '',
-    optionCount = 0,
-    defaultStatus = 'open',
-  } = {}
+  { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  if (presentationId) s.presentationId = String(presentationId || '').trim();
+  const slide = await ensureInteractionSlide({
+    sessionId,
+    slideId,
+    type: normalizeInteractionType(type),
+    optionCount,
+    defaultStatus,
+  });
+  if (!slide) return null;
+  await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const it = normalizeInteractionType(type);
-
-  let st = s.slides.get(sid);
-  if (!st) {
-    st = {
-      slideId: sid,
-      type: it,
-      status: defaultStatus === 'closed' ? 'closed' : 'open',
-      optionCount: 0,
-      votesByDevice: new Map(),
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    s.slides.set(sid, st);
-  }
-  st.slideId = sid;
-  st.type = it;
-  ensureOptionCount(st, optionCount);
-  st.updatedAt = now();
-  schedulePersist(s);
-
-  const agg = aggregateForDevice(st, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, st);
+  const agg = await aggregateForDevice(slide, null);
+  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId);
   return agg;
 }
 
+/**
+ * Read the aggregate for a slide, optionally reconciling the option count with
+ * what the deck says today.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {string} [opts.slideId]
+ * @param {string|null} [opts.deviceId]
+ * @param {number|null} [opts.optionCount]
+ * @returns {Promise<object|null>}
+ */
 async function getInteractionAggregate(
   repoRoot,
   sessionId,
   { slideId = '', deviceId = null, optionCount = null } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  if (optionCount != null) ensureOptionCount(st, optionCount);
-  st.updatedAt = now();
-  schedulePersist(s);
-  return aggregateForDevice(st, deviceId);
+  let slide = await getInteractionSlide({ sessionId, slideId });
+  if (!slide) return null;
+  if (optionCount != null && clampInt(optionCount, 0, MAX_OPTIONS) !== slide.optionCount) {
+    slide = (await updateInteractionSlide({ sessionId, slideId, optionCount })) || slide;
+    await pruneOutOfRangeVotes(slide.id, slide.optionCount);
+  }
+  return aggregateForDevice(slide, deviceId);
 }
 
+/**
+ * Cast (or change) one device's vote.
+ *
+ * The interaction is created on the fly when a voter arrives before the
+ * presenter's ensure call, so the first voter never needs a presenter action.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ */
 async function voteInteraction(
   repoRoot,
   sessionId,
-  {
-    type = 'poll',
-    presentationId = '',
-    slideId = '',
-    deviceId = '',
-    optionIndex = 0,
-    optionCount = 0,
-  } = {}
+  { type = 'poll', slideId = '', deviceId = '', optionIndex = 0, optionCount = 0 } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'no_session' };
-  if (presentationId) s.presentationId = String(presentationId || '').trim();
-
+  const did = normalizeDeviceId(deviceId);
   const sid = String(slideId || '').trim();
-  const did = String(deviceId || '').trim();
   if (!sid || !did) return { ok: false, reason: 'bad_request' };
 
-  const it = normalizeInteractionType(type);
+  const slide = await ensureInteractionSlide({
+    sessionId,
+    slideId: sid,
+    type: normalizeInteractionType(type),
+    optionCount,
+  });
+  if (!slide) return { ok: false, reason: 'no_session' };
+  await pruneOutOfRangeVotes(slide.id, slide.optionCount);
+  if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 
-  let st = s.slides.get(sid);
-  if (!st) {
-    // Auto-create (open) so the first voter doesn't need a presenter action.
-    st = {
-      slideId: sid,
-      type: it,
-      status: 'open',
-      optionCount: 0,
-      votesByDevice: new Map(),
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    s.slides.set(sid, st);
-  }
+  const idx = clampInt(optionIndex, 0, Math.max(0, slide.optionCount - 1));
+  await withDbGuard(undefined, async (db) => {
+    await db
+      .insertInto('interaction_votes')
+      .values({
+        interaction_id: slide.id,
+        device_id: did,
+        option_index: idx,
+        updated_at: new Date(),
+      })
+      .onConflict((oc) =>
+        oc.columns(['interaction_id', 'device_id']).doUpdateSet({
+          option_index: idx,
+          updated_at: new Date(),
+        })
+      )
+      .execute();
+  });
+  // A vote is a change to the interaction, so it moves `updated_at` — the
+  // timestamp clients use to tell a fresh aggregate from a replayed one.
+  const touched = (await updateInteractionSlide({ sessionId, slideId: sid })) || slide;
 
-  st.type = it;
-  ensureOptionCount(st, optionCount);
-  const idx = clampInt(optionIndex, 0, Math.max(0, st.optionCount - 1));
-  if (st.status === 'closed') return { ok: false, reason: 'closed' };
-
-  // votesByDevice is the single source of truth - just update it.
-  // Totals will be computed on-the-fly in aggregateForDevice.
-  st.votesByDevice.set(did, idx);
-  st.updatedAt = now();
-  schedulePersist(s);
-
-  const agg = aggregateForDevice(st, did);
-  scheduleInteractionBroadcast(repoRoot, sessionId, st);
+  const agg = await aggregateForDevice(touched, did);
+  scheduleInteractionBroadcast(repoRoot, sessionId, sid);
   return { ok: true, aggregate: agg };
 }
 
+/**
+ * Open or close an interaction (presenter action), firing the close webhook.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<object|null>}
+ */
 async function setInteractionStatus(
   repoRoot,
   sessionId,
   { slideId = '', status = 'open', optionCount = null } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  if (optionCount != null) ensureOptionCount(st, optionCount);
-  const prevStatus = st.status;
-  st.status = String(status) === 'closed' ? 'closed' : 'open';
-  st.updatedAt = now();
-  schedulePersist(s);
-  const agg = aggregateForDevice(st, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, st, { immediate: true });
+  const existing = await getInteractionSlide({ sessionId, slideId });
+  if (!existing) return null;
 
-  // Fire webhook when interaction is closed
-  if (prevStatus !== 'closed' && st.status === 'closed') {
+  const slide = await updateInteractionSlide({
+    sessionId,
+    slideId,
+    status,
+    ...(optionCount != null ? { optionCount } : {}),
+  });
+  if (!slide) return null;
+  if (optionCount != null) await pruneOutOfRangeVotes(slide.id, slide.optionCount);
+
+  const agg = await aggregateForDevice(slide, null);
+  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId, { immediate: true });
+
+  if (existing.status !== 'closed' && slide.status === 'closed') {
     const webhookEvent =
-      st.type === 'likert'
+      slide.type === 'likert'
         ? 'interaction.likert_closed'
         : 'interaction.poll_closed';
     maybeFireInteractionWebhook(repoRoot, {
@@ -406,20 +386,28 @@ async function setInteractionStatus(
   return agg;
 }
 
+/**
+ * Clear every vote on an interaction (presenter action).
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<object|null>}
+ */
 async function resetInteraction(repoRoot, sessionId, { slideId = '', optionCount = null } = {}) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  if (optionCount != null) ensureOptionCount(st, optionCount);
-  // Clear all votes - totals will automatically be zeros when computed
-  st.votesByDevice = new Map();
-  st.updatedAt = now();
-  schedulePersist(s);
-  const agg = aggregateForDevice(st, null);
-  scheduleInteractionBroadcast(repoRoot, sessionId, st, { immediate: true });
+  const slide = await updateInteractionSlide({
+    sessionId,
+    slideId,
+    ...(optionCount != null ? { optionCount } : {}),
+  });
+  if (!slide) return null;
+
+  await withDbGuard(undefined, async (db) => {
+    await db.deleteFrom('interaction_votes').where('interaction_id', '=', slide.id).execute();
+  });
+
+  const agg = await aggregateForDevice(slide, null);
+  scheduleInteractionBroadcast(repoRoot, sessionId, slide.slideId, { immediate: true });
   return agg;
 }
 
@@ -466,4 +454,3 @@ export async function setLikertInteractionStatus(repoRoot, sessionId, opts = {})
 export async function resetLikertInteraction(repoRoot, sessionId, opts = {}) {
   return resetInteraction(repoRoot, sessionId, opts);
 }
-

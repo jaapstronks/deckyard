@@ -9,8 +9,7 @@ import {
 import { getFollowStateForPresentation } from '../../storage/present-sessions/index.js';
 import crypto from 'node:crypto';
 import {
-  ensureQuestionsSession,
-  getQuestionsSession,
+  getQuestion,
   promoteQuestion,
   removeQuestion,
 } from '../../storage/questions.js';
@@ -42,7 +41,6 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
     // as long as we can resolve a sessionId for the presentation.
     if (!state.sessionId) return badRequest(res, 'No session found for presentation');
 
-    await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
     const result = await removeQuestion(repoRoot, state.sessionId, {
       questionId,
       removedBy: authedUser.email || 'moderator',
@@ -85,22 +83,13 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
     // Allow promotion even if session isn't "live" anymore, as long as we have a sessionId.
     if (!state.sessionId) return badRequest(res, 'No session found for presentation');
 
-    await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
-    const qs = await getQuestionsSession(repoRoot, state.sessionId);
-    const q = (Array.isArray(qs?.questions) ? qs.questions : []).find(
-      (x) => String(x?.id || '') === String(questionId || '')
-    );
+    const q = await getQuestion(repoRoot, state.sessionId, questionId);
     if (!q) return notFound(res);
 
     const dominant =
       normalizeLang(pres?.i18n?.dominant) || 'nl';
-    const texts = q?.texts && typeof q.texts === 'object' ? q.texts : {};
-    const originalText =
-      typeof q?.originalText === 'string' && q.originalText.trim()
-        ? q.originalText
-        : typeof q?.text === 'string'
-        ? q.text
-        : '';
+    const texts = q.texts && typeof q.texts === 'object' ? q.texts : {};
+    const originalText = String(q.text || '').trim();
 
     const pickText = (lang) => {
       const t = typeof texts?.[lang] === 'string' ? texts[lang] : '';
@@ -122,7 +111,7 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
       'Q&A question',
       '',
       originalText ? `Original: ${originalText}` : '',
-      q?.authorName ? `Asked by: ${String(q.authorName).trim()}` : '',
+      q.authorName ? `Asked by: ${String(q.authorName).trim()}` : '',
     ]
       .filter(Boolean)
       .join('\n');

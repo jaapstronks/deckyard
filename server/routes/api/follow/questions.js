@@ -5,7 +5,6 @@ import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   cancelQuestion,
   createQuestion,
-  ensureQuestionsSession,
   listQuestions,
   upvoteQuestion,
 } from '../../../storage/questions.js';
@@ -34,8 +33,7 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
       );
       return true;
     }
-    // If Q&A is disabled at the presentation level, don't leak questions and avoid
-    // creating background sessions.
+    // If Q&A is disabled at the presentation level, don't leak questions.
     if (caps.canUseQa === false) {
       const dev = ensureQaDeviceCookie(req);
       serveJson(
@@ -46,7 +44,6 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
       );
       return true;
     }
-    await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
     const questions = (await listQuestions(repoRoot, state.sessionId)) || [];
     const dev = ensureQaDeviceCookie(req);
     serveJson(
@@ -66,7 +63,6 @@ export async function handleFollowQuestions({ repoRoot, req, res }, presentation
     const caps = computeAudienceCapabilitiesFromState(state, pres);
     if (caps.canUseQa === false)
       return badRequest(res, 'Q&A is disabled for this presentation');
-    await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
     const body = await json(req);
     const dev = ensureQaDeviceCookie(req);
     const authorId = dev.id;
@@ -113,7 +109,6 @@ export async function handleFollowUpvote({ repoRoot, req, res }, presentationId,
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (caps.canUseQa === false)
     return badRequest(res, 'Q&A is disabled for this presentation');
-  await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
   const dev = ensureQaDeviceCookie(req);
   const voterId = dev.id;
   const result = await upvoteQuestion(repoRoot, state.sessionId, {
@@ -152,7 +147,6 @@ export async function handleFollowCancel({ repoRoot, req, res }, presentationId,
   const caps = computeAudienceCapabilitiesFromState(state, pres);
   if (caps.canUseQa === false)
     return badRequest(res, 'Q&A is disabled for this presentation');
-  await ensureQuestionsSession(repoRoot, state.sessionId, { presentationId });
   const dev = ensureQaDeviceCookie(req);
   const authorId = dev.id;
   const result = await cancelQuestion(repoRoot, state.sessionId, {

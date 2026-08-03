@@ -1,162 +1,108 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
-import { writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
-import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
-
 /**
- * Session-scoped feedback storage (per slide, per device).
+ * Session-scoped feedback storage (per slide, per device), on PostgreSQL.
  *
  * - Not shown on slides (only collected via follow UI)
  * - Presenter can export as CSV/JSON
+ *
+ * One row per `(session_id, slide_id, device_id)` — the unique constraint
+ * migration 001 created, which is exactly the "one entry per device, editable"
+ * rule the file format expressed as an `entriesByDevice` map. Resubmitting
+ * updates the text and keeps the original `created_at`.
+ *
+ * The per-slide open/closed status is **not** here: it is an `interactions` row
+ * of type `'feedback'` (`storage/interaction-slides.js`), shared with polls and
+ * likerts, because that lifecycle is one concept across all three live kinds.
+ * This module owns the answers, as the free-text sibling of `interaction_votes`.
+ *
+ * This replaces a JSON file per session under `dataDir()/feedback/`, written
+ * regardless of `STORAGE_MODE` and — because expired sessions were explicitly
+ * kept on disk — never collected. Collection is now the `ON DELETE CASCADE`
+ * from `present_sessions`.
  */
 
-const TTL_MS = 24 * 60 * 60 * 1000; // ~1 day (matches present-sessions + interactions)
+import { sql } from 'kysely';
 
-/** @type {Map<string, any>} */
-const sessions = new Map(); // sessionId -> session
+import { notifyPresentSessionInteractionState } from './present-sessions/index.js';
+import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
+import { withDbGuard } from './utils/db-guard.js';
+import {
+  ensureInteractionSlide,
+  getInteractionSlide,
+  updateInteractionSlide,
+} from './interaction-slides.js';
 
-function feedbackDir(repoRoot) {
-  return path.join(dataDir(repoRoot), 'feedback');
-}
+/** Free text is capped so an export stays sane and a row stays bounded. */
+const MAX_TEXT_LENGTH = 4000;
 
-function sessionFile(repoRoot, sessionId) {
-  return path.join(feedbackDir(repoRoot), `${sessionId}.json`);
-}
+/** Device ids arrive in a client-controlled cookie; clamp to the column width. */
+const MAX_DEVICE_ID_LENGTH = 100;
 
 function now() {
   return Date.now();
 }
 
-function safeObject(v) {
-  return v && typeof v === 'object' ? v : {};
+/**
+ * @param {*} v
+ * @returns {string}
+ */
+function normalizeDeviceId(v) {
+  return String(v || '').trim().slice(0, MAX_DEVICE_ID_LENGTH);
 }
 
-function safeString(v) {
-  return typeof v === 'string' ? v : '';
+/**
+ * Epoch millis from a timestamptz column.
+ * @param {*} value
+ * @returns {number}
+ */
+function toMillis(value) {
+  if (!value) return 0;
+  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
 }
 
-function serializeSession(s) {
-  const slides = {};
-  for (const [slideId, st] of s.slides.entries()) {
-    const entriesByDevice = {};
-    for (const [deviceId, it] of st.entriesByDevice.entries()) {
-      entriesByDevice[deviceId] = {
-        text: safeString(it?.text),
-        createdAt: Number(it?.createdAt || 0) || now(),
-        updatedAt: Number(it?.updatedAt || 0) || now(),
-      };
-    }
-    slides[slideId] = {
-      status: st.status,
-      entriesByDevice,
-      updatedAt: Number(st.updatedAt || 0) || now(),
-      createdAt: Number(st.createdAt || 0) || now(),
+/**
+ * Entry count plus this device's own text, in one round trip.
+ *
+ * @param {string} sessionId
+ * @param {string} slideId
+ * @param {string|null} deviceId
+ * @returns {Promise<{ total: number, myText: string|null }>}
+ */
+async function readEntrySummary(sessionId, slideId, deviceId) {
+  const did = normalizeDeviceId(deviceId);
+  return withDbGuard({ total: 0, myText: null }, async (db) => {
+    const { rows } = await sql`
+      SELECT
+        count(*)::int AS total,
+        max(text) FILTER (WHERE device_id = ${did || null}) AS mine
+      FROM feedback
+      WHERE session_id = ${sessionId} AND slide_id = ${slideId}
+    `.execute(db);
+    const row = rows?.[0] || {};
+    return {
+      total: Number(row.total || 0),
+      myText: did && typeof row.mine === 'string' ? row.mine : null,
     };
-  }
+  });
+}
+
+/**
+ * Build the payload the presenter and the follow client both render.
+ *
+ * @param {import('./interaction-slides.js').InteractionSlide} slide
+ * @param {string|null} deviceId
+ * @returns {Promise<object>}
+ */
+async function aggregateForDevice(slide, deviceId) {
+  const { total, myText } = await readEntrySummary(slide.sessionId, slide.slideId, deviceId);
   return {
-    sessionId: s.sessionId,
-    presentationId: s.presentationId,
-    slides,
-    createdAt: Number(s.createdAt || 0) || now(),
-    lastActivityAt: Number(s.lastActivityAt || 0) || now(),
-  };
-}
-
-async function writeSessionToDisk(s) {
-  const repoRoot = s?.repoRoot;
-  if (!repoRoot || !s?.sessionId) return;
-  await writeJsonAtomic(sessionFile(repoRoot, s.sessionId), serializeSession(s));
-}
-
-function schedulePersist(s) {
-  if (!s) return;
-  s.lastActivityAt = now();
-  if (s.persistTimer) clearTimeout(s.persistTimer);
-  s.persistTimer = setTimeout(() => {
-    s.persistTimer = null;
-    writeSessionToDisk(s).catch(() => {});
-  }, 650);
-  s.persistTimer.unref?.();
-}
-
-async function loadSessionFromDisk(repoRoot, sessionId) {
-  const root = String(repoRoot || '');
-  const sid = String(sessionId || '').trim();
-  if (!root || !sid) return null;
-  if (sessions.has(sid)) return sessions.get(sid);
-
-  const s = {
-    sessionId: sid,
-    presentationId: '',
-    repoRoot: root,
-    slides: new Map(),
-    createdAt: now(),
-    lastActivityAt: now(),
-    persistTimer: null,
-  };
-
-  const f = sessionFile(root, sid);
-  try {
-    const raw = await fs.readFile(f, 'utf8');
-    const data = JSON.parse(raw);
-    s.presentationId = safeString(data?.presentationId);
-    s.createdAt = Number(data?.createdAt || 0) || s.createdAt;
-    s.lastActivityAt = Number(data?.lastActivityAt || 0) || s.lastActivityAt;
-
-    const slides = safeObject(data?.slides);
-    for (const [slideId, st0] of Object.entries(slides)) {
-      const st = safeObject(st0);
-      const entries = new Map();
-      const entriesObj = safeObject(st.entriesByDevice);
-      for (const [deviceId, it0] of Object.entries(entriesObj)) {
-        const di = safeString(deviceId);
-        if (!di) continue;
-        const it = safeObject(it0);
-        const text = safeString(it.text);
-        entries.set(di, {
-          text,
-          createdAt: Number(it.createdAt || 0) || now(),
-          updatedAt: Number(it.updatedAt || 0) || now(),
-        });
-      }
-      s.slides.set(String(slideId), {
-        slideId: String(slideId),
-        status: safeString(st.status) === 'closed' ? 'closed' : 'open',
-        entriesByDevice: entries,
-        createdAt: Number(st.createdAt || 0) || now(),
-        updatedAt: Number(st.updatedAt || 0) || now(),
-      });
-    }
-  } catch {
-    // New session; ignore missing/bad files.
-  }
-
-  // Expiry is best-effort; if old data exists, it will be overwritten when session is active again.
-  if (now() - s.lastActivityAt > TTL_MS) {
-    // keep on disk; reset in memory to avoid unbounded growth
-    s.slides = new Map();
-    s.createdAt = now();
-    s.lastActivityAt = now();
-  }
-
-  sessions.set(sid, s);
-  return s;
-}
-
-function aggregateForDevice(st, deviceId) {
-  const entries = st?.entriesByDevice instanceof Map ? st.entriesByDevice : new Map();
-  const total = entries.size;
-  const mine = deviceId && entries.has(deviceId) ? entries.get(deviceId) : null;
-  return {
-    slideId: st.slideId,
+    slideId: slide.slideId,
     type: 'feedback',
-    status: st.status,
-    open: st.status !== 'closed',
+    status: slide.status,
+    open: slide.status !== 'closed',
     total,
-    myText: mine?.text ?? undefined,
-    updatedAt: Number(st.updatedAt || 0) || now(),
+    myText: myText ?? undefined,
+    updatedAt: slide.updatedAt || now(),
   };
 }
 
@@ -168,100 +114,109 @@ async function maybeBroadcast(repoRoot, sessionId, agg) {
   }
 }
 
+/**
+ * Create the feedback interaction for a slide if it has none.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {string} [opts.slideId]
+ * @param {'open'|'closed'} [opts.defaultStatus]
+ * @returns {Promise<object|null>} The aggregate, or null when there is no such session.
+ */
 export async function ensureFeedbackForSlide(
   repoRoot,
   sessionId,
-  { presentationId = '', slideId = '', defaultStatus = 'open' } = {}
+  { slideId = '', defaultStatus = 'open' } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  if (presentationId) s.presentationId = String(presentationId || '').trim();
+  const slide = await ensureInteractionSlide({
+    sessionId,
+    slideId,
+    type: 'feedback',
+    optionCount: 0,
+    defaultStatus,
+  });
+  if (!slide) return null;
 
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-
-  let st = s.slides.get(sid);
-  if (!st) {
-    st = {
-      slideId: sid,
-      status: String(defaultStatus) === 'closed' ? 'closed' : 'open',
-      entriesByDevice: new Map(),
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    s.slides.set(sid, st);
-  }
-  st.slideId = sid;
-  st.updatedAt = now();
-  schedulePersist(s);
-
-  const agg = aggregateForDevice(st, null);
+  const agg = await aggregateForDevice(slide, null);
   await maybeBroadcast(repoRoot, sessionId, agg);
   return agg;
 }
 
+/**
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {string} [opts.slideId]
+ * @param {string|null} [opts.deviceId]
+ * @returns {Promise<object|null>}
+ */
 export async function getFeedbackAggregate(
   repoRoot,
   sessionId,
   { slideId = '', deviceId = null } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  st.updatedAt = now();
-  schedulePersist(s);
-  return aggregateForDevice(st, deviceId);
+  const slide = await getInteractionSlide({ sessionId, slideId });
+  if (!slide) return null;
+  return aggregateForDevice(slide, deviceId);
 }
 
+/**
+ * Submit (or replace) one device's feedback on a slide.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
+ */
 export async function submitFeedback(
   repoRoot,
   sessionId,
-  { presentationId = '', slideId = '', deviceId = '', text = '' } = {}
+  { slideId = '', deviceId = '', text = '' } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'no_session' };
-  if (presentationId) s.presentationId = String(presentationId || '').trim();
-
   const sid = String(slideId || '').trim();
-  const did = String(deviceId || '').trim();
+  const did = normalizeDeviceId(deviceId);
   if (!sid || !did) return { ok: false, reason: 'bad_request' };
-
-  let st = s.slides.get(sid);
-  if (!st) {
-    st = {
-      slideId: sid,
-      status: 'open',
-      entriesByDevice: new Map(),
-      createdAt: now(),
-      updatedAt: now(),
-    };
-    s.slides.set(sid, st);
-  }
-  if (st.status === 'closed') return { ok: false, reason: 'closed' };
 
   const t = String(text || '').trim();
   if (!t) return { ok: false, reason: 'empty' };
-  // Keep payloads sane for storage/export.
-  const limited = t.length > 4000 ? t.slice(0, 4000) : t;
+  const limited = t.length > MAX_TEXT_LENGTH ? t.slice(0, MAX_TEXT_LENGTH) : t;
 
-  const prev = st.entriesByDevice.has(did) ? st.entriesByDevice.get(did) : null;
-  const createdAt = prev?.createdAt ? Number(prev.createdAt) : now();
-  st.entriesByDevice.set(did, {
-    text: limited,
-    createdAt: Number(createdAt || 0) || now(),
-    updatedAt: now(),
+  // Auto-create so the first respondent never needs a presenter action, the
+  // same way a first voter creates a poll's interaction.
+  const slide = await ensureInteractionSlide({
+    sessionId,
+    slideId: sid,
+    type: 'feedback',
+    optionCount: 0,
   });
-  st.updatedAt = now();
-  schedulePersist(s);
+  if (!slide) return { ok: false, reason: 'no_session' };
+  if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 
-  const aggForDevice = aggregateForDevice(st, did);
-  const aggForBroadcast = aggregateForDevice(st, null);
+  await withDbGuard(undefined, async (db) => {
+    await db
+      .insertInto('feedback')
+      .values({
+        session_id: slide.sessionId,
+        slide_id: slide.slideId,
+        device_id: did,
+        text: limited,
+        updated_at: new Date(),
+      })
+      .onConflict((oc) =>
+        oc.columns(['session_id', 'slide_id', 'device_id']).doUpdateSet({
+          text: limited,
+          updated_at: new Date(),
+        })
+      )
+      .execute();
+  });
+  const touched = (await updateInteractionSlide({ sessionId, slideId: sid })) || slide;
+
+  const aggForDevice = await aggregateForDevice(touched, did);
+  const aggForBroadcast = await aggregateForDevice(touched, null);
   await maybeBroadcast(repoRoot, sessionId, aggForBroadcast);
 
-  // Fire webhook when feedback is submitted
   maybeFireInteractionWebhook(repoRoot, {
     event: 'interaction.feedback_submitted',
     sessionId,
@@ -271,58 +226,85 @@ export async function submitFeedback(
   return { ok: true, aggregate: aggForDevice };
 }
 
+/**
+ * Open or close feedback collection on a slide (presenter action).
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<object|null>}
+ */
 export async function setFeedbackStatus(
   repoRoot,
   sessionId,
   { slideId = '', status = 'open' } = {}
 ) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  st.status = String(status) === 'closed' ? 'closed' : 'open';
-  st.updatedAt = now();
-  schedulePersist(s);
-  const agg = aggregateForDevice(st, null);
+  const slide = await updateInteractionSlide({ sessionId, slideId, status });
+  if (!slide) return null;
+  const agg = await aggregateForDevice(slide, null);
   await maybeBroadcast(repoRoot, sessionId, agg);
   return agg;
 }
 
+/**
+ * Discard every entry on a slide (presenter action).
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<object|null>}
+ */
 export async function resetFeedback(repoRoot, sessionId, { slideId = '' } = {}) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return null;
-  const sid = String(slideId || '').trim();
-  if (!sid) return null;
-  const st = s.slides.get(sid);
-  if (!st) return null;
-  st.entriesByDevice = new Map();
-  st.updatedAt = now();
-  schedulePersist(s);
-  const agg = aggregateForDevice(st, null);
+  const slide = await updateInteractionSlide({ sessionId, slideId });
+  if (!slide) return null;
+
+  await withDbGuard(undefined, async (db) => {
+    await db
+      .deleteFrom('feedback')
+      .where('session_id', '=', slide.sessionId)
+      .where('slide_id', '=', slide.slideId)
+      .execute();
+  });
+
+  const agg = await aggregateForDevice(slide, null);
   await maybeBroadcast(repoRoot, sessionId, agg);
   return agg;
 }
 
+/**
+ * Every entry on a slide, for the presenter's CSV/JSON export.
+ *
+ * Ordered in SQL by the same key the file version sorted on in JavaScript, so
+ * two exports of the same data are byte-identical.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @param {string} [opts.slideId]
+ * @returns {Promise<Array<{slideId: string, deviceId: string, text: string, createdAt: number, updatedAt: number}>>}
+ */
 export async function listFeedbackEntries(repoRoot, sessionId, { slideId = '' } = {}) {
-  const s = await loadSessionFromDisk(repoRoot, sessionId);
-  if (!s) return [];
-  const sid = String(slideId || '').trim();
-  if (!sid) return [];
-  const st = s.slides.get(sid);
-  if (!st) return [];
-  const out = [];
-  for (const [deviceId, it] of st.entriesByDevice.entries()) {
-    out.push({
-      slideId: sid,
-      deviceId,
-      text: safeString(it?.text),
-      createdAt: Number(it?.createdAt || 0) || 0,
-      updatedAt: Number(it?.updatedAt || 0) || 0,
-    });
-  }
-  // stable-ish ordering: createdAt then updatedAt then deviceId
-  out.sort((a, b) => (a.createdAt - b.createdAt) || (a.updatedAt - b.updatedAt) || String(a.deviceId).localeCompare(String(b.deviceId)));
-  return out;
+  const sid = String(sessionId || '').trim();
+  const slide = String(slideId || '').trim();
+  if (!sid || !slide) return [];
+
+  return withDbGuard([], async (db) => {
+    const rows = await db
+      .selectFrom('feedback')
+      .select(['slide_id', 'device_id', 'text', 'created_at', 'updated_at'])
+      .where('session_id', '=', sid)
+      .where('slide_id', '=', slide)
+      .orderBy('created_at', 'asc')
+      .orderBy('updated_at', 'asc')
+      .orderBy('device_id', 'asc')
+      .execute();
+
+    return rows.map((row) => ({
+      slideId: String(row.slide_id),
+      deviceId: String(row.device_id),
+      text: typeof row.text === 'string' ? row.text : '',
+      createdAt: toMillis(row.created_at),
+      updatedAt: toMillis(row.updated_at),
+    }));
+  });
 }
