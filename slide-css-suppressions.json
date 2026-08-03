@@ -122,49 +122,9 @@
       "count": 6
     }
   },
-  "client/styles/slides/02-content-and-media/10-image-text.css": {
-    "font-size": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/02-content-and-media/20-video.css": {
-    "line-height": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/02-content-and-media/30-embed.css": {
-    "line-height": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/02-content-and-media/40-quote.css": {
-    "font-size": {
-      "count": 4
-    },
-    "line-height": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 2
-    }
-  },
-  "client/styles/slides/02-content-and-media/75-icon-card-grid-variants.css": {
-    "font-size": {
-      "count": 1
-    }
-  },
   "client/styles/slides/02-content-and-media/80-text-blocks.css": {
-    "font-size": {
-      "count": 8
-    },
-    "line-height": {
-      "count": 2
-    },
     "spacing": {
-      "count": 12
+      "count": 1
     }
   },
   "client/styles/slides/03-components/00-icon-card-grid.css": {
