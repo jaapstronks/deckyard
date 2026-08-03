@@ -80,7 +80,7 @@ export const ICON_CATEGORIES = [
     icons: [
       'cpu', 'code', 'code-xml', 'terminal', 'database', 'server',
       'cloud', 'wifi', 'bluetooth', 'smartphone', 'laptop', 'monitor',
-      'hard-drive', 'bug', 'git-branch', 'github', 'binary', 'network',
+      'hard-drive', 'bug', 'git-branch', 'binary', 'network',
       'plug', 'qr-code', 'scan', 'bot', 'brain', 'circuit-board',
       'mouse-pointer-click', 'keyboard', 'memory-stick', 'router', 'webhook',
       'glasses', 'scan-eye', 'scan-face', 'view', 'focus', 'cuboid',
@@ -184,7 +184,7 @@ export const ICON_CATEGORIES = [
     label: 'Sports & body',
     icons: [
       'dumbbell', 'biceps-flexed', 'footprints', 'person-standing', 'activity', 'heart-pulse',
-      'bike', 'volleyball', 'dribbble', 'goal', 'trophy', 'medal',
+      'bike', 'volleyball', 'goal', 'trophy', 'medal',
       'bone', 'brain', 'ear', 'eye', 'hand', 'scan-face',
       'scan-heart', 'baby', 'accessibility',
     ],
@@ -254,7 +254,6 @@ export const ICON_SEARCH_ALIASES = {
   footprints: ['exercise', 'walk', 'run', 'body', 'steps'],
   'person-standing': ['body', 'human', 'person'],
   volleyball: ['sport', 'ball', 'game'],
-  dribbble: ['sport', 'basketball', 'ball'],
   goal: ['sport', 'football', 'soccer', 'target'],
   activity: ['exercise', 'health', 'movement', 'pulse'],
   'heart-pulse': ['exercise', 'health', 'body', 'fitness'],
