@@ -1,9 +1,11 @@
 import { cleanStr, uniqStrings } from '../../../shared/string-utils.js';
 
 export function getThemeSlideTypeConfig(theme) {
-  const hidden = uniqStrings(theme?.hiddenSlideTypes);
+  // Themes reaching here are normalized (client/lib/theme/theme.js runs every
+  // load through normalizeTheme), so `slideTypes.exclude` is the whole story —
+  // the legacy `hiddenSlideTypes` alias is folded away there.
   const st = theme?.slideTypes && typeof theme.slideTypes === 'object' ? theme.slideTypes : {};
-  const exclude = uniqStrings([...(Array.isArray(st.exclude) ? st.exclude : []), ...hidden]);
+  const exclude = uniqStrings(st.exclude);
   const include = uniqStrings(st.include);
   return {
     exclude: new Set(exclude),

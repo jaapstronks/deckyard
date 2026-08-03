@@ -172,17 +172,22 @@ Themes can control which slide types can be inserted:
 - **`slideTypes.exclude`**: hide these slide types from the editor “add slide” UI (and prevent inserting them from the slide library).
 - **`slideTypes.include`**: enable theme-specific slide types (ones that declare `themeId` matching this theme’s `id`).
 
-#### Back-compat: `hiddenSlideTypes`
+#### Removed spelling: `hiddenSlideTypes`
 
-Older theme files may use:
+`slideTypes.exclude` is the only spelling. Older theme files may still carry:
 
 ```json
 { "hiddenSlideTypes": ["lead-capture-slide"] }
 ```
 
-This is still supported and is treated as:
+`normalizeTheme()` folds that into `slideTypes.exclude` on read **and drops the
+key**, so a normalized theme never carries both. Nothing downstream reads
+`hiddenSlideTypes`.
 
-- `slideTypes.exclude += hiddenSlideTypes`
+The fold is a migration ramp, not a supported second spelling: it exists so an
+old theme file keeps working, and it will be removed once no theme in the wild
+uses it. Deckyard is in beta — don't write new themes against it. Move the list
+into `slideTypes.exclude` and delete the old key.
 
 ### Creating a theme (checklist)
 

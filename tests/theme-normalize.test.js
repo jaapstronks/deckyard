@@ -172,7 +172,7 @@ test('gradient generation is skipped when a source colour is unparseable', () =>
   assert.equal(out.cssVars['--t-slide-gradient-bg'], undefined);
 });
 
-test('hiddenSlideTypes merges into slideTypes.exclude, deduped', () => {
+test('legacy hiddenSlideTypes folds into slideTypes.exclude, deduped, and is dropped', () => {
   const out = normalizeTheme({
     ...baseTheme(),
     hiddenSlideTypes: ['quote-slide', ' quote-slide ', 'video-slide'],
@@ -181,6 +181,22 @@ test('hiddenSlideTypes merges into slideTypes.exclude, deduped', () => {
 
   assert.deepEqual(out.slideTypes.exclude, ['video-slide', 'quote-slide']);
   assert.deepEqual(out.slideTypes.include, ['content-slide']);
+  // Normalize-and-remove: one canonical spelling survives normalization, so no
+  // consumer can read a second field meaning the same thing.
+  assert.ok(
+    !('hiddenSlideTypes' in out),
+    'the legacy alias must not survive normalization'
+  );
+});
+
+test('a theme carrying only the legacy alias still ends up excluded', () => {
+  const out = normalizeTheme({
+    ...baseTheme(),
+    hiddenSlideTypes: ['lead-capture-slide'],
+  });
+
+  assert.deepEqual(out.slideTypes.exclude, ['lead-capture-slide']);
+  assert.ok(!('hiddenSlideTypes' in out));
 });
 
 test('defaultTitleSlide falls back to title-slide', () => {

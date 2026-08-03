@@ -116,16 +116,19 @@ export function normalizeTheme(theme) {
   // default/muted/accent). Kept only for slots the theme actually coloured.
   out.textSwatches = normalizeTextSwatches(out.textSwatches, vars);
 
-  // Slide type visibility. Back-compat: `hiddenSlideTypes` is an alias for
-  // `slideTypes.exclude`.
-  out.hiddenSlideTypes = uniqStrings(out.hiddenSlideTypes);
+  // Slide type visibility. `slideTypes.exclude` is the only spelling; the
+  // legacy `hiddenSlideTypes` alias is folded in here and then dropped, so no
+  // consumer downstream ever sees a second field meaning the same thing. This
+  // is the normalize-and-remove seam: a theme file may still carry the alias,
+  // a normalized theme never does.
   out.slideTypes =
     out.slideTypes && typeof out.slideTypes === 'object' ? out.slideTypes : {};
   out.slideTypes.exclude = uniqStrings([
     ...(Array.isArray(out.slideTypes.exclude) ? out.slideTypes.exclude : []),
-    ...out.hiddenSlideTypes,
+    ...uniqStrings(out.hiddenSlideTypes),
   ]);
   out.slideTypes.include = uniqStrings(out.slideTypes.include);
+  delete out.hiddenSlideTypes;
 
   // Title slide type used for new presentations on this theme.
   out.defaultTitleSlide = cleanStr(out.defaultTitleSlide) || 'title-slide';

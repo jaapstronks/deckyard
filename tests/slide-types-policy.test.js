@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isInsertableSlideType } from '../client/views/editor/slide-types-policy.js';
 import { SLIDE_TYPES, renderSlideHtml } from '../shared/slide-types.js';
+import { normalizeTheme } from '../shared/theme-normalize.js';
 
 test('a normal type is insertable', () => {
   assert.equal(
@@ -107,6 +108,42 @@ test('lead-capture-slide is parked: deprecated + not insertable, still renders',
   );
   assert.match(html, /class="slide/);
   assert.match(html, /lead-capture-form/);
+});
+
+test('theme exclusion still applies to a theme file written with the legacy alias', () => {
+  // The readers only look at `slideTypes.exclude`; the legacy `hiddenSlideTypes`
+  // spelling is folded away by normalizeTheme(), and every theme reaching a
+  // reader has been through it. This is the regression guard for that seam: an
+  // old theme file must still hide the type it asked to hide.
+  const theme = normalizeTheme({
+    id: 'legacy',
+    label: 'Legacy',
+    cssVars: {},
+    hiddenSlideTypes: ['poll-slide'],
+  });
+
+  assert.ok(!('hiddenSlideTypes' in theme), 'alias folded away by normalization');
+  assert.equal(
+    isInsertableSlideType({ type: 'poll-slide', def: { label: 'Poll' }, theme }),
+    false
+  );
+  assert.equal(
+    isInsertableSlideType({ type: 'content-slide', def: { label: 'Text' }, theme }),
+    true
+  );
+});
+
+test('a raw, unnormalized theme carrying only the alias no longer hides anything', () => {
+  // Deliberate: the alias is dead outside normalizeTheme(). If this ever starts
+  // returning false, a reader grew a second read path for the same meaning.
+  assert.equal(
+    isInsertableSlideType({
+      type: 'poll-slide',
+      def: { label: 'Poll' },
+      theme: { id: 'raw', hiddenSlideTypes: ['poll-slide'] },
+    }),
+    true
+  );
 });
 
 test('org-disabled types are not insertable', () => {
