@@ -1,11 +1,12 @@
 /**
  * Retention cleanup job (server/jobs/retention-cleanup.js).
  *
- * The three storage cleanups it drives were complete but never scheduled, so
- * api_usage_daily, presentation_share_links and activity_events grew without
- * bound. These tests pin the behaviour that matters: old rows go, recent rows
- * stay, and activity events are trimmed across every organization (a scheduled
- * job has no org context) — plus the scheduler returns a stoppable handle.
+ * The storage cleanups it drives were complete but never scheduled, so
+ * api_usage_daily, presentation_share_links, activity_events and slide_locks
+ * grew without bound. These tests pin the behaviour that matters: old rows go,
+ * recent rows stay, and activity events plus slide locks are trimmed across
+ * every organization (a scheduled job has no org context) — plus the scheduler
+ * returns a stoppable handle.
  *
  * Run with: node --test tests/retention-cleanup.test.js
  */
@@ -52,12 +53,18 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
       { id: 'e-old-b', organization_id: ORG_B, created_at: daysAgoIso(365), actor_email: 'b@example.com' },
       { id: 'e-new-a', organization_id: ORG_A, created_at: daysAgoIso(10), actor_email: 'a@example.com' },
     ],
+    // Slide locks across two orgs: expired goes instance-wide, live stays.
+    slide_locks: [
+      { id: 'l-expired-a', organization_id: ORG_A, expires_at: daysAgoIso(1) },
+      { id: 'l-expired-b', organization_id: ORG_B, expires_at: daysAgoIso(30) },
+      { id: 'l-live-a', organization_id: ORG_A, expires_at: daysAheadIso(1) },
+    ],
   });
   __setTestDb(db);
 
   const result = await runRetentionCleanup({ activityRetentionDays: 180 });
 
-  assert.deepEqual(result, { usage: 1, shareLinks: 1, activityEvents: 2 });
+  assert.deepEqual(result, { usage: 1, shareLinks: 1, activityEvents: 2, slideLocks: 2 });
 
   // api_usage_daily: only the recent row survives.
   assert.deepEqual(
@@ -76,6 +83,12 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
   assert.deepEqual(
     db.__tables.activity_events.map((r) => r.id),
     ['e-new-a']
+  );
+
+  // Slide locks: both expired locks gone regardless of org; the live one stays.
+  assert.deepEqual(
+    db.__tables.slide_locks.map((r) => r.id),
+    ['l-live-a']
   );
 });
 

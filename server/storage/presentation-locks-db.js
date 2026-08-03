@@ -4,7 +4,7 @@
  */
 
 import { getOrgId } from '../utils/context.js';
-import { norm, nowIso, isoAfter, isoBefore } from '../utils/normalize.js';
+import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
@@ -300,22 +300,6 @@ export async function forceReleasePresentationLock(presentationId, ctx) {
   });
 }
 
-/**
- * Cleanup all expired locks (background task).
- */
-export async function cleanupExpiredLocks(ctx) {
-  return withDbGuard(0, async (db) => {
-    const now = nowIso();
-
-    const result = await db
-      .deleteFrom('presentation_locks')
-      .where('expires_at', '<=', now)
-      .executeTakeFirst();
-
-    return Number(result.numDeletedRows) || 0;
-  });
-}
-
 // ============================================================
 // LOCK REQUESTS
 // ============================================================
@@ -576,23 +560,5 @@ export async function getUserLockRequestStatus(presentationId, { email } = {}, c
     if (!row) return null;
 
     return mapRequestRow(row);
-  });
-}
-
-/**
- * Cleanup old resolved requests (background task).
- * Keeps requests for 24 hours after resolution.
- */
-export async function cleanupOldLockRequests(ctx) {
-  return withDbGuard(0, async (db) => {
-    const cutoff = isoBefore(24 * 60 * 60 * 1000);
-
-    const result = await db
-      .deleteFrom('lock_requests')
-      .where('status', '!=', 'pending')
-      .where('resolved_at', '<', cutoff)
-      .executeTakeFirst();
-
-    return Number(result.numDeletedRows) || 0;
   });
 }
