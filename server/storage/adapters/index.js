@@ -69,3 +69,20 @@ export async function closeStorage() {
     adapter = null;
   }
 }
+
+/**
+ * Drop the active adapter without closing it (test-only).
+ *
+ * {@link closeStorage} closes the adapter, which for the PostgreSQL adapter
+ * destroys the shared database handle. The real-PostgreSQL test suite
+ * (tests/pg/**) owns that handle itself — it opened it through the
+ * `__setTestDb()` seam and tears it down with `closeTestDb()` — so it needs to
+ * reset the facade's adapter singleton *without* a second destroy. This clears
+ * the singleton and nothing else.
+ *
+ * Test-only: production code closes storage through {@link closeStorage}.
+ * @returns {void}
+ */
+export function __resetStorageForTests() {
+  adapter = null;
+}

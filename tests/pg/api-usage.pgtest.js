@@ -9,10 +9,10 @@
  * conflict path on the `(api_key_id, date)` primary key.
  */
 
-import { after, before, beforeEach, describe, it } from 'node:test';
+import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, truncate } from './helpers/harness.js';
+import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
 import { getTodayUsage, incrementUsage } from '../../server/storage/api-usage.js';
 
 /**
@@ -36,7 +36,7 @@ async function seedApiKey(db) {
   return row.id;
 }
 
-describe('incrementUsage (real PostgreSQL)', () => {
+pgDescribe('incrementUsage (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
   let db;
   /** @type {string} */
