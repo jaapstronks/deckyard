@@ -342,7 +342,6 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     cssVars,
     embedFonts,
     externalFontLinks,
-    hiddenSlideTypes: [],
     backgroundPresets: [],
     // Mark as custom theme for the system
     _isCustomTheme: true,

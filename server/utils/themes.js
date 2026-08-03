@@ -97,7 +97,6 @@ export async function loadTheme(repoRoot, rawThemeId, ctx = null) {
     assets: { logo: '/assets/images/deckyard-mark.svg', logoAlt: 'Deckyard' },
     cssVars: {},
     embedFonts: [],
-    hiddenSlideTypes: [],
   };
   const normalized = normalizeTheme(fallback);
   cache.set(DEFAULT_THEME, normalized);

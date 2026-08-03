@@ -29,13 +29,15 @@ const log = createLogger('change-theme');
  * @returns {Object} { exclude: Set, include: Set }
  */
 function getThemeSlideTypeConfig(theme) {
+  // `newTheme` comes from loadTheme(), which normalizes, so `slideTypes.exclude`
+  // is the whole story here — the legacy `hiddenSlideTypes` alias is folded away
+  // in normalizeTheme().
   const st = theme?.slideTypes && typeof theme.slideTypes === 'object' ? theme.slideTypes : {};
-  const hidden = Array.isArray(theme?.hiddenSlideTypes) ? theme.hiddenSlideTypes : [];
   const excludeArr = Array.isArray(st.exclude) ? st.exclude : [];
   const includeArr = Array.isArray(st.include) ? st.include : [];
 
   return {
-    exclude: new Set([...excludeArr, ...hidden]),
+    exclude: new Set(excludeArr),
     include: new Set(includeArr),
   };
 }
