@@ -6,7 +6,7 @@
 .slide-table .heading {
   font-family: var(--font-heading);
   font-size: calc(var(--font-size-heading) + 6px);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -15,7 +15,7 @@
 
 /* Reuse markdown table styles via .md-table-wrap / .md-table */
 .slide-table .md-table-wrap {
-  margin-top: 12px;
+  margin-top: var(--slide-space-3);
   flex: 1;
   min-height: 0;
 }
@@ -130,7 +130,7 @@
   margin-top: 14px;
   font-family: var(--font-body);
   font-size: calc(var(--font-size-body) - 2px);
-  line-height: 1.35;
+  line-height: var(--slide-leading-normal);
   opacity: 0.9;
   max-width: 80%;
 }

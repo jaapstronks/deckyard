@@ -4,76 +4,9 @@
       "count": 2
     }
   },
-  "client/styles/slides/01-layout-and-title/00-base.css": {
-    "line-height": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/01-layout-and-title/30-content.css": {
-    "line-height": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/01-layout-and-title/32-markdown-and-actions.css": {
-    "font-size": {
-      "count": 2
-    },
-    "line-height": {
-      "count": 2
-    }
-  },
-  "client/styles/slides/01-layout-and-title/35-table-slide.css": {
-    "line-height": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/01-layout-and-title/40-image-slide.css": {
-    "font-size": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/01-layout-and-title/50-image-text-slide.css": {
-    "line-height": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/01-layout-and-title/60-list-slide.css": {
-    "line-height": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 6
-    }
-  },
   "client/styles/slides/01-layout-and-title/80-kpi-metrics-slide.css": {
-    "font-size": {
-      "count": 3
-    },
-    "line-height": {
-      "count": 1
-    },
     "spacing": {
-      "count": 6
-    }
-  },
-  "client/styles/slides/01-layout-and-title/82-comparison-slide.css": {
-    "font-size": {
-      "count": 1
-    },
-    "line-height": {
-      "count": 1
+      "count": 4
     }
   },
   "client/styles/slides/01-layout-and-title/86-timeline-slide.css": {
@@ -81,45 +14,9 @@
       "count": 1
     }
   },
-  "client/styles/slides/01-layout-and-title/88-matrix-slide.css": {
-    "line-height": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 2
-    }
-  },
-  "client/styles/slides/01-layout-and-title/90-funnel-slide.css": {
-    "font-size": {
-      "count": 9
-    },
-    "line-height": {
-      "count": 3
-    },
-    "spacing": {
-      "count": 8
-    }
-  },
   "client/styles/slides/01-layout-and-title/91-pyramid-slide.css": {
-    "font-size": {
-      "count": 6
-    },
-    "line-height": {
-      "count": 2
-    },
     "spacing": {
-      "count": 8
-    }
-  },
-  "client/styles/slides/01-layout-and-title/93-gallery-slide.css": {
-    "font-size": {
-      "count": 2
-    },
-    "line-height": {
       "count": 1
-    },
-    "spacing": {
-      "count": 6
     }
   },
   "client/styles/slides/02-content-and-media/10-image-text.css": {

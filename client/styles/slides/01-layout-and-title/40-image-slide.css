@@ -36,7 +36,7 @@
 }
 .slide-image .img-title {
   font-family: var(--font-heading);
-  font-size: 44px;
+  font-size: var(--slide-text-2xl);
   line-height: 1.08;
   letter-spacing: -0.02em;
   font-weight: 400;
@@ -82,7 +82,7 @@
   background: rgba(0, 0, 0, 0.45);
   border-radius: var(--t-radius-sm, 14px);
   font-family: var(--font-caption);
-  font-size: 20px;
+  font-size: var(--slide-text-base);
   color: rgba(255, 255, 255, 0.92);
   display: inline-block;
   width: fit-content;
@@ -158,7 +158,7 @@
   max-height: calc(100% - 100px);
 }
 .slide-image:not(.is-bleed).has-bottom-subheading .bottom-subheading {
-  padding-top: 12px;
+  padding-top: var(--slide-space-3);
 }
 
 /* Box invariant for the caption. It is a `width: fit-content` chip pinned with

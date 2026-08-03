@@ -10,7 +10,7 @@
 .slide-comparison .heading {
   font-family: var(--font-heading);
   font-size: var(--font-size-heading);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -174,22 +174,22 @@
   }
 
   .slide-comparison .comparison-side {
-    padding: 16px 20px;
+    padding: var(--slide-space-4) var(--slide-space-5);
   }
 
   .slide-comparison .comparison-side.left {
     padding-left: 0;
-    padding-right: 24px;
+    padding-right: var(--slide-space-6);
   }
 
   .slide-comparison .comparison-side.right {
     padding-right: 0;
-    padding-left: 24px;
+    padding-left: var(--slide-space-6);
   }
 
   .slide-comparison .side-title {
-    font-size: 34px;
-    margin-bottom: 16px;
+    font-size: var(--slide-text-xl);
+    margin-bottom: var(--slide-space-4);
   }
 
   .slide-comparison .body {

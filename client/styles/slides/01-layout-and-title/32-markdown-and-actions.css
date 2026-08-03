@@ -8,7 +8,7 @@
 .md-table-wrap {
   max-width: 100%;
   overflow-x: auto; /* if a table is wider than the slide, scroll instead of breaking layout */
-  margin-top: 16px;
+  margin-top: var(--slide-space-4);
 }
 
 .md-table {
@@ -60,8 +60,8 @@
 .slide-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 24px;
+  gap: var(--slide-space-4);
+  margin-top: var(--slide-space-6);
 }
 
 .slide-action {
@@ -70,9 +70,9 @@
   justify-content: center;
   padding: 14px 28px;
   font-family: var(--font-body);
-  font-size: 20px;
+  font-size: var(--slide-text-base);
   font-weight: 500;
-  line-height: 1.2;
+  line-height: var(--slide-leading-snug);
   text-decoration: none;
   border-radius: var(--t-radius-sm, 10px);
   cursor: pointer;
@@ -171,14 +171,14 @@
 /* Code blocks - dark Catppuccin Mocha style */
 .md-code-block {
   font-family: var(--font-mono);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: var(--slide-text-sm);
+  line-height: var(--slide-leading-relaxed);
   background: var(--slide-code-bg);
   color: var(--slide-code-text);
-  padding: 20px 24px;
+  padding: var(--slide-space-5) var(--slide-space-6);
   border-radius: var(--slide-radius-sm, 10px);
   overflow-x: auto;
-  margin: 16px 0;
+  margin: var(--slide-space-4) 0;
   text-align: left;
   white-space: pre;
   tab-size: 2;
@@ -251,7 +251,7 @@
 /* Math blocks - centered display */
 .md-math-block {
   text-align: center;
-  margin: 20px 0;
+  margin: var(--slide-space-5) 0;
   font-size: 1.2em;
   overflow-x: auto;
 }

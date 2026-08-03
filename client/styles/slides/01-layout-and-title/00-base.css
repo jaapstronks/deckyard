@@ -106,7 +106,7 @@
   margin: 0;
   font-family: var(--font-heading);
   font-size: var(--font-size-heading, var(--slide-text-2xl, 44px));
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
 }
