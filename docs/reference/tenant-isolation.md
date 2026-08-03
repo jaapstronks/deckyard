@@ -3,7 +3,8 @@
 How Deckyard keeps one customer's decks away from another's, and which
 deployment shapes are supported. Verified against HEAD on 2026-07-23; hosting
 shapes and roadmap updated 2026-07-25; the request-to-organization binding
-updated 2026-07-25; the organization UI completed and written up 2026-07-31.
+updated 2026-07-25; the organization UI completed and written up 2026-07-31;
+rewritten for one storage backend on 2026-08-03.
 
 ## The supported model: the tenant boundary is the infrastructure
 
@@ -45,10 +46,9 @@ own themes, members and decks. It carries no notion of plans, seats or payment.
 In single-org mode there is exactly one organization per instance
 (`getDefaultOrganizationId()`, `00000000-0000-0000-0000-000000000001`). Every
 authenticated user belongs to that one org, so there is no second tenant for a
-deck to leak to. The known cross-org gaps (a workspace-scoped read that does
-not check org, a flat file directory with no org dimension) only bite when a
-single backend serves **more than one** organization — which single-org mode,
-by definition, never does.
+deck to leak to. A cross-org gap — a read that does not check the organization —
+only bites when a single backend serves **more than one** organization, which
+single-org mode, by definition, never does.
 
 Concretely, on a dedicated instance:
 
@@ -59,34 +59,31 @@ Concretely, on a dedicated instance:
 - Private decks stay owner-scoped (email-keyed ownership check in the same
   file), so users on the instance still can't read each other's private decks.
 
-## The footgun, and the boot guard that closes it
+## The storage layer enforces the boundary
 
-The one way to accidentally leak across tenants on the current code is to put
-**two customers on one shared backend** by turning on multi-workspace without a
-storage layer that enforces org isolation:
+Putting **two organizations on one instance** (`MULTI_WORKSPACE_ENABLED`) only
+holds if the storage layer partitions on the organization. PostgreSQL — the only
+storage backend — does: every presentation query is scoped by `organization_id`
+(`server/storage/adapters/postgres/presentations.js`), and in multi-workspace
+mode the org is resolved per request from the session, verified against
+membership (`server/utils/context.js`, see below). A cross-org read returns
+nothing. The session is the *only* resolution path: the hostname says nothing
+about which organization a request acts in (see "Why not the hostname" below).
 
-- **Postgres backend** *does* enforce it. Every presentation query is scoped by
-  `organization_id` (`server/storage/adapters/postgres/presentations.js`), and
-  in multi-workspace mode the org is resolved per request from the session,
-  verified against membership (`server/utils/context.js`, see below). A
-  cross-org read returns nothing. The session is the *only* resolution path:
-  the hostname says nothing about which organization a request acts in (see
-  "Why not the hostname" below).
-- The old **file backend** (`STORAGE_MODE=file`) did **not**: decks lived flat
-  in one directory and listings never consulted the org. That backend was
-  removed in 1.x, so every supported install now runs on the isolating
-  PostgreSQL path.
+This used to be a real footgun. The old file backend (`STORAGE_MODE=file`) had
+no org dimension at all — decks lived flat in one directory and listings never
+consulted the org — so two tenants sharing one saw each other's workspace decks.
+The server **failed closed at boot** against that combination, in a
+`multiWorkspaceStorageError()` guard that lived in
+`server/config/features.js`. The file
+backend was removed in 1.x and the guard went with it: with one isolating
+backend it had no case left to catch, and a guard that can never fire is a
+claim the code no longer makes. `STORAGE_MODE` now accepts a single value, and
+anything else stops the boot with an explanation (`storageModeError()` in
+`server/config/database.js`).
 
-While the file backend existed, the server **failed closed at boot**:
-`multiWorkspaceStorageError()` (`server/config/features.js`) returned a fatal
-error when `MULTI_WORKSPACE_ENABLED=true` while the storage backend could not
-enforce org isolation. With PostgreSQL as the only backend the guard no longer
-has a case to catch; it is slated for removal with the rest of the
-one-backend cleanup. Guard behavior is pinned by
-`tests/multi-workspace-storage-guard.test.js`.
-
-Sandbox mode is exempt from the guard: it is single-org by construction (see
-below), so there is no second tenant even if the flag is combined with it.
+Sandbox mode was exempt from that guard and is still single-org by construction
+(see below), so there is no second tenant to leak to there either.
 
 ## Sandbox isolation (`sandbox.deckyard.eu`)
 

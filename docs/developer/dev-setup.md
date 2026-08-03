@@ -140,9 +140,11 @@ See `docs/ops/self-hosting.md`.
 
 ### Importing Data: File to PostgreSQL
 
-Covers every adapter domain with a file/PG split (presentations, image library,
-slide library, published, tags, slide collections, slide-library usage). The
-import is idempotent — running it twice imports nothing the second time.
+For data left behind by the removed file backend. It reads an old data
+directory from disk and covers every domain that lived there (presentations,
+image library, slide library, published, tags, slide collections,
+slide-library usage). The import stays after the teardown, and is idempotent —
+running it twice imports nothing the second time.
 Presentation versions (DB migration 053) and derived ydoc collab-state are
 intentionally not imported.
 

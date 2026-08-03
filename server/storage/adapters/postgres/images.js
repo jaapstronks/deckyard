@@ -7,7 +7,7 @@ import { mapImageRow } from '../../mappers.js';
 
 /**
  * Images mixin - adds image library methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withImages(Base) {
   return class extends Base {
