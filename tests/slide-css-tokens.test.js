@@ -158,24 +158,34 @@ function numKey(n) {
  * theme-following tokens like `--slide-radius-md: var(--t-radius, 18px)` are
  * skipped by construction, which is exactly the border-radius exclusion above.
  *
+ * The `px` axis is split into a **per-category** map, `text` and `space`, each
+ * keyed on value within its own scale. This matters where the two scales share
+ * a value (16/20/24/64px sit on both): a single value-keyed map would let the
+ * first-parsed token win, so a spacing declaration of `16px` would resolve to
+ * `--slide-text-sm`, and `findViolations`' category guard would then skip it as
+ * "not a space token" — the violation would be invisible. Keyed per category,
+ * a spacing `16px` always resolves to `--slide-space-4`.
+ *
  * @param {string} source
- * @returns {{px: Map<number, string>, leading: Map<number, string>}}
+ * @returns {{text: Map<number, string>, space: Map<number, string>, leading: Map<number, string>}}
  */
 function readScales(source) {
-  const px = new Map();
+  const text = new Map();
+  const space = new Map();
   const leading = new Map();
   for (const m of stripComments(source).matchAll(
-    /(--slide-(?:text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g
+    /(--slide-(text|space)-[\w-]+)\s*:\s*([\d.]+)px\s*;/g
   )) {
-    const key = numKey(Number(m[2]));
-    if (!px.has(key)) px.set(key, m[1]);
+    const map = m[2] === 'text' ? text : space;
+    const key = numKey(Number(m[3]));
+    if (!map.has(key)) map.set(key, m[1]);
   }
   for (const m of stripComments(source).matchAll(
     /(--slide-leading-[\w-]+)\s*:\s*([\d.]+)\s*;/g
   )) {
     leading.set(numKey(Number(m[2])), m[1]);
   }
-  return { px, leading };
+  return { text, space, leading };
 }
 
 /**
@@ -250,7 +260,7 @@ const NUMBER_RE = /^-?\d*\.?\d+$/;
  *
  * @param {string} source
  * @param {string} label repo-relative path
- * @param {{px: Map<number, string>, leading: Map<number, string>}} scales
+ * @param {{text: Map<number, string>, space: Map<number, string>, leading: Map<number, string>}} scales
  * @returns {Violation[]}
  */
 function findViolations(source, label, scales) {
@@ -283,13 +293,14 @@ function findViolations(source, label, scales) {
         continue;
       }
 
+      // Each category resolves against its own scale, so a value that lives on
+      // both scales (16/20/24/64px) is measured against the right one.
+      const scale = category === 'font-size' ? scales.text : scales.space;
       for (const len of raw.matchAll(LENGTH_RE)) {
         const px = numKey(Number(len[2]) * (len[3] === 'rem' ? REM_IN_PX : 1));
         if (px === 0) continue; // 0 stays literal
-        const token = scales.px.get(px);
-        if (!token) continue; // off-scale: a design signal, not a conversion
-        if (category === 'font-size' && !token.startsWith('--slide-text-')) continue;
-        if (category === 'spacing' && !token.startsWith('--slide-space-')) continue;
+        const token = scale.get(px);
+        if (!token) continue; // off-scale for this category: a design signal, not a conversion
         out.push({ file: label, line, category, prop, value: value.trim(), token });
       }
     }
@@ -345,15 +356,23 @@ describe('slide css tokens', () => {
     // If this ever comes back empty the gate would pass vacuously, which is
     // the one failure mode a guard must not have.
     assert.ok(
-      scales.px.size >= 15,
-      `expected the text + space scales, parsed ${scales.px.size} px tokens`
+      scales.text.size >= 10,
+      `expected the text scale, parsed ${scales.text.size} text tokens`
+    );
+    assert.ok(
+      scales.space.size >= 10,
+      `expected the space scale, parsed ${scales.space.size} space tokens`
     );
     for (const px of [14, 20, 44, 80]) {
-      assert.ok(scales.px.has(px), `the text scale should carry ${px}px`);
+      assert.ok(scales.text.has(px), `the text scale should carry ${px}px`);
     }
     for (const px of [4, 8, 16, 24, 64]) {
-      assert.ok(scales.px.has(px), `the space scale should carry ${px}px`);
+      assert.ok(scales.space.has(px), `the space scale should carry ${px}px`);
     }
+    // The shared values must resolve per category, not to whichever scale
+    // parsed first — this is the collision the split map fixes.
+    assert.strictEqual(scales.text.get(16), '--slide-text-sm');
+    assert.strictEqual(scales.space.get(16), '--slide-space-4');
     assert.ok(scales.leading.size >= 4, 'expected the leading scale');
     for (const n of [1.1, 1.2, 1.35, 1.5]) {
       assert.ok(scales.leading.has(n), `the leading scale should carry ${n}`);

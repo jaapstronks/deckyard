@@ -5,11 +5,24 @@
     },
     "line-height": {
       "count": 1
+    },
+    "spacing": {
+      "count": 6
+    }
+  },
+  "client/styles/slides/01-layout-and-title/35-table-slide.css": {
+    "spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/slides/01-layout-and-title/40-image-slide.css": {
+    "spacing": {
+      "count": 3
     }
   },
   "client/styles/slides/01-layout-and-title/80-kpi-metrics-slide.css": {
     "spacing": {
-      "count": 4
+      "count": 7
     }
   },
   "client/styles/slides/01-layout-and-title/86-timeline-slide.css": {
@@ -17,7 +30,22 @@
       "count": 1
     }
   },
+  "client/styles/slides/01-layout-and-title/88-matrix-slide.css": {
+    "spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/slides/01-layout-and-title/90-funnel-slide.css": {
+    "spacing": {
+      "count": 2
+    }
+  },
   "client/styles/slides/01-layout-and-title/91-pyramid-slide.css": {
+    "spacing": {
+      "count": 1
+    }
+  },
+  "client/styles/slides/02-content-and-media/75-icon-card-grid-variants.css": {
     "spacing": {
       "count": 1
     }
@@ -27,14 +55,19 @@
       "count": 1
     }
   },
+  "client/styles/slides/03-components/10-poll.css": {
+    "spacing": {
+      "count": 2
+    }
+  },
   "client/styles/slides/03-components/17-lead-capture.css": {
     "spacing": {
-      "count": 1
+      "count": 3
     }
   },
   "client/styles/slides/03-components/20-chart.css": {
     "spacing": {
-      "count": 4
+      "count": 5
     }
   },
   "client/styles/slides/03-components/45-team-cards.css": {
@@ -44,7 +77,7 @@
   },
   "client/styles/slides/03-components/46-logo-wall.css": {
     "spacing": {
-      "count": 2
+      "count": 3
     }
   }
 }
