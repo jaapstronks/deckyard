@@ -118,17 +118,19 @@ Two things you may want to change in `.env`:
       profiles: ["disabled"]
   ```
 
-To keep JSON-file storage instead, set `STORAGE_MODE=file` in `.env`. Note that
-this is the storage path being retired during beta — see
-`docs/reference/versioning.md` for what "beta" promises.
+`STORAGE_MODE` defaults to `postgres` for every install, compose or not; the
+one other accepted value is `file` (JSON on disk). That is the storage path
+being retired during beta — see [`versioning.md`](../reference/versioning.md)
+for what "beta" promises. There is no third spelling: `STORAGE_MODE=postgresql`
+is a boot error, not an alias.
 
-> **Upgrading an existing file-storage compose install?** Pulling this change
-> switches the container to Postgres, and your `server/data/` decks are not
-> served from there. Either set `STORAGE_MODE=file` in `.env` before
-> `docker compose up`, or import the data once with
-> `docker compose exec app npm run db:import`. The container logs a
-> warning at boot when it finds a non-empty `server/data/presentations` while
-> running on Postgres; your files are never touched.
+> **Upgrading an existing file-storage install?** Your `server/data/` decks are
+> not served from Postgres. Deckyard **refuses to start** when it finds decks
+> on disk while the database holds none, and prints both ways out — so you get
+> a stopped container, never an empty workspace. Import the data once with
+> `npm run db:import` (in compose:
+> `docker compose exec app npm run db:import`), or set `STORAGE_MODE=file` in
+> `.env`. Your files are never touched either way.
 
 ### Backups
 

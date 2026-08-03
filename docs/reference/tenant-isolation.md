@@ -72,8 +72,8 @@ storage layer that enforces org isolation:
   cross-org read returns nothing. The session is the *only* resolution path:
   the hostname says nothing about which organization a request acts in (see
   "Why not the hostname" below).
-- **File backend** (the code default for a plain `npm start`; the compose
-  stack ships Postgres) does **not**. Decks
+- **File backend** (`STORAGE_MODE=file`, an explicit opt-out of the Postgres
+  default and the path being retired during beta) does **not**. Decks
   live flat in one directory (`server/storage/presentations/paths.js`) and
   `listPresentations()` never consults the org
   (`server/storage/presentations/list.js`). Two tenants sharing one file
@@ -84,8 +84,9 @@ To make that impossible by accident, the server **fails closed at boot**:
 `multiWorkspaceStorageError()` (`server/config/features.js`) returns a fatal
 error, and `server/server.js` calls `process.exit(1)`, when
 `MULTI_WORKSPACE_ENABLED=true` while the storage backend cannot enforce org
-isolation (i.e. the file backend). The fix is either `STORAGE_MODE=postgres`
-or — the supported path — one dedicated instance per customer with
+isolation (i.e. the file backend). The fix is either dropping the explicit
+`STORAGE_MODE=file` (Postgres is the default) or — the supported path — one
+dedicated instance per customer with
 multi-workspace unset. Guard behavior is pinned by
 `tests/multi-workspace-storage-guard.test.js`.
 

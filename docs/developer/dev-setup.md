@@ -106,23 +106,15 @@ NOTION_FEATURE=true
 
 ## Database Setup
 
-### Default: File-Based Storage
+### Default: PostgreSQL
 
-No database needed for development. Data is stored as JSON files:
-
-```
-server/data/presentations/   # Presentation JSON files
-server/data/published/       # Published presentations
-server/uploads/              # Uploaded images
-```
-
-### Optional: PostgreSQL
-
-For production-like testing or multi-tenant features:
+`STORAGE_MODE` defaults to `postgres`, so a checkout expects a database. The
+quickest one is the bundled compose service (`docker compose -f
+docker-compose.yml -f docker-compose.local.yml up -d postgres` publishes it on
+port 5433); any local PostgreSQL works too.
 
 ```bash
-# 1. Set environment variables
-STORAGE_MODE=postgres
+# 1. Set environment variables (STORAGE_MODE only if you want it explicit)
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
 DATABASE_NAME=deckyard

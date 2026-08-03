@@ -8,7 +8,7 @@
  *  1. File mode is 100% unchanged. The presentations facade
  *     (server/storage/presentations/index.js) now drives version create/list/get/
  *     prune through the storage adapter. With the file adapter initialized
- *     (default OSS mode) a create→list→get round-trip must still work AND the
+ *     (STORAGE_MODE=file) a create→list→get round-trip must still work AND the
  *     snapshot must still land at the same on-disk path the file module always
  *     used, byte-for-byte in shape.
  *
@@ -41,6 +41,9 @@ describe('version history via the facade (file adapter)', () => {
 
   before(async () => {
     process.env.DATA_DIR = dataDir;
+    // The file adapter is the subject here, and STORAGE_MODE now defaults to
+    // postgres, so pin the backend this block means to exercise.
+    process.env.STORAGE_MODE = 'file';
     await fs.mkdir(dataDir, { recursive: true });
     adapters = await import('../server/storage/adapters/index.js');
     await adapters.initializeStorage(repoRoot);
@@ -51,6 +54,7 @@ describe('version history via the facade (file adapter)', () => {
     await adapters.closeStorage();
     await fs.rm(repoRoot, { recursive: true, force: true });
     delete process.env.DATA_DIR;
+    delete process.env.STORAGE_MODE;
   });
 
   it('creates, lists and gets a version snapshot, unchanged from file behavior', async () => {

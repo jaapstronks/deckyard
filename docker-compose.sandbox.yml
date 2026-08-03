@@ -9,6 +9,13 @@ services:
 
       # Sandbox mode
       SANDBOX_MODE: "1"
+
+      # This stack has no database service, and the sandbox's TTL cleanup and
+      # per-guest quota still read deck JSON straight from disk, so it pins the
+      # file backend explicitly now that `postgres` is the default. Porting the
+      # sandbox to Postgres is its own change; until then this pin is what keeps
+      # the stack bootable.
+      STORAGE_MODE: "file"
       SANDBOX_TTL_HOURS: "${SANDBOX_TTL_HOURS:-24}"
       # Must be a real theme id. Sandbox shows only the neutral built-in
       # themes (corporate, deckyard, editorial, midnight, playful); an operator

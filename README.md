@@ -276,10 +276,10 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 docker compose up -d --build
 ```
 
-The stack ships its own `postgres:16`, so the containers run on Postgres out
-of the box; pending migrations are applied automatically at container start.
-Set `STORAGE_MODE=file` in `.env` to keep JSON-file storage, or point
-`DATABASE_HOST` at a managed database.
+Deckyard runs on PostgreSQL, and the stack ships its own `postgres:16` so the
+containers need no setup; pending migrations are applied automatically at
+container start. Point `DATABASE_HOST` at a managed database to use that
+instead.
 
 Going from zero to a live HTTPS instance on a VPS is one command with
 [`scripts/vps-bootstrap.sh`](scripts/vps-bootstrap.sh) — see the
@@ -294,12 +294,15 @@ node server/server.js
 
 ### Data Storage
 
-- **Compose stack** (default): decks live in the bundled Postgres — back up
-  the `pg_data` volume
-  (`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
-  plus `server/uploads/`.
-- **Plain `npm start`** (file storage): `server/data/presentations/` and
-  `server/uploads/`.
+Decks live in PostgreSQL: `STORAGE_MODE` defaults to `postgres`, and the
+compose stack ships its own database. Back up the `pg_data` volume
+(`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
+together with `server/uploads/`, which is where uploaded media stays.
+
+The `file` mode (JSON in `server/data/`) still exists but is being retired
+during beta. An install with existing file data imports it once with
+`npm run db:import`; until then Deckyard refuses to boot on an empty database
+rather than show an empty workspace.
 
 See the [self-hosting guide](docs/ops/self-hosting.md) for the storage options
 and `.env.example` for every `DATABASE_*` variable.

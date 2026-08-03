@@ -23,6 +23,9 @@ import crypto from 'node:crypto';
 
 const repoRoot = path.join(os.tmpdir(), `deckyard-tags-${crypto.randomUUID()}`);
 process.env.DATA_DIR = path.join(repoRoot, 'data');
+// This suite drives the file adapter on purpose, and STORAGE_MODE now defaults
+// to postgres, so it pins the backend it means to exercise.
+process.env.STORAGE_MODE = 'file';
 
 const { initializeStorage, closeStorage } = await import('../server/storage/adapters/index.js');
 const {
@@ -49,6 +52,7 @@ after(async () => {
   await closeStorage();
   await fs.rm(repoRoot, { recursive: true, force: true });
   delete process.env.DATA_DIR;
+  delete process.env.STORAGE_MODE;
 });
 
 describe('tags storage (file adapter)', () => {

@@ -28,6 +28,8 @@ import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { loadDotEnv } from '../config/env.js';
 import { initializeStorage } from '../storage/adapters/index.js';
+import { strandedFileDataError } from '../storage/boot-check.js';
+import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 
 // ─── CRITICAL: Redirect console.log to stderr ────────────────────────────
@@ -107,12 +109,32 @@ async function main() {
   // Load environment
   await loadDotEnv(repoRoot);
 
+  // Same storage guards as the HTTP server (server/server.js): an unknown
+  // STORAGE_MODE, or an empty database next to a populated file-storage data
+  // directory, is a stop — an agent silently authoring into an empty workspace
+  // is worse than a failed handshake.
+  {
+    const modeErr = storageModeError();
+    if (modeErr) {
+      process.stderr.write(`[MCP] ${modeErr}\n`);
+      process.exit(1);
+    }
+  }
+
   // Initialize storage (DB connection)
   try {
     await initializeStorage(repoRoot);
   } catch (err) {
     process.stderr.write(`[MCP] Storage init failed: ${err.message}\n`);
     process.stderr.write('[MCP] Continuing with limited functionality (no DB-backed features)\n');
+  }
+
+  {
+    const strandedErr = await strandedFileDataError(repoRoot);
+    if (strandedErr) {
+      process.stderr.write(`[MCP] ${strandedErr}\n`);
+      process.exit(1);
+    }
   }
 
   // Create and configure server
