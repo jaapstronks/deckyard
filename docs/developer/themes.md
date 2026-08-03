@@ -228,6 +228,54 @@ The fonts will be:
 - Loaded in the browser for live editing/presenting
 - Embedded in PDF/HTML exports for offline viewing
 
+### Entry shape
+
+| Field | Required | Meaning |
+|-------|----------|---------|
+| `family` | yes | The `font-family` name the rule declares. Must match what `--t-font-heading` / `--t-font-body` name. |
+| `path` | one of | Repo-root-relative path to a `woff2` (no leading slash). |
+| `url` | one of | An `/uploads/…` path or an absolute URL, for managed/uploaded fonts. |
+| `weight` | no | `font-weight` for the rule. Defaults to `400`. |
+| `style` | no | `font-style`. Defaults to `normal`. |
+| `format` | no | `src` format hint for URL-based fonts. Defaults to `woff2`. |
+| `unicodeRange` | no | `unicode-range` for the rule — **required when one family is split across several files.** |
+
+**`unicodeRange` is not optional in practice for the curated fonts.** Google
+splits every family into disjoint per-script subsets: the `latin` file holds
+ASCII and Latin-1, the `latin-ext` file the Polish/Czech/Turkish/Hungarian
+letters, and neither contains the other's glyphs. Two entries for one
+family+weight without ranges means the second simply overrides the first and
+half the alphabet falls back to a system face. A font that ships as a single
+file covering everything (a typical uploaded brand face) needs no range.
+
+**`weight` may be a range.** A variable font is one file that covers a span of
+weights, so its entry declares that span the way CSS does — two numbers
+separated by a space:
+
+```json
+{
+  "family": "Inter",
+  "path": "assets/fonts/google/inter/inter-400-latin.woff2",
+  "weight": "400 700",
+  "style": "normal",
+  "unicodeRange": "U+0000-00FF, U+0131, …"
+}
+```
+
+This is how the curated families are written, and it is what keeps exports
+honest about size: an export base64-inlines every `@font-face` rule, so four
+weight-entries pointing at the same variable file inlined the same blob four
+times. Entries that *do* resolve to the same file are merged automatically
+(`mergeFontFaces` in `shared/theme-fonts.js`), so a hand-written theme that
+lists one entry per weight still exports one copy — but writing the range is
+clearer. A truly static family (one file per weight, e.g. Poppins) keeps one
+entry per weight, because those files really are different bytes.
+
+For the built-in and database themes you never write this by hand:
+`curatedEmbedFonts()` (`server/utils/curated-font-embed.js`) generates the list
+from the curated set and the font lockfile, and `tests/theme-embed-fonts.test.js`
+fails if a committed `themes/*.json` drifts from it.
+
 ---
 
 ## Background Presets

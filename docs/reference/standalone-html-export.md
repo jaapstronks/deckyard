@@ -62,7 +62,7 @@ Everything the page needs is embedded into the one HTML file:
 | Slide images / uploads | base64 data URLs | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`) |
 | Lucide icon SVGs / client assets | base64 data URLs | same image-embed pass (`includeClient: true`) |
 | Theme fonts (curated + uploaded) | base64 `@font-face` data URLs | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
-| Shared / UI fonts referenced by `/assets/...` in the bundled CSS | base64 data URLs, in place | `inlineLocalFontUrls` (`embed-fonts.js`) |
+| Any other `/assets/...` font a bundled stylesheet references | base64 data URLs, in place | `inlineLocalFontUrls` (`embed-fonts.js`) |
 | Viewer chrome + slide CSS | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle` |
 
 ### Which CSS ships — the viewer boundary
@@ -75,8 +75,8 @@ it only shipped because the bundle used to inline `app.css` wholesale, which put
 a ~1 MB `<style>` block on every download.
 
 `export.css` is a thin chrome layer: `client/styles/shared/ui-tokens.css` (the
-design tokens the presenter chrome in `slides.css` reads unfallbacked),
-`client/styles/shared/fonts.css`, and the `.btn` family + `.form-input` + `.row`
+design tokens the presenter chrome in `slides.css` reads unfallbacked) and the
+`.btn` family + `.form-input` + `.row`
 that the exported deck nav and the pdf/png/print toolbars use. The presenter chrome itself (`.presenter-*`, `.deck-slide`,
 `.sr-only`, `.skip-link`, progress bar) already lives in `slides.css`. This
 mirrors `embed.css`, the iframe viewer's entrypoint, which drops `app.css` the
@@ -90,20 +90,41 @@ remaining bulk — `slides.css` is ~310 KB of per-slide-type CSS shipped whole �
 is separate, out-of-scope work.
 
 `inlineLocalFontUrls` rewrites any root-relative `url('/…​.woff2')` in the CSS
-to a data URL by reading the file from the repo. It covers the shared UI
-weights that no theme owns — e.g. `client/styles/shared/fonts.css`
-(Bricolage Grotesque) — which `theme.embedFonts` does not cover. Theme fonts
-are handled separately by `buildEmbeddedFontCss`; the two mechanisms are
-complementary.
+to a data URL by reading the file from the repo. No built-in stylesheet
+declares an `@font-face` any more — slide text is served by the theme's
+`embedFonts` and the export *chrome* deliberately resolves `--ps-font-sans`
+through its native system fallback — so this is the safety net for a **custom**
+theme that ships its own `/custom/…` face in a stylesheet the bundle picks up.
+It is what guarantees the invariant the tests assert: no `/assets/`-style font
+reference survives into a downloaded file.
 
 ## Font-size trade-off
 
-Only the font files the CSS **actually references** are embedded — typically a
-couple of small `woff2` weights (a few KB each). The full managed font library
-is ~2.5 MB across all themes; embedding all of it would bloat every export, so
-we never do. This keeps a standalone export's font payload proportional to what
-the deck uses (usually well under ~100 KB of fonts), while still rendering
-offline.
+Only the font files the CSS **actually references** are embedded, and each
+distinct file exactly once. The full pinned font library is ~2.7 MB across all
+curated families; embedding all of it would bloat every export, so we never do.
+
+Measured on the built-in themes, the embedded `@font-face` block is:
+
+| Theme | `@font-face` rules | Embedded fonts |
+|-------|-------------------|----------------|
+| `deckyard` (default), `brand` | 4 | ~253 KB |
+| `corporate` | 4 | ~141 KB |
+| `editorial` | 4 | ~205 KB |
+| `midnight` | 6 | ~286 KB |
+| `playful` | 10 | ~171 KB |
+
+Two numbers explain the shape of that table. **Two Latin subsets**: Google
+splits every family into a disjoint `latin` and `latin-ext` file, and both ship
+(see `docs/reference/font-management.md`) — dropping `latin-ext` would render
+every Polish, Czech, Turkish and Hungarian letter in a fallback face. **One
+file per variable family**: Google serves a single variable `woff2` for all of
+a family's weights, so a heading font and a body font come to four files, not
+one per weight. `playful` is the outlier at ten rules because Poppins is a
+*static* family — genuinely one file per weight.
+
+Base64 costs a third on top of the raw bytes; the numbers above are the encoded
+size, which is what actually lands in the file.
 
 The one exception is **external** managed fonts (Adobe / Monotype / Google via
 `<link>`/`<script>`): those still require network access. Only local (curated

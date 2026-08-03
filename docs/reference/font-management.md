@@ -75,6 +75,16 @@ Without the pin, `assets/fonts/google/` was a function of Google's release
 schedule rather than of this repository, and no rendering baseline could mean
 anything (`docs/plans/briefs/export-structural-metrics.md`).
 
+**Which install failures are fatal.** A pinned URL that answers with an HTTP
+error, or answers with bytes whose checksum does not match, is a *repository*
+problem: the lock points at something that is no longer there, and installing
+anyway leaves a checkout with silently missing fonts. Those abort `postinstall`
+with a non-zero exit and a `--update-lock` instruction. A request that never
+gets an answer at all (DNS, timeout, offline, proxy) is an *environment*
+problem: these assets are optional at runtime, every consumer falls back to the
+system stack, and failing `npm install` over a flaky connection would be worse.
+Those warn and continue.
+
 Each weight ships as **two files**, Google's disjoint `latin` and `latin-ext`
 subsets, named `<slug>-<weight>-<subset>.woff2`. Both are needed: `latin` holds
 ASCII and Latin-1, `latin-ext` holds the Polish/Czech/Turkish/Hungarian letters.
@@ -83,6 +93,26 @@ from `FONT_SUBSETS` in `shared/theme-fonts.js`; without it the second rule would
 simply override the first. Paths come from `curatedFontPath()` /
 `curatedFontFaces()` — never hand-built — so writer and readers cannot drift.
 `tests/google-fonts-lock.test.js` gates all of this.
+
+**One file, several weights.** Most curated families are *variable* fonts, and
+Google serves the same file for every weight you ask for: a family pinned at
+400/500/600/700 is four identical downloads under four names (262 pinned
+entries across the curated list resolve to 98 distinct files). Declaring one
+`@font-face` per weight is only redundant over HTTP, but an export
+base64-inlines every rule — the default theme shipped ~930 KB of fonts where
+~250 KB was unique.
+
+So weights that share a file are collapsed into one rule with a CSS weight
+range (`font-weight: 400 700`), by `mergeFontFaces()` in
+`shared/theme-fonts.js`. It is used in exactly one spelling everywhere a rule
+is emitted: the generated `assets/fonts/google/fonts.css`, a theme's
+`embedFonts` (`curatedEmbedFonts()`), and the export embedder
+(`buildEmbeddedFontCss`). Files that are *not* identical — Lato, Poppins,
+Crimson Text and IBM Plex Mono are genuinely static — keep one rule per weight.
+The lockfile's SHA-256 is what decides which is which; nothing infers it.
+
+The downloader groups by URL for the same reason: one fetch and one checksum
+check per distinct file, written to each name the lock gives it.
 
 **Managed fonts**: org-scoped custom fonts created through the font editor. Stored in the database with source-specific resolution.
 
@@ -123,6 +153,7 @@ Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces
 | `server/utils/theme-builder.js` | `buildThemeConfig()`, `generatePreviewCSS()`, `generateFontFaceCSS()`, `buildExternalFontLinks()` |
 | `server/utils/themes.js` | Theme loading with managed font resolution, `clearCustomThemeCache()` |
 | `server/storage/themes.js` | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()` |
+| `server/utils/curated-font-embed.js` | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity |
 | `server/utils/embed-fonts.js` | Base64-embeds font files for offline HTML exports |
 | `server/export/html.js` | Standalone HTML export (injects external font tags) |
 | `server/utils/embed-html/index.js` | Embed HTML builder (injects external font tags) |

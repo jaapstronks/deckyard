@@ -29,7 +29,12 @@
    partial is a separate, editor-touching refactor — see the PR discussion. If
    you change .btn in app/components.css, mirror the change here. */
 
-@import url('./shared/fonts.css');
+/* No @font-face import. Slide text is served by the theme's own embedFonts
+   (base64-inlined by buildEmbeddedFontCss); the export *chrome* — topbar,
+   nav buttons, toolbars — resolves `--ps-font-sans` through its native system
+   fallback. Pulling the pinned Google set in here instead would either inline
+   the whole ~2.7 MB library into every download or leave a `/assets/...`
+   reference that a downloaded file cannot resolve. */
 @import url('./shared/ui-tokens.css');
 
 /* Base body chrome (from app/tokens.css — the export never loads app.css). */

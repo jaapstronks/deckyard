@@ -55,7 +55,6 @@ export function renderEmbedHtmlDocument({
     <title>${safeTitle}</title>
     ${extraHead}
     ${extraFontHtml}
-    <link rel="stylesheet" href="/client/styles/shared/fonts.css" />
     <link rel="stylesheet" href="/assets/fonts/google/fonts.css" />
     <link rel="stylesheet" href="/client/styles/embed.css" />
     <link rel="stylesheet" href="/client/styles/theme.css" />

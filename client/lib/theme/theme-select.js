@@ -263,11 +263,14 @@ export function createVisualThemePicker({
         if (!family || seen.has(family)) continue;
         const first = theme.embedFonts.find((f) => f.family === family);
         if (!first) continue;
-        // One weight is enough for a preview card, but a curated font ships
-        // that weight as Google's disjoint latin / latin-ext pair — take both,
-        // or accented glyphs in a theme name render in a fallback face.
+        // One weight entry is enough for a preview card, but a curated font
+        // ships it as Google's disjoint latin / latin-ext pair — take both, or
+        // accented glyphs in a theme name render in a fallback face. For a
+        // variable family that single entry already spans every pinned weight
+        // ("400 700"), so this is the whole family; for a static one it is its
+        // lightest weight, which is all a preview needs.
         const matches = theme.embedFonts.filter(
-          (f) => f.family === family && (f.weight || 400) === (first.weight || 400)
+          (f) => f.family === family && String(f.weight || 400) === String(first.weight || 400)
         );
         let added = false;
         for (const match of matches) {
