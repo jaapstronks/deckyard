@@ -23,9 +23,30 @@ import { getPuppeteerBrowser, toNodeBuffer } from '../../server/utils/puppeteer-
 import { buildSlidePngHtml } from '../../server/render/png.js';
 import { renderSlidesToPdfBuffer } from '../../server/render/pdf.js';
 import { parsePdf } from '../../server/utils/convert-file/pdf-parser.js';
+import { FONT_SUBSETS } from '../../shared/theme-fonts.js';
 
 /** The slide frame every export renders into. */
 export const FRAME = { width: 1600, height: 900 };
+
+/**
+ * `unicode-range` in a form both sides of the browser boundary agree on.
+ *
+ * Chrome re-serialises what it parsed, dropping the leading zeros our declared
+ * ranges are written with: `U+0000-00FF` comes back as `U+0-FF`. Running our
+ * constants and Chrome's readback through the same normaliser is what lets a
+ * loaded `FontFace` be labelled with the subset it came from.
+ */
+function normalizeUnicodeRange(range) {
+  return String(range || '')
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/(^|[+\-,])0+(?=[0-9A-F])/g, '$1');
+}
+
+/** `{ <normalized range>: 'latin' | 'latin-ext' }`, for labelling loaded faces. */
+const SUBSET_LABELS = Object.fromEntries(
+  FONT_SUBSETS.map(({ name, unicodeRange }) => [normalizeUnicodeRange(unicodeRange), name])
+);
 
 /**
  * Elements measured on the calibration slide, in the brief's own terms.
@@ -37,6 +58,30 @@ export const MEASURED_SELECTORS = ['.slide .heading', '.slide .subheading', '.sl
 /** Round to one decimal: enough to see a real layout shift, not sub-pixel noise. */
 function round1(n) {
   return Math.round(Number(n) * 10) / 10;
+}
+
+/**
+ * A page's extracted text, reduced to the form that is actually compared.
+ *
+ * Two steps, and the order is the whole point.
+ *
+ * **Normalise, then slice.** Where pdf.js breaks a glyph run is a function of
+ * font metrics, so the same word extracts as `Your` on one platform and
+ * `Y our` on another — the CI runner did exactly that on the logo
+ * placeholder's "Your logo here". Whitespace is therefore dropped entirely
+ * rather than collapsed, because the split can land *inside* a word where
+ * there was no space to collapse. Slicing first, as this used to, would let a
+ * whitespace shift move the cut and change which characters survive it — the
+ * assertion would then fail on content that never differed.
+ *
+ * Word boundaries are not what this is for. "The right text reached the page"
+ * is.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function pageTextKey(text) {
+  return String(text || '').replace(/\s+/g, '').slice(0, 80);
 }
 
 /** `rgb(r, g, b)` / `rgba(...)` or `#rrggbb` → `[r, g, b]`, else null. */
@@ -128,7 +173,7 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
     await page.evaluate(() => document.fonts?.ready);
 
     const inPage = await page.evaluate(
-      ({ selectors: sels, frame }) => {
+      ({ selectors: sels, frame, subsetLabels }) => {
         const rectOf = (el) => {
           const r = el.getBoundingClientRect();
           return { x: r.x, y: r.y, width: r.width, height: r.height };
@@ -178,9 +223,20 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         const slideEl = document.querySelector('.slide');
         const slideBackground = slideEl ? getComputedStyle(slideEl).backgroundColor : null;
 
+        // Keyed by subset as well as family and weight. A curated family ships
+        // as Google's disjoint `latin` / `latin-ext` pair, and keying on
+        // `family weight` alone collapsed the two into one entry — so losing
+        // the `latin-ext` file, which is every accented glyph, changed nothing
+        // here. The subset label is what makes that visible.
         const loadedFonts = [...document.fonts]
           .filter((f) => f.status === 'loaded')
-          .map((f) => `${f.family} ${f.weight}`)
+          .map((f) => {
+            const range = String(f.unicodeRange || '')
+              .toUpperCase()
+              .replace(/\s+/g, '')
+              .replace(/(^|[+\-,])0+(?=[0-9A-F])/g, '$1');
+            return `${f.family} ${f.weight} [${subsetLabels[range] || range}]`;
+          })
           .sort();
 
         return {
@@ -188,10 +244,9 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
           overflowing,
           slideBackground,
           loadedFonts: [...new Set(loadedFonts)],
-          documentFontsStatus: document.fonts.status,
         };
       },
-      { selectors, frame: FRAME }
+      { selectors, frame: FRAME, subsetLabels: SUBSET_LABELS }
     );
 
     const client = await page.createCDPSession();
@@ -225,7 +280,6 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
     const dominant = await dominantColor(png);
 
     return {
-      frame: { ...FRAME },
       elements,
       overflowing: inPage.overflowing.map((o) => ({
         selector: o.selector,
@@ -238,7 +292,6 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
       })),
       slideBackground: inPage.slideBackground,
       loadedFonts: inPage.loadedFonts,
-      documentFontsStatus: inPage.documentFontsStatus,
       dominantColor: { rgb: dominant.rgb, share: Math.round(dominant.share * 1000) / 1000 },
     };
   } finally {
@@ -272,12 +325,21 @@ export async function measureDeckPdf(repoRoot, deck, { theme = null } = {}) {
     return { width: round1(x1 - x0), height: round1(y1 - y0) };
   });
 
+  // The scan is a heuristic over raw bytes; the page count is not. If they ever
+  // disagree the geometry list is describing something other than the pages —
+  // an inherited /MediaBox, a compressed page tree, a stray match inside a
+  // stream — and a baseline recorded from it would be nonsense.
+  if (mediaBoxes.length !== parsed.slides.length) {
+    throw new Error(
+      `/MediaBox scan found ${mediaBoxes.length} boxes for ${parsed.slides.length} pages — ` +
+        'the raw-bytes scan no longer describes this PDF and the geometry cannot be trusted'
+    );
+  }
+
   return {
     pageCount: parsed.slides.length,
     parseErrors: parsed.errors,
     pages: mediaBoxes,
-    pageText: parsed.slides.map((p) =>
-      String(p.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80)
-    ),
+    pageText: parsed.slides.map((p) => pageTextKey(p.textContent)),
   };
 }

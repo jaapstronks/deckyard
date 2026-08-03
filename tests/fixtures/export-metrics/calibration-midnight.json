@@ -1,8 +1,4 @@
 {
-  "frame": {
-    "width": 1600,
-    "height": 900
-  },
   "elements": {
     ".slide .heading": {
       "rect": {
@@ -35,10 +31,10 @@
       "paintedFamilies": [
         {
           "family": "Inter",
-          "glyphs": 21
+          "glyphs": 17
         }
       ],
-      "text": "One calibration slide"
+      "text": "Zażółć gęślą jaźń"
     },
     ".slide .body": {
       "rect": {
@@ -56,16 +52,16 @@
           "glyphs": 34
         }
       ],
-      "text": "Short body line. Second short line."
+      "text": "Short body line. Zażółć gęślą jaźń."
     }
   },
   "overflowing": [],
   "slideBackground": "rgb(24, 24, 27)",
   "loadedFonts": [
-    "Inter 400",
-    "Space Grotesk 500"
+    "Inter 400 700 [latin-ext]",
+    "Inter 400 700 [latin]",
+    "Space Grotesk 400 700 [latin]"
   ],
-  "documentFontsStatus": "loaded",
   "dominantColor": {
     "rgb": [
       24,

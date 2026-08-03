@@ -28,11 +28,11 @@
     }
   ],
   "pageText": [
-    "All field types One pass over the registry 2026-08-03",
-    "Markdown and items Body plus actions A bold word and a slanted one. First point ",
-    "Table rows Column A Column B One Two Three Four",
-    "Chart data 0 1 2 3 4 5 Alfa Bravo Charlie",
-    "Custom HTML",
-    "Image and flag Y our logo here A local asset, so the fixture needs no network"
+    "AllfieldtypesOnepassovertheregistry2026-08-03",
+    "MarkdownanditemsBodyplusactionsAboldwordandaslantedone.FirstpointSecondpointRead",
+    "TablerowsColumnAColumnBOneTwoThreeFour",
+    "Chartdata012345AlfaBravoCharlie",
+    "CustomHTML",
+    "ImageandflagYourlogohereAlocalasset,sothefixtureneedsnonetwork"
   ]
 }

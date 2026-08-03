@@ -1,8 +1,4 @@
 {
-  "frame": {
-    "width": 1600,
-    "height": 900
-  },
   "elements": {
     ".slide .heading": {
       "rect": {
@@ -35,10 +31,10 @@
       "paintedFamilies": [
         {
           "family": "Nunito ExtraLight",
-          "glyphs": 21
+          "glyphs": 17
         }
       ],
-      "text": "One calibration slide"
+      "text": "Zażółć gęślą jaźń"
     },
     ".slide .body": {
       "rect": {
@@ -56,16 +52,16 @@
           "glyphs": 34
         }
       ],
-      "text": "Short body line. Second short line."
+      "text": "Short body line. Zażółć gęślą jaźń."
     }
   },
   "overflowing": [],
   "slideBackground": "rgb(255, 251, 245)",
   "loadedFonts": [
-    "Nunito 400",
-    "Poppins 700"
+    "Nunito 400 700 [latin-ext]",
+    "Nunito 400 700 [latin]",
+    "Poppins 700 [latin]"
   ],
-  "documentFontsStatus": "loaded",
   "dominantColor": {
     "rgb": [
       255,

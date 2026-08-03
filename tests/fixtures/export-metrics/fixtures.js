@@ -16,7 +16,24 @@
  * rasterises differently from a Mac — a body block that sits one word away from
  * wrapping would swing a whole line height and blow any sane tolerance. The
  * fixture is the place to remove that flake, not the tolerance.
+ *
+ * It is also deliberately **not** pure ASCII. The pinned fonts ship as Google's
+ * two disjoint Latin subsets and the whole point of shipping `latin-ext` is the
+ * Polish/Czech/Turkish/Hungarian letters; a fixture without a single accented
+ * character would leave that file unexercised, so the subset could regress —
+ * or stop being downloaded at all — with every assertion still green. Hence the
+ * Polish pangram: every glyph in it lives in `latin-ext`, so it is exactly the
+ * text that goes blank when that half is missing.
  */
+
+/**
+ * A pangram whose glyphs sit in Google's `latin-ext` subset.
+ *
+ * "Zażółć gęślą jaźń" — Polish for "colour the hen's yellow", the standard
+ * test line for the language's diacritics. Nine of its letters (ż, ó, ł, ć, ę,
+ * ś, ą, ź, ń) are outside Latin-1 and therefore outside the `latin` file.
+ */
+export const LATIN_EXT_PANGRAM = 'Zażółć gęślą jaźń';
 
 /** Every theme shipped in `themes/`, each getting its own baseline file. */
 export const BUILTIN_THEMES = [
@@ -29,10 +46,14 @@ export const BUILTIN_THEMES = [
 ];
 
 /**
- * The `background` variant the calibration slide renders with (the registry
- * default for `content-slide`). It selects which theme token paints the frame:
- * `--t-slide-bg-<variant>`, which is *not* `--t-color-background` — in the
- * midnight theme those are `#18181b` and `#09090b` respectively.
+ * The `background` variant the calibration slide renders with. It selects which
+ * theme token paints the frame: `--t-slide-bg-<variant>`, which is *not*
+ * `--t-color-background` — in the midnight theme those are `#18181b` and
+ * `#09090b` respectively.
+ *
+ * The slide sets it explicitly rather than leaning on `content-slide`'s
+ * registry default, so the constant the test reads and the value the render
+ * uses cannot drift apart.
  */
 export const CALIBRATION_BACKGROUND_VARIANT = 'lime';
 
@@ -45,8 +66,9 @@ export function calibrationSlide() {
     type: 'content-slide',
     content: {
       title: 'Structural metrics',
-      subheading: 'One calibration slide',
-      body: 'Short body line.\n\nSecond short line.',
+      subheading: LATIN_EXT_PANGRAM,
+      body: `Short body line.\n\n${LATIN_EXT_PANGRAM}.`,
+      background: CALIBRATION_BACKGROUND_VARIANT,
     },
   };
 }

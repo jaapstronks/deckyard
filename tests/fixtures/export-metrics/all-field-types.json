@@ -2,12 +2,6 @@
   "slides": [
     {
       "type": "title-slide",
-      "fieldKinds": [
-        "string",
-        "enum",
-        "number"
-      ],
-      "titleSelector": ".slide .title",
       "title": {
         "rect": {
           "x": 96,
@@ -28,26 +22,12 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Bricolage Grotesque 700",
-        "Inter 400",
-        "Inter 700"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.509
-      }
+        "Bricolage Grotesque 400 700 [latin]",
+        "Inter 400 700 [latin]"
+      ]
     },
     {
       "type": "content-slide",
-      "fieldKinds": [
-        "markdown",
-        "items"
-      ],
-      "titleSelector": ".slide .heading",
       "title": {
         "rect": {
           "x": 64,
@@ -68,26 +48,12 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Bricolage Grotesque 700",
-        "Inter 400",
-        "Inter 500",
-        "Inter 700"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.981
-      }
+        "Bricolage Grotesque 400 700 [latin]",
+        "Inter 400 700 [latin]"
+      ]
     },
     {
       "type": "table-slide",
-      "fieldKinds": [
-        "items"
-      ],
-      "titleSelector": ".slide .heading",
       "title": {
         "rect": {
           "x": 64,
@@ -108,26 +74,12 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Bricolage Grotesque 700",
-        "Inter 400",
-        "Inter 500",
-        "Inter 700"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.994
-      }
+        "Bricolage Grotesque 400 700 [latin]",
+        "Inter 400 700 [latin]"
+      ]
     },
     {
       "type": "chart-slide",
-      "fieldKinds": [
-        "csv"
-      ],
-      "titleSelector": ".slide .chart-title",
       "title": {
         "rect": {
           "x": 64,
@@ -148,24 +100,12 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Bricolage Grotesque 400",
-        "Inter 400"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.882
-      }
+        "Bricolage Grotesque 400 700 [latin]",
+        "Inter 400 700 [latin]"
+      ]
     },
     {
       "type": "custom-html-slide",
-      "fieldKinds": [
-        "code"
-      ],
-      "titleSelector": ".slide .probe",
       "title": {
         "rect": {
           "x": 64,
@@ -186,24 +126,11 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Inter 400"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.997
-      }
+        "Inter 400 700 [latin]"
+      ]
     },
     {
       "type": "image-slide",
-      "fieldKinds": [
-        "image",
-        "boolean"
-      ],
-      "titleSelector": ".slide .img-title",
       "title": {
         "rect": {
           "x": 64,
@@ -224,17 +151,9 @@
       },
       "overflowing": [],
       "loadedFonts": [
-        "Bricolage Grotesque 400",
-        "Inter 400"
-      ],
-      "dominantColor": {
-        "rgb": [
-          255,
-          255,
-          255
-        ],
-        "share": 0.979
-      }
+        "Bricolage Grotesque 400 700 [latin]",
+        "Inter 400 700 [latin]"
+      ]
     }
   ]
 }

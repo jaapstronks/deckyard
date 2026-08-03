@@ -121,36 +121,6 @@ function boxAllowance(baselineValue) {
 }
 
 /**
- * Compare extracted PDF text ignoring whitespace entirely.
- *
- * Where pdf.js breaks a glyph run is a function of font metrics, so the same
- * word can extract as `Your` on one platform and `Y our` on another — the CI
- * runner did exactly that on the logo placeholder's "Your logo here". That is a
- * kerning artefact of the extractor, not a rendering difference, and the
- * neighbouring smoke test already collapses whitespace for the same reason.
- *
- * Whitespace is dropped rather than collapsed, because the split can land
- * *inside* a word where there was no space to collapse. Word boundaries are not
- * what this assertion is for — "the right text reached the page" is.
- *
- * @param {string} text
- * @returns {string}
- */
-function textKey(text) {
-  return String(text).replace(/\s+/g, '');
-}
-
-/**
- * Assert two page-text arrays carry the same characters, reporting the readable
- * strings when they do not.
- */
-function assertSamePageText(actual, expected, message) {
-  assert.deepEqual(actual.map(textKey), expected.map(textKey), `${message}\n` +
-    `  actual:   ${JSON.stringify(actual)}\n` +
-    `  baseline: ${JSON.stringify(expected)}`);
-}
-
-/**
  * Compare one rect against its baseline, collecting readable failures.
  * @returns {string[]} - Empty when every side is within tolerance
  */
@@ -220,10 +190,7 @@ for (const themeName of BUILTIN_THEMES) {
     const baseline = await baselineFor(`calibration-${themeName}`, metrics);
     if (!baseline) return;
 
-    // 1. Frame — the contract every other number is expressed in.
-    assert.deepEqual(metrics.frame, baseline.frame, 'the slide frame should not move');
-
-    // 2. Boxes.
+    // 1. Boxes.
     const diffs = [];
     for (const selector of MEASURED_SELECTORS) {
       const actual = metrics.elements[selector];
@@ -236,10 +203,15 @@ for (const themeName of BUILTIN_THEMES) {
       diffs.push(...rectDiffs(selector, actual.rect, expected.rect));
       assert.equal(actual.fontSize, expected.fontSize, `${selector}: font-size changed`);
       assert.equal(actual.fontWeight, expected.fontWeight, `${selector}: font-weight changed`);
+      // The text itself, not only its box: the fixture's Latin-ext pangram is
+      // the reason a subset regression has somewhere to show up, and a
+      // mangled or dropped glyph would otherwise only move a width by a few
+      // pixels — inside tolerance.
+      assert.equal(actual.text, expected.text, `${selector}: rendered text changed`);
     }
     assert.deepEqual(diffs, [], `layout drifted beyond tolerance:\n  ${diffs.join('\n  ')}`);
 
-    // 3. Fonts — both what loaded and what was painted.
+    // 2. Fonts — both what loaded and what was painted.
     assert.deepEqual(
       metrics.loadedFonts,
       baseline.loadedFonts,
@@ -256,7 +228,7 @@ for (const themeName of BUILTIN_THEMES) {
       );
     }
 
-    // 4. Dominant colour against the theme's own token, not just against the
+    // 3. Dominant colour against the theme's own token, not just against the
     //    baseline: this ties the rendered frame back to the theme file. The
     //    token is the slide's background *variant*, not `--t-color-background`
     //    — in the midnight theme those differ (#18181b vs #09090b).
@@ -285,7 +257,7 @@ for (const themeName of BUILTIN_THEMES) {
       `the background should still dominate the frame (got ${metrics.dominantColor.share})`
     );
 
-    // 5. Nothing outside the frame.
+    // 4. Nothing outside the frame.
     assert.deepEqual(
       metrics.overflowing,
       [],
@@ -302,7 +274,7 @@ for (const themeName of BUILTIN_THEMES) {
     assert.deepEqual(metrics.parseErrors, [], 'the PDF should parse without errors');
     assert.equal(metrics.pageCount, baseline.pageCount, 'one slide in → one page out');
     assert.deepEqual(metrics.pages, baseline.pages, 'PDF page geometry changed');
-    assertSamePageText(metrics.pageText, baseline.pageText, 'PDF page text changed');
+    assert.deepEqual(metrics.pageText, baseline.pageText, 'PDF page text changed');
   });
 }
 
@@ -325,7 +297,7 @@ test('the all-field-types deck exports one page per slide, unchanged', { skip },
   );
   assert.equal(metrics.pageCount, baseline.pageCount);
   assert.deepEqual(metrics.pages, baseline.pages, 'PDF page geometry changed');
-  assertSamePageText(metrics.pageText, baseline.pageText, 'PDF page text changed');
+  assert.deepEqual(metrics.pageText, baseline.pageText, 'PDF page text changed');
 });
 
 test('every all-field-types slide stays inside the frame with real fonts', { skip }, async () => {
@@ -342,14 +314,15 @@ test('every all-field-types slide stays inside the frame with real fonts', { ski
       theme,
       selectors: [entry.titleSelector],
     });
+    // Only what is asserted below is recorded. `fieldKinds` and
+    // `titleSelector` describe the fixture and already live in fixtures.js;
+    // `dominantColor` is the calibration slide's check, against the theme
+    // token, and was never read here.
     measured.push({
       type: entry.slide.type,
-      fieldKinds: entry.fieldKinds,
-      titleSelector: entry.titleSelector,
       title: metrics.elements[entry.titleSelector],
       overflowing: metrics.overflowing,
       loadedFonts: metrics.loadedFonts,
-      dominantColor: metrics.dominantColor,
     });
   }
 
@@ -362,8 +335,8 @@ test('every all-field-types slide stays inside the frame with real fonts', { ski
     assert.equal(actual.type, expected.type, `slide ${i}: fixture order changed`);
     assert.ok(
       actual.title,
-      `${actual.type}: no element matched ${actual.titleSelector} — the fixture's ` +
-        'title selector no longer describes the rendered markup'
+      `${actual.type}: no element matched ${ALL_FIELD_TYPES_SLIDES[i].titleSelector} — ` +
+        "the fixture's title selector no longer describes the rendered markup"
     );
     assert.deepEqual(
       actual.overflowing,

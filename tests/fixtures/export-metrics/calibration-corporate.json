@@ -1,8 +1,4 @@
 {
-  "frame": {
-    "width": 1600,
-    "height": 900
-  },
   "elements": {
     ".slide .heading": {
       "rect": {
@@ -35,10 +31,10 @@
       "paintedFamilies": [
         {
           "family": "Manrope ExtraLight",
-          "glyphs": 21
+          "glyphs": 17
         }
       ],
-      "text": "One calibration slide"
+      "text": "Zażółć gęślą jaźń"
     },
     ".slide .body": {
       "rect": {
@@ -56,16 +52,16 @@
           "glyphs": 34
         }
       ],
-      "text": "Short body line. Second short line."
+      "text": "Short body line. Zażółć gęślą jaźń."
     }
   },
   "overflowing": [],
   "slideBackground": "rgb(255, 255, 255)",
   "loadedFonts": [
-    "Archivo 700",
-    "Manrope 400"
+    "Archivo 400 700 [latin]",
+    "Manrope 400 700 [latin-ext]",
+    "Manrope 400 700 [latin]"
   ],
-  "documentFontsStatus": "loaded",
   "dominantColor": {
     "rgb": [
       255,
