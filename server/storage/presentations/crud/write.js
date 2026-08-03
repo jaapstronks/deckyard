@@ -13,7 +13,6 @@ import {
   prunePresentationVersions,
 } from '../versions.js';
 import { attachSandboxMeta } from '../sandbox.js';
-import { assertSandboxQuotaForCreate } from '../sandbox-quota.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemeIds } from '../../../utils/themes.js';
 import { getPresentationLock } from '../../../utils/presentation-locks.js';
@@ -115,9 +114,9 @@ async function maybeAutoSnapshot(repoRoot, pres, { actorEmail = null, reason = '
  * @returns {Promise<Object>} Created presentation
  */
 export async function createPresentation(repoRoot, body) {
-  // Sandbox: refuse the mint (typed 4xx) once the guest is at their disk quota,
-  // before writing anything. No-op outside sandbox mode.
-  await assertSandboxQuotaForCreate(repoRoot, body?.ownerEmail);
+  // The sandbox storage quota is enforced in the presentations facade
+  // (server/storage/presentations/index.js), before dispatch, so it covers
+  // this file backend and Postgres alike.
   const pres = await prepareNewPresentation(repoRoot, body);
   await writePresentation(repoRoot, pres);
   return pres;

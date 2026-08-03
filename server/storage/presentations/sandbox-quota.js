@@ -1,12 +1,12 @@
 /**
- * Per-guest disk quota for sandbox mode.
+ * Per-guest storage quota for sandbox mode.
  *
  * Sandbox is a public, anonymous playground where many guests share one
- * instance and one data volume. Isolation is per-cookie, but nothing otherwise
+ * instance and one database. Isolation is per-cookie, but nothing otherwise
  * bounds how many decks (or how many bytes) a single guest — or a determined
- * abuser rotating cookies/IPs — can pile into `sandbox_data`. This module caps
- * both per guest and refuses new decks with a typed 4xx once the cap is hit,
- * instead of letting the disk fill.
+ * abuser rotating cookies/IPs — can pile into the `presentations` table. This
+ * module caps both per guest and refuses new decks with a typed 4xx once the
+ * cap is hit, instead of letting the volume fill.
  *
  * The per-guest guarantee is really the pair (deck-count cap × request body
  * cap): `MAX_REQUEST_BODY_BYTES` bounds any single deck/import, and the count
@@ -15,14 +15,20 @@
  * The explicit byte cap adds a second gate: once a guest's *stored* bytes are
  * already over budget, no further decks are minted.
  *
+ * Since sandbox runs on Postgres (the file backend is gone from every sandbox
+ * deploy), the counts come from the `presentations` table, keyed on
+ * `owner_email` within the instance's single organization — not a directory
+ * scan. `pg_column_size(slides) + pg_column_size(i18n)` is the on-disk byte
+ * proxy for a deck; it is the compressed jsonb size, so an approximation of the
+ * old whole-file byte sum, which is all a coarse abuse guard needs.
+ *
  * No-ops outside sandbox mode and for requests without an owner email, so it is
- * safe to call from the shared create/duplicate path.
+ * safe to call from the shared create/duplicate facade.
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { getDb, sql } from '../../db/client.js';
+import { getOrgId } from '../../utils/context.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { presDir } from './paths.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { AppError } from '../../utils/errors.js';
 
@@ -49,8 +55,8 @@ function sandboxMaxBytesPerGuest() {
 }
 
 /**
- * Global soft ceiling for the whole presentations dir, used by the cleanup loop
- * as a non-destructive observability guard. `0`/unset disables the check.
+ * Global soft ceiling for the whole presentations table, used by the cleanup
+ * loop as a non-destructive observability guard. `0`/unset disables the check.
  * @returns {number}
  */
 export function sandboxMaxTotalBytes() {
@@ -58,8 +64,8 @@ export function sandboxMaxTotalBytes() {
 }
 
 /**
- * Error thrown when a sandbox guest hits their disk quota. Maps to HTTP 429 via
- * the AppError status, with a stable machine code clients can branch on.
+ * Error thrown when a sandbox guest hits their storage quota. Maps to HTTP 429
+ * via the AppError status, with a stable machine code clients can branch on.
  */
 export class SandboxQuotaError extends AppError {
   /** @param {string} message @param {object} [details] */
@@ -69,72 +75,50 @@ export class SandboxQuotaError extends AppError {
 }
 
 /**
- * Count a guest's decks and sum their on-disk bytes by scanning the shared
- * presentations dir. One read per deck file (owner lives inside the JSON).
- * @param {string} repoRoot
+ * Count a guest's decks and sum their stored bytes in the shared presentations
+ * table, scoped to the context's organization. The byte figure is the
+ * compressed jsonb size of the two big columns (slides + i18n).
+ * @param {object} ctx - Storage context carrying the organization.
  * @param {string} ownerEmail
  * @returns {Promise<{ deckCount: number, totalBytes: number }>}
  */
-export async function getSandboxUsageForOwner(repoRoot, ownerEmail) {
+export async function getSandboxUsageForOwner(ctx, ownerEmail) {
   const owner = normalizeEmail(ownerEmail);
   if (!owner) return { deckCount: 0, totalBytes: 0 };
 
-  const dir = presDir(repoRoot);
-  let files;
-  try {
-    files = await fs.readdir(dir);
-  } catch {
-    return { deckCount: 0, totalBytes: 0 };
-  }
+  const db = getDb();
+  const orgId = getOrgId(ctx);
+  const { rows } = await sql`
+    SELECT
+      count(*)::int AS deck_count,
+      coalesce(sum(pg_column_size(slides) + pg_column_size(i18n)), 0)::bigint AS total_bytes
+    FROM presentations
+    WHERE organization_id = ${orgId}
+      AND lower(owner_email) = ${owner}
+  `.execute(db);
 
-  let deckCount = 0;
-  let totalBytes = 0;
-  for (const f of files) {
-    if (!f.endsWith('.json')) continue;
-    let raw;
-    try {
-      raw = await fs.readFile(path.join(dir, f));
-    } catch {
-      continue;
-    }
-    let pres;
-    try {
-      pres = JSON.parse(raw.toString('utf8'));
-    } catch {
-      continue;
-    }
-    if (normalizeEmail(pres?.ownerEmail) !== owner) continue;
-    deckCount += 1;
-    totalBytes += raw.length;
-  }
-  return { deckCount, totalBytes };
+  const row = rows[0] || {};
+  return {
+    deckCount: Number(row.deck_count) || 0,
+    totalBytes: Number(row.total_bytes) || 0,
+  };
 }
 
 /**
- * Sum on-disk bytes of every deck file in the shared presentations dir.
- * Cheap (stat only) — used by the cleanup loop's global disk-usage guard.
- * @param {string} repoRoot
+ * Sum stored bytes of every deck in the shared presentations table, scoped to
+ * the organization. Used by the cleanup loop's global disk-usage guard.
+ * @param {object} ctx - Storage context carrying the organization.
  * @returns {Promise<number>}
  */
-export async function getSandboxTotalBytes(repoRoot) {
-  const dir = presDir(repoRoot);
-  let files;
-  try {
-    files = await fs.readdir(dir);
-  } catch {
-    return 0;
-  }
-  let total = 0;
-  for (const f of files) {
-    if (!f.endsWith('.json')) continue;
-    try {
-      const st = await fs.stat(path.join(dir, f));
-      total += st.size;
-    } catch {
-      // ignore
-    }
-  }
-  return total;
+export async function getSandboxTotalBytes(ctx) {
+  const db = getDb();
+  const orgId = getOrgId(ctx);
+  const { rows } = await sql`
+    SELECT coalesce(sum(pg_column_size(slides) + pg_column_size(i18n)), 0)::bigint AS total_bytes
+    FROM presentations
+    WHERE organization_id = ${orgId}
+  `.execute(db);
+  return Number(rows[0]?.total_bytes) || 0;
 }
 
 /**
@@ -142,18 +126,18 @@ export async function getSandboxTotalBytes(repoRoot) {
  * would exceed the per-guest deck-count cap, or the guest's stored bytes are
  * already over the per-guest byte cap. No-op outside sandbox mode or without an
  * owner email, so it is safe to call unconditionally from the create path.
- * @param {string} repoRoot
+ * @param {object} ctx - Storage context carrying the organization.
  * @param {string} ownerEmail
  * @returns {Promise<void>}
  */
-export async function assertSandboxQuotaForCreate(repoRoot, ownerEmail) {
+export async function assertSandboxQuotaForCreate(ctx, ownerEmail) {
   if (!sandboxEnabled()) return;
   const owner = normalizeEmail(ownerEmail);
   if (!owner) return;
 
   const maxDecks = sandboxMaxDecksPerGuest();
   const maxBytes = sandboxMaxBytesPerGuest();
-  const { deckCount, totalBytes } = await getSandboxUsageForOwner(repoRoot, owner);
+  const { deckCount, totalBytes } = await getSandboxUsageForOwner(ctx, owner);
 
   if (deckCount >= maxDecks) {
     throw new SandboxQuotaError(
