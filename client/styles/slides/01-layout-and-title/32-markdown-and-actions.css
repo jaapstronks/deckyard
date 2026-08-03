@@ -8,7 +8,10 @@
 .md-table-wrap {
   max-width: 100%;
   overflow-x: auto; /* if a table is wider than the slide, scroll instead of breaking layout */
-  margin-top: var(--slide-space-4);
+  /* Stays literal on purpose: markdown blocks also render in speaker notes and
+     the presenter console, outside the `.slide` root where the `--slide-*`
+     tokens are defined. */
+  margin-top: 16px;
 }
 
 .md-table {
@@ -171,14 +174,17 @@
 /* Code blocks - dark Catppuccin Mocha style */
 .md-code-block {
   font-family: var(--font-mono);
-  font-size: var(--slide-text-sm);
-  line-height: var(--slide-leading-relaxed);
+  /* Lengths stay literal on purpose: markdown blocks also render in speaker
+     notes and the presenter console, outside the `.slide` root where the
+     `--slide-*` tokens are defined. */
+  font-size: 16px;
+  line-height: 1.5;
   background: var(--slide-code-bg);
   color: var(--slide-code-text);
-  padding: var(--slide-space-5) var(--slide-space-6);
+  padding: 20px 24px;
   border-radius: var(--slide-radius-sm, 10px);
   overflow-x: auto;
-  margin: var(--slide-space-4) 0;
+  margin: 16px 0;
   text-align: left;
   white-space: pre;
   tab-size: 2;
@@ -251,7 +257,10 @@
 /* Math blocks - centered display */
 .md-math-block {
   text-align: center;
-  margin: var(--slide-space-5) 0;
+  /* Stays literal on purpose: markdown blocks also render in speaker notes and
+     the presenter console, outside the `.slide` root where the `--slide-*`
+     tokens are defined. */
+  margin: 20px 0;
   font-size: 1.2em;
   overflow-x: auto;
 }

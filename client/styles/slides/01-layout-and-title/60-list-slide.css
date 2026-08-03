@@ -44,8 +44,8 @@
   line-height: var(--line-height-body);
 }
 /* When there's no subheading the list follows the heading directly; the
-   heading's 12px bottom margin alone crowds the first item against the title.
-   The subheading (when present) supplies its own 48px gap, so only pad here. */
+   heading's small bottom margin alone crowds the first item against the title.
+   The subheading (when present) supplies its own larger gap, so only pad here. */
 .slide-lijstje .heading + .lijst {
   margin-top: var(--slide-space-6);
 }
