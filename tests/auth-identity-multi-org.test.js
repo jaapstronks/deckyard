@@ -49,9 +49,6 @@ const passwordReset = await import('../server/storage/password-reset.js');
 const magicLinkStore = await import('../server/storage/magic-link.js');
 const ssoStore = await import('../server/storage/sso.js');
 const usersStore = await import('../server/storage/users.js');
-const { withSettings } = await import('../server/storage/adapters/postgres/settings.js');
-
-const SettingsAdapter = withSettings(class {});
 
 /** Context for the organization a request is currently being handled in. */
 const ctxIn = (organizationId) => ({ organizationId, actorEmail: 'alice@example.com' });
@@ -371,19 +368,6 @@ test('an SSO login from another organization reuses the existing row', async () 
   assert.equal(result.ok, true);
   assert.equal(result.provisioned, false);
   assert.equal(db.__tables.users.length, 1);
-});
-
-test('personal settings follow the person, not the workspace', async () => {
-  const db = seedMultiOrg();
-  const adapter = new SettingsAdapter();
-
-  await adapter.setUserSettings('alice@example.com', { profile: { name: 'Alice A' } }, ctxIn(ORG_B));
-
-  // Read from the other workspace: same person, same settings.
-  assert.deepEqual(await adapter.getUserSettings('alice@example.com', ctxIn(ORG_A)), {
-    profile: { name: 'Alice A' },
-  });
-  assert.equal(db.__tables.users.length, 1, 'settings write did not add a row');
 });
 
 test('inviting someone who already exists elsewhere reports already_exists', async () => {

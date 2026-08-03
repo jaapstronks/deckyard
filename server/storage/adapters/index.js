@@ -3,7 +3,7 @@
  * Selects the appropriate storage backend based on configuration.
  */
 
-import { getStorageMode, getDualWriteMode } from '../../config/database.js';
+import { getStorageMode } from '../../config/database.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('adapters');
 
@@ -21,27 +21,10 @@ export async function initializeStorage(repoRoot) {
   }
 
   const mode = getStorageMode();
-  const dualWriteMode = getDualWriteMode();
 
-  log.info(`[Storage] Mode: ${mode}, Dual-write: ${dualWriteMode}`);
+  log.info(`[Storage] Mode: ${mode}`);
 
-  if (dualWriteMode !== 'off') {
-    // Dual-write mode: use both adapters
-    const { FileAdapter } = await import('./file-adapter.js');
-    const { PostgresAdapter } = await import('./postgres-adapter.js');
-    const { DualWriteAdapter } = await import('./dual-write-adapter.js');
-
-    const fileAdapter = new FileAdapter(repoRoot);
-    const postgresAdapter = new PostgresAdapter();
-
-    await fileAdapter.initialize();
-    await postgresAdapter.initialize();
-
-    adapter = new DualWriteAdapter(fileAdapter, postgresAdapter, {
-      mode: dualWriteMode,
-    });
-    log.info(`[Storage] Initialized dual-write adapter (mode: ${dualWriteMode})`);
-  } else if (mode === 'postgres') {
+  if (mode === 'postgres') {
     const { PostgresAdapter } = await import('./postgres-adapter.js');
     adapter = new PostgresAdapter();
     await adapter.initialize();

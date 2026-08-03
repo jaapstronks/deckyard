@@ -7,8 +7,6 @@
  * - images.js - Image library
  * - slides.js - Slide library
  * - published.js - Published presentations
- * - settings.js - App and user settings
- * - follow-codes.js - Follow codes
  */
 
 import { StorageAdapter } from '../interface.js';
@@ -19,8 +17,6 @@ import { withImages } from './images.js';
 import { withImageFavorites } from './image-favorites.js';
 import { withSlides } from './slides.js';
 import { withPublished } from './published.js';
-import { withSettings } from './settings.js';
-import { withFollowCodes } from './follow-codes.js';
 import { withTags } from './tags.js';
 import { withSlideLibraryTags } from './slide-library-tags.js';
 import { withCollections } from './collections.js';
@@ -49,15 +45,11 @@ export const PostgresAdapter = withSlideLibraryUsage(
   withCollections(
     withSlideLibraryTags(
       withTags(
-        withFollowCodes(
-          withSettings(
-            withPublished(
-              withSlides(
-                withImageFavorites(
-                  withImages(
-                    withPresentations(BasePostgresAdapter)
-                  )
-                )
+        withPublished(
+          withSlides(
+            withImageFavorites(
+              withImages(
+                withPresentations(BasePostgresAdapter)
               )
             )
           )
