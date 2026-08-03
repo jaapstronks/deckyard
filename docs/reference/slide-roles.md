@@ -137,6 +137,30 @@ beta stance*): a theme that sets a removed token does not break — unknown
 tokens do nothing — but the deck renders with role-derived styling instead;
 the release notes name each family.
 
+## Markdown output is styled per surface
+
+Decided 2026-08-03 (the batch 2.1 review found the seam). `shared/markdown.js`
+emits the same `md-*` classes on every surface that renders markdown, but the
+surfaces do not share a vocabulary — so they do not share rules either:
+
+- **Slide canvas** — `client/styles/slides/01-layout-and-title/32-markdown-and-actions.css`
+  scopes every `md-*` rule under `.slide` and speaks `--slide-*` only. Inside
+  `.slide` the tokens always resolve (they are defined on that scope in
+  `00-tokens.css`), the code palette stays theme-overridable per deck, and the
+  rules no longer leak into app chrome.
+- **App chrome** (speaker-notes view, presenter console) — one shared block in
+  `client/styles/base/04-editor-and-misc/60-notes.css`, keyed on the
+  `.notes-body` class, speaking `--ps-*`/`--app-*`. Both chrome containers
+  carry the class; a new chrome surface that renders markdown opts in the same
+  way. Prism and KaTeX only run on slide roots (`slide-render.js`,
+  `server/utils/prism-katex.js`), so chrome shows code and math as plain
+  source text and styles it as such — there is no second copy of the syntax
+  palette.
+
+No fallback values bridge the two surfaces: a rule that needs a token it
+cannot reach is on the wrong surface, not a candidate for a `var(…, literal)`
+double.
+
 ## The allowlist
 
 Values outside the scales are allowed **per category with a reason**, not per

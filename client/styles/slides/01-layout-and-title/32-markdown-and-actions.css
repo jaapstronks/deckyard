@@ -2,19 +2,21 @@
    Both are emitted by machinery, not by one slide type: the `md-*` classes come
    from shared/markdown.js for any type that renders markdown, and `.slide-action*`
    from the shared action-button helper. They stay shared on purpose — see
-   docs/plans/briefs/slide-type-seam-collapse.md § "Residu dat bewust blijft staan". */
+   docs/plans/briefs/slide-type-seam-collapse.md § "Residu dat bewust blijft staan".
+
+   All `md-*` rules are scoped under `.slide`: the markdown pipeline also renders
+   in app chrome (speaker notes view, presenter console), which styles the same
+   classes on the app vocabularies via `.notes-body` — see
+   docs/reference/slide-roles.md § "Markdown output is styled per surface". */
 
 /* Markdown tables (used in content-slide and image-text-slide) */
-.md-table-wrap {
+.slide .md-table-wrap {
   max-width: 100%;
   overflow-x: auto; /* if a table is wider than the slide, scroll instead of breaking layout */
-  /* Stays literal on purpose: markdown blocks also render in speaker notes and
-     the presenter console, outside the `.slide` root where the `--slide-*`
-     tokens are defined. */
-  margin-top: 16px;
+  margin-top: var(--slide-space-4);
 }
 
-.md-table {
+.slide .md-table {
   display: inline-table; /* shrink-to-fit when only a few columns */
   width: auto;
   max-width: 100%;
@@ -23,8 +25,8 @@
   table-layout: auto;
 }
 
-.md-table th,
-.md-table td {
+.slide .md-table th,
+.slide .md-table td {
   padding: 16px 22px;
   vertical-align: top;
   text-align: start; /* RTL support */
@@ -33,7 +35,7 @@
   min-width: 140px; /* makes small-column tables feel roomier; wide tables will scroll */
 }
 
-.md-table th {
+.slide .md-table th {
   font-weight: 400;
   font-synthesis: none;
 }
@@ -41,21 +43,21 @@
 /* Inner gridlines only: no outer border.
    Colour is driven by --table-border so themable table variants can restyle it;
    the fallback reproduces the historical hardcoded gridline. */
-.md-table tr > *:not(:last-child) {
+.slide .md-table tr > *:not(:last-child) {
   border-right: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
 }
 
 /* Header/body separator: thead's only row is typically :last-child within thead, so handle explicitly */
-.md-table thead tr > * {
+.slide .md-table thead tr > * {
   border-bottom: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
 }
 
 /* Body row separators (no bottom outer line on the final row) */
-.md-table tbody tr:not(:last-child) > * {
+.slide .md-table tbody tr:not(:last-child) > * {
   border-bottom: 1px solid var(--table-border, rgba(0, 0, 0, 0.55));
 }
 
-.md-table a {
+.slide .md-table a {
   color: var(--color-link);
 }
 
@@ -161,7 +163,7 @@
    ========================================================================== */
 
 /* Inline code - red text with gray background */
-.md-code-inline {
+.slide .md-code-inline {
   font-family: var(--font-mono);
   font-size: 0.88em;
   background: rgba(0, 0, 0, 0.06);
@@ -172,25 +174,22 @@
 }
 
 /* Code blocks - dark Catppuccin Mocha style */
-.md-code-block {
+.slide .md-code-block {
   font-family: var(--font-mono);
-  /* Lengths stay literal on purpose: markdown blocks also render in speaker
-     notes and the presenter console, outside the `.slide` root where the
-     `--slide-*` tokens are defined. */
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: var(--slide-text-sm);
+  line-height: var(--slide-leading-relaxed);
   background: var(--slide-code-bg);
   color: var(--slide-code-text);
-  padding: 20px 24px;
-  border-radius: var(--slide-radius-sm, 10px);
+  padding: var(--slide-space-5) var(--slide-space-6);
+  border-radius: var(--slide-radius-sm);
   overflow-x: auto;
-  margin: 16px 0;
+  margin: var(--slide-space-4) 0;
   text-align: left;
   white-space: pre;
   tab-size: 2;
 }
 
-.md-code-block code {
+.slide .md-code-block code {
   font-family: inherit;
   font-size: inherit;
   background: transparent;
@@ -199,80 +198,77 @@
 }
 
 /* Override Prism theme to match Catppuccin Mocha */
-.md-code-block .token.comment,
-.md-code-block .token.prolog,
-.md-code-block .token.doctype,
-.md-code-block .token.cdata {
+.slide .md-code-block .token.comment,
+.slide .md-code-block .token.prolog,
+.slide .md-code-block .token.doctype,
+.slide .md-code-block .token.cdata {
   color: var(--slide-code-comment);
 }
 
-.md-code-block .token.punctuation {
+.slide .md-code-block .token.punctuation {
   color: var(--slide-code-punctuation);
 }
 
-.md-code-block .token.property,
-.md-code-block .token.tag,
-.md-code-block .token.boolean,
-.md-code-block .token.number,
-.md-code-block .token.constant,
-.md-code-block .token.symbol,
-.md-code-block .token.deleted {
+.slide .md-code-block .token.property,
+.slide .md-code-block .token.tag,
+.slide .md-code-block .token.boolean,
+.slide .md-code-block .token.number,
+.slide .md-code-block .token.constant,
+.slide .md-code-block .token.symbol,
+.slide .md-code-block .token.deleted {
   color: var(--slide-code-number);
 }
 
-.md-code-block .token.selector,
-.md-code-block .token.attr-name,
-.md-code-block .token.string,
-.md-code-block .token.char,
-.md-code-block .token.builtin,
-.md-code-block .token.inserted {
+.slide .md-code-block .token.selector,
+.slide .md-code-block .token.attr-name,
+.slide .md-code-block .token.string,
+.slide .md-code-block .token.char,
+.slide .md-code-block .token.builtin,
+.slide .md-code-block .token.inserted {
   color: var(--slide-code-string);
 }
 
-.md-code-block .token.operator,
-.md-code-block .token.entity,
-.md-code-block .token.url,
-.md-code-block .language-css .token.string,
-.md-code-block .style .token.string {
+.slide .md-code-block .token.operator,
+.slide .md-code-block .token.entity,
+.slide .md-code-block .token.url,
+.slide .md-code-block .language-css .token.string,
+.slide .md-code-block .style .token.string {
   color: var(--slide-code-operator);
 }
 
-.md-code-block .token.atrule,
-.md-code-block .token.attr-value,
-.md-code-block .token.keyword {
+.slide .md-code-block .token.atrule,
+.slide .md-code-block .token.attr-value,
+.slide .md-code-block .token.keyword {
   color: var(--slide-code-keyword);
 }
 
-.md-code-block .token.function,
-.md-code-block .token.class-name {
+.slide .md-code-block .token.function,
+.slide .md-code-block .token.class-name {
   color: var(--slide-code-function);
 }
 
-.md-code-block .token.regex,
-.md-code-block .token.important,
-.md-code-block .token.variable {
+.slide .md-code-block .token.regex,
+.slide .md-code-block .token.important,
+.slide .md-code-block .token.variable {
   color: var(--slide-code-variable);
 }
 
 /* Math blocks - centered display */
-.md-math-block {
+.slide .md-math-block {
   text-align: center;
-  /* Stays literal on purpose: markdown blocks also render in speaker notes and
-     the presenter console, outside the `.slide` root where the `--slide-*`
-     tokens are defined. */
-  margin: 20px 0;
+  margin: var(--slide-space-5) 0;
   font-size: 1.2em;
   overflow-x: auto;
 }
 
 /* Inline math */
-.md-math-inline {
+.slide .md-math-inline {
   display: inline;
 }
 
 /* KaTeX error styling - show raw LaTeX on error */
-.md-math-block .katex-error,
-.md-math-inline .katex-error {
+.slide .md-math-block .katex-error,
+.slide .md-math-inline .katex-error {
   color: var(--slide-color-danger);
   font-family: var(--font-mono);
   font-size: 0.9em;

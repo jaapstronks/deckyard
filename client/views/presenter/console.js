@@ -157,7 +157,8 @@ export function createPresenterConsole({ theme, presentationId } = {}) {
   ]);
 
   // --- Notes block -------------------------------------------------------
-  const notesBody = h('div', { class: 'presenter-console-notes-body' });
+  // `notes-body` opts into the shared markdown-in-chrome styling (60-notes.css).
+  const notesBody = h('div', { class: 'presenter-console-notes-body notes-body' });
   const notesBlock = h('section', { class: 'presenter-console-notes' }, [
     h('div', {
       class: 'presenter-console-label',
