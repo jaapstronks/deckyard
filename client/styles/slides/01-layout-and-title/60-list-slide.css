@@ -79,6 +79,7 @@
   place-items: center;
   font-family: var(--font-mono);
   font-size: 22px;
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
   margin-top: 2px;
 }
@@ -103,7 +104,7 @@
 .slide-lijstje .item-title {
   font-family: var(--font-heading);
   font-size: calc(0.95em * var(--tf-size-scale, 1)); /* slightly smaller than body */
-  line-height: 1.12;
+  line-height: var(--slide-leading-tight);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -113,7 +114,7 @@
 .slide-lijstje .item-text {
   font-family: var(--font-body);
   font-size: calc(0.95em * var(--tf-size-scale, 1));
-  line-height: 1.22;
+  line-height: var(--slide-leading-snug);
 }
 
 /* Text size variants (density field).

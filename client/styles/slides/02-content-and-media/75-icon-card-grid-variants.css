@@ -200,14 +200,14 @@
   );
   justify-content: flex-end;
   text-align: center;
-  padding: 0 18px 24px;
+  padding: 0 var(--slide-space-4) var(--slide-space-6);
 }
 /* `.slide h3 { text-align: start }` (base) wins over the parent's centering,
    so the title has to opt back in explicitly. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-title {
   margin-bottom: var(--slide-space-2);
   font-size: var(--slide-text-lg);
-  line-height: 1.15;
+  line-height: var(--slide-leading-snug);
   text-align: center;
 }
 /* Body text under the title. Clamped so a long description shrinks the visible

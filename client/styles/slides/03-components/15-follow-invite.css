@@ -16,7 +16,7 @@
   text-transform: var(--heading-transform, none);
   letter-spacing: -0.02em;
   font-size: 58px;
-  line-height: 1.03;
+  line-height: var(--slide-leading-tight);
 }
 
 .slide-follow-invite .sfi-body {
@@ -98,6 +98,7 @@
   font-weight: 900;
   letter-spacing: 0.14em;
   color: var(--color-accent);
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
 }
 

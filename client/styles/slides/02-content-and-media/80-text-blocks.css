@@ -15,7 +15,7 @@
 .slide-text-blocks .header .title {
   font-family: var(--font-heading);
   font-size: 48px;
-  line-height: 1.05;
+  line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -110,7 +110,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   letter-spacing: -0.01em;
-  line-height: 1.15;
+  line-height: var(--slide-leading-snug);
   margin: 0 0 var(--slide-space-3);
 }
 
@@ -118,7 +118,7 @@
 .slide-text-blocks .text-block-body {
   font-family: var(--font-body);
   font-size: var(--slide-text-md);
-  line-height: 1.4;
+  line-height: var(--slide-leading-normal);
 }
 .slide-text-blocks .text-block-body p {
   margin: 0;
@@ -193,6 +193,7 @@
   margin: var(--slide-space-4) 0;
   font-size: 40px;
   font-weight: 700;
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 80%, transparent);
 }
@@ -279,7 +280,7 @@
   margin-top: var(--slide-space-3);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block {
-  padding: 12px 18px;
+  padding: var(--slide-space-3) var(--slide-space-4);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-title {
   font-size: 19px;
@@ -287,7 +288,7 @@
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-body {
   font-size: 18px;
-  line-height: 1.3;
+  line-height: var(--slide-leading-compact);
 }
 
 /* Compact 4-row + 3 blocks per row */

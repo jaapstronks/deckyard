@@ -214,10 +214,12 @@
 
 .slide-kpi-metrics .kpi-value-num {
   font-size: var(--slide-text-kpi-md);
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
 }
 .slide-kpi-metrics .kpi-unit {
   font-size: 40px;
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
   color: var(--kpi-tile-value-muted, var(--color-text-muted));
 }
@@ -238,7 +240,7 @@
 .slide-kpi-metrics .kpi-label {
   font-family: var(--font-body);
   font-size: calc(var(--slide-font-size-body) + 6px);
-  line-height: 1.18;
+  line-height: var(--slide-leading-snug);
   color: var(--kpi-tile-fg);
   margin-top: 2px;
 }
@@ -253,7 +255,7 @@
   align-items: baseline;
   font-family: var(--font-mono);
   font-size: 26px;
-  line-height: 1.15;
+  line-height: var(--slide-leading-snug);
   color: var(--kpi-tile-fg-muted, var(--color-text-muted));
   /* `auto` is what takes the slack: value and label stay at the top edge, the
      note drops to the foot of the tile. In a short tile it collapses to the

@@ -303,7 +303,7 @@
   --timeline-title-max-lines: 3;
   font-family: var(--font-heading);
   font-size: var(--timeline-title-max-px); /* = --slide-text-base (20); auto-shrinks per card when it wraps */
-  line-height: 1.15;
+  line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -316,7 +316,7 @@
 .slide-timeline .timeline-text {
   font-family: var(--font-body);
   font-size: 17px; /* off-scale: between --slide-text-sm (16) and --slide-text-base (20); projector-readable, keeps hierarchy with the 20px title */
-  line-height: 1.3;
+  line-height: var(--slide-leading-compact);
   color: var(--timeline-text-muted);
   margin: 0;
   max-width: 50ch;
