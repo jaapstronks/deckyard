@@ -68,13 +68,20 @@
  */
 
 /**
- * The vocabulary. These six partition the current 38 types completely - there is
- * no "other" bucket, which is the best evidence available that the axis is the
+ * The vocabulary. These six partition the core types completely - there is no
+ * "other" bucket, which is the best evidence available that the axis is the
  * right one.
+ *
+ * Exported for a cross-repo consumer: `deckyard-website` reads this map in
+ * `scripts/generate-slide-types.js` to publish the one-line meaning of each
+ * structure on `/spec/slide-types/`. A dead-export sweep that only greps this
+ * repo will read it as unused - it is not. `SLIDE_STRUCTURE_CONTRACTS` is not a
+ * substitute: it carries `itemArrays`, `itemsPhrase` and `reader`, not the
+ * short meaning.
  *
  * @type {Readonly<Record<string, string>>}
  */
-const SLIDE_STRUCTURES = Object.freeze({
+export const SLIDE_STRUCTURES = Object.freeze({
   /** A fixed set of scalar slots (title + body + image). */
   singleton: 'A fixed set of scalar slots.',
   /** *n* items of one repeated shape; *n* is the author's choice. */
