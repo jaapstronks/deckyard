@@ -12,10 +12,10 @@
  * (migration 023) — is enforced by the constraint itself, not by a hand model.
  */
 
-import { after, before, beforeEach, describe, it } from 'node:test';
+import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { closeTestDb, openTestDb, truncate } from './helpers/harness.js';
+import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness.js';
 import {
   acquireSlideLock,
   getSlideLock,
@@ -27,7 +27,7 @@ const SID = 'slide-1';
 const ALICE = { email: 'alice@example.com', name: 'Alice' };
 const BOB = { email: 'bob@example.com', name: 'Bob' };
 
-describe('acquireSlideLock (real PostgreSQL)', () => {
+pgDescribe('acquireSlideLock (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
   let db;
 

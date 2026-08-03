@@ -200,6 +200,12 @@ jobs:
       DATABASE_PASSWORD: deckyard
       DATABASE_SSL: 'false'
       STORAGE_MODE: postgres
+      # The suite itself gates on DATABASE_URL: it TRUNCATEs, so it runs only
+      # against a database explicitly named as throwaway — a signal a normal dev
+      # `.env` (which uses DATABASE_HOST/NAME) never carries, so a local
+      # `npm run test:pg` is inert unless deliberately pointed at a scratch DB.
+      # Here it names the same throwaway database the migrate step builds.
+      DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_pg_tests
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
