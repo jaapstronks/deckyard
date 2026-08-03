@@ -141,9 +141,18 @@
 .notes-body {
   line-height: 1.45;
 }
+
+/* Markdown-pipeline output in app chrome. The `md-*` classes come from
+   shared/markdown.js; the slide bundle styles them inside `.slide` only, so
+   chrome prose styles them here on the app vocabularies. `.notes-body` is the
+   canonical hook — the speaker-notes view and the presenter console notes body
+   both carry it (docs/reference/slide-roles.md § "Markdown output is styled
+   per surface"). Prism and KaTeX only run on slide roots, so code and math
+   render as plain source text here and are styled as such. */
 .notes-body .md-table-wrap {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  margin: var(--ps-space-2-5) 0;
 }
 .notes-body .md-table {
   width: 100%;
@@ -154,6 +163,43 @@
 .notes-body .md-table td {
   border: 1px solid hsl(var(--app-border-default));
   padding: var(--ps-space-2) var(--ps-space-2-5);
+  text-align: start;
+  vertical-align: top;
+}
+.notes-body .md-code-inline {
+  font-family: var(--ps-font-mono);
+  font-size: 0.9em;
+  background: hsl(var(--app-bg-sunken));
+  padding: 0 var(--ps-space-1);
+  border-radius: var(--ps-radius-sm);
+}
+.notes-body .md-code-block {
+  font-family: var(--ps-font-mono);
+  font-size: var(--ps-text-sm);
+  line-height: 1.5;
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  padding: var(--ps-space-2-5) var(--ps-space-3);
+  margin: var(--ps-space-2-5) 0;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+.notes-body .md-code-block code {
+  font: inherit;
+  /* Prism's lazily loaded page theme colours `code[class*="language-"]`
+     globally; chrome code blocks are plain text, so take the prose colour. */
+  color: inherit;
+  background: transparent;
+  padding: 0;
+}
+.notes-body .md-math-block {
+  font-family: var(--ps-font-mono);
+  font-size: 0.9em;
+  text-align: center;
+  margin: var(--ps-space-2-5) 0;
+  overflow-x: auto;
 }
 
 /* Notes: Q&A list (moderation) */

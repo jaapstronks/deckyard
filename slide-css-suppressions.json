@@ -1,13 +1,7 @@
 {
   "client/styles/slides/01-layout-and-title/32-markdown-and-actions.css": {
-    "font-size": {
-      "count": 1
-    },
-    "line-height": {
-      "count": 1
-    },
     "spacing": {
-      "count": 6
+      "count": 1
     }
   },
   "client/styles/slides/01-layout-and-title/35-table-slide.css": {
