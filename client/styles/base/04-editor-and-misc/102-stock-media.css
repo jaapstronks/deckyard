@@ -192,3 +192,51 @@
     transform: rotate(360deg);
   }
 }
+
+/* ------------------------------------------------------------------
+ * Bundled gradients picker
+ *
+ * Reuses .stock-media-grid / .stock-media-item; only the 16:9 tiles, the
+ * always-on label and the tone filter are its own.
+ * ------------------------------------------------------------------ */
+.gradient-picker-modal .modal-content {
+  min-width: min(720px, 90vw);
+}
+
+.gradient-picker-filters {
+  gap: var(--ps-space-2);
+  flex-wrap: wrap;
+}
+
+.gradient-picker-filters .btn.is-active {
+  border-color: var(--ps-color-primary);
+  color: var(--ps-color-primary);
+}
+
+.gradient-picker-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  max-height: 55vh;
+}
+
+.gradient-picker-item {
+  aspect-ratio: 16/9;
+  border: 1px solid var(--ps-color-border);
+  padding: 0;
+  display: block;
+  text-align: left;
+}
+
+.gradient-picker-item:focus-visible {
+  outline: 2px solid var(--ps-color-primary);
+  outline-offset: 2px;
+}
+
+.gradient-picker-label {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-font-size-xs);
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+  pointer-events: none;
+}

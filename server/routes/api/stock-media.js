@@ -1,8 +1,12 @@
 /**
- * Stock Media API routes for Unsplash and Giphy integration.
+ * Stock media API routes — the image sources beside the native library.
  *
- * Provides search, download, and status endpoints for stock media.
- * Downloaded media is saved to the image library for local hosting.
+ * Three providers share one status endpoint and one `stockMedia.<id>.enabled`
+ * toggle: `bundled` (gradients that ship with the app), `unsplash` and `giphy`.
+ * The two remote ones search a third-party API and copy the bytes into the
+ * image library; `bundled` has nothing to fetch and nothing to copy — its
+ * manifest lists static assets under `/assets/gradients/`, so it is `configured`
+ * unconditionally. See server/media/bundled-gradients.js.
  */
 
 import {
@@ -31,6 +35,7 @@ import {
   getGiphyGif,
   downloadGif,
 } from '../../integrations/giphy.js';
+import { listBundledGradients } from '../../media/bundled-gradients.js';
 
 /**
  * Get stock media provider status and configuration.
@@ -42,6 +47,11 @@ async function getStockMediaStatus(repoRoot) {
   const stockMedia = settings?.stockMedia || {};
 
   return {
+    // No key to miss and no service to reach: always configured.
+    bundled: {
+      configured: true,
+      enabled: stockMedia.bundled?.enabled === true,
+    },
     unsplash: {
       configured: isUnsplashConfigured(),
       enabled: stockMedia.unsplash?.enabled === true,
@@ -69,6 +79,24 @@ export async function handleStockMedia({ repoRoot, storageScope, req, res, url, 
 
   // All other endpoints require authentication
   if (!authedUser) return false;
+
+  // === BUNDLED GRADIENTS ===
+
+  // List the gradients that ship with the app. No search, no pagination and no
+  // download step: the whole library is a few dozen static assets, and a pick
+  // is just its URL — the picker writes it straight onto the slide.
+  if (url.pathname === '/api/stock-media/bundled/manifest') {
+    if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+
+    const status = await getStockMediaStatus(repoRoot);
+    if (!status.bundled.enabled) {
+      return badRequest(res, 'Bundled gradients are not available');
+    }
+
+    const items = await listBundledGradients(repoRoot);
+    serveJson(res, 200, { items });
+    return true;
+  }
 
   // === UNSPLASH ENDPOINTS ===
 

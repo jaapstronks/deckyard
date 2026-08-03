@@ -1201,7 +1201,7 @@ export async function createEditorController({
   // call site — side-form fields AND the inline WYSIWYG popover — goes through
   // this, so a new entry point can no longer silently forget a provider. See
   // image-pickers.js / media/picker-provider.js.
-  const { openImagePicker } = createImagePickers({
+  const { openImagePicker } = await createImagePickers({
     h,
     root,
     user,

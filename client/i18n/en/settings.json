@@ -318,6 +318,8 @@
   "settings.admin.sessionDuration.duration": "Duration",
   "settings.admin.sessionDuration.hint": "How long users stay logged in before needing to sign in again.",
   "settings.admin.sessionDuration.title": "Session Duration",
+  "settings.admin.stockMedia.bundled": "Enable bundled gradients",
+  "settings.admin.stockMedia.bundledHint": "Abstract backgrounds generated from the built-in themes. No API key, no attribution, no external requests.",
   "settings.admin.stockMedia.configuredParen": "(API key configured)",
   "settings.admin.stockMedia.giphy": "Enable Giphy GIFs",
   "settings.admin.stockMedia.hint": "Enable stock photo and GIF integrations for the image picker. Requires API keys in server environment.",

@@ -367,6 +367,7 @@
   "editor.image.libraryTitle": "Beeldbank: kies een afbeelding",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Vooraf ingestelde afbeeldingen",
+  "editor.image.source.bundled": "Gradiënten",
   "editor.image.source.imagekit": "ImageKit",
   "editor.image.source.library": "Afbeeldingenbibliotheek",
   "editor.image.source.title": "Kies afbeeldingsbron",

@@ -3,7 +3,6 @@
  * General admin settings: supported languages, themes, AI identity, email sender, session, etc.
  */
 
-import { api } from '../../../lib/api.js';
 import { h } from '../../../lib/dom.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -13,6 +12,10 @@ import {
   updateAppSettings,
   invalidateSettingsCache,
 } from '../../../lib/net/settings.js';
+import {
+  fetchStockMediaStatus,
+  invalidateStockMediaStatus,
+} from '../../../lib/net/stock-media.js';
 import { getSupportedLangs, setSupportedLangs } from '../../../lib/format/i18n.js';
 import { DEFAULT_AI_NAME, DEFAULT_AI_EMAIL } from '../../../../shared/constants/ai.js';
 
@@ -284,6 +287,23 @@ export function createAdminTab({ user }) {
     ),
   });
 
+  // Bundled gradients toggle. No key to check, so no status span: the assets
+  // ship with the app and are always "configured".
+  const bundledEnabledCheck = h('input', { type: 'checkbox' });
+  const bundledLabel = h('label', { class: 'admin-checkbox-item' }, [
+    bundledEnabledCheck,
+    h('span', {
+      text: t('settings.admin.stockMedia.bundled', 'Enable bundled gradients'),
+    }),
+  ]);
+  const bundledHint = h('div', {
+    class: 'help',
+    text: t(
+      'settings.admin.stockMedia.bundledHint',
+      'Abstract backgrounds generated from the built-in themes. No API key, no attribution, no external requests.'
+    ),
+  });
+
   // Unsplash toggle
   const unsplashEnabledCheck = h('input', { type: 'checkbox' });
   const unsplashStatusSpan = h('span', { class: 'help stock-media-status' });
@@ -303,6 +323,8 @@ export function createAdminTab({ user }) {
   ]);
 
   const stockMediaOptions = h('div', { class: 'stack gap-2' }, [
+    bundledLabel,
+    bundledHint,
     unsplashLabel,
     giphyLabel,
   ]);
@@ -394,12 +416,13 @@ export function createAdminTab({ user }) {
 
       // Stock media settings
       const stockMedia = app?.stockMedia || {};
+      bundledEnabledCheck.checked = stockMedia?.bundled?.enabled === true;
       unsplashEnabledCheck.checked = stockMedia?.unsplash?.enabled === true;
       giphyEnabledCheck.checked = stockMedia?.giphy?.enabled === true;
 
       // Fetch stock media status to show if API keys are configured
       try {
-        const status = await api('/api/stock-media/status');
+        const status = await fetchStockMediaStatus({ maxAgeMs: 0 });
         const notConfigured = t('settings.admin.stockMedia.notConfiguredParen', '(Not configured)');
         const configured = t('settings.admin.stockMedia.configuredParen', '(API key configured)');
 
@@ -463,6 +486,7 @@ export function createAdminTab({ user }) {
           },
         },
         stockMedia: {
+          bundled: { enabled: bundledEnabledCheck.checked },
           unsplash: { enabled: unsplashEnabledCheck.checked },
           giphy: { enabled: giphyEnabledCheck.checked },
         },
@@ -476,6 +500,8 @@ export function createAdminTab({ user }) {
       }
 
       invalidateSettingsCache();
+      // An editor opened after this save must see the new source list.
+      invalidateStockMediaStatus();
       toast.success(t('settings.saved', 'Saved.'), {
         id: 'settings-save',
         durationMs: 1800,

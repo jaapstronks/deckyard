@@ -7,6 +7,7 @@ import { createImageLibraryUpload } from './upload.js';
 import { createUnsplashSearch } from './unsplash-search.js';
 import { createGiphySearch } from './giphy-search.js';
 import { createMediaLibrarySidebar, SECTIONS } from './sidebar.js';
+import { fetchStockMediaStatus, isStockSourceAvailable } from '../../../lib/net/stock-media.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -466,15 +467,15 @@ export function openImageLibraryPicker({
     try {
       const [libraryResp, statusResp] = await Promise.all([
         api('/api/image-library'),
-        api('/api/stock-media/status').catch(() => null),
+        fetchStockMediaStatus(),
       ]);
 
       items = Array.isArray(libraryResp?.items) ? libraryResp.items : [];
       stockMediaStatus = statusResp;
 
       // Check stock media availability
-      hasUnsplash = !!(stockMediaStatus?.unsplash?.configured && stockMediaStatus?.unsplash?.enabled);
-      hasGiphy = !!(stockMediaStatus?.giphy?.configured && stockMediaStatus?.giphy?.enabled);
+      hasUnsplash = isStockSourceAvailable(stockMediaStatus, 'unsplash');
+      hasGiphy = isStockSourceAvailable(stockMediaStatus, 'giphy');
 
       // Create stock media components if available
       if (hasUnsplash) {

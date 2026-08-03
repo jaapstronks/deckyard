@@ -130,8 +130,12 @@ export function defaultAppSettings() {
         },
       },
     },
-    // Stock media integrations (Unsplash, Giphy)
+    // Image sources beyond the native library. `bundled` is the gradient set
+    // that ships with the app (no key, no licence, no external request); the
+    // other two are third-party APIs. All off by default — a source appearing
+    // in the picker is an admin's decision, not an upgrade's side effect.
     stockMedia: {
+      bundled: { enabled: false },
       unsplash: { enabled: false },
       giphy: { enabled: false },
     },
@@ -322,12 +326,15 @@ export async function getAppSettings(repoRoot) {
 
   // Stock media settings
   const stockMediaObj = obj?.stockMedia && typeof obj.stockMedia === 'object' ? obj.stockMedia : {};
+  const bundledObj = stockMediaObj?.bundled && typeof stockMediaObj.bundled === 'object'
+    ? stockMediaObj.bundled : {};
   const unsplashObj = stockMediaObj?.unsplash && typeof stockMediaObj.unsplash === 'object'
     ? stockMediaObj.unsplash : {};
   const giphyObj = stockMediaObj?.giphy && typeof stockMediaObj.giphy === 'object'
     ? stockMediaObj.giphy : {};
 
   const stockMedia = {
+    bundled: { enabled: bundledObj?.enabled === true },
     unsplash: { enabled: unsplashObj?.enabled === true },
     giphy: { enabled: giphyObj?.enabled === true },
   };
@@ -483,14 +490,18 @@ export async function writeAppSettings(repoRoot, next) {
     next?.stockMedia && typeof next.stockMedia === 'object' ? next.stockMedia : null;
   let stockMedia = null;
   if (nextStockMedia) {
-    const nextUnsplash = nextStockMedia?.unsplash && typeof nextStockMedia.unsplash === 'object'
-      ? nextStockMedia.unsplash : {};
-    const nextGiphy = nextStockMedia?.giphy && typeof nextStockMedia.giphy === 'object'
-      ? nextStockMedia.giphy : {};
+    // A provider the payload does not mention keeps its stored value. Without
+    // this, a client that knows about two of the three sources silently turns
+    // the third one off on every save.
+    const provider = (key) =>
+      nextStockMedia?.[key] && typeof nextStockMedia[key] === 'object'
+        ? { enabled: nextStockMedia[key].enabled === true }
+        : { enabled: prev.stockMedia?.[key]?.enabled === true };
 
     stockMedia = {
-      unsplash: { enabled: nextUnsplash?.enabled === true },
-      giphy: { enabled: nextGiphy?.enabled === true },
+      bundled: provider('bundled'),
+      unsplash: provider('unsplash'),
+      giphy: provider('giphy'),
     };
   }
 

@@ -8,9 +8,10 @@ the inline WYSIWYG popover) through its own DAM.
 ## The shape
 
 `client/views/editor/media/picker-provider.js` exports
-`createImagePickerSeam({ h, root, features, openImageLibrary, openImageKit })`,
-which returns a single `openImagePicker(opts)` function (with a `.providers`
-array attached for feature-detection at call sites).
+`createImagePickerSeam({ h, root, features, openImageLibrary,
+openBundledGradients, openImageKit })`, which returns a single
+`openImagePicker(opts)` function (with a `.providers` array attached for
+feature-detection at call sites).
 
 ```js
 openImagePicker({
@@ -19,12 +20,21 @@ openImagePicker({
 });
 ```
 
-Enabled providers are resolved from `features`:
+Enabled providers, in chooser order:
 
 - **native library** (`local-library`) — enabled unless
   `features.disableImageLibrary` (which `IMAGEKIT_ONLY` already forces). Wraps
   `openImageLibraryPicker` (local/Scaleway upload + Unsplash/Giphy).
+- **bundled gradients** (`bundled`) — enabled whenever its raw opener is
+  injected. See [`bundled-gradients.md`](bundled-gradients.md).
 - **ImageKit** (`imagekit`) — enabled whenever its raw opener is injected.
+
+Two different kinds of gate decide whether an opener is injected, and
+`createImagePickers` (`client/views/editor/image-pickers.js`) resolves both:
+ImageKit hangs off the env-derived `features.imagekitConfigured`, while the
+bundled gradients hang off the `stockMedia.bundled.enabled` *app setting*,
+fetched once via `lib/net/stock-media.js` and shared with the image library.
+That async step is why `createImagePickers` is async.
 
 With **one** provider enabled, `openImagePicker` opens it directly. With **more
 than one**, it shows a lightweight source chooser first. A single-provider
@@ -70,6 +80,10 @@ array, the inline popover mutates an item — and delegate the rest:
    branch there), gated on your own feature flag.
 3. Nothing at the call sites changes — every current and future image entry
    point inherits it.
+
+The bundled-gradients provider is the worked example: an adapter of eight
+lines, one opener injected behind a setting, and every image field plus the
+inline popover gained a source.
 
 The persisted slide shape stays backward compatible; a migration to a nested
 media object would be a separate, later decision.
