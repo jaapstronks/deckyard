@@ -21,13 +21,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { extractUsedKeys, loadLocale, isDynamicKey } from '../scripts/i18n-keys.js';
+import { TIER_1 } from '../scripts/i18n-tiers.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const clientDir = path.join(repoRoot, 'client');
 const i18nDir = path.join(clientDir, 'i18n');
 
-/** Locales that must be complete. Other locales fall back and are not gated. */
-const REQUIRED_LOCALES = ['nl', 'en'];
+/**
+ * Locales that must be complete: Tier 1. Tier-2 locales fall back to the inline
+ * English `t()` string and are not gated — see docs/reference/i18n-locale-tiers.md.
+ * Read from the manifest so this list has one source, not two.
+ */
+const REQUIRED_LOCALES = TIER_1;
 
 const used = await extractUsedKeys(clientDir);
 const staticKeys = [...used.keys()].filter((k) => !isDynamicKey(k));
