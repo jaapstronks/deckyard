@@ -305,19 +305,22 @@ test('the role is read from the membership list the session already needs', asyn
   );
 });
 
-test('resolveActiveMembership answers both questions from one lookup', async () => {
+test('resolveActiveMembership answers org, role and designer from one lookup', async () => {
   seedMultiOrg();
   assert.deepEqual(await identity.resolveActiveMembership('user-alice', ORG_B), {
     organizationId: ORG_B,
     role: 'owner',
+    isDesigner: false,
   });
   assert.deepEqual(await identity.resolveActiveMembership('user-alice', ORG_GONE), {
     organizationId: ORG_A,
     role: 'member',
+    isDesigner: false,
   });
   assert.deepEqual(await identity.resolveActiveMembership('user-nobody', ORG_A), {
     organizationId: null,
     role: null,
+    isDesigner: null,
   });
 });
 

@@ -66,34 +66,40 @@ export async function getUserByEmailGlobal(email) {
  * entirely or silently dropped into the default organization.
  *
  * The membership row that decides this also carries the person's role in that
- * organization (owner/admin/member), which is what the UI must gate on rather
- * than the instance-wide `users.role`. Returning both from one call is what
- * keeps that role free: the membership list is already read here, so no caller
- * has to look it up a second time.
+ * organization (owner/admin/member) and their designer flag, which is what the
+ * UI and designer-capability resolution must gate on rather than the
+ * instance-wide `users.role`. Returning them from one call is what keeps them
+ * free: the membership list is already read here, so no caller has to look the
+ * same row up a second time (see utils/designer.js).
  *
  * @param {string} userId - `users.id` of the resolved person
  * @param {string} [requestedOrganizationId] - Organization from the session
- * @returns {Promise<{organizationId: string|null, role: string|null}>} - The
- *   organization to act in plus the role held there. `organizationId` is null
- *   when the person holds no membership at all (the caller must refuse the
- *   request). `role` is null in single-workspace mode, where memberships are
- *   not consulted and the instance-wide role is the only one there is.
+ * @returns {Promise<{organizationId: string|null, role: string|null, isDesigner: boolean|null}>} -
+ *   The organization to act in, the role held there, and the raw membership
+ *   designer flag. `organizationId` is null when the person holds no membership
+ *   at all (the caller must refuse the request). `role` and `isDesigner` are
+ *   null in single-workspace mode, where memberships are not consulted and the
+ *   instance-wide role is the only one there is.
  */
 export async function resolveActiveMembership(userId, requestedOrganizationId) {
   if (!isMultiWorkspaceEnabled())
-    return { organizationId: getDefaultOrganizationId(), role: null };
-  if (!userId) return { organizationId: null, role: null };
+    return { organizationId: getDefaultOrganizationId(), role: null, isDesigner: null };
+  if (!userId) return { organizationId: null, role: null, isDesigner: null };
 
   // Ordered by joined_at ascending, so the fallback is deterministic.
   const memberships = await listUserOrganizations(userId);
-  if (!memberships.length) return { organizationId: null, role: null };
+  if (!memberships.length) return { organizationId: null, role: null, isDesigner: null };
 
   const requested =
     requestedOrganizationId &&
     memberships.find((org) => org.id === requestedOrganizationId);
   const active = requested || memberships[0];
 
-  return { organizationId: active.id, role: active.membership?.role || null };
+  return {
+    organizationId: active.id,
+    role: active.membership?.role || null,
+    isDesigner: active.membership?.isDesigner ?? null,
+  };
 }
 
 /**

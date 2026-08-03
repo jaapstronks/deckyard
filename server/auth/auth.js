@@ -385,10 +385,11 @@ export async function getUserFromRequestAsync(req, ctx) {
     // Which workspace this session may act in. Single-workspace mode answers
     // this from configuration without touching the database; multi-workspace
     // mode re-verifies membership, because the token outlives a revocation.
-    const { organizationId, role: organizationRole } = await resolveActiveMembership(
-      dbUser.id,
-      payload?.orgId
-    );
+    const {
+      organizationId,
+      role: organizationRole,
+      isDesigner: organizationIsDesigner,
+    } = await resolveActiveMembership(dbUser.id, payload?.orgId);
     if (!organizationId) return null;
 
     const adminEmail = getAdminEmail();
@@ -408,6 +409,11 @@ export async function getUserFromRequestAsync(req, ctx) {
       // where there is only one organization and no membership to read. The
       // UI gates admin surfaces on both; see client/lib/user/workspace-role.js.
       organizationRole,
+      // The raw `is_designer` flag on that same membership row. Carried so
+      // designer-capability resolution can reuse the row already read here
+      // instead of re-querying it (see utils/designer.js). Null whenever
+      // `organizationRole` is — single-workspace has no membership row to read.
+      organizationIsDesigner,
     };
   }
 

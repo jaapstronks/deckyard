@@ -38,7 +38,7 @@ process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
 const ORG_B = '00000000-0000-0000-0000-0000000000bb';
 
-const { createFakeDb } = await import('./helpers/fake-db.js');
+const { createFakeDb, touchedTables } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { isMultiWorkspaceEnabled } = await import('../server/config/features.js');
 const { resolveDesignerCapability } = await import('../server/utils/designer.js');
@@ -186,6 +186,60 @@ test('no email, no capability', async () => {
   seed();
   assert.equal(await resolveDesignerCapability({ isAdmin: true }), false);
   assert.equal(await resolveDesignerCapability(null), false);
+});
+
+// ---------------------------------------------------------------------------
+// Reusing the membership already read in auth (no second lookup)
+// ---------------------------------------------------------------------------
+
+/**
+ * The user object as auth returns it in multi-workspace mode: `organizationRole`
+ * and `organizationIsDesigner` come straight off the active membership row that
+ * resolveActiveMembership() already read, so capability resolution must not read
+ * the same row again.
+ */
+const sessionUser = (organizationId, organizationRole, organizationIsDesigner) => ({
+  email: 'alice@example.com',
+  isAdmin: true,
+  organizationId,
+  organizationRole,
+  organizationIsDesigner,
+});
+
+test('a carried membership answers without touching the database', async () => {
+  const db = seed({ roleInB: 'member', designerInB: false });
+  db.__queryLog.length = 0;
+  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'member', false)), false);
+  assert.deepEqual(db.__queryLog, [], 'the membership was reused, not re-read');
+});
+
+test('a carried owner needs no organization-settings read', async () => {
+  const db = seed({ roleInB: 'owner', settingsB: { adminsAreDesigners: false } });
+  db.__queryLog.length = 0;
+  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'owner', false)), true);
+  assert.deepEqual(db.__queryLog, [], 'owner is decided by the row alone');
+});
+
+test('a carried explicit designer needs no organization-settings read', async () => {
+  const db = seed({ roleInB: 'member', designerInB: true });
+  db.__queryLog.length = 0;
+  assert.equal(await resolveDesignerCapability(sessionUser(ORG_B, 'member', true)), true);
+  assert.deepEqual(db.__queryLog, [], 'the designer flag on the row settles it');
+});
+
+test('a carried admin reads organization settings, and only those', async () => {
+  const db = seed({ roleInB: 'admin', settingsB: { adminsAreDesigners: false } });
+  db.__queryLog.length = 0;
+  assert.equal(
+    await resolveDesignerCapability(sessionUser(ORG_B, 'admin', false)),
+    false,
+    'an admin without the flag is the one case adminsAreDesigners decides'
+  );
+  assert.deepEqual(
+    touchedTables(db, 'select'),
+    ['organizations'],
+    'the organization row is read; the membership is not read a second time'
+  );
 });
 
 // ---------------------------------------------------------------------------
