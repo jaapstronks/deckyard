@@ -25,6 +25,15 @@ import { slideTypeSample } from '../../../shared/slide-types/authoring-companion
  * The example itself comes from slideTypeSample(): the definition's own
  * `sampleContent` first (a fork type's, which now reaches the editor over
  * /api/slide-types), then core's per-type sample.
+ *
+ * **Preview-only.** This feeds the picker thumbnails, the peek lightbox and the
+ * settings curation tiles — never an inserted slide. What a new slide is seeded
+ * from is `makeNewSlide` → `defaultsByLang[<deck lang>]`, which already follows
+ * the deck language (tests/insert-seeds-deck-language.test.js). So the sample is
+ * a single English example on purpose: it does not owe a per-deck-language
+ * variant, because it never becomes deck content. This is why the locale-tiering
+ * work (A6/A7.7) added no `sampleNl` obligation — see
+ * docs/reference/slide-type-companions.md § "Sample content is preview-only".
  * @param {string} type - The slide type
  * @param {object} SLIDE_TYPES - The slide type definitions
  * @param {object} [theme] - Optional theme object for theme-specific sample content

@@ -162,6 +162,8 @@ are in [`slide-type-structure.md`](slide-type-structure.md) and
   artifact (`scripts/i18n-extract.js`), not a hand-written per-type entry, and a
   missing key renders the English fallback baked into the definition.
   `tests/i18n-coverage.test.js` guards the static `t()` surface.
+- **A Dutch sample** — see the box below. The sample a type declares is
+  preview-only, so it owes no per-deck-language variant.
 - **Slide CSS** (`client/styles/slides/**`) — hand-maintained, but not one file
   per type: types share stylesheets, and a missing rule shows up the moment you
   look at the slide rather than silently.
@@ -178,8 +180,25 @@ are in [`slide-type-structure.md`](slide-type-structure.md) and
   Asserting total coverage over them would mean asserting a judgement the list
   does not record. Consolidating them is a separate question (STRATEGY A7.1).
 
-These four exclusions are judgements, and until recently nothing checked that
+These five exclusions are judgements, and until recently nothing checked that
 the list of judgements was complete. That is what the inventory below is for.
+
+### Sample content is preview-only
+
+A type's `sample` (in its `authoring.js`) is the filled-in example the picker
+renders in a tile thumbnail, the peek lightbox, and the settings curation grid.
+It is **never** what an inserted slide is seeded from — that is `makeNewSlide`,
+which reads `defaultsByLang[<deck lang>]` and so already follows the deck
+language (`tests/insert-seeds-deck-language.test.js`).
+
+This is why the locale-tiering work (A6 / A7.7) added **no** Dutch-sample
+obligation. It was considered — a `sampleNl` per type, gated like the other
+companions — and rejected: it would make every future slide type owe a second
+translated sample (a new permanent per-type obligation, exactly what the
+locale-tiering brief set out to *reduce*) to change a preview thumbnail that the
+user never keeps. Inserted content — the part that becomes the deck — is already
+correct. So the sample stays a single English example on purpose, and a Dutch
+deck previews an English thumbnail but inserts Dutch content.
 
 ## The name-branching inventory — no hole in the matrix
 
