@@ -1,7 +1,6 @@
 /* App design tokens (theme-independent).
    Do not reference slide theme variables here. */
 
-@import url('../shared/fonts.css');
 @import url('../shared/ui-tokens.css');
 
 body {

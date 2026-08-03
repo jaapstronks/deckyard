@@ -41,13 +41,13 @@ export async function buildStandaloneHtml(
   ).trim();
   const css = await loadExportCssBundle(repoRoot, theme, watermark);
 
-  // Inline any root-relative local font files (e.g. the shared Bricolage
-  // Grotesque UI weight in client/styles/shared/fonts.css) as data URLs, so a
-  // downloaded standalone file renders its fonts offline instead of falling
-  // back to system fonts on a dead `/assets/fonts/*.woff2` reference. Theme
-  // fonts are already embedded via css.fontCss; this only embeds the handful
-  // of small weights the CSS actually references (a few KB each), not the
-  // whole ~2.5 MB font library. See docs/reference/standalone-html-export.md.
+  // Inline any root-relative local font file a bundled stylesheet still
+  // references (a custom theme's own face) as a data URL, so a downloaded
+  // standalone file renders it offline instead of falling back to system fonts
+  // on a dead `/assets/...woff2` reference. Theme fonts are already embedded
+  // via css.fontCss; this only embeds what the CSS actually references, never
+  // the whole ~2.7 MB pinned library. See
+  // docs/reference/standalone-html-export.md.
   const [chromeCss, slidesCss] = await Promise.all([
     inlineLocalFontUrls(repoRoot, css.chromeCss),
     inlineLocalFontUrls(repoRoot, css.slidesCss),

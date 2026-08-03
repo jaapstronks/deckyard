@@ -2,6 +2,7 @@ import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { THEMES as BUILTIN_THEMES } from '../../../shared/slide-types/registry.js';
 import { slideBackgroundsCssText } from '../../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../../shared/theme-normalize.js';
+import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
 function safeThemeId(raw) {
   const s = String(raw || '').trim();
@@ -200,15 +201,22 @@ export function injectThemeFontFaces(theme, key = null) {
 
     let src;
     if (f.url) {
-      src = `url('${f.url}') format('${f.format || 'woff2'}')`;
+      src = `url('${cssStringEscape(f.url)}') format('${cssStringEscape(f.format || 'woff2')}')`;
     } else if (f.path) {
-      src = `url('/${f.path}') format('woff2')`;
+      src = `url('/${cssStringEscape(f.path)}') format('woff2')`;
     } else {
       continue;
     }
 
+    // Curated fonts ship as Google's disjoint latin / latin-ext splits, one
+    // entry per subset; the range is what keeps the second entry from simply
+    // overriding the first. `weight` may be a CSS weight *range* ("400 700") —
+    // a variable family is one file covering every weight it was pinned at,
+    // and the entry says so rather than repeating the file per weight. See
+    // server/utils/curated-font-embed.js.
+    const range = f.unicodeRange ? ` unicode-range: ${f.unicodeRange};` : '';
     rules.push(
-      `@font-face { font-family: '${family}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap; }`
+      `@font-face { font-family: '${cssStringEscape(family)}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap;${range} }`
     );
   }
 

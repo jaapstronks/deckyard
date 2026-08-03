@@ -7,6 +7,7 @@
 import { t } from '../ui-i18n.js';
 import { DEFAULT_THEME_ID, DEFAULT_THEME_NAME } from '../../../shared/constants/themes.js';
 import { loadThemeById } from './theme.js';
+import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
 /**
  * Create a theme selector field with label and select element.
@@ -261,21 +262,35 @@ export function createVisualThemePicker({
       for (const varName of ['--t-font-heading', '--t-font-body']) {
         const family = (vars[varName] || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
         if (!family || seen.has(family)) continue;
-        const match = theme.embedFonts.find((f) => f.family === family);
-        if (!match) continue;
-        // Support both path-based (curated) and URL-based (uploaded) fonts
-        let src;
-        if (match.url) {
-          src = `url('${match.url}') format('${match.format || 'woff2'}')`;
-        } else if (match.path) {
-          src = `url('/${match.path}') format('woff2')`;
-        } else {
-          continue;
-        }
-        seen.add(family);
-        rules.push(
-          `@font-face { font-family: '${match.family}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap; }`
+        const first = theme.embedFonts.find((f) => f.family === family);
+        if (!first) continue;
+        // One weight entry is enough for a preview card, but a curated font
+        // ships it as Google's disjoint latin / latin-ext pair — take both, or
+        // accented glyphs in a theme name render in a fallback face. For a
+        // variable family that single entry already spans every pinned weight
+        // ("400 700"), so this is the whole family; for a static one it is its
+        // lightest weight, which is all a preview needs.
+        const matches = theme.embedFonts.filter(
+          (f) => f.family === family && String(f.weight || 400) === String(first.weight || 400)
         );
+        let added = false;
+        for (const match of matches) {
+          // Support both path-based (curated) and URL-based (uploaded) fonts
+          let src;
+          if (match.url) {
+            src = `url('${cssStringEscape(match.url)}') format('${cssStringEscape(match.format || 'woff2')}')`;
+          } else if (match.path) {
+            src = `url('/${cssStringEscape(match.path)}') format('woff2')`;
+          } else {
+            continue;
+          }
+          const range = match.unicodeRange ? ` unicode-range: ${match.unicodeRange};` : '';
+          rules.push(
+            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`
+          );
+          added = true;
+        }
+        if (added) seen.add(family);
       }
     }
     if (rules.length) {

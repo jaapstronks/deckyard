@@ -4,11 +4,8 @@
  * used by the existing presentation rendering system.
  */
 
-import {
-  getFontByFamily,
-  getFontFamilyCSS,
-  fontFamilyToSlug,
-} from '../../shared/theme-fonts.js';
+import { cssStringEscape, getFontFamilyCSS } from '../../shared/theme-fonts.js';
+import { curatedEmbedFonts } from './curated-font-embed.js';
 import {
   validateThemeConfig,
   RADIUS_SCALES,
@@ -427,20 +424,12 @@ function buildEmbedFontsArray(fonts, { headingManaged, bodyManaged } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    const fontInfo = getFontByFamily(family);
-    if (!fontInfo) return;
-
-    const slug = fontFamilyToSlug(family);
-
-    // Add each weight
-    for (const weight of fontInfo.weights) {
-      embedFonts.push({
-        family,
-        path: `assets/fonts/google/${slug}/${slug}-${weight}.woff2`,
-        weight,
-        style: 'normal',
-      });
-    }
+    // One entry per subset — the self-hosted files are Google's disjoint
+    // `latin` / `latin-ext` splits, so each carries the unicode-range that
+    // tells the browser which of the two holds the glyph it wants — and, for a
+    // variable family, one entry covering every weight that shares the file.
+    // See curatedEmbedFonts().
+    for (const face of curatedEmbedFonts(family)) embedFonts.push(face);
   };
 
   const addManagedFont = (managed) => {
@@ -581,18 +570,16 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    const fontInfo = getFontByFamily(family);
-    if (!fontInfo) return;
-
-    const slug = fontFamilyToSlug(family);
-
-    for (const weight of fontInfo.weights) {
+    // Same merged spelling as the theme's embedFonts and the export embedder:
+    // one rule per subset × distinct file, weight ranges for variable families.
+    for (const face of curatedEmbedFonts(family)) {
       lines.push(`@font-face {
-  font-family: '${family}';
+  font-family: '${cssStringEscape(family)}';
   font-style: normal;
-  font-weight: ${weight};
+  font-weight: ${face.weight};
   font-display: swap;
-  src: url('/assets/fonts/google/${slug}/${slug}-${weight}.woff2') format('woff2');
+  src: url('/${face.path}') format('woff2');
+  unicode-range: ${face.unicodeRange};
 }`);
     }
   };
@@ -607,7 +594,7 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     for (const variant of managed.variants) {
       if (!variant.url) continue;
       lines.push(`@font-face {
-  font-family: '${managed.name}';
+  font-family: '${cssStringEscape(managed.name)}';
   font-style: ${variant.style || 'normal'};
   font-weight: ${variant.weight || 400};
   font-display: swap;
