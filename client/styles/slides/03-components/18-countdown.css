@@ -58,6 +58,7 @@
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
   font-weight: 800;
+  /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 0.95;
   letter-spacing: -0.02em;
   white-space: nowrap;

@@ -790,5 +790,7 @@
   "settings.themes.workspace.visibleInPicker": "Visible in picker",
   "settings.title": "Settings",
   "settings.uiLocale.hint": "The language of this application's interface, unrelated to the language used in slides.",
+  "settings.uiLocale.tier1": "Fully supported",
+  "settings.uiLocale.tier2": "Best effort — falls back to English",
   "settings.uiLocale.title": "Application language"
 }

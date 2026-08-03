@@ -68,7 +68,7 @@
 
 .slide-lead-capture .lead-capture-description {
   font-size: var(--slide-text-md);
-  line-height: 1.4;
+  line-height: var(--slide-leading-normal);
   color: var(--color-text);
   opacity: 0.85;
   max-width: 50ch;
@@ -150,7 +150,7 @@
 
 .slide-lead-capture .lead-capture-consent-text {
   font-size: 18px;
-  line-height: 1.45;
+  line-height: var(--slide-leading-relaxed);
   color: var(--color-text);
   opacity: 0.85;
 }
@@ -269,7 +269,7 @@
 
 .slide-lead-capture .lead-capture-thankyou-message {
   font-size: 26px;
-  line-height: 1.45;
+  line-height: var(--slide-leading-relaxed);
   color: var(--color-text);
   opacity: 0.85;
   max-width: 45ch;

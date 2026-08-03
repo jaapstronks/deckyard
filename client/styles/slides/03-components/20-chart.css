@@ -25,7 +25,7 @@
 .slide-chart .chart-title {
   font-family: var(--font-heading);
   font-size: var(--slide-text-3xl);
-  line-height: 1.08;
+  line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: 400;
   font-synthesis: none;

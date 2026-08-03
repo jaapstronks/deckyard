@@ -168,6 +168,11 @@ occurrence:
 
 - `50%` and corner composites on `border-radius` (circles and asymmetric
   corners are shapes, not scale steps);
+- `line-height: 1` and below on **single-line display glyphs** — a numeral in
+  a circle badge, a KPI figure, an arrow, the countdown digits. There the line
+  box *is* the layout: raising it to `tight` decentres the badge. The leading
+  steps describe text rhythm, and these carriers have none. Marked in place
+  with an `allowlist:` comment;
 - the `--tf-size-scale` expressions of the text-style controls;
 - em-based micro-typography (letter-spacing-relative sizing);
 - private locals as readability aliases (`--team-gap-x`) — allowed only when
@@ -194,6 +199,10 @@ new code:
 `tests/slide-css-tokens.test.js` — a value that exactly equals a slide token
 must be written as that token, per-file burndown budgets that only go down.
 Presenter chrome inside the slide bundle is excluded by file, with the reason
-in the test. The end state adds two more checks: no `var(--t-…)` outside
-`00-tokens.css`, and the seam table read out of the contract file as a
-snapshot.
+in the test.
+
+The same file carries the first slice of the end-state contract check: **no
+`var(--t-radius…)` anywhere in the slide bundle outside `00-tokens.css`**. That
+became true in batch 2.2a and is asserted from batch 2.3a on, so the direct
+path cannot reopen. Colour and typography still have direct reads; phase 3
+widens the check to all of `--t-*` and adds the seam table as a snapshot.

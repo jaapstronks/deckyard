@@ -62,8 +62,8 @@ docs/plans
 # Personal correspondence, never commit
 briefing-maarten.md
 
-# Stale i18n extraction artifacts, produced by scripts/i18n-extract.js and read
+# Stale i18n extraction artifact, produced by scripts/i18n-extract.js and read
 # by nothing (runtime uses client/i18n/<locale>/*.json). Kept out of the repo so
-# they can't be mistaken for a live source; regenerate locally if ever needed.
-client/i18n/en.json
+# it can't be mistaken for a live source; regenerate locally if ever needed.
+# (en.json is no longer generated at all — the extractor only emits the template.)
 client/i18n/template.pot.json

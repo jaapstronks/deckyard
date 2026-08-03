@@ -790,5 +790,7 @@
   "settings.themes.workspace.visibleInPicker": "Zichtbaar in kiezer",
   "settings.title": "Instellingen",
   "settings.uiLocale.hint": "De taal van de interface van deze applicatie, los van de taal die in slides wordt gebruikt.",
+  "settings.uiLocale.tier1": "Volledig ondersteund",
+  "settings.uiLocale.tier2": "Best effort — valt terug op Engels",
   "settings.uiLocale.title": "Applicatietaal"
 }

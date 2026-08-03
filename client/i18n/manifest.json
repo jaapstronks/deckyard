@@ -1,25 +1,16 @@
 {
   "locales": [
-    { "id": "en", "label": "English" },
-    { "id": "nl", "label": "Nederlands" },
-    { "id": "de", "label": "Deutsch" },
-    { "id": "fr", "label": "Français" },
-    { "id": "es", "label": "Español" },
-    { "id": "pt", "label": "Português" },
-    { "id": "it", "label": "Italiano" },
-    { "id": "pl", "label": "Polski" },
-    { "id": "fi", "label": "Suomi" },
-    { "id": "da", "label": "Dansk" },
-    { "id": "sv", "label": "Svenska" },
-    { "id": "no", "label": "Norsk" }
+    { "id": "en", "label": "English", "tier": 1 },
+    { "id": "nl", "label": "Nederlands", "tier": 1 },
+    { "id": "de", "label": "Deutsch", "tier": 2 },
+    { "id": "fr", "label": "Français", "tier": 2 },
+    { "id": "es", "label": "Español", "tier": 2 },
+    { "id": "pt", "label": "Português", "tier": 2 },
+    { "id": "it", "label": "Italiano", "tier": 2 },
+    { "id": "pl", "label": "Polski", "tier": 2 },
+    { "id": "fi", "label": "Suomi", "tier": 2 },
+    { "id": "da", "label": "Dansk", "tier": 2 },
+    { "id": "sv", "label": "Svenska", "tier": 2 },
+    { "id": "no", "label": "Norsk", "tier": 2 }
   ]
 }
-
-
-
-
-
-
-
-
-
