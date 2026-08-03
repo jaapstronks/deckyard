@@ -141,15 +141,6 @@ ${entries}
 });
 
 /**
- * The editorial copy for a type, or null when it has none.
- * @param {string} type - registry type name
- * @returns {Object|null}
- */
-export function aiFor(type) {
-  return SLIDE_TYPE_AI[type] || null;
-}
-
-/**
  * The filled-in prompt examples per slide type — each type's \`aiExamples\`
  * export. **Sparse by design**: examples exist for the types whose shape is
  * hard to infer from a schema alone; a type without an entry shows the model
