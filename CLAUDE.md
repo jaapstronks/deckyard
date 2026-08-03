@@ -100,8 +100,13 @@ Apply it at the recurring moments:
 - **Docs-only changes** (`docs/`, `ROADMAP.md`, `README.md`, `CLAUDE.md`,
   `AGENTS.md`, `.gitignore`) may be committed and pushed **directly on
   `main`** — no branch or PR needed.
-- **Code changes** go via a feature branch, merged into `main` (PR for
-  anything substantial).
+- **Code changes** go via a feature branch and a **PR** — and there Claude
+  stops. Open the PR, hand it off with `claude-notify-pr`, and let Jaap review
+  it (himself or via a Fable agent) and merge. **Do not self-merge code to
+  `main`**, even when it's green and tested. The only exception is an explicit
+  "review en merge" hand-off from Jaap (then merge and run `merge-housekeeping`
+  as the tail — see below). Note: the global "afmaken zonder te vragen /
+  merge-to-main" rule is scoped to `wings-monorepo` ops work, **not** deckyard.
 - **Long-running feature tracks** use an integration branch: sub-PRs target
   that branch (not `main`), which gets one umbrella PR to `main` when the
   whole track is accepted. **No integration branch is active right now** —
