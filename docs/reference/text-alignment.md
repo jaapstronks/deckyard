@@ -248,12 +248,21 @@ such as a caption under an image.
 
 `quote-slide` used to hardcode this behaviour: it read one designated field's
 per-field alignment (`textStyles.quote.align`) and lifted it to a whole-block
-treatment. That is now the declared group, so the type keeps a **read fallback**
-— `quoteAlign` wins when present, otherwise the legacy value is read. Nothing is
-rewritten on disk; the editor writes the new key from now on.
+treatment. That is now the declared group, and `quoteAlign` is the **one stored
+form**. The legacy value is folded into it once by the **v4 → v5 schema
+migration** (`shared/slide-types/schema-version.js`): a stored `align` the group
+still offers moves to `quoteAlign` when that key is absent, the legacy key is
+dropped, and `color`/`size` on the same field stay put. The migration runs on
+read and persists on the next write, like every step in that chain.
 
-No other type needs one. Across 245 decks and 832 slides there were two stored
-`align` values, both on standalone fields, both unaffected.
+The renderer keeps **no** second reading form: an un-migrated
+`textStyles.quote.align` is inert, exactly as a group member's own `align` has
+been since the group model (`fieldAllowedAlignValues` returns `[]` for a
+member). Both directions are asserted — the fold in `tests/schema-version.test.js`,
+the inertness in `tests/field-group-adoption.test.js`.
+
+No other type needs a migration. Across 245 decks and 832 slides there were two
+stored `align` values, both on standalone fields, both unaffected.
 
 ## Theme locks
 

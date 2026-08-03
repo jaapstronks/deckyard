@@ -6,7 +6,6 @@ import {
   styleAttrFromVars,
   imagePlaceholderHtml,
 } from '../helpers.js';
-import { normalizeTextStyles } from '../text-styles.js';
 import { alignGroup, groupAlignClass } from '../field-groups.js';
 
 /**
@@ -17,28 +16,17 @@ import { alignGroup, groupAlignClass } from '../field-groups.js';
  * is what text-roles.js has had booked as "retires the quote hardcode" since
  * the role rollout.
  *
- * READ FALLBACK, and the one migration in this model: decks authored before
- * the group stored their centring in `textStyles.quote.align`. `quoteAlign`
- * wins when present, otherwise that legacy value is read. Same pattern the
- * title slide uses for its legacy `bgImage`. Nothing is rewritten on disk; the
- * editor simply writes the new key from now on.
+ * `quoteAlign` is the ONE stored form. Decks authored before the group kept
+ * their centring in `textStyles.quote.align`; that value is folded into
+ * `quoteAlign` once by the v4 -> v5 schema migration (schema-version.js), so
+ * nothing here reads the legacy key any more. A deck that somehow reaches the
+ * renderer un-migrated falls back to the group's default, like any other
+ * unrecognised alignment value.
  */
 const QUOTE_BLOCK = alignGroup('quote-block', 'quoteAlign', {
   label: 'Quote block alignment',
   schematicKind: 'quote',
 });
-
-/**
- * The content a group read should see: the stored `quoteAlign`, or the legacy
- * per-field align it replaced.
- * @param {Object} content
- * @returns {Object} content with `quoteAlign` resolved
- */
-function withResolvedQuoteAlign(content) {
-  if (content?.quoteAlign) return content;
-  const legacy = normalizeTextStyles(content?.textStyles)?.quote?.align;
-  return legacy ? { ...content, quoteAlign: legacy } : content;
-}
 
 // Portraits on the primary (legacy) quote: two slots so a shared quote (a duo)
 // can show both people. Extra quotes carry a single optional portrait each.
@@ -411,8 +399,8 @@ export default {
       };
       // Centre the WHOLE block - quote, byline and portraits - in the slide,
       // not just the text within a left-hung column. Driven by the quote-block
-      // group (Layout chip), with the legacy per-field align as read fallback.
-      const groupClass = groupAlignClass(QUOTE_BLOCK.group, withResolvedQuoteAlign(content));
+      // group (Layout chip); `quoteAlign` is the only stored form.
+      const groupClass = groupAlignClass(QUOTE_BLOCK.group, content);
       const alignClass = groupClass ? ` ${groupClass}` : '';
       const portraitsHtml = portraitsWrap(primaryPortraitParts(content, editMode));
       const inner = quoteBlockInnerHtml({

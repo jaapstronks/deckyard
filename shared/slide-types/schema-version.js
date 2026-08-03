@@ -16,10 +16,15 @@
  */
 
 import { resolveRows } from './types/text-blocks-slide.js';
-import { resolveSlideTypeName } from './registry.js';
+import { getSlideType, resolveSlideTypeName } from './registry.js';
+import { getFieldGroup, groupAlignValues } from './field-groups.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
+
+/** Type + group the v4 -> v5 quote-alignment fold reads its target key from. */
+const QUOTE_SLIDE_TYPE = 'quote-slide';
+const QUOTE_BLOCK_GROUP = 'quote-block';
 
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` migrates a deck FROM version
@@ -89,6 +94,46 @@ export const SCHEMA_MIGRATIONS = [
       if (!slide || typeof slide.type !== 'string') continue;
       const key = resolveSlideTypeName(slide.type);
       if (key && key !== slide.type) slide.type = key;
+    }
+    return pres;
+  },
+
+  // v4 -> v5: fold quote-slide's block alignment down to the one stored form.
+  // Before the field-group model the type hardcoded a lift: it read ONE
+  // designated field's per-field align (`textStyles.quote.align`) and applied it
+  // to the whole quote/name/role composition. The declared group replaced that
+  // with `quoteAlign`, and the type kept a permanent read fallback so decks
+  // authored before the group kept their centring — a second stored shape for
+  // one meaning, with no end date. This step is that end date: the legacy value
+  // moves into the group's own key once, the legacy key is dropped, and the
+  // read fallback is gone from the type.
+  //
+  // Render-equivalent: a group member's own `align` has been inert on render
+  // since the group model (`fieldAllowedAlignValues` returns [] for a member),
+  // so the lifted block value is the only effect the key ever had, and a value
+  // the group does not offer (`right`) already resolved to the default. Only
+  // `align` is touched — `color`/`size` on the same field are per-field styling
+  // and stay. Idempotent: a slide without the legacy key is untouched.
+  (pres) => {
+    const group = getFieldGroup(getSlideType(QUOTE_SLIDE_TYPE), QUOTE_BLOCK_GROUP);
+    const alignKey = typeof group?.alignKey === 'string' ? group.alignKey : '';
+    if (!alignKey) return pres;
+    const offered = groupAlignValues(group);
+    const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+    for (const slide of slides) {
+      if (!slide || slide.type !== QUOTE_SLIDE_TYPE) continue;
+      const content = slide.content;
+      if (!content || typeof content !== 'object') continue;
+      const styles = content.textStyles;
+      if (!styles || typeof styles !== 'object') continue;
+      const quoteStyle = styles.quote;
+      if (!quoteStyle || typeof quoteStyle !== 'object') continue;
+      if (!Object.prototype.hasOwnProperty.call(quoteStyle, 'align')) continue;
+      const legacy = quoteStyle.align;
+      if (!content[alignKey] && offered.includes(legacy)) content[alignKey] = legacy;
+      delete quoteStyle.align;
+      if (!Object.keys(quoteStyle).length) delete styles.quote;
+      if (!Object.keys(styles).length) delete content.textStyles;
     }
     return pres;
   },

@@ -15,6 +15,7 @@ import {
   newPresentation,
   validatePresentation,
 } from '../shared/slide-types/presentation.js';
+import { SLIDE_TYPES } from '../shared/slide-types.js';
 import {
   readPresentation,
   writePresentation,
@@ -165,6 +166,107 @@ test('v3->v4 is idempotent — a second run rewrites nothing', () => {
   const once = migratePresentation(deck);
   const twice = migratePresentation(structuredClone(once));
   assert.deepEqual(twice, once);
+});
+
+/** A v4 deck whose quote slide still stores its centring the legacy way. */
+function legacyQuoteDeck(quoteStyle, extraContent = {}) {
+  return {
+    id: randomUUID(),
+    schemaVersion: 4,
+    title: 'Quote',
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'quote-slide',
+        content: {
+          quote: 'Q',
+          authorName: 'N',
+          ...extraContent,
+          textStyles: { quote: { ...quoteStyle } },
+        },
+      },
+    ],
+  };
+}
+
+test('v4->v5 folds the legacy quote align into quoteAlign and drops the old key', () => {
+  const migrated = migratePresentation(legacyQuoteDeck({ align: 'center' }));
+  const content = migrated.slides[0].content;
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.equal(content.quoteAlign, 'center');
+  // Normalize-and-remove: the second stored form is gone, not merely ignored.
+  assert.equal(content.textStyles, undefined);
+});
+
+test('v4->v5 renders a folded deck exactly as the legacy read fallback did', () => {
+  const migrated = migratePresentation(legacyQuoteDeck({ align: 'center' }));
+  const html = SLIDE_TYPES['quote-slide'].renderHtml(
+    migrated.slides[0].content,
+    { id: 's' },
+    {}
+  );
+  assert.match(html, /is-align-center/);
+});
+
+test('v4->v5 keeps the group value when both forms are stored', () => {
+  const migrated = migratePresentation(
+    legacyQuoteDeck({ align: 'center' }, { quoteAlign: 'left' })
+  );
+  const content = migrated.slides[0].content;
+  assert.equal(content.quoteAlign, 'left');
+  assert.equal(content.textStyles, undefined);
+});
+
+test('v4->v5 keeps per-field colour/size on the same field', () => {
+  const migrated = migratePresentation(legacyQuoteDeck({ align: 'center', color: 'accent' }));
+  const content = migrated.slides[0].content;
+  assert.equal(content.quoteAlign, 'center');
+  assert.deepEqual(content.textStyles, { quote: { color: 'accent' } });
+});
+
+test('v4->v5 drops an align the group never offered without inventing a value', () => {
+  // `right` is not on the quote-block group's offer, so it already resolved to
+  // the default on render; folding it would store a value nothing honours.
+  const migrated = migratePresentation(legacyQuoteDeck({ align: 'right' }));
+  const content = migrated.slides[0].content;
+  assert.equal(content.quoteAlign, undefined);
+  assert.equal(content.textStyles, undefined);
+});
+
+test('v4->v5 leaves other types and other fields alone, and is idempotent', () => {
+  const deck = {
+    id: randomUUID(),
+    schemaVersion: 4,
+    title: 'Mixed',
+    slides: [
+      {
+        id: randomUUID(),
+        type: 'title-slide',
+        content: { title: 'T', textStyles: { title: { align: 'center' } } },
+      },
+      {
+        id: randomUUID(),
+        type: 'quote-slide',
+        content: { quote: 'Q', textStyles: { authorName: { align: 'center' } } },
+      },
+    ],
+  };
+  const once = migratePresentation(deck);
+  assert.deepEqual(once.slides[0].content.textStyles, { title: { align: 'center' } });
+  assert.deepEqual(once.slides[1].content.textStyles, { authorName: { align: 'center' } });
+  const twice = migratePresentation(structuredClone(once));
+  assert.deepEqual(twice, once);
+});
+
+test('the renderer no longer reads the legacy quote align at all', () => {
+  // The reverse of the fold: an un-migrated raw value must be inert, so the
+  // dual reading form cannot quietly come back.
+  const html = SLIDE_TYPES['quote-slide'].renderHtml(
+    { quote: 'Q', authorName: 'N', textStyles: { quote: { align: 'center' } } },
+    { id: 's' },
+    {}
+  );
+  assert.doesNotMatch(html, /is-align-center/);
 });
 
 test('a deck from a newer build is never downgraded', () => {

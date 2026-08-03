@@ -121,12 +121,12 @@ describe('quote slide render', () => {
     assert.ok(!/is-multi/.test(html));
   });
 
-  it('centre-aligned quote text centres the whole block (is-align-center)', () => {
+  it('centre-aligned quote block centres the whole composition (is-align-center)', () => {
     const html = render({
       quote: SHORT,
       authorName: 'A',
       authorTitle: 'B',
-      textStyles: { quote: { align: 'center' } },
+      quoteAlign: 'center',
     });
     assert.match(html, /slide-quote is-align-center/);
   });
