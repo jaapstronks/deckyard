@@ -260,7 +260,9 @@ rm -rf node_modules
 npm install
 ```
 
-The postinstall script vendors Lucide icons and downloads Google Fonts.
+The postinstall script vendors Lucide icons, vendors DOMPurify into
+`client/vendor/dompurify/` (`npm run vendor:dompurify` re-runs just that step
+after a dependency bump), and downloads Google Fonts.
 
 ### File Upload Issues
 

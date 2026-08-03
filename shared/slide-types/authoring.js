@@ -85,12 +85,3 @@ export const SLIDE_TYPE_AUTHORING = {
   'title-slide': titleSlideAuthoring,
   'video-slide': videoSlideAuthoring,
 };
-
-/**
- * The authoring companion for a type, or null when it has none.
- * @param {string} type - registry type name
- * @returns {Object|null}
- */
-export function authoringFor(type) {
-  return SLIDE_TYPE_AUTHORING[type] || null;
-}
