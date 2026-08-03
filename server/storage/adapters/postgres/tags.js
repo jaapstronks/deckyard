@@ -6,7 +6,7 @@ import { getDb, getOrgId, now } from './helpers.js';
 
 /**
  * Tags mixin - adds tag methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withTags(Base) {
   return class extends Base {

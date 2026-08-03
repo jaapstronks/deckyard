@@ -7,7 +7,7 @@ import { mapPublishedRow } from '../../mappers.js';
 
 /**
  * Published mixin - adds published presentation methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withPublished(Base) {
   return class extends Base {

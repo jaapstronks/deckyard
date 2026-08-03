@@ -6,7 +6,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadDotEnv } from '../server/config/env.js';
-import { PostgresAdapter } from '../server/storage/adapters/postgres-adapter.js';
+import { PostgresAdapter } from '../server/storage/adapters/postgres/index.js';
 import { getDefaultOrganizationId } from '../server/config/database.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

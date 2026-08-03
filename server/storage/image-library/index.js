@@ -8,7 +8,7 @@
  * their per-user favorites.
  */
 
-import { isStorageInitialized, getStorage } from '../adapters/index.js';
+import { getStorage } from '../adapters/index.js';
 import { resolveScope } from '../scope.js';
 import { toStorageContext } from '../backend-dispatch.js';
 
@@ -80,11 +80,7 @@ export async function deleteImageLibraryItem(scope, id) {
  */
 export async function getImageFavorites(scope, userEmail) {
   const ctx = resolveScope(scope, 'getImageFavorites');
-  if (!isStorageInitialized()) return [];
   const storage = getStorage();
-  // Favorites are optional per backend; treat an absent implementation as
-  // "no favorites".
-  if (typeof storage.getImageFavorites !== 'function') return [];
   return storage.getImageFavorites(userEmail, ctx);
 }
 
@@ -97,8 +93,6 @@ export async function getImageFavorites(scope, userEmail) {
  */
 export async function toggleImageFavorite(scope, imageId, userEmail) {
   const ctx = resolveScope(scope, 'toggleImageFavorite');
-  if (!isStorageInitialized()) return false;
   const storage = getStorage();
-  if (typeof storage.toggleImageFavorite !== 'function') return false;
   return storage.toggleImageFavorite(imageId, userEmail, ctx);
 }
