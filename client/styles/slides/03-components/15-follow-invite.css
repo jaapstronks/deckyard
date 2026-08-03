@@ -23,7 +23,7 @@
   margin-top: 10px;
   max-width: 70ch;
   font-size: 24px;
-  line-height: 1.25;
+  line-height: var(--slide-leading-compact);
   opacity: 0.92;
 }
 

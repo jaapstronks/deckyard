@@ -32,15 +32,21 @@
   --slide-font-size-subheading: var(--slide-text-lg);
   --slide-font-size-body: var(--slide-text-base);
   --slide-font-size-caption: var(--slide-text-sm);
+  --slide-font-size-label: var(--slide-text-xs); /* kickers, eyebrows, axis labels */
+  --slide-font-size-card-title: var(--slide-text-md); /* the recurring card pattern */
+  --slide-font-size-card-body: var(--slide-text-sm);
 
   /* KPI/metric display sizes */
   --slide-text-kpi-lg: 156px;
   --slide-text-kpi-md: 108px;
   --slide-text-kpi-sm: 80px;
 
-  /* Line heights */
+  /* Line heights. `compact` sits between snug and normal: the census found a
+     real 1.25 rhythm in card titles and dense description text, the same kind
+     of signal that earned the app spacing scale its fine band. */
   --slide-leading-tight: 1.1;
   --slide-leading-snug: 1.2;
+  --slide-leading-compact: 1.25;
   --slide-leading-normal: 1.35;
   --slide-leading-relaxed: 1.5;
 
@@ -68,6 +74,7 @@
   --slide-header-gap: var(--slide-space-6);
   --slide-section-gap: var(--slide-space-8);
   --slide-card-gap: var(--slide-space-4);
+  --slide-card-padding: var(--slide-space-6);
   --slide-item-gap: var(--slide-space-3);
   --slide-text-gap: var(--slide-space-2);
 
