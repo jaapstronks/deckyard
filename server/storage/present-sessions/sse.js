@@ -1,6 +1,6 @@
 import { sseComment, sseWrite } from '../../utils/sse.js';
 import { HEARTBEAT_MS } from './constants.js';
-import { schedulePersist } from './disk.js';
+import { schedulePersist } from './db.js';
 import { sessions } from './state.js';
 import { touchPresentSession, findMostRecentSessionForPresentation } from './sessions.js';
 
@@ -40,9 +40,20 @@ export async function attachSessionSseClient(repoRoot, sessionId, res) {
   return detach;
 }
 
+/**
+ * Send an event to the session's SSE clients **in this process**.
+ *
+ * Deliberately a memory-only lookup: the clients are process-local sockets, so
+ * a session this process is not holding has nobody here to write to and the
+ * table has nothing to add. (Reaching followers attached to another worker
+ * needs a pub/sub substrate — see the note in `db.js`.)
+ *
+ * @returns {Promise<boolean>} Whether a local session was found to broadcast to.
+ */
 export async function broadcast(repoRoot, sessionId, event, data) {
-  const s = await touchPresentSession(repoRoot, sessionId);
+  const s = getSessionSync(sessionId);
   if (!s) return false;
+  touchSessionSync(s);
   // Serialize once for all clients; sseWrite passes strings through as-is.
   const payload =
     data == null || typeof data === 'string' ? data : JSON.stringify(data);

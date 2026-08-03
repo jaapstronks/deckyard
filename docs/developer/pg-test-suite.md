@@ -94,6 +94,8 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
 | image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
 | image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
+| follow codes | that a five-character code fits the column at all: the 001 schema declared `char(4)`, which the double (any string is any string) could never have caught, and migration 059 widened |
+| present sessions | the substrate swap: a session survives a cold process, a stale row loses to a fresher in-memory copy and a newer row wins, the `presentation_id` cascade removes sessions with their deck, and the TTL sweep spares live ones |
 
 ## Adding a test
 

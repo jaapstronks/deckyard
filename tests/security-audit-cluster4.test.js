@@ -50,7 +50,7 @@ const { handleShareLinkManagement, shareLinkBelongsToPresentation } = await impo
   '../server/routes/api/share-links/management.js'
 );
 const { fetchCsvData } = await import('../server/utils/data-source/providers/csv-url.js');
-const { sessions, loadedRoots } = await import('../server/storage/present-sessions/state.js');
+const { sessions } = await import('../server/storage/present-sessions/state.js');
 
 const OWNER = { email: 'owner@example.com' };
 const FOREIGN = { email: 'attacker@example.com' };
@@ -142,9 +142,9 @@ function seedPresentation(id, { ownerEmail, slides = [] }) {
 }
 
 function seedSession(root, sessionId, presentationId, extra = {}) {
-  // Pre-mark the root as loaded so getPresentSession skips the disk scan and
-  // uses our in-memory entry.
-  loadedRoots.add(root);
+  // Straight into the live map: the session lookup hydrates from Postgres on a
+  // miss, and the database double carries no `present_sessions` rows, so an
+  // in-memory entry is what the route resolves.
   const s = {
     sessionId,
     presentationId,
@@ -160,7 +160,6 @@ function seedSession(root, sessionId, presentationId, extra = {}) {
     followCodes: {},
     createdAt: 1,
     lastActivityAt: Date.now(),
-    repoRoot: root,
     clients: new Set(),
     heartbeatTimers: new Map(),
     persistTimer: null,

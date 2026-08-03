@@ -19,6 +19,7 @@ import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
+import { startLiveSessionCleanupLoop } from './utils/live-session-cleanup.js';
 import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
 import { strandedFileDataError } from './storage/boot-check.js';
@@ -230,6 +231,7 @@ await initializeStorage();
 await initializeMediaProvider(repoRoot);
 await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
 startSandboxCleanupLoop();
+startLiveSessionCleanupLoop(); // TTL sweep for present sessions + follow codes
 startHeartbeat(); // SSE heartbeat for real-time comment updates
 const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
 const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails
