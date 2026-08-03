@@ -10,7 +10,8 @@
  *     which the default test env uses) so both languages survive.
  *
  * The Postgres adapter write path (migration 049 + `slides.js`) can't run in the
- * DB-less test env; it's verified manually against Postgres (see the PR).
+ * DB-less test env; it is covered against real PostgreSQL in
+ * tests/pg/slide-library-i18n-storage.pgtest.js (the `test-postgres` CI job).
  *
  * Run with: node --test tests/slide-library-i18n-storage.test.js
  */
