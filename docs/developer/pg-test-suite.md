@@ -93,6 +93,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | `markThreadsRead` (`presentation-comments.js`) | the heaviest FK chain: a `comment_thread_reads` marker upserts on `(user_email, comment_id)` and cascades out when its `presentation_comments` row is deleted (org → deck → comment → marker) |
 | `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
 | image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
+| image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
 
 ## Adding a test
 
