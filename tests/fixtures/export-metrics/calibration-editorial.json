@@ -1,0 +1,73 @@
+{
+  "elements": {
+    ".slide .heading": {
+      "rect": {
+        "x": 64,
+        "y": 64,
+        "width": 1472,
+        "height": 55
+      },
+      "fontSize": "50px",
+      "fontWeight": "600",
+      "requestedFamily": "Fraunces",
+      "paintedFamilies": [
+        {
+          "family": "Fraunces",
+          "glyphs": 18
+        }
+      ],
+      "text": "Structural metrics"
+    },
+    ".slide .subheading": {
+      "rect": {
+        "x": 64,
+        "y": 127,
+        "width": 1472,
+        "height": 45.6
+      },
+      "fontSize": "38px",
+      "fontWeight": "400",
+      "requestedFamily": "Work Sans",
+      "paintedFamilies": [
+        {
+          "family": "Work Sans",
+          "glyphs": 17
+        }
+      ],
+      "text": "Zażółć gęślą jaźń"
+    },
+    ".slide .body": {
+      "rect": {
+        "x": 64,
+        "y": 190.6,
+        "width": 1472,
+        "height": 645.4
+      },
+      "fontSize": "28px",
+      "fontWeight": "400",
+      "requestedFamily": "Work Sans",
+      "paintedFamilies": [
+        {
+          "family": "Work Sans",
+          "glyphs": 34
+        }
+      ],
+      "text": "Short body line. Zażółć gęślą jaźń."
+    }
+  },
+  "overflowing": [],
+  "slideBackground": "rgb(255, 253, 247)",
+  "loadedFonts": [
+    "Fraunces 400 700 [latin]",
+    "Work Sans 400 700 [latin-ext]",
+    "Work Sans 400 700 [latin]"
+  ],
+  "dominantColor": {
+    "rgb": [
+      255,
+      253,
+      247
+    ],
+    "share": 0.989
+  }
+}

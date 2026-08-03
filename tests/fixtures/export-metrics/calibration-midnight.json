@@ -1,0 +1,73 @@
+{
+  "elements": {
+    ".slide .heading": {
+      "rect": {
+        "x": 64,
+        "y": 64,
+        "width": 1472,
+        "height": 55
+      },
+      "fontSize": "50px",
+      "fontWeight": "500",
+      "requestedFamily": "Space Grotesk",
+      "paintedFamilies": [
+        {
+          "family": "Space Grotesk Light",
+          "glyphs": 18
+        }
+      ],
+      "text": "Structural metrics"
+    },
+    ".slide .subheading": {
+      "rect": {
+        "x": 64,
+        "y": 127,
+        "width": 1472,
+        "height": 45.6
+      },
+      "fontSize": "38px",
+      "fontWeight": "400",
+      "requestedFamily": "Inter",
+      "paintedFamilies": [
+        {
+          "family": "Inter",
+          "glyphs": 17
+        }
+      ],
+      "text": "Zażółć gęślą jaźń"
+    },
+    ".slide .body": {
+      "rect": {
+        "x": 64,
+        "y": 190.6,
+        "width": 1472,
+        "height": 645.4
+      },
+      "fontSize": "28px",
+      "fontWeight": "400",
+      "requestedFamily": "Inter",
+      "paintedFamilies": [
+        {
+          "family": "Inter",
+          "glyphs": 34
+        }
+      ],
+      "text": "Short body line. Zażółć gęślą jaźń."
+    }
+  },
+  "overflowing": [],
+  "slideBackground": "rgb(24, 24, 27)",
+  "loadedFonts": [
+    "Inter 400 700 [latin-ext]",
+    "Inter 400 700 [latin]",
+    "Space Grotesk 400 700 [latin]"
+  ],
+  "dominantColor": {
+    "rgb": [
+      24,
+      24,
+      27
+    ],
+    "share": 0.988
+  }
+}

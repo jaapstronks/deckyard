@@ -12,7 +12,23 @@ import { buildPrismKatexCdnTags, buildPrismKatexInitScriptTag } from '../utils/p
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { loadExportCssBundle, buildExportStyleContent } from '../export/css-bundle.js';
 
-async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null, lang = null } = {}) {
+/**
+ * Build the standalone HTML document a PNG export renders.
+ *
+ * Exported so `tests/export-structural-metrics.test.js` can measure the real
+ * export document rather than a lookalike — a reconstruction would keep passing
+ * through exactly the CSS-bundle and theme-var regressions the metrics exist to
+ * catch.
+ *
+ * @param {string} repoRoot - Repository root path
+ * @param {Object} slide - Slide to render
+ * @param {Object} [options]
+ * @param {Object} [options.theme] - Resolved theme
+ * @param {Object} [options.slideTypes] - Slide type registry override
+ * @param {string} [options.lang] - Render language
+ * @returns {Promise<string>} - Complete HTML document
+ */
+export async function buildSlidePngHtml(repoRoot, slide, { theme = null, slideTypes = null, lang = null } = {}) {
   const css = await loadExportCssBundle(repoRoot, theme, null);
 
   const cloned = structuredClone(slide);
