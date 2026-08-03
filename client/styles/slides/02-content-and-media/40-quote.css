@@ -40,7 +40,7 @@
   /* --quote-scale is set per slide by the renderer from the amount of content
      (quoteFontScale): a hero quote stays at 1 and only dips for long text. */
   font-size: calc(var(--slide-font-size-title) * var(--quote-scale, 1));
-  line-height: 1.05;
+  line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   text-transform: var(--heading-transform, none);
   font-weight: var(--heading-weight, 400);

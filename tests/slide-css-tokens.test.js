@@ -312,9 +312,9 @@ function findViolations(source, label, scales) {
 const tokensSource = await fs.readFile(tokensFile, 'utf8');
 const scales = readScales(tokensSource);
 
-const files = (await cssFiles(slidesDir))
-  .map((f) => path.relative(repoRoot, f))
-  .filter((rel) => !EXCLUDED.some((re) => re.test(rel)));
+const allSheets = (await cssFiles(slidesDir)).map((f) => path.relative(repoRoot, f));
+
+const files = allSheets.filter((rel) => !EXCLUDED.some((re) => re.test(rel)));
 
 const violations = (
   await Promise.all(
@@ -430,6 +430,36 @@ describe('slide css tokens', () => {
       `${stale.length} burndown budget(s) are now too generous.\n` +
         'Lower them (or delete the entry) — the conversion is that much done:\n' +
         '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js'
+    );
+  });
+
+  it('reads no --t-radius token outside 00-tokens.css', async () => {
+    // The end-state contract check (phase 3 step 6 of the role-vocabulary
+    // brief) is "no var(--t-…) in slides/** outside 00-tokens.css". Colour and
+    // typography still have direct reads and get there in phase 3, but radius
+    // arrived early: batch 2.2a routed all 31 of them through
+    // `--slide-radius-*`. Asserting the radius family now locks that win in,
+    // so the next sheet cannot quietly reopen the direct path.
+    //
+    // Scope is every sheet in the bundle, presenter chrome included: chrome
+    // draws its rounding from `--app-*`, so a `--t-radius` read there is just
+    // as wrong as one in slide CSS.
+    const reads = [];
+    for (const rel of allSheets) {
+      if (/\/00-tokens\.css$/.test(rel)) continue;
+      const clean = stripComments(await fs.readFile(path.join(repoRoot, rel), 'utf8'));
+      for (const m of clean.matchAll(/var\(\s*(--t-radius[\w-]*)/g)) {
+        const line = clean.slice(0, m.index).split('\n').length;
+        reads.push(`${rel}:${line}  ${m[1]}`);
+      }
+    }
+    assert.deepStrictEqual(
+      reads.sort(),
+      [],
+      `${reads.length} direct theme-radius read(s) in the slide bundle.\n` +
+        'Radius reaches slide CSS through --slide-radius-{sm,md,lg,full}; only\n' +
+        '00-tokens.css binds those to the theme. Add a role there if the four\n' +
+        'steps do not cover the case — do not read --t-radius* directly.'
     );
   });
 

@@ -7,8 +7,7 @@
     --t-icon-card-grid-slide-bg,
     var(--color-background)
   );
-  /* Middle-ground bottom breathing room */
-  padding: var(--slide-space-12) var(--slide-padding) 56px;
+  padding: var(--slide-space-12) var(--slide-padding) var(--slide-space-12);
   --g1x: 14%;
   --g1y: 82%;
   --g2x: 55%;
@@ -96,7 +95,7 @@
   grid-template-columns: 1fr 1fr;
   /* Fixed row height + distribute remaining space evenly */
   grid-template-rows: repeat(3, var(--icg-row-h));
-  gap: var(--slide-space-5) 18px;
+  gap: var(--slide-space-5);
   flex: 1 1 auto;
   align-content: space-between;
   /* 5% less wide, leaving extra room on the right side */
