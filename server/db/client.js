@@ -26,6 +26,7 @@ let pool = null;
  * @property {SlideLibraryTable} slide_library
  * @property {FollowCodesTable} follow_codes
  * @property {AppSettingsTable} app_settings
+ * @property {UserSettingsTable} user_settings
  * @property {PresentSessionsTable} present_sessions
  * @property {InteractionsTable} interactions
  * @property {InteractionVotesTable} interaction_votes

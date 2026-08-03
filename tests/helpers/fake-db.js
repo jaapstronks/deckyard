@@ -67,10 +67,11 @@ export const UNIQUE_CONSTRAINTS = {
 export const JSONB_COLUMNS = {
   users: ['settings'],
   organizations: ['settings'],
-  // `supported_slide_langs` is NOT here: it is `TEXT[]`, as declared in
-  // server/db/migrations/001_initial_schema.js, and it sat in this list
-  // claiming to be jsonb until the schema conformance check called it.
-  app_settings: ['webhooks'],
+  // Migration 059 replaced the per-organization app_settings (whose `webhooks`
+  // column sat here) with a singleton jsonb bag, and added user_settings with
+  // the same one-bag shape.
+  app_settings: ['settings'],
+  user_settings: ['settings'],
   auth_audit_log: ['metadata'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],

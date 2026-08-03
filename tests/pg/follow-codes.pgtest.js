@@ -2,14 +2,14 @@
  * Follow-code storage against real PostgreSQL.
  *
  * Codes moved off `follow-codes.json` into the `follow_codes` table, which
- * migration 059 first had to widen: the 001 schema declared `code` as
+ * migration 060 first had to widen: the 001 schema declared `code` as
  * `char(4)` while the generator has produced five characters since the M3
  * keyspace fix. That mismatch is invisible to the in-memory double — it stores
  * whatever string it is handed — and would have made every single insert fail
  * in production. Hence the first test: mint a code and read it back *through
  * the column*.
  *
- * The table is instance-global (migration 059 dropped the unused
+ * The table is instance-global (migration 060 dropped the unused
  * organization_id), so no parent rows need seeding.
  */
 

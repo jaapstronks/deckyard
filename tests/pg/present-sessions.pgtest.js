@@ -11,7 +11,7 @@
  * lookup that still resolves proves it went through Postgres. It also models a
  * restart, which is the other half of the acceptance test.
  *
- * The `presentation_id` foreign key is real here (migration 059 made it NOT
+ * The `presentation_id` foreign key is real here (migration 060 made it NOT
  * NULL and cascading), so every test seeds an organization and a deck rather
  * than the bare string ids the file suite tolerated.
  */

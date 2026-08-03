@@ -18,7 +18,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -35,7 +34,6 @@ import {
   renderGradientSvg,
   toneOf,
 } from '../server/media/bundled-gradients.js';
-import { getAppSettings, writeAppSettings } from '../server/storage/settings.js';
 import { embedImgSrcDataUrls } from '../server/utils/html-utils.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -193,34 +191,5 @@ test('a picked gradient is inlined by the export path, so PDFs need no network',
   assert.ok(!out.includes(items[0].url));
 });
 
-// ---------------------------------------------------------------- settings
-
-test('stockMedia.bundled is off by default and round-trips', async (t) => {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-gradients-'));
-  t.after(() => fs.rm(dir, { recursive: true, force: true }));
-  await fs.mkdir(path.join(dir, 'data'), { recursive: true });
-
-  const before = await getAppSettings(dir);
-  assert.equal(before.stockMedia.bundled.enabled, false);
-
-  const after = await writeAppSettings(dir, {
-    stockMedia: { bundled: { enabled: true } },
-  });
-  assert.equal(after.stockMedia.bundled.enabled, true);
-  assert.equal((await getAppSettings(dir)).stockMedia.bundled.enabled, true);
-});
-
-test('a write that mentions one source leaves the others alone', async (t) => {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-gradients-'));
-  t.after(() => fs.rm(dir, { recursive: true, force: true }));
-  await fs.mkdir(path.join(dir, 'data'), { recursive: true });
-
-  await writeAppSettings(dir, {
-    stockMedia: { bundled: { enabled: true }, unsplash: { enabled: true } },
-  });
-  // A client that only knows about Giphy must not switch the other two off.
-  const after = await writeAppSettings(dir, { stockMedia: { giphy: { enabled: true } } });
-  assert.equal(after.stockMedia.bundled.enabled, true);
-  assert.equal(after.stockMedia.unsplash.enabled, true);
-  assert.equal(after.stockMedia.giphy.enabled, true);
-});
+// The stockMedia round-trip and per-source merge now persist in PostgreSQL;
+// their coverage lives in tests/pg/settings.pgtest.js.

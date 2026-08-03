@@ -3,7 +3,7 @@
  *
  * A follow code is a short, human-typable handle for a live follow URL: the
  * audience types five letters instead of a link. Codes live in the
- * `follow_codes` table (widened from the dormant 001 schema by migration 059),
+ * `follow_codes` table (widened from the dormant 001 schema by migration 060),
  * one row per code, expiring 24 hours after they are minted.
  *
  * They used to be a `follow-codes.json` blob rewritten in full on every mint —
