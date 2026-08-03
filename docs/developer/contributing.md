@@ -242,8 +242,13 @@ try {
 
 1. Create `shared/slide-types/types/my-slide.js`
 2. Add to `shared/slide-types/registry.js`
-3. Add CSS in `client/styles/slides/my-slide.css`
-4. Import CSS in the appropriate bundle
+3. Add CSS as a numbered file in the matching tier directory under
+   `client/styles/slides/` (`01-layout-and-title/`, `02-content-and-media/` or
+   `03-components/`; the numeric prefix is a cascade position, not a sort key)
+4. Declare that file in `TYPE_CSS` in `scripts/generate-slide-css-aggregators.js`
+   and run `npm run gen:slide-css` — the per-tier aggregator files are
+   generated, never hand-edited (`tests/slide-css-aggregators.test.js` gates
+   this)
 5. Add labels to **both** Tier-1 locales: `client/i18n/en/slide-types.json` and
    `client/i18n/nl/slide-types.json` (`npm test` fails if either drifts)
 6. Materialize and translate them: `node scripts/i18n-fill.js en`, then

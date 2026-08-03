@@ -98,10 +98,6 @@ const isDocFile = (rel) =>
 const TUTORIAL_PLACEHOLDERS = {
   'client/lib/slide-runtime/my-slide.js':
     'slide-types.md walks the reader through creating this runtime module',
-  'client/styles/slides/my-slide.css':
-    'contributing.md example CSS for a slide type the reader is adding',
-  'client/styles/slides/custom/my-title-slide.css':
-    'slide-types.md example of fork-custom slide CSS',
   'client/views/editor/editor-form/slide-forms/my-slide.js':
     'slide-types.md example of a slide side-form the reader is adding',
   'server/routes/api/my-feature.js':
