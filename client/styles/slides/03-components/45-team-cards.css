@@ -243,7 +243,7 @@
 }
 
 .slide-team-cards.has-bottom-subheading .slide-inner {
-  gap: 12px;
+  gap: var(--slide-space-3);
 }
 
 .slide-team-cards:not(.has-header) .slide-inner {
@@ -262,8 +262,8 @@
 
 .slide-team-cards .header .subtitle {
   margin: 10px 0 0;
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
   max-width: 75ch;
 }
@@ -312,7 +312,7 @@
   /* Keep the name tight to its own photo. Combined with a clearly larger row
      gap, a name (even wrapped to two lines) groups with the photo above it
      rather than reading as a caption for the photo in the next row. */
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
 }
 
 /* Photo frame (background + border) - off by default */
@@ -352,18 +352,18 @@
 
 .slide-team-cards .team-card-name {
   font-family: var(--font-heading);
-  font-size: 24px;
+  font-size: var(--slide-text-md);
   line-height: 1.18;
   font-weight: 400;
   font-synthesis: none;
-  margin-bottom: 4px;
+  margin-bottom: var(--slide-space-1);
   width: 100%;
   overflow-wrap: anywhere;
 }
 
 .slide-team-cards .team-card-byline {
   font-family: var(--font-body);
-  font-size: 20px;
+  font-size: var(--slide-text-base);
   line-height: 1.3;
   color: var(--color-text-muted);
   width: 100%;
@@ -396,7 +396,7 @@
 .slide-team-cards[data-card-count='2'] .team-card-name,
 .slide-team-cards[data-card-count='3'] .team-card-name,
 .slide-team-cards[data-card-count='4'] .team-card-name {
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
 }
 
 .slide-team-cards[data-card-count='1'] .team-card-byline,
@@ -409,7 +409,7 @@
 /* Smaller text for 5-6 cards (more compact single-row layout) */
 .slide-team-cards[data-card-count='5'] .team-card-name,
 .slide-team-cards[data-card-count='6'] .team-card-name {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
 }
 
 .slide-team-cards[data-card-count='5'] .team-card-byline,
@@ -433,7 +433,7 @@
 .slide-team-cards[data-card-count='16'] .team-card-byline,
 .slide-team-cards[data-card-count='17'] .team-card-byline,
 .slide-team-cards[data-card-count='18'] .team-card-byline {
-  font-size: 14px;
+  font-size: var(--slide-text-xs);
 }
 
 /* Even more compact for the densest grids (19–25) */
@@ -456,7 +456,7 @@
 .slide-team-cards[data-card-count='24'] .team-card-byline,
 .slide-team-cards[data-card-count='25'] .team-card-byline {
   font-size: 12px;
-  line-height: 1.2;
+  line-height: var(--slide-leading-snug);
 }
 
 /* Even smaller text when bottom subheading is present */
@@ -509,7 +509,7 @@
 }
 
 .slide-team-cards.text-split .team-card-name {
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
   align-self: end; /* Push title to bottom so images align */
   min-height: 2.4em; /* Reserve space for ~2 lines */
   display: flex;
@@ -517,7 +517,7 @@
 }
 
 .slide-team-cards.text-split .team-card-photo {
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
 }
 
 .slide-team-cards.text-split .team-card-byline {
@@ -574,7 +574,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
 }
 
 .slide-team-cards.aspect-original:not(.has-column-split) .team-card-photo img {
@@ -610,7 +610,7 @@
 .slide-team-cards.aspect-original:not(.has-column-split).text-split .team-card-name {
   align-self: start;
   min-height: 0;
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
   display: block;
 }
 
@@ -662,7 +662,7 @@
   min-height: 0;
   align-items: start;
   justify-content: center;
-  margin-top: 8px; /* Extra space below title */
+  margin-top: var(--slide-space-2); /* Extra space below title */
   /* Anchor the auto-fit scale to the top so a shrunk split stays below the
      title rather than drifting down (applied by the team-cards auto-fit runtime). */
   transform-origin: center top;
@@ -678,10 +678,10 @@
 /* Group subheading: left-aligned within its group */
 .slide-team-cards .team-cards-group-subheading {
   font-family: var(--font-body);
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
-  margin: 0 0 16px;
+  margin: 0 0 var(--slide-space-4);
   text-align: left;
 }
 

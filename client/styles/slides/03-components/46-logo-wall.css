@@ -84,13 +84,13 @@
    Cells share the row width instead of using fixed sizes, so any count up
    to the cap lays out without per-count CSS. */
 .slide-logo-wall.is-fluid {
-  padding: 40px 48px 48px;
+  padding: var(--slide-space-10) var(--slide-space-12) var(--slide-space-12);
 }
 
 .slide-logo-wall.is-fluid .logo-wall-grid {
   grid-template-columns: repeat(var(--lw-cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--lw-rows), auto);
-  column-gap: 16px;
+  column-gap: var(--slide-space-4);
   row-gap: 14px;
   width: 100%;
 }
@@ -122,8 +122,8 @@
 
 .slide-logo-wall .header .subtitle {
   margin: 10px 0 0;
-  font-size: 24px;
-  line-height: 1.2;
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
   max-width: 75ch;
 }

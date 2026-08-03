@@ -1,9 +1,4 @@
 {
-  "client/styles/slides/00-patterns.css": {
-    "spacing": {
-      "count": 2
-    }
-  },
   "client/styles/slides/01-layout-and-title/00-base.css": {
     "line-height": {
       "count": 1
@@ -127,85 +122,24 @@
       "count": 1
     }
   },
-  "client/styles/slides/03-components/00-icon-card-grid.css": {
-    "line-height": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 1
-    }
-  },
-  "client/styles/slides/03-components/10-poll.css": {
-    "font-size": {
-      "count": 8
-    },
-    "line-height": {
-      "count": 1
-    },
-    "spacing": {
-      "count": 12
-    }
-  },
-  "client/styles/slides/03-components/15-follow-invite.css": {
-    "font-size": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 2
-    }
-  },
-  "client/styles/slides/03-components/16-feedback.css": {
-    "font-size": {
-      "count": 2
-    }
-  },
   "client/styles/slides/03-components/17-lead-capture.css": {
-    "font-size": {
-      "count": 3
-    },
-    "line-height": {
-      "count": 2
-    },
-    "spacing": {
-      "count": 6
-    }
-  },
-  "client/styles/slides/03-components/18-countdown.css": {
     "spacing": {
       "count": 1
     }
   },
   "client/styles/slides/03-components/20-chart.css": {
-    "font-size": {
-      "count": 3
-    },
-    "line-height": {
-      "count": 4
-    },
     "spacing": {
-      "count": 6
+      "count": 4
     }
   },
   "client/styles/slides/03-components/45-team-cards.css": {
-    "font-size": {
-      "count": 7
-    },
-    "line-height": {
-      "count": 3
-    },
     "spacing": {
-      "count": 12
+      "count": 4
     }
   },
   "client/styles/slides/03-components/46-logo-wall.css": {
-    "font-size": {
-      "count": 1
-    },
-    "line-height": {
-      "count": 1
-    },
     "spacing": {
-      "count": 5
+      "count": 2
     }
   },
   "client/styles/slides/03-components/60-accessibility.css": {
