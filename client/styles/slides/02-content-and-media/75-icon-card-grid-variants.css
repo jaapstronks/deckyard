@@ -94,7 +94,7 @@
   --icg-tile: 350px;
   grid-template-columns: repeat(4, var(--icg-tile));
   grid-template-rows: auto;
-  gap: 24px;
+  gap: var(--slide-space-6);
   width: 100%;
   margin: 0;
   flex: 1 1 auto;
@@ -206,7 +206,7 @@
    so the title has to opt back in explicitly. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-title {
   margin-bottom: var(--slide-space-2);
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
   line-height: 1.15;
   text-align: center;
 }
