@@ -90,3 +90,27 @@ export async function seedSlideLibraryItem(
     .executeTakeFirstOrThrow();
   return row.id;
 }
+
+/**
+ * Insert an image-library item and return its (generated, uuid) id.
+ * `image_library_favorites.image_id` is a NOT NULL FK to `image_library(id)`,
+ * so favoriting needs a real image row; only the NOT NULL `url` is set.
+ *
+ * @param {import('kysely').Kysely<any>} db
+ * @param {object} [opts]
+ * @param {string} [opts.organizationId]
+ * @param {string} [opts.url='https://example.com/img.png']
+ * @returns {Promise<string>}
+ */
+export async function seedImageLibraryItem(
+  db,
+  { organizationId, url = 'https://example.com/img.png' } = {}
+) {
+  const orgId = organizationId || getDefaultOrganizationId();
+  const row = await db
+    .insertInto('image_library')
+    .values({ organization_id: orgId, url })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return row.id;
+}
