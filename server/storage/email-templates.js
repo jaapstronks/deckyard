@@ -1,13 +1,18 @@
 /**
  * Email template storage layer.
  * Provides CRUD operations for admin-customizable email templates.
- * Templates are stored in data/email-templates.json as instance-level overrides.
- * Code defaults remain in server/i18n/locales/*.json.
+ * Overrides are instance-level and persist in PostgreSQL: one row per
+ * (type, locale) in `email_templates`, and the instance default locale in the
+ * singleton `email_template_settings` (see migration 058). Code defaults remain
+ * in server/i18n/locales/*.json.
+ *
+ * The facade is unchanged from the file-backed version — every function still
+ * takes `repoRoot` first for call-site stability — but that argument is now
+ * unused: persistence no longer touches disk.
  */
 
-import path from 'node:path';
-import { readJsonIfExists, writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
+import { sql } from 'kysely';
+import { withDbGuard } from './utils/db-guard.js';
 import {
   SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,
   DEFAULT_LOCALE as SHARED_DEFAULT_LOCALE,
@@ -177,158 +182,186 @@ export const SUPPORTED_LOCALES = SHARED_SUPPORTED_LOCALES;
 export const DEFAULT_LOCALE = SHARED_DEFAULT_LOCALE;
 
 /**
- * Get the path to the email templates file.
- * @param {string} repoRoot - Repository root directory
- * @returns {string} Path to email-templates.json
+ * Empty configuration, returned when the database is unavailable so callers see
+ * the code defaults rather than an error.
+ * @returns {EmailTemplatesConfig}
  */
-function emailTemplatesPath(repoRoot) {
-  return path.join(dataDir(repoRoot), 'email-templates.json');
+function emptyConfig() {
+  return { defaultLocale: DEFAULT_LOCALE, templates: {} };
 }
 
 /**
- * Read all email template overrides.
- * @param {string} repoRoot - Repository root directory
+ * Read all email template overrides plus the instance default locale.
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @returns {Promise<Object>} Email templates configuration
  */
 export async function getEmailTemplates(repoRoot) {
-  const raw = await readJsonIfExists(emailTemplatesPath(repoRoot));
-  const obj = raw && typeof raw === 'object' ? raw : {};
+  return withDbGuard(emptyConfig(), async (db) => {
+    const [rows, settings] = await Promise.all([
+      db.selectFrom('email_templates').select(['type', 'locale', 'fields']).execute(),
+      db.selectFrom('email_template_settings').select('default_locale').executeTakeFirst(),
+    ]);
 
-  return {
-    defaultLocale: typeof obj.defaultLocale === 'string' && SUPPORTED_LOCALES.includes(obj.defaultLocale)
-      ? obj.defaultLocale
-      : DEFAULT_LOCALE,
-    templates: obj.templates && typeof obj.templates === 'object' ? obj.templates : {},
-  };
+    const templates = {};
+    for (const row of rows) {
+      if (!templates[row.type]) templates[row.type] = {};
+      // jsonb reads back as a parsed object; guard against a null column.
+      templates[row.type][row.locale] = row.fields || {};
+    }
+
+    const defaultLocale =
+      settings && SUPPORTED_LOCALES.includes(settings.default_locale)
+        ? settings.default_locale
+        : DEFAULT_LOCALE;
+
+    return { defaultLocale, templates };
+  });
 }
 
 /**
- * Write email template override for a specific type and locale.
- * @param {string} repoRoot - Repository root directory
+ * Normalize submitted fields to the type's allowed set: trimmed non-empty
+ * strings only. Returns a plain object (possibly empty).
+ * @param {string} type
+ * @param {Object} fields
+ * @returns {Object}
+ */
+function normalizeFields(type, fields) {
+  const allowedFields = TEMPLATE_METADATA[type].fields;
+  const normalized = {};
+  for (const field of allowedFields) {
+    if (typeof fields[field] === 'string') {
+      const trimmed = fields[field].trim();
+      if (trimmed) normalized[field] = trimmed;
+    }
+  }
+  return normalized;
+}
+
+/**
+ * Write email template override for a specific type and locale. An override
+ * that normalizes to no fields deletes the row (mirrors the old file
+ * semantics, where an empty entry was removed).
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @param {string} type - Template type (e.g., 'userInvitation')
  * @param {string} locale - Locale code (e.g., 'en')
  * @param {Object} fields - Template fields to save
  * @returns {Promise<Object>} Updated templates configuration
  */
 export async function writeEmailTemplate(repoRoot, type, locale, fields) {
-  // Validate type
   if (!TEMPLATE_METADATA[type]) {
     throw new Error(`Invalid template type: ${type}`);
   }
-
-  // Validate locale
   if (!SUPPORTED_LOCALES.includes(locale)) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await getEmailTemplates(repoRoot);
+  const normalized = normalizeFields(type, fields);
 
-  // Initialize template type if not exists
-  if (!current.templates[type]) {
-    current.templates[type] = {};
-  }
-
-  // Normalize and validate fields
-  const allowedFields = TEMPLATE_METADATA[type].fields;
-  const normalized = {};
-
-  for (const field of allowedFields) {
-    if (typeof fields[field] === 'string') {
-      const trimmed = fields[field].trim();
-      if (trimmed) {
-        normalized[field] = trimmed;
-      }
+  return withDbGuard(emptyConfig(), async (db) => {
+    if (Object.keys(normalized).length > 0) {
+      await db
+        .insertInto('email_templates')
+        .values({ type, locale, fields: JSON.stringify(normalized), updated_at: sql`now()` })
+        .onConflict((oc) =>
+          oc.columns(['type', 'locale']).doUpdateSet({
+            fields: JSON.stringify(normalized),
+            updated_at: sql`now()`,
+          })
+        )
+        .execute();
+    } else {
+      await db
+        .deleteFrom('email_templates')
+        .where('type', '=', type)
+        .where('locale', '=', locale)
+        .execute();
     }
-  }
-
-  // Only save if there are actual overrides
-  if (Object.keys(normalized).length > 0) {
-    current.templates[type][locale] = normalized;
-  } else {
-    // Remove locale if no fields
-    delete current.templates[type][locale];
-    // Remove type if no locales
-    if (Object.keys(current.templates[type]).length === 0) {
-      delete current.templates[type];
-    }
-  }
-
-  await writeJsonAtomic(emailTemplatesPath(repoRoot), current);
-  return current;
+    return getEmailTemplates(repoRoot);
+  });
 }
 
 /**
  * Delete email template override for a specific type and locale.
  * Resets to code defaults.
- * @param {string} repoRoot - Repository root directory
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @param {string} type - Template type (e.g., 'userInvitation')
  * @param {string} locale - Locale code (e.g., 'en')
  * @returns {Promise<Object>} Updated templates configuration
  */
 export async function deleteEmailTemplate(repoRoot, type, locale) {
-  // Validate type
   if (!TEMPLATE_METADATA[type]) {
     throw new Error(`Invalid template type: ${type}`);
   }
-
-  // Validate locale
   if (!SUPPORTED_LOCALES.includes(locale)) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await getEmailTemplates(repoRoot);
-
-  // Remove locale override
-  if (current.templates[type]) {
-    delete current.templates[type][locale];
-    // Remove type if no locales
-    if (Object.keys(current.templates[type]).length === 0) {
-      delete current.templates[type];
-    }
-  }
-
-  await writeJsonAtomic(emailTemplatesPath(repoRoot), current);
-  return current;
+  return withDbGuard(emptyConfig(), async (db) => {
+    await db
+      .deleteFrom('email_templates')
+      .where('type', '=', type)
+      .where('locale', '=', locale)
+      .execute();
+    return getEmailTemplates(repoRoot);
+  });
 }
 
 /**
- * Update the default locale setting.
- * @param {string} repoRoot - Repository root directory
+ * Update the instance default locale setting (upserts the singleton row).
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @param {string} locale - New default locale
  * @returns {Promise<Object>} Updated templates configuration
  */
 export async function updateDefaultLocale(repoRoot, locale) {
-  // Validate locale
   if (!SUPPORTED_LOCALES.includes(locale)) {
     throw new Error(`Invalid locale: ${locale}`);
   }
 
-  const current = await getEmailTemplates(repoRoot);
-  current.defaultLocale = locale;
-
-  await writeJsonAtomic(emailTemplatesPath(repoRoot), current);
-  return current;
+  return withDbGuard(emptyConfig(), async (db) => {
+    await db
+      .insertInto('email_template_settings')
+      .values({ id: true, default_locale: locale, updated_at: sql`now()` })
+      .onConflict((oc) =>
+        oc.column('id').doUpdateSet({ default_locale: locale, updated_at: sql`now()` })
+      )
+      .execute();
+    return getEmailTemplates(repoRoot);
+  });
 }
 
 /**
  * Get template override for a specific type and locale.
- * @param {string} repoRoot - Repository root directory
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @param {string} type - Template type
  * @param {string} locale - Locale code
  * @returns {Promise<Object|null>} Template override or null if not set
  */
 export async function getEmailTemplateOverride(repoRoot, type, locale) {
-  const data = await getEmailTemplates(repoRoot);
-  return data.templates[type]?.[locale] || null;
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('email_templates')
+      .select('fields')
+      .where('type', '=', type)
+      .where('locale', '=', locale)
+      .executeTakeFirst();
+    return row?.fields || null;
+  });
 }
 
 /**
  * Get the configured default locale for email templates.
  * Used when sending user invitation emails without a specified locale.
- * @param {string} repoRoot - Repository root directory
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
  * @returns {Promise<string>} Default locale code
  */
 export async function getEmailDefaultLocale(repoRoot) {
-  const data = await getEmailTemplates(repoRoot);
-  return data.defaultLocale || DEFAULT_LOCALE;
+  return withDbGuard(DEFAULT_LOCALE, async (db) => {
+    const row = await db
+      .selectFrom('email_template_settings')
+      .select('default_locale')
+      .executeTakeFirst();
+    return row && SUPPORTED_LOCALES.includes(row.default_locale)
+      ? row.default_locale
+      : DEFAULT_LOCALE;
+  });
 }

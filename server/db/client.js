@@ -31,6 +31,8 @@ let pool = null;
  * @property {InteractionVotesTable} interaction_votes
  * @property {QuestionsTable} questions
  * @property {FeedbackTable} feedback
+ * @property {EmailTemplatesTable} email_templates
+ * @property {EmailTemplateSettingsTable} email_template_settings
  */
 
 /**
