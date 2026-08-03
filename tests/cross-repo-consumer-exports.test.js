@@ -56,6 +56,14 @@ const WEBSITE_GENERATOR_IMPORTS = {
   ],
   'shared/slide-types/authoring-companions.js': ['SLIDE_TYPE_DESCRIPTION'],
   'server/utils/ai/slide-catalog/definitions.js': ['getCoreSlideCatalog'],
+  'shared/slide-types/deck.js': ['presentationToDeck'],
+  'server/export/deck-bundle.js': ['DECK_MIMETYPE', 'DECK_BUNDLE_VERSION'],
+  'shared/slide-types/json-schema.js': [
+    'SCHEMA_BASE_URI',
+    'deckJsonSchema',
+    'slideTypeContentSchema',
+  ],
+  'shared/slide-types/schema-version.js': ['CURRENT_SCHEMA_VERSION'],
 };
 
 test('every export deckyard-website generates from is still exported', async () => {

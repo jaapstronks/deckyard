@@ -56,8 +56,17 @@ const BCP47_PATTERN =
  * under this host by deckyard-website. The version in the path is
  * `CURRENT_SCHEMA_VERSION` (the content-schema version), not the envelope
  * `version` — see `schema-version.js`.
+ *
+ * Exported for a cross-repo consumer: `deckyard-website` reads this constant in
+ * `scripts/generate-slide-types.js` to stamp the `$id` of every published
+ * schema under `public/schema/`. A dead-export sweep that only greps this repo
+ * will read it as unused - it is not, and
+ * `tests/cross-repo-consumer-exports.test.js` fails if it disappears. Unlike
+ * the three maps #558/#559 restored, losing this one does not crash the
+ * generator: the template literal turns `undefined` into the string
+ * `"undefined/v4/..."` and publishes it silently.
  */
-const SCHEMA_BASE_URI = 'https://deckyard.eu/schema';
+export const SCHEMA_BASE_URI = 'https://deckyard.eu/schema';
 
 /** `$defs` key for a slide type's content schema. */
 function contentDefKey(typeName) {
