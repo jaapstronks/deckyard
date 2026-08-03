@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.4em;
-  padding: 48px;
+  padding: var(--slide-space-12);
   text-align: center;
   overflow: hidden;
 }
@@ -76,7 +76,7 @@
 /* Controls row */
 .slide-countdown .cd-controls {
   display: flex;
-  gap: 16px;
+  gap: var(--slide-space-4);
   margin-top: 0.4em;
 }
 
