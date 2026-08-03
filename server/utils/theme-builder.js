@@ -4,7 +4,7 @@
  * used by the existing presentation rendering system.
  */
 
-import { getFontFamilyCSS } from '../../shared/theme-fonts.js';
+import { cssStringEscape, getFontFamilyCSS } from '../../shared/theme-fonts.js';
 import { curatedEmbedFonts } from './curated-font-embed.js';
 import {
   validateThemeConfig,
@@ -574,7 +574,7 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     // one rule per subset × distinct file, weight ranges for variable families.
     for (const face of curatedEmbedFonts(family)) {
       lines.push(`@font-face {
-  font-family: '${family}';
+  font-family: '${cssStringEscape(family)}';
   font-style: normal;
   font-weight: ${face.weight};
   font-display: swap;
@@ -594,7 +594,7 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     for (const variant of managed.variants) {
       if (!variant.url) continue;
       lines.push(`@font-face {
-  font-family: '${managed.name}';
+  font-family: '${cssStringEscape(managed.name)}';
   font-style: ${variant.style || 'normal'};
   font-weight: ${variant.weight || 400};
   font-display: swap;

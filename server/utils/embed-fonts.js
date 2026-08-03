@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadsDir } from '../config/storage-paths.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
-import { mergeFontFaces } from '../../shared/theme-fonts.js';
+import { cssStringEscape, mergeFontFaces } from '../../shared/theme-fonts.js';
 
 function stripFontFaceBlocks(cssText) {
   return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
@@ -167,7 +167,7 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   const blocks = mergeFontFaces(identified).map((face) =>
     `
 @font-face {
-  font-family: '${face.family.replace(/'/g, "\\'")}';
+  font-family: '${cssStringEscape(face.family)}';
   src: url('${face.identity}') format('${face.format}');
   font-weight: ${face.weight};
   font-style: ${face.style};

@@ -7,6 +7,7 @@
 import { t } from '../ui-i18n.js';
 import { DEFAULT_THEME_ID, DEFAULT_THEME_NAME } from '../../../shared/constants/themes.js';
 import { loadThemeById } from './theme.js';
+import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
 /**
  * Create a theme selector field with label and select element.
@@ -277,15 +278,15 @@ export function createVisualThemePicker({
           // Support both path-based (curated) and URL-based (uploaded) fonts
           let src;
           if (match.url) {
-            src = `url('${match.url}') format('${match.format || 'woff2'}')`;
+            src = `url('${cssStringEscape(match.url)}') format('${cssStringEscape(match.format || 'woff2')}')`;
           } else if (match.path) {
-            src = `url('/${match.path}') format('woff2')`;
+            src = `url('/${cssStringEscape(match.path)}') format('woff2')`;
           } else {
             continue;
           }
           const range = match.unicodeRange ? ` unicode-range: ${match.unicodeRange};` : '';
           rules.push(
-            `@font-face { font-family: '${match.family}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`
+            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`
           );
           added = true;
         }
