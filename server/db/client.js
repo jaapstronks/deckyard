@@ -118,12 +118,15 @@ export function isDatabaseAvailable() {
  * Install a stand-in database instance for tests.
  *
  * The storage layer reaches the database exclusively through getDb() behind
- * isDatabaseAvailable() (see storage/utils/db-guard.js), so injecting an
- * in-memory double here makes every storage module exercisable without a live
- * PostgreSQL server. Tests use tests/helpers/fake-db.js as the double.
+ * isDatabaseAvailable() (see storage/utils/db-guard.js), so injecting a
+ * stand-in here makes every storage module exercisable without going through
+ * initializeDatabase(). Most tests inject the in-memory double
+ * (tests/helpers/fake-db.js); the real-PostgreSQL suite (tests/pg/**, via
+ * tests/pg/helpers/harness.js) injects a live Kysely handle through this same
+ * seam.
  *
- * Test-only: production code must never call this. A real connection is only
- * ever created by initializeDatabase().
+ * Test-only: production code must never call this. The app's own connection is
+ * only ever created by initializeDatabase().
  *
  * @param {Object|null} testDb - Kysely-shaped double, or null to uninstall
  * @returns {void}

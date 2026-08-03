@@ -151,3 +151,63 @@ jobs:
           DATABASE_USER: deckyard
           DATABASE_PASSWORD: deckyard
           DATABASE_SSL: 'false'
+
+  # The storage layer's queries, against a real PostgreSQL. The `migrations` job
+  # above proves the schema builds and rolls back; this one runs the actual
+  # storage modules against the schema those migrations produce. Every other
+  # test in the repo runs against tests/helpers/fake-db.js, an in-memory double
+  # that models only the query shapes the storage layer uses and diverges from
+  # PostgreSQL exactly where it hurts: a `DO UPDATE ... WHERE` that returns no
+  # row (#423), a conflict target with the wrong columns, a `COALESCE(...) + n`
+  # upsert the double approximates. This suite installs a live Kysely handle
+  # through the same __setTestDb seam the double uses and exercises those paths
+  # on the database itself. That is option A in
+  # docs/plans/briefs/postgres-test-infra.md, the follow-up to D/C (#548/#551),
+  # unblocked once runUp became importable from server/db/migrate.js.
+  #
+  # A separate job, like `migrations` and `test-fork`, so it costs ~0 wall-clock
+  # on the critical path — GitHub runs it beside `test` — and a red mark reads
+  # as "a real-DB query broke" without opening the run. The suite is kept out of
+  # `npm test` by its `*.pgtest.js` naming (the default glob matches `*.test.js`
+  # only), so a local `npm test` with no database still runs the pure suite.
+  test-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: deckyard
+          POSTGRES_PASSWORD: deckyard
+          POSTGRES_DB: deckyard_pg_tests
+        ports:
+          - 5432:5432
+        # See the note in `migrations`: without the healthcheck the migrate step
+        # races the container's boot and loses.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Read by server/config/database.js for every connection this job opens
+      # (the migrate step and the suite alike). Shared at job level here because
+      # both steps need the identical set; the `migrations` job repeats them
+      # per-step only because its two steps predate this block.
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_NAME: deckyard_pg_tests
+      DATABASE_USER: deckyard
+      DATABASE_PASSWORD: deckyard
+      DATABASE_SSL: 'false'
+      STORAGE_MODE: postgres
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the schema the suite runs against
+        run: npm run db:migrate
+      - name: Run the storage-layer suite against PostgreSQL
+        run: npm run test:pg
