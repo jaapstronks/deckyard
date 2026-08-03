@@ -30,7 +30,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: var(--slide-space-12);
 }
 
 .slide-lead-capture .lead-capture-container {
@@ -59,15 +59,15 @@
   font-family: var(--font-heading);
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);
-  font-size: 52px;
-  line-height: 1.1;
-  margin: 0 0 16px;
+  font-size: var(--slide-text-3xl);
+  line-height: var(--slide-leading-tight);
+  margin: 0 0 var(--slide-space-4);
   color: var(--color-text);
   text-align: center;
 }
 
 .slide-lead-capture .lead-capture-description {
-  font-size: 24px;
+  font-size: var(--slide-text-md);
   line-height: 1.4;
   color: var(--color-text);
   opacity: 0.85;
@@ -83,13 +83,13 @@
 .slide-lead-capture .lead-capture-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--slide-space-6);
 }
 
 .slide-lead-capture .lead-capture-field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--slide-space-2);
 }
 
 .slide-lead-capture .lead-capture-label {
@@ -129,7 +129,7 @@
 
 /* Consent checkbox */
 .slide-lead-capture .lead-capture-consent {
-  margin-top: 8px;
+  margin-top: var(--slide-space-2);
 }
 
 .slide-lead-capture .lead-capture-consent-label {
@@ -167,7 +167,7 @@
 
 /* Submit button */
 .slide-lead-capture .lead-capture-actions {
-  margin-top: 12px;
+  margin-top: var(--slide-space-3);
 }
 
 .slide-lead-capture .lead-capture-submit {
@@ -175,7 +175,7 @@
   font-family: var(--font-heading);
   font-size: 22px;
   font-weight: 600;
-  padding: 20px 32px;
+  padding: var(--slide-space-5) var(--slide-space-8);
   border: none;
   border-radius: var(--slide-radius-md);
   background: var(--color-accent);
@@ -215,7 +215,7 @@
 /* Cookie notice */
 .slide-lead-capture .lead-capture-cookie-notice {
   text-align: center;
-  padding: 24px;
+  padding: var(--slide-space-6);
   background: var(--interaction-surface-2);
   border-radius: var(--slide-radius-md);
   border: 1px dashed var(--interaction-border);
@@ -223,7 +223,7 @@
 
 .slide-lead-capture .lead-capture-cookie-notice p {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--slide-text-base);
   color: var(--color-text);
   opacity: 0.7;
 }
@@ -242,7 +242,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: var(--slide-space-6);
 }
 
 .slide-lead-capture .lead-capture-thankyou-icon {
@@ -261,7 +261,7 @@
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);
   font-size: 56px;
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0;
   color: var(--color-text);
   text-align: center;

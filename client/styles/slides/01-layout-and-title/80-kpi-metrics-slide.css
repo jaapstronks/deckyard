@@ -10,7 +10,7 @@
 .slide-kpi-metrics .heading {
   font-family: var(--font-heading);
   font-size: calc(var(--slide-font-size-heading) + 6px);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0 0 28px;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -79,7 +79,7 @@
      The dead space a tall tile used to leave is taken by the note, which is
      pushed to the foot of the tile below. */
   justify-content: flex-start;
-  gap: 12px;
+  gap: var(--slide-space-3);
   border-radius: 26px;
   padding: 32px 34px;
   background: var(--kpi-tile-bg);
@@ -204,7 +204,7 @@
 .slide-kpi-metrics .kpi-value {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--slide-space-3);
   font-family: var(--font-heading);
   font-weight: 400;
   font-synthesis: none;
@@ -213,7 +213,7 @@
 }
 
 .slide-kpi-metrics .kpi-value-num {
-  font-size: 108px;
+  font-size: var(--slide-text-kpi-md);
   line-height: 1;
 }
 .slide-kpi-metrics .kpi-unit {
@@ -223,7 +223,7 @@
 }
 
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-value-num {
-  font-size: 156px;
+  font-size: var(--slide-text-kpi-lg);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-unit {
   font-size: 54px;
@@ -328,7 +328,7 @@
   padding: 22px 24px;
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-value-num {
-  font-size: 80px;
+  font-size: var(--slide-text-kpi-sm);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-value-num {
   font-size: 120px;

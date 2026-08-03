@@ -22,7 +22,7 @@
 .slide-follow-invite .sfi-body {
   margin-top: 10px;
   max-width: 70ch;
-  font-size: 24px;
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-compact);
   opacity: 0.92;
 }
@@ -41,7 +41,7 @@
   padding: 22px;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 12px;
+  gap: var(--slide-space-3);
   box-shadow: var(--slide-shadow-lg);
 }
 
@@ -71,11 +71,11 @@
   grid-template-columns: auto 1fr;
   gap: 18px;
   align-items: baseline;
-  padding: 8px 0;
+  padding: var(--slide-space-2) 0;
 }
 
 .slide-follow-invite .sfi-row-label {
-  font-size: 24px;
+  font-size: var(--slide-text-md);
   font-weight: 900;
   opacity: 0.78;
   white-space: nowrap;

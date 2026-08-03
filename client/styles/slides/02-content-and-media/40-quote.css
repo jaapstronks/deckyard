@@ -46,7 +46,7 @@
   font-weight: var(--heading-weight, 400);
   /* Wider column so a hero quote fills ~2/3 of the slide, not just over half. */
   max-width: 46ch;
-  margin-top: 8px;
+  margin-top: var(--slide-space-2);
 }
 /* The inline field is the inner <p>; it inherits the .quote-text size (single
    AND multi variants), so scale it with 1em * --tf-size-scale (per-field S/M/L,
@@ -58,15 +58,15 @@
   color: var(--quote-author-color);
   font-family: var(--font-mono);
   font-size: 22px;
-  line-height: 1.2;
+  line-height: var(--slide-leading-snug);
 }
 .slide-quote .quote-author .name {
   font-family: var(--font-mono);
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
   margin-bottom: 6px;
 }
 .slide-quote .quote-author .role {
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
   opacity: 0.92;
 }
 .slide-quote .quote-author.has-portraits {
@@ -134,7 +134,7 @@
 /* ---- Multi-quote (2-3 stacked quotes, alternating alignment) ---- */
 .slide-quote.is-multi .slide-inner {
   justify-content: center;
-  gap: 40px;
+  gap: var(--slide-space-10);
 }
 /* Two quotes read as too centered - push them apart so the first sits high and
    the second drops low, using the slide's full height (3 already fill it). */
@@ -163,7 +163,7 @@
    on the slide, so they stay uniform. Fallback 0.6 = the old 2-quote size. */
 .slide-quote.is-multi .quote-text {
   font-size: calc(var(--slide-font-size-title) * var(--quote-scale, 0.6));
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   max-width: none;
   margin-top: 0;
 }
@@ -171,18 +171,18 @@
   font-size: 18px;
 }
 .slide-quote.is-multi .quote-author .name {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
   margin-bottom: 2px;
 }
 .slide-quote.is-multi .quote-author .role {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
 }
 .slide-quote.is-multi .quote-portrait {
   width: 64px;
   height: 64px;
 }
 .slide-quote.is-multi .quote-author.has-portraits {
-  gap: 16px;
+  gap: var(--slide-space-4);
 }
 /* Right-aligned items put the portrait after the text, reading edge-in. */
 .slide-quote.is-multi .quote-item:nth-child(even) .quote-author.has-portraits {

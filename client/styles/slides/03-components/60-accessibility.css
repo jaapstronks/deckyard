@@ -11,6 +11,9 @@
   border: 0 !important;
 }
 
+/* This whole rule stays literal on purpose: `.skip-link` is page chrome that
+   renders outside the `.slide` root, where the `--slide-*` tokens are not
+   defined. The sheet is excluded from the slide-token gate for that reason. */
 .skip-link {
   position: absolute;
   left: 12px;

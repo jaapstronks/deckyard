@@ -4,7 +4,7 @@
   /* Content-slide headings should read a touch more like "titles".
      --tf-size-scale (per-field S/M/L, default 1) scales this heading when set. */
   font-size: calc((var(--slide-font-size-heading) + 6px) * var(--tf-size-scale, 1));
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -31,7 +31,7 @@
   font-size: calc(28px * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-normal);
   columns: 2;
-  column-gap: 64px;
+  column-gap: var(--slide-space-16);
   column-fill: auto; /* fill left column first, then flow to right */
   flex: 1;
   min-height: 0;
@@ -90,7 +90,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  margin: 24px 0 12px;
+  margin: var(--slide-space-6) 0 var(--slide-space-3);
   color: var(--color-text);
 }
 .slide-content.is-fit-medium .body .md-subheading {

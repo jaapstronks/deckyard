@@ -10,7 +10,7 @@
 .slide-pyramid .heading {
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-heading);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -18,7 +18,7 @@
 }
 
 .slide-pyramid .subheading {
-  margin-top: 8px;
+  margin-top: var(--slide-space-2);
   margin-bottom: 0;
 }
 
@@ -33,7 +33,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 16px 0;
+  padding: var(--slide-space-4) 0;
 }
 
 /* ===========================================
@@ -88,7 +88,7 @@
 .slide-pyramid .level-label {
   font-family: var(--font-heading);
   font-size: 22px;
-  line-height: 1.2;
+  line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -97,7 +97,7 @@
 
 .slide-pyramid .level-text {
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--slide-text-sm);
   line-height: 1.3;
   color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
 }
@@ -118,20 +118,20 @@
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-bar {
   min-height: 80px;
-  padding: 16px 40px;
+  padding: var(--slide-space-4) var(--slide-space-10);
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-label {
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-text {
-  font-size: 20px;
+  font-size: var(--slide-text-base);
 }
 
 /* 4 levels */
 .slide-pyramid .pyramid-container[data-count='4'] {
-  gap: 8px;
+  gap: var(--slide-space-2);
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-bar {
@@ -140,7 +140,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-label {
-  font-size: 24px;
+  font-size: var(--slide-text-md);
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-text {
@@ -151,12 +151,12 @@
 
 /* 6 levels: smallest */
 .slide-pyramid .pyramid-container[data-count='6'] {
-  gap: 4px;
+  gap: var(--slide-space-1);
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-bar {
   min-height: 40px;
-  padding: 8px 24px;
+  padding: var(--slide-space-2) var(--slide-space-6);
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-label {
@@ -164,7 +164,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-text {
-  font-size: 14px;
+  font-size: var(--slide-text-xs);
 }
 
 /* ===========================================
@@ -262,16 +262,16 @@
 
 @media (max-width: 1024px) {
   .slide-pyramid .pyramid-container {
-    gap: 4px;
+    gap: var(--slide-space-1);
   }
 
   .slide-pyramid .level-bar {
     min-height: 36px;
-    padding: 8px 20px;
+    padding: var(--slide-space-2) var(--slide-space-5);
   }
 
   .slide-pyramid .level-label {
-    font-size: 16px;
+    font-size: var(--slide-text-sm);
   }
 
   .slide-pyramid .level-text {

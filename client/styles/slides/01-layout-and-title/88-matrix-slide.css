@@ -24,7 +24,7 @@
 .slide-matrix .heading {
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-heading);
-  line-height: 1.1;
+  line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -204,7 +204,7 @@
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .slide-matrix .matrix-grid {
-    gap: 12px;
+    gap: var(--slide-space-3);
   }
 
   .slide-matrix .matrix-cell {
@@ -213,7 +213,7 @@
 
   .slide-matrix .cell-title {
     font-size: 26px;
-    margin-bottom: 12px;
+    margin-bottom: var(--slide-space-3);
   }
 
   .slide-matrix .cell-body {
