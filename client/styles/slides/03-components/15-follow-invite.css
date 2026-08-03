@@ -15,7 +15,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   letter-spacing: -0.02em;
-  font-size: 58px;
+  font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .slide-follow-invite .sfi-card-kicker {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   font-weight: 900;
   letter-spacing: -0.01em;
   opacity: 0.88;
@@ -82,7 +82,7 @@
 }
 
 .slide-follow-invite .sfi-go {
-  font-size: 42px;
+  font-size: var(--slide-text-2xl);
   font-weight: 900;
   letter-spacing: -0.02em;
   color: rgba(0, 0, 0, 0.88);
@@ -94,7 +94,7 @@
 
 .slide-follow-invite .sfi-code {
   font-family: var(--font-mono);
-  font-size: 78px;
+  font-size: var(--slide-text-5xl);
   font-weight: 900;
   letter-spacing: 0.14em;
   color: var(--color-accent);

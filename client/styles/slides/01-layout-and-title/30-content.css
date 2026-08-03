@@ -85,7 +85,7 @@
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
 .slide-content .body .md-subheading {
   font-family: var(--font-heading);
-  font-size: 32px;
+  font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -94,11 +94,11 @@
   color: var(--color-text);
 }
 .slide-content.is-fit-medium .body .md-subheading {
-  font-size: 29px;
+  font-size: var(--slide-text-lg);
   margin: 21px 0 11px;
 }
 .slide-content.is-compact .body .md-subheading {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
   margin: 18px 0 10px;
 }
 .slide-content .body .md-subheading:first-child {

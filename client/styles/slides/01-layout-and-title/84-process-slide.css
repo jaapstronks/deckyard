@@ -206,7 +206,7 @@
 /* Step title */
 .slide-process .step-title {
   font-family: var(--font-heading);
-  font-size: 26px; /* TODO: between --slide-text-md (24px) and --slide-text-lg (28px) */
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -282,15 +282,15 @@
 .slide-process .process-container[data-count='3'] .step-number {
   width: var(--slide-step-size-lg);
   height: var(--slide-step-size-lg);
-  font-size: 32px; /* TODO: between --slide-text-lg (28px) and --slide-text-xl (34px) */
+  font-size: var(--slide-text-xl);
 }
 
 .slide-process .process-container[data-count='3'] .step-title {
-  font-size: 30px; /* TODO: between --slide-text-lg (28px) and --slide-text-xl (34px) */
+  font-size: var(--slide-text-lg);
 }
 
 .slide-process .process-container[data-count='3'] .step-text {
-  font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+  font-size: var(--slide-text-md);
 }
 
 /* 4 items: slightly smaller */
@@ -323,7 +323,7 @@
 
 .slide-process .process-container[data-count='5'] .step-text,
 .slide-process .process-container[data-count='6'] .step-text {
-  font-size: 18px; /* TODO: between --slide-text-sm (16px) and --slide-text-base (20px) */
+  font-size: var(--slide-text-sm);
 }
 
 /* 7 items: smaller elements */
@@ -334,7 +334,7 @@
 }
 
 .slide-process .process-container[data-count='7'] .step-title {
-  font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+  font-size: var(--slide-text-base);
 }
 
 .slide-process .process-container[data-count='7'] .step-text {
@@ -383,11 +383,11 @@
   .slide-process .step-number {
     width: var(--slide-step-size-sm);
     height: var(--slide-step-size-sm);
-    font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+    font-size: var(--slide-text-base);
   }
 
   .slide-process .step-title {
-    font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+    font-size: var(--slide-text-base);
   }
 
   .slide-process .step-text {

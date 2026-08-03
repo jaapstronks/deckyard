@@ -272,7 +272,7 @@
   }
 
   .slide-gallery .gallery-caption {
-    font-size: 12px;
+    font-size: var(--slide-text-xs);
     padding: 6px 10px;
   }
 }

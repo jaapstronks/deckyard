@@ -57,7 +57,7 @@
 .slide-quote .quote-author {
   color: var(--quote-author-color);
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-snug);
 }
 .slide-quote .quote-author .name {
@@ -168,7 +168,7 @@
   margin-top: 0;
 }
 .slide-quote.is-multi .quote-author {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 .slide-quote.is-multi .quote-author .name {
   font-size: var(--slide-text-base);

@@ -218,6 +218,9 @@
   line-height: 1;
 }
 .slide-kpi-metrics .kpi-unit {
+  /* allowlist: KPI display figure — the unit is sized to its hero number, which
+     is fitted to the tile per metric-count on the coarse 3-step display scale
+     (kpi-sm/md/lg); these fills are layout measurements, not scale steps (slide-roles.md) */
   font-size: 40px;
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
@@ -228,13 +231,13 @@
   font-size: var(--slide-text-kpi-lg);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-unit {
-  font-size: 54px;
+  font-size: 54px; /* allowlist: KPI display figure (see .kpi-unit) */
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='4'] .kpi-value-num {
-  font-size: 96px;
+  font-size: 96px; /* allowlist: KPI display figure fitted to the 4-tile grid (see .kpi-unit) */
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='3'] .kpi-value-num {
-  font-size: 98px;
+  font-size: 98px; /* allowlist: KPI display figure fitted to the 3-tile grid (see .kpi-unit) */
 }
 
 .slide-kpi-metrics .kpi-label {
@@ -254,7 +257,7 @@
   gap: 12px 18px;
   align-items: baseline;
   font-family: var(--font-mono);
-  font-size: 26px;
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: var(--kpi-tile-fg-muted, var(--color-text-muted));
   /* `auto` is what takes the slack: value and label stay at the top edge, the
@@ -333,7 +336,7 @@
   font-size: var(--slide-text-kpi-sm);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-value-num {
-  font-size: 120px;
+  font-size: 120px; /* allowlist: KPI display figure fitted to the single tile with a bottom subheading (see .kpi-unit) */
 }
 
 

@@ -14,7 +14,7 @@
 }
 .slide-text-blocks .header .title {
   font-family: var(--font-heading);
-  font-size: 48px;
+  font-size: var(--slide-text-2xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 400);
@@ -42,7 +42,7 @@
 .slide-text-blocks .text-blocks-row-title {
   text-align: center;
   font-family: var(--font-heading);
-  font-size: 32px;
+  font-size: var(--slide-text-xl);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -105,7 +105,7 @@
 /* Block title */
 .slide-text-blocks .text-block-title {
   font-family: var(--font-heading);
-  font-size: 30px;
+  font-size: var(--slide-text-lg);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -143,7 +143,7 @@
 .slide-text-blocks
   .text-blocks-row[data-count='1']
   .text-block-title {
-  font-size: 36px;
+  font-size: var(--slide-text-xl);
 }
 .slide-text-blocks
   .text-blocks-row[data-count='1']
@@ -155,12 +155,12 @@
 .slide-text-blocks
   .text-blocks-row[data-count='3']
   .text-block-title {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
 }
 .slide-text-blocks
   .text-blocks-row[data-count='3']
   .text-block-body {
-  font-size: 21px;
+  font-size: var(--slide-text-base);
 }
 
 /* Four or more blocks - smaller */
@@ -173,7 +173,7 @@
 .slide-text-blocks
   .text-blocks-row[data-count='6']
   .text-block-title {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
 }
 .slide-text-blocks
   .text-blocks-row[data-count='4']
@@ -184,14 +184,14 @@
 .slide-text-blocks
   .text-blocks-row[data-count='6']
   .text-block-body {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 
 /* Arrow between rows */
 .slide-text-blocks .text-blocks-arrow {
   text-align: center;
   margin: var(--slide-space-4) 0;
-  font-size: 40px;
+  font-size: var(--slide-text-2xl);
   font-weight: 700;
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
@@ -214,7 +214,7 @@
   font-size: var(--slide-text-lg);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row-title {
-  font-size: 26px;
+  font-size: var(--slide-text-lg);
   margin: 0 0 10px;
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row + .text-blocks-row {
@@ -227,7 +227,7 @@
   padding: 18px 22px;
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-title {
-  font-size: 21px;
+  font-size: var(--slide-text-base);
   margin-bottom: 6px;
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-body {
@@ -237,10 +237,10 @@
 
 /* Compact mode + 3 blocks per row */
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-title {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-body {
-  font-size: 17px;
+  font-size: var(--slide-text-sm);
 }
 
 /* Compact mode + 4 or more blocks per row */
@@ -252,7 +252,7 @@
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block-body,
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block-body,
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block-body {
-  font-size: 15px;
+  font-size: var(--slide-text-xs);
 }
 
 /* Compact mode: 4 rows present (A0.4).
@@ -267,10 +267,10 @@
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-arrow {
   margin: 3px 0;
-  font-size: 22px;
+  font-size: var(--slide-text-base);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row-title {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   margin: 0 0 6px;
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row + .text-blocks-row {
@@ -283,17 +283,17 @@
   padding: var(--slide-space-3) var(--slide-space-4);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-title {
-  font-size: 19px;
+  font-size: var(--slide-text-sm);
   margin-bottom: var(--slide-space-1);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-body {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
 }
 
 /* Compact 4-row + 3 blocks per row */
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='3'] .text-block-title {
-  font-size: 17px;
+  font-size: var(--slide-text-sm);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='3'] .text-block-body {
   font-size: var(--slide-text-sm);
@@ -303,7 +303,7 @@
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-title,
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block-title,
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block-title {
-  font-size: 15px;
+  font-size: var(--slide-text-xs);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-body,
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block-body,

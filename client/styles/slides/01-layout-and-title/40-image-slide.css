@@ -134,7 +134,7 @@
   padding: 16px 22px;
   background: rgba(0, 0, 0, 0.45);
   border-radius: var(--slide-radius-sm);
-  font-size: 38px;
+  font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-compact);
   color: rgba(255, 255, 255, 0.92);
   display: inline-block;

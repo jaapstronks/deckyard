@@ -33,7 +33,7 @@
 }
 .slide-chart .chart-subtitle {
   margin-top: 10px;
-  font-size: 26px;
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
   color: var(--color-text-muted);
   max-width: 70ch;
@@ -257,14 +257,14 @@
 }
 .slide-chart .chart-error-title {
   font-family: var(--font-heading);
-  font-size: 22px;
+  font-size: var(--slide-text-md);
   margin-bottom: 10px;
   color: rgba(0, 0, 0, 0.9);
 }
 .slide-chart .chart-error-list {
   margin: 0;
   padding-left: 1.2em;
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-normal);
   color: rgba(0, 0, 0, 0.82);
 }

@@ -87,7 +87,7 @@
 
 .slide-pyramid .level-label {
   font-family: var(--font-heading);
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -144,7 +144,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-text {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 
 /* 5 levels: default sizing (defined above) */
@@ -160,7 +160,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-label {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-text {
@@ -275,7 +275,7 @@
   }
 
   .slide-pyramid .level-text {
-    font-size: 13px;
+    font-size: var(--slide-text-xs);
   }
 }
 

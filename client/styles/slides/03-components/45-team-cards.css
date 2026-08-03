@@ -252,7 +252,7 @@
 
 .slide-team-cards .header .title {
   font-family: var(--font-heading);
-  font-size: 48px;
+  font-size: var(--slide-text-2xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: 400;
@@ -375,7 +375,7 @@
   align-items: center;
   justify-content: center;
   margin-top: 6px;
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   color: var(--color-text-muted);
   text-decoration: none;
   transition: color 0.15s ease, transform 0.15s ease;
@@ -403,7 +403,7 @@
 .slide-team-cards[data-card-count='2'] .team-card-byline,
 .slide-team-cards[data-card-count='3'] .team-card-byline,
 .slide-team-cards[data-card-count='4'] .team-card-byline {
-  font-size: 22px;
+  font-size: var(--slide-text-md);
 }
 
 /* Smaller text for 5-6 cards (more compact single-row layout) */
@@ -414,7 +414,7 @@
 
 .slide-team-cards[data-card-count='5'] .team-card-byline,
 .slide-team-cards[data-card-count='6'] .team-card-byline {
-  font-size: 17px;
+  font-size: var(--slide-text-sm);
 }
 
 /* Compact labels for large grids (13–18) */
@@ -424,7 +424,7 @@
 .slide-team-cards[data-card-count='16'] .team-card-name,
 .slide-team-cards[data-card-count='17'] .team-card-name,
 .slide-team-cards[data-card-count='18'] .team-card-name {
-  font-size: 17px;
+  font-size: var(--slide-text-sm);
   margin-bottom: 2px;
 }
 .slide-team-cards[data-card-count='13'] .team-card-byline,
@@ -444,7 +444,7 @@
 .slide-team-cards[data-card-count='23'] .team-card-name,
 .slide-team-cards[data-card-count='24'] .team-card-name,
 .slide-team-cards[data-card-count='25'] .team-card-name {
-  font-size: 15px;
+  font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-tight);
   margin-bottom: 1px;
 }
@@ -455,24 +455,24 @@
 .slide-team-cards[data-card-count='23'] .team-card-byline,
 .slide-team-cards[data-card-count='24'] .team-card-byline,
 .slide-team-cards[data-card-count='25'] .team-card-byline {
-  font-size: 12px;
+  font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-snug);
 }
 
 /* Even smaller text when bottom subheading is present */
 .slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-name,
 .slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-name {
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
 }
 
 .slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-byline,
 .slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-byline {
-  font-size: 15px;
+  font-size: var(--slide-text-xs);
 }
 
 .slide-team-cards .team-cards-empty {
   font-family: var(--font-body);
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 60%, transparent);
   text-align: center;

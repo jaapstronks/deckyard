@@ -3,8 +3,8 @@
 **Normative target, decided 2026-08-03.** This document describes the single
 vocabulary slide CSS is converging on. Implementation status, honestly: the
 tokens below all exist in `client/styles/slides/00-tokens.css`, but adoption in
-the slide stylesheets is still uneven per axis — leading and radius are
-essentially done, spacing is the long tail; the live figures are the per-file,
+the slide stylesheets is still uneven per axis — leading, radius and font-size
+are essentially done, spacing is the long tail; the live figures are the per-file,
 per-category budgets in `slide-css-suppressions.json` — and
 the legacy alias families listed at the bottom still have live consumers. The
 gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
@@ -193,6 +193,16 @@ occurrence:
   box *is* the layout: raising it to `tight` decentres the badge. The leading
   steps describe text rhythm, and these carriers have none. Marked in place
   with an `allowlist:` comment;
+- **KPI display figures** — the hero number on a metric tile and the unit
+  beside it (`80-kpi-metrics-slide.css`). Their `font-size` is fitted to the
+  tile geometry per `data-metric-count` (a 4-tile grid needs a smaller figure
+  than a single tile), and the display scale that carries them
+  (`--slide-text-kpi-{sm,md,lg}`) is deliberately coarse — three steps for the
+  common counts. The in-between fills (a 3- or 4-tile figure, the
+  bottom-subheading variant, the units) are layout measurements against the
+  tile, not text-scale steps; snapping them up to the nearest display step
+  reintroduces overflow at the denser counts. Marked in place with an
+  `allowlist:` comment;
 - the `--tf-size-scale` expressions of the text-style controls;
 - em-based micro-typography (letter-spacing-relative sizing);
 - private locals as readability aliases (`--team-gap-x`) — allowed only when

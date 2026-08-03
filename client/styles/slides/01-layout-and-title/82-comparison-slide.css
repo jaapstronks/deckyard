@@ -197,7 +197,7 @@
   }
 
   .slide-comparison .comparison-verdict .badge {
-    font-size: 18px;
+    font-size: var(--slide-text-sm);
     padding: 10px 22px;
   }
 }

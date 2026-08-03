@@ -272,7 +272,7 @@
 
 .image-placeholder-text {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: var(--slide-text-sm);
   letter-spacing: 0.02em;
 }
 
