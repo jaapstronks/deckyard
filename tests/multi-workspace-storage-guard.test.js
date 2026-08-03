@@ -5,10 +5,11 @@ import { multiWorkspaceStorageError } from '../server/config/features.js';
 /**
  * Tenant-isolation boot guard: MULTI_WORKSPACE_ENABLED serves multiple
  * organizations from one instance, so deck isolation must come from the
- * storage layer. The Postgres backend scopes every query by organization_id;
- * the file backend has no org dimension and would leak workspace decks across
- * tenants. The guard must fail closed (return an error string) on the file
- * backend and pass (null) on Postgres. Sandbox is single-org and exempt.
+ * storage layer. The guard failed closed on the file backend, which had no
+ * org dimension; that backend was removed in 1.x, so every mode now resolves
+ * to Postgres and the guard can no longer fire. It is inert and slated for
+ * removal with the rest of the one-backend cleanup; until then this pins
+ * that it never blocks a supported boot.
  *
  * The function reads process.env at call time, so we toggle env per case.
  */
@@ -30,27 +31,17 @@ function withEnv(env, fn) {
   }
 }
 
-test('no error when multi-workspace is disabled (single-org, any backend)', () => {
+test('no error when multi-workspace is disabled (single-org)', () => {
   withEnv({ MULTI_WORKSPACE_ENABLED: undefined, STORAGE_MODE: undefined }, () => {
     assert.equal(multiWorkspaceStorageError(), null);
   });
-  withEnv({ MULTI_WORKSPACE_ENABLED: 'false', STORAGE_MODE: 'file' }, () => {
-    assert.equal(multiWorkspaceStorageError(), null);
-  });
-});
-
-test('fails closed: multi-workspace on the file backend returns an error', () => {
-  for (const flag of ['1', 'true', 'yes', 'on']) {
-    withEnv({ MULTI_WORKSPACE_ENABLED: flag, STORAGE_MODE: 'file', SANDBOX_MODE: undefined }, () => {
-      const err = multiWorkspaceStorageError();
-      assert.ok(err, `expected an error for flag=${flag}`);
-      assert.match(err, /Postgres/, 'error should point at the Postgres requirement');
-    });
-  }
 });
 
 test('no error: multi-workspace on Postgres, including the default (unset) mode', () => {
-  for (const mode of ['postgres', undefined]) {
+  // A removed backend cannot be selected, so even a stale STORAGE_MODE=file in
+  // the environment resolves to Postgres here (the boot stops on it earlier,
+  // in storageModeError()).
+  for (const mode of ['postgres', undefined, 'file']) {
     withEnv({ MULTI_WORKSPACE_ENABLED: 'true', STORAGE_MODE: mode, SANDBOX_MODE: undefined }, () => {
       assert.equal(multiWorkspaceStorageError(), null, `mode=${mode}`);
     });
@@ -58,7 +49,7 @@ test('no error: multi-workspace on Postgres, including the default (unset) mode'
 });
 
 test('sandbox is exempt: single-org anonymous instance never triggers the guard', () => {
-  withEnv({ MULTI_WORKSPACE_ENABLED: 'true', STORAGE_MODE: 'file', SANDBOX_MODE: 'true' }, () => {
+  withEnv({ MULTI_WORKSPACE_ENABLED: 'true', SANDBOX_MODE: 'true' }, () => {
     assert.equal(multiWorkspaceStorageError(), null);
   });
 });

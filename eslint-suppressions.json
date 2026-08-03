@@ -189,11 +189,6 @@
       "count": 1
     }
   },
-  "server/storage/presentations/versions.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/utils/ai/revise-outline.js": {
     "no-useless-assignment": {
       "count": 1

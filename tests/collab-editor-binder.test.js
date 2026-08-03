@@ -9,20 +9,25 @@
  * Run with: node --test tests/collab-editor-binder.test.js
  */
 
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
 process.env.COLLAB_ENABLED = 'true';
 process.env.COLLAB_LIVE_EDITS = 'true';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_SECRET;
 delete process.env.AUTH_DEV_BYPASS;
 
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
 const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mount.js');
 const { createPresentation, getPresentation } = await import(
   '../server/storage/presentations/index.js'
@@ -31,6 +36,20 @@ const { createPresenceSession } = await import('../client/lib/collab/presence-se
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');
 const { createLiveDocBinder } = await import('../client/lib/collab/live-doc-binder.js');
+
+// The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
+// is the only backend.
+const REPO_ROOT = process.cwd();
+
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
+// `closeStorage()` would call `db.destroy()`, which the in-memory double does
+// not have — drop the adapter singleton instead.
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 /** Poll until `fn()` is truthy or the timeout elapses. */
 async function waitFor(fn, { timeout = 8000, interval = 25 } = {}) {
@@ -46,15 +65,14 @@ async function waitFor(fn, { timeout = 8000, interval = 25 } = {}) {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 test('editor binder: two clients over a live mount', async (t) => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-binder-'));
-  const stored = await createPresentation(testScope(repoRoot), {
+  const stored = await createPresentation(testScope(), {
     title: 'Binder deck',
     ownerEmail: 'anonymous',
     lang: 'nl',
   });
 
   const server = http.createServer((req, res) => res.end('ok'));
-  const hocuspocus = await maybeAttachCollab(server, { repoRoot });
+  const hocuspocus = await maybeAttachCollab(server, { repoRoot: REPO_ROOT });
   assert.ok(hocuspocus, 'collab should mount');
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const url = `ws://127.0.0.1:${server.address().port}/collab`;
@@ -67,7 +85,7 @@ test('editor binder: two clients over a live mount', async (t) => {
       url,
     });
     const doc = session._provider.document;
-    const pres = structuredClone(await getPresentation(testScope(repoRoot), stored.id));
+    const pres = structuredClone(await getPresentation(testScope(), stored.id));
     const remoteEvents = [];
     const binder = createLiveDocBinder({
       Y,
@@ -92,7 +110,6 @@ test('editor binder: two clients over a live mount', async (t) => {
     b.session.destroy();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
-    rmSync(repoRoot, { recursive: true, force: true });
   });
 
   const firstId = a.pres.slides[0].id;
@@ -313,7 +330,7 @@ test('editor binder: two clients over a live mount', async (t) => {
 
   await t.test('the debounced store persists the converged deck JSON', async () => {
     const p = await waitFor(async () => {
-      const cur = await getPresentation(testScope(repoRoot), stored.id);
+      const cur = await getPresentation(testScope(), stored.id);
       return cur?.title === 'Onze binder-deck' && cur?.i18n?.versions?.['en-GB'] ? cur : null;
     });
     assert.ok(p.slides.some((s) => s.id === listId));

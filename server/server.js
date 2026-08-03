@@ -228,7 +228,7 @@ for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
 }
 
 await ensureDirs();
-await initializeStorage(repoRoot);
+await initializeStorage();
 
 // Data check: an empty database next to a populated file-storage data
 // directory means this install predates the Postgres default and has not been

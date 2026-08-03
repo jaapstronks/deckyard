@@ -11,7 +11,6 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { isPostgresMode } from '../config/database.js';
 import { dataDir } from '../config/storage-paths.js';
 import { getDb, isDatabaseAvailable } from '../db/client.js';
 
@@ -61,8 +60,6 @@ async function databaseHasPresentations() {
  * @returns {Promise<string|null>} Error message, or null when the boot is fine.
  */
 export async function strandedFileDataError(repoRoot) {
-  if (!isPostgresMode()) return null;
-
   const hasDbData = await databaseHasPresentations();
   if (hasDbData !== false) return null;
 
@@ -75,10 +72,9 @@ export async function strandedFileDataError(repoRoot) {
     `file-storage data directory is not empty:\n` +
     `  ${dir} - ${fileCount} deck${fileCount === 1 ? '' : 's'}\n` +
     `Starting now would show an empty workspace next to your data, so Deckyard stops here.\n` +
-    `Your files have not been touched. Pick one:\n` +
-    `  1. Import them into Postgres (idempotent, safe to repeat):\n` +
-    `       npm run db:migrate && npm run db:import\n` +
-    `     Inside docker compose: docker compose exec app npm run db:import\n` +
-    `  2. Keep serving them from disk: set STORAGE_MODE=file in .env.`
+    `Your files have not been touched. Import them into Postgres (idempotent, safe to repeat):\n` +
+    `    npm run db:migrate && npm run db:import\n` +
+    `  Inside docker compose: docker compose exec app npm run db:import\n` +
+    `The file backend itself was removed in 1.x, so STORAGE_MODE=file is no longer a way out.`
   );
 }

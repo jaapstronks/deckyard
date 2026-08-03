@@ -9,53 +9,51 @@
  * A): every writer, admins included, must supply If-Match and go through the
  * same merge path.
  *
- * These tests drive the real route handlers against a temp storage root and
- * assert both the admin and the owner get 428 without If-Match, and that a
- * well-formed If-Match still succeeds for an admin (the merge path is intact,
- * not just blanket-blocked).
+ * These tests drive the real route handlers against the Postgres adapter on the
+ * in-memory database double (tests/helpers/fake-db.js) and assert both the admin
+ * and the owner get 428 without If-Match, and that a well-formed If-Match still
+ * succeeds for an admin (the merge path is intact, not just blanket-blocked).
  *
  * Run with: node --test tests/admin-ifmatch-required.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
-let repoRoot;
-let createPresentation;
-let getPresentation;
-let handlePresentationItem;
-let handlePresentationScope;
-let handlePresentationRestoreVersion;
-let createPresentationVersion;
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
+// Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { createPresentation, getPresentation, createPresentationVersion } = await import(
+  '../server/storage/presentations/index.js'
+);
+const { handlePresentationItem } = await import(
+  '../server/routes/api/presentations/presentation.js'
+);
+const { handlePresentationScope } = await import(
+  '../server/routes/api/presentations/scope.js'
+);
+const { handlePresentationRestoreVersion } = await import(
+  '../server/routes/api/presentations/restore.js'
+);
 
 const OWNER = 'owner@example.com';
 
 test.before(async () => {
-  repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-ifmatch-repo-'));
-  ({ createPresentation, getPresentation, createPresentationVersion } = await import(
-    '../server/storage/presentations/index.js'
-  ));
-  ({ handlePresentationItem } = await import(
-    '../server/routes/api/presentations/presentation.js'
-  ));
-  ({ handlePresentationScope } = await import(
-    '../server/routes/api/presentations/scope.js'
-  ));
-  ({ handlePresentationRestoreVersion } = await import(
-    '../server/routes/api/presentations/restore.js'
-  ));
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
 });
 
 test.after(() => {
-  try {
-    fs.rmSync(repoRoot, { recursive: true, force: true });
-  } catch {
-    /* best effort */
-  }
+  __resetStorageForTests();
+  __setTestDb(null);
 });
 
 /** A request whose body streams `body` as JSON, with the given method/headers. */
@@ -88,7 +86,7 @@ function fakeRes() {
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
-  return createPresentation(testScope(repoRoot), {
+  return createPresentation(testScope(), {
     title: 'Lockable deck',
     ownerEmail: OWNER,
     slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
@@ -103,8 +101,7 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
   const res = fakeRes();
   await handlePresentationItem(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
       res,
       url: `/api/presentations/${pres.id}`,
@@ -114,7 +111,7 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
   );
   assert.equal(res.statusCode, 428, 'admin must supply If-Match, no blind overwrite');
   // The deck is untouched — the write never happened.
-  const after = await getPresentation(testScope(repoRoot), pres.id);
+  const after = await getPresentation(testScope(), pres.id);
   assert.equal(after.title, 'Lockable deck', 'title unchanged');
 });
 
@@ -123,8 +120,7 @@ test('PUT without If-Match is 428 for a non-admin owner too', async () => {
   const res = fakeRes();
   await handlePresentationItem(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
       res,
       url: `/api/presentations/${pres.id}`,
@@ -140,8 +136,7 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
   const res = fakeRes();
   await handlePresentationItem(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({
         method: 'PUT',
         headers: { 'if-match': String(pres.revision) },
@@ -154,7 +149,7 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
     pres.id
   );
   assert.equal(res.statusCode, 200, 'the merge path is intact, not blanket-blocked');
-  const after = await getPresentation(testScope(repoRoot), pres.id);
+  const after = await getPresentation(testScope(), pres.id);
   assert.equal(after.title, 'Properly merged');
 });
 
@@ -163,8 +158,7 @@ test('POST /scope without If-Match is 428 for an admin', async () => {
   const res = fakeRes();
   await handlePresentationScope(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({ method: 'PATCH', headers: {}, body: { scope: 'workspace' } }),
       res,
       authedUser: admin,
@@ -176,14 +170,13 @@ test('POST /scope without If-Match is 428 for an admin', async () => {
 
 test('POST /restore without If-Match is 428 for an admin', async () => {
   const pres = await seedDeck();
-  const version = await createPresentationVersion(testScope(repoRoot), pres.id, pres, {
+  const version = await createPresentationVersion(testScope(), pres.id, pres, {
     actorEmail: OWNER,
   });
   const res = fakeRes();
   await handlePresentationRestoreVersion(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({ method: 'POST', headers: {}, body: {} }),
       res,
       authedUser: admin,

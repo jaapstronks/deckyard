@@ -1,9 +1,9 @@
 /**
  * Storage adapter factory.
- * Selects the appropriate storage backend based on configuration.
+ * PostgreSQL is the only storage backend; the file backend was removed in 1.x
+ * (run `npm run db:import` once against an old data directory to move it in).
  */
 
-import { getStorageMode } from '../../config/database.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('adapters');
 
@@ -11,30 +11,18 @@ const log = createLogger('adapters');
 let adapter = null;
 
 /**
- * Initialize the storage adapter based on configuration.
- * @param {string} repoRoot - Repository root path (needed for file adapter)
+ * Initialize the storage adapter.
  * @returns {Promise<import('./interface.js').StorageAdapter>}
  */
-export async function initializeStorage(repoRoot) {
+export async function initializeStorage() {
   if (adapter) {
     return adapter;
   }
 
-  const mode = getStorageMode();
-
-  log.info(`[Storage] Mode: ${mode}`);
-
-  if (mode === 'postgres') {
-    const { PostgresAdapter } = await import('./postgres-adapter.js');
-    adapter = new PostgresAdapter();
-    await adapter.initialize();
-    log.info('[Storage] Initialized PostgreSQL adapter');
-  } else {
-    const { FileAdapter } = await import('./file-adapter.js');
-    adapter = new FileAdapter(repoRoot);
-    await adapter.initialize();
-    log.info('[Storage] Initialized file adapter');
-  }
+  const { PostgresAdapter } = await import('./postgres-adapter.js');
+  adapter = new PostgresAdapter();
+  await adapter.initialize();
+  log.info('[Storage] Initialized PostgreSQL adapter');
 
   return adapter;
 }

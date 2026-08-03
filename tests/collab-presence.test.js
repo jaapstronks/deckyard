@@ -1,18 +1,23 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
 // Enable the collab feature before the mount module reads it. Auth stays in
 // its dev default (disabled → anonymous admin), except in the 401 subtest.
 process.env.COLLAB_ENABLED = 'true';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_SECRET;
 delete process.env.AUTH_DEV_BYPASS;
 
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
 const { maybeAttachCollab, shutdownCollab } = await import(
   '../server/collab/mount.js'
 );
@@ -22,6 +27,20 @@ const { createPresentation } = await import(
 const { createPresenceSession } = await import(
   '../client/lib/collab/presence-session.js'
 );
+
+// The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
+// is the only backend.
+const REPO_ROOT = process.cwd();
+
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
+// `closeStorage()` would call `db.destroy()`, which the in-memory double does
+// not have — drop the adapter singleton instead.
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 /** Poll until `fn()` is truthy or the timeout elapses. */
 async function waitFor(fn, { timeout = 5000, interval = 25 } = {}) {
@@ -34,9 +53,9 @@ async function waitFor(fn, { timeout = 5000, interval = 25 } = {}) {
   }
 }
 
-async function startCollabServer(repoRoot) {
+async function startCollabServer() {
   const server = http.createServer((req, res) => res.end('ok'));
-  const hocuspocus = await maybeAttachCollab(server, { repoRoot });
+  const hocuspocus = await maybeAttachCollab(server, { repoRoot: REPO_ROOT });
   assert.ok(hocuspocus, 'collab should mount when COLLAB_ENABLED=true');
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address();
@@ -44,14 +63,13 @@ async function startCollabServer(repoRoot) {
 }
 
 test('presence: two clients on the same deck see each other', async (t) => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-collab-'));
-  const pres = await createPresentation(testScope(repoRoot), {
+  const pres = await createPresentation(testScope(), {
     title: 'Collab test deck',
     ownerEmail: 'anonymous',
   });
   assert.ok(pres?.id, 'presentation should be created');
 
-  const { server, url } = await startCollabServer(repoRoot);
+  const { server, url } = await startCollabServer();
 
   const alice = createPresenceSession({
     presentationId: pres.id,
@@ -93,8 +111,7 @@ test('presence: two clients on the same deck see each other', async (t) => {
 });
 
 test('presence: unknown document is rejected', async (t) => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-collab-'));
-  const { server, url } = await startCollabServer(repoRoot);
+  const { server, url } = await startCollabServer();
 
   const session = createPresenceSession({
     presentationId: 'no-such-presentation',
@@ -125,7 +142,6 @@ test('presence: unknown document is rejected', async (t) => {
 });
 
 test('presence: upgrade without a session is rejected when auth is on', async (t) => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-collab-'));
   process.env.AUTH_ENABLED = 'true';
   process.env.AUTH_SECRET = 'test-secret-for-collab-auth';
   t.after(() => {
@@ -133,7 +149,7 @@ test('presence: upgrade without a session is rejected when auth is on', async (t
     delete process.env.AUTH_SECRET;
   });
 
-  const { server, url } = await startCollabServer(repoRoot);
+  const { server, url } = await startCollabServer();
 
   // Raw WebSocket (no cookie): the upgrade must be refused with an HTTP error.
   let ws;

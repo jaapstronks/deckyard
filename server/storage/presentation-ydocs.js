@@ -1,7 +1,5 @@
 /**
  * Collab Y.Doc state facade.
- * Uses the storage adapter when initialized, falls back to file-based storage
- * (same pattern as presentations.js).
  *
  * Every function takes a **storage scope** rather than a bare `repoRoot`: the
  * organization comes from the caller, never from a default (see
@@ -10,10 +8,8 @@
  * state on the wrong workspace's deck.
  */
 
-import { repoRootOf } from './scope.js';
-import { createStorageDispatch, toStorageContext } from './backend-dispatch.js';
-
-const withStorageFallback = createStorageDispatch(() => import('./presentations/ydoc-state.js'));
+import { getStorage } from './adapters/index.js';
+import { toStorageContext } from './backend-dispatch.js';
 
 /**
  * Read the stored Y.Doc state (one merged yjs update) for a presentation.
@@ -23,12 +19,8 @@ const withStorageFallback = createStorageDispatch(() => import('./presentations/
  */
 export async function getYDocState(scope, id) {
   const ctx = toStorageContext(scope, 'getYDocState');
-  return withStorageFallback(
-    scope,
-    'getYDocState',
-    (storage) => storage.getYDocState(id, ctx),
-    (mod) => mod.getYDocState(repoRootOf(scope), id)
-  );
+  const storage = getStorage();
+  return storage.getYDocState(id, ctx);
 }
 
 /**
@@ -40,12 +32,8 @@ export async function getYDocState(scope, id) {
  */
 export async function setYDocState(scope, id, state) {
   const ctx = toStorageContext(scope, 'setYDocState');
-  return withStorageFallback(
-    scope,
-    'setYDocState',
-    (storage) => storage.setYDocState(id, state, ctx),
-    (mod) => mod.setYDocState(repoRootOf(scope), id, state)
-  );
+  const storage = getStorage();
+  return storage.setYDocState(id, state, ctx);
 }
 
 /**
@@ -56,10 +44,6 @@ export async function setYDocState(scope, id, state) {
  */
 export async function deleteYDocState(scope, id) {
   const ctx = toStorageContext(scope, 'deleteYDocState');
-  return withStorageFallback(
-    scope,
-    'deleteYDocState',
-    (storage) => storage.deleteYDocState(id, ctx),
-    (mod) => mod.deleteYDocState(repoRootOf(scope), id)
-  );
+  const storage = getStorage();
+  return storage.deleteYDocState(id, ctx);
 }

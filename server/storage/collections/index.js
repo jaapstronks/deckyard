@@ -1,9 +1,8 @@
 /**
  * Slide collections storage facade.
- * Uses the storage adapter when initialized, falls back to file-based storage.
  *
- * A collection is a named, ordered, scoped set of slide-library item ids
- * (see ./file.js). It stores references only, never slide content.
+ * A collection is a named, ordered, scoped set of slide-library item ids. It
+ * stores references only, never slide content.
  *
  * Every function takes a **storage scope** rather than a bare `repoRoot`, so the
  * organization comes from the caller instead of a hardcoded default — see
@@ -16,10 +15,8 @@
  * (who may see it). They are unrelated.
  */
 
-import { repoRootOf } from '../scope.js';
-import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
-
-const withStorageFallback = createStorageDispatch(() => import('./file.js'));
+import { getStorage } from '../adapters/index.js';
+import { toStorageContext } from '../backend-dispatch.js';
 
 function cleanName(input) {
   return typeof input?.name === 'string' ? input.name.trim() : '';
@@ -30,106 +27,76 @@ function cleanName(input) {
 // ============================================================
 
 export async function listPersonalCollections(storageScope, userEmail) {
-  return withStorageFallback(
-    storageScope,
-    'listPersonalCollections',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'listPersonalCollections', { userEmail });
-      const items = await storage.listSlideCollections(ctx, {
-        scope: 'personal',
-        ownerEmail: String(userEmail || '').toLowerCase(),
-      });
-      return { items };
-    },
-    (mod) => mod.listPersonalCollections(repoRootOf(storageScope), userEmail)
-  );
+  const ctx = toStorageContext(storageScope, 'listPersonalCollections', { userEmail });
+  const storage = getStorage();
+  const items = await storage.listSlideCollections(ctx, {
+    scope: 'personal',
+    ownerEmail: String(userEmail || '').toLowerCase(),
+  });
+  return { items };
 }
 
 export async function getPersonalCollection(storageScope, userEmail, id) {
-  return withStorageFallback(
-    storageScope,
-    'getPersonalCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'getPersonalCollection', { userEmail });
-      const item = await storage.getSlideCollection(id, ctx);
-      if (!item || item.scope !== 'personal') return null;
-      const owner = String(userEmail || '').toLowerCase();
-      if (String(item.ownerEmail || '').toLowerCase() !== owner) return null;
-      return item;
-    },
-    (mod) => mod.getPersonalCollection(repoRootOf(storageScope), userEmail, id)
-  );
+  const ctx = toStorageContext(storageScope, 'getPersonalCollection', { userEmail });
+  const storage = getStorage();
+  const item = await storage.getSlideCollection(id, ctx);
+  if (!item || item.scope !== 'personal') return null;
+  const owner = String(userEmail || '').toLowerCase();
+  if (String(item.ownerEmail || '').toLowerCase() !== owner) return null;
+  return item;
 }
 
 export async function createPersonalCollection(storageScope, userEmail, input, { actorEmail } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'createPersonalCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'createPersonalCollection', { userEmail, actorEmail });
-      if (!cleanName(input)) return { ok: false, reason: 'name_required' };
-      const item = await storage.createSlideCollection(
-        {
-          name: cleanName(input),
-          description: input?.description,
-          slideIds: input?.slideIds,
-          scope: 'personal',
-          ownerEmail: String(userEmail || '').toLowerCase(),
-        },
-        ctx
-      );
-      if (!item) return { ok: false, reason: 'create_failed' };
-      return { ok: true, item };
+  const ctx = toStorageContext(storageScope, 'createPersonalCollection', { userEmail, actorEmail });
+  const storage = getStorage();
+  if (!cleanName(input)) return { ok: false, reason: 'name_required' };
+  const item = await storage.createSlideCollection(
+    {
+      name: cleanName(input),
+      description: input?.description,
+      slideIds: input?.slideIds,
+      scope: 'personal',
+      ownerEmail: String(userEmail || '').toLowerCase(),
     },
-    (mod) => mod.createPersonalCollection(repoRootOf(storageScope), userEmail, input, { actorEmail })
+    ctx
   );
+  if (!item) return { ok: false, reason: 'create_failed' };
+  return { ok: true, item };
 }
 
 export async function updatePersonalCollection(storageScope, userEmail, id, patch, { actorEmail } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'updatePersonalCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'updatePersonalCollection', { userEmail, actorEmail });
-      // Ownership check: only the owner may mutate their personal collection.
-      const existing = await storage.getSlideCollection(id, ctx);
-      const owner = String(userEmail || '').toLowerCase();
-      if (
-        !existing ||
-        existing.scope !== 'personal' ||
-        String(existing.ownerEmail || '').toLowerCase() !== owner
-      ) {
-        return { ok: false, reason: 'not_found' };
-      }
-      const item = await storage.updateSlideCollection(id, patch, ctx);
-      if (!item) return { ok: false, reason: 'not_found' };
-      return { ok: true, item };
-    },
-    (mod) => mod.updatePersonalCollection(repoRootOf(storageScope), userEmail, id, patch, { actorEmail })
-  );
+  const ctx = toStorageContext(storageScope, 'updatePersonalCollection', { userEmail, actorEmail });
+  const storage = getStorage();
+  // Ownership check: only the owner may mutate their personal collection.
+  const existing = await storage.getSlideCollection(id, ctx);
+  const owner = String(userEmail || '').toLowerCase();
+  if (
+    !existing ||
+    existing.scope !== 'personal' ||
+    String(existing.ownerEmail || '').toLowerCase() !== owner
+  ) {
+    return { ok: false, reason: 'not_found' };
+  }
+  const item = await storage.updateSlideCollection(id, patch, ctx);
+  if (!item) return { ok: false, reason: 'not_found' };
+  return { ok: true, item };
 }
 
 export async function deletePersonalCollection(storageScope, userEmail, id) {
-  return withStorageFallback(
-    storageScope,
-    'deletePersonalCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'deletePersonalCollection', { userEmail });
-      const existing = await storage.getSlideCollection(id, ctx);
-      const owner = String(userEmail || '').toLowerCase();
-      if (
-        !existing ||
-        existing.scope !== 'personal' ||
-        String(existing.ownerEmail || '').toLowerCase() !== owner
-      ) {
-        return { ok: false, reason: 'not_found' };
-      }
-      const deleted = await storage.deleteSlideCollection(id, ctx);
-      if (!deleted) return { ok: false, reason: 'not_found' };
-      return { ok: true };
-    },
-    (mod) => mod.deletePersonalCollection(repoRootOf(storageScope), userEmail, id)
-  );
+  const ctx = toStorageContext(storageScope, 'deletePersonalCollection', { userEmail });
+  const storage = getStorage();
+  const existing = await storage.getSlideCollection(id, ctx);
+  const owner = String(userEmail || '').toLowerCase();
+  if (
+    !existing ||
+    existing.scope !== 'personal' ||
+    String(existing.ownerEmail || '').toLowerCase() !== owner
+  ) {
+    return { ok: false, reason: 'not_found' };
+  }
+  const deleted = await storage.deleteSlideCollection(id, ctx);
+  if (!deleted) return { ok: false, reason: 'not_found' };
+  return { ok: true };
 }
 
 // ============================================================
@@ -137,91 +104,61 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
 // ============================================================
 
 export async function listTeamCollections(storageScope, { userEmail = '' } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'listTeamCollections',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'listTeamCollections', { userEmail });
-      const items = await storage.listSlideCollections(ctx, { scope: 'team' });
-      return { items };
-    },
-    (mod) => mod.listTeamCollections(repoRootOf(storageScope))
-  );
+  const ctx = toStorageContext(storageScope, 'listTeamCollections', { userEmail });
+  const storage = getStorage();
+  const items = await storage.listSlideCollections(ctx, { scope: 'team' });
+  return { items };
 }
 
 export async function getTeamCollection(storageScope, id, { userEmail = '' } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'getTeamCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'getTeamCollection', { userEmail });
-      const item = await storage.getSlideCollection(id, ctx);
-      if (!item || item.scope !== 'team') return null;
-      return item;
-    },
-    (mod) => mod.getTeamCollection(repoRootOf(storageScope), id)
-  );
+  const ctx = toStorageContext(storageScope, 'getTeamCollection', { userEmail });
+  const storage = getStorage();
+  const item = await storage.getSlideCollection(id, ctx);
+  if (!item || item.scope !== 'team') return null;
+  return item;
 }
 
 export async function createTeamCollection(storageScope, input, { actorEmail } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'createTeamCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'createTeamCollection', { actorEmail });
-      if (!cleanName(input)) return { ok: false, reason: 'name_required' };
-      const item = await storage.createSlideCollection(
-        {
-          name: cleanName(input),
-          description: input?.description,
-          slideIds: input?.slideIds,
-          scope: 'team',
-        },
-        ctx
-      );
-      if (!item) return { ok: false, reason: 'create_failed' };
-      return { ok: true, item };
+  const ctx = toStorageContext(storageScope, 'createTeamCollection', { actorEmail });
+  const storage = getStorage();
+  if (!cleanName(input)) return { ok: false, reason: 'name_required' };
+  const item = await storage.createSlideCollection(
+    {
+      name: cleanName(input),
+      description: input?.description,
+      slideIds: input?.slideIds,
+      scope: 'team',
     },
-    (mod) => mod.createTeamCollection(repoRootOf(storageScope), input, { actorEmail })
+    ctx
   );
+  if (!item) return { ok: false, reason: 'create_failed' };
+  return { ok: true, item };
 }
 
 export async function updateTeamCollection(storageScope, id, patch, { actorEmail, allowMutate } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'updateTeamCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'updateTeamCollection', { actorEmail });
-      const existing = await storage.getSlideCollection(id, ctx);
-      if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
-      if (typeof allowMutate === 'function') {
-        const ok = await allowMutate(existing, { actorEmail });
-        if (!ok) return { ok: false, reason: 'forbidden' };
-      }
-      const item = await storage.updateSlideCollection(id, patch, ctx);
-      if (!item) return { ok: false, reason: 'not_found' };
-      return { ok: true, item };
-    },
-    (mod) => mod.updateTeamCollection(repoRootOf(storageScope), id, patch, { actorEmail, allowMutate })
-  );
+  const ctx = toStorageContext(storageScope, 'updateTeamCollection', { actorEmail });
+  const storage = getStorage();
+  const existing = await storage.getSlideCollection(id, ctx);
+  if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
+  if (typeof allowMutate === 'function') {
+    const ok = await allowMutate(existing, { actorEmail });
+    if (!ok) return { ok: false, reason: 'forbidden' };
+  }
+  const item = await storage.updateSlideCollection(id, patch, ctx);
+  if (!item) return { ok: false, reason: 'not_found' };
+  return { ok: true, item };
 }
 
 export async function deleteTeamCollection(storageScope, id, { actorEmail, allowMutate } = {}) {
-  return withStorageFallback(
-    storageScope,
-    'deleteTeamCollection',
-    async (storage) => {
-      const ctx = toStorageContext(storageScope, 'deleteTeamCollection', { actorEmail });
-      const existing = await storage.getSlideCollection(id, ctx);
-      if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
-      if (typeof allowMutate === 'function') {
-        const ok = await allowMutate(existing, { actorEmail });
-        if (!ok) return { ok: false, reason: 'forbidden' };
-      }
-      const deleted = await storage.deleteSlideCollection(id, ctx);
-      if (!deleted) return { ok: false, reason: 'not_found' };
-      return { ok: true };
-    },
-    (mod) => mod.deleteTeamCollection(repoRootOf(storageScope), id, { actorEmail, allowMutate })
-  );
+  const ctx = toStorageContext(storageScope, 'deleteTeamCollection', { actorEmail });
+  const storage = getStorage();
+  const existing = await storage.getSlideCollection(id, ctx);
+  if (!existing || existing.scope !== 'team') return { ok: false, reason: 'not_found' };
+  if (typeof allowMutate === 'function') {
+    const ok = await allowMutate(existing, { actorEmail });
+    if (!ok) return { ok: false, reason: 'forbidden' };
+  }
+  const deleted = await storage.deleteSlideCollection(id, ctx);
+  if (!deleted) return { ok: false, reason: 'not_found' };
+  return { ok: true };
 }

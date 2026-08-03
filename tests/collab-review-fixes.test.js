@@ -17,12 +17,10 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
 process.env.COLLAB_ENABLED = 'true';
 process.env.COLLAB_LIVE_EDITS = 'true';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 
 import * as Y from 'yjs';
 import {
@@ -34,11 +32,33 @@ import { extractCustomHtml, guardCustomHtml } from '../server/collab/custom-html
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { applyServerWriteToActiveDoc } from '../server/collab/live-apply.js';
 import { testScope } from './helpers/storage-scope.js';
-import {
+
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations/index.js';
+} = await import('../server/storage/presentations/index.js');
+
+// The collab hooks still take a `repoRoot` for their scope shape; storage
+// ignores it entirely now that PostgreSQL is the only backend.
+const REPO_ROOT = process.cwd();
+
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
+// `closeStorage()` would call `db.destroy()`, which the in-memory double does
+// not have — drop the adapter singleton instead.
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 function makeLog() {
   const lines = { warn: [], error: [] };
@@ -165,35 +185,30 @@ describe('guardCustomHtml: reverts non-capable raw HTML/CSS edits', () => {
 });
 
 describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
-  let tempRoot;
   let deckId;
   let chId;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-ch-gate-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    const created = await createPresentation(testScope(), {
       title: 'CH gate deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
     });
     deckId = created.id;
     chId = crypto.randomUUID(); // the facade validates slide ids as uuids
-    const pres = await getPresentation(testScope(tempRoot), deckId);
+    const pres = await getPresentation(testScope(), deckId);
     pres.slides = [
       { id: chId, type: 'custom-html-slide', notes: '', content: { html: '<p>ok</p>', css: '', background: 'lime' } },
     ];
     // The facade does not enforce the capability (that's the route's job) —
     // exactly the gap the doc-level gate closes.
-    await updatePresentation(testScope(tempRoot), deckId, pres);
-  });
-  after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
+    await updatePresentation(testScope(), deckId, pres);
   });
 
   it('reverts a non-capable user; accepts a capable user', async () => {
     const log = makeLog();
     const hooks = createCollabPersistence({
-      repoRoot: tempRoot,
+      repoRoot: REPO_ROOT,
       deps: { log, canEditCustomHtmlFn: (u) => u?.email === 'boss@example.com' },
     });
 
@@ -282,39 +297,34 @@ describe('applyServerWriteToActiveDoc: treats loading docs as active', () => {
 // ── 4. binary-store failure keeps JSON consistent ───────────────────────────
 
 describe('onStoreDocument: a failed binary store does not write JSON', () => {
-  let tempRoot;
   let deckId;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-binfail-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    const created = await createPresentation(testScope(), {
       title: 'Binfail deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
     });
     deckId = created.id;
   });
-  after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
-  });
 
   it('leaves the JSON untouched (no revision bump) and logs the failure', async () => {
     const log = makeLog();
     // Load with a working store to seed the doc, then swap in a failing one.
-    const loader = createCollabPersistence({ repoRoot: tempRoot, deps: { log: makeLog() } });
+    const loader = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
     const doc = new Y.Doc();
     await loader.onLoadDocument({ documentName: docName(deckId), document: doc });
-    const before = await getPresentation(testScope(tempRoot), deckId);
+    const before = await getPresentation(testScope(), deckId);
 
     let jsonWriteAttempted = false;
     const failing = createCollabPersistence({
-      repoRoot: tempRoot,
+      repoRoot: REPO_ROOT,
       deps: {
         log,
         setYDocState: async () => {
           throw new Error('disk full');
         },
-        updatePresentation: async (...args) => {
+        updatePresentation: async () => {
           jsonWriteAttempted = true;
           return { ok: true, revision: 999 };
         },
@@ -326,9 +336,9 @@ describe('onStoreDocument: a failed binary store does not write JSON', () => {
     await failing.onStoreDocument({ documentName: docName(deckId), document: doc });
 
     assert.equal(jsonWriteAttempted, false, 'must not attempt the JSON write');
-    const after = await getPresentation(testScope(tempRoot), deckId);
-    assert.equal(after.revision, before.revision, 'revision unchanged');
-    assert.equal(after.title, before.title, 'JSON untouched');
+    const stored = await getPresentation(testScope(), deckId);
+    assert.equal(stored.revision, before.revision, 'revision unchanged');
+    assert.equal(stored.title, before.title, 'JSON untouched');
     assert.equal(log.lines.error.length, 1);
     assert.match(log.lines.error[0], /skipping the JSON write/);
   });

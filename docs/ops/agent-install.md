@@ -119,15 +119,14 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 docker compose up -d --build
 ```
 
-> **The two paths use different storage.** `npm run start` stores decks as
-> JSON under `server/data/`; the compose stack ships its own Postgres and runs
-> on it (migrations are applied automatically at container start). Decks
-> created on one path are not visible on the other. Pick one and stay on it,
-> or set `STORAGE_MODE=file` in `.env` to keep the compose stack on file
-> storage.
+> **Both paths run PostgreSQL.** The compose stack ships its own `postgres`
+> service (migrations are applied automatically at container start);
+> `npm run start` needs the `DATABASE_*` settings in `.env` pointed at a
+> PostgreSQL you provide, with `npm run db:migrate` run once. The two paths
+> use separate databases unless you point them at the same one.
 
-> **Node is the simplest local path.** For a single-user local try, prefer
-> `npm run start`; reach for Docker only if the user explicitly wants it.
+> **Compose is the simplest local path.** It brings its own database; reach
+> for bare `npm run start` only when a PostgreSQL is already at hand.
 
 ### 5. Wire yourself in over MCP
 

@@ -1,24 +1,24 @@
 /**
  * Presentations storage facade.
- * Uses storage adapter when initialized, falls back to file-based storage.
  *
  * Every function here takes a **storage scope** as its first argument rather
- * than a bare `repoRoot` string: which organization the operation acts in, on
- * whose behalf, and (for the file-backed fallback) where the repository lives.
- * The facade used to answer the organization question itself, with a hardcoded
- * `getDefaultOrganizationId()`, which is why a session working in organization
- * B would still read decks out of organization A. It no longer has a default to
- * fall back to — see server/storage/scope.js for the contract and for the one
- * legitimate way to say "this operation is not organization-scoped".
+ * than a bare `repoRoot` string: which organization the operation acts in, and
+ * on whose behalf. The facade used to answer the organization question itself,
+ * with a hardcoded `getDefaultOrganizationId()`, which is why a session working
+ * in organization B would still read decks out of organization A. It no longer
+ * has a default to fall back to — see server/storage/scope.js for the contract
+ * and for the one legitimate way to say "this operation is not
+ * organization-scoped".
  */
 
-import { isStorageInitialized, getStorage } from '../adapters/index.js';
+import { getStorage } from '../adapters/index.js';
 import { repoRootOf } from '../scope.js';
-import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
+import { toStorageContext } from '../backend-dispatch.js';
 import { isCollabLiveEditsEnabled } from '../../config/features.js';
 import { deleteYDocState } from '../presentation-ydocs.js';
 import { normalizeSlides } from './slides.js';
 import { normalizeI18n } from './i18n.js';
+import { prepareNewPresentation } from './crud/factory.js';
 import { assertSandboxQuotaForCreate } from './sandbox-quota.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
@@ -26,13 +26,6 @@ import { invalidatePresentationCache } from '../presentation-cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('presentations');
-
-// The presentations facade dispatches to three file-backend modules depending
-// on the operation: list/trash reads, CRUD, and version history. One bound
-// dispatcher each, all sharing the DB-vs-file logic in backend-dispatch.js.
-const withList = createStorageDispatch(() => import('./list.js'));
-const withCrud = createStorageDispatch(() => import('./crud/index.js'));
-const withVersions = createStorageDispatch(() => import('./versions.js'));
 
 // Only the single-deck read may skip the organization filter, and only for a
 // deck a public token already addressed. Everything else — listings and every
@@ -46,12 +39,8 @@ const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
  */
 export async function listPresentations(scope) {
   const ctx = toStorageContext(scope, 'listPresentations');
-  return withList(
-    scope,
-    'listPresentations',
-    (storage) => storage.listPresentations(ctx),
-    (mod) => mod.listPresentations(repoRootOf(scope))
-  );
+  const storage = getStorage();
+  return storage.listPresentations(ctx);
 }
 
 /**
@@ -63,18 +52,11 @@ export async function listPresentations(scope) {
 export async function getPresentation(scope, id) {
   // The single durable read funnel: every stored deck is migrated up to the
   // current schema version in memory here, so callers (editor, exports, the
-  // semantic projection) never see a legacy shape — regardless of the storage
-  // backend. Reads don't write; the upgraded deck is persisted on the next
-  // write. migratePresentation is idempotent, so the file fallback (which also
-  // migrates in readPresentation) is unaffected.
+  // semantic projection) never see a legacy shape. Reads don't write; the
+  // upgraded deck is persisted on the next write.
   const ctx = toStorageContext(scope, 'getPresentation', {}, ALLOW_CROSS_ORG);
-  return withCrud(
-    scope,
-    'getPresentation',
-    async (storage) => migratePresentation(await storage.getPresentation(id, ctx)),
-    async (mod) => migratePresentation(await mod.getPresentation(repoRootOf(scope), id)),
-    ALLOW_CROSS_ORG
-  );
+  const storage = getStorage();
+  return migratePresentation(await storage.getPresentation(id, ctx));
 }
 
 /**
@@ -84,45 +66,36 @@ export async function getPresentation(scope, id) {
  * @returns {Promise<Object>}
  */
 export async function createPresentation(scope, body) {
-  // Kept as an explicit dispatch rather than routed through withCrud: the DB
-  // branch also loads crud.js (for prepareNewPresentation), so its import is not
-  // a file-backend fallback and could not move into a fileFn. Consolidating the
-  // dispatch here would relocate that import, not remove it.
-  //
   // Validate the scope before doing any work: a caller that gave none must fail
   // here, not after preparing a deck it has nowhere to put.
   const ctx = toStorageContext(scope, 'createPresentation', { actorEmail: body?.ownerEmail });
   const repoRoot = repoRootOf(scope);
   // Sandbox: refuse the mint (typed 4xx) once the guest is at their storage
-  // quota, before preparing anything. Enforced here in the facade so it covers
-  // every backend; no-op outside sandbox mode.
+  // quota, before preparing anything. Enforced here in the facade; no-op
+  // outside sandbox mode.
   await assertSandboxQuotaForCreate(ctx, body?.ownerEmail);
-  if (isStorageInitialized()) {
-    // Prepare the full presentation object (with slides, i18n, etc.) before storing
-    const mod = await import('./crud/index.js');
-    const preparedPresentation = await mod.prepareNewPresentation(repoRoot, body);
 
-    // Validate size limits before creating
-    const validation = validatePresentationSize(preparedPresentation);
-    if (!validation.ok) {
-      return {
-        ok: false,
-        reason: 'limit_exceeded',
-        errors: validation.errors,
-      };
-    }
+  // Prepare the full presentation object (with slides, i18n, etc.) before storing
+  const preparedPresentation = await prepareNewPresentation(repoRoot, body);
 
-    const storage = getStorage();
-    const result = await storage.createPresentation(preparedPresentation, ctx);
-
-    // Attach warnings to the result if any
-    if (validation.warnings) {
-      result._warnings = validation.warnings;
-    }
-    return result;
+  // Validate size limits before creating
+  const validation = validatePresentationSize(preparedPresentation);
+  if (!validation.ok) {
+    return {
+      ok: false,
+      reason: 'limit_exceeded',
+      errors: validation.errors,
+    };
   }
-  const mod = await import('./crud/index.js');
-  return await mod.createPresentation(repoRoot, body);
+
+  const storage = getStorage();
+  const result = await storage.createPresentation(preparedPresentation, ctx);
+
+  // Attach warnings to the result if any
+  if (validation.warnings) {
+    result._warnings = validation.warnings;
+  }
+  return result;
 }
 
 /**
@@ -150,8 +123,7 @@ export async function updatePresentation(scope, id, body, opts) {
   // Merge-capable save (editor autosave with If-Match + modified-slide ids)
   // by a client more than one revision behind: snapshot the current server
   // state first (reason 'pre_merge'), so a bad merge is a one-click restore
-  // in the version history. File-based like every other snapshot, for both
-  // storage backends. Best-effort: never blocks the save.
+  // in the version history. Best-effort: never blocks the save.
   const expectedRevision = Number(opts?.expectedRevision);
   if (Number.isFinite(expectedRevision) && Array.isArray(opts?.modifiedSlideIds)) {
     try {
@@ -225,63 +197,54 @@ export async function updatePresentation(scope, id, body, opts) {
   return result;
 }
 
-function updatePresentationUncached(scope, id, body, opts) {
-  return withCrud(
-    scope,
-    'updatePresentation',
-    async (storage) => {
-      const ctx = toStorageContext(scope, 'updatePresentation', {
-        actorEmail: opts?.actorEmail,
-      });
+async function updatePresentationUncached(scope, id, body, opts) {
+  const ctx = toStorageContext(scope, 'updatePresentation', {
+    actorEmail: opts?.actorEmail,
+  });
+  const storage = getStorage();
 
-      // Normalize slides and i18n before storing (mirrors crud.js behavior).
-      // This ensures pres.slides and i18n.versions[lang].slides stay in sync.
-      //
-      // Only normalize slides the caller actually sent: `normalizeSlides`
-      // answers `[]` for an absent list, and handing the adapter an invented
-      // empty array would make a body that never mentioned slides (an
-      // unpublish, say) erase them. The adapter treats `undefined` as "leave
-      // this column alone", so the key has to stay absent to get there.
-      const normalized = { ...body };
-      if (normalized.slides !== undefined) {
-        normalized.slides = normalizeSlides(normalized.slides);
-      }
-      normalizeI18n(normalized);
+  // Normalize slides and i18n before storing. This ensures pres.slides and
+  // i18n.versions[lang].slides stay in sync.
+  //
+  // Only normalize slides the caller actually sent: `normalizeSlides`
+  // answers `[]` for an absent list, and handing the adapter an invented
+  // empty array would make a body that never mentioned slides (an
+  // unpublish, say) erase them. The adapter treats `undefined` as "leave
+  // this column alone", so the key has to stay absent to get there.
+  const normalized = { ...body };
+  if (normalized.slides !== undefined) {
+    normalized.slides = normalizeSlides(normalized.slides);
+  }
+  normalizeI18n(normalized);
 
-      // Validate size limits before updating (unless bypassed)
-      if (!opts?.skipLimitCheck) {
-        const validation = validatePresentationSize(normalized);
-        if (!validation.ok) {
-          return {
-            ok: false,
-            reason: 'limit_exceeded',
-            errors: validation.errors,
-          };
-        }
-
-        const result = await storage.updatePresentation(id, normalized, ctx, opts);
-
-        // Attach warnings to the result if any
-        if (validation.warnings && result && typeof result === 'object') {
-          result._warnings = validation.warnings;
-        }
-        return result;
-      }
-
-      return await storage.updatePresentation(id, normalized, ctx, opts);
-    },
-    async (mod) => {
-      // The file write path still queries the database for locks, so it needs
-      // the organization this write acts in — see lockContext() in crud/write.js.
-      const { organizationId } = toStorageContext(scope, 'updatePresentation', {
-        actorEmail: opts?.actorEmail,
-      });
-      return await mod.updatePresentation(repoRootOf(scope), id, body, {
-        ...opts,
-        organizationId,
-      });
+  // Validate size limits before updating (unless bypassed)
+  if (!opts?.skipLimitCheck) {
+    const validation = validatePresentationSize(normalized);
+    if (!validation.ok) {
+      return {
+        ok: false,
+        reason: 'limit_exceeded',
+        errors: validation.errors,
+      };
     }
-  );
+
+    const result = migratePresentation(
+      await storage.updatePresentation(id, normalized, ctx, opts)
+    );
+
+    // Attach warnings to the result if any
+    if (validation.warnings && result && typeof result === 'object') {
+      result._warnings = validation.warnings;
+    }
+    return result;
+  }
+
+  // The write funnel answers the same shape as the read funnel: the stored
+  // row carries no schemaVersion column, so the mapped result is stamped here
+  // exactly like getPresentation stamps its reads. Without this, consumers
+  // comparing a write result against a read (the collab live-apply guard)
+  // see a permanent schemaVersion difference and never converge.
+  return migratePresentation(await storage.updatePresentation(id, normalized, ctx, opts));
 }
 
 /**
@@ -292,13 +255,9 @@ function updatePresentationUncached(scope, id, body, opts) {
  */
 export async function deletePresentation(scope, id, opts) {
   const ctx = toStorageContext(scope, 'deletePresentation', { actorEmail: opts?.actorEmail });
+  const storage = getStorage();
   try {
-    return await withCrud(
-      scope,
-      'deletePresentation',
-      (storage) => storage.deletePresentation(id, ctx),
-      (mod) => mod.deletePresentation(repoRootOf(scope), id, opts)
-    );
+    return await storage.deletePresentation(id, ctx);
   } finally {
     invalidatePresentationCache(id);
     // Trash/restore round-trips must not resurrect a stale collab doc.
@@ -313,12 +272,8 @@ export async function deletePresentation(scope, id, opts) {
  */
 export async function listTrashedPresentations(scope) {
   const ctx = toStorageContext(scope, 'listTrashedPresentations');
-  return withList(
-    scope,
-    'listTrashedPresentations',
-    (storage) => storage.listTrashedPresentations(ctx),
-    (mod) => mod.listTrashedPresentations(repoRootOf(scope))
-  );
+  const storage = getStorage();
+  return storage.listTrashedPresentations(ctx);
 }
 
 /**
@@ -329,12 +284,8 @@ export async function listTrashedPresentations(scope) {
 export async function restorePresentation(scope, id) {
   try {
     const ctx = toStorageContext(scope, 'restorePresentation');
-    return await withCrud(
-      scope,
-      'restorePresentation',
-      (storage) => storage.restorePresentation(id, ctx),
-      (mod) => mod.restorePresentation(repoRootOf(scope), id)
-    );
+    const storage = getStorage();
+    return await storage.restorePresentation(id, ctx);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -348,16 +299,8 @@ export async function restorePresentation(scope, id) {
 export async function permanentlyDeletePresentation(scope, id) {
   try {
     const ctx = toStorageContext(scope, 'permanentlyDeletePresentation');
-    return await withCrud(
-      scope,
-      'permanentlyDeletePresentation',
-      (storage) => storage.permanentlyDeletePresentation(id, ctx),
-      // The file module unpublishes through the (organization-scoped) published
-      // facade, so it needs the organization — see crud/delete.js.
-      (mod) => mod.permanentlyDeletePresentation(repoRootOf(scope), id, {
-        organizationId: ctx.organizationId,
-      })
-    );
+    const storage = getStorage();
+    return await storage.permanentlyDeletePresentation(id, ctx);
   } finally {
     invalidatePresentationCache(id);
   }
@@ -376,12 +319,8 @@ export async function duplicatePresentation(scope, id, opts) {
   // A duplicate mints a new deck, so it counts against the guest's sandbox
   // quota — refuse (typed 4xx) once they are at the cap. No-op outside sandbox.
   await assertSandboxQuotaForCreate(ctx, opts?.actorEmail);
-  return withCrud(
-    scope,
-    'duplicatePresentation',
-    (storage) => storage.duplicatePresentation(id, ctx, opts),
-    (mod) => mod.duplicatePresentation(repoRootOf(scope), id, opts)
-  );
+  const storage = getStorage();
+  return storage.duplicatePresentation(id, ctx, opts);
 }
 
 /**
@@ -398,31 +337,24 @@ export async function getFirstSlidesForIds(scope, ids) {
   }
 
   const ctx = toStorageContext(scope, 'getFirstSlidesForIds');
-  return withCrud(
-    scope,
-    'getFirstSlidesForIds',
-    async (storage) => {
-      // If storage adapter supports batch first slides, use it
-      if (typeof storage.getFirstSlidesForIds === 'function') {
-        return await storage.getFirstSlidesForIds(ids, ctx);
+  const storage = getStorage();
+  // If storage adapter supports batch first slides, use it
+  if (typeof storage.getFirstSlidesForIds === 'function') {
+    return await storage.getFirstSlidesForIds(ids, ctx);
+  }
+  // Fallback: fetch each presentation and extract first slide
+  const results = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const pres = await storage.getPresentation(id, ctx);
+        const first = pres?.slides?.[0];
+        return [id, first ? { id: first.id, type: first.type, content: first.content || {} } : null];
+      } catch {
+        return [id, null];
       }
-      // Fallback: fetch each presentation and extract first slide
-      const results = await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const pres = await storage.getPresentation(id, ctx);
-            const first = pres?.slides?.[0];
-            return [id, first ? { id: first.id, type: first.type, content: first.content || {} } : null];
-          } catch {
-            return [id, null];
-          }
-        })
-      );
-      return new Map(results);
-    },
-    // File-based storage: batch read JSON files
-    (mod) => mod.getFirstSlidesForIds(repoRootOf(scope), ids)
+    })
   );
+  return new Map(results);
 }
 
 // ============================================================
@@ -430,16 +362,13 @@ export async function getFirstSlidesForIds(scope, ids) {
 // ============================================================
 //
 // Version snapshots route through the storage adapter, exactly like every
-// other persisted entity. In file mode the adapter delegates to the file
-// module (server/data/presentation-versions/*.json), so behavior is
-// identical to importing that module directly. In Postgres mode they land
-// in the `presentation_versions` table, so version history rides along with
-// the regular DB backups instead of living on a disk that a redeploy wipes.
+// other persisted entity: they land in the `presentation_versions` table, so
+// version history rides along with the regular DB backups instead of living on
+// a disk that a redeploy wipes.
 //
 // The (scope, presentationId, ...) signature matches the CRUD helpers above:
 // snapshots live in the same organization as the deck they snapshot, so they
-// take the same scope. When storage is not initialized (some scripts/tests) we
-// fall back to the file module.
+// take the same scope.
 
 /**
  * List version snapshots for a presentation (newest first).
@@ -449,12 +378,8 @@ export async function getFirstSlidesForIds(scope, ids) {
  */
 export async function listPresentationVersions(scope, presentationId) {
   const ctx = toStorageContext(scope, 'listPresentationVersions');
-  return withVersions(
-    scope,
-    'listPresentationVersions',
-    (storage) => storage.listPresentationVersions(presentationId, ctx),
-    (mod) => mod.listPresentationVersions(repoRootOf(scope), presentationId)
-  );
+  const storage = getStorage();
+  return storage.listPresentationVersions(presentationId, ctx);
 }
 
 /**
@@ -466,12 +391,8 @@ export async function listPresentationVersions(scope, presentationId) {
  */
 export async function getPresentationVersion(scope, presentationId, versionId) {
   const ctx = toStorageContext(scope, 'getPresentationVersion');
-  return withVersions(
-    scope,
-    'getPresentationVersion',
-    (storage) => storage.getPresentationVersion(presentationId, versionId, ctx),
-    (mod) => mod.getPresentationVersion(repoRootOf(scope), presentationId, versionId)
-  );
+  const storage = getStorage();
+  return storage.getPresentationVersion(presentationId, versionId, ctx);
 }
 
 /**
@@ -489,15 +410,11 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
   const ctx = toStorageContext(scope, 'createPresentationVersion', {
     actorEmail: opts?.actorEmail,
   });
-  return withVersions(
-    scope,
-    'createPresentationVersion',
-    (storage) => storage.createPresentationVersion(presentationId, pres, ctx, {
-      reason: opts?.reason,
-      label: opts?.label,
-    }),
-    (mod) => mod.createPresentationVersion(repoRootOf(scope), presentationId, pres, opts)
-  );
+  const storage = getStorage();
+  return storage.createPresentationVersion(presentationId, pres, ctx, {
+    reason: opts?.reason,
+    label: opts?.label,
+  });
 }
 
 /**
@@ -510,12 +427,8 @@ export async function createPresentationVersion(scope, presentationId, pres, opt
  */
 export async function prunePresentationVersions(scope, presentationId, opts = {}) {
   const ctx = toStorageContext(scope, 'prunePresentationVersions');
-  return withVersions(
-    scope,
-    'prunePresentationVersions',
-    (storage) => storage.prunePresentationVersions(presentationId, ctx, {
-      keep: opts?.keep,
-    }),
-    (mod) => mod.prunePresentationVersions(repoRootOf(scope), presentationId, opts)
-  );
+  const storage = getStorage();
+  return storage.prunePresentationVersions(presentationId, ctx, {
+    keep: opts?.keep,
+  });
 }

@@ -5,8 +5,8 @@ as the owner of the API key (or MCP session). This closes the loop for the
 scenario: *"deck X has new comments → analyze them → reply 'good point,
 fixed in slide 7' → resolve"*.
 
-Requires the **database storage backend**; the file backend has no comment
-store (all endpoints/tools return empty results or a clear error there).
+Comments live in PostgreSQL, like all deck storage; without a reachable
+database the endpoints/tools return empty results or a clear error.
 
 ## Key scopes
 
@@ -138,5 +138,5 @@ an author). Access rules are identical to the REST endpoints.
   truth for every write path — app, REST, MCP). Parser lives in
   `shared/comment-mentions.js`.
 - Comments live only in Postgres (`server/storage/presentation-comments.js`
-  wraps everything in `withDbGuard`); the file backend has no comments
-  table, so there was no second backend to migrate.
+  wraps everything in `withDbGuard`); the removed file backend never had a
+  comments store, so there was no second backend to migrate.

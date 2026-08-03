@@ -123,26 +123,25 @@ const handler = compose(
 
 The storage layer supports multiple backends through an adapter pattern:
 
-| Mode | Backend | Status |
-|------|---------|--------|
-| `postgres` | PostgreSQL | The default everywhere — a plain `npm start` checkout and the compose stack (which ships its own database) — and the only backend under development |
-| `file` | JSON on disk | Being retired during beta; gains no new features |
+PostgreSQL is the only storage backend; the old `file` backend (JSON on disk)
+was removed in 1.x. Old file data imports once with `npm run db:import`.
 
 ```javascript
-// Storage mode selection (server/config/database.js)
-STORAGE_MODE=postgres|file   // unset means postgres
+// Storage mode validation (server/config/database.js)
+STORAGE_MODE=postgres   // unset means postgres; "file" stops the boot
 ```
 
-`postgres` and `file` are the only accepted values, spelled exactly like
-that — an unknown value (including `postgresql`) stops the boot rather than
-falling back to a backend the operator did not ask for.
+`postgres` is the only accepted value, spelled exactly like that — anything
+else (including `postgresql`, and the removed `file`) stops the boot with an
+explanation rather than falling back to a backend the operator did not ask
+for.
 
-### File-Based Storage
+### On-disk state
 
-- Presentations: `/server/data/presentations/{id}.json`
-- Published: `/server/data/published/{publicId}.json`
 - Uploads: `/server/uploads/{filename}`
-- Atomic writes: temp file + rename prevents corruption
+- A set of JSON domains (settings, questions, feedback, present-sessions, …)
+  still writes to `/server/data/` regardless of the database; moving them into
+  PostgreSQL is a tracked follow-up. Atomic writes: temp file + rename.
 
 ### PostgreSQL Storage
 
