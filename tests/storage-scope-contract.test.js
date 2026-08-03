@@ -39,6 +39,14 @@ const {
 const { createRouteContext } = await import('../server/utils/context.js');
 const facade = await import('../server/storage/presentations/index.js');
 
+// The reads below that make it past scope validation need an initialized
+// adapter; an empty database double answers them with "not found".
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage } = await import('../server/storage/adapters/index.js');
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
 // ─── the rule: no scope, no answer ──────────────────────────────────────────
 
 test('a bare repoRoot string is refused, and says what to pass instead', () => {
@@ -218,7 +226,7 @@ const { getPresentationCached } = await import('../server/storage/presentation-c
 const { followAudienceScope } = await import('../server/routes/api/follow/helpers.js');
 
 test('the presentation cache passes its caller scope through to the facade', async () => {
-  // Resolves to null (no storage, no file) — what matters is that it resolves
+  // Resolves to null (empty database) — what matters is that it resolves
   // at all instead of throwing the scope TypeError at the audience.
   const pres = await getPresentationCached(followAudienceScope('/srv'), 'deck-1');
   assert.equal(pres, null);
@@ -244,10 +252,9 @@ test('the presentation cache refuses a bare repoRoot, like the facade does', asy
 // so a caller had no way to say which organization it meant. Both old call
 // shapes must now fail, and fail pointing at the contract.
 //
-// Note where the check lives: the three facades that keep a file-backed
-// fallback validate the scope in `withStorageFallback` **before** choosing a
-// backend. That is deliberate — the file-mode suite is what CI runs, so a
-// missed call site has to fail there too, not only against Postgres.
+// Note where the check lives: every facade validates the scope in
+// `toStorageContext` **before** touching the adapter, so a missed call site
+// fails on validation rather than somewhere inside a query.
 
 const smallFacades = {
   'slide-library/index.js': [

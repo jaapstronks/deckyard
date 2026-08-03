@@ -4,11 +4,13 @@
  */
 
 /**
- * The only accepted values of STORAGE_MODE. One canonical spelling per
- * backend: `postgresql` is not an alias for `postgres`, it is a boot error.
- * @type {readonly ['postgres', 'file']}
+ * The only accepted value of STORAGE_MODE. PostgreSQL is the sole storage
+ * backend; the file backend was removed during beta (see
+ * docs/reference/versioning.md § the beta stance). One canonical spelling:
+ * `postgresql` is not an alias for `postgres`, it is a boot error.
+ * @type {readonly ['postgres']}
  */
-export const STORAGE_MODES = Object.freeze(['postgres', 'file']);
+export const STORAGE_MODES = Object.freeze(['postgres']);
 
 /** Storage backend used when STORAGE_MODE is unset. */
 export const DEFAULT_STORAGE_MODE = 'postgres';
@@ -19,10 +21,9 @@ export const DEFAULT_STORAGE_MODE = 'postgres';
  * Anything outside {@link STORAGE_MODES} is rejected at boot by
  * {@link storageModeError}, so a booted process never reaches this with an
  * unknown value. The fallback exists for callers that skip the boot guard
- * (scripts, tests) and deliberately resolves to the default rather than to
- * file storage: a typo must never silently open a second, empty workspace.
+ * (scripts, tests) and deliberately resolves to the default.
  *
- * @returns {'postgres' | 'file'}
+ * @returns {'postgres'}
  */
 export function getStorageMode() {
   const mode = (process.env.STORAGE_MODE || '').trim();
@@ -42,6 +43,14 @@ export function storageModeError() {
   const raw = (process.env.STORAGE_MODE || '').trim();
   if (!raw || STORAGE_MODES.includes(raw)) return null;
 
+  if (raw === 'file') {
+    return (
+      'STORAGE_MODE="file" is no longer supported: the file backend was ' +
+      'removed in 1.x. Run `npm run db:import` once against your existing ' +
+      'data directory to move it into PostgreSQL, then remove STORAGE_MODE ' +
+      'from your environment (unset means "postgres").'
+    );
+  }
   const hint =
     raw.toLowerCase() === 'postgresql'
       ? 'The canonical spelling is "postgres"; "postgresql" is no longer accepted. '

@@ -18,8 +18,8 @@ Deckyard's hosting story has four shapes:
    managed hosting: you run it, or we run it for you.
 4. **Multiple organizations on one instance** (`MULTI_WORKSPACE_ENABLED`) —
    **in development**, see below. Isolation is enforced in code (every query is
-   scoped by `organization_id`) rather than by infrastructure, which is why it
-   is gated on the Postgres backend and refuses to boot on the file backend.
+   scoped by `organization_id`) rather than by infrastructure, which is what
+   the PostgreSQL storage layer provides.
 
 Shapes 1-3 run in the default **single-organization** mode
 (`MULTI_WORKSPACE_ENABLED` unset). Their isolation guarantee is
@@ -72,22 +72,17 @@ storage layer that enforces org isolation:
   cross-org read returns nothing. The session is the *only* resolution path:
   the hostname says nothing about which organization a request acts in (see
   "Why not the hostname" below).
-- **File backend** (`STORAGE_MODE=file`, an explicit opt-out of the Postgres
-  default and the path being retired during beta) does **not**. Decks
-  live flat in one directory (`server/storage/presentations/paths.js`) and
-  `listPresentations()` never consults the org
-  (`server/storage/presentations/list.js`). Two tenants sharing one file
-  backend with `MULTI_WORKSPACE_ENABLED=true` would see each other's workspace
-  decks.
+- The old **file backend** (`STORAGE_MODE=file`) did **not**: decks lived flat
+  in one directory and listings never consulted the org. That backend was
+  removed in 1.x, so every supported install now runs on the isolating
+  PostgreSQL path.
 
-To make that impossible by accident, the server **fails closed at boot**:
-`multiWorkspaceStorageError()` (`server/config/features.js`) returns a fatal
-error, and `server/server.js` calls `process.exit(1)`, when
-`MULTI_WORKSPACE_ENABLED=true` while the storage backend cannot enforce org
-isolation (i.e. the file backend). The fix is either dropping the explicit
-`STORAGE_MODE=file` (Postgres is the default) or — the supported path — one
-dedicated instance per customer with
-multi-workspace unset. Guard behavior is pinned by
+While the file backend existed, the server **failed closed at boot**:
+`multiWorkspaceStorageError()` (`server/config/features.js`) returned a fatal
+error when `MULTI_WORKSPACE_ENABLED=true` while the storage backend could not
+enforce org isolation. With PostgreSQL as the only backend the guard no longer
+has a case to catch; it is slated for removal with the rest of the
+one-backend cleanup. Guard behavior is pinned by
 `tests/multi-workspace-storage-guard.test.js`.
 
 Sandbox mode is exempt from the guard: it is single-org by construction (see
@@ -211,8 +206,8 @@ missing is listed under *What is not done yet* below.
   image favorites it was sharper still, because those functions took no scope
   argument at all, so a caller had no way to state an organization even if it
   wanted to. Every one of them now takes a **storage scope** as its first
-  argument — which organization, on whose behalf, and where the repository lives
-  for the file-backed fallback — and `server/storage/scope.js` refuses anything
+  argument — which organization, and on whose behalf — and
+  `server/storage/scope.js` refuses anything
   that states neither an organization nor a reason it cannot have one. There is
   no fallback left: a caller that gives nothing gets a `TypeError`, not a guess.
 
@@ -246,16 +241,9 @@ missing is listed under *What is not done yet* below.
   persistence hooks, which is what lets a collab store write into the deck's own
   organization.
 
-  Two file-backed write paths query the *database* for locks and for the publish
-  index even in file mode (`presentations/crud/write.js`,
-  `presentations/crud/delete.js`), so the organization travels down to them in
-  `opts` rather than being re-derived there.
-
-  Where the check sits matters as much as the check. The three facades that keep
-  a file-backed fallback validate the scope in `withStorageFallback()`, **before**
-  choosing a backend — otherwise the file-mode suite, which is what CI runs,
-  would wave an un-migrated caller straight through and the defect would only
-  surface on Postgres.
+  Where the check sits matters as much as the check. Every facade validates the
+  scope in `toStorageContext()` **before** touching the adapter, so an
+  un-migrated caller fails on the validation, not somewhere inside a query.
 
   Single-organization installations are unaffected in behaviour: there the
   session's organization *is* the default one, so every scoped call resolves to

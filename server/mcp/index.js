@@ -123,7 +123,7 @@ async function main() {
 
   // Initialize storage (DB connection)
   try {
-    await initializeStorage(repoRoot);
+    await initializeStorage();
   } catch (err) {
     process.stderr.write(`[MCP] Storage init failed: ${err.message}\n`);
     process.stderr.write('[MCP] Continuing with limited functionality (no DB-backed features)\n');

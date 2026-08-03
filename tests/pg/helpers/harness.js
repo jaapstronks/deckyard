@@ -152,7 +152,7 @@ export async function installFacadeStorage() {
   // initializeStorage() is what wires the facade to the injected handle.
   process.env.STORAGE_MODE = 'postgres';
   // repoRoot is unused by the PostgreSQL adapter; pass a harmless placeholder.
-  await initializeStorage('/pg-test');
+  await initializeStorage();
 }
 
 /**

@@ -46,18 +46,39 @@ import {
 } from '../server/render/deck-thumbnail.js';
 import { handlePresentationItem } from '../server/routes/api/presentations/presentation.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
-import {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} from '../server/storage/presentations/index.js';
 import { loadTheme } from '../server/utils/themes.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { testScope } from './helpers/storage-scope.js';
 
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { createPresentation, getPresentation, updatePresentation } = await import(
+  '../server/storage/presentations/index.js'
+);
+
 const OWNER = 'owner@example.com';
 const owner = { email: OWNER, isAdmin: false };
 
+test.before(async () => {
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
+});
+
+test.after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
+
+/**
+ * A throwaway root for the on-disk raster cache (`dataDir(root)/deck-thumbs`).
+ * Decks themselves live in the database double, not under this root.
+ */
 async function tmpRoot() {
   return fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-warm-'));
 }
@@ -268,7 +289,7 @@ test('adding a slide in front of the deck counts as changing slide 1', async () 
 
 test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → nothing', async () => {
   const repoRoot = await tmpRoot();
-  const scope = testScope(repoRoot);
+  const scope = testScope();
 
   await withWarmingEnabled(async () => {
     const created = await createPresentation(scope, {
@@ -325,7 +346,7 @@ test('PUT wires the gate in: slide 1 edited → warm pending, otherwise → noth
 
 test('after the warm ran, the next Home load is a cache hit instead of a miss', async () => {
   const repoRoot = await tmpRoot();
-  const scope = testScope(repoRoot);
+  const scope = testScope();
 
   await withWarmingEnabled(async () => {
     const created = await createPresentation(scope, {

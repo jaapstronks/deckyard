@@ -9,10 +9,11 @@ import {
 } from '../server/config/database.js';
 
 /**
- * STORAGE_MODE has one canonical spelling per backend and defaults to
- * Postgres. `postgresql` used to be a silent alias for `postgres`, and any
- * unknown value used to fall through to file storage — both are boot errors
- * now, so an operator never gets a backend they did not ask for.
+ * PostgreSQL is the only storage backend, and STORAGE_MODE has one canonical
+ * spelling. `postgresql` used to be a silent alias for `postgres`; the `file`
+ * backend was removed in 1.x and now stops the boot with the import
+ * instructions. Any unknown value is a boot error too, so an operator never
+ * gets a backend they did not ask for.
  */
 
 function withMode(value, fn) {
@@ -40,14 +41,23 @@ test('unset STORAGE_MODE resolves to Postgres', () => {
   });
 });
 
-test('the canonical values are accepted and nothing else is', () => {
-  assert.deepEqual([...STORAGE_MODES], ['postgres', 'file']);
-  for (const mode of STORAGE_MODES) {
-    withMode(mode, () => {
-      assert.equal(getStorageMode(), mode);
-      assert.equal(storageModeError(), null, `${mode} should be valid`);
-    });
-  }
+test('postgres is the only accepted value', () => {
+  assert.deepEqual([...STORAGE_MODES], ['postgres']);
+  withMode('postgres', () => {
+    assert.equal(getStorageMode(), 'postgres');
+    assert.equal(storageModeError(), null, 'postgres should be valid');
+  });
+});
+
+test('file is rejected with the import instructions', () => {
+  withMode('file', () => {
+    const err = storageModeError();
+    assert.ok(err, 'the removed file backend must not be accepted');
+    assert.match(err, /removed/);
+    assert.match(err, /db:import/);
+    // getStorageMode still resolves to the default for unvalidated callers.
+    assert.equal(getStorageMode(), 'postgres');
+  });
 });
 
 test('postgresql is rejected, and the message names the canonical spelling', () => {
@@ -77,8 +87,8 @@ test('an unvalidated caller falls back to the default, never to file storage', (
 });
 
 test('surrounding whitespace is trimmed, not treated as a typo', () => {
-  withMode(' file ', () => {
-    assert.equal(getStorageMode(), 'file');
+  withMode(' postgres ', () => {
+    assert.equal(getStorageMode(), 'postgres');
     assert.equal(storageModeError(), null);
   });
 });

@@ -17,22 +17,25 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
 import { canonicalJson, slideFingerprint } from '../shared/slide-fingerprint.js';
-import {
-  mergeSlidesAtSlideLevel,
-  mergeMaxRevisionGap,
-} from '../server/storage/presentations/crud/helpers.js';
-import {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} from '../server/storage/presentations/index.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { testScope } from './helpers/storage-scope.js';
+
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { mergeSlidesAtSlideLevel, mergeMaxRevisionGap } = await import(
+  '../server/storage/presentations/crud/helpers.js'
+);
+const { createPresentation, getPresentation, updatePresentation } = await import(
+  '../server/storage/presentations/index.js'
+);
 
 const slide = (id, body, extra = {}) => ({
   id,
@@ -137,22 +140,22 @@ describe('mergeSlidesAtSlideLevel — staleness cap + fingerprints', () => {
 });
 
 // ============================================================================
-// Integration: updatePresentation (file-mode storage)
+// Integration: updatePresentation (Postgres adapter on the database double)
 // ============================================================================
 
-describe('updatePresentation — stale-tab guards (file mode)', () => {
+describe('updatePresentation — stale-tab guards', () => {
   const X = '33333333-3333-4333-8333-333333333333';
   const Y = '44444444-4444-4444-8444-444444444444';
   const Z = '55555555-5555-4555-8555-555555555555';
   const W = '66666666-6666-4666-8666-666666666666';
 
-  let tempRoot;
   let deckId;
   let template;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'stale-merge-test-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    await initializeStorage();
+    const created = await createPresentation(testScope(), {
       title: 'Stale merge guard',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
@@ -162,7 +165,8 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     template = structuredClone(created.slides[0]);
   });
   after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
+    __resetStorageForTests();
+    __setTestDb(null);
   });
 
   /** Valid slide built from the deck's own default slide. */
@@ -178,7 +182,7 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     s.content = { ...s.content, title };
   };
 
-  const loadDoc = async () => structuredClone(await getPresentation(testScope(tempRoot), deckId));
+  const loadDoc = async () => structuredClone(await getPresentation(testScope(), deckId));
 
   /** Keep the active i18n buffer in sync with top-level slides, like the client does. */
   const syncI18n = (doc) => {
@@ -194,7 +198,7 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     const doc = await loadDoc();
     doc.slides = structuredClone(slides);
     syncI18n(doc);
-    await updatePresentation(testScope(tempRoot), deckId, doc, { actorEmail: 'owner@example.com' });
+    await updatePresentation(testScope(), deckId, doc, { actorEmail: 'owner@example.com' });
     return loadDoc();
   };
 
@@ -210,13 +214,13 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     setTitle(other, X, 'X v2 by other');
     other.slides = [other.slides.find((s) => s.id === X), mkSlide(Y, 'Y new by other')];
     syncI18n(other);
-    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
 
     // The stale tab wakes up and autosaves its old copy with its own X edit.
     setTitle(staleTab, X, 'X stale edit');
     syncI18n(staleTab);
     await assert.rejects(
-      updatePresentation(testScope(tempRoot), deckId, staleTab, {
+      updatePresentation(testScope(), deckId, staleTab, {
         expectedRevision: staleTab.revision,
         modifiedSlideIds: [X],
         slideBaseFingerprints: staleFingerprints,
@@ -230,7 +234,7 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     );
 
     // Server state is untouched: other user's work survived.
-    const stored = await getPresentation(testScope(tempRoot), deckId);
+    const stored = await getPresentation(testScope(), deckId);
     assert.equal(titleOf(stored, X), 'X v2 by other');
     assert.ok(stored.slides.find((s) => s.id === Y));
   });
@@ -245,12 +249,12 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
     const other = await loadDoc();
     setTitle(other, X, 'X v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
 
     // Tab A edits only W: base fingerprint of W still matches the server.
     setTitle(tabA, W, 'W v2 by tab A');
     syncI18n(tabA);
-    const updated = await updatePresentation(testScope(tempRoot), deckId, tabA, {
+    const updated = await updatePresentation(testScope(), deckId, tabA, {
       expectedRevision: tabA.revision,
       modifiedSlideIds: [W],
       slideBaseFingerprints: fingerprints,
@@ -270,13 +274,13 @@ describe('updatePresentation — stale-tab guards (file mode)', () => {
       const doc = await loadDoc();
       setTitle(doc, X, `X tick ${i}`);
       syncI18n(doc);
-      await updatePresentation(testScope(tempRoot), deckId, doc, { actorEmail: 'other@example.com' });
+      await updatePresentation(testScope(), deckId, doc, { actorEmail: 'other@example.com' });
     }
 
     setTitle(staleTab, W, 'W stale edit');
     syncI18n(staleTab);
     await assert.rejects(
-      updatePresentation(testScope(tempRoot), deckId, staleTab, {
+      updatePresentation(testScope(), deckId, staleTab, {
         expectedRevision: staleTab.revision,
         modifiedSlideIds: [W],
         slideBaseFingerprints: { [W]: slideFingerprint(base.slides.find((s) => s.id === W)) },

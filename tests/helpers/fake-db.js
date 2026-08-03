@@ -423,19 +423,26 @@ export function createFakeDb(seed = {}) {
       return list;
     };
 
+    // PostgreSQL hands every read a freshly parsed value; nothing a caller
+    // does to a returned row can reach the stored one. The double must match,
+    // or a test that mutates a read result in place silently rewrites the
+    // "stored" state and e.g. a diff-against-existing guard never fires.
+    const detach = (value) =>
+      value && typeof value === 'object' ? structuredClone(value) : value;
+
     const project = (context) => {
       if (state.aggregates.length) return null;
       if (state.selectAll || !state.projection) {
         const out = {};
         for (const [key, value] of Object.entries(context)) {
           if (key === '__source' || key.includes('.')) continue;
-          out[key] = value;
+          out[key] = detach(value);
         }
         return out;
       }
       const out = {};
       for (const item of state.projection) {
-        out[item.alias] = readColumn(context, item.column);
+        out[item.alias] = detach(readColumn(context, item.column));
       }
       return out;
     };
@@ -592,7 +599,7 @@ export function createFakeDb(seed = {}) {
                   resolveWriteValues(conflict.set || {}, existing)
                 );
                 Object.assign(existing, applied);
-                if (returning) inserted.push({ ...existing });
+                if (returning) inserted.push(structuredClone(existing));
                 continue;
               }
             }
@@ -602,7 +609,7 @@ export function createFakeDb(seed = {}) {
             );
             assertUnique(table, row);
             rowsOf(table).push(row);
-            inserted.push({ ...row });
+            inserted.push(structuredClone(row));
           }
           return returning ? inserted : [{ numInsertedOrUpdatedRows: BigInt(inserted.length) }];
         },
@@ -645,7 +652,7 @@ export function createFakeDb(seed = {}) {
             Object.assign(row, applied);
           }
           return returning
-            ? targets.map((row) => ({ ...row }))
+            ? targets.map((row) => structuredClone(row))
             : [{ numUpdatedRows: BigInt(targets.length) }];
         },
         async executeTakeFirst() {

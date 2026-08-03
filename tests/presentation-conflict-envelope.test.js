@@ -19,17 +19,30 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
-let repoRoot;
-let createPresentation;
-let createPresentationVersion;
-let handlePresentationItem;
-let handlePresentationScope;
-let handlePresentationRestoreVersion;
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
+// Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { createPresentation, createPresentationVersion } = await import(
+  '../server/storage/presentations/index.js'
+);
+const { handlePresentationItem } = await import(
+  '../server/routes/api/presentations/presentation.js'
+);
+const { handlePresentationScope } = await import(
+  '../server/routes/api/presentations/scope.js'
+);
+const { handlePresentationRestoreVersion } = await import(
+  '../server/routes/api/presentations/restore.js'
+);
 
 const OWNER = 'owner@example.com';
 // A revision that will never match a freshly-seeded deck (revision 1), so the
@@ -37,27 +50,13 @@ const OWNER = 'owner@example.com';
 const STALE_REVISION = '999';
 
 test.before(async () => {
-  repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-conflict-envelope-'));
-  ({ createPresentation, createPresentationVersion } = await import(
-    '../server/storage/presentations/index.js'
-  ));
-  ({ handlePresentationItem } = await import(
-    '../server/routes/api/presentations/presentation.js'
-  ));
-  ({ handlePresentationScope } = await import(
-    '../server/routes/api/presentations/scope.js'
-  ));
-  ({ handlePresentationRestoreVersion } = await import(
-    '../server/routes/api/presentations/restore.js'
-  ));
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
 });
 
 test.after(() => {
-  try {
-    fs.rmSync(repoRoot, { recursive: true, force: true });
-  } catch {
-    /* best effort */
-  }
+  __resetStorageForTests();
+  __setTestDb(null);
 });
 
 /** A request whose body streams `body` as JSON, with the given method/headers. */
@@ -93,7 +92,7 @@ function fakeRes() {
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
-  return createPresentation(testScope(repoRoot), {
+  return createPresentation(testScope(), {
     title: 'Conflict deck',
     ownerEmail: OWNER,
     slides: [{ id: 's1', type: 'content-slide', content: { title: 'A', body: 'Hello' } }],
@@ -125,8 +124,7 @@ test('PUT /:id conflict emits the canonical envelope', async () => {
   const res = fakeRes();
   await handlePresentationItem(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({
         method: 'PUT',
         headers: { 'if-match': STALE_REVISION },
@@ -146,8 +144,7 @@ test('PATCH /:id/scope conflict emits the canonical envelope', async () => {
   const res = fakeRes();
   await handlePresentationScope(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({
         method: 'PATCH',
         headers: { 'if-match': STALE_REVISION },
@@ -163,14 +160,13 @@ test('PATCH /:id/scope conflict emits the canonical envelope', async () => {
 
 test('POST /:id/versions/:v/restore conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
-  const version = await createPresentationVersion(testScope(repoRoot), pres.id, pres, {
+  const version = await createPresentationVersion(testScope(), pres.id, pres, {
     actorEmail: OWNER,
   });
   const res = fakeRes();
   await handlePresentationRestoreVersion(
     {
-      repoRoot,
-      storageScope: testScope(repoRoot),
+      storageScope: testScope(),
       req: fakeReq({
         method: 'POST',
         headers: { 'if-match': STALE_REVISION },

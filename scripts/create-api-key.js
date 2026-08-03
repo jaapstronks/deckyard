@@ -35,7 +35,7 @@ async function main() {
   }
 
   await loadDotEnv(repoRoot);
-  await initializeStorage(repoRoot);
+  await initializeStorage();
 
   const result = await createApiKey({ name, ownerEmail: email, scopes }, { repoRoot });
 
