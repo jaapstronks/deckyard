@@ -10,12 +10,20 @@ services:
       # Sandbox mode
       SANDBOX_MODE: "1"
 
-      # This stack has no database service, and the sandbox's TTL cleanup and
-      # per-guest quota still read deck JSON straight from disk, so it pins the
-      # file backend explicitly now that `postgres` is the default. Porting the
-      # sandbox to Postgres is its own change; until then this pin is what keeps
-      # the stack bootable.
-      STORAGE_MODE: "file"
+      # Storage. Sandbox runs on Postgres like every other deploy: the deck TTL
+      # sweep and per-guest quota are Postgres queries against the presentations
+      # table. The bundled `postgres` service below needs no setup — migrations
+      # run automatically at app start (scripts/docker-entrypoint.sh). Uploads
+      # stay on disk (SANDBOX_UPLOADS_DIR).
+      STORAGE_MODE: "${STORAGE_MODE:-postgres}"
+      DATABASE_HOST: "${DATABASE_HOST:-postgres}"
+      DATABASE_PORT: "${DATABASE_PORT:-5432}"
+      DATABASE_NAME: "${DATABASE_NAME:-deckyard}"
+      DATABASE_USER: "${DATABASE_USER:-deckyard}"
+      DATABASE_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      # The bundled database is only reachable on the compose network, never
+      # from the host, so it speaks plaintext.
+      DATABASE_SSL: "${DATABASE_SSL:-false}"
       SANDBOX_TTL_HOURS: "${SANDBOX_TTL_HOURS:-24}"
       # Must be a real theme id. Sandbox shows only the neutral built-in
       # themes (corporate, deckyard, editorial, midnight, playful); an operator
@@ -67,6 +75,30 @@ services:
       - sandbox_uploads:/app/server/uploads
     expose:
       - "4177"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Bundled database. Not published to the host: only the app container reaches
+  # it. Migrations run automatically at app start (scripts/docker-entrypoint.sh),
+  # and the sandbox's ephemeral decks live here, so a fresh volume just needs the
+  # seed decks loaded (a deploy step, sandbox being throwaway).
+  postgres:
+    image: postgres:16
+    container_name: deckyard-sandbox-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${DATABASE_NAME:-deckyard}"
+      POSTGRES_USER: "${DATABASE_USER:-deckyard}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+    volumes:
+      - sandbox_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   caddy:
     image: caddy:2-alpine
@@ -88,6 +120,7 @@ services:
 volumes:
   sandbox_data:
   sandbox_uploads:
+  sandbox_pg_data:
   caddy_data:
   caddy_config:
 

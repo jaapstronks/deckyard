@@ -87,6 +87,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | slide-library-i18n facade | the `i18n` jsonb write path (migration 049) survives create/read-back/update |
 | home-aggregation route | `handleHome` assembles team slides, team collections and usage into the Home shape |
 | version-history facade | version create/list/get/prune through the presentations adapter |
+| sandbox TTL sweep + quota | the bulk `DELETE` of expired ephemeral decks cascades to versions/published; per-guest deck-count and byte caps count against `presentations` and refuse a mint with a typed 429 |
 
 ## Adding a test
 
