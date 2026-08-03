@@ -176,7 +176,7 @@ function extraPortraitParts(item) {
  *
  * @param {number} count 1-3 rendered quotes
  * @param {string[]} quoteTexts the quote strings on the slide
- * @returns {number} multiplier for --font-size-title
+ * @returns {number} multiplier for --slide-font-size-title
  */
 export function quoteFontScale(count, quoteTexts) {
   // [min, max] multiplier per quote count. min = the dense/long-content size

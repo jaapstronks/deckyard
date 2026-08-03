@@ -156,14 +156,14 @@ Legacy alias families with live consumers today; the sweep migrates the
 consumers and then deletes the family. None of these is a valid spelling for
 new code:
 
-1. `--font-size-title/subtitle/heading/body` + `--line-height-body`
-   (`theme.css`, already marked legacy);
+1. ~~`--font-size-title/subtitle/heading/body` + `--line-height-body`~~ —
+   **done** (batch 2.2a): consumers migrated, family deleted from `theme.css`;
 2. the `--color-*` spelling of the text-colour alias layer (becomes
    `--slide-*`);
 3. the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
    `--t-bg-dark`, `--t-brand-1/2`);
-4. direct `var(--t-radius…)` reads in slide CSS (go through
-   `--slide-radius-*`).
+4. ~~direct `var(--t-radius…)` reads in slide CSS~~ — **done** (batch 2.2a):
+   all reads go through `--slide-radius-*`.
 
 ## Enforcement
 

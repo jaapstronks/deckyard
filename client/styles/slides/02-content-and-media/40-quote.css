@@ -39,7 +39,7 @@
   font-family: var(--font-heading);
   /* --quote-scale is set per slide by the renderer from the amount of content
      (quoteFontScale): a hero quote stays at 1 and only dips for long text. */
-  font-size: calc(var(--font-size-title) * var(--quote-scale, 1));
+  font-size: calc(var(--slide-font-size-title) * var(--quote-scale, 1));
   line-height: 1.05;
   letter-spacing: -0.02em;
   text-transform: var(--heading-transform, none);
@@ -162,7 +162,7 @@
    band instead of always sitting at the dense size. Same scale for every quote
    on the slide, so they stay uniform. Fallback 0.6 = the old 2-quote size. */
 .slide-quote.is-multi .quote-text {
-  font-size: calc(var(--font-size-title) * var(--quote-scale, 0.6));
+  font-size: calc(var(--slide-font-size-title) * var(--quote-scale, 0.6));
   line-height: var(--slide-leading-tight);
   max-width: none;
   margin-top: 0;

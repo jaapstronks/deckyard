@@ -9,7 +9,7 @@
 
 .slide-gallery .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
@@ -164,7 +164,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--t-radius-sm, 10px);
+  border-radius: var(--slide-radius-sm);
   background: rgba(0, 0, 0, 0.05);
 }
 

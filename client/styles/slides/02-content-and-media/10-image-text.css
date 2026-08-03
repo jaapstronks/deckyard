@@ -9,7 +9,7 @@
 .slide-image-text .copy .body {
   font-family: var(--font-body);
   font-size: calc(28px * var(--tf-size-scale, 1));
-  line-height: var(--line-height-body);
+  line-height: var(--slide-leading-normal);
 }
 .slide-image-text.is-image-narrow .copy .body {
   font-size: calc(32px * var(--tf-size-scale, 1));

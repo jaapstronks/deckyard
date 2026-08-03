@@ -5,7 +5,7 @@
 
 .slide-table .heading {
   font-family: var(--font-heading);
-  font-size: calc(var(--font-size-heading) + 6px);
+  font-size: calc(var(--slide-font-size-heading) + 6px);
   line-height: var(--slide-leading-tight);
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
@@ -23,13 +23,13 @@
 /* Ensure table text is readable - use body font size */
 .slide-table .md-table {
   font-family: var(--font-body);
-  font-size: var(--font-size-body);
-  line-height: var(--line-height-body);
+  font-size: var(--slide-font-size-body);
+  line-height: var(--slide-leading-normal);
 }
 
 .slide-table .md-table th,
 .slide-table .md-table td {
-  font-size: var(--font-size-body);
+  font-size: var(--slide-font-size-body);
   padding: 14px 20px;
 }
 
@@ -105,7 +105,7 @@
   --table-firstcol-bg: var(--t-table-panel-firstcol-bg, var(--t-table-panel-header-bg, var(--color-accent)));
   --table-firstcol-text: var(--t-table-panel-firstcol-text, var(--t-color-accent-contrast, #fff));
   --table-border: var(--t-table-panel-border, rgba(0, 0, 0, 0.14));
-  --table-radius: var(--t-radius, 12px);
+  --table-radius: var(--slide-radius-md);
 }
 
 /* soft — near-white panel, coloured header, faint accent label column */
@@ -123,13 +123,13 @@
     --t-table-soft-border,
     color-mix(in srgb, var(--color-accent) 20%, transparent)
   );
-  --table-radius: var(--t-radius, 12px);
+  --table-radius: var(--slide-radius-md);
 }
 
 .slide-table .table-caption {
   margin-top: 14px;
   font-family: var(--font-body);
-  font-size: calc(var(--font-size-body) - 2px);
+  font-size: calc(var(--slide-font-size-body) - 2px);
   line-height: var(--slide-leading-normal);
   opacity: 0.9;
   max-width: 80%;

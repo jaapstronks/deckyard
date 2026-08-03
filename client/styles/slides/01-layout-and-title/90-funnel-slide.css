@@ -9,7 +9,7 @@
 
 .slide-funnel .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: var(--slide-leading-tight);
   margin: 0;
   font-weight: var(--heading-weight, 400);
@@ -58,7 +58,7 @@
   justify-content: center;
   /* Use lime as primary funnel color */
   background: var(--slide-bg-lime, #e2fe52);
-  border-radius: var(--t-radius-sm, 10px);
+  border-radius: var(--slide-radius-sm);
   padding: var(--slide-space-3) var(--slide-space-6);
   transition: width 0.3s ease;
 }

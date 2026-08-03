@@ -9,7 +9,7 @@
 
 .slide-kpi-metrics .heading {
   font-family: var(--font-heading);
-  font-size: calc(var(--font-size-heading) + 6px);
+  font-size: calc(var(--slide-font-size-heading) + 6px);
   line-height: var(--slide-leading-tight);
   margin: 0 0 28px;
   font-weight: var(--heading-weight, 400);
@@ -237,7 +237,7 @@
 
 .slide-kpi-metrics .kpi-label {
   font-family: var(--font-body);
-  font-size: calc(var(--font-size-body) + 6px);
+  font-size: calc(var(--slide-font-size-body) + 6px);
   line-height: 1.18;
   color: var(--kpi-tile-fg);
   margin-top: 2px;

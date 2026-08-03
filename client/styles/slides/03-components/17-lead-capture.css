@@ -43,7 +43,7 @@
 /* Form state wrapper */
 .slide-lead-capture .lead-capture-form-state {
   background: var(--interaction-surface);
-  border-radius: var(--t-radius-lg, 24px);
+  border-radius: var(--slide-radius-lg);
   padding: 48px 56px;
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
@@ -105,7 +105,7 @@
   font-size: 22px;
   padding: 18px 24px;
   border: 2px solid var(--interaction-border);
-  border-radius: var(--t-radius, 16px);
+  border-radius: var(--slide-radius-md);
   background: var(--interaction-surface-2);
   /* --interaction-surface-2 is ~white mixed with the slide background: a
      light surface whatever the variant did to the slide's text colour. */
@@ -177,7 +177,7 @@
   font-weight: 600;
   padding: var(--slide-space-5) var(--slide-space-8);
   border: none;
-  border-radius: var(--t-radius, 16px);
+  border-radius: var(--slide-radius-md);
   background: var(--color-accent);
   color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
   cursor: pointer;
@@ -217,7 +217,7 @@
   text-align: center;
   padding: var(--slide-space-6);
   background: var(--interaction-surface-2);
-  border-radius: var(--t-radius, 16px);
+  border-radius: var(--slide-radius-md);
   border: 1px dashed var(--interaction-border);
 }
 
@@ -231,7 +231,7 @@
 /* Thank you state */
 .slide-lead-capture .lead-capture-thankyou-state {
   background: var(--interaction-surface);
-  border-radius: var(--t-radius-lg, 24px);
+  border-radius: var(--slide-radius-lg);
   padding: 64px 56px;
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
