@@ -24,7 +24,7 @@
 }
 .slide-chart .chart-title {
   font-family: var(--font-heading);
-  font-size: 52px;
+  font-size: var(--slide-text-3xl);
   line-height: 1.08;
   letter-spacing: -0.02em;
   font-weight: 400;
@@ -34,7 +34,7 @@
 .slide-chart .chart-subtitle {
   margin-top: 10px;
   font-size: 26px;
-  line-height: 1.35;
+  line-height: var(--slide-leading-normal);
   color: var(--color-text-muted);
   max-width: 70ch;
 }
@@ -44,7 +44,7 @@
   /* No background for chart area (per design) */
   background: transparent;
   border: 0;
-  padding: 8px 4px;
+  padding: var(--slide-space-2) var(--slide-space-1);
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -74,7 +74,7 @@
   align-items: center;
   gap: 10px;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--slide-radius-full);
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.35);
   /* Use theme text color for the legend label. */
@@ -91,8 +91,8 @@
 }
 .slide-chart .chart-legend-name {
   font-family: var(--font-mono);
-  font-size: 20px;
-  line-height: 1.1;
+  font-size: var(--slide-text-base);
+  line-height: var(--slide-leading-tight);
   color: inherit;
   opacity: 0.86;
 }
@@ -100,8 +100,8 @@
    number, so it's full-opacity and bold. */
 .slide-chart .chart-legend-stat {
   font-family: var(--font-mono);
-  font-size: 20px;
-  line-height: 1.1;
+  font-size: var(--slide-text-base);
+  line-height: var(--slide-leading-tight);
   font-weight: 700;
   color: inherit;
   opacity: 1;
@@ -262,7 +262,7 @@
   margin: 0;
   padding-left: 1.2em;
   font-size: 18px;
-  line-height: 1.35;
+  line-height: var(--slide-leading-normal);
   color: rgba(0, 0, 0, 0.82);
 }
 

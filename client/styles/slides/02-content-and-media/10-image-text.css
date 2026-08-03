@@ -26,12 +26,12 @@
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
 .slide-image-text .copy .body .md-subheading {
   font-family: var(--font-heading);
-  font-size: 28px;
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  margin: 24px 0 12px;
+  margin: var(--slide-space-6) 0 var(--slide-space-3);
   color: var(--color-text);
 }
 .slide-image-text.is-compact .copy .body .md-subheading {
@@ -74,6 +74,6 @@
 /* Image-text slide specific positioning of the shared CTA row
    (`.slide-actions` lives in 01-layout-and-title/32-markdown-and-actions.css). */
 .slide-image-text .slide-actions {
-  margin-top: 20px;
+  margin-top: var(--slide-space-5);
 }
 

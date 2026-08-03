@@ -282,7 +282,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--slide-space-3);
   padding: 18px;
   text-align: center;
 }
@@ -309,7 +309,7 @@
 }
 
 .slide-gallery .image-placeholder-inner {
-  gap: 8px;
+  gap: var(--slide-space-2);
   padding: 10px;
 }
 

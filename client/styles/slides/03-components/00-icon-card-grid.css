@@ -33,12 +33,12 @@
 .slide-icon-card-grid .icon-card-title {
   font-family: var(--font-heading);
   font-size: 22px;
-  line-height: 1.2;
+  line-height: var(--slide-leading-snug);
   font-weight: var(--t-icon-card-grid-card-title-weight, 400);
   text-transform: var(--t-icon-card-grid-card-title-transform, none);
   font-synthesis: none;
   letter-spacing: var(--t-icon-card-grid-card-title-letter-spacing, -0.01em);
-  margin-bottom: 8px;
+  margin-bottom: var(--slide-space-2);
   /* Long single words (URLs, compound nouns) must not run past the card edge:
      break within the word and hyphenate where the content language allows
      (hyphens honors the slide's `lang`, defaulting to the document language). */
