@@ -97,7 +97,7 @@ async function replaceMembership(db, orgId, collectionId, slideIds) {
 
 /**
  * Slide Collections mixin - adds collection methods to the adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withCollections(Base) {
   return class extends Base {

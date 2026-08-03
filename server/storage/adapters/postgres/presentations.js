@@ -11,7 +11,7 @@ import { enforceSlideWritePolicy } from '../../presentations/crud/enforce-slide-
 
 /**
  * Presentations mixin - adds presentation methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withPresentations(Base) {
   return class extends Base {

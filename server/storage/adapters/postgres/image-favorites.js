@@ -6,7 +6,7 @@ import { getDb, getOrgId } from './helpers.js';
 
 /**
  * Image favorites mixin - adds favorite methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withImageFavorites(Base) {
   return class extends Base {

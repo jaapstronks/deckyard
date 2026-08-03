@@ -7,19 +7,25 @@
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('adapters');
 
-/** @type {import('./interface.js').StorageAdapter | null} */
+/**
+ * The composed PostgreSQL adapter — the storage contract, now that it is the
+ * only backend. The shapes it exchanges with the facades live in `./types.js`.
+ * @typedef {InstanceType<typeof import('./postgres/index.js').PostgresAdapter>} StorageAdapter
+ */
+
+/** @type {StorageAdapter | null} */
 let adapter = null;
 
 /**
  * Initialize the storage adapter.
- * @returns {Promise<import('./interface.js').StorageAdapter>}
+ * @returns {Promise<StorageAdapter>}
  */
 export async function initializeStorage() {
   if (adapter) {
     return adapter;
   }
 
-  const { PostgresAdapter } = await import('./postgres-adapter.js');
+  const { PostgresAdapter } = await import('./postgres/index.js');
   adapter = new PostgresAdapter();
   await adapter.initialize();
   log.info('[Storage] Initialized PostgreSQL adapter');
@@ -29,7 +35,7 @@ export async function initializeStorage() {
 
 /**
  * Get the current storage adapter.
- * @returns {import('./interface.js').StorageAdapter}
+ * @returns {StorageAdapter}
  * @throws {Error} If storage not initialized
  */
 export function getStorage() {
@@ -37,14 +43,6 @@ export function getStorage() {
     throw new Error('Storage not initialized. Call initializeStorage() first.');
   }
   return adapter;
-}
-
-/**
- * Check if storage is initialized.
- * @returns {boolean}
- */
-export function isStorageInitialized() {
-  return adapter !== null;
 }
 
 /**

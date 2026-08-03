@@ -25,7 +25,7 @@ deckyard/
 │   ├── mcp/             # MCP server (stdio + SSE transports, 27 tools)
 │   ├── collab/          # Real-time collaboration (Yjs/Hocuspocus over WebSocket)
 │   ├── storage/         # Data persistence layer
-│   │   └── adapters/    # File-based or PostgreSQL backends
+│   │   └── adapters/    # The PostgreSQL storage adapter
 │   ├── export/          # Export format builders (PNG, PDF, PPTX, HTML)
 │   ├── render/          # Server-side rendering (Puppeteer for screenshots)
 │   ├── auth/            # Authentication (sessions, sandbox mode)
@@ -119,9 +119,7 @@ const handler = compose(
 
 ## Storage Layer
 
-### Adapter Pattern
-
-The storage layer supports multiple backends through an adapter pattern:
+### One backend, one adapter
 
 PostgreSQL is the only storage backend; the old `file` backend (JSON on disk)
 was removed in 1.x. Old file data imports once with `npm run db:import`.
@@ -135,6 +133,20 @@ STORAGE_MODE=postgres   // unset means postgres; "file" stops the boot
 else (including `postgresql`, and the removed `file`) stops the boot with an
 explanation rather than falling back to a backend the operator did not ask
 for.
+
+The layer is two levels deep, and neither is a dispatch:
+
+- **Facades** (`server/storage/<domain>/`) are what routes and jobs call. Each
+  takes a **storage scope** as its first argument, reduces it to a context
+  (`toStorageContext()`), and hands that to the adapter. The scope is where the
+  organization comes from — see [tenant-isolation.md](../reference/tenant-isolation.md).
+- **The adapter** (`server/storage/adapters/`) is composed in
+  `adapters/postgres/index.js`: a base class owning connect/close, widened by
+  one `with*()` mixin per domain. `adapters/index.js` owns the singleton;
+  `adapters/types.js` documents the shapes the two levels exchange.
+
+There is no base class to implement and no capability probing left: a single
+backend either has a method or the call is a bug.
 
 ### On-disk state
 

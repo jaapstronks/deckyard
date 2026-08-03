@@ -34,7 +34,7 @@ function normalizeUsageItems(input) {
 
 /**
  * Slide-library usage mixin - adds per-user usage tracking to the adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withSlideLibraryUsage(Base) {
   return class extends Base {

@@ -7,7 +7,7 @@ import { mapSlideLibraryRow } from '../../mappers.js';
 
 /**
  * Slides mixin - adds slide library methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withSlides(Base) {
   return class extends Base {
