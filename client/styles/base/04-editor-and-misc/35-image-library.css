@@ -42,7 +42,7 @@
 .media-lib-nav-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--ps-space-0-5);
 }
 
 .media-lib-nav-divider {
@@ -99,7 +99,7 @@
   width: 16px;
   height: 16px;
   object-fit: contain;
-  margin-right: 6px;
+  margin-right: var(--ps-space-1-5);
   vertical-align: middle;
 }
 
@@ -236,7 +236,7 @@
 }
 
 .image-library-grid {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
 }
 
 /* Card wrapper for item + favorite button */
@@ -291,7 +291,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -312,8 +312,8 @@
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
-  gap: 8px;
-  padding: 10px;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2-5);
   width: 220px;
   height: 260px;
   border-radius: 12px;
@@ -347,15 +347,15 @@
 .image-lib-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
+  gap: var(--ps-space-1-5);
+  margin-top: var(--ps-space-1-5);
   /* Keep the card height stable even when tags overflow */
   max-height: 56px;
   overflow: hidden;
 }
 
 .image-lib-tag {
-  padding: 2px 8px;
+  padding: var(--ps-space-0-5) var(--ps-space-2);
   border-radius: 999px;
   font-size: 12px;
   border: 1px solid hsl(var(--app-border-default));
@@ -366,8 +366,8 @@
 .image-lib-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
 }
 
 .image-lib-tag-chip {
@@ -390,8 +390,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: var(--ps-space-2-5);
+  margin-bottom: var(--ps-space-2-5);
 }
 
 .image-lib-detail-preview {
@@ -405,13 +405,13 @@
 }
 
 .image-lib-detail-meta {
-  margin-top: 12px;
+  margin-top: var(--ps-space-3);
 }
 
 .image-lib-detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 
 @media (max-width: 640px) {
@@ -423,21 +423,21 @@
 .image-lib-detail-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--ps-space-2);
   justify-content: space-between;
-  margin-top: 12px;
+  margin-top: var(--ps-space-3);
 }
 
 .image-lib-usage {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: var(--ps-space-3);
+  padding-top: var(--ps-space-2-5);
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
 /* Upload section */
 .image-lib-upload {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: var(--ps-space-3-5);
+  padding-top: var(--ps-space-3-5);
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
@@ -447,9 +447,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 32px 24px;
-  margin-top: 10px;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-8) var(--ps-space-6);
+  margin-top: var(--ps-space-2-5);
   border: 2px dashed hsl(var(--app-border-default));
   border-radius: 12px;
   background: hsl(var(--app-bg-sunken));
@@ -486,7 +486,7 @@
 
 /* Preview after upload */
 .image-lib-preview {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
 }
 
 .image-lib-preview-img {
@@ -502,13 +502,13 @@
 }
 
 .image-lib-change-row {
-  margin-top: 8px;
+  margin-top: var(--ps-space-2);
 }
 
 /* URL toggle link */
 .image-lib-url-toggle {
   display: inline-block;
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
   padding: 0;
   border: none;
   background: none;
@@ -525,30 +525,30 @@
 
 /* URL section */
 .image-lib-url-section {
-  margin-top: 10px;
+  margin-top: var(--ps-space-2-5);
 }
 
 /* Metadata section */
 .image-lib-metadata {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: var(--ps-space-4);
+  padding-top: var(--ps-space-4);
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
 .image-lib-metadata-grid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  margin-bottom: 12px;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-2);
+  margin-bottom: var(--ps-space-3);
 }
 
 /* Actions row */
 .image-lib-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 16px;
+  gap: var(--ps-space-2);
+  margin-top: var(--ps-space-4);
 }
 
 

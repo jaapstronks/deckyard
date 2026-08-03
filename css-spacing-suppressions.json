@@ -1,7 +1,7 @@
 {
   "client/styles/app/components.css": {
     "tokenisable-spacing": {
-      "count": 22
+      "count": 1
     }
   },
   "client/styles/base/01-core/10-shell-topbar-dropdown.css": {
@@ -101,17 +101,12 @@
   },
   "client/styles/base/03-controls-and-forms.css": {
     "tokenisable-spacing": {
-      "count": 27
+      "count": 2
     }
   },
   "client/styles/base/04-editor-and-misc/10-modals-base.css": {
     "tokenisable-spacing": {
       "count": 10
-    }
-  },
-  "client/styles/base/04-editor-and-misc/100-analytics.css": {
-    "tokenisable-spacing": {
-      "count": 23
     }
   },
   "client/styles/base/04-editor-and-misc/103-data-source.css": {
@@ -166,7 +161,7 @@
   },
   "client/styles/base/04-editor-and-misc/13-modals-misc.css": {
     "tokenisable-spacing": {
-      "count": 33
+      "count": 2
     }
   },
   "client/styles/base/04-editor-and-misc/14-modals-json-debug.css": {
@@ -191,7 +186,7 @@
   },
   "client/styles/base/04-editor-and-misc/18-modals-export.css": {
     "tokenisable-spacing": {
-      "count": 16
+      "count": 6
     }
   },
   "client/styles/base/04-editor-and-misc/20-preview.css": {
@@ -199,14 +194,9 @@
       "count": 12
     }
   },
-  "client/styles/base/04-editor-and-misc/30-publish.css": {
-    "tokenisable-spacing": {
-      "count": 20
-    }
-  },
   "client/styles/base/04-editor-and-misc/35-image-library.css": {
     "tokenisable-spacing": {
-      "count": 39
+      "count": 1
     }
   },
   "client/styles/base/04-editor-and-misc/36-imagekit-picker.css": {
@@ -222,11 +212,6 @@
   "client/styles/base/04-editor-and-misc/50-editor-responsive.css": {
     "tokenisable-spacing": {
       "count": 3
-    }
-  },
-  "client/styles/base/04-editor-and-misc/60-notes.css": {
-    "tokenisable-spacing": {
-      "count": 30
     }
   },
   "client/styles/base/04-editor-and-misc/72-video-layer.css": {
@@ -301,7 +286,7 @@
   },
   "client/styles/base/04-editor-and-misc/95-viewer-mode.css": {
     "tokenisable-spacing": {
-      "count": 27
+      "count": 1
     }
   },
   "client/styles/base/04-editor-and-misc/97-theme-picker.css": {
@@ -321,7 +306,7 @@
   },
   "client/styles/base/04-editor-and-misc/video-player.css": {
     "tokenisable-spacing": {
-      "count": 25
+      "count": 1
     }
   },
   "client/styles/embed.css": {
