@@ -75,6 +75,7 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
     "@eslint/js": "^9.39.5",
+    "es-module-lexer": "^2.3.1",
     "eslint": "^9.39.5",
     "eslint-plugin-import-x": "^4.17.1",
     "globals": "^17.8.0"

@@ -139,7 +139,7 @@
   flex-direction: column;
   gap: 1px;
   width: 100%;
-  padding: 6px 8px;
+  padding: var(--ps-space-1-5) var(--ps-space-2);
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -191,7 +191,7 @@
 .comment-reply {
   margin-left: var(--ps-space-3);
   padding-left: var(--ps-space-3);
-  margin-top: 6px;
+  margin-top: var(--ps-space-1-5);
   border-left: 2px solid var(--border-light, #e0e0e0);
 }
 
@@ -202,8 +202,8 @@
 .comment-item-header {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 2px;
+  gap: var(--ps-space-1-5);
+  margin-bottom: var(--ps-space-0-5);
 }
 
 .comment-author {
@@ -245,7 +245,7 @@
 
 .comment-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
   margin-top: var(--ps-space-1);
 }
 
@@ -260,7 +260,7 @@
 
 .comment-reply-input {
   display: flex;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
   margin-top: var(--ps-space-2);
   padding: var(--ps-space-2);
   background: var(--surface-alt, #f8f8f8);
@@ -269,7 +269,7 @@
 
 .comment-reply-textarea {
   flex: 1;
-  padding: 6px 8px;
+  padding: var(--ps-space-1-5) var(--ps-space-2);
   font-size: 12px;
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 4px;
@@ -291,13 +291,13 @@
 
 .comments-input-textarea {
   width: 100%;
-  padding: 8px 10px;
+  padding: var(--ps-space-2) var(--ps-space-2-5);
   font-size: var(--ps-text-sm);
   border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 6px;
   resize: none;
   font-family: inherit;
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
   min-height: 36px;
 }
 
@@ -358,7 +358,7 @@
 }
 
 .comment-toolbar-btn {
-  padding: 4px 10px;
+  padding: var(--ps-space-1) var(--ps-space-2-5);
   font-size: 12px;
   color: var(--text-muted, #666);
   background: transparent;
@@ -504,7 +504,7 @@
 
 /* Button size variants */
 .btn-xs {
-  padding: 2px 8px;
+  padding: var(--ps-space-0-5) var(--ps-space-2);
   font-size: 12px;
 }
 
@@ -610,7 +610,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-2);
-  padding: 10px;
+  padding: var(--ps-space-2-5);
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md, 8px);
@@ -662,7 +662,7 @@
 .positioned-comment-popup-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--ps-space-1-5);
 }
 
 /* ============================================================
@@ -684,7 +684,7 @@
 
 .comment-author-ai::before {
   content: '';
-  margin-right: 2px;
+  margin-right: var(--ps-space-0-5);
 }
 
 /* Category badges */
@@ -791,7 +791,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--ps-space-2);
-  padding: 6px 8px;
+  padding: var(--ps-space-1-5) var(--ps-space-2);
   background: var(--surface-alt, #f8f8f8);
   border-radius: 4px;
   margin-bottom: var(--ps-space-1);
@@ -801,7 +801,7 @@
 .analyze-category-badge {
   font-size: 10px;
   font-weight: 500;
-  padding: 2px 6px;
+  padding: var(--ps-space-0-5) var(--ps-space-1-5);
   border-radius: 8px;
   background: hsl(270 40% 90%);
   color: hsl(270 60% 40%);

@@ -40,14 +40,47 @@ const TOP_LEVEL_DIRS = ['assets', 'client', 'docs', 'scripts', 'server', 'shared
 const GITIGNORED_RUNTIME_ROOTS = ['server/data/', 'server/uploads/', 'assets/fonts/google/'];
 
 /**
- * Docs the gate reads. Prose that ships with the repo, minus the private planning
- * workspace: `docs/**` outside `docs/plans/`, plus the four anchor files at the
- * root.
+ * Doc trees this gate does not read and does not require links into.
+ *
+ * `docs/plans/` is upstream's own: a gitignored symlink to the private planning
+ * repo, absent on a fresh clone, so scanning it would fail everywhere and citing
+ * into it must not fail here.
+ *
+ * **A fork adds its own private tree to this list.** That is the whole reason it
+ * is a constant. Upstream hardcoded `docs/plans/` in three places, so a fork with
+ * a `docs/internal/` failed this gate on every item in it and had to patch the
+ * test itself — a patch that then had to be re-defended at every merge. One list,
+ * one line to add. (Fork-upgrade finding B6.)
+ *
+ * A prefix here means three things at once, and they belong together: the tree is
+ * not scanned for citations, citations *into* it are skipped, and its docs are
+ * not required to be linked from elsewhere.
+ *
+ * That third consequence has a sharp edge worth knowing before you document an
+ * example: because citations into an excluded tree are skipped, a *literal*
+ * example path like `docs/internal/` disappears from {@link citedPaths} the
+ * moment a fork excludes that tree — and an allowlist entry for it would then
+ * fail the "cannot rot" test as uncited. So docs name an excluded tree as a
+ * placeholder pattern (`docs/<your-tree>/`), which is filtered as a pattern in
+ * either state and needs no allowlist entry at all.
+ */
+const EXCLUDED_DOC_TREES = ['docs/plans/'];
+
+/**
+ * @param {string} rel repo-relative path
+ * @returns {boolean} whether it sits in a tree this gate ignores
+ */
+const isExcludedDocPath = (rel) => EXCLUDED_DOC_TREES.some((d) => rel.startsWith(d));
+
+/**
+ * Docs the gate reads. Prose that ships with the repo, minus the private trees in
+ * {@link EXCLUDED_DOC_TREES}: `docs/**` outside those, plus the four anchor files
+ * at the root.
  */
 const isDocFile = (rel) =>
   rel.endsWith('.md') &&
   (['AGENTS.md', 'CLAUDE.md', 'README.md', 'ROADMAP.md'].includes(rel) ||
-    (rel.startsWith('docs/') && !rel.startsWith('docs/plans/')));
+    (rel.startsWith('docs/') && !isExcludedDocPath(rel)));
 
 /**
  * Cited paths that resolve to nothing yet are correct as written.
@@ -162,8 +195,9 @@ function pathResolves(rel) {
  *
  * Skipped as "not a literal path to resolve":
  * - glob / angle-bracket / brace templates (`client/lib/*`, `<type>.js`, `{en,nl}`);
- * - `docs/plans/**` — a gitignored symlink to the private planning repo, absent on
- *   a fresh clone;
+ * - anything under {@link EXCLUDED_DOC_TREES} — upstream's `docs/plans/` is a
+ *   gitignored symlink to the private planning repo, absent on a fresh clone,
+ *   and a fork adds its own private tree there;
  * - `client/i18n/**` — generated translation payloads, gitignored (the same
  *   exclusion `removed-slide-types.test.js` makes);
  * - the gitignored runtime roots above — absent in CI and on a fresh clone by
@@ -181,7 +215,7 @@ function citedPaths() {
       tok = tok.replace(/[.,;)]+$/, ''); // drop trailing sentence punctuation
       if (!TOP_LEVEL_DIRS.some((d) => tok.startsWith(`${d}/`))) continue;
       if (/[*?<>{}|]/.test(tok) || tok.includes('…')) continue; // a pattern, not a path
-      if (tok.startsWith('docs/plans/')) continue; // gitignored symlink
+      if (isExcludedDocPath(tok)) continue; // a tree this gate does not own
       if (tok.startsWith('client/i18n/')) continue; // generated payloads
       if (GITIGNORED_RUNTIME_ROOTS.some((d) => tok === d || tok.startsWith(d))) continue;
       out.push({ p: tok, doc });
@@ -292,7 +326,7 @@ test('every doc under docs/ is linked from somewhere', () => {
   const targets = TRACKED.filter(
     (r) =>
       r.startsWith('docs/') &&
-      !r.startsWith('docs/plans/') &&
+      !isExcludedDocPath(r) &&
       r.endsWith('.md') &&
       path.basename(r) !== 'README.md'
   );
