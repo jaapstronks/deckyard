@@ -26,6 +26,7 @@ RUN npm install --omit=dev || npm install
 # (uploads, data/) succeed. A renderer compromise then lands as `node`,
 # not root. See docs/plans/security-hardening.md item 1.
 RUN mkdir -p /app/data /app/uploads \
+  && chmod +x /app/scripts/docker-entrypoint.sh \
   && chown -R node:node /app
 
 ENV NODE_ENV=production
@@ -36,5 +37,11 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 USER node
 
 EXPOSE 4177
+
+# The entrypoint applies pending database migrations when STORAGE_MODE is
+# postgres (a no-op otherwise) and then execs the CMD, so a compose deploy needs
+# no manual `db:migrate` step. `docker compose exec` bypasses entrypoints, so
+# one-off commands in a running container are unaffected.
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 
 CMD ["node", "server/server.js"]
