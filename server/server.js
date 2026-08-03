@@ -223,7 +223,7 @@ startHeartbeat(); // SSE heartbeat for real-time comment updates
 const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
 const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails
 const analyticsCleanupJob = scheduleAnalyticsCleanup(); // Clean old analytics daily
-const retentionCleanupJob = scheduleRetentionCleanup(); // Trim usage/share-links/activity daily
+const retentionCleanupJob = scheduleRetentionCleanup(); // Trim usage/share-links/activity/slide-locks daily
 
 // Initialize background job queue (Redis-based, with fallback)
 await initializeQueues();

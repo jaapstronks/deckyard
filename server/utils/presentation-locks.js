@@ -145,5 +145,3 @@ export const getLockRequest = dbLocks.getLockRequest;
 export const acceptLockRequest = dbLocks.acceptLockRequest;
 export const rejectLockRequest = dbLocks.rejectLockRequest;
 export const getUserLockRequestStatus = dbLocks.getUserLockRequestStatus;
-export const cleanupExpiredLocks = dbLocks.cleanupExpiredLocks;
-export const cleanupOldLockRequests = dbLocks.cleanupOldLockRequests;

@@ -388,10 +388,12 @@ export async function releaseAllUserLocksGlobally({ email } = {}, ctx) {
 
 /**
  * Cleanup all expired slide locks (background task).
- * @param {Object} ctx - Context with organization info
+ *
+ * Instance-wide on purpose: a scheduled job has no org context, and an expired
+ * lock is expired in every organization.
  * @returns {Promise<number>} Number of locks cleaned up
  */
-export async function cleanupExpiredSlideLocks(ctx) {
+export async function cleanupExpiredSlideLocks() {
   return withDbGuard(0, async (db) => {
     const now = nowIso();
 
