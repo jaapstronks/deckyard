@@ -1,5 +1,5 @@
 import { LIVE_WINDOW_MS } from './constants.js';
-import { getSessionsFromDisk } from './disk.js';
+import { hydrateSessionsForPresentation } from './db.js';
 import { sessions } from './state.js';
 
 export async function getFollowStateForPresentation(
@@ -7,7 +7,6 @@ export async function getFollowStateForPresentation(
   presentationId,
   { liveWindowMs = LIVE_WINDOW_MS } = {}
 ) {
-  await getSessionsFromDisk(repoRoot);
   const pid = String(presentationId || '').trim();
   if (!pid)
     return {
@@ -18,6 +17,10 @@ export async function getFollowStateForPresentation(
       slideIndex: 0,
       updatedAt: 0,
     };
+
+  // Adopt stored sessions for this deck: a follower may be reading from a
+  // process other than the one the presenter is pushing state to.
+  await hydrateSessionsForPresentation(pid);
 
   let foundAny = false;
   let best = null;

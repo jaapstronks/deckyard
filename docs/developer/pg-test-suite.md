@@ -95,6 +95,8 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
 | image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
 | settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the file backend used to prove on disk |
+| follow codes | that a five-character code fits the column at all: the 001 schema declared `char(4)`, which the double (any string is any string) could never have caught, and migration 060 widened |
+| present sessions | the substrate swap: a session survives a cold process, a stale row loses to a fresher in-memory copy and a newer row wins, the `presentation_id` cascade removes sessions with their deck, and the TTL sweep spares live ones |
 
 ## Adding a test
 

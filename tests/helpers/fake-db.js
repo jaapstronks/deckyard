@@ -75,6 +75,7 @@ export const JSONB_COLUMNS = {
   auth_audit_log: ['metadata'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],
+  present_sessions: ['state', 'follow_codes'],
 };
 
 /**

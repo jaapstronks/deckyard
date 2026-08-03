@@ -151,9 +151,11 @@ backend either has a method or the call is a bug.
 ### On-disk state
 
 - Uploads: `/server/uploads/{filename}`
-- A set of JSON domains (settings, questions, feedback, present-sessions, …)
+- A shrinking set of JSON domains (settings, questions, feedback, interactions)
   still writes to `/server/data/` regardless of the database; moving them into
   PostgreSQL is a tracked follow-up. Atomic writes: temp file + rename.
+  Already moved: email templates, image-library usage, and the live-session
+  pair (present sessions + follow codes).
 
 ### PostgreSQL Storage
 

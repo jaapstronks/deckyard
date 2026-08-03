@@ -1,41 +1,51 @@
-import { createFollowCode } from '../follow-codes.js';
+import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
-import { isExpired, getSessionsFromDisk, schedulePersist } from './disk.js';
+import {
+  isExpired,
+  hydrateSession,
+  hydrateSessionsForPresentation,
+  persistSession,
+  schedulePersist,
+} from './db.js';
 import { newSessionId, nowState } from './ids.js';
 import { closeSession } from './close.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('sessions');
-
-// Follow codes expire after 24 hours (must match follow-codes.js)
-const FOLLOW_CODE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function areFollowCodesExpired(session) {
   const createdAt = session.followCodesCreatedAt || session.createdAt || 0;
   return Date.now() - createdAt > FOLLOW_CODE_TTL_MS;
 }
 
-async function refreshFollowCodes(repoRoot, session) {
-  const presId = session.presentationId;
+/**
+ * Mint a follow code per language for a deck.
+ *
+ * A failure here is not fatal: the session is still usable, the audience just
+ * has to follow the link instead of typing a code. A code is only omitted when
+ * minting returned nothing (the database is unavailable), never faked.
+ *
+ * @param {string} repoRoot
+ * @param {string} presentationId
+ * @returns {Promise<Object<string, string>>} Codes by language key.
+ */
+async function mintFollowCodes(repoRoot, presentationId) {
   const followCodes = {};
-
   try {
-    const nlFollowUrl = `/follow/${encodeURIComponent(presId)}?lang=nl`;
-    const enFollowUrl = `/follow/${encodeURIComponent(presId)}?lang=en-GB`;
-
-    followCodes.nl = await createFollowCode(repoRoot, nlFollowUrl);
-    followCodes.en = await createFollowCode(repoRoot, enFollowUrl);
-
-    session.followCodes = followCodes;
-    session.followCodesCreatedAt = Date.now();
-
+    const byLang = {
+      nl: `/follow/${encodeURIComponent(presentationId)}?lang=nl`,
+      en: `/follow/${encodeURIComponent(presentationId)}?lang=en-GB`,
+    };
+    for (const [lang, followUrl] of Object.entries(byLang)) {
+      const code = await createFollowCode(repoRoot, followUrl);
+      if (code) followCodes[lang] = code;
+    }
     // Don't log the code values: a live follow code resolves to a presenter's
     // follow URL, so it's a secret (audit L2).
-    log.info(`[Follow Codes] Refreshed expired codes for presentation ${presId}`);
+    log.info(`[Follow Codes] Minted for presentation ${presentationId}`);
   } catch (error) {
-    log.error('Failed to refresh follow codes:', error);
+    log.error('Failed to mint follow codes:', error);
   }
-
   return followCodes;
 }
 
@@ -63,9 +73,12 @@ function ensureCleanupTimer() {
 
 export async function createPresentSession(repoRoot, { presentationId }) {
   ensureCleanupTimer();
-  await getSessionsFromDisk(repoRoot);
   const presId = String(presentationId || '').trim();
   if (!presId) return null;
+
+  // Adopt whatever is stored for this deck first, so a session another process
+  // (or this one before a restart) started is reused rather than duplicated.
+  await hydrateSessionsForPresentation(presId);
 
   // Reuse existing session for this deck if still active.
   for (const s of sessions.values()) {
@@ -81,7 +94,9 @@ export async function createPresentSession(repoRoot, { presentationId }) {
     let followCodes = s.followCodes || {};
     if (areFollowCodesExpired(s)) {
       log.info(`[Follow Codes] Codes expired for session ${s.sessionId}, refreshing...`);
-      followCodes = await refreshFollowCodes(repoRoot, s);
+      followCodes = await mintFollowCodes(repoRoot, presId);
+      s.followCodes = followCodes;
+      s.followCodesCreatedAt = Date.now();
     }
 
     s.lastActivityAt = Date.now();
@@ -94,23 +109,8 @@ export async function createPresentSession(repoRoot, { presentationId }) {
   }
 
   const sessionId = newSessionId();
-
-  // Generate follow codes for both languages
-  const followCodes = {};
+  const followCodes = await mintFollowCodes(repoRoot, presId);
   const now = Date.now();
-  try {
-    const nlFollowUrl = `/follow/${encodeURIComponent(presId)}?lang=nl`;
-    const enFollowUrl = `/follow/${encodeURIComponent(presId)}?lang=en-GB`;
-
-    followCodes.nl = await createFollowCode(repoRoot, nlFollowUrl);
-    followCodes.en = await createFollowCode(repoRoot, enFollowUrl);
-
-    // Don't log the code values (secret; see audit L2).
-    log.info(`[Follow Codes] Generated for presentation ${presId}`);
-  } catch (error) {
-    // If code generation fails, continue without codes
-    log.error('Failed to generate follow codes:', error);
-  }
 
   const s = {
     sessionId,
@@ -125,13 +125,14 @@ export async function createPresentSession(repoRoot, { presentationId }) {
     followCodesCreatedAt: now,
     createdAt: now,
     lastActivityAt: now,
-    repoRoot,
     clients: new Set(),
     heartbeatTimers: new Map(),
     persistTimer: null,
   };
   sessions.set(sessionId, s);
-  schedulePersist(s);
+  // Awaited, not debounced: the row is what makes the session findable from
+  // another process, and the presenter's very next request may land there.
+  await persistSession(s);
   return {
     sessionId,
     joinPath: `/notes/${sessionId}`,
@@ -140,14 +141,13 @@ export async function createPresentSession(repoRoot, { presentationId }) {
 }
 
 export async function getPresentSession(repoRoot, sessionId) {
-  await getSessionsFromDisk(repoRoot);
-  return sessions.get(String(sessionId || '')) || null;
+  return hydrateSession(sessionId);
 }
 
 export async function findMostRecentSessionForPresentation(repoRoot, presentationId) {
-  await getSessionsFromDisk(repoRoot);
   const pid = String(presentationId || '').trim();
   if (!pid) return null;
+  await hydrateSessionsForPresentation(pid);
   let best = null;
   let bestTs = -1;
   for (const s of sessions.values()) {

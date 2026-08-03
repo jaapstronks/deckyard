@@ -1,8 +1,15 @@
-import fs from 'node:fs/promises';
 import { sseWrite } from '../../utils/sse.js';
 import { sessions } from './state.js';
-import { sessionFile } from './disk.js';
+import { deletePersistedSession } from './db.js';
 
+/**
+ * End a session: tell its SSE clients, stop its timers, drop it from this
+ * process, and delete its row.
+ *
+ * @param {string} sessionId
+ * @param {string} [reason] - Sent to clients as the close reason.
+ * @returns {boolean} Whether a session was held here to close.
+ */
 export function closeSession(sessionId, reason = 'closed') {
   const s = sessions.get(String(sessionId || '')) || null;
   if (!s) return false;
@@ -25,8 +32,6 @@ export function closeSession(sessionId, reason = 'closed') {
     } catch {}
   }
   sessions.delete(sessionId);
-  if (s.repoRoot) {
-    fs.unlink(sessionFile(s.repoRoot, sessionId)).catch(() => {});
-  }
+  deletePersistedSession(sessionId).catch(() => {});
   return true;
 }
