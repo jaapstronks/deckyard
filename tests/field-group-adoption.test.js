@@ -144,13 +144,12 @@ describe('quote-slide: the hardcode is now the declared group', () => {
     assert.match(q({ quoteAlign: 'center' }), /is-align-center/);
   });
 
-  it('reads the legacy per-field align so existing decks keep their centring', () => {
-    assert.match(q({ textStyles: { quote: { align: 'center' } } }), /is-align-center/);
-  });
-
-  it('the group field wins over the legacy value', () => {
-    const html = q({ quoteAlign: 'left', textStyles: { quote: { align: 'center' } } });
-    assert.doesNotMatch(html, /is-align-center/);
+  it('does NOT read the retired legacy per-field align (fold, not fallback)', () => {
+    // The v4 -> v5 migration moves `textStyles.quote.align` into `quoteAlign`
+    // once; the renderer must have no second reading form left, so a raw
+    // un-migrated value is inert here. Covered from the migration side in
+    // tests/schema-version.test.js.
+    assert.doesNotMatch(q({ textStyles: { quote: { align: 'center' } } }), /is-align-center/);
   });
 
   it('a group member emits no per-field align class', () => {
