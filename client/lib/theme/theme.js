@@ -208,8 +208,11 @@ export function injectThemeFontFaces(theme, key = null) {
     }
 
     // Curated fonts ship as Google's disjoint latin / latin-ext splits, one
-    // entry per weight × subset; the range is what keeps the second entry from
-    // simply overriding the first.
+    // entry per subset; the range is what keeps the second entry from simply
+    // overriding the first. `weight` may be a CSS weight *range* ("400 700") —
+    // a variable family is one file covering every weight it was pinned at,
+    // and the entry says so rather than repeating the file per weight. See
+    // server/utils/curated-font-embed.js.
     const range = f.unicodeRange ? ` unicode-range: ${f.unicodeRange};` : '';
     rules.push(
       `@font-face { font-family: '${family}'; src: ${src}; font-weight: ${f.weight || 400}; font-style: ${f.style || 'normal'}; font-display: swap;${range} }`

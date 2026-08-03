@@ -34,6 +34,7 @@ import {
   curatedFontFaces,
   curatedFontPath,
   fontFamilyToSlug,
+  mergeFontFaces,
 } from '../shared/theme-fonts.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -139,11 +140,37 @@ async function fetchFontFaces(url) {
   return faces;
 }
 
-/** Fetch a URL and return its bytes, with a clear error on a non-2xx. */
+/**
+ * Fetch a URL and return its bytes.
+ *
+ * The two failure modes are not the same kind of problem, and the caller has
+ * to be able to tell them apart:
+ *
+ * - **The server answered, with an error.** A pinned `fonts.gstatic.com` URL
+ *   that 404s means the pin is rotten — the repository is asking for bytes
+ *   Google no longer serves. Installing anyway leaves a checkout with silently
+ *   missing fonts, which is exactly the unreproducible state the lock exists to
+ *   prevent. Marked `fatalPin`.
+ * - **The request never got an answer** (DNS, timeout, offline, proxy). That is
+ *   the environment, not the repository; these assets are optional at runtime
+ *   and failing `npm install` over a flaky connection would be worse.
+ */
 async function fetchBytes(url) {
-  const response = await fetch(url);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (err) {
+    const cause = err?.cause?.code ? ` (${err.cause.code})` : '';
+    throw new Error(`could not reach ${url}${cause} — network error, not a broken pin`);
+  }
   if (!response.ok) {
-    throw new Error(`Failed to download font: ${response.status} ${response.statusText}`);
+    const err = new Error(
+      `Failed to download font: ${response.status} ${response.statusText}\n` +
+        `      ${url}\n` +
+        '      the pinned URL is gone; re-run with --update-lock and review the diff'
+    );
+    err.fatalPin = true;
+    throw err;
   }
   return Buffer.from(await response.arrayBuffer());
 }
@@ -161,6 +188,9 @@ async function resolveFontEntries(font, options) {
 
   const faces = await fetchFontFaces(apiUrl);
   const entries = [];
+  // Google hands back the same variable file for every weight of a family, so
+  // hash each distinct URL once rather than once per weight × subset.
+  const hashed = new Map();
 
   for (const weight of font.weights) {
     for (const { name: subset, unicodeRange: expectedRange } of FONT_SUBSETS) {
@@ -179,14 +209,18 @@ async function resolveFontEntries(font, options) {
         );
       }
 
-      const bytes = await fetchBytes(face.url);
+      if (!hashed.has(face.url)) {
+        const bytes = await fetchBytes(face.url);
+        hashed.set(face.url, { sha256: sha256(bytes), bytes: bytes.length });
+      }
+      const { sha256: hash, bytes: size } = hashed.get(face.url);
       entries.push({
         weight,
         subset,
         file: path.basename(curatedFontPath(slug, weight, subset)),
         url: face.url,
-        sha256: sha256(bytes),
-        bytes: bytes.length,
+        sha256: hash,
+        bytes: size,
       });
     }
   }
@@ -288,9 +322,11 @@ async function readLock({ optional = false } = {}) {
 async function downloadPinnedFont(font, lock, options) {
   const pinned = lock.fonts[font.family];
   if (!pinned) {
-    throw new Error(
+    const err = new Error(
       `not in the lockfile — run \`node scripts/download-google-fonts.js --update-lock\``
     );
+    err.fatalPin = true;
+    throw err;
   }
 
   const fontDir = path.join(FONTS_DIR, pinned.slug);
@@ -304,37 +340,58 @@ async function downloadPinnedFont(font, lock, options) {
   let downloaded = 0;
   let cached = 0;
 
+  // Group the pins by URL before fetching. A variable family is pinned once per
+  // weight × subset but Google serves *one file per subset* — a four-weight
+  // family means four identical downloads. Across the curated list that was
+  // 262 requests / ~8 MB where 98 requests / ~2.7 MB is the whole payload.
+  const byUrl = new Map();
   for (const entry of pinned.files) {
-    const destPath = path.join(fontDir, entry.file);
+    let group = byUrl.get(entry.url);
+    if (!group) byUrl.set(entry.url, (group = []));
+    group.push(entry);
+  }
 
+  for (const [url, entries] of byUrl) {
     // An existing file counts only if it *is* the pinned bytes. Anything else
     // (a stale download from before the pin, a truncated fetch) is replaced.
-    try {
-      const onDisk = await fs.readFile(destPath);
-      if (sha256(onDisk) === entry.sha256) {
-        if (options.verbose) console.log(`   ✓ ${entry.file} (pinned, cached)`);
-        cached++;
-        continue;
+    const stale = [];
+    for (const entry of entries) {
+      const destPath = path.join(fontDir, entry.file);
+      try {
+        const onDisk = await fs.readFile(destPath);
+        if (sha256(onDisk) === entry.sha256) {
+          if (options.verbose) console.log(`   ✓ ${entry.file} (pinned, cached)`);
+          cached++;
+          continue;
+        }
+        console.log(`   ↻ ${entry.file} (does not match the pin, re-downloading)`);
+      } catch {
+        // Not on disk yet.
       }
-      console.log(`   ↻ ${entry.file} (does not match the pin, re-downloading)`);
-    } catch {
-      // Not on disk yet.
+      stale.push(entry);
     }
+    if (!stale.length) continue;
 
-    const bytes = await fetchBytes(entry.url);
+    // One fetch and one checksum check per unique file, then write every name
+    // the lock gives it.
+    const bytes = await fetchBytes(url);
     const actual = sha256(bytes);
-    if (actual !== entry.sha256) {
-      throw new Error(
-        `checksum mismatch for ${entry.file}\n` +
-          `      expected ${entry.sha256}\n` +
-          `      received ${actual}\n` +
-          `      the pinned URL no longer serves the pinned bytes; re-run with --update-lock ` +
-          `and review the diff`
-      );
+    for (const entry of stale) {
+      if (actual !== entry.sha256) {
+        const err = new Error(
+          `checksum mismatch for ${entry.file}\n` +
+            `      expected ${entry.sha256}\n` +
+            `      received ${actual}\n` +
+            `      the pinned URL no longer serves the pinned bytes; re-run with --update-lock ` +
+            `and review the diff`
+        );
+        err.fatalPin = true;
+        throw err;
+      }
+      await fs.writeFile(path.join(fontDir, entry.file), bytes);
+      console.log(`   ✓ ${entry.file}`);
+      downloaded++;
     }
-    await fs.writeFile(destPath, bytes);
-    console.log(`   ✓ ${entry.file}`);
-    downloaded++;
   }
 
   // Prune anything the lock does not name. `assets/fonts/google/` is a
@@ -355,16 +412,32 @@ async function downloadPinnedFont(font, lock, options) {
 /**
  * Generate @font-face CSS for all downloaded fonts.
  *
- * One rule per weight × subset, each carrying its `unicode-range` so the
- * browser picks the file that actually holds the glyph it needs.
+ * One rule per subset × *distinct file*, each carrying its `unicode-range` so
+ * the browser picks the file that actually holds the glyph it needs. Weights
+ * that share a file (Google serves one variable woff2 per subset and repeats it
+ * for every requested weight) collapse into a single rule with a weight range —
+ * the same spelling `curatedEmbedFonts()` puts in a theme's `embedFonts` and
+ * the export embedder emits, so a family is declared identically everywhere.
+ *
+ * @param {Object} lock - Parsed lockfile (the only thing that knows which
+ *   pinned files are byte-identical)
  */
-function generateFontFaceCSS() {
+function generateFontFaceCSS(lock) {
   let css =
     '/* Auto-generated @font-face rules for self-hosted Google Fonts.\n' +
     '   Written by scripts/download-google-fonts.js — do not edit. */\n\n';
 
   for (const font of CURATED_FONTS) {
-    for (const face of curatedFontFaces(font.family)) {
+    const pins = lock.fonts?.[font.family]?.files || [];
+    const faces = curatedFontFaces(font.family).map((face) => ({
+      ...face,
+      style: 'normal',
+      identity:
+        pins.find((p) => p.weight === face.weight && p.subset === face.subset)?.sha256 ||
+        face.path,
+    }));
+
+    for (const face of mergeFontFaces(faces)) {
       css += `@font-face {
   font-family: '${font.family}';
   font-style: normal;
@@ -434,9 +507,10 @@ async function main() {
       if (!options.dryRun && downloaded === 0) console.log(`   ✓ ${cached} files already pinned`);
       successCount++;
     } catch (err) {
-      // A broken pin is a repository problem and must stop the run; a failed
-      // fetch is an environment problem and must not break `npm install`.
-      if (/checksum mismatch|lockfile/.test(err.message)) {
+      // A broken pin is a repository problem and must stop the run; an
+      // unreachable network is an environment problem and must not break
+      // `npm install`. fetchBytes / downloadPinnedFont tag the first kind.
+      if (err.fatalPin) {
         fatal = err;
         break;
       }
@@ -454,7 +528,7 @@ async function main() {
   if (!options.dryRun) {
     console.log('\n📄 Generating @font-face CSS...');
     const cssPath = path.join(FONTS_DIR, 'fonts.css');
-    await fs.writeFile(cssPath, generateFontFaceCSS());
+    await fs.writeFile(cssPath, generateFontFaceCSS(lock));
     console.log(`   ✓ ${cssPath}`);
   }
 

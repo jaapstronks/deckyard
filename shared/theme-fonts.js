@@ -204,3 +204,77 @@ export function curatedFontFaces(family) {
   return faces;
 }
 
+/**
+ * Collapse @font-face descriptors that resolve to the same physical file.
+ *
+ * Google serves one *variable* woff2 per family × subset and hands back the
+ * same file for every weight you ask for: a family pinned at 400/500/600/700
+ * is four identical downloads under four names. Declared one rule per weight
+ * that is merely redundant over HTTP — but an export base64-inlines every
+ * rule, so the default theme shipped four copies of the same ~35 KB blob in
+ * every standalone HTML, PNG and PDF document.
+ *
+ * Faces are grouped by family + style + `identity`, where `identity` is
+ * whatever the caller can prove file-sameness with (a SHA-256 from the
+ * lockfile, a data URL, a remote URL). Each group becomes one rule:
+ *
+ * - `weight` is the CSS variable-font *range* spanning the group's weights
+ *   (`400 700`), or the single value when the group holds one weight. A range
+ *   is correct precisely because the file is shared: only a variable font can
+ *   be served for several weights, and the range makes the browser set the
+ *   `wght` axis instead of snapping to the nearest declared instance.
+ * - `unicodeRange` is the union of the group's ranges, comma-joined. In
+ *   practice a shared file never spans two subsets, so this is a no-op
+ *   safety net rather than the mechanism.
+ *
+ * Group order follows first appearance, so a caller's precedence (later rules
+ * winning on overlap) is preserved.
+ *
+ * @template {{family: string, weight?: number|string, style?: string, identity: string, unicodeRange?: string}} T
+ * @param {T[]} faces - Face descriptors carrying an `identity`
+ * @returns {Array<T & {weight: string, weights: number[], unicodeRange: string}>}
+ */
+export function mergeFontFaces(faces) {
+  const groups = new Map();
+
+  for (const face of faces || []) {
+    const family = String(face?.family || '').trim();
+    if (!family) continue;
+    const style = String(face.style || 'normal');
+    const identity = String(face.identity ?? '');
+    const key = `${family} ${style} ${identity}`;
+
+    let group = groups.get(key);
+    if (!group) {
+      group = { ...face, family, style, identity, weights: [], ranges: [] };
+      groups.set(key, group);
+    }
+
+    // `weight` may already be a merged CSS range ("400 700") — a theme's
+    // embedFonts are stored merged, and the export embedder merges again to
+    // catch hand-written duplicates. Both endpoints have to survive that.
+    const weights = String(face.weight ?? '')
+      .trim()
+      .split(/\s+/)
+      .map(Number)
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (!weights.length) weights.push(400);
+    for (const weight of weights) {
+      if (!group.weights.includes(weight)) group.weights.push(weight);
+    }
+    const range = String(face.unicodeRange || '').trim();
+    if (range && !group.ranges.includes(range)) group.ranges.push(range);
+  }
+
+  return [...groups.values()].map((group) => {
+    const min = Math.min(...group.weights);
+    const max = Math.max(...group.weights);
+    const { ranges, ...rest } = group;
+    return {
+      ...rest,
+      weight: min === max ? String(min) : `${min} ${max}`,
+      unicodeRange: ranges.join(', '),
+    };
+  });
+}
+

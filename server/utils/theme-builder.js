@@ -4,7 +4,8 @@
  * used by the existing presentation rendering system.
  */
 
-import { getFontFamilyCSS, curatedFontFaces } from '../../shared/theme-fonts.js';
+import { getFontFamilyCSS } from '../../shared/theme-fonts.js';
+import { curatedEmbedFonts } from './curated-font-embed.js';
 import {
   validateThemeConfig,
   RADIUS_SCALES,
@@ -423,18 +424,12 @@ function buildEmbedFontsArray(fonts, { headingManaged, bodyManaged } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    // One entry per weight × subset: the self-hosted files are Google's
-    // disjoint `latin` / `latin-ext` splits, so each carries the unicode-range
-    // that tells the browser which of the two holds the glyph it wants.
-    for (const face of curatedFontFaces(family)) {
-      embedFonts.push({
-        family,
-        path: face.path,
-        weight: face.weight,
-        style: 'normal',
-        unicodeRange: face.unicodeRange,
-      });
-    }
+    // One entry per subset — the self-hosted files are Google's disjoint
+    // `latin` / `latin-ext` splits, so each carries the unicode-range that
+    // tells the browser which of the two holds the glyph it wants — and, for a
+    // variable family, one entry covering every weight that shares the file.
+    // See curatedEmbedFonts().
+    for (const face of curatedEmbedFonts(family)) embedFonts.push(face);
   };
 
   const addManagedFont = (managed) => {
@@ -575,7 +570,9 @@ export function generateFontFaceCSS(fonts, { managedFonts } = {}) {
     if (addedFonts.has(family)) return;
     addedFonts.add(family);
 
-    for (const face of curatedFontFaces(family)) {
+    // Same merged spelling as the theme's embedFonts and the export embedder:
+    // one rule per subset × distinct file, weight ranges for variable families.
+    for (const face of curatedEmbedFonts(family)) {
       lines.push(`@font-face {
   font-family: '${family}';
   font-style: normal;

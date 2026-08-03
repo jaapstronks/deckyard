@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { uploadsDir } from '../config/storage-paths.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
+import { mergeFontFaces } from '../../shared/theme-fonts.js';
 
 function stripFontFaceBlocks(cssText) {
   return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
@@ -75,6 +76,34 @@ export async function fetchFontAsDataUrl(url, format = 'woff2') {
   }
 }
 
+/**
+ * Resolve one embedFonts entry to its bytes, as a base64 data URL.
+ * @returns {Promise<string|null>} data URL, or null when the source is unusable
+ */
+async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
+  if (url && url.startsWith('/uploads/')) {
+    // Locally-stored uploaded font — read directly from the uploads directory
+    try {
+      return await readLocalUploadAsDataUrl(repoRoot, url, format);
+    } catch {
+      return null; // file not found
+    }
+  }
+  if (url) {
+    // URL-based font (external CDN / media provider) — fetch and base64-encode
+    return await fetchFontAsDataUrl(url, format);
+  }
+  if (relPath) {
+    // Path-based font (local curated file)
+    try {
+      return await readFontAsDataUrl(repoRoot, relPath);
+    } catch {
+      return null; // e.g. postinstall download skipped
+    }
+  }
+  return null;
+}
+
 export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   // These will be inlined into export HTML so opening the exported file via
   // `file://` still works (no network, no local-path fetches).
@@ -83,52 +112,69 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   // the export falls back to the CSS font stacks.
   const list = Array.isArray(theme?.embedFonts) ? theme.embedFonts : [];
 
-  const blocks = [];
+  // Resolve each distinct source exactly once. A curated family pins one
+  // *variable* woff2 per subset and repeats it for every weight, so a
+  // four-weight family names four paths that hold identical bytes; reading
+  // (and later inlining) them per entry is where the export's font payload
+  // quadrupled.
+  const sources = new Map();
+  const faces = [];
+
   for (const f of list) {
     const family = String(f?.family || '').trim();
     if (!family) continue;
 
-    const weight = Number(f?.weight || 400) || 400;
-    const style = String(f?.style || 'normal');
     const format = String(f?.format || 'woff2');
-    // Curated fonts arrive as one entry per weight × Google subset; without the
-    // range the second entry would simply override the first and half the
-    // glyphs would fall back. Uploaded fonts carry no range and need none.
-    const unicodeRange = String(f?.unicodeRange || '').trim();
+    const url = typeof f?.url === 'string' ? f.url.trim() : '';
+    const relPath = !url && f?.path ? String(f.path).trim() : '';
+    if (!url && !relPath) continue;
 
-    let dataUrl;
-
-    if (f.url && f.url.startsWith('/uploads/')) {
-      // Locally-stored uploaded font — read directly from the uploads directory
-      try {
-        dataUrl = await readLocalUploadAsDataUrl(repoRoot, f.url, format);
-      } catch {
-        continue; // Skip if file not found
-      }
-    } else if (f.url) {
-      // URL-based font (external CDN / media provider) — fetch and base64-encode
-      dataUrl = await fetchFontAsDataUrl(f.url, format);
-      if (!dataUrl) continue; // Skip if fetch fails
-    } else if (f.path) {
-      // Path-based font (local curated file)
-      try {
-        dataUrl = await readFontAsDataUrl(repoRoot, String(f.path).trim());
-      } catch {
-        continue; // Skip if file not found (e.g. postinstall download skipped)
-      }
-    } else {
-      continue;
+    const sourceKey = `${format} ${url || `path:${relPath}`}`;
+    if (!sources.has(sourceKey)) {
+      sources.set(sourceKey, resolveEmbedSource(repoRoot, { url, path: relPath, format }));
     }
 
-    blocks.push(`
-@font-face {
-  font-family: '${family.replace(/'/g, "\\'")}';
-  src: url('${dataUrl}') format('${format}');
-  font-weight: ${weight};
-  font-style: ${style};
-  font-display: swap;${unicodeRange ? `\n  unicode-range: ${unicodeRange};` : ''}
-}`.trim());
+    faces.push({
+      family,
+      // Left raw: a curated entry already carries the merged CSS range
+      // ("400 700"), which mergeFontFaces knows how to read.
+      weight: f?.weight ?? 400,
+      style: String(f?.style || 'normal'),
+      format,
+      // Curated fonts arrive as one entry per weight × Google subset; without
+      // the range the second entry would simply override the first and half
+      // the glyphs would fall back. Uploaded fonts carry no range and need none.
+      unicodeRange: String(f?.unicodeRange || '').trim(),
+      sourceKey,
+    });
   }
+
+  const dataUrls = new Map(
+    await Promise.all(
+      [...sources].map(async ([key, promise]) => [key, await promise]),
+    ),
+  );
+
+  // The data URL *is* the file identity: two entries that base64 to the same
+  // string are the same bytes, whatever they were named on disk.
+  const identified = [];
+  for (const face of faces) {
+    const dataUrl = dataUrls.get(face.sourceKey);
+    if (!dataUrl) continue; // unreadable / failed fetch — skip, as before
+    identified.push({ ...face, identity: dataUrl });
+  }
+
+  const blocks = mergeFontFaces(identified).map((face) =>
+    `
+@font-face {
+  font-family: '${face.family.replace(/'/g, "\\'")}';
+  src: url('${face.identity}') format('${face.format}');
+  font-weight: ${face.weight};
+  font-style: ${face.style};
+  font-display: swap;${face.unicodeRange ? `\n  unicode-range: ${face.unicodeRange};` : ''}
+}`.trim(),
+  );
+
   return blocks.join('\n');
 }
 
@@ -146,15 +192,15 @@ const LOCAL_FONT_URL_RE = /url\(\s*(['"]?)(\/[^'")]+\.woff2?)\1\s*\)/gi;
  * downloaded file renders its fonts offline, without a server to resolve
  * `/assets/...` paths.
  *
- * Only URLs that actually appear in the CSS are embedded — in practice a
- * couple of small woff2 files (a few KB each, e.g. the shared Bricolage
- * Grotesque UI weight), never the whole managed font library (~2.5 MB across
- * all themes). Files that resolve outside the repo, or can't be read, are left
- * untouched.
+ * Only URLs that actually appear in the CSS are embedded, never the whole
+ * pinned font library (~2.7 MB across all curated families). Files that
+ * resolve outside the repo, or can't be read, are left untouched.
  *
- * Theme fonts are embedded separately via {@link buildEmbeddedFontCss}; this
- * covers shared/UI @font-face rules (`client/styles/shared/fonts.css`) that no
- * theme's `embedFonts` list owns.
+ * Theme fonts are embedded separately via {@link buildEmbeddedFontCss}. No
+ * built-in stylesheet declares an @font-face any more, so in practice this is
+ * the safety net for a *custom* theme that ships its own face in a stylesheet
+ * the export bundle picks up — and the thing that guarantees no
+ * `/assets/...woff2` reference survives into a downloaded file.
  *
  * @param {string} repoRoot - Repository root path
  * @param {string} cssText - CSS source text
