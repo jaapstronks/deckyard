@@ -145,7 +145,13 @@ export default {
 
 ### 2. Add CSS (optional)
 
-Create `client/styles/slides/custom/my-title-slide.css` and import it from your styles bundle.
+There is no separate stylesheet seam for custom types yet: everything under
+`client/styles/slides/` is core-owned and its aggregators are generated, so a
+fork-added file there would be tracked, unloaded, and a merge conflict waiting
+to happen. Instead, put the type's styles inline in `renderHtml` — a `<style>`
+element scoped to your type's own class. Inline styles travel with the type
+through every render path (editor preview, presenter, exports) without
+patching core files.
 
 ### 3. Restart the server
 

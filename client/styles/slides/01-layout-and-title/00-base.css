@@ -258,7 +258,7 @@
    tokens to the theme's house-style contrast colours
    (--t-text-color-light / --t-text-color-dark, falling back to white /
    near-black). "auto" mode picks one at edit time by luminance sampling
-   (client/lib/bg-contrast.js); manual light/dark force it. Muted variants are
+   (client/lib/slide-authoring/bg-contrast.js); manual light/dark force it. Muted variants are
    derived with color-mix so brand tints stay on-palette. Redirecting the tokens
    (not hard-setting colours) keeps hover colours, currentColor icons and
    semantic fills working without !important. */
