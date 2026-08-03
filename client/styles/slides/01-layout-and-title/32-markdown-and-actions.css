@@ -169,6 +169,9 @@
   background: rgba(0, 0, 0, 0.06);
   color: var(--slide-color-danger);
   padding: 2px 6px;
+  /* allowlist: micro-chip rounding. The chip is barely taller than its line
+     box, so the smallest step (--slide-radius-sm, 10px) turns it into a pill
+     and the code stops reading as inline. See slide-roles.md § The allowlist. */
   border-radius: 4px;
   white-space: nowrap;
 }

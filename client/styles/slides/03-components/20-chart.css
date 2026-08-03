@@ -83,6 +83,9 @@
 .slide-chart .chart-legend-swatch {
   width: 14px;
   height: 14px;
+  /* allowlist: micro-chip rounding. The box is 14px square, so the smallest
+     step (--slide-radius-sm, 10px) clamps to a circle and the swatch stops
+     reading as a colour sample. See slide-roles.md § The allowlist. */
   border-radius: 4px;
   display: inline-block;
   flex: 0 0 auto;
@@ -246,7 +249,7 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  border-radius: 14px;
+  border-radius: var(--slide-radius-md);
   padding: 18px 20px;
   border: 1px solid rgba(0, 0, 0, 0.16);
   background: rgba(255, 255, 255, 0.7);

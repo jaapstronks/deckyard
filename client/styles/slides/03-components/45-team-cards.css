@@ -307,7 +307,7 @@
 .slide-team-cards .team-card-photo {
   width: var(--team-card-photo);
   height: var(--team-card-photo);
-  border-radius: 14px;
+  border-radius: var(--slide-radius-md);
   overflow: hidden;
   /* Keep the name tight to its own photo. Combined with a clearly larger row
      gap, a name (even wrapped to two lines) groups with the photo above it
@@ -334,7 +334,7 @@
   background: rgba(0, 0, 0, 0.04);
 }
 
-/* Image shape variants. Default 'rounded' keeps the 14px radius set above. */
+/* Image shape variants. Default 'rounded' keeps the card radius set above. */
 .slide-team-cards.shape-square .team-card-photo {
   border-radius: 0;
 }
