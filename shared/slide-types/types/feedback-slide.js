@@ -61,13 +61,13 @@ export default {
       <div class="slide slide-feedback slide-follow-invite ${bg}" data-interaction="feedback">
         <div class="slide-inner">
           <div class="sfi">
-            <div class="sfi-header">
+            <div>
               <div class="sfi-title" data-inline-field="question" dir="auto">${esc(question)}</div>
               <div class="sfi-body">${esc(copy.feedbackHelp)}</div>
             </div>
 
             <div class="sfi-methods" role="group" aria-label="${esc(copy.feedbackMethodsLabel)}">
-              <div class="sfi-card sfi-card-qr on-surface-light">
+              <div class="sfi-card on-surface-light">
                 <div class="sfi-card-kicker">${esc(copy.feedbackScan)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${esc(
@@ -76,7 +76,7 @@ export default {
                 </div>
               </div>
 
-              <div class="sfi-card sfi-card-code on-surface-light">
+              <div class="sfi-card on-surface-light">
                 <div class="sfi-card-kicker">${esc(copy.feedbackOrGoTo)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 <div class="sfi-code-row">

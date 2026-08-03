@@ -179,7 +179,7 @@ export default {
               <ol class="poll-options poll-options-grid" aria-label="${esc(copy.pollOptionsLabel)}">
                 ${optsHtml}
               </ol>
-              <div class="poll-results poll-results-main on-surface-light" aria-label="${esc(copy.pollResultsLabel)}">
+              <div class="poll-results on-surface-light" aria-label="${esc(copy.pollResultsLabel)}">
                 <div class="poll-results-title">${esc(copy.pollResultsTitle)}</div>
                 <div class="poll-bars" data-poll-bars="1">
                   ${barsHtml}
