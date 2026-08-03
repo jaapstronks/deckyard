@@ -47,14 +47,10 @@ test('fails closed: multi-workspace on the file backend returns an error', () =>
       assert.match(err, /Postgres/, 'error should point at the Postgres requirement');
     });
   }
-  // Default STORAGE_MODE (unset) resolves to file — same footgun.
-  withEnv({ MULTI_WORKSPACE_ENABLED: 'true', STORAGE_MODE: undefined, SANDBOX_MODE: undefined }, () => {
-    assert.ok(multiWorkspaceStorageError());
-  });
 });
 
-test('no error: multi-workspace on Postgres (org-scoped storage)', () => {
-  for (const mode of ['postgres', 'postgresql', 'Postgres']) {
+test('no error: multi-workspace on Postgres, including the default (unset) mode', () => {
+  for (const mode of ['postgres', undefined]) {
     withEnv({ MULTI_WORKSPACE_ENABLED: 'true', STORAGE_MODE: mode, SANDBOX_MODE: undefined }, () => {
       assert.equal(multiWorkspaceStorageError(), null, `mode=${mode}`);
     });

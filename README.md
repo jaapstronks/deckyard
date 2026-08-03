@@ -280,11 +280,15 @@ node server/server.js
 
 ### Data Storage
 
-- Presentations: `server/data/presentations/`
-- Uploads: `server/uploads/`
+Decks live in PostgreSQL — `STORAGE_MODE` defaults to `postgres`, and the
+compose stack ships its own database. Uploaded media stays on disk in
+`server/uploads/`, so a backup is a `pg_dump` plus that directory; see the
+[self-hosting guide](docs/ops/self-hosting.md).
 
-Back up these directories regularly. (Optional Postgres mode: see
-`.env.example`.)
+The `file` mode (JSON in `server/data/`) still exists but is being retired
+during beta. An install with existing file data imports it once with
+`npm run db:import`; until then Deckyard refuses to boot on an empty database
+rather than show an empty workspace.
 
 ## Project Structure
 

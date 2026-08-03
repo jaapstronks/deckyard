@@ -15,11 +15,10 @@ services:
       PORT: "4177"
       HOST: "0.0.0.0"
 
-      # Storage. The compose stack ships its own database, so the container runs
-      # on Postgres out of the box; the code default (file storage, for a plain
-      # `npm start` checkout) is unchanged. Every value below is `.env`-
-      # overridable: set STORAGE_MODE=file there to keep file storage, or point
-      # DATABASE_HOST at a managed database to ignore the bundled service.
+      # Storage. Postgres is the default everywhere; the compose stack ships its
+      # own database so the container needs no setup. Every value below is
+      # `.env`-overridable: point DATABASE_HOST at a managed database to ignore
+      # the bundled service.
       STORAGE_MODE: "${STORAGE_MODE:-postgres}"
       DATABASE_HOST: "${DATABASE_HOST:-postgres}"
       DATABASE_PORT: "${DATABASE_PORT:-5432}"

@@ -60,6 +60,9 @@ describe('mapSlideLibraryRow (Postgres read projection)', () => {
 // Postgres fix.
 const repoRoot = path.join(os.tmpdir(), `deckyard-lib-i18n-${crypto.randomUUID()}`);
 process.env.DATA_DIR = path.join(repoRoot, 'data');
+// This suite drives the file adapter on purpose, and STORAGE_MODE now defaults
+// to postgres, so it pins the backend it means to exercise.
+process.env.STORAGE_MODE = 'file';
 
 const { initializeStorage, closeStorage } = await import('../server/storage/adapters/index.js');
 const { createPersonalLibraryItem, listPersonalLibrary, updatePersonalLibraryItem } = await import(
@@ -83,6 +86,7 @@ describe('slide-library i18n round-trip (facade / file backend)', () => {
     await closeStorage();
     await fs.rm(repoRoot, { recursive: true, force: true });
     delete process.env.DATA_DIR;
+    delete process.env.STORAGE_MODE;
   });
 
   it('keeps both languages through create and update', async () => {

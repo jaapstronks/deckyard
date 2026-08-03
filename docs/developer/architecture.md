@@ -123,15 +123,19 @@ const handler = compose(
 
 The storage layer supports multiple backends through an adapter pattern:
 
-| Mode | Backend | Use Case |
-|------|---------|----------|
-| `file` | JSON on disk | OSS self-hosted, development |
-| `postgres` | PostgreSQL | Production, multi-tenant |
+| Mode | Backend | Status |
+|------|---------|--------|
+| `postgres` | PostgreSQL | The default, and the only backend under development |
+| `file` | JSON on disk | Being retired during beta; gains no new features |
 
 ```javascript
 // Storage mode selection (server/config/database.js)
-STORAGE_MODE=file|postgres
+STORAGE_MODE=postgres|file   // unset means postgres
 ```
+
+`postgres` and `file` are the only accepted values, spelled exactly like
+that — an unknown value (including `postgresql`) stops the boot rather than
+falling back to a backend the operator did not ask for.
 
 ### File-Based Storage
 

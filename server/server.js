@@ -10,6 +10,7 @@ import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { ssoConfigError } from './config/sso.js';
 import { multiWorkspaceStorageError } from './config/features.js';
+import { storageModeError } from './config/database.js';
 import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
 import { handleStatic } from './routes/static.js';
@@ -21,6 +22,7 @@ import { createLogger } from './utils/logger.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
 import { dataDir, uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
+import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
 import { startHeartbeat, stopHeartbeat } from './services/comment-events.js';
 import { announceMaintenance } from './services/maintenance.js';
@@ -208,6 +210,17 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+// Configuration check: STORAGE_MODE must name a backend that exists. An
+// unknown value used to fall through to file storage, which is the one
+// outcome an operator asking for Postgres must never get.
+{
+  const modeErr = storageModeError();
+  if (modeErr) {
+    console.error(`\n⚠️  STORAGE: ${modeErr}\n`);
+    process.exit(1);
+  }
+}
+
 // Non-fatal configuration warnings (weak secret, missing public URL). These
 // don't block boot but should be fixed before exposing the instance.
 for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
@@ -216,6 +229,19 @@ for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
 
 await ensureDirs();
 await initializeStorage(repoRoot);
+
+// Data check: an empty database next to a populated file-storage data
+// directory means this install predates the Postgres default and has not been
+// imported yet. Serving an empty workspace over it is indistinguishable from
+// data loss, so stop with the commands that fix it.
+{
+  const strandedErr = await strandedFileDataError(repoRoot);
+  if (strandedErr) {
+    console.error(`\n⚠️  STORAGE: ${strandedErr}\n`);
+    await closeStorage();
+    process.exit(1);
+  }
+}
 await initializeMediaProvider(repoRoot);
 await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
 startSandboxCleanupLoop(repoRoot);

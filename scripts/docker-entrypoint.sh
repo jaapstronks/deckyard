@@ -12,9 +12,12 @@ set -e
 
 APP_DIR="${APP_DIR:-/app}"
 
-storage_mode=$(printf '%s' "${STORAGE_MODE:-}" | tr '[:upper:]' '[:lower:]')
+# Postgres is the default, so an unset STORAGE_MODE means Postgres too. Any
+# other value is left to the app, which validates STORAGE_MODE at boot and
+# names the canonical spellings (server/config/database.js).
+storage_mode="${STORAGE_MODE:-postgres}"
 
-if [ "$storage_mode" = "postgres" ] || [ "$storage_mode" = "postgresql" ]; then
+if [ "$storage_mode" = "postgres" ]; then
   # `depends_on: condition: service_healthy` already gates on pg_isready, but a
   # healthy Postgres can still refuse the first connection for a beat (it
   # restarts once during first-run initdb). Retry a few times before giving up
@@ -30,18 +33,10 @@ if [ "$storage_mode" = "postgres" ] || [ "$storage_mode" = "postgresql" ]; then
     attempt=$((attempt + 1))
     sleep 3
   done
-
-  # Never let a Postgres-mode boot quietly present an empty workspace next to a
-  # full data directory. This is a warning, not a stop: the hard boot-guard
-  # lands with the storage default flip (see
-  # docs/plans/briefs/storage-path-consolidation.md, PR D).
-  if [ -d "${APP_DIR}/server/data/presentations" ] &&
-     [ -n "$(ls -A "${APP_DIR}/server/data/presentations" 2>/dev/null || true)" ]; then
-    echo "entrypoint: WARNING — STORAGE_MODE=postgres, but server/data/presentations is not empty." >&2
-    echo "entrypoint: that file-storage data is NOT served in Postgres mode. Either import it" >&2
-    echo "entrypoint: (docker compose exec app npm run db:import) or set STORAGE_MODE=file" >&2
-    echo "entrypoint: in .env to keep using file storage." >&2
-  fi
 fi
+
+# A Postgres-mode boot that would show an empty workspace next to a full data
+# directory is refused by the app itself (server/storage/boot-check.js), which
+# can see whether the database is actually empty. Nothing to duplicate here.
 
 exec "$@"

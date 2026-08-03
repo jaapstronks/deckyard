@@ -25,7 +25,7 @@
  *
  * Prerequisites:
  *   - PostgreSQL database running and schema migrations applied
- *   - Set STORAGE_MODE=postgres in .env (or it uses file mode)
+ *   - DATABASE_* configured (STORAGE_MODE already defaults to postgres)
  */
 
 import fs from 'node:fs/promises';

@@ -22,6 +22,9 @@ import crypto from 'node:crypto';
 
 const repoRoot = path.join(os.tmpdir(), `deckyard-home-${crypto.randomUUID()}`);
 process.env.DATA_DIR = path.join(repoRoot, 'data');
+// This suite drives the file adapter on purpose, and STORAGE_MODE now defaults
+// to postgres, so it pins the backend it means to exercise.
+process.env.STORAGE_MODE = 'file';
 
 const { initializeStorage, closeStorage } = await import(
   '../server/storage/adapters/index.js'
@@ -111,6 +114,7 @@ describe('handleHome (round-trip)', () => {
     await closeStorage();
     await fs.rm(repoRoot, { recursive: true, force: true });
     delete process.env.DATA_DIR;
+    delete process.env.STORAGE_MODE;
   });
 
   it('rejects an unauthenticated request', async () => {
