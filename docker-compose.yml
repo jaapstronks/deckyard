@@ -14,11 +14,53 @@ services:
       # These are always set regardless of .env
       PORT: "4177"
       HOST: "0.0.0.0"
+
+      # Storage. The compose stack ships its own database, so the container runs
+      # on Postgres out of the box; the code default (file storage, for a plain
+      # `npm start` checkout) is unchanged. Every value below is `.env`-
+      # overridable: set STORAGE_MODE=file there to keep file storage, or point
+      # DATABASE_HOST at a managed database to ignore the bundled service.
+      STORAGE_MODE: "${STORAGE_MODE:-postgres}"
+      DATABASE_HOST: "${DATABASE_HOST:-postgres}"
+      DATABASE_PORT: "${DATABASE_PORT:-5432}"
+      DATABASE_NAME: "${DATABASE_NAME:-deckyard}"
+      DATABASE_USER: "${DATABASE_USER:-deckyard}"
+      DATABASE_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+      # The bundled database is only reachable on the compose network, never
+      # from the host, so it speaks plaintext. SSL stays on by default for any
+      # non-localhost host, which is what a managed database wants.
+      DATABASE_SSL: "${DATABASE_SSL:-false}"
     volumes:
       - ./server/data:/app/server/data
       - ./server/uploads:/app/server/uploads
     expose:
       - "4177"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Bundled database. Not published to the host: only the app container reaches
+  # it. Migrations run automatically at app start (see
+  # scripts/docker-entrypoint.sh), so a fresh clone needs no manual step.
+  postgres:
+    image: postgres:16
+    container_name: deckyard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${DATABASE_NAME:-deckyard}"
+      POSTGRES_USER: "${DATABASE_USER:-deckyard}"
+      POSTGRES_PASSWORD: "${DATABASE_PASSWORD:-deckyard}"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # The app starts as soon as compose calls this healthy, which is earlier
+    # than "accepting connections" on a first run — the entrypoint retries a few
+    # times to cover the gap.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-deckyard} -d ${DATABASE_NAME:-deckyard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   # Optional (recommended in production): HTTPS reverse proxy
   # - Put DOMAIN and LETSENCRYPT_EMAIL in a `.env` file on the server (not committed)
@@ -41,5 +83,6 @@ services:
       - caddy_config:/config
 
 volumes:
+  pg_data:
   caddy_data:
   caddy_config:

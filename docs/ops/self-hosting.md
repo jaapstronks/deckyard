@@ -72,23 +72,63 @@ every option; the ones most installs want:
 | `AUTH_ENABLED` + `AUTH_SECRET` | Enable auth; long random string for session signing |
 | `AUTH_ADMIN_EMAIL` | This user gets the admin role |
 | `OPENAI_API` / `CLAUDE_API` / `MISTRAL_API` / `DEEPSEEK_API` | Enable the AI wizard (optional; one is enough) |
-| `DATABASE_*` | Postgres storage instead of JSON files (optional) |
+| `DATABASE_*` | Override the bundled Postgres (host, credentials, SSL) — see below |
 | `DEFAULT_THEME` | Default theme id for new decks |
 | `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`) | Real-time collaboration: presence, and optionally live co-editing (default off) |
 | `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL` | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
 After editing: `docker compose up -d` to apply.
 
-### Database migrations
+### Storage: the bundled database
 
-When running with Postgres, apply migrations after each update:
+`docker compose up` starts a `postgres:16` service alongside the app and points
+the app at it, so a fresh clone runs on Postgres with no extra step. The
+database is not published to the host — only the app container can reach it —
+and its data lives in the `pg_data` named volume, which survives
+`docker compose restart` and `docker compose up -d --build`.
+
+Migrations are applied automatically when the app container starts
+(`scripts/docker-entrypoint.sh`). Applied migrations are recorded in a
+`_migrations` table, so a restart re-runs nothing and the manual
+`docker compose exec app npm run db:migrate` after each update is no longer
+needed. Feature flags that need a migration on Postgres — `COLLAB_LIVE_EDITS`
+requires `040_presentation_ydocs` — are covered by that automatic run.
+
+Two things you may want to change in `.env`:
+
+- **Credentials.** The bundled database defaults to `deckyard` / `deckyard` on
+  database `deckyard`. Set `DATABASE_USER`, `DATABASE_PASSWORD` and
+  `DATABASE_NAME` before the first `up` to pick your own; both containers read
+  the same variables, so they stay in sync. Changing them after the volume
+  exists does not rename the existing role or database.
+- **A managed database instead.** Set `DATABASE_HOST` (plus port, name,
+  credentials) to point at your provider. SSL is on by default for any
+  non-localhost host; set `DATABASE_SSL_REJECT_UNAUTHORIZED=false` for a
+  self-signed certificate. The bundled service still starts and idles; add a
+  `docker-compose.override.yml` that gives it a `profiles: ["disabled"]` entry
+  if you would rather it did not.
+
+To keep JSON-file storage instead, set `STORAGE_MODE=file` in `.env`. Note that
+this is the storage path being retired during beta — see
+`docs/reference/versioning.md` for what "beta" promises.
+
+> **Upgrading an existing file-storage compose install?** Pulling this change
+> switches the container to Postgres, and your `server/data/` decks are not
+> served from there. Either set `STORAGE_MODE=file` in `.env` before
+> `docker compose up`, or import the data once with
+> `docker compose exec app npm run db:migrate:data`. The container logs a
+> warning at boot when it finds a non-empty `server/data/presentations` while
+> running on Postgres; your files are never touched.
+
+### Backups
+
+The `pg_data` volume holds everything except uploaded media:
 
 ```bash
-cd /opt/deckyard && docker compose exec app npm run db:migrate
+docker compose exec postgres pg_dump -U deckyard deckyard > backup.sql
 ```
 
-Feature flags that need a migration on Postgres: `COLLAB_LIVE_EDITS` requires
-migration `040_presentation_ydocs` (included in a normal `db:migrate` run).
+Back that up together with `server/uploads/`.
 
 ## Deploy updates
 
@@ -101,12 +141,13 @@ CI to run the same two commands over SSH.
 
 ## Back up
 
-Two directories hold all state when using file storage:
+On the compose stack (Postgres): the `pg_data` volume plus `server/uploads/` —
+see [Backups](#backups) above for the `pg_dump` command.
+
+On a `STORAGE_MODE=file` install, two directories hold all state:
 
 - `server/data/` — presentations, versions, settings
 - `server/uploads/` — uploaded media
-
-With Postgres, back up the database plus `server/uploads/`.
 
 ## Security defaults
 
