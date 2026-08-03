@@ -72,7 +72,8 @@ storage layer that enforces org isolation:
   cross-org read returns nothing. The session is the *only* resolution path:
   the hostname says nothing about which organization a request acts in (see
   "Why not the hostname" below).
-- **File backend** (the OSS default, `STORAGE_MODE` unset) does **not**. Decks
+- **File backend** (the code default for a plain `npm start`; the compose
+  stack ships Postgres) does **not**. Decks
   live flat in one directory (`server/storage/presentations/paths.js`) and
   `listPresentations()` never consults the org
   (`server/storage/presentations/list.js`). Two tenants sharing one file

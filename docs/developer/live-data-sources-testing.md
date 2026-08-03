@@ -10,13 +10,13 @@
 
 2. Run the migration (if using PostgreSQL):
    ```
-   npm run migrate
+   npm run db:migrate
    ```
    This adds the `data_source` column to `slide_library`.
 
 3. Start the dev server:
    ```
-   npm run dev
+   npm start
    ```
 
 ---

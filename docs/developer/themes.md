@@ -326,7 +326,9 @@ theme knows what its own slots are.
 ```
 
 Either a plain string or an `{ en, nl }` object per slot. Renaming the slots is
-what this is for; adding *new* options is `slideBackgrounds` (above).
+what this is for; adding *new* options is `slideBackgrounds`
+(`shared/theme-slide-backgrounds.js`; a theme declares extra `slideBackgrounds`
+entries and the generated CSS ships the matching `.slide-bg-<id>` rules).
 
 > Database themes set the same thing through `config.backgroundLabels`, one
 > label per slot — the theme editor has no per-locale field.
@@ -442,9 +444,9 @@ Available tokens (each optional; unset falls back to the palette default):
   "label": "Acme Corporation",
 
   "assets": {
-    "logo": "/custom/assets/images/acme-logo.svg",
+    "logo": "/custom/themes/acme-corp/assets/images/acme-logo.svg",
     "logoAlt": "Acme Corp",
-    "payoffLogo": "/custom/assets/images/acme-payoff.svg",
+    "payoffLogo": "/custom/themes/acme-corp/assets/images/acme-payoff.svg",
     "payoffAlt": "Acme Corp"
   },
 
@@ -454,7 +456,7 @@ Available tokens (each optional; unset falls back to the palette default):
     "--t-color-accent": "#0066cc",
     "--t-slide-bg-lime": "#00cc66",
     "--t-slide-bg-mist": "#f0f4f8",
-    "--t-slide-bg-night": "#1a1a2e",
+    "--t-slide-bg-dark": "#1a1a2e",
     "--t-text-color-light": "#ffffff",
     "--t-text-color-dark": "#212121"
   },
@@ -462,15 +464,15 @@ Available tokens (each optional; unset falls back to the palette default):
   "embedFonts": [
     {
       "family": "Acme Sans",
-      "path": "custom/assets/fonts/AcmeSans-Medium.woff2",
+      "path": "custom/themes/acme-corp/assets/fonts/AcmeSans-Medium.woff2",
       "weight": 500,
       "style": "normal"
     }
   ],
 
   "backgroundPresets": [
-    "/custom/assets/images/backgrounds/acme-bg-1.jpg",
-    "/custom/assets/images/backgrounds/acme-bg-2.jpg"
+    "/custom/themes/acme-corp/assets/images/backgrounds/acme-bg-1.jpg",
+    "/custom/themes/acme-corp/assets/images/backgrounds/acme-bg-2.jpg"
   ],
 
   "slideTypes": {
@@ -493,18 +495,22 @@ For a complete custom setup:
 
 ```
 custom/themes/
-└── acme-corp.json
-
-custom/assets/
-├── fonts/
-│   └── AcmeSans-Medium.woff2
-└── images/
-    ├── acme-logo.svg
-    ├── acme-payoff.svg
-    └── backgrounds/
-        ├── acme-bg-1.jpg
-        └── acme-bg-2.jpg
+└── acme-corp/
+    ├── theme.json
+    └── assets/
+        ├── fonts/
+        │   └── AcmeSans-Medium.woff2
+        └── images/
+            ├── acme-logo.svg
+            ├── acme-payoff.svg
+            └── backgrounds/
+                ├── acme-bg-1.jpg
+                └── acme-bg-2.jpg
 ```
+
+The theme's own chrome lives in its folder. Assets that get baked into saved
+slide content (uploaded images, deck-specific photos) stay in the shared
+`custom/assets/` tree - see the note under "Theme locations" above.
 
 ---
 

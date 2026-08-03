@@ -25,9 +25,9 @@ agent's preview — none of which share the app's chrome.
 > `app.css` saves ~458KB), so a `var(--ps-*)` or `var(--z-*)` written inside
 > `client/styles/slides/**` resolves to **nothing** there, with no error.
 >
-> This is the only such consumer: the HTML/PNG/PDF export
-> (`server/export/css-bundle.js`) loads `app.css` too, and the embed shell goes
-> through `embed.css`, which imports the tokens directly.
+> This is the only such consumer: the HTML/PNG/PDF export goes through
+> `client/styles/export.css` (`server/export/css-bundle.js`), which imports
+> `ui-tokens.css` directly — as does the embed shell's `embed.css`.
 >
 > So: **do not put `--ps-*` or `--z-*` inside `client/styles/slides/**`.** If you
 > need to, fix the bundle first (import `ui-tokens.css` from `slides.css`, or add
@@ -167,7 +167,7 @@ Never raise a budget to make the gate pass.
 
 ## Z-index — named stacking tiers
 
-Fourteen tiers, so cross-component overlap has one source of truth instead of
+Seventeen tiers, so cross-component overlap has one source of truth instead of
 scattered magic numbers. The full list with per-tier intent lives in
 `ui-tokens.css` itself; the shape is:
 

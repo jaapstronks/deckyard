@@ -104,9 +104,19 @@ Two things you may want to change in `.env`:
 - **A managed database instead.** Set `DATABASE_HOST` (plus port, name,
   credentials) to point at your provider. SSL is on by default for any
   non-localhost host; set `DATABASE_SSL_REJECT_UNAUTHORIZED=false` for a
-  self-signed certificate. The bundled service still starts and idles; add a
-  `docker-compose.override.yml` that gives it a `profiles: ["disabled"]` entry
-  if you would rather it did not.
+  self-signed certificate. The bundled service still starts and idles. To stop
+  it entirely, add a `docker-compose.override.yml` that both drops the
+  dependency and parks the service behind an inactive profile — dropping only
+  one of the two makes Compose refuse to start ("service app depends on
+  undefined service postgres"):
+
+  ```yaml
+  services:
+    app:
+      depends_on: !reset []
+    postgres:
+      profiles: ["disabled"]
+  ```
 
 To keep JSON-file storage instead, set `STORAGE_MODE=file` in `.env`. Note that
 this is the storage path being retired during beta — see
@@ -125,7 +135,7 @@ this is the storage path being retired during beta — see
 The `pg_data` volume holds everything except uploaded media:
 
 ```bash
-docker compose exec postgres pg_dump -U deckyard deckyard > backup.sql
+docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql
 ```
 
 Back that up together with `server/uploads/`.
@@ -174,10 +184,12 @@ user rather than root. Two consequences for self-hosters on Linux:
 ## Running a public sandbox
 
 Deckyard has a sandbox mode (anonymous guest sessions, 24h auto-cleanup,
-watermarked exports, uploads disabled) for public demo instances. Use
-`docker-compose.sandbox.yml`; it sets `SANDBOX_MODE=1` and the related
-`SANDBOX_*` variables (TTL, watermark, theme) documented in
-`server/config/sandbox.js`.
+watermarked exports, uploads disabled) for public demo instances. Run it as a
+stack of its own — `docker compose -f docker-compose.sandbox.yml up -d --build`
+— not as an override on `docker-compose.yml`: it defines its own app, proxy
+and volumes, and runs on file storage in throwaway volumes. It sets
+`SANDBOX_MODE=1` and the related `SANDBOX_*` variables (TTL, watermark, theme)
+documented in `server/config/sandbox.js`.
 
 What sandbox mode does, and what it deliberately leaves on:
 

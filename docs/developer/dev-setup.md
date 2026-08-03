@@ -87,6 +87,8 @@ NOTION_FEATURE=true
 |--------|-------------|
 | `npm start` | Start development server |
 | `npm test` | Run the node test suite |
+| `npm run lint` | ESLint gate; CI runs it before the tests |
+| `npm run test:pg` | Storage-layer suite against a real PostgreSQL (see `docs/developer/pg-test-suite.md`) |
 | `npm run mcp` | Start the MCP server over stdio (for Claude Desktop etc.) |
 | `npm run vendor:collab` | Rebuild the vendored Yjs/Hocuspocus client bundle |
 | `npm run seed:bg-demo` | Seed the background-contrast demo deck |
@@ -95,6 +97,7 @@ NOTION_FEATURE=true
 | `npm run db:migrate:down` | Rollback last migration |
 | `npm run db:migrate:status` | Show migration status |
 | `npm run db:import` | Import file data into PostgreSQL |
+| `npm run i18n:audit` | Find hardcoded copy that bypasses `t()`, and orphan keys |
 | `npm run i18n:extract` | Extract translation keys from source |
 | `npm run i18n:sync` | Sync missing keys across locales |
 | `npm run i18n:validate` | Validate translation files |
@@ -136,6 +139,12 @@ npm run db:migrate
 # 4. Check status
 npm run db:migrate:status
 ```
+
+Or let compose do it:
+`docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build`
+starts a bundled `postgres:16`, applies pending migrations at boot
+(`scripts/docker-entrypoint.sh`), and publishes the database on host port 5433.
+See `docs/ops/self-hosting.md`.
 
 ### Importing Data: File to PostgreSQL
 
@@ -273,12 +282,13 @@ chmod 755 server/uploads
 ### Missing Translations
 
 ```bash
-# Sync missing keys from English to other locales
-npm run i18n:sync
-
-# Validate all translation files
-npm run i18n:validate
+node scripts/i18n-fill.js en          # write missing EN keys from fallbacks
+node scripts/i18n-fill.js --report nl # dump missing NL keys for translation
+npm run i18n:validate                 # validate all translation files
 ```
+
+Only `en` and `nl` are gated; the other ten locales fall back to English by
+design.
 
 ---
 
@@ -288,6 +298,10 @@ npm run i18n:validate
 
 `npm test` runs the node test suite (`tests/**/*.test.js`, using the built-in
 `node --test` runner). CI runs the same suite on every push and PR.
+
+The storage layer additionally runs against a real PostgreSQL in the
+`test-postgres` CI job (`npm run test:pg`); it is deliberately outside
+`npm test` - see [pg-test-suite.md](pg-test-suite.md).
 
 ### Testing storage behaviour without PostgreSQL
 
@@ -378,7 +392,8 @@ Slide types are in `shared/slide-types/types/`. To debug:
 
 ### Code Style
 
-No linter configured. Follow these conventions:
+ESLint gates CI (`npm run lint` runs before the tests) - see
+[linting.md](linting.md). On top of what the linter enforces:
 
 - Small modules with clear boundaries
 - Escape all user content with `esc()` or `markdownToSafeHtml()`

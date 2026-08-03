@@ -279,6 +279,11 @@ Your fork deploys exactly like the OSS version:
 docker compose up -d --build
 ```
 
+The compose stack ships its own `postgres:16` and runs on it by default;
+pending migrations are applied automatically at container start. Set
+`STORAGE_MODE=file` in `.env` to stay on file storage — see
+`docs/ops/self-hosting.md`.
+
 Make sure your `.env` file on the server has:
 - `DEFAULT_THEME=your-org` (your theme ID)
 - Any API keys (OpenAI, ImageKit, etc.)

@@ -3,7 +3,9 @@
 **Normative target, decided 2026-08-03.** This document describes the single
 vocabulary slide CSS is converging on. Implementation status, honestly: the
 tokens below all exist in `client/styles/slides/00-tokens.css`, but adoption in
-the slide stylesheets is partial (16–53% per axis at the 2026-08-03 census) and
+the slide stylesheets is still uneven per axis — leading and radius are
+essentially done, spacing is the long tail; the live figures are the per-file,
+per-category budgets in `slide-css-suppressions.json` — and
 the legacy alias families listed at the bottom still have live consumers. The
 gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
 that raises it is tracked in the planning repo (`css-role-vocabulary.md`).
@@ -215,7 +217,8 @@ new code:
 ## Enforcement
 
 `tests/slide-css-tokens.test.js` — a value that exactly equals a slide token
-must be written as that token, per-file burndown budgets that only go down.
+must be written as that token, per-file and per-category burndown budgets that
+only go down.
 Presenter chrome inside the slide bundle is excluded by file, with the reason
 in the test.
 

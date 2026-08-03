@@ -77,8 +77,9 @@ Recognised flags:
 | `--port` | number | App port (default 4177) |
 | `--theme` | theme id | Default theme (default `brand`) |
 
-The wizard upserts only the keys it is given on top of `.env.example`, so
-`.env.example` stays the full reference and nothing set by hand is lost. Never
+The wizard upserts only the keys it is given on top of your existing `.env`
+(or a fresh copy of `.env.example` if there is none), so `.env.example` stays
+the full reference and nothing set by hand is lost. Never
 echo or commit the key — it only ever lands in the local, gitignored `.env`.
 
 **If you hand-edit `.env` instead of using the flags**, use the exact variable
@@ -117,6 +118,13 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 # Production (behind Caddy on 80/443, needs DOMAIN + LETSENCRYPT_EMAIL in .env):
 docker compose up -d --build
 ```
+
+> **The two paths use different storage.** `npm run start` stores decks as
+> JSON under `server/data/`; the compose stack ships its own Postgres and runs
+> on it (migrations are applied automatically at container start). Decks
+> created on one path are not visible on the other. Pick one and stay on it,
+> or set `STORAGE_MODE=file` in `.env` to keep the compose stack on file
+> storage.
 
 > **Node is the simplest local path.** For a single-user local try, prefer
 > `npm run start`; reach for Docker only if the user explicitly wants it.

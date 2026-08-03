@@ -51,11 +51,11 @@ migration landed — the failure mode the double already has.
 It says nothing about whether the resulting schema is *correct*, or whether any
 query the storage layer writes works against it. Conflict targets, `jsonb`
 round-trips, transaction isolation — the classes where the in-memory double can
-disagree with PostgreSQL — are all untouched here. That coverage needs a test
-suite running against `DATABASE_URL`, which is a larger piece of work; see
-`docs/plans/briefs/postgres-test-infra.md` (option A). This script is option D:
-the smallest thing that moves "a broken migration" out of production and into
-CI.
+disagree with PostgreSQL — are all untouched here. That coverage is option A
+from the same brief (`docs/plans/briefs/postgres-test-infra.md`) and it has
+shipped: see [pg-test-suite.md](pg-test-suite.md) and the `test-postgres` CI
+job. This script is option D: the smallest thing that moves "a broken
+migration" out of production and into CI.
 
 It also does not run in `npm test`. The suite has no database, deliberately —
 see [dev-setup.md](dev-setup.md) § Testing storage behaviour without PostgreSQL.
@@ -96,8 +96,9 @@ race it will never lose twice — the worst kind of flake.
 `server/db/migrate.js` exports `createMigrationDb`, `runUp`, `runDown`,
 `listMigrationFiles` and `listAppliedMigrations`; its CLI half is guarded so
 importing the module has no side effects. That is what lets this script roll the
-whole stack back and forward over one connection instead of spawning the CLI 115
-times, and it is the prerequisite for the fuller PostgreSQL test job later.
+whole stack back and forward over one connection instead of spawning the CLI 171
+times, and it is what made the fuller PostgreSQL test job (`test-postgres`,
+[pg-test-suite.md](pg-test-suite.md)) possible.
 
 ## Test-double schema conformance
 

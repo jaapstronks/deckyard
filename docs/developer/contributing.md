@@ -244,8 +244,12 @@ try {
 2. Add to `shared/slide-types/registry.js`
 3. Add CSS in `client/styles/slides/my-slide.css`
 4. Import CSS in the appropriate bundle
-5. Add translations for labels in `client/i18n/en/slide-types.json`
-6. Run `npm run i18n:sync` to add placeholders to the other locales
+5. Add labels to **both** Tier-1 locales: `client/i18n/en/slide-types.json` and
+   `client/i18n/nl/slide-types.json` (`npm test` fails if either drifts)
+6. Materialize and translate them: `node scripts/i18n-fill.js en`, then
+   `node scripts/i18n-fill.js --report nl`. The other ten locales are Tier 2
+   and fall back to English - do not backfill them with `i18n:sync`. See
+   [i18n.md](i18n.md) and `docs/reference/i18n-locale-tiers.md`
 
 ### New API Endpoint
 
@@ -257,7 +261,11 @@ try {
 ### New Translation Keys
 
 1. Add keys to appropriate module in `client/i18n/en/*.json`
-2. Run `npm run i18n:sync` to add placeholders to other locales
+2. Materialize English mechanically and translate Dutch (both Tier 1 and
+   gated): `node scripts/i18n-fill.js en`, then
+   `node scripts/i18n-fill.js --report nl`. The other ten locales are Tier 2
+   and fall back to English - do not backfill them with `i18n:sync`. See
+   [i18n.md](i18n.md) and `docs/reference/i18n-locale-tiers.md`
 3. Run `npm run i18n:validate` to check for issues
 
 (The runtime loads the modular `<locale>/<component>.json` files directly;
