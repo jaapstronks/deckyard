@@ -48,13 +48,13 @@ direction of the fix; none are done here because each needs a browser check.
 | `89-slide-type-editor.css:299` | `font-family: … !important` | `.code-textarea` forcing monospace over the base textarea font. |
 | `89-slide-type-editor.css:300` | `font-size: 13px !important` | Same rule. |
 | `89-slide-type-editor.css:301` | `line-height: 1.5 !important` | Same rule. |
-| `03-controls-and-forms.css:814` | `grid-template-columns: 1fr !important` | `.editor-title-row` forcing single column. Carries a comment explaining the intent; the `!important` guards against a responsive grid rule elsewhere — verify that rule still exists before removing. |
-| `03-controls-and-forms.css:937` | `border-color: … !important` | `.danger` — a state class overriding a component border. A component-scoped `.danger` selector would win without it. |
+| `03-controls-and-forms.css:819` | `grid-template-columns: 1fr !important` | `.editor-title-row` forcing single column. Carries a comment explaining the intent; the `!important` guards against a responsive grid rule elsewhere — verify that rule still exists before removing. |
+| `03-controls-and-forms.css:935` | `border-color: … !important` | `.danger` — a state class overriding a component border. A component-scoped `.danger` selector would win without it. |
 | `app/components.css:307` | `border-right: none !important` | `.csv-grid-td-actions` removing a cell border. Table cells inherit borders from `.csv-grid td` — a more specific selector wins without `!important`. |
 | `app/components.css:325` | `border-right: none !important` | `.csv-grid-th-actions`, same pattern. |
 
 ## The one comment worth keeping honest
 
 `base/02-lists-and-thumbs/35-slide-visibility.css:121` and
-`slides/01-layout-and-title/00-base.css:246` mention `!important` in comments but
+`slides/01-layout-and-title/00-base.css:264` mention `!important` in comments but
 carry no `!important` declaration. They are not in the count above.

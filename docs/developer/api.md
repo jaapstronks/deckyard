@@ -96,6 +96,8 @@ API keys can have granular permissions:
 | `write` | Create, update, delete presentations |
 | `export` | Export presentations |
 | `ai` | Use AI generation endpoints |
+| `comments:read` | Read comments on accessible presentations |
+| `comments:write` | Create comments/replies and change comment status |
 
 Check scopes with:
 

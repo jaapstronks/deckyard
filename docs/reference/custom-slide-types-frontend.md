@@ -32,7 +32,7 @@ Full settings UI for creating, editing, and managing custom slide types. This co
 ### Prerequisites
 
 - PostgreSQL running with migration `035_custom_slide_types` applied
-- `npm run dev` with `STORAGE_MODE=postgres`
+- `npm start` with `STORAGE_MODE=postgres`
 - Logged in as a user with **designer** or **admin** role
 
 ### Test Flow

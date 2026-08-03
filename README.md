@@ -143,7 +143,7 @@ Full docs: [`docs/reference/mcp-server.md`](docs/reference/mcp-server.md)
 
 ## Customization
 
-Deckyard is designed to be forked and branded. All customizations live in dedicated directories that won't conflict with upstream updates.
+Deckyard is designed to be forked and branded. All customizations live in dedicated directories, so they survive an upstream merge as files. The interfaces they build on (slide-type contract, theme vars, core CSS names) are still moving while Deckyard is in beta — see [`docs/reference/versioning.md`](docs/reference/versioning.md).
 
 ### Custom Themes
 
@@ -208,9 +208,13 @@ Reference them in your theme: `"/custom/assets/images/my-logo.svg"`
 
 ```bash
 git remote add upstream https://github.com/jaapstronks/deckyard.git
-git fetch upstream
-git merge upstream/main
+git fetch upstream --tags
+git merge <newest v* tag>   # sync on release tags, not on upstream/main
 ```
+
+Deckyard is in beta: `main` carries unreleased and occasionally breaking
+work, and a new tag is how a fork learns there is something to pull. See
+[`docs/reference/versioning.md`](docs/reference/versioning.md).
 
 ## Configuration
 
@@ -230,6 +234,9 @@ DEFAULT_THEME=brand
 
 # MCP owner (for stdio transport)
 DECKYARD_MCP_OWNER_EMAIL=you@example.com
+
+# Storage (compose runs Postgres by default; see the Database block in .env.example)
+STORAGE_MODE=file
 ```
 
 ### Authentication
@@ -262,10 +269,17 @@ permissions; viewers and share-link guests connect read-only. See
 ### Docker (Recommended)
 
 ```bash
+# Local: app published on http://localhost:4177
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+
+# Production: app behind Caddy on 80/443 (needs DOMAIN + LETSENCRYPT_EMAIL in .env)
 docker compose up -d --build
 ```
 
-Runs on port 4177. Use the included Caddy configuration for HTTPS.
+Deckyard runs on PostgreSQL, and the stack ships its own `postgres:16` so the
+containers need no setup; pending migrations are applied automatically at
+container start. Point `DATABASE_HOST` at a managed database to use that
+instead.
 
 Going from zero to a live HTTPS instance on a VPS is one command with
 [`scripts/vps-bootstrap.sh`](scripts/vps-bootstrap.sh) — see the
@@ -280,15 +294,18 @@ node server/server.js
 
 ### Data Storage
 
-Decks live in PostgreSQL — `STORAGE_MODE` defaults to `postgres`, and the
-compose stack ships its own database. Uploaded media stays on disk in
-`server/uploads/`, so a backup is a `pg_dump` plus that directory; see the
-[self-hosting guide](docs/ops/self-hosting.md).
+Decks live in PostgreSQL: `STORAGE_MODE` defaults to `postgres`, and the
+compose stack ships its own database. Back up the `pg_data` volume
+(`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
+together with `server/uploads/`, which is where uploaded media stays.
 
 The `file` mode (JSON in `server/data/`) still exists but is being retired
 during beta. An install with existing file data imports it once with
 `npm run db:import`; until then Deckyard refuses to boot on an empty database
 rather than show an empty workspace.
+
+See the [self-hosting guide](docs/ops/self-hosting.md) for the storage options
+and `.env.example` for every `DATABASE_*` variable.
 
 ## Project Structure
 

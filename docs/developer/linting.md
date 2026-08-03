@@ -92,6 +92,16 @@ Two suppressions exist, both with their reason inline:
   place, and `tests/custom-imports-resolvable.test.js` resolves it for real
   there.
 
+### `no-restricted-syntax` on single-argument `t()` — the i18n fallback rule
+
+Scoped to `client/**`, this rule rejects `t('some.key')` written without its
+English fallback. `t(key, fallback)` is the only accepted form.
+
+That second argument is what Tier-2 locales degrade to when a key is missing
+(`client/lib/ui-i18n.js`); without it a missing key renders the raw key string
+instead of English, which is the one way the tiering safety net breaks. See
+[`docs/reference/i18n-locale-tiers.md`](../reference/i18n-locale-tiers.md).
+
 ### The suppressions baseline (burndown)
 
 The first run surfaced **397 `no-unused-vars`** and **10 `no-useless-escape`**
@@ -187,7 +197,7 @@ Two properties worth knowing:
 - **It measures `git ls-files`, not the working tree.** A class used only by an
   untracked scratch file still counts as dead — otherwise "green for the author"
   is not "green in CI" (the #413 lesson).
-- **It stays advisory (exit 0) until the report is clean.** Today it lists ~136
+- **It stays advisory (exit 0) until the report is clean.** Today it lists ~83
   candidates; promote it to a gate only once those are triaged away. Each hit is
   a *candidate* — verify by hand (a fully dynamic `class` built from a variable
   the scanner can't see is a false positive) before deleting.

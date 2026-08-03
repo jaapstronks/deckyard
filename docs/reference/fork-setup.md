@@ -279,6 +279,11 @@ Your fork deploys exactly like the OSS version:
 docker compose up -d --build
 ```
 
+Deckyard runs on PostgreSQL; the compose stack ships its own `postgres:16` and
+applies pending migrations automatically at container start. If your fork still
+holds decks in file storage, import them once with
+`docker compose exec app npm run db:import` — see `docs/ops/self-hosting.md`.
+
 Make sure your `.env` file on the server has:
 - `DEFAULT_THEME=your-org` (your theme ID)
 - Any API keys (OpenAI, ImageKit, etc.)

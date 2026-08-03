@@ -11,17 +11,25 @@ change history.
   (`openSlideTypeModal`). Renders the header, the compact insert-position row,
   and the tab toggle (Slide types / Slide library / Import from file). Delegates
   each tab body to an injected renderer.
-- **Type picker** — `client/views/editor/slide-type-picker.js`
-  (`createSlideTypePicker` → `renderSlideTypePicker`). Owns the search box, the
-  preview-background toggle, category grouping, quick-access strips, tiles,
-  peek lightbox, and the inline library strip.
+- **Type picker** — `client/views/editor/slide-type-picker/` behind the
+  `slide-type-picker.js` re-export shim. `index.js` (`createSlideTypePicker` →
+  `renderSlideTypePicker`) is the seam: it owns render orchestration and the
+  mutable per-render state (view mode, preview surface, observers, the peek
+  handle) and composes `data.js` (curated presets + tuning constants),
+  `preferences.js` (every localStorage key), `thumbnails.js` (video/embed
+  mocks + schematic filler), `peek.js` (lightbox) and `library-strip.js`.
 - **Sample content** — `client/views/editor/slide-type-sample-content.js`
   (`getSampleContent`). Per-type example content merged onto each type's
   `defaults` for the thumbnails.
 - **Keyboard nav** — `client/views/editor/slide-type-picker-keyboard.js`
   (`wireGridKeyboardNav`).
 
-## Thumbnails are live renders
+## Thumbnails: schematic (default) or live render
+
+A segmented control (`editor.slideTypePicker.view.schematic` /
+`.preview`) switches the tiles between abstract schematic diagrams and live
+renders; the choice persists in `ps-slide-picker-view` and defaults to
+`schematic`. The rest of this section describes the `preview` mode.
 
 `hydrateThumb` builds a fake slide `{ type, content: sampleContentFor(type) }`
 and calls `renderSlideElement(slide, { mode: 'thumb', theme })`. CSS scales the
@@ -95,7 +103,9 @@ A swatch toggle on the controls row forces a surface (Auto / Lime / Mist / Dark)
 onto every visible thumbnail whose type supports it; the choice persists in
 `ps-slide-picker-bg`. It only offers surfaces the active theme defines with a
 **distinct** token value (`--t-slide-bg-<surface>`) **and** that ≥1 insertable
-type supports, and hides entirely below 2 distinct surfaces. `sampleContentFor`
+type supports, and hides entirely below 2 distinct surfaces. It is also hidden
+outside preview mode — schematics paint no surface — so it does not appear in
+the picker's default view. `sampleContentFor`
 applies the surface last (after any preset override), and `restyleHydratedThumbs`
 re-renders only already-hydrated, background-capable tiles on change.
 
@@ -111,8 +121,11 @@ Close dismiss it; focus returns to the originating tile.
 
 When a modal context supplies `loadLibraryStripItems` + `onSeeAllLibrary`, a
 "From your library" strip loads async (never blocking the type grid) and is
-prepended above the categories: up to 4 personal, insertable, non-trashed items
-(favourites first). Each tile inserts the reused slide; "See all" jumps to the
+prepended above the categories: up to 8 insertable, non-trashed items split
+across your personal and team libraries (favourites first). The budget is
+weighted by how many slides each scope has but guarantees at least one tile
+from every non-empty scope, so a lone personal slide is never buried under a
+large team library. Each tile inserts the reused slide; "See all" jumps to the
 Slide library tab. Hidden entirely on empty/error, and skipped where no library
 tab exists (e.g. the quick-add drawer).
 
@@ -142,6 +155,7 @@ buttons.)
 
 | Key | Meaning |
 | --- | --- |
+| `ps-slide-picker-view` | thumbnail view mode (`schematic` \| `preview`; default `schematic`) |
 | `ps-slide-picker-collapsed` | per-section collapsed map (`getJSON/setJSON`) |
 | `ps-slide-type-usage` | `{ type: insertCount }` for Frequently-used |
 | `ps-slide-type-pins` | pinned type keys |

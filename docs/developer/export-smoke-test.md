@@ -57,7 +57,7 @@ falls back, so the test reads the resolved face via
 `CSS.getPlatformFontsForNode` instead.
 
 What it deliberately does **not** guard is exact rendering: no pixel baselines.
-37 types × 6 themes is 222 binary files nobody reviews, the expected flake is
+34 types × 6 themes is 204 binary files nobody reviews, the expected flake is
 10-25%, and the ubuntu runner rasterises differently from a Mac. That was
 weighed and rejected — `docs/plans/briefs/export-structural-metrics.md`.
 

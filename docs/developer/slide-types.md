@@ -49,7 +49,7 @@ Every slide type has a canonical identity, published as a **reverse-DNS id**
 - The published format knows **one spelling** per type — the canonical id.
   The older spellings (`title-slide` bare on the wire, `core/title-slide`)
   still resolve during the beta convergence that folds them away
-  (`ROADMAP.md`; beta stance in `docs/reference/versioning.md`).
+  (beta stance in `docs/reference/versioning.md`).
   `resolveSlideTypeName()` (registry) maps any spelling to the registry key,
   `getSlideType()` to the definition, and `sameType()` compares two refs as
   identities. **Never compare type refs as strings** in engine code, never
@@ -117,7 +117,7 @@ export default {
       key: 'background',
       label: 'Background color',
       type: 'enum',
-      options: ['lime', 'mist', 'night'],
+      options: ['lime', 'mist', 'dark'],
     },
   ],
 
@@ -778,7 +778,7 @@ export default {
       key: 'background',
       type: 'enum',
       label: 'Background color',
-      options: ['lime', 'mist', 'night'],
+      options: ['lime', 'mist', 'dark'],
     },
   ],
 

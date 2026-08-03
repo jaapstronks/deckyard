@@ -72,6 +72,16 @@ DATABASE_NAME=deckyard_pg_tests npm run db:migrate
 DATABASE_NAME=deckyard_pg_tests npm run test:pg
 ```
 
+If you run the compose stack, `docker-compose.local.yml` publishes its Postgres
+on host port 5433 (`POSTGRES_HOST_PORT` to change it). Point the suite at a
+**scratch database on that server**, never at the compose stack's own
+`deckyard` database - that is your dev data and this suite truncates tables:
+
+```sh
+createdb -h localhost -p 5433 -U deckyard deckyard_pg_tests   # once
+DATABASE_PORT=5433 DATABASE_NAME=deckyard_pg_tests npm run test:pg
+```
+
 `.env` values do not override variables already set in the shell
 (`server/config/env.js`), so the `DATABASE_NAME=` prefix wins over a `.env` that
 points at your dev database.

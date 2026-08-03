@@ -222,9 +222,9 @@ Two CSS traps worth knowing:
 | `kpi-metrics-slide` | `header-block` | title, subheading |
 | `quote-slide` | `quote-block` | quote, authorName, authorTitle |
 
-Types whose repeated cells each own their box — `text-blocks`,
-`content-columns`, `comparison`, `matrix`, `process`, `timeline`, `funnel`,
-`cycle`, `pyramid`, `team-cards`, `card-stack`, `poll`, `likert-slider` — are
+Types whose repeated cells each own their box — `text-blocks`, `comparison`,
+`matrix`, `process`, `timeline`, `funnel`,
+`cycle`, `pyramid`, `team-cards`, `poll`, `likert-slider` — are
 deliberately **not** grouped. There "centre this field" means "centre it within
 its cell", which is exactly right, and their sibling fields already share a
 centre.

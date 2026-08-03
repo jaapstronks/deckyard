@@ -125,7 +125,7 @@ The storage layer supports multiple backends through an adapter pattern:
 
 | Mode | Backend | Status |
 |------|---------|--------|
-| `postgres` | PostgreSQL | The default, and the only backend under development |
+| `postgres` | PostgreSQL | The default everywhere — a plain `npm start` checkout and the compose stack (which ships its own database) — and the only backend under development |
 | `file` | JSON on disk | Being retired during beta; gains no new features |
 
 ```javascript
@@ -346,7 +346,7 @@ export function attachSlideRuntime(slideEl) {
 |----------|-----------|
 | No framework | Minimal dependencies, full control |
 | Functional middleware | Composition over inheritance, explicit data flow |
-| Storage abstraction | Swappable backends with migration safety net |
+| Storage abstraction | Swappable backends with a one-shot file→Postgres import path (`db:import`) |
 | In-memory SSE | Fast, no message queue (sessions reset on restart) |
 | Atomic file writes | Temp + rename prevents corruption |
 | Puppeteer rendering | Server-side PNG/PDF at request time |

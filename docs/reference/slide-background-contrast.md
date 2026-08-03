@@ -90,7 +90,8 @@ Muted variants (subtitles, captions) are derived from the chosen colour with
 The root `.slide` gets one of `has-slide-bg-light-text` /
 `has-slide-bg-dark-text`, which redirect `--color-text` / `--color-text-muted`.
 If your slide type paints text on its **own opaque light surface** sitting on
-top of the image (a card, a panel), re-assert dark text for it under
-`.slide.has-slide-bg-light-text` — see the existing list in
-`client/styles/slides/01-layout-and-title/00-base.css` (icon-card-body,
-matrix-cell, partner-split, etc.).
+top of the image (a card, a panel), re-assert dark text for it — preferably by
+giving the element an `on-surface-*` class (see
+[`nested-surfaces.md`](nested-surfaces.md)); the unconverted remainder is the
+`:is(.icon-card-body, .matrix-cell)` list in
+`client/styles/slides/01-layout-and-title/00-base.css`.
