@@ -6,32 +6,6 @@
    ============================================================================ */
 
 /* =========================================================================
-   SLIDE HEADER PATTERN
-   =========================================================================
-   Unified header for content slides (heading + optional subheading).
-   Used by: process, timeline, matrix, comparison, kpi-metrics, etc.
-   ========================================================================= */
-
-.slide-header {
-  margin-bottom: var(--slide-header-gap);
-}
-
-.slide-header .heading {
-  font-family: var(--font-heading);
-  font-size: var(--slide-font-size-heading);
-  line-height: var(--slide-leading-tight);
-  margin: 0;
-  font-weight: var(--heading-weight, 400);
-  text-transform: var(--heading-transform, none);
-  font-synthesis: none;
-}
-
-.slide-header .subheading {
-  margin-top: var(--slide-text-gap);
-  margin-bottom: 0;
-}
-
-/* =========================================================================
    SUBTITLE / SUBHEADING COMPATIBILITY
    =========================================================================
    Standardized on .subheading. This layer provides backward compatibility.
