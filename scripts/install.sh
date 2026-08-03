@@ -104,12 +104,19 @@ URL="http://localhost:${PORT}"
 
 # --- start -------------------------------------------------------------------
 if [ "$MODE" = docker ]; then
+  # The base compose file is the production topology: the app only `expose`s
+  # 4177 on the compose network and sits behind Caddy on 80/443, so a bare
+  # `docker compose up` never publishes http://localhost:4177. The local
+  # overlay adds the host port mapping (and drops Caddy); both files together
+  # are what makes the promised URL reachable. Every follow-up command must
+  # carry the same -f flags or compose falls back to the base file alone.
+  COMPOSE="docker compose -f docker-compose.yml -f docker-compose.local.yml"
   say "Building and starting containers (docker compose)…"
-  docker compose up -d --build
+  $COMPOSE up -d --build
   open_browser "$URL"
   printf '\n%s Deckyard is starting at %s%s%s\n' "${GREEN}✓${RESET}" "${BOLD}" "$URL" "${RESET}"
-  note "Logs:  docker compose logs -f --tail=200"
-  note "Stop:  docker compose down"
+  note "Logs:  $COMPOSE logs -f --tail=200"
+  note "Stop:  $COMPOSE down"
   exit 0
 fi
 
