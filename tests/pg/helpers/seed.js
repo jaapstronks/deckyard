@@ -43,15 +43,30 @@ export async function seedDefaultOrganization(db) {
  * @param {object} [opts]
  * @param {string} [opts.organizationId] - Owning org (default org if omitted).
  * @param {string} [opts.title]
+ * @param {Array<object>} [opts.slides] - Deck body, for tests that query into it.
+ * @param {object} [opts.i18n] - Language versions, for tests that query into them.
+ * @param {string} [opts.modifiedAt] - Overrides the `now()` default, to fix ordering.
+ * @param {string} [opts.trashedAt] - Seeds the deck already in the trash.
  * @returns {Promise<string>}
  */
-export async function seedPresentation(db, { organizationId, title = 'Deck' } = {}) {
+export async function seedPresentation(
+  db,
+  { organizationId, title = 'Deck', slides, i18n, modifiedAt, trashedAt } = {}
+) {
   const orgId = organizationId || getDefaultOrganizationId();
   // presentations.id is a NOT NULL uuid with no default — the app supplies it.
   const id = crypto.randomUUID();
   const row = await db
     .insertInto('presentations')
-    .values({ id, organization_id: orgId, title })
+    .values({
+      id,
+      organization_id: orgId,
+      title,
+      ...(slides === undefined ? {} : { slides: JSON.stringify(slides) }),
+      ...(i18n === undefined ? {} : { i18n: JSON.stringify(i18n) }),
+      ...(modifiedAt === undefined ? {} : { modified_at: modifiedAt }),
+      ...(trashedAt === undefined ? {} : { trashed_at: trashedAt }),
+    })
     .returning('id')
     .executeTakeFirstOrThrow();
   return row.id;
