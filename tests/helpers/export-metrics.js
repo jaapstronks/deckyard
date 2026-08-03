@@ -173,7 +173,7 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
     await page.evaluate(() => document.fonts?.ready);
 
     const inPage = await page.evaluate(
-      ({ selectors: sels, frame, subsetLabels }) => {
+      ({ selectors: sels, frame }) => {
         const rectOf = (el) => {
           const r = el.getBoundingClientRect();
           return { x: r.x, y: r.y, width: r.width, height: r.height };
@@ -223,31 +223,34 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         const slideEl = document.querySelector('.slide');
         const slideBackground = slideEl ? getComputedStyle(slideEl).backgroundColor : null;
 
-        // Keyed by subset as well as family and weight. A curated family ships
-        // as Google's disjoint `latin` / `latin-ext` pair, and keying on
-        // `family weight` alone collapsed the two into one entry — so losing
-        // the `latin-ext` file, which is every accented glyph, changed nothing
-        // here. The subset label is what makes that visible.
+        // Reported raw; the subset labelling happens in Node, where the
+        // normaliser already lives.
         const loadedFonts = [...document.fonts]
           .filter((f) => f.status === 'loaded')
-          .map((f) => {
-            const range = String(f.unicodeRange || '')
-              .toUpperCase()
-              .replace(/\s+/g, '')
-              .replace(/(^|[+\-,])0+(?=[0-9A-F])/g, '$1');
-            return `${f.family} ${f.weight} [${subsetLabels[range] || range}]`;
-          })
-          .sort();
+          .map((f) => ({
+            family: f.family,
+            weight: f.weight,
+            unicodeRange: f.unicodeRange,
+          }));
 
-        return {
-          elements,
-          overflowing,
-          slideBackground,
-          loadedFonts: [...new Set(loadedFonts)],
-        };
+        return { elements, overflowing, slideBackground, loadedFonts };
       },
-      { selectors, frame: FRAME, subsetLabels: SUBSET_LABELS }
+      { selectors, frame: FRAME }
     );
+
+    // Keyed by subset as well as family and weight. A curated family ships as
+    // Google's disjoint `latin` / `latin-ext` pair, and keying on
+    // `family weight` alone collapsed the two into one entry — so losing the
+    // `latin-ext` file, which is every accented glyph, changed nothing here.
+    // The subset label is what makes that visible.
+    const loadedFonts = [
+      ...new Set(
+        inPage.loadedFonts.map((f) => {
+          const range = normalizeUnicodeRange(f.unicodeRange);
+          return `${f.family} ${f.weight} [${SUBSET_LABELS[range] || range}]`;
+        })
+      ),
+    ].sort();
 
     const client = await page.createCDPSession();
     await client.send('DOM.enable');
@@ -291,7 +294,7 @@ export async function measureSlide(repoRoot, slide, { theme = null, selectors = 
         },
       })),
       slideBackground: inPage.slideBackground,
-      loadedFonts: inPage.loadedFonts,
+      loadedFonts,
       dominantColor: { rgb: dominant.rgb, share: Math.round(dominant.share * 1000) / 1000 },
     };
   } finally {
