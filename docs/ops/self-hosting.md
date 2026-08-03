@@ -116,7 +116,7 @@ this is the storage path being retired during beta — see
 > switches the container to Postgres, and your `server/data/` decks are not
 > served from there. Either set `STORAGE_MODE=file` in `.env` before
 > `docker compose up`, or import the data once with
-> `docker compose exec app npm run db:migrate:data`. The container logs a
+> `docker compose exec app npm run db:import`. The container logs a
 > warning at boot when it finds a non-empty `server/data/presentations` while
 > running on Postgres; your files are never touched.
 

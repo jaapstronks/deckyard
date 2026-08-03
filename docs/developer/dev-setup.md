@@ -94,7 +94,7 @@ NOTION_FEATURE=true
 | `npm run db:migrate` | Run pending database migrations |
 | `npm run db:migrate:down` | Rollback last migration |
 | `npm run db:migrate:status` | Show migration status |
-| `npm run db:migrate:data` | Migrate file data to PostgreSQL |
+| `npm run db:import` | Import file data into PostgreSQL |
 | `npm run i18n:extract` | Extract translation keys from source |
 | `npm run i18n:sync` | Sync missing keys across locales |
 | `npm run i18n:validate` | Validate translation files |
@@ -137,17 +137,23 @@ npm run db:migrate
 npm run db:migrate:status
 ```
 
-### Migrating Data: File to PostgreSQL
+### Importing Data: File to PostgreSQL
+
+Covers every adapter domain with a file/PG split (presentations, image library,
+slide library, published, tags, slide collections, slide-library usage). The
+import is idempotent — running it twice imports nothing the second time.
+Presentation versions (DB migration 053) and derived ydoc collab-state are
+intentionally not imported.
 
 ```bash
-# Dry run (see what would be migrated)
-npm run db:migrate:data -- --dry-run
+# Dry run (see what would be imported, with per-domain counts)
+npm run db:import -- --dry-run
 
-# Migrate with reset (clear existing data first)
-npm run db:migrate:data -- --reset
+# Import with reset (clear existing data first)
+npm run db:import -- --reset
 
-# Standard migration
-npm run db:migrate:data
+# Standard import
+npm run db:import
 ```
 
 ---
