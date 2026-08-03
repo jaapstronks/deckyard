@@ -67,11 +67,18 @@
 import { SLIDE_TYPES } from './registry.js';
 
 /**
- * The vocabulary. These three partition the current 38 types completely.
+ * The vocabulary. These three partition the core types completely.
+ *
+ * Exported for a cross-repo consumer: `deckyard-website` reads this map in
+ * `scripts/generate-slide-types.js` to publish the `runtime` vocabulary on
+ * `/spec/slide-types/`. A dead-export sweep that only greps this repo will read
+ * it as unused - it is not, and `tests/cross-repo-consumer-exports.test.js`
+ * fails if it disappears. `SLIDE_RUNTIME_NAMES` is not a substitute: those are
+ * the keys without the meaning.
  *
  * @type {Readonly<Record<string, string>>}
  */
-const SLIDE_RUNTIMES = Object.freeze({
+export const SLIDE_RUNTIMES = Object.freeze({
   /** The session does nothing for it beyond serving the slide. */
   static: 'The session does nothing for it.',
   /** A presenter-driven clock; state is local to the presenting window. */
@@ -88,9 +95,13 @@ export const SLIDE_RUNTIME_NAMES = Object.freeze(Object.keys(SLIDE_RUNTIMES));
  * API already puts on the wire as `interaction.type`, so this declaration names
  * an existing protocol rather than inventing one.
  *
+ * Exported for the same cross-repo consumer as {@link SLIDE_RUNTIMES}: the
+ * `interaction` vocabulary on `/spec/slide-types/` is generated from this map,
+ * and `LIVE_INTERACTION_NAMES` does not carry the meanings.
+ *
  * @type {Readonly<Record<string, string>>}
  */
-const LIVE_INTERACTIONS = Object.freeze({
+export const LIVE_INTERACTIONS = Object.freeze({
   /** One choice out of a short option list. */
   poll: 'One choice out of a short option list.',
   /** A point on a scale, whether drawn as buttons or as a slider. */
