@@ -318,6 +318,8 @@
   "settings.admin.sessionDuration.duration": "Duur",
   "settings.admin.sessionDuration.hint": "Hoe lang gebruikers ingelogd blijven voordat ze opnieuw moeten inloggen.",
   "settings.admin.sessionDuration.title": "Sessieduur",
+  "settings.admin.stockMedia.bundled": "Ingebouwde gradiënten inschakelen",
+  "settings.admin.stockMedia.bundledHint": "Abstracte achtergronden, gegenereerd uit de ingebouwde thema’s. Geen API-sleutel, geen naamsvermelding, geen externe verzoeken.",
   "settings.admin.stockMedia.configuredParen": "(API-sleutel geconfigureerd)",
   "settings.admin.stockMedia.giphy": "Giphy GIF's inschakelen",
   "settings.admin.stockMedia.hint": "Schakel stockfoto- en GIF-integraties in voor de afbeeldingskiezer. Vereist API-sleutels in serveromgeving.",

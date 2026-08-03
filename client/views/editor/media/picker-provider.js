@@ -15,7 +15,7 @@
  * chooser first. A fork swaps the provider table once (register ImageKit,
  * disable the library) and inherits every current and future call site.
  *
- * The normalization also unifies three historical pick shapes (native library
+ * The normalization also unifies the historical pick shapes (native library
  * item, ImageKit pick, Beeldbank pick) into one contract; `apply-pick.js`
  * flattens it onto the (unchanged) flat `slide.content` storage model.
  */
@@ -85,6 +85,28 @@ function libraryProvider(openLibraryRaw) {
             },
           });
         },
+      });
+    },
+  };
+}
+
+/**
+ * Adapter: bundled gradient library (static assets shipped with the app).
+ * @param {Function} openBundledRaw - bound `openBundledGradientPicker`
+ * @returns {PickerProvider}
+ */
+function bundledGradientsProvider(openBundledRaw) {
+  return {
+    id: 'bundled',
+    label: t('editor.image.source.bundled', 'Gradients'),
+    open(opts) {
+      // Deliberately not forwarding `opts.title`: call sites name the *field*
+      // ("Library: choose an image"), which is the wrong heading once the user
+      // has already chosen a source. The picker's own title names the source.
+      openBundledRaw({
+        // Already normalized at the source: the manifest is ours, so the
+        // adapter has nothing to reshape.
+        onPick: (picked) => opts.onPick?.(picked),
       });
     },
   };
@@ -161,14 +183,17 @@ function openSourceChooser({ h, root, providers, onChoose }) {
  * a source it had before:
  * - the native library is enabled unless `features.disableImageLibrary`
  *   (which `IMAGEKIT_ONLY` already forces);
+ * - the bundled gradients are enabled whenever their raw opener is provided
+ *   (the caller resolves the `stockMedia.bundled.enabled` toggle);
  * - ImageKit is enabled whenever its raw opener is provided.
  *
  * @param {Object} args
  * @param {Function} args.h
  * @param {HTMLElement} args.root
  * @param {Object} [args.features]
- * @param {Function} [args.openImageLibrary] - bound `openImageLibraryPicker`
- * @param {Function} [args.openImageKit]     - bound `openImageKitPicker`
+ * @param {Function} [args.openImageLibrary]     - bound `openImageLibraryPicker`
+ * @param {Function} [args.openBundledGradients] - bound `openBundledGradientPicker`
+ * @param {Function} [args.openImageKit]         - bound `openImageKitPicker`
  * @returns {((opts: PickerOpts) => void) & { providers: PickerProvider[] }}
  */
 export function createImagePickerSeam({
@@ -176,12 +201,16 @@ export function createImagePickerSeam({
   root,
   features = {},
   openImageLibrary,
+  openBundledGradients,
   openImageKit,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
   if (!flags.disableImageLibrary && typeof openImageLibrary === 'function') {
     providers.push(libraryProvider(openImageLibrary));
+  }
+  if (typeof openBundledGradients === 'function') {
+    providers.push(bundledGradientsProvider(openBundledGradients));
   }
   if (typeof openImageKit === 'function') {
     providers.push(imagekitProvider(openImageKit));

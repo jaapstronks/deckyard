@@ -375,6 +375,7 @@
   "editor.image.libraryTitle": "Library: choose an image",
   "editor.image.photoCredit": "Photo: {photographer}",
   "editor.image.presets": "Preset images",
+  "editor.image.source.bundled": "Gradients",
   "editor.image.source.imagekit": "ImageKit",
   "editor.image.source.library": "Image library",
   "editor.image.source.title": "Choose image source",
