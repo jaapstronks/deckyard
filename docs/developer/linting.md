@@ -137,6 +137,20 @@ scan but are reached at runtime. Treat every hit as a *candidate* and confirm it
 by hand against the reachability method in the dead-code audit brief before
 deleting anything. The import-cycle hits, by contrast, are precise.
 
+**Hand-verification does not stop at this repo's edge.** Some exports have their
+only consumer in a *sibling* repo: `deckyard-website`'s docs generator imports
+several `shared/slide-types/` modules directly, so a sweep that greps only this
+repo sees a module-local const where a live contract sits. That is not
+hypothetical — sweep #536 demoted `SLIDE_STRUCTURES` and the website generator
+crashed on it, twice in one day (#558/#559 restored it plus
+`SLIDE_RUNTIMES`/`LIVE_INTERACTIONS`).
+[`tests/cross-repo-consumer-exports.test.js`](../../tests/cross-repo-consumer-exports.test.js)
+pins every module that generator reads, as a deliberately hand-written statement
+about that consumer; removing an entry there means coordinating with
+`deckyard-website` first (a `_meta` briefing), never editing the list to make a
+sweep pass. If a second external consumer ever appears, give it its own pinned
+list the same way.
+
 > The `no-unused-modules` rule has a quirk: even under flat config it needs a
 > legacy `.eslintrc.json` (ignore patterns only) to know which files to skip.
 > That shim is read *only* by this advisory pass — ESLint 9 uses the flat
