@@ -97,6 +97,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the file backend used to prove on disk |
 | follow codes | that a five-character code fits the column at all: the 001 schema declared `char(4)`, which the double (any string is any string) could never have caught, and migration 060 widened |
 | present sessions | the substrate swap: a session survives a cold process, a stale row loses to a fresher in-memory copy and a newer row wins, the `presentation_id` cascade removes sessions with their deck, and the TTL sweep spares live ones |
+| live interactions (questions, polls/likerts, feedback) | the constraints that replaced per-process Maps: `voters @> ARRAY[…]` makes a second upvote a no-op, `interaction_votes`' composite primary key makes a re-vote a replacement, `feedback`'s `(session, slide, device)` unique makes a resubmit an edit — and the `session_id` cascade that lets one sweep collect all four domains |
 
 ## Adding a test
 

@@ -52,6 +52,13 @@ export const UNIQUE_CONSTRAINTS = {
   // is NOT part of it (migration 023_slide_locks.js). Matching the real columns
   // is what lets the acquire-race test exercise the ON CONFLICT path.
   slide_locks: [['presentation_id', 'slide_id']],
+  // Migration 061 woke the live-interaction tables. Both upserts run on every
+  // vote and every feedback submission, so the double has to collide the way
+  // PostgreSQL does or the "one answer per device" rule is only enforced in
+  // production. `interaction_votes` is not listed: its rule is the primary key
+  // (interaction_id, device_id), which the double models as identity.
+  interactions: [['session_id', 'slide_id']],
+  feedback: [['session_id', 'slide_id', 'device_id']],
 };
 
 /**
@@ -76,6 +83,8 @@ export const JSONB_COLUMNS = {
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],
   present_sessions: ['state', 'follow_codes'],
+  // Migration 061: `texts` is the per-language map of a question.
+  questions: ['texts'],
 };
 
 /**
