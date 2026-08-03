@@ -494,7 +494,7 @@ export default {
           <div class="slide-inner">
             ${headerHtml}
             <div class="team-cards-split-container">
-              <div class="team-cards-group team-cards-group-left" data-cols="${leftCols}">
+              <div class="team-cards-group" data-cols="${leftCols}">
                 ${leftSubheadingHtml}
                 <div class="team-cards-grid" data-cols="${leftCols}">
                   ${leftCards.join('')}

@@ -85,7 +85,7 @@ function quoteBlockInnerHtml({
             </blockquote>
             <footer class="quote-author${portraitsHtml ? ' has-portraits' : ''}"${morphAuthor}>
               ${portraitsHtml}
-              <div class="quote-author-text">
+              <div>
                 <div class="name" data-inline-field="${nameField}" dir="auto">${esc(
                   authorName
                 )}</div>

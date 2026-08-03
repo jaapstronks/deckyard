@@ -213,7 +213,7 @@ export default {
               </ol>
             </div>
             <div class="poll-right">
-              <div class="poll-results poll-results-main likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
+              <div class="poll-results likert-results on-surface-light" aria-label="${esc(copy.likertResultsLabel)}">
                 <div class="poll-results-title">${esc(copy.likertResultsTitle)}</div>
                 <div class="likert-hill" data-likert-hill="1"></div>
                 <div class="likert-axis" data-likert-axis="1">${axisHtml}</div>
