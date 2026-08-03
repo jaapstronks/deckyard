@@ -41,9 +41,6 @@ const identity = await import('../server/storage/identity.js');
 const magicLinkStore = await import('../server/storage/magic-link.js');
 const ssoStore = await import('../server/storage/sso.js');
 const usersStore = await import('../server/storage/users.js');
-const { withSettings } = await import('../server/storage/adapters/postgres/settings.js');
-
-const SettingsAdapter = withSettings(class {});
 
 const ctx = { organizationId: DEFAULT_ORG, actorEmail: 'alice@example.com' };
 
@@ -353,20 +350,6 @@ test('getOrCreateSsoUser refuses an unknown identity when auto-provision is off'
   );
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'not_provisioned');
-});
-
-test('user settings round-trip through the postgres adapter', async () => {
-  const db = seedSingleOrg();
-  const adapter = new SettingsAdapter();
-
-  assert.deepEqual(await adapter.getUserSettings('alice@example.com', ctx), {});
-
-  await adapter.setUserSettings('alice@example.com', { profile: { name: 'Alice A' } }, ctx);
-
-  assert.equal(db.__tables.users.length, 1, 'settings write did not add a row');
-  assert.deepEqual(await adapter.getUserSettings('alice@example.com', ctx), {
-    profile: { name: 'Alice A' },
-  });
 });
 
 // ---------------------------------------------------------------------------

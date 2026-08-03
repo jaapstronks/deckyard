@@ -67,10 +67,9 @@ export const UNIQUE_CONSTRAINTS = {
 export const JSONB_COLUMNS = {
   users: ['settings'],
   organizations: ['settings'],
-  // `supported_slide_langs` is NOT here: it is `TEXT[]`, written with an
-  // explicit `::text[]` cast (server/storage/adapters/postgres/settings.js:64),
-  // and it sat in this list claiming to be jsonb until the schema conformance
-  // check called it.
+  // `supported_slide_langs` is NOT here: it is `TEXT[]`, as declared in
+  // server/db/migrations/001_initial_schema.js, and it sat in this list
+  // claiming to be jsonb until the schema conformance check called it.
   app_settings: ['webhooks'],
   auth_audit_log: ['metadata'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],

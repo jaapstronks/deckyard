@@ -47,18 +47,3 @@ export function getDatabaseConfig() {
 export function getDefaultOrganizationId() {
   return process.env.DEFAULT_ORGANIZATION_ID || '00000000-0000-0000-0000-000000000001';
 }
-
-/**
- * Dual-write mode for safe migration:
- * - 'off' - No dual-write (default)
- * - 'shadow' - Write both, read file, compare results
- * - 'primary-file' - Write both, read from file
- * - 'primary-postgres' - Write both, read from postgres
- */
-export function getDualWriteMode() {
-  const mode = (process.env.DUAL_WRITE_MODE || '').toLowerCase().trim();
-  if (['shadow', 'primary-file', 'primary-postgres'].includes(mode)) {
-    return mode;
-  }
-  return 'off';
-}

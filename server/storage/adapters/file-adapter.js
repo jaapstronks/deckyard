@@ -66,19 +66,6 @@ import {
 } from '../published/file.js';
 
 import {
-  getAppSettings as fileGetAppSettings,
-  writeAppSettings as fileSetAppSettings,
-  getUserSettings as fileGetUserSettings,
-  writeUserSettings as fileSetUserSettings,
-} from '../settings.js';
-
-import {
-  createFollowCode as fileCreateFollowCode,
-  resolveFollowCode as fileResolveFollowCode,
-  cleanupExpiredCodes as fileCleanupExpiredCodes,
-} from '../follow-codes.js';
-
-import {
   listTags as fileListTags,
   getTagsForPresentation as fileGetTagsForPresentation,
   getTagsForPresentations as fileGetTagsForPresentations,
@@ -519,44 +506,6 @@ export class FileAdapter extends StorageAdapter {
 
   async deletePublished(publishId, ctx) {
     return removePublishedEntry(this.repoRoot, publishId);
-  }
-
-  // ============================================================
-  // SETTINGS
-  // ============================================================
-
-  async getAppSettings(ctx) {
-    return fileGetAppSettings(this.repoRoot);
-  }
-
-  async setAppSettings(data, ctx) {
-    return fileSetAppSettings(this.repoRoot, data);
-  }
-
-  async getUserSettings(email, ctx) {
-    return fileGetUserSettings(this.repoRoot, email);
-  }
-
-  async setUserSettings(email, data, ctx) {
-    return fileSetUserSettings(this.repoRoot, email, data);
-  }
-
-  // ============================================================
-  // FOLLOW CODES
-  // ============================================================
-
-  async createFollowCode(code, followUrl, ctx, opts = {}) {
-    // The file-based implementation generates its own code, so we pass the followUrl
-    // and let it return the created entry with code
-    return fileCreateFollowCode(this.repoRoot, followUrl);
-  }
-
-  async resolveFollowCode(code, ctx) {
-    return fileResolveFollowCode(this.repoRoot, code);
-  }
-
-  async cleanupExpiredFollowCodes(ctx) {
-    return fileCleanupExpiredCodes(this.repoRoot);
   }
 
   // ============================================================

@@ -150,16 +150,6 @@ npm run db:migrate:data -- --reset
 npm run db:migrate:data
 ```
 
-### Dual-Write Mode (Safe Migration)
-
-For production migrations, use dual-write mode:
-
-```bash
-DUAL_WRITE_MODE=shadow         # Write both, read file, compare results
-DUAL_WRITE_MODE=primary-file   # Write both, read from file
-DUAL_WRITE_MODE=primary-postgres  # Write both, read from postgres
-```
-
 ---
 
 ## Debugging

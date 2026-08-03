@@ -10,8 +10,6 @@
  * - postgres/images.js - Image library
  * - postgres/slides.js - Slide library
  * - postgres/published.js - Published presentations
- * - postgres/settings.js - App and user settings
- * - postgres/follow-codes.js - Follow codes
  * - postgres/helpers.js - Shared utilities
  */
 

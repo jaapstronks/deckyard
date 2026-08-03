@@ -76,9 +76,8 @@ and mandatory in another.
 Two distinct things, often confused:
 
 - **Adapter mode-selection** — `server/storage/adapters/index.js` loads only the
-  `FileAdapter` / `PostgresAdapter` / `DualWriteAdapter` the configured mode
-  needs. The Postgres adapter pulls in kysely and pg, so a file-mode install
-  genuinely benefits.
+  `FileAdapter` / `PostgresAdapter` the configured mode needs. The Postgres
+  adapter pulls in kysely and pg, so a file-mode install genuinely benefits.
 - **The DB-vs-file dispatch** — every storage facade answers the same question
   per method: adapter initialized → call it; otherwise lazily load the pure-JS
   file module. That used to be a copy-pasted `await import()` in *every facade

@@ -127,14 +127,10 @@ The storage layer supports multiple backends through an adapter pattern:
 |------|---------|----------|
 | `file` | JSON on disk | OSS self-hosted, development |
 | `postgres` | PostgreSQL | Production, multi-tenant |
-| `dual-write` | Both | Safe migration between backends |
 
 ```javascript
 // Storage mode selection (server/config/database.js)
 STORAGE_MODE=file|postgres
-
-// Dual-write modes for migration
-DUAL_WRITE_MODE=off|shadow|primary-file|primary-postgres
 ```
 
 ### File-Based Storage

@@ -144,8 +144,8 @@ not the constraint it claims to have — accepting it would be a false green of
 the #423 kind, which is the thing this check exists to prevent.
 
 It found one drift on its first run: `app_settings.supported_slide_langs` was
-listed as jsonb, but it is `TEXT[]`, written with an explicit `::text[]` cast in
-`server/storage/adapters/postgres/settings.js`.
+listed as jsonb, but it is `TEXT[]`, as declared in
+`server/db/migrations/001_initial_schema.js`.
 
 ### Why it is not in `npm test`
 
