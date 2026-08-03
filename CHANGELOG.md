@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.14.0](https://github.com/jaapstronks/deckyard/compare/v1.13.0...v1.14.0) (2026-08-03)
+
+
+### Added
+
+* **slides:** add role tokens and the slide-roles reference (role-vocabulary phase 1) ([#571](https://github.com/jaapstronks/deckyard/issues/571)) ([3309330](https://github.com/jaapstronks/deckyard/commit/3309330856340e82b72e601fa3a046c9b9825f2a))
+
+
+### Fixed
+
+* **test:** key slide-css gate scales per category + drop dead .slide-header rules ([#576](https://github.com/jaapstronks/deckyard/issues/576)) ([037d432](https://github.com/jaapstronks/deckyard/commit/037d432302828010597e8734736c8cb3bde5ebaf))
+
+
+### Security
+
+* self-host Prism and KaTeX, loaded lazily by the app shell (B33) ([#565](https://github.com/jaapstronks/deckyard/issues/565)) ([c54bf9f](https://github.com/jaapstronks/deckyard/commit/c54bf9f3a1a9aa47830f56a805c14263be8af7c2))
+
 ## [1.13.0](https://github.com/jaapstronks/deckyard/compare/v1.12.1...v1.13.0) (2026-08-03)
 
 
