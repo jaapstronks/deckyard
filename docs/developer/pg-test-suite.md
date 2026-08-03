@@ -94,6 +94,7 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
 | image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
 | image library usage facade | the `jsonb_path_exists` search over `slides` and `i18n` that replaced the old directory scan — whole-value, content-scoped, org- and trash-filtered — a query shape the in-memory double does not model at all |
+| settings facade | the singleton `app_settings` upsert (one jsonb bag, one row) and the per-e-mail `user_settings` upsert (migration 059) — store-raw / normalize-on-read round-trips plus the partial-write merges the file backend used to prove on disk |
 
 ## Adding a test
 
