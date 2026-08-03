@@ -88,6 +88,11 @@ the same public facade the server uses in `STORAGE_MODE=postgres`.
 | home-aggregation route | `handleHome` assembles team slides, team collections and usage into the Home shape |
 | version-history facade | version create/list/get/prune through the presentations adapter |
 | sandbox TTL sweep + quota | the bulk `DELETE` of expired ephemeral decks cascades to versions/published; per-guest deck-count and byte caps count against `presentations` and refuse a mint with a typed 429 |
+| `updateUserEventRead` (`activity-events.js`) | the read-marker upsert on the `(organization_id, user_email)` unique index, and the `last_read_event_id` FK that is set to null (not orphaned) when its `activity_events` row is deleted |
+| `setSubscription` (`presentation-subscriptions.js`) | the per-deck override upsert on the `(presentation_id, user_email)` primary key, with `presentation_id` FK-bound to a real deck |
+| `markThreadsRead` (`presentation-comments.js`) | the heaviest FK chain: a `comment_thread_reads` marker upserts on `(user_email, comment_id)` and cascades out when its `presentation_comments` row is deleted (org → deck → comment → marker) |
+| `setYDocState` (postgres `presentations`) | the collab `bytea` round-trip: a `Uint8Array` stored via `Buffer.from` reads back byte-for-byte, upserting on the `presentation_id` primary key |
+| image favorites (postgres adapter) | `addImageFavorite`'s `ON CONFLICT DO NOTHING` makes a duplicate add a silent no-op on the composite PK, and the `image_id` FK cascades favorites out when the image is deleted |
 
 ## Adding a test
 
@@ -102,10 +107,11 @@ For a **facade test**, also call `installFacadeStorage()` in `before` and
 seed parents from `./helpers/seed.js`. `tags-storage.pgtest.js` is the smallest
 end-to-end example.
 
-The remaining `onConflict` sites from the brief — `activity-events`,
-`presentation-subscriptions`, `presentation-comments`, and the adapter-backed
-`presentations`/`image-favorites` — are the natural next additions; they carry
-heavier foreign-key chains.
+All eight `onConflict` sites from `docs/plans/briefs/postgres-test-infra.md`
+now have coverage: `slide-locks` and `api-usage` (the first suite), plus
+`activity-events`, `presentation-subscriptions`, `presentation-comments`, the
+adapter-backed `presentations` (Y.Doc state), `image-favorites`, and
+`slide-library-usage`.
 
 ## Running it locally
 
