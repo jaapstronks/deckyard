@@ -86,7 +86,7 @@
 .slide-content .body .md-subheading {
   font-family: var(--font-heading);
   font-size: 32px;
-  line-height: 1.25;
+  line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;

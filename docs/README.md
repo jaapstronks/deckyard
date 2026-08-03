@@ -59,6 +59,7 @@ ships:
 | What a new slide type owes elsewhere | `docs/reference/slide-type-companions.md` |
 | Removing a slide type | `docs/reference/slide-type-removal.md` |
 | CSS design tokens (spacing, z-index) | `docs/reference/css-tokens.md` |
+| Slide role tokens & the theme seam | `docs/reference/slide-roles.md` |
 | CSS breakpoints | `docs/reference/css-breakpoints.md` |
 | Which `!important` are by design | `docs/reference/css-important.md` |
 | Renaming a class a slide type emits | `docs/reference/slide-type-css-contract.md` |
@@ -133,6 +134,7 @@ nothing is discoverable only by `ls`.
 | [`contrast.md`](reference/contrast.md) | The one contrast implementation |
 | [`nested-surfaces.md`](reference/nested-surfaces.md) | Text on a panel, bar or card that paints its own background |
 | [`css-tokens.md`](reference/css-tokens.md) | CSS design tokens (app chrome) |
+| [`slide-roles.md`](reference/slide-roles.md) | The role-token vocabulary for slide CSS, and the theme seam |
 | [`css-breakpoints.md`](reference/css-breakpoints.md) | The shared breakpoint ladder |
 | [`css-important.md`](reference/css-important.md) | Every `!important`, by-design vs cascade-patch |
 | [`slide-type-css-contract.md`](reference/slide-type-css-contract.md) | The class names a slide type emits are a public contract |

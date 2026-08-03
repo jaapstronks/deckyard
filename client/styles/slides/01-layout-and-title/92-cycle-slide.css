@@ -79,7 +79,7 @@
 .slide-cycle .center-label {
   font-family: var(--font-heading);
   font-size: var(--slide-text-sm);
-  line-height: 1.25;
+  line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
   color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
 }

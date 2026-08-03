@@ -87,7 +87,10 @@ So the scale was refined to match the rhythm that exists. Above 20px the
 resolution genuinely is not needed, which is why the fine band stops there — the
 handful of 22/26/30px values up there do get rounded during conversion.
 
-Decision: `docs/plans/briefs/css-tokens-beyond-color.md` § *as (a)*.
+The slide layer faced the same near-miss question and resolved it the same
+way on 2026-08-03: snap to the scale, except where the census shows a real
+rhythm — which earned the slide leading scale its `compact` (1.25) step. See
+`slide-roles.md`.
 
 Use the no-fallback form — `var(--ps-space-3)`, not
 `var(--ps-space-3, 12px)`. A fallback would let the trap above pass silently.
