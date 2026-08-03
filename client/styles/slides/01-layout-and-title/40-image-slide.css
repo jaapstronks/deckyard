@@ -56,7 +56,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
 }
 .slide-image.is-fit-cover .image {
   object-fit: cover;
@@ -80,7 +80,7 @@
   bottom: 18px;
   padding: 16px 22px;
   background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
+  border-radius: var(--slide-radius-sm);
   font-family: var(--font-caption);
   font-size: 20px;
   color: rgba(255, 255, 255, 0.92);
@@ -113,7 +113,7 @@
   bottom: auto;
   padding: 16px 22px;
   background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
+  border-radius: var(--slide-radius-sm);
   display: inline-block;
   width: fit-content;
   max-width: calc(100% - 36px);
@@ -133,7 +133,7 @@
   bottom: 18px;
   padding: 16px 22px;
   background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
+  border-radius: var(--slide-radius-sm);
   font-size: 38px;
   line-height: var(--slide-leading-compact);
   color: rgba(255, 255, 255, 0.92);

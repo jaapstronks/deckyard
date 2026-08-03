@@ -62,18 +62,11 @@
   );
 
   /* =========================================================================
-     SLIDE SIZING (Legacy variables)
+     SLIDE SIZING
      =========================================================================
-     These are kept for backward compatibility. New code should use the
-     design tokens from 00-tokens.css (e.g., --slide-font-size-title).
+     Slide code uses the design tokens from 00-tokens.css directly
+     (e.g., --slide-font-size-title).
      ========================================================================= */
 
   --slide-padding: var(--slide-space-16, 64px);
-
-  /* Typography aliases (map to new token system) */
-  --font-size-title: var(--slide-font-size-title, 64px);
-  --font-size-subtitle: var(--slide-font-size-subheading, 28px);
-  --font-size-heading: var(--slide-font-size-heading, 44px);
-  --font-size-body: var(--slide-font-size-body, 20px);
-  --line-height-body: var(--slide-leading-normal, 1.35);
 }

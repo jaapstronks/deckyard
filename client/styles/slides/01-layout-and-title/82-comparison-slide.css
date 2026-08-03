@@ -9,7 +9,7 @@
 
 .slide-comparison .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: 1.1;
   margin: 0;
   font-weight: var(--heading-weight, 400);
@@ -75,8 +75,8 @@
 /* Markdown body */
 .slide-comparison .body {
   font-family: var(--font-body);
-  font-size: calc(var(--font-size-body) + 2px);
-  line-height: var(--line-height-body);
+  font-size: calc(var(--slide-font-size-body) + 2px);
+  line-height: var(--slide-leading-normal);
   flex: 1;
   min-height: 0;
 }
@@ -193,7 +193,7 @@
   }
 
   .slide-comparison .body {
-    font-size: var(--font-size-body);
+    font-size: var(--slide-font-size-body);
   }
 
   .slide-comparison .comparison-verdict .badge {

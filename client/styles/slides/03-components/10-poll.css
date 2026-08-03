@@ -37,7 +37,7 @@
 
 .slide-poll .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: 1.1;
   margin: 0;
   font-weight: var(--heading-weight, 400);
@@ -95,7 +95,7 @@
   width: 100%;
   min-width: 0;
   padding: 20px 24px;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   background: var(--interaction-surface);
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow-sm);
@@ -104,12 +104,12 @@
 .slide-poll .poll-letter {
   font-family: var(--font-heading);
   font-weight: var(--heading-weight, 600);
-  font-size: calc(var(--font-size-body) + 4px);
+  font-size: calc(var(--slide-font-size-body) + 4px);
   color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
   background: var(--color-accent);
   width: 44px;
   height: 44px;
-  border-radius: var(--t-radius-sm, 12px);
+  border-radius: var(--slide-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -117,8 +117,8 @@
 }
 
 .slide-poll .poll-text {
-  font-size: var(--font-size-body);
-  line-height: var(--line-height-body);
+  font-size: var(--slide-font-size-body);
+  line-height: var(--slide-leading-normal);
   color: var(--color-text);
   padding-top: 6px;
   min-width: 0;
@@ -128,7 +128,7 @@
 .slide-poll .poll-results,
 .slide-likert .poll-results {
   background: var(--interaction-surface);
-  border-radius: var(--t-radius-lg, 22px);
+  border-radius: var(--slide-radius-lg);
   padding: 28px;
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
@@ -137,7 +137,7 @@
 .slide-poll .poll-results-title,
 .slide-likert .poll-results-title {
   font-family: var(--font-heading);
-  font-size: calc(var(--font-size-body) - 2px);
+  font-size: calc(var(--slide-font-size-body) - 2px);
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);
   color: var(--color-text);
@@ -161,7 +161,7 @@
 
 .slide-poll .poll-bar-name {
   font-family: var(--font-heading);
-  font-size: calc(var(--font-size-body) - 4px);
+  font-size: calc(var(--slide-font-size-body) - 4px);
   font-weight: var(--heading-weight, 600);
   color: var(--color-text);
 }
@@ -169,7 +169,7 @@
 .slide-poll .poll-bar-track {
   height: 28px;
   background: var(--interaction-surface-2);
-  border-radius: var(--t-radius-sm, 12px);
+  border-radius: var(--slide-radius-sm);
   overflow: hidden;
   position: relative;
   border: 1px solid var(--interaction-border);
@@ -179,7 +179,7 @@
   height: 100%;
   width: 0%;
   background: var(--color-accent);
-  border-radius: var(--t-radius-sm, 12px);
+  border-radius: var(--slide-radius-sm);
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
 }
@@ -231,7 +231,7 @@
 /* Poll Scan/Join Section */
 .slide-poll .poll-scan {
   background: var(--interaction-surface);
-  border-radius: var(--t-radius-lg, 22px);
+  border-radius: var(--slide-radius-lg);
   padding: 32px;
   box-shadow: var(--interaction-shadow);
   border: 1px solid var(--interaction-border);
@@ -247,7 +247,7 @@
 }
 
 .slide-poll .poll-scan .help {
-  font-size: calc(var(--font-size-body) - 6px);
+  font-size: calc(var(--slide-font-size-body) - 6px);
   color: var(--color-text-muted);
   line-height: 1.4;
 }
@@ -257,7 +257,7 @@
   display: block;
   width: 100%;
   height: auto;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   background: #fff;
   padding: 12px;
   margin: 18px auto 0;
@@ -272,7 +272,7 @@
 .slide-likert .heading {
   font-family: var(--font-heading);
   /* Bigger, title-like question for Likert (requested) */
-  font-size: calc(var(--font-size-heading) + 10px);
+  font-size: calc(var(--slide-font-size-heading) + 10px);
   line-height: 1.08;
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);
@@ -325,7 +325,7 @@
   gap: 20px;
   background: var(--interaction-surface);
   padding: 20px 28px;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   width: 100%;
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow-sm);
@@ -339,7 +339,7 @@
   background: var(--color-accent);
   width: 52px;
   height: 52px;
-  border-radius: var(--t-radius-sm, 12px);
+  border-radius: var(--slide-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -372,7 +372,7 @@
   margin: 16px 0;
   color: var(--color-accent);
   background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.03) 100%);
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   overflow: hidden;
   border: 1px solid var(--interaction-border);
 }
@@ -432,7 +432,7 @@
   background: var(--interaction-surface);
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow-sm);
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   padding: 24px 28px;
 }
 .slide-likert-slider .likert-slider-labels {

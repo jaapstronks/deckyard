@@ -5,7 +5,7 @@
 }
 .slide-lijstje .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: 1.1;
   margin: 0 0 12px;
   font-weight: var(--heading-weight, 400);
@@ -19,7 +19,7 @@
      lead paragraph on a web page. No heading transform/weight so an uppercase
      theme doesn't shout a full sentence. */
   font-family: var(--font-body);
-  font-size: var(--font-size-subtitle);
+  font-size: var(--slide-font-size-subheading);
   line-height: 1.35;
   color: var(--color-text);
   font-weight: 400;
@@ -40,8 +40,8 @@
   /* Match the readable one-column content slide width */
   max-width: 65%;
   /* Match the “one-column content” big-type feel */
-  font-size: calc(var(--font-size-body) + 2px);
-  line-height: var(--line-height-body);
+  font-size: calc(var(--slide-font-size-body) + 2px);
+  line-height: var(--slide-leading-normal);
 }
 /* When there's no subheading the list follows the heading directly; the
    heading's 12px bottom margin alone crowds the first item against the title.
@@ -122,7 +122,7 @@
    everything so many items still fit on one slide. Titles use em units off
    .lijst, so scaling the list font-size cascades to both title and text. */
 .slide-lijstje.is-comfortable .lijst {
-  font-size: calc(var(--font-size-body) + 7px);
+  font-size: calc(var(--slide-font-size-body) + 7px);
 }
 .slide-lijstje.is-comfortable .item-title {
   font-size: calc(1.18em * var(--tf-size-scale, 1)); /* bigger titles are the main win for sparse slides */
@@ -139,7 +139,7 @@
 }
 
 .slide-lijstje.is-compact .lijst {
-  font-size: var(--font-size-body);
+  font-size: var(--slide-font-size-body);
 }
 .slide-lijstje.is-compact .item-title {
   font-size: calc(0.9em * var(--tf-size-scale, 1));

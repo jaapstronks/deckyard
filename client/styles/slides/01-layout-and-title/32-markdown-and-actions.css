@@ -74,7 +74,7 @@
   font-weight: 500;
   line-height: 1.2;
   text-decoration: none;
-  border-radius: var(--t-radius-sm, 10px);
+  border-radius: var(--slide-radius-sm);
   cursor: pointer;
   transition:
     background-color 0.2s ease,

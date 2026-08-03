@@ -163,7 +163,7 @@
   bottom: 18px;
   padding: 14px 18px;
   background: rgba(0, 0, 0, 0.45);
-  border-radius: var(--t-radius-sm, 14px);
+  border-radius: var(--slide-radius-sm);
   font-family: var(--font-caption);
   font-size: 18px;
   line-height: var(--slide-leading-compact);
@@ -184,7 +184,7 @@
 .slide-image-text .image-placeholder {
   width: 100%;
   height: 100%;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   border: 1px dashed rgba(0, 0, 0, 0.22);
   background:
     radial-gradient(
@@ -299,7 +299,7 @@
 }
 .slide-image-text .copy .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: 1.1;
   margin: 0 0 18px;
   font-weight: var(--heading-weight, 400);

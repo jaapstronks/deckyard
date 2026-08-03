@@ -9,7 +9,7 @@
 
 .slide-pyramid .heading {
   font-family: var(--font-heading);
-  font-size: var(--font-size-heading);
+  font-size: var(--slide-font-size-heading);
   line-height: 1.1;
   margin: 0;
   font-weight: var(--heading-weight, 400);

@@ -14,7 +14,7 @@
 .slide-icon-card-grid .icon-card-icon-fallback {
   width: 44px;
   height: 44px;
-  border-radius: var(--t-radius-sm, 12px);
+  border-radius: var(--slide-radius-sm);
   border: 1px dashed rgba(0, 0, 0, 0.35);
   background: rgba(0, 0, 0, 0.08);
 }

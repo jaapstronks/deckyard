@@ -88,7 +88,7 @@
 /* Block styling */
 .slide-text-blocks .text-block {
   padding: 26px 30px;
-  border-radius: var(--t-radius, 18px);
+  border-radius: var(--slide-radius-md);
   display: flex;
   flex-direction: column;
   min-height: 0;
