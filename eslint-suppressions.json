@@ -1,1 +1,272 @@
-{}
+{
+  "capture/lib/api.js": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "capture/lib/marketing.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/embed-sdk.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/api.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/comments/mention-autocomplete.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/format/lang-selector.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/net/reconnect.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/lib/net/stock-media.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/analytics/shared-report.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/analytics/viewer-list.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/bootstrap.js": {
+    "no-useless-assignment": {
+      "count": 2
+    }
+  },
+  "client/views/editor/deck-grid.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/editor-form/background-section.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/fields/icon-picker-modal.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/image-library/grid.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-type-picker-keyboard.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slide-type-picker/library-strip.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/slides-panel.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/list/views/home-view.js": {
+    "no-useless-assignment": {
+      "count": 2
+    }
+  },
+  "client/views/presenter/index.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/share-viewer/topbar.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "scripts/download-google-fonts.js": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "scripts/i18n-keys.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/auth/auth.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/config/env.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/db/migrations/053_import_file_versions_to_table.js": {
+    "no-useless-assignment": {
+      "count": 3
+    }
+  },
+  "server/media/bundled-gradients.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/media/scaleway.js": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/render/pdf.js": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "server/routes/api/assets.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/routes/api/notion/subjects.js": {
+    "no-useless-assignment": {
+      "count": 3
+    }
+  },
+  "server/routes/api/presentations/comments-write.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/popular.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/routes/api/presentations/presentation.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/routes/api/publish.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/routes/static/static-files.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/services/comment-subscriptions.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/services/deck-activity-notifications.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/storage/presentations/versions.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/ai/revise-outline.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/convert-file/pdf-parser.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/data-source/providers/csv-url.js": {
+    "preserve-caught-error": {
+      "count": 3
+    }
+  },
+  "server/utils/embed-fonts.js": {
+    "preserve-caught-error": {
+      "count": 3
+    }
+  },
+  "server/utils/embed-html/index.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/llm/providers/claude.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/llm/vision.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/markdown-import/parse.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "server/utils/notion/pages.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "shared/slide-types/types/chart-slide.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "shared/slide-types/types/chart-slide/ticks.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "shared/slide-types/types/video-slide.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "test-suite/lib/anthropic.js": {
+    "preserve-caught-error": {
+      "count": 1
+    }
+  },
+  "test-suite/lib/cases.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "test-suite/lib/prompt-version.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  }
+}
