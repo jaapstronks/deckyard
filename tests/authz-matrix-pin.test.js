@@ -33,11 +33,13 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 // Default install: single-workspace, sandbox off. isMultiWorkspaceEnabled() is
-// read at module load (config/features.js), so it must be cleared before import.
+// read at module load (config/features.js), so the env must be cleared before
+// the module is evaluated. A static `import` would not guarantee that — static
+// imports hoist above this statement — hence the dynamic import below it.
 delete process.env.MULTI_WORKSPACE_ENABLED;
 delete process.env.SANDBOX_MODE;
 
-import {
+const {
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
@@ -49,7 +51,7 @@ import {
   getEffectivePermission,
   canResolveComment,
   canDeleteComment,
-} from '../server/utils/presentation-authz.js';
+} = await import('../server/utils/presentation-authz.js');
 
 // --- Actors -----------------------------------------------------------------
 // Owner and creator are deliberately different emails so a deck can distinguish
