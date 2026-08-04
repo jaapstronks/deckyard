@@ -5,6 +5,7 @@
 import crypto from 'node:crypto';
 import { getDb, getOrgId, jsonb, now, sql, applyPagination } from './helpers.js';
 import { mapPresentationRow, mapVersionRowSummary, mapVersionRowFull } from '../../mappers.js';
+import { resolveIdentityByEmail } from '../../identity-resolver.js';
 import { ConflictError } from '../../../utils/errors.js';
 import { mergeSlidesAtSlideLevel } from '../../presentations/crud/helpers.js';
 import { enforceSlideWritePolicy } from '../../presentations/crud/enforce-slide-locks.js';
@@ -157,6 +158,16 @@ export function withPresentations(Base) {
       const id = data.id || crypto.randomUUID();
       const ownerEmail = data.ownerEmail || ctx?.actorEmail || null;
 
+      // Dual-key (T10 PR 3): stamp the stable user_id beside each email column.
+      // At create the owner is also the creator and last writer, so all three
+      // email columns hold `ownerEmail` and all three id columns resolve from
+      // it — one lookup. A known user maps to their users.id; an owner with no
+      // users row resolves `external` and stays NULL (the pinned legacy path).
+      // Reads still key on the email; this only populates the columns a later
+      // PR moves the ownership reads onto.
+      const ownerResolution = await resolveIdentityByEmail(ownerEmail);
+      const ownerUserId = ownerResolution?.userId ?? null;
+
       const row = await db
         .insertInto('presentations')
         .values({
@@ -165,6 +176,9 @@ export function withPresentations(Base) {
           owner_email: ownerEmail,
           created_by: ownerEmail,
           updated_by: ownerEmail,
+          owner_user_id: ownerUserId,
+          created_by_user_id: ownerUserId,
+          updated_by_user_id: ownerUserId,
           title: data.title || 'Untitled',
           description: data.description || null,
           theme: data.theme || 'default',
@@ -296,8 +310,20 @@ export function withPresentations(Base) {
       // explicit `null` and wiped `settings`, `i18n`, `published` and
       // `description`. One partial `POST /api/v1/presentations/:id/slides`
       // emptied a production deck's whole i18n object that way.
+      // Dual-key (T10 PR 3): the update path stamps the "last writer", so it
+      // fills `updated_by_user_id` from the very same actor it writes to
+      // `updated_by` — the two keys move together or the per-row backfill
+      // verification (brief volgorde-punt 4) becomes impossible. It touches
+      // neither `owner_user_id` nor `created_by_user_id`: the PG update path
+      // never rewrites `owner_email`/`created_by` (ownership transfer's
+      // owner_email persistence is a pre-existing PG gap, tracked as its own
+      // item — brief § PR 3), so faithfully mirroring the email columns means
+      // leaving the id columns for owner and creator alone here too.
+      const updatedByEmail = ctx?.actorEmail || data.updatedBy;
+      const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
       const updateData = {
-        updated_by: ctx?.actorEmail || data.updatedBy,
+        updated_by: updatedByEmail,
+        updated_by_user_id: updatedByResolution?.userId ?? null,
         modified_at: now(),
         revision: sql`revision + 1`,
       };
