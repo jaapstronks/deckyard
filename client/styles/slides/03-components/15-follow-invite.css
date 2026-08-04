@@ -34,11 +34,15 @@
   align-items: stretch;
 }
 
+/* The one card that sits on the default card anchors: it has a single density,
+   so it re-declares nothing and reads --slide-card-padding /
+   --slide-font-size-card-title straight from 00-tokens.css
+   (slide-roles.md § The card pattern). */
 .slide-follow-invite .sfi-card {
   background: rgba(255, 255, 255, 0.92);
   border: 2px solid rgba(0, 0, 0, 0.10);
   border-radius: var(--slide-radius-md);
-  padding: var(--slide-space-6);
+  padding: var(--slide-card-padding);
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--slide-space-3);
@@ -46,7 +50,7 @@
 }
 
 .slide-follow-invite .sfi-card-kicker {
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-title);
   font-weight: 900;
   letter-spacing: -0.01em;
   opacity: 0.88;

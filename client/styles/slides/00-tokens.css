@@ -33,8 +33,12 @@
   --slide-font-size-body: var(--slide-text-base);
   --slide-font-size-caption: var(--slide-text-sm);
   --slide-font-size-label: var(--slide-text-xs); /* kickers, eyebrows, axis labels */
-  --slide-font-size-card-title: var(--slide-text-md); /* the recurring card pattern */
-  --slide-font-size-card-body: var(--slide-text-sm);
+  /* The card pattern. Unlike the roles above, these two are *contextual*: a
+     card sets them for its own density and its parts read them, so the values
+     here are the default a card inherits when it sets nothing. See
+     docs/reference/slide-roles.md § The card pattern. */
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-md);
 
   /* KPI/metric display sizes */
   --slide-text-kpi-lg: 156px;
@@ -80,6 +84,8 @@
   --slide-header-gap: var(--slide-space-6);
   --slide-section-gap: var(--slide-space-8);
   --slide-card-gap: var(--slide-space-4);
+  /* Contextual like the two card font-size roles: the card sets its own
+     padding — one step or a shorthand of steps — and its box reads it. */
   --slide-card-padding: var(--slide-space-6);
   --slide-item-gap: var(--slide-space-3);
   --slide-text-gap: var(--slide-space-2);

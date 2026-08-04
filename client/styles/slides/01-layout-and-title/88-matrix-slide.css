@@ -48,9 +48,14 @@
 
 /* Individual cell */
 .slide-matrix .matrix-cell {
+  /* The cell is the card; .cell-title / .cell-body read the roles
+     (slide-roles.md § The card pattern). */
+  --slide-card-padding: var(--slide-space-6) var(--slide-space-8);
+  --slide-font-size-card-title: var(--slide-text-xl);
+  --slide-font-size-card-body: var(--slide-text-md);
   display: flex;
   flex-direction: column;
-  padding: var(--slide-space-6) var(--slide-space-8);
+  padding: var(--slide-card-padding);
   background: rgba(255, 255, 255, 0.6);
   border: 2px solid var(--slide-border-light);
   overflow: hidden;
@@ -99,7 +104,7 @@
 /* Cell title */
 .slide-matrix .cell-title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-xl);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -124,7 +129,7 @@
 /* Markdown body */
 .slide-matrix .cell-body {
   font-family: var(--font-body);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-normal);
   flex: 1;
   min-height: 0;
@@ -215,16 +220,14 @@
   }
 
   .slide-matrix .matrix-cell {
-    padding: var(--slide-space-5);
+    /* ladder rung: both stay under the base cell (xl / md) */
+    --slide-card-padding: var(--slide-space-5);
+    --slide-font-size-card-title: var(--slide-text-lg);
+    --slide-font-size-card-body: var(--slide-text-base);
   }
 
   .slide-matrix .cell-title {
-    font-size: var(--slide-text-lg);
     margin-bottom: var(--slide-space-3);
-  }
-
-  .slide-matrix .cell-body {
-    font-size: var(--slide-text-base);
   }
 }
 
