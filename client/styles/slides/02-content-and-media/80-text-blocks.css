@@ -85,9 +85,16 @@
   grid-template-columns: repeat(6, 1fr);
 }
 
-/* Block styling */
+/* Block styling.
+   The block is the card: it sets the three card roles for its own density and
+   .text-block-title / .text-block-body read them, so every rung below is one
+   rule instead of a title rule plus a body rule (slide-roles.md § The card
+   pattern). */
 .slide-text-blocks .text-block {
-  padding: var(--slide-space-6) var(--slide-space-8);
+  --slide-card-padding: var(--slide-space-6) var(--slide-space-8);
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-md);
+  padding: var(--slide-card-padding);
   border-radius: var(--slide-radius-md);
   display: flex;
   flex-direction: column;
@@ -105,7 +112,7 @@
 /* Block title */
 .slide-text-blocks .text-block-title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-lg);
+  font-size: var(--slide-font-size-card-title);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -117,7 +124,7 @@
 /* Block body */
 .slide-text-blocks .text-block-body {
   font-family: var(--font-body);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-normal);
 }
 .slide-text-blocks .text-block-body p {
@@ -136,58 +143,35 @@
 .slide-text-blocks
   .text-blocks-row[data-count='1']
   .text-block {
+  --slide-card-padding: var(--slide-space-10);
+  --slide-font-size-card-title: var(--slide-text-xl);
+  --slide-font-size-card-body: var(--slide-text-lg);
   text-align: center;
   align-items: center;
-  padding: var(--slide-space-10);
-}
-.slide-text-blocks
-  .text-blocks-row[data-count='1']
-  .text-block-title {
-  font-size: var(--slide-text-xl);
-}
-.slide-text-blocks
-  .text-blocks-row[data-count='1']
-  .text-block-body {
-  font-size: var(--slide-text-lg);
 }
 
 /* Three blocks - slightly smaller */
 .slide-text-blocks
   .text-blocks-row[data-count='3']
-  .text-block-title {
-  /* ladder rung: stays under the base block title (lg) */
-  font-size: var(--slide-text-md);
-}
-.slide-text-blocks
-  .text-blocks-row[data-count='3']
-  .text-block-body {
-  font-size: var(--slide-text-base);
+  .text-block {
+  /* ladder rung: the title stays under the base block title (lg) */
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
 }
 
 /* Four or more blocks - smaller */
 .slide-text-blocks
   .text-blocks-row[data-count='4']
-  .text-block-title,
+  .text-block,
 .slide-text-blocks
   .text-blocks-row[data-count='5']
-  .text-block-title,
+  .text-block,
 .slide-text-blocks
   .text-blocks-row[data-count='6']
-  .text-block-title {
-  /* ladder rung: stays under the 3-block rung (md) */
-  font-size: var(--slide-text-base);
-}
-.slide-text-blocks
-  .text-blocks-row[data-count='4']
-  .text-block-body,
-.slide-text-blocks
-  .text-blocks-row[data-count='5']
-  .text-block-body,
-.slide-text-blocks
-  .text-blocks-row[data-count='6']
-  .text-block-body {
-  /* ladder rung: stays under the 3-block rung (base) */
-  font-size: var(--slide-text-sm);
+  .text-block {
+  /* ladder rung: both stay under the 3-block rung (md / base) */
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* Arrow between rows */
@@ -227,37 +211,28 @@
   margin-top: var(--slide-space-5);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block {
-  padding: var(--slide-space-5) var(--slide-space-6);
+  --slide-card-padding: var(--slide-space-5) var(--slide-space-6);
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-base);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-title {
-  font-size: var(--slide-text-base);
   margin-bottom: var(--slide-space-2);
-}
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-body {
-  font-size: var(--slide-text-base);
-  line-height: var(--slide-leading-normal);
 }
 
 /* Compact mode + 3 blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-title {
-  /* ladder rung: stays under the 3-row block title (base) */
-  font-size: var(--slide-text-sm);
-}
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-body {
-  font-size: var(--slide-text-sm);
+.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block {
+  /* ladder rung: the title stays under the 3-row block title (base) */
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* Compact mode + 4 or more blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block-title,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block-title,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block-title {
-  font-size: var(--slide-text-sm);
-}
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block-body,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block-body,
-.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block-body {
-  /* ladder rung: stays under the 3-row 3-block rung (sm) */
-  font-size: var(--slide-text-xs);
+.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block,
+.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block,
+.slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block {
+  /* ladder rung: the body stays under the 3-row 3-block rung (sm) */
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 
 /* Compact mode: 4 rows present (A0.4).
@@ -288,39 +263,30 @@
   margin-top: var(--slide-space-3);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block {
-  padding: var(--slide-space-3) var(--slide-space-4);
+  /* ladder rung + overflow: both stay under the 3-row tier (base), and the
+     4-row tier exists to make four rows fit */
+  --slide-card-padding: var(--slide-space-3) var(--slide-space-4);
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-title {
-  /* ladder rung + overflow: stays under the 3-row tier (base), and the 4-row tier
-     exists to make four rows fit */
-  font-size: var(--slide-text-sm);
   margin-bottom: var(--slide-space-1);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-body {
-  /* ladder rung + overflow: stays under the 3-row tier (base), and the 4-row tier
-     exists to make four rows fit */
-  font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
 }
 
-/* Compact 4-row + 3 blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='3'] .text-block-title {
-  font-size: var(--slide-text-sm);
-}
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='3'] .text-block-body {
-  font-size: var(--slide-text-sm);
-}
+/* The 4-row + 3-block rung is gone: it restated the 4-row tier it sits in
+   (sm/sm), and with it deleted a 3-block row in a 4-row slide still resolves
+   to that tier — the 3-block rung it would otherwise fall back to loses the
+   specificity tie to it (slide-roles.md § Snapping a value to the scale). */
 
 /* Compact 4-row + 4 or more blocks per row */
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-title,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block-title,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block-title {
-  /* ladder rung + overflow: stays under the 4-row 3-block rung (sm) */
-  font-size: var(--slide-text-xs);
-}
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-body,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block-body,
-.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block-body {
-  font-size: var(--slide-text-xs);
+.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block,
+.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block,
+.slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block {
+  /* ladder rung + overflow: the title stays under the 4-row tier (sm) */
+  --slide-font-size-card-title: var(--slide-text-xs);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 

@@ -104,6 +104,11 @@
   min-height: 0;
 }
 .slide-icon-card-grid .icon-card {
+  /* The card sets the three card roles; .icon-card-body / -title / -text read
+     them (slide-roles.md § The card pattern). */
+  --slide-card-padding: var(--slide-space-5) var(--slide-space-6);
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-md);
   display: flex;
   align-items: stretch;
   min-width: 0;

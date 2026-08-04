@@ -297,6 +297,11 @@
 }
 
 .slide-team-cards .team-card {
+  /* The card sets the two card text roles; .team-card-name / -byline read them,
+     so each density rung below is one rule (slide-roles.md § The card pattern).
+     A team card has no surface of its own, so it carries no --slide-card-padding. */
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
   width: var(--team-card-photo);
   min-width: 0;
   display: flex;
@@ -352,7 +357,7 @@
 
 .slide-team-cards .team-card-name {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: 400;
   font-synthesis: none;
@@ -363,7 +368,7 @@
 
 .slide-team-cards .team-card-byline {
   font-family: var(--font-body);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
   color: var(--color-text-muted);
   width: 100%;
@@ -392,54 +397,58 @@
 }
 
 /* Larger text for 1-4 card layouts */
-.slide-team-cards[data-card-count='1'] .team-card-name,
-.slide-team-cards[data-card-count='2'] .team-card-name,
-.slide-team-cards[data-card-count='3'] .team-card-name,
-.slide-team-cards[data-card-count='4'] .team-card-name {
-  font-size: var(--slide-text-lg);
-}
-
-.slide-team-cards[data-card-count='1'] .team-card-byline,
-.slide-team-cards[data-card-count='2'] .team-card-byline,
-.slide-team-cards[data-card-count='3'] .team-card-byline,
-.slide-team-cards[data-card-count='4'] .team-card-byline {
-  font-size: var(--slide-text-md);
+.slide-team-cards[data-card-count='1'] .team-card,
+.slide-team-cards[data-card-count='2'] .team-card,
+.slide-team-cards[data-card-count='3'] .team-card,
+.slide-team-cards[data-card-count='4'] .team-card {
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-md);
 }
 
 /* Smaller text for 5-6 cards (more compact single-row layout) */
-.slide-team-cards[data-card-count='5'] .team-card-name,
-.slide-team-cards[data-card-count='6'] .team-card-name {
-  font-size: var(--slide-text-base);
-}
-
-.slide-team-cards[data-card-count='5'] .team-card-byline,
-.slide-team-cards[data-card-count='6'] .team-card-byline {
-  font-size: var(--slide-text-sm);
+.slide-team-cards[data-card-count='5'] .team-card,
+.slide-team-cards[data-card-count='6'] .team-card {
+  /* ladder rung: both stay under the 1-4 rung (lg / md) */
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* Compact labels for large grids (13–18) */
+.slide-team-cards[data-card-count='13'] .team-card,
+.slide-team-cards[data-card-count='14'] .team-card,
+.slide-team-cards[data-card-count='15'] .team-card,
+.slide-team-cards[data-card-count='16'] .team-card,
+.slide-team-cards[data-card-count='17'] .team-card,
+.slide-team-cards[data-card-count='18'] .team-card {
+  /* ladder rung: both stay under the 5-6 rung (base / sm) */
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
+}
 .slide-team-cards[data-card-count='13'] .team-card-name,
 .slide-team-cards[data-card-count='14'] .team-card-name,
 .slide-team-cards[data-card-count='15'] .team-card-name,
 .slide-team-cards[data-card-count='16'] .team-card-name,
 .slide-team-cards[data-card-count='17'] .team-card-name,
 .slide-team-cards[data-card-count='18'] .team-card-name {
-  font-size: var(--slide-text-sm);
   /* allowlist: sub-step hairline — the last two tiers of the name→byline ramp
      continue below --slide-space-1 (the base is space-2, 8px). Snapping 2px and
      1px both to 4px would merge two density tiers into one (slide-roles.md) */
   margin-bottom: 2px;
 }
-.slide-team-cards[data-card-count='13'] .team-card-byline,
-.slide-team-cards[data-card-count='14'] .team-card-byline,
-.slide-team-cards[data-card-count='15'] .team-card-byline,
-.slide-team-cards[data-card-count='16'] .team-card-byline,
-.slide-team-cards[data-card-count='17'] .team-card-byline,
-.slide-team-cards[data-card-count='18'] .team-card-byline {
-  font-size: var(--slide-text-xs);
-}
 
 /* Even more compact for the densest grids (19–25) */
+.slide-team-cards[data-card-count='19'] .team-card,
+.slide-team-cards[data-card-count='20'] .team-card,
+.slide-team-cards[data-card-count='21'] .team-card,
+.slide-team-cards[data-card-count='22'] .team-card,
+.slide-team-cards[data-card-count='23'] .team-card,
+.slide-team-cards[data-card-count='24'] .team-card,
+.slide-team-cards[data-card-count='25'] .team-card {
+  /* ladder rung: the title stays under the 13-18 rung (sm); the byline is
+     already on the scale floor for cards, so the two rungs meet at xs */
+  --slide-font-size-card-title: var(--slide-text-xs);
+  --slide-font-size-card-body: var(--slide-text-xs);
+}
 .slide-team-cards[data-card-count='19'] .team-card-name,
 .slide-team-cards[data-card-count='20'] .team-card-name,
 .slide-team-cards[data-card-count='21'] .team-card-name,
@@ -447,8 +456,6 @@
 .slide-team-cards[data-card-count='23'] .team-card-name,
 .slide-team-cards[data-card-count='24'] .team-card-name,
 .slide-team-cards[data-card-count='25'] .team-card-name {
-  /* ladder rung: stays under the 13-18 card rung (sm) */
-  font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-tight);
   /* allowlist: sub-step hairline — see the 13–18 tier above */
   margin-bottom: 1px;
@@ -460,21 +467,15 @@
 .slide-team-cards[data-card-count='23'] .team-card-byline,
 .slide-team-cards[data-card-count='24'] .team-card-byline,
 .slide-team-cards[data-card-count='25'] .team-card-byline {
-  font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-snug);
 }
 
 /* Even smaller text when bottom subheading is present */
-.slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-name,
-.slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-name {
-  /* ladder rung: stays under the 5-6 card name rung (base) */
-  font-size: var(--slide-text-sm);
-}
-
-.slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card-byline,
-.slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card-byline {
-  /* ladder rung: stays under the 5-6 card byline rung (sm) */
-  font-size: var(--slide-text-xs);
+.slide-team-cards.has-bottom-subheading[data-card-count='5'] .team-card,
+.slide-team-cards.has-bottom-subheading[data-card-count='6'] .team-card {
+  /* ladder rung: both stay under the 5-6 card rung (base / sm) */
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 
 .slide-team-cards .team-cards-empty {

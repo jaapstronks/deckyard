@@ -116,11 +116,11 @@ and the KPI display sizes carry the values; roles bind meaning to a step:
 | Caption | `--slide-font-size-caption` | `--slide-text-sm` |
 | Label | `--slide-font-size-label` | `--slide-text-xs` |
 | Card title | `--slide-font-size-card-title` | `--slide-text-md` |
-| Card body | `--slide-font-size-card-body` | `--slide-text-sm` |
+| Card body | `--slide-font-size-card-body` | `--slide-text-md` |
 
-The card bindings are the starting anchors for the card pattern (the census
-found 91 unique card sizes spread across types); they get their carriers during
-the sweep and may be re-anchored there — the *role* is the stable part.
+The two card rows are the only *contextual* roles: a card re-declares them for
+its own density and the values above are what a card inherits when it declares
+nothing. That, and which patterns count as cards, is the section below.
 
 Leading uses the five-step scale: `tight` 1.1 · `snug` 1.2 · `compact` 1.25 ·
 `normal` 1.35 · `relaxed` 1.5. The `compact` step exists because the census
@@ -150,6 +150,83 @@ size layer is finer-grained where the affordance layer does not need to be:
 | `quote` | type-scaled display (quote-slide's own scaling; allowlisted) |
 | `caption` | caption |
 | `label` | label |
+
+## The card pattern
+
+A **card** is a repeated content unit that carries a title and a body which
+size *together* as one block, in a box the grid and the content set. The three
+card roles — `--slide-font-size-card-title`, `--slide-font-size-card-body`,
+`--slide-card-padding` — are the whole vocabulary a card's parts may speak on
+those axes.
+
+The members, measured rather than declared: the icon-card (both layouts), the
+text block, the team card, the timeline card, the matrix cell, the KPI tile and
+the follow-invite card. Two neighbours look like members and are not, for the
+same reason: **`.comparison-side` is a column**, not a box — no surface, and
+its padding is the gutter between the two halves; **the gallery tile and the
+logo-wall cell** carry media and a caption, not a title/body pair.
+
+### The roles are contextual
+
+A card's text size is a function of its density, and density is a property of
+the *card*, not of the text inside it: six cards in a row are smaller than one,
+whatever their titles say. So the card element sets the roles and its parts
+read them —
+
+```css
+.slide-text-blocks .text-block {
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-md);
+}
+.slide-text-blocks .text-blocks-row[data-count='3'] .text-block {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
+}
+.slide-text-blocks .text-block-title { font-size: var(--slide-font-size-card-title); }
+.slide-text-blocks .text-block-body  { font-size: var(--slide-font-size-card-body); }
+```
+
+— which makes each rung of a density ladder **one rule that names the density**
+instead of a title rule plus a body rule that have to be kept in step by hand.
+The parts name a size exactly once, at the top. A card that has a single
+density declares nothing at all and reads the bindings from `00-tokens.css`;
+`.sfi-card` in `15-follow-invite.css` is the live case.
+
+`--slide-card-padding` carries the card's **whole** padding, one step or a
+shorthand of steps (`var(--slide-space-6) var(--slide-space-8)`), because a
+card's padding is one decision even when it is asymmetric — splitting it into a
+block and an inline role would make two tokens out of one concept.
+
+### Title and body are an ordered pair
+
+There are two card text roles rather than one because **the title never sits
+below the body**: `card-title` ≥ `card-body`, on every rung of every ladder.
+That is the same ordering constraint the tie-break above describes, applied
+within the card instead of down a ladder, so it is read the same way — where
+the ratio-larger step would put the body on or above the title, the body takes
+the smaller step. The KPI tile is the worked example: label and note were both
+26px, the label snapped up to `lg` on the plain rule, and the note stays at
+`md` because it hangs *from* the label. Expressing that as
+`card-title: lg` / `card-body: md` is why the note needs no exception comment —
+the roles carry the ordering that a comment used to have to assert.
+
+### What this does not settle
+
+Every card pattern still runs its **own** density ladder: a matrix cell starts
+at `xl` where a timeline card starts at `base`, and the census's 91 unique card
+sizes are all still there, now named rather than reduced. One shared card
+ladder — density N takes size S(N) across types — is the change that would
+actually collapse that count, and it is a value change on every card, so it is
+its own piece of work, not a side effect of naming.
+
+The diagram families (process, funnel, pyramid, cycle) present the same
+title/body-on-a-count-ladder shape and are deliberately left out: their ladders
+were just ratified value-by-value under the tie-break, and folding them in means
+re-opening that record rather than reading it.
+
+`.slide-card` in `00-patterns.css` is **not** the base of this pattern — nothing
+renders it (a dead-CSS candidate, tracked in the dead-code audit). Each card
+pattern owns its own box.
 
 ## Spacing roles
 

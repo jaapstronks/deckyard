@@ -191,6 +191,14 @@
   width: 68px;
   height: 68px;
 }
+/* A tile is the same card at a different density, so the variant re-sets the
+   card roles rather than re-declaring sizes on the parts (slide-roles.md
+   § The card pattern). */
+.slide-icon-card-grid[data-layout='tiles'] .icon-card {
+  --slide-card-padding: 0 var(--slide-space-4) var(--slide-space-6);
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-base);
+}
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-body {
   flex: 0 0 auto;
   background: transparent;
@@ -200,13 +208,11 @@
   );
   justify-content: flex-end;
   text-align: center;
-  padding: 0 var(--slide-space-4) var(--slide-space-6);
 }
 /* `.slide h3 { text-align: start }` (base) wins over the parent's centering,
    so the title has to opt back in explicitly. */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-title {
   margin-bottom: var(--slide-space-2);
-  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-snug);
   text-align: center;
 }
@@ -218,10 +224,18 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   overflow: hidden;
-  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
   text-align: center;
   opacity: var(--slide-opacity-prominent, 0.85);
+}
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='5']
+  .icon-card,
+.slide-icon-card-grid[data-layout='tiles']
+  .icon-card-grid[data-card-count='6']
+  .icon-card {
+  /* ladder rung: the body stays under the tile base (base) */
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 .slide-icon-card-grid[data-layout='tiles']
   .icon-card-grid[data-card-count='5']
@@ -229,7 +243,6 @@
 .slide-icon-card-grid[data-layout='tiles']
   .icon-card-grid[data-card-count='6']
   .icon-card-text {
-  font-size: var(--slide-text-sm);
   -webkit-line-clamp: 2;
   line-clamp: 2;
 }
