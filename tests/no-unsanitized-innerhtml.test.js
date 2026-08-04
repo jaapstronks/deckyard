@@ -333,8 +333,11 @@ export function classifyChars(src) {
   return tags;
 }
 
-/** `.innerHTML =` but not `==`, `===`, `+=`, `>=` etc. */
-const ASSIGN_RE = /\binnerHTML\s*=(?!=)/g;
+/**
+ * `.innerHTML =` and the compound writes `+=`, `||=`, `&&=`, `??=` — every form
+ * that stores into the sink — but not comparisons (`==`, `===`, `>=`, …).
+ */
+const ASSIGN_RE = /\binnerHTML\s*(?:\+|\|\||&&|\?\?)?=(?!=)/g;
 
 /**
  * Collect the right-hand side of an assignment starting just after the `=`,
@@ -496,7 +499,7 @@ test('the allowlist has no stale entries', () => {
       if (entry) matched.add(entry);
     }
   }
-  const stale = ALLOWLIST.filter((e) => !matched.has(e)).map((e) => `${e.file} — ${e.expr}`);
+  const stale = ALLOWLIST.filter((e) => !matched.has(e)).map((e) => `${e.file} — ${e.rhs}`);
   assert.deepEqual(stale, [], 'allowlist entries that no longer match any innerHTML site');
 });
 
@@ -538,6 +541,11 @@ test('the scanner classifies contexts, literals and interpolation correctly', ()
   const tags = classifyChars(src);
   const hits = [...src.matchAll(ASSIGN_RE)].map((m) => tags[m.index]);
   assert.deepEqual(hits, ['comment', 'string', 'code'], 'comment, string, then real code');
+
+  // Compound writes store into the sink just like `=` does; comparisons do not.
+  const compound = 'a.innerHTML += x; b.innerHTML ||= y; c.innerHTML &&= y; d.innerHTML ??= z;';
+  assert.equal([...compound.matchAll(ASSIGN_RE)].length, 4, 'compound assignments are sinks');
+  assert.equal([...'if (a.innerHTML === b || a.innerHTML == c) {}'.matchAll(ASSIGN_RE)].length, 0);
 
   // RHS reading stops at the statement terminator, and spans a whole template.
   const rhsSrc = 'el.innerHTML = `<p>${a}</p>`;\nnext();';
