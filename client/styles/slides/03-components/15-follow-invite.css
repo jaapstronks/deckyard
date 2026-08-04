@@ -15,7 +15,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   letter-spacing: -0.02em;
-  font-size: var(--slide-text-3xl);
+  font-size: var(--slide-text-4xl);
   line-height: var(--slide-leading-tight);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .slide-follow-invite .sfi-card-kicker {
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-text-md);
   font-weight: 900;
   letter-spacing: -0.01em;
   opacity: 0.88;

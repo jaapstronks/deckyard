@@ -36,6 +36,72 @@ Two consequences, both machine-checkable once the sweep lands:
 - **A new slide type cannot introduce a theme dependency** without touching the
   contract file, which makes it a deliberate, reviewable diff.
 
+## Snapping a value to the scale
+
+Every axis below carries a step scale, and the census keeps finding values that
+sit *between* two steps. One rule decides where each of them lands, and it is
+the same rule on every axis.
+
+**A value between two steps goes to the step it is nearest in *ratio*, which at
+an exact midpoint is always the larger one.** Absolute distance cannot break
+that tie — the arithmetic midpoint is equidistant by definition — but the ratio
+can, because a scale is read as a series of relative steps, and the arithmetic
+midpoint always lies *above* the ratio midpoint (the geometric mean) of the two
+steps it sits between. So 10px between `--slide-space-2` (8) and
+`--slide-space-3` (12) goes up (`12/10 = 1.2` against `10/8 = 1.25`), and 18px
+between `--slide-text-sm` (16) and `--slide-text-base` (20) goes up for exactly
+the same reason. One rule applied to a whole axis is what keeps the conversion
+reviewable by reading instead of by argument.
+
+**Below the floor there is no tie to break**, because there is no lower step to
+weigh against. The question there is whether the value is a step at all, and the
+same ratio answers it: within one low-end step of the smallest step (4/3 = 1.33)
+it snaps, beyond it (a full doubling) it is a *sub-step hairline* and goes on
+the allowlist. On the spacing scale that puts the line between 3px, which
+converts, and the 1–2px hairlines, which do not.
+
+Snapping is what B4 decided; the app layer answered the same question
+differently (`css-tokens.md` § *Why the fine band exists*) because 587 values
+could not be visually reviewed one by one, and the slide axes are small enough
+that they can.
+
+### The two exceptions
+
+Both are ordering constraints, and both are written as a comment at the
+declaration that takes them. **Ordering is a constraint, the tie-break is a
+preference**: where they disagree the constraint wins and the value takes the
+*smaller* step.
+
+- **Ladder-rung ordering.** A density or responsive ladder — `[data-count]`,
+  `[data-rows]`, `.is-compact`, `.has-bottom-subheading`, a `@media` tier, a
+  variant that overrides a base rule — is an *ordered* set: a rung exists to be
+  a step below the rung above it. Where the ratio-larger step would land on or
+  above that rung, the value takes the smaller step instead. The scale is
+  coarser than the ad-hoc ladders it replaces, so two rungs sometimes merge onto
+  one step; that is the honest outcome of putting the ladder on the scale, not a
+  reason to keep the off-scale value.
+- **Documented overflow.** A rung that exists because the content otherwise
+  overflows the slide — the text-blocks 4-row tier, the dense process tiers —
+  keeps the smaller step even where nothing collides, because growing it is the
+  failure the tier was added to prevent. The comment names the overflow.
+
+**Whether a base rule is a rung is a fact about the renderer**, not about the
+stylesheet. Funnel, pyramid and cycle clamp their count to a range whose default
+falls through to the base rule (`clampInt(stages.length, 3, 6, 4)`), so their
+base *is* the rung for that count and carries the ordering constraint. Process
+clamps to 3–7 and gives every count an explicit rung, so its base rule never
+renders and takes the plain rule.
+
+**A snap that makes an override identical to the rule it overrides deletes the
+override** — the restated value is a fossil of the off-scale pair, not a
+decision. Two things are not fossils and stay: an overridden rule that is itself
+a rung (collapsing two rungs into one declaration hides an ordering the next
+change would have to rediscover), and an override that still *decides* something
+in the cascade, because a later rule of lower specificity — typically a `@media`
+tier — would win once it is gone. Delete only after checking what moves up; the
+process step titles are the worked example, where dropping two apparently
+redundant rungs handed counts 3 and 4 to the responsive tier at 1024px.
+
 ## Typography roles
 
 The 10-step size scale (`--slide-text-xs` … `--slide-text-5xl`, ~1.25 ratio)
@@ -61,6 +127,13 @@ Leading uses the five-step scale: `tight` 1.1 · `snug` 1.2 · `compact` 1.25 ·
 found a real 1.25 rhythm (18 declarations) in card titles and dense description
 text — the same "the scale should carry what exists" reasoning that gave the
 app spacing scale its fine band (`css-tokens.md` § *Why the fine band exists*).
+
+The size axis follows the shared tie-break above, and it is the axis where the
+two exceptions actually bite: nearly every slide type sizes its text down a
+density ladder, so a midpoint value is more often a rung than a free choice.
+Where the ratio-larger step is refused, the reason is at the declaration —
+`ladder rung: …` for an ordering constraint, `overflow: …` for a tier that
+exists to make content fit.
 
 ### One word list, two projections
 
@@ -92,17 +165,10 @@ raw length. This is the same conversion rule as the app layer
 *every* length in it lands on the scale, so the change is value-identical by
 construction and reviewable by reading.
 
-**A value between two steps goes to the step it is nearest in *ratio*, which at
-an exact midpoint is always the larger one.** The scale ticks by 4px below 24,
-so the near-misses the census found are the odd 2px offsets — 6, 10, 14, 18, 22
-— and every one of them sits exactly between two steps. Absolute distance
-cannot break that tie; the ratio can, because the scale is read as a series of
-relative steps (`12/10 = 1.2` against `10/8 = 1.25`, so 10px is nearer 12 than
-8). One rule, applied to the whole axis, is what keeps the conversion reviewable
-by reading instead of by argument. Snapping is what B4 decided; the app layer
-answered the same question differently (`css-tokens.md` § *Why the fine band
-exists*) because 587 values could not be visually reviewed one by one, and the
-slide axis is small enough that they can.
+The axis follows the shared tie-break above. The scale ticks by 4px below 24, so
+the near-misses the census found are the odd 2px offsets — 6, 10, 14, 18, 22 —
+and every one of them sits exactly between two steps, which is why one rule had
+to decide all of them.
 
 **A negative offset is on the scale too**, written as
 `margin-top: calc(-1 * var(--slide-space-3))`. The gate skips declarations
@@ -110,18 +176,10 @@ carrying a negative length — tokenising only the positive half of a pull-up /
 gap pair puts the pair out of step — so the negated form is the way to convert
 one anyway, and only when its positive counterpart converts in the same step.
 
-**Below the floor the tie-break does not apply**, because there is no lower step
-to weigh against. The question there is whether the length is a step at all, and
-the same ratio answers it: within one low-end step of `--slide-space-1` (4/3 =
-1.33) it snaps, beyond it (4/2 = 2, a full doubling) it is a *sub-step hairline*
-and goes on the allowlist. So 3px converts and 1–2px do not.
-
 **A composite that snaps to one repeated step collapses to that step.** Once
 `padding: 32px 34px` becomes `var(--slide-space-8) var(--slide-space-8)`, the
 second value is a fossil of the off-scale pair, not a decision — write
-`padding: var(--slide-space-8)`. The same holds when a snap makes a density
-override identical to the rule it overrides: delete the declaration rather than
-restate the inherited value.
+`padding: var(--slide-space-8)`.
 
 Lengths that are *not* spacing stay out of this axis by definition: `inset`
 (`left`/`bottom` on an absolutely-positioned caption), `width`/`height`, and

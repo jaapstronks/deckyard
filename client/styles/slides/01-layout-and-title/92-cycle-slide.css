@@ -178,6 +178,8 @@
 
 .slide-cycle .cycle-label {
   font-family: var(--font-heading);
+  /* ladder rung: this base rule is the 4-stage rung (clampInt(stages, 3, 6, 4))
+     and stays under the 3-stage rung (lg) */
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
@@ -353,6 +355,7 @@
 
 .slide-cycle .cycle-container[data-count='5'] .cycle-label,
 .slide-cycle .cycle-container[data-count='6'] .cycle-label {
+  /* ladder rung: stays under the 4-stage rung, which is the base rule (md) */
   font-size: var(--slide-text-base);
 }
 

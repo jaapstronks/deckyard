@@ -100,6 +100,8 @@
   margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-content.is-compact .body .md-subheading {
+  /* ladder rung: compact stays under the is-fit-medium rung, which is the
+     ratio-larger step (lg) itself (slide-roles.md) */
   font-size: var(--slide-text-md);
   margin: var(--slide-space-5) 0 var(--slide-space-3);
 }

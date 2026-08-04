@@ -94,7 +94,7 @@
 
 .slide-lead-capture .lead-capture-label {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-text-base);
   font-weight: 600;
   color: var(--color-text);
   opacity: 0.9;
@@ -102,7 +102,7 @@
 
 .slide-lead-capture .lead-capture-input {
   font-family: inherit;
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-text-md);
   padding: var(--slide-space-5) var(--slide-space-6);
   border: 2px solid var(--interaction-border);
   border-radius: var(--slide-radius-md);
@@ -149,7 +149,7 @@
 }
 
 .slide-lead-capture .lead-capture-consent-text {
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-relaxed);
   color: var(--color-text);
   opacity: 0.85;
@@ -173,7 +173,7 @@
 .slide-lead-capture .lead-capture-submit {
   width: 100%;
   font-family: var(--font-heading);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-text-md);
   font-weight: 600;
   padding: var(--slide-space-5) var(--slide-space-8);
   border: none;
@@ -203,7 +203,7 @@
 /* Error message */
 .slide-lead-capture .lead-capture-error {
   text-align: center;
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-text-base);
   color: var(--slide-color-danger);
   min-height: 1.5em;
 }
@@ -268,7 +268,7 @@
 }
 
 .slide-lead-capture .lead-capture-thankyou-message {
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-relaxed);
   color: var(--color-text);
   opacity: 0.85;

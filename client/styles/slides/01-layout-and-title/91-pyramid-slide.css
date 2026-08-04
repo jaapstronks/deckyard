@@ -89,6 +89,8 @@
 
 .slide-pyramid .level-label {
   font-family: var(--font-heading);
+  /* ladder rung: this base rule is the 5-level rung (clampInt(levels, 3, 6, 5))
+     and stays under the 4-level rung (md) */
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
@@ -146,6 +148,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-text {
+  /* ladder rung: stays under the 3-level rung (base) */
   font-size: var(--slide-text-sm);
 }
 
@@ -162,6 +165,7 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-label {
+  /* ladder rung: stays under the 5-level rung, which is the base rule (base) */
   font-size: var(--slide-text-sm);
 }
 

@@ -47,7 +47,7 @@
 }
 .slide-icon-card-grid .icon-card-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-compact);
 }
 .slide-icon-card-grid .icon-card-text ul,

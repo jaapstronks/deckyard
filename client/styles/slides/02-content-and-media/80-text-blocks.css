@@ -14,7 +14,7 @@
 }
 .slide-text-blocks .header .title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-2xl);
+  font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 400);
@@ -155,6 +155,7 @@
 .slide-text-blocks
   .text-blocks-row[data-count='3']
   .text-block-title {
+  /* ladder rung: stays under the base block title (lg) */
   font-size: var(--slide-text-md);
 }
 .slide-text-blocks
@@ -173,6 +174,7 @@
 .slide-text-blocks
   .text-blocks-row[data-count='6']
   .text-block-title {
+  /* ladder rung: stays under the 3-block rung (md) */
   font-size: var(--slide-text-base);
 }
 .slide-text-blocks
@@ -184,6 +186,7 @@
 .slide-text-blocks
   .text-blocks-row[data-count='6']
   .text-block-body {
+  /* ladder rung: stays under the 3-block rung (base) */
   font-size: var(--slide-text-sm);
 }
 
@@ -237,6 +240,7 @@
 
 /* Compact mode + 3 blocks per row */
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-title {
+  /* ladder rung: stays under the 3-row block title (base) */
   font-size: var(--slide-text-sm);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='3'] .text-block-body {
@@ -252,6 +256,7 @@
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='4'] .text-block-body,
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='5'] .text-block-body,
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row[data-count='6'] .text-block-body {
+  /* ladder rung: stays under the 3-row 3-block rung (sm) */
   font-size: var(--slide-text-xs);
 }
 
@@ -267,9 +272,12 @@
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-arrow {
   margin: var(--slide-space-1) 0;
+  /* overflow: the 4-row tier exists so four rows fit at 1600x900 (A0.4 above);
+     the ratio-larger step is height the tier does not have */
   font-size: var(--slide-text-base);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row-title {
+  /* overflow: same 4-row tier — the ratio-larger step is height it does not have */
   font-size: var(--slide-text-base);
   margin: 0 0 var(--slide-space-2);
 }
@@ -283,10 +291,14 @@
   padding: var(--slide-space-3) var(--slide-space-4);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-title {
+  /* ladder rung + overflow: stays under the 3-row tier (base), and the 4-row tier
+     exists to make four rows fit */
   font-size: var(--slide-text-sm);
   margin-bottom: var(--slide-space-1);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-body {
+  /* ladder rung + overflow: stays under the 3-row tier (base), and the 4-row tier
+     exists to make four rows fit */
   font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
 }
@@ -303,6 +315,7 @@
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-title,
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='5'] .text-block-title,
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='6'] .text-block-title {
+  /* ladder rung + overflow: stays under the 4-row 3-block rung (sm) */
   font-size: var(--slide-text-xs);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row[data-count='4'] .text-block-body,
