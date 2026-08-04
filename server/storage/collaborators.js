@@ -6,6 +6,7 @@
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from './utils/db-guard.js';
+import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
   getCachedPermission,
   setCachedPermission,
@@ -45,6 +46,14 @@ export async function addCollaborator(presentationId, options, ctx) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
 
+    // Dual-key (T10 PR 2): write the stable user_id alongside the email via the
+    // resolver. A known user maps to their users.id; an external collaborator
+    // (no users row) resolves `external` and stays NULL — the pinned path that
+    // must keep working. Reads still key on the email; this only populates the
+    // column a later PR will move the ACL reads onto.
+    const resolution = await resolveIdentityByEmail(userEmail);
+    const userId = resolution?.userId ?? null;
+
     // Check if collaborator already exists
     const existing = await db
       .selectFrom('presentation_collaborators')
@@ -61,6 +70,7 @@ export async function addCollaborator(presentationId, options, ctx) {
           .updateTable('presentation_collaborators')
           .set({
             permission,
+            user_id: userId,
             invited_by: options?.invitedBy || null,
             invited_at: nowIso(),
             revoked_at: null,
@@ -91,6 +101,7 @@ export async function addCollaborator(presentationId, options, ctx) {
         presentation_id: pid,
         organization_id: orgId,
         user_email: userEmail,
+        user_id: userId,
         permission,
         invited_by: options?.invitedBy || null,
       })
