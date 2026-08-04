@@ -17,12 +17,31 @@ import { getClientIp } from './rate-limit.js';
 export { getClientIp };
 
 /**
- * Get the organization ID from context, falling back to default.
- * @param {Object} ctx - Context object with optional organizationId
+ * Get the organization ID a context acts in.
+ *
+ * There is no fallback: a context without an organization is a bug at the
+ * call site, not something to paper over with the default organization. A
+ * request-backed context gets its organization from {@link createRouteContext}
+ * (which resolves it from the verified session); an entry point with no request
+ * gets one from `singleWorkspaceScope()` (server/storage/scope.js), which is
+ * exact on a single-workspace instance and refuses to guess on one that holds
+ * several. Falling back here would hand an unfiltered query the default
+ * organization — the same tenant-isolation leak `storage/scope.js` exists to
+ * prevent, in another guise — so this throws in the same shape instead.
+ *
+ * @param {Object} ctx - Context object carrying an organizationId
  * @returns {string} - Organization ID
+ * @throws {Error} When the context carries no organization.
  */
 export function getOrgId(ctx) {
-  return ctx?.organizationId || getDefaultOrganizationId();
+  if (!ctx?.organizationId) {
+    throw new Error(
+      'getOrgId was called with a context that has no organization to act in. ' +
+        'Build it through createRouteContext (a request) or singleWorkspaceScope ' +
+        '(an entry point without a request) rather than falling back to the default organization.'
+    );
+  }
+  return ctx.organizationId;
 }
 
 /**

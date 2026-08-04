@@ -4,7 +4,6 @@
  */
 
 import { getOrganizationById } from '../storage/user-organizations/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
 import { listPublishedCustomSlideTypes } from '../storage/custom-slide-types.js';
 import { getOrgSettings } from './org-settings.js';
 
@@ -15,7 +14,7 @@ import { getOrgSettings } from './org-settings.js';
  */
 export async function loadDisabledSlideTypes(ctx) {
   try {
-    const orgId = ctx?.organizationId || getDefaultOrganizationId();
+    const orgId = ctx?.organizationId;
     const org = await getOrganizationById(orgId);
     const settings = getOrgSettings(org);
     return Array.isArray(settings.disabledSlideTypes) ? settings.disabledSlideTypes : [];
@@ -32,7 +31,7 @@ export async function loadDisabledSlideTypes(ctx) {
  */
 export async function loadCustomSlideTypes(ctx) {
   try {
-    const orgId = ctx?.organizationId || getDefaultOrganizationId();
+    const orgId = ctx?.organizationId;
     return await listPublishedCustomSlideTypes({ organizationId: orgId });
   } catch {
     return [];

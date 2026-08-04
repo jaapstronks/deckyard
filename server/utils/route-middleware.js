@@ -152,7 +152,9 @@ export async function checkPresentationReadAccess({ req, authedUser, pres }) {
   // Fetch collaborator permission if the user is authenticated
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, {});
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, {
+      organizationId: pres.organizationId,
+    });
   }
 
   // Check authenticated user first (with collaborator permission)
@@ -183,7 +185,9 @@ export async function checkPresentationCommentAccess({ req, authedUser, pres }) 
   // Fetch collaborator permission if the user is authenticated
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, {});
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, {
+      organizationId: pres.organizationId,
+    });
   }
 
   // Check authenticated user first (with collaborator permission)
@@ -249,7 +253,9 @@ export async function withPresentationAuth({ repoRoot, id, authedUser, res, perm
   // For read/write permissions, check collaborator permission as well
   let collaboratorPermission = null;
   if ((permission === 'read' || permission === 'write') && authedUser?.email) {
-    collaboratorPermission = await getCollaboratorPermission(id, authedUser.email, {});
+    collaboratorPermission = await getCollaboratorPermission(id, authedUser.email, {
+      organizationId: pres.organizationId,
+    });
   }
 
   if (!checkFn({ user: authedUser, pres, collaboratorPermission })) {
@@ -269,7 +275,7 @@ export async function getGuestFromRequest(req) {
   const cookies = parseCookies(req.headers?.cookie);
   const sessionToken = cookies.share_guest_session;
   if (!sessionToken) return null;
-  return getGuestBySessionToken(sessionToken, {});
+  return getGuestBySessionToken(sessionToken);
 }
 
 /**

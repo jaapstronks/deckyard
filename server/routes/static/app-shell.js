@@ -6,7 +6,7 @@ import { getAppSettings } from '../../storage/settings.js';
 import { analyticsHeadHtml } from '../../analytics/head.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
-import { isRssFeedEnabled } from '../../config/features.js';
+import { isRssFeedEnabled, isMultiWorkspaceEnabled } from '../../config/features.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
 import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
@@ -103,10 +103,15 @@ export function serveShellHtml(res, html) {
 /**
  * Inject RSS/Atom/JSON feed auto-discovery links when the default org has RSS
  * enabled. Feed discovery is nice-to-have — never fail the app shell.
+ *
+ * Suppressed under multi-workspace: the feed itself 404s there (see
+ * handleFeed), because "the default organization" is no longer a defined feed
+ * once an instance holds several workspaces — so advertising instance-global
+ * `<link>`s that resolve to one workspace's presentations would be wrong.
  */
-async function injectFeedDiscovery(html, repoRoot) {
+export async function injectFeedDiscovery(html, repoRoot) {
   try {
-    if (isRssFeedEnabled()) {
+    if (isRssFeedEnabled() && !isMultiWorkspaceEnabled()) {
       const feedOrgId = getDefaultOrganizationId();
       const feedOrg = await getOrganizationById(feedOrgId);
       const feedSettings = getOrgSettings(feedOrg);

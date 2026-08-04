@@ -323,8 +323,11 @@ export function getUserFromRequest(req) {
       role,
       name: payload?.name || '',
       isAdmin: role === 'admin',
-      // Include organization context from session (multi-workspace mode)
-      organizationId: payload?.orgId || getDefaultOrganizationId(),
+      // Include organization context from session (multi-workspace mode).
+      // No default fallback: this synchronous path is marked
+      // `_needsDbValidation` and is ignored by createRouteContext, so a missing
+      // orgId must stay missing rather than resolve to the default organization.
+      organizationId: payload?.orgId,
       _needsDbValidation: true,
       _sessionV: payload?.v,
     };
@@ -439,7 +442,10 @@ export function setSessionCookie(
   // Include organization ID in session when multi-workspace is enabled
   // This allows workspace context to persist across requests
   if (isMultiWorkspaceEnabled()) {
-    payload.orgId = organizationId || user.organizationId || getDefaultOrganizationId();
+    // No default fallback under multi-workspace: stamping the default
+    // organization into the cookie would let a session act in a workspace it
+    // was never resolved to. A missing org stays missing.
+    payload.orgId = organizationId || user.organizationId;
   }
 
   const payloadB64 = base64url(JSON.stringify(payload));
