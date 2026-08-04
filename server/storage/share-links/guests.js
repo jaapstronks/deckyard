@@ -36,10 +36,9 @@ export function formatGuest(row) {
  * @param {string} shareLinkId - The share link ID
  * @param {string} email - Guest email address
  * @param {string} [name] - Guest name (optional)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with verification token
  */
-export async function requestGuestVerification(shareLinkId, email, name, ctx) {
+export async function requestGuestVerification(shareLinkId, email, name) {
   const id = norm(shareLinkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -51,7 +50,19 @@ export async function requestGuestVerification(shareLinkId, email, name, ctx) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
+    // Token-authorized path: the anonymous caller has no session to take an
+    // organization from, so the link's own row is the source (same shape as
+    // verifyGuestEmail below).
+    const linkRow = await db
+      .selectFrom('presentation_share_links')
+      .select(['organization_id'])
+      .where('id', '=', id)
+      .executeTakeFirst();
+
+    if (!linkRow) {
+      return { ok: false, reason: 'share_link_not_found' };
+    }
+    const orgId = linkRow.organization_id;
 
     // Validate the share link
     const validation = await getValidShareLinkById(db, id, orgId);
@@ -147,11 +158,12 @@ export async function requestGuestVerification(shareLinkId, email, name, ctx) {
 
 /**
  * Verify a guest's email and create a session.
+ * Token-authorized: the verification token resolves the guest, the guest's
+ * share link carries the organization.
  * @param {string} verificationToken - The verification token
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Result with session token and guest info
  */
-export async function verifyGuestEmail(verificationToken, ctx) {
+export async function verifyGuestEmail(verificationToken) {
   const token = norm(verificationToken);
   if (!token) {
     return { ok: false, reason: 'invalid' };
@@ -226,11 +238,12 @@ export async function verifyGuestEmail(verificationToken, ctx) {
  * Get a guest by their session token.
  * Also validates that the associated share link is still valid.
  * Only refreshes session if not expired.
+ * Token-authorized: the session token resolves the guest, the guest row
+ * carries the organization.
  * @param {string} sessionToken - The session token
- * @param {Object} ctx - Context object
  * @returns {Promise<Object|null>} - Guest info or null
  */
-export async function getGuestBySessionToken(sessionToken, ctx) {
+export async function getGuestBySessionToken(sessionToken) {
   const token = norm(sessionToken);
   if (!token) return null;
 

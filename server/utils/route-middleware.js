@@ -275,7 +275,7 @@ export async function getGuestFromRequest(req) {
   const cookies = parseCookies(req.headers?.cookie);
   const sessionToken = cookies.share_guest_session;
   if (!sessionToken) return null;
-  return getGuestBySessionToken(sessionToken, {});
+  return getGuestBySessionToken(sessionToken);
 }
 
 /**

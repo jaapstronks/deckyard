@@ -34,13 +34,16 @@ const log = createLogger('public');
  * Handle public share link endpoints.
  */
 export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
-  const ctx = {};
+  // No request context here on purpose: these endpoints are anonymous, and
+  // every storage call on this path is token-authorized — the share token (or
+  // a token resolved from it) is globally unique and carries its own
+  // organization. See tenant-isolation.md.
 
   // GET /api/share/:token - Validate share token
   const validateMatch = url.pathname.match(/^\/api\/share\/([^/]+)$/);
   if (validateMatch && req.method === 'GET') {
     const token = validateMatch[1];
-    const result = await validateShareLink(token, ctx);
+    const result = await validateShareLink(token);
 
     if (!result.ok) {
       const status = getErrorStatus(result.reason);
@@ -71,7 +74,9 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
               accessType: ACCESS_TYPES.SHARE_LINK,
               accessReferenceId: result.shareLinkId,
               accessorIp: ipAddress,
-              ctx,
+              // The deck was resolved from the link, so its organization is
+              // the one this access belongs to.
+              ctx: { organizationId: pres.organizationId },
             }),
             'notify author of share-link access attempt'
           );
@@ -106,17 +111,19 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
       body = {};
     }
 
-    const result = await verifyShareLinkAccess(token, body?.password, ctx);
+    const result = await verifyShareLinkAccess(token, body?.password);
 
     if (!result.ok) {
       jsonError(res, getErrorStatus(result.reason), result.reason);
       return true;
     }
 
-    // Log the access
+    // Log the access. The empty context is the access-log defect (it ignores
+    // its ctx entirely — org-scoping brief, defecten-PR); it gets a real
+    // treatment there, not a guessed organization here.
     const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'];
-    await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent }, ctx);
+    await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent }, {});
 
     serveJson(res, 200, {
       presentationId: result.shareLink.presentationId,
@@ -132,7 +139,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const token = guestRequestMatch[1];
 
     // Validate share link first
-    const validation = await validateShareLink(token, ctx);
+    const validation = await validateShareLink(token);
     if (!validation.ok) {
       jsonError(res, getErrorStatus(validation.reason), validation.reason);
       return true;
@@ -162,8 +169,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const result = await requestGuestVerification(
       validation.shareLink.id,
       email,
-      name || null,
-      ctx
+      name || null
     );
 
     if (!result.ok) {
@@ -218,7 +224,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const shareToken = guestVerifyMatch[1];
     const verificationToken = guestVerifyMatch[2];
 
-    const result = await verifyGuestEmail(verificationToken, ctx);
+    const result = await verifyGuestEmail(verificationToken);
 
     const redirectBase = buildRequestUrl(req, `/s/${encodeURIComponent(shareToken)}`);
     if (!redirectBase) {
@@ -261,7 +267,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     const shareToken = guestMeMatch[1];
 
     // Validate share link first
-    const validation = await validateShareLink(shareToken, ctx);
+    const validation = await validateShareLink(shareToken);
     if (!validation.ok) {
       serveJson(res, 200, { authenticated: false });
       return true;
@@ -277,7 +283,7 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     }
 
     // Get guest by session token
-    const guestInfo = await getGuestBySessionToken(sessionToken, ctx);
+    const guestInfo = await getGuestBySessionToken(sessionToken);
 
     if (!guestInfo) {
       serveJson(res, 200, { authenticated: false, permission: validation.shareLink.permission });
