@@ -4,7 +4,7 @@
 }
 
 .slide-process .header {
-  margin-bottom: 28px; /* TODO: between --slide-space-6 (24px) and --slide-space-8 (32px) */
+  margin-bottom: var(--slide-space-8);
 }
 
 .slide-process .heading {
@@ -190,7 +190,7 @@
 
 /* Horizontal: add margin above content */
 .slide-process .process-container[data-direction='horizontal'] .step-content {
-  margin-top: 14px; /* TODO: between --slide-space-3 (12px) and --slide-space-4 (16px) */
+  margin-top: var(--slide-space-4);
 }
 
 /* Vertical single-column: no top margin needed */
@@ -211,7 +211,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  margin: 0 0 6px; /* TODO: between --slide-space-1 (4px) and --slide-space-2 (8px) */
+  margin: 0 0 var(--slide-space-2);
   color: var(--color-text);
 }
 
@@ -244,7 +244,7 @@
      axis. While the container centred its children the margin only biased that
      centring, and the arrow floated at half the container's height - far below
      the steps whenever the container was taller than its content. */
-  margin: 14px 0 0; /* TODO: between --slide-space-3 (12px) and --slide-space-4 (16px) */
+  margin: var(--slide-space-4) 0 0;
 }
 
 .slide-process .process-container[data-direction='horizontal'] .process-arrow::before {

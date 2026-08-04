@@ -63,7 +63,7 @@
 .slide-quote .quote-author .name {
   font-family: var(--font-mono);
   font-size: var(--slide-text-lg);
-  margin-bottom: 6px;
+  margin-bottom: var(--slide-space-2);
 }
 .slide-quote .quote-author .role {
   font-size: var(--slide-text-lg);
@@ -72,11 +72,11 @@
 .slide-quote .quote-author.has-portraits {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: var(--slide-space-8);
 }
 .slide-quote .quote-portraits {
   display: flex;
-  gap: 14px;
+  gap: var(--slide-space-4);
   flex-shrink: 0;
 }
 .slide-quote .quote-portrait {
@@ -144,7 +144,7 @@
 .slide-quote.is-multi .quote-item {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--slide-space-4);
   max-width: 74%;
 }
 /* Alternate the alignment down the slide: 1 left, 2 right, 3 left. */
@@ -172,6 +172,8 @@
 }
 .slide-quote.is-multi .quote-author .name {
   font-size: var(--slide-text-base);
+  /* allowlist: sub-step hairline — name and role are one attribution block;
+     the smallest step (4px) reads as two (slide-roles.md) */
   margin-bottom: 2px;
 }
 .slide-quote.is-multi .quote-author .role {

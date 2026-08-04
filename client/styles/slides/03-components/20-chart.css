@@ -20,7 +20,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--slide-space-4);
 }
 .slide-chart .chart-title {
   font-family: var(--font-heading);
@@ -50,11 +50,11 @@
 }
 .slide-chart[data-chart-type='bar'] .chart-area {
   /* Bar charts read better slightly lower (more breathing room under title/legend). */
-  padding: 22px 4px 8px;
+  padding: var(--slide-space-6) var(--slide-space-1) var(--slide-space-2);
 }
 .slide-chart[data-chart-type='line'] .chart-area {
   /* Smaller nudge than bar charts. */
-  padding: 14px 4px 8px;
+  padding: var(--slide-space-4) var(--slide-space-1) var(--slide-space-2);
 }
 .slide-chart .chart-svg {
   width: 100%;

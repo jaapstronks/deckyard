@@ -56,7 +56,7 @@
   padding-left: 1.2em;
 }
 .slide-icon-card-grid .icon-card-text li {
-  margin: 6px 0;
+  margin: var(--slide-space-2) 0;
 }
 .slide-icon-card-grid .icon-card-text p {
   margin: 0;

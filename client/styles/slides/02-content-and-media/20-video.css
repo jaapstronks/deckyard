@@ -6,7 +6,7 @@
   padding: var(--slide-padding);
   padding-bottom: var(--slide-padding);
   justify-content: flex-start;
-  gap: 22px;
+  gap: var(--slide-space-6);
 }
 .slide-video .heading {
   font-family: var(--font-heading);
