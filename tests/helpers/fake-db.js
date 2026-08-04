@@ -14,6 +14,10 @@
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set, deleteFrom / returning, and `db.fn.count()`.
  *
+ * Table references may carry an alias (`selectFrom('presentation_collaborators
+ * as c').innerJoin('presentations as p', …)`, the "shared with me" query): the
+ * alias shadows the real name for column resolution, as in SQL.
+ *
  * Four behaviours are modelled on purpose because tests depend on them:
  *   1. UNIQUE constraints (notably the globally unique `users.email`) throw the
  *      way PostgreSQL does, so a code path that wrongly tries to insert a
@@ -263,6 +267,23 @@ class UniqueViolationError extends Error {
 const lastSegment = (column) => String(column).split('.').pop();
 
 /**
+ * Split a table reference into the stored table and the name it is addressed
+ * by. `selectFrom('presentation_collaborators as c')` reads the collaborators
+ * table but qualifies its columns `c.*`; without this the double looked for a
+ * table literally named "presentation_collaborators as c", found none, and
+ * answered every aliased query with an empty result — so a join that returns
+ * nothing in production and a join the double cannot compile were
+ * indistinguishable. An alias shadows the real name, exactly as in SQL.
+ *
+ * @param {string} ref - Table reference, e.g. 'users' or 'presentations as p'
+ * @returns {{table: string, alias: string}}
+ */
+function parseTableRef(ref) {
+  const match = String(ref).match(/^(\S+)\s+as\s+(\S+)$/i);
+  return match ? { table: match[1], alias: match[2] } : { table: String(ref), alias: String(ref) };
+}
+
+/**
  * Resolve a possibly qualified column reference against a row context.
  * @param {Object} row - Row context (qualified and unqualified keys)
  * @param {string} column - Column reference, e.g. 'email' or 'users.email'
@@ -417,7 +438,8 @@ export function createFakeDb(seed = {}) {
    * @param {string} table - Base table
    * @returns {Object}
    */
-  function selectBuilder(table) {
+  function selectBuilder(tableRef) {
+    const { table, alias } = parseTableRef(tableRef);
     queryLog.push({ op: 'select', table });
 
     const state = {
@@ -433,8 +455,8 @@ export function createFakeDb(seed = {}) {
 
     const contexts = () => {
       let list = rowsOf(table).map((row) => ({
-        __source: { [table]: row },
-        ...mergeIntoContext({}, table, row),
+        __source: { [alias]: row },
+        ...mergeIntoContext({}, alias, row),
       }));
 
       for (const join of state.joins) {
@@ -443,13 +465,13 @@ export function createFakeDb(seed = {}) {
         for (const context of list) {
           const partner = rowsOf(join.table).find(
             (row) =>
-              mergeIntoContext(context, join.table, row)[join.left] ===
-              mergeIntoContext(context, join.table, row)[join.right]
+              mergeIntoContext(context, join.alias, row)[join.left] ===
+              mergeIntoContext(context, join.alias, row)[join.right]
           );
           if (partner) {
             joined.push({
-              ...mergeIntoContext(context, join.table, partner),
-              __source: { ...context.__source, [join.table]: partner },
+              ...mergeIntoContext(context, join.alias, partner),
+              __source: { ...context.__source, [join.alias]: partner },
             });
           } else if (join.type === 'left') {
             joined.push(context);
@@ -506,11 +528,11 @@ export function createFakeDb(seed = {}) {
 
     const builder = {
       innerJoin(joinTable, left, right) {
-        state.joins.push({ table: joinTable, left, right, type: 'inner' });
+        state.joins.push({ ...parseTableRef(joinTable), left, right, type: 'inner' });
         return builder;
       },
       leftJoin(joinTable, left, right) {
-        state.joins.push({ table: joinTable, left, right, type: 'left' });
+        state.joins.push({ ...parseTableRef(joinTable), left, right, type: 'left' });
         return builder;
       },
       select(columns) {
