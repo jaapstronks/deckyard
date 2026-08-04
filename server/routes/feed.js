@@ -8,7 +8,7 @@ import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
 import { listPublishedForFeed } from '../storage/published/index.js';
 import { buildFeed } from '../utils/rss-feed.js';
-import { isRssFeedEnabled } from '../config/features.js';
+import { isRssFeedEnabled, isMultiWorkspaceEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 const log = createLogger('feed');
 
@@ -39,6 +39,18 @@ export async function handleFeed({ repoRoot, req, res, url }) {
 
   // Feature flag kill switch
   if (!isRssFeedEnabled()) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+    return true;
+  }
+
+  // The feed is per-organization but has no session to resolve one from, so it
+  // uses the default organization below. That is only a valid answer in
+  // single-workspace mode; once an instance holds several workspaces "the
+  // default one" is no longer a defined feed, so the route 404s instead of
+  // serving one workspace's presentations under an instance-global URL
+  // (org-scoping decision, deelbesluit 4).
+  if (isMultiWorkspaceEnabled()) {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
     return true;

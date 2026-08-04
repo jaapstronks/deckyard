@@ -6,7 +6,6 @@ import { buildStandaloneHtml } from '../../export/html.js';
 import { buildReaderHtml } from '../../export/reader.js';
 import { loadTheme } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { getDefaultOrganizationId } from '../../config/database.js';
 import { getAppName } from '../../config/branding.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
@@ -66,7 +65,7 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
 
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
-  const orgId = pres?.organizationId || getDefaultOrganizationId();
+  const orgId = pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
   const readerHeadHtml = `<meta name="robots" content="${
     sandboxEnabled() ? 'noindex,nofollow' : 'index,follow'
@@ -241,7 +240,7 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
     sourceId: publishId,
   });
 
-  const orgId = pres?.organizationId || getDefaultOrganizationId();
+  const orgId = pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
 
   const html = await buildStandaloneHtml(repoRoot, projected, {

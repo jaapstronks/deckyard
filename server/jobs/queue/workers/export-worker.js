@@ -23,7 +23,6 @@ import { buildStandaloneHtml } from '../../../export/html.js';
 import { projectPresentationToLang } from '../../../storage/presentations/i18n.js';
 import { stripLiveOnlySlides } from '../../../export/pipeline.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-import { getDefaultOrganizationId } from '../../../config/database.js';
 import { jobScope } from '../../../storage/scope.js';
 
 // Store completed job results temporarily for download
@@ -96,7 +95,7 @@ async function prepareExportContext(job) {
   const theme = await getTheme(repoRoot, themeName);
 
   // Load merged slide types (core + org-specific custom types)
-  const orgId = pres?.organizationId || getDefaultOrganizationId();
+  const orgId = pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
 
   return {

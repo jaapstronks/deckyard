@@ -14,7 +14,6 @@ import {
 import { listImageLibrary } from '../storage/image-library/index.js';
 import { listPersonalLibrary, listTeamLibrary } from '../storage/slide-library/index.js';
 import { listThemes } from '../storage/themes.js';
-import { getDefaultOrganizationId } from '../config/database.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -364,10 +363,11 @@ export async function buildBulkExport(opts) {
   // ── 5. Collect themes (50-55%) ──────────────────────────────
   if (includeThemes) {
     try {
-      const ctx = {
-        organizationId: organizationId || getDefaultOrganizationId(),
-        actorEmail: userEmail,
-      };
+      // Reuse the scope resolved above rather than rebuilding one: it already
+      // carries the caller's organization (or the single-workspace default via
+      // singleWorkspaceScope, which refuses to guess on a multi-workspace
+      // instance) instead of silently falling back to the default organization.
+      const ctx = { organizationId: storageScope.organizationId, actorEmail: userEmail };
       const themes = await listThemes(ctx);
       if (Array.isArray(themes)) {
         for (const theme of themes) {

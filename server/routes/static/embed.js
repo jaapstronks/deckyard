@@ -4,7 +4,6 @@ import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published/index.js';
 import { loadTheme } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { getDefaultOrganizationId } from '../../config/database.js';
 import { buildEmbedHtml, parseEmbedOptionsFromUrl } from '../../utils/embed-html.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
@@ -73,7 +72,7 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
     sandbox: sandboxEnabled(),
     settings: embedSettings,
   });
-  const embedOrgId = pres?.organizationId || getDefaultOrganizationId();
+  const embedOrgId = pres?.organizationId;
   const embedSlideTypes = await buildMergedSlideTypes({ organizationId: embedOrgId });
 
   try {

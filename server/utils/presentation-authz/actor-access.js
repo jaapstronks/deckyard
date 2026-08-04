@@ -67,7 +67,7 @@ function actorUser(actorEmail, pres) {
 export async function canActorAccessPresentation(pres, actorEmail, access = 'read') {
   if (!pres || typeof pres !== 'object') return false;
   const collaboratorPermission = actorEmail
-    ? await getCollaboratorPermission(pres.id, actorEmail, {})
+    ? await getCollaboratorPermission(pres.id, actorEmail, { organizationId: pres.organizationId })
     : null;
   return checkActorAccess({ pres, actorEmail, access, collaboratorPermission });
 }
@@ -99,7 +99,7 @@ export function checkActorCommentAccess({ pres, actorEmail, collaboratorPermissi
 export async function canActorCommentOnPresentation(pres, actorEmail) {
   if (!pres || typeof pres !== 'object') return false;
   const collaboratorPermission = actorEmail
-    ? await getCollaboratorPermission(pres.id, actorEmail, {})
+    ? await getCollaboratorPermission(pres.id, actorEmail, { organizationId: pres.organizationId })
     : null;
   return checkActorCommentAccess({ pres, actorEmail, collaboratorPermission });
 }
