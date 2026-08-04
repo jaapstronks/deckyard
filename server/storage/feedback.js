@@ -14,7 +14,7 @@
  * likerts, because that lifecycle is one concept across all three live kinds.
  * This module owns the answers, as the free-text sibling of `interaction_votes`.
  *
- * This replaces a JSON file per session under `dataDir()/feedback/`, written
+ * This replaces a per-session JSON file on disk (`feedback/<sessionId>.json`), written
  * regardless of `STORAGE_MODE` and — because expired sessions were explicitly
  * kept on disk — never collected. Collection is now the `ON DELETE CASCADE`
  * from `present_sessions`.

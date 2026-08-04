@@ -6,7 +6,7 @@
  * `(interaction_id, device_id)`, so the "one vote per device" rule is enforced
  * by the database rather than by a Map in one process.
  *
- * This replaces a JSON file per session under `dataDir()/interactions/`. That
+ * This replaces a per-session JSON file on disk (`interactions/<sessionId>.json`). That
  * file was written regardless of `STORAGE_MODE`, was only visible to the process
  * that held the session in its `sessions` map, and — because expired sessions
  * were explicitly "left on disk for now" — was never collected. All three are

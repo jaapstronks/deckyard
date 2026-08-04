@@ -21,11 +21,9 @@ async function resetDemoData() {
   await rmIfExists(path.join(dataRoot, 'presentations'));
   await rmIfExists(path.join(dataRoot, 'published'));
 
-  // Live/session-ish data
+  // Live/session-ish data. questions/, feedback/ and interactions/ moved to
+  // Postgres (disk-JSON-to-PG, PR 5) and are no longer written to disk.
   await rmIfExists(path.join(dataRoot, 'present-sessions'));
-  await rmIfExists(path.join(dataRoot, 'questions'));
-  await rmIfExists(path.join(dataRoot, 'feedback'));
-  await rmIfExists(path.join(dataRoot, 'interactions'));
   await rmIfExists(path.join(dataRoot, 'polls'));
   await rmIfExists(path.join(dataRoot, 'trivia-sessions'));
 
