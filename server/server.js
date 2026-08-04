@@ -1,6 +1,5 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import {
   CLIENT_DIR,
   SHARED_PUBLIC_DIRS,
@@ -20,7 +19,7 @@ import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
 import { startLiveSessionCleanupLoop } from './utils/live-session-cleanup.js';
-import { dataDir, uploadsDir } from './config/storage-paths.js';
+import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
 import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
@@ -44,11 +43,10 @@ function getUrl(req) {
   return new URL(req.url || '/', `http://${host}`);
 }
 
-async function ensureDirs() {
-  const d = dataDir(repoRoot);
-  await fs.mkdir(path.join(d, 'presentations'), { recursive: true });
-  await fs.mkdir(path.join(d, 'published'), { recursive: true });
-  await fs.mkdir(path.join(d, 'polls'), { recursive: true });
+// `uploads/` is the only disk directory the server still writes to on boot;
+// every former JSON domain (presentations, published, polls, live sessions,
+// interactions, …) now lives in Postgres.
+async function ensureUploadsDir() {
   await fs.mkdir(uploadsDir(repoRoot), { recursive: true });
 }
 
@@ -213,7 +211,7 @@ for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
   console.warn(`⚠️  CONFIG: ${w}`);
 }
 
-await ensureDirs();
+await ensureUploadsDir();
 await initializeStorage();
 
 // Data check: an empty database next to a populated file-storage data
