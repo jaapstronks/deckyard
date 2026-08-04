@@ -39,7 +39,54 @@ write is safe only if it falls into one of them.
 | Round-trip / parse buffers | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page |
 | Slide-render contract boundary | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
 | Self-escaping renderer | `modals/json-debug-modal.js` `renderSchemaAsHtml()` | Escapes `& < >` before applying its mini-markdown transforms |
-| Intentional trusted HTML | `settings/email-templates/actions.js` template preview | Server-generated, admin-only; rendered verbatim by design |
+| Intentional trusted HTML | `settings/email-templates/actions.js` template preview | Server-generated, admin-only; rendered verbatim by design (re-verified, see below) |
+
+The last row is the only one whose safety rests on an authorization claim rather
+than on escaping, so it was re-checked in full (2026-08-04):
+
+- `POST /api/admin/email-templates/:type/preview` is gated on `user.isAdmin`
+  before any branch dispatches — `server/routes/api/email-templates.js:55-63`,
+  covering every path under `/api/admin/email-templates`. `isAdmin` here is the
+  instance-wide role, not an organization role.
+- `buildPreviewHtml()` escapes the greeting (via `emailWrapper`), the button
+  label and URL (via `emailButton`) and the footer. Exactly one field, `body`,
+  is interpolated raw — deliberately, because the shipped defaults themselves
+  contain markup (`<strong>{inviter}</strong>`). Its `{placeholder}` values in
+  preview mode are hard-coded sample data.
+- The only writer of `body` is `PUT /api/admin/email-templates/:type/:locale`,
+  behind the same instance-admin gate, into an instance-global store. Writer and
+  reader therefore hold identical privilege. That is what distinguishes this from
+  the comment `author_email` leak, where an unprivileged guest wrote into a
+  privileged reader's view — the shape that made *that* one a real vector.
+
+## The gate
+
+`tests/no-unsanitized-innerhtml.test.js` keeps the classification above true.
+It scans every non-vendor `.js` file under `client/` and fails on any `innerHTML`
+assignment whose right-hand side is not a single string or template literal
+without interpolation or concatenation — unless the site is on the test's inline
+allowlist with a written verdict.
+
+The allowlist is grouped by the argument that justifies each entry:
+
+- **`USER_TEXT_SITES`** — the six places where the value derives from text a
+  person typed, and escaping or sanitizing is the only thing making them safe.
+  A seventh entry is a security decision; a separate assertion pins the count at
+  six so growing it is a visible, reviewable edit.
+- **`INDIRECT_STATIC_SITES`** — icon-map lookups and static-SVG ternaries: no
+  runtime data, only a literal the mechanical rule cannot see past.
+- **`DOM_ROUNDTRIP_SITES`** — detached parse buffers, the cancel-edit restore,
+  and the `renderSlideHtml()` contract boundary.
+
+A second assertion fails on **stale** entries, so a site that moves or is
+converted to `h()` takes its verdict with it instead of leaving a standing
+exemption. Entries match on the whole normalized right-hand side, which means
+broadening the expression expires the entry rather than silently inheriting its
+verdict.
+
+Adding client code: prefer `h()` and you need no entry at all. If it must be
+`innerHTML`, route the value through `escapeHtml()`, `markdownToSafeHtml()` or
+`sanitizeHtml()` — not a fourth mechanism — and add an entry stating which.
 
 ### The one genuine XSS that was fixed
 
