@@ -6,8 +6,8 @@
  * (which deck, which slide, control on/off, follow codes) that has to survive a
  * restart. This module owns the second half; `state.js` holds the first.
  *
- * It replaces `disk.js`, which wrote one JSON file per session under
- * `dataDir()/present-sessions/` and read that directory **once per process**
+ * It replaces `disk.js`, which wrote one JSON file per session on disk
+ * (`present-sessions/<sessionId>.json`) and read that directory **once per process**
  * (the `loadedRoots` guard). That made every session another process created
  * invisible: a second worker never saw them, and a session created after the
  * first read was only found because the same process had put it in the map.
