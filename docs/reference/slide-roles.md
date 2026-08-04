@@ -109,10 +109,33 @@ carrying a negative length — tokenising only the positive half of a pull-up /
 gap pair puts the pair out of step — so the negated form is the way to convert
 one anyway, and only when its positive counterpart converts in the same step.
 
+**Below the floor the tie-break does not apply**, because there is no lower step
+to weigh against. The question there is whether the length is a step at all, and
+the same ratio answers it: within one low-end step of `--slide-space-1` (4/3 =
+1.33) it snaps, beyond it (4/2 = 2, a full doubling) it is a *sub-step hairline*
+and goes on the allowlist. So 3px converts and 1–2px do not.
+
+**A composite that snaps to one repeated step collapses to that step.** Once
+`padding: 32px 34px` becomes `var(--slide-space-8) var(--slide-space-8)`, the
+second value is a fossil of the off-scale pair, not a decision — write
+`padding: var(--slide-space-8)`. The same holds when a snap makes a density
+override identical to the rule it overrides: delete the declaration rather than
+restate the inherited value.
+
 Lengths that are *not* spacing stay out of this axis by definition: `inset`
 (`left`/`bottom` on an absolutely-positioned caption), `width`/`height`, and
 custom properties that feed them (`--marker-size`). A 20px inset and a 20px gap
 are not the same concept even when the number matches.
+
+Every `margin`/`padding`/`gap` **declaration** in the slide bundle is now on the
+scale or on the allowlist. What is *not* yet converted is the layer below: ~30
+private spacing locals (`--team-gap-x/y`, `--lw-gap-x/y`, `--timeline-gap`,
+`--tsu-pad-*`, `--split-gap`) that introduce literals the gate cannot see,
+because it reads declarations and these are custom-property definitions. By the
+allowlist rule below, a local that introduces a literal *counts* as one, so the
+axis is not finished until they resolve to tokens — and three of them (80px,
+96px) sit above `--slide-space-16`, so that batch has to answer whether the
+scale grows first.
 
 ## Colour roles
 
@@ -211,6 +234,17 @@ occurrence:
   in place with an `allowlist:` comment. Self-evident shapes (`50%`, `0`) are
   not marked — the comment exists where a bare length would otherwise read as
   an unconverted literal;
+- **sub-step hairlines** on spacing — a 1px or 2px length below the floor of the
+  spacing scale, where the smallest step (`--slide-space-1`, 4px) is a full
+  low-end step away (the scale doubles from 4 to 8) rather than a near-miss.
+  These are not rhythm gaps: they are the second line of a label pair that has
+  to read as one block (KPI figure and label, funnel stage and description,
+  quote name and role, pyramid label and text), an optical baseline nudge for a
+  glyph in a disc, the inner padding of an inline-code chip, and the last two
+  tiers of the team-card density ramp, which continues below the scale. Marked
+  in place with an `allowlist:` comment. **3px is not on this list** — its ratio
+  to the floor (1.33) is inside one step, so it snaps to `--slide-space-1` like
+  any other near-miss;
 - `line-height: 1` and below on **single-line display glyphs** — a numeral in
   a circle badge, a KPI figure, an arrow, the countdown digits. There the line
   box *is* the layout: raising it to `tight` decentres the badge. The leading

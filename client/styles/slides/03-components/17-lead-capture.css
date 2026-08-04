@@ -44,7 +44,7 @@
 .slide-lead-capture .lead-capture-form-state {
   background: var(--interaction-surface);
   border-radius: var(--slide-radius-lg);
-  padding: 48px 56px;
+  padding: var(--slide-space-12) var(--slide-space-16);
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
 }
@@ -52,7 +52,7 @@
 /* Header section */
 .slide-lead-capture .lead-capture-header {
   text-align: center;
-  margin-bottom: 36px;
+  margin-bottom: var(--slide-space-10);
 }
 
 .slide-lead-capture .lead-capture-title {
@@ -135,7 +135,7 @@
 .slide-lead-capture .lead-capture-consent-label {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: var(--slide-space-4);
   cursor: pointer;
 }
 
@@ -143,7 +143,7 @@
   flex-shrink: 0;
   width: 24px;
   height: 24px;
-  margin-top: 3px;
+  margin-top: var(--slide-space-1);
   accent-color: var(--color-accent);
   cursor: pointer;
 }
@@ -232,7 +232,7 @@
 .slide-lead-capture .lead-capture-thankyou-state {
   background: var(--interaction-surface);
   border-radius: var(--slide-radius-lg);
-  padding: 64px 56px;
+  padding: var(--slide-space-16);
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
 }

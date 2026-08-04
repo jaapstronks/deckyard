@@ -1,6 +1,6 @@
 /* Follow-invite slide (big-screen friendly) */
 .slide-follow-invite .slide-inner {
-  padding: 36px 56px;
+  padding: var(--slide-space-10) var(--slide-space-16);
 }
 
 .slide-follow-invite .sfi {
@@ -30,7 +30,7 @@
 .slide-follow-invite .sfi-methods {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
+  gap: var(--slide-space-6);
   align-items: stretch;
 }
 
@@ -38,7 +38,7 @@
   background: rgba(255, 255, 255, 0.92);
   border: 2px solid rgba(0, 0, 0, 0.10);
   border-radius: var(--slide-radius-md);
-  padding: 22px;
+  padding: var(--slide-space-6);
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--slide-space-3);

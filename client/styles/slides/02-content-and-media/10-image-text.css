@@ -21,7 +21,7 @@
   font-size: calc(24px * var(--tf-size-scale, 1));
 }
 .slide-image-text .copy .body p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--slide-space-4);
 }
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
 .slide-image-text .copy .body .md-subheading {
@@ -43,7 +43,7 @@
 }
 .slide-image-text .copy .body ul,
 .slide-image-text .copy .body ol {
-  margin: 0 0 14px 1.2em;
+  margin: 0 0 var(--slide-space-4) 1.2em;
   padding: 0;
 }
 .slide-image-text .copy .body li {

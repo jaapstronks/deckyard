@@ -310,6 +310,6 @@
 }
 
 .slide-logo-wall .image-placeholder-inner {
-  gap: 6px;
-  padding: 6px;
+  gap: var(--slide-space-2);
+  padding: var(--slide-space-2);
 }
