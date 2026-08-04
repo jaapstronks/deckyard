@@ -333,7 +333,7 @@
 
 .slide-likert .likert-num {
   font-family: var(--font-heading);
-  font-size: 32px;
+  font-size: var(--slide-text-xl);
   font-weight: var(--heading-weight, 600);
   color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
   background: var(--color-accent);
@@ -361,7 +361,7 @@
 }
 
 .slide-likert .likert-results .poll-results-title {
-  font-size: 26px;
+  font-size: var(--slide-text-lg);
   margin-bottom: var(--slide-space-6);
 }
 
@@ -458,14 +458,14 @@
   color: var(--color-text);
 }
 .slide-likert-slider .likert-slider-text {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
   color: var(--color-text);
   opacity: 0.92;
   min-width: 0;
 }
 
 .slide-likert-slider .likert-slider-help {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-compact);
   font-weight: 600;
   margin-top: var(--slide-space-3);
