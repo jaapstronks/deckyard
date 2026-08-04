@@ -842,6 +842,7 @@
   "editor.transitions.slide": "Slide",
   "editor.translate.abortedSaveFailed": "Could not save; translation aborted.",
   "editor.translate.busy": "Translating…",
+  "editor.translate.busyLangSwitch": "Translating… you can switch language again when it is done.",
   "editor.translate.disabled": "Translation is disabled (only one language enabled).",
   "editor.translate.done": "Translation ready.",
   "editor.translate.missingBtn": "Translate with AI",
