@@ -169,6 +169,7 @@ nothing is discoverable only by `ls`.
 | Doc | What it covers |
 |-----|----------------|
 | [`two-window-presenter.md`](reference/two-window-presenter.md) | The two-window presenter view |
+| [`live-sessions.md`](reference/live-sessions.md) | Present sessions and the SSE layer underneath the presenter UI |
 | [`notes-companion.md`](reference/notes-companion.md) | The phone companion, and the session token that authorizes its notes edits |
 | [`live-video-layer.md`](reference/live-video-layer.md) | The live video layer |
 | [`comments-and-notifications.md`](reference/comments-and-notifications.md) | The three-layer comments model |
@@ -185,7 +186,10 @@ nothing is discoverable only by `ls`.
 | [`../ops/self-hosting.md`](ops/self-hosting.md) | VPS deploy guide |
 | [`../ops/agent-install.md`](ops/agent-install.md) | Install Deckyard with an AI agent |
 | [`fork-setup.md`](reference/fork-setup.md) | Setting up a fork |
+| [`storage-layer.md`](reference/storage-layer.md) | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy |
 | [`tenant-isolation.md`](reference/tenant-isolation.md) | Organizations and isolation shapes |
+| [`auth-and-sessions.md`](reference/auth-and-sessions.md) | Session cookies/tokens, the login paths, and auth rate limits |
+| [`sandbox-mode.md`](reference/sandbox-mode.md) | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup |
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
