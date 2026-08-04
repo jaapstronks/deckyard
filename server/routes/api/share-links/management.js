@@ -225,7 +225,7 @@ export async function handleShareLinkManagement({ repoRoot, req, res, url, authe
     if (!link) return true;
 
     const { limit, offset } = parsePaginationParams(url.searchParams, { defaultLimit: 100 });
-    const log = await getShareLinkAccessLog(linkId, { limit, offset }, ctx);
+    const log = await getShareLinkAccessLog(linkId, { limit, offset });
 
     serveJson(res, 200, { accessLog: log });
     return true;

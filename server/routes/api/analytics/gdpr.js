@@ -37,10 +37,9 @@ export async function handleExportMyData(ctx) {
     return sendRateLimitResponse(res, 'Rate limit exceeded for data export', 5), true;
   }
 
-  const result = await exportUserAnalyticsData({
-    email: authedUser.email,
-    organizationId: authedUser.organizationId,
-  });
+  // Identity is the scope: the export covers this person's sessions on the
+  // whole instance, not just the workspace they happen to be acting in.
+  const result = await exportUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
     return sendErrorResponse(res, 500, result.reason || 'Failed to export data'), true;
@@ -70,10 +69,9 @@ export async function handleDeleteMyData(ctx) {
     return sendRateLimitResponse(res, 'Rate limit exceeded for data deletion', 5), true;
   }
 
-  const result = await deleteUserAnalyticsData({
-    email: authedUser.email,
-    organizationId: authedUser.organizationId,
-  });
+  // Identity is the scope — an erasure that stopped at the acting workspace
+  // would report success while leaving the same person's rows behind.
+  const result = await deleteUserAnalyticsData({ email: authedUser.email });
 
   if (!result.ok) {
     return sendErrorResponse(res, 500, result.reason || 'Failed to delete data'), true;

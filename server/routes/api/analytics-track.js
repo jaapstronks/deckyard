@@ -256,14 +256,18 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       }
     }
 
-    // Determine if viewer is internal (same organization as presentation)
-    const presentation = accessValidation.presentation;
-    const presOrgId = presentation?.organizationId;
-    const viewerOrgId = body?.organizationId ?? null;
-    const isInternal = isAuthenticatedViewer && presOrgId && viewerOrgId && presOrgId === viewerOrgId;
-
-    // If external analytics is disabled and viewer is external, don't track
-    if (!isInternal && !appSettings.analytics?.externalAnalytics?.enabled) {
+    // Every session this route opens is external. Whether a viewer is
+    // *internal* — a member of the presentation's own workspace — is not
+    // knowable here: the endpoint is deliberately unauthenticated (anonymous
+    // and guest viewers reach it over a share token), so the only organization
+    // it could compare against was the one the client put in the request body.
+    // That let any caller declare itself internal and walk straight through
+    // the external-analytics gate below, which is a privacy setting. The input
+    // is gone along with `view_sessions.organization_id` (migration 065); no
+    // shipped client ever sent it, so nothing that worked stops working.
+    // Restoring internal detection needs a server-known signal on this route,
+    // not a claim from the payload.
+    if (!appSettings.analytics?.externalAnalytics?.enabled) {
       return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
     }
 
@@ -282,10 +286,9 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       viewerType,
       viewerEmail,
       deviceId,
-      organizationId: viewerOrgId,
       ipAddress: clientIp,
       userAgent,
-      isInternal,
+      isInternal: false, // see the gate above — not knowable on this route
       attributionAllowed,
     });
 

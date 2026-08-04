@@ -4,11 +4,8 @@
  * `server/routes/api/analytics/gdpr.js` exposes two endpoints on
  * `/api/analytics/my-data` — `GET` (right to access / export) and `DELETE`
  * (right to erasure) — over `server/storage/analytics/view-sessions-gdpr.js`.
- * The storage helpers below them had no route-level coverage: who is allowed to
- * ask, what an erasure actually removes, and — the security-relevant part —
- * that neither endpoint reaches across an organization boundary.
  *
- * Two rules carry this surface and are stated here as assertions:
+ * Three rules carry this surface and are stated here as assertions:
  *
  *   1. **The endpoint is self-service and identifies you by your own email.**
  *      Both handlers refuse a request without `authedUser.email` (401) and, when
@@ -16,24 +13,32 @@
  *      is deliberately no "wrong role" negative test: the endpoint has no role
  *      dimension — identity *is* the scope, so there is no privileged vs.
  *      unprivileged caller to distinguish, only "you" vs. "not authenticated".
- *   2. **Erasure is org-scoped and hard-deletes, it does not anonymize.** The
- *      handler passes `authedUser.organizationId`, so a delete removes the acting
- *      user's `view_sessions` (and their `slide_views`) *in that org only*; rows
- *      for another email, or for the same email under a different org, survive
- *      untouched. What comes back is a count of what was removed, not an
- *      anonymized shadow — the IP-anonymization retention job
- *      (`anonymizeOldIpAddresses`) is a separate path this endpoint never calls.
+ *   2. **The data subject is the scope; the workspace plays no part.** An
+ *      export or erasure covers this person's sessions across the whole
+ *      instance, whatever workspace the caller happens to be acting in and
+ *      whatever workspace the viewed deck belongs to. This is the form chosen
+ *      in the A1(a) defects PR: the previous organization filter matched
+ *      `view_sessions.organization_id` — a column the *viewer's browser* filled
+ *      in — against the *authenticated caller's* organization, so under
+ *      multi-workspace an erasure deleted nothing and reported success anyway.
+ *      The column is gone (migration 065); rule R2 in
+ *      `docs/reference/tenant-isolation.md` says a view session inherits its
+ *      workspace from its presentation and carries no copy of it.
+ *   3. **Erasure hard-deletes, and identifies nobody by device.** A delete
+ *      removes the matched `view_sessions` and their `slide_views` and reports
+ *      how many; it does not anonymize (the IP-anonymization retention job
+ *      `anonymizeOldIpAddresses` is a separate path this endpoint never calls),
+ *      and it never matches on `device_id`. A device id is not a secret — the
+ *      full value of every session is returned to anyone with read access to
+ *      the deck — so it cannot authorize an export or an erasure, and the
+ *      storage refuses an identifier that has nothing else in it.
  *
  * House shape (see `tests/authz-organization-scope.test.js`,
  * `tests/auth-routes-reset-and-magic-link.test.js`): the exported handler is
  * called directly with a req/res double over `tests/helpers/fake-db.js`. No HTTP
  * server, no browser — the suite has no e2e harness and this item introduces
  * none. The erasure runs inside `db.transaction()`, whose all-or-nothing
- * behaviour the double now models (see the `transaction()` note in fake-db.js).
- *
- * No production code changes with this file; only the db double gained a
- * `transaction()` shim, in the same spirit as the fake-db extensions that PR 1
- * and PR 2 of this track landed.
+ * behaviour the double models (see the `transaction()` note in fake-db.js).
  *
  * Run with: node --test tests/analytics-gdpr-delete-path.test.js
  */
@@ -50,9 +55,17 @@ const { AUTH_RATE_LIMITS } = await import('../server/analytics/helpers.js');
 const { handleExportMyData, handleDeleteMyData } = await import(
   '../server/routes/api/analytics/gdpr.js'
 );
+const { exportUserAnalyticsData, deleteUserAnalyticsData } = await import(
+  '../server/storage/analytics/view-sessions.js'
+);
 
 const ORG_A = 'org-aaaa';
 const ORG_B = 'org-bbbb';
+// Two decks that live in different workspaces. Nothing on the row says so any
+// more — the workspace is a property of the presentation — which is exactly
+// the point these tests pin.
+const DECK_IN_A = 'deck-in-org-a';
+const DECK_IN_B = 'deck-in-org-b';
 const ALICE = 'alice@example.com';
 const BOB = 'bob@example.com';
 const MY_DATA_URL = new URL('http://localhost/api/analytics/my-data');
@@ -92,21 +105,27 @@ async function invoke(handler, authedUser) {
 // ---------------------------------------------------------------------------
 
 /**
- * A `view_sessions` row in the shape `createViewSession` writes. `viewer_email`
- * is stored lowercase, exactly as the write path normalizes it, so the
- * lowercasing the query does is exercised rather than accidentally bypassed.
+ * A `view_sessions` row in the shape `createViewSession` writes — no
+ * organization column (migration 065). `viewer_email` is stored lowercase,
+ * exactly as the write path normalizes it, so the lowercasing the query does is
+ * exercised rather than accidentally bypassed.
  * @param {Object} spec
  * @returns {Object}
  */
-function sessionRow({ id, org, email = null, device = null, startedAt = '2026-01-01T00:00:00.000Z' }) {
+function sessionRow({
+  id,
+  deck = DECK_IN_A,
+  email = null,
+  device = null,
+  startedAt = '2026-01-01T00:00:00.000Z',
+}) {
   return {
     id,
-    organization_id: org,
-    presentation_id: 'deck-1',
+    presentation_id: deck,
     session_token: `tok-${id}`,
     source_type: 'share_link',
     source_id: null,
-    viewer_type: 'authenticated',
+    viewer_type: email ? 'authenticated' : 'anonymous',
     viewer_email: email ? email.toLowerCase() : null,
     device_id: device,
     started_at: startedAt,
@@ -123,11 +142,11 @@ function sessionRow({ id, org, email = null, device = null, startedAt = '2026-01
 }
 
 /** A `slide_views` row belonging to one session. */
-function slideViewRow({ id, sessionId, slideId = 'slide-1', index = 0 }) {
+function slideViewRow({ id, sessionId, deck = DECK_IN_A, slideId = 'slide-1', index = 0 }) {
   return {
     id,
     view_session_id: sessionId,
-    presentation_id: 'deck-1',
+    presentation_id: deck,
     slide_id: slideId,
     slide_index: index,
     entered_at: '2026-01-01T00:00:00.000Z',
@@ -157,7 +176,7 @@ test.beforeEach(() => {
 
 test('export returns the caller’s own sessions and slide views', async () => {
   seed({
-    sessions: [sessionRow({ id: 's1', org: ORG_A, email: ALICE })],
+    sessions: [sessionRow({ id: 's1', email: ALICE })],
     slideViews: [
       slideViewRow({ id: 'v1', sessionId: 's1', index: 0 }),
       slideViewRow({ id: 'v2', sessionId: 's1', index: 1 }),
@@ -175,7 +194,7 @@ test('export returns the caller’s own sessions and slide views', async () => {
 });
 
 test('export refuses an unauthenticated caller and reads nothing', async () => {
-  const db = seed({ sessions: [sessionRow({ id: 's1', org: ORG_A, email: ALICE })] });
+  const db = seed({ sessions: [sessionRow({ id: 's1', email: ALICE })] });
 
   const { res, handled } = await invoke(handleExportMyData, { organizationId: ORG_A });
 
@@ -189,38 +208,69 @@ test('export refuses an unauthenticated caller and reads nothing', async () => {
   );
 });
 
-test('export is scoped to the caller’s org and email — no cross-org, no cross-user leak', async () => {
+test('export covers the caller’s rows in every workspace, and no one else’s', async () => {
   seed({
     sessions: [
-      sessionRow({ id: 'mine', org: ORG_A, email: ALICE }),
-      sessionRow({ id: 'other-org', org: ORG_B, email: ALICE }), // same person, different org
-      sessionRow({ id: 'other-user', org: ORG_A, email: BOB }), // same org, different person
+      sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),
+      sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }), // her view of another workspace's deck
+      sessionRow({ id: 'bob', deck: DECK_IN_A, email: BOB }), // someone else — never hers
+      sessionRow({ id: 'anon', deck: DECK_IN_A, device: 'dev-1' }), // no email — not addressable here
     ],
   });
 
   const { res } = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_A });
 
   assert.equal(res.statusCode, 200);
-  const returned = res.body.sessions.map((s) => s.viewerEmail);
-  assert.equal(res.body.totalSessions, 1, 'only the ORG_A alice row is exported');
-  assert.deepEqual(returned, [ALICE]);
+  assert.equal(res.body.totalSessions, 2, 'both of Alice’s sessions come back');
+  assert.deepEqual(
+    res.body.sessions.map((s) => s.presentationId).sort(),
+    [DECK_IN_A, DECK_IN_B]
+  );
+  assert.deepEqual(
+    [...new Set(res.body.sessions.map((s) => s.viewerEmail))],
+    [ALICE],
+    'no other person’s rows are exported'
+  );
+});
+
+test('export ignores which workspace the caller is acting in', async () => {
+  const rows = [
+    sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),
+    sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }),
+  ];
+
+  seed({ sessions: rows });
+  const actingInA = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_A });
+
+  resetRateLimitBuckets();
+  seed({ sessions: rows });
+  const actingInB = await invoke(handleExportMyData, { email: ALICE, organizationId: ORG_B });
+
+  resetRateLimitBuckets();
+  seed({ sessions: rows });
+  const noOrg = await invoke(handleExportMyData, { email: ALICE });
+
+  for (const { res } of [actingInA, actingInB, noOrg]) {
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.totalSessions, 2, 'the acting organization does not narrow the answer');
+  }
 });
 
 // ---------------------------------------------------------------------------
 // DELETE /api/analytics/my-data — erasure (right to be forgotten)
 // ---------------------------------------------------------------------------
 
-test('delete erases the caller’s org rows and their slide views, nothing else', async () => {
+test('delete erases the caller’s rows in every workspace, and their slide views', async () => {
   const db = seed({
     sessions: [
-      sessionRow({ id: 'mine', org: ORG_A, email: ALICE }),
-      sessionRow({ id: 'mine-org-b', org: ORG_B, email: ALICE }), // same person, other org — must survive
-      sessionRow({ id: 'bob', org: ORG_A, email: BOB }), // other person, same org — must survive
+      sessionRow({ id: 'mine-a', deck: DECK_IN_A, email: ALICE }),
+      sessionRow({ id: 'mine-b', deck: DECK_IN_B, email: ALICE }),
+      sessionRow({ id: 'bob', deck: DECK_IN_A, email: BOB }), // other person — must survive
     ],
     slideViews: [
-      slideViewRow({ id: 'v-mine', sessionId: 'mine' }),
-      slideViewRow({ id: 'v-mine-b', sessionId: 'mine-org-b' }),
-      slideViewRow({ id: 'v-bob', sessionId: 'bob' }),
+      slideViewRow({ id: 'v-mine-a', sessionId: 'mine-a', deck: DECK_IN_A }),
+      slideViewRow({ id: 'v-mine-b', sessionId: 'mine-b', deck: DECK_IN_B }),
+      slideViewRow({ id: 'v-bob', sessionId: 'bob', deck: DECK_IN_A }),
     ],
   });
 
@@ -228,24 +278,24 @@ test('delete erases the caller’s org rows and their slide views, nothing else'
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.deleted, { sessions: 1, slideViews: 1 });
+  assert.deepEqual(res.body.deleted, { sessions: 2, slideViews: 2 });
   assert.equal(res.body.message, 'Your analytics data has been deleted');
 
   assert.deepEqual(
     sessionIds(db),
-    ['bob', 'mine-org-b'],
-    'the ORG_A alice session is gone; the other-org and other-user sessions survive'
+    ['bob'],
+    'both of Alice’s sessions are gone; the other person’s survives'
   );
   assert.deepEqual(
     slideViewIds(db),
-    ['v-bob', 'v-mine-b'],
-    'only the deleted session’s slide views go with it'
+    ['v-bob'],
+    'the deleted sessions’ slide views go with them, and only those'
   );
 });
 
 test('delete refuses an unauthenticated caller and removes nothing', async () => {
   const db = seed({
-    sessions: [sessionRow({ id: 's1', org: ORG_A, email: ALICE })],
+    sessions: [sessionRow({ id: 's1', email: ALICE })],
     slideViews: [slideViewRow({ id: 'v1', sessionId: 's1' })],
   });
 
@@ -258,23 +308,31 @@ test('delete refuses an unauthenticated caller and removes nothing', async () =>
   assert.deepEqual(db.__queryLog, [], 'the 401 short-circuits before any query');
 });
 
-test('delete cannot reach the caller’s data in another org', async () => {
+test('delete does not sweep up sessions that carry no email', async () => {
   const db = seed({
-    sessions: [sessionRow({ id: 'mine-org-b', org: ORG_B, email: ALICE })],
-    slideViews: [slideViewRow({ id: 'v-b', sessionId: 'mine-org-b' })],
+    sessions: [
+      sessionRow({ id: 'mine', email: ALICE, device: 'dev-1' }),
+      // Same browser, but tracked anonymously: no email on the row. It is not
+      // the caller's to erase through this endpoint, and matching it on the
+      // device id would mean trusting an identifier every deck owner can read.
+      sessionRow({ id: 'anon-same-device', device: 'dev-1' }),
+    ],
+    slideViews: [
+      slideViewRow({ id: 'v-mine', sessionId: 'mine' }),
+      slideViewRow({ id: 'v-anon', sessionId: 'anon-same-device' }),
+    ],
   });
 
-  // Alice is acting in ORG_A; her data lives in ORG_B.
   const { res } = await invoke(handleDeleteMyData, { email: ALICE, organizationId: ORG_A });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.deleted, { sessions: 0, slideViews: 0 });
-  assert.deepEqual(sessionIds(db), ['mine-org-b'], 'the ORG_B row is untouched');
-  assert.deepEqual(slideViewIds(db), ['v-b']);
+  assert.deepEqual(res.body.deleted, { sessions: 1, slideViews: 1 });
+  assert.deepEqual(sessionIds(db), ['anon-same-device'], 'the device-only row is untouched');
+  assert.deepEqual(slideViewIds(db), ['v-anon']);
 });
 
 test('delete reports a zeroed count when the caller has no data (no false erasure)', async () => {
-  const db = seed({ sessions: [sessionRow({ id: 'bob', org: ORG_A, email: BOB })] });
+  const db = seed({ sessions: [sessionRow({ id: 'bob', email: BOB })] });
 
   const { res } = await invoke(handleDeleteMyData, { email: ALICE, organizationId: ORG_A });
 
@@ -284,11 +342,37 @@ test('delete reports a zeroed count when the caller has no data (no false erasur
 });
 
 // ---------------------------------------------------------------------------
+// The storage contract underneath: an email, or nothing
+// ---------------------------------------------------------------------------
+
+test('the storage helpers refuse an identifier that is not an email', async () => {
+  const db = seed({ sessions: [sessionRow({ id: 'anon', device: 'dev-1' })] });
+
+  // A device id is public to every deck reader, so it identifies no one here;
+  // the helpers take an email and nothing else.
+  assert.deepEqual(await exportUserAnalyticsData({ deviceId: 'dev-1' }), {
+    ok: false,
+    reason: 'No identifier provided',
+  });
+  assert.deepEqual(await deleteUserAnalyticsData({ deviceId: 'dev-1' }), {
+    ok: false,
+    reason: 'No identifier provided',
+  });
+  assert.deepEqual(await deleteUserAnalyticsData({}), {
+    ok: false,
+    reason: 'No identifier provided',
+  });
+
+  assert.deepEqual(sessionIds(db), ['anon'], 'the refusals touched nothing');
+  assert.deepEqual(db.__queryLog, [], 'and issued no query at all');
+});
+
+// ---------------------------------------------------------------------------
 // The GDPR-specific expensive-op rate limit gates each endpoint
 // ---------------------------------------------------------------------------
 
 test('export is rate-limited once the expensive-op bucket is spent', async () => {
-  seed({ sessions: [sessionRow({ id: 's1', org: ORG_A, email: ALICE })] });
+  seed({ sessions: [sessionRow({ id: 's1', email: ALICE })] });
   const user = { email: ALICE, organizationId: ORG_A };
 
   for (let i = 0; i < EXPENSIVE_CAP; i++) {
@@ -303,7 +387,7 @@ test('export is rate-limited once the expensive-op bucket is spent', async () =>
 });
 
 test('delete is rate-limited once the expensive-op bucket is spent', async () => {
-  seed({ sessions: [sessionRow({ id: 's1', org: ORG_A, email: BOB })] });
+  seed({ sessions: [sessionRow({ id: 's1', email: BOB })] });
   const user = { email: BOB, organizationId: ORG_A };
 
   for (let i = 0; i < EXPENSIVE_CAP; i++) {

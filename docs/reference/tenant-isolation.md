@@ -150,14 +150,45 @@ Four edge decisions taken with the rules:
    with me" *should* be workspace-scoped is a product question about what that
    list means across workspaces, and is the only thing keeping this column
    from being removable outright.
+6. **The share-link access log is addressed by the link, and takes no
+   context.** `share_link_access_log` rows hang off one
+   `presentation_share_links.id`, itself a globally unique uuid, so the link
+   identifies the workspace on its own — the same reasoning as decision 5.
+   Both functions in `server/storage/share-links/access-log.js` used to accept
+   a context parameter and ignore it, a check the signature promised and never
+   performed; the parameter is gone rather than made real. Authorization sits
+   with the caller, which is where it already was: the management route
+   authorizes the presentation (`withPresentationAuth`) and then binds the link
+   id to it through the organization-filtered `getShareLinkById`, before any
+   viewer IP or user-agent is read.
+7. **`view_sessions` carries no organization column, and GDPR self-service is
+   scoped by person.** The column existed from migration 014 and was never
+   trustworthy: the public tracking route stamped it from
+   `body.organizationId` — an organization the viewer's browser claimed —
+   while its only reader, the GDPR export/erasure pair, filtered on the
+   authenticated caller's organization. Under multi-workspace those never
+   matched, so an erasure deleted nothing and still answered "Your analytics
+   data has been deleted" (found in #627). R2 decides it: the session inherits
+   its workspace from `presentation_id`, so the column goes (migration 065),
+   and with it the client-supplied field on `POST /api/track/session/start`.
+   The export and erasure now match one email address across the whole
+   instance — the data subject is the scope, the workspace plays no part,
+   consistent with `user_settings` being keyed per person under R3. The same
+   route deliberately does **not** accept a `deviceId`: the full device id of
+   every session is handed to anyone with read access to the deck
+   (`GET /api/presentations/:id/analytics/sessions`), so it authorizes nothing,
+   and accepting it would let a deck owner export or erase a viewer's
+   cross-deck history. A viewer tracked only by device therefore has no
+   self-service route until there is a proof-of-possession mechanism —
+   tracked as its own item, not left implied by a dead parameter.
 
-**Implementation status (2026-08-04):** the rules above are normative; the
-code does not fully match them yet. Open, tracked in the planning repo: three
-defects (the share-link access log ignores its context; `view_sessions.organization_id`
-is written from the client request body and never filtered; bulk export builds
-a default-organization context instead of using `singleWorkspaceScope()`), the
-sweep of the remaining `getDefaultOrganizationId()` fallbacks outside the
-sanctioned call sites, and the feed gating from decision 4.
+**Implementation status (2026-08-04):** the rules above are normative and the
+code now matches them on every point the decision named. Remaining: the feed
+gating from decision 4, and the product question left open in decision 5. One
+consequence is tracked separately — with the client-claimed organization gone,
+the tracking route has no server-known signal for "internal viewer", so
+`view_sessions.is_internal` is always false and the internal/external filters
+in the analytics dashboard have nothing to separate.
 
 ## Sandbox isolation (`sandbox.deckyard.eu`)
 

@@ -65,6 +65,8 @@ const HOME_ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const AWAY_ORG = '00000000-0000-0000-0000-0000000000bb';
 const DECK = 'deck-under-test';
 
+import { callArguments, walkJsFiles } from './helpers/call-sites.js';
+
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } = await import(
@@ -407,65 +409,16 @@ test('a deck in another workspace is absent on every endpoint, row or no row', a
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
-/**
- * Every `.js` file under a directory.
- * @param {string} dir
- * @param {string[]} [out]
- * @returns {string[]}
- */
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
-/**
- * The arguments of every `getCollaboratorPermission(...)` call in a source
- * file, split on top-level commas. Scans by bracket depth so an object literal
- * or a nested call in an argument does not split the list.
- *
- * @param {string} source - File contents.
- * @returns {string[][]} One entry per call site.
- */
-function callArguments(source) {
-  const calls = [];
-  // An `import { getCollaboratorPermission }` has no following `(`, so imports
-  // never match.
-  const pattern = /getCollaboratorPermission\s*\(/g;
-  let match;
-  while ((match = pattern.exec(source))) {
-    let depth = 1;
-    let i = match.index + match[0].length;
-    let current = '';
-    const args = [];
-    while (depth > 0 && i < source.length) {
-      const c = source[i];
-      if ('([{'.includes(c)) depth += 1;
-      else if (')]}'.includes(c)) depth -= 1;
-      if (depth === 0) break;
-      if (c === ',' && depth === 1) {
-        args.push(current.trim());
-        current = '';
-      } else {
-        current += c;
-      }
-      i += 1;
-    }
-    args.push(current.trim());
-    calls.push(args.filter((a) => a !== ''));
-  }
-  return calls;
-}
+// The bracket-depth scanner is shared with the share-link access-log guard,
+// which pins the same "the identifier is the scope" contract.
+const permissionCallArgs = (source) => callArguments(source, 'getCollaboratorPermission');
 
 test('no getCollaboratorPermission() call site passes a scope', () => {
   const offenders = [];
 
-  for (const file of walk(path.join(repoRoot, 'server'))) {
+  for (const file of walkJsFiles(path.join(repoRoot, 'server'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
-    for (const args of callArguments(fs.readFileSync(file, 'utf8'))) {
+    for (const args of permissionCallArgs(fs.readFileSync(file, 'utf8'))) {
       if (args.length > 2) offenders.push(`${rel}  (${args.length} arguments)`);
     }
   }
@@ -482,9 +435,9 @@ test('no getCollaboratorPermission() call site passes a scope', () => {
 test('the guard would catch a re-introduced scope argument', () => {
   const planted =
     'await getCollaboratorPermission(pres.id, user.email, { organizationId: ctx.organizationId });';
-  assert.equal(callArguments(planted)[0].length, 3, 'the parser sees all three arguments');
+  assert.equal(permissionCallArgs(planted)[0].length, 3, 'the parser sees all three arguments');
   assert.equal(
-    callArguments('await getCollaboratorPermission(pres.id, user.email);')[0].length,
+    permissionCallArgs('await getCollaboratorPermission(pres.id, user.email);')[0].length,
     2,
     'and exactly two on the canonical form'
   );
