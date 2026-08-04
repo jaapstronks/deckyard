@@ -262,3 +262,27 @@ export async function allowShareVerifyAttempt({ ip } = {}) {
   const ipKey = `share-verify:ip:${String(ip || 'unknown')}`;
   return allowRequest(ipKey, SHARE_VERIFY_LIMITS.ip);
 }
+
+/**
+ * Token-bucket limit for the anonymous notes-companion write
+ * (`PUT /api/present-sessions/:sessionId/notes/:slideId`). Not a secret gate
+ * like the two above — the session id is the capability and the caller is
+ * allowed to write — so this is a volume cap, not a guess cap: the companion
+ * saves on a debounce, and a leaked join link must not be usable to hammer the
+ * deck's slides column. Generous enough that a speaker typing hard never sees
+ * it, tight enough to be a ceiling.
+ */
+export const COMPANION_NOTES_LIMITS = {
+  ip: { capacity: 30, refillPerSec: 1 }, // burst 30, then ~1/second
+};
+
+/**
+ * Throttle an anonymous notes-companion save. Consumes one token per write
+ * from a per-IP bucket.
+ * @param {{ip?: string}} p
+ * @returns {Promise<boolean>} false when the write should be blocked (429)
+ */
+export async function allowCompanionNotesWrite({ ip } = {}) {
+  const ipKey = `companion-notes:ip:${String(ip || 'unknown')}`;
+  return allowRequest(ipKey, COMPANION_NOTES_LIMITS.ip);
+}

@@ -1,5 +1,4 @@
 import {
-  attachSessionSseClient,
   broadcastBranch,
   createPresentSession,
   getPresentSession,
@@ -36,7 +35,15 @@ import {
 import { liveInteractionKind } from '../../../shared/slide-types/runtime.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { getString } from '../../utils/request-validators.js';
-import { guardSseConnection } from '../../utils/sse-limiter.js';
+
+/**
+ * Presenter-only present-session routes.
+ *
+ * Everything here requires deck-write. The capability-based half of the surface
+ * — the audience/companion reads, the SSE stream and the session-scoped notes
+ * write — lives in `present-session-audience.js` and is dispatched from the
+ * public block, before the login gate.
+ */
 
 /**
  * Require the caller to be allowed to write (present/control) the presentation
@@ -97,19 +104,8 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
     const sessionId = sessStateMatch[1];
     const s = await getPresentSession(repoRoot, sessionId);
     if (!s) return notFound(res);
-    if (req.method === 'GET') {
-      serveJson(res, 200, {
-        sessionId,
-        presentationId: s.presentationId,
-        slideId: s.state?.slideId || '',
-        slideIndex: Number(s.state?.slideIndex || 0) || 0,
-        stepIdx: Math.max(0, Number(s.state?.stepIdx || 0) || 0),
-        stepParagraphs: !!s.state?.stepParagraphs,
-        updatedAt: Number(s.state?.updatedAt || 0) || 0,
-        controlEnabled: !!s.controlEnabled,
-      });
-      return true;
-    }
+    // GET is capability-based (the session id is the authorization) and is
+    // served from the public block — see routes/api/present-session-audience.js.
     if (req.method === 'POST') {
       // Pushing live state is a presenter action → require deck-write.
       const pres = await requirePresentationControl({
@@ -347,26 +343,6 @@ export async function handlePresentSessions({ repoRoot, req, res, url, authedUse
       'Content-Disposition': `attachment; filename="${filename}"`,
     });
     res.end(body);
-    return true;
-  }
-
-  const sessEventsMatch = url.pathname.match(
-    /^\/api\/present-sessions\/([^/]+)\/events$/
-  );
-  if (sessEventsMatch && req.method === 'GET') {
-    const sessionId = sessEventsMatch[1];
-    const s = await getPresentSession(repoRoot, sessionId);
-    if (!s) return notFound(res);
-    // Cap unauthenticated, long-lived streams before opening one (DoS guard).
-    if (!guardSseConnection(req, res)) return true;
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-store',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-    });
-    res.write('\n');
-    await attachSessionSseClient(repoRoot, sessionId, res);
     return true;
   }
 

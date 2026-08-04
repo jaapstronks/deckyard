@@ -72,7 +72,7 @@ const USER_TEXT_SITES = [
       'i18n strings.',
   },
   {
-    file: 'client/views/notes/index.js',
+    file: 'client/views/notes/notes-editor.js',
     rhs: 'html',
     reason:
       'Speaker notes. Either markdownToSafeHtml() output (which runs ' +
@@ -82,7 +82,7 @@ const USER_TEXT_SITES = [
   {
     file: 'client/views/presenter/console.js',
     rhs: 'notes.trim() ? markdownToSafeHtml(notes)…',
-    reason: 'Presenter-console speaker notes; same markdownToSafeHtml() path as notes/index.js.',
+    reason: 'Presenter-console speaker notes; same markdownToSafeHtml() path as notes/notes-editor.js.',
   },
   {
     file: 'client/views/editor/modals/json-debug-modal.js',

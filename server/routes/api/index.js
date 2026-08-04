@@ -27,6 +27,7 @@ import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow.js';
 import { handleFollowCodes } from './follow-codes.js';
 import { handlePresentSessions } from './present-sessions.js';
+import { handlePresentSessionsPublic } from './present-session-audience.js';
 import { handleAssets } from './assets.js';
 import { handleSlideTypes } from './slide-types.js';
 import { handleThemes } from './themes.js';
@@ -125,6 +126,11 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (url.pathname.match(/^\/api\/follow-codes\/[A-Z]{4,6}$/i) && req.method === 'GET') {
     if (await handleFollowCodes({ repoRoot, req, res, url, authedUser: null })) return;
   }
+  // Present-session companion: the session id in the join link is the
+  // authorization, so these sit in front of the login gate (see
+  // present-session-audience.js). Presenter actions on the same session stay
+  // behind deck-write, below.
+  if (await handlePresentSessionsPublic({ repoRoot, req, res, url })) return;
   if (await handleSharePublic({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsTrack({ repoRoot, req, res, url })) return;
   if (await handleAnalyticsReportPublic({ repoRoot, req, res, url })) return;

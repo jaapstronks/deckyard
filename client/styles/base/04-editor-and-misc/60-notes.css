@@ -120,6 +120,32 @@
   font-weight: 700;
   margin-bottom: var(--ps-space-2-5);
 }
+.notes-panel-header {
+  align-items: baseline;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-2-5);
+}
+.notes-panel-header .notes-panel-title {
+  margin-bottom: 0;
+}
+
+/* Notes editing (session-token-scoped; see client/views/notes/notes-editor.js).
+   The textarea is sized for a phone held in one hand — tall enough to see a
+   paragraph, short enough that the save row stays reachable without scrolling. */
+.notes-edit-input {
+  width: 100%;
+  min-height: 9rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+.notes-edit-actions {
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+.notes-edit-status {
+  margin: 0;
+  min-height: 1em;
+}
 
 .notes-qa-panel {
   margin-top: var(--ps-space-3);

@@ -46,6 +46,9 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { handlePresentSessions } = await import('../server/routes/api/present-sessions.js');
+const { handlePresentSessionsPublic } = await import(
+  '../server/routes/api/present-session-audience.js'
+);
 const { handleShareLinkManagement, shareLinkBelongsToPresentation } = await import(
   '../server/routes/api/share-links/management.js'
 );
@@ -294,11 +297,14 @@ test('H4: reading session state stays open to the audience (GET is capability-ba
     seedPresentation('deck-g', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-g', 'deck-g');
     // No authedUser at all (audience device): GET /state must still resolve.
-    const { res } = await callPresentSessions({
-      root,
-      method: 'GET',
-      pathname: '/api/present-sessions/sess-g/state',
-      authedUser: null,
+    // It is served from the public dispatcher, which runs before the login gate
+    // — see routes/api/present-session-audience.js.
+    const res = new MockRes();
+    await handlePresentSessionsPublic({
+      repoRoot: root,
+      req: mockReq('GET'),
+      res,
+      url: new URL('http://localhost/api/present-sessions/sess-g/state'),
     });
     assert.equal(res.statusCode, 200);
     assert.equal(JSON.parse(res.body()).presentationId, 'deck-g');

@@ -5,11 +5,11 @@ import {
   cleanupSlideRuntimes,
   mountSlideInto,
 } from '../../lib/slide-runtime/slide-render.js';
-import { markdownToSafeHtml } from '../../../shared/markdown.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
-import { clamp, normalizeNotes, normalizePresentation } from './utils.js';
+import { clamp, normalizePresentation } from './utils.js';
+import { createNotesEditor } from './notes-editor.js';
 import { createNotesQaController } from './qa.js';
 import { createNotesSessionSse } from './session-sse.js';
 import { buildNotesLayout } from './layout.js';
@@ -49,7 +49,6 @@ export async function renderNotes(
     nextPreviewWrap,
     notesWrap,
     notesTitle,
-    notesBody,
     qaWrap,
     qaBody,
   } = ui;
@@ -67,9 +66,13 @@ export async function renderNotes(
   const sess = await api(
     `/api/present-sessions/${sessionId}/state`
   );
-  let pres = normalizePresentation(
-    await api(`/api/presentations/${sess.presentationId}`)
-  );
+  // The deck comes from the session-scoped endpoint, not
+  // `GET /api/presentations/:id`: the companion is authorized by the session id
+  // in its join link and may have no account at all, so it must never depend on
+  // deck read-auth. See routes/api/present-session-audience.js.
+  const fetchDeck = () =>
+    api(`/api/present-sessions/${encodeURIComponent(sessionId)}/deck`);
+  let pres = normalizePresentation(await fetchDeck());
   let theme = await loadThemeById(pres?.theme);
 
   title.textContent = pres.title || t('notes.speakerNotes', 'Speaker notes');
@@ -98,10 +101,9 @@ export async function renderNotes(
   };
 
   // --- Q&A (optional) ---
-  const uiLang =
-    normalizeLang(pres?.i18n?.active) ||
-    normalizeLang(pres?.i18n?.dominant) ||
-    'nl';
+  // The session deck carries the deck-level language hint rather than the whole
+  // i18n block (translation jobs are none of the companion's business).
+  const uiLang = normalizeLang(pres?.lang) || 'nl';
   const qaCtl = createNotesQaController({
     api,
     h,
@@ -116,10 +118,17 @@ export async function renderNotes(
   qaCtl.refresh().catch(() => {});
   qaCtl.connect();
 
+  // --- Notes editing ---
+  // Session-token-scoped: whoever holds this join link may edit the notes of
+  // this session's deck, account or no account.
+  const notesEditor = createNotesEditor({
+    api,
+    sessionId,
+    ui,
+  });
+
   const refreshPresentation = async () => {
-    pres = normalizePresentation(
-      await api(`/api/presentations/${sess.presentationId}`)
-    );
+    pres = normalizePresentation(await fetchDeck());
     theme = await loadThemeById(pres?.theme);
     title.textContent = pres.title || t('notes.speakerNotes', 'Speaker notes');
     render();
@@ -162,11 +171,9 @@ export async function renderNotes(
       nextLabel.textContent = t('notes.upNext', 'Up next');
     }
 
-    const notes = normalizeNotes(slide?.notes || '');
-    const html = notes.trim()
-      ? markdownToSafeHtml(notes)
-      : `<p class="help">${t('notes.noNotes', 'No notes for this slide.')}</p>`;
-    notesBody.innerHTML = html;
+    // The editor owns the notes body: it renders the markdown when idle and
+    // holds the visitor's buffer when they are typing.
+    notesEditor.setSlide(slide || null);
 
     notesTitle.textContent = t('notes.notesSlideOf', 'Notes · Slide {current} / {total}', {
       current: idx + 1,
@@ -252,6 +259,7 @@ export async function renderNotes(
 
   return () => {
     sse.stop();
+    notesEditor.destroy();
     try {
       uiMode.detach?.();
     } catch {}
