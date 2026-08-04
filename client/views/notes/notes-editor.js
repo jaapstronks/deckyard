@@ -25,7 +25,7 @@ const AUTOSAVE_DELAY_MS = 1200;
  *   neighbour field. A clean buffer takes the update straight away.
  *
  * Concurrency with the desktop editor is last-write-wins on this one field, by
- * design (docs/plans/briefs/companion-notes-editing.md).
+ * design (docs/reference/notes-companion.md, § Concurrency).
  *
  * @param {Object} options
  * @param {Function} options.api - `api()` from lib/api.js.
