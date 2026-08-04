@@ -103,7 +103,7 @@
 .slide-lead-capture .lead-capture-input {
   font-family: inherit;
   font-size: 22px;
-  padding: 18px 24px;
+  padding: var(--slide-space-5) var(--slide-space-6);
   border: 2px solid var(--interaction-border);
   border-radius: var(--slide-radius-md);
   background: var(--interaction-surface-2);

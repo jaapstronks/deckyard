@@ -34,7 +34,7 @@
 .slide-video .slide-inner:has(.heading) .video-frame {
   margin-left: 0;
   margin-right: auto;
-  margin-top: 18px;
+  margin-top: var(--slide-space-5);
 }
 .slide-video .video-iframe {
   display: block;
@@ -43,7 +43,7 @@
   border: 0;
 }
 .slide-video .video-empty {
-  padding: 18px;
+  padding: var(--slide-space-5);
   border-radius: var(--slide-radius-sm);
   border: 1px dashed rgba(0, 0, 0, 0.25);
   background: rgba(255, 255, 255, 0.35);

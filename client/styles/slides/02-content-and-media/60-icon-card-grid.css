@@ -49,7 +49,7 @@
   position: relative;
   z-index: 1;
   justify-content: flex-start;
-  gap: 18px; /* TODO: between --slide-space-4 (16px) and --slide-space-5 (20px) */
+  gap: var(--slide-space-5);
 }
 .slide-icon-card-grid .header .title {
   font-family: var(--font-heading);

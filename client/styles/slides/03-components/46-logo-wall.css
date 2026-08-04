@@ -107,7 +107,7 @@
 
 .slide-logo-wall .slide-inner {
   justify-content: flex-start;
-  gap: 18px;
+  gap: var(--slide-space-5);
 }
 
 .slide-logo-wall .header .title {
@@ -121,7 +121,7 @@
 }
 
 .slide-logo-wall .header .subtitle {
-  margin: 10px 0 0;
+  margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
@@ -186,7 +186,7 @@
   line-height: var(--slide-leading-normal);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 60%, transparent);
   text-align: center;
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
 }
 
 

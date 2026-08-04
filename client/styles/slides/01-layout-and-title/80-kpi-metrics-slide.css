@@ -251,7 +251,7 @@
 .slide-kpi-metrics .kpi-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
+  gap: var(--slide-space-3) var(--slide-space-5);
   align-items: baseline;
   font-family: var(--font-mono);
   font-size: 26px;

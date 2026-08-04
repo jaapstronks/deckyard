@@ -91,6 +91,29 @@ raw length. This is the same conversion rule as the app layer
 *every* length in it lands on the scale, so the change is value-identical by
 construction and reviewable by reading.
 
+**A value between two steps goes to the step it is nearest in *ratio*, which at
+an exact midpoint is always the larger one.** The scale ticks by 4px below 24,
+so the near-misses the census found are the odd 2px offsets — 6, 10, 14, 18, 22
+— and every one of them sits exactly between two steps. Absolute distance
+cannot break that tie; the ratio can, because the scale is read as a series of
+relative steps (`12/10 = 1.2` against `10/8 = 1.25`, so 10px is nearer 12 than
+8). One rule, applied to the whole axis, is what keeps the conversion reviewable
+by reading instead of by argument. Snapping is what B4 decided; the app layer
+answered the same question differently (`css-tokens.md` § *Why the fine band
+exists*) because 587 values could not be visually reviewed one by one, and the
+slide axis is small enough that they can.
+
+**A negative offset is on the scale too**, written as
+`margin-top: calc(-1 * var(--slide-space-3))`. The gate skips declarations
+carrying a negative length — tokenising only the positive half of a pull-up /
+gap pair puts the pair out of step — so the negated form is the way to convert
+one anyway, and only when its positive counterpart converts in the same step.
+
+Lengths that are *not* spacing stay out of this axis by definition: `inset`
+(`left`/`bottom` on an absolutely-positioned caption), `width`/`height`, and
+custom properties that feed them (`--marker-size`). A 20px inset and a 20px gap
+are not the same concept even when the number matches.
+
 ## Colour roles
 
 The role list; today's spellings fold into the `--slide-*` family during the

@@ -7,7 +7,7 @@
   font-family: var(--font-heading);
   font-size: calc(var(--slide-font-size-heading) + 6px);
   line-height: var(--slide-leading-tight);
-  margin: 0 0 18px;
+  margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
