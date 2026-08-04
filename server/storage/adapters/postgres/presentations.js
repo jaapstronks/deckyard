@@ -310,15 +310,15 @@ export function withPresentations(Base) {
       // explicit `null` and wiped `settings`, `i18n`, `published` and
       // `description`. One partial `POST /api/v1/presentations/:id/slides`
       // emptied a production deck's whole i18n object that way.
-      // Dual-key (T10 PR 3): the update path stamps the "last writer", so it
-      // fills `updated_by_user_id` from the very same actor it writes to
-      // `updated_by` — the two keys move together or the per-row backfill
-      // verification (brief volgorde-punt 4) becomes impossible. It touches
-      // neither `owner_user_id` nor `created_by_user_id`: the PG update path
-      // never rewrites `owner_email`/`created_by` (ownership transfer's
-      // owner_email persistence is a pre-existing PG gap, tracked as its own
-      // item — brief § PR 3), so faithfully mirroring the email columns means
-      // leaving the id columns for owner and creator alone here too.
+      // Dual-key (T10 PR 3 + transfer-gap fix): the update path stamps the
+      // "last writer", filling `updated_by_user_id` from the very same actor it
+      // writes to `updated_by` — the two keys move together or the per-row
+      // backfill verification (brief volgorde-punt 4) becomes impossible. It
+      // never rewrites `created_by`/`created_by_user_id` (those are create-only),
+      // and on the ordinary editor save it leaves `owner_email`/`owner_user_id`
+      // alone as well. Only the ownership-transfer route opts in via
+      // `allowOwnerChange` (below), and there the paired owner keys move in this
+      // same statement.
       const updatedByEmail = ctx?.actorEmail || data.updatedBy;
       const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
       const updateData = {
@@ -336,6 +336,24 @@ export function withPresentations(Base) {
 
       if (opts?.allowScopeChange && data.scope) {
         updateData.scope = data.scope;
+      }
+
+      // Ownership transfer is the one write that rewrites `owner_email`, and it
+      // is gated exactly like `allowScopeChange`: only the ownership route opts
+      // in via `allowOwnerChange`, so a regular editor save (which never carries
+      // the flag, and whose body may omit `ownerEmail` entirely) can never move
+      // the owner. Because the transfer is the *only* mover of `owner_email` in
+      // Postgres mode, this fixes the pre-existing gap where a transfer silently
+      // dropped the new owner (brief § PR 3). The dual-key invariant holds by
+      // construction: `owner_email` and `owner_user_id` are set from a single
+      // resolution of the same address, so the paired keys can never diverge —
+      // a known owner writes their `users.id`, an external owner writes NULL.
+      if (opts?.allowOwnerChange && data.ownerEmail) {
+        const ownerResolution = await resolveIdentityByEmail(data.ownerEmail);
+        if (ownerResolution) {
+          updateData.owner_email = ownerResolution.value;
+          updateData.owner_user_id = ownerResolution.userId ?? null;
+        }
       }
 
       // Theme is hard-locked on the shared write path; only an explicit,

@@ -22,8 +22,15 @@
  * Behaviour-preservation is pinned elsewhere: the authz matrix and the
  * email-keyed resolution are unchanged by PR 3 and stay green in
  * authz-matrix-pin.test.js and collaborator-authz-resolution.pgtest.js. This
- * file only proves the new columns are filled correctly and that an edit leaves
- * the owner/creator identity alone.
+ * file proves the new columns are filled correctly and that an edit leaves the
+ * owner/creator identity alone.
+ *
+ * The **ownership-transfer** section then pins the one deliberate behaviour
+ * change on top of PR 3 (the transfer-gap fix): a transfer opens the
+ * `allowOwnerChange` gate and moves `owner_email` and `owner_user_id` in one
+ * statement — both columns for a known new owner, email-only (id NULL) for an
+ * external one — while a plain update that merely names an `ownerEmail` still
+ * cannot touch the owner.
  *
  * Runs only against a throwaway database named by DATABASE_URL — see
  * tests/pg/helpers/harness.js and docs/developer/pg-test-suite.md.
@@ -48,6 +55,7 @@ import {
   createPresentation,
   updatePresentation,
 } from '../../server/storage/presentations/index.js';
+import { transferPresentationOwnership } from '../../server/storage/presentations/ownership.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
 const ORG = getDefaultOrganizationId();
@@ -150,5 +158,74 @@ pgDescribe('presentation owner user_id dual-key write (real PostgreSQL)', () => 
     // Owner/creator identity still intact.
     assert.equal(row.owner_user_id, OWNER_ID);
     assert.equal(row.created_by_user_id, OWNER_ID);
+  });
+
+  // --- Ownership transfer: the gated owner write (transfer-gap fix) ---------
+  //
+  // The update path drops `ownerEmail` unless `allowOwnerChange` is set, so a
+  // transfer used to return ok yet persist nothing in Postgres mode. These pin
+  // the fix: `transferPresentationOwnership` opens the gate and the paired owner
+  // keys move in one statement — a known new owner writes both columns, an
+  // external one moves the email and leaves the id NULL — while a plain update
+  // that merely names an `ownerEmail` (no gate) still cannot touch the owner.
+
+  it('transfer to a known member moves owner_email and owner_user_id together, leaving creator intact', async () => {
+    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+
+    const result = await transferPresentationOwnership(
+      null,
+      pres.id,
+      { newOwnerEmail: MEMBER_EMAIL, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
+      scope
+    );
+    assert.equal(result.ok, true);
+
+    const row = await storedRow(pres.id);
+    // Both owner keys followed the new owner, resolved from one address.
+    assert.equal(row.owner_email, MEMBER_EMAIL);
+    assert.equal(row.owner_user_id, MEMBER_ID);
+    // Creator is create-only and untouched by a transfer.
+    assert.equal(row.created_by, OWNER_EMAIL);
+    assert.equal(row.created_by_user_id, OWNER_ID);
+    // The actor performing the transfer is the last writer.
+    assert.equal(row.updated_by, OWNER_EMAIL);
+    assert.equal(row.updated_by_user_id, OWNER_ID);
+  });
+
+  it('transfer to an external email moves owner_email but leaves owner_user_id NULL', async () => {
+    const external = 'newowner@external.test'; // deliberately NOT in `users`
+    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+
+    const result = await transferPresentationOwnership(
+      null,
+      pres.id,
+      { newOwnerEmail: external, previousOwnerEmail: OWNER_EMAIL, actorEmail: OWNER_EMAIL },
+      scope
+    );
+    assert.equal(result.ok, true);
+
+    const row = await storedRow(pres.id);
+    // Email moves; the id column stays NULL — the pinned external/legacy path.
+    assert.equal(row.owner_email, external);
+    assert.equal(row.owner_user_id, null);
+    // Creator untouched.
+    assert.equal(row.created_by_user_id, OWNER_ID);
+  });
+
+  it('a plain update naming ownerEmail (no allowOwnerChange gate) leaves the owner columns untouched', async () => {
+    const pres = await createPresentation(scope, { title: 'Deck', ownerEmail: OWNER_EMAIL });
+
+    // An ordinary editor save that happens to carry ownerEmail must NOT move
+    // the owner — only the gated transfer route may. This pins the gate itself.
+    await updatePresentation(
+      scope,
+      pres.id,
+      { title: 'Edited', ownerEmail: MEMBER_EMAIL },
+      { actorEmail: OWNER_EMAIL }
+    );
+
+    const row = await storedRow(pres.id);
+    assert.equal(row.owner_email, OWNER_EMAIL);
+    assert.equal(row.owner_user_id, OWNER_ID);
   });
 });
