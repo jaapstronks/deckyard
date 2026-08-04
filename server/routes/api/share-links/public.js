@@ -20,10 +20,10 @@ import {
 import { sendGuestVerificationEmail } from '../../../integrations/brevo.js';
 import { notifyAuthorOfAccessAttempt, ACCESS_TYPES } from '../../../services/access-notifications.js';
 import { parseCookies } from '../../../utils/cookies.js';
-import { json, serveJson, badRequest, getErrorStatus, jsonError } from '../../../utils/http.js';
+import { json, serveJson, badRequest, getErrorStatus, jsonError, rateLimited } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { buildRequestUrl, shouldUseSecureCookies } from '../../../utils/request-url.js';
-import { getClientIp } from '../../../utils/rate-limit.js';
+import { getClientIp, allowShareVerifyAttempt } from '../../../utils/rate-limit.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
@@ -111,6 +111,26 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
       body = {};
     }
 
+    const ipAddress = getClientIp(req);
+
+    // Brute-force throttle. Resolve the link first (cheap, no hashing) so the
+    // limit applies only to password-protected links — the only guessing
+    // surface here; a no-password link must stay freely re-openable. Guessing
+    // is capped per IP at 3/hour, the same shape and `rate_limited`/429 as the
+    // guest-verification limit next door (storage/share-links/guests.js).
+    const validation = await validateShareLink(token);
+    if (!validation.ok) {
+      jsonError(res, getErrorStatus(validation.reason), validation.reason);
+      return true;
+    }
+    if (validation.requiresPassword) {
+      const allowed = await allowShareVerifyAttempt({ ip: ipAddress });
+      if (!allowed) {
+        rateLimited(res, 3600, 'Too many attempts. Please try again later.');
+        return true;
+      }
+    }
+
     const result = await verifyShareLinkAccess(token, body?.password);
 
     if (!result.ok) {
@@ -121,7 +141,6 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
     // Log the access. The empty context is the access-log defect (it ignores
     // its ctx entirely — org-scoping brief, defecten-PR); it gets a real
     // treatment there, not a guessed organization here.
-    const ipAddress = getClientIp(req);
     const userAgent = req.headers['user-agent'];
     await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent }, {});
 

@@ -239,3 +239,26 @@ export async function allowLoginAttempt({ ip, email } = {}) {
   const emailOk = await allowRequest(emailKey, LOGIN_LIMITS.email);
   return emailOk;
 }
+
+/**
+ * Token-bucket limit for the anonymous share-link password gate
+ * (`POST /api/share/:token/verify`). Mirrors the guest-verification limit next
+ * door in `storage/share-links/guests.js` (3 requests per actor per hour): an
+ * anonymous caller carries no session, so the only actor signal is the IP.
+ * Caps password guesses at 3/hour per IP — a brute-force throttle for a secret
+ * that sits behind an anonymously reachable endpoint.
+ */
+export const SHARE_VERIFY_LIMITS = {
+  ip: { capacity: 3, refillPerSec: 3 / 3600 }, // burst 3, then ~3/hour
+};
+
+/**
+ * Throttle an anonymous share-link password-verification attempt. Consumes one
+ * token per attempt from a per-IP bucket.
+ * @param {{ip?: string}} p
+ * @returns {Promise<boolean>} false when the attempt should be blocked (429)
+ */
+export async function allowShareVerifyAttempt({ ip } = {}) {
+  const ipKey = `share-verify:ip:${String(ip || 'unknown')}`;
+  return allowRequest(ipKey, SHARE_VERIFY_LIMITS.ip);
+}

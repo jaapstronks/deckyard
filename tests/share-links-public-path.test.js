@@ -53,6 +53,7 @@ const { initializeStorage, __resetStorageForTests } = await import(
   '../server/storage/adapters/index.js'
 );
 const { hashPassword } = await import('../server/utils/password-hash.js');
+const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { handleSharePublic } = await import('../server/routes/api/share-links/index.js');
 
 const HOST = 'decks.example.test';
@@ -142,6 +143,10 @@ const past = () => new Date(Date.now() - HOUR).toISOString();
  * @returns {ReturnType<typeof createFakeDb>}
  */
 function seed() {
+  // The verify throttle keys an in-memory token bucket per IP; every test
+  // drives the same client IP, so clear the buckets or one test's guesses
+  // would spill into the next.
+  resetRateLimitBuckets();
   db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     presentations: DECKS.map(deckRow),
@@ -421,6 +426,55 @@ test('a revoked or expired token cannot be verified into access', async () => {
     assert.equal(res.body.presentationId, undefined);
   }
   assert.deepEqual(accessLog(), [], 'a dead link writes no access log');
+});
+
+// ---------------------------------------------------------------------------
+// The password gate is rate-limited (B42(b)): an anonymous endpoint that
+// checks a secret is a guessing port, so guesses are capped per IP — the same
+// 3/hour and `rate_limited`/429 the guest-verification path uses next door.
+// ---------------------------------------------------------------------------
+
+test('password guessing is throttled to three tries per IP, then 429', async () => {
+  seed();
+
+  // Three wrong guesses are each answered on their own merits...
+  for (const attempt of [1, 2, 3]) {
+    const res = await call('POST', '/api/share/tok-password/verify', {
+      body: { password: 'not it' },
+    });
+    assert.equal(res.status, 401, `guess ${attempt} is judged, not throttled`);
+    assert.equal(res.body.error, 'invalid_password');
+  }
+
+  // ...the fourth is refused before the password is ever checked.
+  const blocked = await call('POST', '/api/share/tok-password/verify', {
+    body: { password: 'not it' },
+  });
+  assert.equal(blocked.status, 429);
+  assert.equal(blocked.body.error, 'rate_limited', 'the same code the guest path returns');
+  assert.equal(blocked.headers['Retry-After'], '3600');
+
+  // Even the *right* password is refused while the bucket is empty: the gate
+  // is shut, not the password wrong.
+  const correctButBlocked = await call('POST', '/api/share/tok-password/verify', {
+    body: { password: PASSWORD },
+  });
+  assert.equal(correctButBlocked.status, 429);
+  assert.equal(link('tok-password').use_count, 0, 'a throttled attempt is never a use');
+  assert.deepEqual(accessLog(), [], 'and it is never logged as access');
+});
+
+test('the throttle is scoped to the guessing surface: a no-password link is not capped', async () => {
+  seed();
+
+  // Far more than three opens of a link that guards nothing — all allowed,
+  // because there is no secret to guess and the anonymous happy path must
+  // stay open.
+  for (const open of [1, 2, 3, 4, 5]) {
+    const res = await call('POST', '/api/share/tok-view/verify', { body: {} });
+    assert.equal(res.status, 200, `open ${open} is not throttled`);
+    assert.equal(link('tok-view').use_count, open, 'each open is a real, counted use');
+  }
 });
 
 // ---------------------------------------------------------------------------
