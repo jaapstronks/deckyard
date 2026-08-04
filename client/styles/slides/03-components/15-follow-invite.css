@@ -7,7 +7,7 @@
   height: 100%;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 18px;
+  gap: var(--slide-space-5);
 }
 
 .slide-follow-invite .sfi-title {
@@ -20,7 +20,7 @@
 }
 
 .slide-follow-invite .sfi-body {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
   max-width: 70ch;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-compact);
@@ -57,7 +57,7 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  padding: 10px;
+  padding: var(--slide-space-3);
 }
 
 .slide-follow-invite .sfi-qr {
@@ -69,7 +69,7 @@
 .slide-follow-invite .sfi-code-row {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 18px;
+  gap: var(--slide-space-5);
   align-items: baseline;
   padding: var(--slide-space-2) 0;
 }

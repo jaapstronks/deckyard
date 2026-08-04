@@ -258,7 +258,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--slide-space-3);
-  padding: 18px;
+  padding: var(--slide-space-5);
   text-align: center;
 }
 
@@ -285,7 +285,7 @@
 
 .slide-gallery .image-placeholder-inner {
   gap: var(--slide-space-2);
-  padding: 10px;
+  padding: var(--slide-space-3);
 }
 
 /* Small slots — round portraits, logo cells — carry no label

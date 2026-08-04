@@ -349,7 +349,7 @@
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .slide-timeline .timeline-container {
-    gap: 10px; /* TODO: between --slide-space-2 (8px) and --slide-space-3 (12px) */
+    gap: var(--slide-space-3);
     --marker-size: 18px;
     --connector-height: 48px;
     padding: var(--slide-space-5) var(--slide-space-6);

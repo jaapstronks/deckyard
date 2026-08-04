@@ -59,7 +59,7 @@
   background: var(--slide-bg-lime, #e2fe52);
   /* Trapezoid shape using clip-path */
   clip-path: polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%);
-  padding: 10px 32px;
+  padding: var(--slide-space-3) var(--slide-space-8);
   transition: width 0.3s ease;
 }
 
@@ -113,7 +113,7 @@
 
 /* 3 levels: larger elements */
 .slide-pyramid .pyramid-container[data-count='3'] {
-  gap: 10px;
+  gap: var(--slide-space-3);
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-bar {
