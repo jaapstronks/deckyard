@@ -30,7 +30,9 @@
  *      and anything else throws rather than being silently ignored or stored as
  *      a builder object. An ORDER BY the double quietly dropped would make an
  *      ordering test pass on insertion order, which is the failure mode that
- *      matters most here.
+ *      matters most here. The callback form of `.set()` (`(eb) => ({ use_count:
+ *      eb('use_count', '+', 1) })`, the share-link use counter) is resolved for
+ *      the same reason.
  */
 
 import crypto from 'node:crypto';
@@ -145,8 +147,48 @@ function evaluateRawExpression(value, row, column) {
 }
 
 /**
+ * Is this an expression-builder node rather than a plain value?
+ *
+ * `.set((eb) => ({ use_count: eb('use_count', '+', 1) }))` hands the SET clause
+ * the same node shape `where()` callbacks produce, so only the operator tells a
+ * comparison from arithmetic.
+ *
+ * @param {*} value - Value from a SET/VALUES object
+ * @returns {boolean}
+ */
+function isBuilderNode(value) {
+  return !!value && typeof value === 'object' && value.kind === 'cmp';
+}
+
+/**
+ * Evaluate an expression-builder node used as a written value.
+ *
+ * Only `<column> + <number>` and `<column> - <number>` are understood — the
+ * shape `verifyShareLinkAccess` writes for the share-link use counter. Anything
+ * else throws for the same reason {@link evaluateRawExpression} does: a
+ * counter the double silently left alone would make a "the link is spent now"
+ * assertion pass without the counter ever moving.
+ *
+ * @param {Object} node - Expression-builder node
+ * @param {Object} row - Row being updated
+ * @param {string} column - Column being written
+ * @returns {number}
+ */
+function evaluateBuilderArithmetic(node, row, column) {
+  if (node.op !== '+' && node.op !== '-') {
+    throw new Error(
+      `fake-db: unsupported expression-builder operator "${node.op}" for "${column}"`
+    );
+  }
+  const base = Number(readColumn(row, node.column)) || 0;
+  const amount = Number(node.value);
+  return node.op === '+' ? base + amount : base - amount;
+}
+
+/**
  * Drop `undefined` values the way Kysely does when it compiles a SET or VALUES
- * clause, and resolve any `sql` template against the row being written.
+ * clause, and resolve any `sql` template or expression-builder node against the
+ * row being written.
  *
  * @param {Object} input - SET/VALUES object as the storage layer wrote it
  * @param {Object} [row] - Row being updated, for raw expressions
@@ -156,9 +198,13 @@ function resolveWriteValues(input, row = {}) {
   const out = {};
   for (const [column, value] of Object.entries(input || {})) {
     if (value === undefined) continue;
-    out[column] = isRawExpression(value)
-      ? evaluateRawExpression(value, row, column)
-      : value;
+    if (isRawExpression(value)) {
+      out[column] = evaluateRawExpression(value, row, column);
+    } else if (isBuilderNode(value)) {
+      out[column] = evaluateBuilderArithmetic(value, row, column);
+    } else {
+      out[column] = value;
+    }
   }
   return out;
 }
@@ -639,8 +685,12 @@ export function createFakeDb(seed = {}) {
       let returning = false;
 
       const builder = {
+        // `.set()` also takes the callback form (`(eb) => ({ … })`) that the
+        // share-link use counter uses. Resolving it here rather than treating
+        // the function as a value is what keeps the increment from silently
+        // compiling to an empty SET clause.
         set(input) {
-          updates = input;
+          updates = typeof input === 'function' ? input(makeExpressionBuilder()) : input;
           return builder;
         },
         where(columnOrCallback, op, value) {
