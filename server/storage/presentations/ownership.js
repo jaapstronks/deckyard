@@ -55,6 +55,10 @@ export async function transferPresentationOwnership(
     updated = await updatePresentation(scope, presentationId, updates, {
       actorEmail,
       reason: 'ownership_transfer',
+      // Open the owner-write gate: the adapter otherwise drops `ownerEmail` on
+      // an update (mirroring allowScopeChange). Without this the transfer
+      // returned ok but persisted nothing — the bug this fixes.
+      allowOwnerChange: true,
     });
   } catch (err) {
     log.error('[ownership] Failed to update presentation:', err);
