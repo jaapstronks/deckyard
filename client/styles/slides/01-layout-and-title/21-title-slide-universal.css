@@ -11,9 +11,9 @@
   position: relative;
   overflow: hidden;
   /* Layout knobs (scoped to this slide only) */
-  --tsu-pad-left: 96px;
-  --tsu-pad-right: 96px;
-  --tsu-pad-bottom: 80px;
+  --tsu-pad-left: var(--slide-space-24);
+  --tsu-pad-right: var(--slide-space-24);
+  --tsu-pad-bottom: var(--slide-space-20);
 }
 
 .slide-title-universal .slide-inner {
@@ -262,8 +262,8 @@
    move the title block. It used to also set `--tsu-pad-left: 72px` here — dragged
    in by name similarity with the alignment rules — which shifted the whole
    content block 24px left, because `--tsu-pad-left` feeds both `.tsu-content`'s
-   width cap and its `margin-inline`. The gutter now stays at the 96px default
-   regardless of logo corner. */
+   width cap and its `margin-inline`. The gutter now stays at its
+   `--slide-space-24` default regardless of logo corner. */
 
 /* Background-image variant: switch to light text for contrast */
 .slide-title-universal.has-bg .title {

@@ -80,13 +80,15 @@
   min-height: 0;
   display: flex;
   align-items: stretch;
-  gap: var(--timeline-gap, 14px);
+  gap: var(--timeline-gap);
   position: relative;
   padding: var(--slide-space-6) var(--slide-space-8);
   /* Geometry. --card-w is the *minimum* (preferred) card width;
      --card-max-w is the cap when content (long titles) needs more room.
      Cards size to max-content between these bounds so long single words
      get extra width before the JS auto-shrink kicks in. */
+  /* Base gap for counts the per-count blocks below do not cover (1, and 9+). */
+  --timeline-gap: var(--slide-space-4);
   --marker-size: 20px;
   --connector-height: 60px;
   --card-w: clamp(200px, 18vw, 320px);
@@ -104,7 +106,7 @@
   --card-spill: 140px;
   --top-x: clamp(24px, 3vw, 90px);
   --bottom-x: clamp(-90px, -3vw, -24px);
-  --timeline-gap: 18px;
+  --timeline-gap: var(--slide-space-5);
 }
 
 .slide-timeline .timeline-container[data-count='4'] {
@@ -113,7 +115,7 @@
   --card-spill: 120px;
   --top-x: clamp(18px, 2.4vw, 70px);
   --bottom-x: clamp(-70px, -2.4vw, -18px);
-  --timeline-gap: 14px;
+  /* No --timeline-gap override: this tier's 14px snapped onto the base step. */
 }
 
 .slide-timeline .timeline-container[data-count='5'],
@@ -123,7 +125,7 @@
   --card-spill: 100px;
   --top-x: clamp(14px, 1.8vw, 50px);
   --bottom-x: clamp(-50px, -1.8vw, -14px);
-  --timeline-gap: 10px;
+  --timeline-gap: var(--slide-space-3);
 }
 
 .slide-timeline .timeline-container[data-count='7'],
@@ -133,7 +135,7 @@
   --card-spill: 80px;
   --top-x: clamp(10px, 1.2vw, 34px);
   --bottom-x: clamp(-34px, -1.2vw, -10px);
-  --timeline-gap: 8px;
+  --timeline-gap: var(--slide-space-2);
 }
 
 /* Horizontal track line */

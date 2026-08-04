@@ -68,6 +68,12 @@
   --slide-space-10: 40px;    /* Extra large gaps */
   --slide-space-12: 48px;    /* Section separators */
   --slide-space-16: 64px;    /* Slide padding */
+  /* Slide-frame steps: wider than the slide padding, for the few places that
+     have to read as a frame rather than a gap — a title slide's gutter, the
+     gap between two card groups. Same ratio band as the steps below them
+     (64→80 is 1.25, 80→96 is 1.2). */
+  --slide-space-20: 80px;
+  --slide-space-24: 96px;
 
   /* Semantic spacing aliases */
   --slide-padding: var(--slide-space-16);
