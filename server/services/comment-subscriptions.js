@@ -152,7 +152,7 @@ export async function resolveCommentRecipients({
   // check below filters them straight out again.
   let collaborators = [];
   try {
-    collaborators = (await listCollaborators(presentation?.id, ctx))
+    collaborators = (await listCollaborators(presentation?.id))
       .map((c) => c?.userEmail)
       .filter(Boolean);
   } catch {

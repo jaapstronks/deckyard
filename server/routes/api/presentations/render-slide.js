@@ -42,8 +42,7 @@ export async function handleRenderSlide(
   // Authorization check
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
-    authedUser?.email,
-    ctx
+    authedUser?.email
   );
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
     return unauthorized(res);

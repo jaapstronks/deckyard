@@ -37,15 +37,13 @@ import { canActorAccessPresentation } from '../../server/utils/presentation-auth
 import { resolveIdentityByEmail } from '../../server/storage/identity-resolver.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
-// The seeded org must be the instance DEFAULT: canActorAccessPresentation
-// resolves the collaborator lookup with an empty ctx, which getOrgId() maps to
-// the default organization regardless of pres.organizationId — the documented
-// machine-client tenant caveat (see actor-access.js and
-// docs/reference/tenant-isolation.md). Seeding under any other org id would
-// make the composed checks miss the collaborator rows this file pins.
+// The seeded org is the instance DEFAULT so the composed machine-client checks
+// (canActorAccessPresentation) see the same workspace the deck is in. The
+// collaborator lookups themselves no longer take an organization at all — a
+// row is scoped by its deck, and `(presentation_id, user_email)` is the whole
+// key (see the header of server/storage/collaborators.js).
 const ORG = getDefaultOrganizationId();
 const PID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-const CTX = { organizationId: ORG };
 
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_ID = '11111111-1111-1111-1111-111111111111';
@@ -90,49 +88,89 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
       // A distinct email per case keeps the in-memory permission cache from
       // colliding across tests; addCollaborator invalidates its own key.
       const email = `collab-${permission}@example.com`;
-      const added = await addCollaborator(PID, { userEmail: email, permission }, CTX);
+      const added = await addCollaborator(PID, { userEmail: email, permission });
       assert.equal(added.ok, true);
 
-      assert.equal(await getCollaboratorPermission(PID, email, CTX), permission);
+      assert.equal(await getCollaboratorPermission(PID, email), permission);
     });
   }
 
   it('returns null for someone who is not a collaborator', async () => {
-    assert.equal(await getCollaboratorPermission(PID, 'stranger@example.com', CTX), null);
+    assert.equal(await getCollaboratorPermission(PID, 'stranger@example.com'), null);
   });
 
   it('returns null once a collaborator is revoked', async () => {
     const email = 'revoked@example.com';
-    await addCollaborator(PID, { userEmail: email, permission: 'edit' }, CTX);
-    assert.equal(await getCollaboratorPermission(PID, email, CTX), 'edit');
+    await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+    assert.equal(await getCollaboratorPermission(PID, email), 'edit');
 
-    const removed = await removeCollaborator(PID, email, OWNER_EMAIL, {}, CTX);
+    const removed = await removeCollaborator(PID, email, OWNER_EMAIL, {});
     assert.equal(removed.ok, true);
-    assert.equal(await getCollaboratorPermission(PID, email, CTX), null);
+    assert.equal(await getCollaboratorPermission(PID, email), null);
   });
 
   it('reflects a permission update', async () => {
     const email = 'promoted@example.com';
-    await addCollaborator(PID, { userEmail: email, permission: 'view' }, CTX);
-    await updateCollaboratorPermission(PID, email, 'admin', CTX);
-    assert.equal(await getCollaboratorPermission(PID, email, CTX), 'admin');
+    await addCollaborator(PID, { userEmail: email, permission: 'view' });
+    await updateCollaboratorPermission(PID, email, 'admin');
+    assert.equal(await getCollaboratorPermission(PID, email), 'admin');
   });
 
-  it('does not resolve a collaborator from a different organization', async () => {
+  it("stamps a new row with the deck's organization", async () => {
+    // The write path used to stamp the *inviter's* session organization, which
+    // could differ from the deck's and produced a grant that then resolved to
+    // nothing. There is no session to stamp from any more: the organization is
+    // read off the presentation, so the column and the deck cannot disagree.
     const otherOrg = '00000000-0000-0000-0000-0000000000bb';
     await db.insertInto('organizations').values({ id: otherOrg, name: 'Other', slug: 'other' }).execute();
-    const email = 'cross-org@example.com';
-    await addCollaborator(PID, { userEmail: email, permission: 'edit' }, { organizationId: otherOrg });
+    const email = 'stamped@example.com';
+    await addCollaborator(PID, { userEmail: email, permission: 'edit' });
 
-    // Read from the presentation's own org: the cross-org row must not surface.
-    assert.equal(await getCollaboratorPermission(PID, email, CTX), null);
+    const row = await db
+      .selectFrom('presentation_collaborators')
+      .select('organization_id')
+      .where('presentation_id', '=', PID)
+      .where('user_email', '=', email)
+      .executeTakeFirstOrThrow();
+
+    assert.equal(row.organization_id, ORG);
+    assert.notEqual(row.organization_id, otherOrg);
+  });
+
+  it('resolves a row that carries a foreign organization stamp', async () => {
+    // Exactly what the old write path left behind. The stamp is a denormalized
+    // copy of the deck's organization, not part of the lookup, so such a row
+    // grants what it says it grants instead of being silently inert.
+    const otherOrg = '00000000-0000-0000-0000-0000000000cc';
+    await db.insertInto('organizations').values({ id: otherOrg, name: 'Third', slug: 'third' }).execute();
+    const email = 'legacy-stamp@example.com';
+    await db
+      .insertInto('presentation_collaborators')
+      .values({
+        presentation_id: PID,
+        organization_id: otherOrg,
+        user_email: email,
+        permission: 'edit',
+        invited_by: OWNER_EMAIL,
+      })
+      .execute();
+
+    assert.equal(await getCollaboratorPermission(PID, email), 'edit');
+  });
+
+  it('refuses to invite onto a deck that does not exist', async () => {
+    const result = await addCollaborator('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', {
+      userEmail: 'nowhere@example.com',
+      permission: 'view',
+    });
+    assert.deepEqual(result, { ok: false, reason: 'not_found' });
   });
 
   // --- Composed decision: resolution feeding the actor-access check --------
 
   it('an edit collaborator can read and write through canActorAccessPresentation', async () => {
     const email = 'editor@example.com';
-    await addCollaborator(PID, { userEmail: email, permission: 'edit' }, CTX);
+    await addCollaborator(PID, { userEmail: email, permission: 'edit' });
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await canActorAccessPresentation(pres, email, 'read'), true);
@@ -141,7 +179,7 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
 
   it('a view collaborator can read but not write', async () => {
     const email = 'viewer@example.com';
-    await addCollaborator(PID, { userEmail: email, permission: 'view' }, CTX);
+    await addCollaborator(PID, { userEmail: email, permission: 'view' });
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
     assert.equal(await canActorAccessPresentation(pres, email, 'read'), true);
@@ -152,10 +190,10 @@ pgDescribe('collaborator authz resolution + identity resolver (real PostgreSQL)'
 
   it('an external collaborator (no user row) still resolves a permission and gets access', async () => {
     const email = 'external-partner@agency.test'; // deliberately NOT in `users`
-    await addCollaborator(PID, { userEmail: email, permission: 'edit' }, CTX);
+    await addCollaborator(PID, { userEmail: email, permission: 'edit' });
     const pres = { id: PID, scope: 'private', ownerEmail: OWNER_EMAIL, organizationId: ORG };
 
-    assert.equal(await getCollaboratorPermission(PID, email, CTX), 'edit');
+    assert.equal(await getCollaboratorPermission(PID, email), 'edit');
     assert.equal(await canActorAccessPresentation(pres, email, 'write'), true);
 
     // …and the resolver names them external rather than failing — this is the

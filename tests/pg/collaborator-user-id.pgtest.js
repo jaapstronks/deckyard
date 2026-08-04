@@ -32,12 +32,11 @@ import { closeTestDb, openTestDb, pgDescribe, truncate } from './helpers/harness
 import { addCollaborator, removeCollaborator } from '../../server/storage/collaborators.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
 
-// Seed under the instance default org, for the same reason the sibling pin
-// does: getOrgId({}) falls to the default organization (see that file and
-// docs/reference/tenant-isolation.md).
+// The seeded org owns the deck, and that is now the only organization in play:
+// the collaborator functions read it off the presentation rather than taking it
+// from a caller (see the header of server/storage/collaborators.js).
 const ORG = getDefaultOrganizationId();
 const PID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-const CTX = { organizationId: ORG };
 
 const OWNER_EMAIL = 'owner@example.com';
 const OWNER_ID = '11111111-1111-1111-1111-111111111111';
@@ -93,26 +92,26 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
   }
 
   it("writes the known user's stable users.id", async () => {
-    const added = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'edit' }, CTX);
+    const added = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'edit' });
     assert.equal(added.ok, true);
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
   });
 
   it('writes NULL for an external collaborator (no users row)', async () => {
     const email = 'external-partner@agency.test'; // deliberately NOT in `users`
-    const added = await addCollaborator(PID, { userEmail: email, permission: 'edit' }, CTX);
+    const added = await addCollaborator(PID, { userEmail: email, permission: 'edit' });
     assert.equal(added.ok, true);
     assert.equal(await storedUserId(email), null);
   });
 
   it('restores the correct user_id on revoke → re-add (reactivate)', async () => {
-    await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'view' }, CTX);
+    await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'view' });
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
 
-    const removed = await removeCollaborator(PID, MEMBER_EMAIL, OWNER_EMAIL, {}, CTX);
+    const removed = await removeCollaborator(PID, MEMBER_EMAIL, OWNER_EMAIL, {});
     assert.equal(removed.ok, true);
 
-    const readded = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'admin' }, CTX);
+    const readded = await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'admin' });
     assert.equal(readded.ok, true);
     assert.equal(readded.reactivated, true);
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
@@ -122,10 +121,10 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
     const email = 'late-signup@example.com';
 
     // First invited as an external collaborator: no users row yet → NULL.
-    await addCollaborator(PID, { userEmail: email, permission: 'view' }, CTX);
+    await addCollaborator(PID, { userEmail: email, permission: 'view' });
     assert.equal(await storedUserId(email), null);
 
-    await removeCollaborator(PID, email, OWNER_EMAIL, {}, CTX);
+    await removeCollaborator(PID, email, OWNER_EMAIL, {});
 
     // They sign up — a users row now exists for that email.
     const lateId = '33333333-3333-3333-3333-333333333333';
@@ -135,7 +134,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
       .execute();
 
     // Re-adding resolves the freshly-created id instead of staying NULL.
-    const readded = await addCollaborator(PID, { userEmail: email, permission: 'edit' }, CTX);
+    const readded = await addCollaborator(PID, { userEmail: email, permission: 'edit' });
     assert.equal(readded.reactivated, true);
     assert.equal(await storedUserId(email), lateId);
   });

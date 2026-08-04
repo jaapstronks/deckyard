@@ -84,8 +84,7 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
 
   const collaboratorPermission = await getCollaboratorPermission(
     presentationId,
-    user.email,
-    { organizationId: pres.organizationId }
+    user.email
   );
   if (!canReadPresentation({ user, pres, collaboratorPermission }))
     throw httpError('Forbidden', 403);

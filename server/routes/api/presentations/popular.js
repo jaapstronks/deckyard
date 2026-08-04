@@ -158,7 +158,7 @@ async function filterReadableRows(rows, ctx) {
       continue;
     }
     try {
-      collaboratorPermission = await getCollaboratorPermission(row.id, user?.email, ctx);
+      collaboratorPermission = await getCollaboratorPermission(row.id, user?.email);
     } catch {
       collaboratorPermission = null;
     }

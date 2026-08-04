@@ -27,10 +27,13 @@ const log = createLogger('guests');
 
 /**
  * Helper to fetch collaborator permission for ACL checks.
+ *
+ * Takes no context: a collaborator row is scoped by its deck, not by the
+ * session (see the header of server/storage/collaborators.js).
  */
-async function getCollabPermission(pres, authedUser, ctx) {
+async function getCollabPermission(pres, authedUser) {
   if (!authedUser?.email || !pres?.id) return null;
-  return getCollaboratorPermission(pres.id, authedUser.email, ctx);
+  return getCollaboratorPermission(pres.id, authedUser.email);
 }
 
 /**
@@ -50,7 +53,7 @@ export async function handleGuestManagement({ repoRoot, storageScope, req, res, 
     const linkId = guestsMatch[2];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
+    const collaboratorPermission = await getCollabPermission(pres, authedUser);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -122,7 +125,7 @@ export async function handleGuestManagement({ repoRoot, storageScope, req, res, 
     const linkId = guestsMatch[2];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
+    const collaboratorPermission = await getCollabPermission(pres, authedUser);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -143,7 +146,7 @@ export async function handleGuestManagement({ repoRoot, storageScope, req, res, 
     const guestId = guestMatch[3];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
+    const collaboratorPermission = await getCollabPermission(pres, authedUser);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -169,7 +172,7 @@ export async function handleGuestManagement({ repoRoot, storageScope, req, res, 
     const guestId = resendMatch[3];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollabPermission(pres, authedUser, ctx);
+    const collaboratorPermission = await getCollabPermission(pres, authedUser);
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }

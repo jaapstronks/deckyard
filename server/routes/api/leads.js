@@ -8,7 +8,6 @@ import { getTrimmedString } from '../../utils/request-validators.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
-import { createRouteContext } from '../../utils/context.js';
 import { canWritePresentation, canReadPresentation } from '../../utils/presentation-authz.js';
 import { getAppSettings } from '../../storage/settings.js';
 import {
@@ -222,10 +221,9 @@ async function handleGetLeads(ctx, presentationId) {
   }
 
   // Check read permission
-  const routeCtx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, routeCtx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -261,10 +259,9 @@ async function handleGetLeadCount(ctx, presentationId) {
   }
 
   // Check read permission
-  const routeCtx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, routeCtx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -286,10 +283,9 @@ async function handleExportLeads(ctx, presentationId) {
   }
 
   // Check write permission for export (more sensitive than read)
-  const routeCtx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, routeCtx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -323,10 +319,9 @@ async function handleDeleteLead(ctx, leadId) {
   }
 
   // Check write permission
-  const routeCtx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, routeCtx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {

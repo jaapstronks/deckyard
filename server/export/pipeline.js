@@ -59,9 +59,7 @@ export async function prepareExportContext({
   }
 
   const collaboratorPermission = authedUser?.email
-    ? await getCollaboratorPermission(presentationId, authedUser.email, {
-        organizationId: pres.organizationId,
-      })
+    ? await getCollaboratorPermission(presentationId, authedUser.email)
     : null;
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -266,9 +264,7 @@ export function createAsyncExportRoute(config) {
         return notFound(res);
       }
       const collaboratorPermission = authedUser?.email
-        ? await getCollaboratorPermission(presentationId, authedUser.email, {
-        organizationId: pres.organizationId,
-      })
+        ? await getCollaboratorPermission(presentationId, authedUser.email)
         : null;
       if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
         return unauthorized(res);
