@@ -5,51 +5,51 @@
  * - Data export (right to access)
  * - Data deletion (right to erasure)
  * - Data anonymization (retention policy)
+ *
+ * **The data subject is the scope; the organization plays no part.** These
+ * functions act on one email address across the whole instance. A person is
+ * one person on this deployment — `user_settings` already keys on their email
+ * rather than on a workspace (tenant-isolation.md rule R3) — and the operator
+ * of the instance is the single controller answering the request, so an
+ * erasure that stopped at a workspace boundary would silently under-delete and
+ * still report success. That is exactly what the earlier organization filter
+ * did (#627): it matched `view_sessions.organization_id`, a column the viewer's
+ * own browser filled in, against the authenticated caller's organization. The
+ * column is gone (migration 065) and the filter with it.
+ *
+ * **Identifying by device id is deliberately not offered.** The storage could
+ * match on `device_id`, but no caller may supply one: the full 32-hex device id
+ * of every session is returned to anyone with read access to the presentation
+ * (`GET /api/presentations/:id/analytics/sessions`), so it is not a secret and
+ * cannot authorize anything. Accepting it would let a deck owner export — or
+ * erase — the cross-deck viewing history of one of their viewers. A viewer
+ * tracked only by device therefore has no self-service route here; giving them
+ * one needs a proof-of-possession mechanism this endpoint does not have.
  */
 
 import { withDbGuard } from '../utils/db-guard.js';
 
 /**
- * Export all analytics data for a user (GDPR data export).
- * Finds data by email address or device ID, scoped to organization.
+ * Export all analytics data for one person (GDPR right of access).
+ * Matches on email address across the whole instance; see the module header.
  * @param {Object} identifier - User identifier
- * @param {string} [identifier.email] - User's email address
- * @param {string} [identifier.deviceId] - User's device ID
- * @param {string} [identifier.organizationId] - Organization ID to scope the query (recommended for multi-tenant)
+ * @param {string} identifier.email - The data subject's email address
  * @returns {Promise<{ok: boolean, data?: Object, reason?: string}>}
  */
-export async function exportUserAnalyticsData({ email, deviceId, organizationId }) {
+export async function exportUserAnalyticsData({ email }) {
   const normalizedEmail = email?.toLowerCase()?.trim();
-  const normalizedDeviceId = deviceId?.trim();
-  const normalizedOrgId = organizationId?.trim() || null;
 
-  if (!normalizedEmail && !normalizedDeviceId) {
+  if (!normalizedEmail) {
     return { ok: false, reason: 'No identifier provided' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    // Build query to find sessions by email or device ID
-    let sessionsQuery = db.selectFrom('view_sessions').selectAll();
-
-    // Scope to organization if provided (recommended for multi-tenant security)
-    if (normalizedOrgId) {
-      sessionsQuery = sessionsQuery.where('organization_id', '=', normalizedOrgId);
-    }
-
-    if (normalizedEmail && normalizedDeviceId) {
-      sessionsQuery = sessionsQuery.where((eb) =>
-        eb.or([
-          eb('viewer_email', '=', normalizedEmail),
-          eb('device_id', '=', normalizedDeviceId),
-        ])
-      );
-    } else if (normalizedEmail) {
-      sessionsQuery = sessionsQuery.where('viewer_email', '=', normalizedEmail);
-    } else {
-      sessionsQuery = sessionsQuery.where('device_id', '=', normalizedDeviceId);
-    }
-
-    const sessions = await sessionsQuery.orderBy('started_at', 'desc').execute();
+    const sessions = await db
+      .selectFrom('view_sessions')
+      .selectAll()
+      .where('viewer_email', '=', normalizedEmail)
+      .orderBy('started_at', 'desc')
+      .execute();
 
     if (sessions.length === 0) {
       return { ok: true, data: { sessions: [], slideViews: [] } };
@@ -96,7 +96,7 @@ export async function exportUserAnalyticsData({ email, deviceId, organizationId 
       ok: true,
       data: {
         exportedAt: new Date().toISOString(),
-        identifier: { email: normalizedEmail, deviceId: normalizedDeviceId },
+        identifier: { email: normalizedEmail },
         sessions: exportedSessions,
         slideViews: exportedSlideViews,
         totalSessions: exportedSessions.length,
@@ -107,47 +107,26 @@ export async function exportUserAnalyticsData({ email, deviceId, organizationId 
 }
 
 /**
- * Delete all analytics data for a user (GDPR right to erasure).
- * Deletes by email address or device ID, scoped to organization.
+ * Delete all analytics data for one person (GDPR right to erasure).
+ * Matches on email address across the whole instance; see the module header.
  * @param {Object} identifier - User identifier
- * @param {string} [identifier.email] - User's email address
- * @param {string} [identifier.deviceId] - User's device ID
- * @param {string} [identifier.organizationId] - Organization ID to scope the deletion (recommended for multi-tenant)
+ * @param {string} identifier.email - The data subject's email address
  * @returns {Promise<{ok: boolean, deleted?: {sessions: number, slideViews: number}, reason?: string}>}
  */
-export async function deleteUserAnalyticsData({ email, deviceId, organizationId }) {
+export async function deleteUserAnalyticsData({ email }) {
   const normalizedEmail = email?.toLowerCase()?.trim();
-  const normalizedDeviceId = deviceId?.trim();
-  const normalizedOrgId = organizationId?.trim() || null;
 
-  if (!normalizedEmail && !normalizedDeviceId) {
+  if (!normalizedEmail) {
     return { ok: false, reason: 'No identifier provided' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     return db.transaction().execute(async (trx) => {
-      // Find sessions to delete
-      let findQuery = trx.selectFrom('view_sessions').select('id');
-
-      // Scope to organization if provided (recommended for multi-tenant security)
-      if (normalizedOrgId) {
-        findQuery = findQuery.where('organization_id', '=', normalizedOrgId);
-      }
-
-      if (normalizedEmail && normalizedDeviceId) {
-        findQuery = findQuery.where((eb) =>
-          eb.or([
-            eb('viewer_email', '=', normalizedEmail),
-            eb('device_id', '=', normalizedDeviceId),
-          ])
-        );
-      } else if (normalizedEmail) {
-        findQuery = findQuery.where('viewer_email', '=', normalizedEmail);
-      } else {
-        findQuery = findQuery.where('device_id', '=', normalizedDeviceId);
-      }
-
-      const sessions = await findQuery.execute();
+      const sessions = await trx
+        .selectFrom('view_sessions')
+        .select('id')
+        .where('viewer_email', '=', normalizedEmail)
+        .execute();
       const sessionIds = sessions.map((s) => s.id);
 
       let deletedSlideViews = 0;

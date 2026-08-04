@@ -138,11 +138,10 @@ export async function handleSharePublicEndpoints({ repoRoot, req, res, url }) {
       return true;
     }
 
-    // Log the access. The empty context is the access-log defect (it ignores
-    // its ctx entirely — org-scoping brief, defecten-PR); it gets a real
-    // treatment there, not a guessed organization here.
+    // Log the access against the link the token just resolved to. The link id
+    // is the scope — the access log takes no context (see access-log.js).
     const userAgent = req.headers['user-agent'];
-    await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent }, {});
+    await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent });
 
     serveJson(res, 200, {
       presentationId: result.shareLink.presentationId,

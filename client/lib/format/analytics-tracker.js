@@ -58,7 +58,6 @@ function getDeviceId() {
  * @param {string} [options.sourceId] - Share link token or session ID
  * @param {string} [options.viewerEmail] - Viewer's email if authenticated
  * @param {string} [options.viewerType] - 'guest' | 'authenticated' | 'anonymous'
- * @param {string} [options.organizationId] - Organization ID
  * @returns {Object} Tracker API
  */
 export function createAnalyticsTracker({
@@ -67,7 +66,6 @@ export function createAnalyticsTracker({
   sourceId = null,
   viewerEmail = null,
   viewerType = 'anonymous',
-  organizationId = null,
 } = {}) {
   let sessionToken = null;
   let currentSlideId = null;
@@ -170,7 +168,6 @@ export function createAnalyticsTracker({
       viewerEmail,
       viewerType,
       deviceId,
-      organizationId,
     }, { critical: true });
 
     // destroy() can land while the (retrying, therefore slow) session-start

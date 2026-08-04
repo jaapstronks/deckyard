@@ -48,7 +48,6 @@ function generateSessionToken() {
  * @param {string} [data.deviceId] - Client device ID from localStorage
  * @param {string} [data.ipAddress] - Client IP address
  * @param {string} [data.userAgent] - Client user agent
- * @param {string} [data.organizationId] - Organization ID (optional)
  * @param {boolean} [data.isInternal] - True if viewer is an authenticated team member
  * @param {boolean} [data.attributionAllowed] - True if viewer opts into having name shown
  * @returns {Promise<{ok: boolean, session?: Object, reason?: string}>}
@@ -68,7 +67,10 @@ export async function createViewSession(data) {
     const row = await db
       .insertInto('view_sessions')
       .values({
-        organization_id: data?.organizationId ?? null,
+        // No organization column: a view session inherits its workspace from
+        // the presentation it belongs to (tenant-isolation.md rule R2). The
+        // column that used to sit here held a viewer-claimed organization and
+        // was dropped in migration 065.
         presentation_id: presentationId,
         session_token: sessionToken,
         source_type: sourceType,
@@ -306,7 +308,6 @@ export async function deleteOldViewSessions(olderThan) {
 function rowToSession(row) {
   return {
     id: row.id,
-    organizationId: row.organization_id,
     presentationId: row.presentation_id,
     sessionToken: row.session_token,
     sourceType: row.source_type,
