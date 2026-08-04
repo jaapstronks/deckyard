@@ -28,10 +28,12 @@ service container first, then `npm run test:pg`.
 
 The suite `TRUNCATE`s tables, so it must never touch a real workspace database.
 It therefore runs **only** when `DATABASE_URL` names a throwaway Postgres —
-a signal a normal dev `.env` does not carry, because the app is configured
-through `DATABASE_HOST`/`DATABASE_NAME` (not `DATABASE_URL`). With `DATABASE_URL`
-unset, `pgDescribe()` skips every block with a clear reason and a bare
-`npm run test:pg` is inert. In CI the `test-postgres` job sets `DATABASE_URL` at
+a signal a normal dev `.env` does not carry, because the standard dev config
+uses the discrete `DATABASE_HOST`/`DATABASE_NAME` vars. (`db:migrate` and the
+app *do* honor `DATABASE_URL` when it is set — that is B43's fix, so the migrate
+step and the suite agree on the scratch DB — but a dev `.env` leaves it unset.)
+With `DATABASE_URL` unset, `pgDescribe()` skips every block with a clear reason
+and a bare `npm run test:pg` is inert. In CI the `test-postgres` job sets `DATABASE_URL` at
 its dedicated scratch database.
 
 Because the facade tests share tables (organizations, presentations,
@@ -125,22 +127,27 @@ migrate it, then run the suite:
 
 ```sh
 createdb deckyard_pg_tests
-DATABASE_NAME=deckyard_pg_tests npm run db:migrate
-DATABASE_URL=postgres://USER:PASS@localhost:5432/deckyard_pg_tests npm run test:pg
+export DATABASE_URL=postgres://USER:PASS@localhost:5432/deckyard_pg_tests
+npm run db:migrate   # honors DATABASE_URL — migrates the scratch DB, not your dev DB
+npm run test:pg
 ```
 
-The migrate step reads the `DATABASE_*` vars; the suite reads `DATABASE_URL`.
-Both must name the *same* scratch database, and it must be a **scratch**
-database — never the compose stack's own `deckyard`, which is your dev data and
-which this suite truncates.
+`db:migrate` honors a set `DATABASE_URL` above the `DATABASE_*` vars (they share
+`getDatabaseConfig()`), so `DATABASE_URL=… npm run db:migrate` migrates the
+scratch database the suite reads — you no longer need to restate it as
+`DATABASE_NAME=…` for the migrate step, and a bare `DATABASE_URL=…` run can no
+longer migrate your dev database by accident. Whichever way you set it, it must
+name a **scratch** database — never the compose stack's own `deckyard`, which is
+your dev data and which this suite truncates.
 
 If you run the compose stack, `docker-compose.local.yml` publishes its Postgres
 on host port 5433 (`POSTGRES_HOST_PORT` to change it):
 
 ```sh
 createdb -h localhost -p 5433 -U deckyard deckyard_pg_tests   # once
-DATABASE_PORT=5433 DATABASE_NAME=deckyard_pg_tests npm run db:migrate
-DATABASE_URL=postgres://deckyard:PASS@localhost:5433/deckyard_pg_tests npm run test:pg
+export DATABASE_URL=postgres://deckyard:PASS@localhost:5433/deckyard_pg_tests
+npm run db:migrate   # the URL carries host+port+name, so both steps agree
+npm run test:pg
 ```
 
 `.env` values do not override variables already set in the shell
