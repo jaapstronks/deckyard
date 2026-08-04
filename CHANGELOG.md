@@ -4,6 +4,27 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.16.0](https://github.com/jaapstronks/deckyard/compare/v1.15.0...v1.16.0) (2026-08-04)
+
+
+### Added
+
+* **authz:** add owner/created_by/updated_by user_id to presentations (T10 PR 3) ([#616](https://github.com/jaapstronks/deckyard/issues/616)) ([aa0c591](https://github.com/jaapstronks/deckyard/commit/aa0c5911349322613ea19ef3a89ad0e29dd77c40))
+* **authz:** add user_id to collaborators alongside user_email (T10 PR 2) ([#613](https://github.com/jaapstronks/deckyard/issues/613)) ([3a239c2](https://github.com/jaapstronks/deckyard/commit/3a239c21443eaba35c11780f6da78c18a6d47550))
+* **authz:** persist owner on PG ownership transfer (T10 tail) ([a0fed94](https://github.com/jaapstronks/deckyard/commit/a0fed945deaaa6c30869f35602eb3b9b9bd842a8))
+* **storage:** move questions, interactions and feedback from disk JSON to Postgres ([#606](https://github.com/jaapstronks/deckyard/issues/606)) ([0a5b932](https://github.com/jaapstronks/deckyard/commit/0a5b932c57efdd36b2b3270baf0c889c44e928dc))
+
+
+### Fixed
+
+* **authz:** scope collaborator rows on the deck, not the session ([#626](https://github.com/jaapstronks/deckyard/issues/626)) ([fdacfb2](https://github.com/jaapstronks/deckyard/commit/fdacfb22db66f31dd35dca7160e1fc5c26124025))
+* **editor:** make a failing language switch visible ([#620](https://github.com/jaapstronks/deckyard/issues/620)) ([596ee2f](https://github.com/jaapstronks/deckyard/commit/596ee2f661e7f7e5f19d9f954ebf92ba6f9d56bb))
+
+
+### Security
+
+* **share-links:** rate-limit the public password verify ([#628](https://github.com/jaapstronks/deckyard/issues/628)) ([9cd3898](https://github.com/jaapstronks/deckyard/commit/9cd3898dd217c01fcc064038aada5ffa4b14e54e))
+
 ## [1.15.0](https://github.com/jaapstronks/deckyard/compare/v1.14.0...v1.15.0) (2026-08-03)
 
 
