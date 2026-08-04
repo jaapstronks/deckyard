@@ -73,7 +73,7 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     const presentationId = baseMatch[1];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
+    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -147,15 +147,11 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
 
       let result;
       try {
-        result = await addCollaborator(
-          presentationId,
-          {
-            userEmail,
-            permission,
-            invitedBy: authedUser?.email,
-          },
-          ctx
-        );
+        result = await addCollaborator(presentationId, {
+          userEmail,
+          permission,
+          invitedBy: authedUser?.email,
+        });
       } catch (err) {
         log.error(`[collaborators] Failed to add collaborator ${userEmail}:`, err);
         results.push({
@@ -298,13 +294,13 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     const presentationId = baseMatch[1];
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
+    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
 
     try {
-      const collaborators = await listCollaborators(presentationId, ctx);
+      const collaborators = await listCollaborators(presentationId);
 
       // Enrich with user names if available
       const users = await listUsers(ctx);
@@ -335,7 +331,7 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     const email = decodeURIComponent(deleteMatch[2]);
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
+    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -345,13 +341,9 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     const message = body?.message || null;
 
     try {
-      const result = await removeCollaborator(
-        presentationId,
-        email,
-        authedUser?.email,
-        { message },
-        ctx
-      );
+      const result = await removeCollaborator(presentationId, email, authedUser?.email, {
+        message,
+      });
 
       if (!result.ok) {
         if (result.reason === 'not_found') return notFound(res);
@@ -372,7 +364,7 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     const email = decodeURIComponent(deleteMatch[2]);
     const pres = await getPresentation(storageScope, presentationId);
     if (!pres) return notFound(res);
-    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email, ctx);
+    const collaboratorPermission = await getCollaboratorPermission(presentationId, authedUser?.email);
     if (!canManageCollaborators({ user: authedUser, pres, collaboratorPermission })) {
       return unauthorized(res);
     }
@@ -385,12 +377,7 @@ export async function handleCollaborators({ repoRoot, storageScope, req, res, ur
     if (!validatePermission(permission, res)) return true;
 
     try {
-      const result = await updateCollaboratorPermission(
-        presentationId,
-        email,
-        permission,
-        ctx
-      );
+      const result = await updateCollaboratorPermission(presentationId, email, permission);
 
       if (!result.ok) {
         if (result.reason === 'not_found') return notFound(res);

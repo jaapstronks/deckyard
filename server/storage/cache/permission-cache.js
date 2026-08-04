@@ -33,15 +33,22 @@ function getConfig() {
 
 /**
  * Generate cache key for a permission lookup.
+ *
+ * `(presentation, email)` is the whole key, matching the row it caches: a
+ * presentation id is a globally unique uuid, so it already names one deck in
+ * one organization (see the header of storage/collaborators.js). Keying on an
+ * organization as well would let the same row be cached under two keys — one
+ * per caller's idea of the scope — which is the drift this layer must not
+ * reintroduce.
+ *
  * @param {string} presentationId - Presentation ID
  * @param {string} userEmail - User email
- * @param {string} orgId - Organization ID
  * @returns {string} Cache key
  */
-function makeCacheKey(presentationId, userEmail, orgId) {
+function makeCacheKey(presentationId, userEmail) {
   // Normalize to avoid case issues
   const email = (userEmail || '').toLowerCase().trim();
-  return `${orgId}:${presentationId}:${email}`;
+  return `${presentationId}:${email}`;
 }
 
 /**
@@ -117,11 +124,10 @@ async function deleteFromRedis(key) {
  * Tries Redis first, then falls back to memory cache.
  * @param {string} presentationId - Presentation ID
  * @param {string} userEmail - User email
- * @param {string} orgId - Organization ID
  * @returns {Promise<string|null|undefined>} Permission, null (no permission), or undefined (not cached)
  */
-export async function getCachedPermission(presentationId, userEmail, orgId) {
-  const key = makeCacheKey(presentationId, userEmail, orgId);
+export async function getCachedPermission(presentationId, userEmail) {
+  const key = makeCacheKey(presentationId, userEmail);
 
   // Try Redis first
   if (isRedisAvailable()) {
@@ -151,12 +157,11 @@ export async function getCachedPermission(presentationId, userEmail, orgId) {
  * Stores in both Redis (if available) and memory cache.
  * @param {string} presentationId - Presentation ID
  * @param {string} userEmail - User email
- * @param {string} orgId - Organization ID
  * @param {string|null} permission - Permission to cache
  * @returns {Promise<void>}
  */
-export async function setCachedPermission(presentationId, userEmail, orgId, permission) {
-  const key = makeCacheKey(presentationId, userEmail, orgId);
+export async function setCachedPermission(presentationId, userEmail, permission) {
+  const key = makeCacheKey(presentationId, userEmail);
   const config = getConfig();
 
   // Store in Redis
@@ -178,11 +183,10 @@ export async function setCachedPermission(presentationId, userEmail, orgId, perm
  * Call this when permission changes.
  * @param {string} presentationId - Presentation ID
  * @param {string} userEmail - User email
- * @param {string} orgId - Organization ID
  * @returns {Promise<void>}
  */
-export async function invalidatePermission(presentationId, userEmail, orgId) {
-  const key = makeCacheKey(presentationId, userEmail, orgId);
+export async function invalidatePermission(presentationId, userEmail) {
+  const key = makeCacheKey(presentationId, userEmail);
 
   // Remove from Redis
   if (isRedisAvailable()) {

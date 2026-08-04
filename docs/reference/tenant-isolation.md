@@ -132,6 +132,24 @@ Four edge decisions taken with the rules:
    feed and its autodiscovery links are disabled (404 / omitted) while
    `MULTI_WORKSPACE_ENABLED` is set, until a per-organization or per-author
    feed is designed.
+5. **`presentation_collaborators.organization_id` is a denormalized copy of the
+   deck's organization, and no authorization read filters on it.** A
+   collaborator row is addressed by `(presentation_id, user_email)` — unique
+   since migration 010 — and a presentation id is a globally unique uuid, so
+   the deck already *is* the scope; an organization in the filter cannot
+   narrow the answer, only make it wrong when the two disagree. That is the R2
+   "second copy could only drift" hazard, and it drifted: the write path
+   stamped the *inviter's session* organization, so an invite sent from
+   another workspace produced an inert grant. The column is kept rather than
+   dropped because the per-user listing (`listPresentationsSharedWithUser`,
+   "shared with me") is scoped by person and has no deck to derive an
+   organization from, and its index rests on the column. It cannot drift any
+   more: `addCollaborator` reads the stamp off the presentation, migration 064
+   re-stamped the history, and `tests/collaborator-cross-org-endpoints.test.js`
+   fails any call site that passes a scope back in. **Open:** whether "shared
+   with me" *should* be workspace-scoped is a product question about what that
+   list means across workspaces, and is the only thing keeping this column
+   from being removable outright.
 
 **Implementation status (2026-08-04):** the rules above are normative; the
 code does not fully match them yet. Open, tracked in the planning repo: three
@@ -233,6 +251,14 @@ missing is listed under *What is not done yet* below.
   untouched, and the unrestricted operator of an auth-disabled install is
   unaffected. In multi-workspace mode an organization that cannot be read on
   either side is refused rather than waved through.
+
+  The collaborator lookup that feeds these checks takes no organization at all
+  (edge decision 5 above): it answers "what does this email hold on this deck",
+  while whether the session may see the deck is settled one layer up by
+  `getPresentation` on an organization-carrying storage scope. A deck in
+  another workspace is therefore *absent* on every session path — 404, not 403
+  — before a collaborator row is ever read, and no collaborator row can become
+  a way around the organization filter.
 
   Single-organization installations are unaffected in behaviour and in cost:
   there is one organization, so `isSameOrganization()` answers `true` from the

@@ -67,7 +67,7 @@ export async function transferPresentationOwnership(
 
   // Remove new owner from collaborators if they were one
   try {
-    await removeCollaborator(presentationId, newOwnerEmail, actorEmail, ctx);
+    await removeCollaborator(presentationId, newOwnerEmail, actorEmail);
   } catch {
     // Ignore - they may not have been a collaborator
   }
@@ -76,15 +76,11 @@ export async function transferPresentationOwnership(
   let collaboratorAdded = false;
   if (keepAsCollaborator && previousOwnerEmail && previousOwnerEmail !== newOwnerEmail) {
     try {
-      const result = await addCollaborator(
-        presentationId,
-        {
-          userEmail: previousOwnerEmail,
-          permission: 'edit', // Previous owners get edit access
-          invitedBy: actorEmail,
-        },
-        ctx
-      );
+      const result = await addCollaborator(presentationId, {
+        userEmail: previousOwnerEmail,
+        permission: 'edit', // Previous owners get edit access
+        invitedBy: actorEmail,
+      });
       collaboratorAdded = result.ok;
     } catch (err) {
       log.error('[ownership] Failed to add previous owner as collaborator:', err);

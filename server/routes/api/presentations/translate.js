@@ -1,6 +1,5 @@
 import { getPresentation, updatePresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { getFeatureFlags } from '../../../config/feature-flags.js';
 import { translatePresentationStrings } from '../../../utils/ai.js';
 import {
@@ -27,10 +26,9 @@ export async function handlePresentationTranslate(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);

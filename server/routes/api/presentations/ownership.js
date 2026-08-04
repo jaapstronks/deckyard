@@ -39,7 +39,7 @@ export async function handleOwnershipTransfer(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for authorization check
-  const collaboratorPermission = await getCollaboratorPermission(id, authedUser?.email, ctx);
+  const collaboratorPermission = await getCollaboratorPermission(id, authedUser?.email);
 
   if (!canTransferOwnership({ user: authedUser, pres, collaboratorPermission })) {
     return unauthorized(res);

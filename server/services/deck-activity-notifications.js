@@ -125,7 +125,7 @@ export function buildDeckActivityNotificationInput({ presentation, actor, count 
 async function resolveDeckActivityRecipients({ repoRoot, presentation, actor, ctx }) {
   let collaborators = [];
   try {
-    collaborators = (await listCollaborators(presentation?.id, ctx))
+    collaborators = (await listCollaborators(presentation?.id))
       .map((c) => c?.userEmail)
       .filter(Boolean);
   } catch {
