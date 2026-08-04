@@ -39,6 +39,7 @@ import {
 import { errorToResponse } from '../../utils/errors.js';
 import { allowCompanionNotesWrite, getClientIp } from '../../utils/rate-limit.js';
 import { guardSseConnection } from '../../utils/sse-limiter.js';
+import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 
 /**
  * Why a companion read may skip the organization filter: the session id it came
@@ -144,7 +145,11 @@ async function handleSessionDeck({ repoRoot, res }, sessionId) {
     presentationId: pres.id,
     title: typeof pres.title === 'string' ? pres.title : '',
     theme: pres.theme || '',
-    lang: pres.lang || '',
+    // The one canonical answer to "what language is this deck" — i18n.active
+    // before dominant before pres.lang (see shared/i18n-utils.js). The payload
+    // carries the resolved value so the companion never re-derives it from a
+    // deck object that deliberately omits the i18n block.
+    lang: resolveDeckLang(pres) || '',
     revision: Number(pres.revision) || 0,
     slides: Array.isArray(pres.slides) ? pres.slides : [],
     controlEnabled: !!session.controlEnabled,
