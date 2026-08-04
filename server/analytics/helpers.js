@@ -3,6 +3,8 @@
  * Centralizes configuration, validation, rate limiting responses, and security logging.
  */
 
+import { createHmac } from 'node:crypto';
+
 // ============================================================
 // CONFIGURATION CONSTANTS (can be overridden via env vars)
 // ============================================================
@@ -127,6 +129,68 @@ export function sanitizeUserAgent(userAgent) {
   if (trimmed.length === 0) return null;
   if (trimmed.length <= ANALYTICS_CONFIG.MAX_USER_AGENT_LENGTH) return trimmed;
   return trimmed.slice(0, ANALYTICS_CONFIG.MAX_USER_AGENT_LENGTH);
+}
+
+// ============================================================
+// PUBLIC IDENTIFIERS
+// ============================================================
+
+/**
+ * Length of a public device label, in hex characters. Twelve hex chars is
+ * 48 bits: far too wide to collide within one deck's session list, far too
+ * narrow to be worth attacking.
+ */
+const DEVICE_LABEL_HEX_LENGTH = 12;
+
+/**
+ * Derive the per-deck label that stands in for a raw device id on a response.
+ *
+ * The raw `view_sessions.device_id` is browser-generated and instance-wide: the
+ * same 32-hex value appears on every deck that browser visits. Handing it to
+ * anyone with read access to a deck lets two deck owners compare lists and
+ * correlate the same visitor across their decks. Keying the label to the
+ * presentation breaks that: the same browser reads as a different label in
+ * every deck, while staying stable *within* a deck, which is the only thing the
+ * viewer list needs it for ("this is a returning viewer").
+ *
+ * HMAC rather than a truncation of the raw id: a prefix of the same id is the
+ * same string in every deck, so truncating would preserve exactly the
+ * cross-deck correlation this removes. The secret makes the mapping
+ * unreproducible by anyone who has only the label.
+ *
+ * Applied at the response boundary only — the raw id stays in the database,
+ * where the erasure path needs it and `COUNT(DISTINCT device_id)` aggregations
+ * keep working.
+ *
+ * @param {string|null|undefined} deviceId - The raw device id from storage.
+ * @param {string} presentationId - The deck the response is about.
+ * @returns {string|null} 12 hex chars, or null when there is no device id.
+ * @throws {Error} When called without a presentation id, or when AUTH_SECRET is
+ *   unset — there is deliberately no fallback secret, since a guessable key
+ *   would make the label reversible and silently reinstate the correlation.
+ */
+export function publicDeviceLabel(deviceId, presentationId) {
+  if (deviceId === null || deviceId === undefined || deviceId === '') return null;
+
+  const presId = String(presentationId || '').trim();
+  if (!presId) {
+    throw new Error(
+      'publicDeviceLabel requires a presentation id: the label is per-deck by construction'
+    );
+  }
+
+  const secret = String(process.env.AUTH_SECRET || '').trim();
+  if (!secret) {
+    throw new Error(
+      'AUTH_SECRET is required to derive a per-deck device label. Set AUTH_SECRET, ' +
+        'or disable analytics — returning raw device ids instead is not an option.'
+    );
+  }
+
+  return createHmac('sha256', secret)
+    .update(`${String(deviceId)}:${presId}`)
+    .digest('hex')
+    .slice(0, DEVICE_LABEL_HEX_LENGTH);
 }
 
 // ============================================================

@@ -10,7 +10,7 @@
  * It implements the query shapes the storage layer actually uses, not Kysely
  * as a whole:
  *   selectFrom / select / selectAll / distinctOn / innerJoin / leftJoin /
- *   where / orderBy / limit / offset / execute / executeTakeFirst,
+ *   where / orderBy / limit / offset / clearSelect / execute / executeTakeFirst,
  *   insertInto / values / returningAll / onConflict (doNothing + doUpdateSet),
  *   updateTable / set, deleteFrom / returning, and `db.fn.count()`.
  *
@@ -438,11 +438,11 @@ export function createFakeDb(seed = {}) {
    * @param {string} table - Base table
    * @returns {Object}
    */
-  function selectBuilder(tableRef) {
+  function selectBuilder(tableRef, seedState = null) {
     const { table, alias } = parseTableRef(tableRef);
     queryLog.push({ op: 'select', table });
 
-    const state = {
+    const state = seedState || {
       joins: [],
       predicates: [],
       projection: null,
@@ -556,6 +556,25 @@ export function createFakeDb(seed = {}) {
       selectAll() {
         state.selectAll = true;
         return builder;
+      },
+      /**
+       * Drop the projection and hand back a *separate* builder, the way Kysely's
+       * immutable builders do. The paginated readers build one filtered query
+       * and then branch it — `query.clearSelect().select(count)` for the total,
+       * `query.orderBy(…).limit(…)` for the page — so a shared mutable builder
+       * would let the count clause leak into the page query and vice versa.
+       * Filters, joins and ordering carry over; only what is selected is reset.
+       */
+      clearSelect() {
+        return selectBuilder(tableRef, {
+          ...state,
+          joins: [...state.joins],
+          predicates: [...state.predicates],
+          orderBy: [...state.orderBy],
+          projection: null,
+          aggregates: [],
+          selectAll: false,
+        });
       },
       distinctOn() {
         return builder;
