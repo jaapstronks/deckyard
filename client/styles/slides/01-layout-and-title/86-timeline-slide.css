@@ -226,7 +226,12 @@
   background: var(--timeline-card-surface);
   border: 2px solid var(--timeline-card-border);
   border-radius: var(--slide-radius-md);
-  padding: var(--slide-space-4);
+  /* The card sets the three card roles; .timeline-title / .timeline-text read
+     them (slide-roles.md § The card pattern). */
+  --slide-card-padding: var(--slide-space-4);
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
+  padding: var(--slide-card-padding);
   box-shadow: var(--timeline-card-shadow);
 }
 
@@ -298,17 +303,22 @@
 }
 
 /* Title. Font-size is the *ceiling*; client-side initTimelineSlides() may shrink it
-   down to --timeline-title-min-px (14) for cards whose title still wraps after the
+   down to --timeline-title-min-px for cards whose title still wraps after the
    card has grown to its max-width. overflow-wrap stays as the last-resort fallback
-   for truly absurd single words. */
+   for truly absurd single words.
+
+   The ceiling *is* the card title role, so the responsive tier below moves the
+   runtime's ceiling with it by setting the role on the card. The runtime reads
+   these two through getComputedStyle(), which substitutes the var() — it sees
+   the resolved px either way. */
 .slide-timeline .timeline-title {
-  --timeline-title-max-px: 20px;
+  --timeline-title-max-px: var(--slide-font-size-card-title);
   /* Floor is deliberately high: the card has vertical room for 2-3 wrapped
      lines, so long titles should wrap at a readable size rather than shrink. */
-  --timeline-title-min-px: 16px;
+  --timeline-title-min-px: var(--slide-text-sm);
   --timeline-title-max-lines: 3;
   font-family: var(--font-heading);
-  font-size: var(--timeline-title-max-px); /* = --slide-text-base (20); auto-shrinks per card when it wraps */
+  font-size: var(--timeline-title-max-px);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -321,7 +331,7 @@
 /* Description text */
 .slide-timeline .timeline-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
   color: var(--timeline-text-muted);
   margin: 0;
@@ -363,16 +373,11 @@
   }
 
   .slide-timeline .timeline-card {
-    padding: var(--slide-space-3) var(--slide-space-4) var(--slide-space-4);
+    /* ladder rung: both stay under the base card (base / sm) */
+    --slide-card-padding: var(--slide-space-3) var(--slide-space-4) var(--slide-space-4);
+    --slide-font-size-card-title: var(--slide-text-sm);
+    --slide-font-size-card-body: var(--slide-text-xs);
     border-radius: var(--slide-radius-sm);
-  }
-
-  .slide-timeline .timeline-title {
-    font-size: var(--slide-text-sm);
-  }
-
-  .slide-timeline .timeline-text {
-    font-size: var(--slide-text-xs);
   }
 }
 

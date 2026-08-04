@@ -24,7 +24,7 @@
      on a white slide); text stays dark — the surface stays light. */
   background: var(--t-icon-card-grid-body-bg, #fff);
   color: rgba(11, 11, 11, 0.92);
-  padding: var(--slide-space-5) var(--slide-space-6);
+  padding: var(--slide-card-padding);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -32,7 +32,7 @@
 }
 .slide-icon-card-grid .icon-card-title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--t-icon-card-grid-card-title-weight, 400);
   text-transform: var(--t-icon-card-grid-card-title-transform, none);
@@ -47,7 +47,7 @@
 }
 .slide-icon-card-grid .icon-card-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
 }
 .slide-icon-card-grid .icon-card-text ul,
