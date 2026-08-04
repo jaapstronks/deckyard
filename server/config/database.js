@@ -66,28 +66,83 @@ export function isPostgresMode() {
   return getStorageMode() === 'postgres';
 }
 
-export function getDatabaseConfig() {
-  // SSL is enabled by default for non-localhost connections
-  const host = process.env.DATABASE_HOST || 'localhost';
+/**
+ * SSL settings for a connection, derived the same way regardless of whether the
+ * host came from `DATABASE_HOST` or a parsed `DATABASE_URL`.
+ *
+ * SSL is on by default for a non-localhost host; `DATABASE_SSL=false` forces it
+ * off (e.g. an internal network), and `DATABASE_SSL_REJECT_UNAUTHORIZED=false`
+ * allows self-signed certificates (managed database services).
+ *
+ * @param {string} host
+ * @returns {{ rejectUnauthorized: boolean } | false}
+ */
+function resolveSsl(host) {
   const isLocalhost = host === 'localhost' || host === '127.0.0.1';
   const sslExplicitlyDisabled = process.env.DATABASE_SSL === 'false';
   const sslEnabled = !isLocalhost && !sslExplicitlyDisabled;
-  // Allow self-signed certificates (e.g., managed database services)
   const rejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+  return sslEnabled ? { rejectUnauthorized } : false;
+}
 
+function poolConfig() {
+  return {
+    min: parseInt(process.env.DATABASE_POOL_MIN || '2', 10),
+    max: parseInt(process.env.DATABASE_POOL_MAX || '10', 10),
+  };
+}
+
+/**
+ * Connection config, either parsed from `DATABASE_URL` or assembled from the
+ * discrete `DATABASE_*` variables.
+ *
+ * `DATABASE_URL`, when set, is the **complete** override: every connection field
+ * (host, port, database, user, password) comes from the URL, not from a mix of
+ * URL and `DATABASE_*`. This is the one connection knob the whole stack agrees
+ * on — the app pool ({@link initializeDatabase}), the migration runner
+ * (`db:migrate`) and the data importer all read this function, so pointing
+ * `DATABASE_URL` at a scratch database migrates and serves *that* database
+ * instead of whatever `.env`'s `DATABASE_HOST`/`DATABASE_NAME` names. That
+ * matters for the `test:pg` recipe: its scratch DB is expressed as `DATABASE_URL`,
+ * and before this a bare `db:migrate` ignored it and migrated the dev database.
+ * The SSL and pool knobs (`DATABASE_SSL*`, `DATABASE_POOL_*`) still apply on top,
+ * since a URL does not carry them.
+ *
+ * @returns {{ host: string, port: number, database: string, user: string, password: string, ssl: { rejectUnauthorized: boolean } | false, pool: { min: number, max: number } }}
+ */
+export function getDatabaseConfig() {
+  const url = (process.env.DATABASE_URL || '').trim();
+  if (url) {
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new Error(
+        'DATABASE_URL is set but is not a valid connection URL ' +
+          '(expected e.g. postgres://user:pass@host:5432/dbname).'
+      );
+    }
+    const host = parsed.hostname || 'localhost';
+    return {
+      host,
+      port: parsed.port ? parseInt(parsed.port, 10) : 5432,
+      database: decodeURIComponent(parsed.pathname.replace(/^\//, '')) || 'deckyard',
+      user: decodeURIComponent(parsed.username) || 'deckyard',
+      password: decodeURIComponent(parsed.password) || '',
+      ssl: resolveSsl(host),
+      pool: poolConfig(),
+    };
+  }
+
+  const host = process.env.DATABASE_HOST || 'localhost';
   return {
     host,
     port: parseInt(process.env.DATABASE_PORT || '5432', 10),
     database: process.env.DATABASE_NAME || 'deckyard',
     user: process.env.DATABASE_USER || 'deckyard',
     password: process.env.DATABASE_PASSWORD || '',
-    ssl: sslEnabled
-      ? { rejectUnauthorized }
-      : false,
-    pool: {
-      min: parseInt(process.env.DATABASE_POOL_MIN || '2', 10),
-      max: parseInt(process.env.DATABASE_POOL_MAX || '10', 10),
-    },
+    ssl: resolveSsl(host),
+    pool: poolConfig(),
   };
 }
 

@@ -40,9 +40,9 @@
  * scratch database. Locally:
  *
  *     createdb deckyard_pg_tests
- *     DATABASE_NAME=deckyard_pg_tests npm run db:migrate
- *     DATABASE_URL=postgres://deckyard:pw@localhost:5432/deckyard_pg_tests \
- *       npm run test:pg
+ *     export DATABASE_URL=postgres://deckyard:pw@localhost:5432/deckyard_pg_tests
+ *     npm run db:migrate   # honors DATABASE_URL, so it migrates the scratch DB
+ *     npm run test:pg
  *
  * This suite never runs under `npm test` — its files are named `*.pgtest.js`,
  * which the default glob (matching `*.test.js` only) does not pick up. See
@@ -118,7 +118,7 @@ export async function openTestDb() {
     await db.destroy();
     throw new Error(
       'PG test suite: the database has no schema. Run the migrations against it ' +
-        'first (`DATABASE_NAME=… npm run db:migrate`), then run `npm run test:pg`.'
+        'first (`DATABASE_URL=… npm run db:migrate`), then run `npm run test:pg`.'
     );
   }
 
