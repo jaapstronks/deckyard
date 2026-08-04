@@ -85,6 +85,62 @@ anything else stops the boot with an explanation (`storageModeError()` in
 Sandbox mode was exempt from that guard and is still single-org by construction
 (see below), so there is no second tenant to leak to there either.
 
+## Which domains partition on the organization
+
+Decided 2026-08-04. Until then this choice was implicit in the comments of
+migrations 058–061, which deliberately dropped `organization_id` from the
+domains they moved to Postgres. Three rules now say which tables carry an
+organization and which never will:
+
+- **R1 — Content and content containers are organization-scoped, hard.**
+  Presentations, slides, themes, slide libraries, collections, tags, comments:
+  every query filters on the organization, and `server/storage/scope.js`
+  refuses a call that states neither an organization nor a reason it cannot
+  have one.
+- **R2 — Content descendants inherit the organization through their FK chain
+  and carry no organization column of their own.** The live stack
+  (present-sessions, interactions, questions, feedback), analytics, the
+  share-link access log and API usage all reach the organization via the row
+  they hang off (`session_id` → `present_sessions.presentation_id` →
+  `presentations.organization_id`; `api_key_id` → `api_keys.organization_id`).
+  A second copy of the organization on those tables could only drift, so
+  adding one is a defect, not diligence. A column that exists but is never
+  filtered on is the same defect in another shape: it either becomes real
+  (filled from the session, filtered everywhere) or it goes. Reads that cross
+  organizations exist only on the token-authorized paths
+  (`crossOrganizationScope`).
+- **R3 — Instance machinery is instance-global, enumerated by name.** The
+  closed list: `app_settings`, `user_settings` (keyed per person — one set of
+  preferences however many organizations they join), `email_templates` and its
+  settings row, the share-link TTL sweep, and the sandbox cleanup. A new
+  domain must justify itself under one of these three rules; "the migration
+  dropped the column" is not a rule.
+
+Four edge decisions taken with the rules:
+
+1. **`app_settings.defaultThemeId` / `enabledThemes` point at
+   organization-scoped theme rows.** Accepted as instance policy for now;
+   moving exactly these two keys to per-organization settings is a named
+   leftover for when shape 4 goes GA.
+2. **Email templates stay instance-global** — the operator sends the mail.
+   Revisit at shape-4 GA together with 1.
+3. **Follow codes share one instance-wide keyspace.** Accepted: a code is a
+   short-lived public token (24h TTL), and the token is the authorization; it
+   needs no organization column.
+4. **The RSS/Atom/JSON feed has no organization source at all** and therefore
+   serves the default organization. Under multi-workspace that is wrong: the
+   feed and its autodiscovery links are disabled (404 / omitted) while
+   `MULTI_WORKSPACE_ENABLED` is set, until a per-organization or per-author
+   feed is designed.
+
+**Implementation status (2026-08-04):** the rules above are normative; the
+code does not fully match them yet. Open, tracked in the planning repo: three
+defects (the share-link access log ignores its context; `view_sessions.organization_id`
+is written from the client request body and never filtered; bulk export builds
+a default-organization context instead of using `singleWorkspaceScope()`), the
+sweep of the remaining `getDefaultOrganizationId()` fallbacks outside the
+sanctioned call sites, and the feed gating from decision 4.
+
 ## Sandbox isolation (`sandbox.deckyard.eu`)
 
 Sandbox mode is safe to expose publicly. Its isolation rests on four things:
