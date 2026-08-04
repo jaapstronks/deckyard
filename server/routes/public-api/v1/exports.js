@@ -14,7 +14,6 @@ import { stripLiveOnlySlidesFromPresentation } from '../../../utils/public-outpu
 import { normalizeLang, projectPresentationForLang } from '../../../utils/i18n.js';
 import { loadTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-import { getDefaultOrganizationId } from '../../../config/database.js';
 import {
   requireScope,
   checkExportLimit,
@@ -57,7 +56,7 @@ async function prepareExportContext(ctx, presentationId) {
   const langSuffix = getLangSuffix(exportLang);
 
   // Load merged slide types (core + org-specific custom types)
-  const orgId = apiKey?.organizationId || pres?.organizationId || getDefaultOrganizationId();
+  const orgId = apiKey?.organizationId || pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
 
   return {

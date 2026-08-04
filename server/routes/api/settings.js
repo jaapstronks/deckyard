@@ -5,7 +5,6 @@ import {
   writeAppSettings,
   writeUserSettings,
 } from '../../storage/settings.js';
-import { getDefaultOrganizationId } from '../../config/database.js';
 import {
   getOrganizationById,
   updateOrganization,
@@ -77,7 +76,7 @@ export async function handleSettings({ repoRoot, req, res, url, authedUser }) {
   if (url.pathname === '/api/settings/organization') {
     // GET is available to any authenticated user (picker needs disabledSlideTypes)
     // PATCH requires admin
-    const orgId = authedUser?.organizationId || getDefaultOrganizationId();
+    const orgId = authedUser?.organizationId;
 
     if (req.method === 'GET') {
       try {

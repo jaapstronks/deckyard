@@ -75,7 +75,7 @@ async function validatePresentationAccess(data, ctx) {
         return { ok: false, reason: 'Share link token required' };
       }
 
-      const validation = await validateShareLink(sourceId, ctx);
+      const validation = await validateShareLink(sourceId);
       if (!validation.ok) {
         logSecurityEvent(SECURITY_EVENTS.ACCESS_DENIED, {
           endpoint: '/api/track/session/start',

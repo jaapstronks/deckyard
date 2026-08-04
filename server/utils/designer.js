@@ -6,7 +6,6 @@
 
 import { getMembershipByEmail, hasDesignerCapability } from '../storage/user-organizations/index.js';
 import { getOrganizationById } from '../storage/user-organizations/index.js';
-import { getDefaultOrganizationId } from '../config/database.js';
 import { isMultiWorkspaceEnabled } from '../config/features.js';
 import { getOrgSettings } from './org-settings.js';
 
@@ -42,7 +41,7 @@ export async function resolveDesignerCapability(user) {
 
   if (!isMultiWorkspaceEnabled() && user.isAdmin) return true;
 
-  const orgId = user.organizationId || getDefaultOrganizationId();
+  const orgId = user.organizationId;
 
   try {
     // A non-null `organizationRole` means the active membership was resolved in

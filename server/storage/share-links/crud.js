@@ -185,24 +185,29 @@ export async function getValidShareLinkById(db, shareLinkId, orgId) {
 /**
  * Validate a share token and return access info if valid.
  * Checks: token exists, not revoked, not expired, within use limit.
+ *
+ * Takes no context: the token is the authorization (tenant-isolation.md — a
+ * share link resolves a globally unique token, and `token` is UNIQUE in the
+ * schema). The anonymous public path has no session to take an organization
+ * from; the link's own row carries the organization for everything after
+ * resolution. Filtering this lookup on a caller-supplied organization was the
+ * silent-default leak in another guise: on a multi-workspace instance it made
+ * every share link outside the default workspace unresolvable.
+ *
  * @param {string} token - The share token
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Validation result
  */
-export async function validateShareLink(token, ctx) {
+export async function validateShareLink(token) {
   const t = norm(token);
   if (!t) {
     return { ok: false, reason: 'invalid' };
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(ctx);
-
     const row = await db
       .selectFrom('presentation_share_links')
       .selectAll()
       .where('token', '=', t)
-      .where('organization_id', '=', orgId)
       .executeTakeFirst();
 
     if (!row) {
@@ -240,13 +245,14 @@ export async function validateShareLink(token, ctx) {
 
 /**
  * Verify password for a share link and increment use count.
+ * Token-authorized like {@link validateShareLink}: no context, the unique
+ * token (and the id resolved from it) scopes every query here.
  * @param {string} token - The share token
  * @param {string} [password] - The password (if required)
- * @param {Object} ctx - Context object
  * @returns {Promise<Object>} - Verification result with access token
  */
-export async function verifyShareLinkAccess(token, password, ctx) {
-  const validation = await validateShareLink(token, ctx);
+export async function verifyShareLinkAccess(token, password) {
+  const validation = await validateShareLink(token);
   if (!validation.ok) {
     return validation;
   }
@@ -260,13 +266,11 @@ export async function verifyShareLinkAccess(token, password, ctx) {
     }
 
     const db = getDb();
-    const orgId = getOrgId(ctx);
 
     const row = await db
       .selectFrom('presentation_share_links')
       .select('password_hash')
       .where('token', '=', token)
-      .where('organization_id', '=', orgId)
       .executeTakeFirst();
 
     if (!row?.password_hash) {
@@ -281,7 +285,6 @@ export async function verifyShareLinkAccess(token, password, ctx) {
 
   // Increment use count atomically
   const db = getDb();
-  const orgId = getOrgId(ctx);
 
   await db
     .updateTable('presentation_share_links')
@@ -290,7 +293,6 @@ export async function verifyShareLinkAccess(token, password, ctx) {
       last_used_at: nowIso(),
     }))
     .where('id', '=', shareLink.id)
-    .where('organization_id', '=', orgId)
     .execute();
 
   return {

@@ -8,7 +8,6 @@ import { canReadPresentation } from '../utils/presentation-authz.js';
 import { getCollaboratorPermission } from '../storage/collaborators.js';
 import { addJob, isQueueAvailable, QUEUE_NAMES } from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { getDefaultOrganizationId } from '../config/database.js';
 import { createRouteContext } from '../utils/context.js';
 
 /**
@@ -60,7 +59,9 @@ export async function prepareExportContext({
   }
 
   const collaboratorPermission = authedUser?.email
-    ? await getCollaboratorPermission(presentationId, authedUser.email, {})
+    ? await getCollaboratorPermission(presentationId, authedUser.email, {
+        organizationId: pres.organizationId,
+      })
     : null;
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -74,7 +75,7 @@ export async function prepareExportContext({
   const langSuffix = getLangSuffix(exportLang);
 
   // Load merged slide types (core + org-specific custom types)
-  const orgId = authedUser?.organizationId || pres?.organizationId || getDefaultOrganizationId();
+  const orgId = authedUser?.organizationId || pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
 
   return {
@@ -265,7 +266,9 @@ export function createAsyncExportRoute(config) {
         return notFound(res);
       }
       const collaboratorPermission = authedUser?.email
-        ? await getCollaboratorPermission(presentationId, authedUser.email, {})
+        ? await getCollaboratorPermission(presentationId, authedUser.email, {
+        organizationId: pres.organizationId,
+      })
         : null;
       if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
         return unauthorized(res);

@@ -12,7 +12,6 @@ import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { buildBulkExport } from '../../../export/bulk-export.js';
 import { createNotification } from '../../../storage/notifications.js';
 import { broadcastToUser } from '../../../services/notification-events.js';
-import { getDefaultOrganizationId } from '../../../config/database.js';
 import { getAppBaseUrl } from '../../../config/utils.js';
 
 // Store completed job results temporarily for download
@@ -139,7 +138,7 @@ async function sendExportNotifications({ userEmail, jobId, manifest, organizatio
   // 1. In-app notification
   try {
     const ctx = {
-      organizationId: organizationId || getDefaultOrganizationId(),
+      organizationId,
       actorEmail: userEmail,
     };
 
