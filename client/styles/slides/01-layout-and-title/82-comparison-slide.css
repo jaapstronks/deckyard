@@ -75,7 +75,9 @@
 /* Markdown body */
 .slide-comparison .body {
   font-family: var(--font-body);
-  font-size: calc(var(--slide-font-size-body) + 2px);
+  /* The columns are narrow, so the copy runs a step above body (22px → `md`);
+     the 1024px tier below drops it back to the body role. */
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
   flex: 1;
   min-height: 0;
