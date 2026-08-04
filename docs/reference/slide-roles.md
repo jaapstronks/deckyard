@@ -2,11 +2,12 @@
 
 **Normative target, decided 2026-08-03.** This document describes the single
 vocabulary slide CSS is converging on. Implementation status, honestly: the
-tokens below all exist in `client/styles/slides/00-tokens.css`, but adoption in
-the slide stylesheets is still uneven per axis — leading, radius and font-size
-are essentially done, spacing is the long tail; the live figures are the per-file,
-per-category budgets in `slide-css-suppressions.json` — and
-the legacy alias families listed at the bottom still have live consumers. The
+tokens below all exist in `client/styles/slides/00-tokens.css`, and the four
+geometry/typography axes — leading, radius, font-size and spacing — are done,
+down to the private locals that feed them; the live figures are the per-file,
+per-category budgets in `slide-css-suppressions.json`, currently empty. What is
+*not* done is colour: the legacy alias families listed at the bottom still have
+live consumers, and phase 3 of the sweep is what removes them. The
 gate that ratchets adoption up is `tests/slide-css-tokens.test.js`; the sweep
 that raises it is tracked in the planning repo (`css-role-vocabulary.md`).
 
@@ -127,15 +128,25 @@ Lengths that are *not* spacing stay out of this axis by definition: `inset`
 custom properties that feed them (`--marker-size`). A 20px inset and a 20px gap
 are not the same concept even when the number matches.
 
-Every `margin`/`padding`/`gap` **declaration** in the slide bundle is now on the
-scale or on the allowlist. What is *not* yet converted is the layer below: ~30
-private spacing locals (`--team-gap-x/y`, `--lw-gap-x/y`, `--timeline-gap`,
-`--tsu-pad-*`, `--split-gap`) that introduce literals the gate cannot see,
-because it reads declarations and these are custom-property definitions. By the
-allowlist rule below, a local that introduces a literal *counts* as one, so the
-axis is not finished until they resolve to tokens — and three of them (80px,
-96px) sit above `--slide-space-16`, so that batch has to answer whether the
-scale grows first.
+**The scale carries two steps wider than the slide padding**,
+`--slide-space-20` (80px) and `--slide-space-24` (96px). They exist because
+`--slide-space-16` is *the slide padding*: anything that has to read as wider
+than the frame — a title slide's gutter, the gap that separates two card
+groups from the gap inside one — had nowhere on the scale to land, and
+answering that with an allowlist category would have exempted the one place
+where "wider than the padding" is a deliberate design step rather than drift.
+Both continue the ratio band of the steps below them (64→80 is 1.25, 80→96 is
+1.2, against 32→40→48 at 1.25 and 1.2), so they are the scale's own next
+values, not new numbers.
+
+The axis is closed at both layers. Every `margin`/`padding`/`gap`
+**declaration** in the slide bundle is on the scale or on the allowlist, and so
+is the layer below it: the private spacing locals (`--team-gap-x/y`,
+`--lw-gap-x/y`, `--timeline-gap`, `--tsu-pad-*`, `--split-gap`) that feed those
+declarations through a `var()`. The gate cannot see that layer — it reads
+declarations, and these are custom-property definitions — but the allowlist
+rule below counts a local that introduces a literal *as* a literal, so it was
+never outside the axis, only outside the measurement.
 
 ## Colour roles
 
