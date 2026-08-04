@@ -878,6 +878,7 @@
   "editor.transitions.slide": "Slide",
   "editor.translate.abortedSaveFailed": "Kon niet opslaan; vertaling afgebroken.",
   "editor.translate.busy": "Vertalen…",
+  "editor.translate.busyLangSwitch": "Bezig met vertalen… je kunt straks weer van taal wisselen.",
   "editor.translate.disabled": "Vertalen is uitgeschakeld (slechts één taal actief).",
   "editor.translate.done": "Vertaling klaar.",
   "editor.translate.missingBtn": "Vertaal met AI",

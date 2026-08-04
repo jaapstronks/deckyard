@@ -60,6 +60,19 @@ export function createLanguageMode({
   collabLanguage = null,
 } = {}) {
   let translateBusy = false;
+  const supportedLangs = new Set(getSupportedLangs());
+
+  /**
+   * Best-effort display text for a thrown value. May legitimately come back
+   * empty (a rejection with no message at all) - `toastStatus` supplies the
+   * fallback so an error can never end up invisible.
+   */
+  const errorMessage = (e) => String(e?.message || e || '').trim();
+
+  const setTranslateBusy = (busy) => {
+    translateBusy = !!busy;
+    syncLangUi();
+  };
 
   const langLabel = (lang) =>
     lang === 'nl'
@@ -86,6 +99,10 @@ export function createLanguageMode({
     }
   };
 
+  // Every status reported here becomes a visible toast. An empty message is
+  // never silence: a rejection without a message (an aborted request, an error
+  // body with no text) used to return early here, which is exactly how a failed
+  // language switch could leave no trace at all.
   const toastStatus = (payload) => {
     const p =
       typeof payload === 'string'
@@ -93,8 +110,8 @@ export function createLanguageMode({
         : payload && typeof payload === 'object'
           ? payload
           : null;
-    const msg = String(p?.msg || '').trim();
-    if (!msg) return;
+    const msg =
+      String(p?.msg || '').trim() || t('common.unknownError', 'Unknown error');
     const level = p?.level === 'success' || p?.level === 'error' ? p.level : 'info';
     const durationMs = typeof p?.durationMs === 'number' ? p.durationMs : 5200;
     if (level === 'success') toast.success(msg, { id: 'editor-translate', durationMs });
@@ -102,10 +119,24 @@ export function createLanguageMode({
     else toast.info(msg, { id: 'editor-translate', durationMs });
   };
 
+  // Single place that derives the segmented control from state: which language
+  // is active, and whether a translation is running. While it runs the language
+  // buttons are disabled with the reason on the wrapper (a disabled button
+  // swallows its own tooltip), so a click that can't work explains itself
+  // instead of disappearing under the busy modal's backdrop.
   const syncLangUi = () => {
     const a = normalizeLang(pres?.i18n?.active) || 'nl';
     btnNl.classList.toggle('is-active', a === 'nl');
     btnEn.classList.toggle('is-active', a === 'en-GB');
+    btnNl.disabled = !supportedLangs.has('nl') || translateBusy;
+    btnEn.disabled = !supportedLangs.has('en-GB') || translateBusy;
+    langSeg.setAttribute('aria-busy', translateBusy ? 'true' : 'false');
+    langSeg.title = translateBusy
+      ? t(
+          'editor.translate.busyLangSwitch',
+          'Translating… you can switch language again when it is done.'
+        )
+      : t('editor.langMode.title', 'Language mode (edit + present)');
   };
 
   // Apply server-enforced metadata after a server-side write (translate
@@ -151,7 +182,7 @@ export function createLanguageMode({
       pres.theme = refreshed.theme;
       applyServerMeta(refreshed);
     } catch (e) {
-      onStatus?.(String(e?.message || e));
+      onStatus?.({ level: 'error', msg: errorMessage(e) });
       return false;
     }
 
@@ -180,7 +211,11 @@ export function createLanguageMode({
     return true;
   };
 
-  const switchLanguageMode = async (nextLang, { onStatus } = {}) => {
+  /**
+   * The switch itself. Throws freely - `switchLanguageMode` is the only caller
+   * and turns every failure into a visible status.
+   */
+  const runLanguageSwitch = async (nextLang, { onStatus } = {}) => {
     const next = normalizeLang(nextLang);
     if (!next) return;
     if (!isSupportedLang(next) && next !== pres?.i18n?.active) {
@@ -227,7 +262,6 @@ export function createLanguageMode({
 
     const ok = await loadLanguageIntoView(next, { onStatus });
     if (!ok) return;
-    onStatus?.({ level: 'info', msg: '' });
 
     // Invite (non-blocking, dismissible) to AI-translate what's still missing -
     // right after creating the version, but also on later switches while the
@@ -249,6 +283,22 @@ export function createLanguageMode({
           { lang: langLabel(next) }
         )
       );
+    }
+  };
+
+  /**
+   * Switch the editor to another language version.
+   *
+   * Nothing in this path may fail silently: the onclick handlers don't await
+   * the returned promise, so without this catch a throw anywhere below (a
+   * failed fetch, a version buffer the server didn't return) would vanish as an
+   * unhandled rejection and leave a dead-looking button behind.
+   */
+  const switchLanguageMode = async (nextLang, { onStatus } = {}) => {
+    try {
+      await runLanguageSwitch(nextLang, { onStatus });
+    } catch (e) {
+      onStatus?.({ level: 'error', msg: errorMessage(e) });
     }
   };
 
@@ -322,7 +372,7 @@ export function createLanguageMode({
       }
     }
 
-    translateBusy = true;
+    setTranslateBusy(true);
     const backdrop = buildBusyModal();
     root.append(backdrop);
     try {
@@ -349,9 +399,9 @@ export function createLanguageMode({
         msg: t('editor.translate.done', 'Translation ready.'),
       });
     } catch (e) {
-      onStatus?.({ level: 'error', msg: String(e?.message || e) });
+      onStatus?.({ level: 'error', msg: errorMessage(e) });
     } finally {
-      translateBusy = false;
+      setTranslateBusy(false);
       backdrop.remove();
     }
   };
@@ -401,7 +451,7 @@ export function createLanguageMode({
       }
     }
     onStatus?.({ level: 'info', msg: t('editor.translate.busy', 'Translating…') });
-    translateBusy = true;
+    setTranslateBusy(true);
     const backdrop = buildBusyModal();
     root.append(backdrop);
     try {
@@ -422,9 +472,9 @@ export function createLanguageMode({
       // (a duplicate write would double-insert the same text via the CRDT).
       onStatus?.({ level: 'success', msg: t('editor.translate.done', 'Translation ready.') });
     } catch (e) {
-      onStatus?.(String(e?.message || e));
+      onStatus?.({ level: 'error', msg: errorMessage(e) });
     } finally {
-      translateBusy = false;
+      setTranslateBusy(false);
       backdrop.remove();
     }
   };
@@ -504,10 +554,8 @@ export function createLanguageMode({
 
   // UI elements
   const langSegWrapper = h('div', { class: 'lang-seg-wrapper' });
-  const langSeg = h('div', {
-    class: 'sb-segmented is-toggle is-compact',
-    title: t('editor.langMode.title', 'Language mode (edit + present)'),
-  });
+  // Title is set by syncLangUi (it doubles as the busy explanation).
+  const langSeg = h('div', { class: 'sb-segmented is-toggle is-compact' });
 
   const btnNl = h('button', {
     class: 'sb-segmented-btn',
@@ -526,13 +574,12 @@ export function createLanguageMode({
   langSeg.append(btnNl, btnEn);
   langSegWrapper.append(langSeg, langPopover);
 
-  // Initialize button states
-  const supported = new Set(getSupportedLangs());
+  // Initialize button states. Visibility is fixed for the session (admin
+  // settings); active + disabled come from `syncLangUi`, the single derivation.
   const active = normalizeLang(pres?.i18n?.active);
-  btnNl.hidden = !(supported.has('nl') || active === 'nl');
-  btnEn.hidden = !(supported.has('en-GB') || active === 'en-GB');
-  btnNl.disabled = !supported.has('nl');
-  btnEn.disabled = !supported.has('en-GB');
+  btnNl.hidden = !(supportedLangs.has('nl') || active === 'nl');
+  btnEn.hidden = !(supportedLangs.has('en-GB') || active === 'en-GB');
+  syncLangUi();
 
   return {
     el: langSegWrapper,
