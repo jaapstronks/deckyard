@@ -35,8 +35,15 @@ import {
 } from '../../server/storage/collaborators.js';
 import { canActorAccessPresentation } from '../../server/utils/presentation-authz/actor-access.js';
 import { resolveIdentityByEmail } from '../../server/storage/identity-resolver.js';
+import { getDefaultOrganizationId } from '../../server/config/database.js';
 
-const ORG = '00000000-0000-0000-0000-0000000000aa';
+// The seeded org must be the instance DEFAULT: canActorAccessPresentation
+// resolves the collaborator lookup with an empty ctx, which getOrgId() maps to
+// the default organization regardless of pres.organizationId — the documented
+// machine-client tenant caveat (see actor-access.js and
+// docs/reference/tenant-isolation.md). Seeding under any other org id would
+// make the composed checks miss the collaborator rows this file pins.
+const ORG = getDefaultOrganizationId();
 const PID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 const CTX = { organizationId: ORG };
 
