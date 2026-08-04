@@ -53,7 +53,7 @@
 }
 .slide-icon-card-grid .header .title {
   font-family: var(--font-heading);
-  font-size: 48px; /* TODO: between --slide-text-2xl (44px) and --slide-text-3xl (52px) */
+  font-size: var(--slide-text-2xl);
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 400);

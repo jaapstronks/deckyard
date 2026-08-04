@@ -35,7 +35,7 @@
   color: var(--color-text);
 }
 .slide-image-text.is-compact .copy .body .md-subheading {
-  font-size: 22px;
+  font-size: var(--slide-text-md);
   margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-image-text .copy .body .md-subheading:first-child {

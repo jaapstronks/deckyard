@@ -104,7 +104,7 @@
 /* Description text below each stage */
 .slide-funnel .stage-text {
   font-family: var(--font-body);
-  font-size: 18px;
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
   color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
   text-align: center;
@@ -152,11 +152,11 @@
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-label {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-value {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-text {
@@ -178,7 +178,7 @@
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-value {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-text {
@@ -213,11 +213,11 @@
   }
 
   .slide-funnel .stage-label {
-    font-size: 18px;
+    font-size: var(--slide-text-sm);
   }
 
   .slide-funnel .stage-value {
-    font-size: 22px;
+    font-size: var(--slide-text-base);
   }
 
   .slide-funnel .stage-text {

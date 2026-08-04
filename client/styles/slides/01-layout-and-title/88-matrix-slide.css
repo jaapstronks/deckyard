@@ -219,12 +219,12 @@
   }
 
   .slide-matrix .cell-title {
-    font-size: 26px;
+    font-size: var(--slide-text-lg);
     margin-bottom: var(--slide-space-3);
   }
 
   .slide-matrix .cell-body {
-    font-size: 18px;
+    font-size: var(--slide-text-base);
   }
 }
 

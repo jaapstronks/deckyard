@@ -153,11 +153,10 @@
   justify-content: center;
 }
 
-/* Subheading: larger than regular text, placed after title.
-   Note: Uses 38px which is between scale values (34px/44px) for legacy reasons. */
+/* Subheading: larger than regular text, placed after title. */
 .slide .subheading {
   font-family: var(--font-body);
-  font-size: 38px; /* TODO: Consider migrating to var(--slide-text-xl) */
+  font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
   margin: var(--slide-space-3) 0 0;
   color: var(--color-text-muted, rgba(11, 11, 11, 0.65));
@@ -170,7 +169,7 @@
    sides, instead of floating ~38px too high. */
 .slide .bottom-subheading {
   font-family: var(--font-body);
-  font-size: 38px; /* TODO: Consider migrating to var(--slide-text-xl) */
+  font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
   margin-top: auto;
   margin-bottom: 0;

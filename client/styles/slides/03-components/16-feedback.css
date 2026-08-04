@@ -5,7 +5,7 @@
 }
 
 .slide-feedback.slide-follow-invite .sfi-body {
-  font-size: 26px;
+  font-size: var(--slide-text-md);
 }
 
 /* Two code rows need a bit more compact typography */
@@ -16,7 +16,7 @@
 
 /* Make labels more explicit but still bold/legible */
 .slide-feedback.slide-follow-invite .sfi-row-label {
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   opacity: 0.84;
 }
 

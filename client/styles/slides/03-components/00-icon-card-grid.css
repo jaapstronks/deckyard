@@ -32,7 +32,7 @@
 }
 .slide-icon-card-grid .icon-card-title {
   font-family: var(--font-heading);
-  font-size: 22px;
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   font-weight: var(--t-icon-card-grid-card-title-weight, 400);
   text-transform: var(--t-icon-card-grid-card-title-transform, none);
@@ -47,7 +47,7 @@
 }
 .slide-icon-card-grid .icon-card-text {
   font-family: var(--font-body);
-  font-size: 22px;
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
 }
 .slide-icon-card-grid .icon-card-text ul,

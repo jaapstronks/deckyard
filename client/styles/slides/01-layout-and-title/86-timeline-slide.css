@@ -319,7 +319,7 @@
 /* Description text */
 .slide-timeline .timeline-text {
   font-family: var(--font-body);
-  font-size: 17px; /* off-scale: between --slide-text-sm (16) and --slide-text-base (20); projector-readable, keeps hierarchy with the 20px title */
+  font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
   color: var(--timeline-text-muted);
   margin: 0;

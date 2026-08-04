@@ -178,7 +178,7 @@
 
 .slide-cycle .cycle-label {
   font-family: var(--font-heading);
-  font-size: 26px; /* TODO: between --slide-text-md (24px) and --slide-text-lg (28px) */
+  font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -319,11 +319,11 @@
 }
 
 .slide-cycle .cycle-container[data-count='3'] .cycle-label {
-  font-size: 30px; /* TODO: between --slide-text-lg (28px) and --slide-text-xl (34px) */
+  font-size: var(--slide-text-lg);
 }
 
 .slide-cycle .cycle-container[data-count='3'] .cycle-text {
-  font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+  font-size: var(--slide-text-md);
 }
 
 .slide-cycle .cycle-container[data-count='3'] .cycle-stage {
@@ -353,12 +353,12 @@
 
 .slide-cycle .cycle-container[data-count='5'] .cycle-label,
 .slide-cycle .cycle-container[data-count='6'] .cycle-label {
-  font-size: 22px; /* TODO: between --slide-text-base (20px) and --slide-text-md (24px) */
+  font-size: var(--slide-text-base);
 }
 
 .slide-cycle .cycle-container[data-count='5'] .cycle-text,
 .slide-cycle .cycle-container[data-count='6'] .cycle-text {
-  font-size: 17px; /* TODO: between --slide-text-sm (16px) and --slide-text-base (20px) */
+  font-size: var(--slide-text-sm);
 }
 
 .slide-cycle .cycle-container[data-count='5'] .cycle-ring,
