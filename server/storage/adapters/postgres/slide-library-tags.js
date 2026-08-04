@@ -7,7 +7,7 @@ import { getDb, getOrgId, now } from './helpers.js';
 
 /**
  * Slide Library Tags mixin - adds slide library tag methods to adapter.
- * @param {typeof import('../interface.js').StorageAdapter} Base
+ * @param {import('../types.js').AdapterBase} Base
  */
 export function withSlideLibraryTags(Base) {
   return class extends Base {

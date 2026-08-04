@@ -51,9 +51,9 @@
 }
 .slide-lijstje .lijst-item {
   display: flex;
-  gap: 28px; /* more horizontal room between marker and text */
+  gap: var(--slide-space-8); /* more horizontal room between marker and text */
   align-items: flex-start;
-  padding: 26px 0; /* more breathing room between items */
+  padding: var(--slide-space-6) 0; /* more breathing room between items */
   /* Never let flexbox compress an item to fit: shrinking eats the bottom
      padding asymmetrically and the wrapped description ends up crowding the
      divider below it. Keep items at natural size; when many long items don't
@@ -81,6 +81,8 @@
   font-size: var(--slide-text-md);
   /* allowlist: single-line display glyph — the line box is the layout, not text rhythm (slide-roles.md) */
   line-height: 1;
+  /* allowlist: sub-step hairline — an optical baseline nudge for the numeral in
+     the disc, measured off the glyph, not off the spacing scale (slide-roles.md) */
   margin-top: 2px;
 }
 /* The dot is a pure graphic: it follows --slide-marker-color, not the accent
@@ -109,7 +111,7 @@
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
   letter-spacing: var(--t-list-item-title-letter-spacing, -0.01em);
-  margin: 0 0 6px;
+  margin: 0 0 var(--slide-space-2);
 }
 .slide-lijstje .item-text {
   font-family: var(--font-body);
@@ -133,7 +135,7 @@
   font-size: calc(1em * var(--tf-size-scale, 1));
 }
 .slide-lijstje.is-comfortable .lijst-item {
-  padding: 30px 0;
+  padding: var(--slide-space-8) 0;
 }
 .slide-lijstje.is-comfortable.is-bullets .marker {
   margin-top: var(--slide-space-5); /* keep bullet aligned with the taller title line */

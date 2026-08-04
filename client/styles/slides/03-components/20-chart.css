@@ -14,13 +14,13 @@
   justify-content: flex-start;
 }
 .slide-chart .chart-header {
-  margin-bottom: 18px;
+  margin-bottom: var(--slide-space-5);
 }
 .slide-chart .chart-title-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 14px;
+  gap: var(--slide-space-4);
 }
 .slide-chart .chart-title {
   font-family: var(--font-heading);
@@ -32,7 +32,7 @@
   margin: 0;
 }
 .slide-chart .chart-subtitle {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
   color: var(--color-text-muted);
@@ -50,11 +50,11 @@
 }
 .slide-chart[data-chart-type='bar'] .chart-area {
   /* Bar charts read better slightly lower (more breathing room under title/legend). */
-  padding: 22px 4px 8px;
+  padding: var(--slide-space-6) var(--slide-space-1) var(--slide-space-2);
 }
 .slide-chart[data-chart-type='line'] .chart-area {
   /* Smaller nudge than bar charts. */
-  padding: 14px 4px 8px;
+  padding: var(--slide-space-4) var(--slide-space-1) var(--slide-space-2);
 }
 .slide-chart .chart-svg {
   width: 100%;
@@ -65,15 +65,15 @@
 .slide-chart .chart-legend-block {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 14px;
+  gap: var(--slide-space-3) var(--slide-space-4);
   align-items: center;
-  margin: 6px 0 10px;
+  margin: var(--slide-space-2) 0 var(--slide-space-3);
 }
 .slide-chart .chart-legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
+  gap: var(--slide-space-3);
+  padding: var(--slide-space-2) var(--slide-space-3);
   border-radius: var(--slide-radius-full);
   border: 1px solid rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 0.35);
@@ -250,7 +250,7 @@
   height: 100%;
   box-sizing: border-box;
   border-radius: var(--slide-radius-md);
-  padding: 18px 20px;
+  padding: var(--slide-space-5);
   border: 1px solid rgba(0, 0, 0, 0.16);
   background: rgba(255, 255, 255, 0.7);
   overflow: auto;
@@ -258,7 +258,7 @@
 .slide-chart .chart-error-title {
   font-family: var(--font-heading);
   font-size: var(--slide-text-md);
-  margin-bottom: 10px;
+  margin-bottom: var(--slide-space-3);
   color: rgba(0, 0, 0, 0.9);
 }
 .slide-chart .chart-error-list {

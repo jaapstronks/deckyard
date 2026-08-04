@@ -21,7 +21,7 @@
   font-size: calc(24px * var(--tf-size-scale, 1));
 }
 .slide-image-text .copy .body p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--slide-space-4);
 }
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
 .slide-image-text .copy .body .md-subheading {
@@ -36,18 +36,18 @@
 }
 .slide-image-text.is-compact .copy .body .md-subheading {
   font-size: var(--slide-text-md);
-  margin: 18px 0 10px;
+  margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-image-text .copy .body .md-subheading:first-child {
   margin-top: 0;
 }
 .slide-image-text .copy .body ul,
 .slide-image-text .copy .body ol {
-  margin: 0 0 14px 1.2em;
+  margin: 0 0 var(--slide-space-4) 1.2em;
   padding: 0;
 }
 .slide-image-text .copy .body li {
-  margin: 10px 0;
+  margin: var(--slide-space-3) 0;
 }
 .slide-image-text .copy .body ul li::marker {
   color: var(--color-accent);

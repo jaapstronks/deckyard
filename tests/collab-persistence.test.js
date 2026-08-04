@@ -1,34 +1,55 @@
 /**
- * Tests for collab Y.Doc persistence (phase 2, step 2): file-backend ydoc
- * state storage, the Hocuspocus onLoadDocument/onStoreDocument hooks, and
+ * Tests for collab Y.Doc persistence (phase 2, step 2): the Y.Doc state
+ * facade, the Hocuspocus onLoadDocument/onStoreDocument hooks, and
  * cold-binary invalidation when a deck is saved outside the collab doc.
  *
- * Uses file-mode storage in a temp repoRoot (same approach as the authz
- * integration tests).
+ * Runs against the in-memory database double (tests/helpers/fake-db.js), the
+ * only storage backend there is.
  *
  * Run with: node --test tests/collab-persistence.test.js
  */
 
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
 import * as Y from 'yjs';
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { deckYdocCodec } from '../server/collab/deck-doc.js';
 import { testScope } from './helpers/storage-scope.js';
-import {
+
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const {
   getYDocState,
   setYDocState,
   deleteYDocState,
-} from '../server/storage/presentations/ydoc-state.js';
-import {
+} = await import('../server/storage/presentation-ydocs.js');
+const {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../server/storage/presentations/index.js';
+} = await import('../server/storage/presentations/index.js');
+
+// The collab hooks still take a `repoRoot` for their scope shape; storage
+// ignores it entirely now that PostgreSQL is the only backend.
+const REPO_ROOT = process.cwd();
+
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
+// `closeStorage()` would call `db.destroy()`, which the in-memory double does
+// not have — drop the adapter singleton instead, the seam meant for exactly
+// this (server/storage/adapters/index.js).
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 function stripVolatile(pres) {
   const p = JSON.parse(JSON.stringify(pres));
@@ -52,65 +73,57 @@ function makeLog() {
   };
 }
 
-describe('ydoc-state file backend', () => {
-  let tempRoot;
+describe('ydoc-state facade', () => {
+  let deckId;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ydoc-state-test-'));
-  });
-  after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
+    const created = await createPresentation(testScope(), {
+      title: 'Ydoc state deck',
+      ownerEmail: 'owner@example.com',
+      lang: 'nl',
+    });
+    deckId = created.id;
   });
 
   it('set/get/delete round-trip', async () => {
     const bytes = new Uint8Array([1, 2, 3, 250]);
-    assert.equal(await getYDocState(tempRoot, 'abc-123'), null);
-    assert.equal(await setYDocState(tempRoot, 'abc-123', bytes), true);
-    assert.deepEqual(await getYDocState(tempRoot, 'abc-123'), bytes);
-    assert.equal(await deleteYDocState(tempRoot, 'abc-123'), true);
-    assert.equal(await getYDocState(tempRoot, 'abc-123'), null);
-  });
-
-  it('refuses path-traversal ids', async () => {
-    assert.equal(await setYDocState(tempRoot, '../evil', new Uint8Array([1])), false);
-    assert.equal(await getYDocState(tempRoot, '../evil'), null);
+    assert.equal(await getYDocState(testScope(), deckId), null);
+    assert.equal(await setYDocState(testScope(), deckId, bytes), true);
+    assert.deepEqual(await getYDocState(testScope(), deckId), bytes);
+    assert.equal(await deleteYDocState(testScope(), deckId), true);
+    assert.equal(await getYDocState(testScope(), deckId), null);
   });
 });
 
-describe('collab persistence hooks (file-mode storage)', () => {
-  let tempRoot;
+describe('collab persistence hooks', () => {
   let deckId;
   let log;
   let hooks;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-persist-test-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    const created = await createPresentation(testScope(), {
       title: 'Persistente deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
     });
     deckId = created.id;
   });
-  after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
-  });
   beforeEach(() => {
     log = makeLog();
-    hooks = createCollabPersistence({ repoRoot: tempRoot, deps: { log } });
+    hooks = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log } });
   });
 
   it('first open bootstraps the doc from the deck JSON and persists the binary', async () => {
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
 
-    const stored = await getPresentation(testScope(tempRoot), deckId);
+    const stored = await getPresentation(testScope(), deckId);
     assert.deepStrictEqual(
       stripVolatile(deckYdocCodec.projectDocToPresentation(doc)),
       stripVolatile(stored)
     );
 
-    const bin = await getYDocState(tempRoot, deckId);
+    const bin = await getYDocState(testScope(), deckId);
     assert.ok(bin instanceof Uint8Array && bin.length > 0, 'bootstrap binary persisted');
   });
 
@@ -131,14 +144,14 @@ describe('collab persistence hooks (file-mode storage)', () => {
   it('onStoreDocument serializes the doc back to the deck JSON via the facade', async () => {
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
-    const before = await getPresentation(testScope(tempRoot), deckId);
+    const before = await getPresentation(testScope(), deckId);
 
     const title = doc.getMap('meta').get('title').get('nl');
     title.delete(0, title.length);
     title.insert(0, 'Live bewerkt');
     await hooks.onStoreDocument({ documentName: docName(deckId), document: doc });
 
-    const afterJson = await getPresentation(testScope(tempRoot), deckId);
+    const afterJson = await getPresentation(testScope(), deckId);
     assert.equal(afterJson.title, 'Live bewerkt');
     assert.equal(afterJson.revision, before.revision + 1, 'revision bumped by the facade');
     assert.equal(log.lines.error.length, 0, log.lines.error.join('\n'));
@@ -147,10 +160,10 @@ describe('collab persistence hooks (file-mode storage)', () => {
   it('keeps the binary and leaves the JSON untouched when serialization fails', async () => {
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
-    const before = await getPresentation(testScope(tempRoot), deckId);
+    const before = await getPresentation(testScope(), deckId);
 
     const failing = createCollabPersistence({
-      repoRoot: tempRoot,
+      repoRoot: REPO_ROOT,
       deps: {
         log,
         updatePresentation: async () => {
@@ -165,9 +178,9 @@ describe('collab persistence hooks (file-mode storage)', () => {
       failing.onStoreDocument({ documentName: docName(deckId), document: doc })
     );
 
-    const after = await getPresentation(testScope(tempRoot), deckId);
-    assert.equal(after.title, before.title, 'JSON not clobbered');
-    assert.equal(after.revision, before.revision, 'JSON untouched');
+    const afterJson = await getPresentation(testScope(), deckId);
+    assert.equal(afterJson.title, before.title, 'JSON not clobbered');
+    assert.equal(afterJson.revision, before.revision, 'JSON untouched');
     assert.equal(log.lines.error.length, 1);
     assert.match(log.lines.error[0], /JSON left as-is/);
 
@@ -178,21 +191,21 @@ describe('collab persistence hooks (file-mode storage)', () => {
   });
 
   it('never stores an unpopulated doc over a real deck', async () => {
-    const before = await getPresentation(testScope(tempRoot), deckId);
+    const before = await getPresentation(testScope(), deckId);
     await hooks.onStoreDocument({ documentName: docName(deckId), document: new Y.Doc() });
-    const after = await getPresentation(testScope(tempRoot), deckId);
-    assert.equal(after.revision, before.revision);
+    const afterJson = await getPresentation(testScope(), deckId);
+    assert.equal(afterJson.revision, before.revision);
     assert.equal(log.lines.warn.length, 1);
     assert.match(log.lines.warn[0], /no deck state/);
   });
 
   it('logs bootstrap warnings loudly when language versions had diverged', async () => {
-    const diverged = await createPresentation(testScope(tempRoot), {
+    const diverged = await createPresentation(testScope(), {
       title: 'Divergent deck',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
     });
-    const pres = await getPresentation(testScope(tempRoot), diverged.id);
+    const pres = await getPresentation(testScope(), diverged.id);
     pres.i18n = {
       dominant: 'nl',
       versions: {
@@ -206,7 +219,7 @@ describe('collab persistence hooks (file-mode storage)', () => {
         },
       },
     };
-    await updatePresentation(testScope(tempRoot), diverged.id, pres);
+    await updatePresentation(testScope(), diverged.id, pres);
 
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(diverged.id), document: doc });
@@ -217,7 +230,6 @@ describe('collab persistence hooks (file-mode storage)', () => {
 });
 
 describe('cold-binary invalidation on non-collab saves', () => {
-  let tempRoot;
   let deckId;
   const envBefore = {};
 
@@ -225,32 +237,30 @@ describe('cold-binary invalidation on non-collab saves', () => {
     for (const k of ['COLLAB_ENABLED', 'COLLAB_LIVE_EDITS']) envBefore[k] = process.env[k];
     process.env.COLLAB_ENABLED = 'true';
     process.env.COLLAB_LIVE_EDITS = 'true';
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'collab-invalidate-test-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    const created = await createPresentation(testScope(), {
       title: 'Invalidate me',
       ownerEmail: 'owner@example.com',
     });
     deckId = created.id;
   });
-  after(async () => {
+  after(() => {
     for (const [k, v] of Object.entries(envBefore)) {
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
     }
-    await fs.rm(tempRoot, { recursive: true, force: true });
   });
 
   it('a REST/MCP-style save deletes the stored doc binary', async () => {
-    const hooks = createCollabPersistence({ repoRoot: tempRoot, deps: { log: makeLog() } });
+    const hooks = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
-    assert.ok(await getYDocState(tempRoot, deckId), 'binary exists after collab open');
+    assert.ok(await getYDocState(testScope(), deckId), 'binary exists after collab open');
 
-    const pres = await getPresentation(testScope(tempRoot), deckId);
-    await updatePresentation(testScope(tempRoot), deckId, { ...pres, title: 'Edited via REST' });
+    const pres = await getPresentation(testScope(), deckId);
+    await updatePresentation(testScope(), deckId, { ...pres, title: 'Edited via REST' });
     // The invalidation is fire-and-forget; give it a tick.
     await new Promise((r) => setTimeout(r, 50));
-    assert.equal(await getYDocState(tempRoot, deckId), null, 'binary invalidated');
+    assert.equal(await getYDocState(testScope(), deckId), null, 'binary invalidated');
   });
 
   it('invalidation also fires while the flag is off (no resurrection after re-enable)', async () => {
@@ -259,11 +269,11 @@ describe('cold-binary invalidation on non-collab saves', () => {
     delete process.env.COLLAB_ENABLED;
     delete process.env.COLLAB_LIVE_EDITS;
     try {
-      await setYDocState(tempRoot, deckId, new Uint8Array([1, 2, 3]));
-      const pres = await getPresentation(testScope(tempRoot), deckId);
-      await updatePresentation(testScope(tempRoot), deckId, { ...pres, title: 'Saved while flag off' });
+      await setYDocState(testScope(), deckId, new Uint8Array([1, 2, 3]));
+      const pres = await getPresentation(testScope(), deckId);
+      await updatePresentation(testScope(), deckId, { ...pres, title: 'Saved while flag off' });
       await new Promise((r) => setTimeout(r, 50));
-      assert.equal(await getYDocState(tempRoot, deckId), null, 'binary invalidated');
+      assert.equal(await getYDocState(testScope(), deckId), null, 'binary invalidated');
     } finally {
       process.env.COLLAB_ENABLED = 'true';
       process.env.COLLAB_LIVE_EDITS = 'true';
@@ -271,11 +281,11 @@ describe('cold-binary invalidation on non-collab saves', () => {
   });
 
   it('a collab-originated save keeps the binary', async () => {
-    const hooks = createCollabPersistence({ repoRoot: tempRoot, deps: { log: makeLog() } });
+    const hooks = createCollabPersistence({ repoRoot: REPO_ROOT, deps: { log: makeLog() } });
     const doc = new Y.Doc();
     await hooks.onLoadDocument({ documentName: docName(deckId), document: doc });
     await hooks.onStoreDocument({ documentName: docName(deckId), document: doc });
     await new Promise((r) => setTimeout(r, 50));
-    assert.ok(await getYDocState(tempRoot, deckId), 'binary survives collab save');
+    assert.ok(await getYDocState(testScope(), deckId), 'binary survives collab save');
   });
 });

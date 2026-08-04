@@ -1,5 +1,5 @@
 import { createFollowCode, resolveFollowCode } from '../../storage/follow-codes.js';
-import { badRequest, methodNotAllowed, parseJsonBody, payloadTooLarge, serveJson, unauthorized, rateLimited } from '../../utils/http.js';
+import { badRequest, methodNotAllowed, parseJsonBody, payloadTooLarge, serveJson, serverError, unauthorized, rateLimited } from '../../utils/http.js';
 import { getClientIp } from '../../utils/context.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('follow-codes');
@@ -56,7 +56,7 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
 
   const clientIp = getClientIp(req) || 'unknown';
 
-  // POST /api/follow-codes - Create a new 4-letter code for a follow URL
+  // POST /api/follow-codes - Mint a short letter code for a follow URL
   // Requires authentication to prevent abuse
   if (url.pathname === '/api/follow-codes' && req.method === 'POST') {
     // Require authentication
@@ -96,6 +96,11 @@ export async function handleFollowCodes({ repoRoot, req, res, url, authedUser })
       }
 
       const code = await createFollowCode(repoRoot, followUrl.trim());
+      if (!code) {
+        // Codes live in Postgres; without it there is nothing to hand out.
+        serverError(res, 'Follow codes are unavailable');
+        return true;
+      }
       serveJson(res, 200, { code });
       return true;
     } catch (error) {

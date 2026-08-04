@@ -111,18 +111,15 @@ export async function handleFollowInteractionsCurrent(
     // Ensure a session-scoped interaction exists even before the first vote.
     if (type === 'feedback') {
       await ensureFeedbackForSlide(repoRoot, state.sessionId, {
-        presentationId,
         slideId,
       });
     } else if (type === 'likert') {
       await ensureLikertInteractionForSlide(repoRoot, state.sessionId, {
-        presentationId,
         slideId,
         optionCount,
       });
     } else {
       await ensurePollInteractionForSlide(repoRoot, state.sessionId, {
-        presentationId,
         slideId,
         optionCount,
       });
@@ -292,14 +289,12 @@ export async function handleFollowInteractionVote(
     const result =
       type === 'likert'
         ? await voteLikertInteraction(repoRoot, state.sessionId, {
-            presentationId,
             slideId: requested,
             deviceId: dev.id,
             optionIndex,
             optionCount,
           })
         : await votePollInteraction(repoRoot, state.sessionId, {
-            presentationId,
             slideId: requested,
             deviceId: dev.id,
             optionIndex,
@@ -358,7 +353,6 @@ export async function handleFollowInteractionFeedback(
     const body = await json(req);
     const text = getString(body, 'text');
     const result = await submitFeedback(repoRoot, state.sessionId, {
-      presentationId,
       slideId: requested,
       deviceId: dev.id,
       text,

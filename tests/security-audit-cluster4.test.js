@@ -35,15 +35,42 @@ import path from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
-import { handlePresentSessions } from '../server/routes/api/present-sessions.js';
-import { handleShareLinkManagement } from '../server/routes/api/share-links/management.js';
-import { shareLinkBelongsToPresentation } from '../server/routes/api/share-links/management.js';
-import { fetchCsvData } from '../server/utils/data-source/providers/csv-url.js';
-import { sessions, loadedRoots } from '../server/storage/present-sessions/state.js';
-import { presDir } from '../server/storage/presentations/paths.js';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
+// Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { handlePresentSessions } = await import('../server/routes/api/present-sessions.js');
+const { handleShareLinkManagement, shareLinkBelongsToPresentation } = await import(
+  '../server/routes/api/share-links/management.js'
+);
+const { fetchCsvData } = await import('../server/utils/data-source/providers/csv-url.js');
+const { sessions } = await import('../server/storage/present-sessions/state.js');
 
 const OWNER = { email: 'owner@example.com' };
 const FOREIGN = { email: 'attacker@example.com' };
+
+/** The database double, reinstalled per test so decks never leak between them. */
+let db;
+
+test.beforeEach(async () => {
+  db = createFakeDb({
+    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    presentations: [],
+  });
+  __setTestDb(db);
+  await initializeStorage();
+});
+
+test.afterEach(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 /**
  * Minimal ServerResponse mock: a Writable that also answers writeHead/end so
@@ -80,27 +107,44 @@ function mockReq(method, body) {
   return req;
 }
 
-async function seedPresentation(root, id, { ownerEmail, slides = [] }) {
-  const dir = presDir(root);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(
-    path.join(dir, `${id}.json`),
-    JSON.stringify({
-      id,
-      title: 'Test deck',
-      scope: 'private',
-      ownerEmail,
-      createdBy: ownerEmail,
-      slides,
-    }),
-    'utf8',
-  );
+/**
+ * Seed one private deck straight into the database double. The routes read it
+ * back through the presentations facade, so only the column names the Postgres
+ * adapter selects matter here.
+ * @param {string} id - Presentation id
+ * @param {Object} options
+ * @param {string} options.ownerEmail - Deck owner
+ * @param {Array<Object>} [options.slides] - Slides to store
+ * @returns {void}
+ */
+function seedPresentation(id, { ownerEmail, slides = [] }) {
+  db.__tables.presentations.push({
+    id,
+    organization_id: ORG,
+    owner_email: ownerEmail,
+    created_by: ownerEmail,
+    updated_by: ownerEmail,
+    title: 'Test deck',
+    description: null,
+    theme: 'default',
+    lang: 'nl',
+    scope: 'private',
+    is_view_only: false,
+    revision: 1,
+    settings: {},
+    i18n: null,
+    slides,
+    published: null,
+    created_at: '2026-07-01T00:00:00.000Z',
+    modified_at: '2026-07-01T00:00:00.000Z',
+    trashed_at: null,
+  });
 }
 
 function seedSession(root, sessionId, presentationId, extra = {}) {
-  // Pre-mark the root as loaded so getPresentSession skips the disk scan and
-  // uses our in-memory entry.
-  loadedRoots.add(root);
+  // Straight into the live map: the session lookup hydrates from Postgres on a
+  // miss, and the database double carries no `present_sessions` rows, so an
+  // in-memory entry is what the route resolves.
   const s = {
     sessionId,
     presentationId,
@@ -116,7 +160,6 @@ function seedSession(root, sessionId, presentationId, extra = {}) {
     followCodes: {},
     createdAt: 1,
     lastActivityAt: Date.now(),
-    repoRoot: root,
     clients: new Set(),
     heartbeatTimers: new Map(),
     persistTimer: null,
@@ -154,7 +197,7 @@ async function callPresentSessions({ root, method, pathname, body, authedUser })
 
 test('H4: a non-owner cannot create/resume a present session (401)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-a', { ownerEmail: OWNER.email });
+    seedPresentation('deck-a', { ownerEmail: OWNER.email });
     const { res } = await callPresentSessions({
       root,
       method: 'POST',
@@ -168,7 +211,7 @@ test('H4: a non-owner cannot create/resume a present session (401)', async () =>
 
 test('H4: the owner can create a present session (201)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-b', { ownerEmail: OWNER.email });
+    seedPresentation('deck-b', { ownerEmail: OWNER.email });
     const { res } = await callPresentSessions({
       root,
       method: 'POST',
@@ -183,7 +226,7 @@ test('H4: the owner can create a present session (201)', async () => {
 
 test('H4: a non-owner cannot enable remote control on a live session (401)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-c', { ownerEmail: OWNER.email });
+    seedPresentation('deck-c', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-c', 'deck-c');
     const { res } = await callPresentSessions({
       root,
@@ -198,7 +241,7 @@ test('H4: a non-owner cannot enable remote control on a live session (401)', asy
 
 test('H4: the owner can enable remote control (200)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-d', { ownerEmail: OWNER.email });
+    seedPresentation('deck-d', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-d', 'deck-d');
     const { res } = await callPresentSessions({
       root,
@@ -213,7 +256,7 @@ test('H4: the owner can enable remote control (200)', async () => {
 
 test('H4: a non-owner cannot push live slide state (401)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-e', { ownerEmail: OWNER.email });
+    seedPresentation('deck-e', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-e', 'deck-e');
     const { res } = await callPresentSessions({
       root,
@@ -229,7 +272,7 @@ test('H4: a non-owner cannot push live slide state (401)', async () => {
 
 test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-f', {
+    seedPresentation('deck-f', {
       ownerEmail: OWNER.email,
       slides: [{ id: 'fb1', type: 'feedback-slide', content: {} }],
     });
@@ -248,7 +291,7 @@ test('H4: a non-owner cannot export audience feedback CSV (401, no PII leaked)',
 
 test('H4: reading session state stays open to the audience (GET is capability-based)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-g', { ownerEmail: OWNER.email });
+    seedPresentation('deck-g', { ownerEmail: OWNER.email });
     seedSession(root, 'sess-g', 'deck-g');
     // No authedUser at all (audience device): GET /state must still resolve.
     const { res } = await callPresentSessions({
@@ -332,7 +375,7 @@ test('MH2: revoke/update/access-log run the containment gate before mutating', a
 
 test('MH2: a linkId that resolves to no in-scope link is denied (404, fail closed)', async () => {
   await withTempRoot(async (root) => {
-    await seedPresentation(root, 'deck-h', { ownerEmail: OWNER.email });
+    seedPresentation('deck-h', { ownerEmail: OWNER.email });
     const res = new MockRes();
     const url = new URL(
       'http://localhost/api/presentations/deck-h/share-links/foreign-link-id',

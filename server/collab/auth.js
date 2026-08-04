@@ -44,12 +44,10 @@ export async function authenticateUpgradeRequest(request) {
  * Extract the presentation id from a collab document name.
  * The document name is arbitrary Yjs-protocol application data (a client can
  * open a provider with any name), and the extracted id flows into
- * `getPresentation` → `presPath` (`path.join(dataDir, 'presentations',
- * `${id}.json`)`), which does not sanitize it. Without a charset guard a name
- * like `presentation:../../../../etc/foo` would resolve outside the
- * presentations directory. Restrict the id to the same safe charset the ydoc
- * `.bin` backend already enforces (`ydoc-state.js` `safeId`); real ids are
- * uuids. Anything else is rejected as an unknown document.
+ * `getPresentation` and other storage lookups that treat it as an opaque key.
+ * Restrict the id to a safe charset so a name like
+ * `presentation:../../../../etc/foo` is rejected as an unknown document
+ * rather than reaching any lookup; real ids are uuids.
  *
  * @param {string} documentName
  * @returns {string|null}

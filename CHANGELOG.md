@@ -4,6 +4,38 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.15.0](https://github.com/jaapstronks/deckyard/compare/v1.14.0...v1.15.0) (2026-08-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **slide-types:** seven slide-type CSS classes are no longer emitted (team-cards-group-left, kpi-note, quote-author-text, poll-results-main, sfi-header, sfi-card-code, sfi-card-qr). No core stylesheet targeted them, so Deckyard's own themes are unaffected; a fork that styled any of these names against its own copy of the slide types must move those rules to the surviving class on the same element.
+
+### Added
+
+* **i18n:** tier UI locales - nl/en gated, ten best-effort ([12c9bad](https://github.com/jaapstronks/deckyard/commit/12c9bad4111b737f926d15a908f00a58a492a539))
+* **import:** complete the file→Postgres import path ([#586](https://github.com/jaapstronks/deckyard/issues/586)) ([53fe563](https://github.com/jaapstronks/deckyard/commit/53fe56300ddf882e151b4ac82e6c6527c71243be))
+* **ops:** ship Postgres in the compose stack ([#585](https://github.com/jaapstronks/deckyard/issues/585)) ([4c93690](https://github.com/jaapstronks/deckyard/commit/4c93690f607ad2b5cec850997a8067709e55fef6))
+* **sandbox:** run sandbox TTL cleanup and quota on Postgres ([#589](https://github.com/jaapstronks/deckyard/issues/589)) ([3cd1d3d](https://github.com/jaapstronks/deckyard/commit/3cd1d3d83756665c4bae2fb877c242abb9fd3355))
+* **storage:** default STORAGE_MODE to postgres with a boot guard for file data ([#587](https://github.com/jaapstronks/deckyard/issues/587)) ([12b9a3b](https://github.com/jaapstronks/deckyard/commit/12b9a3bb6c3a38d90073f4c199deac23122139d8))
+* **storage:** move email templates from disk JSON to Postgres ([#602](https://github.com/jaapstronks/deckyard/issues/602)) ([e6d2d35](https://github.com/jaapstronks/deckyard/commit/e6d2d35fd97b3fe0b0f1c8fd206bdf622dbd7236))
+* **storage:** move live sessions and follow codes from disk JSON to Postgres ([#604](https://github.com/jaapstronks/deckyard/issues/604)) ([96aa349](https://github.com/jaapstronks/deckyard/commit/96aa349f604bf7d484f84700de91a6407daafe42))
+* **storage:** move settings from disk JSON to Postgres ([#603](https://github.com/jaapstronks/deckyard/issues/603)) ([e0c4072](https://github.com/jaapstronks/deckyard/commit/e0c4072c8d7daab1e5adf24643437613e0c17393))
+* **storage:** remove the file storage backend ([#595](https://github.com/jaapstronks/deckyard/issues/595)) ([1825a2f](https://github.com/jaapstronks/deckyard/commit/1825a2f1dc9bb6c7f358a2969a7d4e9e966e1e7d))
+
+
+### Fixed
+
+* **image-library:** find image usage in the presentations table, not on disk ([#601](https://github.com/jaapstronks/deckyard/issues/601)) ([6a84975](https://github.com/jaapstronks/deckyard/commit/6a84975899210313355e9d6c0ef3dbd6c2366f38))
+* **install:** pass the local compose overlay and fail fast on a stale DATABASE_HOST ([#598](https://github.com/jaapstronks/deckyard/issues/598)) ([4ae2f0d](https://github.com/jaapstronks/deckyard/commit/4ae2f0d5275f23f99a348474921977c0c9190770))
+
+
+### Changed
+
+* **auth:** reuse the active membership for designer resolution ([06d8122](https://github.com/jaapstronks/deckyard/commit/06d812291a76fd964e3569058bca69bbf3c1d9cc))
+* **main:** revert the 2.0.0 release bookkeeping, keep numbering in 1.x ([51103e7](https://github.com/jaapstronks/deckyard/commit/51103e7bdb9b760c554cba96ad64b6535b97124c))
+* **slide-types:** drop seven dead emitted CSS classes ([#599](https://github.com/jaapstronks/deckyard/issues/599)) ([6347085](https://github.com/jaapstronks/deckyard/commit/6347085397e5bc2497cc8fce6efe1a8638c22b78))
+
 ## [1.14.0](https://github.com/jaapstronks/deckyard/compare/v1.13.0...v1.14.0) (2026-08-03)
 
 

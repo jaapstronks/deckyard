@@ -15,16 +15,35 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { createPresentation, listPresentations } from '../server/storage/presentations/index.js';
 import { resolveThemeThumbBg } from '../server/utils/themes.js';
 import { testScope } from './helpers/storage-scope.js';
 
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { createPresentation, listPresentations } = await import(
+  '../server/storage/presentations/index.js'
+);
+
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+test.before(async () => {
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
+});
+
+test.after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 test('resolveThemeThumbBg returns a theme background hex', async () => {
   const bg = await resolveThemeThumbBg(repoRoot, 'deckyard');
@@ -39,13 +58,12 @@ test('resolveThemeThumbBg never throws and falls back sanely', async () => {
 });
 
 test('list payload reports hasSlides instead of shipping slide content', async () => {
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-hasslides-'));
-  await createPresentation(testScope(tmp), {
+  await createPresentation(testScope(), {
     title: 'Has a slide',
     ownerEmail: 'owner@example.com',
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
-  const list = await listPresentations(testScope(tmp));
+  const list = await listPresentations(testScope());
   const item = list.find((p) => p.title === 'Has a slide');
   assert.ok(item, 'deck is listed');
   assert.equal(item.hasSlides, true, 'presence flag set');

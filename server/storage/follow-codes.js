@@ -1,9 +1,23 @@
-import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { dataDir } from '../config/storage-paths.js';
+/**
+ * Follow-code storage.
+ *
+ * A follow code is a short, human-typable handle for a live follow URL: the
+ * audience types five letters instead of a link. Codes live in the
+ * `follow_codes` table (widened from the dormant 001 schema by migration 060),
+ * one row per code, expiring 24 hours after they are minted.
+ *
+ * They used to be a `follow-codes.json` blob rewritten in full on every mint —
+ * a non-atomic write (no tmp+rename) whose `cleanupExpiredCodes` nothing ever
+ * called, so the file only grew. A row per code makes the mint a single insert
+ * and the cleanup a `DELETE`, run by the live-session sweep.
+ *
+ * The facade is unchanged: every function still takes `repoRoot` first for
+ * call-site stability, but that argument is now unused — persistence no longer
+ * touches disk.
+ */
 
-const CODES_FILE = 'follow-codes.json';
+import crypto from 'node:crypto';
+import { withDbGuard } from './utils/db-guard.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a
 // presenter's live follow URL. Use a CSPRNG (not Math.random, which is
@@ -13,27 +27,22 @@ const CODES_FILE = 'follow-codes.json';
 const CODE_LENGTH = 5;
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPRTUVWXY';
 
-function codesFilePath(repoRoot) {
-  return path.join(dataDir(repoRoot), CODES_FILE);
-}
+/**
+ * How long a minted code stays resolvable. Present sessions use the same
+ * window (`present-sessions/constants.js` TTL_MS), so a code outlives the
+ * session it was minted for by no more than the session's own idle grace.
+ */
+export const FOLLOW_CODE_TTL_MS = 24 * 60 * 60 * 1000;
 
-async function readCodes(repoRoot) {
-  try {
-    const content = await fs.readFile(codesFilePath(repoRoot), 'utf8');
-    return JSON.parse(content);
-  } catch {
-    return {};
-  }
-}
+/** How many collisions to ride out before giving up on a unique code. */
+const MAX_MINT_ATTEMPTS = 100;
 
-async function writeCodes(repoRoot, codes) {
-  const filePath = codesFilePath(repoRoot);
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(codes, null, 2), 'utf8');
-}
-
+/**
+ * Mint a random code. The alphabet excludes glyphs that are easy to misread:
+ * O/0, I/1, Q/O, S/5, Z/2.
+ * @returns {string}
+ */
 export function generateCode() {
-  // Alphabet excludes glyphs that are easy to misread: O/0, I/1, Q/O, S/5, Z/2.
   let code = '';
   for (let i = 0; i < CODE_LENGTH; i++) {
     code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
@@ -41,74 +50,89 @@ export function generateCode() {
   return code;
 }
 
-function isCodeExpired(entry, maxAgeMs = 24 * 60 * 60 * 1000) {
-  const now = Date.now();
-  return now - entry.created > maxAgeMs;
-}
-
+/**
+ * Create a follow code for a follow URL.
+ *
+ * Uniqueness is the primary key's job: each attempt inserts with
+ * `ON CONFLICT DO NOTHING` and retries on a collision, so two processes minting
+ * at the same instant can never hand out the same code. An expired row still
+ * occupies its code until the sweep removes it; that costs a retry, which at a
+ * 4M keyspace is not a cost worth engineering around.
+ *
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {string} followUrl - The `/follow/...` URL the code resolves to.
+ * @returns {Promise<string|null>} The code, or null when the database is
+ *   unavailable.
+ */
 export async function createFollowCode(repoRoot, followUrl) {
-  const codes = await readCodes(repoRoot);
-
-  // Clean up expired codes first
-  const now = Date.now();
-  for (const [code, entry] of Object.entries(codes)) {
-    if (isCodeExpired(entry)) {
-      delete codes[code];
+  return withDbGuard(null, async (db) => {
+    for (let attempt = 0; attempt < MAX_MINT_ATTEMPTS; attempt++) {
+      const createdAt = new Date();
+      const inserted = await db
+        .insertInto('follow_codes')
+        .values({
+          code: generateCode(),
+          follow_url: followUrl,
+          created_at: createdAt,
+          expires_at: new Date(createdAt.getTime() + FOLLOW_CODE_TTL_MS),
+        })
+        .onConflict((oc) => oc.column('code').doNothing())
+        .returning('code')
+        .executeTakeFirst();
+      if (inserted?.code) return inserted.code;
     }
-  }
-  
-  // Generate a unique code
-  let code;
-  let attempts = 0;
-  do {
-    code = generateCode();
-    attempts++;
-    if (attempts > 100) {
-      throw new Error('Unable to generate unique follow code');
-    }
-  } while (codes[code]);
-  
-  // Store the code mapping
-  codes[code] = {
-    followUrl,
-    created: now,
-  };
-  
-  await writeCodes(repoRoot, codes);
-  return code;
+    throw new Error('Unable to generate unique follow code');
+  });
 }
 
+/**
+ * Resolve a code to its follow URL, or null when it is unknown or expired.
+ *
+ * An expired hit is deleted on the way out, so a code that leaked stops
+ * resolving the moment someone tries it rather than at the next sweep. Nothing
+ * here logs the code or the URL: a live code resolves to a presenter's follow
+ * URL, so both are secrets (audit L2).
+ *
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @param {string} code - The code as typed; matched case-insensitively.
+ * @returns {Promise<string|null>}
+ */
 export async function resolveFollowCode(repoRoot, code) {
-  const codes = await readCodes(repoRoot);
-  const upperCode = code.toUpperCase();
-  const entry = codes[upperCode];
+  const upperCode = String(code || '').toUpperCase();
+  if (!upperCode) return null;
 
-  if (!entry) return null;
-  if (isCodeExpired(entry)) {
-    // Clean up expired code. Don't log the code itself: a live follow code
-    // resolves to a presenter's follow URL, so it's a secret (audit L2).
-    delete codes[upperCode];
-    await writeCodes(repoRoot, codes);
-    return null;
-  }
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('follow_codes')
+      .select(['follow_url', 'expires_at'])
+      .where('code', '=', upperCode)
+      .executeTakeFirst();
+    if (!row) return null;
 
-  return entry.followUrl;
+    if (new Date(row.expires_at).getTime() <= Date.now()) {
+      await db.deleteFrom('follow_codes').where('code', '=', upperCode).execute();
+      return null;
+    }
+
+    return row.follow_url;
+  });
 }
 
+/**
+ * Delete every expired code. Called by the live-session sweep
+ * (`utils/live-session-cleanup.js`); the file-backed predecessor of this
+ * function was never called at all, which is why the JSON blob only grew.
+ *
+ * @param {string} [repoRoot] - Unused; retained for facade-API stability.
+ * @returns {Promise<number>} How many codes were removed.
+ */
 export async function cleanupExpiredCodes(repoRoot) {
-  const codes = await readCodes(repoRoot);
-  let cleaned = 0;
-  
-  for (const [code, entry] of Object.entries(codes)) {
-    if (isCodeExpired(entry)) {
-      delete codes[code];
-      cleaned++;
-    }
-  }
-  
-  if (cleaned > 0) {
-    await writeCodes(repoRoot, codes);
-  }
-  
-  return cleaned;
+  const now = new Date().toISOString();
+  return withDbGuard(0, async (db) => {
+    const result = await db
+      .deleteFrom('follow_codes')
+      .where('expires_at', '<=', now)
+      .executeTakeFirst();
+    return Number(result?.numDeletedRows ?? 0);
+  });
 }

@@ -1,6 +1,5 @@
 /**
  * Per-user slide-library usage storage facade.
- * Uses the storage adapter when initialized, falls back to file-based storage.
  *
  * "Usage" = the current user picked a library slide or collection as a starting
  * point for a deck (compose or insert-into-existing). It powers the Home
@@ -12,10 +11,8 @@
  * server/storage/scope.js.
  */
 
-import { repoRootOf } from '../scope.js';
-import { createStorageDispatch, toStorageContext } from '../backend-dispatch.js';
-
-const withStorageFallback = createStorageDispatch(() => import('./file.js'));
+import { getStorage } from '../adapters/index.js';
+import { toStorageContext } from '../backend-dispatch.js';
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
@@ -25,16 +22,10 @@ const withStorageFallback = createStorageDispatch(() => import('./file.js'));
  */
 export async function listSlideLibraryUsage(scope, userEmail) {
   const email = String(userEmail || '').trim().toLowerCase();
-  return withStorageFallback(
-    scope,
-    'listSlideLibraryUsage',
-    async (storage) => {
-      const ctx = toStorageContext(scope, 'listSlideLibraryUsage', { userEmail: email });
-      const items = await storage.listSlideLibraryUsage(email, ctx);
-      return { items: Array.isArray(items) ? items : [] };
-    },
-    (mod) => mod.listSlideLibraryUsage(repoRootOf(scope), email)
-  );
+  const ctx = toStorageContext(scope, 'listSlideLibraryUsage', { userEmail: email });
+  const storage = getStorage();
+  const items = await storage.listSlideLibraryUsage(email, ctx);
+  return { items: Array.isArray(items) ? items : [] };
 }
 
 /**
@@ -47,14 +38,8 @@ export async function listSlideLibraryUsage(scope, userEmail) {
 export async function recordSlideLibraryUsage(scope, userEmail, items) {
   const email = String(userEmail || '').trim().toLowerCase();
   if (!email) return { ok: true, recorded: 0 };
-  return withStorageFallback(
-    scope,
-    'recordSlideLibraryUsage',
-    async (storage) => {
-      const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', { userEmail: email });
-      const recorded = await storage.recordSlideLibraryUsage(email, items, ctx);
-      return { ok: true, recorded: Number(recorded) || 0 };
-    },
-    (mod) => mod.recordSlideLibraryUsage(repoRootOf(scope), email, items)
-  );
+  const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', { userEmail: email });
+  const storage = getStorage();
+  const recorded = await storage.recordSlideLibraryUsage(email, items, ctx);
+  return { ok: true, recorded: Number(recorded) || 0 };
 }

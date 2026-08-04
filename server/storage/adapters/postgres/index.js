@@ -9,7 +9,6 @@
  * - published.js - Published presentations
  */
 
-import { StorageAdapter } from '../interface.js';
 import { initializeDatabase, closeDatabase } from '../../../db/client.js';
 
 import { withPresentations } from './presentations.js';
@@ -25,9 +24,11 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('postgres');
 
 /**
- * Base adapter with connection management.
+ * Base adapter with connection management. The domain methods are layered on
+ * by the `with*()` mixins below; the data shapes they exchange with the
+ * storage facades are documented in `../types.js`.
  */
-class BasePostgresAdapter extends StorageAdapter {
+class BasePostgresAdapter {
   async initialize() {
     await initializeDatabase();
     log.info('[PostgresAdapter] Connected to PostgreSQL');

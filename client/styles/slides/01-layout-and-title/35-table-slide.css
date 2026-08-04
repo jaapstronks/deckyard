@@ -7,7 +7,7 @@
   font-family: var(--font-heading);
   font-size: calc(var(--slide-font-size-heading) + 6px);
   line-height: var(--slide-leading-tight);
-  margin: 0 0 18px;
+  margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -30,7 +30,7 @@
 .slide-table .md-table th,
 .slide-table .md-table td {
   font-size: var(--slide-font-size-body);
-  padding: 14px 20px;
+  padding: var(--slide-space-4) var(--slide-space-5);
 }
 
 /* Header row slightly bolder for emphasis */
@@ -127,7 +127,7 @@
 }
 
 .slide-table .table-caption {
-  margin-top: 14px;
+  margin-top: var(--slide-space-4);
   font-family: var(--font-body);
   font-size: calc(var(--slide-font-size-body) - 2px);
   line-height: var(--slide-leading-normal);

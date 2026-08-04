@@ -25,7 +25,7 @@ deckyard/
 │   ├── mcp/             # MCP server (stdio + SSE transports, 27 tools)
 │   ├── collab/          # Real-time collaboration (Yjs/Hocuspocus over WebSocket)
 │   ├── storage/         # Data persistence layer
-│   │   └── adapters/    # File-based or PostgreSQL backends
+│   │   └── adapters/    # The PostgreSQL storage adapter
 │   ├── export/          # Export format builders (PNG, PDF, PPTX, HTML)
 │   ├── render/          # Server-side rendering (Puppeteer for screenshots)
 │   ├── auth/            # Authentication (sessions, sandbox mode)
@@ -119,30 +119,44 @@ const handler = compose(
 
 ## Storage Layer
 
-### Adapter Pattern
+### One backend, one adapter
 
-The storage layer supports multiple backends through an adapter pattern:
-
-| Mode | Backend | Status |
-|------|---------|--------|
-| `postgres` | PostgreSQL | The default everywhere — a plain `npm start` checkout and the compose stack (which ships its own database) — and the only backend under development |
-| `file` | JSON on disk | Being retired during beta; gains no new features |
+PostgreSQL is the only storage backend; the old `file` backend (JSON on disk)
+was removed in 1.x. Old file data imports once with `npm run db:import`.
 
 ```javascript
-// Storage mode selection (server/config/database.js)
-STORAGE_MODE=postgres|file   // unset means postgres
+// Storage mode validation (server/config/database.js)
+STORAGE_MODE=postgres   // unset means postgres; "file" stops the boot
 ```
 
-`postgres` and `file` are the only accepted values, spelled exactly like
-that — an unknown value (including `postgresql`) stops the boot rather than
-falling back to a backend the operator did not ask for.
+`postgres` is the only accepted value, spelled exactly like that — anything
+else (including `postgresql`, and the removed `file`) stops the boot with an
+explanation rather than falling back to a backend the operator did not ask
+for.
 
-### File-Based Storage
+The layer is two levels deep, and neither is a dispatch:
 
-- Presentations: `/server/data/presentations/{id}.json`
-- Published: `/server/data/published/{publicId}.json`
+- **Facades** (`server/storage/<domain>/`) are what routes and jobs call. Each
+  takes a **storage scope** as its first argument, reduces it to a context
+  (`toStorageContext()`), and hands that to the adapter. The scope is where the
+  organization comes from — see [tenant-isolation.md](../reference/tenant-isolation.md).
+- **The adapter** (`server/storage/adapters/`) is composed in
+  `adapters/postgres/index.js`: a base class owning connect/close, widened by
+  one `with*()` mixin per domain. `adapters/index.js` owns the singleton;
+  `adapters/types.js` documents the shapes the two levels exchange.
+
+There is no base class to implement and no capability probing left: a single
+backend either has a method or the call is a bug.
+
+### On-disk state
+
 - Uploads: `/server/uploads/{filename}`
-- Atomic writes: temp file + rename prevents corruption
+- Deck thumbnails: `/server/data/deck-thumbs/` — a derived, regenerable cache.
+- No domain data is written to `/server/data/` as JSON any more. Settings, email
+  templates, image-library usage, present sessions, follow codes, questions,
+  interactions and feedback all persist in PostgreSQL. What remains under
+  `/server/data/` is the thumbnail cache plus the import source the migration
+  chain reads from on an upgrading install.
 
 ### PostgreSQL Storage
 

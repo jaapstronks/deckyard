@@ -198,7 +198,7 @@
 
   .slide-comparison .comparison-verdict .badge {
     font-size: var(--slide-text-sm);
-    padding: 10px 22px;
+    padding: var(--slide-space-3) var(--slide-space-6);
   }
 }
 

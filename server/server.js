@@ -1,6 +1,5 @@
 import http from 'node:http';
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import {
   CLIENT_DIR,
   SHARED_PUBLIC_DIRS,
@@ -9,7 +8,6 @@ import {
 import { loadDotEnv } from './config/env.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { ssoConfigError } from './config/sso.js';
-import { multiWorkspaceStorageError } from './config/features.js';
 import { storageModeError } from './config/database.js';
 import { publicUrlWarnings } from './config/utils.js';
 import { handleApi } from './routes/api.js';
@@ -20,7 +18,8 @@ import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { startSandboxCleanupLoop } from './utils/sandbox-cleanup.js';
-import { dataDir, uploadsDir } from './config/storage-paths.js';
+import { startLiveSessionCleanupLoop } from './utils/live-session-cleanup.js';
+import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/adapters/index.js';
 import { strandedFileDataError } from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
@@ -44,11 +43,10 @@ function getUrl(req) {
   return new URL(req.url || '/', `http://${host}`);
 }
 
-async function ensureDirs() {
-  const d = dataDir(repoRoot);
-  await fs.mkdir(path.join(d, 'presentations'), { recursive: true });
-  await fs.mkdir(path.join(d, 'published'), { recursive: true });
-  await fs.mkdir(path.join(d, 'polls'), { recursive: true });
+// `uploads/` is the only disk directory the server still writes to on boot;
+// every former JSON domain (presentations, published, polls, live sessions,
+// interactions, …) now lives in Postgres.
+async function ensureUploadsDir() {
   await fs.mkdir(uploadsDir(repoRoot), { recursive: true });
 }
 
@@ -196,20 +194,6 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
-// Security check: refuse to fail OPEN on a leaking shared instance. Multi-
-// workspace mode serves several organizations from one instance, so deck
-// isolation must be enforced by the storage layer. The file backend has no
-// org dimension, so booting it with MULTI_WORKSPACE_ENABLED=true would let
-// tenants see each other's workspace decks. Fail loudly at boot rather than
-// leak silently at runtime. See docs/reference/tenant-isolation.md.
-{
-  const mwErr = multiWorkspaceStorageError();
-  if (mwErr) {
-    console.error(`\n⚠️  SECURITY: ${mwErr}\n`);
-    process.exit(1);
-  }
-}
-
 // Configuration check: STORAGE_MODE must name a backend that exists. An
 // unknown value used to fall through to file storage, which is the one
 // outcome an operator asking for Postgres must never get.
@@ -227,8 +211,8 @@ for (const w of [...authConfigWarnings(), ...publicUrlWarnings()]) {
   console.warn(`⚠️  CONFIG: ${w}`);
 }
 
-await ensureDirs();
-await initializeStorage(repoRoot);
+await ensureUploadsDir();
+await initializeStorage();
 
 // Data check: an empty database next to a populated file-storage data
 // directory means this install predates the Postgres default and has not been
@@ -245,6 +229,7 @@ await initializeStorage(repoRoot);
 await initializeMediaProvider(repoRoot);
 await initSanitizer(); // Enable sync HTML sanitization for markdown rendering
 startSandboxCleanupLoop();
+startLiveSessionCleanupLoop(); // TTL sweep for present sessions + follow codes
 startHeartbeat(); // SSE heartbeat for real-time comment updates
 const authCleanupJob = scheduleAuthCleanup(); // Clean expired tokens hourly
 const digestEmailJob = scheduleDigestEmailJob({ repoRoot }); // Weekly digest emails

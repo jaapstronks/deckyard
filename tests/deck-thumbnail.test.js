@@ -26,14 +26,31 @@ import {
   requestThumbnailGeneration,
 } from '../server/render/deck-thumbnail.js';
 import { dataDir } from '../server/config/storage-paths.js';
-import {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} from '../server/storage/presentations/index.js';
 import { loadTheme } from '../server/utils/themes.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
 import { testScope } from './helpers/storage-scope.js';
+
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { createPresentation, getPresentation, updatePresentation } = await import(
+  '../server/storage/presentations/index.js'
+);
+
+test.before(async () => {
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
+});
+
+test.after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 function mockRes() {
   return {
@@ -53,6 +70,10 @@ function mockRes() {
   };
 }
 
+/**
+ * A throwaway root for the on-disk raster cache (`dataDir(root)/deck-thumbs`).
+ * Decks themselves live in the database double, not under this root.
+ */
 async function tmpRoot() {
   return fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-thumb-'));
 }
@@ -144,13 +165,13 @@ test('requestThumbnailGeneration short-circuits (no render) when already cached'
 
 test('route serves a cached webp to the owner', async () => {
   const repoRoot = await tmpRoot();
-  const created = await createPresentation(testScope(repoRoot), {
+  const created = await createPresentation(testScope(), {
     title: 'Owned deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
     slides: [{ id: 's1', type: 'title-slide', content: { title: 'Hi' } }],
   });
-  const pres = await getPresentation(testScope(repoRoot), created.id);
+  const pres = await getPresentation(testScope(), created.id);
   const theme = await loadTheme(repoRoot, pres.theme);
   const { filename } = thumbCacheKey(pres, theme);
 
@@ -165,7 +186,7 @@ test('route serves a cached webp to the owner', async () => {
 
   const res = mockRes();
   const handled = await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
+    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
     created.id
   );
   assert.equal(handled, true);
@@ -176,7 +197,7 @@ test('route serves a cached webp to the owner', async () => {
 
 test('route denies a non-owner on a private deck', async () => {
   const repoRoot = await tmpRoot();
-  const created = await createPresentation(testScope(repoRoot), {
+  const created = await createPresentation(testScope(), {
     title: 'Private deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
@@ -185,7 +206,7 @@ test('route denies a non-owner on a private deck', async () => {
 
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'intruder@example.com' } },
+    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'intruder@example.com' } },
     created.id
   );
   assert.equal(res.statusCode, 401, 'private deck thumbnails require read access');
@@ -195,7 +216,7 @@ test('route 404s for an unknown deck', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
+    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
     'does-not-exist'
   );
   assert.equal(res.statusCode, 404);
@@ -205,7 +226,7 @@ test('route rejects non-GET methods', async () => {
   const repoRoot = await tmpRoot();
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'POST' }, res, authedUser: { email: 'x@example.com' } },
+    { repoRoot, storageScope: testScope(), req: { method: 'POST' }, res, authedUser: { email: 'x@example.com' } },
     'whatever'
   );
   assert.equal(res.statusCode, 405);
@@ -258,17 +279,17 @@ test('route serves the previous raster instead of 404 while the new one renders'
   // when given none), so the route reaches the stale branch without kicking off
   // a real headless-Chrome render, which would outlive the test process. The
   // branch under test is the fallback: fresh key absent, previous raster present.
-  const created = await createPresentation(testScope(repoRoot), {
+  const created = await createPresentation(testScope(), {
     title: 'Edited deck',
     ownerEmail: 'owner@example.com',
     scope: 'private',
     slides: [],
   });
-  const seeded = await getPresentation(testScope(repoRoot), created.id);
-  await updatePresentation(testScope(repoRoot), created.id, { ...seeded, slides: [] }, {
+  const seeded = await getPresentation(testScope(), created.id);
+  await updatePresentation(testScope(), created.id, { ...seeded, slides: [] }, {
     expectedRevision: seeded.revision,
   });
-  const pres = await getPresentation(testScope(repoRoot), created.id);
+  const pres = await getPresentation(testScope(), created.id);
   const theme = await loadTheme(repoRoot, pres.theme);
   const { prefix, filename } = thumbCacheKey(pres, theme);
 
@@ -285,7 +306,7 @@ test('route serves the previous raster instead of 404 while the new one renders'
 
   const res = mockRes();
   await handlePresentationThumbnail(
-    { repoRoot, storageScope: testScope(repoRoot), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
+    { repoRoot, storageScope: testScope(), req: { method: 'GET' }, res, authedUser: { email: 'owner@example.com' } },
     created.id
   );
   assert.equal(res.statusCode, 200, 'stale beats a placeholder');

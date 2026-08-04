@@ -52,7 +52,7 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  margin-top: 18px;
+  margin-top: var(--slide-space-5);
 }
 
 .slide-poll .poll-left {
@@ -120,7 +120,7 @@
   font-size: var(--slide-font-size-body);
   line-height: var(--slide-leading-normal);
   color: var(--color-text);
-  padding-top: 6px;
+  padding-top: var(--slide-space-2);
   min-width: 0;
 }
 
@@ -129,7 +129,7 @@
 .slide-likert .poll-results {
   background: var(--interaction-surface);
   border-radius: var(--slide-radius-lg);
-  padding: 28px;
+  padding: var(--slide-space-8);
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow);
 }
@@ -193,7 +193,7 @@
 
 .slide-poll .poll-bar-count {
   display: flex;
-  gap: 10px;
+  gap: var(--slide-space-3);
   align-items: baseline;
   min-width: 110px;
   justify-content: flex-end;
@@ -260,7 +260,7 @@
   border-radius: var(--slide-radius-md);
   background: #fff;
   padding: var(--slide-space-3);
-  margin: 18px auto 0;
+  margin: var(--slide-space-5) auto 0;
   box-sizing: border-box;
 }
 
@@ -274,7 +274,7 @@
   /* Bigger, title-like question for Likert (requested) */
   font-size: calc(var(--slide-font-size-heading) + 10px);
   line-height: var(--slide-leading-tight);
-  margin: 0 0 18px;
+  margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -287,7 +287,7 @@
   flex: 1;
   min-height: 0;
   min-width: 0;
-  margin-top: 18px;
+  margin-top: var(--slide-space-5);
 }
 
 .slide-likert .poll-left {
@@ -312,7 +312,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--slide-space-4);
 }
 
 .slide-likert .likert-option {
@@ -324,7 +324,7 @@
   align-items: center;
   gap: var(--slide-space-5);
   background: var(--interaction-surface);
-  padding: 20px 28px;
+  padding: var(--slide-space-5) var(--slide-space-8);
   border-radius: var(--slide-radius-md);
   width: 100%;
   border: 1px solid var(--interaction-border);
@@ -433,17 +433,17 @@
   border: 1px solid var(--interaction-border);
   box-shadow: var(--interaction-shadow-sm);
   border-radius: var(--slide-radius-md);
-  padding: 24px 28px;
+  padding: var(--slide-space-6) var(--slide-space-8);
 }
 .slide-likert-slider .likert-slider-labels {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--slide-space-5);
   align-items: baseline;
 }
 .slide-likert-slider .likert-slider-label {
   display: inline-flex;
-  gap: 14px;
+  gap: var(--slide-space-4);
   align-items: baseline;
   min-width: 0;
 }
@@ -481,12 +481,12 @@
 
 /* Help text inside poll-scan section */
 .slide-poll .poll-scan > .help {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
 }
 
 /* Follow codes help text */
 .slide-poll .poll-follow-codes {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
 }
 
 

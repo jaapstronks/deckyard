@@ -1,7 +1,4 @@
-import {
-  attachQuestionsSseClient,
-  ensureQuestionsSession,
-} from '../../../storage/questions.js';
+import { attachQuestionsSseClient } from '../../../storage/questions.js';
 import { sseWrite } from '../../../utils/sse.js';
 import { guardSseConnection } from '../../../utils/sse-limiter.js';
 import { ensureQaDeviceCookie, writeSseHeaders } from './helpers.js';
@@ -50,7 +47,6 @@ export async function handleFollowQuestionsEvents(
       if (state.sessionId !== currentSessionId) {
         detachSession();
         currentSessionId = state.sessionId;
-        await ensureQuestionsSession(repoRoot, currentSessionId, { presentationId });
         detach = await attachQuestionsSseClient(repoRoot, currentSessionId, res);
       }
     } else {

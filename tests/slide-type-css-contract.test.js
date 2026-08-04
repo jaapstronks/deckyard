@@ -53,11 +53,14 @@ const STYLES_DIR = path.join(REPO_ROOT, 'client', 'styles');
  * `hook` — the class exists so code can find the element. It is queried by a
  * selector somewhere and styling it would be beside the point.
  *
- * `unstyled` — the class is emitted and nothing anywhere uses it. These are
- * *candidates for removal*, not settled design, and the list should shrink.
- * Removing one is a contract change under the rule this test enforces, so it
- * belongs in release notes and not in a drive-by commit — which is exactly why
- * they are recorded here instead of deleted in the same PR that found them.
+ * `unstyled` — the class is emitted and no *dedicated* rule targets it, yet its
+ * presence is not junk: it is either the default value of an enum whose base
+ * slide already styles it (only the non-default siblings carry a rule), or a
+ * name whose look comes from an inline style or a numbered variant beside it.
+ * Removing one is a contract change under the rule this test enforces (a fork
+ * may style it), so it belongs in release notes, not a drive-by commit. The
+ * seven genuinely-dead names that once lived here — emitted, styled nowhere,
+ * carrying no such reason — were removed at source; see the release notes.
  *
  * @type {Record<string, { kind: 'hook' | 'unstyled', why: string }>}
  */
@@ -83,22 +86,18 @@ const UNSTYLED = {
     kind: 'unstyled',
     why: 'the `custom` background takes its colour from an inline style, so there is nothing to declare',
   },
-  'aspect-square': { kind: 'unstyled', why: 'team-cards: emitted, referenced nowhere' },
-  'shape-rounded': { kind: 'unstyled', why: 'team-cards: emitted, referenced nowhere' },
-  'team-cards-group-left': {
+  'aspect-square': {
     kind: 'unstyled',
-    why: 'team-cards: emitted as the symmetry partner of the -right hook, but nothing reads it',
+    why: 'team-cards: the default `imageAspect`; only the non-default `.aspect-original` carries rules, so the base slide styles this value',
   },
-  'is-layout-center': { kind: 'unstyled', why: 'chapter-title: emitted, referenced nowhere' },
-  'kpi-note': { kind: 'unstyled', why: 'kpi-metrics: emitted, referenced nowhere' },
-  'quote-author-text': { kind: 'unstyled', why: 'quote: emitted, referenced nowhere' },
-  'poll-results-main': {
+  'shape-rounded': {
     kind: 'unstyled',
-    why: 'poll/likert/likert-slider: emitted, referenced nowhere',
+    why: 'team-cards: the default `imageShape`; only `.shape-square`/`.shape-circle` carry rules, so the base slide styles this value',
   },
-  'sfi-header': { kind: 'unstyled', why: 'feedback + follow-invite: emitted, referenced nowhere' },
-  'sfi-card-code': { kind: 'unstyled', why: 'feedback + follow-invite: emitted, referenced nowhere' },
-  'sfi-card-qr': { kind: 'unstyled', why: 'feedback + follow-invite: emitted, referenced nowhere' },
+  'is-layout-center': {
+    kind: 'unstyled',
+    why: 'chapter-title: the default `layout`; only `.is-layout-top`/`.is-layout-bottom` carry rules, so the base slide styles this value',
+  },
 };
 
 /**

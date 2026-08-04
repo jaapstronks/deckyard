@@ -1,6 +1,7 @@
 /**
  * Integration tests for the public API's per-deck access check
- * (getPresentationWithAccess), using file-mode storage in a temp repoRoot.
+ * (getPresentationWithAccess), against the Postgres adapter on the in-memory
+ * database double (tests/helpers/fake-db.js).
  *
  * Regression guard: the public API used canAccessPresentation
  * (owner/workspace only, no read/write distinction), so any workspace-scoped
@@ -13,22 +14,31 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
-import { getPresentationWithAccess } from '../server/routes/public-api/v1/middleware.js';
 import { testScope } from './helpers/storage-scope.js';
-import {
-  createPresentation,
-  updatePresentation,
-} from '../server/storage/presentations/index.js';
+
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
+// Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { getPresentationWithAccess } = await import(
+  '../server/routes/public-api/v1/middleware.js'
+);
+const { createPresentation, updatePresentation } = await import(
+  '../server/storage/presentations/index.js'
+);
 
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';
 
 /** Minimal ctx with a response stub that records status + JSON body. */
-function makeCtx(repoRoot, ownerEmail) {
+function makeCtx(ownerEmail) {
   const res = {
     statusCode: null,
     body: null,
@@ -38,80 +48,82 @@ function makeCtx(repoRoot, ownerEmail) {
     end(payload) { this.body = payload ? JSON.parse(payload) : null; },
   };
   return {
-    repoRoot,
-    storageScope: testScope(repoRoot),
+    storageScope: testScope(),
     res,
     apiKey: { id: 'test-key', tier: 'free', ownerEmail },
   };
 }
 
-describe('getPresentationWithAccess (file-mode storage)', () => {
-  let tempRoot;
+describe('getPresentationWithAccess', () => {
   let privateId;
   let viewOnlyId;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'public-api-authz-test-'));
+    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    await initializeStorage();
 
-    const privateDeck = await createPresentation(testScope(tempRoot), {
+    const privateDeck = await createPresentation(testScope(), {
       title: 'Private deck',
       ownerEmail: OWNER,
     });
     privateId = privateDeck.id;
 
-    const viewOnlyDeck = await createPresentation(testScope(tempRoot), {
+    const viewOnlyDeck = await createPresentation(testScope(), {
       title: 'View-only workspace deck',
       ownerEmail: OWNER,
     });
     viewOnlyId = viewOnlyDeck.id;
-    await updatePresentation(testScope(tempRoot), viewOnlyId, {
+    await updatePresentation(testScope(), viewOnlyId, {
       ...viewOnlyDeck,
       scope: 'workspace',
       isViewOnly: true,
-    }, { allowScopeChange: true });
+      // Both flips are gated on the write path, so the fixture opts into them
+      // explicitly (as the routes that own those switches do).
+    }, { allowScopeChange: true, allowViewOnlyChange: true });
   });
 
-  after(async () => {
-    if (tempRoot) await fs.rm(tempRoot, { recursive: true, force: true });
+  after(() => {
+    __resetStorageForTests();
+    __setTestDb(null);
   });
 
   it('404s for a nonexistent deck', async () => {
-    const ctx = makeCtx(tempRoot, OWNER);
+    const ctx = makeCtx(OWNER);
     const { ok } = await getPresentationWithAccess(ctx, 'nope-does-not-exist');
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 404);
   });
 
   it('lets the key owner read and write their private deck', async () => {
-    const read = await getPresentationWithAccess(makeCtx(tempRoot, OWNER), privateId);
+    const read = await getPresentationWithAccess(makeCtx(OWNER), privateId);
     assert.equal(read.ok, true);
     assert.equal(read.pres.id, privateId);
 
     const write = await getPresentationWithAccess(
-      makeCtx(tempRoot, OWNER), privateId, { access: 'write' }
+      makeCtx(OWNER), privateId, { access: 'write' }
     );
     assert.equal(write.ok, true);
   });
 
   it("403s another key's read of a private deck", async () => {
-    const ctx = makeCtx(tempRoot, OTHER);
+    const ctx = makeCtx(OTHER);
     const { ok } = await getPresentationWithAccess(ctx, privateId);
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);
   });
 
   it("403s another key's write of a private deck", async () => {
-    const ctx = makeCtx(tempRoot, OTHER);
+    const ctx = makeCtx(OTHER);
     const { ok } = await getPresentationWithAccess(ctx, privateId, { access: 'write' });
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);
   });
 
   it('view-only workspace deck: read ok, write 403 for non-owner keys', async () => {
-    const read = await getPresentationWithAccess(makeCtx(tempRoot, OTHER), viewOnlyId);
+    const read = await getPresentationWithAccess(makeCtx(OTHER), viewOnlyId);
     assert.equal(read.ok, true);
 
-    const ctx = makeCtx(tempRoot, OTHER);
+    const ctx = makeCtx(OTHER);
     const { ok } = await getPresentationWithAccess(ctx, viewOnlyId, { access: 'write' });
     assert.equal(ok, false);
     assert.equal(ctx.res.statusCode, 403);

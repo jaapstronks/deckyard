@@ -2,33 +2,56 @@
  * Smoke/contract tests for the cross-deck comment read helpers:
  * `listAccessiblePresentationRefs` and `listRecentCommentsForOwner`.
  *
- * These run without a database: comments live only in the DB store, so the
- * meaningful assertions here are the ones that hold in every mode — an unknown
- * or missing owner resolves to no accessible decks and therefore no comments,
- * and odd inputs (bad scope/status, oversized limit) never throw. The DB-backed
- * behaviour (ordering, author filter, limit, owned+shared union, title
+ * The assertions here are the ones that hold whatever the comment store holds:
+ * an unknown or missing owner resolves to no accessible decks and therefore no
+ * comments, and odd inputs (bad scope/status, oversized limit) never throw. The
+ * richer behaviour (ordering, author filter, limit, owned+shared union, title
  * enrichment) needs a live Postgres and is exercised as a local integration
  * step, matching this repo's "integration tests need DB access" boundary.
+ *
+ * The deck lookups these helpers do go through the presentations facade, so the
+ * suite runs against the Postgres adapter on the in-memory database double
+ * (tests/helpers/fake-db.js), seeded with no decks at all.
  *
  * Run with: node --test tests/presentation-comments-recent.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 
-import { repoRoot } from '../server/config/paths.js';
-import { getDefaultOrganizationId } from '../server/config/database.js';
-import {
-  listAccessiblePresentationRefs,
-  listRecentCommentsForOwner,
-} from '../server/storage/presentation-comments.js';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG_ID = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
+// Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { repoRoot } = await import('../server/config/paths.js');
+const { listAccessiblePresentationRefs, listRecentCommentsForOwner } = await import(
+  '../server/storage/presentation-comments.js'
+);
 
 // An address that owns no decks and is shared none, in any environment.
 const NOBODY = 'nobody-xyz@example.invalid';
 
 // A storage context states the organization it acts in; these helpers reach the
 // presentations facade, which no longer accepts one that does not.
-const ORG = { organizationId: getDefaultOrganizationId() };
+const ORG = { organizationId: ORG_ID };
+
+before(async () => {
+  __setTestDb(
+    createFakeDb({ organizations: [{ id: ORG_ID, name: 'Default', slug: 'default' }] })
+  );
+  await initializeStorage();
+});
+
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 describe('listAccessiblePresentationRefs', () => {
   it('returns [] when there is no acting owner', async () => {

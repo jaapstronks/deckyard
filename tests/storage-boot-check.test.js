@@ -61,16 +61,7 @@ afterEach(async () => {
   while (cleanup.length) await fs.rm(cleanup.pop(), { recursive: true, force: true });
 });
 
-test('file mode is never blocked, whatever is on disk', async () => {
-  const root = await makeDataDir({ decks: 3 });
-  cleanup.push(root);
-  process.env.STORAGE_MODE = 'file';
-  __setTestDb(dbWithPresentations([]));
-
-  assert.equal(await strandedFileDataError(root), null);
-});
-
-test('empty database plus decks on disk refuses the boot with both fixes', async () => {
+test('empty database plus decks on disk refuses the boot with the import fix', async () => {
   const root = await makeDataDir({ decks: 2 });
   cleanup.push(root);
   process.env.STORAGE_MODE = 'postgres';
@@ -80,7 +71,7 @@ test('empty database plus decks on disk refuses the boot with both fixes', async
   assert.ok(err, 'expected the boot to be refused');
   assert.match(err, /2 decks/);
   assert.match(err, /db:import/, 'must name the import command');
-  assert.match(err, /STORAGE_MODE=file/, 'must name the stay-on-disk escape hatch');
+  assert.match(err, /removed in 1\.x/, 'must say the file backend is gone, not an option');
   assert.match(err, /not been touched/, 'must say the file data is left alone');
 });
 

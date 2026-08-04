@@ -11,7 +11,7 @@
   font-family: var(--font-heading);
   font-size: calc(var(--slide-font-size-heading) + 6px);
   line-height: var(--slide-leading-tight);
-  margin: 0 0 28px;
+  margin: 0 0 var(--slide-space-8);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -19,7 +19,7 @@
 
 .slide-kpi-metrics .kpi-grid {
   display: grid;
-  gap: 26px;
+  gap: var(--slide-space-6);
   flex: 1;
   min-height: 0;
   align-content: center;
@@ -81,7 +81,7 @@
   justify-content: flex-start;
   gap: var(--slide-space-3);
   border-radius: var(--slide-radius-lg);
-  padding: 32px 34px;
+  padding: var(--slide-space-8);
   background: var(--kpi-tile-bg);
   color: var(--kpi-tile-fg);
   border: 1px solid var(--kpi-tile-border);
@@ -187,18 +187,20 @@
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-metric {
   width: min(980px, 70%);
   min-height: 360px;
-  padding: 54px 60px;
+  padding: var(--slide-space-12) var(--slide-space-16);
   align-items: center;
   justify-content: center;
   text-align: center;
 }
+/* No padding override here: the 2- and 3-up tiles carry the base tile padding
+   (--slide-space-8). Their old 30px/28px sat a notch under it and snapped onto
+   the same step, so repeating it would only be a fossil of the off-scale
+   values. */
 .slide-kpi-metrics .kpi-grid[data-metric-count='2'] .kpi-metric {
   min-height: 320px;
-  padding: 30px 32px;
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='3'] .kpi-metric {
   min-height: 300px;
-  padding: 28px 30px;
 }
 
 .slide-kpi-metrics .kpi-value {
@@ -245,6 +247,8 @@
   font-size: calc(var(--slide-font-size-body) + 6px);
   line-height: var(--slide-leading-snug);
   color: var(--kpi-tile-fg);
+  /* allowlist: sub-step hairline — the label hugs the figure so the pair reads
+     as one block; the smallest step (4px) opens it into two (slide-roles.md) */
   margin-top: 2px;
 }
 
@@ -254,7 +258,7 @@
 .slide-kpi-metrics .kpi-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
+  gap: var(--slide-space-3) var(--slide-space-5);
   align-items: baseline;
   font-family: var(--font-mono);
   font-size: var(--slide-text-md);
@@ -264,7 +268,7 @@
      note drops to the foot of the tile. In a short tile it collapses to the
      4px minimum, so nothing moves in the 3- and 4-up rows. */
   margin-top: auto;
-  padding-top: 14px;
+  padding-top: var(--slide-space-4);
   border-top: 1px solid color-mix(in srgb, var(--kpi-tile-fg) 22%, transparent);
 }
 .slide-kpi-metrics .kpi-grid[data-metric-count='1'] .kpi-meta {
@@ -318,19 +322,19 @@
 
 /* When bottom subheading is present, shrink card heights */
 .slide-kpi-metrics.has-bottom-subheading .kpi-metric {
-  padding: 24px 28px;
+  padding: var(--slide-space-6) var(--slide-space-8);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='1'] .kpi-metric {
   min-height: 400px;
-  padding: 36px 48px;
+  padding: var(--slide-space-10) var(--slide-space-12);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='2'] .kpi-metric {
   min-height: 240px;
-  padding: 24px 26px;
+  padding: var(--slide-space-6);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-grid[data-metric-count='3'] .kpi-metric {
   min-height: 220px;
-  padding: 22px 24px;
+  padding: var(--slide-space-6);
 }
 .slide-kpi-metrics.has-bottom-subheading .kpi-value-num {
   font-size: var(--slide-text-kpi-sm);

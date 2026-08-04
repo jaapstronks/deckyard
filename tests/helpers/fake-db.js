@@ -52,6 +52,13 @@ export const UNIQUE_CONSTRAINTS = {
   // is NOT part of it (migration 023_slide_locks.js). Matching the real columns
   // is what lets the acquire-race test exercise the ON CONFLICT path.
   slide_locks: [['presentation_id', 'slide_id']],
+  // Migration 061 woke the live-interaction tables. Both upserts run on every
+  // vote and every feedback submission, so the double has to collide the way
+  // PostgreSQL does or the "one answer per device" rule is only enforced in
+  // production. `interaction_votes` is not listed: its rule is the primary key
+  // (interaction_id, device_id), which the double models as identity.
+  interactions: [['session_id', 'slide_id']],
+  feedback: [['session_id', 'slide_id', 'device_id']],
 };
 
 /**
@@ -67,13 +74,17 @@ export const UNIQUE_CONSTRAINTS = {
 export const JSONB_COLUMNS = {
   users: ['settings'],
   organizations: ['settings'],
-  // `supported_slide_langs` is NOT here: it is `TEXT[]`, as declared in
-  // server/db/migrations/001_initial_schema.js, and it sat in this list
-  // claiming to be jsonb until the schema conformance check called it.
-  app_settings: ['webhooks'],
+  // Migration 059 replaced the per-organization app_settings (whose `webhooks`
+  // column sat here) with a singleton jsonb bag, and added user_settings with
+  // the same one-bag shape.
+  app_settings: ['settings'],
+  user_settings: ['settings'],
   auth_audit_log: ['metadata'],
   presentations: ['settings', 'i18n', 'slides', 'published', 'sandbox'],
   presentation_versions: ['presentation_data'],
+  present_sessions: ['state', 'follow_codes'],
+  // Migration 061: `texts` is the per-language map of a question.
+  questions: ['texts'],
 };
 
 /**
@@ -423,19 +434,26 @@ export function createFakeDb(seed = {}) {
       return list;
     };
 
+    // PostgreSQL hands every read a freshly parsed value; nothing a caller
+    // does to a returned row can reach the stored one. The double must match,
+    // or a test that mutates a read result in place silently rewrites the
+    // "stored" state and e.g. a diff-against-existing guard never fires.
+    const detach = (value) =>
+      value && typeof value === 'object' ? structuredClone(value) : value;
+
     const project = (context) => {
       if (state.aggregates.length) return null;
       if (state.selectAll || !state.projection) {
         const out = {};
         for (const [key, value] of Object.entries(context)) {
           if (key === '__source' || key.includes('.')) continue;
-          out[key] = value;
+          out[key] = detach(value);
         }
         return out;
       }
       const out = {};
       for (const item of state.projection) {
-        out[item.alias] = readColumn(context, item.column);
+        out[item.alias] = detach(readColumn(context, item.column));
       }
       return out;
     };
@@ -592,7 +610,7 @@ export function createFakeDb(seed = {}) {
                   resolveWriteValues(conflict.set || {}, existing)
                 );
                 Object.assign(existing, applied);
-                if (returning) inserted.push({ ...existing });
+                if (returning) inserted.push(structuredClone(existing));
                 continue;
               }
             }
@@ -602,7 +620,7 @@ export function createFakeDb(seed = {}) {
             );
             assertUnique(table, row);
             rowsOf(table).push(row);
-            inserted.push({ ...row });
+            inserted.push(structuredClone(row));
           }
           return returning ? inserted : [{ numInsertedOrUpdatedRows: BigInt(inserted.length) }];
         },
@@ -645,7 +663,7 @@ export function createFakeDb(seed = {}) {
             Object.assign(row, applied);
           }
           return returning
-            ? targets.map((row) => ({ ...row }))
+            ? targets.map((row) => structuredClone(row))
             : [{ numUpdatedRows: BigInt(targets.length) }];
         },
         async executeTakeFirst() {

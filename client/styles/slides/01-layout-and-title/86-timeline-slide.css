@@ -82,7 +82,7 @@
   align-items: stretch;
   gap: var(--timeline-gap, 14px);
   position: relative;
-  padding: 26px 32px;
+  padding: var(--slide-space-6) var(--slide-space-8);
   /* Geometry. --card-w is the *minimum* (preferred) card width;
      --card-max-w is the cap when content (long titles) needs more room.
      Cards size to max-content between these bounds so long single words
@@ -224,7 +224,7 @@
   background: var(--timeline-card-surface);
   border: 2px solid var(--timeline-card-border);
   border-radius: var(--slide-radius-md);
-  padding: 14px var(--slide-space-4) var(--slide-space-4);
+  padding: var(--slide-space-4);
   box-shadow: var(--timeline-card-shadow);
 }
 
@@ -349,7 +349,7 @@
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .slide-timeline .timeline-container {
-    gap: 10px; /* TODO: between --slide-space-2 (8px) and --slide-space-3 (12px) */
+    gap: var(--slide-space-3);
     --marker-size: 18px;
     --connector-height: 48px;
     padding: var(--slide-space-5) var(--slide-space-6);
@@ -361,7 +361,7 @@
   }
 
   .slide-timeline .timeline-card {
-    padding: var(--slide-space-3) 14px 14px;
+    padding: var(--slide-space-3) var(--slide-space-4) var(--slide-space-4);
     border-radius: var(--slide-radius-sm);
   }
 

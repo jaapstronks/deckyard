@@ -5,7 +5,7 @@
      --tf-size-scale (per-field S/M/L, default 1) scales this heading when set. */
   font-size: calc((var(--slide-font-size-heading) + 6px) * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-tight);
-  margin: 0 0 18px;
+  margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
@@ -13,8 +13,10 @@
 
 /* Subheading directly after heading - tighter spacing */
 .slide-content .subheading {
-  margin-top: -10px;
-  margin-bottom: 18px;
+  /* The pull-up is the same step as the gap below it, negated — both halves of
+     the pair move together, so the negative stays on the scale too. */
+  margin-top: calc(-1 * var(--slide-space-3));
+  margin-bottom: var(--slide-space-5);
 }
 
 .slide-content .slide-inner {
@@ -80,7 +82,7 @@
 }
 
 .slide-content .body p {
-  margin: 0 0 14px;
+  margin: 0 0 var(--slide-space-4);
 }
 /* Markdown subheading: ## renders as h3 (since slide title is h2) */
 .slide-content .body .md-subheading {
@@ -95,22 +97,22 @@
 }
 .slide-content.is-fit-medium .body .md-subheading {
   font-size: var(--slide-text-lg);
-  margin: 21px 0 11px;
+  margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-content.is-compact .body .md-subheading {
   font-size: var(--slide-text-md);
-  margin: 18px 0 10px;
+  margin: var(--slide-space-5) 0 var(--slide-space-3);
 }
 .slide-content .body .md-subheading:first-child {
   margin-top: 0;
 }
 .slide-content .body ul,
 .slide-content .body ol {
-  margin: 0 0 14px 1.2em;
+  margin: 0 0 var(--slide-space-4) 1.2em;
   padding: 0;
 }
 .slide-content .body li {
-  margin: 10px 0;
+  margin: var(--slide-space-3) 0;
 }
 .slide-content .body ul li::marker {
   color: var(--color-accent);

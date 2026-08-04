@@ -4,7 +4,7 @@
 }
 
 .slide-pyramid .header {
-  margin-bottom: 28px;
+  margin-bottom: var(--slide-space-8);
 }
 
 .slide-pyramid .heading {
@@ -32,7 +32,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--slide-space-2);
   padding: var(--slide-space-4) 0;
 }
 
@@ -59,7 +59,7 @@
   background: var(--slide-bg-lime, #e2fe52);
   /* Trapezoid shape using clip-path */
   clip-path: polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%);
-  padding: 10px 32px;
+  padding: var(--slide-space-3) var(--slide-space-8);
   transition: width 0.3s ease;
 }
 
@@ -82,6 +82,8 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  /* allowlist: sub-step hairline — label and text are one block inside the bar;
+     the smallest step (4px) reads as two lines (slide-roles.md) */
   gap: 2px;
 }
 
@@ -113,7 +115,7 @@
 
 /* 3 levels: larger elements */
 .slide-pyramid .pyramid-container[data-count='3'] {
-  gap: 10px;
+  gap: var(--slide-space-3);
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-bar {
@@ -136,7 +138,7 @@
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-bar {
   min-height: 64px;
-  padding: 14px 36px;
+  padding: var(--slide-space-4) var(--slide-space-10);
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-label {

@@ -25,15 +25,23 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { McpServer } from '../../server/mcp/protocol.js';
-import { registerTools } from '../../server/mcp/tools.js';
-import { repoRoot } from '../../server/config/paths.js';
-import { testScope } from '../helpers/storage-scope.js';
-import {
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('../helpers/fake-db.js');
+const { __setTestDb } = await import('../../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../../server/storage/adapters/index.js'
+);
+const { McpServer } = await import('../../server/mcp/protocol.js');
+const { registerTools } = await import('../../server/mcp/tools.js');
+const { repoRoot } = await import('../../server/config/paths.js');
+const { testScope } = await import('../helpers/storage-scope.js');
+const {
   createPresentation,
   getPresentation,
   updatePresentation,
-} from '../../server/storage/presentations/index.js';
+} = await import('../../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
 const OTHER = 'collab@example.com';
@@ -55,6 +63,8 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   before(async () => {
     tempDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-slide-lock-test-'));
     process.env.DATA_DIR = tempDataDir;
+    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    await initializeStorage();
 
     server = new McpServer();
     registerTools(server, {});
@@ -75,6 +85,8 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   });
 
   after(async () => {
+    __resetStorageForTests();
+    __setTestDb(null);
     delete process.env.DATA_DIR;
     if (tempDataDir) await fs.rm(tempDataDir, { recursive: true, force: true });
   });

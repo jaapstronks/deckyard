@@ -1,149 +1,65 @@
-import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+/**
+ * Audience Q&A storage (session-scoped), on PostgreSQL.
+ *
+ * One row per question in `questions`, foreign-keyed to `present_sessions`.
+ * There is no separate "questions session" any more: the file version kept one
+ * per session with its own `createdAt`/`lastActivityAt` and its own 24h TTL
+ * timer, which was a second lifetime for a thing that already had one. The live
+ * session is the lifetime — the cascade takes the questions with it when the
+ * session closes or the sweep in `utils/live-session-cleanup.js` collects it.
+ *
+ * What stays in this process is the SSE registry: the response streams attached
+ * here and their heartbeat timers. Those are sockets, so they cannot be shared
+ * by a table. As with present sessions, that means fan-out is process-local — a
+ * question asked on worker A does not push to a follower attached to worker B
+ * until that client re-reads. The list itself is correct everywhere, which the
+ * file version could not manage: it only ever showed the questions the process
+ * that held the session had loaded.
+ *
+ * Upvotes are not stored as a number. `voters` is the set of device ids that
+ * voted, so the count is `cardinality(voters)` — one source of truth, and the
+ * "one vote per device" rule is a set membership test rather than two fields
+ * that have to be kept in step.
+ */
+
+import { sql } from 'kysely';
+
 import { normalizeLang } from '../utils/i18n.js';
 import { sseComment, sseWrite } from '../utils/sse.js';
-import { writeJsonAtomic } from './io.js';
-import { dataDir } from '../config/storage-paths.js';
+import { withDbGuard } from './utils/db-guard.js';
 
-const TTL_MS = 24 * 60 * 60 * 1000; // ~1 day
 const HEARTBEAT_MS = 15 * 1000;
 // Note: questions are not auto-translated (explicit translation may be added later).
 
-/** @type {Map<string, any>} */
-const sessions = new Map(); // sessionId -> session object
-const loadedRoots = new Set();
+/** Author/voter ids come from a client-controlled cookie; clamp to the column. */
+const MAX_AUTHOR_ID_LENGTH = 100;
 
-let cleanupTimerStarted = false;
-function ensureCleanupTimer() {
-  if (cleanupTimerStarted) return;
-  cleanupTimerStarted = true;
-  setInterval(() => {
-    const now = Date.now();
-    for (const [id, s] of sessions.entries()) {
-      if (!s) {
-        sessions.delete(id);
-        continue;
-      }
-      const last = Number(s.lastActivityAt || 0) || 0;
-      if (now - last <= TTL_MS) continue;
-      try {
-        closeQuestionsSession(id, 'expired');
-      } catch {
-        sessions.delete(id);
-      }
-    }
-  }, 60 * 1000).unref?.();
-}
+/**
+ * SSE clients per session — the half of a session that cannot be a row.
+ * @type {Map<string, { clients: Set<any>, heartbeatTimers: Map<any, any> }>}
+ */
+const sseSessions = new Map();
 
-function sessionsDir(repoRoot) {
-  return path.join(dataDir(repoRoot), 'questions');
-}
+/** Statuses a question is still visible and actionable in. */
+const ACTIVE_STATUSES = ['active', 'promoted'];
 
-function sessionFile(repoRoot, sessionId) {
-  return path.join(sessionsDir(repoRoot), `${sessionId}.json`);
-}
-
-function isExpired(s) {
-  const last = Number(s?.lastActivityAt || 0) || 0;
-  if (!last) return true;
-  return Date.now() - last > TTL_MS;
-}
-
-function serializeSession(s) {
-  return {
-    sessionId: s.sessionId,
-    presentationId: s.presentationId,
-    createdAt: Number(s.createdAt || 0) || Date.now(),
-    lastActivityAt: Number(s.lastActivityAt || 0) || Date.now(),
-    questions: Array.isArray(s.questions)
-      ? s.questions.map((q) => ({
-          id: String(q?.id || ''),
-          text: String(q?.text || ''),
-          originalText: String(q?.originalText || ''),
-          originalLang: String(q?.originalLang || ''),
-          texts: q?.texts && typeof q.texts === 'object' ? q.texts : {},
-          translatedAt: Number(q?.translatedAt || 0) || 0,
-          translatedFrom: String(q?.translatedFrom || ''),
-          createdAt: Number(q?.createdAt || 0) || Date.now(),
-          authorId: String(q?.authorId || ''),
-          authorName: String(q?.authorName || ''),
-          upvotes: Math.max(0, Number(q?.upvotes || 0) || 0),
-          voters: Array.isArray(q?.voters) ? q.voters.map(String) : [],
-          status: String(q?.status || 'active'),
-          promotedAt: Number(q?.promotedAt || 0) || 0,
-          promotedSlideId: String(q?.promotedSlideId || ''),
-          promotedBy: String(q?.promotedBy || ''),
-          removedAt: Number(q?.removedAt || 0) || 0,
-          removedBy: String(q?.removedBy || ''),
-          cancelledAt: Number(q?.cancelledAt || 0) || 0,
-        }))
-      : [],
-  };
-}
-
-async function writeSessionToDisk(s) {
-  const repoRoot = s?.repoRoot;
-  if (!repoRoot || !s?.sessionId) return;
-  await writeJsonAtomic(sessionFile(repoRoot, s.sessionId), serializeSession(s));
-}
-
-function schedulePersist(s) {
-  if (!s) return;
-  if (s.persistTimer) clearTimeout(s.persistTimer);
-  s.persistTimer = setTimeout(() => {
-    s.persistTimer = null;
-    writeSessionToDisk(s).catch(() => {});
-  }, 600);
-  s.persistTimer.unref?.();
-}
-
-async function getSessionsFromDisk(repoRoot) {
-  const root = String(repoRoot || '');
-  if (!root || loadedRoots.has(root)) return;
-  loadedRoots.add(root);
-
-  const dir = sessionsDir(root);
-  await fs.mkdir(dir, { recursive: true });
-  const files = await fs.readdir(dir);
-  for (const f of files) {
-    if (!f.endsWith('.json')) continue;
-    const full = path.join(dir, f);
-    try {
-      const raw = await fs.readFile(full, 'utf8');
-      const data = JSON.parse(raw);
-      if (!data?.sessionId || !data?.presentationId) continue;
-      const s = {
-        sessionId: String(data.sessionId),
-        presentationId: String(data.presentationId),
-        createdAt: Number(data.createdAt || 0) || Date.now(),
-        lastActivityAt: Number(data.lastActivityAt || 0) || Date.now(),
-        questions: Array.isArray(data.questions) ? data.questions : [],
-        repoRoot: root,
-        clients: new Set(),
-        heartbeatTimers: new Map(),
-        persistTimer: null,
-      };
-      if (isExpired(s)) {
-        try {
-          await fs.unlink(full);
-        } catch {}
-        continue;
-      }
-      sessions.set(s.sessionId, s);
-    } catch {
-      // ignore bad files
-    }
-  }
-}
+/**
+ * Question ids reach us straight from a URL path. The column is `uuid`, so a
+ * non-uuid would make PostgreSQL raise `invalid input syntax` — a 500 where the
+ * honest answer is "no such question".
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function now() {
   return Date.now();
 }
 
-function newId() {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  return crypto.randomBytes(16).toString('hex');
+/**
+ * @param {*} v
+ * @returns {string}
+ */
+function normalizeActorId(v) {
+  return String(v || '').trim().slice(0, MAX_AUTHOR_ID_LENGTH);
 }
 
 function normalizeText(v) {
@@ -157,299 +73,443 @@ function normalizeName(v) {
   return s.slice(0, 60);
 }
 
-function isActiveQuestion(q) {
-  if (!q || typeof q !== 'object') return false;
-  const st = String(q.status || 'active');
-  return st === 'active' || st === 'promoted';
+/**
+ * Epoch millis from a timestamptz column.
+ * @param {*} value
+ * @returns {number}
+ */
+function toMillis(value) {
+  if (!value) return 0;
+  const ms = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
 }
 
-function publicQuestion(q) {
-  const originalLang = normalizeLang(q?.originalLang) || null;
-  const texts = q?.texts && typeof q.texts === 'object' ? q.texts : {};
-  const textNl = typeof texts?.nl === 'string' ? texts.nl : '';
-  const textEn = typeof texts?.['en-GB'] === 'string' ? texts['en-GB'] : '';
-  const originalText =
-    typeof q?.originalText === 'string' && q.originalText.trim()
-      ? q.originalText
-      : typeof q?.text === 'string'
-      ? q.text
-      : '';
+const QUESTION_COLUMNS = [
+  'id',
+  'session_id',
+  'author_id',
+  'author_name',
+  'text',
+  'original_lang',
+  'texts',
+  'voters',
+  'status',
+  'promoted_at',
+  'promoted_slide_id',
+  'promoted_by',
+  'created_at',
+];
+
+/**
+ * @typedef {object} QuestionRecord
+ * @property {string} id
+ * @property {string} authorId
+ * @property {string} authorName
+ * @property {string} text - The question as asked.
+ * @property {string|null} originalLang
+ * @property {Object<string, string>} texts - Per-language texts, keyed by lang.
+ * @property {string[]} voters
+ * @property {number} upvotes - Derived: `voters.length`.
+ * @property {string} status
+ * @property {number} promotedAt
+ * @property {string} promotedSlideId
+ * @property {number} createdAt
+ */
+
+/**
+ * @param {object} row
+ * @returns {QuestionRecord}
+ */
+function rowToQuestion(row) {
+  const voters = Array.isArray(row.voters) ? row.voters.map(String) : [];
   return {
-    id: String(q?.id || ''),
-    // Back-compat: `text` is the original text.
-    text: String(originalText || ''),
-    createdAt: Number(q?.createdAt || 0) || 0,
-    upvotes: Math.max(0, Number(q?.upvotes || 0) || 0),
-    authorName: String(q?.authorName || '').trim() || '',
-    status: String(q?.status || 'active'),
-    promoted: {
-      slideId: String(q?.promotedSlideId || ''),
-      promotedAt: Number(q?.promotedAt || 0) || 0,
-    },
-    original: {
-      lang: originalLang,
-      text: String(originalText || ''),
-    },
-    texts: {
-      nl: String(textNl || ''),
-      'en-GB': String(textEn || ''),
-    },
-    translatedAt: Number(q?.translatedAt || 0) || 0,
-    translatedFrom: normalizeLang(q?.translatedFrom) || null,
+    id: String(row.id),
+    authorId: String(row.author_id || ''),
+    authorName: String(row.author_name || ''),
+    text: String(row.text || ''),
+    originalLang: normalizeLang(row.original_lang) || null,
+    texts: row.texts && typeof row.texts === 'object' ? row.texts : {},
+    voters,
+    upvotes: voters.length,
+    status: String(row.status || 'active'),
+    promotedAt: toMillis(row.promoted_at),
+    promotedSlideId: String(row.promoted_slide_id || ''),
+    createdAt: toMillis(row.created_at) || now(),
   };
 }
 
-function rankQuestions(list) {
-  const arr = Array.isArray(list) ? list : [];
-  arr.sort((a, b) => {
-    const ap = String(a?.status || '') === 'promoted';
-    const bp = String(b?.status || '') === 'promoted';
-    if (ap !== bp) return ap ? -1 : 1;
-    const au = Math.max(0, Number(a?.upvotes || 0) || 0);
-    const bu = Math.max(0, Number(b?.upvotes || 0) || 0);
-    if (bu !== au) return bu - au;
-    const at = Number(a?.createdAt || 0) || 0;
-    const bt = Number(b?.createdAt || 0) || 0;
-    return at - bt;
-  });
-  return arr;
+/**
+ * The audience-facing shape of a question.
+ *
+ * @param {QuestionRecord} q
+ * @returns {object}
+ */
+function publicQuestion(q) {
+  const texts = q.texts && typeof q.texts === 'object' ? q.texts : {};
+  return {
+    id: q.id,
+    // Back-compat: `text` is the original text.
+    text: q.text,
+    createdAt: q.createdAt,
+    upvotes: q.upvotes,
+    authorName: q.authorName.trim(),
+    status: q.status,
+    promoted: {
+      slideId: q.promotedSlideId,
+      promotedAt: q.promotedAt,
+    },
+    original: {
+      lang: q.originalLang,
+      text: q.text,
+    },
+    texts: {
+      nl: typeof texts.nl === 'string' ? texts.nl : '',
+      'en-GB': typeof texts['en-GB'] === 'string' ? texts['en-GB'] : '',
+    },
+  };
 }
 
-async function broadcast(repoRoot, sessionId, event, data) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return false;
+/**
+ * Fan a payload out to the SSE clients this process holds for a session.
+ *
+ * @param {string} sessionId
+ * @param {string} event
+ * @param {*} data
+ * @returns {void}
+ */
+function broadcast(sessionId, event, data) {
+  const reg = sseSessions.get(String(sessionId || ''));
+  if (!reg) return;
   // Serialize once for all clients; sseWrite passes strings through as-is.
-  const payload =
-    data == null || typeof data === 'string' ? data : JSON.stringify(data);
-  for (const res of Array.from(s.clients)) {
+  const payload = data == null || typeof data === 'string' ? data : JSON.stringify(data);
+  for (const res of Array.from(reg.clients)) {
     try {
       sseWrite(res, { event, data: payload });
     } catch {
       try {
-        s.clients.delete(res);
+        reg.clients.delete(res);
       } catch {}
     }
   }
-  return true;
 }
 
-export async function getQuestionsSession(repoRoot, sessionId) {
-  await getSessionsFromDisk(repoRoot);
-  return sessions.get(String(sessionId || '')) || null;
+/**
+ * Push the current list to every attached client. Fire-and-forget: a failed
+ * broadcast must never fail the mutation that triggered it.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @returns {void}
+ */
+function broadcastQuestions(repoRoot, sessionId) {
+  if (!sseSessions.has(String(sessionId || ''))) return;
+  listQuestions(repoRoot, sessionId)
+    .then((questions) => broadcast(sessionId, 'questions', { questions: questions || [] }))
+    .catch(() => {});
 }
 
-export async function ensureQuestionsSession(repoRoot, sessionId, { presentationId } = {}) {
-  ensureCleanupTimer();
-  await getSessionsFromDisk(repoRoot);
+/**
+ * Read one question, by session and id.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {string} questionId
+ * @returns {Promise<QuestionRecord|null>}
+ */
+export async function getQuestion(repoRoot, sessionId, questionId) {
   const sid = String(sessionId || '').trim();
-  const pid = String(presentationId || '').trim();
-  if (!sid || !pid) return null;
+  const qid = String(questionId || '').trim();
+  if (!sid || !UUID_RE.test(qid)) return null;
 
-  const existing = sessions.get(sid) || null;
-  if (existing) {
-    existing.presentationId = pid;
-    existing.lastActivityAt = now();
-    schedulePersist(existing);
-    return existing;
-  }
-
-  const s = {
-    sessionId: sid,
-    presentationId: pid,
-    createdAt: now(),
-    lastActivityAt: now(),
-    questions: [],
-    repoRoot,
-    clients: new Set(),
-    heartbeatTimers: new Map(),
-    persistTimer: null,
-  };
-  sessions.set(sid, s);
-  schedulePersist(s);
-  return s;
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('questions')
+      .select(QUESTION_COLUMNS)
+      .where('session_id', '=', sid)
+      .where('id', '=', qid)
+      .executeTakeFirst();
+    return row ? rowToQuestion(row) : null;
+  });
 }
 
-async function touchQuestionsSession(repoRoot, sessionId) {
-  const s = await getQuestionsSession(repoRoot, sessionId);
-  if (!s) return null;
-  s.lastActivityAt = now();
-  schedulePersist(s);
-  return s;
-}
-
+/**
+ * The visible, ranked question list for a session: promoted first, then by
+ * upvotes, then oldest first.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @returns {Promise<Array<object>|null>} Null when the session id is empty.
+ */
 export async function listQuestions(repoRoot, sessionId) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return null;
-  const visible = rankQuestions(
-    (Array.isArray(s.questions) ? s.questions : []).filter(isActiveQuestion)
-  );
-  return visible.map(publicQuestion);
+  const sid = String(sessionId || '').trim();
+  if (!sid) return null;
+
+  return withDbGuard([], async (db) => {
+    const rows = await db
+      .selectFrom('questions')
+      .select(QUESTION_COLUMNS)
+      .where('session_id', '=', sid)
+      .where('status', 'in', ACTIVE_STATUSES)
+      .orderBy(sql`status = 'promoted'`, 'desc')
+      .orderBy(sql`cardinality(voters)`, 'desc')
+      .orderBy('created_at', 'asc')
+      .execute();
+    return rows.map((row) => publicQuestion(rowToQuestion(row)));
+  });
 }
 
+/**
+ * Ask a question.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: true, question: object}|{ok: false, reason: string}>}
+ */
 export async function createQuestion(
   repoRoot,
   sessionId,
   { authorId, authorName, text, originalLang } = {}
 ) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'not_found' };
-  const a = String(authorId || '').trim();
+  const sid = String(sessionId || '').trim();
+  const a = normalizeActorId(authorId);
   const n = normalizeName(authorName);
   const t = normalizeText(text);
   const from = normalizeLang(originalLang) || null;
+  if (!sid) return { ok: false, reason: 'not_found' };
   if (!a) return { ok: false, reason: 'missing_author' };
   if (!t) return { ok: false, reason: 'missing_text' };
 
-  const q = {
-    id: newId(),
-    text: t,
-    originalText: t,
-    originalLang: from || '',
-    texts: {
-      ...(from ? { [from]: t } : {}),
-    },
-    translatedAt: 0,
-    translatedFrom: '',
-    createdAt: now(),
-    authorId: a,
-    authorName: n,
-    upvotes: 0,
-    voters: [],
-    status: 'active',
-    promotedAt: 0,
-    promotedSlideId: '',
-    promotedBy: '',
-    removedAt: 0,
-    removedBy: '',
-    cancelledAt: 0,
-  };
-  s.questions = Array.isArray(s.questions) ? s.questions : [];
-  s.questions.push(q);
+  const row = await withDbGuard(null, async (db) => {
+    try {
+      return await db
+        .insertInto('questions')
+        .values({
+          session_id: sid,
+          author_id: a,
+          author_name: n,
+          text: t,
+          original_lang: from,
+          texts: JSON.stringify(from ? { [from]: t } : {}),
+          voters: [],
+          status: 'active',
+        })
+        .returning(QUESTION_COLUMNS)
+        .executeTakeFirst();
+    } catch (err) {
+      // 23503: no such live session. The route resolved one, so this is the
+      // narrow race where it ended in between.
+      if (String(err?.code || '') === '23503') return null;
+      throw err;
+    }
+  });
+  if (!row) return { ok: false, reason: 'not_found' };
 
-  schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'questions', {
-    questions: await listQuestions(repoRoot, sessionId),
-  }).catch(() => {});
-  return { ok: true, question: publicQuestion(q) };
+  broadcastQuestions(repoRoot, sid);
+  return { ok: true, question: publicQuestion(rowToQuestion(row)) };
 }
 
+/**
+ * Upvote a question, once per device.
+ *
+ * The append is guarded in SQL rather than by a read-then-write, so two devices
+ * (or two processes) racing cannot both append and neither can double-count.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: true, upvotes: number}|{ok: false, reason: string}>}
+ */
 export async function upvoteQuestion(repoRoot, sessionId, { questionId, voterId } = {}) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'not_found' };
+  const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
-  const vid = String(voterId || '').trim();
+  const vid = normalizeActorId(voterId);
   if (!qid) return { ok: false, reason: 'missing_questionId' };
   if (!vid) return { ok: false, reason: 'missing_voter' };
 
-  const q = (Array.isArray(s.questions) ? s.questions : []).find((x) => String(x?.id || '') === qid) || null;
+  const q = await getQuestion(repoRoot, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (String(q.status || '') === 'promoted') return { ok: false, reason: 'locked' };
-  if (!isActiveQuestion(q)) return { ok: false, reason: 'inactive' };
-  if (String(q.authorId || '') === vid) return { ok: false, reason: 'own_question' };
+  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+  if (q.authorId === vid) return { ok: false, reason: 'own_question' };
 
-  q.voters = Array.isArray(q.voters) ? q.voters : [];
-  if (q.voters.includes(vid)) return { ok: false, reason: 'already_voted' };
-  q.voters.push(vid);
-  q.upvotes = Math.max(0, Number(q.upvotes || 0) || 0) + 1;
-  schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'questions', { questions: await listQuestions(repoRoot, sessionId) }).catch(() => {});
-  return { ok: true, upvotes: q.upvotes };
+  const upvotes = await withDbGuard(null, async (db) => {
+    const { rows } = await sql`
+      UPDATE questions
+      SET voters = array_append(voters, ${vid})
+      WHERE id = ${qid}
+        AND session_id = ${sid}
+        AND status = 'active'
+        AND NOT (voters @> ARRAY[${vid}]::text[])
+      RETURNING cardinality(voters) AS upvotes
+    `.execute(db);
+    return rows?.length ? Number(rows[0].upvotes || 0) : null;
+  });
+  if (upvotes == null) return { ok: false, reason: 'already_voted' };
+
+  broadcastQuestions(repoRoot, sid);
+  return { ok: true, upvotes };
 }
 
+/**
+ * Transition a question to a terminal status, if it is still actionable.
+ *
+ * @param {string} sessionId
+ * @param {string} questionId
+ * @param {Record<string, any>} set - Columns to write.
+ * @returns {Promise<boolean>} Whether a row changed.
+ */
+async function transitionQuestion(sessionId, questionId, set) {
+  return withDbGuard(false, async (db) => {
+    const row = await db
+      .updateTable('questions')
+      .set(set)
+      .where('id', '=', questionId)
+      .where('session_id', '=', sessionId)
+      // 'promoted' is a lock: it is not cancellable, removable or re-promotable.
+      .where('status', '=', 'active')
+      .returning('id')
+      .executeTakeFirst();
+    return !!row;
+  });
+}
+
+/**
+ * Withdraw your own question.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: boolean, reason?: string}>}
+ */
 export async function cancelQuestion(repoRoot, sessionId, { questionId, authorId } = {}) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'not_found' };
+  const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
-  const aid = String(authorId || '').trim();
+  const aid = normalizeActorId(authorId);
   if (!qid) return { ok: false, reason: 'missing_questionId' };
   if (!aid) return { ok: false, reason: 'missing_author' };
 
-  const q = (Array.isArray(s.questions) ? s.questions : []).find((x) => String(x?.id || '') === qid) || null;
+  const q = await getQuestion(repoRoot, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (String(q.status || '') === 'promoted') return { ok: false, reason: 'locked' };
-  if (String(q.authorId || '') !== aid) return { ok: false, reason: 'forbidden' };
-  if (!isActiveQuestion(q)) return { ok: false, reason: 'inactive' };
+  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (q.authorId !== aid) return { ok: false, reason: 'forbidden' };
+  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
 
-  q.status = 'cancelled';
-  q.cancelledAt = now();
-  schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'questions', { questions: await listQuestions(repoRoot, sessionId) }).catch(() => {});
+  const changed = await transitionQuestion(sid, qid, {
+    status: 'cancelled',
+    cancelled_at: new Date(),
+  });
+  if (!changed) return { ok: false, reason: 'inactive' };
+
+  broadcastQuestions(repoRoot, sid);
   return { ok: true };
 }
 
+/**
+ * Moderator removal.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: boolean, reason?: string}>}
+ */
 export async function removeQuestion(repoRoot, sessionId, { questionId, removedBy } = {}) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'not_found' };
+  const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   if (!qid) return { ok: false, reason: 'missing_questionId' };
 
-  const q = (Array.isArray(s.questions) ? s.questions : []).find((x) => String(x?.id || '') === qid) || null;
+  const q = await getQuestion(repoRoot, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (String(q.status || '') === 'promoted') return { ok: false, reason: 'locked' };
-  if (!isActiveQuestion(q)) return { ok: false, reason: 'inactive' };
+  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
 
-  q.status = 'removed';
-  q.removedAt = now();
-  q.removedBy = String(removedBy || '').trim();
-  schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'questions', { questions: await listQuestions(repoRoot, sessionId) }).catch(() => {});
+  const changed = await transitionQuestion(sid, qid, {
+    status: 'removed',
+    removed_at: new Date(),
+    removed_by: String(removedBy || '').trim().slice(0, 320),
+  });
+  if (!changed) return { ok: false, reason: 'inactive' };
+
+  broadcastQuestions(repoRoot, sid);
   return { ok: true };
 }
 
+/**
+ * Promote a question onto a slide. Promoting locks it: no more votes, no
+ * cancellation, no removal.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {object} [opts]
+ * @returns {Promise<{ok: boolean, already?: boolean, reason?: string}>}
+ */
 export async function promoteQuestion(
   repoRoot,
   sessionId,
   { questionId, slideId, promotedBy } = {}
 ) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return { ok: false, reason: 'not_found' };
+  const sid = String(sessionId || '').trim();
   const qid = String(questionId || '').trim();
   if (!qid) return { ok: false, reason: 'missing_questionId' };
-  const q =
-    (Array.isArray(s.questions) ? s.questions : []).find(
-      (x) => String(x?.id || '') === qid
-    ) || null;
-  if (!q) return { ok: false, reason: 'not_found' };
-  if (!isActiveQuestion(q)) return { ok: false, reason: 'inactive' };
-  if (String(q.status || '') === 'promoted') return { ok: true, already: true };
 
-  q.status = 'promoted';
-  q.promotedAt = now();
-  q.promotedSlideId = String(slideId || '').trim();
-  q.promotedBy = String(promotedBy || '').trim();
-  schedulePersist(s);
-  broadcast(repoRoot, sessionId, 'questions', {
-    questions: await listQuestions(repoRoot, sessionId),
-  }).catch(() => {});
+  const q = await getQuestion(repoRoot, sid, qid);
+  if (!q) return { ok: false, reason: 'not_found' };
+  if (q.status === 'promoted') return { ok: true, already: true };
+  if (!ACTIVE_STATUSES.includes(q.status)) return { ok: false, reason: 'inactive' };
+
+  const changed = await transitionQuestion(sid, qid, {
+    status: 'promoted',
+    promoted_at: new Date(),
+    promoted_slide_id: String(slideId || '').trim(),
+    promoted_by: String(promotedBy || '').trim().slice(0, 320),
+  });
+  if (!changed) return { ok: false, reason: 'inactive' };
+
+  broadcastQuestions(repoRoot, sid);
   return { ok: true };
 }
 
+/**
+ * Attach an SSE stream to a session's question feed, send the current list and
+ * start heartbeats.
+ *
+ * @param {string} repoRoot
+ * @param {string} sessionId
+ * @param {import('node:http').ServerResponse} res
+ * @returns {Promise<(() => void)|null>} A detach function, or null for an empty id.
+ */
 export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
-  const s = await touchQuestionsSession(repoRoot, sessionId);
-  if (!s) return null;
+  const sid = String(sessionId || '').trim();
+  if (!sid) return null;
 
-  s.clients.add(res);
+  let reg = sseSessions.get(sid);
+  if (!reg) {
+    reg = { clients: new Set(), heartbeatTimers: new Map() };
+    sseSessions.set(sid, reg);
+  }
+  reg.clients.add(res);
 
   // Initial snapshot
-  const questions = await listQuestions(repoRoot, sessionId);
+  const questions = await listQuestions(repoRoot, sid);
   sseWrite(res, { event: 'questions', data: { questions: questions || [] } });
 
   // Heartbeats
   const tid = setInterval(() => {
     sseComment(res, 'heartbeat');
   }, HEARTBEAT_MS);
-  s.heartbeatTimers.set(res, tid);
+  reg.heartbeatTimers.set(res, tid);
 
   const detach = () => {
     try {
       clearInterval(tid);
     } catch {}
     try {
-      s.heartbeatTimers.delete(res);
+      reg.heartbeatTimers.delete(res);
     } catch {}
     try {
-      s.clients.delete(res);
+      reg.clients.delete(res);
     } catch {}
+    if (!reg.clients.size) sseSessions.delete(sid);
   };
 
   res.on?.('close', detach);
@@ -457,10 +517,22 @@ export async function attachQuestionsSseClient(repoRoot, sessionId, res) {
   return detach;
 }
 
-function closeQuestionsSession(sessionId, reason = 'closed') {
-  const s = sessions.get(String(sessionId || '')) || null;
-  if (!s) return false;
-  for (const res of Array.from(s.clients)) {
+/**
+ * Close every question stream this process holds for a session.
+ *
+ * Called from `present-sessions/close.js`: the question rows go with the
+ * session through the foreign key, and the sockets have to go with them or
+ * followers sit on a feed whose data no longer exists.
+ *
+ * @param {string} sessionId
+ * @param {string} [reason]
+ * @returns {boolean} Whether any client was attached here.
+ */
+export function closeQuestionsClients(sessionId, reason = 'closed') {
+  const sid = String(sessionId || '').trim();
+  const reg = sseSessions.get(sid);
+  if (!reg) return false;
+  for (const res of Array.from(reg.clients)) {
     try {
       sseWrite(res, { event: 'close', data: { reason } });
     } catch {}
@@ -468,19 +540,11 @@ function closeQuestionsSession(sessionId, reason = 'closed') {
       res.end?.();
     } catch {}
   }
-  for (const tid of s.heartbeatTimers.values()) {
+  for (const tid of reg.heartbeatTimers.values()) {
     try {
       clearInterval(tid);
     } catch {}
   }
-  if (s.persistTimer) {
-    try {
-      clearTimeout(s.persistTimer);
-    } catch {}
-  }
-  sessions.delete(sessionId);
-  if (s.repoRoot) {
-    fs.unlink(sessionFile(s.repoRoot, sessionId)).catch(() => {});
-  }
+  sseSessions.delete(sid);
   return true;
 }

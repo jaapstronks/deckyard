@@ -71,32 +71,15 @@ and mandatory in another.
   `server/utils/ai/slide-catalog/custom-catalog-loader.js` — fork drop-in AI
   prompts and catalog entries.
 
-### Storage backend selection
+### Storage adapter loading
 
-Two distinct things, often confused:
+`server/storage/adapters/index.js` loads the `PostgresAdapter` lazily at
+`initializeStorage()`, keeping kysely and pg out of the module graph of
+scripts that never touch storage. The DB-vs-file dispatch that used to live in
+`server/storage/backend-dispatch.js` went with the file backend's removal;
+that module now only reduces a caller's scope to an adapter context
+(`toStorageContext`).
 
-- **Adapter mode-selection** — `server/storage/adapters/index.js` loads only the
-  `FileAdapter` / `PostgresAdapter` the configured mode needs. The Postgres
-  adapter pulls in kysely and pg, so a file-mode install genuinely benefits.
-- **The DB-vs-file dispatch** — every storage facade answers the same question
-  per method: adapter initialized → call it; otherwise lazily load the pure-JS
-  file module. That used to be a copy-pasted `await import()` in *every facade
-  method* (~30 sites). It now lives in one place,
-  [`server/storage/backend-dispatch.js`](../../server/storage/backend-dispatch.js),
-  and each facade binds it once:
-
-  ```js
-  const withStorageFallback = createStorageDispatch(() => import('./file.js'));
-  ```
-
-  Nine such bindings exist (`presentations` has three — list, crud, versions).
-  The laziness is preserved; the boilerplate is not.
-
-  **One documented exception**: `createPresentation` in
-  `server/storage/presentations/index.js` imports `./crud/index.js` directly on
-  *both* paths, because the Postgres path also needs `prepareNewPresentation()`
-  from the file module to build the deck before storing it. That is not the
-  dispatch pattern and should not be folded into it.
 
 ### Real cycle-breakers — do not make these static
 

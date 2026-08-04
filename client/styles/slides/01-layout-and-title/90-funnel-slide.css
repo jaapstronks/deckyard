@@ -4,7 +4,7 @@
 }
 
 .slide-funnel .header {
-  margin-bottom: 28px;
+  margin-bottom: var(--slide-space-8);
 }
 
 .slide-funnel .heading {
@@ -108,6 +108,8 @@
   line-height: var(--slide-leading-compact);
   color: var(--color-text-muted, rgba(11, 11, 11, 0.7));
   text-align: center;
+  /* allowlist: sub-step hairline — the description hugs the stage label so the
+     pair reads as one block; the smallest step (4px) splits it (slide-roles.md) */
   margin-top: 2px;
 }
 
@@ -141,12 +143,12 @@
 
 /* 5 stages: slightly smaller */
 .slide-funnel .funnel-container[data-count='5'] {
-  gap: 6px;
+  gap: var(--slide-space-2);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-bar {
   min-height: 48px;
-  padding: 10px 20px;
+  padding: var(--slide-space-3) var(--slide-space-5);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-label {
@@ -202,12 +204,12 @@
 
 @media (max-width: 1024px) {
   .slide-funnel .funnel-container {
-    gap: 6px;
+    gap: var(--slide-space-2);
   }
 
   .slide-funnel .stage-bar {
     min-height: 44px;
-    padding: 10px 16px;
+    padding: var(--slide-space-3) var(--slide-space-4);
   }
 
   .slide-funnel .stage-label {

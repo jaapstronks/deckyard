@@ -315,7 +315,7 @@ export default {
         ? `
               <div class="kpi-meta">
                 ${highlight ? `<span class="kpi-delta ${tone}">${esc(highlight)}</span>` : ''}
-                ${rest ? `<span class="kpi-note" dir="auto">${esc(rest)}</span>` : ''}
+                ${rest ? `<span dir="auto">${esc(rest)}</span>` : ''}
               </div>
             `
         : '';

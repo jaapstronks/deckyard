@@ -63,6 +63,20 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
     `index.js` already is the seam, so the wrapper is redundant indirection.
     Likewise don't suffix the folder with its role (`email-templates/`, not
     `email-templates-panel/`).
+  - **Re-export shim at a moved path: no, with one bounded exception.** When a
+    module moves or a file decomposes into `X/index.js`, the default is **no
+    shim at the old path** — a re-export is a second canonical form for one
+    module, exactly the tolerance-creep the beta stance forbids (see the
+    eponymous-wrapper rule above; #348 *removed* such a wrapper). Forks sync on
+    tags, not `main`, so the move is a release-notes moment, not a mid-stream
+    surprise. A temporary shim is allowed **only** when all three hold: (1) it
+    lives **one release, then is deleted** — never longer; (2) the moved thing is
+    a **broadly-imported public seam** (the kind a forker imports, not an
+    internal concern file); (3) the **removal date is stated in the same release
+    notes** that ship the move. Absent all three, move the path and list it under
+    breaking changes. This is the beta stance applied to module moves
+    (`docs/reference/versioning.md` § *The beta stance: purity over
+    compatibility*).
   - A module that is *not* decomposed stays a single file — it is itself a
     concern module of its parent folder (e.g. each `settings/tabs/*-tab.js` is a
     concern of `tabs/`, whose `index.js` is the barrel). A tab that grows its own

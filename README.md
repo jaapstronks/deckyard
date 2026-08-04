@@ -235,8 +235,7 @@ DEFAULT_THEME=brand
 # MCP owner (for stdio transport)
 DECKYARD_MCP_OWNER_EMAIL=you@example.com
 
-# Storage (compose runs Postgres by default; see the Database block in .env.example)
-STORAGE_MODE=file
+# Storage: PostgreSQL, configured via DATABASE_* (see the Database block in .env.example)
 ```
 
 ### Authentication
@@ -299,10 +298,10 @@ compose stack ships its own database. Back up the `pg_data` volume
 (`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
 together with `server/uploads/`, which is where uploaded media stays.
 
-The `file` mode (JSON in `server/data/`) still exists but is being retired
-during beta. An install with existing file data imports it once with
-`npm run db:import`; until then Deckyard refuses to boot on an empty database
-rather than show an empty workspace.
+The old `file` backend (JSON in `server/data/`) was removed in 1.x. An install
+with existing file data imports it once with `npm run db:import`; until then
+Deckyard refuses to boot on an empty database rather than show an empty
+workspace.
 
 See the [self-hosting guide](docs/ops/self-hosting.md) for the storage options
 and `.env.example` for every `DATABASE_*` variable.

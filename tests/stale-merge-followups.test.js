@@ -20,21 +20,29 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
-import fs from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
 
 import { slideFingerprint } from '../shared/slide-fingerprint.js';
-import { mergeSlidesAtSlideLevel } from '../server/storage/presentations/crud/helpers.js';
-import {
-  createPresentation,
-  getPresentation,
-  updatePresentation,
-} from '../server/storage/presentations/index.js';
-import { listPresentationVersions } from '../server/storage/presentations/versions.js';
 import { createSaveManager } from '../client/views/editor/save-manager.js';
 import { createRemoteRefresh } from '../client/views/editor/remote-refresh.js';
 import { testScope } from './helpers/storage-scope.js';
+
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+const { mergeSlidesAtSlideLevel } = await import(
+  '../server/storage/presentations/crud/helpers.js'
+);
+const {
+  createPresentation,
+  getPresentation,
+  updatePresentation,
+  listPresentationVersions,
+} = await import('../server/storage/presentations/index.js');
 
 const slide = (id, body, extra = {}) => ({
   id,
@@ -160,7 +168,7 @@ describe('mergeSlidesAtSlideLevel — order preservation', () => {
 });
 
 // ============================================================================
-// Integration: updatePresentation (file mode) — layers 3 + 5
+// Integration: updatePresentation (database double) — layers 3 + 5
 // ============================================================================
 
 describe('updatePresentation — order preservation, merge audit and pre_merge snapshot', () => {
@@ -169,13 +177,13 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
   const C = '55555555-5555-4555-8555-555555555555';
   const N = '66666666-6666-4666-8666-666666666666';
 
-  let tempRoot;
   let deckId;
   let template;
 
   before(async () => {
-    tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'stale-merge-followups-'));
-    const created = await createPresentation(testScope(tempRoot), {
+    __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+    await initializeStorage();
+    const created = await createPresentation(testScope(), {
       title: 'Stale merge follow-ups',
       ownerEmail: 'owner@example.com',
       lang: 'nl',
@@ -184,7 +192,8 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     template = structuredClone(created.slides[0]);
   });
   after(async () => {
-    await fs.rm(tempRoot, { recursive: true, force: true });
+    __resetStorageForTests();
+    __setTestDb(null);
   });
 
   const mkSlide = (id, title) => {
@@ -205,12 +214,12 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     }
     return doc;
   };
-  const loadDoc = async () => structuredClone(await getPresentation(testScope(tempRoot), deckId));
+  const loadDoc = async () => structuredClone(await getPresentation(testScope(), deckId));
   const resetDeck = async (slides) => {
     const doc = await loadDoc();
     doc.slides = structuredClone(slides);
     syncI18n(doc);
-    await updatePresentation(testScope(tempRoot), deckId, doc, { actorEmail: 'owner@example.com' });
+    await updatePresentation(testScope(), deckId, doc, { actorEmail: 'owner@example.com' });
     return loadDoc();
   };
 
@@ -225,7 +234,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     let other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
     other = await loadDoc();
     other.slides = [
       other.slides.find((s) => s.id === A),
@@ -234,12 +243,12 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
       other.slides.find((s) => s.id === C),
     ];
     syncI18n(other);
-    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
 
     // The stale tab edited only C and did not reorder.
     setTitle(staleTab, C, 'C stale-tab edit');
     syncI18n(staleTab);
-    const updated = await updatePresentation(testScope(tempRoot), deckId, staleTab, {
+    const updated = await updatePresentation(testScope(), deckId, staleTab, {
       expectedRevision: staleTab.revision,
       modifiedSlideIds: [C],
       slideBaseFingerprints: staleFingerprints,
@@ -261,7 +270,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
 
     // Layer 5: gap > 1 created a pre_merge snapshot of the pre-merge server
     // state, so restoring a bad merge is one click in the version history.
-    const versions = await listPresentationVersions(tempRoot, deckId);
+    const versions = await listPresentationVersions(testScope(), deckId);
     const preMerge = versions.filter((v) => v.reason === 'pre_merge');
     assert.equal(preMerge.length, 1);
     assert.equal(preMerge[0].revision, staleTab.revision + 2);
@@ -274,14 +283,14 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     const other = await loadDoc();
     setTitle(other, A, 'A v2 by other');
     syncI18n(other);
-    await updatePresentation(testScope(tempRoot), deckId, other, { actorEmail: 'other@example.com' });
+    await updatePresentation(testScope(), deckId, other, { actorEmail: 'other@example.com' });
 
     setTitle(staleTab, B, 'B tab edit');
     syncI18n(staleTab);
-    const before = (await listPresentationVersions(tempRoot, deckId)).filter(
+    const before = (await listPresentationVersions(testScope(), deckId)).filter(
       (v) => v.reason === 'pre_merge'
     ).length;
-    const updated = await updatePresentation(testScope(tempRoot), deckId, staleTab, {
+    const updated = await updatePresentation(testScope(), deckId, staleTab, {
       expectedRevision: staleTab.revision,
       modifiedSlideIds: [B],
       slideBaseFingerprints: {
@@ -292,7 +301,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     });
 
     assert.equal(updated._slideMerge.revisionGap, 1);
-    const after = (await listPresentationVersions(tempRoot, deckId)).filter(
+    const after = (await listPresentationVersions(testScope(), deckId)).filter(
       (v) => v.reason === 'pre_merge'
     ).length;
     assert.equal(after, before, 'gap 1 must not create a pre_merge snapshot');
@@ -302,7 +311,7 @@ describe('updatePresentation — order preservation, merge audit and pre_merge s
     const doc = await loadDoc();
     setTitle(doc, A, 'A clean edit');
     syncI18n(doc);
-    const updated = await updatePresentation(testScope(tempRoot), deckId, doc, {
+    const updated = await updatePresentation(testScope(), deckId, doc, {
       expectedRevision: doc.revision,
       modifiedSlideIds: [A],
       actorEmail: 'owner@example.com',

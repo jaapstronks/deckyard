@@ -23,7 +23,7 @@
   margin: 0;
 }
 .slide-text-blocks .header .subtitle {
-  margin: 10px 0 0;
+  margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
@@ -87,7 +87,7 @@
 
 /* Block styling */
 .slide-text-blocks .text-block {
-  padding: 26px 30px;
+  padding: var(--slide-space-6) var(--slide-space-8);
   border-radius: var(--slide-radius-md);
   display: flex;
   flex-direction: column;
@@ -138,7 +138,7 @@
   .text-block {
   text-align: center;
   align-items: center;
-  padding: 36px 42px;
+  padding: var(--slide-space-10);
 }
 .slide-text-blocks
   .text-blocks-row[data-count='1']
@@ -215,20 +215,20 @@
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row-title {
   font-size: var(--slide-text-lg);
-  margin: 0 0 10px;
+  margin: 0 0 var(--slide-space-3);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row + .text-blocks-row {
-  margin-top: 18px;
+  margin-top: var(--slide-space-5);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-blocks-row + .text-blocks-row-title {
-  margin-top: 18px;
+  margin-top: var(--slide-space-5);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block {
-  padding: 18px 22px;
+  padding: var(--slide-space-5) var(--slide-space-6);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-title {
   font-size: var(--slide-text-base);
-  margin-bottom: 6px;
+  margin-bottom: var(--slide-space-2);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-body {
   font-size: var(--slide-text-base);
@@ -266,12 +266,12 @@
   justify-content: flex-start;
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-arrow {
-  margin: 3px 0;
+  margin: var(--slide-space-1) 0;
   font-size: var(--slide-text-base);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row-title {
   font-size: var(--slide-text-base);
-  margin: 0 0 6px;
+  margin: 0 0 var(--slide-space-2);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-blocks-row + .text-blocks-row {
   margin-top: var(--slide-space-3);

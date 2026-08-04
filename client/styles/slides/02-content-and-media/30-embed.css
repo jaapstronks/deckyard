@@ -6,7 +6,7 @@
   padding: var(--slide-padding);
   justify-content: center;
   align-items: center;
-  gap: 22px;
+  gap: var(--slide-space-6);
 }
 .slide-embed .heading {
   font-family: var(--font-heading);
@@ -59,7 +59,7 @@
   min-height: 300px;
 }
 .slide-embed .embed-empty {
-  padding: 18px;
+  padding: var(--slide-space-5);
   border-radius: var(--slide-radius-sm);
   border: 1px dashed rgba(0, 0, 0, 0.25);
   background: rgba(255, 255, 255, 0.35);

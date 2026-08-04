@@ -19,6 +19,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
+
 let tmpUploads;
 let repoRoot;
 let buildDeckBundle;
@@ -29,11 +38,14 @@ const PNG_A = Buffer.from('89504e470d0a1a0a0000000d49484452AAAA', 'hex');
 const PNG_B = Buffer.from('89504e470d0a1a0a0000000d49484452BBBBCCCC', 'hex');
 
 test.before(async () => {
+  // Assets still live on disk; only the deck itself moved to the adapter.
   tmpUploads = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-import-uploads-'));
   repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-import-repo-'));
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'a.png'), PNG_A);
   fs.writeFileSync(path.join(tmpUploads, 'b.png'), PNG_B);
+  __setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+  await initializeStorage();
   ({ buildDeckBundle, readDeckBundle } = await import('../server/export/deck-bundle.js'));
   ({ handlePresentationsImportDeck } = await import(
     '../server/routes/api/presentations/import-deck.js'
@@ -41,6 +53,8 @@ test.before(async () => {
 });
 
 test.after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
   for (const dir of [tmpUploads, repoRoot]) {
     try {
       fs.rmSync(dir, { recursive: true, force: true });
@@ -80,7 +94,7 @@ async function importBundle(buf) {
   const res = fakeRes();
   await handlePresentationsImportDeck({
     repoRoot,
-    storageScope: testScope(repoRoot),
+    storageScope: testScope(),
     req: fakeReq(buf),
     res,
     authedUser: { email: 'importer@example.com' },

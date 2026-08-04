@@ -273,6 +273,6 @@
 
   .slide-gallery .gallery-caption {
     font-size: var(--slide-text-xs);
-    padding: 6px 10px;
+    padding: var(--slide-space-2) var(--slide-space-3);
   }
 }

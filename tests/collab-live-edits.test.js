@@ -7,28 +7,47 @@
  * Run with: node --test tests/collab-live-edits.test.js
  */
 
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
 
 // Enable collab + live edits before the mount reads the flags. Auth stays in
 // its dev default (disabled → anonymous admin), same as the presence test.
 process.env.COLLAB_ENABLED = 'true';
 process.env.COLLAB_LIVE_EDITS = 'true';
+process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_SECRET;
 delete process.env.AUTH_DEV_BYPASS;
 
+const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { initializeStorage, __resetStorageForTests } = await import(
+  '../server/storage/adapters/index.js'
+);
 const { maybeAttachCollab, shutdownCollab } = await import('../server/collab/mount.js');
 const { createPresentation, getPresentation } = await import(
   '../server/storage/presentations/index.js'
 );
-const { getYDocState } = await import('../server/storage/presentations/ydoc-state.js');
+const { getYDocState } = await import('../server/storage/presentation-ydocs.js');
 const { createPresenceSession } = await import('../client/lib/collab/presence-session.js');
+
+// The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
+// is the only backend.
+const REPO_ROOT = process.cwd();
+
+__setTestDb(createFakeDb({ organizations: [{ id: ORG, name: 'Default', slug: 'default' }] }));
+await initializeStorage();
+
+// `closeStorage()` would call `db.destroy()`, which the in-memory double does
+// not have — drop the adapter singleton instead.
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 /** Poll until `fn()` is truthy or the timeout elapses. */
 async function waitFor(fn, { timeout = 8000, interval = 50 } = {}) {
@@ -42,15 +61,14 @@ async function waitFor(fn, { timeout = 8000, interval = 50 } = {}) {
 }
 
 test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t) => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-live-edits-'));
-  const pres = await createPresentation(testScope(repoRoot), {
+  const pres = await createPresentation(testScope(), {
     title: 'Live edits deck',
     ownerEmail: 'anonymous',
     lang: 'nl',
   });
 
   const server = http.createServer((req, res) => res.end('ok'));
-  const hocuspocus = await maybeAttachCollab(server, { repoRoot });
+  const hocuspocus = await maybeAttachCollab(server, { repoRoot: REPO_ROOT });
   assert.ok(hocuspocus, 'collab should mount');
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const url = `ws://127.0.0.1:${server.address().port}/collab`;
@@ -70,7 +88,6 @@ test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t
     bob.destroy();
     await shutdownCollab();
     await new Promise((resolve) => server.close(resolve));
-    rmSync(repoRoot, { recursive: true, force: true });
   });
 
   const docA = alice._provider.document;
@@ -98,13 +115,13 @@ test('live edits: bootstrap, concurrent edits converge, JSON persists', async (t
 
   // The debounced store (2s) serializes back to the deck JSON.
   const updated = await waitFor(async () => {
-    const p = await getPresentation(testScope(repoRoot), pres.id);
+    const p = await getPresentation(testScope(), pres.id);
     return p?.title === 'Onze Live edits deck' && p?.slides?.[0]?.content?.title === 'Door Bob bewerkt'
       ? p
       : null;
   });
   assert.ok(updated.revision > pres.revision, 'facade bumped the revision');
 
-  const bin = await getYDocState(repoRoot, pres.id);
+  const bin = await getYDocState(testScope(), pres.id);
   assert.ok(bin instanceof Uint8Array && bin.length > 0, 'doc binary stored');
 });

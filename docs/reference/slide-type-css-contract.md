@@ -64,28 +64,30 @@ Two kinds of entry, and they mean different things:
 - **`hook`** — the class exists so code can find the element. `chart-frag` is
   queried by presenter stepping; `team-cards-group-right` is an inline-edit
   anchor. Styling them would be beside the point. These are permanent.
-- **`unstyled`** — the class is emitted and nothing anywhere uses it: no rule, no
-  selector. These are *candidates for removal*, not settled design, and the list
-  should shrink.
+- **`unstyled`** — the class is emitted and no dedicated rule targets it, yet its
+  presence is deliberate: it is the default value of an enum whose base slide
+  already styles it, or a name whose look comes from an inline style or a
+  numbered variant beside it. Each entry's reason says which.
 
-Standing up the test found thirteen of the second kind. They are recorded rather
-than deleted on purpose: removing an emitted class is itself a contract change
-under the rule this test enforces, so it belongs in a release with a note, not in
-the commit that happened to notice it.
+Standing up the test found thirteen of the second kind. Recording them rather
+than deleting them was deliberate: removing an emitted class is itself a contract
+change under the rule this test enforces, so it belongs in a release with a note,
+not in the commit that happened to notice it. Seven of the thirteen turned out to
+be genuinely dead — emitted, styled nowhere, queried by nothing — and were later
+removed at source in exactly such a release (`team-cards-group-left`, `kpi-note`,
+`quote-author-text`, `poll-results-main`, `sfi-header`, `sfi-card-code`,
+`sfi-card-qr`; see the release notes).
 
-Three of the thirteen are arguably correct as they stand and worth understanding
-before anyone deletes them in bulk:
+The six that remain are correct as they stand:
 
 | Class | Why it is emitted without a rule |
 | --- | --- |
 | `chart-slice` | the pie renderer emits it beside the styled `chart-slice-<n>`; the base name is the category, the indexed one carries the colour |
 | `is-left` | image-text marks the default side explicitly; only the opposite, `.split.is-right`, needs rules |
 | `slide-bg-custom` | the `custom` background takes its colour from an inline style, so there is nothing to declare |
-
-The rest — `aspect-square`, `shape-rounded`, `team-cards-group-left`,
-`is-layout-center`, `kpi-note`, `quote-author-text`, `poll-results-main`,
-`sfi-header`, `sfi-card-code`, `sfi-card-qr` — appear nowhere but their own
-renderer.
+| `aspect-square` | the default `imageAspect` of team-cards; only the non-default `.aspect-original` carries a rule, the base slide styles this value |
+| `shape-rounded` | the default `imageShape` of team-cards; only `.shape-square`/`.shape-circle` carry rules |
+| `is-layout-center` | the default `layout` of chapter-title; only `.is-layout-top`/`.is-layout-bottom` carry rules |
 
 The list cannot rot in either direction: one test fails if an entry names a class
 no type renders any more, another fails if an entry quietly gained a stylesheet,

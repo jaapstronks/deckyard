@@ -26,11 +26,14 @@ let pool = null;
  * @property {SlideLibraryTable} slide_library
  * @property {FollowCodesTable} follow_codes
  * @property {AppSettingsTable} app_settings
+ * @property {UserSettingsTable} user_settings
  * @property {PresentSessionsTable} present_sessions
  * @property {InteractionsTable} interactions
  * @property {InteractionVotesTable} interaction_votes
  * @property {QuestionsTable} questions
  * @property {FeedbackTable} feedback
+ * @property {EmailTemplatesTable} email_templates
+ * @property {EmailTemplateSettingsTable} email_template_settings
  */
 
 /**

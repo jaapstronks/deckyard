@@ -118,19 +118,18 @@ Two things you may want to change in `.env`:
       profiles: ["disabled"]
   ```
 
-`STORAGE_MODE` defaults to `postgres` for every install, compose or not; the
-one other accepted value is `file` (JSON on disk). That is the storage path
-being retired during beta — see [`versioning.md`](../reference/versioning.md)
-for what "beta" promises. There is no third spelling: `STORAGE_MODE=postgresql`
-is a boot error, not an alias.
+PostgreSQL is the only storage backend. The old `file` backend (JSON on disk)
+was removed in 1.x, per the beta stance in
+[`versioning.md`](../reference/versioning.md); `STORAGE_MODE` may be left
+unset or set to `postgres`, and there is no third spelling:
+`STORAGE_MODE=postgresql` is a boot error, not an alias.
 
 > **Upgrading an existing file-storage install?** Your `server/data/` decks are
 > not served from Postgres. Deckyard **refuses to start** when it finds decks
-> on disk while the database holds none, and prints both ways out — so you get
-> a stopped container, never an empty workspace. Import the data once with
-> `npm run db:import` (in compose:
-> `docker compose exec app npm run db:import`), or set `STORAGE_MODE=file` in
-> `.env`. Your files are never touched either way.
+> on disk while the database holds none — so you get a stopped container,
+> never an empty workspace. Import the data once with `npm run db:import`
+> (in compose: `docker compose exec app npm run db:import`). The import is
+> idempotent and your files are never touched.
 
 ### Backups
 
@@ -156,9 +155,9 @@ CI to run the same two commands over SSH.
 On the compose stack (Postgres): the `pg_data` volume plus `server/uploads/` —
 see [Backups](#backups) above for the `pg_dump` command.
 
-On a `STORAGE_MODE=file` install, two directories hold all state:
+Outside compose, back up your own PostgreSQL plus the same two directories:
 
-- `server/data/` — presentations, versions, settings
+- `server/data/` — settings and other JSON state not yet in the database
 - `server/uploads/` — uploaded media
 
 ## Security defaults

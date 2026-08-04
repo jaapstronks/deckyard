@@ -5,8 +5,8 @@
 .slide-team-cards {
   background: var(--slide-bg-mist);
   color: var(--color-text, #0b0b0b);
-  /* Use standard padding on left/right, slightly tighter on top/bottom for more card space */
-  padding: 48px var(--slide-padding) 56px;
+  /* Standard padding on left/right/bottom, tighter on top for more card space */
+  padding: var(--slide-space-12) var(--slide-padding) var(--slide-padding);
 
   /* Layout knobs (derived from card count via data-attrs) */
   --team-cols: 4;
@@ -93,7 +93,7 @@
 .slide-team-cards[data-card-count='11'],
 .slide-team-cards[data-card-count='12'] {
   /* Tighter padding for dense grids to fit content */
-  padding: 44px 48px 52px;
+  padding: var(--slide-space-12);
 }
 
 /* ============================================
@@ -165,7 +165,7 @@
 .slide-team-cards[data-card-count='23'],
 .slide-team-cards[data-card-count='24'],
 .slide-team-cards[data-card-count='25'] {
-  padding: 40px 48px 44px;
+  padding: var(--slide-space-10) var(--slide-space-12) var(--slide-space-12);
 }
 
 /* Reduce card sizes when bottom subheading is present (less vertical space) */
@@ -239,7 +239,7 @@
 
 .slide-team-cards .slide-inner {
   justify-content: flex-start;
-  gap: 18px;
+  gap: var(--slide-space-5);
 }
 
 .slide-team-cards.has-bottom-subheading .slide-inner {
@@ -261,7 +261,7 @@
 }
 
 .slide-team-cards .header .subtitle {
-  margin: 10px 0 0;
+  margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 75%, transparent);
@@ -374,7 +374,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 6px;
+  margin-top: var(--slide-space-2);
   font-size: var(--slide-text-base);
   color: var(--color-text-muted);
   text-decoration: none;
@@ -425,6 +425,9 @@
 .slide-team-cards[data-card-count='17'] .team-card-name,
 .slide-team-cards[data-card-count='18'] .team-card-name {
   font-size: var(--slide-text-sm);
+  /* allowlist: sub-step hairline — the last two tiers of the name→byline ramp
+     continue below --slide-space-1 (the base is space-2, 8px). Snapping 2px and
+     1px both to 4px would merge two density tiers into one (slide-roles.md) */
   margin-bottom: 2px;
 }
 .slide-team-cards[data-card-count='13'] .team-card-byline,
@@ -446,6 +449,7 @@
 .slide-team-cards[data-card-count='25'] .team-card-name {
   font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-tight);
+  /* allowlist: sub-step hairline — see the 13–18 tier above */
   margin-bottom: 1px;
 }
 .slide-team-cards[data-card-count='19'] .team-card-byline,
@@ -476,7 +480,7 @@
   line-height: var(--slide-leading-normal);
   color: color-mix(in srgb, var(--color-text, #0b0b0b) 60%, transparent);
   text-align: center;
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
 }
 
 /* Background color variants */
@@ -492,7 +496,7 @@
 
 /* Below (default): photo first, then title + caption grouped below */
 .slide-team-cards.text-below .team-card-text {
-  margin-top: 6px;
+  margin-top: var(--slide-space-2);
 }
 
 /* Split: title above image, caption below image */

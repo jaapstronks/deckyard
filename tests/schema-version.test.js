@@ -1,8 +1,5 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
 import {
@@ -16,10 +13,6 @@ import {
   validatePresentation,
 } from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
-import {
-  readPresentation,
-  writePresentation,
-} from '../server/storage/presentations/io.js';
 
 /** A minimal pre-versioning deck (no schemaVersion stamp). */
 function legacyDeck() {
@@ -281,19 +274,56 @@ test('non-object input passes through untouched', () => {
 });
 
 test('the read funnel migrates a stored legacy deck in memory', async () => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-schema-version-'));
+  // The single durable read funnel is the presentations facade: a deck stored
+  // WITHOUT a schemaVersion stamp (legacy row) comes back migrated.
+  const ORG = '00000000-0000-0000-0000-0000000000aa';
+  process.env.DEFAULT_ORGANIZATION_ID = ORG;
+  const { createFakeDb } = await import('./helpers/fake-db.js');
+  const { __setTestDb } = await import('../server/db/client.js');
+  const { initializeStorage, __resetStorageForTests } = await import(
+    '../server/storage/adapters/index.js'
+  );
   const legacy = legacyDeck();
-  await writePresentation(repoRoot, legacy); // stored WITHOUT schemaVersion
-  const read = await readPresentation(repoRoot, legacy.id);
-  assert.equal(read.schemaVersion, CURRENT_SCHEMA_VERSION);
-  assert.equal(read.id, legacy.id);
-  assert.equal(read.slides[0].content.title, 'Hi');
-});
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      presentations: [
+        {
+          id: legacy.id,
+          organization_id: ORG,
+          owner_email: 'owner@example.com',
+          title: legacy.title,
+          theme: legacy.theme,
+          lang: legacy.lang,
+          created: legacy.created,
+          modified: legacy.modified,
+          revision: 1,
+          deleted_at: null,
+          slides: legacy.slides,
+          settings: legacy.settings,
+          i18n: null,
+          published: null,
+        },
+      ],
+    })
+  );
+  await initializeStorage();
+  try {
+    const { getPresentation } = await import(
+      '../server/storage/presentations/index.js'
+    );
+    const scope = { repoRoot: null, organizationId: ORG };
+    const read = await getPresentation(scope, legacy.id);
+    assert.equal(read.schemaVersion, CURRENT_SCHEMA_VERSION);
+    assert.equal(read.id, legacy.id);
+    assert.equal(read.slides[0].content.title, 'Hi');
 
-test('reading a missing deck stays null', async () => {
-  const repoRoot = mkdtempSync(join(tmpdir(), 'deckyard-schema-version-'));
-  const read = await readPresentation(repoRoot, randomUUID());
-  assert.equal(read, null);
+    const missing = await getPresentation(scope, randomUUID());
+    assert.equal(missing, null);
+  } finally {
+    __resetStorageForTests();
+    __setTestDb(null);
+  }
 });
 
 test('validatePresentation accepts a freshly stamped deck', () => {

@@ -24,7 +24,7 @@
      on a white slide); text stays dark — the surface stays light. */
   background: var(--t-icon-card-grid-body-bg, #fff);
   color: rgba(11, 11, 11, 0.92);
-  padding: 18px 22px;
+  padding: var(--slide-space-5) var(--slide-space-6);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -56,13 +56,13 @@
   padding-left: 1.2em;
 }
 .slide-icon-card-grid .icon-card-text li {
-  margin: 6px 0;
+  margin: var(--slide-space-2) 0;
 }
 .slide-icon-card-grid .icon-card-text p {
   margin: 0;
 }
 .slide-icon-card-grid .icon-card-text > * + * {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
 }
 
 

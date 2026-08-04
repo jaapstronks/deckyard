@@ -161,7 +161,7 @@
   position: absolute;
   left: 18px;
   bottom: 18px;
-  padding: 14px 18px;
+  padding: var(--slide-space-4) var(--slide-space-5);
   background: rgba(0, 0, 0, 0.45);
   border-radius: var(--slide-radius-sm);
   font-family: var(--font-caption);
@@ -295,13 +295,13 @@
    margin is trimmed, which made the second column sit a few px higher.
    Bottom-only margins keep both columns top-aligned. */
 .slide-image-text.is-text-cols-2 .copy .body li {
-  margin: 0 0 10px;
+  margin: 0 0 var(--slide-space-3);
 }
 .slide-image-text .copy .heading {
   font-family: var(--font-heading);
   font-size: var(--slide-font-size-heading);
   line-height: var(--slide-leading-tight);
-  margin: 0 0 18px;
+  margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;

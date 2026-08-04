@@ -1,47 +1,41 @@
 /**
  * Storage adapter factory.
- * Selects the appropriate storage backend based on configuration.
+ * PostgreSQL is the only storage backend; the file backend was removed in 1.x
+ * (run `npm run db:import` once against an old data directory to move it in).
  */
 
-import { getStorageMode } from '../../config/database.js';
 import { createLogger } from '../../utils/logger.js';
 const log = createLogger('adapters');
 
-/** @type {import('./interface.js').StorageAdapter | null} */
+/**
+ * The composed PostgreSQL adapter — the storage contract, now that it is the
+ * only backend. The shapes it exchanges with the facades live in `./types.js`.
+ * @typedef {InstanceType<typeof import('./postgres/index.js').PostgresAdapter>} StorageAdapter
+ */
+
+/** @type {StorageAdapter | null} */
 let adapter = null;
 
 /**
- * Initialize the storage adapter based on configuration.
- * @param {string} repoRoot - Repository root path (needed for file adapter)
- * @returns {Promise<import('./interface.js').StorageAdapter>}
+ * Initialize the storage adapter.
+ * @returns {Promise<StorageAdapter>}
  */
-export async function initializeStorage(repoRoot) {
+export async function initializeStorage() {
   if (adapter) {
     return adapter;
   }
 
-  const mode = getStorageMode();
-
-  log.info(`[Storage] Mode: ${mode}`);
-
-  if (mode === 'postgres') {
-    const { PostgresAdapter } = await import('./postgres-adapter.js');
-    adapter = new PostgresAdapter();
-    await adapter.initialize();
-    log.info('[Storage] Initialized PostgreSQL adapter');
-  } else {
-    const { FileAdapter } = await import('./file-adapter.js');
-    adapter = new FileAdapter(repoRoot);
-    await adapter.initialize();
-    log.info('[Storage] Initialized file adapter');
-  }
+  const { PostgresAdapter } = await import('./postgres/index.js');
+  adapter = new PostgresAdapter();
+  await adapter.initialize();
+  log.info('[Storage] Initialized PostgreSQL adapter');
 
   return adapter;
 }
 
 /**
  * Get the current storage adapter.
- * @returns {import('./interface.js').StorageAdapter}
+ * @returns {StorageAdapter}
  * @throws {Error} If storage not initialized
  */
 export function getStorage() {
@@ -49,14 +43,6 @@ export function getStorage() {
     throw new Error('Storage not initialized. Call initializeStorage() first.');
   }
   return adapter;
-}
-
-/**
- * Check if storage is initialized.
- * @returns {boolean}
- */
-export function isStorageInitialized() {
-  return adapter !== null;
 }
 
 /**

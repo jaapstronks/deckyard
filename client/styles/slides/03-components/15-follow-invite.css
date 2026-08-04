@@ -1,13 +1,13 @@
 /* Follow-invite slide (big-screen friendly) */
 .slide-follow-invite .slide-inner {
-  padding: 36px 56px;
+  padding: var(--slide-space-10) var(--slide-space-16);
 }
 
 .slide-follow-invite .sfi {
   height: 100%;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 18px;
+  gap: var(--slide-space-5);
 }
 
 .slide-follow-invite .sfi-title {
@@ -20,7 +20,7 @@
 }
 
 .slide-follow-invite .sfi-body {
-  margin-top: 10px;
+  margin-top: var(--slide-space-3);
   max-width: 70ch;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-compact);
@@ -30,7 +30,7 @@
 .slide-follow-invite .sfi-methods {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 22px;
+  gap: var(--slide-space-6);
   align-items: stretch;
 }
 
@@ -38,7 +38,7 @@
   background: rgba(255, 255, 255, 0.92);
   border: 2px solid rgba(0, 0, 0, 0.10);
   border-radius: var(--slide-radius-md);
-  padding: 22px;
+  padding: var(--slide-space-6);
   display: grid;
   grid-template-rows: auto 1fr;
   gap: var(--slide-space-3);
@@ -57,7 +57,7 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  padding: 10px;
+  padding: var(--slide-space-3);
 }
 
 .slide-follow-invite .sfi-qr {
@@ -69,7 +69,7 @@
 .slide-follow-invite .sfi-code-row {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 18px;
+  gap: var(--slide-space-5);
   align-items: baseline;
   padding: var(--slide-space-2) 0;
 }

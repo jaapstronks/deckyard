@@ -1,30 +1,25 @@
 /**
- * App-settings theme wiring: the workspace default theme (defaultThemeId) and
- * the picker allowlist (enabledThemes) round-trip through read/write, normalize
- * safely, and getDefaultThemeId honors the setting > DEFAULT_THEME env > built-in
- * precedence (the fork seam).
+ * App-settings theme wiring, the parts that need no persistence: the default
+ * shape, and getDefaultThemeId's fallback precedence when nothing is stored
+ * (DEFAULT_THEME env > built-in — the fork seam). With no database configured
+ * the settings store reads back empty, which is exactly the "nothing set" state
+ * these fallbacks describe.
+ *
+ * The persistence cases — round-tripping defaultThemeId/enabledThemes, invalid-
+ * id normalization, partial-write no-clobber, and the configured-setting branch
+ * of getDefaultThemeId — persist in PostgreSQL and live in
+ * tests/pg/settings.pgtest.js.
  *
  * Run with: node --test tests/app-settings-default-theme.test.js
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-theme-settings-'));
-process.env.DATA_DIR = tmp;
-
-const {
-  defaultAppSettings,
-  getAppSettings,
-  writeAppSettings,
-  getDefaultThemeId,
-} = await import('../server/storage/settings.js');
+const { defaultAppSettings, getDefaultThemeId } = await import(
+  '../server/storage/settings.js'
+);
 const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
-
-const repoRoot = tmp;
 
 describe('app settings: default theme + picker allowlist', () => {
   it('defaults expose defaultThemeId and enabledThemes', () => {
@@ -32,56 +27,20 @@ describe('app settings: default theme + picker allowlist', () => {
     assert.strictEqual(d.defaultThemeId, '');
     assert.deepStrictEqual(d.enabledThemes, []);
   });
-
-  it('round-trips defaultThemeId and enabledThemes', async () => {
-    await writeAppSettings(repoRoot, {
-      defaultThemeId: 'clicknl',
-      enabledThemes: ['deckyard', 'clicknl'],
-    });
-    const s = await getAppSettings(repoRoot);
-    assert.strictEqual(s.defaultThemeId, 'clicknl');
-    assert.deepStrictEqual(s.enabledThemes, ['deckyard', 'clicknl']);
-  });
-
-  it('rejects an invalid defaultThemeId (stored as empty)', async () => {
-    await writeAppSettings(repoRoot, { defaultThemeId: 'bad id!!' });
-    const s = await getAppSettings(repoRoot);
-    assert.strictEqual(s.defaultThemeId, '');
-  });
-
-  it('a partial write does not clobber the other theme key', async () => {
-    await writeAppSettings(repoRoot, {
-      defaultThemeId: 'deckyard',
-      enabledThemes: ['deckyard'],
-    });
-    // Write only the allowlist; defaultThemeId must survive.
-    await writeAppSettings(repoRoot, { enabledThemes: ['deckyard', 'clicknl'] });
-    const s = await getAppSettings(repoRoot);
-    assert.strictEqual(s.defaultThemeId, 'deckyard');
-    assert.deepStrictEqual(s.enabledThemes, ['deckyard', 'clicknl']);
-  });
 });
 
-describe('getDefaultThemeId precedence', () => {
-  it('uses the configured setting when present', async () => {
-    await writeAppSettings(repoRoot, { defaultThemeId: 'clicknl' });
-    delete process.env.DEFAULT_THEME;
-    assert.strictEqual(await getDefaultThemeId(repoRoot), 'clicknl');
-  });
-
+describe('getDefaultThemeId fallback precedence (empty store)', () => {
   it('falls back to the DEFAULT_THEME env var (fork seam)', async () => {
-    await writeAppSettings(repoRoot, { defaultThemeId: '' });
     process.env.DEFAULT_THEME = 'ciiic';
     try {
-      assert.strictEqual(await getDefaultThemeId(repoRoot), 'ciiic');
+      assert.strictEqual(await getDefaultThemeId(), 'ciiic');
     } finally {
       delete process.env.DEFAULT_THEME;
     }
   });
 
   it('falls back to the built-in default when nothing is set', async () => {
-    await writeAppSettings(repoRoot, { defaultThemeId: '' });
     delete process.env.DEFAULT_THEME;
-    assert.strictEqual(await getDefaultThemeId(repoRoot), DEFAULT_THEME_ID);
+    assert.strictEqual(await getDefaultThemeId(), DEFAULT_THEME_ID);
   });
 });
