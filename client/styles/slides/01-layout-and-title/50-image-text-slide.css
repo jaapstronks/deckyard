@@ -165,7 +165,7 @@
   background: rgba(0, 0, 0, 0.45);
   border-radius: var(--slide-radius-sm);
   font-family: var(--font-caption);
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
   color: rgba(255, 255, 255, 0.92);
   display: inline-block;

@@ -458,14 +458,14 @@
   color: var(--color-text);
 }
 .slide-likert-slider .likert-slider-text {
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   color: var(--color-text);
   opacity: 0.92;
   min-width: 0;
 }
 
 .slide-likert-slider .likert-slider-help {
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-compact);
   font-weight: 600;
   margin-top: var(--slide-space-3);

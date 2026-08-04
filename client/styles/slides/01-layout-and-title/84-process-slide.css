@@ -206,7 +206,7 @@
 /* Step title */
 .slide-process .step-title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -285,6 +285,9 @@
   font-size: var(--slide-text-xl);
 }
 
+/* Restates the base rule since the tie-break moved both onto `lg`, but it is
+   not a fossil: it also outranks the responsive tier below, which is a later
+   rule of lower specificity (slide-roles.md). */
 .slide-process .process-container[data-count='3'] .step-title {
   font-size: var(--slide-text-lg);
 }
@@ -300,6 +303,7 @@
   font-size: var(--slide-text-lg);
 }
 
+/* Same as the 3-item rung above: a restatement that still decides the cascade. */
 .slide-process .process-container[data-count='4'] .step-title {
   font-size: var(--slide-text-lg);
 }
@@ -323,6 +327,7 @@
 
 .slide-process .process-container[data-count='5'] .step-text,
 .slide-process .process-container[data-count='6'] .step-text {
+  /* ladder rung: stays under the 4-item rung (base) */
   font-size: var(--slide-text-sm);
 }
 
@@ -334,6 +339,7 @@
 }
 
 .slide-process .process-container[data-count='7'] .step-title {
+  /* ladder rung: stays under the 5-6 item rung (md) */
   font-size: var(--slide-text-base);
 }
 
@@ -383,11 +389,11 @@
   .slide-process .step-number {
     width: var(--slide-step-size-sm);
     height: var(--slide-step-size-sm);
-    font-size: var(--slide-text-base);
+    font-size: var(--slide-text-md);
   }
 
   .slide-process .step-title {
-    font-size: var(--slide-text-base);
+    font-size: var(--slide-text-md);
   }
 
   .slide-process .step-text {

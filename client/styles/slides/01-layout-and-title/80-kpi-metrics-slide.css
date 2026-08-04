@@ -261,6 +261,9 @@
   gap: var(--slide-space-3) var(--slide-space-5);
   align-items: baseline;
   font-family: var(--font-mono);
+  /* ladder rung: the note stays under .kpi-label (calc(body + 6) = 26px, still
+     off-axis); the ratio-larger step (lg) would put the footnote above the label
+     it hangs from (slide-roles.md) */
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
   color: var(--kpi-tile-fg-muted, var(--color-text-muted));

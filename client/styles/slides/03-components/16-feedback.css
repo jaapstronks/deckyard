@@ -5,7 +5,7 @@
 }
 
 .slide-feedback.slide-follow-invite .sfi-body {
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
 }
 
 /* Two code rows need a bit more compact typography */
@@ -16,6 +16,8 @@
 
 /* Make labels more explicit but still bold/legible */
 .slide-feedback.slide-follow-invite .sfi-row-label {
+  /* ladder rung: the feedback variant stays under the follow-invite row label
+     (md) it overrides */
   font-size: var(--slide-text-base);
   opacity: 0.84;
 }

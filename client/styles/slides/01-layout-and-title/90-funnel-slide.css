@@ -152,10 +152,12 @@
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-label {
+  /* ladder rung: stays under the 4-stage rung, which is the base rule (md) */
   font-size: var(--slide-text-base);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-value {
+  /* ladder rung: stays under the 4-stage rung, which is the base rule (lg) */
   font-size: var(--slide-text-md);
 }
 
@@ -178,6 +180,7 @@
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-value {
+  /* ladder rung: stays under the 5-stage rung (md) */
   font-size: var(--slide-text-base);
 }
 
@@ -213,10 +216,14 @@
   }
 
   .slide-funnel .stage-label {
+    /* overflow: this tier is what makes a 4-stage funnel fit at 1024px wide —
+       it is the one responsive block here that still wins (count 4 has no rung
+       of its own), and the ratio-larger step measures as a stage-bar escape */
     font-size: var(--slide-text-sm);
   }
 
   .slide-funnel .stage-value {
+    /* overflow: same tier, same measured escape */
     font-size: var(--slide-text-base);
   }
 

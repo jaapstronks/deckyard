@@ -33,7 +33,7 @@
 }
 .slide-chart .chart-subtitle {
   margin-top: var(--slide-space-3);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-text-lg);
   line-height: var(--slide-leading-normal);
   color: var(--color-text-muted);
   max-width: 70ch;
@@ -264,7 +264,7 @@
 .slide-chart .chart-error-list {
   margin: 0;
   padding-left: 1.2em;
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
   color: rgba(0, 0, 0, 0.82);
 }
