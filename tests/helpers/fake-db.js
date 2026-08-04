@@ -788,6 +788,39 @@ export function createFakeDb(seed = {}) {
       return builder;
     },
 
+    /**
+     * Model `db.transaction().execute(fn)`. The callback receives the same
+     * double as `trx`, so every query shape above works inside a transaction
+     * unchanged; on a thrown callback the tables are rolled back to the
+     * snapshot taken on entry, exactly as PostgreSQL discards an aborted
+     * transaction. The GDPR erasure path (view-sessions-gdpr.js) deletes
+     * slide_views and view_sessions inside one transaction and depends on that
+     * all-or-nothing behaviour.
+     *
+     * What this does NOT model — and cannot, being single-threaded — is
+     * isolation between concurrent transactions: two overlapping erasures are
+     * serialized here, never interleaved. Same limitation as the slide-lock
+     * acquire-race double (tests/slide-lock-acquire-race.test.js); a test that
+     * claimed to cover a genuine race on this double would be lying.
+     */
+    transaction() {
+      return {
+        async execute(fn) {
+          const snapshot = {};
+          for (const [name, rows] of Object.entries(tables)) {
+            snapshot[name] = rows.map((row) => ({ ...row }));
+          }
+          try {
+            return await fn(db);
+          } catch (err) {
+            for (const name of Object.keys(tables)) delete tables[name];
+            for (const [name, rows] of Object.entries(snapshot)) tables[name] = rows;
+            throw err;
+          }
+        },
+      };
+    },
+
     fn: makeExpressionBuilder().fn,
 
     /** Direct access to the backing rows, for arrange/assert in tests. */
