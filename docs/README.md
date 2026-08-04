@@ -169,6 +169,7 @@ nothing is discoverable only by `ls`.
 | Doc | What it covers |
 |-----|----------------|
 | [`two-window-presenter.md`](reference/two-window-presenter.md) | The two-window presenter view |
+| [`notes-companion.md`](reference/notes-companion.md) | The phone companion, and the session token that authorizes its notes edits |
 | [`live-video-layer.md`](reference/live-video-layer.md) | The live video layer |
 | [`comments-and-notifications.md`](reference/comments-and-notifications.md) | The three-layer comments model |
 | [`collab-presence.md`](reference/collab-presence.md) | Collaborator presence |

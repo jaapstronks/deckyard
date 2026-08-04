@@ -319,14 +319,22 @@ export function withPresentations(Base) {
       // alone as well. Only the ownership-transfer route opts in via
       // `allowOwnerChange` (below), and there the paired owner keys move in this
       // same statement.
+      // The pair moves together or not at all. A write with no actor at all
+      // (the anonymous notes-companion save) leaves `updated_by` untouched —
+      // Kysely drops an `undefined` from the SET clause — so stamping
+      // `updated_by_user_id` anyway would null the id half while the email half
+      // kept the previous writer, which is exactly the divergence the dual-key
+      // invariant exists to prevent.
       const updatedByEmail = ctx?.actorEmail || data.updatedBy;
-      const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
       const updateData = {
-        updated_by: updatedByEmail,
-        updated_by_user_id: updatedByResolution?.userId ?? null,
         modified_at: now(),
         revision: sql`revision + 1`,
       };
+      if (updatedByEmail) {
+        const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
+        updateData.updated_by = updatedByEmail;
+        updateData.updated_by_user_id = updatedByResolution?.userId ?? null;
+      }
       if (data.title !== undefined) updateData.title = data.title;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.settings !== undefined) updateData.settings = jsonb(data.settings);

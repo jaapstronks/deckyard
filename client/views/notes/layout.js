@@ -16,6 +16,9 @@ import { createUiModeSwitcher } from '../ui-mode-switcher.js';
  *   previewPrevBtn: HTMLElement, previewNextBtn: HTMLElement, previewMeta: HTMLElement,
  *   previewWrap: HTMLElement, nextLabel: HTMLElement, nextPreviewWrap: HTMLElement,
  *   notesWrap: HTMLElement, notesTitle: HTMLElement, notesBody: HTMLElement,
+ *   notesEditBtn: HTMLElement, notesEditor: HTMLElement,
+ *   notesTextarea: HTMLTextAreaElement, notesSaveBtn: HTMLElement,
+ *   notesCancelBtn: HTMLElement, notesStatus: HTMLElement,
  *   qaWrap: HTMLElement, qaBody: HTMLElement,
  * }}
  */
@@ -93,10 +96,53 @@ export function buildNotesLayout() {
     class: 'notes-panel-title',
     text: t('notes.notes', 'Notes'),
   });
+  // Editing is capability-based: whoever holds the join link may edit this
+  // session's notes, logged in or not. The toggle therefore always shows.
+  const notesEditBtn = h('button', {
+    class: 'btn btn-secondary btn-sm notes-edit-toggle',
+    type: 'button',
+    text: t('notes.edit.start', 'Edit'),
+    'aria-expanded': 'false',
+    hidden: true,
+  });
+  const notesHeader = h('div', { class: 'row spread notes-panel-header' }, [
+    notesTitle,
+    notesEditBtn,
+  ]);
   const notesBody = h('div', {
     class: 'notes-body',
   });
-  notesWrap.append(notesTitle, notesBody);
+  const notesTextarea = h('textarea', {
+    class: 'form-input notes-edit-input',
+    'aria-label': t('notes.edit.label', 'Speaker notes (markdown)'),
+    placeholder: t(
+      'notes.edit.placeholder',
+      'Notes for this slide. Markdown works.'
+    ),
+  });
+  const notesSaveBtn = h('button', {
+    class: 'btn btn-primary btn-sm',
+    type: 'button',
+    text: t('notes.edit.save', 'Save'),
+  });
+  const notesCancelBtn = h('button', {
+    class: 'btn btn-secondary btn-sm',
+    type: 'button',
+    text: t('common.cancel', 'Cancel'),
+  });
+  const notesStatus = h('div', {
+    class: 'help notes-edit-status',
+    role: 'status',
+    'aria-live': 'polite',
+  });
+  const notesEditor = h('div', { class: 'stack notes-edit', hidden: true }, [
+    notesTextarea,
+    h('div', { class: 'row spread notes-edit-actions' }, [
+      notesStatus,
+      h('div', { class: 'row' }, [notesCancelBtn, notesSaveBtn]),
+    ]),
+  ]);
+  notesWrap.append(notesHeader, notesBody, notesEditor);
 
   const qaWrap = h('div', { class: 'notes-panel notes-qa-panel' });
   const qaTitle = h('div', { class: 'notes-panel-title', text: t('notes.qa', 'Q&A') });
@@ -130,6 +176,12 @@ export function buildNotesLayout() {
     notesWrap,
     notesTitle,
     notesBody,
+    notesEditBtn,
+    notesEditor,
+    notesTextarea,
+    notesSaveBtn,
+    notesCancelBtn,
+    notesStatus,
     qaWrap,
     qaBody,
   };

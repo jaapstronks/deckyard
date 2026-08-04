@@ -200,6 +200,22 @@ async function render() {
       return;
     }
 
+    // The notes companion and its QR join page are capability-based: the
+    // session id in the link is what authorizes them (server side:
+    // routes/api/present-session-audience.js). A speaker who scans the QR on a
+    // phone that is not logged in must land on the companion, not on a login
+    // screen. `getMeCached()` still runs, because Q&A moderation shows extra
+    // affordances to an admin — it just answers null for a visitor here.
+    if (r.name === 'notes') {
+      await mount(renderNotes(root, r.sessionId, { nav, user: await getMeCached() }));
+      return;
+    }
+
+    if (r.name === 'notesJoin') {
+      await mount(renderNotesJoin(root, r.sessionId, { nav }));
+      return;
+    }
+
     const user = await getMeCached();
     if (!user) {
       const returnTo = `${location.pathname}${
@@ -275,14 +291,6 @@ async function render() {
     }
     if (r.name === 'presentWindow') {
       await mount(renderPresentWindow(root, r.id, { nav, user }));
-      return;
-    }
-    if (r.name === 'notes') {
-      await mount(renderNotes(root, r.sessionId, { nav, user }));
-      return;
-    }
-    if (r.name === 'notesJoin') {
-      await mount(renderNotesJoin(root, r.sessionId, { nav, user }));
       return;
     }
     if (r.name === 'moderate') {
