@@ -18,7 +18,6 @@ import {
   updatePresentation,
 } from '../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
-import { createRouteContext } from '../../utils/context.js';
 import { normalizeLang } from '../../utils/translation-status.js';
 import { notifyPresentSessionDeckUpdated } from '../../storage/present-sessions/index.js';
 import { canWritePresentation } from '../../utils/presentation-authz.js';
@@ -66,10 +65,9 @@ export async function handleQuestions({ repoRoot, storageScope, req, res, url, a
     if (!pres) return notFound(res);
 
     // Fetch collaborator permission for ACL check
-    const ctx = createRouteContext(authedUser);
     let collaboratorPermission = null;
     if (authedUser?.email && pres?.id) {
-      collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+      collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
     }
 
     if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))

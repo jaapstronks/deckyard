@@ -6,7 +6,6 @@ import {
   prunePresentationVersions,
 } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { isAiCompareAvailable, compareVersionsWithAi } from '../../../utils/ai/compare-versions.js';
 import {
   json,
@@ -36,10 +35,9 @@ export async function handlePresentationVersions(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);
@@ -96,10 +94,9 @@ export async function handlePresentationVersionItem(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -140,10 +137,9 @@ export async function handlePresentationVersionExport(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -208,10 +204,9 @@ export async function handlePresentationVersionCompareAi(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
@@ -268,10 +263,9 @@ export async function handlePresentationSessionEnd(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission })) {

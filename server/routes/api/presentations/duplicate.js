@@ -1,6 +1,5 @@
 import { duplicatePresentation, getPresentation } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { createRouteContext } from '../../../utils/context.js';
 import { json, methodNotAllowed, notFound, serveJson, unauthorized } from '../../../utils/http.js';
 import { canReadPresentation } from '../../../utils/presentation-authz.js';
 
@@ -14,10 +13,9 @@ export async function handlePresentationDuplicate(
   if (!pres) return notFound(res);
 
   // Fetch collaborator permission for ACL check
-  const ctx = createRouteContext(authedUser);
   let collaboratorPermission = null;
   if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email, ctx);
+    collaboratorPermission = await getCollaboratorPermission(pres.id, authedUser.email);
   }
 
   if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission })) return unauthorized(res);

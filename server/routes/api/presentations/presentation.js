@@ -64,9 +64,7 @@ export async function handlePresentationItem(
     // Determine user's effective permission for the client UI
     let collaboratorPermission = null;
     if (authedUser?.email) {
-      collaboratorPermission = await getCollaboratorPermission(id, authedUser.email, {
-        organizationId: pres.organizationId,
-      });
+      collaboratorPermission = await getCollaboratorPermission(id, authedUser.email);
     }
     const userPermission = getEffectivePermission({
       user: authedUser,

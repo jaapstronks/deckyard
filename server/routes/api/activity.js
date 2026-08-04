@@ -75,12 +75,7 @@ export async function handleActivity({ repoRoot, storageScope, req, res, url, au
         count += entry.count;
         continue;
       }
-      const pres = await getReadablePresentation(
-        entry.presentationId,
-        storageScope,
-        authedUser,
-        ctx
-      );
+      const pres = await getReadablePresentation(entry.presentationId, storageScope, authedUser);
       if (pres) count += entry.count;
     }
 
@@ -124,12 +119,7 @@ export async function handleActivity({ repoRoot, storageScope, req, res, url, au
  */
 export async function getEnrichedActivity({ storageScope, authedUser, ctx, opts }) {
   const result = await listActivityEvents(ctx, opts);
-  const events = await enrichEventsWithPresentations(
-    result.events,
-    storageScope,
-    authedUser,
-    ctx
-  );
+  const events = await enrichEventsWithPresentations(result.events, storageScope, authedUser);
   return {
     events,
     // Note: total may be higher than accessible events; this is acceptable
@@ -144,14 +134,14 @@ export async function getEnrichedActivity({ storageScope, authedUser, ctx, opts 
  * Fetch a presentation and return it only if the user can read it
  * (collaborator-aware). Returns null when missing or not accessible.
  */
-async function getReadablePresentation(pid, storageScope, authedUser, ctx) {
+async function getReadablePresentation(pid, storageScope, authedUser) {
   try {
     const pres = await getPresentation(storageScope, pid);
     if (!pres) return null;
 
     let collaboratorPermission = null;
     try {
-      collaboratorPermission = await getCollaboratorPermission(pid, authedUser?.email, ctx);
+      collaboratorPermission = await getCollaboratorPermission(pid, authedUser?.email);
     } catch {
       // Ignore - no collaborator access
     }
@@ -174,7 +164,7 @@ async function getReadablePresentation(pid, storageScope, authedUser, ctx) {
  * Fetches presentation titles for events that reference presentations,
  * and filters out events for presentations the user cannot access.
  */
-async function enrichEventsWithPresentations(events, storageScope, authedUser, ctx) {
+async function enrichEventsWithPresentations(events, storageScope, authedUser) {
   // Collect unique presentation IDs
   const presentationIds = new Set();
   for (const event of events) {
@@ -190,7 +180,7 @@ async function enrichEventsWithPresentations(events, storageScope, authedUser, c
   const accessibleIds = new Set();
 
   for (const pid of presentationIds) {
-    const pres = await getReadablePresentation(pid, storageScope, authedUser, ctx);
+    const pres = await getReadablePresentation(pid, storageScope, authedUser);
     if (pres) {
       accessibleIds.add(pid);
       presMap.set(pid, pres);

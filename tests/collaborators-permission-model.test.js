@@ -171,6 +171,8 @@ function collaboratorRow(overrides) {
  * module-level Map with a five-minute TTL, so without it a permission one test
  * granted would still answer a lookup in the next — the reseeded database would
  * never be consulted and an authorization assertion would pass on a stale hit.
+ * The key is `(deck, email)`, matching the row: an organization is not part of
+ * a collaborator lookup (see the header of server/storage/collaborators.js).
  *
  * @returns {Promise<ReturnType<typeof createFakeDb>>}
  */
@@ -239,9 +241,7 @@ async function seed() {
 
   for (const deck of DECKS) {
     for (const actor of Object.values(ACTORS)) {
-      for (const org of [ORG, OTHER_ORG]) {
-        await invalidatePermission(deck, actor.email, org);
-      }
+      await invalidatePermission(deck, actor.email);
     }
   }
   return db;
