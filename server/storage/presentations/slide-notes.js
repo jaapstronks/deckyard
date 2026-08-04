@@ -15,7 +15,7 @@
  * Concurrency is deliberately last-write-wins on that one field: notes are one
  * string per slide, so the conflict window is a single sentence, and a merge
  * mechanism would cost more than it buys (see
- * `docs/plans/briefs/companion-notes-editing.md`).
+ * `docs/reference/notes-companion.md`, § Concurrency).
  *
  * @module server/storage/presentations/slide-notes
  */
