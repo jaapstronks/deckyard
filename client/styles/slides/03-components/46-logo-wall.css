@@ -8,8 +8,8 @@
 
   --lw-cols: 4;
   --lw-rows: 2;
-  --lw-gap-x: 22px;
-  --lw-gap-y: 22px;
+  --lw-gap-x: var(--slide-space-6);
+  --lw-gap-y: var(--slide-space-6);
   --lw-cell: clamp(180px, 18vh, 240px);
 }
 
@@ -61,7 +61,7 @@
   --lw-cols: 5;
   --lw-rows: 2;
   --lw-cell: clamp(180px, 11vw, 230px);
-  --lw-gap-x: 18px;
+  --lw-gap-x: var(--slide-space-5);
 }
 
 /* 11–12 => 6×2 */
@@ -70,7 +70,7 @@
   --lw-cols: 6;
   --lw-rows: 2;
   --lw-cell: clamp(170px, 10.4vw, 225px);
-  --lw-gap-x: 16px;
+  --lw-gap-x: var(--slide-space-4);
 }
 
 .slide-logo-wall[data-logo-count='9'],
