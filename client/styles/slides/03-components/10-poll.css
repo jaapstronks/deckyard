@@ -104,7 +104,7 @@
 .slide-poll .poll-letter {
   font-family: var(--font-heading);
   font-weight: var(--heading-weight, 600);
-  font-size: calc(var(--slide-font-size-body) + 4px);
+  font-size: var(--slide-text-md);
   color: var(--t-color-accent-contrast, var(--t-text-color-light, #fff));
   background: var(--color-accent);
   width: 44px;
@@ -137,7 +137,7 @@
 .slide-poll .poll-results-title,
 .slide-likert .poll-results-title {
   font-family: var(--font-heading);
-  font-size: calc(var(--slide-font-size-body) - 2px);
+  font-size: var(--slide-font-size-body);
   font-weight: var(--heading-weight, 600);
   text-transform: var(--heading-transform, none);
   color: var(--color-text);
@@ -161,7 +161,7 @@
 
 .slide-poll .poll-bar-name {
   font-family: var(--font-heading);
-  font-size: calc(var(--slide-font-size-body) - 4px);
+  font-size: var(--slide-text-sm);
   font-weight: var(--heading-weight, 600);
   color: var(--color-text);
 }
@@ -247,7 +247,7 @@
 }
 
 .slide-poll .poll-scan .help {
-  font-size: calc(var(--slide-font-size-body) - 6px);
+  font-size: var(--slide-text-xs);
   color: var(--color-text-muted);
   line-height: var(--slide-leading-normal);
 }
@@ -271,8 +271,9 @@
 
 .slide-likert .heading {
   font-family: var(--font-heading);
-  /* Bigger, title-like question for Likert (requested) */
-  font-size: calc(var(--slide-font-size-heading) + 10px);
+  /* Bigger, title-like question for Likert (requested): the same title-like
+     step the content, table and kpi-metrics headings take (54px → `3xl`). */
+  font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);

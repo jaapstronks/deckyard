@@ -435,6 +435,19 @@ only go down.
 Presenter chrome inside the slide bundle is excluded by file, with the reason
 in the test.
 
+**The gate cannot see inside `calc()`**, because a length there may be a
+multiplier, an offset or an `em` and the parser cannot tell which. So a
+`calc(<role> ± Npx)` sits off the scale without ever costing a budget point, and
+a whole tail of them survived the axis sweeps: on the font-size axis the census
+counted 12, spread over 7 types. The rule that closes the hole is a reading
+rule, not a parser one: **an arithmetic offset from a role token is a scale step
+the scale does not have yet** — write the step, or add it. `calc()` stays
+legitimate for the two things it cannot express otherwise, a scale multiplier
+(`--tf-size-scale`, `--quote-scale`) and `em`-relative sizing, and both are
+already allowlisted categories. A literal *inside* such an expression is not
+covered by that allowlist: the multiplier is allowed, the number it multiplies
+is still a value on the axis.
+
 The same file carries the first slice of the end-state contract check: **no
 `var(--t-radius…)` anywhere in the slide bundle outside `00-tokens.css`**. That
 became true in batch 2.2a and is asserted from batch 2.3a on, so the direct

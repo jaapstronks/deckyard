@@ -5,7 +5,8 @@
 
 .slide-table .heading {
   font-family: var(--font-heading);
-  font-size: calc(var(--slide-font-size-heading) + 6px);
+  /* Same title-like heading step as content and kpi-metrics (50px → `3xl`). */
+  font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);
@@ -129,7 +130,7 @@
 .slide-table .table-caption {
   margin-top: var(--slide-space-4);
   font-family: var(--font-body);
-  font-size: calc(var(--slide-font-size-body) - 2px);
+  font-size: var(--slide-font-size-body);
   line-height: var(--slide-leading-normal);
   opacity: 0.9;
   max-width: 80%;

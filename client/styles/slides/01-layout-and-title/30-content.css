@@ -1,9 +1,10 @@
 /* content-slide */
 .slide-content .heading {
   font-family: var(--font-heading);
-  /* Content-slide headings should read a touch more like "titles".
-     --tf-size-scale (per-field S/M/L, default 1) scales this heading when set. */
-  font-size: calc((var(--slide-font-size-heading) + 6px) * var(--tf-size-scale, 1));
+  /* Content-slide headings should read a touch more like "titles", so they take
+     the step above the heading role (50px → `3xl`; table and kpi-metrics read
+     the same way). --tf-size-scale (per-field S/M/L, default 1) scales it. */
+  font-size: calc(var(--slide-text-3xl) * var(--tf-size-scale, 1));
   line-height: var(--slide-leading-tight);
   margin: 0 0 var(--slide-space-5);
   font-weight: var(--heading-weight, 400);

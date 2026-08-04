@@ -9,7 +9,9 @@
 
 .slide-kpi-metrics .heading {
   font-family: var(--font-heading);
-  font-size: calc(var(--slide-font-size-heading) + 6px);
+  /* The type reads its heading as a title, one step above the heading role
+     (slide-roles.md § Snapping a value to the scale: 50px → `3xl`). */
+  font-size: var(--slide-text-3xl);
   line-height: var(--slide-leading-tight);
   margin: 0 0 var(--slide-space-8);
   font-weight: var(--heading-weight, 400);

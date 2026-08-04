@@ -5,9 +5,9 @@
         "x": 64,
         "y": 64,
         "width": 1472,
-        "height": 55
+        "height": 57.2
       },
-      "fontSize": "50px",
+      "fontSize": "52px",
       "fontWeight": "700",
       "requestedFamily": "Poppins",
       "paintedFamilies": [
@@ -21,7 +21,7 @@
     ".slide .subheading": {
       "rect": {
         "x": 64,
-        "y": 127,
+        "y": 129.2,
         "width": 1472,
         "height": 40.8
       },
@@ -39,9 +39,9 @@
     ".slide .body": {
       "rect": {
         "x": 64,
-        "y": 185.8,
+        "y": 190,
         "width": 1472,
-        "height": 650.2
+        "height": 646
       },
       "fontSize": "28px",
       "fontWeight": "400",
@@ -68,6 +68,6 @@
       251,
       245
     ],
-    "share": 0.989
+    "share": 0.988
   }
 }
