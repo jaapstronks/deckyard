@@ -156,7 +156,7 @@ logo, or an avatar) that points at it.
 | `MEDIA_STORAGE_MODE` | `media/config.js` | `auto` (default), `scaleway`, `local`. `auto` picks Scaleway when configured. `scaleway` throws at startup if it is not. |
 | `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_BUCKET` | `media/config.js` | All three required to count as configured. |
 | `SCW_REGION`, `SCW_ENDPOINT`, `SCW_CDN_URL` | `media/config.js` | Default region `nl-ams`; endpoint defaults to `https://s3.<region>.scw.cloud`; CDN URL optional. |
-| `UPLOADS_DIR` / `SANDBOX_UPLOADS_DIR` | `config/storage-paths.js` | Override the local upload directory. Default `server/uploads`, `server/uploads-sandbox` in sandbox mode. |
+| `UPLOADS_DIR` / `SANDBOX_UPLOADS_DIR` | `server/config/storage-paths.js` | Override the local upload directory. It defaults to an `uploads` directory under `server/` (`uploads-sandbox` in sandbox mode), created at boot by `server/server.js` — so neither is in the repo. |
 | `IMAGEKIT_PRIVATE_KEY`, `IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_URL_ENDPOINT` | `media/imagekit.js` | Required for the DAM panel; missing ones surface as `issues`. |
 | `IMAGEKIT_UPLOAD_FOLDER`, `IMAGEKIT_TAG_PREFIX`, `IMAGEKIT_METADATA_FIELD_ALT_SEED` | `media/imagekit.js` | Optional; missing ones surface as `warnings`. Tag prefix defaults to `deck:`. |
 | `UNSPLASH_ACCESS_KEY` | `integrations/unsplash.js` | Enables Unsplash search/import. |
