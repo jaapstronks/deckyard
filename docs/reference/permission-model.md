@@ -266,7 +266,7 @@ every authorized request, so it is cached:
 |---|---|
 | `PERMISSION_CACHE_TTL_SECONDS` | Cache TTL, default `300`. |
 | `PERMISSION_CACHE_MAX_SIZE` | Max entries in the in-memory fallback, default `10000`. |
-| `REDIS_URL` | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only. |
+| `REDIS_URL` | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)). |
 | `AUTH_ENABLED=false` | Produces the single `unrestricted` operator; every ownership-scoped check grants. |
 | `AUTH_DEV_BYPASS` | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback. |
 | `MULTI_WORKSPACE_ENABLED` | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything. |
