@@ -25,6 +25,14 @@
  * keeps working on the e-mail key exactly as before, and picks up an id on its
  * owner's first write. That NULL is a defined state, not an error; see
  * {@link module:storage/identity-resolver}.
+ *
+ * **When the two collide, the id wins** (T10 PR G). Renaming into an address
+ * that already carries an id-less row would otherwise make the e-mail re-stamp
+ * throw on the primary key. The id-bearing row is kept and the orphan is
+ * dropped: it belongs to nobody who can sign in, and one row per person is what
+ * this table's keys already promise. `verifyIdentityConsistency()`
+ * ({@link module:storage/identity-verification}) is the check that the promise
+ * holds across the whole table.
  */
 
 import { sql } from 'kysely';
@@ -821,15 +829,44 @@ export async function writeUserSettings(repoRoot, email, next) {
     // Update the row this person already owns by id, and re-stamp its `email`
     // to their current address while we are there. That re-stamp is the point
     // of the dual key: the id says *who*, and keeping the e-mail column in step
-    // is what lets the later per-row verification (brief § PR G) assert "id
-    // present ⇒ e-mail matches the users row" instead of tolerating drift.
+    // is what lets the per-row verification (storage/identity-verification.js)
+    // assert "id present ⇒ e-mail matches the users row" instead of tolerating
+    // drift.
     if (userId) {
-      const updated = await db
-        .updateTable('user_settings')
-        .set({ email: key, settings: payload, updated_at: sql`now()` })
-        .where('user_id', '=', userId)
-        .executeTakeFirst();
-      if (Number(updated?.numUpdatedRows ?? 0) > 0) return;
+      const claimed = await db.transaction().execute(async (trx) => {
+        const own = await trx
+          .selectFrom('user_settings')
+          .select('email')
+          .where('user_id', '=', userId)
+          .executeTakeFirst();
+        // No id-bearing row for this person yet — fall through to the upsert,
+        // which adopts whatever sits on the e-mail key instead of deleting it.
+        if (!own) return false;
+
+        // The orphan rule (T10 PR G). Renaming *into* an address that already
+        // has an id-less settings row used to make this re-stamp collide with
+        // the e-mail primary key and throw. The id-bearing row wins: it is the
+        // one an account actually reads and writes, while a NULL `user_id` row
+        // on that address belongs to nobody who can sign in — the anonymous
+        // bucket aside, it is a legacy disk import or an address that never
+        // became an account. Dropping it is the only outcome that keeps one
+        // row per person, which is what the table's unique keys already claim.
+        if (own.email !== key) {
+          await trx
+            .deleteFrom('user_settings')
+            .where('email', '=', key)
+            .where('user_id', 'is', null)
+            .execute();
+        }
+
+        await trx
+          .updateTable('user_settings')
+          .set({ email: key, settings: payload, updated_at: sql`now()` })
+          .where('user_id', '=', userId)
+          .execute();
+        return true;
+      });
+      if (claimed) return;
     }
 
     // No id row yet: upsert on the e-mail primary key and stamp `user_id` on

@@ -18,8 +18,8 @@ org-isolation through every call. It does not re-document the deck data format
 
 ## Module map
 
-`server/storage/` holds **91 `.js` files** — 35 top-level facades/helpers and
-the rest under 14 subdirectories. Rather than list all 91, this is the shape;
+`server/storage/` holds **93 `.js` files** — 36 top-level facades/helpers and
+the rest under 14 subdirectories. Rather than list all 93, this is the shape;
 each path resolves.
 
 **The seam (read these first):**
@@ -60,6 +60,10 @@ each path resolves.
   storage (incl. the GDPR view-session path).
 - `server/storage/cache/` — `permission-cache.js`.
 - `server/storage/utils/` — `db-guard.js` (`withDbGuard`), `helpers.js`.
+- `server/storage/identity-resolver.js` /
+  `server/storage/identity-verification.js` — map an external identifier to a
+  stable `users.id`, and check that every dual key still agrees (see
+  *Identity dual keys* below).
 
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
@@ -75,8 +79,8 @@ camelCase API objects.
 
 ## Data model
 
-Schema lives in `server/db/migrations/` (**65 numbered migrations**,
-`001_initial_schema.js` … `065_drop_view_sessions_organization_id.js`).
+Schema lives in `server/db/migrations/` (**68 numbered migrations**,
+`001_initial_schema.js` … `068_strip_identity_from_snapshots.js`).
 `001_initial_schema.js` creates the core: `organizations`, `users`,
 `presentations` (the deck table), `presentation_versions`,
 `published_presentations`, plus `follow_codes`, `present_sessions`,
@@ -86,6 +90,48 @@ tables — share links, collaborators, tags, themes, `custom_slide_types`,
 2026-08 org-threading migrations (`062`–`065`) that carry `organization_id`
 onto collaborators/owners. Roughly 45 distinct tables in total; each domain's
 columns live with its facade and migration, not duplicated here.
+
+### Identity dual keys
+
+Ownership and ACLs used to key on an **e-mail string**. Migrations `062`
+(collaborators), `063` (presentation owner/creator/editor) and `067`
+(`user_settings`) put a nullable `users.id` column beside each of those e-mail
+columns and backfilled it. Five pairs exist today:
+
+| Table                        | id column             | e-mail column |
+| ---------------------------- | --------------------- | ------------- |
+| `presentations`              | `owner_user_id`       | `owner_email` |
+| `presentations`              | `created_by_user_id`  | `created_by`  |
+| `presentations`              | `updated_by_user_id`  | `updated_by`  |
+| `presentation_collaborators` | `user_id`             | `user_email`  |
+| `user_settings`              | `user_id`             | `email`       |
+
+The **id leads and the e-mail is the fallback**, under one invariant: *id
+present ⇒ the e-mail column equals that user's current address*. Facades that
+write by id re-stamp the e-mail so the two never drift. A NULL id is a defined
+state, not a defect — external collaborators, the shared `anonymous` settings
+bucket and rows imported off disk stay NULL forever.
+
+`verifyIdentityConsistency()` (`server/storage/identity-verification.js`) is the
+per-row check of that invariant; it sorts every row into **linked**,
+**external**, **unlinked** (id NULL while a `users` row exists — repairable by
+re-running the migrations) or **mismatched** (id and e-mail name two different
+people — the only hard defect). It is read-only, so re-running it is a no-op.
+Two entry points, one implementation:
+
+```sh
+node scripts/verify-identity-migration.js           # after deploying 062/063/067
+node scripts/verify-identity-migration.js --strict  # also fail on repairable rows
+```
+
+and `tests/pg/identity-verification.pgtest.js` in CI.
+
+Identity deliberately does **not** live in `presentation_versions.
+presentation_data`: `stripIdentityForSnapshot()` keeps it out of new snapshots
+and migration `068` erased it from the old ones, so a deck's history cannot
+stamp a person's address into every row or name a previous owner after a
+transfer. `presentation_versions.created_by` is still a bare e-mail column —
+that one has no id beside it yet.
 
 ## Flows
 
