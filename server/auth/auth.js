@@ -402,7 +402,7 @@ export async function getUserFromRequestAsync(req, ctx) {
         : 'user';
     return {
       // The stable `users.id`. This is the key every ownership decision keys on
-      // (utils/presentation-authz/identity-match.js); the email beside it is a
+      // (shared/identity-match.js); the email beside it is a
       // display/contact value and a fallback identifier for the shapes that have
       // no id — file mode, external/legacy rows, the auth-off operator. Only
       // this async path can carry it: the synchronous getUserFromRequest reads a
@@ -557,6 +557,10 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
       // getUserFromRequestAsync will recompute it on the next request.
       const v = sessionVersion(dbUser);
       return {
+        // The stable `users.id`, carried from the moment of login so the client
+        // can compare identities on the key rather than on an address — see
+        // shared/identity-match.js.
+        id: dbUser.id,
         email,
         role,
         name: dbUser.name || '',

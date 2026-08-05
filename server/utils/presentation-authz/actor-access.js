@@ -13,7 +13,7 @@
  *
  *   - the **email** is the identity these surfaces hold (an `api_keys` row's
  *     owner, the MCP session owner). The deciders key on `users.id`
- *     (identity-match.js), so this module resolves it through the identity
+ *     (shared/identity-match.js), so this module resolves it through the identity
  *     resolver once per check. An email with no `users` row resolves to a
  *     defined NULL and simply leaves the actor id-less, putting the deciders on
  *     their email fallback — the same answer as before;

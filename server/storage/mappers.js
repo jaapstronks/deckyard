@@ -144,7 +144,7 @@ export function mapPresentationRow(row) {
     // is the key every authorization decision compares, the email beside it is
     // display/contact plus the fallback identifier for rows whose email never
     // matched a user (external/legacy — a defined NULL). See
-    // utils/presentation-authz/identity-match.js.
+    // shared/identity-match.js.
     ownerId: row.owner_user_id || null,
     ownerEmail: row.owner_email,
     createdById: row.created_by_user_id || null,

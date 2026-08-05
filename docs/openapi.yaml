@@ -1761,14 +1761,38 @@ components:
           type: string
         description:
           type: string
+        ownerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: >-
+            The deck owner's stable user id — the canonical identity of an
+            owner, and the only field to compare when asking "is this mine?".
+            Null for a deck whose owner has no user record on this instance
+            (an external or legacy owner) and in file-storage mode; that is a
+            defined absence, not an error.
+        createdById:
+          type: string
+          format: uuid
+          nullable: true
+          description: The stable user id of whoever created the deck. Null as for `ownerId`.
+        updatedById:
+          type: string
+          format: uuid
+          nullable: true
+          description: The stable user id of the last writer. Null as for `ownerId`.
         ownerEmail:
           type: string
           nullable: true
           description: >-
-            The deck owner's email, returned only when the requesting API key
-            belongs to the owner. For decks reached via workspace or
-            collaborator access it is null, so one user's address is never
-            disclosed to another.
+            **Display and contact only — never an identity.** The deck owner's
+            email, returned only when the requesting API key belongs to the
+            owner; for decks reached via workspace or collaborator access it is
+            null, so one user's address is never disclosed to another. Do not
+            compare it to decide ownership: an address can be reassigned and a
+            person can hold several, which is why `ownerId` exists. No request
+            body identifies an owner by email — email remains the mechanism for
+            *inviting collaborators*, and nothing else.
         scope:
           type: string
           enum: [private, workspace]

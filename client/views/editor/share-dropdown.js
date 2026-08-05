@@ -28,6 +28,7 @@ export function setupShareDropdown({
   root,
   openOverlayClosers,
   editorState,
+  currentUser,
   currentUserEmail,
   isAdmin,
 } = {}) {
@@ -103,6 +104,7 @@ export function setupShareDropdown({
       lockDocumentScroll,
       copyToClipboard,
       toast,
+      currentUser,
       currentUserEmail,
       isAdmin,
       isDirty,

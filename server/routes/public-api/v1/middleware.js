@@ -68,7 +68,7 @@ export async function authenticateApiKey(ctx) {
   // authorization layer keys on — resolved once per request rather than per
   // deck. A key whose owner has no user row (external/legacy) resolves to null
   // and the deciders fall back to the email identifier; see
-  // utils/presentation-authz/identity-match.js.
+  // shared/identity-match.js.
   ctx.apiKey = result;
   const ownerResolution = await resolveIdentityByEmail(result.ownerEmail);
   ctx.authedUser = {

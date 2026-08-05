@@ -1,11 +1,18 @@
 /**
- * Identity matching for the authorization layer — "is this actor that person?"
+ * Identity matching — "is this actor that person?"
  *
- * This is the one place that answers whether an acting user *is* the identity
- * stamped on a deck (its owner, its creator). Every ownership decision in
- * `presentations.js`, `comments.js`, the collection filter and the machine-client
- * surfaces routes through here, so the epic's key swap happens once instead of
- * a dozen times (T10; see docs/plans/briefs/identity-decoupling.md).
+ * This is the one place, on **both sides of the wire**, that answers whether an
+ * acting user *is* the identity stamped on a deck (its owner, its creator). The
+ * server's deciders (`presentation-authz/`), the collection and machine-client
+ * filters, and the client's advisory mirrors (`comment-authz.js`,
+ * `slide-lock-authz.js`, the share modal) all route through here, so the rule
+ * exists once rather than being re-derived per surface — which is how the client
+ * and server came to disagree about who an owner was in the first place (T10;
+ * see docs/plans/briefs/identity-decoupling.md).
+ *
+ * It lives in `shared/` for that reason and imports nothing: the rule is pure
+ * comparison, and a client mirror that had to import server code would be no
+ * mirror at all.
  *
  * ## The key is `users.id`, with email as the fallback identifier
  *
@@ -31,12 +38,29 @@
  *
  * The functions here are pure: they read the objects handed to them and touch no
  * storage. Resolving an email-only actor (an API key owner) to a `users.id`
- * happens at the boundary, in actor-access.js, before it reaches this module.
+ * happens at the boundary, in server/utils/presentation-authz/actor-access.js,
+ * before it reaches this module.
  *
- * @module utils/presentation-authz/identity-match
+ * The client's copies are **advisory UI only** — they decide which affordance to
+ * show, never whether an operation is allowed. Enforcement is the server's, on
+ * the same rule.
+ *
+ * @module shared/identity-match
  */
 
-import { normalizeEmail } from '../normalize.js';
+/**
+ * Normalize an email for comparison: trimmed, lowercased, '' when absent.
+ *
+ * A local copy rather than an import, because this module is shared and the
+ * server's `normalizeEmail` (which answers `null`) lives in server code. Same
+ * comparison, no dependency.
+ *
+ * @param {string} [email]
+ * @returns {string}
+ */
+function normalizeEmail(email) {
+  return typeof email === 'string' ? email.trim().toLowerCase() : '';
+}
 
 /**
  * The identity an actor carries into an authorization decision.
@@ -49,10 +73,11 @@ import { normalizeEmail } from '../normalize.js';
 /**
  * Read an actor's identity off a user-shaped object.
  *
- * Accepts the authed user built by `getUserFromRequestAsync` (which carries
- * `id` since this PR), the actor shape machine surfaces build in
- * actor-access.js, and the bare `{ email }` objects tests and legacy call sites
- * pass. A missing id is normal, not an error — see the module header.
+ * Accepts the authed user the server builds in `getUserFromRequestAsync`, the
+ * same object as `/api/auth/me` hands the client, the actor shape the machine
+ * surfaces build in actor-access.js, and the bare `{ email }` objects tests and
+ * legacy call sites pass. A missing id is normal, not an error — see the module
+ * header.
  *
  * @param {Object} [user] - The acting user
  * @returns {ActorIdentity}

@@ -93,6 +93,10 @@ export async function handleAuth({ repoRoot, req, res, url }) {
     setSessionCookie(req, res, user);
     serveJson(res, 200, {
       user: {
+        // Identity is the id; the email beside it is display/contact. Both the
+        // login response and /api/auth/me carry it, so the client never has to
+        // fall back to comparing addresses (shared/identity-match.js).
+        id: user.id ?? null,
         email: user.email,
         role: user.role,
         name: user.name || '',

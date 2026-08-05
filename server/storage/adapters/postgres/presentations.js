@@ -37,7 +37,7 @@ export function withPresentations(Base) {
           'theme',
           // Identity as an (id, email) pair per role: the collection filter and
           // the bulk-export filter decide on the id and fall back to the email
-          // only for rows that have none. See presentation-authz/identity-match.js.
+          // only for rows that have none. See shared/identity-match.js.
           'owner_user_id as ownerId',
           'owner_email as ownerEmail',
           'created_by_user_id as createdById',

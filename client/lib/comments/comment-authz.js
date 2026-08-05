@@ -1,23 +1,34 @@
 /**
  * Shared authorization utilities for comments.
+ *
+ * Advisory only: these decide which affordance the UI offers. Every operation
+ * is authorized again on the server, by the same rule — deck ownership through
+ * {@link isOwnerOrCreator} in shared/identity-match.js, which keys on the
+ * stable `users.id` and falls back to the email identifier only where no id
+ * exists (file mode, external/legacy rows).
  */
+
+import { isOwnerOrCreator } from '../../../shared/identity-match.js';
 
 /**
  * Check if the user is the presentation owner (can resolve/reopen comments).
- * @param {Object} user - Current user object
- * @param {Object} pres - Presentation object
+ * @param {Object} user - Current user object (from /api/auth/me, carrying `id`)
+ * @param {Object} pres - Presentation object (carrying `ownerId`/`createdById`)
  * @returns {boolean} True if user is owner or admin
  */
 export function isCommentOwner(user, pres) {
   if (!user) return false;
-  const userEmail = (user.email || '').toLowerCase();
-  const ownerEmail = (pres?.ownerEmail || '').toLowerCase();
-  const createdBy = (pres?.createdBy || '').toLowerCase();
-  return user.isAdmin || userEmail === ownerEmail || userEmail === createdBy;
+  return Boolean(user.isAdmin) || isOwnerOrCreator(user, pres);
 }
 
 /**
  * Check if the user is the author of a comment (can delete).
+ *
+ * Comment authorship still compares emails: a comment row carries
+ * `author_email` and no author id, so there is no stable key to compare yet.
+ * That is the absence of a key, not a second one — same seam as the server's
+ * canEditComment.
+ *
  * @param {Object} user - Current user object
  * @param {Object} comment - Comment object
  * @returns {boolean} True if user is author or admin
@@ -26,11 +37,15 @@ export function isCommentAuthor(user, comment) {
   if (!user || !comment) return false;
   const userEmail = (user.email || '').toLowerCase();
   const authorEmail = (comment.authorEmail || '').toLowerCase();
-  return user.isAdmin || userEmail === authorEmail;
+  return user.isAdmin || (!!userEmail && userEmail === authorEmail);
 }
 
 /**
  * Check if a guest is the author of a comment (for share-viewer context).
+ *
+ * Guests have no user record at all — a share-link guest is identified by the
+ * email they gave — so this is email-keyed by nature.
+ *
  * @param {Object} guestSession - Guest session object
  * @param {Object} comment - Comment object
  * @returns {boolean} True if guest is author
@@ -39,5 +54,5 @@ export function isGuestCommentAuthor(guestSession, comment) {
   if (!guestSession || !comment) return false;
   const guestEmail = (guestSession.email || '').toLowerCase();
   const authorEmail = (comment.authorEmail || '').toLowerCase();
-  return guestEmail === authorEmail;
+  return !!guestEmail && guestEmail === authorEmail;
 }
