@@ -4,6 +4,35 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.17.0](https://github.com/jaapstronks/deckyard/compare/v1.16.0...v1.17.0) (2026-08-05)
+
+
+### Added
+
+* **analytics:** anonymous viewers can erase their own data (session-token proof-of-possession) ([#637](https://github.com/jaapstronks/deckyard/issues/637)) ([52b7f41](https://github.com/jaapstronks/deckyard/commit/52b7f41f1eb42ac31c3a35d42e5e6806e34100b4))
+* **analytics:** drop the internal/external tracking toggle, leaving analytics.enabled as the only switch ([#635](https://github.com/jaapstronks/deckyard/issues/635)) ([0172041](https://github.com/jaapstronks/deckyard/commit/0172041a56cbad47fad0f0df4470fd477c82252b))
+* **api:** carry ownerId as the identity in responses and compare it on the client ([#640](https://github.com/jaapstronks/deckyard/issues/640)) ([5d653d2](https://github.com/jaapstronks/deckyard/commit/5d653d2e3572ea939c2e6fa31ec2e00b049eb148))
+* **authz:** decide presentation ownership on users.id instead of the email string ([#638](https://github.com/jaapstronks/deckyard/issues/638)) ([1b5c229](https://github.com/jaapstronks/deckyard/commit/1b5c229c0f87e93865b3320093bda0fafa47e362))
+* **authz:** decide the workspace grant against the actor's own organization (L10) ([#639](https://github.com/jaapstronks/deckyard/issues/639)) ([566d970](https://github.com/jaapstronks/deckyard/commit/566d970591f4722bb9c7e536515841476d2b5cf4))
+* **identity:** key user_settings on users.id (T10 PR E) ([#643](https://github.com/jaapstronks/deckyard/issues/643)) ([a0c2af9](https://github.com/jaapstronks/deckyard/commit/a0c2af9c883d24808fdcaf305c47ba8cd5ed3047))
+* **identity:** verify and backfill the identity data migration (T10 PR G) ([#646](https://github.com/jaapstronks/deckyard/issues/646)) ([6ea1181](https://github.com/jaapstronks/deckyard/commit/6ea11815ccec78b0d24b4c56dae36eaac2573dd6))
+* **notes:** let the join link edit the session's speaker notes ([#632](https://github.com/jaapstronks/deckyard/issues/632)) ([e6823c9](https://github.com/jaapstronks/deckyard/commit/e6823c986cb7d6c0a4280bc10b21abc41a67450a))
+
+
+### Fixed
+
+* **analytics:** make the identifier the scope on the last two org-blind seams ([#629](https://github.com/jaapstronks/deckyard/issues/629)) ([688c843](https://github.com/jaapstronks/deckyard/commit/688c8439a79e0352d3424f4a2b7e4dcc7ef83201))
+* **collaborators:** a failed invite insert answers 500, not 400 ([#642](https://github.com/jaapstronks/deckyard/issues/642)) ([d389a32](https://github.com/jaapstronks/deckyard/commit/d389a322c2d82a285989633eaaf2f1b24e36a9ea))
+* **db:** honor DATABASE_URL over DATABASE_* in db:migrate ([#631](https://github.com/jaapstronks/deckyard/issues/631)) ([19a4f28](https://github.com/jaapstronks/deckyard/commit/19a4f28b0f379dd52c370231e7c658fbda007fd2))
+* **export:** queued exports load their theme through loadTheme ([#641](https://github.com/jaapstronks/deckyard/issues/641)) ([7f56e38](https://github.com/jaapstronks/deckyard/commit/7f56e38a90c132b1fd9528cc5752730a39a95f77))
+* **share:** branch the invite failure on e.code, not on the message ([#645](https://github.com/jaapstronks/deckyard/issues/645)) ([39e548a](https://github.com/jaapstronks/deckyard/commit/39e548a9ec76426b950fb6b0b949eb44c74ce9d2))
+
+
+### Security
+
+* **analytics:** drop sessionToken from the sessions list response ([#636](https://github.com/jaapstronks/deckyard/issues/636)) ([51cb500](https://github.com/jaapstronks/deckyard/commit/51cb500d9484fed838f12a1858c17bf21ab66d7b))
+* **analytics:** return a per-deck device label instead of the raw device id ([#634](https://github.com/jaapstronks/deckyard/issues/634)) ([23748b4](https://github.com/jaapstronks/deckyard/commit/23748b44d2df390477d895f3ebfbdd34d191cbf1))
+
 ## [1.16.0](https://github.com/jaapstronks/deckyard/compare/v1.15.0...v1.16.0) (2026-08-04)
 
 
