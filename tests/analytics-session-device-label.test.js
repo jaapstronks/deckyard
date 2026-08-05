@@ -117,7 +117,6 @@ function sessionRow({ id, deck, device = DEVICE, startedAt = '2026-03-01T10:00:0
     exit_slide_index: null,
     ip_address: '203.0.113.5',
     user_agent: 'UA/1.0',
-    is_internal: false,
     attribution_allowed: false,
     created_at: startedAt,
   };

@@ -57,7 +57,6 @@ export async function renderDashboard(root, { nav } = {}) {
 
   // State
   let period = '30d';
-  let category = 'all';
   let dashboardData = null;
   let loadError = null;
 
@@ -78,7 +77,7 @@ export async function renderDashboard(root, { nav } = {}) {
   async function loadDashboardData() {
     loadError = null;
     try {
-      dashboardData = await api(`/api/analytics/dashboard?period=${period}&category=${category}`);
+      dashboardData = await api(`/api/analytics/dashboard?period=${period}`);
     } catch (err) {
       loadError = err?.message || t('dashboard.error', 'Failed to load insights');
       dashboardData = {

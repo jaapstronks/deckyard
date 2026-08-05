@@ -68,12 +68,10 @@ function getPreviousPeriodDateRange(period) {
  * @param {string} organizationId - The user's organization ID
  * @param {Object} opts - Query options
  * @param {string} opts.period - '7d' | '30d' | '90d' | '12m'
- * @param {string} [opts.category] - 'all' | 'internal' | 'external'
  * @returns {Promise<Object>}
  */
 export async function getDashboardSummary(userEmail, organizationId, opts = {}) {
   const period = opts.period || '30d';
-  const category = opts.category || 'all';
   const dateRange = getPeriodDateRange(period);
   const previousRange = getPreviousPeriodDateRange(period);
 
@@ -100,13 +98,6 @@ export async function getDashboardSummary(userEmail, organizationId, opts = {}) 
       ])
       .where('presentation_id', 'in', userPresentations);
 
-    // Apply category filter
-    if (category === 'internal') {
-      currentQuery = currentQuery.where('is_internal', '=', true);
-    } else if (category === 'external') {
-      currentQuery = currentQuery.where('is_internal', '=', false);
-    }
-
     // Apply date filters
     currentQuery = applyDateFilters(currentQuery, dateRange);
 
@@ -117,12 +108,6 @@ export async function getDashboardSummary(userEmail, organizationId, opts = {}) 
       .selectFrom('view_sessions')
       .select((eb) => eb.fn.count('id').as('total_views'))
       .where('presentation_id', 'in', userPresentations);
-
-    if (category === 'internal') {
-      previousQuery = previousQuery.where('is_internal', '=', true);
-    } else if (category === 'external') {
-      previousQuery = previousQuery.where('is_internal', '=', false);
-    }
 
     previousQuery = applyDateFilters(previousQuery, previousRange);
 
@@ -165,7 +150,6 @@ export async function getDashboardSummary(userEmail, organizationId, opts = {}) 
  */
 export async function getDashboardTimeline(userEmail, organizationId, opts = {}) {
   const period = opts.period || '30d';
-  const category = opts.category || 'all';
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard([], async (db) => {
@@ -182,12 +166,6 @@ export async function getDashboardTimeline(userEmail, organizationId, opts = {})
       .where('presentation_id', 'in', userPresentations)
       .groupBy(sql`date_trunc('day', started_at)`)
       .orderBy(sql`date_trunc('day', started_at)`, 'asc');
-
-    if (category === 'internal') {
-      query = query.where('is_internal', '=', true);
-    } else if (category === 'external') {
-      query = query.where('is_internal', '=', false);
-    }
 
     query = applyDateFilters(query, dateRange);
 
@@ -210,7 +188,6 @@ export async function getDashboardTimeline(userEmail, organizationId, opts = {})
  */
 export async function getTopPresentations(userEmail, organizationId, opts = {}) {
   const period = opts.period || '30d';
-  const category = opts.category || 'all';
   const limit = opts.limit || 10;
   const dateRange = getPeriodDateRange(period);
 
@@ -232,12 +209,6 @@ export async function getTopPresentations(userEmail, organizationId, opts = {}) 
       .groupBy(['presentations.id', 'presentations.title'])
       .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
       .limit(limit);
-
-    if (category === 'internal') {
-      query = query.where('view_sessions.is_internal', '=', true);
-    } else if (category === 'external') {
-      query = query.where('view_sessions.is_internal', '=', false);
-    }
 
     query = applyDateFilters(query, dateRange, 'view_sessions.started_at');
 
@@ -263,7 +234,6 @@ export async function getTopPresentations(userEmail, organizationId, opts = {}) 
  */
 export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
   const period = opts.period || '30d';
-  const category = opts.category || 'all';
   const dateRange = getPeriodDateRange(period);
 
   return withDbGuard({
@@ -285,12 +255,6 @@ export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
       ])
       .where('presentation_id', 'in', userPresentations)
       .groupBy('source_type');
-
-    if (category === 'internal') {
-      query = query.where('is_internal', '=', true);
-    } else if (category === 'external') {
-      query = query.where('is_internal', '=', false);
-    }
 
     query = applyDateFilters(query, dateRange);
 

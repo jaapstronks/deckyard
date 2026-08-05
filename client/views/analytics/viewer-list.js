@@ -1,6 +1,5 @@
 /**
  * Viewer list showing session details.
- * Supports privacy-aware rendering based on team analytics policy.
  */
 
 import { t } from '../../lib/ui-i18n.js';
@@ -16,12 +15,9 @@ import { iconUrl } from '../../../shared/icon-names.js';
  * @param {number} options.total - Total session count
  * @param {Function} options.onLoadMore - Load more callback
  * @param {Function} options.onGenerateReport - Generate report callback
- * @param {Object} [options.privacySettings] - Privacy settings for team analytics
- * @param {string} [options.privacySettings.teamPolicy] - 'off' | 'aggregate' | 'opt-in-detailed'
- * @param {number} [options.privacySettings.internalViewCount] - Aggregated internal view count
  * @returns {Object} List API with el and update method
  */
-export function createViewerList({ h, sessions, total, onLoadMore, onGenerateReport, privacySettings }) {
+export function createViewerList({ h, sessions, total, onLoadMore, onGenerateReport }) {
   const el = h('div', { class: 'analytics-section analytics-viewers' });
 
   // Sorting state
@@ -98,21 +94,9 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
   function renderList() {
     container.innerHTML = '';
 
-    const teamPolicy = privacySettings?.teamPolicy || 'aggregate';
-    const internalViewCount = privacySettings?.internalViewCount || 0;
+    const displaySessions = currentSessions;
 
-    // Filter sessions based on privacy policy
-    let displaySessions = currentSessions;
-    if (teamPolicy === 'off') {
-      // Don't show internal viewers at all
-      displaySessions = currentSessions.filter((s) => !s.isInternal);
-    } else if (teamPolicy === 'aggregate') {
-      // Show only external viewers in detail, aggregate internal
-      displaySessions = currentSessions.filter((s) => !s.isInternal);
-    }
-    // 'opt-in-detailed': Show all, but respect attributionAllowed flag
-
-    if (displaySessions.length === 0 && internalViewCount === 0) {
+    if (displaySessions.length === 0) {
       container.append(
         h('div', { class: 'analytics-empty-state' }, [
           h('img', { class: 'analytics-empty-state-icon', src: iconUrl('eye'), alt: '', 'aria-hidden': 'true' }),
@@ -120,27 +104,6 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
           h('p', { class: 'analytics-empty-state-description', text: t('analytics.shareToGetViewers', 'Once people view your presentation, their sessions will appear here.') }),
         ])
       );
-      loadMoreBtn.style.display = 'none';
-      return;
-    }
-
-    // Show aggregated internal team views banner (for aggregate policy)
-    if (teamPolicy === 'aggregate' && internalViewCount > 0) {
-      const internalBanner = h('div', { class: 'analytics-internal-aggregate' }, [
-        h('img', { class: 'analytics-internal-icon', src: '/client/vendor/lucide-icons/users.svg', alt: '', 'aria-hidden': 'true' }),
-        h('span', {
-          text: t('analytics.teamViewers', '{{count}} team member views', { count: internalViewCount })
-        }),
-        h('span', {
-          class: 'analytics-internal-note',
-          text: t('analytics.teamViewersNote', '(aggregated for privacy)')
-        }),
-      ]);
-      container.append(internalBanner);
-    }
-
-    if (displaySessions.length === 0) {
-      // Only internal views, no external
       loadMoreBtn.style.display = 'none';
       return;
     }
@@ -174,7 +137,7 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
 
     // Session rows
     sortedSessions.forEach((session) => {
-      const row = createSessionRow(h, session, teamPolicy);
+      const row = createSessionRow(h, session);
       container.append(row);
     });
 
@@ -221,42 +184,26 @@ export function createViewerList({ h, sessions, total, onLoadMore, onGenerateRep
  * Create a session row.
  * @param {Function} h - DOM helper
  * @param {Object} session - Session data
- * @param {string} teamPolicy - Privacy policy for team analytics
  * @returns {HTMLElement}
  */
-function createSessionRow(h, session, teamPolicy = 'aggregate') {
-  // Determine viewer identifier based on privacy settings
+function createSessionRow(h, session) {
+  // Determine viewer identifier
   let viewerText;
   let viewerBadge = '';
   let viewerBadgeIsIcon = false;
 
-  if (session.isInternal) {
-    // Internal viewer - respect attribution settings
-    if (teamPolicy === 'opt-in-detailed' && session.attributionAllowed && session.viewerEmail) {
-      // Show attributed name for viewers who opted in
-      viewerText = session.viewerEmail;
-      viewerBadge = '✓';
-    } else {
-      // Show as anonymous team member
-      viewerText = t('analytics.teamMember', 'Team member');
-      viewerBadge = 'users';
-      viewerBadgeIsIcon = true;
-    }
-  } else {
-    // External viewer - show full details
-    viewerText = session.viewerEmail
-      ? session.viewerEmail
-      : session.deviceId
-        ? t('analytics.deviceLabel', 'Device {{id}}...', { id: session.deviceId.substring(0, 8) })
-        : t('analytics.anonymous', 'Anonymous');
+  viewerText = session.viewerEmail
+    ? session.viewerEmail
+    : session.deviceId
+      ? t('analytics.deviceLabel', 'Device {{id}}...', { id: session.deviceId.substring(0, 8) })
+      : t('analytics.anonymous', 'Anonymous');
 
-    const viewerType = session.viewerType || 'anonymous';
-    if (viewerType === 'guest') {
-      viewerBadge = 'user';
-      viewerBadgeIsIcon = true;
-    } else if (viewerType === 'authenticated') {
-      viewerBadge = '✓';
-    }
+  const viewerType = session.viewerType || 'anonymous';
+  if (viewerType === 'guest') {
+    viewerBadge = 'user';
+    viewerBadgeIsIcon = true;
+  } else if (viewerType === 'authenticated') {
+    viewerBadge = '✓';
   }
 
   // Exit slide display

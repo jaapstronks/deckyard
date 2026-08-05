@@ -139,7 +139,6 @@ function sessionRow({
     exit_slide_index: null,
     ip_address: '203.0.113.5',
     user_agent: 'UA/1.0',
-    is_internal: false,
     attribution_allowed: false,
     created_at: startedAt,
   };

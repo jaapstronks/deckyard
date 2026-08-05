@@ -57,12 +57,9 @@ function getPreviousWeekDateRange() {
  * Used for the weekly digest email.
  * @param {string} userId - The user's ID
  * @param {string} userEmail - The user's email
- * @param {Object} opts - Options
- * @param {boolean} [opts.includeTeamAnalytics] - Include internal view stats
  * @returns {Promise<Object>}
  */
-export async function getWeeklyAnalyticsForUser(userId, userEmail, opts = {}) {
-  const { includeTeamAnalytics = true } = opts;
+export async function getWeeklyAnalyticsForUser(userId, userEmail) {
   const dateRange = getWeekDateRange();
   const previousRange = getPreviousWeekDateRange();
 
@@ -117,13 +114,8 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail, opts = {}) {
     }
 
     // Build base query conditions
-    const buildBaseQuery = (query) => {
-      query = query.where('presentation_id', 'in', userPresentations);
-      if (!includeTeamAnalytics) {
-        query = query.where('is_internal', '=', false);
-      }
-      return query;
-    };
+    const buildBaseQuery = (query) =>
+      query.where('presentation_id', 'in', userPresentations);
 
     // Current week summary
     let currentQuery = db
@@ -165,14 +157,11 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail, opts = {}) {
       .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
       .limit(5);
 
-    if (!includeTeamAnalytics) {
-      topQuery = topQuery.where('view_sessions.is_internal', '=', false);
-    }
     topQuery = applyDateFilters(topQuery, dateRange, 'view_sessions.started_at');
     const topRows = await topQuery.execute();
 
     // Get engagement insights
-    const insights = await getWeeklyInsights(db, userPresentations, dateRange, includeTeamAnalytics);
+    const insights = await getWeeklyInsights(db, userPresentations, dateRange);
 
     // Calculate values
     const currentViews = Number(currentResult?.total_views) || 0;
@@ -384,10 +373,9 @@ export async function getTeamWeeklyAnalytics(organizationId) {
  * @param {Object} db - Database connection
  * @param {string[]} presentationIds - User's presentation IDs
  * @param {Object} dateRange - Date range object
- * @param {boolean} includeTeamAnalytics - Include internal views
  * @returns {Promise<Array<{type: string, text: string, data: Object}>>}
  */
-async function getWeeklyInsights(db, presentationIds, dateRange, includeTeamAnalytics) {
+async function getWeeklyInsights(db, presentationIds, dateRange) {
   const insights = [];
 
   // Insight 1: Peak engagement days
@@ -403,9 +391,6 @@ async function getWeeklyInsights(db, presentationIds, dateRange, includeTeamAnal
     .orderBy((eb) => eb.fn.count('id'), 'desc')
     .limit(2);
 
-  if (!includeTeamAnalytics) {
-    peakDaysQuery = peakDaysQuery.where('is_internal', '=', false);
-  }
   peakDaysQuery = applyDateFilters(peakDaysQuery, dateRange);
   const peakDays = await peakDaysQuery.execute();
 
@@ -434,9 +419,6 @@ async function getWeeklyInsights(db, presentationIds, dateRange, includeTeamAnal
     .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
     .limit(1);
 
-  if (!includeTeamAnalytics) {
-    returningQuery = returningQuery.where('view_sessions.is_internal', '=', false);
-  }
   returningQuery = applyDateFilters(returningQuery, dateRange, 'view_sessions.started_at');
   const returningViewers = await returningQuery.execute();
 
@@ -488,7 +470,6 @@ export async function getUsersWithDigestDay(dayOfWeek) {
       email: user.email,
       organizationId: user.organization_id,
       role: user.role,
-      includeTeamAnalytics: user.settings?.digest?.includeTeamAnalytics !== false,
     }));
   });
 }

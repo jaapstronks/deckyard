@@ -240,7 +240,6 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
     }
 
-    // Check if external tracking is disabled and viewer is external
     const viewerType = body?.viewerType ?? VIEWER_TYPES.ANONYMOUS;
     const viewerEmail = body?.viewerEmail ?? null;
     const isAuthenticatedViewer = viewerType === VIEWER_TYPES.AUTHENTICATED && viewerEmail;
@@ -256,20 +255,11 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       }
     }
 
-    // Every session this route opens is external. Whether a viewer is
-    // *internal* — a member of the presentation's own workspace — is not
-    // knowable here: the endpoint is deliberately unauthenticated (anonymous
-    // and guest viewers reach it over a share token), so the only organization
-    // it could compare against was the one the client put in the request body.
-    // That let any caller declare itself internal and walk straight through
-    // the external-analytics gate below, which is a privacy setting. The input
-    // is gone along with `view_sessions.organization_id` (migration 065); no
-    // shipped client ever sent it, so nothing that worked stops working.
-    // Restoring internal detection needs a server-known signal on this route,
-    // not a claim from the payload.
-    if (!appSettings.analytics?.externalAnalytics?.enabled) {
-      return sendSuccessResponse(res, { sessionToken: null, sessionId: null }), true;
-    }
+    // There is no internal/external split on this route: it is deliberately
+    // unauthenticated, so the viewer's workspace is not knowable server-side,
+    // and the old second "external analytics" switch has been removed —
+    // `analytics.enabled` (gated above) is the only tracking toggle. Rationale
+    // and the revive path: done/decisions.md § analytics-privacy-naden.
 
     // Check if viewer allows attribution (name to be shown in analytics)
     const attributionAllowed = viewerPrivacySettings?.privacy?.allowViewAttribution === true;
@@ -288,7 +278,6 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       deviceId,
       ipAddress: clientIp,
       userAgent,
-      isInternal: false, // see the gate above — not knowable on this route
       attributionAllowed,
     });
 

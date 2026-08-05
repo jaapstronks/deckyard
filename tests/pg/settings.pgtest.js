@@ -114,6 +114,73 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal((await getAppSettings()).stockMedia.bundled.enabled, true);
   });
 
+  // The dead internal/external analytics chain was removed. A settings bag that
+  // still carries its keys (team-policy, external-viewer toggle, digest team
+  // stat) must read back clean and, on the next write, not be persisted again —
+  // store-raw / normalize-on-read, "ignored, not migrated". See
+  // docs/plans/done/decisions.md § analytics-privacy-naden.
+  it('ignores legacy internal/external analytics keys and does not write them back', async () => {
+    // Seed the raw jsonb directly, bypassing the write path's normalization so
+    // the legacy keys really are stored.
+    await db
+      .insertInto('app_settings')
+      .values({
+        id: true,
+        settings: JSON.stringify({
+          analytics: {
+            enabled: true,
+            teamAnalytics: { policy: 'opt-in-detailed', allowDetailedOptIn: false },
+            externalAnalytics: { enabled: false },
+            retention: { sessionDataDays: 90, ipAnonymizationDays: 7 },
+          },
+        }),
+      })
+      .execute();
+
+    // Read back: the legacy sub-objects are gone, the master switch survives.
+    const read = await getAppSettings();
+    assert.equal(read.analytics.enabled, true);
+    assert.equal('teamAnalytics' in read.analytics, false);
+    assert.equal('externalAnalytics' in read.analytics, false);
+
+    // A later write must not resurrect them in the stored bag.
+    await writeAppSettings(null, { sessionDurationDays: 45 });
+    const row = await db
+      .selectFrom('app_settings')
+      .select('settings')
+      .executeTakeFirst();
+    const stored = typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings;
+    assert.equal('teamAnalytics' in stored.analytics, false);
+    assert.equal('externalAnalytics' in stored.analytics, false);
+  });
+
+  it('ignores a legacy digest.includeTeamAnalytics on a user settings bag', async () => {
+    await db
+      .insertInto('user_settings')
+      .values({
+        email: 'legacy@example.com',
+        settings: JSON.stringify({
+          digest: { enabled: true, dayOfWeek: 3, includeTeamAnalytics: false },
+        }),
+      })
+      .execute();
+
+    const read = await getUserSettings(null, 'legacy@example.com');
+    assert.equal(read.digest.enabled, true);
+    assert.equal(read.digest.dayOfWeek, 3);
+    assert.equal('includeTeamAnalytics' in read.digest, false);
+
+    // A later write does not persist the dropped key.
+    await writeUserSettings(null, 'legacy@example.com', { uiLocale: 'nl' });
+    const row = await db
+      .selectFrom('user_settings')
+      .select('settings')
+      .where('email', '=', 'legacy@example.com')
+      .executeTakeFirst();
+    const stored = typeof row.settings === 'string' ? JSON.parse(row.settings) : row.settings;
+    assert.equal('includeTeamAnalytics' in stored.digest, false);
+  });
+
   it('reads code defaults from an empty user_settings', async () => {
     assert.deepEqual(await getUserSettings(null, 'jaap@ciiic.nl'), defaultUserSettings());
   });

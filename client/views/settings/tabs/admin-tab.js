@@ -204,36 +204,14 @@ export function createAdminTab({ user }) {
     ),
   });
 
-  // Master analytics toggle
+  // Master analytics toggle — the only tracking switch. The former team-policy,
+  // detailed-opt-in and external-viewer toggles gated a distinction the data
+  // never carried; they were removed with the internal/external chain
+  // (done/decisions.md § analytics-privacy-naden).
   const analyticsEnabledCheck = h('input', { type: 'checkbox', checked: true });
   const analyticsEnabledLabel = h('label', { class: 'admin-checkbox-item' }, [
     analyticsEnabledCheck,
     h('span', { text: t('settings.admin.analytics.enabled', 'Enable engagement insights') }),
-  ]);
-
-  // Team analytics policy
-  const teamPolicySelect = h('select', { class: 'select', 'aria-label': t('settings.admin.analytics.teamPolicy', 'Team analytics policy') }, [
-    h('option', { value: 'off', text: t('settings.admin.analytics.teamPolicyOff', "Off - Don't track team member views") }),
-    h('option', { value: 'aggregate', text: t('settings.admin.analytics.teamPolicyAggregate', 'Aggregate - Show counts without names') }),
-    h('option', { value: 'opt-in-detailed', text: t('settings.admin.analytics.teamPolicyOptIn', 'Opt-in detailed - Show names if viewer allows') }),
-  ]);
-  const teamPolicyField = h('label', { class: 'field-row' }, [
-    h('span', { class: 'field-row-label', text: t('settings.admin.analytics.teamPolicy', 'Team analytics policy') }),
-    teamPolicySelect,
-  ]);
-
-  // Allow detailed opt-in toggle
-  const allowDetailedOptInCheck = h('input', { type: 'checkbox', checked: true });
-  const allowDetailedOptInLabel = h('label', { class: 'admin-checkbox-item' }, [
-    allowDetailedOptInCheck,
-    h('span', { text: t('settings.admin.analytics.allowDetailedOptIn', 'Allow presenters to request detailed team analytics') }),
-  ]);
-
-  // External analytics toggle
-  const externalAnalyticsCheck = h('input', { type: 'checkbox', checked: true });
-  const externalAnalyticsLabel = h('label', { class: 'admin-checkbox-item' }, [
-    externalAnalyticsCheck,
-    h('span', { text: t('settings.admin.analytics.externalEnabled', 'Track external/anonymous viewers') }),
   ]);
 
   // Retention settings
@@ -262,9 +240,6 @@ export function createAdminTab({ user }) {
 
   const analyticsOptions = h('div', { class: 'stack gap-3' }, [
     analyticsEnabledLabel,
-    teamPolicyField,
-    allowDetailedOptInLabel,
-    externalAnalyticsLabel,
     h('div', { class: 'field-label', style: 'margin-top: var(--ps-space-3);', text: t('settings.admin.analytics.retention', 'Data retention') }),
     retentionSessionField,
     retentionIpField,
@@ -361,9 +336,6 @@ export function createAdminTab({ user }) {
     senderNameInput,
     sessionSelect,
     analyticsEnabledCheck,
-    teamPolicySelect,
-    allowDetailedOptInCheck,
-    externalAnalyticsCheck,
     retentionSessionSelect,
     retentionIpSelect,
     unsplashEnabledCheck,
@@ -408,9 +380,6 @@ export function createAdminTab({ user }) {
       // Analytics settings
       const analytics = app?.analytics || {};
       analyticsEnabledCheck.checked = analytics?.enabled !== false;
-      teamPolicySelect.value = analytics?.teamAnalytics?.policy || 'aggregate';
-      allowDetailedOptInCheck.checked = analytics?.teamAnalytics?.allowDetailedOptIn !== false;
-      externalAnalyticsCheck.checked = analytics?.externalAnalytics?.enabled !== false;
       retentionSessionSelect.value = String(analytics?.retention?.sessionDataDays || 90);
       retentionIpSelect.value = String(analytics?.retention?.ipAnonymizationDays || 7);
 
@@ -473,13 +442,6 @@ export function createAdminTab({ user }) {
         sessionDurationDays: parseInt(sessionSelect.value, 10) || 30,
         analytics: {
           enabled: analyticsEnabledCheck.checked,
-          teamAnalytics: {
-            policy: teamPolicySelect.value,
-            allowDetailedOptIn: allowDetailedOptInCheck.checked,
-          },
-          externalAnalytics: {
-            enabled: externalAnalyticsCheck.checked,
-          },
           retention: {
             sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
             ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
