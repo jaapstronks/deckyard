@@ -62,11 +62,6 @@ import { withDbGuard } from './utils/db-guard.js';
  * The dual keys this pass verifies: one entry per (id column, e-mail column)
  * pair that the epic created.
  *
- * `presentation_versions.created_by` is **not** here on purpose — it is still a
- * bare e-mail with no id column beside it, and giving it one belongs to PR F.
- * An entry that named it would report every row as external and read as
- * coverage where there is none.
- *
  * @type {readonly {table: string, idColumn: string, emailColumn: string, label: string}[]}
  */
 export const IDENTITY_DUAL_KEYS = Object.freeze([
@@ -87,6 +82,12 @@ export const IDENTITY_DUAL_KEYS = Object.freeze([
     idColumn: 'updated_by_user_id',
     emailColumn: 'updated_by',
     label: 'presentation last editor',
+  },
+  {
+    table: 'presentation_versions',
+    idColumn: 'created_by_user_id',
+    emailColumn: 'created_by',
+    label: 'version author',
   },
   {
     table: 'presentation_collaborators',
@@ -207,7 +208,7 @@ async function verifyDualKey(db, key) {
 /**
  * @typedef {Object} IdentityVerificationReport
  * @property {boolean} ok - no mismatched rows anywhere
- * @property {boolean} available - false when there is no database (file mode)
+ * @property {boolean} available - false when no database handle is installed
  * @property {number} mismatched - total mismatched rows across all keys
  * @property {number} unlinked - total repairable rows across all keys
  * @property {DualKeyReport[]} checks
