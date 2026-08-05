@@ -10,6 +10,8 @@
  * 5. Releases all locks on page unload
  */
 
+import { matchesIdentity } from '../../../shared/identity-match.js';
+
 const REFRESH_INTERVAL_MS = 30 * 1000; // 30 seconds
 const DEBUG = false; // Set to true to enable debug logging
 
@@ -22,6 +24,8 @@ function debugLog(...args) {
  * @param {Object} options - Configuration options
  * @param {Function} options.api - API function for making requests
  * @param {string} options.presentationId - The presentation ID
+ * @param {Object} [options.user] - The current user ({ id, email }), for the
+ *   "is this lock mine?" self-check on SSE lock events
  * @param {Function} options.getSelectedSlideId - Function to get current slide ID
  * @param {Function} [options.onLocksChanged] - Callback when locks state changes
  * @param {Function} [options.onLockFailed] - Callback when lock acquisition fails
@@ -30,6 +34,7 @@ function debugLog(...args) {
 export function createSlideLockManager({
   api,
   presentationId,
+  user,
   onLocksChanged,
   onLockFailed,
 } = {}) {
@@ -236,9 +241,10 @@ export function createSlideLockManager({
         case 'slide:locked':
           if (data.slideId && data.lock) {
             locks[data.slideId] = data.lock;
-            // Check if this is locked by someone else
-            const currentEmail = window.__currentUserEmail?.toLowerCase?.();
-            if (currentEmail && data.lock.holderEmail !== currentEmail) {
+            // Locked by someone else unless the holder is me. Id-primary, e-mail
+            // fallback (shared/identity-match.js) — the lock payload carries
+            // holderId, so a renamed holder still recognizes their own lock.
+            if (!matchesIdentity(user, { userId: data.lock.holderId, email: data.lock.holderEmail })) {
               lockedByOthers.add(data.slideId);
             }
             emitLocksChanged();

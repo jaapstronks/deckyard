@@ -5,6 +5,8 @@
 
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
+import { matchesIdentity } from '../../shared/identity-match.js';
+import { resolveIdentityByEmail } from './identity-resolver.js';
 import { withDbGuard } from './utils/db-guard.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
@@ -21,12 +23,22 @@ const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
 function mapLockRow(row) {
   return {
     presentationId: row.presentation_id,
+    holderId: row.holder_user_id || null,
     holderEmail: row.holder_email,
     holderName: row.holder_name,
     acquiredAt: row.acquired_at,
     refreshedAt: row.refreshed_at,
     expiresAt: row.expires_at,
   };
+}
+
+/**
+ * The identity stamp on a lock row, as {@link matchesIdentity} expects it.
+ * @param {Object} row - A presentation_locks row
+ * @returns {{userId: string|null, email: string}}
+ */
+function holderStamp(row) {
+  return { userId: row.holder_user_id || null, email: row.holder_email };
 }
 
 /**
@@ -82,10 +94,12 @@ export async function getPresentationLock(presentationId, ctx) {
  * If the same user already holds the lock, refreshes it.
  * Returns { ok: true, lock } on success, { ok: false, reason, lock? } on failure.
  */
-export async function acquirePresentationLock(presentationId, { email, name } = {}, ctx) {
+export async function acquirePresentationLock(presentationId, { email, name, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const holderName = norm(name) || holderEmail;
+  const holderId = userId || null;
+  const actor = { id: holderId, email: holderEmail };
 
   if (!pid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -106,8 +120,8 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
       .executeTakeFirst();
 
     if (existing) {
-      // If held by someone else, return error
-      if (existing.holder_email !== holderEmail) {
+      // If held by someone else, return error (id-primary, e-mail fallback)
+      if (!matchesIdentity(actor, holderStamp(existing))) {
         return {
           ok: false,
           reason: 'held',
@@ -115,10 +129,13 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
         };
       }
 
-      // Same user - refresh the lock
+      // Same user - refresh the lock, re-stamping both identity halves so a
+      // holder who renamed brings the row's e-mail back in step with their id.
       const updated = await db
         .updateTable('presentation_locks')
         .set({
+          holder_user_id: holderId,
+          holder_email: holderEmail,
           holder_name: holderName,
           refreshed_at: now,
           expires_at: expiresAt,
@@ -146,6 +163,7 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
       .values({
         presentation_id: pid,
         organization_id: orgId,
+        holder_user_id: holderId,
         holder_email: holderEmail,
         holder_name: holderName,
         acquired_at: now,
@@ -166,9 +184,10 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
  * Refresh an existing lock (extend TTL).
  * Only the current holder can refresh.
  */
-export async function refreshPresentationLock(presentationId, { email } = {}, ctx) {
+export async function refreshPresentationLock(presentationId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
+  const actor = { id: userId || null, email: holderEmail };
 
   if (!pid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -202,8 +221,8 @@ export async function refreshPresentationLock(presentationId, { email } = {}, ct
       return { ok: false, reason: 'expired' };
     }
 
-    // Check if held by different user
-    if (existing.holder_email !== holderEmail) {
+    // Check if held by different user (id-primary, e-mail fallback)
+    if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
         reason: 'held',
@@ -234,9 +253,10 @@ export async function refreshPresentationLock(presentationId, { email } = {}, ct
  * Release a lock.
  * Only the current holder can release (except force release).
  */
-export async function releasePresentationLock(presentationId, { email } = {}, ctx) {
+export async function releasePresentationLock(presentationId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
+  const actor = { id: userId || null, email: holderEmail };
 
   if (!pid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
@@ -257,8 +277,8 @@ export async function releasePresentationLock(presentationId, { email } = {}, ct
       return { ok: true, released: false };
     }
 
-    // Check if held by different user
-    if (existing.holder_email !== holderEmail) {
+    // Check if held by different user (id-primary, e-mail fallback)
+    if (!matchesIdentity(actor, holderStamp(existing))) {
       return {
         ok: false,
         reason: 'held',
@@ -416,6 +436,16 @@ export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
     return { ok: false, reason: 'already_resolved', status: request.status };
   }
 
+  // Resolve the requester's stable id once: the new holder is the requester,
+  // known here only by the e-mail on their lock_requests row (that table has no
+  // id column), so unlike acquire/refresh — where the id rides in on the authed
+  // session — the transfer resolves it. `external` (no users row) stamps NULL,
+  // the same defined absence the e-mail fallback covers.
+  const requesterEmail = request.requesterEmail.toLowerCase();
+  const holderName = request.requesterName || request.requesterEmail;
+  const resolved = await resolveIdentityByEmail(requesterEmail);
+  const holderId = resolved?.userId || null;
+
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(ctx);
     const now = nowIso();
@@ -427,8 +457,9 @@ export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
     const updated = await db
       .updateTable('presentation_locks')
       .set({
-        holder_email: request.requesterEmail.toLowerCase(),
-        holder_name: request.requesterName || request.requesterEmail,
+        holder_user_id: holderId,
+        holder_email: requesterEmail,
+        holder_name: holderName,
         acquired_at: now,
         refreshed_at: now,
         expires_at: expiresAt,
@@ -445,8 +476,9 @@ export async function acceptLockRequest(requestId, { holderEmail } = {}, ctx) {
         .values({
           presentation_id: request.presentationId,
           organization_id: orgId,
-          holder_email: request.requesterEmail.toLowerCase(),
-          holder_name: request.requesterName || request.requesterEmail,
+          holder_user_id: holderId,
+          holder_email: requesterEmail,
+          holder_name: holderName,
           acquired_at: now,
           refreshed_at: now,
           expires_at: expiresAt,
@@ -522,15 +554,17 @@ export async function rejectLockRequest(requestId, ctx) {
  * Only returns pending requests or recently resolved ones (within 2 minutes).
  * Returns null if the user already holds the lock (they don't need their request status).
  */
-export async function getUserLockRequestStatus(presentationId, { email } = {}, ctx) {
+export async function getUserLockRequestStatus(presentationId, { email, userId } = {}, ctx) {
   const pid = norm(presentationId);
   const userEmail = norm(email).toLowerCase();
   if (!pid || !userEmail) return null;
 
   // If the user already holds the lock, they don't need their request status
-  // (this prevents old "accepted" requests from triggering re-acquire)
+  // (this prevents old "accepted" requests from triggering re-acquire). The
+  // holder check is id-primary; the requester lookup below stays keyed on the
+  // e-mail because lock_requests carries no requester id column.
   const currentLock = await getPresentationLock(pid, ctx);
-  if (currentLock && currentLock.holderEmail === userEmail) {
+  if (currentLock && matchesIdentity({ id: userId || null, email: userEmail }, { userId: currentLock.holderId, email: currentLock.holderEmail })) {
     return null;
   }
 

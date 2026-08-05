@@ -1,5 +1,6 @@
 import { isDatabaseAvailable } from '../db/client.js';
 import * as dbLocks from '../storage/presentation-locks-db.js';
+import { matchesIdentity } from '../../shared/identity-match.js';
 import { norm } from './normalize.js';
 
 const LOCK_TTL_MS = 2 * 60 * 1000;
@@ -45,6 +46,7 @@ export async function getPresentationLock(presentationId, ctx) {
   if (!lock) return null;
   return {
     presentationId: pid,
+    holderId: lock.holderId || null,
     holderEmail: lock.holderEmail || null,
     holderName: lock.holderName || null,
     acquiredAt: lock.acquiredAt,
@@ -53,21 +55,27 @@ export async function getPresentationLock(presentationId, ctx) {
   };
 }
 
-export async function acquirePresentationLock(presentationId, { email, name } = {}, ctx) {
+/** The identity stamp on an in-memory lock, for {@link matchesIdentity}. */
+function holderStamp(lock) {
+  return { userId: lock?.holderId || null, email: lock?.holderEmail || '' };
+}
+
+export async function acquirePresentationLock(presentationId, { email, name, userId } = {}, ctx) {
   if (useDbLocks()) {
-    return dbLocks.acquirePresentationLock(presentationId, { email, name }, ctx);
+    return dbLocks.acquirePresentationLock(presentationId, { email, name, userId }, ctx);
   }
   cleanupExpired();
   const pid = norm(presentationId);
   const holderEmail = norm(email).toLowerCase();
   const holderName = norm(name);
+  const holderId = userId || null;
   if (!pid || !holderEmail) {
     return { ok: false, reason: 'invalid' };
   }
 
   const existing = locks.get(pid);
   const t = nowMs();
-  if (existing && existing.holderEmail && existing.holderEmail !== holderEmail) {
+  if (existing && existing.holderEmail && !matchesIdentity({ id: holderId, email: holderEmail }, holderStamp(existing))) {
     return {
       ok: false,
       reason: 'held',
@@ -80,6 +88,7 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
   const lock = existing
     ? {
         ...existing,
+        holderId,
         holderEmail,
         holderName: holderName || existing.holderName || holderEmail,
         refreshedAt: isoNow,
@@ -87,6 +96,7 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
         expiresAtMs,
       }
     : {
+        holderId,
         holderEmail,
         holderName: holderName || holderEmail,
         acquiredAt: isoNow,
@@ -98,9 +108,9 @@ export async function acquirePresentationLock(presentationId, { email, name } = 
   return { ok: true, lock: await getPresentationLock(pid) };
 }
 
-export async function refreshPresentationLock(presentationId, { email } = {}, ctx) {
+export async function refreshPresentationLock(presentationId, { email, userId } = {}, ctx) {
   if (useDbLocks()) {
-    return dbLocks.refreshPresentationLock(presentationId, { email }, ctx);
+    return dbLocks.refreshPresentationLock(presentationId, { email, userId }, ctx);
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -108,7 +118,7 @@ export async function refreshPresentationLock(presentationId, { email } = {}, ct
   if (!pid || !holderEmail) return { ok: false, reason: 'invalid' };
   const existing = locks.get(pid);
   if (!existing) return { ok: false, reason: 'missing' };
-  if (existing.holderEmail !== holderEmail)
+  if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
     return { ok: false, reason: 'held', lock: await getPresentationLock(pid) };
 
   const t = nowMs();
@@ -121,9 +131,9 @@ export async function refreshPresentationLock(presentationId, { email } = {}, ct
   return { ok: true, lock: await getPresentationLock(pid) };
 }
 
-export async function releasePresentationLock(presentationId, { email } = {}, ctx) {
+export async function releasePresentationLock(presentationId, { email, userId } = {}, ctx) {
   if (useDbLocks()) {
-    return dbLocks.releasePresentationLock(presentationId, { email }, ctx);
+    return dbLocks.releasePresentationLock(presentationId, { email, userId }, ctx);
   }
   cleanupExpired();
   const pid = norm(presentationId);
@@ -131,7 +141,7 @@ export async function releasePresentationLock(presentationId, { email } = {}, ct
   if (!pid || !holderEmail) return { ok: false, reason: 'invalid' };
   const existing = locks.get(pid);
   if (!existing) return { ok: true, released: false };
-  if (existing.holderEmail !== holderEmail)
+  if (!matchesIdentity({ id: userId || null, email: holderEmail }, holderStamp(existing)))
     return { ok: false, reason: 'held', lock: await getPresentationLock(pid) };
   locks.delete(pid);
   return { ok: true, released: true };
