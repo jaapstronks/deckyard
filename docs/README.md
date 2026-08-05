@@ -190,6 +190,7 @@ nothing is discoverable only by `ls`.
 | [`fork-setup.md`](reference/fork-setup.md) | Setting up a fork |
 | [`storage-layer.md`](reference/storage-layer.md) | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy |
 | [`tenant-isolation.md`](reference/tenant-isolation.md) | Organizations and isolation shapes |
+| [`permission-model.md`](reference/permission-model.md) | The per-deck permission ladder: grants, collaborators, the deciders and the cache |
 | [`auth-and-sessions.md`](reference/auth-and-sessions.md) | Session cookies/tokens, the login paths, and auth rate limits |
 | [`sandbox-mode.md`](reference/sandbox-mode.md) | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup |
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
