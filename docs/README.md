@@ -119,6 +119,7 @@ nothing is discoverable only by `ls`.
 | [`editor-responsive-fields.md`](reference/editor-responsive-fields.md) | Size-intent field rows |
 | [`image-property-ownership.md`](reference/image-property-ownership.md) | Where each image property lives |
 | [`image-picker-seam.md`](reference/image-picker-seam.md) | The shared image-picker seam |
+| [`media-library.md`](reference/media-library.md) | Media providers, the per-organization image library, and the stock sources |
 | [`bundled-gradients.md`](reference/bundled-gradients.md) | The licence-free image source that ships with the app |
 | [`insert-slide-picker.md`](reference/insert-slide-picker.md) | The insert-slide picker |
 | [`deck-creation-and-reuse.md`](reference/deck-creation-and-reuse.md) | Slide library, collections, reuse |
