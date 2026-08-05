@@ -16,6 +16,7 @@ import {
   badRequest,
 } from '../../../utils/http.js';
 import { canDeletePresentation } from '../../../utils/presentation-authz.js';
+import { isOwnerOrCreator, matchesIdentity } from '../../../../shared/identity-match.js';
 
 /**
  * GET /api/presentations/trash - List trashed presentations
@@ -27,17 +28,15 @@ export async function handlePresentationsTrashList({ repoRoot, storageScope, req
 
   const items = await listTrashedPresentations(storageScope);
 
-  // Filter to only show items the user can see (owner, creator, or admin)
+  // Filter to only show items the user can see (owner, creator, trasher, or
+  // admin). Identity is matched through shared/identity-match.js (id-first,
+  // e-mail fallback) rather than raw lowercased e-mail, so a renamed user
+  // still sees the items they own or trashed (T10 PR F2).
   const filtered = items.filter((p) => {
-    // Admins can see all trashed presentations
     if (authedUser?.isAdmin) return true;
-    // Owners and creators can see their trashed presentations
-    const email = authedUser?.email?.toLowerCase();
-    if (!email) return false;
     return (
-      p.ownerEmail?.toLowerCase() === email ||
-      p.createdBy?.toLowerCase() === email ||
-      p.trashedBy?.toLowerCase() === email
+      isOwnerOrCreator(authedUser, p) ||
+      matchesIdentity(authedUser, { userId: p.trashedById, email: p.trashedBy })
     );
   });
 
@@ -64,13 +63,13 @@ export async function handlePresentationRestore({ repoRoot, storageScope, req, r
     return badRequest(res, 'Presentation is not in trash');
   }
 
-  // Check authorization: owner, creator, trashedBy, or admin
-  const email = authedUser?.email?.toLowerCase();
+  // Check authorization: owner, creator, trasher, or admin. Matched through
+  // shared/identity-match.js (id-first, e-mail fallback) so a rename does not
+  // strip the trasher of their restore right (T10 PR F2).
   const canRestore =
     authedUser?.isAdmin ||
-    existing.ownerEmail?.toLowerCase() === email ||
-    existing.createdBy?.toLowerCase() === email ||
-    existing.trashedBy?.toLowerCase() === email;
+    isOwnerOrCreator(authedUser, existing) ||
+    matchesIdentity(authedUser, { userId: existing.trashedById, email: existing.trashedBy });
 
   if (!canRestore) {
     return forbidden(res, 'You do not have permission to restore this presentation');

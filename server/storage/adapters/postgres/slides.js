@@ -4,6 +4,7 @@
 
 import { getDb, getOrgId, jsonb, now, sql, applyPagination } from './helpers.js';
 import { mapSlideLibraryRow } from '../../mappers.js';
+import { resolveIdentityByEmail } from '../../identity-resolver.js';
 
 /**
  * Slides mixin - adds slide library methods to adapter.
@@ -68,6 +69,13 @@ export function withSlides(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
+      // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
+      // created_by and updated_by e-mail (the same actor at create), so the
+      // team-library authz guard can match on the stable id.
+      const actorEmail = ctx?.actorEmail || null;
+      const actorResolution = actorEmail ? await resolveIdentityByEmail(actorEmail) : null;
+      const actorUserId = actorResolution?.userId ?? null;
+
       const row = await db
         .insertInto('slide_library')
         .values({
@@ -81,8 +89,10 @@ export function withSlides(Base) {
           content: jsonb(data.content || {}),
           i18n: jsonb(data.i18n || {}),
           favorites: sql`${data.favorites || []}::text[]`,
-          created_by: ctx?.actorEmail || null,
-          updated_by: ctx?.actorEmail || null,
+          created_by: actorEmail,
+          created_by_user_id: actorUserId,
+          updated_by: actorEmail,
+          updated_by_user_id: actorUserId,
         })
         .returningAll()
         .executeTakeFirst();
@@ -94,11 +104,19 @@ export function withSlides(Base) {
       const db = getDb();
       const orgId = getOrgId(ctx);
 
-      // Build update object, only including fields that are defined
+      // Build update object, only including fields that are defined.
+      // Dual-key (T10 PR F2): stamp updated_by_user_id from the same
+      // resolution only when there is an actor to stamp, so an actor-less
+      // write (Kysely drops the undefined updated_by) never nulls the id half
+      // while the e-mail half keeps the previous writer.
       const updateData = {
-        updated_by: ctx?.actorEmail,
         updated_at: now(),
       };
+      if (ctx?.actorEmail) {
+        const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
+        updateData.updated_by = ctx.actorEmail;
+        updateData.updated_by_user_id = actorResolution?.userId ?? null;
+      }
       if (data.name !== undefined) updateData.name = data.name;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.content !== undefined) updateData.content = jsonb(data.content);

@@ -29,6 +29,7 @@ import { loadTheme } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
 import { createLogger } from '../../utils/logger.js';
+import { matchesIdentity } from '../../../shared/identity-match.js';
 const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
@@ -177,9 +178,12 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
         const r = await setTeamLibraryItemTrashed(storageScope, id, {
           trashed: !!body.trashed,
           actorEmail: email,
-          allowTrash: (item, { actorEmail }) => {
+          allowTrash: (item) => {
+            // Id-first identity match (T10 PR F2): the creator keeps their
+            // trash right across a rename. Falls back to the e-mail for items
+            // whose creator has no users row.
             if (authedUser?.isAdmin) return true;
-            return String(item?.createdBy || '').toLowerCase() === String(actorEmail || '').toLowerCase();
+            return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
           },
         });
         if (!r.ok) {
@@ -199,12 +203,14 @@ export async function handleSlideLibrary({ repoRoot, storageScope, req, res, url
     if (req.method === 'DELETE') {
       const r = await deleteTeamLibraryItem(storageScope, id, {
         actorEmail: email,
-        allowDelete: (item, { actorEmail }) => {
+        allowDelete: (item) => {
           // Conservative policy:
           // - admins can delete
           // - otherwise only the creator can delete
+          // Id-first identity match (T10 PR F2), e-mail fallback for a creator
+          // with no users row.
           if (authedUser?.isAdmin) return true;
-          return String(item?.createdBy || '').toLowerCase() === String(actorEmail || '').toLowerCase();
+          return matchesIdentity(authedUser, { userId: item?.createdById, email: item?.createdBy });
         },
       });
       if (!r.ok) {

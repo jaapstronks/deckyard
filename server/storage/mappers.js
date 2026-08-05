@@ -42,8 +42,13 @@ export function mapSlideLibraryRow(row) {
     i18n: row.i18n || {},
     favorites: row.favorites || [],
     trashedAt: row.trashed_at,
+    // Identity travels as a pair (T10 PR F2): the stable `users.id`
+    // (migration 070) beside the display/fallback e-mail. The team-library
+    // trash/delete guard matches on `createdById`; see shared/identity-match.js.
     trashedBy: row.trashed_by,
+    createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
+    updatedById: row.updated_by_user_id || null,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -65,7 +70,11 @@ export function mapSlideCollectionRow(row, slideIds = []) {
     description: row.description || '',
     slideIds: Array.isArray(slideIds) ? slideIds : [],
     slideCount: Array.isArray(slideIds) ? slideIds.length : 0,
+    // Identity pair (T10 PR F2): the team-collection mutate guard matches on
+    // `createdById`, with the e-mail as the fallback. See shared/identity-match.js.
+    createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
+    updatedById: row.updated_by_user_id || null,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -158,6 +167,7 @@ export function mapPresentationRow(row) {
     sandbox: row.sandbox,
     published: row.published,
     trashedAt: row.trashed_at,
+    trashedById: row.trashed_by_user_id || null,
     trashedBy: row.trashed_by,
   };
 }
