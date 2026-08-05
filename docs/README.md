@@ -195,6 +195,7 @@ nothing is discoverable only by `ls`.
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
 | [`analytics.md`](reference/analytics.md) | View analytics end to end: tracking routes, aggregations, reports, retention job |
 | [`analytics-privacy.md`](reference/analytics-privacy.md) | What view analytics stores per viewer, the two erase routes, retention |
+| [`email-infrastructure.md`](reference/email-infrastructure.md) | The Brevo transport, the senders, and the admin-customizable templates |
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |
