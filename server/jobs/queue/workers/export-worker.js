@@ -14,7 +14,7 @@
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
-import { getTheme } from '../../../storage/themes.js';
+import { loadTheme } from '../../../utils/themes.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';
 import { renderSlidesToPdfBuffer } from '../../../render/pdf.js';
@@ -90,9 +90,12 @@ async function prepareExportContext(job) {
     filteredPres = stripLiveOnlySlides(projectedPres);
   }
 
-  // Load theme
-  const themeName = filteredPres.theme || 'default';
-  const theme = await getTheme(repoRoot, themeName);
+  // Load theme. Same loader as the synchronous pipeline (`export/pipeline.js`):
+  // `utils/themes.js` takes repoRoot first and resolves both file-backed themes
+  // and custom-theme UUIDs. The storage-layer `getTheme(themeId, ctx)` is a
+  // different signature entirely — calling it with a repoRoot yielded `theme =
+  // null` on every queued export.
+  const theme = await loadTheme(repoRoot, filteredPres.theme);
 
   // Load merged slide types (core + org-specific custom types)
   const orgId = pres?.organizationId;
