@@ -127,5 +127,18 @@ export async function createFollowCopy(lang) {
       'follow.followInviteSuccess',
       'Follow along mode successful, this view will update automatically.'
     ),
+    erase: {
+      button: tr('follow.erase.button', 'Forget me'),
+      tooltip: tr('follow.erase.tooltip', 'Erase the view history recorded for this device'),
+      confirmTitle: tr('follow.erase.confirmTitle', 'Forget this device?'),
+      confirmMessage: tr(
+        'follow.erase.confirmMessage',
+        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone."
+      ),
+      confirmOk: tr('follow.erase.confirmOk', 'Forget me'),
+      cancel: tr('follow.erase.cancel', 'Cancel'),
+      done: tr('follow.erase.done', 'Your viewing history on this device has been erased.'),
+      failed: tr('follow.erase.failed', "Couldn't erase your data. Please try again."),
+    },
   };
 }

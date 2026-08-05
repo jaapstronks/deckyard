@@ -6,6 +6,7 @@ import { createCommentsApi } from '../editor/comments-api.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { renderGuestJoinPrompt } from './guest-join.js';
 import { createShareViewerCommentsSection } from './viewer-comments.js';
+import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button.js';
 
 /**
  * Build the share-viewer topbar: title, permission badge, guest controls
@@ -24,6 +25,8 @@ import { createShareViewerCommentsSection } from './viewer-comments.js';
  * @param {HTMLElement} opts.shell - viewer shell (guest-join prompt renders into it).
  * @param {() => string|null} opts.getCurrentSlideId - live current slide id.
  * @param {() => (void | Promise<void>)} opts.onGuestJoined - re-render after a guest joins.
+ * @param {Object|null} [opts.analyticsTracker] - live tracker, for the "forget me" control.
+ * @param {() => void} [opts.onAnalyticsErased] - called after the viewer erases their data.
  * @returns {{ topbar: HTMLElement, commentsSection: object|null }}
  */
 export function buildShareViewerTopbar({
@@ -35,6 +38,8 @@ export function buildShareViewerTopbar({
   shell,
   getCurrentSlideId,
   onGuestJoined,
+  analyticsTracker = null,
+  onAnalyticsErased,
 }) {
   const topbar = h('div', { class: 'share-viewer-topbar' });
 
@@ -109,6 +114,27 @@ export function buildShareViewerTopbar({
 
     controls.append(guestStatusEl);
   }
+
+  // "Forget me": erase the analytics history this device has recorded. Only
+  // present when a tracker is live (analytics enabled for this deck).
+  const eraseBtn = createEraseMyDataButton({
+    tracker: analyticsTracker,
+    labels: {
+      button: t('share.erase.button', 'Forget me'),
+      tooltip: t('share.erase.tooltip', 'Erase the view history recorded for this device'),
+      confirmTitle: t('share.erase.confirmTitle', 'Forget this device?'),
+      confirmMessage: t(
+        'share.erase.confirmMessage',
+        "This permanently erases the viewing history recorded for this device across every presentation on this site. It can't be undone."
+      ),
+      confirmOk: t('share.erase.confirmOk', 'Forget me'),
+      cancel: t('common.cancel', 'Cancel'),
+      done: t('share.erase.done', 'Your viewing history on this device has been erased.'),
+      failed: t('share.erase.failed', "Couldn't erase your data. Please try again."),
+    },
+    onErased: onAnalyticsErased,
+  });
+  if (eraseBtn) controls.append(eraseBtn);
 
   const uiMode = createUiModeSwitcher({ h, className: 'share-viewer-ui-mode' });
   controls.append(uiMode.el);

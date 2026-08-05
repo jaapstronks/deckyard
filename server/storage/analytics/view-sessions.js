@@ -12,6 +12,8 @@ import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
 export {
   exportUserAnalyticsData,
   deleteUserAnalyticsData,
+  eraseAnalyticsDataForDevice,
+  eraseAnalyticsDataForSession,
   anonymizeOldIpAddresses,
 } from './view-sessions-gdpr.js';
 

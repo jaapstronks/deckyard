@@ -12,6 +12,7 @@ import { validateShareLink } from '../../storage/share-links/crud.js';
 import { getAppSettings, getUserSettings } from '../../storage/settings.js';
 import {
   TRACKING_RATE_LIMITS,
+  AUTH_RATE_LIMITS,
   isValidDeviceId,
   isValidSessionToken,
   isValidSlideIndex,
@@ -29,6 +30,8 @@ import {
   updateViewSession,
   endViewSession,
   getViewSessionByToken,
+  eraseAnalyticsDataForDevice,
+  eraseAnalyticsDataForSession,
   VIEWER_TYPES,
 } from '../../storage/analytics/view-sessions.js';
 import {
@@ -494,6 +497,77 @@ export async function handleAnalyticsTrack({ req, res, url, repoRoot }) {
       ok: true,
       slideViewId: result.slideView.id,
     }), true;
+  }
+
+  // POST /api/track/my-data/erase - Anonymous viewer erases their own data.
+  //
+  // The public, device-only counterpart of DELETE /api/analytics/my-data (which
+  // identifies a logged-in person by email). Here the proof of identity is the
+  // live session_token the viewer's own browser holds: possession of it means
+  // the browser that opened the session is asking to be forgotten. A raw device
+  // id is deliberately NOT an accepted input — it is browser-generated and every
+  // deck reader can see a per-deck label of it, so it proves nothing (see
+  // view-sessions-gdpr.js header, and done/decisions.md § analytics-privacy-naden).
+  if (req.method === 'POST' && path === '/api/track/my-data/erase') {
+    const clientIp = getClientIp(req);
+
+    // Destructive and instance-wide: gate it with the same strict expensive-op
+    // tier the GDPR endpoints use, keyed by IP since there is no principal here.
+    if (!(await allowRequest(`track:erase:${clientIp}`, AUTH_RATE_LIMITS.expensive))) {
+      logSecurityEvent(SECURITY_EVENTS.RATE_LIMIT_EXCEEDED, {
+        ip: clientIp,
+        endpoint: path,
+        limitType: 'trackErase',
+      });
+      return sendRateLimitResponse(res), true;
+    }
+
+    let body;
+    try {
+      body = await json(req);
+    } catch (err) {
+      return sendErrorResponse(res, 400, 'Invalid JSON body'), true;
+    }
+
+    const sessionToken = norm(body?.sessionToken);
+
+    if (!sessionToken) {
+      return sendErrorResponse(res, 400, 'Missing session token'), true;
+    }
+
+    // Validate session token format
+    if (!isValidSessionToken(sessionToken)) {
+      logSecurityEvent(SECURITY_EVENTS.INVALID_TOKEN, {
+        ip: clientIp,
+        endpoint: path,
+        tokenPrefix: sessionToken?.slice(0, 8) + '...',
+      });
+      return sendErrorResponse(res, 400, 'Invalid session token format'), true;
+    }
+
+    const session = await getViewSessionByToken(sessionToken);
+    if (!session) {
+      // Same semantics as heartbeat/end: an unknown token is a 404, not a hint
+      // about which tokens exist.
+      logSecurityEvent(SECURITY_EVENTS.ACCESS_DENIED, {
+        ip: clientIp,
+        endpoint: path,
+        reason: 'Unknown session token',
+      });
+      return sendErrorResponse(res, 404, 'Session not found'), true;
+    }
+
+    // A session with a device id cascades to every session of that device
+    // (identity is the scope); one without a device id erases only itself.
+    const result = session.deviceId
+      ? await eraseAnalyticsDataForDevice({ deviceId: session.deviceId })
+      : await eraseAnalyticsDataForSession({ sessionId: session.id });
+
+    if (!result.ok) {
+      return sendErrorResponse(res, 500, result.reason || 'Failed to erase data'), true;
+    }
+
+    return sendSuccessResponse(res, { ok: true, deleted: result.deleted }), true;
   }
 
   return false;

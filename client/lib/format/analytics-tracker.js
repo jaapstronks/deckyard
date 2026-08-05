@@ -310,6 +310,39 @@ export function createAnalyticsTracker({
   }
 
   /**
+   * Erase this viewer's analytics data server-side ("forget me").
+   *
+   * Sends the live session token as proof of possession; the server resolves it
+   * to a device id and erases every session of that device (or just this one if
+   * it has no device id). Then it tears the tracker down *without* the usual
+   * session-end beacon — the sessions are already gone, so /session/end would
+   * only 404 — and drops the device id from localStorage, so a later visit
+   * starts as a fresh identity rather than re-linking to the erased history.
+   *
+   * @returns {Promise<{ok: boolean, deleted?: Object}|null>} Server result, or
+   *   null when there is no live session to erase (analytics off, or start()
+   *   has not resolved yet).
+   */
+  async function erase() {
+    if (isDestroyed || !isStarted || !sessionToken) return null;
+
+    const result = await sendTrack('/api/track/my-data/erase', { sessionToken });
+
+    // Tear down like destroy(), but skip the end beacon: the rows are deleted.
+    isDestroyed = true;
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', handleUnload);
+    window.removeEventListener('pagehide', handleUnload);
+    stopHeartbeat();
+    sessionToken = null;
+
+    // Forget the device so the next visit is a new identity, not a re-link.
+    storage.remove(DEVICE_ID_KEY);
+
+    return result;
+  }
+
+  /**
    * Get the current session token.
    * @returns {string|null}
    */
@@ -329,6 +362,7 @@ export function createAnalyticsTracker({
     start,
     trackSlide,
     destroy,
+    erase,
     getSessionToken,
     isTracking,
   };
