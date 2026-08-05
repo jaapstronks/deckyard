@@ -12,7 +12,6 @@ import {
 } from '../../../storage/analytics/dashboard.js';
 
 const VALID_PERIODS = ['7d', '30d', '90d', '12m'];
-const VALID_CATEGORIES = ['all', 'internal', 'external'];
 const VALID_SORTS = ['views', 'duration', 'completion', 'recent'];
 
 /**
@@ -26,17 +25,12 @@ export async function handleDashboard(ctx) {
   }
 
   const period = url.searchParams.get('period') || '30d';
-  const category = url.searchParams.get('category') || 'all';
 
   if (!VALID_PERIODS.includes(period)) {
     return sendErrorResponse(res, 400, 'Invalid period. Use 7d, 30d, 90d, or 12m'), true;
   }
 
-  if (!VALID_CATEGORIES.includes(category)) {
-    return sendErrorResponse(res, 400, 'Invalid category. Use all, internal, or external'), true;
-  }
-
-  const opts = { period, category };
+  const opts = { period };
 
   // Fetch all dashboard data in parallel
   const [summary, timeline, topPresentations, sourceBreakdown] = await Promise.all([

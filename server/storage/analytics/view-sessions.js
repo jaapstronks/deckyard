@@ -48,7 +48,6 @@ function generateSessionToken() {
  * @param {string} [data.deviceId] - Client device ID from localStorage
  * @param {string} [data.ipAddress] - Client IP address
  * @param {string} [data.userAgent] - Client user agent
- * @param {boolean} [data.isInternal] - True if viewer is an authenticated team member
  * @param {boolean} [data.attributionAllowed] - True if viewer opts into having name shown
  * @returns {Promise<{ok: boolean, session?: Object, reason?: string}>}
  */
@@ -83,7 +82,6 @@ export async function createViewSession(data) {
         duration_seconds: 0,
         ip_address: data?.ipAddress ?? null,
         user_agent: data?.userAgent ?? null,
-        is_internal: data?.isInternal ?? false,
         attribution_allowed: data?.attributionAllowed ?? false,
         created_at: now,
       })
@@ -323,7 +321,6 @@ function rowToSession(row) {
     exitSlideIndex: row.exit_slide_index,
     ipAddress: row.ip_address,
     userAgent: row.user_agent,
-    isInternal: row.is_internal ?? false,
     attributionAllowed: row.attribution_allowed ?? false,
     createdAt: row.created_at,
   };

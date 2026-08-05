@@ -258,17 +258,9 @@ export function createPreferencesTab({ user, nav }) {
     digestDaySelect,
   ]);
 
-  // Include team analytics toggle
-  const digestTeamCheck = h('input', { type: 'checkbox', checked: true });
-  const digestTeamLabel = h('label', { class: 'admin-checkbox-item' }, [
-    digestTeamCheck,
-    h('span', { text: t('settings.digest.includeTeam', 'Include team engagement statistics') }),
-  ]);
-
   const digestOptions = h('div', { class: 'stack gap-2' }, [
     digestEnabledLabel,
     digestDayField,
-    digestTeamLabel,
   ]);
   digestCard.append(digestHint, digestOptions);
 
@@ -409,7 +401,6 @@ export function createPreferencesTab({ user, nav }) {
     // Disable digest controls
     digestEnabledCheck.disabled = busy;
     digestDaySelect.disabled = busy;
-    digestTeamCheck.disabled = busy;
     // Disable highlighter controls
     thicknessSlider.disabled = busy;
     persistentDrawCheck.disabled = busy;
@@ -453,7 +444,6 @@ export function createPreferencesTab({ user, nav }) {
         : {};
       digestEnabledCheck.checked = myDigest?.enabled !== false;
       digestDaySelect.value = String(myDigest?.dayOfWeek ?? 1);
-      digestTeamCheck.checked = myDigest?.includeTeamAnalytics !== false;
 
       // Highlighter settings
       const myHighlighter = my?.highlighter && typeof my.highlighter === 'object'
@@ -533,7 +523,6 @@ export function createPreferencesTab({ user, nav }) {
         digest: {
           enabled: digestEnabledCheck.checked,
           dayOfWeek: parseInt(digestDaySelect.value, 10) || 1,
-          includeTeamAnalytics: digestTeamCheck.checked,
         },
         highlighter: {
           color: highlighterColorPicker.getValue(),

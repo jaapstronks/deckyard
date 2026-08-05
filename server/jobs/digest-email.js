@@ -103,11 +103,7 @@ async function processUserDigest(user, repoRoot) {
   console.log(`[digest-email] Processing digest for ${user.email}`);
 
   // Get weekly analytics
-  const analytics = await getWeeklyAnalyticsForUser(
-    user.id,
-    user.email,
-    { includeTeamAnalytics: user.includeTeamAnalytics }
-  );
+  const analytics = await getWeeklyAnalyticsForUser(user.id, user.email);
 
   // Skip if no activity and no presentations
   if (!analytics.hasActivity && analytics.presentationCount === 0) {

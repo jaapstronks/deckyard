@@ -89,14 +89,7 @@ export function defaultAppSettings() {
     defaultThemeId: '',
     // Engagement insights (analytics) settings
     analytics: {
-      enabled: true, // Master switch for all analytics
-      teamAnalytics: {
-        policy: 'aggregate', // 'off' | 'aggregate' | 'opt-in-detailed'
-        allowDetailedOptIn: true, // Allow presenters to request detailed team analytics
-      },
-      externalAnalytics: {
-        enabled: true, // Track external/anonymous viewers
-      },
+      enabled: true, // Master switch for all analytics — the only tracking toggle
       retention: {
         sessionDataDays: 90, // How long to keep detailed session data
         ipAnonymizationDays: 7, // How long before IP addresses are anonymized
@@ -179,12 +172,6 @@ function normalizeStringArray(arr, maxLen = 50) {
     .map((v) => normalizeString(v, 64))
     .filter(Boolean)
     .slice(0, maxLen);
-}
-
-function normalizeAnalyticsPolicy(v) {
-  const allowed = ['off', 'aggregate', 'opt-in-detailed'];
-  const s = String(v || '').trim().toLowerCase();
-  return allowed.includes(s) ? s : 'aggregate';
 }
 
 function normalizeProviderUrl(v) {
@@ -297,12 +284,11 @@ export async function getAppSettings(repoRoot) {
   // Workspace default theme (empty = resolve via env/built-in default)
   const defaultThemeId = normalizeThemeId(obj?.defaultThemeId);
 
-  // Analytics settings
+  // Analytics settings. Any legacy team/external-analytics keys in the stored
+  // bag are ignored here (store-raw / normalize-on-read), so they never reach
+  // a caller and drop out on the next write — see PR "drop the dead
+  // internal/external chain" (done/decisions.md § analytics-privacy-naden).
   const analyticsObj = obj?.analytics && typeof obj.analytics === 'object' ? obj.analytics : {};
-  const teamAnalyticsObj = analyticsObj?.teamAnalytics && typeof analyticsObj.teamAnalytics === 'object'
-    ? analyticsObj.teamAnalytics : {};
-  const externalAnalyticsObj = analyticsObj?.externalAnalytics && typeof analyticsObj.externalAnalytics === 'object'
-    ? analyticsObj.externalAnalytics : {};
   const retentionObj = analyticsObj?.retention && typeof analyticsObj.retention === 'object'
     ? analyticsObj.retention : {};
   const externalProvidersObj = analyticsObj?.externalProviders && typeof analyticsObj.externalProviders === 'object'
@@ -310,13 +296,6 @@ export async function getAppSettings(repoRoot) {
 
   const analytics = {
     enabled: analyticsObj?.enabled !== false,
-    teamAnalytics: {
-      policy: normalizeAnalyticsPolicy(teamAnalyticsObj?.policy),
-      allowDetailedOptIn: teamAnalyticsObj?.allowDetailedOptIn !== false,
-    },
-    externalAnalytics: {
-      enabled: externalAnalyticsObj?.enabled !== false,
-    },
     retention: {
       sessionDataDays: normalizePositiveInt(retentionObj?.sessionDataDays, 90, 1, 365),
       ipAnonymizationDays: normalizePositiveInt(retentionObj?.ipAnonymizationDays, 7, 1, 90),
@@ -451,24 +430,15 @@ export async function writeAppSettings(repoRoot, next) {
     next?.analytics && typeof next.analytics === 'object' ? next.analytics : null;
   let analytics = null;
   if (nextAnalytics) {
-    const nextTeamAnalytics = nextAnalytics?.teamAnalytics && typeof nextAnalytics.teamAnalytics === 'object'
-      ? nextAnalytics.teamAnalytics : {};
-    const nextExternalAnalytics = nextAnalytics?.externalAnalytics && typeof nextAnalytics.externalAnalytics === 'object'
-      ? nextAnalytics.externalAnalytics : {};
     const nextRetention = nextAnalytics?.retention && typeof nextAnalytics.retention === 'object'
       ? nextAnalytics.retention : {};
     const nextExternalProviders = nextAnalytics?.externalProviders && typeof nextAnalytics.externalProviders === 'object'
       ? nextAnalytics.externalProviders : null;
 
+    // Legacy team/external-analytics keys in the payload are dropped, not
+    // persisted: `analytics.enabled` is the only tracking switch.
     analytics = {
       enabled: nextAnalytics?.enabled !== false,
-      teamAnalytics: {
-        policy: normalizeAnalyticsPolicy(nextTeamAnalytics?.policy ?? prev.analytics?.teamAnalytics?.policy),
-        allowDetailedOptIn: nextTeamAnalytics?.allowDetailedOptIn !== false,
-      },
-      externalAnalytics: {
-        enabled: nextExternalAnalytics?.enabled !== false,
-      },
       retention: {
         sessionDataDays: normalizePositiveInt(
           nextRetention?.sessionDataDays ?? prev.analytics?.retention?.sessionDataDays,
@@ -578,7 +548,6 @@ export function defaultUserSettings() {
     digest: {
       enabled: true, // Receive weekly engagement digest
       dayOfWeek: 1, // 0=Sunday, 1=Monday, etc.
-      includeTeamAnalytics: true, // Include team view statistics in digest
     },
     // Presenter highlighter / laser pointer settings
     highlighter: {
@@ -662,7 +631,6 @@ export async function getUserSettings(repoRoot, email) {
   const digest = {
     enabled: digestObj?.enabled !== false,
     dayOfWeek: normalizeDayOfWeek(digestObj?.dayOfWeek),
-    includeTeamAnalytics: digestObj?.includeTeamAnalytics !== false,
   };
 
   // Highlighter settings
@@ -750,7 +718,6 @@ export async function writeUserSettings(repoRoot, email, next) {
     ? {
         enabled: nextDigest?.enabled !== false,
         dayOfWeek: normalizeDayOfWeek(nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek),
-        includeTeamAnalytics: nextDigest?.includeTeamAnalytics !== false,
       }
     : prev.digest;
 
