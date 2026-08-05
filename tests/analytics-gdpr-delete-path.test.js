@@ -29,9 +29,13 @@
  *      how many; it does not anonymize (the IP-anonymization retention job
  *      `anonymizeOldIpAddresses` is a separate path this endpoint never calls),
  *      and it never matches on `device_id`. A device id is not a secret — the
- *      full value of every session is returned to anyone with read access to
- *      the deck — so it cannot authorize an export or an erasure, and the
- *      storage refuses an identifier that has nothing else in it.
+ *      viewer's own browser generates it and puts it in the request body — so
+ *      it cannot authorize an export or an erasure, and the storage refuses an
+ *      identifier that has nothing else in it. (The session-list endpoint used
+ *      to hand the raw value to every reader of the deck as well; it returns a
+ *      per-deck HMAC label now, see
+ *      `tests/analytics-session-device-label.test.js`. That narrowed the
+ *      exposure without changing the rule here.)
  *
  * House shape (see `tests/authz-organization-scope.test.js`,
  * `tests/auth-routes-reset-and-magic-link.test.js`): the exported handler is
@@ -348,8 +352,8 @@ test('delete reports a zeroed count when the caller has no data (no false erasur
 test('the storage helpers refuse an identifier that is not an email', async () => {
   const db = seed({ sessions: [sessionRow({ id: 'anon', device: 'dev-1' })] });
 
-  // A device id is public to every deck reader, so it identifies no one here;
-  // the helpers take an email and nothing else.
+  // A device id is client-generated, so producing one proves nothing about
+  // whose device it is; the helpers take an email and nothing else.
   assert.deepEqual(await exportUserAnalyticsData({ deviceId: 'dev-1' }), {
     ok: false,
     reason: 'No identifier provided',

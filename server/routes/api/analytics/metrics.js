@@ -4,7 +4,11 @@
 
 import { extractValidatedDateRange, parsePaginationParams } from '../../../utils/request-validators.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
-import { sendErrorResponse, sendSuccessResponse } from '../../../analytics/helpers.js';
+import {
+  publicDeviceLabel,
+  sendErrorResponse,
+  sendSuccessResponse,
+} from '../../../analytics/helpers.js';
 import { getViewSessionsForPresentation } from '../../../storage/analytics/view-sessions.js';
 import {
   getPresentationAnalyticsOverview,
@@ -111,6 +115,11 @@ export async function handleJourney(ctx, presentationId) {
 
 /**
  * GET /api/presentations/:id/analytics/sessions - Get viewer session list.
+ *
+ * Readable by every reader of the deck, so the device id is replaced here by a
+ * per-deck label (see `publicDeviceLabel`): stable within this deck, unrelated
+ * to the label the same browser gets in someone else's deck. Same field name,
+ * derived value — the raw id does not cross this boundary in any shape.
  */
 export async function handleSessions(ctx, presentationId) {
   const { res, url, authedUser } = ctx;
@@ -136,5 +145,10 @@ export async function handleSessions(ctx, presentationId) {
     ...dateRange,
   });
 
-  return sendSuccessResponse(res, result), true;
+  const sessions = result.sessions.map((session) => ({
+    ...session,
+    deviceId: publicDeviceLabel(session.deviceId, presentationId),
+  }));
+
+  return sendSuccessResponse(res, { ...result, sessions }), true;
 }
