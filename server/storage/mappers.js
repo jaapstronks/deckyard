@@ -140,8 +140,16 @@ export function mapPresentationRow(row) {
     scope: row.scope,
     isViewOnly: !!row.is_view_only,
     revision: row.revision,
+    // Identity travels as a pair per role: the stable `users.id` (migration 063)
+    // is the key every authorization decision compares, the email beside it is
+    // display/contact plus the fallback identifier for rows whose email never
+    // matched a user (external/legacy — a defined NULL). See
+    // utils/presentation-authz/identity-match.js.
+    ownerId: row.owner_user_id || null,
     ownerEmail: row.owner_email,
+    createdById: row.created_by_user_id || null,
     createdBy: row.created_by,
+    updatedById: row.updated_by_user_id || null,
     updatedBy: row.updated_by,
     settings: row.settings || {},
     i18n: row.i18n || {},

@@ -1,11 +1,17 @@
 /**
  * Core presentation authorization functions.
+ *
+ * Who a deck belongs to is decided by {@link isOwnerOrCreator} in
+ * identity-match.js, which keys on the stable `users.id` and falls back to the
+ * email identifier only where no id exists (file mode, external/legacy rows,
+ * the auth-off operator). These functions therefore never compare an email
+ * themselves — see that module for the rule and why it is not a second key.
  */
 
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { isMultiWorkspaceEnabled } from '../../config/features.js';
-import { normalizeEmail } from '../normalize.js';
 import { canComment, canWrite, canManage } from '../../../shared/constants/permissions.js';
+import { hasIdentity, isOwnerOrCreator } from './identity-match.js';
 
 /**
  * Normalize presentation scope to either 'workspace' or 'private'.
@@ -70,16 +76,11 @@ export function canReadPresentation({ user, pres, collaboratorPermission } = {})
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   const scope = normalizePresentationScope(pres?.scope);
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
+  if (!hasIdentity(user)) return false;
   if (scope === 'workspace' && isSameOrganization(user, pres)) return true;
 
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-
   // Owner or creator can read
-  if (owner && owner === userEmail) return true;
-  if (createdBy && createdBy === userEmail) return true;
+  if (isOwnerOrCreator(user, pres)) return true;
 
   // Collaborator with any permission can read
   if (collaboratorPermission) return true;
@@ -97,11 +98,8 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
   if (sandboxEnabled() && scope === 'workspace') return false;
 
   // Owner/creator can write
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
+  if (!hasIdentity(user)) return false;
+  if (isOwnerOrCreator(user, pres)) return true;
 
   // View-only presentations are read-only for non-owners
   if (pres?.isViewOnly) return false;
@@ -121,13 +119,8 @@ export function canWritePresentation({ user, pres, collaboratorPermission } = {}
 export function canDeletePresentation({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
   // Only the owner/creator can delete.
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
-
-  return false;
+  if (!hasIdentity(user)) return false;
+  return isOwnerOrCreator(user, pres);
 }
 
 /**
@@ -135,8 +128,7 @@ export function canDeletePresentation({ user, pres } = {}) {
  */
 export function canChangePresentationScope({ user, pres, nextScope } = {}) {
   if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
+  if (!hasIdentity(user)) return false;
 
   const from = normalizePresentationScope(pres?.scope);
   const to = normalizePresentationScope(nextScope);
@@ -148,12 +140,9 @@ export function canChangePresentationScope({ user, pres, nextScope } = {}) {
   // Sandbox stance: prevent user-to-user sharing
   if (sandboxEnabled()) return false;
 
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-
   // Phase 1: allow private -> workspace by owner/creator only.
   if (from === 'private' && to === 'workspace') {
-    return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
+    return isOwnerOrCreator(user, pres);
   }
 
   // Workspace -> private is intentionally not supported for non-admin in Phase 1.
@@ -166,11 +155,8 @@ export function canChangePresentationScope({ user, pres, nextScope } = {}) {
 export function canForceLockRelease({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
   // Owner/creator of the presentation can force release locks.
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
+  if (!hasIdentity(user)) return false;
+  return isOwnerOrCreator(user, pres);
 }
 
 /**
@@ -180,11 +166,8 @@ export function canForceLockRelease({ user, pres } = {}) {
 export function canTransferOwnership({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
+  if (!hasIdentity(user)) return false;
+  return isOwnerOrCreator(user, pres);
 }
 
 /**
@@ -195,11 +178,8 @@ export function canTransferOwnership({ user, pres } = {}) {
 export function isPresentationAuthor({ user, pres } = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  return (owner && owner === userEmail) || (createdBy && createdBy === userEmail);
+  if (!hasIdentity(user)) return false;
+  return isOwnerOrCreator(user, pres);
 }
 
 /**
@@ -209,11 +189,8 @@ export function isPresentationAuthor({ user, pres } = {}) {
 export function canManageCollaborators({ user, pres, collaboratorPermission } = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
+  if (!hasIdentity(user)) return false;
+  if (isOwnerOrCreator(user, pres)) return true;
 
   // Collaborator with admin permission can manage collaborators
   if (canManage(collaboratorPermission)) return true;
@@ -227,13 +204,10 @@ export function canManageCollaborators({ user, pres, collaboratorPermission } = 
 export function canCommentOnPresentation({ user, pres, collaboratorPermission } = {}) {
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return false;
+  if (!hasIdentity(user)) return false;
 
   // Owner/creator can always comment
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
-  if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return true;
+  if (isOwnerOrCreator(user, pres)) return true;
 
   // Workspace presentations: any user of that same workspace can comment
   const scope = normalizePresentationScope(pres?.scope);
@@ -254,14 +228,10 @@ export function getEffectivePermission({ user, pres, collaboratorPermission } = 
   if (isUnrestricted(user)) return 'edit';
   if (!pres || typeof pres !== 'object') return 'view';
 
-  const userEmail = normalizeEmail(user?.email);
-  if (!userEmail) return 'view';
-
-  const owner = normalizeEmail(pres?.ownerEmail);
-  const createdBy = normalizeEmail(pres?.createdBy);
+  if (!hasIdentity(user)) return 'view';
 
   // Owner or creator always has edit permission
-  if ((owner && owner === userEmail) || (createdBy && createdBy === userEmail)) return 'edit';
+  if (isOwnerOrCreator(user, pres)) return 'edit';
 
   // Workspace presentations handling
   const scope = normalizePresentationScope(pres?.scope);

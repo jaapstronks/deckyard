@@ -20,6 +20,8 @@ import { createWriteStream } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { singleWorkspaceScope } from '../storage/scope.js';
+import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
+import { isOwnerOrCreator } from '../utils/presentation-authz.js';
 
 /**
  * Simple concurrency limiter.
@@ -258,12 +260,15 @@ export async function buildBulkExport(opts) {
   // ── 1. Collect presentations (0-15%) ────────────────────────
   await onProgress(2);
 
+  // "My decks" for a data export is an ownership question, so it is decided on
+  // the stable `users.id` like every other one — resolved once here, since a
+  // detached job has no request context to carry it. An exporter with no user
+  // row (file mode, legacy) leaves the actor id-less and the match falls back
+  // to the email identifier. See utils/presentation-authz/identity-match.js.
+  const exporterResolution = await resolveIdentityByEmail(userEmail);
+  const exporter = { id: exporterResolution?.userId || null, email: userEmail };
   const allPresentations = await listPresentations(storageScope);
-  const userPresentations = allPresentations.filter(
-    (p) =>
-      p.ownerEmail === userEmail ||
-      p.createdBy === userEmail
-  );
+  const userPresentations = allPresentations.filter((p) => isOwnerOrCreator(exporter, p));
 
   const presentations = [];
   for (let i = 0; i < userPresentations.length; i++) {

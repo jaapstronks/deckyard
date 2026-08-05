@@ -23,9 +23,11 @@ import { requireScope, canAccessPresentation, getPresentationWithAccess, parseJs
 
 /**
  * Filter presentations to only those accessible to the API key owner.
+ * @param {Object[]} presentations
+ * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
  */
-function filterByOwner(presentations, ownerEmail) {
-  return presentations.filter((p) => canAccessPresentation(p, ownerEmail));
+function filterByOwner(presentations, actor) {
+  return presentations.filter((p) => canAccessPresentation(p, actor));
 }
 
 /**
@@ -99,12 +101,12 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
  * - viewOnly: if 'true', only return view-only presentations
  */
 async function handleList(ctx) {
-  const { storageScope, apiKey, url } = ctx;
+  const { storageScope, apiKey, authedUser, url } = ctx;
 
   if (!requireScope(ctx, 'read')) return true;
 
   const list = await listPresentations(storageScope);
-  let filtered = filterByOwner(list, apiKey.ownerEmail);
+  let filtered = filterByOwner(list, authedUser);
 
   // Optional filters
   const viewOnlyFilter = url.searchParams.get('viewOnly');

@@ -29,7 +29,7 @@ import {
 } from '../storage/presentation-comments.js';
 import {
   canActorCommentOnPresentation,
-  canResolveComment,
+  canActorResolveComment,
 } from '../utils/presentation-authz.js';
 import {
   buildSlideSnapshot,
@@ -1650,7 +1650,7 @@ export function registerTools(
       }
 
       const pres = await getCheckedPresentation(presentationId, context);
-      if (!canResolveComment({ user: { email: owner }, pres, comment })) {
+      if (!(await canActorResolveComment(pres, owner))) {
         throw new Error('Only the presentation owner can change comment status');
       }
 

@@ -248,7 +248,7 @@ async function handleCreateComment(ctx, presentationId) {
  * resolved→open. Only the presentation owner/creator may change status.
  */
 async function handleCommentStatus(ctx, commentId) {
-  const { req, apiKey } = ctx;
+  const { req, apiKey, authedUser } = ctx;
 
   if (!requireScope(ctx, 'comments:write')) return true;
 
@@ -271,8 +271,10 @@ async function handleCommentStatus(ctx, commentId) {
   const { ok, pres } = await getPresentationWithAccess(ctx, comment.presentationId);
   if (!ok) return true;
 
-  // Same rule as the app: only the presentation owner/creator moderates.
-  if (!canResolveComment({ user: { email: apiKey.ownerEmail }, pres, comment })) {
+  // Same rule as the app: only the presentation owner/creator moderates. The
+  // context's authed user carries the API-key owner's resolved `users.id`, so
+  // this decides on the stable key like every other ownership check.
+  if (!canResolveComment({ user: authedUser, pres, comment })) {
     await apiError(ctx, 403, 'Only the presentation owner can change comment status');
     return true;
   }
