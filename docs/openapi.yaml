@@ -357,6 +357,14 @@ paths:
                     created:
                       type: string
                       format: date-time
+                    createdById:
+                      type: string
+                      format: uuid
+                      nullable: true
+                      description: >-
+                        The stable user id of whoever took the snapshot. Null
+                        for an external or legacy author with no user record —
+                        a defined absence, not an error.
                     createdBy:
                       type: string
                       nullable: true
@@ -418,6 +426,14 @@ paths:
                       created:
                         type: string
                         format: date-time
+                      createdById:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: >-
+                          The stable user id of whoever took the snapshot. Null
+                          for an external or legacy author with no user record —
+                          a defined absence, not an error.
                       createdBy:
                         type: string
                         nullable: true
@@ -1769,8 +1785,8 @@ components:
             The deck owner's stable user id — the canonical identity of an
             owner, and the only field to compare when asking "is this mine?".
             Null for a deck whose owner has no user record on this instance
-            (an external or legacy owner) and in file-storage mode; that is a
-            defined absence, not an error.
+            (an external or legacy owner); that is a defined absence, not an
+            error.
         createdById:
           type: string
           format: uuid
