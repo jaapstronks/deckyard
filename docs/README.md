@@ -191,6 +191,7 @@ nothing is discoverable only by `ls`.
 | [`auth-and-sessions.md`](reference/auth-and-sessions.md) | Session cookies/tokens, the login paths, and auth rate limits |
 | [`sandbox-mode.md`](reference/sandbox-mode.md) | The public anonymous try-it playground: guest identity, ephemeral decks, TTL cleanup |
 | [`security-posture.md`](reference/security-posture.md) | Server-side hardening controls, what each blocks, and where it lives |
+| [`analytics-privacy.md`](reference/analytics-privacy.md) | What view analytics stores per viewer, the two erase routes, retention |
 | [`maintenance-mode.md`](reference/maintenance-mode.md) | Deploying without failing saves in open editors |
 | [`sso-oidc.md`](reference/sso-oidc.md) | SSO via OIDC (single IdP) |
 | [`versioning.md`](reference/versioning.md) | Versioning & releases |

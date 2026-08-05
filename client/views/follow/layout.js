@@ -14,7 +14,7 @@ import { createUiModeSwitcher } from '../ui-mode-switcher.js';
  * @param {() => object} opts.getCopy - live localized copy bundle.
  * @returns {{
  *   shell: HTMLElement, topbar: HTMLElement, title: HTMLElement,
- *   langWrap: HTMLElement, status: HTMLElement,
+ *   langWrap: HTMLElement, eraseSlot: HTMLElement, status: HTMLElement,
  *   uiMode: { el: HTMLElement, detach?: () => void },
  *   stageWrap: HTMLElement, slideWrap: HTMLElement, interactionWrap: HTMLElement,
  *   qaWrap: HTMLElement, qaTitle: HTMLElement, qaHint: HTMLElement,
@@ -33,12 +33,16 @@ export function buildFollowLayout({ getCopy }) {
   });
   const langWrap = h('div', { class: 'follow-lang' });
   const actions = h('div', { class: 'follow-actions' });
+  // Slot for the "forget me" button. The tracker is created asynchronously
+  // (only for anonymous viewers, after an auth check), so the button is filled
+  // in later — this keeps a stable place for it in the topbar.
+  const eraseSlot = h('div', { class: 'follow-erase-slot' });
   const uiMode = createUiModeSwitcher({ h, className: 'follow-ui-mode' });
   const status = h('div', {
     class: 'follow-status',
     text: copy.connecting,
   });
-  actions.append(langWrap, uiMode.el);
+  actions.append(langWrap, eraseSlot, uiMode.el);
   topbar.append(title, actions, status);
 
   const stageWrap = h('div', {
@@ -137,6 +141,7 @@ export function buildFollowLayout({ getCopy }) {
     topbar,
     title,
     langWrap,
+    eraseSlot,
     status,
     uiMode,
     stageWrap,

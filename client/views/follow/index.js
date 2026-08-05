@@ -14,6 +14,7 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { createAnalyticsTracker, isAnalyticsEnabled } from '../../lib/format/analytics-tracker.js';
+import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button.js';
 import { me } from '../../lib/user/auth.js';
 import {
   addMyQuestionId,
@@ -53,6 +54,7 @@ export async function renderFollow(root, presentationId) {
     shell,
     title,
     langWrap,
+    eraseSlot,
     status,
     uiMode,
     stageWrap,
@@ -110,6 +112,36 @@ export async function renderFollow(root, presentationId) {
   const stopTranslatingPoll = () => translatingPoll?.stop?.();
   const ensureTranslatingPoll = () => translatingPoll?.ensure?.();
 
+  // (Re)build the "forget me" button from the current deck-language copy and
+  // drop it into its topbar slot. Called when tracking starts and again on a
+  // live language switch so the label follows the deck language. Nulls the
+  // tracker after a successful erase so it is not rebuilt for a dead session.
+  const mountEraseButton = () => {
+    if (!analyticsTracker) return;
+    const eraseBtn = createEraseMyDataButton({
+      tracker: analyticsTracker,
+      labels: copy.erase,
+      onErased: () => {
+        analyticsTracker = null;
+        eraseSlot.replaceChildren();
+      },
+    });
+    if (eraseBtn) eraseSlot.replaceChildren(eraseBtn);
+  };
+
+  // Start anonymous analytics tracking and surface the erase control. Runs once,
+  // only for a viewer we could not identify as logged in.
+  const startAnonymousTracking = () => {
+    analyticsTracker = createAnalyticsTracker({
+      presentationId,
+      sourceType: 'follow',
+      sourceId: presentationId,
+      viewerType: 'anonymous',
+    });
+    analyticsTracker.start();
+    mountEraseButton();
+  };
+
   const getTranslatingLang = () => {
     const ts = meta?.translationStatus;
     if (!ts) return null;
@@ -135,6 +167,7 @@ export async function renderFollow(root, presentationId) {
         qaTitle.textContent = copy.qaTitle;
         qaAskBtn.textContent = copy.qaAsk;
         qaInput.placeholder = copy.qaPlaceholder;
+        mountEraseButton();
         qa?.syncQaNameBtn?.();
         qa?.renderQuestions?.();
         try {
@@ -241,22 +274,10 @@ export async function renderFollow(root, presentationId) {
           return;
         }
         // Anonymous viewer - initialize tracking
-        analyticsTracker = createAnalyticsTracker({
-          presentationId,
-          sourceType: 'follow',
-          sourceId: presentationId,
-          viewerType: 'anonymous',
-        });
-        analyticsTracker.start();
+        startAnonymousTracking();
       }).catch(() => {
         // On auth check failure, assume anonymous and track
-        analyticsTracker = createAnalyticsTracker({
-          presentationId,
-          sourceType: 'follow',
-          sourceId: presentationId,
-          viewerType: 'anonymous',
-        });
-        analyticsTracker.start();
+        startAnonymousTracking();
       });
     }
     // Also sync current slide/step state (helps initial render before SSE connects).

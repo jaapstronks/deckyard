@@ -209,6 +209,10 @@ export async function renderShareViewer(root, token) {
         shell.innerHTML = '';
         renderViewer();
       },
+      analyticsTracker,
+      onAnalyticsErased: () => {
+        analyticsTracker = null;
+      },
     });
 
     const stage = h('div', { class: 'share-viewer-stage' });
